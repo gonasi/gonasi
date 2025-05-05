@@ -1,14 +1,14 @@
 import { data, Outlet, redirect } from 'react-router';
-import { jwtDecode, type JwtPayload } from 'jwt-decode';
+import { jwtDecode } from 'jwt-decode';
 
 import { fetchAllUsersActiveCompany } from '@gonasi/database/activeCompany';
-import type { UserRole } from '@gonasi/database/client';
 import { getUserProfile } from '@gonasi/database/profile';
 
 import type { Route } from './+types/go-layout';
 
 import { TopNav } from '~/components/go-top-nav';
 import { createClient } from '~/lib/supabase/supabase.server';
+import type { GoJwtPayload } from '~/root';
 
 export function meta() {
   return [
@@ -39,10 +39,6 @@ export function meta() {
     },
     { name: 'twitter:image', content: 'https://gonasi.com/twitter-image.jpg' },
   ];
-}
-
-export interface GoJwtPayload extends JwtPayload {
-  user_role: UserRole;
 }
 
 export type UserActiveCompanyLoaderReturnType = Exclude<

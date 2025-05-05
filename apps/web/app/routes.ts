@@ -25,6 +25,15 @@ export default [
     ]),
   ]),
 
+  // change team
+  ...prefix('dashboard', [
+    layout('routes/layouts/dashboard/dashboard-plain-team.tsx', [
+      route('/change-team', 'routes/dashboard/team-management/change-team.tsx', [
+        route('leave-team/:companyId', 'routes/dashboard/team-management/leave-team.tsx'),
+      ]),
+    ]),
+  ]),
+
   route('sign-out', 'routes/sign-out.tsx'),
   route('*', 'routes/not-found.tsx'),
 ] satisfies RouteConfig;

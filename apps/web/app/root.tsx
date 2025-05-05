@@ -12,9 +12,12 @@ import {
 } from 'react-router';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/react';
+import type { JwtPayload } from 'jwt-decode';
 import { getToast } from 'remix-toast';
 import { HoneypotProvider } from 'remix-utils/honeypot/react';
 import { Toaster } from 'sonner';
+
+import type { UserRole } from '@gonasi/database/client';
 
 import type { Route } from './+types/root';
 import { FeedbackBanner } from './components/feedback-banner';
@@ -26,6 +29,10 @@ import { getClientEnv } from '~/.server/env.server';
 import { useToast } from '~/components/ui/toast';
 import { honeypot } from '~/utils/honeypot.server';
 import { combineHeaders } from '~/utils/misc';
+
+export interface GoJwtPayload extends JwtPayload {
+  user_role: UserRole;
+}
 
 export async function loader({ request }: Route.LoaderArgs) {
   const clientEnv = getClientEnv();
