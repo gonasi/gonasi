@@ -40,24 +40,7 @@ import { Badge } from '../ui/badge';
 import { buttonVariants } from '../ui/button';
 
 import { cn } from '~/lib/utils';
-
-interface Lesson {
-  id: string;
-  name: string;
-  course_id: string;
-  chapter_id: string;
-  created_at: string;
-  created_by: string;
-  updated_by: string;
-  position: number | null;
-  lesson_types: {
-    id: string;
-    name: string;
-    description: string;
-    lucide_icon: string;
-    bg_color: string;
-  } | null;
-}
+import type { CourseLessonType } from '~/routes/dashboard/courses/course-content';
 
 interface Props {
   companyId: string;
@@ -65,7 +48,7 @@ interface Props {
   name: string;
   description: string | null;
   courseId: string;
-  lessons: Lesson[];
+  lessons: CourseLessonType[];
   requires_payment: boolean | null;
   lesson_count: number;
   loading: boolean;
@@ -175,13 +158,11 @@ export default function CourseChapterItem({
 
       if (newLessons.length) {
         const simplifiedlessons: LessonPositionUpdateArray = newLessons.map(
-          ({ id, chapter_id, course_id, name, created_by }, index) => ({
+          ({ id, updated_by, chapter_id }, index) => ({
             id,
             position: index,
+            updated_by,
             chapter_id,
-            course_id,
-            name,
-            created_by,
           }),
         );
 

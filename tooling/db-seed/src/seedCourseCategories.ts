@@ -4,7 +4,7 @@ import { type profilesScalars } from '@snaplet/seed';
 import { createCourseCategory } from '@gonasi/database/courseCategories';
 import { createCourseSubCategory } from '@gonasi/database/courseSubCategories';
 
-import { PASSWORD, supabase } from './constants';
+import { PASSWORD, SU_EMAIL, supabase } from './constants';
 
 const categories = [
   {
@@ -116,7 +116,7 @@ const categories = [
 ];
 
 export async function seedCourseCategories(users: profilesScalars[]) {
-  const admins = users.filter((user) => user.email.endsWith('@gonasi.com'));
+  const admins = users.filter((user) => user.email === SU_EMAIL);
 
   for (const category of categories) {
     const creator = faker.helpers.arrayElement(admins);

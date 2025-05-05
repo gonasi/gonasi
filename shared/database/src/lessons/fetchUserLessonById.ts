@@ -13,7 +13,7 @@ export async function fetchUserLessonById(supabase: TypedSupabaseClient, lessonI
 
   const { data, error } = await supabase
     .from('lessons')
-    .select('id, name, content, lesson_type_id, lesson_types(name, description)')
+    .select('id, name, lesson_type_id, lesson_types(name, description)')
     .match({ id: lessonId, created_by: userId })
     .single();
 

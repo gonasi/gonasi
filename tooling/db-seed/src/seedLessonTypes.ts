@@ -3,7 +3,7 @@ import { type profilesScalars } from '@snaplet/seed';
 
 import { createLessonType } from '@gonasi/database/lessonTypes';
 
-import { PASSWORD, supabase } from './constants';
+import { PASSWORD, SU_EMAIL, supabase } from './constants';
 
 const lessonTypes = [
   {
@@ -99,7 +99,7 @@ const lessonTypes = [
 ];
 
 export async function seedLessonTypes(users: profilesScalars[]) {
-  const admins = users.filter((user) => user.email.endsWith('@gonasi.com'));
+  const admins = users.filter((user) => user.email === SU_EMAIL);
 
   for (const { name, description, lucideIcon, bgColor } of lessonTypes) {
     const creator = faker.helpers.arrayElement(admins);

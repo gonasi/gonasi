@@ -92,29 +92,24 @@ begin
   -- Extract chapter_id from the first item in the array
   target_chapter_id := (lessons->0->>'chapter_id')::uuid;
 
-  -- Temporarily shift existing lesson positions to avoid conflicts
+  -- Temporarily offset existing lesson positions to avoid unique constraint conflicts
   update public.lessons
   set position = position + 1000000
   where chapter_id = target_chapter_id;
 
-  -- Upsert each lesson with the new position
-  insert into public.lessons (
-    id, course_id, chapter_id, name, content, position, created_by, updated_by
-  )
-  select
-    (l->>'id')::uuid,
-    (l->>'course_id')::uuid,
-    (l->>'chapter_id')::uuid,
-    l->>'name',
-    l->>'content',
-    (l->>'position')::int,
-    (l->>'created_by')::uuid,
-    (l->>'updated_by')::uuid
-  from jsonb_array_elements(lessons) as l
-  on conflict (id) do update
-  set
-    position = excluded.position,
-    updated_by = excluded.updated_by,
-    updated_at = timezone('utc', now());
+  -- Update positions based on the input array
+  update public.lessons as l
+  set 
+    position = new_data.position,
+    updated_by = new_data.updated_by,
+    updated_at = timezone('utc', now())
+  from (
+    select 
+      (elem->>'id')::uuid as id,
+      (elem->>'position')::int as position,
+      (elem->>'updated_by')::uuid as updated_by
+    from jsonb_array_elements(lessons) as elem
+  ) as new_data
+  where l.id = new_data.id;
 end;
 $$;

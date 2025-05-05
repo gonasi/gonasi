@@ -19,6 +19,8 @@ import { createClient } from '~/lib/supabase/supabase.server';
 
 export type CourseChaptersType = Exclude<Awaited<ReturnType<typeof loader>>, Response>['data'];
 
+export type CourseLessonType = NonNullable<CourseChaptersType>[number]['lessons'][number];
+
 export async function loader({ params, request }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
   const courseChapters = await fetchCourseChaptersByCourseId(supabase, params.courseId);

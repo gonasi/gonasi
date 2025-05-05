@@ -785,20 +785,6 @@
           "isGenerated": false,
           "sequence": false,
           "hasDefaultValue": false
-        },
-        {
-          "name": "lessons_progress",
-          "type": "lessons_progress",
-          "isRequired": false,
-          "kind": "object",
-          "relationName": "lessons_progressTochapters",
-          "relationFromFields": [],
-          "relationToFields": [],
-          "isList": true,
-          "isId": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false
         }
       ],
       "uniqueConstraints": [
@@ -1723,20 +1709,6 @@
           "isGenerated": false,
           "sequence": false,
           "hasDefaultValue": false
-        },
-        {
-          "name": "lessons_progress",
-          "type": "lessons_progress",
-          "isRequired": false,
-          "kind": "object",
-          "relationName": "lessons_progressTocourses",
-          "relationFromFields": [],
-          "relationToFields": [],
-          "isList": true,
-          "isId": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false
         }
       ],
       "uniqueConstraints": [
@@ -2192,198 +2164,6 @@
       "uniqueConstraints": [
         {
           "name": "featured_courses_pricing_pkey",
-          "fields": [
-            "id"
-          ],
-          "nullNotDistinct": false
-        }
-      ]
-    },
-    "feedback": {
-      "id": "public.feedback",
-      "schemaName": "public",
-      "tableName": "feedback",
-      "fields": [
-        {
-          "id": "public.feedback.id",
-          "name": "id",
-          "columnName": "id",
-          "type": "uuid",
-          "isRequired": true,
-          "kind": "scalar",
-          "isList": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": true,
-          "isId": true,
-          "maxLength": null
-        },
-        {
-          "id": "public.feedback.experience",
-          "name": "experience",
-          "columnName": "experience",
-          "type": "text",
-          "isRequired": true,
-          "kind": "scalar",
-          "isList": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false,
-          "isId": false,
-          "maxLength": null
-        },
-        {
-          "id": "public.feedback.hardest_part",
-          "name": "hardest_part",
-          "columnName": "hardest_part",
-          "type": "text",
-          "isRequired": true,
-          "kind": "scalar",
-          "isList": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false,
-          "isId": false,
-          "maxLength": null
-        },
-        {
-          "id": "public.feedback.best_part",
-          "name": "best_part",
-          "columnName": "best_part",
-          "type": "text",
-          "isRequired": true,
-          "kind": "scalar",
-          "isList": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false,
-          "isId": false,
-          "maxLength": null
-        },
-        {
-          "id": "public.feedback.nps_score",
-          "name": "nps_score",
-          "columnName": "nps_score",
-          "type": "int4",
-          "isRequired": false,
-          "kind": "scalar",
-          "isList": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false,
-          "isId": false,
-          "maxLength": null
-        },
-        {
-          "id": "public.feedback.share_feedback",
-          "name": "share_feedback",
-          "columnName": "share_feedback",
-          "type": "bool",
-          "isRequired": false,
-          "kind": "scalar",
-          "isList": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": true,
-          "isId": false,
-          "maxLength": null
-        },
-        {
-          "id": "public.feedback.created_at",
-          "name": "created_at",
-          "columnName": "created_at",
-          "type": "timestamptz",
-          "isRequired": true,
-          "kind": "scalar",
-          "isList": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": true,
-          "isId": false,
-          "maxLength": null
-        },
-        {
-          "id": "public.feedback.updated_at",
-          "name": "updated_at",
-          "columnName": "updated_at",
-          "type": "timestamptz",
-          "isRequired": true,
-          "kind": "scalar",
-          "isList": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": true,
-          "isId": false,
-          "maxLength": null
-        },
-        {
-          "id": "public.feedback.created_by",
-          "name": "created_by",
-          "columnName": "created_by",
-          "type": "uuid",
-          "isRequired": true,
-          "kind": "scalar",
-          "isList": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false,
-          "isId": false,
-          "maxLength": null
-        },
-        {
-          "id": "public.feedback.updated_by",
-          "name": "updated_by",
-          "columnName": "updated_by",
-          "type": "uuid",
-          "isRequired": true,
-          "kind": "scalar",
-          "isList": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false,
-          "isId": false,
-          "maxLength": null
-        },
-        {
-          "name": "profiles_feedback_created_byToprofiles",
-          "type": "profiles",
-          "isRequired": true,
-          "kind": "object",
-          "relationName": "feedback_created_byToprofiles",
-          "relationFromFields": [
-            "created_by"
-          ],
-          "relationToFields": [
-            "id"
-          ],
-          "isList": false,
-          "isId": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false
-        },
-        {
-          "name": "profiles_feedback_updated_byToprofiles",
-          "type": "profiles",
-          "isRequired": true,
-          "kind": "object",
-          "relationName": "feedback_updated_byToprofiles",
-          "relationFromFields": [
-            "updated_by"
-          ],
-          "relationToFields": [
-            "id"
-          ],
-          "isList": false,
-          "isId": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false
-        }
-      ],
-      "uniqueConstraints": [
-        {
-          "name": "feedback_pkey",
           "fields": [
             "id"
           ],
@@ -3374,16 +3154,30 @@
           "maxLength": null
         },
         {
-          "id": "public.lessons.content",
-          "name": "content",
-          "columnName": "content",
+          "id": "public.lessons.metadata",
+          "name": "metadata",
+          "columnName": "metadata",
           "type": "jsonb",
-          "isRequired": false,
+          "isRequired": true,
           "kind": "scalar",
           "isList": false,
           "isGenerated": false,
           "sequence": false,
-          "hasDefaultValue": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.lessons.settings",
+          "name": "settings",
+          "columnName": "settings",
+          "type": "jsonb",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
           "isId": false,
           "maxLength": null
         },
@@ -3476,20 +3270,6 @@
           "isGenerated": false,
           "sequence": false,
           "hasDefaultValue": false
-        },
-        {
-          "name": "lessons_progress",
-          "type": "lessons_progress",
-          "isRequired": false,
-          "kind": "object",
-          "relationName": "lessons_progressTolessons",
-          "relationFromFields": [],
-          "relationToFields": [],
-          "isList": true,
-          "isId": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false
         }
       ],
       "uniqueConstraints": [
@@ -3505,228 +3285,6 @@
           "fields": [
             "chapter_id",
             "position"
-          ],
-          "nullNotDistinct": false
-        }
-      ]
-    },
-    "lessons_progress": {
-      "id": "public.lessons_progress",
-      "schemaName": "public",
-      "tableName": "lessons_progress",
-      "fields": [
-        {
-          "id": "public.lessons_progress.id",
-          "name": "id",
-          "columnName": "id",
-          "type": "uuid",
-          "isRequired": true,
-          "kind": "scalar",
-          "isList": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": true,
-          "isId": true,
-          "maxLength": null
-        },
-        {
-          "id": "public.lessons_progress.user_id",
-          "name": "user_id",
-          "columnName": "user_id",
-          "type": "uuid",
-          "isRequired": true,
-          "kind": "scalar",
-          "isList": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false,
-          "isId": false,
-          "maxLength": null
-        },
-        {
-          "id": "public.lessons_progress.lesson_id",
-          "name": "lesson_id",
-          "columnName": "lesson_id",
-          "type": "uuid",
-          "isRequired": true,
-          "kind": "scalar",
-          "isList": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false,
-          "isId": false,
-          "maxLength": null
-        },
-        {
-          "id": "public.lessons_progress.course_id",
-          "name": "course_id",
-          "columnName": "course_id",
-          "type": "uuid",
-          "isRequired": true,
-          "kind": "scalar",
-          "isList": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false,
-          "isId": false,
-          "maxLength": null
-        },
-        {
-          "id": "public.lessons_progress.chapter_id",
-          "name": "chapter_id",
-          "columnName": "chapter_id",
-          "type": "uuid",
-          "isRequired": true,
-          "kind": "scalar",
-          "isList": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false,
-          "isId": false,
-          "maxLength": null
-        },
-        {
-          "id": "public.lessons_progress.node_progress",
-          "name": "node_progress",
-          "columnName": "node_progress",
-          "type": "jsonb",
-          "isRequired": true,
-          "kind": "scalar",
-          "isList": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": true,
-          "isId": false,
-          "maxLength": null
-        },
-        {
-          "id": "public.lessons_progress.is_complete",
-          "name": "is_complete",
-          "columnName": "is_complete",
-          "type": "bool",
-          "isRequired": true,
-          "kind": "scalar",
-          "isList": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": true,
-          "isId": false,
-          "maxLength": null
-        },
-        {
-          "id": "public.lessons_progress.created_at",
-          "name": "created_at",
-          "columnName": "created_at",
-          "type": "timestamptz",
-          "isRequired": true,
-          "kind": "scalar",
-          "isList": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": true,
-          "isId": false,
-          "maxLength": null
-        },
-        {
-          "id": "public.lessons_progress.updated_at",
-          "name": "updated_at",
-          "columnName": "updated_at",
-          "type": "timestamptz",
-          "isRequired": true,
-          "kind": "scalar",
-          "isList": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": true,
-          "isId": false,
-          "maxLength": null
-        },
-        {
-          "name": "chapters",
-          "type": "chapters",
-          "isRequired": true,
-          "kind": "object",
-          "relationName": "lessons_progressTochapters",
-          "relationFromFields": [
-            "chapter_id"
-          ],
-          "relationToFields": [
-            "id"
-          ],
-          "isList": false,
-          "isId": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false
-        },
-        {
-          "name": "courses",
-          "type": "courses",
-          "isRequired": true,
-          "kind": "object",
-          "relationName": "lessons_progressTocourses",
-          "relationFromFields": [
-            "course_id"
-          ],
-          "relationToFields": [
-            "id"
-          ],
-          "isList": false,
-          "isId": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false
-        },
-        {
-          "name": "lessons",
-          "type": "lessons",
-          "isRequired": true,
-          "kind": "object",
-          "relationName": "lessons_progressTolessons",
-          "relationFromFields": [
-            "lesson_id"
-          ],
-          "relationToFields": [
-            "id"
-          ],
-          "isList": false,
-          "isId": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false
-        },
-        {
-          "name": "profiles",
-          "type": "profiles",
-          "isRequired": true,
-          "kind": "object",
-          "relationName": "lessons_progressToprofiles",
-          "relationFromFields": [
-            "user_id"
-          ],
-          "relationToFields": [
-            "id"
-          ],
-          "isList": false,
-          "isId": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false
-        }
-      ],
-      "uniqueConstraints": [
-        {
-          "name": "lessons_progress_pkey",
-          "fields": [
-            "id"
-          ],
-          "nullNotDistinct": false
-        },
-        {
-          "name": "unique_user_lesson",
-          "fields": [
-            "lesson_id",
-            "user_id"
           ],
           "nullNotDistinct": false
         }
@@ -5674,34 +5232,6 @@
           "hasDefaultValue": false
         },
         {
-          "name": "feedback_feedback_created_byToprofiles",
-          "type": "feedback",
-          "isRequired": false,
-          "kind": "object",
-          "relationName": "feedback_created_byToprofiles",
-          "relationFromFields": [],
-          "relationToFields": [],
-          "isList": true,
-          "isId": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false
-        },
-        {
-          "name": "feedback_feedback_updated_byToprofiles",
-          "type": "feedback",
-          "isRequired": false,
-          "kind": "object",
-          "relationName": "feedback_updated_byToprofiles",
-          "relationFromFields": [],
-          "relationToFields": [],
-          "isList": true,
-          "isId": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false
-        },
-        {
           "name": "lesson_types_lesson_types_created_byToprofiles",
           "type": "lesson_types",
           "isRequired": false,
@@ -5749,20 +5279,6 @@
           "isRequired": false,
           "kind": "object",
           "relationName": "lessons_updated_byToprofiles",
-          "relationFromFields": [],
-          "relationToFields": [],
-          "isList": true,
-          "isId": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false
-        },
-        {
-          "name": "lessons_progress",
-          "type": "lessons_progress",
-          "isRequired": false,
-          "kind": "object",
-          "relationName": "lessons_progressToprofiles",
           "relationFromFields": [],
           "relationToFields": [],
           "isList": true,
@@ -7181,6 +6697,50 @@
           "name": "secrets_name_idx",
           "fields": [
             "name"
+          ],
+          "nullNotDistinct": false
+        }
+      ]
+    },
+    "seed_files": {
+      "id": "supabase_migrations.seed_files",
+      "schemaName": "supabase_migrations",
+      "tableName": "seed_files",
+      "fields": [
+        {
+          "id": "supabase_migrations.seed_files.path",
+          "name": "path",
+          "columnName": "path",
+          "type": "text",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": true,
+          "maxLength": null
+        },
+        {
+          "id": "supabase_migrations.seed_files.hash",
+          "name": "hash",
+          "columnName": "hash",
+          "type": "text",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        }
+      ],
+      "uniqueConstraints": [
+        {
+          "name": "seed_files_pkey",
+          "fields": [
+            "path"
           ],
           "nullNotDistinct": false
         }

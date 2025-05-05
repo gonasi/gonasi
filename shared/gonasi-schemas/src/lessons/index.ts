@@ -60,12 +60,10 @@ export type DeleteLessonDetailsTypes = z.infer<typeof DeleteLessonSchema>;
 export type DeleteLessonSubmitValues = z.infer<typeof DeleteLessonSchema>;
 
 export const LessonPositionUpdateSchema = z.object({
-  id: z.string(),
-  position: z.number(),
-  chapter_id: z.string(),
-  course_id: z.string(),
-  name: z.string(),
-  created_by: z.string(),
+  id: z.string().uuid(),
+  position: z.number().int(),
+  updated_by: z.string().uuid(),
+  chapter_id: z.string().uuid().optional(), // optional if used for validation/filtering
 });
 
 export const LessonPositionUpdateArraySchema = z.array(LessonPositionUpdateSchema);

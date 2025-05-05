@@ -12,7 +12,7 @@ export const supabase = createClient<Database>(
 
 export const PASSWORD = 'password';
 
-export const SU_EMAIL = 'dalin.oluoch@gonasi.com';
+export const SU_EMAIL = 'gonasiapp@gmail.com';
 
 function snakeToCamel(str: string): string {
   return str.replace(/[_-](\w)/g, (_, c) => c.toUpperCase());
