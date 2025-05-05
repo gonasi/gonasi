@@ -1,15 +1,626 @@
-@import "tailwindcss";
+@import 'tailwindcss';
+@plugin 'tailwindcss-animate';
+@plugin '@tailwindcss/typography';
 
-@theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif,
-    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --radius: 0.6rem;
+
+  /* Brand Colors */
+  --primary: hsl(3, 90%, 60%); /* #f74d40 */
+  --primary-foreground: hsl(0, 0%, 98%);
+  --primary-hover: hsl(3, 85%, 55%);
+
+  --header: hsl(217, 39%, 10%);
+  --gold: hsl(45, 100%, 40%);
+
+  --secondary: hsl(182, 74%, 35%); /* Darker cyan */
+  --secondary-foreground: hsl(217, 39%, 10%); /* Darker navy */
+  --secondary-hover: hsl(182, 70%, 30%); /* Even darker hover */
+
+  --success: hsl(150, 70%, 40%); /* #1fa672 */
+  --success-foreground: hsl(0, 0%, 98%);
+  --success-hover: hsl(150, 65%, 35%);
+
+  --info: hsl(210, 90%, 60%); /* Calming blue */
+  --info-foreground: hsl(0, 0%, 98%);
+  --info-hover: hsl(210, 85%, 55%);
+
+  --warning: hsl(45, 100%, 50%); /* #ffc107 */
+  --warning-foreground: hsl(217, 39%, 15%);
+  --warning-hover: hsl(45, 95%, 45%);
+
+  --tip: hsl(50, 100%, 75%);
+  --tip-foreground: hsl(40, 40%, 15%);
+  --tip-hover: hsl(50, 100%, 70%);
+
+  --danger: hsl(0, 75%, 50%); /* #e63946 */
+  --danger-foreground: hsl(0, 0%, 98%);
+  --danger-hover: hsl(0, 70%, 45%);
+
+  /* Background & Foreground */
+  --background: hsl(220, 10%, 90%); /* Lighter background */
+  --foreground: hsl(220, 20%, 25%);
+
+  /* UI Colors */
+  --card: hsl(220, 10%, 85%); /* Slightly darker card */
+  --card-foreground: hsl(220, 20%, 25%);
+  --card-border: hsl(220, 15%, 60%);
+  --popover: hsl(220, 10%, 94%);
+  --popover-foreground: hsl(220, 20%, 25%);
+  --muted: hsl(220, 10%, 80%); /* Darker muted for better contrast */
+  --muted-foreground: hsl(220, 5%, 45%); /* Slightly darker foreground */
+  --accent: hsl(220, 10%, 85%);
+  --accent-foreground: hsl(220, 20%, 25%);
+  --destructive: hsl(0, 75%, 50%);
+  --destructive-foreground: hsl(0, 0%, 98%);
+  --border: hsl(220, 10%, 80%);
+  --input: hsl(220, 10%, 80%);
+  --ring: hsl(220, 20%, 25%);
+
+  /* Chart Colors */
+  --chart-1: hsl(3, 80%, 55%);
+  --chart-2: hsl(182, 70%, 40%);
+  --chart-3: hsl(210, 50%, 40%);
+  --chart-4: hsl(45, 85%, 60%);
+  --chart-5: hsl(30, 87%, 67%);
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 2px 4px rgba(0, 0, 0, 0.15);
+  --shadow-lg: 0 4px 6px rgba(0, 0, 0, 0.2);
+  --shadow-xl: 0 6px 8px rgba(0, 0, 0, 0.25);
 }
 
-html,
-body {
-  @apply bg-white dark:bg-gray-950;
+/* Auto-apply dark mode when system prefers it */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: hsl(217, 39%, 15%); /* Darker background */
+    --foreground: hsl(0, 0%, 98%);
 
-  @media (prefers-color-scheme: dark) {
-    color-scheme: dark;
+    --secondary: hsl(182, 74%, 47%); /* #20c9d0 */
+    --secondary-foreground: hsl(217, 39%, 15%); /* #0f172a */
+    --secondary-hover: hsl(182, 70%, 42%);
+
+    --header: hsl(0, 0%, 100%);
+    --gold: hsl(45, 100%, 60%);
+
+    /* UI Colors */
+    --card: hsl(217, 39%, 25%); /* Darker card */
+    --card-foreground: hsl(0, 0%, 98%);
+    --card-border: hsl(217, 39%, 50%);
+    --popover: hsl(217, 39%, 25%);
+    --popover-foreground: hsl(0, 0%, 98%);
+    --muted: hsl(217, 39%, 35%);
+    --muted-foreground: hsl(0, 0%, 63%);
+    --accent: hsl(217, 39%, 35%);
+    --accent-foreground: hsl(0, 0%, 98%);
+    --destructive: hsl(0, 62%, 40%);
+    --destructive-foreground: hsl(0, 0%, 98%);
+    --border: hsl(217, 39%, 60%);
+    --input: hsl(217, 39%, 25%);
+    --ring: hsl(0, 0%, 83%);
+
+    /* Success, Warning & Danger */
+    --success: hsl(150, 65%, 42%);
+    --success-foreground: hsl(0, 0%, 98%);
+    --success-hover: hsl(150, 60%, 38%);
+
+    --info: hsl(210, 90%, 65%);
+    --info-foreground: hsl(0, 0%, 98%);
+    --info-hover: hsl(210, 85%, 60%);
+
+    --warning: hsl(45, 95%, 45%);
+    --warning-foreground: hsl(217, 39%, 15%);
+    --warning-hover: hsl(45, 90%, 40%);
+
+    --tip: hsl(50, 30%, 30%);
+    --tip-foreground: hsl(50, 80%, 90%);
+    --tip-hover: hsl(50, 30%, 35%);
+
+    --danger: hsl(0, 68%, 50%);
+    --danger-foreground: hsl(0, 0%, 98%);
+    --danger-hover: hsl(0, 62%, 45%);
+
+    /* Chart Colors */
+    --chart-1: hsl(220, 70%, 50%);
+    --chart-2: hsl(160, 60%, 45%);
+    --chart-3: hsl(30, 80%, 55%);
+    --chart-4: hsl(280, 65%, 60%);
+    --chart-5: hsl(340, 75%, 55%);
+
+    --shadow-sm: 0 1px 2px rgba(255, 255, 255, 0.05);
+    --shadow-md: 0 2px 4px rgba(255, 255, 255, 0.08);
+    --shadow-lg: 0 4px 6px rgba(255, 255, 255, 0.1);
+    --shadow-xl: 0 6px 8px rgba(255, 255, 255, 0.12);
   }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card); /* Apply card-specific colors */
+  --color-card-foreground: var(--card-foreground); /* Text color inside cards */
+  --color-card-border: var(--card-border);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-header: var(--header);
+  --color-gold: var(--gold);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-success-hover: var(--success-hover);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-warning-hover: var(--warning-hover);
+  --color-tip: var(--tip);
+  --color-tip-foreground: var(--tip-foreground);
+  --color-tip-hover: var(--tip-hover);
+  --color-danger: var(--danger);
+  --color-danger-foreground: var(--danger-foreground);
+  --color-danger-hover: var(--danger-hover);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --shadow-xl: var(--shadow-xl);
+}
+
+@font-face {
+  font-family: 'Oceanwide';
+  src: url('/assets/fonts/oceanwide/Oceanwide-Semibold.otf') format('opentype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Oceanwide';
+  src: url('/assets/fonts/oceanwide/Oceanwide-SemiboldOblique.otf') format('opentype');
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Montserrat';
+  src: url('/assets/fonts/montserrat/Montserrat-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Montserrat';
+  src: url('/assets/fonts/montserrat/Montserrat-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Montserrat';
+  src: url('/assets/fonts/montserrat/Montserrat-MediumItalic.ttf') format('truetype');
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Montserrat';
+  src: url('/assets/fonts/montserrat/Montserrat-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Montserrat';
+  src: url('/assets/fonts/montserrat/Montserrat-SemiBoldItalic.ttf') format('truetype');
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Montserrat';
+  src: url('/assets/fonts/montserrat/Montserrat-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Montserrat';
+  src: url('/assets/fonts/montserrat/Montserrat-BoldItalic.ttf') format('truetype');
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+
+@theme {
+  --font-primary: 'Oceanwide', sans-serif;
+  --font-secondary: 'Montserrat', sans-serif;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+body {
+  font-family: var(--font-primary), var(--font-secondary), sans-serif;
+}
+
+.margin-left-custom {
+  margin-left: var(--ml);
+}
+
+.editor-shell {
+  @apply text-foreground relative mx-auto max-w-[1100px] rounded-sm leading-[1.7] font-normal;
+}
+
+.editor-shell .editor-container.tree-view {
+  @apply rounded-none;
+}
+
+.editor-shell .editor-container.plain-text {
+  @apply rounded-t-[10px];
+}
+
+.toolbar {
+  @apply bg-card sticky top-12 z-20 mb-px flex w-full flex-shrink-0 items-center space-x-2 overflow-x-auto overflow-y-hidden rounded-lg p-1;
+}
+
+.toolbar-nonsticky {
+  @apply bg-card z-5 flex w-full flex-shrink-0 items-center space-x-2 overflow-x-auto overflow-y-hidden rounded-lg p-1;
+}
+
+/* THEME */
+
+/* Tailwind equivalents using @apply */
+/* editor-theme.css */
+.PlaygroundEditorTheme__autocomplete {
+  @apply rounded border bg-white p-2 shadow;
+  border-color: var(--card-border);
+  background-color: var(--popover);
+}
+
+.PlaygroundEditorTheme__blockCursor {
+  background-color: var(--foreground);
+}
+
+.PlaygroundEditorTheme__characterLimit {
+  color: var(--danger);
+}
+
+.PlaygroundEditorTheme__code {
+  @apply rounded p-2 font-mono text-sm;
+  background-color: var(--muted);
+}
+
+.PlaygroundEditorTheme__tokenAttr {
+  color: var(--secondary);
+}
+
+.PlaygroundEditorTheme__tokenProperty {
+  color: var(--info);
+}
+
+.PlaygroundEditorTheme__tokenSelector {
+  color: var(--primary);
+}
+
+.PlaygroundEditorTheme__tokenComment {
+  color: var(--muted);
+  font-style: italic;
+}
+
+.PlaygroundEditorTheme__tokenFunction {
+  color: var(--success);
+}
+
+.PlaygroundEditorTheme__tokenOperator {
+  color: var(--danger);
+}
+
+.PlaygroundEditorTheme__tokenVariable {
+  color: var(--warning);
+}
+
+.PlaygroundEditorTheme__tokenPunctuation {
+  color: var(--foreground);
+}
+
+.PlaygroundEditorTheme__embedBlock {
+  @apply rounded border p-4;
+  border-color: var(--card-border);
+}
+
+.PlaygroundEditorTheme__embedBlockFocus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px var(--primary-hover);
+}
+
+.PlaygroundEditorTheme__hashtag {
+  color: var(--info);
+}
+
+.PlaygroundEditorTheme__h1 {
+  @apply my-4 text-4xl font-bold;
+  color: var(--foreground);
+}
+.PlaygroundEditorTheme__h2 {
+  @apply my-3 text-3xl font-semibold;
+  color: var(--foreground);
+}
+.PlaygroundEditorTheme__h3 {
+  @apply my-2 text-2xl font-medium;
+  color: var(--foreground);
+}
+.PlaygroundEditorTheme__h4 {
+  @apply my-1 text-xl font-medium;
+  color: var(--foreground);
+}
+.PlaygroundEditorTheme__h5 {
+  @apply text-lg font-medium;
+  color: var(--foreground);
+}
+.PlaygroundEditorTheme__h6 {
+  @apply text-base font-semibold;
+  color: var(--foreground);
+}
+
+.PlaygroundEditorTheme__hr {
+  @apply my-4 border-t;
+  border-color: var(--card-border);
+}
+
+.PlaygroundEditorTheme__hrSelected {
+  @apply my-4 border-t-2;
+  border-color: var(--primary);
+}
+
+.editor-image {
+  @apply max-w-full rounded;
+}
+
+.inline-editor-image {
+  @apply inline-block h-auto w-20 rounded;
+}
+
+.PlaygroundEditorTheme__indent {
+  @apply ml-4;
+}
+
+.PlaygroundEditorTheme__layoutContainer {
+  @apply grid grid-cols-2 gap-4;
+}
+
+.PlaygroundEditorTheme__layoutItem {
+  @apply rounded border p-2;
+  background-color: var(--card);
+  border-color: var(--card-border);
+}
+
+.PlaygroundEditorTheme__link {
+  color: var(--primary);
+  text-decoration: underline;
+}
+.PlaygroundEditorTheme__link:hover {
+  color: var(--primary-hover);
+}
+
+.PlaygroundEditorTheme__checklist {
+  @apply list-none pl-0;
+}
+
+.PlaygroundEditorTheme__listItem {
+  @apply ml-6 list-disc;
+  color: var(--foreground);
+}
+
+.PlaygroundEditorTheme__listItemChecked {
+  @apply line-through opacity-60;
+}
+
+.PlaygroundEditorTheme__listItemUnchecked {
+  @apply opacity-100;
+}
+
+.PlaygroundEditorTheme__nestedListItem {
+  @apply ml-6;
+}
+
+.PlaygroundEditorTheme__ol1,
+.PlaygroundEditorTheme__ol2,
+.PlaygroundEditorTheme__ol3,
+.PlaygroundEditorTheme__ol4,
+.PlaygroundEditorTheme__ol5,
+.PlaygroundEditorTheme__ul {
+  list-style-type: decimal;
+  color: var(--foreground);
+}
+
+.PlaygroundEditorTheme__ltr {
+  text-align: left;
+}
+
+.PlaygroundEditorTheme__rtl {
+  text-align: right;
+}
+
+.PlaygroundEditorTheme__mark {
+  background-color: var(--tip);
+}
+
+.PlaygroundEditorTheme__markOverlap {
+  background-color: var(--warning-hover);
+}
+
+.PlaygroundEditorTheme__paragraph {
+  @apply font-secondary my-2;
+  color: var(--foreground);
+}
+
+.PlaygroundEditorTheme__quote {
+  border-left: 4px solid var(--muted);
+  padding-left: 1rem;
+  color: var(--muted);
+  font-style: italic;
+}
+
+.PlaygroundEditorTheme__specialText {
+  color: var(--gold);
+}
+
+.PlaygroundEditorTheme__tabNode {
+  @apply pl-8;
+}
+
+/* Table styles */
+.PlaygroundEditorTheme__table {
+  @apply w-full border;
+  border-color: var(--card-border);
+}
+.PlaygroundEditorTheme__tableAddColumns,
+.PlaygroundEditorTheme__tableAddRows {
+  @apply cursor-pointer text-sm;
+  color: var(--muted);
+}
+.PlaygroundEditorTheme__tableAddColumns:hover,
+.PlaygroundEditorTheme__tableAddRows:hover {
+  color: var(--primary);
+}
+.PlaygroundEditorTheme__tableAlignmentCenter {
+  text-align: center;
+}
+.PlaygroundEditorTheme__tableAlignmentRight {
+  text-align: right;
+}
+.PlaygroundEditorTheme__tableCell {
+  @apply border p-2;
+  border-color: var(--card-border);
+}
+.PlaygroundEditorTheme__tableCellActionButton {
+  @apply text-sm;
+  color: var(--primary);
+  text-decoration: none;
+}
+.PlaygroundEditorTheme__tableCellActionButton:hover {
+  text-decoration: underline;
+}
+.PlaygroundEditorTheme__tableCellActionButtonContainer {
+  @apply flex items-center justify-end;
+}
+.PlaygroundEditorTheme__tableCellHeader {
+  background-color: var(--popover);
+  font-weight: 600;
+}
+.PlaygroundEditorTheme__tableCellResizer {
+  @apply w-1 cursor-col-resize;
+  background-color: var(--card-border);
+}
+.PlaygroundEditorTheme__tableCellSelected {
+  background-color: var(--info-hover);
+}
+.PlaygroundEditorTheme__tableFrozenColumn {
+  position: sticky;
+  left: 0;
+  z-index: 10;
+  background-color: var(--popover);
+}
+.PlaygroundEditorTheme__tableFrozenRow {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: var(--popover);
+}
+.PlaygroundEditorTheme__tableRowStriping {
+  background-color: var(--background);
+}
+.PlaygroundEditorTheme__tableScrollableWrapper {
+  max-width: 100%;
+  overflow: auto;
+}
+.PlaygroundEditorTheme__tableSelected {
+  border: 2px solid var(--primary);
+}
+.PlaygroundEditorTheme__tableSelection {
+  background-color: var(--info-hover);
+}
+
+/* Text styles */
+.PlaygroundEditorTheme__textBold {
+  font-weight: bold;
+}
+.PlaygroundEditorTheme__textItalic {
+  font-style: italic;
+}
+.PlaygroundEditorTheme__textUnderline {
+  text-decoration: underline;
+}
+.PlaygroundEditorTheme__textStrikethrough {
+  text-decoration: line-through;
+}
+.PlaygroundEditorTheme__textUnderlineStrikethrough {
+  text-decoration: underline line-through;
+}
+.PlaygroundEditorTheme__textCode {
+  border-radius: 0.25rem;
+  background-color: var(--muted);
+  padding: 0.125rem 0.25rem;
+  font-family: monospace;
+}
+.PlaygroundEditorTheme__textHighlight {
+  background-color: var(--tip);
+}
+.PlaygroundEditorTheme__textSuperscript {
+  vertical-align: super;
+  font-size: 0.75rem;
+}
+.PlaygroundEditorTheme__textSubscript {
+  vertical-align: sub;
+  font-size: 0.75rem;
+}
+.PlaygroundEditorTheme__textLowercase {
+  text-transform: lowercase;
+}
+.PlaygroundEditorTheme__textUppercase {
+  text-transform: uppercase;
+}
+.PlaygroundEditorTheme__textCapitalize {
+  text-transform: capitalize;
+}
+
+// Rest
+.image-resizer-square {
+  @apply absolute block h-2 w-2 bg-red-500;
 }

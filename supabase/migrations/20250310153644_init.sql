@@ -339,7 +339,7 @@ begin
     values (new.id, new.id); 
 
   -- Assign role based on email
-  if new.email = 'dalin.oluoch@gonasi.com' then
+  if new.email = 'gonasiapp@gmail.com' then
     insert into public.user_roles (user_id, role) values (new.id, 'go_su');
   elsif new.email ilike '%@gonasi.com' then
     insert into public.user_roles (user_id, role) values (new.id, 'go_staff');
