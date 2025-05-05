@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router';
-import { ChevronsUpDown, CreditCard, LayoutDashboard, LogOut, Settings, User } from 'lucide-react';
+import { ChevronsUpDown, LayoutDashboard, LogOut } from 'lucide-react';
 
 import { PlainAvatar, UserAvatar } from '../avatars';
 import { NotFoundCard } from '../cards';
@@ -43,9 +43,9 @@ export function ProfileDropdown({
 
   const menuItems = [
     { to: `/dashboard/${activeCompany.company_id}`, label: 'Dashboard', icon: LayoutDashboard },
-    { to: '/profile', label: 'Profile', icon: User },
-    { to: '/settings', label: 'Settings', icon: Settings },
-    { to: '/billing', label: 'Billing', icon: CreditCard },
+    // { to: '/profile', label: 'Profile', icon: User },
+    // { to: '/settings', label: 'Settings', icon: Settings },
+    // { to: '/billing', label: 'Billing', icon: CreditCard },
   ];
 
   return (
