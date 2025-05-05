@@ -1,0 +1,5 @@
+{
+  "extends": ["@gonasi/typescript-config/base"],
+  "include": ["src", "../../apps/web/app/components/go-editor/plugins/ImagesPlugin/schema.ts"],
+  "exclude": ["dist", "node_modules"]
+}

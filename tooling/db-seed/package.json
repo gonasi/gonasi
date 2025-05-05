@@ -1,0 +1,33 @@
+{
+  "name": "@gonasi/db-seed",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./*": {
+      "default": "./src/*/index.ts"
+    }
+  },
+  "scripts": {
+    "lint": "eslint src",
+    "lint:fix": "npm run lint --fix",
+    "typecheck": "tsc --noEmit",
+    "sync:db": "npx @snaplet/seed sync",
+    "seed": "npx tsx seed.ts",
+    "db:refresh": "npm run sync:db && npm run seed"
+  },
+  "eslintConfig": {
+    "extends": "@gonasi/eslint-config/base"
+  },
+  "devDependencies": {
+    "@gonasi/eslint-config": "*",
+    "@gonasi/typescript-config": "*",
+    "@snaplet/copycat": "^6.0.0",
+    "@snaplet/seed": "^0.98.0",
+    "postgres": "^3.4.5"
+  },
+  "dependencies": {
+    "@gonasi/database": "*",
+    "@supabase/supabase-js": "^2.49.1"
+  }
+}

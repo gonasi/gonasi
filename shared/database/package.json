@@ -1,0 +1,30 @@
+{
+  "name": "@gonasi/database",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./*": {
+      "default": "./src/*/index.ts"
+    }
+  },
+  "scripts": {
+    "lint": "eslint src",
+    "lint:fix": "npm run lint --fix",
+    "typecheck": "tsc --noEmit"
+  },
+  "eslintConfig": {
+    "extends": "@gonasi/eslint-config/base"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.48.1",
+    "date-fns": "^4.1.0",
+    "jwt-decode": "^4.0.0"
+  },
+  "devDependencies": {
+    "@gonasi/eslint-config": "*",
+    "@gonasi/schemas": "*",
+    "@gonasi/typescript-config": "*",
+    "@gonasi/utils": "*"
+  }
+}

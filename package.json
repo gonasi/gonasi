@@ -1,0 +1,39 @@
+{
+  "name": "gonasi",
+  "version": "0.0.0",
+  "private": true,
+  "description": "",
+  "author": "",
+  "license": "UNLICENSED",
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "test": "turbo test",
+    "typecheck": "turbo run typecheck",
+    "typecheck:force": "npm run typecheck -- --force",
+    "test:e2e": "turbo test:e2e",
+    "deps:update": "syncpack update --types prod,dev",
+    "deps:verify": "syncpack list-mismatches --types prod,dev,resolutions",
+    "postinstall": "npx patch-package -y",
+    "lint": "turbo run lint",
+    "lint:fix": "turbo lint:fix",
+    "format": "prettier --write \"**/*.{ts,tsx,md}\""
+  },
+  "devDependencies": {
+    "prettier": "^3.2.5",
+    "syncpack": "12.3.1",
+    "turbo": "^2.4.1"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "packageManager": "npm@10.9.2",
+  "workspaces": [
+    "apps/*",
+    "tooling/*",
+    "shared/*"
+  ],
+  "dependencies": {
+    "cmdk": "^1.0.4"
+  }
+}

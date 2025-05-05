@@ -1,0 +1,26 @@
+{
+  "name": "@gonasi/utils",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./*": {
+      "default": "./src/*/index.ts"
+    }
+  },
+  "scripts": {
+    "lint": "eslint src",
+    "lint:fix": "npm run lint --fix",
+    "typecheck": "tsc --noEmit"
+  },
+  "eslintConfig": {
+    "extends": "@gonasi/eslint-config/base"
+  },
+  "dependencies": {
+    "dayjs": "^1.11.13"
+  },
+  "devDependencies": {
+    "@gonasi/eslint-config": "*",
+    "@gonasi/typescript-config": "*"
+  }
+}

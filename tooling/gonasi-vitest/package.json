@@ -1,0 +1,17 @@
+{
+  "name": "@gonasi/vitest",
+  "version": "0.1.0",
+  "private": true,
+  "main": "base.vite.config.ts",
+  "eslintConfig": {
+    "extends": "@gonasi/eslint-config/base"
+  },
+  "dependencies": {
+    "vitest": "^1.6.1"
+  },
+  "devDependencies": {
+    "@gonasi/eslint-config": "*",
+    "@gonasi/typescript-config": "*",
+    "eslint": "8.57.0"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "recommendations": [
+    "csstools.postcss",
+    "bradlc.vscode-tailwindcss",
+    "ms-playwright.playwright",
+    "graphql.vscode-graphql-syntax",
+    "eamodio.gitlens"
+  ]
+}
