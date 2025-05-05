@@ -19,9 +19,9 @@ export default [
     layout('routes/layouts/go/go-layout.tsx', [
       index('routes/go/go.tsx'),
       route('feedback', 'routes/go/feedback.tsx'),
-      // route('courses', 'routes/go/courses.tsx', [
-      //   route(':courseId', 'routes/go/go-course-details.tsx'),
-      // ]),
+      route('courses', 'routes/go/courses.tsx', [
+        route(':courseId', 'routes/go/go-course-details.tsx'),
+      ]),
     ]),
   ]),
 
@@ -30,6 +30,72 @@ export default [
     layout('routes/layouts/dashboard/dashboard-plain-team.tsx', [
       route('/change-team', 'routes/dashboard/team-management/change-team.tsx', [
         route('leave-team/:companyId', 'routes/dashboard/team-management/leave-team.tsx'),
+      ]),
+    ]),
+  ]),
+
+  ...prefix('dashboard/:companyId', [
+    layout('routes/layouts/dashboard/dashboard.tsx', [
+      index('routes/dashboard/dashboard.tsx'), //ROUTE: /dashboard/:companyId
+
+      route('/team-management', 'routes/dashboard/team-management/team-management.tsx', [
+        route('staff-directory', 'routes/dashboard/team-management/staff-directory.tsx', [
+          route('edit-role/:staffId', 'routes/dashboard/team-management/edit-staff-role.tsx'),
+          route('remove-staff/:staffId', 'routes/dashboard/team-management/remove-staff.tsx'),
+        ]),
+        route('staff-teams', 'routes/dashboard/team-management/staff-teams.tsx'),
+        route('staff-invites', 'routes/dashboard/team-management/staff-invites.tsx', [
+          route('new', 'routes/dashboard/team-management/new-staff-invite.tsx'),
+        ]),
+      ]),
+      route('learning-paths', 'routes/dashboard/pathways/all-learning-paths.tsx'),
+      route('courses', 'routes/dashboard/courses/all-courses.tsx'),
+      route('resource-center', 'routes/dashboard/resource-center.tsx'),
+      route('revenue', 'routes/dashboard/revenue.tsx'),
+    ]),
+  ]),
+
+  ...prefix('dashboard/:companyId', [
+    layout('routes/layouts/dashboard/dashboard-course-details.tsx', [
+      ...prefix('courses', [
+        route(':courseId', 'routes/dashboard/courses/course-by-id.tsx', [
+          route('course-details', 'routes/dashboard/courses/course-details.tsx', [
+            route('edit-image', 'routes/dashboard/courses/edit-course-image.tsx'),
+            route('edit-details', 'routes/dashboard/courses/edit-course-details.tsx'),
+            ...prefix('grouping', [
+              layout('routes/layouts/dashboard/dashboard-course-grouping.tsx', [
+                route('edit-category', 'routes/dashboard/courses/edit-course-category.tsx'),
+                route('edit-subcategory', 'routes/dashboard/courses/edit-course-subcategory.tsx'),
+                route('edit-pathway', 'routes/dashboard/courses/edit-course-pathway.tsx'),
+              ]),
+            ]),
+          ]),
+          route('course-content', 'routes/dashboard/courses/course-content.tsx', [
+            ...prefix('chapter', [
+              route('new', 'routes/dashboard/courses/chapters/new-course-chapter.tsx'),
+            ]),
+            ...prefix(':chapterId', [
+              route('edit-chapter', 'routes/dashboard/courses/chapters/edit-course-chapter.tsx'),
+              route(
+                'delete-chapter',
+                'routes/dashboard/courses/chapters/delete-course-chapter.tsx',
+              ),
+              route(
+                'new-lesson-details',
+                'routes/dashboard/courses/lessons/new-lesson-details.tsx',
+              ),
+              route(
+                ':lessonId/edit-lesson-details',
+                'routes/dashboard/courses/lessons/edit-lesson-details.tsx',
+              ),
+              route(':lessonId/delete', 'routes/dashboard/courses/lessons/delete-lesson.tsx'),
+              route(
+                ':lessonId/edit-content',
+                'routes/dashboard/courses/lessons/edit-lesson-content.tsx',
+              ),
+            ]),
+          ]),
+        ]),
       ]),
     ]),
   ]),

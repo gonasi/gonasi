@@ -13,11 +13,15 @@ import {
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import type { JwtPayload } from 'jwt-decode';
-import { getToast } from 'remix-toast';
+import { jwtDecode } from 'jwt-decode';
+import { dataWithError, getToast, redirectWithSuccess } from 'remix-toast';
 import { HoneypotProvider } from 'remix-utils/honeypot/react';
 import { Toaster } from 'sonner';
 
+import { fetchAllUsersActiveCompany } from '@gonasi/database/activeCompany';
 import type { UserRole } from '@gonasi/database/client';
+import { getUserProfile } from '@gonasi/database/profile';
+import { updateUsersActiveCompany } from '@gonasi/database/staffMembers';
 
 import type { Route } from './+types/root';
 import { FeedbackBanner } from './components/feedback-banner';
@@ -27,6 +31,7 @@ import './app.css';
 
 import { getClientEnv } from '~/.server/env.server';
 import { useToast } from '~/components/ui/toast';
+import { createClient } from '~/lib/supabase/supabase.server';
 import { honeypot } from '~/utils/honeypot.server';
 import { combineHeaders } from '~/utils/misc';
 
@@ -34,18 +39,67 @@ export interface GoJwtPayload extends JwtPayload {
   user_role: UserRole;
 }
 
+export type UserProfileLoaderReturnType = Exclude<
+  Awaited<ReturnType<typeof loader>>,
+  Response
+>['data']['user'];
+
+export type UserRoleLoaderReturnType = Exclude<
+  Awaited<ReturnType<typeof loader>>,
+  Response
+>['data']['role'];
+
+export type UserActiveCompanyLoaderReturnType = Exclude<
+  Awaited<ReturnType<typeof loader>>,
+  Response
+>['data']['activeCompany'];
+
 export async function loader({ request }: Route.LoaderArgs) {
   const clientEnv = getClientEnv();
+
+  const { headers: supabaseHeaders, supabase } = createClient(request);
+
+  let role = 'user';
+
+  const { user } = await getUserProfile(supabase);
+
+  const [activeCompany, sessionResult] = await Promise.all([
+    fetchAllUsersActiveCompany(supabase),
+    supabase.auth.getSession(),
+  ]);
+
+  if (sessionResult.data.session) {
+    const { user_role }: GoJwtPayload = jwtDecode(sessionResult.data.session.access_token);
+    role = user_role;
+  }
 
   const { toast, headers: toastHeaders } = await getToast(request);
   const honeyProps = await honeypot.getInputProps();
 
   return data(
-    { clientEnv, toast, honeyProps },
+    { clientEnv, role, user, activeCompany, toast, honeyProps },
     {
-      headers: combineHeaders(toastHeaders),
+      headers: combineHeaders(supabaseHeaders, toastHeaders),
     },
   );
+}
+
+export async function action({ request }: Route.ActionArgs) {
+  const formData = await request.formData();
+
+  const companyId = formData.get('companyId') as string | null;
+
+  if (!companyId) {
+    return dataWithError(null, 'Missing companyId');
+  }
+
+  const { supabase } = createClient(request);
+
+  const { success, message, data } = await updateUsersActiveCompany(supabase, companyId);
+
+  return success && data
+    ? redirectWithSuccess(`/dashboard/${data.companyId}/team-management/staff-directory`, message)
+    : dataWithError(null, message);
 }
 
 export const useClientEnv = () => {
@@ -133,7 +187,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 function App() {
-  const { toast } = useLoaderData<typeof loader>();
+  const { user, role, toast, activeCompany } = useLoaderData<typeof loader>();
   const navigation = useNavigation();
   const [showLoader, setShowLoader] = useState(false);
 
@@ -178,7 +232,7 @@ function App() {
       <NavigationProgressBar />
       <FeedbackBanner />
 
-      <Outlet />
+      <Outlet context={{ user, role, activeCompany }} />
       <Toaster />
     </main>
   );

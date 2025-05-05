@@ -1,13 +1,11 @@
-import { data, Outlet, redirect } from 'react-router';
-import { jwtDecode } from 'jwt-decode';
+import { data, Outlet, redirect, useOutletContext } from 'react-router';
 
-import { fetchAllUsersActiveCompany } from '@gonasi/database/activeCompany';
 import { getUserProfile } from '@gonasi/database/profile';
 
 import type { Route } from './+types/dashboard-plain-team';
 
+import type { AppOutletContext } from '~/lib/supabase/supabase';
 import { createClient } from '~/lib/supabase/supabase.server';
-import type { GoJwtPayload } from '~/root';
 
 export function meta() {
   return [{ title: 'Gonasi' }, { name: 'description', content: 'Welcome to Gonasi' }];
@@ -32,23 +30,11 @@ export async function loader({ request }: Route.LoaderArgs) {
     );
   }
 
-  let role = 'user';
-
-  const [activeCompany, sessionResult] = await Promise.all([
-    fetchAllUsersActiveCompany(supabase),
-    supabase.auth.getSession(),
-  ]);
-
-  if (sessionResult.data.session) {
-    const { user_role }: GoJwtPayload = jwtDecode(sessionResult.data.session.access_token);
-    role = user_role;
-  }
-
-  return data({ activeCompany, role, user });
+  return data({ success: true });
 }
 
-export default function DashboardPlainTeamLayout({ loaderData }: Route.ComponentProps) {
-  const { user, role, activeCompany } = loaderData;
+export default function DashboardPlainTeamLayout() {
+  const { user, role, activeCompany } = useOutletContext<AppOutletContext>();
 
   return (
     <section className='mx-auto max-w-lg md:mt-16'>
