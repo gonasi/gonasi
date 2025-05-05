@@ -55,6 +55,28 @@ export default [
     ]),
   ]),
 
+  // learning paths and courses
+  ...prefix('dashboard', [
+    layout('routes/layouts/dashboard/dashboard-plain.tsx', [
+      route('/:companyId/learning-paths/new', 'routes/dashboard/pathways/new-learning-path.tsx'),
+      route('/:companyId/courses/new', 'routes/dashboard/courses/new-course-title.tsx'),
+      route(
+        '/:companyId/learning-paths/:learningPathId',
+        'routes/dashboard/pathways/view-learning-path-by-id.tsx',
+        [
+          route('edit', 'routes/dashboard/pathways/edit-learning-path-details-by-id.tsx'),
+          route('edit/image', 'routes/dashboard/pathways/edit-learning-path-image-by-id.tsx'),
+          route('delete', 'routes/dashboard/pathways/delete-learning-path-by-id.tsx'),
+          route('course/add', 'routes/dashboard/pathways/add-course-to-learning-path.tsx'),
+          route(
+            'course/:courseId/remove',
+            'routes/dashboard/pathways/remove-course-to-learning-path.tsx',
+          ),
+        ],
+      ),
+    ]),
+  ]),
+
   ...prefix('dashboard/:companyId', [
     layout('routes/layouts/dashboard/dashboard-course-details.tsx', [
       ...prefix('courses', [
