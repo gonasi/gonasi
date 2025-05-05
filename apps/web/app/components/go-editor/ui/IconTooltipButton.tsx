@@ -8,14 +8,25 @@ type IconTooltipButtonProps = {
   title: string;
   icon: LucideIcon;
   active?: boolean;
+  preventBubble?: boolean;
 } & ButtonProps;
 
 export function IconTooltipButton({
   title,
   icon: Icon,
   active = false,
+  preventBubble = false,
+  onClick,
   ...buttonProps
 }: IconTooltipButtonProps) {
+  const handleClick: React.MouseEventHandler<HTMLElement> = (e) => {
+    if (preventBubble) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    onClick?.(e as any); // call passed in onClick
+  };
+
   return (
     <TooltipProvider>
       <Tooltip>
@@ -23,11 +34,12 @@ export function IconTooltipButton({
           <Button
             variant='ghost'
             size='sm'
-            className={cn('z-5', {
+            className={cn('z-5', buttonProps.className, {
               'bg-primary/10': active,
             })}
             {...buttonProps}
-            style={{ zIndex: '5' }}
+            onClick={handleClick}
+            style={{ zIndex: 5, ...buttonProps.style }}
           >
             <Icon
               className={cn('h-4 w-4', {

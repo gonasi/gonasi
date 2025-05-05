@@ -979,11 +979,7 @@ export type Database = {
     }
     Functions: {
       accept_staff_invitation: {
-        Args: {
-          p_user_id: string
-          p_invite_id: string
-          p_company_id: string
-        }
+        Args: { p_user_id: string; p_invite_id: string; p_company_id: string }
         Returns: undefined
       }
       authorize: {
@@ -993,16 +989,11 @@ export type Database = {
         Returns: boolean
       }
       check_user_role: {
-        Args: {
-          user_id: string
-          allowed_roles: string[]
-        }
+        Args: { user_id: string; allowed_roles: string[] }
         Returns: boolean
       }
       custom_access_token_hook: {
-        Args: {
-          event: Json
-        }
+        Args: { event: Json }
         Returns: Json
       }
       get_user_active_company: {
@@ -1010,21 +1001,15 @@ export type Database = {
         Returns: Json
       }
       get_user_companies: {
-        Args: {
-          user_id: string
-        }
+        Args: { user_id: string }
         Returns: string[]
       }
       reorder_chapters: {
-        Args: {
-          chapters: Json
-        }
+        Args: { chapters: Json }
         Returns: undefined
       }
       reorder_lessons: {
-        Args: {
-          lessons: Json
-        }
+        Args: { lessons: Json }
         Returns: undefined
       }
     }

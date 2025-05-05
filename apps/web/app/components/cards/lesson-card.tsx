@@ -97,6 +97,7 @@ export function LessonCard({
             {...(isMounted ? attributes : {})}
             {...(isMounted ? listeners : {})}
             disabled={loading}
+            preventBubble // 👈 stops accordion toggle automatically
           />
           <ActionDropdown items={options} />
         </div>
