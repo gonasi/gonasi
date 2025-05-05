@@ -8,6 +8,6 @@ export default {
   presets: [vercelPreset()],
   // return a list of URLs to prerender at build time
   async prerender() {
-    return ['/', '/login', '/signup', '/go/feedback'];
+    return ['/'];
   },
 } satisfies Config;
