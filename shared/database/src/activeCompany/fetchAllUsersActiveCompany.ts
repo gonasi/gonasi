@@ -1,40 +1,48 @@
-import { getUserId } from '../auth';
 import type { TypedSupabaseClient } from '../client';
+
+interface UserActiveCompany {
+  id: string;
+  user_id: string;
+  company_id: string;
+  staff_role: string;
+  profiles: {
+    id: string;
+    username: string;
+    full_name: string;
+    avatar_url: string | null;
+  };
+}
 
 /**
  * Fetches the active company of the current user along with their profile and staff role.
  *
  * @param {TypedSupabaseClient} supabase - The Supabase client instance.
- * @returns {Promise<{ id: string; user_id: string; company_id: string; profiles: { id: string; username: string; full_name: string; avatar_url: string }; staff_role: string } | null>} - The user's active company data with profile and staff role, or null if not found.
+ * @returns {Promise<UserActiveCompany | null>} - The user's active company data with profile and staff role, or null if not found.
  */
-export async function fetchAllUsersActiveCompany(supabase: TypedSupabaseClient) {
-  const userId = await getUserId(supabase);
+export async function fetchAllUsersActiveCompany(
+  supabase: TypedSupabaseClient,
+): Promise<UserActiveCompany | null> {
+  const { data, error } = await supabase.rpc('get_user_active_company');
 
-  const { data } = await supabase
-    .from('user_active_companies')
-    .select(
-      `
-      id,
-      user_id,
-      company_id,
-      profiles:profiles!user_active_companies_company_id_fkey(id, username, full_name, avatar_url)
-    `,
-    )
-    .eq('user_id', userId)
-    .single();
+  if (error) {
+    console.error('Error fetching active company:', error);
+    return null;
+  }
 
   if (!data) return null;
 
-  const { data: staffData } = await supabase
-    .from('staff_members')
-    .select('staff_role')
-    .match({ staff_id: userId, company_id: data.company_id })
-    .single();
+  // Explicitly type the data and validate its structure
+  const activeCompany = data as Partial<UserActiveCompany>;
 
-  if (!staffData) return null;
+  if (
+    activeCompany.id &&
+    activeCompany.user_id &&
+    activeCompany.company_id &&
+    activeCompany.staff_role &&
+    activeCompany.profiles
+  ) {
+    return activeCompany as UserActiveCompany;
+  }
 
-  return {
-    ...data,
-    ...staffData,
-  };
+  return null;
 }

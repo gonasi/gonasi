@@ -4,6 +4,7 @@ import { getUserProfile } from '@gonasi/database/profile';
 
 import type { Route } from './+types/public-layout';
 
+import { TopNav } from '~/components/go-top-nav';
 import { createClient } from '~/lib/supabase/supabase.server';
 
 export async function loader({ request }: Route.LoaderArgs) {
@@ -17,7 +18,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 export default function PublicLayout() {
   return (
     <div>
-      {/* <TopNav user={user} role={role} activeCompany={activeCompany} /> */}
+      <TopNav activeCompany={null} />
       <section className='container mx-auto'>
         <Outlet />
       </section>

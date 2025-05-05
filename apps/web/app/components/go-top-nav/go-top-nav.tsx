@@ -11,15 +11,15 @@ import type {
   UserActiveCompanyLoaderReturnType,
   UserProfileLoaderReturnType,
   UserRoleLoaderReturnType,
-} from '~/root';
+} from '~/routes/layouts/go/go-layout';
 
 interface Props {
-  user: UserProfileLoaderReturnType;
-  role: UserRoleLoaderReturnType;
+  user?: UserProfileLoaderReturnType;
+  role?: UserRoleLoaderReturnType;
   activeCompany: UserActiveCompanyLoaderReturnType;
 }
 
-export function TopNav({ user, role, activeCompany }: Props) {
+export function TopNav({ user, role = 'user', activeCompany }: Props) {
   return (
     <nav className='border-b-card flex h-16 w-full items-center border-b md:h-20'>
       <Container className='h-full'>
