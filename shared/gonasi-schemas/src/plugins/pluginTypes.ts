@@ -53,7 +53,7 @@ export const getContentSchemaByType = (type: PluginTypeId) => {
       return RichTextContent;
 
     default:
-      return JsonSchema; // fallback to generic JSON
+      throw new Error('Unsupported plugin type');
   }
 };
 

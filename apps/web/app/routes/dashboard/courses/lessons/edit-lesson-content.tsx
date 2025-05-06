@@ -5,7 +5,7 @@ import { dataWithError, dataWithSuccess, redirectWithError } from 'remix-toast';
 
 import {
   editLessonContent,
-  fetchLessonBlocksById,
+  fetchLessonBlocksByLessonId,
   fetchUserLessonById,
 } from '@gonasi/database/lessons';
 import { SubmitEditLessonContentSchema } from '@gonasi/schemas/lessons';
@@ -22,7 +22,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 
   const [lesson, lessonBlocks] = await Promise.all([
     fetchUserLessonById(supabase, params.lessonId),
-    fetchLessonBlocksById(supabase, params.lessonId),
+    fetchLessonBlocksByLessonId(supabase, params.lessonId),
   ]);
 
   if (!lesson) {
@@ -71,6 +71,11 @@ export default function NewLessonTitle({ loaderData, params }: Route.ComponentPr
       `/dashboard/${params.companyId}/courses/${params.courseId}/course-content/${params.chapterId}/${params.lessonId}/edit-content/plugins`,
     );
 
+  const handleEditPlugin = (blockId: string) =>
+    navigate(
+      `/dashboard/${params.companyId}/courses/${params.courseId}/course-content/${params.chapterId}/${params.lessonId}/edit-content/${blockId}/edit`,
+    );
+
   return (
     <>
       <Modal open onOpenChange={(open) => open || handleClose()}>
@@ -80,7 +85,11 @@ export default function NewLessonTitle({ loaderData, params }: Route.ComponentPr
             title={lesson.name}
             subTitle={lesson.lesson_types?.name}
           />
-          {JSON.stringify(lessonBlocks.data)}
+          {lessonBlocks.data?.map((block) => (
+            <div key={block.id} className='border py-4'>
+              <button onClick={() => handleEditPlugin(block.id)}>{block.plugin_type}</button>
+            </div>
+          ))}
           {/* Floating Button with shadcn Popover */}
           <PluginButton onClick={() => handleOpenPluginModal()} />
         </Modal.Content>

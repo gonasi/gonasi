@@ -1,6 +1,9 @@
 import type { TypedSupabaseClient } from '../../client';
 
-export const fetchLessonBlocksById = async (supabase: TypedSupabaseClient, lessonId: string) => {
+export const fetchLessonBlocksByLessonId = async (
+  supabase: TypedSupabaseClient,
+  lessonId: string,
+) => {
   try {
     const { data, error } = await supabase
       .from('blocks')

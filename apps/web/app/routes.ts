@@ -114,7 +114,10 @@ export default [
               route(
                 ':lessonId/edit-content',
                 'routes/dashboard/courses/lessons/edit-lesson-content.tsx',
-                [route('plugins', 'routes/dashboard/courses/lessons/plugins-modal.tsx')],
+                [
+                  route('plugins', 'routes/dashboard/courses/lessons/plugins-modal.tsx'),
+                  route(':blockId/edit', 'routes/dashboard/courses/lessons/edit-plugin-modal.tsx'),
+                ],
               ),
             ]),
           ]),

@@ -1,2 +1,3 @@
 export * from './createLessonBlock';
-export * from './fetchLessonBlocksById';
+export * from './fetchLessonBlocksByLessonId';
+export * from './fetchSingleBlockByBlockId';
