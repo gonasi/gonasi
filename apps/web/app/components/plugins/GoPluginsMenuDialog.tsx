@@ -10,7 +10,7 @@ import { NotFoundCard } from '~/components/cards';
 import { Input } from '~/components/ui/input';
 import { useStore } from '~/store';
 
-export function GoPluginsMenuDialog() {
+export default function GoPluginsMenuDialog() {
   const { activePlugin, updateActivePlugin } = useStore();
   const [query, setQuery] = useState('');
   const categories = usePluginOptions(query);

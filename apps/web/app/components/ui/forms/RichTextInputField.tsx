@@ -63,7 +63,7 @@ export function RichTextInputField({
         />
       </Suspense>
 
-      <div className='min-h-[32px] pt-1 pb-3'>
+      <div className='min-h-[32px] pb-3'>
         {errorId ? <ErrorList id={errorId} errors={errors} /> : null}
         {description ? <FormDescription id={descriptionId}>{description}</FormDescription> : null}
       </div>

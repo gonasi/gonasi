@@ -3,6 +3,7 @@ import type { JSX } from 'react';
 import { MatchConceptsPlugin } from './DragAndDropPlugins/MatchConceptsPlugin';
 import { TrueOrFalsePlugin } from './QuizPlugins/TrueOrFalsePlugin';
 import { TapToRevealPlugin } from './RevealPlugins/TapToRevealPlugin';
+import { RichTextPlugin } from './RichTextPlugins/RichTextPlugin';
 import type { PluginTypeId } from './pluginData';
 import { getPluginTypeNameById } from './pluginData';
 
@@ -48,6 +49,11 @@ const pluginComponentMap: Record<PluginTypeId, (props: PluginComponentProps) => 
   moderated_forum: unimplementedPlugin,
   manual_review: unimplementedPlugin,
   automated_review: unimplementedPlugin,
+  rich_text_editor: RichTextPlugin,
+  image_upload: unimplementedPlugin,
+  gltf_embed: unimplementedPlugin,
+  video_embed: unimplementedPlugin,
+  note_callout: unimplementedPlugin,
 };
 
 // Default placeholder for unimplemented plugins

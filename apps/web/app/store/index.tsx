@@ -1,9 +1,6 @@
 import { create } from 'zustand';
 
-import type {
-  PluginId,
-  PluginTypeId,
-} from '~/components/go-editor/plugins/GoMenuPlugin/pluginData';
+import type { PluginId, PluginTypeId } from '~/components/plugins/pluginData';
 
 interface StoreState {
   // Plugins

@@ -80,6 +80,64 @@ export type Database = {
           },
         ]
       }
+      blocks: {
+        Row: {
+          content: Json
+          created_at: string
+          created_by: string
+          id: string
+          lesson_id: string
+          plugin_type: string
+          position: number
+          updated_at: string
+          updated_by: string
+        }
+        Insert: {
+          content?: Json
+          created_at?: string
+          created_by: string
+          id?: string
+          lesson_id: string
+          plugin_type: string
+          position?: number
+          updated_at?: string
+          updated_by: string
+        }
+        Update: {
+          content?: Json
+          created_at?: string
+          created_by?: string
+          id?: string
+          lesson_id?: string
+          plugin_type?: string
+          position?: number
+          updated_at?: string
+          updated_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blocks_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "blocks_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "blocks_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chapters: {
         Row: {
           course_id: string
@@ -1003,6 +1061,10 @@ export type Database = {
       get_user_companies: {
         Args: { user_id: string }
         Returns: string[]
+      }
+      reorder_blocks: {
+        Args: { blocks: Json }
+        Returns: undefined
       }
       reorder_chapters: {
         Args: { chapters: Json }
