@@ -46,7 +46,7 @@ function unimplementedPlugin(): JSX.Element {
   throw new Error('Plugin component not implemented.');
 }
 
-export function EditPluginTypesRenderer({ block }: EditPluginComponentProps) {
+export default function EditPluginTypesRenderer({ block }: EditPluginComponentProps) {
   const PluginComponent = editPluginComponentMap[block.plugin_type];
 
   if (!PluginComponent) {
