@@ -3,7 +3,11 @@ import { parseWithZod } from '@conform-to/zod';
 import { NotebookPen } from 'lucide-react';
 import { dataWithError, dataWithSuccess, redirectWithError } from 'remix-toast';
 
-import { editLessonContent, fetchUserLessonById } from '@gonasi/database/lessons';
+import {
+  editLessonContent,
+  fetchLessonBlocksById,
+  fetchUserLessonById,
+} from '@gonasi/database/lessons';
 import { SubmitEditLessonContentSchema } from '@gonasi/schemas/lessons';
 
 import type { Route } from './+types/edit-lesson-content';
@@ -15,16 +19,20 @@ import { createClient } from '~/lib/supabase/supabase.server';
 // Loader
 export async function loader({ params, request }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
-  const lesson = await fetchUserLessonById(supabase, params.lessonId);
+
+  const [lesson, lessonBlocks] = await Promise.all([
+    fetchUserLessonById(supabase, params.lessonId),
+    fetchLessonBlocksById(supabase, params.lessonId),
+  ]);
 
   if (!lesson) {
     return redirectWithError(
       `/dashboard/${params.companyId}/courses/${params.courseId}/course-content`,
-      'Course not found',
+      'Lesson not found',
     );
   }
 
-  return lesson;
+  return { lesson, lessonBlocks };
 }
 
 export async function action({ request }: Route.ActionArgs) {
@@ -51,6 +59,8 @@ export async function action({ request }: Route.ActionArgs) {
 // Component
 
 export default function NewLessonTitle({ loaderData, params }: Route.ComponentProps) {
+  const { lesson, lessonBlocks } = loaderData;
+
   const navigate = useNavigate();
 
   const handleClose = () =>
@@ -67,10 +77,10 @@ export default function NewLessonTitle({ loaderData, params }: Route.ComponentPr
         <Modal.Content size='full'>
           <Modal.Header
             leadingIcon={<NotebookPen />}
-            title={loaderData.name}
-            subTitle={loaderData.lesson_types?.name}
+            title={lesson.name}
+            subTitle={lesson.lesson_types?.name}
           />
-          <h2>hey</h2>
+          {JSON.stringify(lessonBlocks.data)}
           {/* Floating Button with shadcn Popover */}
           <PluginButton onClick={() => handleOpenPluginModal()} />
         </Modal.Content>

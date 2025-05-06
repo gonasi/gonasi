@@ -2,8 +2,9 @@ import type { JSX } from 'react';
 import { motion } from 'framer-motion';
 import * as LucideIcons from 'lucide-react';
 
-import type { PluginId } from './pluginData';
-import { ALL_PLUGINS } from './pluginData';
+import type { PluginId } from '@gonasi/schemas/plugins';
+import { ALL_PLUGINS } from '@gonasi/schemas/plugins';
+
 import { PluginTypesRenderer } from './pluginTypesRenderer';
 
 import { Badge } from '~/components/ui/badge';
@@ -38,7 +39,7 @@ export default function PluginTypeRenderer(): JSX.Element {
   return (
     <>
       {activeSubPlugin ? (
-        <PluginTypesRenderer name={activeSubPlugin} />
+        <PluginTypesRenderer />
       ) : (
         <motion.div
           className='flex flex-col gap-2'

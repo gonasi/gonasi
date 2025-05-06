@@ -20,22 +20,13 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { AccordionContent, AccordionItem, AccordionTrigger } from '@radix-ui/react-accordion';
-import {
-  BookOpen,
-  ChevronsUpDown,
-  CircleDollarSign,
-  GripVerticalIcon,
-  Pencil,
-  Plus,
-  Trash,
-} from 'lucide-react';
+import { BookOpen, ChevronsUpDown, CircleDollarSign, Pencil, Plus, Trash } from 'lucide-react';
 
 import type { LessonPositionUpdateArray } from '@gonasi/schemas/lessons';
 
 import { ActionDropdown } from '../action-dropdown';
 import { NotFoundCard } from '../cards';
 import { LessonCard } from '../cards/lesson-card';
-import { IconTooltipButton } from '../go-editor/ui/IconTooltipButton';
 import { Badge } from '../ui/badge';
 import { buttonVariants } from '../ui/button';
 
@@ -198,7 +189,7 @@ export default function CourseChapterItem({
                 <h3 className='mt-1 line-clamp-1 text-left text-lg'>{name}</h3>
               </div>
               <div className='flex items-center space-x-2'>
-                <IconTooltipButton
+                {/* <IconTooltipButton
                   asChild
                   className='cursor-move p-2'
                   title='Drag and drop to rearrange chapters'
@@ -206,7 +197,7 @@ export default function CourseChapterItem({
                   {...(isMounted ? attributes : {})}
                   {...(isMounted ? listeners : {})}
                   disabled={loading}
-                />
+                /> */}
                 <ActionDropdown
                   items={[
                     {

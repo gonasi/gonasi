@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 
-import type { Plugin, PluginCategory } from './pluginData';
-import { ALL_PLUGINS } from './pluginData';
+import type { Plugin, PluginCategory } from '@gonasi/schemas/plugins';
+import { ALL_PLUGINS } from '@gonasi/schemas/plugins';
 
 export const usePluginOptions = (searchQuery = ''): PluginCategory[] => {
   const data = useMemo<PluginCategory[]>(

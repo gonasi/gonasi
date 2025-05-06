@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import * as LucideIcons from 'lucide-react';
 
-import type { PluginId } from './pluginData';
+import type { PluginId } from '@gonasi/schemas/plugins';
+
 import PluginTypeRenderer from './pluginRenderer';
 import { usePluginOptions } from './usePluginOptions';
 

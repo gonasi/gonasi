@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-import type { PluginId, PluginTypeId } from '~/components/plugins/pluginData';
+import type { PluginId, PluginTypeId } from '@gonasi/schemas/plugins';
 
 interface StoreState {
   // Plugins

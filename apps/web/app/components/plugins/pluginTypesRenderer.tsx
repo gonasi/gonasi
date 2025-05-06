@@ -1,29 +1,24 @@
 import type { JSX } from 'react';
 
+import type { PluginTypeId } from '@gonasi/schemas/plugins';
+import { getPluginTypeNameById } from '@gonasi/schemas/plugins';
+
 import { MatchConceptsPlugin } from './DragAndDropPlugins/MatchConceptsPlugin';
 import { TrueOrFalsePlugin } from './QuizPlugins/TrueOrFalsePlugin';
 import { TapToRevealPlugin } from './RevealPlugins/TapToRevealPlugin';
 import { RichTextPlugin } from './RichTextPlugins/RichTextPlugin';
-import type { PluginTypeId } from './pluginData';
-import { getPluginTypeNameById } from './pluginData';
 
 import { useStore } from '~/store';
 
-interface PluginTypesRendererProps {
-  name: string;
-}
+// Interface PluginTypesRendererProps removed as it is no longer used.
 
 interface PluginComponentProps {
-  name: string;
+  name: PluginTypeId;
 }
 
 // Plugin component map
 const pluginComponentMap: Record<PluginTypeId, (props: PluginComponentProps) => JSX.Element> = {
   true_false: TrueOrFalsePlugin,
-  star_rating: unimplementedPlugin,
-
-  emoji_rating: unimplementedPlugin,
-  numerical_rating: unimplementedPlugin,
   multiple_choice_multiple: unimplementedPlugin,
   multiple_choice_single: unimplementedPlugin,
   match_concepts: MatchConceptsPlugin,
@@ -41,14 +36,6 @@ const pluginComponentMap: Record<PluginTypeId, (props: PluginComponentProps) => 
   slideshow_player: unimplementedPlugin,
   motion_simulation: unimplementedPlugin,
   gravity_simulation: unimplementedPlugin,
-  basic_circuits: unimplementedPlugin,
-  advanced_circuits: unimplementedPlugin,
-  xp_system: unimplementedPlugin,
-  leaderboards: unimplementedPlugin,
-  open_forum: unimplementedPlugin,
-  moderated_forum: unimplementedPlugin,
-  manual_review: unimplementedPlugin,
-  automated_review: unimplementedPlugin,
   rich_text_editor: RichTextPlugin,
   image_upload: unimplementedPlugin,
   gltf_embed: unimplementedPlugin,
@@ -61,12 +48,12 @@ function unimplementedPlugin(): JSX.Element {
   throw new Error('Plugin component not implemented.');
 }
 
-export function PluginTypesRenderer({ name }: PluginTypesRendererProps) {
+export function PluginTypesRenderer() {
   const { activePlugin, activeSubPlugin } = useStore();
 
   if (!activePlugin || !activeSubPlugin) return null;
 
-  const PluginComponent = pluginComponentMap[activeSubPlugin];
+  const PluginComponent = pluginComponentMap[activeSubPlugin as PluginTypeId];
 
   if (!PluginComponent) {
     return (
@@ -74,5 +61,5 @@ export function PluginTypesRenderer({ name }: PluginTypesRendererProps) {
     );
   }
 
-  return <PluginComponent name={name} />;
+  return <PluginComponent name={activeSubPlugin as PluginTypeId} />;
 }
