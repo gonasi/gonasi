@@ -33,6 +33,7 @@ import { BlocksPositionUpdateArraySchema } from '@gonasi/schemas/plugins';
 import type { Route } from './+types/edit-lesson-content';
 
 import LessonBlockWrapper from '~/components/plugins/LessonBlockWrapper';
+import ViewPluginTypesRenderer from '~/components/plugins/viewPluginTypesRenderer';
 import { PluginButton } from '~/components/ui/button';
 import { Modal } from '~/components/ui/modal';
 import { createClient } from '~/lib/supabase/supabase.server';
@@ -211,11 +212,7 @@ export default function EditLessonContent({ loaderData, params }: Route.Componen
                       onEdit={navigateTo(`${getLessonPath(params)}/${block.id}/edit`)}
                       onDelete={navigateTo(`${getLessonPath(params)}/${block.id}/delete`)}
                     >
-                      <div className='py-4'>
-                        <button onClick={navigateTo(`${getLessonPath(params)}/${block.id}/edit`)}>
-                          {JSON.stringify(block.content.data)} -{block.position}
-                        </button>
-                      </div>
+                      <ViewPluginTypesRenderer block={block} mode='preview' />
                     </LessonBlockWrapper>
                   ))
                 ) : (

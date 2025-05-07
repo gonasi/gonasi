@@ -39,7 +39,11 @@ export default function LessonBlockWrapper({
   }, []);
 
   return (
-    <div className='bg-card/20 rounded-lg' ref={isMounted ? setNodeRef : undefined} style={style}>
+    <div
+      className='bg-card/20 rounded-lg pt-6'
+      ref={isMounted ? setNodeRef : undefined}
+      style={style}
+    >
       <div className={cn('relative m-2 p-2')}>
         <>
           <div className='absolute -top-4 -left-4'>
@@ -62,7 +66,7 @@ export default function LessonBlockWrapper({
             />
           </div>
         </>
-        <div>{children}</div>
+        <div className='mt-4'>{children}</div>
       </div>
     </div>
   );
