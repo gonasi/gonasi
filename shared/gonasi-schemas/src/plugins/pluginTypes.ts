@@ -93,6 +93,7 @@ export const InteractionBaseSchema = z.object({
     .default(0),
   feedback: z.string().optional(),
   attempts: z.number().min(1, { message: 'Attempts must be at least 1.' }).default(1),
+  custom: JsonSchema,
 });
 
 // Step 5: Plugin-specific refinement
@@ -104,16 +105,16 @@ export const BlockSchema = BlockBaseSchema.superRefine((data, ctx) => {
     result.error.errors.forEach((error) => {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: `Invalid content for plugin_type "${data.plugin_type}": ${error.message}`,
-        path: ['content', ...(error.path || [])],
+        message: `Invalid custom for plugin_type "${data.plugin_type}": ${error.message}`,
+        path: ['custom', ...(error.path || [])],
       });
     });
   }
 });
 
 export const InteractionSchema = InteractionBaseSchema.superRefine((data, ctx) => {
-  const contentSchema = getInteractionSchemaByType(data.plugin_type);
-  const result = contentSchema.safeParse(data);
+  const interactionSchema = getInteractionSchemaByType(data.plugin_type);
+  const result = interactionSchema.safeParse(data);
 
   if (!result.success) {
     result.error.errors.forEach((error) => {

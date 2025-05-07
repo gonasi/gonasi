@@ -1,7 +1,5 @@
 import { z } from 'zod';
 
-import { InteractionBaseSchema } from '../pluginTypes';
-
-export const RichTextInteractionSchema = InteractionBaseSchema.extend({
+export const RichTextInteractionSchema = z.object({
   action: z.literal('continue'),
 });
