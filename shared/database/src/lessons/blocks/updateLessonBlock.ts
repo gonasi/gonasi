@@ -31,6 +31,8 @@ export const updateLessonBlock = async (
       };
     }
 
+    // TODO: Reset lesson progress of users
+
     return {
       success: true,
       message: 'Block updated successfully.',

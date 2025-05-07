@@ -12,6 +12,7 @@ import { SubmitEditLessonContentSchema } from '@gonasi/schemas/lessons';
 
 import type { Route } from './+types/edit-lesson-content';
 
+import LessonBlockWrapper from '~/components/plugins/LessonBlockWrapper';
 import { PluginButton } from '~/components/ui/button';
 import { Modal } from '~/components/ui/modal';
 import { createClient } from '~/lib/supabase/supabase.server';
@@ -76,6 +77,12 @@ export default function NewLessonTitle({ loaderData, params }: Route.ComponentPr
       `/dashboard/${params.companyId}/courses/${params.courseId}/course-content/${params.chapterId}/${params.lessonId}/edit-content/${blockId}/edit`,
     );
 
+  const handleDeletePlugin = (blockId: string) => {
+    navigate(
+      `/dashboard/${params.companyId}/courses/${params.courseId}/course-content/${params.chapterId}/${params.lessonId}/edit-content/${blockId}/delete`,
+    );
+  };
+
   return (
     <>
       <Modal open onOpenChange={(open) => open || handleClose()}>
@@ -85,11 +92,20 @@ export default function NewLessonTitle({ loaderData, params }: Route.ComponentPr
             title={lesson.name}
             subTitle={lesson.lesson_types?.name}
           />
-          {lessonBlocks.data?.map((block) => (
-            <div key={block.id} className='border py-4'>
-              <button onClick={() => handleEditPlugin(block.id)}>{block.plugin_type}</button>
-            </div>
-          ))}
+          <div className='mx-auto flex max-w-xl flex-col space-y-8 px-4 py-10 md:px-0'>
+            {lessonBlocks.data?.map((block) => (
+              <LessonBlockWrapper
+                key={block.id}
+                onEdit={() => handleEditPlugin(block.id)}
+                onDelete={() => handleDeletePlugin(block.id)}
+              >
+                <div className='py-4'>
+                  <button onClick={() => handleEditPlugin(block.id)}>{block.plugin_type}</button>
+                </div>
+              </LessonBlockWrapper>
+            ))}
+          </div>
+
           {/* Floating Button with shadcn Popover */}
           <PluginButton onClick={() => handleOpenPluginModal()} />
         </Modal.Content>
