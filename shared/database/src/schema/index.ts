@@ -80,6 +80,82 @@ export type Database = {
           },
         ]
       }
+      block_interactions: {
+        Row: {
+          attempts: number
+          block_id: string
+          completed_at: string | null
+          created_at: string
+          feedback: Json
+          id: string
+          is_complete: boolean
+          last_response: Json
+          lesson_id: string
+          score: number | null
+          started_at: string | null
+          state: Json
+          time_spent_seconds: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          attempts?: number
+          block_id: string
+          completed_at?: string | null
+          created_at?: string
+          feedback?: Json
+          id?: string
+          is_complete?: boolean
+          last_response?: Json
+          lesson_id: string
+          score?: number | null
+          started_at?: string | null
+          state?: Json
+          time_spent_seconds?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          attempts?: number
+          block_id?: string
+          completed_at?: string | null
+          created_at?: string
+          feedback?: Json
+          id?: string
+          is_complete?: boolean
+          last_response?: Json
+          lesson_id?: string
+          score?: number | null
+          started_at?: string | null
+          state?: Json
+          time_spent_seconds?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "block_interactions_block_id_fkey"
+            columns: ["block_id"]
+            isOneToOne: false
+            referencedRelation: "blocks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "block_interactions_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "block_interactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       blocks: {
         Row: {
           content: Json

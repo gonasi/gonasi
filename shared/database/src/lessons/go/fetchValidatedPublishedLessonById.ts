@@ -43,6 +43,7 @@ export async function fetchValidatedPublishedLessonById(
     `,
     )
     .eq('id', lessonId)
+    .order('position', { ascending: true, referencedTable: 'blocks' })
     .single();
 
   // Handle error or missing lesson
