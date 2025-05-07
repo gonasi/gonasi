@@ -61,6 +61,7 @@ export const getContentSchemaByType = (type: PluginTypeId) => {
 const BlockBaseSchema = z.object({
   lesson_id: z.string().uuid(),
   plugin_type: PluginType,
+  weight: z.number().min(1).max(10).default(5),
   content: JsonSchema,
 });
 

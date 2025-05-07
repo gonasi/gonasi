@@ -11,11 +11,11 @@ import { RichTextContent } from '@gonasi/schemas/plugins';
 import { Button } from '~/components/ui/button';
 import { ErrorList, TextareaField } from '~/components/ui/forms';
 
-interface RichTextPluginProps {
+interface CreateRichTextPluginProps {
   name: PluginTypeId;
 }
 
-export function RichTextPlugin({ name }: RichTextPluginProps) {
+export function CreateRichTextPlugin({ name }: CreateRichTextPluginProps) {
   const fetcher = useFetcher();
 
   const [loading, setLoading] = useState(false);
@@ -32,7 +32,7 @@ export function RichTextPlugin({ name }: RichTextPluginProps) {
   const [form, fields] = useForm({
     id: `${name}-form`,
     constraint: getZodConstraint(RichTextContent),
-    // defaultValue: { ...defaultData },
+    defaultValue: { data: { richTextState: '' } },
     shouldValidate: 'onBlur',
     shouldRevalidate: 'onInput',
     onValidate({ formData }) {

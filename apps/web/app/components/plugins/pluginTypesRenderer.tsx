@@ -6,7 +6,7 @@ import { getPluginTypeNameById } from '@gonasi/schemas/plugins';
 import { MatchConceptsPlugin } from './DragAndDropPlugins/MatchConceptsPlugin';
 import { TrueOrFalsePlugin } from './QuizPlugins/TrueOrFalsePlugin';
 import { TapToRevealPlugin } from './RevealPlugins/TapToRevealPlugin';
-import { RichTextPlugin } from './RichTextPlugins/RichTextPlugin';
+import { CreateRichTextPlugin } from './RichTextPlugins/RichTextPlugin/CreateRichTextPlugin';
 
 import { useStore } from '~/store';
 
@@ -36,7 +36,7 @@ const pluginComponentMap: Record<PluginTypeId, (props: PluginComponentProps) => 
   slideshow_player: unimplementedPlugin,
   motion_simulation: unimplementedPlugin,
   gravity_simulation: unimplementedPlugin,
-  rich_text_editor: RichTextPlugin,
+  rich_text_editor: CreateRichTextPlugin,
   image_upload: unimplementedPlugin,
   gltf_embed: unimplementedPlugin,
   video_embed: unimplementedPlugin,
@@ -48,18 +48,18 @@ function unimplementedPlugin(): JSX.Element {
   throw new Error('Plugin component not implemented.');
 }
 
-export function PluginTypesRenderer() {
+export function CreatePluginTypesRenderer() {
   const { activePlugin, activeSubPlugin } = useStore();
 
   if (!activePlugin || !activeSubPlugin) return null;
 
-  const PluginComponent = pluginComponentMap[activeSubPlugin as PluginTypeId];
+  const CreatePluginComponent = pluginComponentMap[activeSubPlugin as PluginTypeId];
 
-  if (!PluginComponent) {
+  if (!CreatePluginComponent) {
     return (
       <div>Unsupported plugin type: {getPluginTypeNameById(activePlugin, activeSubPlugin)}</div>
     );
   }
 
-  return <PluginComponent name={activeSubPlugin as PluginTypeId} />;
+  return <CreatePluginComponent name={activeSubPlugin as PluginTypeId} />;
 }
