@@ -45,7 +45,7 @@ export default function GoLessonPlay({ loaderData, params }: Route.ComponentProp
         {blocks && blocks.length > 0 ? (
           blocks.map((block) => (
             <Suspense key={block.id} fallback={<Spinner />}>
-              <ViewPluginTypesRenderer block={block} mode='preview' />
+              <ViewPluginTypesRenderer block={block} mode='play' />
             </Suspense>
           ))
         ) : (
