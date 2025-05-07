@@ -1,4 +1,4 @@
-export * from './fetchPublishedLessonContentById';
+export * from './fetchValidatedPublishedLessonById';
 export * from './resetUserLessonProgress';
 export * from './addGoInteractiveToUserLessonProgress';
 export * from './types';

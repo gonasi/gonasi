@@ -91,6 +91,7 @@ export type Database = {
           position: number
           updated_at: string
           updated_by: string
+          weight: number
         }
         Insert: {
           content?: Json
@@ -102,6 +103,7 @@ export type Database = {
           position?: number
           updated_at?: string
           updated_by: string
+          weight?: number
         }
         Update: {
           content?: Json
@@ -113,6 +115,7 @@ export type Database = {
           position?: number
           updated_at?: string
           updated_by?: string
+          weight?: number
         }
         Relationships: [
           {

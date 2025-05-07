@@ -61,7 +61,7 @@ export async function fetchPublishedCourseDetailsById(
           updated_by, 
           position,
           lesson_types(
-            id,
+            id, 
             name,
             description,
             lucide_icon,
@@ -74,7 +74,7 @@ export async function fetchPublishedCourseDetailsById(
       updated_by_profile:profiles!courses_updated_by_fkey (id, username, email, full_name, avatar_url)
     `,
     )
-    .match({ id: courseId, status: 'published' }) // TODO: Update to { status: 'published' } when ready
+    .match({ id: courseId, status: 'draft' }) // TODO: Update to { status: 'published' } when ready
     .order('position', { ascending: true, referencedTable: 'chapters' })
     .order('position', { referencedTable: 'chapters.lessons' })
     .single();

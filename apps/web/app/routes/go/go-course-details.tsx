@@ -10,11 +10,7 @@ import {
 } from 'lucide-react';
 import { redirectWithError } from 'remix-toast';
 
-import {
-  fetchPublishedCourseDetailsById,
-  getActiveChapterAndLessonForUser,
-} from '@gonasi/database/courses';
-import { fetchLessonsCompletionStatusByCourse } from '@gonasi/database/lessons';
+import { fetchPublishedCourseDetailsById } from '@gonasi/database/courses';
 import { timeAgo } from '@gonasi/utils/timeAgo';
 
 import type { Route } from './+types/go-course-details';
@@ -56,34 +52,13 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   const courseId = params.courseId;
 
   // Fetch data in parallel
-  const [completionStatus, course, activeChapterAndLesson] = await Promise.all([
-    fetchLessonsCompletionStatusByCourse(supabase, courseId),
-    fetchPublishedCourseDetailsById(supabase, courseId),
-    getActiveChapterAndLessonForUser(supabase, courseId),
-  ]);
+  const [course] = await Promise.all([fetchPublishedCourseDetailsById(supabase, courseId)]);
 
   if (!course) {
     return redirectWithError(`/go/courses`, 'Course not found');
   }
 
-  // Create lookup map for completion status for O(1) lookups instead of O(n)
-  const completionStatusMap = new Map(
-    completionStatus?.map((status) => [status.lesson_id, status.is_complete]) || [],
-  );
-
-  // Process course data with efficient lookups
-  const courseWithCompletionStatus = {
-    ...course,
-    chapters: course.chapters.map((chapter) => ({
-      ...chapter,
-      lessons: chapter.lessons.map((lesson) => ({
-        ...lesson,
-        isCompleted: completionStatusMap.get(lesson.id) ?? false,
-      })),
-    })),
-  };
-
-  return { course: courseWithCompletionStatus, completionStatus, activeChapterAndLesson };
+  return { course };
 }
 
 function MetaInfoItem({ label, timestamp }: { label: string; timestamp: string }) {
@@ -189,9 +164,9 @@ export default function GoCourseDetails({ loaderData, params }: Route.ComponentP
                     iconUrl={signedUrl}
                     name={name}
                     className='rounded-t-2xl'
-                    badges={
-                      loaderData.activeChapterAndLesson?.status === 'complete' ? ['Completed'] : []
-                    }
+                    // badges={
+                    //   loaderData.activeChapterAndLesson?.status === 'complete' ? ['Completed'] : []
+                    // }
                   />
                   <div className='bg-card rounded-b-2xl px-4 pb-4 md:rounded-b-none md:bg-transparent md:px-0 md:pb-0'>
                     <div className='py-4'>

@@ -25,6 +25,14 @@ export default [
     ]),
   ]),
 
+  ...prefix('go/course/:courseId/:chapterId/:lessonId', [
+    layout('routes/layouts/go/go-lesson-play-layout.tsx', [
+      route('play', 'routes/go/go-lesson-play.tsx', [
+        route('completed', 'routes/go/go-lesson-completed.tsx'),
+      ]),
+    ]),
+  ]),
+
   // change team
   ...prefix('dashboard', [
     layout('routes/layouts/dashboard/dashboard-plain-team.tsx', [

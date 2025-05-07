@@ -1,15 +1,17 @@
+import { lazy, Suspense } from 'react';
 import { Outlet } from 'react-router';
 import { redirectWithError } from 'remix-toast';
 
-import { fetchNextChapterAndLessonId } from '@gonasi/database/courses';
-import { fetchPublishedLessonContentById } from '@gonasi/database/lessons';
+import { fetchValidatedPublishedLessonById } from '@gonasi/database/lessons';
 
 import type { Route } from './+types/go-lesson-play';
 
 import { CoursePlayLayout } from '~/components/layouts/course';
+import { Spinner } from '~/components/loaders';
 import { createClient } from '~/lib/supabase/supabase.server';
 
-// Load the editor component lazily to improve initial load time
+// Lazily load the ViewPluginTypesRenderer
+const ViewPluginTypesRenderer = lazy(() => import('~/components/plugins/viewPluginTypesRenderer'));
 
 export function headers(_: Route.HeadersArgs) {
   return {
@@ -17,38 +19,39 @@ export function headers(_: Route.HeadersArgs) {
   };
 }
 
-/**
- * Loader function to fetch lesson content by ID.
- * Redirects to course page if the lesson is not found.
- */
 export async function loader({ params, request }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
 
-  // Fetch data in parallel
-  const [lesson, nextChapterAndLessonId] = await Promise.all([
-    fetchPublishedLessonContentById(supabase, params.lessonId),
-    fetchNextChapterAndLessonId(supabase, params.courseId, params.chapterId, params.lessonId),
+  const [lesson] = await Promise.all([
+    fetchValidatedPublishedLessonById(supabase, params.lessonId),
   ]);
 
   if (!lesson) {
     return redirectWithError(`/go/courses/${params.courseId}`, 'Lesson not found');
   }
 
-  if (!lesson.content) {
-    return redirectWithError(`/go/courses/${params.courseId}`, 'Lesson has no content');
-  }
-
-  return { lesson, nextChapterAndLessonId };
+  return { lesson };
 }
 
-/**
- * Component to display the lesson content using LazyGoEditor.
- * Optimized to prevent unnecessary re-renders.
- */
-export default function GoLessonPlay({ params }: Route.ComponentProps) {
+export default function GoLessonPlay({ loaderData, params }: Route.ComponentProps) {
+  const {
+    lesson: { blocks },
+  } = loaderData;
+
   return (
     <>
       <CoursePlayLayout to={`/go/courses/${params.courseId}`} progress={10} />
+      <section className='mx-auto flex max-w-xl flex-col space-y-8 px-4 py-10 md:px-0'>
+        {blocks && blocks.length > 0 ? (
+          blocks.map((block) => (
+            <Suspense key={block.id} fallback={<Spinner />}>
+              <ViewPluginTypesRenderer block={block} mode='preview' />
+            </Suspense>
+          ))
+        ) : (
+          <p>No blocks found</p>
+        )}
+      </section>
       <Outlet />
     </>
   );
