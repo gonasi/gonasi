@@ -233,7 +233,46 @@ function App() {
       <FeedbackBanner />
 
       <Outlet context={{ user, role, activeCompany }} />
-      <Toaster />
+      <Toaster
+        position='top-right'
+        toastOptions={{
+          classNames: {
+            toast: `
+        group toast
+        group-[.toaster]:bg-background
+        group-[.toaster]:text-foreground
+        group-[.toaster]:border-border
+        group-[.toaster]:shadow-lg
+        rounded-xl px-4 py-3
+      `,
+            description: 'group-[.toast]:text-muted-foreground',
+            actionButton: `
+        group-[.toast-success]:bg-[--success]
+        group-[.toast-success]:text-[--success-foreground]
+        group-[.toast-success]:hover:bg-[--success-hover]
+
+        group-[.toast-error]:bg-[--danger]
+        group-[.toast-error]:text-[--danger-foreground]
+        group-[.toast-error]:hover:bg-[--danger-hover]
+
+        group-[.toast-warning]:bg-[--warning]
+        group-[.toast-warning]:text-[--warning-foreground]
+        group-[.toast-warning]:hover:bg-[--warning-hover]
+
+        group-[.toast-info]:bg-[--info]
+        group-[.toast-info]:text-[--info-foreground]
+        group-[.toast-info]:hover:bg-[--info-hover]
+
+        px-3 py-1 rounded-md font-medium transition-colors
+      `,
+            cancelButton: `
+        group-[.toast]:bg-muted 
+        group-[.toast]:text-muted-foreground 
+        hover:opacity-80 transition-opacity
+      `,
+          },
+        }}
+      />
     </main>
   );
 }

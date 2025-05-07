@@ -2,10 +2,11 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Info, Pencil, Text, Trash } from 'lucide-react';
+import { GripVerticalIcon, Info, Pencil, Text, Trash } from 'lucide-react';
 
 import { ActionDropdown } from '../action-dropdown';
 import { Badge } from '../ui/badge';
+import { IconTooltipButton } from '../ui/tooltip';
 import { LucideIconRenderer } from './lucide-icon-renderer';
 
 interface Props {
@@ -88,7 +89,7 @@ export function LessonCard({
           </p>
         </div>
         <div className='flex shrink-0 items-center gap-2'>
-          {/* <IconTooltipButton
+          <IconTooltipButton
             asChild
             className='cursor-move p-2'
             title='Drag and drop to rearrange lessons'
@@ -96,8 +97,7 @@ export function LessonCard({
             {...(isMounted ? attributes : {})}
             {...(isMounted ? listeners : {})}
             disabled={loading}
-            preventBubble // 👈 stops accordion toggle automatically
-          /> */}
+          />
           <ActionDropdown items={options} />
         </div>
       </div>

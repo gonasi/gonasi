@@ -20,7 +20,15 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { AccordionContent, AccordionItem, AccordionTrigger } from '@radix-ui/react-accordion';
-import { BookOpen, ChevronsUpDown, CircleDollarSign, Pencil, Plus, Trash } from 'lucide-react';
+import {
+  BookOpen,
+  ChevronsUpDown,
+  CircleDollarSign,
+  GripVerticalIcon,
+  Pencil,
+  Plus,
+  Trash,
+} from 'lucide-react';
 
 import type { LessonPositionUpdateArray } from '@gonasi/schemas/lessons';
 
@@ -29,9 +37,27 @@ import { NotFoundCard } from '../cards';
 import { LessonCard } from '../cards/lesson-card';
 import { Badge } from '../ui/badge';
 import { buttonVariants } from '../ui/button';
+import { IconTooltipButton } from '../ui/tooltip';
 
 import { cn } from '~/lib/utils';
-import type { CourseLessonType } from '~/routes/dashboard/courses/course-content';
+
+interface Lesson {
+  id: string;
+  name: string;
+  course_id: string;
+  chapter_id: string;
+  created_at: string;
+  created_by: string;
+  updated_by: string;
+  position: number | null;
+  lesson_types: {
+    id: string;
+    name: string;
+    description: string;
+    lucide_icon: string;
+    bg_color: string;
+  } | null;
+}
 
 interface Props {
   companyId: string;
@@ -39,7 +65,7 @@ interface Props {
   name: string;
   description: string | null;
   courseId: string;
-  lessons: CourseLessonType[];
+  lessons: Lesson[];
   requires_payment: boolean | null;
   lesson_count: number;
   loading: boolean;
@@ -149,11 +175,14 @@ export default function CourseChapterItem({
 
       if (newLessons.length) {
         const simplifiedlessons: LessonPositionUpdateArray = newLessons.map(
-          ({ id, updated_by, chapter_id }, index) => ({
+          ({ id, chapter_id, course_id, name, created_by, updated_by }, index) => ({
             id,
             position: index,
-            updated_by,
             chapter_id,
+            course_id,
+            name,
+            created_by,
+            updated_by,
           }),
         );
 
@@ -189,7 +218,7 @@ export default function CourseChapterItem({
                 <h3 className='mt-1 line-clamp-1 text-left text-lg'>{name}</h3>
               </div>
               <div className='flex items-center space-x-2'>
-                {/* <IconTooltipButton
+                <IconTooltipButton
                   asChild
                   className='cursor-move p-2'
                   title='Drag and drop to rearrange chapters'
@@ -197,7 +226,7 @@ export default function CourseChapterItem({
                   {...(isMounted ? attributes : {})}
                   {...(isMounted ? listeners : {})}
                   disabled={loading}
-                /> */}
+                />
                 <ActionDropdown
                   items={[
                     {
