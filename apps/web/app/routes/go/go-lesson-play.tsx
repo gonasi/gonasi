@@ -144,7 +144,9 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 export default function GoLessonPlay({ loaderData, params }: Route.ComponentProps) {
   const fetcher = useFetcher();
 
-  const { visibleBlocks, initializePlayFlow } = useStore();
+  const { visibleBlocks, initializePlayFlow, lessonProgress } = useStore();
+
+  console.log('lessonProgress: ', lessonProgress);
 
   const {
     lesson: { blocks },
@@ -171,7 +173,11 @@ export default function GoLessonPlay({ loaderData, params }: Route.ComponentProp
 
   return (
     <>
-      <CoursePlayLayout to={`/go/courses/${params.courseId}`} progress={10} loading={loading} />
+      <CoursePlayLayout
+        to={`/go/courses/${params.courseId}`}
+        progress={lessonProgress}
+        loading={loading}
+      />
       <section className='mx-auto flex max-w-xl flex-col space-y-8 px-4 py-10 md:px-0'>
         {visibleBlocks?.length > 0 ? (
           visibleBlocks.map((block) => <BlockRenderer key={block.id} block={block} />)

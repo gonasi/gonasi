@@ -16,6 +16,7 @@ interface StoreState {
   lessonBlocks: GoLessonPlayLessonBlocksType;
   lessonBlockInteractions: GoLessonPlayInteractionReturnType;
   visibleBlocks: GoLessonPlayLessonBlocksType;
+  lessonProgress: number | 0;
 
   setCurrentLessonBlocks: (lessonBlocks: GoLessonPlayLessonBlocksType) => void;
   setLessonBlockInteractions: (interactions: GoLessonPlayInteractionReturnType) => void;
@@ -37,9 +38,42 @@ export const useStore = create<StoreState>((set) => ({
   lessonBlocks: [],
   lessonBlockInteractions: [],
   visibleBlocks: [],
+  lessonProgress: 0,
 
-  setCurrentLessonBlocks: (lessonBlocks) => set({ lessonBlocks }),
-  setLessonBlockInteractions: (interactions) => set({ lessonBlockInteractions: interactions }),
+  setCurrentLessonBlocks: (lessonBlocks) =>
+    set((state) => {
+      const completedBlockIds = new Set(
+        state.lessonBlockInteractions.filter((i) => i.is_complete).map((i) => i.block_id),
+      );
+
+      const totalWeight = lessonBlocks.reduce((sum, b) => sum + (b.weight || 0), 0);
+      const completedWeight = lessonBlocks
+        .filter((b) => completedBlockIds.has(b.id))
+        .reduce((sum, b) => sum + (b.weight || 0), 0);
+
+      const lessonProgress = totalWeight > 0 ? (completedWeight / totalWeight) * 100 : 0;
+
+      return { lessonBlocks, lessonProgress };
+    }),
+
+  setLessonBlockInteractions: (interactions) =>
+    set((state) => {
+      const completedBlockIds = new Set(
+        interactions.filter((i) => i.is_complete).map((i) => i.block_id),
+      );
+
+      const totalWeight = state.lessonBlocks.reduce((sum, b) => sum + (b.weight || 0), 0);
+      const completedWeight = state.lessonBlocks
+        .filter((b) => completedBlockIds.has(b.id))
+        .reduce((sum, b) => sum + (b.weight || 0), 0);
+
+      const lessonProgress = totalWeight > 0 ? (completedWeight / totalWeight) * 100 : 0;
+
+      return {
+        lessonBlockInteractions: interactions,
+        lessonProgress,
+      };
+    }),
 
   initializePlayFlow: (lesson, interactions) => {
     const sortedBlocks = [...lesson].sort((a, b) => a.position - b.position);
@@ -57,10 +91,22 @@ export const useStore = create<StoreState>((set) => ({
         .map((block) => block.id),
     );
 
+    const completedBlockIds = new Set(
+      interactions.filter((i) => i.is_complete).map((i) => i.block_id),
+    );
+
+    const totalWeight = sortedBlocks.reduce((sum, b) => sum + (b.weight || 0), 0);
+    const completedWeight = sortedBlocks
+      .filter((b) => completedBlockIds.has(b.id))
+      .reduce((sum, b) => sum + (b.weight || 0), 0);
+
+    const lessonProgress = totalWeight > 0 ? (completedWeight / totalWeight) * 100 : 0;
+
     set({
       lessonBlocks: sortedBlocks,
       lessonBlockInteractions: interactions,
       visibleBlocks: sortedBlocks.filter((block) => visibleBlockIds.has(block.id)),
+      lessonProgress,
     });
   },
 
@@ -69,5 +115,6 @@ export const useStore = create<StoreState>((set) => ({
       lessonBlocks: [],
       lessonBlockInteractions: [],
       visibleBlocks: [],
+      lessonProgress: 0,
     }),
 }));
