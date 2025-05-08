@@ -113,11 +113,10 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 }
 
 export default function GoLessonPlay({ loaderData, params }: Route.ComponentProps) {
-  const { isLoading, visibleBlocks, initializePlayFlow, lessonProgress, activeBlock } = useStore();
+  const { visibleBlocks, initializePlayFlow, lessonProgress, activeBlock } = useStore();
 
   const blockRefs = useRef<Record<string, HTMLElement | null>>({});
 
-  console.log('activeBlock: ', activeBlock);
   const {
     lesson: { blocks },
     blockInteractions,
@@ -149,7 +148,7 @@ export default function GoLessonPlay({ loaderData, params }: Route.ComponentProp
       <CoursePlayLayout
         to={`/go/courses/${params.courseId}`}
         progress={lessonProgress}
-        loading={isLoading}
+        loading={false}
       >
         <section className='mx-auto min-h-screen max-w-xl px-4 py-10 md:px-0'>
           {visibleBlocks?.length > 0

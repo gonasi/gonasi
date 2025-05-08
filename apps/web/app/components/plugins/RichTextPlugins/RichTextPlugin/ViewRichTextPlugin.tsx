@@ -6,14 +6,14 @@ import { type Interaction, isValidInteraction, type Json } from '@gonasi/schemas
 
 import type { ViewPluginComponentProps } from '../../viewPluginTypesRenderer';
 
-import { ContinueButton } from '~/components/ui/button';
+import { BlockActionButton } from '~/components/ui/button';
 import { useStore } from '~/store';
 
 export function ViewRichTextPlugin({ block, mode }: ViewPluginComponentProps) {
   const fetcher = useFetcher();
   const params = useParams();
 
-  const { getBlockInteraction } = useStore();
+  const { getBlockInteraction, isLastBlock } = useStore();
   const blockInteractionData = getBlockInteraction(block.id);
 
   const [loading, setLoading] = useState(false);
@@ -61,10 +61,11 @@ export function ViewRichTextPlugin({ block, mode }: ViewPluginComponentProps) {
 
     const formData = new FormData();
     formData.append('intent', 'addBlockInteraction');
+    formData.append('isLast', isLastBlock ? 'true' : 'false');
     formData.append('payload', JSON.stringify(updatedPayload));
 
     fetcher.submit(formData, { method: 'post' });
-  }, [fetcher, payload, startedAt]);
+  }, [isLastBlock, fetcher, payload, startedAt]);
 
   return (
     <motion.div
@@ -74,7 +75,12 @@ export function ViewRichTextPlugin({ block, mode }: ViewPluginComponentProps) {
     >
       <div className='py-4 whitespace-pre-wrap'>{block.content.data.richTextState}</div>
       {blockInteractionData?.is_complete ? null : (
-        <ContinueButton onClick={handleContinue} loading={loading} disabled={mode === 'preview'} />
+        <BlockActionButton
+          onClick={handleContinue}
+          loading={loading}
+          disabled={mode === 'preview'}
+          isLastBlock={isLastBlock}
+        />
       )}
     </motion.div>
   );

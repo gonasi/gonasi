@@ -1,21 +1,23 @@
 import { motion } from 'framer-motion';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, PartyPopper } from 'lucide-react';
 
 import { Button } from '~/components/ui/button';
 
-interface ContinueButtonProps {
+interface BlockActionButtonProps {
   onClick: () => void;
   loading: boolean;
   disabled?: boolean;
   label?: string;
+  isLastBlock: boolean;
 }
 
-export function ContinueButton({
+export function BlockActionButton({
   onClick,
   loading,
   disabled,
   label = 'Continue',
-}: ContinueButtonProps) {
+  isLastBlock,
+}: BlockActionButtonProps) {
   return (
     <motion.div
       initial={{ opacity: 0, x: -20 }}
@@ -35,15 +37,14 @@ export function ContinueButton({
         }}
       >
         <Button
-          size='sm'
           onClick={onClick}
           className='rounded-full'
-          variant='secondary'
+          variant={isLastBlock ? 'default' : 'secondary'}
           isLoading={loading}
           disabled={disabled}
-          rightIcon={<ArrowRight />}
+          rightIcon={isLastBlock ? <PartyPopper /> : <ArrowRight />}
         >
-          {label}
+          {isLastBlock ? 'Complete Lesson' : 'Continue'}
         </Button>
       </motion.div>
     </motion.div>

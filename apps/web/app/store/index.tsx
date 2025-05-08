@@ -26,6 +26,7 @@ interface StoreState {
 
   // Computed properties
   activeBlock: string | null;
+  isLastBlock: boolean;
 
   // Actions
   setCurrentLessonBlocks: (lessonBlocks: GoLessonPlayLessonBlocksType) => void;
@@ -93,6 +94,21 @@ const computeActiveBlock = (visibleBlocks: GoLessonPlayLessonBlocksType): string
   return visibleBlocks.length > 0 ? (visibleBlocks[visibleBlocks.length - 1]?.id ?? null) : null;
 };
 
+/**
+ * Helper function to determine if the active block is the last block in the lesson
+ */
+const checkIsLastBlock = (
+  activeBlockId: string | null,
+  lessonBlocks: GoLessonPlayLessonBlocksType,
+): boolean => {
+  if (!activeBlockId || lessonBlocks.length === 0) return false;
+
+  const sortedBlocks = [...lessonBlocks].sort((a, b) => a.position - b.position);
+  const lastBlock = sortedBlocks[sortedBlocks.length - 1];
+
+  return activeBlockId === lastBlock?.id;
+};
+
 export const useStore = create<StoreState>((set, get) => ({
   // Initial plugin state
   activePlugin: null,
@@ -106,6 +122,7 @@ export const useStore = create<StoreState>((set, get) => ({
   visibleBlocks: [],
   lessonProgress: 0,
   activeBlock: null,
+  isLastBlock: false,
 
   /**
    * Updates lesson blocks and recalculates derived state
@@ -118,12 +135,14 @@ export const useStore = create<StoreState>((set, get) => ({
           lessonBlocks,
           state.lessonBlockInteractions,
         );
+        const newActiveBlock = computeActiveBlock(updatedVisibleBlocks);
 
         return {
           lessonBlocks,
           lessonProgress: calculateProgress(lessonBlocks, completedBlockIds),
           visibleBlocks: updatedVisibleBlocks,
-          activeBlock: computeActiveBlock(updatedVisibleBlocks),
+          activeBlock: newActiveBlock,
+          isLastBlock: checkIsLastBlock(newActiveBlock, lessonBlocks),
         };
       } catch (error) {
         console.error('Error setting lesson blocks:', error);
@@ -139,12 +158,14 @@ export const useStore = create<StoreState>((set, get) => ({
       try {
         const completedBlockIds = getCompletedBlockIds(interactions);
         const updatedVisibleBlocks = computeVisibleBlocks(state.lessonBlocks, interactions);
+        const newActiveBlock = computeActiveBlock(updatedVisibleBlocks);
 
         return {
           lessonBlockInteractions: interactions,
           lessonProgress: calculateProgress(state.lessonBlocks, completedBlockIds),
           visibleBlocks: updatedVisibleBlocks,
-          activeBlock: computeActiveBlock(updatedVisibleBlocks),
+          activeBlock: newActiveBlock,
+          isLastBlock: checkIsLastBlock(newActiveBlock, state.lessonBlocks),
         };
       } catch (error) {
         console.error('Error setting lesson block interactions:', error);
@@ -161,13 +182,15 @@ export const useStore = create<StoreState>((set, get) => ({
       const sortedBlocks = [...lesson].sort((a, b) => a.position - b.position);
       const completedBlockIds = getCompletedBlockIds(interactions);
       const visibleBlocks = computeVisibleBlocks(sortedBlocks, interactions);
+      const newActiveBlock = computeActiveBlock(visibleBlocks);
 
       set({
         lessonBlocks: sortedBlocks,
         lessonBlockInteractions: interactions,
         visibleBlocks,
         lessonProgress: calculateProgress(sortedBlocks, completedBlockIds),
-        activeBlock: computeActiveBlock(visibleBlocks),
+        activeBlock: newActiveBlock,
+        isLastBlock: checkIsLastBlock(newActiveBlock, sortedBlocks),
       });
     } catch (error) {
       console.error('Error initializing play flow:', error);
@@ -184,6 +207,7 @@ export const useStore = create<StoreState>((set, get) => ({
       visibleBlocks: [],
       lessonProgress: 0,
       activeBlock: null,
+      isLastBlock: false,
     }),
 
   /**
