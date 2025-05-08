@@ -10,6 +10,7 @@ import type { LessonBlockLoaderReturnType } from '~/routes/dashboard/courses/les
 export interface ViewPluginComponentProps {
   block: LessonBlockLoaderReturnType;
   mode: 'preview' | 'play';
+  blockInteraction?: any;
 }
 
 // Plugin component map
@@ -47,12 +48,16 @@ function unimplementedPlugin(): JSX.Element {
   throw new Error('Plugin component not implemented.');
 }
 
-export default function ViewPluginTypesRenderer({ block, mode }: ViewPluginComponentProps) {
+export default function ViewPluginTypesRenderer({
+  block,
+  mode,
+  blockInteraction,
+}: ViewPluginComponentProps) {
   const PluginComponent = viewPluginComponentMap[block.plugin_type];
 
   if (!PluginComponent) {
     return <div>Unsupported plugin type: {block.plugin_type}</div>;
   }
 
-  return <PluginComponent block={block} mode={mode} />;
+  return <PluginComponent block={block} mode={mode} blockInteraction={blockInteraction} />;
 }

@@ -37,7 +37,7 @@ const pluginTypes: PluginTypeId[] = [
 const PluginType = z.enum(pluginTypes as [PluginTypeId, ...PluginTypeId[]]);
 
 // Step 2: Recursive JSON schema (for Supabase compatibility)
-const JsonSchema: z.ZodType<Json> = z.lazy(() =>
+export const JsonSchema: z.ZodType<Json> = z.lazy(() =>
   z.union([
     z.string(),
     z.number(),
@@ -77,23 +77,26 @@ const BlockBaseSchema = z.object({
 });
 
 export const InteractionBaseSchema = z.object({
-  block_id: z.string().uuid({ message: 'block_id must be a valid UUID.' }), // UUID validation
   plugin_type: PluginType,
-  started_at: z
-    .string()
-    .datetime({ message: 'started_at must be a valid ISO 8601 datetime string.' }),
-  completed_at: z
-    .string()
-    .datetime({ message: 'completed_at must be a valid ISO 8601 datetime string.' })
-    .optional(),
+  block_id: z.string().uuid(),
+  lesson_id: z.string().uuid(),
+  is_complete: z.boolean().default(false),
   score: z
     .number()
     .min(0, { message: 'Score must be at least 0.' })
     .max(100, { message: 'Score must not exceed 100.' })
     .default(0),
-  feedback: z.string().optional(),
   attempts: z.number().min(1, { message: 'Attempts must be at least 1.' }).default(1),
-  custom: JsonSchema,
+  state: JsonSchema,
+  last_response: JsonSchema,
+  feedback: JsonSchema,
+  started_at: z
+    .string()
+    .datetime({ message: 'started_at must be a valid ISO 8601 datetime string.' }),
+  completed_at: z
+    .string()
+    .datetime({ message: 'completed_at must be a valid ISO 8601 datetime string.' }),
+  time_spent_seconds: z.number().min(0, { message: 'Time spent must be at least 0.' }).default(0),
 });
 
 // Step 5: Plugin-specific refinement
@@ -118,10 +121,11 @@ export const InteractionSchema = InteractionBaseSchema.superRefine((data, ctx) =
 
   if (!result.success) {
     result.error.errors.forEach((error) => {
+      console.log('error: ', error);
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: `Invalid interaction for plugin_type "${data.plugin_type}": ${error.message}`,
-        path: ['content', ...(error.path || [])],
+        path: ['custom', ...(error.path || [])],
       });
     });
   }

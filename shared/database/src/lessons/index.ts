@@ -6,3 +6,4 @@ export * from './editLessonContent';
 export * from './updateLessonPositions';
 export * from './go';
 export * from './blocks';
+export * from './blockInteractions';

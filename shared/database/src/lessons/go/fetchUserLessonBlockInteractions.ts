@@ -1,3 +1,5 @@
+import { getInteractionSchemaByType, type PluginTypeId } from '@gonasi/schemas/plugins';
+
 import { getUserId } from '../../auth';
 import type { TypedSupabaseClient } from '../../client';
 
@@ -17,25 +19,65 @@ interface FetchLessonBlockInteractionsParams {
 export async function fetchUserLessonBlockInteractions({
   supabase,
   lessonId,
-}: FetchLessonBlockInteractionsParams): Promise<object[] | null> {
+}: FetchLessonBlockInteractionsParams) {
   const userId = await getUserId(supabase);
   if (!userId) {
     console.error('User ID could not be retrieved.');
-    return null;
+    return [];
   }
 
-  const { data, error } = await supabase.from('block_interactions').select('*').match({
-    user_id: userId,
-    lesson_id: lessonId,
-  });
+  const { data, error } = await supabase
+    .from('block_interactions')
+    .select(
+      `
+        id,
+        user_id,
+        block_id,
+        lesson_id,
+        is_complete,
+        score,
+        attempts,
+        state,
+        last_response,
+        feedback,
+        started_at,
+        completed_at,
+        time_spent_seconds,
+        blocks(plugin_type)
+      `,
+    )
+    .match({
+      user_id: userId,
+      lesson_id: lessonId,
+    });
 
   if (error || !data) {
     console.error(
       `Failed to fetch block interactions for lesson ID ${lessonId} and user ID ${userId}:`,
       error?.message ?? 'No data found',
     );
-    return null;
+    return [];
   }
 
-  return data;
+  const validatedInteractions = [];
+
+  for (const interaction of data ?? []) {
+    const pluginType = interaction.blocks?.plugin_type as PluginTypeId;
+
+    const schema = getInteractionSchemaByType(pluginType);
+    const result = schema.safeParse(interaction);
+
+    if (!result.success) {
+      console.warn(`Invalid interaction for block ID ${interaction.block_id}:`, result.error);
+      return [];
+    }
+
+    validatedInteractions.push({
+      ...interaction,
+      plugin_type: pluginType,
+      state: result.data,
+    });
+  }
+
+  return validatedInteractions;
 }
