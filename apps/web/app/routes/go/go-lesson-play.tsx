@@ -170,13 +170,13 @@ export default function GoLessonPlay({ loaderData, params }: Route.ComponentProp
   }, [blockInteractions, blocks, initializePlayFlow]);
 
   useEffect(() => {
-    if (activeBlock) {
+    if (!lessonCompletionStatus?.is_complete && activeBlock) {
       blockRefs.current[activeBlock]?.scrollIntoView({
         behavior: 'smooth',
         block: 'start',
       });
     }
-  }, [activeBlock]);
+  }, [activeBlock, lessonCompletionStatus?.is_complete]);
 
   if (!visibleBlocks) return null;
 
