@@ -30,7 +30,6 @@ export default [
       route('play', 'routes/go/go-lesson-play.tsx', [
         route('completed', 'routes/go/go-lesson-completed.tsx'),
       ]),
-      route('api-interactive', 'routes/go/api/api-interactive.tsx'),
     ]),
   ]),
 

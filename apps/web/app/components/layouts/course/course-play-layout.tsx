@@ -1,6 +1,6 @@
 import { type PropsWithChildren, useCallback } from 'react';
-import { Link, useFetcher, useParams } from 'react-router';
-import { ArrowLeft, RotateCcw } from 'lucide-react';
+import { Link, useFetcher } from 'react-router';
+import { ArrowLeft, LoaderCircle, RotateCcw } from 'lucide-react';
 
 import { Container } from '../container';
 
@@ -10,10 +10,10 @@ import { Progress } from '~/components/ui/progress';
 interface Props extends PropsWithChildren {
   to: string;
   progress: number;
+  loading: boolean;
 }
 
-export function CoursePlayLayout({ children, to, progress }: Props) {
-  const params = useParams();
+export function CoursePlayLayout({ children, to, progress, loading }: Props) {
   const fetcher = useFetcher();
 
   const handleResetLesson = useCallback(() => {
@@ -21,9 +21,8 @@ export function CoursePlayLayout({ children, to, progress }: Props) {
     formData.append('intent', 'resetLessonProgress');
     fetcher.submit(formData, {
       method: 'post',
-      action: `/go/course/${params.courseId}/${params.chapterId}/${params.lessonId}/api-interactive`,
     });
-  }, [fetcher, params]);
+  }, [fetcher]);
 
   return (
     <div>
@@ -33,16 +32,22 @@ export function CoursePlayLayout({ children, to, progress }: Props) {
             <ArrowLeft />
           </Link>
           <Progress value={progress} />
-          <ActionDropdown
-            items={[
-              {
-                title: 'Restart lesson',
-                icon: RotateCcw,
-                onClick: () => handleResetLesson(),
-                disabled: progress === 0,
-              },
-            ]}
-          />
+          <div>
+            {loading ? (
+              <LoaderCircle className='animate-spin cursor-not-allowed' aria-disabled />
+            ) : (
+              <ActionDropdown
+                items={[
+                  {
+                    title: 'Restart lesson',
+                    icon: RotateCcw,
+                    onClick: () => handleResetLesson(),
+                    disabled: progress === 0,
+                  },
+                ]}
+              />
+            )}
+          </div>
         </Container>
       </div>
       <div>{children}</div>

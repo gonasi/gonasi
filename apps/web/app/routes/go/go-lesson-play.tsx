@@ -1,11 +1,12 @@
-import { lazy, memo, Suspense, useEffect } from 'react';
-import { Outlet } from 'react-router';
-import { redirectWithError } from 'remix-toast';
+import { lazy, memo, Suspense, useEffect, useState } from 'react';
+import { Outlet, useFetcher } from 'react-router';
+import { dataWithError, dataWithSuccess, redirectWithError } from 'remix-toast';
 
 import {
   createBlockInteraction,
   fetchUserLessonBlockInteractions,
   fetchValidatedPublishedLessonById,
+  resetBlockInteractionsByLesson,
 } from '@gonasi/database/lessons';
 import type { Interaction } from '@gonasi/schemas/plugins';
 
@@ -37,27 +38,74 @@ const BlockRenderer = memo(function BlockRenderer({
   );
 });
 
-export async function action({ request }: Route.ActionArgs) {
+export async function action({ request, params }: Route.ActionArgs) {
+  const { supabase } = createClient(request);
+
+  // Parse form data from the request
   const formData = await request.formData();
+  const intent = formData.get('intent');
 
-  const rawPayload = formData.get('payload');
-
-  if (typeof rawPayload !== 'string') {
-    throw new Response('Invalid payload format', { status: 400 });
+  // Validate 'intent' value
+  if (typeof intent !== 'string') {
+    return dataWithError(null, 'Invalid or missing intent', { status: 400 });
   }
-
-  let payload: Interaction;
 
   try {
-    payload = JSON.parse(rawPayload);
-  } catch {
-    throw new Response('Failed to parse payload', { status: 400 });
+    // Extract common params for reuse
+    const { courseId, chapterId, lessonId } = params;
+
+    switch (intent) {
+      case 'resetLessonProgress': {
+        const { success, message } = await resetBlockInteractionsByLesson(supabase, lessonId);
+
+        return success ? dataWithSuccess(null, message) : dataWithError(null, message);
+      }
+
+      case 'addBlockInteraction': {
+        const rawPayload = formData.get('payload');
+
+        // Validate 'payload' value
+        if (typeof rawPayload !== 'string') {
+          return dataWithError(null, 'Invalid or missing payload', { status: 400 });
+        }
+
+        let payload: Interaction;
+
+        try {
+          payload = JSON.parse(rawPayload);
+        } catch {
+          throw new Response('Failed to parse payload', { status: 400 });
+        }
+
+        const { supabase } = createClient(request);
+        await createBlockInteraction(supabase, payload);
+
+        return true;
+      }
+
+      // case 'completeLesson': {
+      //   const { success, message } = await completeLessonByUser(
+      //     supabase,
+      //     courseId,
+      //     chapterId,
+      //     lessonId,
+      //   );
+
+      //   if (!success) {
+      //     return dataWithError(null, message, { status: 400 });
+      //   }
+
+      //   return redirect(`/go/course/${courseId}/${chapterId}/${lessonId}/completed`);
+      // }
+
+      default:
+        return dataWithError(null, `Unknown intent: ${intent}`, { status: 400 });
+    }
+  } catch (error) {
+    console.error(`Error processing intent "${intent}":`, error);
+    const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+    return dataWithError(null, errorMessage, { status: 500 });
   }
-
-  const { supabase } = createClient(request);
-  await createBlockInteraction(supabase, payload);
-
-  return true;
 }
 
 export type GoLessonPlayInteractionReturnType = Exclude<
@@ -94,12 +142,20 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 }
 
 export default function GoLessonPlay({ loaderData, params }: Route.ComponentProps) {
+  const fetcher = useFetcher();
+
   const { visibleBlocks, initializePlayFlow } = useStore();
 
   const {
     lesson: { blocks },
     blockInteractions,
   } = loaderData;
+
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setLoading(fetcher.state === 'submitting');
+  }, [fetcher.state]);
 
   useEffect(() => {
     // Initialize the play flow when component mounts
@@ -115,7 +171,7 @@ export default function GoLessonPlay({ loaderData, params }: Route.ComponentProp
 
   return (
     <>
-      <CoursePlayLayout to={`/go/courses/${params.courseId}`} progress={10} />
+      <CoursePlayLayout to={`/go/courses/${params.courseId}`} progress={10} loading={loading} />
       <section className='mx-auto flex max-w-xl flex-col space-y-8 px-4 py-10 md:px-0'>
         {visibleBlocks?.length > 0 ? (
           visibleBlocks.map((block) => <BlockRenderer key={block.id} block={block} />)

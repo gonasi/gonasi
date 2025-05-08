@@ -44,6 +44,7 @@ export function ViewRichTextPlugin({ block, mode }: ViewPluginComponentProps) {
     }
 
     const formData = new FormData();
+    formData.append('intent', 'addBlockInteraction');
     formData.append('payload', JSON.stringify(payload));
 
     // TODO: Optimistic update in Zustand store
