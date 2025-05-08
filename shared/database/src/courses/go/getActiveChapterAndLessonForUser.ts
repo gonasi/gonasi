@@ -61,7 +61,7 @@ export async function getActiveChapterAndLessonForUser(
     const allLessonIds = sortedLessons.map((l) => l.id);
 
     const { data: completedLessons, error: progressError } = await supabase
-      .from('lessons_progress')
+      .from('lesson_progress')
       .select('lesson_id')
       .eq('user_id', userId)
       .eq('is_complete', true)

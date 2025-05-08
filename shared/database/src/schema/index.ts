@@ -217,6 +217,73 @@ export type Database = {
           },
         ]
       }
+      chapter_progress: {
+        Row: {
+          chapter_id: string
+          completed_lessons_count: number
+          course_id: string
+          created_at: string
+          id: string
+          is_complete: boolean
+          progress_percentage: number
+          total_lessons_count: number
+          total_time_spent_seconds: number
+          updated_at: string
+          user_id: string
+          weighted_average_score: number | null
+        }
+        Insert: {
+          chapter_id: string
+          completed_lessons_count?: number
+          course_id: string
+          created_at?: string
+          id?: string
+          is_complete?: boolean
+          progress_percentage?: number
+          total_lessons_count?: number
+          total_time_spent_seconds?: number
+          updated_at?: string
+          user_id: string
+          weighted_average_score?: number | null
+        }
+        Update: {
+          chapter_id?: string
+          completed_lessons_count?: number
+          course_id?: string
+          created_at?: string
+          id?: string
+          is_complete?: boolean
+          progress_percentage?: number
+          total_lessons_count?: number
+          total_time_spent_seconds?: number
+          updated_at?: string
+          user_id?: string
+          weighted_average_score?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chapter_progress_chapter_id_fkey"
+            columns: ["chapter_id"]
+            isOneToOne: false
+            referencedRelation: "chapters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chapter_progress_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chapter_progress_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chapters: {
         Row: {
           course_id: string
@@ -317,6 +384,69 @@ export type Database = {
           {
             foreignKeyName: "course_categories_updated_by_fkey"
             columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      course_progress: {
+        Row: {
+          completed_chapters_count: number
+          completed_lessons_count: number
+          course_id: string
+          created_at: string
+          id: string
+          is_complete: boolean
+          progress_percentage: number
+          total_chapters_count: number
+          total_lessons_count: number
+          total_time_spent_seconds: number
+          updated_at: string
+          user_id: string
+          weighted_average_score: number | null
+        }
+        Insert: {
+          completed_chapters_count?: number
+          completed_lessons_count?: number
+          course_id: string
+          created_at?: string
+          id?: string
+          is_complete?: boolean
+          progress_percentage?: number
+          total_chapters_count?: number
+          total_lessons_count?: number
+          total_time_spent_seconds?: number
+          updated_at?: string
+          user_id: string
+          weighted_average_score?: number | null
+        }
+        Update: {
+          completed_chapters_count?: number
+          completed_lessons_count?: number
+          course_id?: string
+          created_at?: string
+          id?: string
+          is_complete?: boolean
+          progress_percentage?: number
+          total_chapters_count?: number
+          total_lessons_count?: number
+          total_time_spent_seconds?: number
+          updated_at?: string
+          user_id?: string
+          weighted_average_score?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_progress_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_progress_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -610,6 +740,7 @@ export type Database = {
       }
       lesson_progress: {
         Row: {
+          course_id: string
           created_at: string
           id: string
           is_complete: boolean
@@ -621,6 +752,7 @@ export type Database = {
           weighted_average_score: number | null
         }
         Insert: {
+          course_id: string
           created_at?: string
           id?: string
           is_complete?: boolean
@@ -632,6 +764,7 @@ export type Database = {
           weighted_average_score?: number | null
         }
         Update: {
+          course_id?: string
           created_at?: string
           id?: string
           is_complete?: boolean
@@ -643,6 +776,13 @@ export type Database = {
           weighted_average_score?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_lesson_progress_course"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "lesson_progress_lesson_id_fkey"
             columns: ["lesson_id"]
@@ -1184,6 +1324,10 @@ export type Database = {
         Args: { event: Json }
         Returns: Json
       }
+      get_course_completion_status: {
+        Args: { p_user_id: string; p_course_id: string }
+        Returns: Json
+      }
       get_user_active_company: {
         Args: Record<PropertyKey, never>
         Returns: Json
@@ -1191,6 +1335,10 @@ export type Database = {
       get_user_companies: {
         Args: { user_id: string }
         Returns: string[]
+      }
+      recalculate_all_course_progress: {
+        Args: { p_user_id: string }
+        Returns: undefined
       }
       recalculate_lesson_progress: {
         Args: { p_user_id: string; p_lesson_id: string }
@@ -1206,6 +1354,14 @@ export type Database = {
       }
       reorder_lessons: {
         Args: { lessons: Json }
+        Returns: undefined
+      }
+      update_chapter_progress: {
+        Args: { p_user_id: string; p_chapter_id: string }
+        Returns: undefined
+      }
+      update_course_progress: {
+        Args: { p_user_id: string; p_course_id: string }
         Returns: undefined
       }
     }

@@ -10,7 +10,11 @@ import {
 } from 'lucide-react';
 import { redirectWithError } from 'remix-toast';
 
-import { fetchPublishedCourseDetailsById } from '@gonasi/database/courses';
+import {
+  fetchPublishedCourseDetailsById,
+  getActiveChapterAndLessonForUser,
+} from '@gonasi/database/courses';
+import { fetchLessonsCompletionStatusByCourse } from '@gonasi/database/lessons';
 import { timeAgo } from '@gonasi/utils/timeAgo';
 
 import type { Route } from './+types/go-course-details';
@@ -52,13 +56,34 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   const courseId = params.courseId;
 
   // Fetch data in parallel
-  const [course] = await Promise.all([fetchPublishedCourseDetailsById(supabase, courseId)]);
+  const [completionStatus, course, activeChapterAndLesson] = await Promise.all([
+    fetchLessonsCompletionStatusByCourse(supabase, courseId),
+    fetchPublishedCourseDetailsById(supabase, courseId),
+    getActiveChapterAndLessonForUser(supabase, courseId),
+  ]);
 
   if (!course) {
     return redirectWithError(`/go/courses`, 'Course not found');
   }
 
-  return { course };
+  // Create lookup map for completion status for O(1) lookups instead of O(n)
+  const completionStatusMap = new Map(
+    completionStatus?.map((status) => [status.lesson_id, status.is_complete]) || [],
+  );
+
+  // Process course data with efficient lookups
+  const courseWithCompletionStatus = {
+    ...course,
+    chapters: course.chapters.map((chapter) => ({
+      ...chapter,
+      lessons: chapter.lessons.map((lesson) => ({
+        ...lesson,
+        isCompleted: completionStatusMap.get(lesson.id) ?? false,
+      })),
+    })),
+  };
+
+  return { course: courseWithCompletionStatus, completionStatus, activeChapterAndLesson };
 }
 
 function MetaInfoItem({ label, timestamp }: { label: string; timestamp: string }) {

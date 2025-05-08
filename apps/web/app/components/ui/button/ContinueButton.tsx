@@ -18,14 +18,14 @@ export function ContinueButton({
 }: ContinueButtonProps) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 1, duration: 0.3, ease: 'easeOut' }} // Delay added here
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ delay: 0.3, duration: 0.3, ease: 'easeOut' }}
       className='relative'
     >
       <motion.div
         animate={{
-          y: [0, -2, 0],
+          x: [0, 4, 0],
         }}
         transition={{
           repeat: Infinity,
