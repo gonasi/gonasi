@@ -12,9 +12,9 @@ import { UserAvatar } from '~/components/avatars';
 import { NotFoundCard } from '~/components/cards';
 import { StepperFormLayout } from '~/components/layouts/stepper';
 import { PlainButton } from '~/components/ui/button';
-import type { AppOutletContext } from '~/lib/supabase/supabase';
 import { createClient } from '~/lib/supabase/supabase.server';
 import { cn } from '~/lib/utils';
+import type { AppOutletContext } from '~/root';
 
 export async function loader({ request }: Route.LoaderArgs) {
   const { supabase } = createClient(request);

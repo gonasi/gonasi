@@ -6,8 +6,8 @@ import type { Route } from './+types/staff-directory';
 
 import { UsersCard } from '~/components/cards/users-card';
 import { SearchInput } from '~/components/search-params/search-input';
-import type { AppOutletContext } from '~/lib/supabase/supabase';
 import { createClient } from '~/lib/supabase/supabase.server';
+import type { AppOutletContext } from '~/root';
 
 export function meta() {
   return [{ title: 'Gonasi' }, { name: 'description', content: 'Welcome to Gonasi' }];

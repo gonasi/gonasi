@@ -4,7 +4,7 @@ import { Outlet, useNavigate, useOutletContext } from 'react-router';
 import type { Route } from './+types/team-management';
 
 import { GoTabNav } from '~/components/go-tab-nav';
-import type { AppOutletContext } from '~/lib/supabase/supabase';
+import type { AppOutletContext } from '~/root';
 
 export function meta() {
   return [

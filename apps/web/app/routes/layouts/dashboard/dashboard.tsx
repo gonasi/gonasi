@@ -6,8 +6,8 @@ import { canUserViewCompany } from '@gonasi/database/staffMembers';
 import type { Route } from './+types/dashboard';
 
 import { GoDashboardLayout } from '~/components/layouts/dashboard';
-import type { AppOutletContext } from '~/lib/supabase/supabase';
 import { createClient } from '~/lib/supabase/supabase.server';
+import type { AppOutletContext } from '~/root';
 
 export function meta() {
   return [{ title: 'Gonasi' }, { name: 'description', content: 'Welcome to Gonasi' }];

@@ -4,8 +4,8 @@ import { getUserProfile } from '@gonasi/database/profile';
 
 import type { Route } from './+types/dashboard-plain-team';
 
-import type { AppOutletContext } from '~/lib/supabase/supabase';
 import { createClient } from '~/lib/supabase/supabase.server';
+import type { AppOutletContext } from '~/root';
 
 export function meta() {
   return [{ title: 'Gonasi' }, { name: 'description', content: 'Welcome to Gonasi' }];

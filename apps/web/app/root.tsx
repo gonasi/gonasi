@@ -54,6 +54,12 @@ export type UserActiveCompanyLoaderReturnType = Exclude<
   Response
 >['data']['activeCompany'];
 
+export interface AppOutletContext {
+  user: UserProfileLoaderReturnType;
+  role: UserRoleLoaderReturnType;
+  activeCompany: UserActiveCompanyLoaderReturnType;
+}
+
 export async function loader({ request }: Route.LoaderArgs) {
   const clientEnv = getClientEnv();
 

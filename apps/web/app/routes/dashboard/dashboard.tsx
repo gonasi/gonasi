@@ -1,6 +1,6 @@
 import { useOutletContext } from 'react-router';
 
-import type { AppOutletContext } from '~/lib/supabase/supabase';
+import type { AppOutletContext } from '~/root';
 
 export function meta() {
   return [{ title: 'Gonasi' }, { name: 'description', content: 'Welcome to Gonasi' }];

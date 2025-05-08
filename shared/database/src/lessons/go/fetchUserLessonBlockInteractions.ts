@@ -51,6 +51,9 @@ export async function fetchUserLessonBlockInteractions({
       lesson_id: lessonId,
     });
 
+  console.log('data: ', data);
+  console.log('error: ', error);
+
   if (error || !data) {
     console.error(
       `Failed to fetch block interactions for lesson ID ${lessonId} and user ID ${userId}:`,

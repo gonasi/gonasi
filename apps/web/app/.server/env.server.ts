@@ -3,6 +3,10 @@ import { z } from 'zod';
 const envSchema = z.object({
   NODE_ENV: z.enum(['production', 'development', 'test']),
   BASE_URL: z.string().min(1),
+
+  VITE_SUPABASE_URL: z.string().min(1),
+  VITE_SUPABASE_ANON_KEY: z.string().min(1),
+
   SUPABASE_URL: z.string().min(1),
   SUPABASE_ANON_KEY: z.string().min(1),
   HONEYPOT_SECRET: z.string().min(1),
