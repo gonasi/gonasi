@@ -185,7 +185,7 @@ export default function GoLessonPlay({ loaderData, params }: Route.ComponentProp
           <p>No blocks found</p>
         )}
       </section>
-
+      <div>{loading ? <Spinner /> : null}</div>
       <Outlet />
     </>
   );
