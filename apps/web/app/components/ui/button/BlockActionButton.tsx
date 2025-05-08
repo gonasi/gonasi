@@ -7,7 +7,6 @@ interface BlockActionButtonProps {
   onClick: () => void;
   loading: boolean;
   disabled?: boolean;
-  label?: string;
   isLastBlock: boolean;
 }
 
@@ -15,7 +14,6 @@ export function BlockActionButton({
   onClick,
   loading,
   disabled,
-  label = 'Continue',
   isLastBlock,
 }: BlockActionButtonProps) {
   return (

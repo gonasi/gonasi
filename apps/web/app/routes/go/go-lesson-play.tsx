@@ -1,9 +1,13 @@
 import { lazy, useEffect, useRef } from 'react';
-import { Outlet, redirect } from 'react-router';
+import { Outlet, redirect, useNavigate } from 'react-router';
+import { motion } from 'framer-motion';
+import { ArrowRight } from 'lucide-react';
 import { dataWithError, dataWithSuccess, redirectWithError } from 'remix-toast';
 
+import { fetchNextChapterAndLessonId } from '@gonasi/database/courses';
 import {
   createBlockInteraction,
+  fetchLessonCompletionStatus,
   fetchUserLessonBlockInteractions,
   fetchValidatedPublishedLessonById,
   resetBlockInteractionsByLesson,
@@ -13,10 +17,28 @@ import type { Interaction } from '@gonasi/schemas/plugins';
 import type { Route } from './+types/go-lesson-play';
 
 import { CoursePlayLayout } from '~/components/layouts/course';
+import { OutlineButton } from '~/components/ui/button';
 import { createClient } from '~/lib/supabase/supabase.server';
 import { useStore } from '~/store';
 
 const ViewPluginTypesRenderer = lazy(() => import('~/components/plugins/viewPluginTypesRenderer'));
+
+const nudgeAnimation = {
+  initial: { opacity: 0, y: 10 },
+  animate: {
+    opacity: 1,
+    y: [0, -4, 0],
+    transition: {
+      opacity: { delay: 1, duration: 0.3, ease: 'easeOut' },
+      y: {
+        duration: 1.2,
+        repeat: Infinity,
+        repeatType: 'loop',
+        ease: 'easeInOut',
+      },
+    },
+  },
+};
 
 export function headers(_: Route.HeadersArgs) {
   return {
@@ -105,22 +127,27 @@ export type GoLessonPlayLessonBlocksType = Exclude<
 export async function loader({ params, request }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
 
-  const [lesson, blockInteractions] = await Promise.all([
-    fetchValidatedPublishedLessonById(supabase, params.lessonId),
-    fetchUserLessonBlockInteractions({
-      supabase,
-      lessonId: params.lessonId,
-    }),
-  ]);
+  const [lesson, blockInteractions, nextChapterAndLessonId, lessonCompletionStatus] =
+    await Promise.all([
+      fetchValidatedPublishedLessonById(supabase, params.lessonId),
+      fetchUserLessonBlockInteractions({
+        supabase,
+        lessonId: params.lessonId,
+      }),
+      fetchNextChapterAndLessonId(supabase, params.courseId, params.chapterId, params.lessonId),
+      fetchLessonCompletionStatus(supabase, params.lessonId),
+    ]);
 
   if (!lesson) {
     return redirectWithError(`/go/courses/${params.courseId}`, 'Lesson not found');
   }
 
-  return { lesson, blockInteractions };
+  return { lesson, blockInteractions, nextChapterAndLessonId, lessonCompletionStatus };
 }
 
 export default function GoLessonPlay({ loaderData, params }: Route.ComponentProps) {
+  const navigate = useNavigate();
+
   const { visibleBlocks, initializePlayFlow, lessonProgress, activeBlock } = useStore();
 
   const blockRefs = useRef<Record<string, HTMLElement | null>>({});
@@ -128,6 +155,8 @@ export default function GoLessonPlay({ loaderData, params }: Route.ComponentProp
   const {
     lesson: { blocks },
     blockInteractions,
+    nextChapterAndLessonId,
+    lessonCompletionStatus,
   } = loaderData;
 
   useEffect(() => {
@@ -151,6 +180,10 @@ export default function GoLessonPlay({ loaderData, params }: Route.ComponentProp
 
   if (!visibleBlocks) return null;
 
+  const handleNavigate = () =>
+    navigate(
+      `/go/course/${params.courseId}/${nextChapterAndLessonId?.nextChapterId}/${nextChapterAndLessonId?.nextLessonId}/play`,
+    );
   return (
     <>
       <CoursePlayLayout
@@ -166,12 +199,27 @@ export default function GoLessonPlay({ loaderData, params }: Route.ComponentProp
                   ref={(el) => {
                     blockRefs.current[block.id] = el;
                   }}
-                  className='scroll-mt-24'
+                  className='scroll-mt-18 md:scroll-mt-24'
                 >
                   <ViewPluginTypesRenderer block={block} mode='play' />
                 </div>
               ))
             : null}
+          {lessonCompletionStatus?.is_complete ? (
+            <div className='fixed bottom-10'>
+              <motion.div initial={nudgeAnimation.initial} animate={nudgeAnimation.animate}>
+                <OutlineButton
+                  className='bg-card/20 rounded-full'
+                  onClick={handleNavigate}
+                  rightIcon={<ArrowRight />}
+                >
+                  {nextChapterAndLessonId?.nextChapterId === params.chapterId
+                    ? 'Next lesson'
+                    : 'Next chapter'}
+                </OutlineButton>
+              </motion.div>
+            </div>
+          ) : null}
         </section>
       </CoursePlayLayout>
       <Outlet />

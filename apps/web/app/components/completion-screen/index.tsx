@@ -40,7 +40,7 @@ export default function CompletionScreen({ data, courseId }: CompletionScreenPro
         icon: <ArrowRight />,
         path:
           data.status === 'next-lesson'
-            ? `/go/course/${courseId}/${data.currentLesson.chapterId}/${data.nextLesson.id}`
+            ? `/go/course/${courseId}/${data.currentLesson.chapterId}/${data.nextLesson.id}/play`
             : '',
       },
       secondaryBtn: {

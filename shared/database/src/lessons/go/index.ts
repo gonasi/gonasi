@@ -6,3 +6,4 @@ export * from './completLessonByUser';
 export * from './fetchLessonsCompletionStatusByCourse';
 export * from './fetchCoursePlayStatus';
 export * from './fetchUserLessonBlockInteractions';
+export * from './fetchLessonCompletionStatus';
