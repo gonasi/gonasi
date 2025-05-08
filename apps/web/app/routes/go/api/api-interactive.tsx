@@ -1,11 +1,11 @@
 import { redirect } from 'react-router';
-import { dataWithError, redirectWithSuccess } from 'remix-toast';
+import { dataWithError, dataWithSuccess } from 'remix-toast';
 
 import type { NodeProgressPayload } from '@gonasi/database/lessons';
 import {
   addGoInteractiveToUserLessonProgress,
   completeLessonByUser,
-  resetUserLessonProgress,
+  resetBlockInteractionsByLesson,
 } from '@gonasi/database/lessons';
 
 import type { Route } from './+types/api-interactive';
@@ -35,11 +35,9 @@ export async function action({ request, params }: Route.ActionArgs) {
 
     switch (intent) {
       case 'resetLessonProgress': {
-        const { success, message } = await resetUserLessonProgress(supabase, lessonId);
+        const { success, message } = await resetBlockInteractionsByLesson(supabase, lessonId);
 
-        return success
-          ? redirectWithSuccess(`/go/courses/${courseId}`, message)
-          : dataWithError(null, message);
+        return success ? dataWithSuccess(null, message) : dataWithError(null, message);
       }
 
       case 'addGoInteractive': {

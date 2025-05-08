@@ -39,6 +39,7 @@ const BlockRenderer = memo(function BlockRenderer({
 
 export async function action({ request }: Route.ActionArgs) {
   const formData = await request.formData();
+
   const rawPayload = formData.get('payload');
 
   if (typeof rawPayload !== 'string') {
@@ -46,6 +47,7 @@ export async function action({ request }: Route.ActionArgs) {
   }
 
   let payload: Interaction;
+
   try {
     payload = JSON.parse(rawPayload);
   } catch {
@@ -108,6 +110,8 @@ export default function GoLessonPlay({ loaderData, params }: Route.ComponentProp
       useStore.getState().resetPlayFlow();
     };
   }, [blockInteractions, blocks, initializePlayFlow]);
+
+  if (!visibleBlocks) return null;
 
   return (
     <>
