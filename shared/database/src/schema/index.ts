@@ -608,6 +608,57 @@ export type Database = {
         }
         Relationships: []
       }
+      lesson_progress: {
+        Row: {
+          created_at: string
+          id: string
+          is_complete: boolean
+          lesson_id: string
+          progress_percentage: number
+          total_time_spent_seconds: number
+          updated_at: string
+          user_id: string
+          weighted_average_score: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_complete?: boolean
+          lesson_id: string
+          progress_percentage?: number
+          total_time_spent_seconds?: number
+          updated_at?: string
+          user_id: string
+          weighted_average_score?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_complete?: boolean
+          lesson_id?: string
+          progress_percentage?: number
+          total_time_spent_seconds?: number
+          updated_at?: string
+          user_id?: string
+          weighted_average_score?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lesson_progress_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lesson_progress_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lesson_types: {
         Row: {
           bg_color: string
@@ -1140,6 +1191,10 @@ export type Database = {
       get_user_companies: {
         Args: { user_id: string }
         Returns: string[]
+      }
+      recalculate_lesson_progress: {
+        Args: { p_user_id: string; p_lesson_id: string }
+        Returns: undefined
       }
       reorder_blocks: {
         Args: { blocks: Json }

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useFetcher, useParams } from 'react-router';
 import { motion } from 'framer-motion';
 
-import { type Interaction, isValidInteraction } from '@gonasi/schemas/plugins';
+import { type Interaction, isValidInteraction, type Json } from '@gonasi/schemas/plugins';
 
 import type { ViewPluginComponentProps } from '../../viewPluginTypesRenderer';
 
@@ -29,32 +29,42 @@ export function ViewRichTextPlugin({ block, mode }: ViewPluginComponentProps) {
       plugin_type: block.plugin_type,
       attempts: blockInteractionData?.attempts ?? 1,
       block_id: block.id,
-      feedback: blockInteractionData?.feedback ?? {},
+      feedback: (blockInteractionData?.feedback as Json) ?? ({} as Json),
       is_complete: blockInteractionData?.is_complete ?? true,
-      last_response: blockInteractionData?.last_response ?? {},
+      last_response: (blockInteractionData?.last_response as Json) ?? ({} as Json),
       lesson_id: params.lessonId ?? '',
       score: blockInteractionData?.score ?? 0,
-      started_at: blockInteractionData?.started_at ?? startedAt,
-      state: blockInteractionData?.state ?? { continue: true },
-      time_spent_seconds: blockInteractionData?.time_spent_seconds ?? 0,
+      started_at: startedAt, // <-- always use current session's start
+      state: (blockInteractionData?.state as Json) ?? ({ continue: true } as Json),
+      time_spent_seconds: 0, // updated in handleContinue
       completed_at: blockInteractionData?.completed_at ?? new Date().toISOString(),
     };
     return defaultPayload;
   }, [block, params.lessonId, startedAt, blockInteractionData]);
 
   const handleContinue = useCallback(() => {
-    if (!isValidInteraction(payload)) {
-      console.error('Invalid payload:', payload);
+    const completedAt = new Date();
+    const timeSpentSeconds = Math.floor(
+      (completedAt.getTime() - new Date(startedAt).getTime()) / 1000,
+    );
+
+    const updatedPayload: Interaction = {
+      ...payload,
+      completed_at: completedAt.toISOString(),
+      time_spent_seconds: timeSpentSeconds,
+    };
+
+    if (!isValidInteraction(updatedPayload)) {
+      console.error('Invalid payload:', updatedPayload);
       return;
     }
 
     const formData = new FormData();
     formData.append('intent', 'addBlockInteraction');
-    formData.append('payload', JSON.stringify(payload));
+    formData.append('payload', JSON.stringify(updatedPayload));
 
-    // TODO: Optimistic update in Zustand store
     fetcher.submit(formData, { method: 'post' });
-  }, [fetcher, payload]);
+  }, [fetcher, payload, startedAt]);
 
   return (
     <motion.div
