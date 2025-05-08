@@ -108,7 +108,7 @@ export const fetchCoursePlayStatus = async (
     const lessonIds = chapterLessons.map((l) => l.id);
 
     const { data: completedLessons } = await supabase
-      .from('lessons_progress')
+      .from('lesson_progress')
       .select('lesson_id')
       .eq('user_id', userId)
       .eq('is_complete', true)
@@ -130,7 +130,7 @@ export const fetchCoursePlayStatus = async (
     const courseLessonIds = allCourseLessons?.map((l) => l.id) ?? [];
 
     const { data: completedCourseLessons } = await supabase
-      .from('lessons_progress')
+      .from('lesson_progress')
       .select('lesson_id')
       .eq('user_id', userId)
       .eq('is_complete', true)

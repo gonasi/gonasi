@@ -1,5 +1,5 @@
 import { lazy, useEffect, useRef } from 'react';
-import { Outlet } from 'react-router';
+import { Outlet, redirect } from 'react-router';
 import { dataWithError, dataWithSuccess, redirectWithError } from 'remix-toast';
 
 import {
@@ -30,6 +30,7 @@ export async function action({ request, params }: Route.ActionArgs) {
   // Parse form data from the request
   const formData = await request.formData();
   const intent = formData.get('intent');
+  const isLast = formData.get('isLast') === 'true';
 
   // Validate 'intent' value
   if (typeof intent !== 'string') {
@@ -38,7 +39,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 
   try {
     // Extract common params for reuse
-    const { lessonId } = params;
+    const { courseId, chapterId, lessonId } = params;
 
     switch (intent) {
       case 'resetLessonProgress': {
@@ -64,8 +65,15 @@ export async function action({ request, params }: Route.ActionArgs) {
         }
 
         const { supabase } = createClient(request);
-        await createBlockInteraction(supabase, payload);
+        const { success, message } = await createBlockInteraction(supabase, payload);
 
+        if (!success) {
+          return dataWithError(null, message, { status: 400 });
+        }
+
+        if (isLast) {
+          return redirect(`/go/course/${courseId}/${chapterId}/${lessonId}/play/completed`);
+        }
         return true;
       }
 
