@@ -179,11 +179,9 @@ export default function GoLessonPlay({ loaderData, params }: Route.ComponentProp
         loading={loading}
       />
       <section className='mx-auto flex max-w-xl flex-col space-y-8 px-4 py-10 md:px-0'>
-        {visibleBlocks?.length > 0 ? (
-          visibleBlocks.map((block) => <BlockRenderer key={block.id} block={block} />)
-        ) : (
-          <p>No blocks found</p>
-        )}
+        {visibleBlocks?.length > 0
+          ? visibleBlocks.map((block) => <BlockRenderer key={block.id} block={block} />)
+          : null}
       </section>
       <div>{loading ? <Spinner /> : null}</div>
       <Outlet />

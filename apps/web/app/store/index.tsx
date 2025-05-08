@@ -27,9 +27,12 @@ interface StoreState {
   ) => void;
 
   resetPlayFlow: () => void;
+
+  getBlockInteraction: (blockId: string) => GoLessonPlayInteractionReturnType[number] | undefined;
+  activeBlock: () => string | null;
 }
 
-export const useStore = create<StoreState>((set) => ({
+export const useStore = create<StoreState>((set, get) => ({
   activePlugin: null,
   activeSubPlugin: null,
   updateActivePlugin: (pluginId) => set({ activePlugin: pluginId }),
@@ -117,4 +120,12 @@ export const useStore = create<StoreState>((set) => ({
       visibleBlocks: [],
       lessonProgress: 0,
     }),
+
+  getBlockInteraction: (blockId) =>
+    get().lessonBlockInteractions.find((interaction) => interaction.block_id === blockId),
+
+  activeBlock: () => {
+    const visible = get().visibleBlocks;
+    return Array.isArray(visible) && visible.length > 0 ? visible[visible.length - 1].id : null;
+  },
 }));

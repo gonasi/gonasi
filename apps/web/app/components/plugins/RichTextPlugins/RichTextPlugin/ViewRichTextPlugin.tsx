@@ -7,10 +7,15 @@ import { type Interaction, isValidInteraction } from '@gonasi/schemas/plugins';
 import type { ViewPluginComponentProps } from '../../viewPluginTypesRenderer';
 
 import { ContinueButton } from '~/components/ui/button';
+import { useStore } from '~/store';
 
 export function ViewRichTextPlugin({ block, mode }: ViewPluginComponentProps) {
   const fetcher = useFetcher();
   const params = useParams();
+
+  const { getBlockInteraction } = useStore();
+
+  const blockInteractionData = getBlockInteraction(block.id);
 
   const [loading, setLoading] = useState(false);
   const [startedAt] = useState(() => new Date().toISOString());
@@ -58,7 +63,9 @@ export function ViewRichTextPlugin({ block, mode }: ViewPluginComponentProps) {
       transition={{ duration: 0.3, ease: 'easeOut' }}
     >
       <div className='py-4 whitespace-pre-wrap'>{block.content.data.richTextState}</div>
-      <ContinueButton onClick={handleContinue} loading={loading} disabled={mode === 'preview'} />
+      {blockInteractionData?.is_complete ? null : (
+        <ContinueButton onClick={handleContinue} loading={loading} disabled={mode === 'preview'} />
+      )}
     </motion.div>
   );
 }
