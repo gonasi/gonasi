@@ -4,8 +4,8 @@ const envSchema = z.object({
   NODE_ENV: z.enum(['production', 'development', 'test']),
   BASE_URL: z.string().min(1),
 
-  VITE_SUPABASE_URL: z.string().min(1),
-  VITE_SUPABASE_ANON_KEY: z.string().min(1),
+  VITE_PUBLIC_SUPABASE_URL: z.string().min(1),
+  VITE_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
 
   SUPABASE_URL: z.string().min(1),
   SUPABASE_ANON_KEY: z.string().min(1),
