@@ -1,4 +1,4 @@
-import { lazy, memo, Suspense, useEffect } from 'react';
+import { lazy, useEffect, useRef } from 'react';
 import { Outlet } from 'react-router';
 import { dataWithError, dataWithSuccess, redirectWithError } from 'remix-toast';
 
@@ -11,10 +11,8 @@ import {
 import type { Interaction } from '@gonasi/schemas/plugins';
 
 import type { Route } from './+types/go-lesson-play';
-import type { LessonBlockLoaderReturnType } from '../dashboard/courses/lessons/edit-plugin-modal';
 
 import { CoursePlayLayout } from '~/components/layouts/course';
-import { Spinner } from '~/components/loaders';
 import { createClient } from '~/lib/supabase/supabase.server';
 import { useStore } from '~/store';
 
@@ -25,18 +23,6 @@ export function headers(_: Route.HeadersArgs) {
     'Cache-Control': 's-maxage=1, stale-while-revalidate=59',
   };
 }
-
-const BlockRenderer = memo(function BlockRenderer({
-  block,
-}: {
-  block: LessonBlockLoaderReturnType;
-}) {
-  return (
-    <Suspense fallback={<Spinner />}>
-      <ViewPluginTypesRenderer block={block} mode='play' />
-    </Suspense>
-  );
-});
 
 export async function action({ request, params }: Route.ActionArgs) {
   const { supabase } = createClient(request);
@@ -52,7 +38,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 
   try {
     // Extract common params for reuse
-    const { courseId, chapterId, lessonId } = params;
+    const { lessonId } = params;
 
     switch (intent) {
       case 'resetLessonProgress': {
@@ -82,21 +68,6 @@ export async function action({ request, params }: Route.ActionArgs) {
 
         return true;
       }
-
-      // case 'completeLesson': {
-      //   const { success, message } = await completeLessonByUser(
-      //     supabase,
-      //     courseId,
-      //     chapterId,
-      //     lessonId,
-      //   );
-
-      //   if (!success) {
-      //     return dataWithError(null, message, { status: 400 });
-      //   }
-
-      //   return redirect(`/go/course/${courseId}/${chapterId}/${lessonId}/completed`);
-      // }
 
       default:
         return dataWithError(null, `Unknown intent: ${intent}`, { status: 400 });
@@ -142,10 +113,11 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 }
 
 export default function GoLessonPlay({ loaderData, params }: Route.ComponentProps) {
-  const { isLoading, visibleBlocks, initializePlayFlow, lessonProgress } = useStore();
+  const { isLoading, visibleBlocks, initializePlayFlow, lessonProgress, activeBlock } = useStore();
 
-  console.log('lessonProgress: ', lessonProgress);
+  const blockRefs = useRef<Record<string, HTMLElement | null>>({});
 
+  console.log('activeBlock: ', activeBlock);
   const {
     lesson: { blocks },
     blockInteractions,
@@ -161,6 +133,15 @@ export default function GoLessonPlay({ loaderData, params }: Route.ComponentProp
     };
   }, [blockInteractions, blocks, initializePlayFlow]);
 
+  useEffect(() => {
+    if (activeBlock) {
+      blockRefs.current[activeBlock]?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    }
+  }, [activeBlock]);
+
   if (!visibleBlocks) return null;
 
   return (
@@ -169,13 +150,23 @@ export default function GoLessonPlay({ loaderData, params }: Route.ComponentProp
         to={`/go/courses/${params.courseId}`}
         progress={lessonProgress}
         loading={isLoading}
-      />
-      <section className='mx-auto flex max-w-xl flex-col space-y-8 px-4 py-10 md:px-0'>
-        {visibleBlocks?.length > 0
-          ? visibleBlocks.map((block) => <BlockRenderer key={block.id} block={block} />)
-          : null}
-      </section>
-      <div>{isLoading ? <Spinner /> : null}</div>
+      >
+        <section className='mx-auto min-h-screen max-w-xl px-4 py-10 md:px-0'>
+          {visibleBlocks?.length > 0
+            ? visibleBlocks.map((block) => (
+                <div
+                  key={block.id}
+                  ref={(el) => {
+                    blockRefs.current[block.id] = el;
+                  }}
+                  className='scroll-mt-24'
+                >
+                  <ViewPluginTypesRenderer block={block} mode='play' />
+                </div>
+              ))
+            : null}
+        </section>
+      </CoursePlayLayout>
       <Outlet />
     </>
   );

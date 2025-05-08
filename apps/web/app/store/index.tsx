@@ -23,7 +23,9 @@ interface StoreState {
   lessonBlockInteractions: GoLessonPlayInteractionReturnType;
   visibleBlocks: GoLessonPlayLessonBlocksType;
   lessonProgress: number;
-  isLoading: boolean;
+
+  // Computed properties
+  activeBlock: string | null;
 
   // Actions
   setCurrentLessonBlocks: (lessonBlocks: GoLessonPlayLessonBlocksType) => void;
@@ -36,7 +38,6 @@ interface StoreState {
 
   // Selectors
   getBlockInteraction: (blockId: string) => GoLessonPlayInteractionReturnType[number] | undefined;
-  activeBlock: () => string | null;
 }
 
 /**
@@ -62,6 +63,36 @@ const calculateProgress = (
 const getCompletedBlockIds = (interactions: GoLessonPlayInteractionReturnType): Set<string> =>
   new Set(interactions.filter((i) => i.is_complete).map((i) => i.block_id));
 
+/**
+ * Compute visible blocks based on lesson blocks and completed interactions
+ */
+const computeVisibleBlocks = (
+  lessonBlocks: GoLessonPlayLessonBlocksType,
+  interactions: GoLessonPlayInteractionReturnType,
+): GoLessonPlayLessonBlocksType => {
+  // Sort blocks by position for consistent processing
+  const sortedBlocks = [...lessonBlocks].sort((a, b) => a.position - b.position);
+
+  return sortedBlocks.filter((block) => {
+    // First block is always visible
+    if (block.position === 0) return true;
+
+    // Find the previous block
+    const prevBlock = sortedBlocks.find((b) => b.position === block.position - 1);
+    if (!prevBlock) return false;
+
+    // Block is visible if previous block is completed
+    return interactions.some((i) => i.block_id === prevBlock.id && i.is_complete);
+  });
+};
+
+/**
+ * Helper function to compute the active block based on visible blocks
+ */
+const computeActiveBlock = (visibleBlocks: GoLessonPlayLessonBlocksType): string | null => {
+  return visibleBlocks.length > 0 ? (visibleBlocks[visibleBlocks.length - 1]?.id ?? null) : null;
+};
+
 export const useStore = create<StoreState>((set, get) => ({
   // Initial plugin state
   activePlugin: null,
@@ -74,87 +105,72 @@ export const useStore = create<StoreState>((set, get) => ({
   lessonBlockInteractions: [],
   visibleBlocks: [],
   lessonProgress: 0,
-  isLoading: false,
+  activeBlock: null,
 
   /**
-   * Updates lesson blocks and recalculates progress
+   * Updates lesson blocks and recalculates derived state
    */
   setCurrentLessonBlocks: (lessonBlocks) =>
     set((state) => {
-      set({ isLoading: true });
-
       try {
         const completedBlockIds = getCompletedBlockIds(state.lessonBlockInteractions);
-        const lessonProgress = calculateProgress(lessonBlocks, completedBlockIds);
+        const updatedVisibleBlocks = computeVisibleBlocks(
+          lessonBlocks,
+          state.lessonBlockInteractions,
+        );
 
-        return { lessonBlocks, lessonProgress, isLoading: false };
+        return {
+          lessonBlocks,
+          lessonProgress: calculateProgress(lessonBlocks, completedBlockIds),
+          visibleBlocks: updatedVisibleBlocks,
+          activeBlock: computeActiveBlock(updatedVisibleBlocks),
+        };
       } catch (error) {
         console.error('Error setting lesson blocks:', error);
-        return { isLoading: false };
+        return {}; // Return empty object to prevent state changes on error
       }
     }),
 
   /**
-   * Updates interactions and recalculates progress
+   * Updates interactions and recalculates derived state
    */
   setLessonBlockInteractions: (interactions) =>
     set((state) => {
-      set({ isLoading: true });
-
       try {
         const completedBlockIds = getCompletedBlockIds(interactions);
-        const lessonProgress = calculateProgress(state.lessonBlocks, completedBlockIds);
+        const updatedVisibleBlocks = computeVisibleBlocks(state.lessonBlocks, interactions);
 
         return {
           lessonBlockInteractions: interactions,
-          lessonProgress,
-          isLoading: false,
+          lessonProgress: calculateProgress(state.lessonBlocks, completedBlockIds),
+          visibleBlocks: updatedVisibleBlocks,
+          activeBlock: computeActiveBlock(updatedVisibleBlocks),
         };
       } catch (error) {
         console.error('Error setting lesson block interactions:', error);
-        return { isLoading: false };
+        return {}; // Return empty object to prevent state changes on error
       }
     }),
 
   /**
    * Initializes the lesson flow with blocks and interactions
-   * Determines which blocks should be visible based on completion status
    */
   initializePlayFlow: (lesson, interactions) => {
-    // Set loading state to true before processing starts
-    set({ isLoading: true });
-
     try {
       // Sort blocks by position for consistent processing
       const sortedBlocks = [...lesson].sort((a, b) => a.position - b.position);
       const completedBlockIds = getCompletedBlockIds(interactions);
-
-      // Determine visible blocks (first block + blocks after completed blocks)
-      const visibleBlocks = sortedBlocks.filter((block) => {
-        // First block is always visible
-        if (block.position === 0) return true;
-
-        // Find the previous block
-        const prevBlock = sortedBlocks.find((b) => b.position === block.position - 1);
-        if (!prevBlock) return false;
-
-        // Block is visible if previous block is completed
-        return completedBlockIds.has(prevBlock.id);
-      });
-
-      const lessonProgress = calculateProgress(sortedBlocks, completedBlockIds);
+      const visibleBlocks = computeVisibleBlocks(sortedBlocks, interactions);
 
       set({
         lessonBlocks: sortedBlocks,
         lessonBlockInteractions: interactions,
         visibleBlocks,
-        lessonProgress,
-        isLoading: false, // Set loading to false after processing completes
+        lessonProgress: calculateProgress(sortedBlocks, completedBlockIds),
+        activeBlock: computeActiveBlock(visibleBlocks),
       });
     } catch (error) {
-      // Ensure loading state is reset even if there's an error
       console.error('Error initializing play flow:', error);
-      set({ isLoading: false });
     }
   },
 
@@ -167,21 +183,12 @@ export const useStore = create<StoreState>((set, get) => ({
       lessonBlockInteractions: [],
       visibleBlocks: [],
       lessonProgress: 0,
-      isLoading: false,
+      activeBlock: null,
     }),
 
   /**
-   * Finds interaction for a specific block
+   * Selector: Gets the block interaction for a specific block ID
    */
   getBlockInteraction: (blockId) =>
     get().lessonBlockInteractions.find((interaction) => interaction.block_id === blockId),
-
-  /**
-   * Returns ID of the last visible block (current active block)
-   */
-  activeBlock: () => {
-    const visible = get().visibleBlocks;
-    // Use optional chaining and nullish coalescing to handle potentially undefined values
-    return visible && visible.length > 0 ? (visible[visible.length - 1]?.id ?? null) : null;
-  },
 }));
