@@ -1,5 +1,5 @@
-import { lazy, memo, Suspense, useEffect, useState } from 'react';
-import { Outlet, useFetcher } from 'react-router';
+import { lazy, memo, Suspense, useEffect } from 'react';
+import { Outlet } from 'react-router';
 import { dataWithError, dataWithSuccess, redirectWithError } from 'remix-toast';
 
 import {
@@ -142,9 +142,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 }
 
 export default function GoLessonPlay({ loaderData, params }: Route.ComponentProps) {
-  const fetcher = useFetcher();
-
-  const { visibleBlocks, initializePlayFlow, lessonProgress } = useStore();
+  const { isLoading, visibleBlocks, initializePlayFlow, lessonProgress } = useStore();
 
   console.log('lessonProgress: ', lessonProgress);
 
@@ -152,12 +150,6 @@ export default function GoLessonPlay({ loaderData, params }: Route.ComponentProp
     lesson: { blocks },
     blockInteractions,
   } = loaderData;
-
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    setLoading(fetcher.state === 'submitting');
-  }, [fetcher.state]);
 
   useEffect(() => {
     // Initialize the play flow when component mounts
@@ -176,14 +168,14 @@ export default function GoLessonPlay({ loaderData, params }: Route.ComponentProp
       <CoursePlayLayout
         to={`/go/courses/${params.courseId}`}
         progress={lessonProgress}
-        loading={loading}
+        loading={isLoading}
       />
       <section className='mx-auto flex max-w-xl flex-col space-y-8 px-4 py-10 md:px-0'>
         {visibleBlocks?.length > 0
           ? visibleBlocks.map((block) => <BlockRenderer key={block.id} block={block} />)
           : null}
       </section>
-      <div>{loading ? <Spinner /> : null}</div>
+      <div>{isLoading ? <Spinner /> : null}</div>
       <Outlet />
     </>
   );

@@ -14,7 +14,6 @@ export function ViewRichTextPlugin({ block, mode }: ViewPluginComponentProps) {
   const params = useParams();
 
   const { getBlockInteraction } = useStore();
-
   const blockInteractionData = getBlockInteraction(block.id);
 
   const [loading, setLoading] = useState(false);
@@ -24,23 +23,24 @@ export function ViewRichTextPlugin({ block, mode }: ViewPluginComponentProps) {
     setLoading(fetcher.state === 'submitting');
   }, [fetcher.state]);
 
-  const payload = useMemo<Interaction>(
-    () => ({
+  // Default payload using blockInteractionData if available
+  const payload = useMemo<Interaction>(() => {
+    const defaultPayload: Interaction = {
       plugin_type: block.plugin_type,
-      attempts: 1,
+      attempts: blockInteractionData?.attempts ?? 1,
       block_id: block.id,
-      feedback: {},
-      is_complete: true,
-      last_response: {},
+      feedback: blockInteractionData?.feedback ?? {},
+      is_complete: blockInteractionData?.is_complete ?? true,
+      last_response: blockInteractionData?.last_response ?? {},
       lesson_id: params.lessonId ?? '',
-      score: 0,
-      started_at: startedAt,
-      state: { continue: true },
-      time_spent_seconds: 0,
-      completed_at: new Date().toISOString(),
-    }),
-    [block, params.lessonId, startedAt],
-  );
+      score: blockInteractionData?.score ?? 0,
+      started_at: blockInteractionData?.started_at ?? startedAt,
+      state: blockInteractionData?.state ?? { continue: true },
+      time_spent_seconds: blockInteractionData?.time_spent_seconds ?? 0,
+      completed_at: blockInteractionData?.completed_at ?? new Date().toISOString(),
+    };
+    return defaultPayload;
+  }, [block, params.lessonId, startedAt, blockInteractionData]);
 
   const handleContinue = useCallback(() => {
     if (!isValidInteraction(payload)) {
