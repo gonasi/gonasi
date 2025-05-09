@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useFetcher } from 'react-router';
-import { getInputProps, useForm } from '@conform-to/react';
+import { useForm } from '@conform-to/react';
 import { getZodConstraint, parseWithZod } from '@conform-to/zod';
 import { Save } from 'lucide-react';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
@@ -9,7 +9,8 @@ import type { PluginTypeId } from '@gonasi/schemas/plugins';
 import { RichTextContent } from '@gonasi/schemas/plugins';
 
 import { Button } from '~/components/ui/button';
-import { ErrorList, TextareaField } from '~/components/ui/forms';
+import { ErrorList } from '~/components/ui/forms';
+import { RichTextInputField } from '~/components/ui/forms/RichTextInputField';
 
 interface CreateRichTextPluginProps {
   name: PluginTypeId;
@@ -55,15 +56,14 @@ export function CreateRichTextPlugin({ name }: CreateRichTextPluginProps) {
   return (
     <form id={form.id} onSubmit={form.onSubmit} className='space-y-4' noValidate>
       <HoneypotInputs />
-      <TextareaField
-        labelProps={{ children: 'Rich text', required: true }}
-        textareaProps={{
-          ...getInputProps(data.richTextState, { type: 'text' }),
-          placeholder: 'Provide a brief overview of this learning path',
-        }}
-        errors={data.richTextState?.errors}
-        description='This helps learners understand what to expect from this path.'
+      <RichTextInputField
+        labelProps={{ children: 'Title', required: true }}
+        meta={data.richTextState}
+        placeholder='Enter the title here'
+        errors={data.richTextState.errors}
+        description='This is the title for the matching concept.'
       />
+
       <ErrorList errors={form.errors} id={form.errorId} />
 
       <div className='mt-4 flex justify-end space-x-2'>

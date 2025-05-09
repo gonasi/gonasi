@@ -1,4 +1,4 @@
-import { Suspense, useId, useState } from 'react';
+import { lazy, Suspense, useId, useState } from 'react';
 import type { FieldMetadata } from '@conform-to/react';
 import { useInputControl } from '@conform-to/react';
 
@@ -6,6 +6,9 @@ import type { LabelProps } from '../label';
 import { Label } from '../label';
 import type { ListOfErrors } from './forms';
 import { ErrorList, FormDescription, hasErrors } from './forms';
+
+// Lazy import the rich editor
+const LazyRichTextInput = lazy(() => import('../../go-editor'));
 
 interface RichTextInputFieldProps {
   labelProps: Omit<LabelProps, 'htmlFor' | 'error'>;
@@ -22,7 +25,7 @@ export function RichTextInputField({
   className,
   description,
   meta,
-  placeholder = 'Enter text',
+  placeholder = '',
 }: RichTextInputFieldProps) {
   const fallbackId = useId();
 
@@ -50,9 +53,16 @@ export function RichTextInputField({
             Loading editor...
           </div>
         }
-      />
+      >
+        <LazyRichTextInput
+          editorState={editorContent}
+          setEditorState={handleEditorChange}
+          loading={false}
+          placeholder={placeholder}
+        />
+      </Suspense>
 
-      <div className='min-h-[32px] pb-3'>
+      <div className='min-h-[32px] pt-1 pb-3'>
         {errorId ? <ErrorList id={errorId} errors={errors} /> : null}
         {description ? <FormDescription id={descriptionId}>{description}</FormDescription> : null}
       </div>
