@@ -44,6 +44,7 @@ export async function action({ request, params }: Route.ActionArgs) {
     content: submission.value,
     lesson_id: params.lessonId,
     plugin_type: pluginType,
+    weight: 1, // User can update weight on edit
   });
 
   return success

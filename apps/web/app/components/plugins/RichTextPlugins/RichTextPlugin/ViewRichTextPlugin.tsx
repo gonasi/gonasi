@@ -6,7 +6,7 @@ import { type Interaction, isValidInteraction, type Json } from '@gonasi/schemas
 
 import type { ViewPluginComponentProps } from '../../viewPluginTypesRenderer';
 
-import GoEditor from '~/components/go-editor';
+import RichTextRenderer from '~/components/go-editor/ui/RichTextRenderer';
 import { BlockActionButton } from '~/components/ui/button';
 import { useStore } from '~/store';
 
@@ -74,19 +74,9 @@ export function ViewRichTextPlugin({ block, mode }: ViewPluginComponentProps) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, ease: 'easeOut' }}
     >
-      <GoEditor
-        editorState={block.content.data.richTextState}
-        loading={false}
-        placeholder=''
-        readOnly
-      />
-      {blockInteractionData?.is_complete ? null : (
-        <BlockActionButton
-          onClick={handleContinue}
-          loading={loading}
-          disabled={mode === 'preview'}
-          isLastBlock={isLastBlock}
-        />
+      <RichTextRenderer editorState={block.content.data.richTextState} />
+      {blockInteractionData?.is_complete || mode === 'preview' ? null : (
+        <BlockActionButton onClick={handleContinue} loading={loading} isLastBlock={isLastBlock} />
       )}
     </motion.div>
   );

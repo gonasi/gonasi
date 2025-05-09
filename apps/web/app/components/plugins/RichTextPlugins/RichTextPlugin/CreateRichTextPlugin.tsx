@@ -57,11 +57,11 @@ export function CreateRichTextPlugin({ name }: CreateRichTextPluginProps) {
     <form id={form.id} onSubmit={form.onSubmit} className='space-y-4' noValidate>
       <HoneypotInputs />
       <RichTextInputField
-        labelProps={{ children: 'Title', required: true }}
+        labelProps={{ children: 'Rich Text', required: true }}
         meta={data.richTextState}
-        placeholder='Enter the title here'
+        placeholder='Start typing...'
         errors={data.richTextState.errors}
-        description='This is the title for the matching concept.'
+        description='You can format your content using rich text.'
       />
 
       <ErrorList errors={form.errors} id={form.errorId} />

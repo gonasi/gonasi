@@ -278,3 +278,349 @@
 body {
   font-family: var(--font-primary), var(--font-secondary), sans-serif;
 }
+
+.margin-left-custom {
+  margin-left: var(--ml);
+}
+
+.editor-shell {
+  @apply text-foreground relative mx-auto max-w-[1100px] rounded-sm leading-[1.7] font-normal;
+}
+
+.editor-shell .editor-container.tree-view {
+  @apply rounded-none;
+}
+
+.editor-shell .editor-container.plain-text {
+  @apply rounded-t-[10px];
+}
+
+.toolbar {
+  @apply bg-card sticky top-12 z-20 mb-px flex w-full flex-shrink-0 items-center space-x-2 overflow-x-auto overflow-y-hidden rounded-lg p-1;
+}
+
+.toolbar-nonsticky {
+  @apply bg-card z-5 flex w-full flex-shrink-0 items-center space-x-2 overflow-x-auto overflow-y-hidden rounded-lg p-1;
+}
+
+/* THEME */
+
+/* Tailwind equivalents using @apply */
+/* editor-theme.css */
+.PlaygroundEditorTheme__autocomplete {
+  @apply rounded border bg-white p-2 shadow;
+  border-color: var(--card-border);
+  background-color: var(--popover);
+}
+
+.PlaygroundEditorTheme__blockCursor {
+  background-color: var(--foreground);
+}
+
+.PlaygroundEditorTheme__characterLimit {
+  color: var(--danger);
+}
+
+.PlaygroundEditorTheme__code {
+  @apply rounded p-2 font-mono text-sm;
+  background-color: var(--muted);
+}
+
+.PlaygroundEditorTheme__tokenAttr {
+  color: var(--secondary);
+}
+
+.PlaygroundEditorTheme__tokenProperty {
+  color: var(--info);
+}
+
+.PlaygroundEditorTheme__tokenSelector {
+  color: var(--primary);
+}
+
+.PlaygroundEditorTheme__tokenComment {
+  color: var(--muted);
+  font-style: italic;
+}
+
+.PlaygroundEditorTheme__tokenFunction {
+  color: var(--success);
+}
+
+.PlaygroundEditorTheme__tokenOperator {
+  color: var(--danger);
+}
+
+.PlaygroundEditorTheme__tokenVariable {
+  color: var(--warning);
+}
+
+.PlaygroundEditorTheme__tokenPunctuation {
+  color: var(--foreground);
+}
+
+.PlaygroundEditorTheme__embedBlock {
+  @apply rounded border p-4;
+  border-color: var(--card-border);
+}
+
+.PlaygroundEditorTheme__embedBlockFocus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px var(--primary-hover);
+}
+
+.PlaygroundEditorTheme__hashtag {
+  color: var(--info);
+}
+
+.PlaygroundEditorTheme__h1 {
+  @apply my-4 text-4xl font-bold;
+  color: var(--foreground);
+}
+.PlaygroundEditorTheme__h2 {
+  @apply my-3 text-3xl font-semibold;
+  color: var(--foreground);
+}
+.PlaygroundEditorTheme__h3 {
+  @apply my-2 text-2xl font-medium;
+  color: var(--foreground);
+}
+.PlaygroundEditorTheme__h4 {
+  @apply my-1 text-xl font-medium;
+  color: var(--foreground);
+}
+.PlaygroundEditorTheme__h5 {
+  @apply text-lg font-medium;
+  color: var(--foreground);
+}
+.PlaygroundEditorTheme__h6 {
+  @apply text-base font-semibold;
+  color: var(--foreground);
+}
+
+.PlaygroundEditorTheme__hr {
+  @apply my-4 border-t;
+  border-color: var(--card-border);
+}
+
+.PlaygroundEditorTheme__hrSelected {
+  @apply my-4 border-t-2;
+  border-color: var(--primary);
+}
+
+.editor-image {
+  @apply max-w-full rounded;
+}
+
+.inline-editor-image {
+  @apply inline-block h-auto w-20 rounded;
+}
+
+.PlaygroundEditorTheme__indent {
+  @apply ml-4;
+}
+
+.PlaygroundEditorTheme__layoutContainer {
+  @apply grid grid-cols-2 gap-4;
+}
+
+.PlaygroundEditorTheme__layoutItem {
+  @apply rounded border p-2;
+  background-color: var(--card);
+  border-color: var(--card-border);
+}
+
+.PlaygroundEditorTheme__link {
+  color: var(--primary);
+  text-decoration: underline;
+}
+.PlaygroundEditorTheme__link:hover {
+  color: var(--primary-hover);
+}
+
+.PlaygroundEditorTheme__checklist {
+  @apply list-none pl-0;
+}
+
+.PlaygroundEditorTheme__listItem {
+  @apply ml-6 list-disc;
+  color: var(--foreground);
+}
+
+.PlaygroundEditorTheme__listItemChecked {
+  @apply line-through opacity-60;
+}
+
+.PlaygroundEditorTheme__listItemUnchecked {
+  @apply opacity-100;
+}
+
+.PlaygroundEditorTheme__nestedListItem {
+  @apply ml-6;
+}
+
+.PlaygroundEditorTheme__ol1,
+.PlaygroundEditorTheme__ol2,
+.PlaygroundEditorTheme__ol3,
+.PlaygroundEditorTheme__ol4,
+.PlaygroundEditorTheme__ol5,
+.PlaygroundEditorTheme__ul {
+  list-style-type: decimal;
+  color: var(--foreground);
+}
+
+.PlaygroundEditorTheme__ltr {
+  text-align: left;
+}
+
+.PlaygroundEditorTheme__rtl {
+  text-align: right;
+}
+
+.PlaygroundEditorTheme__mark {
+  background-color: var(--tip);
+}
+
+.PlaygroundEditorTheme__markOverlap {
+  background-color: var(--warning-hover);
+}
+
+.PlaygroundEditorTheme__paragraph {
+  @apply font-secondary my-2;
+  color: var(--foreground);
+}
+
+.PlaygroundEditorTheme__quote {
+  border-left: 4px solid var(--muted);
+  padding-left: 1rem;
+  color: var(--muted);
+  font-style: italic;
+}
+
+.PlaygroundEditorTheme__specialText {
+  color: var(--gold);
+}
+
+.PlaygroundEditorTheme__tabNode {
+  @apply pl-8;
+}
+
+/* Table styles */
+.PlaygroundEditorTheme__table {
+  @apply w-full border;
+  border-color: var(--card-border);
+}
+.PlaygroundEditorTheme__tableAddColumns,
+.PlaygroundEditorTheme__tableAddRows {
+  @apply cursor-pointer text-sm;
+  color: var(--muted);
+}
+.PlaygroundEditorTheme__tableAddColumns:hover,
+.PlaygroundEditorTheme__tableAddRows:hover {
+  color: var(--primary);
+}
+.PlaygroundEditorTheme__tableAlignmentCenter {
+  text-align: center;
+}
+.PlaygroundEditorTheme__tableAlignmentRight {
+  text-align: right;
+}
+.PlaygroundEditorTheme__tableCell {
+  @apply border p-2;
+  border-color: var(--card-border);
+}
+.PlaygroundEditorTheme__tableCellActionButton {
+  @apply text-sm;
+  color: var(--primary);
+  text-decoration: none;
+}
+.PlaygroundEditorTheme__tableCellActionButton:hover {
+  text-decoration: underline;
+}
+.PlaygroundEditorTheme__tableCellActionButtonContainer {
+  @apply flex items-center justify-end;
+}
+.PlaygroundEditorTheme__tableCellHeader {
+  background-color: var(--popover);
+  font-weight: 600;
+}
+.PlaygroundEditorTheme__tableCellResizer {
+  @apply w-1 cursor-col-resize;
+  background-color: var(--card-border);
+}
+.PlaygroundEditorTheme__tableCellSelected {
+  background-color: var(--info-hover);
+}
+.PlaygroundEditorTheme__tableFrozenColumn {
+  position: sticky;
+  left: 0;
+  z-index: 10;
+  background-color: var(--popover);
+}
+.PlaygroundEditorTheme__tableFrozenRow {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: var(--popover);
+}
+.PlaygroundEditorTheme__tableRowStriping {
+  background-color: var(--background);
+}
+.PlaygroundEditorTheme__tableScrollableWrapper {
+  max-width: 100%;
+  overflow: auto;
+}
+.PlaygroundEditorTheme__tableSelected {
+  border: 2px solid var(--primary);
+}
+.PlaygroundEditorTheme__tableSelection {
+  background-color: var(--info-hover);
+}
+
+/* Text styles */
+.PlaygroundEditorTheme__textBold {
+  font-weight: bold;
+}
+.PlaygroundEditorTheme__textItalic {
+  font-style: italic;
+}
+.PlaygroundEditorTheme__textUnderline {
+  text-decoration: underline;
+}
+.PlaygroundEditorTheme__textStrikethrough {
+  text-decoration: line-through;
+}
+.PlaygroundEditorTheme__textUnderlineStrikethrough {
+  text-decoration: underline line-through;
+}
+.PlaygroundEditorTheme__textCode {
+  border-radius: 0.25rem;
+  background-color: var(--muted);
+  padding: 0.125rem 0.25rem;
+  font-family: monospace;
+}
+.PlaygroundEditorTheme__textHighlight {
+  background-color: var(--tip);
+}
+.PlaygroundEditorTheme__textSuperscript {
+  vertical-align: super;
+  font-size: 0.75rem;
+}
+.PlaygroundEditorTheme__textSubscript {
+  vertical-align: sub;
+  font-size: 0.75rem;
+}
+.PlaygroundEditorTheme__textLowercase {
+  text-transform: lowercase;
+}
+.PlaygroundEditorTheme__textUppercase {
+  text-transform: uppercase;
+}
+.PlaygroundEditorTheme__textCapitalize {
+  text-transform: capitalize;
+}
+
+// Rest
+.image-resizer-square {
+  @apply absolute block h-2 w-2 bg-red-500;
+}

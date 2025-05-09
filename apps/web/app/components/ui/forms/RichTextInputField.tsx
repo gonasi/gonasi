@@ -7,6 +7,8 @@ import { Label } from '../label';
 import type { ListOfErrors } from './forms';
 import { ErrorList, FormDescription, hasErrors } from './forms';
 
+import { Spinner } from '~/components/loaders';
+
 // Lazy import the rich editor
 const LazyRichTextInput = lazy(() => import('../../go-editor'));
 
@@ -47,13 +49,7 @@ export function RichTextInputField({
   return (
     <div className={className}>
       <Label htmlFor={id} error={err} {...labelProps} />
-      <Suspense
-        fallback={
-          <div className='min-h-[150px] rounded-md border border-gray-200 p-2 text-sm text-gray-400'>
-            Loading editor...
-          </div>
-        }
-      >
+      <Suspense fallback={<Spinner />}>
         <LazyRichTextInput
           editorState={editorContent}
           setEditorState={handleEditorChange}
