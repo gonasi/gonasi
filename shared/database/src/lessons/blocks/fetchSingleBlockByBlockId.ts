@@ -1,5 +1,5 @@
 import type { PluginTypeId } from '@gonasi/schemas/plugins';
-import { getContentSchemaByType } from '@gonasi/schemas/plugins';
+import { getContentSchemaByType, getSettingsSchemaByType } from '@gonasi/schemas/plugins';
 
 import type { TypedSupabaseClient } from '../../client';
 
@@ -7,7 +7,7 @@ export const fetchSingleBlockByBlockId = async (supabase: TypedSupabaseClient, b
   try {
     const { data, error } = await supabase
       .from('blocks')
-      .select('id, plugin_type, content')
+      .select('id, plugin_type, content, settings')
       .eq('id', blockId)
       .single(); // Ensures only one row is returned
 
@@ -22,6 +22,9 @@ export const fetchSingleBlockByBlockId = async (supabase: TypedSupabaseClient, b
     const contentSchema = getContentSchemaByType(data.plugin_type as PluginTypeId);
     const parsedContent = contentSchema.safeParse(data.content);
 
+    const settingsSchema = getSettingsSchemaByType(data.plugin_type as PluginTypeId);
+    const parsedSettings = settingsSchema.safeParse(data.content);
+
     if (!parsedContent.success) {
       return {
         success: false,
@@ -29,6 +32,15 @@ export const fetchSingleBlockByBlockId = async (supabase: TypedSupabaseClient, b
         data: null,
       };
     }
+
+    if (!parsedSettings.success) {
+      return {
+        success: false,
+        message: 'Wrong settings schema.',
+        data: null,
+      };
+    }
+
     return {
       success: true,
       message: 'Block fetched successfully.',
@@ -36,6 +48,7 @@ export const fetchSingleBlockByBlockId = async (supabase: TypedSupabaseClient, b
         ...data,
         plugin_type: data.plugin_type as PluginTypeId,
         content: parsedContent.data,
+        settings: parsedSettings.data,
       },
     };
   } catch (err) {

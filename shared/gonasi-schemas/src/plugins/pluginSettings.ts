@@ -26,7 +26,7 @@ export const PluginSettingsSchema = z.object({
     .default('false') // Default as string to match form expectations
     .describe('Automatically continue to the next block after completion'),
   /**
-   * Delay (in milliseconds) before the plugin block appears after being triggered.
+   * Delay (in seconsds) before the plugin block appears after being triggered.
    * Useful for pacing or sequencing multiple blocks smoothly.
    * Example: delayBeforeShow = 1000 means wait 1 second before showing the block.
    */
@@ -36,6 +36,18 @@ export const PluginSettingsSchema = z.object({
     .max(5, { message: 'Delay must be at most 5 seconds' })
     .default(0)
     .describe('Delay before showing the block (in seconds)'),
+
+  /**
+   * Delay (in seconsds) before automatically continuing after the block is shown.
+   * Useful for allowing the user to absorb content before auto-progressing.
+   * Example: delayBeforeAutoContinue = 2000 means wait 2 seconds before continuing.
+   */
+  delayBeforeAutoContinue: z
+    .number()
+    .min(1, { message: 'Delay must be at least 1 seconds' })
+    .max(5, { message: 'Delay must be at most 5 seconds' })
+    .default(1)
+    .describe('Delay before automatically continuing (in seconds)'),
 });
 
 export const WeightSchema = z.number().min(1).max(10).default(5);

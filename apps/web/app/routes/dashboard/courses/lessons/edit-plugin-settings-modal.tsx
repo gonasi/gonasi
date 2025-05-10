@@ -167,6 +167,17 @@ export default function EditPluginSettingsModal({ loaderData, params }: Route.Co
                   description='When enabled, the plugin automatically proceeds to the next block.'
                 />
 
+                {fields.autoContinue.value === 'true' ? (
+                  <SliderField
+                    labelProps={{ children: 'Delay Before Auto-Continue', required: true }}
+                    meta={fields.delayBeforeAutoContinue}
+                    min={1}
+                    max={5}
+                    errors={fields.delayBeforeAutoContinue.errors}
+                    description='Delay (in seconds) before automatically continuing to the next block.'
+                  />
+                ) : null}
+
                 <div className='pt-4'>
                   <Button
                     type='submit'

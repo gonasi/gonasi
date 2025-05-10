@@ -1,5 +1,5 @@
 import type { PluginTypeId } from '@gonasi/schemas/plugins';
-import { getContentSchemaByType } from '@gonasi/schemas/plugins';
+import { getContentSchemaByType, getSettingsSchemaByType } from '@gonasi/schemas/plugins';
 
 import type { TypedSupabaseClient } from '../../client';
 
@@ -10,7 +10,7 @@ export const fetchLessonBlocksByLessonId = async (
   try {
     const { data, error } = await supabase
       .from('blocks')
-      .select('id, plugin_type, content, position, lesson_id, updated_by')
+      .select('id, plugin_type, content, settings, position, lesson_id, updated_by')
       .eq('lesson_id', lessonId)
       .order('position', { ascending: true });
 
@@ -28,6 +28,9 @@ export const fetchLessonBlocksByLessonId = async (
       const contentSchema = getContentSchemaByType(block.plugin_type as PluginTypeId);
       const parsedContent = contentSchema.safeParse(block.content);
 
+      const settingsSchema = getSettingsSchemaByType(block.plugin_type as PluginTypeId);
+      const parsedSettings = settingsSchema.safeParse(block.content);
+
       if (!parsedContent.success) {
         return {
           success: false,
@@ -36,10 +39,19 @@ export const fetchLessonBlocksByLessonId = async (
         };
       }
 
+      if (!parsedSettings.success) {
+        return {
+          success: false,
+          message: `Invalid settings schema for block ID ${block.id}.`,
+          data: null,
+        };
+      }
+
       parsedBlocks.push({
         ...block,
         plugin_type: block.plugin_type as PluginTypeId,
         content: parsedContent.data,
+        settings: parsedSettings.data,
       });
     }
 

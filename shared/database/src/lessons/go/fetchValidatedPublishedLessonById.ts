@@ -1,5 +1,5 @@
 import type { PluginTypeId } from '@gonasi/schemas/plugins';
-import { getContentSchemaByType } from '@gonasi/schemas/plugins';
+import { getContentSchemaByType, getSettingsSchemaByType } from '@gonasi/schemas/plugins';
 
 import type { TypedSupabaseClient } from '../../client';
 
@@ -38,7 +38,8 @@ export async function fetchValidatedPublishedLessonById(
         plugin_type,
         position,
         content,
-        weight
+        weight,
+        settings
       )
     `,
     )
@@ -63,9 +64,17 @@ export async function fetchValidatedPublishedLessonById(
     const schema = getContentSchemaByType(pluginType);
     const result = schema.safeParse(block.content);
 
+    const settings = getSettingsSchemaByType(pluginType);
+    const resultSettings = settings.safeParse(block.settings);
+
     // Abort if any block has invalid content
     if (!result.success) {
       console.warn(`Invalid block content for block ID ${block.id}:`, result.error);
+      return null;
+    }
+
+    if (!resultSettings.success) {
+      console.warn(`Invalid block settings for block ID ${block.id}:`, result.error);
       return null;
     }
 
@@ -73,6 +82,7 @@ export async function fetchValidatedPublishedLessonById(
       ...block,
       plugin_type: pluginType,
       content: result.data,
+      settings: resultSettings.data,
     });
   }
 
