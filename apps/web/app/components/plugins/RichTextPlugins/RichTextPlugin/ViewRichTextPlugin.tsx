@@ -104,18 +104,14 @@ export function ViewRichTextPlugin({ block, mode }: ViewPluginComponentProps) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, ease: 'easeOut' }}
     >
-      <div className='relative'>
-        <div className='absolute top-6 left-1 flex h-full -translate-x-full items-start md:-left-4'>
-          {!blockInteractionData?.is_complete && autoContinue ? (
-            <ReducingProgress time={delayBeforeAutoContinue} />
-          ) : null}
-        </div>
-        <RichTextRenderer editorState={block.content.richTextState} />
-      </div>
+      <RichTextRenderer editorState={block.content.richTextState} />
 
       {blockInteractionData?.is_complete || mode === 'preview' || autoContinue ? null : (
         <BlockActionButton onClick={handleContinue} loading={loading} isLastBlock={isLastBlock} />
       )}
+      {!blockInteractionData?.is_complete && autoContinue ? (
+        <ReducingProgress time={delayBeforeAutoContinue} />
+      ) : null}
     </motion.div>
   );
 }
