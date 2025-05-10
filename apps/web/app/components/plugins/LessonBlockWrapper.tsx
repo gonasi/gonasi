@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVerticalIcon, Pencil, Trash } from 'lucide-react';
+import { GripVerticalIcon, Pencil, Settings, Trash } from 'lucide-react';
 
 import { ActionDropdown } from '../action-dropdown';
 import { IconTooltipButton } from '../ui/tooltip';
@@ -13,6 +13,7 @@ interface LessonBlockWrapperProps {
   children: React.ReactNode;
   onEdit?: () => void;
   onDelete?: () => void;
+  onEditSettings?: () => void;
   loading?: boolean;
 }
 
@@ -21,6 +22,7 @@ export default function LessonBlockWrapper({
   children,
   onEdit,
   onDelete,
+  onEditSettings,
   loading,
 }: LessonBlockWrapperProps) {
   const [isMounted, setIsMounted] = useState(false);
@@ -61,6 +63,7 @@ export default function LessonBlockWrapper({
             <ActionDropdown
               items={[
                 { title: 'Edit', icon: Pencil, onClick: onEdit },
+                { title: 'Settings', icon: Settings, onClick: onEditSettings },
                 { title: 'Delete', icon: Trash, onClick: onDelete },
               ]}
             />

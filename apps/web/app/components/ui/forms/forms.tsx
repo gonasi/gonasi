@@ -10,7 +10,6 @@ import type { LabelProps } from '../label';
 import { Label } from '../label';
 import type { SearchableDropdownProps } from '../searchable-dropdown';
 import { SearchableDropdown } from '../searchable-dropdown';
-import { Switch } from '../switch';
 import type { TextareaProps } from '../textarea';
 import { Textarea } from '../textarea';
 
@@ -224,83 +223,6 @@ export function CheckboxField({
           error={err}
           {...labelProps}
           className='text-body-xs text-muted-foreground self-center'
-        />
-      </div>
-      <div className='min-h-[32px] pt-0 pb-3'>
-        {errorId ? <ErrorList id={errorId} errors={errors} /> : null}
-        {description ? <FormDescription id={descriptionId}>{description}</FormDescription> : null}
-      </div>
-    </div>
-  );
-}
-
-export function SwitchField({
-  labelProps,
-  switchProps,
-  errors,
-  className,
-  description,
-}: {
-  labelProps: Omit<LabelProps, 'htmlFor' | 'error'>;
-  switchProps: {
-    name: string;
-    form: string;
-    value?: string;
-    defaultChecked?: boolean;
-    id?: string;
-    onCheckedChange?: (checked: boolean) => void;
-    onFocus?: (event: React.FocusEvent<HTMLButtonElement>) => void;
-    onBlur?: (event: React.FocusEvent<HTMLButtonElement>) => void;
-    [key: string]: any; // for extra props passed down
-  };
-  errors?: ListOfErrors;
-  className?: string;
-  description?: string;
-}) {
-  const { defaultChecked, value, id, ...restProps } = switchProps;
-
-  console.log('value', value);
-  const fallbackId = useId();
-  const checkedValue = value;
-  const input = useInputControl({
-    key: switchProps.key,
-    name: switchProps.name,
-    formId: switchProps.form,
-    initialValue: defaultChecked ? checkedValue : undefined,
-  });
-
-  const resolvedId = id ?? fallbackId;
-  const errorId = errors?.length ? `${resolvedId}-error` : undefined;
-  const descriptionId = `${resolvedId}-description`;
-  const err = hasErrors(errors);
-
-  return (
-    <div className={className}>
-      <div className='flex gap-2'>
-        <Switch
-          {...restProps}
-          id={resolvedId}
-          aria-invalid={errorId ? true : undefined}
-          aria-describedby={errorId}
-          checked={input.value === checkedValue}
-          onCheckedChange={(state) => {
-            input.change(state ? checkedValue : '');
-            switchProps.onCheckedChange?.(state);
-          }}
-          onFocus={(event) => {
-            input.focus();
-            switchProps.onFocus?.(event);
-          }}
-          onBlur={(event) => {
-            input.blur();
-            switchProps.onBlur?.(event);
-          }}
-        />
-        <Label
-          htmlFor={resolvedId}
-          error={err}
-          {...labelProps}
-          className='text-body-xs text-muted-foreground mt-0.5 self-center'
         />
       </div>
       <div className='min-h-[32px] pt-0 pb-3'>

@@ -788,6 +788,20 @@
           "maxLength": null
         },
         {
+          "id": "public.blocks.settings",
+          "name": "settings",
+          "columnName": "settings",
+          "type": "jsonb",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
           "name": "lessons",
           "type": "lessons",
           "isRequired": true,

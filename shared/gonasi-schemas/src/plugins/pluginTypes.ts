@@ -1,13 +1,18 @@
 import { z } from 'zod';
 
 import type { PluginTypeId } from '@gonasi/schemas/plugins';
-import { RichTextContent } from '@gonasi/schemas/plugins';
+import { RichTextSchema, RichTextSettingsSchema, WeightSchema } from '@gonasi/schemas/plugins';
 
 import { RichTextInteractionSchema } from './interactions/richTextInteractionSchema';
 
+/**
+ * Recursive JSON type compatible with Supabase
+ */
 export type Json = string | number | boolean | null | { [key: string]: Json } | Json[];
 
-// Step 1: All valid plugin types
+/**
+ * Step 1: All supported plugin type IDs
+ */
 const pluginTypes: PluginTypeId[] = [
   'rich_text_editor',
   'image_upload',
@@ -34,9 +39,14 @@ const pluginTypes: PluginTypeId[] = [
   'gravity_simulation',
 ];
 
+/**
+ * Zod enum created from plugin type IDs
+ */
 const PluginType = z.enum(pluginTypes as [PluginTypeId, ...PluginTypeId[]]);
 
-// Step 2: Recursive JSON schema (for Supabase compatibility)
+/**
+ * Step 2: Recursive schema for validating arbitrary JSON structures
+ */
 export const JsonSchema: z.ZodType<Json> = z.lazy(() =>
   z.union([
     z.string(),
@@ -48,14 +58,24 @@ export const JsonSchema: z.ZodType<Json> = z.lazy(() =>
   ]),
 );
 
-// Step 3: Helper function to return schema for each plugin type
+/**
+ * Step 3: Schema dispatchers for plugin-specific logic
+ */
 export const getContentSchemaByType = (type: PluginTypeId) => {
   switch (type) {
     case 'rich_text_editor':
-      return RichTextContent;
-
+      return RichTextSchema;
     default:
-      throw new Error('Unsupported plugin type');
+      throw new Error(`Unsupported plugin type: ${type}`);
+  }
+};
+
+export const getSettingsSchemaByType = (type: PluginTypeId) => {
+  switch (type) {
+    case 'rich_text_editor':
+      return RichTextSettingsSchema;
+    default:
+      throw new Error(`Unsupported plugin type: ${type}`);
   }
 };
 
@@ -64,11 +84,13 @@ export const getInteractionSchemaByType = (type: PluginTypeId) => {
     case 'rich_text_editor':
       return RichTextInteractionSchema;
     default:
-      throw new Error('Unsupported plugin type for interaction');
+      throw new Error(`Unsupported plugin type for interaction: ${type}`);
   }
 };
 
-// Step 4: Base block schema
+/**
+ * Step 4: Shared base schemas for blocks and interactions
+ */
 const BlockBaseSchema = z.object({
   lesson_id: z.string().uuid(),
   plugin_type: PluginType,
@@ -76,30 +98,31 @@ const BlockBaseSchema = z.object({
   content: JsonSchema,
 });
 
+const SettingsBaseSchema = z.object({
+  block_id: z.string().uuid(),
+  plugin_type: PluginType,
+  weight: WeightSchema,
+  settings: JsonSchema,
+});
+
 export const InteractionBaseSchema = z.object({
   plugin_type: PluginType,
   block_id: z.string().uuid(),
   lesson_id: z.string().uuid(),
   is_complete: z.boolean().default(false),
-  score: z
-    .number()
-    .min(0, { message: 'Score must be at least 0.' })
-    .max(100, { message: 'Score must not exceed 100.' })
-    .default(0),
-  attempts: z.number().min(1, { message: 'Attempts must be at least 1.' }).default(1),
+  score: z.number().min(0).max(100).default(0),
+  attempts: z.number().min(1).default(1),
   state: JsonSchema,
   last_response: JsonSchema,
   feedback: JsonSchema,
-  started_at: z
-    .string()
-    .datetime({ message: 'started_at must be a valid ISO 8601 datetime string.' }),
-  completed_at: z
-    .string()
-    .datetime({ message: 'completed_at must be a valid ISO 8601 datetime string.' }),
-  time_spent_seconds: z.number().min(0, { message: 'Time spent must be at least 0.' }).default(0),
+  started_at: z.string().datetime(),
+  completed_at: z.string().datetime(),
+  time_spent_seconds: z.number().min(0).default(0),
 });
 
-// Step 5: Plugin-specific refinement
+/**
+ * Step 5: Plugin-specific validation for content and interaction schemas
+ */
 export const BlockSchema = BlockBaseSchema.superRefine((data, ctx) => {
   const contentSchema = getContentSchemaByType(data.plugin_type);
   const result = contentSchema.safeParse(data);
@@ -108,7 +131,7 @@ export const BlockSchema = BlockBaseSchema.superRefine((data, ctx) => {
     result.error.errors.forEach((error) => {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: `Invalid custom for plugin_type "${data.plugin_type}": ${error.message}`,
+        message: `Invalid content for plugin_type "${data.plugin_type}": ${error.message}`,
         path: ['custom', ...(error.path || [])],
       });
     });
@@ -121,7 +144,6 @@ export const InteractionSchema = InteractionBaseSchema.superRefine((data, ctx) =
 
   if (!result.success) {
     result.error.errors.forEach((error) => {
-      console.log('error: ', error);
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: `Invalid interaction for plugin_type "${data.plugin_type}": ${error.message}`,
@@ -131,15 +153,39 @@ export const InteractionSchema = InteractionBaseSchema.superRefine((data, ctx) =
   }
 });
 
-// Step 6: Inferred validated block type
+export const SettingsSchema = SettingsBaseSchema.superRefine((data, ctx) => {
+  const settingsSchema = getSettingsSchemaByType(data.plugin_type);
+  const result = settingsSchema.safeParse(data);
+
+  if (!result.success) {
+    result.error.errors.forEach((error) => {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `The settings for plugin type "${data.plugin_type}" are invalid: ${error.message}`,
+        path: ['custom', ...(error.path || [])],
+      });
+    });
+  }
+});
+
+/**
+ * Step 6: Inferred types for runtime use
+ */
 export type Block = z.infer<typeof BlockSchema>;
 export type Interaction = z.infer<typeof InteractionSchema>;
+export type Settings = z.infer<typeof SettingsSchema>;
 
-// Step 7: Runtime validator
+/**
+ * Step 7: Runtime validators for unknown input
+ */
 export const parseBlock = (input: unknown) => BlockSchema.safeParse(input);
 export const parseInteraction = (input: unknown) => InteractionSchema.safeParse(input);
+export const parseSettings = (input: unknown) => SettingsSchema.safeParse(input);
 
-// Step 8: Optional runtime type guard
+/**
+ * Step 8: Runtime type guards
+ */
 export const isValidBlock = (input: unknown): input is Block => parseBlock(input).success;
 export const isValidInteraction = (input: unknown): input is Interaction =>
   parseInteraction(input).success;
+export const isValidSetting = (input: unknown): input is Settings => parseBlock(input).success;

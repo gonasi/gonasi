@@ -126,6 +126,10 @@ export default [
                   route('plugins', 'routes/dashboard/courses/lessons/plugins-modal.tsx'),
                   route(':blockId/edit', 'routes/dashboard/courses/lessons/edit-plugin-modal.tsx'),
                   route(
+                    ':blockId/settings',
+                    'routes/dashboard/courses/lessons/edit-plugin-settings-modal.tsx',
+                  ),
+                  route(
                     ':blockId/delete',
                     'routes/dashboard/courses/lessons/delete-plugin-modal.tsx',
                   ),

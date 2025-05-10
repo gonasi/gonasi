@@ -165,6 +165,7 @@ export type Database = {
           lesson_id: string
           plugin_type: string
           position: number
+          settings: Json
           updated_at: string
           updated_by: string
           weight: number
@@ -177,6 +178,7 @@ export type Database = {
           lesson_id: string
           plugin_type: string
           position?: number
+          settings?: Json
           updated_at?: string
           updated_by: string
           weight?: number
@@ -189,6 +191,7 @@ export type Database = {
           lesson_id?: string
           plugin_type?: string
           position?: number
+          settings?: Json
           updated_at?: string
           updated_by?: string
           weight?: number

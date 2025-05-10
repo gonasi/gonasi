@@ -134,12 +134,6 @@ export async function seedCreateCourse(users: profilesScalars[]) {
             }
 
             console.log(`🎥 Created lesson "${name}" in chapter "${chapter.name}"`);
-
-            // Optional: Populate/edit lesson content
-            // const { success: editLessonContentSuccess, message: editLessonContentMessage } = await editLessonContent(supabase, {
-            //   lessonId: lessonData.id,
-            //   content: ...
-            // });
           }
         }
       }

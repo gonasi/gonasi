@@ -74,7 +74,7 @@ export function ViewRichTextPlugin({ block, mode }: ViewPluginComponentProps) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, ease: 'easeOut' }}
     >
-      <RichTextRenderer editorState={block.content.data.richTextState} />
+      <RichTextRenderer editorState={block.content.richTextState} />
       {blockInteractionData?.is_complete || mode === 'preview' ? null : (
         <BlockActionButton onClick={handleContinue} loading={loading} isLastBlock={isLastBlock} />
       )}

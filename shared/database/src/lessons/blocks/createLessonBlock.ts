@@ -1,4 +1,4 @@
-import type { Block } from '@gonasi/schemas/plugins';
+import { type Block, getSettingsSchemaByType } from '@gonasi/schemas/plugins';
 
 import { getUserId } from '../../auth';
 import type { TypedSupabaseClient } from '../../client';
@@ -31,6 +31,10 @@ export const createLessonBlock = async (
 
     const nextPosition = maxPositionResult?.position != null ? maxPositionResult.position + 1 : 0;
 
+    const schema = getSettingsSchemaByType(blockData.plugin_type);
+
+    const defaultSettings = schema.parse({});
+
     // Insert the new block at the next position
     const { error: insertError } = await supabase
       .from('blocks')
@@ -39,6 +43,7 @@ export const createLessonBlock = async (
         plugin_type,
         position: nextPosition,
         content,
+        settings: defaultSettings,
         created_by: userId,
         updated_by: userId,
       })

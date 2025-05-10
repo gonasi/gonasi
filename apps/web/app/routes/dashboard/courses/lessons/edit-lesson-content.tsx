@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { data, Outlet, useFetcher, useNavigate } from 'react-router';
-import { parseWithZod } from '@conform-to/zod';
 import {
   closestCenter,
   DndContext,
@@ -19,15 +18,13 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { NotebookPen } from 'lucide-react';
-import { dataWithError, dataWithSuccess, redirectWithError } from 'remix-toast';
+import { dataWithError, redirectWithError } from 'remix-toast';
 
 import {
-  editLessonContent,
   fetchLessonBlocksByLessonId,
   fetchUserLessonById,
   updateBlockPositions,
 } from '@gonasi/database/lessons';
-import { SubmitEditLessonContentSchema } from '@gonasi/schemas/lessons';
 import { BlocksPositionUpdateArraySchema } from '@gonasi/schemas/plugins';
 
 import type { Route } from './+types/edit-lesson-content';
@@ -85,17 +82,7 @@ export async function action({ request }: Route.ActionArgs) {
     return data({ success: true });
   }
 
-  const submission = parseWithZod(formData, { schema: SubmitEditLessonContentSchema });
-
-  if (submission.status !== 'success') {
-    return { result: submission.reply(), status: submission.status === 'error' ? 400 : 200 };
-  }
-
-  const { success, message } = await editLessonContent(supabase, submission.value);
-
-  return success
-    ? dataWithSuccess({ result: 'Data saved successfully' }, message)
-    : dataWithError(null, message);
+  return true;
 }
 
 // Helper to build base path
@@ -210,6 +197,7 @@ export default function EditLessonContent({ loaderData, params }: Route.Componen
                       id={block.id}
                       loading={lessonLoading}
                       onEdit={navigateTo(`${getLessonPath(params)}/${block.id}/edit`)}
+                      onEditSettings={navigateTo(`${getLessonPath(params)}/${block.id}/settings`)}
                       onDelete={navigateTo(`${getLessonPath(params)}/${block.id}/delete`)}
                     >
                       <ViewPluginTypesRenderer block={block} mode='preview' />

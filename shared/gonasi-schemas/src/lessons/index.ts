@@ -43,13 +43,6 @@ export const SubmitEditLessonDetailsSchema = EditLessonDetailsSchema.merge(
 );
 export type EditLessonSubmitValues = z.infer<typeof SubmitEditLessonDetailsSchema>;
 
-// Schema for editing lesson content with additional identifiers
-export const SubmitEditLessonContentSchema = z.object({
-  lessonId: z.string(),
-  content: z.string(),
-});
-export type EditLessonContentSubmitValues = z.infer<typeof SubmitEditLessonContentSchema>;
-
 // Schema for deleting a new lesson title
 export const DeleteLessonSchema = z.object({
   lessonId: z.string(),

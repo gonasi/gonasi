@@ -1,4 +1,5 @@
 import { useId } from 'react';
+import type { FieldMetadata } from '@conform-to/react';
 import { useInputControl } from '@conform-to/react';
 import type { SliderProps } from '@radix-ui/react-slider';
 
@@ -14,66 +15,68 @@ export function SliderField({
   errors,
   className,
   description,
+  meta,
+  min = 0,
+  max = 100,
 }: {
   labelProps: Omit<LabelProps, 'htmlFor' | 'error'>;
-  sliderProps: SliderProps & {
-    name: string;
-    form: string;
-  };
+  sliderProps?: Omit<SliderProps, 'id' | 'value' | 'onValueChange' | 'onFocus' | 'onBlur'>;
   errors?: ListOfErrors;
   className?: string;
   description?: string;
+  meta: FieldMetadata<string | number | undefined>;
+  min?: number;
+  max?: number;
 }) {
-  const { key, defaultValue = [0], min = 0, max = 100, ...restSliderProps } = sliderProps;
   const fallbackId = useId();
-  const input = useInputControl({
-    key,
-    name: sliderProps.name,
-    formId: sliderProps.form,
-    initialValue: defaultValue.map(String),
-  });
-  const id = sliderProps.id ?? fallbackId;
+  const input = useInputControl(meta);
+
+  const id = meta.id ?? meta.name ?? fallbackId;
   const errorId = errors?.length ? `${id}-error` : undefined;
-  const descriptionId = `${id}-description`;
+  const descriptionId = description ? `${id}-description` : undefined;
   const err = hasErrors(errors);
 
-  const value = Array.isArray(input.value) ? Number(input.value[0]) || 0 : Number(input.value) || 0;
+  // Handle different types of values
+  const value =
+    typeof meta.value === 'number'
+      ? meta.value
+      : typeof meta.value === 'string' && meta.value !== ''
+        ? Number(meta.value) || 0
+        : 0;
 
   return (
     <div className={className}>
       <div className='mb-2 flex items-center justify-between'>
-        <Label
-          htmlFor={id}
-          error={err}
-          {...labelProps}
-          className='text-body-xs text-muted-foreground'
-        />
+        <Label htmlFor={id} error={err} {...labelProps} />
         <span className='text-body-xs text-muted-foreground'>{value}</span>
       </div>
 
       <Slider
-        {...restSliderProps}
+        {...sliderProps}
         id={id}
         min={min}
         max={max}
         aria-invalid={errorId ? true : undefined}
-        aria-describedby={errorId}
+        aria-describedby={[errorId, descriptionId].filter(Boolean).join(' ') || undefined}
         value={[value]}
         onValueChange={(newValue) => {
-          input.change(newValue.map(String));
-          sliderProps.onValueChange?.(newValue);
+          // Safely handle the value change
+          if (newValue && newValue.length > 0) {
+            // Convert to string for Conform's input control
+            input.change(String(newValue[0]));
+          } else {
+            input.change('0');
+          }
         }}
-        onFocus={(event) => {
+        onFocus={() => {
           input.focus();
-          sliderProps.onFocus?.(event);
         }}
-        onBlur={(event) => {
+        onBlur={() => {
           input.blur();
-          sliderProps.onBlur?.(event);
         }}
       />
 
-      <div className='text-body-2xs text-muted-foreground mt-1 flex justify-between'>
+      <div className='text-body-2xs text-muted-foreground font-secondary mt-1 flex justify-between px-1 pt-2'>
         <span>{min}</span>
         <span>{max}</span>
       </div>

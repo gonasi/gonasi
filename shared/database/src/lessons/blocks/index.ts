@@ -4,3 +4,5 @@ export * from './fetchSingleBlockByBlockId';
 export * from './updateLessonBlock';
 export * from './deleteBlockById';
 export * from './updateBlockPositions';
+export * from './fetchBlockSettingsByBlockId';
+export * from './editBlockSettingsAndWeight';
