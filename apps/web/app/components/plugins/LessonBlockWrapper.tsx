@@ -15,6 +15,7 @@ interface LessonBlockWrapperProps {
   onDelete?: () => void;
   onEditSettings?: () => void;
   loading?: boolean;
+  title: string;
 }
 
 export default function LessonBlockWrapper({
@@ -24,6 +25,7 @@ export default function LessonBlockWrapper({
   onDelete,
   onEditSettings,
   loading,
+  title,
 }: LessonBlockWrapperProps) {
   const [isMounted, setIsMounted] = useState(false);
 
@@ -59,6 +61,7 @@ export default function LessonBlockWrapper({
               disabled={loading}
             />
           </div>
+          <div className='text-muted-foreground absolute -top-2 left-6 text-sm'>{title}</div>
           <div className='bg-card/80 absolute -top-4 -right-4 rounded-lg'>
             <ActionDropdown
               items={[

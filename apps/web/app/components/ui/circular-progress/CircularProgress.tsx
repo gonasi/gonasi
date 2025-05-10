@@ -18,7 +18,7 @@ const CircularProgress = React.forwardRef<HTMLDivElement, CircularProgressProps>
       className,
       value = 0,
       max = 100,
-      size = 14,
+      size = 16,
       thickness = 2,
       showValue = false,
       valueLabel,

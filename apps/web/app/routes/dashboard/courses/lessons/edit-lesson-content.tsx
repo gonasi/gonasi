@@ -35,6 +35,13 @@ import { PluginButton } from '~/components/ui/button';
 import { Modal } from '~/components/ui/modal';
 import { createClient } from '~/lib/supabase/supabase.server';
 
+function toTitleCaseFromUnderscore(input: string): string {
+  return input
+    .split('_')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
 // Loader
 export async function loader({ params, request }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
@@ -196,6 +203,7 @@ export default function EditLessonContent({ loaderData, params }: Route.Componen
                       key={block.id}
                       id={block.id}
                       loading={lessonLoading}
+                      title={toTitleCaseFromUnderscore(block.plugin_type)}
                       onEdit={navigateTo(`${getLessonPath(params)}/${block.id}/edit`)}
                       onEditSettings={navigateTo(`${getLessonPath(params)}/${block.id}/settings`)}
                       onDelete={navigateTo(`${getLessonPath(params)}/${block.id}/delete`)}
