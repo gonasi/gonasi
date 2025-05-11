@@ -4,7 +4,7 @@ import type { PluginTypeId } from '@gonasi/schemas/plugins';
 import { getPluginTypeNameById } from '@gonasi/schemas/plugins';
 
 import { MatchConceptsPlugin } from './DragAndDropPlugins/MatchConceptsPlugin';
-import { TrueOrFalsePlugin } from './QuizPlugins/TrueOrFalsePlugin';
+import { CreateTrueOrFalsePlugin } from './QuizPlugins/TrueOrFalsePlugin/CreateTrueOrFalsePlugin';
 import { TapToRevealPlugin } from './RevealPlugins/TapToRevealPlugin';
 import { CreateRichTextPlugin } from './RichTextPlugins/RichTextPlugin/CreateRichTextPlugin';
 
@@ -18,7 +18,7 @@ interface PluginComponentProps {
 
 // Plugin component map
 const pluginComponentMap: Record<PluginTypeId, (props: PluginComponentProps) => JSX.Element> = {
-  true_false: TrueOrFalsePlugin,
+  true_false: CreateTrueOrFalsePlugin,
   multiple_choice_multiple: unimplementedPlugin,
   multiple_choice_single: unimplementedPlugin,
   match_concepts: MatchConceptsPlugin,

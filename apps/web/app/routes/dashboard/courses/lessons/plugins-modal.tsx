@@ -77,7 +77,7 @@ export default function PluginsModal({ params }: Route.ComponentProps) {
     activePlugin || activeSubPlugin ? (
       <ArrowLeft onClick={handlePrevious} className='hover:cursor-pointer' />
     ) : (
-      <AppLogo sizeClass='h-4 md:h-6 -mt-1' />
+      <AppLogo sizeClass='h-4 md:h-5 -mt-1' />
     );
 
   const title =

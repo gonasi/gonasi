@@ -27,6 +27,7 @@ export interface ViewPluginCoreResult {
   payload: Interaction;
   blockInteractionData: any;
   isLastBlock: boolean;
+  isActiveBlock: boolean;
 }
 
 export function useViewPluginCore({
@@ -37,7 +38,7 @@ export function useViewPluginCore({
 }: ViewPluginCoreProps): ViewPluginCoreResult {
   const fetcher = useFetcher();
   const params = useParams();
-  const { getBlockInteraction, isLastBlock } = useStore();
+  const { getBlockInteraction, isLastBlock, activeBlock } = useStore();
 
   const { autoContinue, delayBeforeShow = 0, delayBeforeAutoContinue = 0 } = settings;
 
@@ -128,5 +129,6 @@ export function useViewPluginCore({
     payload,
     blockInteractionData,
     isLastBlock,
+    isActiveBlock: activeBlock === blockId,
   };
 }
