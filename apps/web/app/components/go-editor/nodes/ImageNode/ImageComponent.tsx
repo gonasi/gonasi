@@ -24,7 +24,6 @@ import {
 } from 'lexical';
 
 import brokenImage from '../../images/image-broken.svg';
-import ImageResizer from '../../ui/ImageResizer';
 import { $isImageNode } from '.';
 
 const imageCache = new Set();
@@ -326,16 +325,6 @@ export default function ImageComponent({
             />
           )}
         </div>
-
-        {resizable && $isNodeSelection(selection) && isFocused && (
-          <ImageResizer
-            editor={editor}
-            imageRef={imageRef}
-            maxWidth={maxWidth}
-            onResizeStart={onResizeStart}
-            onResizeEnd={onResizeEnd}
-          />
-        )}
       </>
     </Suspense>
   );
