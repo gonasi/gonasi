@@ -50,7 +50,7 @@ export default function RichTextRenderer({ editorState }: RichTextRendererProps)
     <Suspense fallback={<Spinner />}>
       <LexicalComposer initialConfig={initialConfig}>
         <EditorStateUpdater editorState={editorState} />
-        <div className='h-fit w-full py-4'>
+        <div className='h-fit w-full'>
           <div className='editor-inner'>
             <RichTextPlugin
               contentEditable={

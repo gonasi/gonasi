@@ -27,11 +27,13 @@ export function ViewRichTextPlugin({ block, mode }: ViewPluginComponentProps) {
     <ViewPluginWrapper isComplete={is_complete} playbackMode={playbackMode}>
       <RichTextRenderer editorState={block.content.richTextState} />
 
-      {shouldShowActionButton && (
-        <BlockActionButton onClick={handleContinue} loading={loading} isLastBlock={isLastBlock} />
-      )}
+      <div className='pt-4'>
+        {shouldShowActionButton && (
+          <BlockActionButton onClick={handleContinue} loading={loading} isLastBlock={isLastBlock} />
+        )}
 
-      {shouldShowProgress && <ReducingProgress time={delayBeforeAutoContinue} />}
+        {shouldShowProgress && <ReducingProgress time={delayBeforeAutoContinue} />}
+      </div>
     </ViewPluginWrapper>
   );
 }

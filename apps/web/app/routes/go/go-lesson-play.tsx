@@ -199,7 +199,7 @@ export default function GoLessonPlay({ loaderData, params }: Route.ComponentProp
                   ref={(el) => {
                     blockRefs.current[block.id] = el;
                   }}
-                  className='scroll-mt-18 md:scroll-mt-24'
+                  className='scroll-mt-18 md:scroll-mt-22'
                 >
                   <ViewPluginTypesRenderer block={block} mode='play' />
                 </div>

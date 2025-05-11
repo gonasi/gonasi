@@ -173,6 +173,7 @@ export default function FileComponent({
   fileName: string;
   resizable?: boolean;
 }): JSX.Element {
+  const fileRef = useRef<HTMLElement | null>(null);
   const imageRef = useRef<null | HTMLImageElement>(null);
   const [isSelected, setSelected, clearSelection] = useLexicalNodeSelection(nodeKey);
   const [isResizing, setIsResizing] = useState(false);
@@ -182,13 +183,16 @@ export default function FileComponent({
   const isEditable = useLexicalEditable();
 
   const $onDelete = useCallback(() => {
-    const deleteSelection = $getSelection();
-    if (isSelected && $isNodeSelection(deleteSelection)) {
-      deleteSelection.getNodes().forEach((node) => {
-        if ($isFileNode(node)) {
-          node.remove();
-        }
-      });
+    if (isSelected) {
+      const deleteSelection = $getSelection();
+      if ($isNodeSelection(deleteSelection)) {
+        deleteSelection.getNodes().forEach((node) => {
+          if ($isFileNode(node)) {
+            node.remove();
+          }
+        });
+      }
+      return true;
     }
     return false;
   }, [isSelected]);
@@ -199,16 +203,26 @@ export default function FileComponent({
   }, [isSelected]);
 
   const $onEscape = useCallback(() => {
-    // Escape no longer forces selection back to file
-    $setSelection(null);
-    return true;
-  }, []);
+    if (isSelected) {
+      $setSelection(null);
+      return true;
+    }
+    return false;
+  }, [isSelected]);
 
   const onClick = useCallback(
     (event: MouseEvent) => {
-      if (isResizing) return true;
-      const isInside = event.currentTarget.contains(event.target as Node);
-      if (!isInside) return false;
+      if (isResizing) {
+        return true;
+      }
+
+      // Check if the click is directly on the file component content
+      const isContentTarget =
+        fileRef.current?.contains(event.target as Node) || imageRef.current === event.target;
+
+      if (!isContentTarget) {
+        return false;
+      }
 
       if (event.shiftKey) {
         setSelected(!isSelected);
@@ -239,16 +253,11 @@ export default function FileComponent({
       editor.registerUpdateListener(({ editorState }) => {
         editorState.read(() => {
           const currentSelection = $getSelection();
-          if ($isNodeSelection(currentSelection)) {
-            setSelection(currentSelection);
-          } else {
-            setSelection(null);
-            setSelected(false); // <- Important: deselect when moving cursor outside
-          }
+          setSelection(currentSelection);
         });
       }),
-      editor.registerCommand(CLICK_COMMAND, onClick, COMMAND_PRIORITY_LOW),
-      editor.registerCommand(RIGHT_CLICK_FILE_COMMAND, onClick, COMMAND_PRIORITY_LOW),
+      editor.registerCommand<MouseEvent>(CLICK_COMMAND, onClick, COMMAND_PRIORITY_LOW),
+      editor.registerCommand<MouseEvent>(RIGHT_CLICK_FILE_COMMAND, onClick, COMMAND_PRIORITY_LOW),
       editor.registerCommand(
         DRAGSTART_COMMAND,
         (event) => {
@@ -273,7 +282,6 @@ export default function FileComponent({
       rootElement?.removeEventListener('contextmenu', onRightClick);
     };
   }, [
-    clearSelection,
     editor,
     isResizing,
     isSelected,
@@ -284,6 +292,7 @@ export default function FileComponent({
     onClick,
     onRightClick,
     setSelected,
+    clearSelection,
   ]);
 
   const draggable = isSelected && $isNodeSelection(selection) && !isResizing;
@@ -294,8 +303,10 @@ export default function FileComponent({
     isFocused && $isNodeSelection(selection) && 'cursor-move',
   );
 
-  const renderFileContent = () => {
-    if (isLoadError) return <BrokenFile fileType={fileType} />;
+  const getFileContent = () => {
+    if (isLoadError) {
+      return <BrokenFile fileType={fileType} />;
+    }
 
     switch (fileType) {
       case FileType.IMAGE:
@@ -330,8 +341,8 @@ export default function FileComponent({
 
   return (
     <Suspense fallback={<Spinner />}>
-      <div draggable={draggable} className='relative w-full' onClick={onClick}>
-        {renderFileContent()}
+      <div draggable={draggable} className='relative w-full' ref={fileRef}>
+        {getFileContent()}
       </div>
     </Suspense>
   );
