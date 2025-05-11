@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { data, Outlet, useFetcher, useNavigate } from 'react-router';
 import {
   closestCenter,
@@ -19,6 +19,7 @@ import {
 } from '@dnd-kit/sortable';
 import { NotebookPen } from 'lucide-react';
 import { dataWithError, redirectWithError } from 'remix-toast';
+import { ClientOnly } from 'remix-utils/client-only';
 
 import {
   fetchLessonBlocksByLessonId,
@@ -29,11 +30,13 @@ import { BlocksPositionUpdateArraySchema } from '@gonasi/schemas/plugins';
 
 import type { Route } from './+types/edit-lesson-content';
 
+import { Spinner } from '~/components/loaders';
 import LessonBlockWrapper from '~/components/plugins/LessonBlockWrapper';
-import ViewPluginTypesRenderer from '~/components/plugins/viewPluginTypesRenderer';
 import { PluginButton } from '~/components/ui/button';
 import { Modal } from '~/components/ui/modal';
 import { createClient } from '~/lib/supabase/supabase.server';
+
+const ViewPluginTypesRenderer = lazy(() => import('~/components/plugins/viewPluginTypesRenderer'));
 
 function toTitleCaseFromUnderscore(input: string): string {
   return input
@@ -208,7 +211,13 @@ export default function EditLessonContent({ loaderData, params }: Route.Componen
                       onEditSettings={navigateTo(`${getLessonPath(params)}/${block.id}/settings`)}
                       onDelete={navigateTo(`${getLessonPath(params)}/${block.id}/delete`)}
                     >
-                      <ViewPluginTypesRenderer block={block} mode='preview' />
+                      <ClientOnly fallback={<Spinner />}>
+                        {() => (
+                          <Suspense fallback={<Spinner />}>
+                            <ViewPluginTypesRenderer block={block} mode='preview' />
+                          </Suspense>
+                        )}
+                      </ClientOnly>
                     </LessonBlockWrapper>
                   ))
                 ) : (

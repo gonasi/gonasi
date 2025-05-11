@@ -1,5 +1,5 @@
 import type { Dispatch, JSX } from 'react';
-import { useCallback, useEffect, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { $isCodeNode, CODE_LANGUAGE_MAP } from '@lexical/code';
 import { $isLinkNode, TOGGLE_LINK_COMMAND } from '@lexical/link';
 import { $isListNode, ListNode } from '@lexical/list';
@@ -44,6 +44,7 @@ import {
   ChevronDown,
   Code,
   Eraser,
+  FilePlus2,
   Highlighter,
   IndentIncrease,
   Italic,
@@ -83,6 +84,7 @@ import {
 import { IS_APPLE } from '~/components/go-editor/utils/environment';
 import { getSelectedNode } from '~/components/go-editor/utils/getSelectedNode';
 import { sanitizeUrl } from '~/components/go-editor/utils/url';
+import { Spinner } from '~/components/loaders';
 import { Button } from '~/components/ui/button';
 import {
   DropdownMenu,
@@ -93,8 +95,9 @@ import {
   DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from '~/components/ui/dropdown-menu';
-import { Separator } from '~/components/ui/separator';
 import { cn } from '~/lib/utils';
+
+const InsertImageDialog = lazy(() => import('../ImagesPlugin/InsertImageDialog'));
 
 const FONT_FAMILY_OPTIONS: [string, string][] = [
   ['Arial', 'Arial'],
@@ -426,7 +429,7 @@ export default function ToolbarPlugin({
 }): JSX.Element {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [_selectedElementKey, setSelectedElementKey] = useState<NodeKey | null>(null);
-  const [modal] = useModal();
+  const [modal, showModal] = useModal();
   const [isEditable, setIsEditable] = useState(() => editor.isEditable());
   const { toolbarState, updateToolbarState } = useToolbarState();
 
@@ -611,6 +614,20 @@ export default function ToolbarPlugin({
   return (
     <div className={cn('toolbar')}>
       <IconTooltipButton
+        disabled={!isEditable}
+        onClick={() => {
+          showModal('Insert Image', (onClose) => (
+            <Suspense fallback={<Spinner />}>
+              <InsertImageDialog activeEditor={activeEditor} onClose={onClose} />
+            </Suspense>
+          ));
+        }}
+        title='Upload media'
+        type='button'
+        aria-label='Upload media.'
+        icon={FilePlus2}
+      />
+      <IconTooltipButton
         disabled={!toolbarState.canUndo || !isEditable}
         onClick={() => {
           activeEditor.dispatchCommand(UNDO_COMMAND, undefined);
@@ -639,7 +656,6 @@ export default function ToolbarPlugin({
             // rootType={toolbarState.rootType}
             editor={activeEditor}
           />
-          <Separator orientation='vertical' />
         </>
       )}
 
@@ -650,13 +666,13 @@ export default function ToolbarPlugin({
           value={toolbarState.fontFamily}
           editor={activeEditor}
         />
-        <Separator orientation='vertical' />
+
         <FontSize
           selectionFontSize={toolbarState.fontSize.slice(0, -2)}
           editor={activeEditor}
           disabled={!isEditable}
         />
-        <Separator orientation='vertical' />
+
         <IconTooltipButton
           disabled={!isEditable}
           onClick={() => {
@@ -828,7 +844,6 @@ export default function ToolbarPlugin({
 
         {canViewerSeeInsertDropdown && (
           <>
-            <Separator orientation='vertical' />
             <div className='flex-shrink-0'>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -871,7 +886,6 @@ export default function ToolbarPlugin({
         )}
       </>
 
-      <Separator orientation='vertical' />
       <ElementFormatDropdown
         disabled={!isEditable}
         value={toolbarState.elementFormat}

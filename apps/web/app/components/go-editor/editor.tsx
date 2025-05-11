@@ -1,5 +1,5 @@
 import type { JSX } from 'react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { AutoFocusPlugin } from '@lexical/react/LexicalAutoFocusPlugin';
 import { CharacterLimitPlugin } from '@lexical/react/LexicalCharacterLimitPlugin';
 import { CheckListPlugin } from '@lexical/react/LexicalCheckListPlugin';
@@ -14,6 +14,7 @@ import { TablePlugin } from '@lexical/react/LexicalTablePlugin';
 import { useSettings } from './context/SettingsContext';
 import { useSharedHistoryContext } from './context/SharedHistoryContext';
 import AutocompletePlugin from './plugins/AutocompletePlugin';
+import ImagesPlugin from './plugins/ImagesPlugin';
 import { ListPlugin } from './plugins/LexicalListPlugin';
 import { MaxLengthPlugin } from './plugins/MaxLengthPlugin';
 import ShortcutsPlugin from './plugins/ShortcutsPlugin';
@@ -22,7 +23,6 @@ import ToolbarPlugin from './plugins/ToolbarPlugin';
 import TreeViewPlugin from './plugins/TreeViewPlugin';
 import ContentEditable from './ui/ContentEditable';
 
-import { CAN_USE_DOM } from '~/components/go-editor/utils/canUseDOM';
 import { cn } from '~/lib/utils';
 
 interface Props {
@@ -34,18 +34,6 @@ export default function Editor({ placeholder = 'Enter text' }: Props): JSX.Eleme
   const { settings } = useSettings();
   const [editor] = useLexicalComposerContext();
   const [activeEditor, setActiveEditor] = useState(editor);
-  const [isSmallWidthViewport, setIsSmallWidthViewport] = useState(false);
-
-  useEffect(() => {
-    const updateViewportWidth = () => {
-      if (!CAN_USE_DOM) return;
-      const isSmall = window.matchMedia('(max-width: 1025px)').matches;
-      setIsSmallWidthViewport(isSmall);
-    };
-    updateViewportWidth();
-    window.addEventListener('resize', updateViewportWidth);
-    return () => window.removeEventListener('resize', updateViewportWidth);
-  }, []);
 
   return (
     <>
@@ -72,6 +60,7 @@ export default function Editor({ placeholder = 'Enter text' }: Props): JSX.Eleme
           }
           ErrorBoundary={LexicalErrorBoundary}
         />
+        <ImagesPlugin />
         <ListPlugin />
         <CheckListPlugin />
         <TablePlugin

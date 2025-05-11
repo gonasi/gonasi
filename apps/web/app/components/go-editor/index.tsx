@@ -17,7 +17,6 @@ import { parseAllowedColor } from './ui/ColorPicker';
 import { Spinner } from '../loaders';
 import Editor from './editor';
 import type { INITIAL_CONFIG } from './types';
-import './index.css';
 
 function getExtraStyles(element: HTMLElement): string {
   let extraStyles = '';

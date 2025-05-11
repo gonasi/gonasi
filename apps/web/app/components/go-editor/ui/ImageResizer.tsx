@@ -2,9 +2,6 @@ import type * as React from 'react';
 import { useRef } from 'react';
 import { calculateZoomLevel } from '@lexical/utils';
 import type { LexicalEditor } from 'lexical';
-import { Captions } from 'lucide-react';
-
-import { Button } from '~/components/ui/button';
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
@@ -20,23 +17,15 @@ const Direction = {
 export default function ImageResizer({
   onResizeStart,
   onResizeEnd,
-  buttonRef,
   imageRef,
   maxWidth,
   editor,
-  showCaption,
-  setShowCaption,
-  captionsEnabled,
 }: {
   editor: LexicalEditor;
-  buttonRef: { current: null | HTMLButtonElement };
   imageRef: { current: null | HTMLElement };
   maxWidth?: number;
   onResizeEnd: (width: 'inherit' | number, height: 'inherit' | number) => void;
   onResizeStart: () => void;
-  setShowCaption: (show: boolean) => void;
-  showCaption: boolean;
-  captionsEnabled: boolean;
 }): React.JSX.Element {
   const controlWrapperRef = useRef<HTMLDivElement>(null);
   const userSelect = useRef({
@@ -212,20 +201,6 @@ export default function ImageResizer({
 
   return (
     <div ref={controlWrapperRef}>
-      {!showCaption && captionsEnabled && (
-        <div className='absolute right-0 bottom-5 left-0 m-auto block w-full cursor-pointer px-4 select-none'>
-          <Button
-            ref={buttonRef}
-            onClick={() => setShowCaption(!showCaption)}
-            size='sm'
-            className='bg-primary/60 w-full'
-            leftIcon={<Captions />}
-          >
-            Add Caption
-          </Button>
-        </div>
-      )}
-
       <div
         className='bg-primary absolute -top-[5px] left-1/2 h-2 w-2 -translate-x-1/2 cursor-n-resize'
         onPointerDown={(e) => handlePointerDown(e, Direction.north)}
