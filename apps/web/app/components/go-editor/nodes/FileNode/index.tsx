@@ -2,7 +2,6 @@ import type { JSX } from 'react';
 import * as React from 'react';
 import type {
   DOMConversionMap,
-  DOMConversionOutput,
   DOMExportOutput,
   EditorConfig,
   LexicalNode,
@@ -18,22 +17,14 @@ import { FileComponentFallback } from './FileComponentFallback';
 
 const LazyFileComponent = React.lazy(() => import('./FileComponent'));
 
-// Helper function to determine file type from extension
 export function getFileTypeFromMimeOrExtension(file: string): FileType {
-  // Handle potential undefined by providing default empty string
   const extension = file.includes('.') ? (file.split('.').pop()?.toLowerCase() ?? '') : '';
 
   if (file.startsWith('data:')) {
     try {
-      // Use safe array access with optional chaining for all operations
       const parts = file.split(',');
       const firstPart = parts[0] ?? '';
-
-      const mimeParts = firstPart.split(':');
-      const mimePart = mimeParts[1] ?? '';
-
-      const mimeAndParams = mimePart.split(';');
-      const mimeType = mimeAndParams[0] ?? '';
+      const mimeType = (firstPart.split(':')[1] ?? '').split(';')[0] ?? '';
 
       if (mimeType.startsWith('image/')) return FileType.IMAGE;
       if (mimeType.startsWith('audio/')) return FileType.AUDIO;
@@ -46,7 +37,6 @@ export function getFileTypeFromMimeOrExtension(file: string): FileType {
       }
     } catch (error) {
       console.error('file error: ', error);
-      // If any errors occur during parsing, return OTHER as fallback
       return FileType.OTHER;
     }
     return FileType.OTHER;
@@ -60,40 +50,23 @@ export function getFileTypeFromMimeOrExtension(file: string): FileType {
 
   return FileType.OTHER;
 }
+
 export interface FilePayload {
   altText: string;
-  caption?: string;
   height?: number;
   key?: NodeKey;
   maxWidth?: number;
-  showCaption?: boolean;
   src: string;
   width?: number;
   fileType?: FileType;
   fileName?: string;
 }
 
-function $convertImageElement(domNode: Node): null | DOMConversionOutput {
-  const img = domNode as HTMLImageElement;
-
-  const { alt: altText, src, width, height } = img;
-  const node = $createFileNode({
-    altText,
-    height,
-    src,
-    width,
-    fileType: FileType.IMAGE,
-  });
-  return { node };
-}
-
 export type SerializedFileNode = Spread<
   {
     altText: string;
-    caption?: string;
     height?: number;
     maxWidth: number;
-    showCaption?: boolean;
     src: string;
     width?: number;
     fileType: FileType;
@@ -108,8 +81,6 @@ export class FileNode extends DecoratorNode<JSX.Element> {
   __width: 'inherit' | number;
   __height: 'inherit' | number;
   __maxWidth: number;
-  __showCaption: boolean;
-  __caption: string;
   __fileType: FileType;
   __fileName: string;
 
@@ -124,8 +95,6 @@ export class FileNode extends DecoratorNode<JSX.Element> {
       node.__maxWidth,
       node.__width,
       node.__height,
-      node.__showCaption,
-      node.__caption,
       node.__fileType,
       node.__fileName,
       node.__key,
@@ -133,15 +102,12 @@ export class FileNode extends DecoratorNode<JSX.Element> {
   }
 
   static importJSON(serializedNode: SerializedFileNode): FileNode {
-    const { altText, caption, height, width, maxWidth, src, showCaption, fileType, fileName } =
-      serializedNode;
+    const { altText, height, width, maxWidth, src, fileType, fileName } = serializedNode;
     return $createFileNode({
       altText,
-      caption,
       height,
       maxWidth,
       src,
-      showCaption,
       width,
       fileType: fileType || getFileTypeFromMimeOrExtension(src),
       fileName: fileName || src.split('/').pop() || 'file',
@@ -152,10 +118,8 @@ export class FileNode extends DecoratorNode<JSX.Element> {
     return {
       ...super.exportJSON(),
       altText: this.getAltText(),
-      caption: this.__caption,
       height: this.__height === 'inherit' ? 0 : this.__height,
       maxWidth: this.__maxWidth,
-      showCaption: this.__showCaption,
       src: this.getSrc(),
       width: this.__width === 'inherit' ? 0 : this.__width,
       fileType: this.__fileType,
@@ -164,27 +128,95 @@ export class FileNode extends DecoratorNode<JSX.Element> {
   }
 
   exportDOM(): DOMExportOutput {
-    if (this.__fileType === FileType.IMAGE) {
-      const element = document.createElement('img');
-      element.setAttribute('src', this.__src);
-      element.setAttribute('alt', this.__altText);
-      element.setAttribute('width', this.__width.toString());
-      element.setAttribute('height', this.__height.toString());
-      return { element };
-    } else {
-      const element = document.createElement('a');
-      element.setAttribute('href', this.__src);
-      element.setAttribute('title', this.__altText);
-      element.setAttribute('download', this.__fileName);
-      element.textContent = this.__fileName;
-      return { element };
+    switch (this.__fileType) {
+      case FileType.IMAGE: {
+        const element = document.createElement('img');
+        element.setAttribute('src', this.__src);
+        element.setAttribute('alt', this.__altText);
+        element.setAttribute('width', this.__width.toString());
+        element.setAttribute('height', this.__height.toString());
+        return { element };
+      }
+      case FileType.AUDIO: {
+        const element = document.createElement('audio');
+        element.setAttribute('controls', '');
+        element.setAttribute('src', this.__src);
+        return { element };
+      }
+      case FileType.VIDEO: {
+        const element = document.createElement('video');
+        element.setAttribute('controls', '');
+        element.setAttribute('src', this.__src);
+        element.setAttribute('width', this.__width.toString());
+        element.setAttribute('height', this.__height.toString());
+        return { element };
+      }
+      default: {
+        const element = document.createElement('a');
+        element.setAttribute('href', this.__src);
+        element.setAttribute('title', this.__altText);
+        element.setAttribute('download', this.__fileName);
+        element.textContent = this.__fileName;
+        return { element };
+      }
     }
   }
 
   static importDOM(): DOMConversionMap | null {
     return {
-      img: (_node: Node) => ({
-        conversion: $convertImageElement,
+      img: () => ({
+        conversion: (domNode) => {
+          const img = domNode as HTMLImageElement;
+          return {
+            node: $createFileNode({
+              altText: img.alt,
+              height: img.height,
+              width: img.width,
+              src: img.src,
+              fileType: FileType.IMAGE,
+            }),
+          };
+        },
+        priority: 0,
+      }),
+      audio: () => ({
+        conversion: (domNode) => {
+          const audio = domNode as HTMLAudioElement;
+          return {
+            node: $createFileNode({
+              altText: audio.title || 'audio',
+              src: audio.src,
+              fileType: FileType.AUDIO,
+            }),
+          };
+        },
+        priority: 0,
+      }),
+      video: () => ({
+        conversion: (domNode) => {
+          const video = domNode as HTMLVideoElement;
+          return {
+            node: $createFileNode({
+              altText: video.title || 'video',
+              src: video.src,
+              fileType: FileType.VIDEO,
+            }),
+          };
+        },
+        priority: 0,
+      }),
+      a: () => ({
+        conversion: (domNode) => {
+          const a = domNode as HTMLAnchorElement;
+          return {
+            node: $createFileNode({
+              altText: a.title || a.textContent || 'file',
+              src: a.href,
+              fileType: getFileTypeFromMimeOrExtension(a.href),
+              fileName: a.download || a.href.split('/').pop() || 'file',
+            }),
+          };
+        },
         priority: 0,
       }),
     };
@@ -196,8 +228,6 @@ export class FileNode extends DecoratorNode<JSX.Element> {
     maxWidth: number,
     width?: 'inherit' | number,
     height?: 'inherit' | number,
-    showCaption?: boolean,
-    caption?: string,
     fileType?: FileType,
     fileName?: string,
     key?: NodeKey,
@@ -208,8 +238,6 @@ export class FileNode extends DecoratorNode<JSX.Element> {
     this.__maxWidth = maxWidth;
     this.__width = width || 'inherit';
     this.__height = height || 'inherit';
-    this.__showCaption = showCaption || false;
-    this.__caption = caption || '';
     this.__fileType = fileType || getFileTypeFromMimeOrExtension(src);
     this.__fileName = fileName || src.split('/').pop() || 'file';
   }
@@ -218,16 +246,6 @@ export class FileNode extends DecoratorNode<JSX.Element> {
     const writable = this.getWritable();
     writable.__width = width;
     writable.__height = height;
-  }
-
-  setShowCaption(showCaption: boolean): void {
-    const writable = this.getWritable();
-    writable.__showCaption = showCaption;
-  }
-
-  setCaption(caption: string): void {
-    const writable = this.getWritable();
-    writable.__caption = caption;
   }
 
   setFileType(fileType: FileType): void {
@@ -248,20 +266,12 @@ export class FileNode extends DecoratorNode<JSX.Element> {
     return this.__altText;
   }
 
-  getCaption(): string {
-    return this.__caption;
-  }
-
   getFileType(): FileType {
     return this.__fileType;
   }
 
   getFileName(): string {
     return this.__fileName;
-  }
-
-  hasCaption(): boolean {
-    return this.__showCaption;
   }
 
   createDOM(config: EditorConfig): HTMLElement {
@@ -302,8 +312,6 @@ export class FileNode extends DecoratorNode<JSX.Element> {
           resizable={this.__fileType === FileType.IMAGE}
           fileType={this.__fileType}
           fileName={this.__fileName}
-          showCaption={this.__showCaption}
-          caption={this.__caption}
         />
       </React.Suspense>
     );
@@ -312,11 +320,9 @@ export class FileNode extends DecoratorNode<JSX.Element> {
 
 export function $createFileNode({
   altText,
-  caption,
   height,
   maxWidth = 500,
   src,
-  showCaption,
   width,
   fileType,
   fileName,
@@ -329,8 +335,6 @@ export function $createFileNode({
       maxWidth,
       width,
       height,
-      showCaption,
-      caption,
       fileType || getFileTypeFromMimeOrExtension(src),
       fileName || src.split('/').pop() || 'file',
       key,

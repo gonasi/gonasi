@@ -130,10 +130,10 @@ export function InsertFileUploadedDialogBody({
   return (
     <Form encType='multipart/form-data' {...getFormProps(form)}>
       <Field
-        labelProps={{ children: 'Image File', required: true }}
+        labelProps={{ children: 'File', required: true }}
         inputProps={{ ...getInputProps(fields.src, { type: 'file' }), autoFocus: true }}
         errors={fields.src?.errors}
-        description='Select an image from your device'
+        description='Select an file from your device'
       />
       <Field
         labelProps={{ children: 'Alternative Text', required: true }}
@@ -141,10 +141,10 @@ export function InsertFileUploadedDialogBody({
           ...getInputProps(fields.altText, { type: 'text' }),
         }}
         errors={fields.altText?.errors}
-        description='Describe the image for accessibility (e.g. “Team photo at retreat”)'
+        description='Describe the file (e.g. “Team photo at retreat”)'
       />
       <Button type='submit' leftIcon={<FileImage />}>
-        Insert Image
+        Insert File
       </Button>
     </Form>
   );

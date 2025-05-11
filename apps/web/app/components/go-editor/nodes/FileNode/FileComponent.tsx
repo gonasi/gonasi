@@ -5,7 +5,7 @@ import { useLexicalEditable } from '@lexical/react/useLexicalEditable';
 import { useLexicalNodeSelection } from '@lexical/react/useLexicalNodeSelection';
 import { mergeRegister } from '@lexical/utils';
 import clsx from 'clsx';
-import type { BaseSelection, LexicalCommand, LexicalEditor, NodeKey } from 'lexical';
+import type { BaseSelection, LexicalCommand, NodeKey } from 'lexical';
 import {
   $getSelection,
   $isNodeSelection,
@@ -19,7 +19,6 @@ import {
   KEY_DELETE_COMMAND,
   KEY_ENTER_COMMAND,
   KEY_ESCAPE_COMMAND,
-  SELECTION_CHANGE_COMMAND,
 } from 'lexical';
 import { Box, File as FileIcon, FileAudio, FileImage, FileText, FileVideo } from 'lucide-react';
 
@@ -39,7 +38,6 @@ export const RIGHT_CLICK_FILE_COMMAND: LexicalCommand<MouseEvent> = createComman
 function useSuspenseFile(src: string) {
   if (!fileCache.has(src)) {
     throw new Promise((resolve) => {
-      // For images, we need to preload
       if (src.startsWith('data:image') || /\.(jpg|jpeg|png|gif|webp|svg|bmp|tiff?)$/i.test(src)) {
         const img = new Image();
         img.src = src;
@@ -52,7 +50,6 @@ function useSuspenseFile(src: string) {
           resolve(null);
         };
       } else {
-        // For non-image files, just mark as loaded
         fileCache.add(src);
         resolve(null);
       }
@@ -69,7 +66,6 @@ function LazyImage({
   height,
   maxWidth,
   onError,
-  resizable,
 }: {
   altText: string;
   className: string | null;
@@ -79,7 +75,6 @@ function LazyImage({
   src: string;
   width: 'inherit' | number;
   onError: () => void;
-  resizable?: boolean;
 }): JSX.Element {
   useSuspenseFile(src);
   return (
@@ -88,11 +83,7 @@ function LazyImage({
       src={src}
       alt={altText}
       ref={imageRef}
-      style={{
-        height,
-        maxWidth,
-        width,
-      }}
+      style={{ height, maxWidth, width }}
       onError={onError}
       draggable='false'
     />
@@ -170,8 +161,6 @@ export default function FileComponent({
   maxWidth,
   fileType,
   fileName,
-  showCaption = false,
-  caption = '',
   resizable,
 }: {
   altText: string;
@@ -182,105 +171,62 @@ export default function FileComponent({
   width: 'inherit' | number;
   fileType: FileType;
   fileName: string;
-  showCaption?: boolean;
-  caption?: string;
   resizable?: boolean;
 }): JSX.Element {
   const imageRef = useRef<null | HTMLImageElement>(null);
-  const buttonRef = useRef<HTMLButtonElement | null>(null);
   const [isSelected, setSelected, clearSelection] = useLexicalNodeSelection(nodeKey);
-  const [isResizing, setIsResizing] = useState<boolean>(false);
+  const [isResizing, setIsResizing] = useState(false);
   const [editor] = useLexicalComposerContext();
   const [selection, setSelection] = useState<BaseSelection | null>(null);
-  const activeEditorRef = useRef<LexicalEditor | null>(null);
-  const [isLoadError, setIsLoadError] = useState<boolean>(false);
+  const [isLoadError, setIsLoadError] = useState(false);
   const isEditable = useLexicalEditable();
 
-  const $onDelete = useCallback(
-    (payload: KeyboardEvent) => {
-      const deleteSelection = $getSelection();
-      if (isSelected && $isNodeSelection(deleteSelection)) {
-        const event: KeyboardEvent = payload;
-        event.preventDefault();
-        deleteSelection.getNodes().forEach((node) => {
-          if ($isFileNode(node)) {
-            node.remove();
-          }
-        });
-      }
-      return false;
-    },
-    [isSelected],
-  );
-
-  const $onEnter = useCallback(
-    (event: KeyboardEvent) => {
-      const latestSelection = $getSelection();
-      const buttonElem = buttonRef.current;
-      if (
-        isSelected &&
-        $isNodeSelection(latestSelection) &&
-        latestSelection.getNodes().length === 1
-      ) {
-        if (buttonElem !== null && buttonElem !== document.activeElement) {
-          event.preventDefault();
-          buttonElem.focus();
-          return true;
+  const $onDelete = useCallback(() => {
+    const deleteSelection = $getSelection();
+    if (isSelected && $isNodeSelection(deleteSelection)) {
+      deleteSelection.getNodes().forEach((node) => {
+        if ($isFileNode(node)) {
+          node.remove();
         }
-      }
-      return false;
-    },
-    [isSelected],
-  );
+      });
+    }
+    return false;
+  }, [isSelected]);
 
-  const $onEscape = useCallback(
-    (event: KeyboardEvent) => {
-      if (buttonRef.current === event.target) {
-        $setSelection(null);
-        editor.update(() => {
-          setSelected(true);
-          const parentRootElement = editor.getRootElement();
-          if (parentRootElement !== null) {
-            parentRootElement.focus();
-          }
-        });
-        return true;
-      }
-      return false;
-    },
-    [editor, setSelected],
-  );
+  const $onEnter = useCallback(() => {
+    // Prevent Enter from doing anything while selected
+    return isSelected;
+  }, [isSelected]);
+
+  const $onEscape = useCallback(() => {
+    // Escape no longer forces selection back to file
+    $setSelection(null);
+    return true;
+  }, []);
 
   const onClick = useCallback(
-    (payload: MouseEvent) => {
-      const event = payload;
+    (event: MouseEvent) => {
+      if (isResizing) return true;
+      const isInside = event.currentTarget.contains(event.target as Node);
+      if (!isInside) return false;
 
-      if (isResizing) {
-        return true;
+      if (event.shiftKey) {
+        setSelected(!isSelected);
+      } else {
+        clearSelection();
+        setSelected(true);
       }
-
-      // Check if the clicked element is part of our component
-      if (event.currentTarget && (event.currentTarget as Node).contains(event.target as Node)) {
-        if (event.shiftKey) {
-          setSelected(!isSelected);
-        } else {
-          clearSelection();
-          setSelected(true);
-        }
-        return true;
-      }
-
-      return false;
+      return true;
     },
     [isResizing, isSelected, setSelected, clearSelection],
   );
 
   const onRightClick = useCallback(
-    (event: MouseEvent): void => {
+    (event: MouseEvent) => {
       editor.getEditorState().read(() => {
         const latestSelection = $getSelection();
         if ($isRangeSelection(latestSelection) && latestSelection.getNodes().length === 1) {
-          editor.dispatchCommand(RIGHT_CLICK_FILE_COMMAND, event as MouseEvent);
+          editor.dispatchCommand(RIGHT_CLICK_FILE_COMMAND, event);
         }
       });
     },
@@ -291,29 +237,22 @@ export default function FileComponent({
     const rootElement = editor.getRootElement();
     const unregister = mergeRegister(
       editor.registerUpdateListener(({ editorState }) => {
-        const updatedSelection = editorState.read(() => $getSelection());
-        if ($isNodeSelection(updatedSelection)) {
-          setSelection(updatedSelection);
-        } else {
-          setSelection(null);
-        }
+        editorState.read(() => {
+          const currentSelection = $getSelection();
+          if ($isNodeSelection(currentSelection)) {
+            setSelection(currentSelection);
+          } else {
+            setSelection(null);
+            setSelected(false); // <- Important: deselect when moving cursor outside
+          }
+        });
       }),
-      editor.registerCommand(
-        SELECTION_CHANGE_COMMAND,
-        (_, activeEditor) => {
-          activeEditorRef.current = activeEditor;
-          return false;
-        },
-        COMMAND_PRIORITY_LOW,
-      ),
-      editor.registerCommand<MouseEvent>(CLICK_COMMAND, onClick, COMMAND_PRIORITY_LOW),
-      editor.registerCommand<MouseEvent>(RIGHT_CLICK_FILE_COMMAND, onClick, COMMAND_PRIORITY_LOW),
+      editor.registerCommand(CLICK_COMMAND, onClick, COMMAND_PRIORITY_LOW),
+      editor.registerCommand(RIGHT_CLICK_FILE_COMMAND, onClick, COMMAND_PRIORITY_LOW),
       editor.registerCommand(
         DRAGSTART_COMMAND,
         (event) => {
           if (event.target === imageRef.current) {
-            // TODO This is just a temporary workaround for FF to behave like other browsers.
-            // Ideally, this handles drag & drop too (and all browsers).
             event.preventDefault();
             return true;
           }
@@ -350,16 +289,13 @@ export default function FileComponent({
   const draggable = isSelected && $isNodeSelection(selection) && !isResizing;
   const isFocused = (isSelected || isResizing) && isEditable;
 
-  // Render different components based on file type
-  const renderFileContent = () => {
-    if (isLoadError) {
-      return <BrokenFile fileType={fileType} />;
-    }
+  const baseClassName = clsx(
+    isFocused && 'ring-primary p-0.5 ring-2',
+    isFocused && $isNodeSelection(selection) && 'cursor-move',
+  );
 
-    const baseClassName = clsx(
-      isFocused && 'ring-primary p-0.5 ring-2',
-      isFocused && $isNodeSelection(selection) && 'cursor-move',
-    );
+  const renderFileContent = () => {
+    if (isLoadError) return <BrokenFile fileType={fileType} />;
 
     switch (fileType) {
       case FileType.IMAGE:
@@ -375,13 +311,10 @@ export default function FileComponent({
             onError={() => setIsLoadError(true)}
           />
         );
-
       case FileType.AUDIO:
         return <AudioPlayer src={src} altText={altText} className={baseClassName} />;
-
       case FileType.VIDEO:
         return <VideoPlayer src={src} altText={altText} className={baseClassName} />;
-
       default:
         return (
           <FileRenderer
@@ -397,7 +330,7 @@ export default function FileComponent({
 
   return (
     <Suspense fallback={<Spinner />}>
-      <div draggable={draggable} className='relative w-full'>
+      <div draggable={draggable} className='relative w-full' onClick={onClick}>
         {renderFileContent()}
       </div>
     </Suspense>
