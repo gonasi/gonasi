@@ -97,7 +97,7 @@ import {
 } from '~/components/ui/dropdown-menu';
 import { cn } from '~/lib/utils';
 
-const InsertImageDialog = lazy(() => import('../ImagesPlugin/InsertImageDialog'));
+const InsertFileDialog = lazy(() => import('../FilesPlugin/InsertFileDialog'));
 
 const FONT_FAMILY_OPTIONS: [string, string][] = [
   ['Arial', 'Arial'],
@@ -616,15 +616,15 @@ export default function ToolbarPlugin({
       <IconTooltipButton
         disabled={!isEditable}
         onClick={() => {
-          showModal('Insert Image', (onClose) => (
+          showModal('Insert File', (onClose) => (
             <Suspense fallback={<Spinner />}>
-              <InsertImageDialog activeEditor={activeEditor} onClose={onClose} />
+              <InsertFileDialog activeEditor={activeEditor} onClose={onClose} />
             </Suspense>
           ));
         }}
-        title='Upload media'
+        title='Upload file'
         type='button'
-        aria-label='Upload media.'
+        aria-label='Upload file.'
         icon={FilePlus2}
       />
       <IconTooltipButton

@@ -14,7 +14,7 @@ import { TablePlugin } from '@lexical/react/LexicalTablePlugin';
 import { useSettings } from './context/SettingsContext';
 import { useSharedHistoryContext } from './context/SharedHistoryContext';
 import AutocompletePlugin from './plugins/AutocompletePlugin';
-import ImagesPlugin from './plugins/ImagesPlugin';
+import FilesPlugin from './plugins/FilesPlugin';
 import { ListPlugin } from './plugins/LexicalListPlugin';
 import { MaxLengthPlugin } from './plugins/MaxLengthPlugin';
 import ShortcutsPlugin from './plugins/ShortcutsPlugin';
@@ -60,7 +60,8 @@ export default function Editor({ placeholder = 'Enter text' }: Props): JSX.Eleme
           }
           ErrorBoundary={LexicalErrorBoundary}
         />
-        <ImagesPlugin />
+
+        <FilesPlugin />
         <ListPlugin />
         <CheckListPlugin />
         <TablePlugin

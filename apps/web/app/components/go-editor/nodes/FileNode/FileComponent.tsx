@@ -21,19 +21,14 @@ import {
   KEY_ESCAPE_COMMAND,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
-import {
-  Box,
-  Download,
-  File as FileIcon,
-  FileAudio,
-  FileImage,
-  FileText,
-  FileVideo,
-} from 'lucide-react';
+import { Box, File as FileIcon, FileAudio, FileImage, FileText, FileVideo } from 'lucide-react';
 
-import { $isFileNode, FileType } from '.';
+import { FileType } from '@gonasi/schemas/file';
 
-import { Button } from '~/components/ui/button';
+import { FileRenderer } from './FileRenderer';
+import { $isFileNode } from '.';
+
+import { Spinner } from '~/components/loaders';
 
 const fileCache = new Set();
 
@@ -74,6 +69,7 @@ function LazyImage({
   height,
   maxWidth,
   onError,
+  resizable,
 }: {
   altText: string;
   className: string | null;
@@ -83,6 +79,7 @@ function LazyImage({
   src: string;
   width: 'inherit' | number;
   onError: () => void;
+  resizable?: boolean;
 }): JSX.Element {
   useSuspenseFile(src);
   return (
@@ -164,49 +161,6 @@ function VideoPlayer({
   );
 }
 
-function FileLink({
-  src,
-  fileName,
-  fileType,
-  className,
-}: {
-  src: string;
-  fileName: string;
-  fileType: FileType;
-  className: string | null;
-}): JSX.Element {
-  let Icon = FileIcon;
-  switch (fileType) {
-    case FileType.MODEL_3D:
-      Icon = Box;
-      break;
-    case FileType.DOCUMENT:
-      Icon = FileText;
-      break;
-    default:
-      Icon = FileIcon;
-  }
-
-  return (
-    <div className={clsx('flex items-center gap-2 rounded-md border p-3', className)}>
-      <Icon size={24} />
-      <span className='flex-1 truncate'>{fileName}</span>
-      <a
-        href={src}
-        download={fileName}
-        target='_blank'
-        rel='noopener noreferrer'
-        onClick={(e) => e.stopPropagation()}
-        className='ml-2'
-      >
-        <Button size='sm' variant='ghost'>
-          <Download size={18} />
-        </Button>
-      </a>
-    </div>
-  );
-}
-
 export default function FileComponent({
   src,
   altText,
@@ -218,6 +172,7 @@ export default function FileComponent({
   fileName,
   showCaption = false,
   caption = '',
+  resizable,
 }: {
   altText: string;
   height: 'inherit' | number;
@@ -229,6 +184,7 @@ export default function FileComponent({
   fileName: string;
   showCaption?: boolean;
   caption?: string;
+  resizable?: boolean;
 }): JSX.Element {
   const imageRef = useRef<null | HTMLImageElement>(null);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
@@ -323,7 +279,6 @@ export default function FileComponent({
     (event: MouseEvent): void => {
       editor.getEditorState().read(() => {
         const latestSelection = $getSelection();
-        const domElement = event.target as HTMLElement;
         if ($isRangeSelection(latestSelection) && latestSelection.getNodes().length === 1) {
           editor.dispatchCommand(RIGHT_CLICK_FILE_COMMAND, event as MouseEvent);
         }
@@ -429,22 +384,22 @@ export default function FileComponent({
 
       default:
         return (
-          <FileLink src={src} fileName={fileName} fileType={fileType} className={baseClassName} />
+          <FileRenderer
+            src={src}
+            fileName={fileName}
+            fileType={fileType}
+            fileAlt={altText}
+            className={baseClassName}
+          />
         );
     }
   };
 
   return (
-    <Suspense fallback={null}>
-      <>
-        <div draggable={draggable} className='relative w-full' onClick={onClick}>
-          {renderFileContent()}
-
-          {showCaption && (
-            <div className='mt-2 text-center text-sm text-gray-500'>{caption || altText}</div>
-          )}
-        </div>
-      </>
+    <Suspense fallback={<Spinner />}>
+      <div draggable={draggable} className='relative w-full'>
+        {renderFileContent()}
+      </div>
     </Suspense>
   );
 }

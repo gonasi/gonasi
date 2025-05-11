@@ -12,64 +12,54 @@ import type {
 } from 'lexical';
 import { $applyNodeReplacement, DecoratorNode } from 'lexical';
 
+import { ALLOWED_EXTENSIONS, FileType } from '@gonasi/schemas/file';
+
 import { FileComponentFallback } from './FileComponentFallback';
 
 const LazyFileComponent = React.lazy(() => import('./FileComponent'));
 
-// Define file type categories
-export enum FileType {
-  IMAGE = 'image',
-  AUDIO = 'audio',
-  VIDEO = 'video',
-  MODEL_3D = 'model3d',
-  DOCUMENT = 'document',
-  OTHER = 'other',
-}
-
 // Helper function to determine file type from extension
 export function getFileTypeFromMimeOrExtension(file: string): FileType {
-  const extension = file.includes('.') ? file.split('.').pop()?.toLowerCase() : '';
+  // Handle potential undefined by providing default empty string
+  const extension = file.includes('.') ? (file.split('.').pop()?.toLowerCase() ?? '') : '';
 
-  // Check if it's a data URL and extract MIME type
   if (file.startsWith('data:')) {
-    const mimeType = file.split(',')[0].split(':')[1].split(';')[0];
+    try {
+      // Use safe array access with optional chaining for all operations
+      const parts = file.split(',');
+      const firstPart = parts[0] ?? '';
 
-    if (mimeType.startsWith('image/')) return FileType.IMAGE;
-    if (mimeType.startsWith('audio/')) return FileType.AUDIO;
-    if (mimeType.startsWith('video/')) return FileType.VIDEO;
-    if (mimeType.startsWith('model/') || mimeType.includes('gltf') || mimeType.includes('obj'))
-      return FileType.MODEL_3D;
-    if (mimeType.startsWith('application/') || mimeType.startsWith('text/'))
-      return FileType.DOCUMENT;
+      const mimeParts = firstPart.split(':');
+      const mimePart = mimeParts[1] ?? '';
+
+      const mimeAndParams = mimePart.split(';');
+      const mimeType = mimeAndParams[0] ?? '';
+
+      if (mimeType.startsWith('image/')) return FileType.IMAGE;
+      if (mimeType.startsWith('audio/')) return FileType.AUDIO;
+      if (mimeType.startsWith('video/')) return FileType.VIDEO;
+      if (mimeType.startsWith('model/') || mimeType.includes('gltf') || mimeType.includes('obj')) {
+        return FileType.MODEL_3D;
+      }
+      if (mimeType.startsWith('application/') || mimeType.startsWith('text/')) {
+        return FileType.DOCUMENT;
+      }
+    } catch (error) {
+      console.error('file error: ', error);
+      // If any errors occur during parsing, return OTHER as fallback
+      return FileType.OTHER;
+    }
     return FileType.OTHER;
   }
 
-  // Image formats
-  if (
-    ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'tif', 'tiff', 'heic'].includes(extension)
-  ) {
-    return FileType.IMAGE;
-  }
-  // Audio formats
-  if (['mp3', 'wav', 'aac', 'flac', 'ogg', 'm4a', 'aiff', 'aif'].includes(extension)) {
-    return FileType.AUDIO;
-  }
-  // Video formats
-  if (['mp4', 'webm', 'mov', 'avi', 'mkv', 'flv', 'wmv'].includes(extension)) {
-    return FileType.VIDEO;
-  }
-  // 3D model formats
-  if (['gltf', 'glb', 'obj', 'fbx', 'stl', 'dae', '3ds', 'usdz'].includes(extension)) {
-    return FileType.MODEL_3D;
-  }
-  // Document formats (you can extend this as needed)
-  if (['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt'].includes(extension)) {
-    return FileType.DOCUMENT;
-  }
+  if (ALLOWED_EXTENSIONS.IMAGE.includes(extension)) return FileType.IMAGE;
+  if (ALLOWED_EXTENSIONS.AUDIO.includes(extension)) return FileType.AUDIO;
+  if (ALLOWED_EXTENSIONS.VIDEO.includes(extension)) return FileType.VIDEO;
+  if (ALLOWED_EXTENSIONS.MODEL_3D.includes(extension)) return FileType.MODEL_3D;
+  if (ALLOWED_EXTENSIONS.DOCUMENT.includes(extension)) return FileType.DOCUMENT;
 
   return FileType.OTHER;
 }
-
 export interface FilePayload {
   altText: string;
   caption?: string;
@@ -83,20 +73,9 @@ export interface FilePayload {
   fileName?: string;
 }
 
-function isGoogleDocCheckboxImg(img: HTMLImageElement): boolean {
-  return (
-    img.parentElement != null &&
-    img.parentElement.tagName === 'LI' &&
-    img.previousSibling === null &&
-    img.getAttribute('aria-roledescription') === 'checkbox'
-  );
-}
-
 function $convertImageElement(domNode: Node): null | DOMConversionOutput {
   const img = domNode as HTMLImageElement;
-  if (img.src.startsWith('file:///') || isGoogleDocCheckboxImg(img)) {
-    return null;
-  }
+
   const { alt: altText, src, width, height } = img;
   const node = $createFileNode({
     altText,
