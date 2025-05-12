@@ -192,3 +192,15 @@ export const EditFileSubmitSchema = EditFileSchema.extend({
 });
 
 export type EditFileSubmitValues = z.infer<typeof EditFileSubmitSchema>;
+
+export const DeleteFileSchema = z.object({
+  path: z.string(),
+  name: z.string(),
+});
+
+export const SubmitFileDeleteSchema = DeleteFileSchema.merge(
+  z.object({
+    fileId: z.string(),
+  }),
+);
+export type DeleteFileSubmitValues = z.infer<typeof SubmitFileDeleteSchema>;

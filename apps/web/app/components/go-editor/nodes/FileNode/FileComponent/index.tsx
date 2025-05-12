@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
 import { $getNodeByKey } from 'lexical';
+import { CircleOff } from 'lucide-react';
 
 import { fetchFileById } from '@gonasi/database/files';
 
@@ -101,14 +102,9 @@ const FileComponent: React.FC<FileComponentProps> = ({ fileId, nodeKey }) => {
   // Display file not found
   if (!fileMetadata) {
     return (
-      <div className='rounded border border-yellow-200 bg-yellow-50 p-3 text-yellow-700'>
+      <div className='bg-warning text-warning-foreground flex items-center space-x-4 rounded-lg p-4'>
+        <CircleOff />
         <p>File not found or inaccessible.</p>
-        <button
-          onClick={handleRemove}
-          className='mt-2 rounded bg-red-500 px-3 py-1 text-white hover:bg-red-600 focus:ring-2 focus:ring-red-400 focus:outline-none'
-        >
-          Remove
-        </button>
       </div>
     );
   }

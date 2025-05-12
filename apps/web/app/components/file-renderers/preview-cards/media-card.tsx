@@ -24,7 +24,7 @@ export const MediaCard: React.FC<MediaCardProps> = ({ file, media }) => {
       to: `${basePath}/edit`,
     },
     {
-      title: 'Delete lesson',
+      title: 'Delete',
       icon: Trash,
       to: `${basePath}/delete`,
     },

@@ -87,6 +87,7 @@ export default function EditFileImage({ loaderData, actionData, params }: Route.
               errors={fields.file?.errors}
               description='Upload a new file to replace the current one.'
             />
+
             <Input {...getInputProps(fields.path, { type: 'hidden' })} />
             <ErrorList errors={form.errors} id={form.errorId} />
             <Button type='submit' disabled={isPending} isLoading={isPending}>
