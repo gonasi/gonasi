@@ -2,13 +2,14 @@
 const config = {
   root: true,
   extends: [
-    "universe/web",
-    "./base.js",
-    "./web-native.js",
-    "plugin:react/recommended",
-    "plugin:react/jsx-runtime",
-    "plugin:react-hooks/recommended",
-    "plugin:jsx-a11y/recommended",
+    'universe/web',
+    './base.js',
+    './web-native.js',
+    'plugin:react/recommended',
+    'plugin:react/jsx-runtime',
+    'plugin:react-hooks/recommended',
+    'plugin:jsx-a11y/recommended',
+    '@react-three',
   ],
   env: {
     browser: true,
@@ -16,16 +17,16 @@ const config = {
     es6: true,
   },
   rules: {
-    "react/prop-types": "off",
+    'react/prop-types': 'off',
   },
-  ignorePatterns: ["!**/.server", "!**/.client"],
+  ignorePatterns: ['!**/.server', '!**/.client'],
   settings: {
-    formComponents: ["Form"],
+    formComponents: ['Form'],
     linkComponents: [
-      { name: "Link", linkAttribute: "to" },
-      { name: "NavLink", linkAttribute: "to" },
+      { name: 'Link', linkAttribute: 'to' },
+      { name: 'NavLink', linkAttribute: 'to' },
     ],
-    "import/resolver": {
+    'import/resolver': {
       typescript: {
         alwaysTryTypes: true,
       },

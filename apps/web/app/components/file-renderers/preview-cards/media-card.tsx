@@ -33,7 +33,7 @@ export const MediaCard: React.FC<MediaCardProps> = ({ file, media }) => {
   return (
     <div className='bg-card/80 hover:bg-card relative h-60 w-full rounded-lg p-4 transition-colors duration-300 hover:cursor-pointer md:h-82'>
       {/* Top-right button */}
-      <div className='bg-card absolute top-2 right-2 rounded-sm'>
+      <div className='bg-card absolute top-2 right-2 z-10 rounded-sm'>
         <ActionDropdown items={options} />
       </div>
 
