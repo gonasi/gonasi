@@ -53,24 +53,32 @@ export function getFileTypeFromMimeOrExtension(file: string): FileType {
 
 export interface FilePayload {
   altText: string;
-  height?: number;
-  key?: NodeKey;
-  maxWidth?: number;
   src: string;
-  width?: number;
-  fileType?: FileType;
-  fileName?: string;
+  metadata?: {
+    path?: string;
+    fileName: string;
+    fileType: FileType;
+    size?: number;
+    width?: number | 'inherit';
+    height?: number | 'inherit';
+    maxWidth?: number;
+  };
 }
 
 export type SerializedFileNode = Spread<
   {
     altText: string;
-    height?: number;
-    maxWidth: number;
     src: string;
-    width?: number;
-    fileType: FileType;
-    fileName?: string;
+    metadata: {
+      path?: string;
+      fileName: string;
+      fileType: FileType;
+      size?: number;
+      width?: number | 'inherit';
+      height?: number | 'inherit';
+      maxWidth?: number;
+    };
+    version: 1;
   },
   SerializedLexicalNode
 >;
@@ -78,63 +86,65 @@ export type SerializedFileNode = Spread<
 export class FileNode extends DecoratorNode<JSX.Element> {
   __src: string;
   __altText: string;
-  __width: 'inherit' | number;
-  __height: 'inherit' | number;
-  __maxWidth: number;
-  __fileType: FileType;
-  __fileName: string;
+  __metadata: {
+    path?: string;
+    fileName: string;
+    fileType: FileType;
+    size?: number;
+    width: number | 'inherit';
+    height: number | 'inherit';
+    maxWidth: number;
+  };
 
   static getType(): string {
     return 'file';
   }
 
   static clone(node: FileNode): FileNode {
-    return new FileNode(
-      node.__src,
-      node.__altText,
-      node.__maxWidth,
-      node.__width,
-      node.__height,
-      node.__fileType,
-      node.__fileName,
-      node.__key,
-    );
+    return new FileNode(node.__src, node.__altText, { ...node.__metadata }, node.__key);
   }
 
   static importJSON(serializedNode: SerializedFileNode): FileNode {
-    const { altText, height, width, maxWidth, src, fileType, fileName } = serializedNode;
+    const { altText, src, metadata } = serializedNode;
     return $createFileNode({
       altText,
-      height,
-      maxWidth,
       src,
-      width,
-      fileType: fileType || getFileTypeFromMimeOrExtension(src),
-      fileName: fileName || src.split('/').pop() || 'file',
+      metadata: {
+        ...metadata,
+        fileType: metadata.fileType || getFileTypeFromMimeOrExtension(src),
+        fileName: metadata.fileName || src.split('/').pop() || 'file',
+      },
     });
   }
 
   exportJSON(): SerializedFileNode {
     return {
       ...super.exportJSON(),
-      altText: this.getAltText(),
-      height: this.__height === 'inherit' ? 0 : this.__height,
-      maxWidth: this.__maxWidth,
-      src: this.getSrc(),
-      width: this.__width === 'inherit' ? 0 : this.__width,
-      fileType: this.__fileType,
-      fileName: this.__fileName,
+      altText: this.__altText,
+      src: this.__src,
+      metadata: {
+        ...this.__metadata,
+        width: this.__metadata.width,
+        height: this.__metadata.height,
+      },
+      version: 1,
     };
   }
 
   exportDOM(): DOMExportOutput {
-    switch (this.__fileType) {
+    const { fileType } = this.__metadata;
+
+    switch (fileType) {
       case FileType.IMAGE: {
         const element = document.createElement('img');
         element.setAttribute('src', this.__src);
         element.setAttribute('alt', this.__altText);
-        element.setAttribute('width', this.__width.toString());
-        element.setAttribute('height', this.__height.toString());
+        if (this.__metadata.width !== 'inherit') {
+          element.setAttribute('width', this.__metadata.width.toString());
+        }
+        if (this.__metadata.height !== 'inherit') {
+          element.setAttribute('height', this.__metadata.height.toString());
+        }
         return { element };
       }
       case FileType.AUDIO: {
@@ -147,16 +157,20 @@ export class FileNode extends DecoratorNode<JSX.Element> {
         const element = document.createElement('video');
         element.setAttribute('controls', '');
         element.setAttribute('src', this.__src);
-        element.setAttribute('width', this.__width.toString());
-        element.setAttribute('height', this.__height.toString());
+        if (this.__metadata.width !== 'inherit') {
+          element.setAttribute('width', this.__metadata.width.toString());
+        }
+        if (this.__metadata.height !== 'inherit') {
+          element.setAttribute('height', this.__metadata.height.toString());
+        }
         return { element };
       }
       default: {
         const element = document.createElement('a');
         element.setAttribute('href', this.__src);
         element.setAttribute('title', this.__altText);
-        element.setAttribute('download', this.__fileName);
-        element.textContent = this.__fileName;
+        element.setAttribute('download', this.__metadata.fileName);
+        element.textContent = this.__metadata.fileName;
         return { element };
       }
     }
@@ -170,10 +184,14 @@ export class FileNode extends DecoratorNode<JSX.Element> {
           return {
             node: $createFileNode({
               altText: img.alt,
-              height: img.height,
-              width: img.width,
               src: img.src,
-              fileType: FileType.IMAGE,
+              metadata: {
+                fileName: img.src.split('/').pop() || 'image',
+                fileType: FileType.IMAGE,
+                width: img.width || 'inherit',
+                height: img.height || 'inherit',
+                maxWidth: 500,
+              },
             }),
           };
         },
@@ -186,7 +204,13 @@ export class FileNode extends DecoratorNode<JSX.Element> {
             node: $createFileNode({
               altText: audio.title || 'audio',
               src: audio.src,
-              fileType: FileType.AUDIO,
+              metadata: {
+                fileName: audio.src.split('/').pop() || 'audio',
+                fileType: FileType.AUDIO,
+                maxWidth: 500,
+                width: 'inherit',
+                height: 'inherit',
+              },
             }),
           };
         },
@@ -199,7 +223,13 @@ export class FileNode extends DecoratorNode<JSX.Element> {
             node: $createFileNode({
               altText: video.title || 'video',
               src: video.src,
-              fileType: FileType.VIDEO,
+              metadata: {
+                fileName: video.src.split('/').pop() || 'video',
+                fileType: FileType.VIDEO,
+                width: video.width || 'inherit',
+                height: video.height || 'inherit',
+                maxWidth: 500,
+              },
             }),
           };
         },
@@ -208,12 +238,18 @@ export class FileNode extends DecoratorNode<JSX.Element> {
       a: () => ({
         conversion: (domNode) => {
           const a = domNode as HTMLAnchorElement;
+          const fileType = getFileTypeFromMimeOrExtension(a.href);
           return {
             node: $createFileNode({
               altText: a.title || a.textContent || 'file',
               src: a.href,
-              fileType: getFileTypeFromMimeOrExtension(a.href),
-              fileName: a.download || a.href.split('/').pop() || 'file',
+              metadata: {
+                fileName: a.download || a.href.split('/').pop() || 'file',
+                fileType,
+                maxWidth: 500,
+                width: 'inherit',
+                height: 'inherit',
+              },
             }),
           };
         },
@@ -225,37 +261,58 @@ export class FileNode extends DecoratorNode<JSX.Element> {
   constructor(
     src: string,
     altText: string,
-    maxWidth: number,
-    width?: 'inherit' | number,
-    height?: 'inherit' | number,
-    fileType?: FileType,
-    fileName?: string,
+    metadata?: {
+      path?: string;
+      fileName?: string;
+      fileType?: FileType;
+      size?: number;
+      width?: number | 'inherit';
+      height?: number | 'inherit';
+      maxWidth?: number;
+    },
     key?: NodeKey,
   ) {
     super(key);
     this.__src = src;
     this.__altText = altText;
-    this.__maxWidth = maxWidth;
-    this.__width = width || 'inherit';
-    this.__height = height || 'inherit';
-    this.__fileType = fileType || getFileTypeFromMimeOrExtension(src);
-    this.__fileName = fileName || src.split('/').pop() || 'file';
+
+    const fileType = metadata?.fileType || getFileTypeFromMimeOrExtension(src);
+    const fileName = metadata?.fileName || src.split('/').pop() || 'file';
+
+    this.__metadata = {
+      path: metadata?.path,
+      fileName,
+      fileType,
+      size: metadata?.size,
+      width: metadata?.width || 'inherit',
+      height: metadata?.height || 'inherit',
+      maxWidth: metadata?.maxWidth || 500,
+    };
   }
 
   setWidthAndHeight(width: 'inherit' | number, height: 'inherit' | number): void {
     const writable = this.getWritable();
-    writable.__width = width;
-    writable.__height = height;
+    writable.__metadata = {
+      ...writable.__metadata,
+      width,
+      height,
+    };
   }
 
   setFileType(fileType: FileType): void {
     const writable = this.getWritable();
-    writable.__fileType = fileType;
+    writable.__metadata = {
+      ...writable.__metadata,
+      fileType,
+    };
   }
 
   setFileName(fileName: string): void {
     const writable = this.getWritable();
-    writable.__fileName = fileName;
+    writable.__metadata = {
+      ...writable.__metadata,
+      fileName,
+    };
   }
 
   getSrc(): string {
@@ -267,11 +324,23 @@ export class FileNode extends DecoratorNode<JSX.Element> {
   }
 
   getFileType(): FileType {
-    return this.__fileType;
+    return this.__metadata.fileType;
   }
 
   getFileName(): string {
-    return this.__fileName;
+    return this.__metadata.fileName;
+  }
+
+  getWidth(): number | 'inherit' {
+    return this.__metadata.width;
+  }
+
+  getHeight(): number | 'inherit' {
+    return this.__metadata.height;
+  }
+
+  getMaxWidth(): number {
+    return this.__metadata.maxWidth;
   }
 
   createDOM(config: EditorConfig): HTMLElement {
@@ -289,8 +358,9 @@ export class FileNode extends DecoratorNode<JSX.Element> {
   }
 
   decorate(): JSX.Element {
-    const fallbackHeight = this.__height === 'inherit' ? 200 : this.__height;
-    const fallbackWidth = this.__width === 'inherit' ? '100%' : this.__width;
+    const { width, height, fileType, fileName, maxWidth } = this.__metadata;
+    const fallbackHeight = height === 'inherit' ? 200 : height;
+    const fallbackWidth = width === 'inherit' ? '100%' : width;
 
     return (
       <React.Suspense
@@ -298,47 +368,39 @@ export class FileNode extends DecoratorNode<JSX.Element> {
           <FileComponentFallback
             height={fallbackHeight}
             width={fallbackWidth}
-            fileType={this.__fileType}
+            fileType={fileType}
           />
         }
       >
         <LazyFileComponent
           src={this.__src}
           altText={this.__altText}
-          width={this.__width}
-          height={this.__height}
-          maxWidth={this.__maxWidth}
+          width={width}
+          height={height}
+          maxWidth={maxWidth}
           nodeKey={this.getKey()}
-          resizable={this.__fileType === FileType.IMAGE}
-          fileType={this.__fileType}
-          fileName={this.__fileName}
+          resizable={fileType === FileType.IMAGE}
+          fileType={fileType}
+          fileName={fileName}
         />
       </React.Suspense>
     );
   }
 }
 
-export function $createFileNode({
-  altText,
-  height,
-  maxWidth = 500,
-  src,
-  width,
-  fileType,
-  fileName,
-  key,
-}: FilePayload): FileNode {
+export function $createFileNode({ altText, src, metadata }: FilePayload): FileNode {
+  const fileType = metadata?.fileType || getFileTypeFromMimeOrExtension(src);
+  const fileName = metadata?.fileName || src.split('/').pop() || 'file';
+
   return $applyNodeReplacement(
-    new FileNode(
-      src,
-      altText,
-      maxWidth,
-      width,
-      height,
-      fileType || getFileTypeFromMimeOrExtension(src),
-      fileName || src.split('/').pop() || 'file',
-      key,
-    ),
+    new FileNode(src, altText, {
+      ...metadata,
+      fileType,
+      fileName,
+      width: metadata?.width !== undefined ? metadata.width : 'inherit',
+      height: metadata?.height !== undefined ? metadata.height : 'inherit',
+      maxWidth: metadata?.maxWidth || 500,
+    }),
   );
 }
 

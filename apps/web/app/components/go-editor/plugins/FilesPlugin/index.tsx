@@ -1,5 +1,5 @@
 import type { JSX } from 'react';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Form } from 'react-router';
 import { getFormProps, getInputProps, useForm } from '@conform-to/react';
 import { getZodConstraint, parseWithZod } from '@conform-to/zod';
@@ -38,72 +38,14 @@ export type InsertFilePayload = Readonly<FilePayload>;
 export const INSERT_FILE_COMMAND: LexicalCommand<InsertFilePayload> =
   createCommand('INSERT_FILE_COMMAND');
 
-export function InsertFileUriDialogBody({
-  handleFileInsert,
-}: {
-  handleFileInsert: (payload: InsertFilePayload) => void;
-}) {
-  const [src, setSrc] = useState('');
-  const [altText, setAltText] = useState('');
-
-  const isDisabled = src === '';
-
-  return (
-    <>
-      <Field
-        labelProps={{ children: 'Image URL' }}
-        inputProps={{
-          placeholder: 'i.e. https://source.unsplash.com/random',
-          onChange: (e) => setSrc(e.target.value),
-          value: src,
-        }}
-        className="[&_input]:data-test-id='image-modal-url-input'"
-      />
-
-      <Field
-        labelProps={{ children: 'Alt Text' }}
-        inputProps={{
-          placeholder: 'Random unsplash image',
-          onChange: (e) => setAltText(e.target.value),
-          value: altText,
-        }}
-        className="[&_input]:data-test-id='image-modal-alt-text-input'"
-      />
-      <Button
-        data-test-id='image-modal-confirm-btn'
-        disabled={isDisabled}
-        onClick={() => handleFileInsert({ altText, src })}
-      >
-        Confirm
-      </Button>
-    </>
-  );
-}
-
 export function InsertFileUploadedDialogBody({
   handleFileInsert,
 }: {
   handleFileInsert: (payload: InsertFilePayload) => void;
 }) {
-  const loadFile = (file: File | null): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      if (!file) {
-        return resolve('');
-      }
-      const reader = new FileReader();
-      reader.onload = () => {
-        if (typeof reader.result === 'string') {
-          resolve(reader.result);
-        } else {
-          resolve('');
-        }
-      };
-      reader.onerror = () => {
-        reject(reader.error);
-      };
-      reader.readAsDataURL(file);
-    });
-  };
+  useEffect(() => {
+    // TODO: Handle file insert here
+  }, []);
 
   const [form, fields] = useForm({
     id: 'new-editor-file-form',
@@ -111,20 +53,6 @@ export function InsertFileUploadedDialogBody({
     shouldValidate: 'onInput',
     shouldRevalidate: 'onInput',
     onValidate: ({ formData }) => parseWithZod(formData, { schema: NewEditorFileSchema }),
-    onSubmit: async (event, { formData }) => {
-      event.preventDefault();
-      const submission = parseWithZod(formData, { schema: NewEditorFileSchema });
-
-      if (submission.status !== 'success') {
-        return { result: submission.reply(), status: submission.status === 'error' ? 400 : 200 };
-      }
-      const src = await loadFile(submission.value.src);
-      const imageData = {
-        ...submission.value,
-        src,
-      };
-      return handleFileInsert(imageData);
-    },
   });
 
   return (
