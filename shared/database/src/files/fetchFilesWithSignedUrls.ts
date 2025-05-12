@@ -1,3 +1,5 @@
+import type { FileType } from '@gonasi/schemas/file';
+
 import { FILE_LIBRARY_BUCKET } from '../constants';
 import { getPaginationRange } from '../constants/utils';
 import type { FetchDataParams } from '../types';
@@ -51,6 +53,7 @@ export async function fetchFilesWithSignedUrls({
 
       return {
         ...file,
+        file_type: file.file_type as FileType,
         signed_url: signedUrlData?.signedUrl ?? null,
       };
     }),

@@ -32,7 +32,7 @@ export async function action({ request, params }: Route.ActionArgs) {
   });
 
   return success
-    ? redirectWithSuccess(`/dashboard/${params.companyId}/learning-paths`, message)
+    ? redirectWithSuccess(`/dashboard/${params.companyId}/file-library`, message)
     : dataWithError(null, message);
 }
 
