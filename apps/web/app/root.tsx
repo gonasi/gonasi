@@ -27,6 +27,7 @@ import type { Route } from './+types/root';
 import { FeedbackBanner } from './components/feedback-banner';
 import { Spinner } from './components/loaders';
 import { NavigationProgressBar } from './components/progress-bar';
+import { useStore } from './store';
 import './app.css';
 
 import { getClientEnv } from '~/.server/env.server';
@@ -54,10 +55,15 @@ export type UserActiveCompanyLoaderReturnType = Exclude<
   Response
 >['data']['activeCompany'];
 
+export type UserActiveSessionLoaderReturnType = Exclude<
+  Awaited<ReturnType<typeof loader>>,
+  Response
+>['data']['session'];
 export interface AppOutletContext {
   user: UserProfileLoaderReturnType;
   role: UserRoleLoaderReturnType;
   activeCompany: UserActiveCompanyLoaderReturnType;
+  session: UserActiveSessionLoaderReturnType;
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
@@ -82,8 +88,12 @@ export async function loader({ request }: Route.LoaderArgs) {
   const { toast, headers: toastHeaders } = await getToast(request);
   const honeyProps = await honeypot.getInputProps();
 
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
   return data(
-    { clientEnv, role, user, activeCompany, toast, honeyProps },
+    { clientEnv, role, user, activeCompany, toast, honeyProps, session },
     {
       headers: combineHeaders(supabaseHeaders, toastHeaders),
     },
@@ -193,11 +203,17 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 function App() {
-  const { user, role, toast, activeCompany } = useLoaderData<typeof loader>();
+  const { user, role, toast, activeCompany, session } = useLoaderData<typeof loader>();
+  const { updateActiveSession } = useStore();
+
   const navigation = useNavigation();
   const [showLoader, setShowLoader] = useState(false);
 
   useToast(toast);
+
+  useEffect(() => {
+    updateActiveSession(session);
+  }, [session, updateActiveSession]);
 
   // ✅ Fix FOUT by ensuring fonts are loaded before rendering content
   useEffect(() => {
@@ -238,7 +254,7 @@ function App() {
       <NavigationProgressBar />
       <FeedbackBanner />
 
-      <Outlet context={{ user, role, activeCompany }} />
+      <Outlet context={{ user, role, activeCompany, session }} />
       <Toaster
         position='top-right'
         toastOptions={{

@@ -41,12 +41,12 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 }
 
 export default function DashboardLayout() {
-  const { user, role, activeCompany } = useOutletContext<AppOutletContext>();
+  const { user, role, activeCompany, session } = useOutletContext<AppOutletContext>();
 
   return (
     <>
       <GoDashboardLayout user={user} role={role} activeCompany={activeCompany}>
-        <Outlet context={{ user, role, activeCompany }} />
+        <Outlet context={{ user, role, activeCompany, session }} />
       </GoDashboardLayout>
     </>
   );

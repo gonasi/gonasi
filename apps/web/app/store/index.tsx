@@ -2,6 +2,7 @@ import { create } from 'zustand';
 
 import type { PluginId, PluginTypeId } from '@gonasi/schemas/plugins';
 
+import type { UserActiveSessionLoaderReturnType } from '~/root';
 import type {
   GoLessonPlayInteractionReturnType,
   GoLessonPlayLessonBlocksType,
@@ -12,6 +13,9 @@ import type {
  * Handles plugin selection, lesson blocks, interactions, and progress tracking
  */
 interface StoreState {
+  activeSession: UserActiveSessionLoaderReturnType;
+  updateActiveSession: (session: UserActiveSessionLoaderReturnType) => void;
+
   // Plugin management
   activePlugin: PluginId | null;
   activeSubPlugin: PluginTypeId | null;
@@ -110,6 +114,9 @@ const checkIsLastBlock = (
 };
 
 export const useStore = create<StoreState>((set, get) => ({
+  activeSession: null,
+  updateActiveSession: (session) => set({ activeSession: session }),
+
   // Initial plugin state
   activePlugin: null,
   activeSubPlugin: null,

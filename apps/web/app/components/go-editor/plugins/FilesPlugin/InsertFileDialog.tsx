@@ -1,7 +1,7 @@
 import { type JSX, useEffect, useRef } from 'react';
 import type { LexicalEditor } from 'lexical';
 
-import { INSERT_FILE_COMMAND, type InsertFilePayload, InsertFileUploadedDialogBody } from '.';
+import { INSERT_FILE_COMMAND, InsertFileDialogBody, type InsertFilePayload } from '.';
 
 export default function InsertFileDialog({
   activeEditor,
@@ -30,7 +30,7 @@ export default function InsertFileDialog({
 
   return (
     <>
-      <InsertFileUploadedDialogBody handleFileInsert={handleFileInsert} />
+      <InsertFileDialogBody handleFileInsert={handleFileInsert} />
     </>
   );
 }
