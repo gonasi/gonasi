@@ -60,7 +60,7 @@ export async function fetchFilesWithSignedUrls({
   );
 
   return {
-    count,
+    count: count || 0,
     data: files,
   };
 }
