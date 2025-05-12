@@ -7,6 +7,7 @@ import {
   ChevronsUpDown,
   ClipboardCheck,
   Coins,
+  FileStack,
   Group,
   LayoutDashboard,
   TableOfContents,
@@ -122,6 +123,12 @@ export function GoSidebar({ user, role, activeCompany }: Props) {
               to={`/dashboard/${companyId}/courses`}
               name='Course Builder'
               icon={<BookLock />}
+              end
+            />
+            <SideLink
+              to={`/dashboard/${companyId}/file-library`}
+              name='File Library'
+              icon={<FileStack />}
               end
             />
             <SideLink to={`/dashboard/${companyId}/revenue`} name='Revenue' icon={<Coins />} end />

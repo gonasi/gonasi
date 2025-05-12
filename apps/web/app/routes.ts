@@ -59,6 +59,7 @@ export default [
       route('learning-paths', 'routes/dashboard/pathways/all-learning-paths.tsx'),
       route('courses', 'routes/dashboard/courses/all-courses.tsx'),
       route('resource-center', 'routes/dashboard/resource-center.tsx'),
+      route('file-library', 'routes/dashboard/file-library/all-files.tsx'),
       route('revenue', 'routes/dashboard/revenue.tsx'),
     ]),
   ]),
@@ -68,6 +69,7 @@ export default [
     layout('routes/layouts/dashboard/dashboard-plain.tsx', [
       route('/:companyId/learning-paths/new', 'routes/dashboard/pathways/new-learning-path.tsx'),
       route('/:companyId/courses/new', 'routes/dashboard/courses/new-course-title.tsx'),
+      route('/:companyId/file-library/new', 'routes/dashboard/file-library/new-file.tsx'),
       route(
         '/:companyId/learning-paths/:learningPathId',
         'routes/dashboard/pathways/view-learning-path-by-id.tsx',

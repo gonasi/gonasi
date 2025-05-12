@@ -741,6 +741,73 @@ export type Database = {
         }
         Relationships: []
       }
+      file_library: {
+        Row: {
+          company_id: string
+          created_at: string
+          created_by: string
+          extension: string
+          file_type: Database["public"]["Enums"]["file_type"]
+          id: string
+          mime_type: string
+          name: string
+          path: string
+          size: number
+          updated_at: string
+          updated_by: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          created_by: string
+          extension: string
+          file_type?: Database["public"]["Enums"]["file_type"]
+          id?: string
+          mime_type: string
+          name: string
+          path: string
+          size: number
+          updated_at?: string
+          updated_by: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          created_by?: string
+          extension?: string
+          file_type?: Database["public"]["Enums"]["file_type"]
+          id?: string
+          mime_type?: string
+          name?: string
+          path?: string
+          size?: number
+          updated_at?: string
+          updated_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "file_library_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "file_library_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "file_library_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lesson_progress: {
         Row: {
           course_id: string
@@ -1327,6 +1394,10 @@ export type Database = {
         Args: { event: Json }
         Returns: Json
       }
+      determine_file_type: {
+        Args: { extension: string }
+        Returns: Database["public"]["Enums"]["file_type"]
+      }
       get_course_completion_status: {
         Args: { p_user_id: string; p_course_id: string }
         Returns: Json
@@ -1338,6 +1409,26 @@ export type Database = {
       get_user_companies: {
         Args: { user_id: string }
         Returns: string[]
+      }
+      gtrgm_compress: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gtrgm_decompress: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gtrgm_in: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gtrgm_options: {
+        Args: { "": unknown }
+        Returns: undefined
+      }
+      gtrgm_out: {
+        Args: { "": unknown }
+        Returns: unknown
       }
       recalculate_all_course_progress: {
         Args: { p_user_id: string }
@@ -1358,6 +1449,18 @@ export type Database = {
       reorder_lessons: {
         Args: { lessons: Json }
         Returns: undefined
+      }
+      set_limit: {
+        Args: { "": number }
+        Returns: number
+      }
+      show_limit: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      show_trgm: {
+        Args: { "": string }
+        Returns: string[]
       }
       update_chapter_progress: {
         Args: { p_user_id: string; p_chapter_id: string }
@@ -1387,6 +1490,7 @@ export type Database = {
       course_approval_status: "pending" | "approved" | "rejected"
       course_pricing: "free" | "paid"
       course_status: "draft" | "published"
+      file_type: "image" | "audio" | "video" | "model3d" | "document" | "other"
       staff_role_enum: "su" | "admin" | "user"
       user_status: "ONLINE" | "OFFLINE"
     }
@@ -1526,6 +1630,7 @@ export const Constants = {
       course_approval_status: ["pending", "approved", "rejected"],
       course_pricing: ["free", "paid"],
       course_status: ["draft", "published"],
+      file_type: ["image", "audio", "video", "model3d", "document", "other"],
       staff_role_enum: ["su", "admin", "user"],
       user_status: ["ONLINE", "OFFLINE"],
     },
