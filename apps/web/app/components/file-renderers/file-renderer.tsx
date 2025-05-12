@@ -11,7 +11,7 @@ import { ModelPreviewCard } from './preview-cards/model-preview-card';
 
 import type { FileLoaderItemType } from '~/routes/dashboard/file-library/all-files';
 
-// Advanced File Renderer
+// Advanced File Renderer her
 export const FileRenderer: React.FC<{ file: FileLoaderItemType }> = ({ file }) => {
   switch (file.file_type) {
     case FileType.IMAGE:
