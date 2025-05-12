@@ -11,7 +11,7 @@ import { createClient } from '~/lib/supabase/supabase.server';
 
 export type FileLoaderReturnType = Exclude<Awaited<ReturnType<typeof loader>>, Response>['data'];
 
-export type FileLoaderItemType = FileLoaderReturnType[number];
+export type FileLoaderItemType = FileLoaderReturnType['data'][number];
 
 export async function loader({ request, params }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
@@ -21,7 +21,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   const page = Number(url.searchParams.get('page')) || 1;
   const limit = 12;
 
-  const files = await fetchFilesWithSignedUrls({
+  const data = await fetchFilesWithSignedUrls({
     supabase,
     companyId: params.companyId,
     searchQuery,
@@ -29,11 +29,13 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     page,
   });
 
-  return files;
+  return { data };
 }
 
 export default function AllFiles({ loaderData, params }: Route.ComponentProps) {
-  const { data, count } = loaderData;
+  const {
+    data: { data, count },
+  } = loaderData;
 
   return (
     <ViewLayout title='File Library' newLink={`/dashboard/${params.companyId}/file-library/new`}>

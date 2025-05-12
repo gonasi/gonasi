@@ -1,7 +1,7 @@
 import type { JSX, ReactNode } from 'react';
 import { useCallback, useMemo, useState } from 'react';
 
-import { Modal } from '~/components/ui/modal';
+import { Modal, type ModalSize } from '~/components/ui/modal';
 
 export default function useModal(): [
   JSX.Element | null,
@@ -10,6 +10,7 @@ export default function useModal(): [
     getContent: (onClose: () => void) => JSX.Element,
     className?: string,
     leadingIcon?: ReactNode,
+    size?: ModalSize,
   ) => void,
 ] {
   const [modalContent, setModalContent] = useState<null | {
@@ -18,6 +19,7 @@ export default function useModal(): [
     title: string;
     className?: string;
     leadingIcon?: ReactNode;
+    size?: ModalSize;
   }>(null);
 
   const onClose = useCallback(() => {
@@ -28,10 +30,10 @@ export default function useModal(): [
     if (modalContent === null) {
       return null;
     }
-    const { title, content, className, leadingIcon } = modalContent;
+    const { title, content, className, leadingIcon, size = 'md' } = modalContent;
     return (
       <Modal open onOpenChange={(open) => open || onClose()}>
-        <Modal.Content size='md' className={className}>
+        <Modal.Content size={size} className={className}>
           <Modal.Header title={title} leadingIcon={leadingIcon} />
           <Modal.Body>{content}</Modal.Body>
         </Modal.Content>
@@ -45,6 +47,7 @@ export default function useModal(): [
       getContent: (onClose: () => void) => JSX.Element,
       className?: string,
       leadingIcon?: ReactNode,
+      size?: ModalSize,
     ) => {
       setModalContent({
         closeOnClickOutside: false,
@@ -52,6 +55,7 @@ export default function useModal(): [
         title,
         className,
         leadingIcon,
+        size,
       });
     },
     [onClose],

@@ -44,6 +44,7 @@ import {
   ChevronDown,
   Code,
   Eraser,
+  File,
   FilePlus2,
   Highlighter,
   IndentIncrease,
@@ -616,11 +617,19 @@ export default function ToolbarPlugin({
       <IconTooltipButton
         disabled={!isEditable}
         onClick={() => {
-          showModal('Insert File', (onClose) => (
-            <Suspense fallback={<Spinner />}>
-              <InsertFileDialog activeEditor={activeEditor} onClose={onClose} />
-            </Suspense>
-          ));
+          showModal(
+            'Insert File', // title
+            (
+              onClose, // getContent
+            ) => (
+              <Suspense fallback={<Spinner />}>
+                <InsertFileDialog activeEditor={activeEditor} onClose={onClose} />
+              </Suspense>
+            ),
+            '', // className (empty string is fine)
+            <File />, // leadingIcon (null is valid)
+            'lg', // size (valid value from 'sm' | 'md' | 'lg' | 'full')
+          );
         }}
         title='Upload file'
         type='button'

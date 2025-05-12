@@ -6,7 +6,7 @@ import { Badge } from '../badge';
 
 import { cn } from '~/lib/utils';
 
-type ModalSize = 'sm' | 'md' | 'lg' | 'full';
+export type ModalSize = 'sm' | 'md' | 'lg' | 'full';
 
 interface ContentProps {
   children: ReactNode;

@@ -9,10 +9,9 @@ import type { FileLoaderItemType } from '~/routes/dashboard/file-library/all-fil
 interface MediaCardProps {
   file: FileLoaderItemType;
   media?: React.ReactNode;
-  icon?: React.ReactNode;
 }
 
-export const MediaCard: React.FC<MediaCardProps> = ({ file, media, icon }) => {
+export const MediaCard: React.FC<MediaCardProps> = ({ file, media }) => {
   const basePath = '';
 
   const options = [
@@ -35,9 +34,7 @@ export const MediaCard: React.FC<MediaCardProps> = ({ file, media, icon }) => {
         <ActionDropdown items={options} />
       </div>
 
-      <div className='flex h-40 w-full items-center justify-center md:h-60'>
-        {media ? media : icon}
-      </div>
+      <div className='flex h-40 w-full items-center justify-center md:h-60'>{media}</div>
 
       <div className='mt-2'>
         <h3 className='truncate font-medium'>{file.name}</h3>
