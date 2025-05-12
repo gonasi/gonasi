@@ -1,3 +1,5 @@
+import { Outlet } from 'react-router';
+
 import { fetchFilesWithSignedUrls } from '@gonasi/database/files';
 
 import type { Route } from './+types/all-files';
@@ -38,23 +40,26 @@ export default function AllFiles({ loaderData, params }: Route.ComponentProps) {
   } = loaderData;
 
   return (
-    <ViewLayout title='File Library' newLink={`/dashboard/${params.companyId}/file-library/new`}>
-      <div className='pb-4'>
-        <SearchInput placeholder='Search for files...' />
-      </div>
-
-      {data && data.length > 0 ? (
-        <div className='flex flex-col space-y-4'>
-          <div className='grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3'>
-            {data.map((file) => (
-              <FileRenderer key={file.id} file={file} />
-            ))}
-          </div>
-          <PaginationBar totalItems={count ?? 0} itemsPerPage={12} />
+    <>
+      <ViewLayout title='File Library' newLink={`/dashboard/${params.companyId}/file-library/new`}>
+        <div className='pb-4'>
+          <SearchInput placeholder='Search for files...' />
         </div>
-      ) : (
-        <NotFoundCard message='No files found' />
-      )}
-    </ViewLayout>
+
+        {data && data.length > 0 ? (
+          <div className='flex flex-col space-y-4'>
+            <div className='grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3'>
+              {data.map((file) => (
+                <FileRenderer key={file.id} file={file} />
+              ))}
+            </div>
+            <PaginationBar totalItems={count ?? 0} itemsPerPage={12} />
+          </div>
+        ) : (
+          <NotFoundCard message='No files found' />
+        )}
+      </ViewLayout>
+      <Outlet />
+    </>
   );
 }

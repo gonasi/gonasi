@@ -171,3 +171,13 @@ export const NewFileLibrarySubmitSchema = NewFileLibrarySchema.extend({
   companyId: z.string(),
 });
 export type NewFileLibrarySubmitValues = z.infer<typeof NewFileLibrarySubmitSchema>;
+
+export const EditFileNameSchema = z.object({
+  name: FileNameSchema,
+});
+
+export const EditFileNameSubmitSchema = EditFileNameSchema.extend({
+  fileId: z.string(),
+});
+
+export type EditFileNameSubmitValues = z.infer<typeof EditFileNameSubmitSchema>;

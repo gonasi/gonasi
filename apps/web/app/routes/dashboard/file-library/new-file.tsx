@@ -38,7 +38,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 
 export default function NewFile({ actionData, params }: Route.ComponentProps) {
   const [form, fields] = useForm({
-    id: 'new-learning-path-form',
+    id: 'new-file-form',
     constraint: getZodConstraint(NewFileLibrarySchema),
     lastResult: actionData?.result,
     shouldValidate: 'onInput',

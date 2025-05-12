@@ -1,4 +1,5 @@
 import type React from 'react';
+import { useParams } from 'react-router';
 import { Pencil, Trash } from 'lucide-react';
 
 import { formatFileSize } from '../file-renderer-types';
@@ -12,13 +13,15 @@ interface MediaCardProps {
 }
 
 export const MediaCard: React.FC<MediaCardProps> = ({ file, media }) => {
-  const basePath = '';
+  const params = useParams();
+
+  const basePath = `/dashboard/${params.companyId}/file-library/${file.id}`;
 
   const options = [
     {
       title: 'Edit',
       icon: Pencil,
-      to: `${basePath}/edit-lesson-details`,
+      to: `${basePath}/edit`,
     },
     {
       title: 'Delete lesson',

@@ -59,7 +59,15 @@ export default [
       route('learning-paths', 'routes/dashboard/pathways/all-learning-paths.tsx'),
       route('courses', 'routes/dashboard/courses/all-courses.tsx'),
       route('resource-center', 'routes/dashboard/resource-center.tsx'),
-      route('file-library', 'routes/dashboard/file-library/all-files.tsx'),
+      route('file-library', 'routes/dashboard/file-library/all-files.tsx', [
+        ...prefix(':fileId', [
+          route('edit', 'routes/dashboard/file-library/edit-file-name.tsx', [
+            route('image', 'routes/dashboard/file-library/edit-file-image.tsx'),
+          ]),
+          route('delete', 'routes/dashboard/file-library/delete-file.tsx'),
+        ]),
+      ]),
+
       route('revenue', 'routes/dashboard/revenue.tsx'),
     ]),
   ]),
