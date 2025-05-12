@@ -75,7 +75,6 @@ export function InsertFileDialogBody({
     count: 0,
     data: [],
   });
-  const [fileId, setFileId] = useState('');
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
