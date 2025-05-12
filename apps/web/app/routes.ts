@@ -61,9 +61,8 @@ export default [
       route('resource-center', 'routes/dashboard/resource-center.tsx'),
       route('file-library', 'routes/dashboard/file-library/all-files.tsx', [
         ...prefix(':fileId', [
-          route('edit', 'routes/dashboard/file-library/edit-file-name.tsx', [
-            route('image', 'routes/dashboard/file-library/edit-file-image.tsx'),
-          ]),
+          route('edit', 'routes/dashboard/file-library/edit-file-name.tsx'),
+          route('edit/image', 'routes/dashboard/file-library/edit-file-image.tsx'),
           route('delete', 'routes/dashboard/file-library/delete-file.tsx'),
         ]),
       ]),

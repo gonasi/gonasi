@@ -44,7 +44,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   const file = await fetchFileById(supabase, params.fileId);
 
   if (file === null)
-    return redirectWithError(`/dashboard/${params.companyId}/file-library`, 'File  not exist');
+    return redirectWithError(`/dashboard/${params.companyId}/file-library`, 'File does not exist');
 
   return data(file);
 }
@@ -84,7 +84,7 @@ export default function EditFileName({ loaderData, actionData, params }: Route.C
                 type='button'
                 onClick={() =>
                   navigate(
-                    `/dashboard/${params.companyId}/file-library/${params.companyId}/edit/image`,
+                    `/dashboard/${params.companyId}/file-library/${params.fileId}/edit/image`,
                   )
                 }
               >
