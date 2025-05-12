@@ -1,7 +1,9 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
-import { $getNodeByKey } from 'lexical';
+import { useLexicalNodeSelection } from '@lexical/react/useLexicalNodeSelection';
+import { CLICK_COMMAND, COMMAND_PRIORITY_LOW } from 'lexical';
 import { CircleOff } from 'lucide-react';
+import { toast } from 'sonner';
 
 import { fetchFileById } from '@gonasi/database/files';
 
@@ -26,15 +28,23 @@ const FileComponent: React.FC<FileComponentProps> = ({ fileId, nodeKey }) => {
   const [editor] = useLexicalComposerContext();
 
   const [fileMetadata, setFileMetadata] = useState<FileLoaderItemType | null>(null);
-  const [fileUrl, setFileUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Selection state
+  const [isSelected, setSelected, clearSelection] = useLexicalNodeSelection(nodeKey);
+
   // Initialize Supabase client outside the fetch function
-  const supabase = React.useMemo(
+  const supabase = useMemo(
     () => (activeSession ? createBrowserClient(activeSession) : null),
     [activeSession],
   );
+
+  useEffect(() => {
+    if (error) {
+      toast.error(error);
+    }
+  }, [error]);
 
   // Fetch file metadata and URL
   const fetchFileDetails = useCallback(async () => {
@@ -53,7 +63,6 @@ const FileComponent: React.FC<FileComponentProps> = ({ fileId, nodeKey }) => {
         return;
       }
 
-      setFileUrl(data.signed_url);
       setFileMetadata({ ...data });
     } catch (err) {
       console.error('File retrieval error:', err);
@@ -68,31 +77,26 @@ const FileComponent: React.FC<FileComponentProps> = ({ fileId, nodeKey }) => {
     fetchFileDetails();
   }, [fetchFileDetails]);
 
-  const handleDownload = useCallback(() => {
-    if (!fileUrl || !fileMetadata) return;
-
-    try {
-      const link = document.createElement('a');
-      link.href = fileUrl;
-      link.download = fileMetadata.name;
-      link.rel = 'noopener noreferrer';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } catch (err) {
-      console.error('Download error:', err);
-      setError('Failed to download file');
-    }
-  }, [fileUrl, fileMetadata]);
-
-  const handleRemove = useCallback(() => {
-    editor.update(() => {
-      const node = $getNodeByKey(nodeKey);
-      if (node) {
-        node.remove();
-      }
-    });
-  }, [editor, nodeKey]);
+  // Register click command for selection
+  useEffect(() => {
+    return editor.registerCommand(
+      CLICK_COMMAND,
+      (event) => {
+        const eventTarget = event.target as HTMLElement;
+        if (eventTarget.closest(`[data-node-key="${nodeKey}"]`)) {
+          if (event.shiftKey) {
+            setSelected(!isSelected);
+          } else {
+            clearSelection();
+            setSelected(true);
+          }
+          return true;
+        }
+        return false;
+      },
+      COMMAND_PRIORITY_LOW,
+    );
+  }, [editor, nodeKey, isSelected, setSelected, clearSelection]);
 
   // Display loading state
   if (loading) {
@@ -110,7 +114,10 @@ const FileComponent: React.FC<FileComponentProps> = ({ fileId, nodeKey }) => {
   }
 
   return (
-    <FileComponentWrapper>
+    <FileComponentWrapper
+      data-node-key={nodeKey}
+      className={isSelected ? 'border border-red-500' : ''}
+    >
       <FileNodeRenderer file={fileMetadata} />
     </FileComponentWrapper>
   );
