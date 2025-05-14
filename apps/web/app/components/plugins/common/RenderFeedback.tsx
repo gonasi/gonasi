@@ -28,7 +28,7 @@ export function RenderFeedback({ color, icon, label, actions, score }: RenderFee
     'bg-danger/3 text-danger': color === 'destructive',
   });
 
-  const scoreVariants = score && score > 0 ? celebrateVariants : feedbackVariants;
+  const scoreVariants = score !== undefined ? celebrateVariants : feedbackVariants;
 
   return (
     <AnimatePresence mode='wait'>
@@ -43,9 +43,13 @@ export function RenderFeedback({ color, icon, label, actions, score }: RenderFee
         <div className={feedbackClassNames}>
           <div className='flex w-full items-center justify-between'>
             <div className='flex items-center space-x-2'>
-              {icon}
-              <p className='hidden md:flex'>{label}</p>
-              {score && (
+              {score ? (
+                <div className='flex items-center space-x-2'>
+                  {icon}
+                  <p className='hidden md:flex'>{label}</p>
+                </div>
+              ) : null}
+              {score !== undefined && (
                 <motion.div
                   variants={scoreVariants}
                   className='bg-success text-success-foreground rounded-lg p-2'
