@@ -11,6 +11,11 @@ import {
 } from '@gonasi/schemas/plugins';
 
 import { RichTextInteractionSchema } from './interactions/richTextInteractionSchema';
+import {
+  MultipleChoiceSingleAnswerInteractionSchema,
+  MultipleChoiceSingleAnswerSchema,
+  MultipleChoiceSingleAnswerSettingsSchema,
+} from './multipleChoiceSingleAnswerSchema';
 
 /**
  * Recursive JSON type compatible with Supabase
@@ -74,6 +79,8 @@ export const getContentSchemaByType = (type: PluginTypeId) => {
       return RichTextSchema;
     case 'true_false':
       return TrueOrFalseSchema;
+    case 'multiple_choice_single':
+      return MultipleChoiceSingleAnswerSchema;
     default:
       throw new Error(`Unsupported plugin type: ${type}`);
   }
@@ -85,6 +92,8 @@ export const getSettingsSchemaByType = (type: PluginTypeId) => {
       return RichTextSettingsSchema;
     case 'true_false':
       return TrueOrFalseSettingsSchema;
+    case 'multiple_choice_single':
+      return MultipleChoiceSingleAnswerSettingsSchema;
     default:
       throw new Error(`Unsupported plugin type: ${type}`);
   }
@@ -96,6 +105,8 @@ export const getInteractionSchemaByType = (type: PluginTypeId) => {
       return RichTextInteractionSchema;
     case 'true_false':
       return TrueOrFalseInteractionSchema;
+    case 'multiple_choice_single':
+      return MultipleChoiceSingleAnswerInteractionSchema;
     default:
       throw new Error(`Unsupported plugin type for interaction: ${type}`);
   }
