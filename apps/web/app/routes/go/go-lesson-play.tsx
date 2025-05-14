@@ -209,7 +209,7 @@ export default function GoLessonPlay({ loaderData, params }: Route.ComponentProp
             <div className='fixed bottom-10'>
               <motion.div initial={nudgeAnimation.initial} animate={nudgeAnimation.animate}>
                 <OutlineButton
-                  className='bg-card/20 rounded-full'
+                  className='bg-card/80 rounded-full'
                   onClick={handleNavigate}
                   rightIcon={<ArrowRight />}
                 >
