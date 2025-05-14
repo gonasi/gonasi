@@ -17,7 +17,7 @@ export function BlockTypeDropdownItem(props: BlockTypeDropdownItemProps) {
   const { blockType, label, shortcut, onClick, active } = props;
   const Icon = blockTypeToIconComponent[blockType];
 
-  const iconClass = cn('w-4 h-4 text-muted-foreground', active && 'text-primary');
+  const iconClass = cn('w-4 h-4 text-muted-foreground z-5', active && 'text-primary');
 
   return (
     <DropdownMenuItem active={active} onClick={onClick}>

@@ -10,16 +10,18 @@ export const MultipleChoiceSingleAnswerSchema = z.object({
     .min(5, 'The question must be at least 5 characters long.'),
 
   choices: z
-    .array(z.string().trim().min(1, 'Each choice must be at least 1 character long.'))
+    .array(
+      z.object({
+        choiceState: z
+          .string({ required_error: 'Choice is required.' })
+          .trim()
+          .min(5, 'The choice must be at least 5 characters long.'),
+      }),
+    )
     .min(2, 'At least two choices are required.')
     .max(6, 'No more than six choices are allowed.'),
 
-  correctAnswer: z
-    .string({ required_error: 'Correct answer is required.' })
-    .trim()
-    .refine((val) => ['A', 'B', 'C', 'D', 'E', 'F'].includes(val), {
-      message: 'Correct answer must be one of A-F.',
-    }),
+  correctAnswer: z.number({ required_error: 'Correct answer is required.' }),
 
   hint: z
     .string()

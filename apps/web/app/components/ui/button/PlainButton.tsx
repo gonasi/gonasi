@@ -1,9 +1,8 @@
-import type { PropsWithChildren } from 'react';
-
-interface PlainButtonProps extends PropsWithChildren {
+interface PlainButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   onClick?: () => void;
   className?: string;
   disabled?: boolean;
+  children: React.ReactNode;
 }
 
 export function PlainButton({ onClick, className = '', children, disabled }: PlainButtonProps) {

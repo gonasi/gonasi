@@ -4,3 +4,4 @@ export * from './richTextSchema';
 export * from './pluginTypes';
 export * from './blocksPositioning';
 export * from './trueOrFalseSchema';
+export * from './multipleChoiceSingleAnswerSchema';

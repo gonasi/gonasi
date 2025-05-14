@@ -76,7 +76,7 @@ const OutlineButton = React.forwardRef<HTMLButtonElement, OutlineButtonProps>(
         disabled={disabled || isLoading}
         {...props}
       >
-        <span className='relative z-10 flex h-full w-full items-center justify-center gap-2'>
+        <span className='relative z-5 flex h-full w-full items-center justify-center gap-2'>
           {isLoading && <Loader2 className='h-4 w-4 animate-spin' />}
           {!isLoading && leftIcon && (
             <div className='transition-transform duration-200 group-hover:scale-110'>

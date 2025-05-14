@@ -28,7 +28,7 @@ export default function LexicalContentEditable({
           <div
             className={
               placeholderClassName ??
-              'text-muted-foreground font-secondary pointer-events-none absolute top-2 right-[28px] left-[28px] inline-block overflow-hidden text-sm text-ellipsis whitespace-nowrap select-none max-[1025px]:right-2 max-[1025px]:left-2'
+              'text-muted-foreground font-secondary pointer-events-none absolute top-16 right-[28px] left-3 inline-block overflow-hidden text-sm text-xs text-ellipsis whitespace-nowrap select-none'
             }
           >
             {placeholder}
