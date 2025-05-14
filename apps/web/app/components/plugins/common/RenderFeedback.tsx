@@ -52,7 +52,7 @@ export function RenderFeedback({ color, icon, label, actions, score }: RenderFee
               {score !== undefined && (
                 <motion.div
                   variants={scoreVariants}
-                  className='bg-success text-success-foreground rounded-lg p-2'
+                  className='bg-success text-success-foreground rounded-lg p-1 md:p-2'
                 >
                   +{score} pts!
                 </motion.div>
