@@ -1,5 +1,3 @@
-import { getInteractionSchemaByType, type PluginTypeId } from '@gonasi/schemas/plugins';
-
 import { getUserId } from '../../auth';
 import type { TypedSupabaseClient } from '../../client';
 
@@ -51,9 +49,6 @@ export async function fetchUserLessonBlockInteractions({
       lesson_id: lessonId,
     });
 
-  console.log('data: ', data);
-  console.log('error: ', error);
-
   if (error || !data) {
     console.error(
       `Failed to fetch block interactions for lesson ID ${lessonId} and user ID ${userId}:`,
@@ -62,25 +57,5 @@ export async function fetchUserLessonBlockInteractions({
     return [];
   }
 
-  const validatedInteractions = [];
-
-  for (const interaction of data ?? []) {
-    const pluginType = interaction.blocks?.plugin_type as PluginTypeId;
-
-    const schema = getInteractionSchemaByType(pluginType);
-    const result = schema.safeParse(interaction);
-
-    if (!result.success) {
-      console.warn(`Invalid interaction for block ID ${interaction.block_id}:`, result.error);
-      return [];
-    }
-
-    validatedInteractions.push({
-      ...interaction,
-      plugin_type: pluginType,
-      state: result.data,
-    });
-  }
-
-  return validatedInteractions;
+  return data;
 }

@@ -1,7 +1,14 @@
 import { z } from 'zod';
 
 import type { PluginTypeId } from '@gonasi/schemas/plugins';
-import { RichTextSchema, RichTextSettingsSchema, WeightSchema } from '@gonasi/schemas/plugins';
+import {
+  RichTextSchema,
+  RichTextSettingsSchema,
+  TrueOrFalseInteractionSchema,
+  TrueOrFalseSchema,
+  TrueOrFalseSettingsSchema,
+  WeightSchema,
+} from '@gonasi/schemas/plugins';
 
 import { RichTextInteractionSchema } from './interactions/richTextInteractionSchema';
 
@@ -65,6 +72,8 @@ export const getContentSchemaByType = (type: PluginTypeId) => {
   switch (type) {
     case 'rich_text_editor':
       return RichTextSchema;
+    case 'true_false':
+      return TrueOrFalseSchema;
     default:
       throw new Error(`Unsupported plugin type: ${type}`);
   }
@@ -74,6 +83,8 @@ export const getSettingsSchemaByType = (type: PluginTypeId) => {
   switch (type) {
     case 'rich_text_editor':
       return RichTextSettingsSchema;
+    case 'true_false':
+      return TrueOrFalseSettingsSchema;
     default:
       throw new Error(`Unsupported plugin type: ${type}`);
   }
@@ -83,6 +94,8 @@ export const getInteractionSchemaByType = (type: PluginTypeId) => {
   switch (type) {
     case 'rich_text_editor':
       return RichTextInteractionSchema;
+    case 'true_false':
+      return TrueOrFalseInteractionSchema;
     default:
       throw new Error(`Unsupported plugin type for interaction: ${type}`);
   }

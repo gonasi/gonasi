@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import { Suspense } from 'react';
 import { Form, useNavigate } from 'react-router';
 import { getFormProps, useForm } from '@conform-to/react';
 import { getZodConstraint, parseWithZod } from '@conform-to/zod';
@@ -25,10 +25,6 @@ import { Modal } from '~/components/ui/modal';
 import { createClient } from '~/lib/supabase/supabase.server';
 import { checkHoneypot } from '~/utils/honeypot.server';
 import { useIsPending } from '~/utils/misc';
-
-const LazyEditPluginTypesRenderer = lazy(
-  () => import('~/components/plugins/editPluginTypesRenderer'),
-);
 
 // --- Action Handler ---
 export async function action({ request, params }: Route.ActionArgs) {

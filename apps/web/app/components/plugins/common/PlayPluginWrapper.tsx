@@ -1,37 +1,17 @@
-import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Lightbulb, Pencil, Trash } from 'lucide-react';
+import { Lightbulb } from 'lucide-react';
 
-import { ActionDropdown } from '~/components/action-dropdown';
 import { Card, CardContent } from '~/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover';
 import { cn } from '~/lib/utils';
 
-interface QuizCardProps {
+interface PlayPluginWrapperProps {
   children: React.ReactNode;
   hint?: string;
-  onEdit?: () => void;
-  onDelete?: () => void;
-  editable?: boolean;
   className?: string;
 }
 
-export const QuizCard = ({
-  children,
-  hint,
-  onEdit,
-  onDelete,
-  editable,
-  className,
-}: QuizCardProps) => {
-  const [shouldAnimate, setShouldAnimate] = useState(false);
-
-  useEffect(() => {
-    if (hint && !editable) {
-      setShouldAnimate(true);
-    }
-  }, [hint, editable]);
-
+export const PlayPluginWrapper = ({ children, hint, className }: PlayPluginWrapperProps) => {
   return (
     <Card
       className={cn(
@@ -40,21 +20,12 @@ export const QuizCard = ({
       )}
     >
       {/* Absolute top-right hint or actions */}
-      <div className='absolute -top-4 right-4 z-10'>
-        {editable ? (
-          <div className='bg-card/80 rounded-lg'>
-            <ActionDropdown
-              items={[
-                { title: 'Edit', icon: Pencil, onClick: onEdit },
-                { title: 'Delete', icon: Trash, onClick: onDelete },
-              ]}
-            />
-          </div>
-        ) : hint ? (
+      <div className='absolute -top-4 right-4 z-5'>
+        {hint ? (
           <Popover>
             <PopoverTrigger className='bg-card/80 cursor-pointer rounded-full p-2'>
               <motion.div
-                animate={shouldAnimate ? { rotate: [0, -10, 10, -5, 5, 0] } : undefined}
+                animate={{ rotate: [0, -10, 10, -5, 5, 0] }}
                 transition={{
                   duration: 0.6,
                   ease: 'easeInOut',
@@ -71,7 +42,6 @@ export const QuizCard = ({
           </Popover>
         ) : null}
       </div>
-
       <CardContent className='px-4'>{children}</CardContent>
     </Card>
   );

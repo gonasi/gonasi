@@ -30,7 +30,6 @@ export const GonasiNodes: Klass<LexicalNode>[] = [
   // StickyNode,
   FileNode,
   // InlineImageNode,
-  // MentionNode,
   // EmojiNode,
   // ExcalidrawNode,
   // EquationNode,

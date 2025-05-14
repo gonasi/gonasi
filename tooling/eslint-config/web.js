@@ -9,7 +9,7 @@ const config = {
     'plugin:react/jsx-runtime',
     'plugin:react-hooks/recommended',
     'plugin:jsx-a11y/recommended',
-    '@react-three',
+    'plugin:@react-three/recommended',
   ],
   env: {
     browser: true,

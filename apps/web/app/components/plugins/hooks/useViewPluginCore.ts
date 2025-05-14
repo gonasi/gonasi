@@ -4,6 +4,7 @@ import { useFetcher, useParams } from 'react-router';
 import type { Interaction, Json, PluginTypeId } from '@gonasi/schemas/plugins';
 import { isValidInteraction } from '@gonasi/schemas/plugins';
 
+import type { GoLessonPlayInteractionReturnType } from '~/routes/go/go-lesson-play';
 import { useStore } from '~/store';
 
 export interface ViewPluginSettings {
@@ -25,7 +26,7 @@ export interface ViewPluginCoreResult {
   canRender: boolean;
   handleContinue: () => void;
   payload: Interaction;
-  blockInteractionData: any;
+  blockInteractionData: GoLessonPlayInteractionReturnType[number] | undefined;
   isLastBlock: boolean;
   isActiveBlock: boolean;
 }

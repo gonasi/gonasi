@@ -1,3 +1,5 @@
+import type { RichTextSchemaType } from '@gonasi/schemas/plugins';
+
 import { useViewPluginCore } from '../../hooks/useViewPluginCore';
 import type { ViewPluginComponentProps } from '../../viewPluginTypesRenderer';
 
@@ -23,9 +25,12 @@ export function ViewRichTextPlugin({ block, mode }: ViewPluginComponentProps) {
   const shouldShowActionButton = !is_complete && mode !== 'preview' && !autoContinue;
   const shouldShowProgress = !is_complete && autoContinue;
 
+  // Safely cast content to the expected structure for rich_text_editor
+  const { richTextState } = block.content as RichTextSchemaType;
+
   return (
     <ViewPluginWrapper isComplete={is_complete} playbackMode={playbackMode}>
-      <RichTextRenderer editorState={block.content.richTextState} />
+      <RichTextRenderer editorState={richTextState} />
       <div className='pt-4'>
         {shouldShowActionButton && (
           <BlockActionButton onClick={handleContinue} loading={loading} isLastBlock={isLastBlock} />

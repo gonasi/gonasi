@@ -1,25 +1,15 @@
 import { useEffect, useState } from 'react';
-import { useFetcher } from 'react-router';
-import { useForm } from '@conform-to/react';
+import { Form, useFetcher } from 'react-router';
+import { type FieldMetadata, getFormProps, getInputProps, useForm } from '@conform-to/react';
 import { getZodConstraint, parseWithZod } from '@conform-to/zod';
 import { Save } from 'lucide-react';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
-import { z } from 'zod';
 
-import type { PluginTypeId } from '@gonasi/schemas/plugins';
+import { type PluginTypeId, TrueOrFalseSchema } from '@gonasi/schemas/plugins';
 
 import { Button } from '~/components/ui/button';
-import { ErrorList } from '~/components/ui/forms';
-import { RadioGroup, RadioGroupItem } from '~/components/ui/radio-group';
-
-// Schema for the True/False quiz plugin
-const TrueOrFalseSchema = z.object({
-  question: z.string().min(1, 'Question is required'),
-  correctAnswer: z.enum(['true', 'false'], {
-    required_error: 'Correct answer is required',
-  }),
-  explanation: z.string().optional(),
-});
+import { ErrorList, RadioButtonField, TextareaField } from '~/components/ui/forms';
+import { RichTextInputField } from '~/components/ui/forms/RichTextInputField';
 
 interface CreateTrueOrFalsePluginProps {
   name: PluginTypeId;
@@ -39,49 +29,52 @@ export function CreateTrueOrFalsePlugin({ name }: CreateTrueOrFalsePluginProps) 
   }, [fetcher.state, fetcher.data]);
 
   const [form, fields] = useForm({
-    id: `${name}-form`,
+    id: `create-${name}-form`,
     constraint: getZodConstraint(TrueOrFalseSchema),
     shouldValidate: 'onBlur',
     shouldRevalidate: 'onInput',
     onValidate({ formData }) {
       return parseWithZod(formData, { schema: TrueOrFalseSchema });
     },
-    onSubmit(event, { formData }) {
-      event.preventDefault();
-
-      if (form.errors?.length) return;
-
-      fetcher.submit(formData, {
-        method: 'post',
-      });
-    },
   });
 
   return (
-    <form id={form.id} onSubmit={form.onSubmit} className='space-y-6' noValidate>
+    <Form method='POST' {...getFormProps(form)}>
       <HoneypotInputs />
 
-      <div className='space-y-2'>
-        <RadioGroup name='correctAnswer' className='space-y-2'>
-          <div className='flex items-center space-x-2'>
-            <RadioGroupItem value='true' id='true-option' />
-            <label htmlFor='true-option'>True</label>
-          </div>
-          <div className='flex items-center space-x-2'>
-            <RadioGroupItem value='false' id='false-option' />
-            <label htmlFor='false-option'>False</label>
-          </div>
-        </RadioGroup>
-        {fields.correctAnswer.errors?.map((error) => (
-          <p key={error} className='text-sm text-red-500'>
-            {error}
-          </p>
-        ))}
-        <p className='text-muted-foreground text-sm'>
-          Select the correct answer for this statement
-        </p>
-      </div>
-
+      <RichTextInputField
+        labelProps={{ children: 'Question', required: true }}
+        meta={fields.questionState as FieldMetadata<string>}
+        placeholder='Type the true or false statement here'
+        errors={fields.questionState.errors}
+        description='The main statement students will evaluate as true or false.'
+      />
+      <RadioButtonField
+        field={fields.correctAnswer}
+        labelProps={{ children: 'Choose the correct answer', required: true }}
+        options={[
+          { value: 'true', label: 'True' },
+          { value: 'false', label: 'False' },
+        ]}
+        errors={fields.correctAnswer.errors}
+        description='Answer that is correct'
+      />
+      <RichTextInputField
+        labelProps={{ children: 'Explanation', required: true }}
+        meta={fields.explanationState as FieldMetadata<string>}
+        placeholder='Explain the reasoning behind the answer'
+        errors={fields.explanationState?.errors}
+        description='Help learners understand the logic or facts that support the answer.'
+      />
+      <TextareaField
+        labelProps={{ children: 'Hint' }}
+        textareaProps={{
+          ...getInputProps(fields.hint, { type: 'text' }),
+          placeholder: 'Optional hint to guide learners',
+        }}
+        errors={fields.hint?.errors}
+        description='Give learners a nudge or context clue (optional).'
+      />
       <ErrorList errors={form.errors} id={form.errorId} />
 
       <div className='mt-4 flex justify-end space-x-2'>
@@ -96,6 +89,6 @@ export function CreateTrueOrFalsePlugin({ name }: CreateTrueOrFalsePluginProps) 
           Save
         </Button>
       </div>
-    </form>
+    </Form>
   );
 }

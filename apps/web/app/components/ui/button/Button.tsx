@@ -10,7 +10,7 @@ const baseStyles = [
   'rounded-[var(--radius)] text-sm font-medium',
   'transition-all duration-200',
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
-  'disabled:pointer-events-none disabled:opacity-50',
+  'disabled:pointer-events-none disabled:opacity-50 disabled:cursor-default',
   '[&_svg]:size-4 [&_svg]:shrink-0',
   'active:scale-95 cursor-pointer font-bold',
   'relative overflow-hidden',
@@ -70,9 +70,13 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 
     return (
       <Comp
-        className={cn(buttonVariants({ variant, size, className }))}
+        className={cn(
+          buttonVariants({ variant, size }),
+          (disabled || isLoading) && 'pointer-events-none cursor-not-allowed opacity-50',
+          className,
+        )}
         ref={ref}
-        disabled={disabled || isLoading}
+        disabled={!asChild && (disabled || isLoading)}
         {...props}
       >
         <span className='relative z-10 flex h-full w-full items-center justify-center gap-2'>

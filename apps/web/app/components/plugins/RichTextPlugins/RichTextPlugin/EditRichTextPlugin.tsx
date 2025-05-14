@@ -5,18 +5,15 @@ import { getZodConstraint, parseWithZod } from '@conform-to/zod';
 import { Save } from 'lucide-react';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
 
-import { RichTextSchema } from '@gonasi/schemas/plugins';
+import { RichTextSchema, type RichTextSchemaType } from '@gonasi/schemas/plugins';
+
+import type { EditPluginComponentProps } from '../../editPluginTypesRenderer';
 
 import { Button } from '~/components/ui/button';
 import { ErrorList } from '~/components/ui/forms';
 import { RichTextInputField } from '~/components/ui/forms/RichTextInputField';
-import type { LessonBlockLoaderReturnType } from '~/routes/dashboard/courses/lessons/edit-plugin-modal';
 
-interface EditRichTextPluginProps {
-  block: LessonBlockLoaderReturnType;
-}
-
-export function EditRichTextPlugin({ block }: EditRichTextPluginProps) {
+export function EditRichTextPlugin({ block }: EditPluginComponentProps) {
   const fetcher = useFetcher();
   const [loading, setLoading] = useState(false);
 
@@ -26,10 +23,14 @@ export function EditRichTextPlugin({ block }: EditRichTextPluginProps) {
     );
   }, [fetcher.state, fetcher.data]);
 
+  const { richTextState } = block.content as RichTextSchemaType;
+
   const [form, fields] = useForm({
     id: `edit-${block.plugin_type}-form`,
     constraint: getZodConstraint(RichTextSchema),
-    defaultValue: block.content,
+    defaultValue: {
+      richTextState,
+    },
     shouldValidate: 'onBlur',
     shouldRevalidate: 'onInput',
     onValidate({ formData }) {

@@ -11,9 +11,11 @@ import type { INITIAL_CONFIG } from '../types';
 
 import { buildImportMap } from '~/components/go-editor';
 import { Spinner } from '~/components/loaders';
+import { cn } from '~/lib/utils';
 
 interface RichTextRendererProps {
   editorState: string | null;
+  className?: string;
 }
 
 // Handles re-applying editor state when it changes
@@ -32,7 +34,7 @@ function EditorStateUpdater({ editorState }: { editorState: string | null }) {
   return null;
 }
 
-export default function RichTextRenderer({ editorState }: RichTextRendererProps) {
+export default function RichTextRenderer({ editorState, className }: RichTextRendererProps) {
   const initialConfig: INITIAL_CONFIG = {
     namespace: 'rich-text-renderer',
     theme: PlaygroundEditorTheme,
@@ -50,7 +52,7 @@ export default function RichTextRenderer({ editorState }: RichTextRendererProps)
     <Suspense fallback={<Spinner />}>
       <LexicalComposer initialConfig={initialConfig}>
         <EditorStateUpdater editorState={editorState} />
-        <div className='h-fit w-full'>
+        <div className={cn('h-fit w-full', className)}>
           <div className='editor-inner'>
             <RichTextPlugin
               contentEditable={
