@@ -1,4 +1,3 @@
-import { useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 import {
@@ -44,37 +43,17 @@ function getScoreColor(score: number): string {
   }
 }
 
-export function RenderFeedback({ color, icon, label, actions, score = 99 }: RenderFeedbackProps) {
+export function RenderFeedback({ color, icon, label, actions, score }: RenderFeedbackProps) {
   const isError = color === 'destructive';
 
-  // Memoize values that depend on props
-  const variants = useMemo(
-    () => (isError ? { ...shakeVariants, ...resetExitVariant } : feedbackVariants),
-    [isError],
-  );
+  const variants = isError ? { ...shakeVariants, ...resetExitVariant } : feedbackVariants;
 
-  const feedbackClassNames = useMemo(
-    () =>
-      cn(baseFeedbackStyle, 'px-4', {
-        'bg-success/5 text-success': color === 'success',
-        'bg-danger/3 text-danger': color === 'destructive',
-      }),
-    [color],
-  );
+  const feedbackClassNames = cn(baseFeedbackStyle, 'px-4', {
+    'bg-success/5 text-success': color === 'success',
+    'bg-danger/3 text-danger': color === 'destructive',
+  });
 
-  const scoreVariants = useMemo(
-    () => (score !== undefined ? celebrateVariants : feedbackVariants),
-    [score],
-  );
-
-  const scoreColorClass = useMemo(() => getScoreColor(score), [score]);
-
-  // For better performance, avoid unnecessary DOM nesting
-  const scoreElement = score !== undefined && (
-    <motion.div variants={scoreVariants} className={cn('rounded-lg p-1 md:p-2', scoreColorClass)}>
-      +{score} pts!
-    </motion.div>
-  );
+  const scoreVariants = score !== undefined ? celebrateVariants : feedbackVariants;
 
   return (
     <AnimatePresence mode='wait'>
@@ -84,7 +63,7 @@ export function RenderFeedback({ color, icon, label, actions, score = 99 }: Rend
         animate='animate'
         exit='exit'
         variants={variants}
-        className='-mx-4 -mb-4'
+        className={cn('-mx-4 -mb-4')}
       >
         <div className={feedbackClassNames}>
           <div className='flex w-full items-center justify-between'>
@@ -95,10 +74,15 @@ export function RenderFeedback({ color, icon, label, actions, score = 99 }: Rend
                   <p className='hidden md:flex'>{label}</p>
                 </div>
               ) : null}
-
-              {scoreElement}
+              {score !== undefined && (
+                <motion.div
+                  variants={scoreVariants}
+                  className={cn('rounded-lg p-1 md:p-2', `${getScoreColor(score)}`)}
+                >
+                  +{score} pts!
+                </motion.div>
+              )}
             </div>
-
             <div className='flex space-x-2'>{actions}</div>
           </div>
         </div>
