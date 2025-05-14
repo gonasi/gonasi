@@ -199,6 +199,19 @@ export const parseSettings = (input: unknown) => SettingsSchema.safeParse(input)
  * Step 8: Runtime type guards
  */
 export const isValidBlock = (input: unknown): input is Block => parseBlock(input).success;
-export const isValidInteraction = (input: unknown): input is Interaction =>
-  parseInteraction(input).success;
+
+export const isValidInteraction = (input: unknown): input is Interaction => {
+  console.log(input);
+  const result = parseInteraction(input);
+
+  if (!result.success) {
+    // Log validation errors for debugging
+    console.error(
+      'Interaction validation failed:',
+      result.error.issues.map((issue) => `${issue.path.join('.')}: ${issue.message}`).join(', '),
+    );
+  }
+
+  return result.success;
+};
 export const isValidSetting = (input: unknown): input is Settings => parseBlock(input).success;

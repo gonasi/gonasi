@@ -36,5 +36,5 @@ export const BaseInteractionSchema = z.object({
   /**
    * The type of interaction (used for type-specific validation or rendering).
    */
-  interactionType: z.enum(['trueOrFalse', 'singleSelect', 'multiSelect']),
+  interactionType: z.enum(['true_false', 'singleSelect', 'multiSelect']),
 });

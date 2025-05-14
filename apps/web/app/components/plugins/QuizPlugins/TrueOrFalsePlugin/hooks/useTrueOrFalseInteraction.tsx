@@ -17,7 +17,7 @@ export function useTrueOrFalseInteraction(initial?: Partial<InteractionState>) {
   const [state, setState] = useState<InteractionState>(() =>
     schema.parse({
       ...initial,
-      interactionType: 'trueOrFalse',
+      interactionType: 'true_false',
     }),
   );
 
@@ -135,7 +135,7 @@ export function useTrueOrFalseInteraction(initial?: Partial<InteractionState>) {
   const reset = useCallback(() => {
     setState(() =>
       schema.parse({
-        interactionType: 'trueOrFalse',
+        interactionType: 'true_false',
       }),
     );
     setSelectedOption(null);

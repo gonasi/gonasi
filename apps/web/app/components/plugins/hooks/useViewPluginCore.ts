@@ -25,6 +25,7 @@ export interface ViewPluginCoreResult {
   loading: boolean;
   canRender: boolean;
   handleContinue: () => void;
+  updatePayload: (updates: Partial<Interaction>) => void;
   payload: Interaction;
   blockInteractionData: GoLessonPlayInteractionReturnType[number] | undefined;
   isLastBlock: boolean;
@@ -48,6 +49,7 @@ export function useViewPluginCore({
   const [loading, setLoading] = useState(false);
   const [startedAt] = useState(() => new Date().toISOString());
   const [canRender, setCanRender] = useState(delayBeforeShow === 0);
+  const [payloadUpdates, setPayloadUpdates] = useState<Partial<Interaction>>({});
 
   // Loading state tracking
   useEffect(() => {
@@ -65,43 +67,38 @@ export function useViewPluginCore({
     return () => clearTimeout(timeoutId);
   }, [delayBeforeShow]);
 
-  // Auto-continue effect with is_complete guard
-  useEffect(() => {
-    if (!canRender || mode !== 'play' || !autoContinue || blockInteractionData?.is_complete) return;
-
-    const autoContinueDelayMs = delayBeforeAutoContinue * 1000;
-
-    const timeoutId = setTimeout(() => {
-      handleContinue();
-    }, autoContinueDelayMs);
-
-    return () => clearTimeout(timeoutId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [canRender, autoContinue, mode, delayBeforeAutoContinue, blockInteractionData?.is_complete]);
-
   // Interaction payload preparation
   const payload = useMemo<Interaction>(() => {
     return {
       plugin_type: pluginType,
-      attempts: blockInteractionData?.attempts ?? 1,
+      attempts: 1,
       block_id: blockId,
-      feedback: (blockInteractionData?.feedback as Json) ?? ({} as Json),
-      is_complete: blockInteractionData?.is_complete ?? true,
-      last_response: (blockInteractionData?.last_response as Json) ?? ({} as Json),
+      feedback: {} as Json,
+      last_response: {} as Json,
       lesson_id: params.lessonId ?? '',
-      score: blockInteractionData?.score ?? 0,
+      score: 0,
       started_at: startedAt,
-      state: (blockInteractionData?.state as Json) ?? ({ continue: true } as Json),
+      state: { continue: true } as Json,
       time_spent_seconds: 0,
-      completed_at: blockInteractionData?.completed_at ?? new Date().toISOString(),
+      completed_at: new Date().toISOString(),
+      is_complete: true,
+      ...payloadUpdates, // Apply any user updates
     };
-  }, [blockId, pluginType, params.lessonId, startedAt, blockInteractionData]);
+  }, [blockId, pluginType, params.lessonId, startedAt, payloadUpdates]);
+
+  // Function to update payload fields
+  const updatePayload = useCallback((updates: Partial<Interaction>) => {
+    setPayloadUpdates((prev) => ({
+      ...prev,
+      ...updates,
+    }));
+  }, []);
 
   // Handler for continuing to next block
   const handleContinue = useCallback(() => {
     const completedAt = new Date();
     const timeSpentSeconds = Math.floor(
-      (completedAt.getTime() - new Date(startedAt).getTime()) / 1000,
+      (completedAt.getTime() - new Date(payload.started_at).getTime()) / 1000,
     );
 
     const updatedPayload: Interaction = {
@@ -121,12 +118,33 @@ export function useViewPluginCore({
     formData.append('payload', JSON.stringify(updatedPayload));
 
     fetcher.submit(formData, { method: 'post' });
-  }, [isLastBlock, fetcher, payload, startedAt]);
+  }, [isLastBlock, fetcher, payload]);
+
+  // Auto-continue effect with is_complete guard
+  useEffect(() => {
+    if (!canRender || mode !== 'play' || !autoContinue || blockInteractionData?.is_complete) return;
+
+    const autoContinueDelayMs = delayBeforeAutoContinue * 1000;
+
+    const timeoutId = setTimeout(() => {
+      handleContinue();
+    }, autoContinueDelayMs);
+
+    return () => clearTimeout(timeoutId);
+  }, [
+    canRender,
+    autoContinue,
+    mode,
+    delayBeforeAutoContinue,
+    blockInteractionData?.is_complete,
+    handleContinue,
+  ]);
 
   return {
     loading,
     canRender,
     handleContinue,
+    updatePayload,
     payload,
     blockInteractionData,
     isLastBlock,

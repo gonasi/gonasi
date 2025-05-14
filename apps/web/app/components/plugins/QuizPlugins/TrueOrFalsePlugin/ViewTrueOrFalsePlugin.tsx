@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Check, CheckCheck, PartyPopper, RefreshCw, X, XCircle } from 'lucide-react';
 
@@ -24,7 +24,7 @@ import { ReducingProgress } from '~/components/ui/circular-progress';
 import { cn } from '~/lib/utils';
 
 export function ViewTrueOrFalsePlugin({ block, mode }: ViewPluginComponentProps) {
-  const { loading, canRender, handleContinue, blockInteractionData, isLastBlock } =
+  const { loading, canRender, handleContinue, blockInteractionData, isLastBlock, updatePayload } =
     useViewPluginCore({
       blockId: block.id,
       pluginType: block.plugin_type,
@@ -45,6 +45,30 @@ export function ViewTrueOrFalsePlugin({ block, mode }: ViewPluginComponentProps)
 
   const { state, selectedOption, selectOption, checkAnswer, revealCorrectAnswer, tryAgain } =
     interaction;
+
+  // Update payload whenever interaction state changes
+  useEffect(() => {
+    updatePayload({
+      is_complete: state.continue,
+      score: state.isCorrect ? 100 : 0,
+      attempts: state.attemptsCount,
+      last_response: {
+        selectedOption,
+        isCorrect: state.isCorrect,
+        attemptsCount: state.attemptsCount,
+        showExplanation,
+      },
+      state: {
+        ...state,
+        continue: state.continue,
+      },
+      feedback: {
+        correctAnswer,
+        userAnswer: selectedOption === true ? 'true' : selectedOption === false ? 'false' : null,
+        isCorrect: state.isCorrect,
+      },
+    });
+  }, [state, selectedOption, showExplanation, correctAnswer, updatePayload]);
 
   if (!canRender) return null;
 
