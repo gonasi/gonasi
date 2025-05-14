@@ -48,6 +48,18 @@ export const PluginSettingsSchema = z.object({
     .max(5, { message: 'Delay must be at most 5 seconds' })
     .default(1)
     .describe('Delay before automatically continuing (in seconds)'),
+
+  /**
+   * Layout style for displaying items in the plugin block.
+   * Controls how many items appear per row to adjust visual density.
+   * - 'single': 1 item per row
+   * - 'double': 2 items per row
+   * Example: layoutStyle = 'double' means display 2 items side by side in each row.
+   */
+  layoutStyle: z
+    .enum(['single', 'double'])
+    .default('single')
+    .describe("Controls how many items appear per row: 'single' (1) or 'double' (2)"),
 });
 
 export const WeightSchema = z.number().min(1).max(10).default(5);

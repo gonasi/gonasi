@@ -83,7 +83,7 @@ export function ViewMultipleChoiceSingleAnswerPlugin({ block, mode }: ViewPlugin
   if (!canRender) return <></>;
 
   return (
-    <ViewPluginWrapper isComplete={is_complete} playbackMode={playbackMode}>
+    <ViewPluginWrapper isComplete={is_complete} playbackMode={playbackMode} mode={mode}>
       <PlayPluginWrapper hint={hint}>
         {/* Question */}
         <RichTextRenderer editorState={questionState} />
@@ -107,17 +107,17 @@ export function ViewMultipleChoiceSingleAnswerPlugin({ block, mode }: ViewPlugin
               <div key={index} className='relative w-full'>
                 <OutlineButton
                   onClick={() => selectOption(index)}
-                  className={cn('relative w-full justify-start text-left', {
+                  className={cn('relative h-fit w-full justify-start text-left md:max-h-50', {
                     'border-secondary bg-secondary/20 hover:bg-secondary-10 hover:border-secondary/80':
                       isSelected,
                   })}
                   disabled={isDisabled}
                 >
-                  <div className='flex items-center'>
-                    <span className='border-border mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full border text-sm'>
-                      {String.fromCharCode(65 + index)}
-                    </span>
-                    <RichTextRenderer editorState={option.choiceState} />
+                  <div className='flex items-start'>
+                    <RichTextRenderer
+                      editorState={option.choiceState}
+                      className='max-h-30 md:max-h-40'
+                    />
                   </div>
                 </OutlineButton>
 

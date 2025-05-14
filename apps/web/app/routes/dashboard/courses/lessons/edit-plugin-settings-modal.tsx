@@ -174,6 +174,20 @@ export default function EditPluginSettingsModal({ loaderData, params }: Route.Co
                   />
                 ) : null}
 
+                <RadioButtonField
+                  labelProps={{
+                    children: 'Choices Per Row',
+                    required: true,
+                  }}
+                  field={fields.layoutStyle}
+                  errors={fields.layoutStyle.errors}
+                  description='Controls how many choices are displayed per row in the plugin block.'
+                  options={[
+                    { value: 'single', label: 'Single Per Row' },
+                    { value: 'double', label: 'Two Per Row' },
+                  ]}
+                />
+
                 <div className='pt-4'>
                   <Button
                     type='submit'

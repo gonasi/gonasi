@@ -1,6 +1,8 @@
 import { type ReactNode, useState } from 'react';
 import { motion } from 'framer-motion';
+import { Settings } from 'lucide-react';
 
+import { Badge } from '~/components/ui/badge';
 import { BlockActionButton } from '~/components/ui/button';
 import { Modal } from '~/components/ui/modal';
 
@@ -8,12 +10,14 @@ export interface ViewPluginWrapperProps {
   children: ReactNode;
   isComplete?: boolean;
   playbackMode?: 'inline' | 'standalone';
+  mode: 'preview' | 'play';
 }
 
 export function ViewPluginWrapper({
   children,
   isComplete = false,
   playbackMode = 'inline',
+  mode,
 }: ViewPluginWrapperProps) {
   const [open, setOpen] = useState(true);
   const isStandalone = playbackMode === 'standalone';
@@ -28,6 +32,18 @@ export function ViewPluginWrapper({
       {children}
     </motion.div>
   );
+
+  if (mode === 'preview') {
+    return (
+      <div>
+        <Badge className='text-xs' variant='outline'>
+          <Settings />
+          Standalone
+        </Badge>
+        {animatedContent}
+      </div>
+    );
+  }
 
   // If closed in standalone mode, just render the button to reopen
   if (!open && isStandalone) {

@@ -34,7 +34,7 @@ export function ViewTrueOrFalsePlugin({ block, mode }: ViewPluginComponentProps)
     });
 
   const { is_complete, state: blockInteractionStateData } = blockInteractionData ?? {};
-  const { playbackMode, autoContinue, delayBeforeAutoContinue } = block.settings;
+  const { playbackMode, autoContinue, delayBeforeAutoContinue, layoutStyle } = block.settings;
   const { questionState, correctAnswer, explanationState, hint } =
     block.content as TrueOrFalseSchemaType;
 
@@ -75,14 +75,19 @@ export function ViewTrueOrFalsePlugin({ block, mode }: ViewPluginComponentProps)
   if (!canRender) return <></>;
 
   return (
-    <ViewPluginWrapper isComplete={is_complete} playbackMode={playbackMode}>
+    <ViewPluginWrapper isComplete={is_complete} playbackMode={playbackMode} mode={mode}>
       <PlayPluginWrapper hint={hint}>
         {/* Question */}
         <RichTextRenderer editorState={questionState} />
 
         {/* Options: True / False */}
         <div className='flex flex-col gap-4'>
-          <div className='flex justify-between space-x-8 py-6'>
+          <div
+            className={cn('gap-4 py-6', {
+              'grid grid-cols-1': layoutStyle === 'single',
+              'grid grid-cols-2': layoutStyle === 'double',
+            })}
+          >
             {([true, false] as const).map((val) => {
               const isSelected = selectedOption === val;
               const icon = val ? <Check /> : <X />;

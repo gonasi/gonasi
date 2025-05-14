@@ -29,7 +29,7 @@ export function ViewRichTextPlugin({ block, mode }: ViewPluginComponentProps) {
   const { richTextState } = block.content as RichTextSchemaType;
 
   return (
-    <ViewPluginWrapper isComplete={is_complete} playbackMode={playbackMode}>
+    <ViewPluginWrapper isComplete={is_complete} playbackMode={playbackMode} mode={mode}>
       <RichTextRenderer editorState={richTextState} />
       <div className='pt-4'>
         {shouldShowActionButton && (

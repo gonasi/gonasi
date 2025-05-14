@@ -29,7 +29,7 @@ export const fetchLessonBlocksByLessonId = async (
       const parsedContent = contentSchema.safeParse(block.content);
 
       const settingsSchema = getSettingsSchemaByType(block.plugin_type as PluginTypeId);
-      const parsedSettings = settingsSchema.safeParse(block.content);
+      const parsedSettings = settingsSchema.safeParse(block.settings);
 
       if (!parsedContent.success) {
         return {
