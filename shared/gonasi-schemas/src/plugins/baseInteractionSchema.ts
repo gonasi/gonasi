@@ -32,9 +32,4 @@ export const BaseInteractionSchema = z.object({
    * Only enabled after correct answer is given.
    */
   canShowExplanationButton: z.boolean().default(false),
-
-  /**
-   * The type of interaction (used for type-specific validation or rendering).
-   */
-  interactionType: z.enum(['true_false', 'singleSelect', 'multiSelect']),
 });

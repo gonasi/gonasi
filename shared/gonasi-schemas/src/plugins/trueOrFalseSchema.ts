@@ -34,9 +34,7 @@ export type TrueOrFalseSchemaType = z.infer<typeof TrueOrFalseSchema>;
 export type TrueOrFalseSettingsType = z.infer<typeof TrueOrFalseSettingsSchema>;
 
 export const TrueOrFalseInteractionSchema = BaseInteractionSchema.extend({
-  interactionType: z.literal('true_false'),
-
-  optionSelected: z.boolean().default(false),
+  optionSelected: z.boolean().default(false).nullable(),
 
   correctAttempt: z
     .object({

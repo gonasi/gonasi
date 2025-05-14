@@ -12,31 +12,12 @@ export interface EditPluginComponentProps {
   block: LessonBlockLoaderReturnType;
 }
 
-export function withPluginGuard<T extends PluginTypeId>(
-  expectedType: T,
-  Component: (
-    props: EditPluginComponentProps & {
-      block: Extract<LessonBlockLoaderReturnType, { plugin_type: T }>;
-    },
-  ) => JSX.Element,
-): (props: EditPluginComponentProps) => JSX.Element {
-  return (props) => {
-    if (props.block.plugin_type !== expectedType) {
-      throw new Error(
-        `Expected plugin_type "${expectedType}", but received "${props.block.plugin_type}"`,
-      );
-    }
-
-    return <Component {...(props as any)} />;
-  };
-}
-
 // Plugin component map
 const editPluginComponentMap: Record<
   PluginTypeId,
   (props: EditPluginComponentProps) => JSX.Element
 > = {
-  true_false: withPluginGuard('true_false', EditTrueOrFalsePlugin),
+  true_false: EditTrueOrFalsePlugin,
   multiple_choice_multiple: unimplementedPlugin,
   multiple_choice_single: unimplementedPlugin,
   match_concepts: unimplementedPlugin,
@@ -54,7 +35,7 @@ const editPluginComponentMap: Record<
   slideshow_player: unimplementedPlugin,
   motion_simulation: unimplementedPlugin,
   gravity_simulation: unimplementedPlugin,
-  rich_text_editor: withPluginGuard('rich_text_editor', EditRichTextPlugin),
+  rich_text_editor: EditRichTextPlugin,
   image_upload: unimplementedPlugin,
   gltf_embed: unimplementedPlugin,
   video_embed: unimplementedPlugin,

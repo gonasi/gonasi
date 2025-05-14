@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Check, CheckCheck, PartyPopper, RefreshCw, X, XCircle } from 'lucide-react';
 
-import type { TrueOrFalseSchemaType } from '@gonasi/schemas/plugins';
+import type { TrueOrFalseInteractionType, TrueOrFalseSchemaType } from '@gonasi/schemas/plugins';
 
 import { useTrueOrFalseInteraction } from './hooks/useTrueOrFalseInteraction';
 import { PlayPluginWrapper } from '../../common/PlayPluginWrapper';
@@ -10,6 +10,7 @@ import { RenderFeedback } from '../../common/RenderFeedback';
 import { ViewPluginWrapper } from '../../common/ViewPluginWrapper';
 import { useViewPluginCore } from '../../hooks/useViewPluginCore';
 import type { ViewPluginComponentProps } from '../../viewPluginTypesRenderer';
+import { calculateTrueFalseScore } from './utils';
 
 import RichTextRenderer from '~/components/go-editor/ui/RichTextRenderer';
 import {
@@ -32,7 +33,7 @@ export function ViewTrueOrFalsePlugin({ block, mode }: ViewPluginComponentProps)
       mode,
     });
 
-  const { is_complete } = blockInteractionData ?? {};
+  const { is_complete, state: blockInteractionStateData } = blockInteractionData ?? {};
   const { playbackMode, autoContinue, delayBeforeAutoContinue } = block.settings;
   const { questionState, correctAnswer, explanationState, hint } =
     block.content as TrueOrFalseSchemaType;
@@ -41,36 +42,37 @@ export function ViewTrueOrFalsePlugin({ block, mode }: ViewPluginComponentProps)
   const shouldShowProgress = !is_complete && autoContinue;
 
   const [showExplanation, setShowExplanation] = useState(false);
-  const interaction = useTrueOrFalseInteraction();
+  const interaction = useTrueOrFalseInteraction(
+    blockInteractionStateData as TrueOrFalseInteractionType,
+  );
 
   const { state, selectedOption, selectOption, checkAnswer, revealCorrectAnswer, tryAgain } =
     interaction;
 
-  // Update payload whenever interaction state changes
+  const userScore = calculateTrueFalseScore({
+    isCorrect: state.isCorrect,
+    correctAnswerRevealed: state.correctAnswerRevealed,
+    wrongAttemptsCount: state.wrongAttempts.length,
+  });
+
+  // Sync interaction state with plugin state
   useEffect(() => {
     updatePayload({
       is_complete: state.continue,
-      score: state.isCorrect ? 100 : 0,
+      score: userScore,
       attempts: state.attemptsCount,
-      last_response: {
-        selectedOption,
-        isCorrect: state.isCorrect,
-        attemptsCount: state.attemptsCount,
-        showExplanation,
-      },
       state: {
         ...state,
+        interactionType: 'true_false',
         continue: state.continue,
-      },
-      feedback: {
-        correctAnswer,
-        userAnswer: selectedOption === true ? 'true' : selectedOption === false ? 'false' : null,
-        isCorrect: state.isCorrect,
+        optionSelected: selectedOption,
+        correctAttempt: state.correctAttempt,
+        wrongAttempts: state.wrongAttempts,
       },
     });
-  }, [state, selectedOption, showExplanation, correctAnswer, updatePayload]);
+  }, [state, selectedOption, showExplanation, correctAnswer, updatePayload, userScore]);
 
-  if (!canRender) return null;
+  if (!canRender) return <></>;
 
   return (
     <ViewPluginWrapper isComplete={is_complete} playbackMode={playbackMode}>
@@ -87,6 +89,7 @@ export function ViewTrueOrFalsePlugin({ block, mode }: ViewPluginComponentProps)
 
               const isCorrectAttempt =
                 !!state.correctAttempt && state.correctAttempt.selected === val;
+
               const isWrongAttempt = !!state.wrongAttempts?.some(
                 (attempt) => attempt.selected === val,
               );
@@ -108,7 +111,7 @@ export function ViewTrueOrFalsePlugin({ block, mode }: ViewPluginComponentProps)
                     {val ? 'True' : 'False'}
                   </OutlineButton>
 
-                  {/* Attempt indicator icon */}
+                  {/* Indicator icon for selected attempts */}
                   <div className='absolute -top-1.5 -right-1.5 rounded-full'>
                     {isCorrectAttempt && (
                       <Check
@@ -154,9 +157,9 @@ export function ViewTrueOrFalsePlugin({ block, mode }: ViewPluginComponentProps)
           </CardFooter>
         )}
 
-        {/* Actions: Check, Feedback, Continue, Try Again */}
+        {/* Action buttons: Check, Continue, Try Again */}
         <div className='w-full pb-4'>
-          {/* Check Button */}
+          {/* Check button (before answer is validated) */}
           {!state.continue && state.isCorrect === null && (
             <div className='flex w-full justify-end'>
               <AnimateInButtonWrapper>
@@ -173,12 +176,13 @@ export function ViewTrueOrFalsePlugin({ block, mode }: ViewPluginComponentProps)
             </div>
           )}
 
-          {/* Correct feedback */}
+          {/* Feedback: Correct */}
           {state.continue && (
             <RenderFeedback
               color='success'
               icon={<PartyPopper />}
               label='Correct!'
+              score={userScore}
               actions={
                 <div className='flex'>
                   <div>
@@ -208,7 +212,7 @@ export function ViewTrueOrFalsePlugin({ block, mode }: ViewPluginComponentProps)
             />
           )}
 
-          {/* Incorrect feedback */}
+          {/* Feedback: Incorrect */}
           {state.isCorrect === false && (
             <RenderFeedback
               color='destructive'
@@ -238,8 +242,6 @@ export function ViewTrueOrFalsePlugin({ block, mode }: ViewPluginComponentProps)
           )}
         </div>
       </PlayPluginWrapper>
-
-      {/* Debug information for developers */}
       {/* <TrueOrFalseInteractionDebug interaction={interaction} /> */}
     </ViewPluginWrapper>
   );

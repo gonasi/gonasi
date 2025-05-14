@@ -4,27 +4,16 @@ import { getZodConstraint, parseWithZod } from '@conform-to/zod';
 import { Save } from 'lucide-react';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
 
-import {
-  TrueOrFalseSchema,
-  type TrueOrFalseSchemaType,
-  type TrueOrFalseSettingsType,
-} from '@gonasi/schemas/plugins';
+import { TrueOrFalseSchema } from '@gonasi/schemas/plugins';
+
+import type { EditPluginComponentProps } from '../../editPluginTypesRenderer';
 
 import { Button } from '~/components/ui/button';
 import { ErrorList, RadioButtonField, TextareaField } from '~/components/ui/forms';
 import { RichTextInputField } from '~/components/ui/forms/RichTextInputField';
 import { useIsPending } from '~/utils/misc';
 
-interface RichTextBlockPluginProps {
-  block: {
-    id: string;
-    plugin_type: 'true_false';
-    content: TrueOrFalseSchemaType;
-    settings: TrueOrFalseSettingsType;
-  };
-}
-
-export function EditTrueOrFalsePlugin({ block }: RichTextBlockPluginProps) {
+export function EditTrueOrFalsePlugin({ block }: EditPluginComponentProps) {
   const isPending = useIsPending();
 
   const [form, fields] = useForm({

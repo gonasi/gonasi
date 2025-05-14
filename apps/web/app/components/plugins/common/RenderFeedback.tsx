@@ -2,6 +2,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 
 import {
   baseFeedbackStyle,
+  celebrateVariants,
   feedbackVariants,
   resetExitVariant,
   shakeVariants,
@@ -14,10 +15,20 @@ interface RenderFeedbackProps {
   icon: React.ReactNode;
   label: string;
   actions: React.ReactNode;
+  score?: number;
 }
 
-export function RenderFeedback({ color, icon, label, actions }: RenderFeedbackProps) {
+export function RenderFeedback({ color, icon, label, actions, score }: RenderFeedbackProps) {
   const isError = color === 'destructive';
+
+  const variants = isError ? { ...shakeVariants, ...resetExitVariant } : feedbackVariants;
+
+  const feedbackClassNames = cn(baseFeedbackStyle, 'px-4', {
+    'bg-success/5 text-success': color === 'success',
+    'bg-danger/3 text-danger': color === 'destructive',
+  });
+
+  const scoreVariants = score && score > 0 ? celebrateVariants : feedbackVariants;
 
   return (
     <AnimatePresence mode='wait'>
@@ -26,19 +37,22 @@ export function RenderFeedback({ color, icon, label, actions }: RenderFeedbackPr
         initial='initial'
         animate='animate'
         exit='exit'
-        variants={isError ? { ...shakeVariants, ...resetExitVariant } : feedbackVariants}
+        variants={variants}
         className={cn('-mx-4 -mb-4')}
       >
-        <div
-          className={cn(baseFeedbackStyle, 'px-4', {
-            'bg-success/5 text-success': color === 'success',
-            'bg-danger/3 text-danger': color === 'destructive',
-          })}
-        >
+        <div className={feedbackClassNames}>
           <div className='flex w-full items-center justify-between'>
             <div className='flex items-center space-x-2'>
               {icon}
-              <p>{label}</p>
+              <p className='hidden md:flex'>{label}</p>
+              {score && (
+                <motion.div
+                  variants={scoreVariants}
+                  className='bg-success text-success-foreground rounded-lg p-2'
+                >
+                  +{score} pts!
+                </motion.div>
+              )}
             </div>
             <div className='flex space-x-2'>{actions}</div>
           </div>
