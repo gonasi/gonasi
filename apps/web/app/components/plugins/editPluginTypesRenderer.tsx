@@ -2,6 +2,7 @@ import type { JSX } from 'react';
 
 import type { PluginTypeId } from '@gonasi/schemas/plugins';
 
+import { EditMultipleChoiceMultipleAnswersPlugin } from './QuizPlugins/MultipleChoiceMultipleAnswers/EditMultipleChoiceMultipleAnswersPlugin';
 import { EditMultipleChoiceSingleAnswerPlugin } from './QuizPlugins/MultipleChoiceSingleAnswer/EditMultipleChoiceSingleAnswerPlugin';
 import { EditTrueOrFalsePlugin } from './QuizPlugins/TrueOrFalsePlugin/EditTrueOrFalsePlugin';
 import { TapToRevealPlugin } from './RevealPlugins/TapToRevealPlugin';
@@ -19,7 +20,7 @@ const editPluginComponentMap: Record<
   (props: EditPluginComponentProps) => JSX.Element
 > = {
   true_false: EditTrueOrFalsePlugin,
-  multiple_choice_multiple: unimplementedPlugin,
+  multiple_choice_multiple: EditMultipleChoiceMultipleAnswersPlugin,
   multiple_choice_single: EditMultipleChoiceSingleAnswerPlugin,
   match_concepts: unimplementedPlugin,
   sequence_ordering: unimplementedPlugin,

@@ -36,6 +36,8 @@ export async function action({ request, params }: Route.ActionArgs) {
 
   const submission = parseWithZod(formData, { schema: PluginTypeSchema });
 
+  console.log('submission ********: ', submission);
+
   if (submission.status !== 'success') {
     return { result: submission.reply(), status: submission.status === 'error' ? 400 : 200 };
   }

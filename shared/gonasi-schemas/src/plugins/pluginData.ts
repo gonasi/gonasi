@@ -133,7 +133,7 @@ export const ALL_PLUGINS = [
             description: 'More than one correct answer.',
             example: 'Which of the following are programming languages?',
             icon: 'SquareCheck',
-            comingSoon: true,
+            comingSoon: false,
           },
         ],
       },

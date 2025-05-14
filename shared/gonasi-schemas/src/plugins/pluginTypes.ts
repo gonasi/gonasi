@@ -12,6 +12,11 @@ import {
 
 import { RichTextInteractionSchema } from './interactions/richTextInteractionSchema';
 import {
+  MultipleChoiceMultipleAnswersInteractionSchema,
+  MultipleChoiceMultipleAnswersSchema,
+  MultipleChoiceMultipleAnswersSettingsSchema,
+} from './multipleChoiceMultipleAnswersSchema';
+import {
   MultipleChoiceSingleAnswerInteractionSchema,
   MultipleChoiceSingleAnswerSchema,
   MultipleChoiceSingleAnswerSettingsSchema,
@@ -81,6 +86,8 @@ export const getContentSchemaByType = (type: PluginTypeId) => {
       return TrueOrFalseSchema;
     case 'multiple_choice_single':
       return MultipleChoiceSingleAnswerSchema;
+    case 'multiple_choice_multiple':
+      return MultipleChoiceMultipleAnswersSchema;
     default:
       throw new Error(`Unsupported plugin type: ${type}`);
   }
@@ -94,6 +101,8 @@ export const getSettingsSchemaByType = (type: PluginTypeId) => {
       return TrueOrFalseSettingsSchema;
     case 'multiple_choice_single':
       return MultipleChoiceSingleAnswerSettingsSchema;
+    case 'multiple_choice_multiple':
+      return MultipleChoiceMultipleAnswersSettingsSchema;
     default:
       throw new Error(`Unsupported plugin type: ${type}`);
   }
@@ -107,6 +116,8 @@ export const getInteractionSchemaByType = (type: PluginTypeId) => {
       return TrueOrFalseInteractionSchema;
     case 'multiple_choice_single':
       return MultipleChoiceSingleAnswerInteractionSchema;
+    case 'multiple_choice_multiple':
+      return MultipleChoiceMultipleAnswersInteractionSchema;
     default:
       throw new Error(`Unsupported plugin type for interaction: ${type}`);
   }
