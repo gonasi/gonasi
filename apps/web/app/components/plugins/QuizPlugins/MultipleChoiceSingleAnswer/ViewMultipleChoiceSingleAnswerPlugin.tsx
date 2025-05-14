@@ -37,7 +37,7 @@ export function ViewMultipleChoiceSingleAnswerPlugin({ block, mode }: ViewPlugin
     });
 
   const { is_complete, state: blockInteractionStateData } = blockInteractionData ?? {};
-  const { playbackMode, autoContinue, delayBeforeAutoContinue } = block.settings;
+  const { playbackMode, autoContinue, delayBeforeAutoContinue, layoutStyle } = block.settings;
   const {
     questionState,
     choices: options,
@@ -89,7 +89,12 @@ export function ViewMultipleChoiceSingleAnswerPlugin({ block, mode }: ViewPlugin
         <RichTextRenderer editorState={questionState} />
 
         {/* Multiple Choice Options */}
-        <div className='flex flex-col gap-4 py-6'>
+        <div
+          className={cn('gap-4 py-6', {
+            'flex flex-col': layoutStyle === 'single',
+            'grid grid-cols-2': layoutStyle === 'double',
+          })}
+        >
           {options.map((option, index) => {
             const isSelected = selectedOptionIndex === index;
 
