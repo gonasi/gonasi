@@ -4,6 +4,7 @@ import type { PluginTypeId } from '@gonasi/schemas/plugins';
 import { getPluginTypeNameById } from '@gonasi/schemas/plugins';
 
 import { MatchConceptsPlugin } from './DragAndDropPlugins/MatchConceptsPlugin';
+import { CreateMultipleChoiceSingleAnswerPlugin } from './QuizPlugins/MultipleChoiceSingleAnswer/CreateMultipleChoiceSingleAnswerPlugin';
 import { CreateTrueOrFalsePlugin } from './QuizPlugins/TrueOrFalsePlugin/CreateTrueOrFalsePlugin';
 import { TapToRevealPlugin } from './RevealPlugins/TapToRevealPlugin';
 import { CreateRichTextPlugin } from './RichTextPlugins/RichTextPlugin/CreateRichTextPlugin';
@@ -20,7 +21,7 @@ interface PluginComponentProps {
 const pluginComponentMap: Record<PluginTypeId, (props: PluginComponentProps) => JSX.Element> = {
   true_false: CreateTrueOrFalsePlugin,
   multiple_choice_multiple: unimplementedPlugin,
-  multiple_choice_single: unimplementedPlugin,
+  multiple_choice_single: CreateMultipleChoiceSingleAnswerPlugin,
   match_concepts: MatchConceptsPlugin,
   sequence_ordering: unimplementedPlugin,
   categorization: unimplementedPlugin,

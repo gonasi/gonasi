@@ -125,7 +125,7 @@ export const ALL_PLUGINS = [
             description: 'One correct answer, multiple options.',
             example: 'What is the capital of France?',
             icon: 'CircleDot',
-            comingSoon: true,
+            comingSoon: false,
           },
           {
             id: 'multiple_choice_multiple',

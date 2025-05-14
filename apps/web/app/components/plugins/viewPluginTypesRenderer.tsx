@@ -2,6 +2,7 @@ import type { JSX } from 'react';
 
 import type { PluginTypeId } from '@gonasi/schemas/plugins';
 
+import { ViewMultipleChoiceSingleAnswerPlugin } from './QuizPlugins/MultipleChoiceSingleAnswer/ViewMultipleChoiceSingleAnswerPlugin';
 import { ViewTrueOrFalsePlugin } from './QuizPlugins/TrueOrFalsePlugin/ViewTrueOrFalsePlugin';
 import { TapToRevealPlugin } from './RevealPlugins/TapToRevealPlugin';
 import { ViewRichTextPlugin } from './RichTextPlugins/RichTextPlugin/ViewRichTextPlugin';
@@ -25,7 +26,7 @@ const viewPluginComponentMap: Record<
   tap_to_reveal: TapToRevealPlugin,
   rich_text_editor: ViewRichTextPlugin,
   multiple_choice_multiple: unimplementedPlugin,
-  multiple_choice_single: unimplementedPlugin,
+  multiple_choice_single: ViewMultipleChoiceSingleAnswerPlugin,
   match_concepts: unimplementedPlugin,
   sequence_ordering: unimplementedPlugin,
   categorization: unimplementedPlugin,
