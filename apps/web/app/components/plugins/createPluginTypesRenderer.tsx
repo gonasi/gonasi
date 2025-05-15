@@ -7,7 +7,7 @@ import { MatchConceptsPlugin } from './DragAndDropPlugins/MatchConceptsPlugin';
 import { CreateMultipleChoiceMultipleAnswersPlugin } from './QuizPlugins/MultipleChoiceMultipleAnswers/CreateMultipleChoiceMultipleAnswersPlugin';
 import { CreateMultipleChoiceSingleAnswerPlugin } from './QuizPlugins/MultipleChoiceSingleAnswer/CreateMultipleChoiceSingleAnswerPlugin';
 import { CreateTrueOrFalsePlugin } from './QuizPlugins/TrueOrFalsePlugin/CreateTrueOrFalsePlugin';
-import { TapToRevealPlugin } from './RevealPlugins/TapToRevealPlugin';
+import { CreateTapToRevealPlugin } from './RevealPlugins/TapToRevealPlugin/CreateTapToRevealPlugin';
 import { CreateRichTextPlugin } from './RichTextPlugins/RichTextPlugin/CreateRichTextPlugin';
 
 import { useStore } from '~/store';
@@ -31,7 +31,7 @@ const pluginComponentMap: Record<PluginTypeId, (props: PluginComponentProps) => 
   pie_chart: unimplementedPlugin,
   historical_events: unimplementedPlugin,
   project_milestones: unimplementedPlugin,
-  tap_to_reveal: TapToRevealPlugin,
+  tap_to_reveal: CreateTapToRevealPlugin,
   step_by_step_reveal: unimplementedPlugin,
   video_player: unimplementedPlugin,
   audio_player: unimplementedPlugin,

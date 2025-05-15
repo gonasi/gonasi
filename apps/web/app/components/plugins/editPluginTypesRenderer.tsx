@@ -5,7 +5,7 @@ import type { PluginTypeId } from '@gonasi/schemas/plugins';
 import { EditMultipleChoiceMultipleAnswersPlugin } from './QuizPlugins/MultipleChoiceMultipleAnswers/EditMultipleChoiceMultipleAnswersPlugin';
 import { EditMultipleChoiceSingleAnswerPlugin } from './QuizPlugins/MultipleChoiceSingleAnswer/EditMultipleChoiceSingleAnswerPlugin';
 import { EditTrueOrFalsePlugin } from './QuizPlugins/TrueOrFalsePlugin/EditTrueOrFalsePlugin';
-import { TapToRevealPlugin } from './RevealPlugins/TapToRevealPlugin';
+import { EditTapToRevealPlugin } from './RevealPlugins/TapToRevealPlugin/EditTapToRevealPlugin';
 import { EditRichTextPlugin } from './RichTextPlugins/RichTextPlugin/EditRichTextPlugin';
 
 import type { LessonBlockLoaderReturnType } from '~/routes/dashboard/courses/lessons/edit-plugin-modal';
@@ -30,7 +30,7 @@ const editPluginComponentMap: Record<
   pie_chart: unimplementedPlugin,
   historical_events: unimplementedPlugin,
   project_milestones: unimplementedPlugin,
-  tap_to_reveal: TapToRevealPlugin,
+  tap_to_reveal: EditTapToRevealPlugin,
   step_by_step_reveal: unimplementedPlugin,
   video_player: unimplementedPlugin,
   audio_player: unimplementedPlugin,

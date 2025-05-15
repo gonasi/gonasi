@@ -5,7 +5,7 @@ import type { PluginTypeId } from '@gonasi/schemas/plugins';
 import { ViewMultipleChoiceMultipleAnswersPlugin } from './QuizPlugins/MultipleChoiceMultipleAnswers/ViewMultipleChoiceMultipleAnswersPlugin';
 import { ViewMultipleChoiceSingleAnswerPlugin } from './QuizPlugins/MultipleChoiceSingleAnswer/ViewMultipleChoiceSingleAnswerPlugin';
 import { ViewTrueOrFalsePlugin } from './QuizPlugins/TrueOrFalsePlugin/ViewTrueOrFalsePlugin';
-import { TapToRevealPlugin } from './RevealPlugins/TapToRevealPlugin';
+import { ViewTapToRevealPlugin } from './RevealPlugins/TapToRevealPlugin/ViewTapToRevealPlugin';
 import { ViewRichTextPlugin } from './RichTextPlugins/RichTextPlugin/ViewRichTextPlugin';
 
 import type { LessonBlockLoaderReturnType } from '~/routes/dashboard/courses/lessons/edit-plugin-modal';
@@ -24,7 +24,7 @@ const viewPluginComponentMap: Record<
   (props: ViewPluginComponentProps) => JSX.Element
 > = {
   true_false: ViewTrueOrFalsePlugin,
-  tap_to_reveal: TapToRevealPlugin,
+  tap_to_reveal: ViewTapToRevealPlugin,
   rich_text_editor: ViewRichTextPlugin,
   multiple_choice_multiple: ViewMultipleChoiceMultipleAnswersPlugin,
   multiple_choice_single: ViewMultipleChoiceSingleAnswerPlugin,
