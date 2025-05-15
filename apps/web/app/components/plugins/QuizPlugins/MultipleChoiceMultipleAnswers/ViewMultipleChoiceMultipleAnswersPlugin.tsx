@@ -168,8 +168,13 @@ export function ViewMultipleChoiceMultipleAnswersPlugin({ block, mode }: ViewPlu
           {state.correctAttempt?.selected && state.correctAttempt.selected.length > 0 && (
             <span className='ml-2'>
               Correct answers found:{' '}
-              <span className='font-normal'>{state.correctAttempt.selected.length}</span>/
-              {correctAnswers.length}
+              <span className='font-primary bg-success/50 text-success-foreground rounded-sm p-1'>
+                {state.correctAttempt.selected.length}
+              </span>
+              {' of '}
+              <span className='font-primary bg-success/60 text-success-foreground rounded-sm p-1'>
+                {correctAnswers.length}
+              </span>
             </span>
           )}
         </div>
