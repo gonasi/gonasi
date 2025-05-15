@@ -123,6 +123,7 @@ export function ViewMultipleChoiceMultipleAnswersPlugin({ block, mode }: ViewPlu
               isCorrectAttempt ||
               ((disabledOptionsIndex?.includes(index) ?? false) && state.isCorrect !== false) ||
               state.continue ||
+              isWrongAttempt ||
               (!canSelectMore && !isSelected);
 
             return (
