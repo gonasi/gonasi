@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { z } from 'zod';
 
 import { MultipleChoiceMultipleAnswersInteractionSchema } from '@gonasi/schemas/plugins';
@@ -12,7 +12,10 @@ const getTimestamp = () => Date.now();
 /**
  * Custom hook to manage a multiple choice multiple answers quiz interaction state.
  */
-export function useMultipleChoiceMultipleAnswersInteraction(initial?: Partial<InteractionState>) {
+export function useMultipleChoiceMultipleAnswersInteraction(
+  correctAnswers: number[],
+  initial?: Partial<InteractionState>,
+) {
   const [state, setState] = useState<InteractionState>(() =>
     schema.parse({
       ...initial,
@@ -21,11 +24,22 @@ export function useMultipleChoiceMultipleAnswersInteraction(initial?: Partial<In
   );
 
   const [selectedOptionsIndex, setSelectedOptionsIndex] = useState<number[] | null>(null);
+  const [disabledOptionsIndex, setDisabledOptionsIndex] = useState<number[] | null>(null);
+  const [remainingCorrectToSelect, setRemainingCorrectToSelect] = useState<number>(
+    correctAnswers.length,
+  );
   const [hasChecked, setHasChecked] = useState(false);
+
+  // Track how many more selections user can make
+  const canSelectMore = selectedOptionsIndex
+    ? selectedOptionsIndex.length <
+      correctAnswers.length - (state.correctAttempt?.selected?.length || 0)
+    : true;
 
   /**
    * Handles user toggling of one or more options by index.
    * If the answer has already been checked, selection is disabled.
+   * Limits selections to match the number of correct answers.
    */
   const selectOptions = useCallback(
     (selections: number | number[]) => {
@@ -35,10 +49,14 @@ export function useMultipleChoiceMultipleAnswersInteraction(initial?: Partial<In
 
       setSelectedOptionsIndex((prev) => {
         const prevSet = new Set(prev ?? []);
+
         for (const index of selectionArray) {
+          // If already selected, remove it
           if (prevSet.has(index)) {
             prevSet.delete(index);
-          } else {
+          }
+          // Only add if we haven't reached the limit or if we're toggling off
+          else if (prevSet.size < remainingCorrectToSelect) {
             prevSet.add(index);
           }
         }
@@ -47,7 +65,7 @@ export function useMultipleChoiceMultipleAnswersInteraction(initial?: Partial<In
         return updated.length === 0 ? null : updated;
       });
     },
-    [hasChecked],
+    [hasChecked, remainingCorrectToSelect],
   );
 
   /**
@@ -62,80 +80,94 @@ export function useMultipleChoiceMultipleAnswersInteraction(initial?: Partial<In
 
   /**
    * Checks the user's selected answers against the correct answer indexes.
+   * After checking, disables non-selected options and updates remaining correct answers needed.
    */
-  const checkAnswer = useCallback(
-    (correctAnswerIndexes: number[]) => {
-      if (selectedOptionsIndex === null) return;
+  const checkAnswer = useCallback(() => {
+    if (!selectedOptionsIndex || selectedOptionsIndex.length === 0) return;
 
-      const timestamp = getTimestamp();
+    const timestamp = getTimestamp();
+    setHasChecked(true);
 
-      setHasChecked(true);
+    setState((prev) => {
+      // Separate selected options into correct and wrong
+      const correctSelectedThisRound = selectedOptionsIndex.filter((option) =>
+        correctAnswers.includes(option),
+      );
 
-      setState((prev) => {
-        // Separate selected options into correct and wrong
-        const correctSelectedThisRound = selectedOptionsIndex.filter((option) =>
-          correctAnswerIndexes.includes(option),
-        );
+      const wrongSelectedThisRound = selectedOptionsIndex.filter(
+        (option) => !correctAnswers.includes(option),
+      );
 
-        const wrongSelectedThisRound = selectedOptionsIndex.filter(
-          (option) => !correctAnswerIndexes.includes(option),
-        );
+      // Track all correct options selected across attempts
+      const previousCorrectSelected = prev.correctAttempt?.selected ?? [];
 
-        // Track all correct options selected across attempts
-        const previousCorrectSelected = prev.correctAttempt?.selected ?? [];
+      // Always accumulate correct selections from this round,
+      // even if wrong options were also selected
+      const updatedCorrectSelected = Array.from(
+        new Set([...previousCorrectSelected, ...correctSelectedThisRound]),
+      );
 
-        // Always accumulate correct selections from this round,
-        // even if wrong options were also selected
-        const updatedCorrectSelected = Array.from(
-          new Set([...previousCorrectSelected, ...correctSelectedThisRound]),
-        );
+      // Determine if the answer is fully correct by comparing accumulated
+      // correct selections with all required correct answers
+      const isFullyCorrect = areArraysEqual(
+        updatedCorrectSelected.slice().sort(),
+        correctAnswers.slice().sort(),
+      );
 
-        // Determine if the answer is fully correct by comparing accumulated
-        // correct selections with all required correct answers
-        const isFullyCorrect = areArraysEqual(
-          updatedCorrectSelected.slice().sort(),
-          correctAnswerIndexes.slice().sort(),
-        );
+      // Determine if this specific selection contains any wrong answers
+      const hasWrongAnswers = wrongSelectedThisRound.length > 0;
 
-        // Determine if this specific selection contains any wrong answers
-        const hasWrongAnswers = wrongSelectedThisRound.length > 0;
+      return {
+        ...prev,
+        optionSelected: true,
+        isCorrect: isFullyCorrect,
+        continue: isFullyCorrect,
+        canShowContinueButton: isFullyCorrect,
+        canShowCorrectAnswer: true,
+        canShowExplanationButton: true,
+        correctAttempt: {
+          selected: updatedCorrectSelected,
+          timestamp: isFullyCorrect ? timestamp : (prev.correctAttempt?.timestamp ?? timestamp),
+        },
+        // Always track wrong attempts if any wrong options were selected
+        wrongAttempts: hasWrongAnswers
+          ? [
+              ...prev.wrongAttempts,
+              {
+                selected: selectedOptionsIndex,
+                timestamp,
+                partiallyCorrect: correctSelectedThisRound.length > 0, // Track if there were some correct answers
+              },
+            ]
+          : prev.wrongAttempts,
+        attemptsCount: prev.attemptsCount + 1,
+      };
+    });
 
-        return {
-          ...prev,
-          optionSelected: true,
-          isCorrect: isFullyCorrect && !hasWrongAnswers, // Only mark as correct if no wrong answers in current selection
-          continue: isFullyCorrect,
-          canShowContinueButton: isFullyCorrect,
-          canShowCorrectAnswer: true,
-          canShowExplanationButton: isFullyCorrect || hasWrongAnswers, // Show explanation for wrong answers too
-          correctAttempt: {
-            selected: updatedCorrectSelected,
-            timestamp: isFullyCorrect ? timestamp : (prev.correctAttempt?.timestamp ?? timestamp),
-          },
-          // Always track wrong attempts if any wrong options were selected
-          wrongAttempts: hasWrongAnswers
-            ? [
-                ...prev.wrongAttempts,
-                {
-                  selected: selectedOptionsIndex,
-                  timestamp,
-                  partiallyCorrect: correctSelectedThisRound.length > 0, // Track if there were some correct answers
-                },
-              ]
-            : prev.wrongAttempts,
-          attemptsCount: prev.attemptsCount + 1,
-        };
-      });
+    // Disable options that were not selected in this round
+    const allOptions = Array.from({ length: 20 }, (_, i) => i); // Assuming max 20 options, adjust as needed
+    const optionsToDisable = allOptions.filter((opt) => !selectedOptionsIndex.includes(opt));
+    setDisabledOptionsIndex(optionsToDisable);
 
-      setSelectedOptionsIndex(null);
-    },
-    [selectedOptionsIndex],
-  );
+    // Update remaining correct answers to select
+    setRemainingCorrectToSelect((prev) => {
+      const correctSelected = selectedOptionsIndex.filter((opt) =>
+        correctAnswers.includes(opt),
+      ).length;
+      return Math.max(0, prev - correctSelected);
+    });
+
+    // Clear selections for next round
+    setSelectedOptionsIndex(null);
+    setHasChecked(false);
+  }, [selectedOptionsIndex, correctAnswers]);
+
   /**
-   * Resets correctness flag for another try.
+   * Resets correctness flag for another try and clears disabled options.
    */
   const tryAgain = useCallback(() => {
     setHasChecked(false);
+    setDisabledOptionsIndex(null);
     setState((prev) => ({
       ...prev,
       isCorrect: null,
@@ -145,7 +177,7 @@ export function useMultipleChoiceMultipleAnswersInteraction(initial?: Partial<In
   /**
    * Marks correct answer as revealed.
    */
-  const revealCorrectAnswer = useCallback((correctAnswerIndexes: number[]) => {
+  const revealCorrectAnswer = useCallback(() => {
     const timestamp = getTimestamp();
 
     setState((prev) => ({
@@ -157,9 +189,11 @@ export function useMultipleChoiceMultipleAnswersInteraction(initial?: Partial<In
       canShowContinueButton: true,
       canShowCorrectAnswer: true,
       canShowExplanationButton: true,
-      correctAttempt: { selected: correctAnswerIndexes, timestamp },
+      correctAttempt: { selected: correctAnswers, timestamp },
     }));
-  }, []);
+
+    setRemainingCorrectToSelect(0);
+  }, [correctAnswers]);
 
   /**
    * Skips current interaction without answering.
@@ -183,12 +217,25 @@ export function useMultipleChoiceMultipleAnswersInteraction(initial?: Partial<In
       }),
     );
     setSelectedOptionsIndex(null);
+    setDisabledOptionsIndex(null);
+    setRemainingCorrectToSelect(correctAnswers.length);
     setHasChecked(false);
-  }, []);
+  }, [correctAnswers.length]);
+
+  // When correctAttempt changes, update remaining correct answers to select
+  useEffect(() => {
+    if (state.correctAttempt?.selected) {
+      const correctRemaining = correctAnswers.length - state.correctAttempt.selected.length;
+      setRemainingCorrectToSelect(correctRemaining);
+    }
+  }, [state.correctAttempt?.selected, correctAnswers.length]);
 
   return {
     state,
     selectedOptionsIndex,
+    disabledOptionsIndex,
+    remainingCorrectToSelect,
+    canSelectMore,
     selectOptions,
     checkAnswer,
     revealCorrectAnswer,

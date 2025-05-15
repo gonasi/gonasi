@@ -51,11 +51,21 @@ export function ViewMultipleChoiceMultipleAnswersPlugin({ block, mode }: ViewPlu
 
   const [showExplanation, setShowExplanation] = useState(false);
   const interaction = useMultipleChoiceMultipleAnswersInteraction(
+    correctAnswers,
     blockInteractionStateData as MultipleChoiceMultipleAnswersInteractionType,
   );
 
-  const { state, selectedOptionsIndex, selectOptions, checkAnswer, revealCorrectAnswer, tryAgain } =
-    interaction;
+  const {
+    state,
+    selectedOptionsIndex,
+    disabledOptionsIndex,
+    remainingCorrectToSelect,
+    canSelectMore,
+    selectOptions,
+    checkAnswer,
+    revealCorrectAnswer,
+    tryAgain,
+  } = interaction;
 
   const userScore = calculateMultipleChoiceMultipleAnswersScore({
     isCorrect: state.isCorrect,
@@ -88,6 +98,16 @@ export function ViewMultipleChoiceMultipleAnswersPlugin({ block, mode }: ViewPlu
         {/* Question */}
         <RichTextRenderer editorState={questionState} />
 
+        {/* Remaining correct answers indicator */}
+        {remainingCorrectToSelect > 0 && state.isCorrect === null && (
+          <div className='text-primary-foreground bg-primary/10 mb-4 inline-block rounded-md px-3 py-2'>
+            <span className='font-semibold'>
+              Select {remainingCorrectToSelect} more correct answer
+              {remainingCorrectToSelect !== 1 ? 's' : ''}
+            </span>
+          </div>
+        )}
+
         {/* Multiple Choice Options */}
         <div
           className={cn('gap-4 py-6', {
@@ -105,8 +125,15 @@ export function ViewMultipleChoiceMultipleAnswersPlugin({ block, mode }: ViewPlu
               attempt.selected.includes(index),
             );
 
+            // Option is disabled if:
+            // 1. It's already been marked as correct
+            // 2. It's in the disabled options array AND we haven't clicked "Try Again" (state.isCorrect !== false)
+            // 3. User has reached selection limit and this option isn't selected
             const isDisabled =
-              isCorrectAttempt || isWrongAttempt || state.continue || state.isCorrect !== null;
+              isCorrectAttempt ||
+              ((disabledOptionsIndex?.includes(index) ?? false) && state.isCorrect !== false) ||
+              state.continue ||
+              (!canSelectMore && !isSelected);
 
             return (
               <div key={index} className='relative w-full'>
@@ -115,6 +142,7 @@ export function ViewMultipleChoiceMultipleAnswersPlugin({ block, mode }: ViewPlu
                   className={cn('relative h-fit w-full justify-start text-left md:max-h-50', {
                     'border-secondary bg-secondary/20 hover:bg-secondary-10 hover:border-secondary/80':
                       isSelected,
+                    'opacity-50': disabledOptionsIndex?.includes(index),
                   })}
                   disabled={isDisabled}
                 >
@@ -146,6 +174,13 @@ export function ViewMultipleChoiceMultipleAnswersPlugin({ block, mode }: ViewPlu
         {/* Attempt count */}
         <div className='text-muted-foreground font-secondary pb-1 text-xs'>
           Attempts: <span className='font-normal'>{state.attemptsCount}</span>
+          {state.correctAttempt?.selected && state.correctAttempt.selected.length > 0 && (
+            <span className='ml-2'>
+              Correct answers found:{' '}
+              <span className='font-normal'>{state.correctAttempt.selected.length}</span>/
+              {correctAnswers.length}
+            </span>
+          )}
         </div>
 
         {/* Explanation section */}
@@ -178,8 +213,12 @@ export function ViewMultipleChoiceMultipleAnswersPlugin({ block, mode }: ViewPlu
                   variant='secondary'
                   className='mb-4 rounded-full'
                   rightIcon={<CheckCheck />}
-                  disabled={selectedOptionsIndex === null || state.continue}
-                  onClick={() => checkAnswer(correctAnswers)}
+                  disabled={
+                    selectedOptionsIndex === null ||
+                    state.continue ||
+                    selectedOptionsIndex.length !== remainingCorrectToSelect
+                  }
+                  onClick={() => checkAnswer()}
                 >
                   Check
                 </Button>
@@ -242,7 +281,7 @@ export function ViewMultipleChoiceMultipleAnswersPlugin({ block, mode }: ViewPlu
                     <Button
                       variant='secondary'
                       className='rounded-full'
-                      onClick={() => revealCorrectAnswer([correctAnswer])}
+                      onClick={() => revealCorrectAnswer()}
                     >
                       Show Answer
                     </Button>
@@ -253,7 +292,7 @@ export function ViewMultipleChoiceMultipleAnswersPlugin({ block, mode }: ViewPlu
           )}
         </div>
       </PlayPluginWrapper>
-      {/* <MultipleChoiceSingleAnswerInteractionDebug interaction={interaction} /> */}
+      {/* <MultipleChoiceMultipleAnswersInteractionDebug interaction={interaction} /> */}
     </ViewPluginWrapper>
   );
 }
