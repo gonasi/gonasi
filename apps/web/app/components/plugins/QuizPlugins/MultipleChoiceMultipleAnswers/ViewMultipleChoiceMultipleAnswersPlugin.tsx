@@ -13,6 +13,7 @@ import { RenderFeedback } from '../../common/RenderFeedback';
 import { ViewPluginWrapper } from '../../common/ViewPluginWrapper';
 import { useViewPluginCore } from '../../hooks/useViewPluginCore';
 import type { ViewPluginComponentProps } from '../../viewPluginTypesRenderer';
+import { calculateMultipleChoiceMultipleAnswersScore } from './utils';
 
 import RichTextRenderer from '~/components/go-editor/ui/RichTextRenderer';
 import {
@@ -53,23 +54,20 @@ export function ViewMultipleChoiceMultipleAnswersPlugin({ block, mode }: ViewPlu
     blockInteractionStateData as MultipleChoiceMultipleAnswersInteractionType,
   );
 
-  const {
-    state,
-    selectedOptionsIndex,
-    selectOptions,
-    checkAnswer,
-    revealCorrectAnswer,
-    tryAgain,
-    calculateScore,
-  } = interaction;
+  const { state, selectedOptionsIndex, selectOptions, checkAnswer, revealCorrectAnswer, tryAgain } =
+    interaction;
 
-  const userScore = calculateScore(options.length);
+  const userScore = calculateMultipleChoiceMultipleAnswersScore({
+    isCorrect: state.isCorrect,
+    correctAnswersRevealed: state.correctAnswerRevealed,
+    wrongAttemptsCount: state.wrongAttempts.length,
+  });
 
   // Sync interaction state with plugin state
   useEffect(() => {
     updatePayload({
       is_complete: state.continue,
-      score: calculateScore(),
+      score: userScore,
       attempts: state.attemptsCount,
       state: {
         ...state,
@@ -80,15 +78,7 @@ export function ViewMultipleChoiceMultipleAnswersPlugin({ block, mode }: ViewPlu
         wrongAttempts: state.wrongAttempts,
       },
     });
-  }, [
-    state,
-    selectedOptionsIndex,
-    showExplanation,
-    correctAnswers,
-    updatePayload,
-    userScore,
-    calculateScore,
-  ]);
+  }, [state, selectedOptionsIndex, showExplanation, correctAnswers, updatePayload, userScore]);
 
   if (!canRender) return <></>;
 

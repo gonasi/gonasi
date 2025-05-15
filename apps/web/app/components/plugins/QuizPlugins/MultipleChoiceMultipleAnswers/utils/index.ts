@@ -1,0 +1,27 @@
+export function calculateMultipleChoiceMultipleAnswersScore({
+  isCorrect,
+  correctAnswersRevealed,
+  wrongAttemptsCount,
+}: {
+  isCorrect: boolean | null;
+  correctAnswersRevealed: boolean;
+  wrongAttemptsCount: number;
+}): number {
+  // If correct answers were revealed, score is 0
+  if (correctAnswersRevealed) return 0;
+
+  // If not correct yet, no score
+  if (!isCorrect) return 0;
+
+  // Score based on number of wrong attempts
+  switch (wrongAttemptsCount) {
+    case 0:
+      return 100; // No wrong attempts = full score
+    case 1:
+      return 75; // One wrong attempt = 75% score
+    case 2:
+      return 50; // Two wrong attempts = 50% score
+    default:
+      return 25; // Three or more wrong attempts = 25% score
+  }
+}

@@ -13,14 +13,11 @@ export function TrueOrFalseInteractionDebug({ interaction }: DebugProps) {
     state,
     selectedOption,
     hasChecked,
-    explanation,
-    // methods aren't strictly needed for debug, but included for completeness
     selectOption,
     checkAnswer,
     revealCorrectAnswer,
     skip,
     reset,
-    toggleExplanation,
   } = interaction;
 
   return (
@@ -30,14 +27,12 @@ export function TrueOrFalseInteractionDebug({ interaction }: DebugProps) {
           state,
           selectedOption,
           hasChecked,
-          explanation,
           availableActions: {
             selectOption: !!selectOption,
             checkAnswer: !!checkAnswer,
             revealCorrectAnswer: !!revealCorrectAnswer,
             skip: !!skip,
             reset: !!reset,
-            toggleExplanation: !!toggleExplanation,
           },
         },
         null,
