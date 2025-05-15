@@ -98,16 +98,6 @@ export function ViewMultipleChoiceMultipleAnswersPlugin({ block, mode }: ViewPlu
         {/* Question */}
         <RichTextRenderer editorState={questionState} />
 
-        {/* Remaining correct answers indicator */}
-        {remainingCorrectToSelect > 0 && state.isCorrect === null && (
-          <div className='text-primary-foreground bg-primary/10 mb-4 inline-block rounded-md px-3 py-2'>
-            <span className='font-semibold'>
-              Select {remainingCorrectToSelect} more correct answer
-              {remainingCorrectToSelect !== 1 ? 's' : ''}
-            </span>
-          </div>
-        )}
-
         {/* Multiple Choice Options */}
         <div
           className={cn('gap-4 py-6', {
@@ -207,11 +197,25 @@ export function ViewMultipleChoiceMultipleAnswersPlugin({ block, mode }: ViewPlu
         <div className='w-full pb-4'>
           {/* Check button (before answer is validated) */}
           {!state.continue && state.isCorrect === null && (
-            <div className='flex w-full justify-end'>
+            <div className='flex w-full items-center justify-between'>
+              {/* Remaining correct answers indicator */}
+              {remainingCorrectToSelect > 0 && state.isCorrect === null ? (
+                <div className='font-secondary bg-success/50 rounded-md px-2 py-1 text-xs'>
+                  Select{' '}
+                  <span className='font-primary bg-success/50 rounded-sm p-1'>
+                    {remainingCorrectToSelect}
+                  </span>{' '}
+                  more correct answer
+                  {remainingCorrectToSelect !== 1 ? 's' : ''}
+                </div>
+              ) : (
+                <div />
+              )}
+
               <AnimateInButtonWrapper>
                 <Button
                   variant='secondary'
-                  className='mb-4 rounded-full'
+                  className='rounded-full'
                   rightIcon={<CheckCheck />}
                   disabled={
                     selectedOptionsIndex === null ||
