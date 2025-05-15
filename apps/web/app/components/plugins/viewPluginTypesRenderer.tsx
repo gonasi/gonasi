@@ -42,10 +42,6 @@ const viewPluginComponentMap: Record<
   slideshow_player: unimplementedPlugin,
   motion_simulation: unimplementedPlugin,
   gravity_simulation: unimplementedPlugin,
-  image_upload: unimplementedPlugin,
-  gltf_embed: unimplementedPlugin,
-  video_embed: unimplementedPlugin,
-  note_callout: unimplementedPlugin,
 };
 
 export default function ViewPluginTypesRenderer({

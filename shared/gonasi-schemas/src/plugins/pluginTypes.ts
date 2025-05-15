@@ -32,10 +32,6 @@ export type Json = string | number | boolean | null | { [key: string]: Json } | 
  */
 const pluginTypes: PluginTypeId[] = [
   'rich_text_editor',
-  'image_upload',
-  'gltf_embed',
-  'video_embed',
-  'note_callout',
   'true_false',
   'multiple_choice_single',
   'multiple_choice_multiple',

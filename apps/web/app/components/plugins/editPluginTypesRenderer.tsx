@@ -38,10 +38,6 @@ const editPluginComponentMap: Record<
   motion_simulation: unimplementedPlugin,
   gravity_simulation: unimplementedPlugin,
   rich_text_editor: EditRichTextPlugin,
-  image_upload: unimplementedPlugin,
-  gltf_embed: unimplementedPlugin,
-  video_embed: unimplementedPlugin,
-  note_callout: unimplementedPlugin,
 };
 
 // Default placeholder for unimplemented plugins
