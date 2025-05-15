@@ -71,7 +71,7 @@ export function ViewMultipleChoiceSingleAnswerPlugin({ block, mode }: ViewPlugin
       attempts: state.attemptsCount,
       state: {
         ...state,
-        interactionType: 'multiple_choice_single_answer',
+        interactionType: 'multiple_choice_single',
         continue: state.continue,
         optionSelected: selectedOptionIndex,
         correctAttempt: state.correctAttempt,

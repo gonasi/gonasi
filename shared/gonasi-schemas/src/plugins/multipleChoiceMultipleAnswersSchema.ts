@@ -50,7 +50,7 @@ export type MultipleChoiceMultipleAnswersSettingsType = z.infer<
 >;
 
 export const MultipleChoiceMultipleAnswersInteractionSchema = BaseInteractionSchema.extend({
-  selectedOptions: z.array(z.number()).nullable(),
+  selectedOptions: z.array(z.number()).nullable().optional(),
 
   correctAttempt: z
     .object({
