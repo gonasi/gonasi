@@ -67,10 +67,18 @@ export function ViewMultipleChoiceMultipleAnswersPlugin({ block, mode }: ViewPlu
     tryAgain,
   } = interaction;
 
+  // Enhanced usage with additional parameters for better scoring
   const userScore = calculateMultipleChoiceMultipleAnswersScore({
     isCorrect: state.isCorrect,
     correctAnswersRevealed: state.correctAnswerRevealed,
     wrongAttemptsCount: state.wrongAttempts.length,
+    correctSelectedCount: state.correctAttempt?.selected.length || 0,
+    totalCorrectAnswers: correctAnswers.length,
+    wrongAttemptsData: state.wrongAttempts,
+    correctAnswers,
+    // Optional time parameters if you want to track timing
+    // timeToAnswer: timeTakenInMilliseconds,
+    // maxTimeExpected: 30000, // 30 seconds as an example
   });
 
   // Sync interaction state with plugin state

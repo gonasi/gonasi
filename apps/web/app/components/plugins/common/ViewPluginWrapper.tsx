@@ -38,7 +38,7 @@ export function ViewPluginWrapper({
       <div>
         <Badge className='text-xs' variant='outline'>
           <Settings />
-          Standalone
+          {playbackMode}
         </Badge>
         {animatedContent}
       </div>
