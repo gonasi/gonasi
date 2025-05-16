@@ -54,9 +54,9 @@ export function ViewPluginWrapper({
   if (isStandalone && !isComplete) {
     return (
       <Modal open={open} onOpenChange={(newOpen) => newOpen || setOpen(false)}>
-        <Modal.Content size='md'>
+        <Modal.Content size='full'>
           <Modal.Header title='' />
-          <Modal.Body>{animatedContent}</Modal.Body>
+          <Modal.Body className='mx-auto max-w-xl'>{animatedContent}</Modal.Body>
         </Modal.Content>
       </Modal>
     );
