@@ -77,18 +77,25 @@ const OutlineButton = React.forwardRef<HTMLButtonElement, OutlineButtonProps>(
         {...props}
       >
         <span className='relative z-5 flex h-full w-full items-center justify-center gap-2'>
-          {isLoading && <Loader2 className='h-4 w-4 animate-spin' />}
+          {/* Left icon or loader (if rightIcon doesn't exist) */}
           {!isLoading && leftIcon && (
             <div className='transition-transform duration-200 group-hover:scale-110'>
               {leftIcon}
             </div>
           )}
           {children}
-          {!isLoading && rightIcon && (
+          {/* Right icon or loader (if both icons exist or only rightIcon exists) */}
+          {isLoading ? (
+            rightIcon || (leftIcon && rightIcon) ? (
+              <Loader2 className='h-4 w-4 animate-spin' />
+            ) : leftIcon ? null : (
+              <Loader2 className='h-4 w-4 animate-spin' />
+            )
+          ) : rightIcon ? (
             <div className='transition-transform duration-200 group-hover:scale-110'>
               {rightIcon}
             </div>
-          )}
+          ) : null}
         </span>
       </Comp>
     );
