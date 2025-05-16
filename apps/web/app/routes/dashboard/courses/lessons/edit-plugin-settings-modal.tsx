@@ -19,7 +19,7 @@ import type { Route } from './+types/edit-plugin-settings-modal';
 
 import { Spinner } from '~/components/loaders';
 import { Button } from '~/components/ui/button';
-import { RadioButtonField, SwitchField } from '~/components/ui/forms';
+import { RadioButtonField } from '~/components/ui/forms';
 import { SliderField } from '~/components/ui/forms/SliderInputField';
 import { Modal } from '~/components/ui/modal';
 import { createClient } from '~/lib/supabase/supabase.server';
@@ -104,7 +104,6 @@ export default function EditPluginSettingsModal({ loaderData, params }: Route.Co
     constraint: getZodConstraint(SettingsSchema),
     defaultValue: {
       ...data.settings,
-      autoContinue: data.settings.autoContinue?.toString() || 'false',
       weight: data.weight,
     },
     // lastResult: actionData?.result,
@@ -155,24 +154,6 @@ export default function EditPluginSettingsModal({ loaderData, params }: Route.Co
                   errors={fields.delayBeforeShow.errors}
                   description='Number of seconds to wait before showing the block.'
                 />
-
-                <SwitchField
-                  labelProps={{ children: 'Auto-Continue', required: true }}
-                  meta={fields.autoContinue}
-                  errors={fields.autoContinue.errors}
-                  description='When enabled, the plugin automatically proceeds to the next block.'
-                />
-
-                {fields.autoContinue.value === 'true' ? (
-                  <SliderField
-                    labelProps={{ children: 'Delay Before Auto-Continue', required: true }}
-                    meta={fields.delayBeforeAutoContinue}
-                    min={1}
-                    max={5}
-                    errors={fields.delayBeforeAutoContinue.errors}
-                    description='Delay (in seconds) before automatically continuing to the next block.'
-                  />
-                ) : null}
 
                 <RadioButtonField
                   labelProps={{

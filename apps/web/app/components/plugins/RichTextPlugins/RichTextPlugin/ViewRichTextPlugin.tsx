@@ -6,7 +6,6 @@ import type { ViewPluginComponentProps } from '../../viewPluginTypesRenderer';
 import RichTextRenderer from '~/components/go-editor/ui/RichTextRenderer';
 import { ViewPluginWrapper } from '~/components/plugins/common/ViewPluginWrapper';
 import { BlockActionButton } from '~/components/ui/button';
-import { ReducingProgress } from '~/components/ui/circular-progress';
 
 export function ViewRichTextPlugin({ block, mode }: ViewPluginComponentProps) {
   const { loading, canRender, handleContinue, blockInteractionData, isLastBlock } =
@@ -14,16 +13,14 @@ export function ViewRichTextPlugin({ block, mode }: ViewPluginComponentProps) {
       blockId: block.id,
       pluginType: block.plugin_type,
       settings: block.settings,
-      mode,
     });
 
   if (!canRender) return <></>;
 
   const { is_complete } = blockInteractionData ?? {};
-  const { playbackMode, autoContinue, delayBeforeAutoContinue } = block.settings;
+  const { playbackMode } = block.settings;
 
-  const shouldShowActionButton = !is_complete && mode !== 'preview' && !autoContinue;
-  const shouldShowProgress = !is_complete && autoContinue;
+  const shouldShowActionButton = !is_complete && mode !== 'preview';
 
   // Safely cast content to the expected structure for rich_text_editor
   const { richTextState } = block.content as RichTextSchemaType;
@@ -35,7 +32,6 @@ export function ViewRichTextPlugin({ block, mode }: ViewPluginComponentProps) {
         {shouldShowActionButton && (
           <BlockActionButton onClick={handleContinue} loading={loading} isLastBlock={isLastBlock} />
         )}
-        {shouldShowProgress && <ReducingProgress time={delayBeforeAutoContinue} />}
       </div>
     </ViewPluginWrapper>
   );

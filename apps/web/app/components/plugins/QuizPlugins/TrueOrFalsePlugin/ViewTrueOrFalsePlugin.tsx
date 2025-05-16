@@ -21,7 +21,6 @@ import {
   PlainButton,
 } from '~/components/ui/button';
 import { CardFooter } from '~/components/ui/card';
-import { ReducingProgress } from '~/components/ui/circular-progress';
 import { cn } from '~/lib/utils';
 
 export function ViewTrueOrFalsePlugin({ block, mode }: ViewPluginComponentProps) {
@@ -30,16 +29,14 @@ export function ViewTrueOrFalsePlugin({ block, mode }: ViewPluginComponentProps)
       blockId: block.id,
       pluginType: block.plugin_type,
       settings: block.settings,
-      mode,
     });
 
   const { is_complete, state: blockInteractionStateData } = blockInteractionData ?? {};
-  const { playbackMode, autoContinue, delayBeforeAutoContinue, layoutStyle } = block.settings;
+  const { playbackMode, layoutStyle } = block.settings;
   const { questionState, correctAnswer, explanationState, hint } =
     block.content as TrueOrFalseSchemaType;
 
-  const shouldShowActionButton = !is_complete && mode !== 'preview' && !autoContinue;
-  const shouldShowProgress = !is_complete && autoContinue;
+  const shouldShowActionButton = !is_complete && mode !== 'preview';
 
   const [showExplanation, setShowExplanation] = useState(false);
   const interaction = useTrueOrFalseInteraction(
@@ -198,7 +195,6 @@ export function ViewTrueOrFalsePlugin({ block, mode }: ViewPluginComponentProps)
                         isLastBlock={isLastBlock}
                       />
                     )}
-                    {shouldShowProgress && <ReducingProgress time={delayBeforeAutoContinue} />}
                   </div>
                   <div>
                     {!showExplanation && (

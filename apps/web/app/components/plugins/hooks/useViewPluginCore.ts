@@ -8,9 +8,7 @@ import type { GoLessonPlayInteractionReturnType } from '~/routes/go/go-lesson-pl
 import { useStore } from '~/store';
 
 export interface ViewPluginSettings {
-  autoContinue?: boolean;
   delayBeforeShow?: number;
-  delayBeforeAutoContinue?: number;
   [key: string]: any;
 }
 
@@ -18,7 +16,6 @@ export interface ViewPluginCoreProps {
   blockId: string;
   pluginType: PluginTypeId;
   settings: ViewPluginSettings;
-  mode: 'play' | 'preview' | string;
 }
 
 export interface ViewPluginCoreResult {
@@ -36,13 +33,12 @@ export function useViewPluginCore({
   blockId,
   pluginType,
   settings,
-  mode,
 }: ViewPluginCoreProps): ViewPluginCoreResult {
   const fetcher = useFetcher();
   const params = useParams();
   const { getBlockInteraction, isLastBlock, activeBlock } = useStore();
 
-  const { autoContinue, delayBeforeShow = 0, delayBeforeAutoContinue = 0 } = settings;
+  const { delayBeforeShow = 0 } = settings;
 
   const blockInteractionData = getBlockInteraction(blockId);
 
@@ -119,26 +115,6 @@ export function useViewPluginCore({
 
     fetcher.submit(formData, { method: 'post' });
   }, [isLastBlock, fetcher, payload]);
-
-  // Auto-continue effect with is_complete guard
-  useEffect(() => {
-    if (!canRender || mode !== 'play' || !autoContinue || blockInteractionData?.is_complete) return;
-
-    const autoContinueDelayMs = delayBeforeAutoContinue * 1000;
-
-    const timeoutId = setTimeout(() => {
-      handleContinue();
-    }, autoContinueDelayMs);
-
-    return () => clearTimeout(timeoutId);
-  }, [
-    canRender,
-    autoContinue,
-    mode,
-    delayBeforeAutoContinue,
-    blockInteractionData?.is_complete,
-    handleContinue,
-  ]);
 
   return {
     loading,
