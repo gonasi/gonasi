@@ -1,5 +1,4 @@
-import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import { useEffect } from 'react';
 import { Check, CheckCheck, PartyPopper, RefreshCw, X, XCircle } from 'lucide-react';
 
 import type {
@@ -21,18 +20,24 @@ import {
   BlockActionButton,
   Button,
   OutlineButton,
-  PlainButton,
 } from '~/components/ui/button';
-import { CardFooter } from '~/components/ui/card';
 import { cn } from '~/lib/utils';
 
 export function ViewMultipleChoiceMultipleAnswersPlugin({ block, mode }: ViewPluginComponentProps) {
-  const { loading, canRender, handleContinue, blockInteractionData, isLastBlock, updatePayload } =
-    useViewPluginCore({
-      blockId: block.id,
-      pluginType: block.plugin_type,
-      settings: block.settings,
-    });
+  const {
+    loading,
+    canRender,
+    handleContinue,
+    blockInteractionData,
+    isLastBlock,
+    updatePayload,
+    setExplanationState,
+    isExplanationBottomSheetOpen,
+  } = useViewPluginCore({
+    blockId: block.id,
+    pluginType: block.plugin_type,
+    settings: block.settings,
+  });
 
   const { is_complete, state: blockInteractionStateData } = blockInteractionData ?? {};
   const { playbackMode, layoutStyle } = block.settings;
@@ -46,7 +51,6 @@ export function ViewMultipleChoiceMultipleAnswersPlugin({ block, mode }: ViewPlu
 
   const shouldShowActionButton = !is_complete && mode !== 'preview';
 
-  const [showExplanation, setShowExplanation] = useState(false);
   const interaction = useMultipleChoiceMultipleAnswersInteraction(
     correctAnswers,
     blockInteractionStateData as MultipleChoiceMultipleAnswersInteractionType,
@@ -93,7 +97,7 @@ export function ViewMultipleChoiceMultipleAnswersPlugin({ block, mode }: ViewPlu
         wrongAttempts: state.wrongAttempts,
       },
     });
-  }, [state, selectedOptionsIndex, showExplanation, correctAnswers, updatePayload, userScore]);
+  }, [state, selectedOptionsIndex, correctAnswers, updatePayload, userScore]);
 
   if (!canRender) return <></>;
 
@@ -184,26 +188,6 @@ export function ViewMultipleChoiceMultipleAnswersPlugin({ block, mode }: ViewPlu
           )}
         </div>
 
-        {/* Explanation section */}
-        {state.canShowExplanationButton && showExplanation && (
-          <CardFooter className='-mx-6'>
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.35, ease: 'easeOut' }}
-              className='rounded-b-0 bg-background/40 w-full px-6 py-4 md:rounded-b-lg'
-            >
-              <div className='flex items-center justify-between pb-2'>
-                <h4 className='text-lg font-medium'>Explanation</h4>
-                <PlainButton onClick={() => setShowExplanation(false)}>
-                  <X />
-                </PlainButton>
-              </div>
-              <RichTextRenderer editorState={explanationState} />
-            </motion.div>
-          </CardFooter>
-        )}
-
         {/* Action buttons: Check, Continue, Try Again */}
         <div className='w-full pb-4'>
           {/* Check button (before answer is validated) */}
@@ -260,11 +244,11 @@ export function ViewMultipleChoiceMultipleAnswersPlugin({ block, mode }: ViewPlu
                     )}
                   </div>
                   <div>
-                    {!showExplanation && state.canShowExplanationButton && (
+                    {!isExplanationBottomSheetOpen && state.canShowExplanationButton && (
                       <AnimateInButtonWrapper>
                         <OutlineButton
                           className='ml-4 rounded-full'
-                          onClick={() => setShowExplanation(true)}
+                          onClick={() => setExplanationState(explanationState)}
                         >
                           Why?
                         </OutlineButton>
@@ -291,7 +275,7 @@ export function ViewMultipleChoiceMultipleAnswersPlugin({ block, mode }: ViewPlu
                   >
                     Try Again
                   </OutlineButton>
-                  {!showExplanation && (
+                  {!explanationState && (
                     <Button
                       variant='secondary'
                       className='rounded-full'

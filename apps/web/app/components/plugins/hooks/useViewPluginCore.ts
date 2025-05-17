@@ -27,6 +27,8 @@ export interface ViewPluginCoreResult {
   blockInteractionData: GoLessonPlayInteractionReturnType[number] | undefined;
   isLastBlock: boolean;
   isActiveBlock: boolean;
+  setExplanationState: (state: string | null) => void;
+  isExplanationBottomSheetOpen: boolean;
 }
 
 export function useViewPluginCore({
@@ -36,7 +38,13 @@ export function useViewPluginCore({
 }: ViewPluginCoreProps): ViewPluginCoreResult {
   const fetcher = useFetcher();
   const params = useParams();
-  const { getBlockInteraction, isLastBlock, activeBlock } = useStore();
+  const {
+    getBlockInteraction,
+    isLastBlock,
+    activeBlock,
+    setExplanationState,
+    isExplanationBottomSheetOpen,
+  } = useStore();
 
   const { delayBeforeShow = 0 } = settings;
 
@@ -125,5 +133,7 @@ export function useViewPluginCore({
     blockInteractionData,
     isLastBlock,
     isActiveBlock: activeBlock === blockId,
+    setExplanationState,
+    isExplanationBottomSheetOpen,
   };
 }
