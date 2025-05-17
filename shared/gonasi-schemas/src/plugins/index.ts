@@ -6,3 +6,4 @@ export * from './blocksPositioning';
 export * from './trueOrFalseSchema';
 export * from './multipleChoiceSingleAnswerSchema';
 export * from './multipleChoiceMultipleAnswersSchema';
+export * from './tapToRevealSchema';

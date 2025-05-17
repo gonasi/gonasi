@@ -21,6 +21,11 @@ import {
   MultipleChoiceSingleAnswerSchema,
   MultipleChoiceSingleAnswerSettingsSchema,
 } from './multipleChoiceSingleAnswerSchema';
+import {
+  TapToRevealInteractionSchema,
+  TapToRevealSchema,
+  TapToRevealSettingsSchema,
+} from './tapToRevealSchema';
 
 /**
  * Recursive JSON type compatible with Supabase
@@ -84,6 +89,8 @@ export const getContentSchemaByType = (type: PluginTypeId) => {
       return MultipleChoiceSingleAnswerSchema;
     case 'multiple_choice_multiple':
       return MultipleChoiceMultipleAnswersSchema;
+    case 'tap_to_reveal':
+      return TapToRevealSchema;
     default:
       throw new Error(`Unsupported plugin type: ${type}`);
   }
@@ -99,6 +106,8 @@ export const getSettingsSchemaByType = (type: PluginTypeId) => {
       return MultipleChoiceSingleAnswerSettingsSchema;
     case 'multiple_choice_multiple':
       return MultipleChoiceMultipleAnswersSettingsSchema;
+    case 'tap_to_reveal':
+      return TapToRevealSettingsSchema;
     default:
       throw new Error(`Unsupported plugin type: ${type}`);
   }
@@ -114,6 +123,8 @@ export const getInteractionSchemaByType = (type: PluginTypeId) => {
       return MultipleChoiceSingleAnswerInteractionSchema;
     case 'multiple_choice_multiple':
       return MultipleChoiceMultipleAnswersInteractionSchema;
+    case 'tap_to_reveal':
+      return TapToRevealInteractionSchema;
     default:
       throw new Error(`Unsupported plugin type for interaction: ${type}`);
   }

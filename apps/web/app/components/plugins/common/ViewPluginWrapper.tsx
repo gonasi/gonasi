@@ -80,7 +80,7 @@ export function ViewPluginWrapper({
           className='bg-card/96 mx-auto flex max-h-[85vh] min-h-[25vh] max-w-xl flex-col gap-0 space-y-0 rounded-t-xl border-0 shadow-xs'
         >
           <SheetHeader className='flex-shrink-0'>
-            <SheetTitle className='text-xl'>Explanation</SheetTitle>
+            <SheetTitle className='text-lg'>Explanation</SheetTitle>
           </SheetHeader>
 
           <div className='flex-1 overflow-y-auto px-4'>
