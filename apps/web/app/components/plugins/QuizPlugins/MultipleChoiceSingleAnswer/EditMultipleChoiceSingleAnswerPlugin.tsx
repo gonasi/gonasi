@@ -9,7 +9,7 @@ import { MultipleChoiceSingleAnswerSchema } from '@gonasi/schemas/plugins';
 
 import type { EditPluginComponentProps } from '../../editPluginTypesRenderer';
 
-import { Button, OutlineButton, PlainButton } from '~/components/ui/button';
+import { Button, OutlineButton } from '~/components/ui/button';
 import { ErrorList, RadioButtonField, TextareaField } from '~/components/ui/forms';
 import { RichTextInputField } from '~/components/ui/forms/RichTextInputField';
 import { cn } from '~/lib/utils';
@@ -124,9 +124,13 @@ export function EditMultipleChoiceSingleAnswerPlugin({ block }: EditPluginCompon
                           children: `Option ${index + 1}`,
                           required: true,
                           endAdornment: (
-                            <PlainButton type='button' onClick={() => handleRemoveChoice(index)}>
+                            <OutlineButton
+                              size='sm'
+                              type='button'
+                              onClick={() => handleRemoveChoice(index)}
+                            >
                               <Trash size={16} />
-                            </PlainButton>
+                            </OutlineButton>
                           ),
                         }}
                         meta={optionFields.choiceState as FieldMetadata<string>}
@@ -171,7 +175,7 @@ export function EditMultipleChoiceSingleAnswerPlugin({ block }: EditPluginCompon
           description='Give learners a nudge or context clue (optional).'
         />
 
-        <ErrorList errors={form.errors} id={form.errorId} />
+        <ErrorList errors={Object.values(form.allErrors).flat()} id={form.errorId} />
 
         <div className='mt-4 flex justify-end space-x-2'>
           <Button

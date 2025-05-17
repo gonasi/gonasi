@@ -1,15 +1,16 @@
 import { Form } from 'react-router';
-import { type FieldMetadata, getFormProps, useForm } from '@conform-to/react';
+import { type FieldMetadata, getFormProps, getInputProps, useForm } from '@conform-to/react';
 import { getZodConstraint, parseWithZod } from '@conform-to/zod';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Plus, Save, Trash } from 'lucide-react';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
+import { v4 as uuidv4 } from 'uuid';
 
-import { TapToRevealSchema } from '@gonasi/schemas/plugins';
+import { type TapToRevealCardType, TapToRevealSchema } from '@gonasi/schemas/plugins';
 
 import type { EditPluginComponentProps } from '../../editPluginTypesRenderer';
 
-import { Button, OutlineButton, PlainButton } from '~/components/ui/button';
+import { Button, OutlineButton } from '~/components/ui/button';
 import { ErrorList } from '~/components/ui/forms';
 import { RichTextInputField } from '~/components/ui/forms/RichTextInputField';
 import { cn } from '~/lib/utils';
@@ -19,7 +20,7 @@ export function EditTapToRevealPlugin({ block }: EditPluginComponentProps) {
   const pending = useIsPending();
 
   const [form, fields] = useForm({
-    id: `edit-${name}-form`,
+    id: `edit-${block.plugin_type}-form`,
     constraint: getZodConstraint(TapToRevealSchema),
     shouldValidate: 'onBlur',
     shouldRevalidate: 'onInput',
@@ -31,27 +32,44 @@ export function EditTapToRevealPlugin({ block }: EditPluginComponentProps) {
     },
   });
 
-  const getCards = () =>
-    fields.cards.getFieldList().map((fieldset) => {
-      const { frontContent, backContent } = fieldset.getFieldset();
+  const cards = fields.cards.getFieldList();
+
+  const getCards = (): TapToRevealCardType[] =>
+    cards.map((fieldset) => {
+      const { frontContent, backContent, uuid } = fieldset.getFieldset();
+      // Validate or coerce here if needed
       return {
+        uuid: uuid.value ?? '',
         frontContent: frontContent.value ?? '',
         backContent: backContent.value ?? '',
       };
     });
 
-  const updateCards = (updated: { frontContent: string; backContent: string }[]) =>
+  const updateCards = (updated: TapToRevealCardType[]) => {
     form.update({ name: fields.cards.name, value: updated });
+  };
 
   const addCard = () => {
-    updateCards([...getCards(), { frontContent: '', backContent: '' }]);
+    const current = getCards();
+
+    updateCards([
+      ...current,
+      {
+        uuid: uuidv4(),
+        frontContent: '',
+        backContent: '',
+      },
+    ]);
   };
 
-  const removeCard = (index: number) => {
-    updateCards(getCards().filter((_, i) => i !== index));
-  };
+  const removeCard = (uuid: string) => {
+    const current = getCards();
+    const indexToRemove = current.findIndex((card) => card.uuid === uuid);
 
-  const cards = fields.cards.getFieldList();
+    if (indexToRemove !== -1) {
+      form.remove({ name: 'cards', index: indexToRemove });
+    }
+  };
 
   return (
     <Form method='POST' {...getFormProps(form)}>
@@ -70,7 +88,7 @@ export function EditTapToRevealPlugin({ block }: EditPluginComponentProps) {
           <div className='flex items-center justify-between'>
             <h3
               className={cn('font-secondary text-sm font-medium', {
-                'text-danger': form.allErrors.choices,
+                'text-danger': form.allErrors.cards,
               })}
             >
               Cards *
@@ -81,7 +99,7 @@ export function EditTapToRevealPlugin({ block }: EditPluginComponentProps) {
               onClick={addCard}
               disabled={cards.length >= 6}
               className={cn({
-                'border-danger text-danger': form.allErrors.choices,
+                'border-danger text-danger': form.allErrors.cards,
               })}
             >
               <Plus className='mr-2 h-4 w-4' />
@@ -92,10 +110,10 @@ export function EditTapToRevealPlugin({ block }: EditPluginComponentProps) {
           {cards.length > 0 ? (
             <AnimatePresence>
               {cards.map((card, index) => {
-                const { frontContent, backContent } = card.getFieldset();
+                const { frontContent, backContent, uuid } = card.getFieldset();
                 return (
                   <motion.div
-                    key={card.id ?? index}
+                    key={card.id ?? uuid}
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }}
@@ -103,9 +121,13 @@ export function EditTapToRevealPlugin({ block }: EditPluginComponentProps) {
                     className='bg-card/50 rounded-lg p-4'
                   >
                     <div className='flex w-full justify-end py-2'>
-                      <PlainButton onClick={() => removeCard(index)}>
+                      <OutlineButton
+                        size='sm'
+                        onClick={() => removeCard(uuid.value ?? '')}
+                        type='button'
+                      >
                         <Trash size={16} />
-                      </PlainButton>
+                      </OutlineButton>
                     </div>
                     <RichTextInputField
                       labelProps={{ children: `Front of Card ${index + 1}`, required: true }}
@@ -117,6 +139,7 @@ export function EditTapToRevealPlugin({ block }: EditPluginComponentProps) {
                       meta={backContent as FieldMetadata<string>}
                       errors={backContent?.errors}
                     />
+                    <input {...getInputProps(uuid, { type: 'text' })} />
                   </motion.div>
                 );
               })}
@@ -124,7 +147,7 @@ export function EditTapToRevealPlugin({ block }: EditPluginComponentProps) {
           ) : (
             <p className='text-warning text-sm'>No cards added yet.</p>
           )}
-          <ErrorList errors={form.allErrors.choices} />
+          <ErrorList errors={form.allErrors.cards} />
         </div>
 
         <ErrorList errors={Object.values(form.allErrors).flat()} id={form.errorId} />
@@ -136,7 +159,7 @@ export function EditTapToRevealPlugin({ block }: EditPluginComponentProps) {
             disabled={pending}
             isLoading={pending}
             name='intent'
-            value={name}
+            value={block.plugin_type}
           >
             Save
           </Button>

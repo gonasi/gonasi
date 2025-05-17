@@ -1,11 +1,16 @@
 import { Form } from 'react-router';
-import { type FieldMetadata, getFormProps, useForm } from '@conform-to/react';
+import { type FieldMetadata, getFormProps, getInputProps, useForm } from '@conform-to/react';
 import { getZodConstraint, parseWithZod } from '@conform-to/zod';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Plus, Save, Trash } from 'lucide-react';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
+import { v4 as uuidv4 } from 'uuid';
 
-import { type PluginTypeId, TapToRevealSchema } from '@gonasi/schemas/plugins';
+import {
+  type PluginTypeId,
+  type TapToRevealCardType,
+  TapToRevealSchema,
+} from '@gonasi/schemas/plugins';
 
 import { Button, OutlineButton, PlainButton } from '~/components/ui/button';
 import { ErrorList } from '~/components/ui/forms';
@@ -30,27 +35,41 @@ export function CreateTapToRevealPlugin({ name }: CreateTapToRevealPluginProps) 
     },
   });
 
-  const getCards = () =>
-    fields.cards.getFieldList().map((fieldset) => {
-      const { frontContent, backContent } = fieldset.getFieldset();
+  const cards = fields.cards.getFieldList();
+
+  const getCards = (): TapToRevealCardType[] =>
+    cards.map((fieldset) => {
+      const { frontContent, backContent, uuid } = fieldset.getFieldset();
+      // Validate or coerce here if needed
       return {
+        uuid: uuid.value ?? '',
         frontContent: frontContent.value ?? '',
         backContent: backContent.value ?? '',
       };
     });
 
-  const updateCards = (updated: { frontContent: string; backContent: string }[]) =>
+  const updateCards = (updated: TapToRevealCardType[]) => {
     form.update({ name: fields.cards.name, value: updated });
+  };
 
   const addCard = () => {
-    updateCards([...getCards(), { frontContent: '', backContent: '' }]);
+    const current = getCards();
+
+    updateCards([
+      ...current,
+      {
+        uuid: uuidv4(),
+        frontContent: '',
+        backContent: '',
+      },
+    ]);
   };
 
-  const removeCard = (index: number) => {
-    updateCards(getCards().filter((_, i) => i !== index));
+  const removeCard = (uuid: string) => {
+    const current = getCards();
+    const updated = current.filter((card) => card.uuid !== uuid);
+    updateCards(updated);
   };
-
-  const cards = fields.cards.getFieldList();
 
   return (
     <Form method='POST' {...getFormProps(form)}>
@@ -78,7 +97,6 @@ export function CreateTapToRevealPlugin({ name }: CreateTapToRevealPluginProps) 
               type='button'
               size='sm'
               onClick={addCard}
-              disabled={cards.length >= 6}
               className={cn({
                 'border-danger text-danger': form.allErrors.choices,
               })}
@@ -91,10 +109,10 @@ export function CreateTapToRevealPlugin({ name }: CreateTapToRevealPluginProps) 
           {cards.length > 0 ? (
             <AnimatePresence>
               {cards.map((card, index) => {
-                const { frontContent, backContent } = card.getFieldset();
+                const { frontContent, backContent, uuid } = card.getFieldset();
                 return (
                   <motion.div
-                    key={card.id ?? index}
+                    key={card.id ?? uuid}
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }}
@@ -102,7 +120,7 @@ export function CreateTapToRevealPlugin({ name }: CreateTapToRevealPluginProps) 
                     className='bg-card/50 rounded-lg p-4'
                   >
                     <div className='flex w-full justify-end py-2'>
-                      <PlainButton onClick={() => removeCard(index)}>
+                      <PlainButton onClick={() => removeCard(uuid.value ?? '')}>
                         <Trash size={16} />
                       </PlainButton>
                     </div>
@@ -116,6 +134,7 @@ export function CreateTapToRevealPlugin({ name }: CreateTapToRevealPluginProps) 
                       meta={backContent as FieldMetadata<string>}
                       errors={backContent?.errors}
                     />
+                    <input {...getInputProps(uuid, { type: 'text' })} />
                   </motion.div>
                 );
               })}

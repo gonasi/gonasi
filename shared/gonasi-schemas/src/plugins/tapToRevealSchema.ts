@@ -12,6 +12,7 @@ export const TapToRevealCardSchema = z.object({
     .string({ required_error: 'Back content is required.' })
     .trim()
     .min(5, 'Back content must be at least 5 characters long.'),
+  uuid: z.string({ required_error: 'Card uuid is required' }),
 });
 
 export const TapToRevealSchema = z.object({
@@ -31,7 +32,14 @@ export const TapToRevealSchema = z.object({
 export const TapToRevealSettingsSchema = PluginSettingsSchema.extend({});
 
 export const TapToRevealInteractionSchema = BaseInteractionSchema.extend({
-  revealedCardIndices: z.array(z.number()).nullable().optional(),
+  revealedCards: z
+    .array(
+      z.object({
+        index: z.number(),
+        timestamp: z.number(),
+      }),
+    )
+    .default([]),
 });
 
 // Types
