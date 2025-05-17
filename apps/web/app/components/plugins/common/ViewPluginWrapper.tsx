@@ -77,7 +77,7 @@ export function ViewPluginWrapper({
       <Sheet open={isExplanationBottomSheetOpen} onOpenChange={() => closeExplanation()}>
         <SheetContent
           side='bottom'
-          className='bg-card/96 mx-auto flex max-h-[80vh] max-w-xl flex-col gap-0 space-y-0 rounded-t-xl border-0 shadow-xs'
+          className='bg-card/96 mx-auto flex max-h-[85vh] min-h-[25vh] max-w-xl flex-col gap-0 space-y-0 rounded-t-xl border-0 shadow-xs'
         >
           <SheetHeader className='flex-shrink-0'>
             <SheetTitle className='text-xl'>Explanation</SheetTitle>
