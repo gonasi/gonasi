@@ -76,10 +76,10 @@ export function CreateTapToRevealPlugin({ name }: CreateTapToRevealPluginProps) 
         <HoneypotInputs />
 
         <RichTextInputField
-          labelProps={{ children: 'Question', required: true }}
+          labelProps={{ children: 'Title', required: true }}
           meta={fields.title as FieldMetadata<string>}
-          placeholder='Enter your question'
-          description='The title shown to users before revealing the cards.'
+          placeholder='Enter your title'
+          description='The title shown to users'
           errors={fields.title.errors}
         />
 
@@ -124,7 +124,7 @@ export function CreateTapToRevealPlugin({ name }: CreateTapToRevealPluginProps) 
                       </PlainButton>
                     </div>
                     <RichTextInputField
-                      labelProps={{ children: `Front of Card ${uuid.value}`, required: true }}
+                      labelProps={{ children: `Front of Card ${index + 1}`, required: true }}
                       meta={frontContent as FieldMetadata<string>}
                       errors={frontContent?.errors}
                     />
@@ -133,7 +133,7 @@ export function CreateTapToRevealPlugin({ name }: CreateTapToRevealPluginProps) 
                       meta={backContent as FieldMetadata<string>}
                       errors={backContent?.errors}
                     />
-                    <input {...getInputProps(uuid, { type: 'text' })} />
+                    <input {...getInputProps(uuid, { type: 'hidden' })} />
                   </motion.div>
                 );
               })}

@@ -139,7 +139,7 @@ export function EditTapToRevealPlugin({ block }: EditPluginComponentProps) {
                       meta={backContent as FieldMetadata<string>}
                       errors={backContent?.errors}
                     />
-                    <input {...getInputProps(uuid, { type: 'text' })} />
+                    <input {...getInputProps(uuid, { type: 'hidden' })} />
                   </motion.div>
                 );
               })}
