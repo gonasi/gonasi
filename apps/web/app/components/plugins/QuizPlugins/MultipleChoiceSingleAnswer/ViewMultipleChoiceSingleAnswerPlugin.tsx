@@ -52,10 +52,11 @@ export function ViewMultipleChoiceSingleAnswerPlugin({ block, mode }: ViewPlugin
   const shouldShowActionButton = !is_complete && mode !== 'preview';
 
   const interaction = useMultipleChoiceSingleAnswerInteraction(
+    correctAnswer, // uuid of correct answer
     blockInteractionStateData as MultipleChoiceSingleAnswerInteractionType,
   );
 
-  const { state, selectedOptionIndex, selectOption, checkAnswer, revealCorrectAnswer, tryAgain } =
+  const { state, selectedOptionUuid, selectOption, checkAnswer, revealCorrectAnswer, tryAgain } =
     interaction;
 
   const userScore = calculateMultipleChoiceSingleAnswerScore({
@@ -74,12 +75,12 @@ export function ViewMultipleChoiceSingleAnswerPlugin({ block, mode }: ViewPlugin
         ...state,
         interactionType: 'multiple_choice_single',
         continue: state.continue,
-        optionSelected: selectedOptionIndex,
+        optionSelected: selectedOptionUuid,
         correctAttempt: state.correctAttempt,
         wrongAttempts: state.wrongAttempts,
       },
     });
-  }, [state, selectedOptionIndex, correctAnswer, updatePayload, userScore]);
+  }, [state, selectedOptionUuid, correctAnswer, updatePayload, userScore]);
 
   if (!canRender) return <></>;
 
@@ -96,23 +97,23 @@ export function ViewMultipleChoiceSingleAnswerPlugin({ block, mode }: ViewPlugin
             'grid grid-cols-2': layoutStyle === 'double',
           })}
         >
-          {options.map((option, index) => {
-            const isSelected = selectedOptionIndex === index;
+          {options.map((option) => {
+            const isSelected = selectedOptionUuid === option.uuid;
 
             const isCorrectAttempt =
-              !!state.correctAttempt && state.correctAttempt.selected === index;
+              !!state.correctAttempt && state.correctAttempt.selected === option.uuid;
 
             const isWrongAttempt = !!state.wrongAttempts?.some(
-              (attempt) => attempt.selected === index,
+              (attempt) => attempt.selected === option.uuid,
             );
 
             const isDisabled =
               isCorrectAttempt || isWrongAttempt || state.continue || state.isCorrect !== null;
 
             return (
-              <div key={index} className='relative w-full'>
+              <div key={option.uuid} className='relative w-full'>
                 <OutlineButton
-                  onClick={() => selectOption(index)}
+                  onClick={() => selectOption(option.uuid)}
                   className={cn('relative h-fit w-full justify-start text-left md:max-h-50', {
                     'border-secondary bg-secondary/20 hover:bg-secondary-10 hover:border-secondary/80':
                       isSelected,
@@ -159,7 +160,7 @@ export function ViewMultipleChoiceSingleAnswerPlugin({ block, mode }: ViewPlugin
                   variant='secondary'
                   className='mb-4 rounded-full'
                   rightIcon={<CheckCheck />}
-                  disabled={selectedOptionIndex === null || state.continue}
+                  disabled={selectedOptionUuid === null || state.continue}
                   onClick={() => checkAnswer(correctAnswer)}
                 >
                   Check

@@ -12,7 +12,10 @@ const getTimestamp = () => Date.now();
 /**
  * Custom hook to manage a multiple choice single answer quiz interaction state.
  */
-export function useMultipleChoiceSingleAnswerInteraction(initial?: Partial<InteractionState>) {
+export function useMultipleChoiceSingleAnswerInteraction(
+  correctAnswerUuid: string,
+  initial?: Partial<InteractionState>,
+) {
   // Main interaction state (parsed with schema)
   const [state, setState] = useState<InteractionState>(() =>
     schema.parse({
@@ -21,8 +24,8 @@ export function useMultipleChoiceSingleAnswerInteraction(initial?: Partial<Inter
     }),
   );
 
-  // The option index currently selected by the user (number | null)
-  const [selectedOptionIndex, setSelectedOptionIndex] = useState<number | null>(null);
+  // The option uuid currently selected by the user (string | null)
+  const [selectedOptionUuid, setSelectedOptionUuid] = useState<string | null>(null);
 
   /**
    * Indicates whether the user has already checked their answer.
@@ -34,15 +37,15 @@ export function useMultipleChoiceSingleAnswerInteraction(initial?: Partial<Inter
   const [hasChecked, setHasChecked] = useState(false);
 
   /**
-   * Handles user selection of an option by index.
+   * Handles user selection of an option by uuid.
    * If the answer has already been checked, selection is disabled.
    * Selecting the same option again will unselect it (toggle behavior).
    */
   const selectOption = useCallback(
-    (selection: number) => {
+    (selection: string) => {
       if (hasChecked) return;
 
-      setSelectedOptionIndex((prev) => (prev === selection ? null : selection));
+      setSelectedOptionUuid((prev) => (prev === selection ? null : selection));
     },
     [hasChecked],
   );
@@ -53,11 +56,11 @@ export function useMultipleChoiceSingleAnswerInteraction(initial?: Partial<Inter
    * Sets `hasChecked` to true to lock further interaction until reset.
    */
   const checkAnswer = useCallback(
-    (correctAnswerUuid: number) => {
-      if (selectedOptionIndex === null) return;
+    (correctAnswerUuid: string) => {
+      if (selectedOptionUuid === null) return;
 
       const timestamp = getTimestamp();
-      const isCorrect = selectedOptionIndex === correctAnswerUuid;
+      const isCorrect = selectedOptionUuid === correctAnswerUuid;
 
       setHasChecked(true);
       setState((prev) => {
@@ -70,7 +73,7 @@ export function useMultipleChoiceSingleAnswerInteraction(initial?: Partial<Inter
             canShowContinueButton: true,
             canShowCorrectAnswer: true,
             canShowExplanationButton: true,
-            correctAttempt: { selected: selectedOptionIndex, timestamp },
+            correctAttempt: { selected: selectedOptionUuid, timestamp },
             attemptsCount: prev.attemptsCount + 1,
           };
         } else {
@@ -79,14 +82,14 @@ export function useMultipleChoiceSingleAnswerInteraction(initial?: Partial<Inter
             optionSelected: true,
             isCorrect: false,
             canShowCorrectAnswer: true,
-            wrongAttempts: [...prev.wrongAttempts, { selected: selectedOptionIndex, timestamp }],
+            wrongAttempts: [...prev.wrongAttempts, { selected: selectedOptionUuid, timestamp }],
             attemptsCount: prev.attemptsCount + 1,
           };
         }
       });
-      setSelectedOptionIndex(null);
+      setSelectedOptionUuid(null);
     },
-    [selectedOptionIndex],
+    [selectedOptionUuid],
   );
 
   /**
@@ -105,7 +108,7 @@ export function useMultipleChoiceSingleAnswerInteraction(initial?: Partial<Inter
    * Marks the correct answer as revealed.
    * Useful for feedback after checking or skipping.
    */
-  const revealCorrectAnswer = useCallback((correctAnswerUuid: number) => {
+  const revealCorrectAnswer = useCallback((correctAnswerUuid: string) => {
     const timestamp = getTimestamp();
 
     setState((prev) => ({
@@ -144,13 +147,13 @@ export function useMultipleChoiceSingleAnswerInteraction(initial?: Partial<Inter
         interactionType: 'multiple_choice_single_answer',
       }),
     );
-    setSelectedOptionIndex(null);
+    setSelectedOptionUuid(null);
     setHasChecked(false);
   }, []);
 
   return {
     state,
-    selectedOptionIndex,
+    selectedOptionUuid,
     selectOption,
     checkAnswer,
     revealCorrectAnswer,

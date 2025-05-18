@@ -53,7 +53,7 @@ export const MultipleChoiceSingleAnswerInteractionSchema = BaseInteractionSchema
 
   correctAttempt: z
     .object({
-      selected: z.number(),
+      selected: z.string(),
       timestamp: z.number(),
     })
     .nullable()
@@ -62,7 +62,7 @@ export const MultipleChoiceSingleAnswerInteractionSchema = BaseInteractionSchema
   wrongAttempts: z
     .array(
       z.object({
-        selected: z.number(),
+        selected: z.string(),
         timestamp: z.number(),
       }),
     )
