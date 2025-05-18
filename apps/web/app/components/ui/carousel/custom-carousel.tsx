@@ -210,8 +210,8 @@ CarouselPrevious.displayName = 'CarouselPrevious';
 const CarouselNext = React.forwardRef<
   HTMLButtonElement,
   React.ComponentProps<typeof OutlineButton>
->(({ className, size = 'icon', ...props }, ref) => {
-  const { orientation, scrollNext, canScrollNext } = useCarousel();
+>(({ className, disabled, size = 'icon', ...props }, ref) => {
+  const { scrollNext, canScrollNext } = useCarousel();
 
   return (
     <OutlineButton
@@ -222,7 +222,7 @@ const CarouselNext = React.forwardRef<
 
         className,
       )}
-      disabled={!canScrollNext}
+      disabled={!canScrollNext || disabled}
       onClick={scrollNext}
       {...props}
     >
