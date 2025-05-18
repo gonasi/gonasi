@@ -192,10 +192,8 @@ const CarouselPrevious = React.forwardRef<
       ref={ref}
       size={size}
       className={cn(
-        'absolute h-8 w-8 rounded-full',
-        orientation === 'horizontal'
-          ? 'top-1/2 left-4 -translate-y-1/2'
-          : 'top-4 left-1/2 -translate-x-1/2 rotate-90',
+        'h-8 w-8 rounded-full',
+
         className,
       )}
       disabled={!canScrollPrev}
@@ -220,10 +218,8 @@ const CarouselNext = React.forwardRef<
       ref={ref}
       size={size}
       className={cn(
-        'absolute h-8 w-8 rounded-full',
-        orientation === 'horizontal'
-          ? 'top-1/2 right-4 -translate-y-1/2'
-          : 'bottom-4 left-1/2 -translate-x-1/2 rotate-90',
+        'h-8 w-8 rounded-full',
+
         className,
       )}
       disabled={!canScrollNext}
@@ -254,11 +250,7 @@ const CarouselIndicators = React.forwardRef<HTMLDivElement, React.HTMLAttributes
     );
 
     return (
-      <div
-        ref={ref}
-        className={cn('absolute bottom-4 left-1/2 flex -translate-x-1/2 gap-2', className)}
-        {...props}
-      >
+      <div ref={ref} className={cn('flex gap-2', className)} {...props}>
         {Array.from({ length: indicatorCount }).map((_, index) => (
           <OutlineButton
             key={index}

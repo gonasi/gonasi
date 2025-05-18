@@ -29,7 +29,7 @@ export function TapToRevealCard({
 
   return (
     <div
-      className={cn('flex h-64 w-52 cursor-pointer perspective-[1200px]', className)}
+      className={cn('flex h-64 w-52 cursor-pointer items-center perspective-[1200px]', className)}
       onClick={toggleReveal}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {

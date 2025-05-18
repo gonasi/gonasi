@@ -39,7 +39,7 @@ export function ViewTapToRevealPlugin({ block, mode }: ViewPluginComponentProps)
         <RichTextRenderer editorState={title} />
         <div>
           <Carousel
-            className='mx-auto w-full border border-red-500'
+            className='mx-auto w-full'
             key={itemsPerSlide}
             opts={{
               align: 'start',
@@ -54,20 +54,24 @@ export function ViewTapToRevealPlugin({ block, mode }: ViewPluginComponentProps)
                       key={index}
                       className={itemsPerSlide === '2' ? 'basis-1/2' : 'basis-full'}
                     >
-                      <TapToRevealCard
-                        key={index}
-                        front={<RichTextRenderer editorState={frontContent} />}
-                        back={<RichTextRenderer editorState={backContent} />}
-                        revealed={revealed}
-                        onToggle={setRevealed}
-                      />
+                      <div className='items-cente flex w-full justify-center'>
+                        <TapToRevealCard
+                          key={index}
+                          front={<RichTextRenderer editorState={frontContent} />}
+                          back={<RichTextRenderer editorState={backContent} />}
+                          revealed={revealed}
+                          onToggle={setRevealed}
+                        />
+                      </div>
                     </CarouselItem>
                   ))
                 : null}
             </CarouselContent>
-            <CarouselPrevious />
-            <CarouselNext />
-            <CarouselIndicators />
+            <div className='flex w-full items-center justify-between py-4'>
+              <CarouselPrevious />
+              <CarouselIndicators />
+              <CarouselNext className='' />
+            </div>
           </Carousel>
         </div>
       </PlayPluginWrapper>
