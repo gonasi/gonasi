@@ -63,7 +63,6 @@ export function EditMultipleChoiceSingleAnswerPlugin({ block }: EditPluginCompon
     const current = getChoices();
     const indexToRemove = current.findIndex((choice) => choice.uuid === uuid);
 
-    console.log('indexToRemove: ', indexToRemove);
     if (indexToRemove !== -1) {
       form.remove({ name: fields.choices.name, index: indexToRemove });
 

@@ -4,10 +4,15 @@ import { getZodConstraint, parseWithZod } from '@conform-to/zod';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Plus, Save, Trash } from 'lucide-react';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
+import { v4 as uuidv4 } from 'uuid';
 
-import { MultipleChoiceMultipleAnswersSchema, type PluginTypeId } from '@gonasi/schemas/plugins';
+import {
+  MultipleChoiceMultipleAnswersSchema,
+  type MultipleChoiceType,
+  type PluginTypeId,
+} from '@gonasi/schemas/plugins';
 
-import { Button, OutlineButton, PlainButton } from '~/components/ui/button';
+import { Button, OutlineButton } from '~/components/ui/button';
 import { Checkbox } from '~/components/ui/checkbox';
 import { ErrorList, hasErrors, TextareaField } from '~/components/ui/forms';
 import { RichTextInputField } from '~/components/ui/forms/RichTextInputField';
@@ -34,48 +39,38 @@ export function CreateMultipleChoiceMultipleAnswersPlugin({
     },
   });
 
-  const handleAddChoice = () => {
-    // Create a new item
-    const newChoice = { choiceState: '' };
+  const choices = fields.choices.getFieldList();
 
-    // Get current items array or initialize it
-    const currentChoices = fields.choices.getFieldList().map((item) => {
-      const choice = item.getFieldset();
+  const getChoices = (): MultipleChoiceType[] =>
+    choices.map((fieldset) => {
+      const { choiceState, uuid } = fieldset.getFieldset();
       return {
-        choiceState: choice.choiceState.value || '',
+        uuid: uuid.value ?? '',
+        choiceState: choiceState.value ?? '',
       };
     });
 
-    // Update the form with the new item added
+  const updateChoices = (updated: MultipleChoiceType[]) => {
     form.update({
       name: fields.choices.name,
-      value: [...currentChoices, newChoice],
+      value: updated,
     });
   };
 
-  // Function to remove an item
-  const handleRemoveChoice = (index: number) => {
-    // Get current items
-    const currentChoices = fields.choices.getFieldList().map((item) => {
-      const choice = item.getFieldset();
-      return {
-        choiceState: choice.choiceState.value || '',
-      };
-    });
-
-    // Remove the item at the specified index
-    const updatedChoices = currentChoices.filter((_, i) => i !== index);
-
-    // Update the form with the filtered items
-    form.update({
-      name: fields.choices.name,
-      value: updatedChoices,
-    });
+  const addChoice = () => {
+    const current = getChoices();
+    const newChoice: MultipleChoiceType = {
+      uuid: uuidv4(),
+      choiceState: '',
+    };
+    updateChoices([...current, newChoice]);
   };
 
-  const optionsList = fields.choices.getFieldList();
-
-  console.log('errors: ', form.allErrors);
+  const removeChoice = (uuid: string) => {
+    const current = getChoices();
+    const updated = current.filter((choice) => choice.uuid !== uuid);
+    updateChoices(updated);
+  };
 
   return (
     <Form method='POST' {...getFormProps(form)}>
@@ -102,23 +97,24 @@ export function CreateMultipleChoiceMultipleAnswersPlugin({
             <OutlineButton
               type='button'
               size='sm'
-              onClick={() => handleAddChoice()}
-              disabled={optionsList.length >= 6}
+              onClick={() => addChoice()}
+              disabled={choices.length >= 6}
               className={cn({
                 'border-danger text-danger': form.allErrors.choices,
               })}
             >
-              <Plus className='mr-2 h-4 w-4' /> Add Option
+              <Plus className='mr-2 h-4 w-4' /> Add Choice
             </OutlineButton>
           </div>
           <div className='bg-card/50 rounded-lg p-4'>
-            {optionsList && optionsList.length ? (
+            {choices && choices.length ? (
               <AnimatePresence>
-                {optionsList.map((option, index) => {
-                  const optionFields = option.getFieldset();
+                {choices.map((choice, index) => {
+                  const { choiceState, uuid } = choice.getFieldset();
+
                   return (
                     <motion.div
-                      key={option.id ?? index} // Make sure to use a stable ID if possible
+                      key={choice.id ?? index} // Make sure to use a stable ID if possible
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: 'auto' }}
                       exit={{ opacity: 0, height: 0 }}
@@ -126,16 +122,25 @@ export function CreateMultipleChoiceMultipleAnswersPlugin({
                     >
                       <RichTextInputField
                         labelProps={{
-                          children: `Option ${index + 1}`,
+                          children: `Choice ${index + 1}`,
                           required: true,
                           endAdornment: (
-                            <PlainButton type='button' onClick={() => handleRemoveChoice(index)}>
+                            <OutlineButton
+                              size='sm'
+                              type='button'
+                              onClick={() => removeChoice(uuid.value ?? '')}
+                            >
                               <Trash size={16} />
-                            </PlainButton>
+                            </OutlineButton>
                           ),
                         }}
-                        meta={optionFields.choiceState as FieldMetadata<string>}
-                        errors={optionFields.choiceState?.errors}
+                        meta={choiceState as FieldMetadata<string>}
+                        errors={choiceState?.errors}
+                      />
+                      <input
+                        type='hidden'
+                        name={`${fields.choices.name}[${index}].uuid`}
+                        value={uuid.value}
                       />
                     </motion.div>
                   );
@@ -151,30 +156,33 @@ export function CreateMultipleChoiceMultipleAnswersPlugin({
               Select all correct answers *
             </h3>
             <div className='grid grid-cols-1 gap-2 md:grid-cols-2'>
-              {optionsList.map((_, index) => (
-                <div key={index} className='flex gap-2'>
-                  <Checkbox
-                    name={fields.correctAnswers.name}
-                    value={index.toString()}
-                    defaultChecked={
-                      fields.correctAnswers.initialValue &&
-                      Array.isArray(fields.correctAnswers.initialValue)
-                        ? fields.correctAnswers.initialValue.includes(index.toString())
-                        : fields.correctAnswers.initialValue === index.toString()
-                    }
-                  />
-                  <Label
-                    error={hasErrors(fields.correctAnswers.errors)}
-                    className='text-body-xs text-muted-foreground self-center'
-                  >
-                    {`Option ${index + 1}`}
-                  </Label>
-                </div>
-              ))}
+              {choices.map((choice, index) => {
+                const { uuid } = choice.getFieldset();
+                return (
+                  <div key={uuid.value ?? index} className='flex gap-2'>
+                    <Checkbox
+                      name={fields.correctAnswers.name}
+                      value={uuid.value}
+                      defaultChecked={
+                        fields.correctAnswers.initialValue &&
+                        Array.isArray(fields.correctAnswers.initialValue)
+                          ? fields.correctAnswers.initialValue.includes(uuid.value)
+                          : fields.correctAnswers.initialValue === uuid.value
+                      }
+                    />
+                    <Label
+                      error={hasErrors(fields.correctAnswers.errors)}
+                      className='text-body-xs text-muted-foreground self-center'
+                    >
+                      {`Choice ${index + 1}`}
+                    </Label>
+                  </div>
+                );
+              })}
             </div>
             <ErrorList errors={fields.correctAnswers?.errors} />
             <p className='text-muted-foreground text-xs'>
-              Choose all options that are correct answers
+              Choose all choices that are correct answers
             </p>
           </div>
         </div>

@@ -8,7 +8,9 @@ export const ChoiceSchema = z.object({
     .string({ required_error: 'Choice is required.' })
     .trim()
     .min(5, 'The choice must be at least 5 characters long.'),
-  uuid: z.string({ required_error: 'Card uuid is required' }),
+  uuid: z
+    .string({ required_error: 'Card uuid is required' })
+    .uuid('Card uuid must be a valid UUID'),
 });
 
 export const MultipleChoiceMultipleAnswersSchema = z.object({
@@ -23,7 +25,11 @@ export const MultipleChoiceMultipleAnswersSchema = z.object({
     .max(6, 'No more than six choices are allowed.'),
 
   correctAnswers: z
-    .array(z.number({ required_error: 'Each correct answer must be a number.' }))
+    .array(
+      z
+        .string({ required_error: 'Each correct answer must be a uuid.' })
+        .uuid('Card uuid must be a valid UUID'),
+    )
     .min(1, 'At least one correct answer is required.'),
 
   hint: z
@@ -51,11 +57,11 @@ export type MultipleChoiceMultipleAnswersSettingsType = z.infer<
 >;
 
 export const MultipleChoiceMultipleAnswersInteractionSchema = BaseInteractionSchema.extend({
-  selectedOptions: z.array(z.number()).nullable().optional(),
+  selectedOptions: z.array(z.string()).nullable().optional(),
 
   correctAttempt: z
     .object({
-      selected: z.array(z.number()),
+      selected: z.array(z.string()),
       timestamp: z.number(),
     })
     .nullable()
@@ -64,7 +70,7 @@ export const MultipleChoiceMultipleAnswersInteractionSchema = BaseInteractionSch
   wrongAttempts: z
     .array(
       z.object({
-        selected: z.array(z.number()),
+        selected: z.array(z.string()),
         timestamp: z.number(),
       }),
     )
@@ -76,3 +82,5 @@ export const MultipleChoiceMultipleAnswersInteractionSchema = BaseInteractionSch
 export type MultipleChoiceMultipleAnswersInteractionType = z.infer<
   typeof MultipleChoiceMultipleAnswersInteractionSchema
 >;
+
+export type MultipleChoiceType = z.infer<typeof ChoiceSchema>;
