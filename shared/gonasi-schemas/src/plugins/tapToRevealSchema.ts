@@ -35,7 +35,7 @@ export const TapToRevealInteractionSchema = BaseInteractionSchema.extend({
   revealedCards: z
     .array(
       z.object({
-        index: z.number(),
+        uuid: z.string(),
         timestamp: z.number(),
       }),
     )
