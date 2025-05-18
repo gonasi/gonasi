@@ -11,9 +11,10 @@ const getTimestamp = () => Date.now();
 
 /**
  * Custom hook to manage a multiple choice multiple answers quiz interaction state.
+ * Uses UUIDs exclusively for tracking choices instead of array indexes.
  */
 export function useMultipleChoiceMultipleAnswersInteraction(
-  correctAnswers: number[],
+  correctAnswers: string[],
   initial?: Partial<InteractionState>,
 ) {
   const [state, setState] = useState<InteractionState>(() =>
@@ -23,45 +24,41 @@ export function useMultipleChoiceMultipleAnswersInteraction(
     }),
   );
 
-  const [selectedOptionsIndex, setSelectedOptionsIndex] = useState<number[] | null>(null);
-  const [disabledOptionsIndex, setDisabledOptionsIndex] = useState<number[] | null>(null);
+  const [selectedOptionsUuids, setSelectedOptionsUuids] = useState<string[] | null>(null);
+  const [disabledOptionsUuids, setDisabledOptionsUuids] = useState<string[] | null>(null);
   const [remainingCorrectToSelect, setRemainingCorrectToSelect] = useState<number>(
     correctAnswers.length,
   );
   const [hasChecked, setHasChecked] = useState(false);
 
   // Track how many more selections user can make
-  const canSelectMore = selectedOptionsIndex
-    ? selectedOptionsIndex.length <
+  const canSelectMore = selectedOptionsUuids
+    ? selectedOptionsUuids.length <
       correctAnswers.length - (state.correctAttempt?.selected?.length || 0)
     : true;
 
   /**
-   * Handles user toggling of one or more options by index.
+   * Handles user toggling of options by UUID.
    * If the answer has already been checked, selection is disabled.
    * Limits selections to match the number of correct answers.
    */
-  const selectOptions = useCallback(
-    (selections: number | number[]) => {
+  const selectOption = useCallback(
+    (uuid: string) => {
       if (hasChecked) return;
 
-      const selectionArray = Array.isArray(selections) ? selections : [selections];
-
-      setSelectedOptionsIndex((prev) => {
+      setSelectedOptionsUuids((prev) => {
         const prevSet = new Set(prev ?? []);
 
-        for (const index of selectionArray) {
-          // If already selected, remove it
-          if (prevSet.has(index)) {
-            prevSet.delete(index);
-          }
-          // Only add if we haven't reached the limit or if we're toggling off
-          else if (prevSet.size < remainingCorrectToSelect) {
-            prevSet.add(index);
-          }
+        // If already selected, remove it
+        if (prevSet.has(uuid)) {
+          prevSet.delete(uuid);
+        }
+        // Only add if we haven't reached the limit
+        else if (prevSet.size < remainingCorrectToSelect) {
+          prevSet.add(uuid);
         }
 
-        const updated = Array.from(prevSet).sort((a, b) => a - b);
+        const updated = Array.from(prevSet);
         return updated.length === 0 ? null : updated;
       });
     },
@@ -71,7 +68,7 @@ export function useMultipleChoiceMultipleAnswersInteraction(
   /**
    * Compares two arrays regardless of order.
    */
-  const areArraysEqual = (a: number[] | null, b: number[]) => {
+  const areArraysEqual = (a: string[] | null, b: string[]) => {
     if (!a || a.length !== b.length) return false;
     const aSorted = [...a].sort();
     const bSorted = [...b].sort();
@@ -79,23 +76,23 @@ export function useMultipleChoiceMultipleAnswersInteraction(
   };
 
   /**
-   * Checks the user's selected answers against the correct answer indexes.
+   * Checks the user's selected answers against the correct answer UUIDs.
    * After checking, disables non-selected options and updates remaining correct answers needed.
    */
   const checkAnswer = useCallback(() => {
-    if (!selectedOptionsIndex || selectedOptionsIndex.length === 0) return;
+    if (!selectedOptionsUuids || selectedOptionsUuids.length === 0) return;
 
     const timestamp = getTimestamp();
     setHasChecked(true);
 
     setState((prev) => {
       // Separate selected options into correct and wrong
-      const correctSelectedThisRound = selectedOptionsIndex.filter((option) =>
-        correctAnswers.includes(option),
+      const correctSelectedThisRound = selectedOptionsUuids.filter((uuid) =>
+        correctAnswers.includes(uuid),
       );
 
-      const wrongSelectedThisRound = selectedOptionsIndex.filter(
-        (option) => !correctAnswers.includes(option),
+      const wrongSelectedThisRound = selectedOptionsUuids.filter(
+        (uuid) => !correctAnswers.includes(uuid),
       );
 
       // Track all correct options selected across attempts
@@ -119,7 +116,7 @@ export function useMultipleChoiceMultipleAnswersInteraction(
 
       return {
         ...prev,
-        optionSelected: true,
+        selectedOptions: selectedOptionsUuids, // Update to match schema
         isCorrect: isFullyCorrect,
         continue: isFullyCorrect,
         canShowContinueButton: isFullyCorrect,
@@ -134,7 +131,7 @@ export function useMultipleChoiceMultipleAnswersInteraction(
           ? [
               ...prev.wrongAttempts,
               {
-                selected: selectedOptionsIndex,
+                selected: selectedOptionsUuids,
                 timestamp,
                 partiallyCorrect: correctSelectedThisRound.length > 0, // Track if there were some correct answers
               },
@@ -144,30 +141,25 @@ export function useMultipleChoiceMultipleAnswersInteraction(
       };
     });
 
-    // Disable options that were not selected in this round
-    const allOptions = Array.from({ length: 20 }, (_, i) => i); // Assuming max 20 options, adjust as needed
-    const optionsToDisable = allOptions.filter((opt) => !selectedOptionsIndex.includes(opt));
-    setDisabledOptionsIndex(optionsToDisable);
-
     // Update remaining correct answers to select
     setRemainingCorrectToSelect((prev) => {
-      const correctSelected = selectedOptionsIndex.filter((opt) =>
-        correctAnswers.includes(opt),
+      const correctSelected = selectedOptionsUuids.filter((uuid) =>
+        correctAnswers.includes(uuid),
       ).length;
       return Math.max(0, prev - correctSelected);
     });
 
     // Clear selections for next round
-    setSelectedOptionsIndex(null);
+    setSelectedOptionsUuids(null);
     setHasChecked(false);
-  }, [selectedOptionsIndex, correctAnswers]);
+  }, [selectedOptionsUuids, correctAnswers]);
 
   /**
    * Resets correctness flag for another try and clears disabled options.
    */
   const tryAgain = useCallback(() => {
     setHasChecked(false);
-    setDisabledOptionsIndex(null);
+    setDisabledOptionsUuids(null);
     setState((prev) => ({
       ...prev,
       isCorrect: null,
@@ -183,7 +175,7 @@ export function useMultipleChoiceMultipleAnswersInteraction(
     setState((prev) => ({
       ...prev,
       correctAnswerRevealed: true,
-      optionSelected: true,
+      selectedOptions: correctAnswers, // Update to match schema
       isCorrect: true,
       continue: true,
       canShowContinueButton: true,
@@ -216,8 +208,8 @@ export function useMultipleChoiceMultipleAnswersInteraction(
         interactionType: 'multiple_choice_multiple',
       }),
     );
-    setSelectedOptionsIndex(null);
-    setDisabledOptionsIndex(null);
+    setSelectedOptionsUuids(null);
+    setDisabledOptionsUuids(null);
     setRemainingCorrectToSelect(correctAnswers.length);
     setHasChecked(false);
   }, [correctAnswers.length]);
@@ -232,11 +224,11 @@ export function useMultipleChoiceMultipleAnswersInteraction(
 
   return {
     state,
-    selectedOptionsIndex,
-    disabledOptionsIndex,
+    selectedOptionsUuids,
+    disabledOptionsUuids,
     remainingCorrectToSelect,
     canSelectMore,
-    selectOptions,
+    selectOption,
     checkAnswer,
     revealCorrectAnswer,
     skip,

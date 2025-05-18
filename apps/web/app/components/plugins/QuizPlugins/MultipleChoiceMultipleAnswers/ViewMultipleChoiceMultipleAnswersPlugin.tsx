@@ -41,13 +41,8 @@ export function ViewMultipleChoiceMultipleAnswersPlugin({ block, mode }: ViewPlu
 
   const { is_complete, state: blockInteractionStateData } = blockInteractionData ?? {};
   const { playbackMode, layoutStyle } = block.settings;
-  const {
-    questionState,
-    choices: options,
-    correctAnswers,
-    explanationState,
-    hint,
-  } = block.content as MultipleChoiceMultipleAnswersSchemaType;
+  const { questionState, choices, correctAnswers, explanationState, hint } =
+    block.content as MultipleChoiceMultipleAnswersSchemaType;
 
   const shouldShowActionButton = !is_complete && mode !== 'preview';
 
@@ -58,11 +53,11 @@ export function ViewMultipleChoiceMultipleAnswersPlugin({ block, mode }: ViewPlu
 
   const {
     state,
-    selectedOptionsIndex,
-    disabledOptionsIndex,
+    selectedOptionsUuids,
+    disabledOptionsUuids,
     remainingCorrectToSelect,
     canSelectMore,
-    selectOptions,
+    selectOption,
     checkAnswer,
     revealCorrectAnswer,
     tryAgain,
@@ -75,8 +70,6 @@ export function ViewMultipleChoiceMultipleAnswersPlugin({ block, mode }: ViewPlu
     wrongAttemptsCount: state.wrongAttempts.length,
     correctSelectedCount: state.correctAttempt?.selected.length || 0,
     totalCorrectAnswers: correctAnswers.length,
-    wrongAttemptsData: state.wrongAttempts,
-    correctAnswers,
     // Optional time parameters if you want to track timing
     // timeToAnswer: timeTakenInMilliseconds,
     // maxTimeExpected: 30000, // 30 seconds as an example
@@ -92,12 +85,12 @@ export function ViewMultipleChoiceMultipleAnswersPlugin({ block, mode }: ViewPlu
         ...state,
         interactionType: 'multiple_choice_multiple',
         continue: state.continue,
-        optionSelected: selectedOptionsIndex,
+        selectedOptions: selectedOptionsUuids,
         correctAttempt: state.correctAttempt,
         wrongAttempts: state.wrongAttempts,
       },
     });
-  }, [state, selectedOptionsIndex, correctAnswers, updatePayload, userScore]);
+  }, [state, selectedOptionsUuids, correctAnswers, updatePayload, userScore]);
 
   if (!canRender) return <></>;
 
@@ -114,14 +107,15 @@ export function ViewMultipleChoiceMultipleAnswersPlugin({ block, mode }: ViewPlu
             'grid grid-cols-2': layoutStyle === 'double',
           })}
         >
-          {options.map((option, index) => {
-            const isSelected = selectedOptionsIndex?.includes(index) ?? false;
+          {choices.map((option) => {
+            const optionUuid = option.uuid;
+            const isSelected = selectedOptionsUuids?.includes(optionUuid) ?? false;
 
             const isCorrectAttempt =
-              !!state.correctAttempt && state.correctAttempt.selected.includes(index);
+              !!state.correctAttempt && state.correctAttempt.selected.includes(optionUuid);
 
             const isWrongAttempt = !!state.wrongAttempts?.some((attempt) =>
-              attempt.selected.includes(index),
+              attempt.selected.includes(optionUuid),
             );
 
             // Option is disabled if:
@@ -130,19 +124,20 @@ export function ViewMultipleChoiceMultipleAnswersPlugin({ block, mode }: ViewPlu
             // 3. User has reached selection limit and this option isn't selected
             const isDisabled =
               isCorrectAttempt ||
-              ((disabledOptionsIndex?.includes(index) ?? false) && state.isCorrect !== false) ||
+              ((disabledOptionsUuids?.includes(optionUuid) ?? false) &&
+                state.isCorrect !== false) ||
               state.continue ||
               isWrongAttempt ||
               (!canSelectMore && !isSelected);
 
             return (
-              <div key={index} className='relative w-full'>
+              <div key={optionUuid} className='relative w-full'>
                 <OutlineButton
-                  onClick={() => selectOptions(index)}
+                  onClick={() => selectOption(optionUuid)}
                   className={cn('relative h-fit w-full justify-start text-left md:max-h-50', {
                     'border-secondary bg-secondary/20 hover:bg-secondary-10 hover:border-secondary/80':
                       isSelected,
-                    'opacity-50': disabledOptionsIndex?.includes(index),
+                    'opacity-50': disabledOptionsUuids?.includes(optionUuid),
                   })}
                   disabled={isDisabled}
                 >
@@ -213,9 +208,9 @@ export function ViewMultipleChoiceMultipleAnswersPlugin({ block, mode }: ViewPlu
                   className='rounded-full'
                   rightIcon={<CheckCheck />}
                   disabled={
-                    selectedOptionsIndex === null ||
+                    selectedOptionsUuids === null ||
                     state.continue ||
-                    selectedOptionsIndex.length !== remainingCorrectToSelect
+                    selectedOptionsUuids.length !== remainingCorrectToSelect
                   }
                   onClick={() => checkAnswer()}
                 >
