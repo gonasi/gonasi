@@ -19,51 +19,23 @@ import {
 } from '~/components/ui/carousel/custom-carousel';
 
 export function ViewTapToRevealPlugin({ block, mode }: ViewPluginComponentProps) {
-  const {
-    loading,
-    canRender,
-    handleContinue,
-    blockInteractionData,
-    isLastBlock,
-    updatePayload,
-    setExplanationState,
-    isExplanationBottomSheetOpen,
-  } = useViewPluginCore({
+  const { blockInteractionData } = useViewPluginCore({
     blockId: block.id,
     pluginType: block.plugin_type,
     settings: block.settings,
   });
 
-  const { is_complete, state: blockInteractionStateData } = blockInteractionData ?? {};
-  const { playbackMode, layoutStyle } = block.settings;
+  const { is_complete } = blockInteractionData ?? {};
+  const { playbackMode } = block.settings;
   const { title, cards } = block.content as TapToRevealSchemaType;
 
-  // Sync interaction state with plugin state
-  // useEffect(() => {
-  //   updatePayload({
-  //     is_complete: state.continue,
-  //     score: userScore,
-  //     attempts: state.attemptsCount,
-  //     state: {
-  //       ...state,
-  //       interactionType: 'true_false',
-  //       continue: state.continue,
-  //       optionSelected: selectedOption,
-  //       correctAttempt: state.correctAttempt,
-  //       wrongAttempts: state.wrongAttempts,
-  //     },
-  //   });
-  // }, [state, selectedOption, correctAnswer, updatePayload, userScore]);
   const [revealed, setRevealed] = useState(false);
 
   const itemsPerSlide = '2';
 
-  if (!canRender) return <></>;
-
   return (
     <ViewPluginWrapper isComplete={is_complete} playbackMode={playbackMode} mode={mode}>
       <PlayPluginWrapper>
-        {/* Question */}
         <RichTextRenderer editorState={title} />
         <div>
           <Carousel
