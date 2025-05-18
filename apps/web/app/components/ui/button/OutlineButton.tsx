@@ -12,7 +12,7 @@ const outlineBaseStyles = [
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
   'disabled:pointer-events-none disabled:opacity-50',
   '[&_svg]:size-4 [&_svg]:shrink-0',
-  'active:scale-95 cursor-pointer font-bold',
+  'active:scale-95 font-bold',
   'relative overflow-hidden',
   'bg-transparent border',
 ].join(' ');
@@ -68,23 +68,29 @@ const OutlineButton = React.forwardRef<HTMLButtonElement, OutlineButtonProps>(
     ref,
   ) => {
     const Comp = asChild ? Slot : 'button';
+    const isButtonDisabled = disabled || isLoading;
 
     return (
       <Comp
-        className={cn(outlineButtonVariants({ variant, size, className }))}
+        className={cn(
+          outlineButtonVariants({ variant, size }),
+          {
+            'cursor-not-allowed': isButtonDisabled,
+            'cursor-pointer': !isButtonDisabled,
+          },
+          className,
+        )}
         ref={ref}
-        disabled={disabled || isLoading}
+        disabled={isButtonDisabled}
         {...props}
       >
         <span className='relative z-5 flex h-full w-full items-center justify-center gap-2'>
-          {/* Left icon or loader (if rightIcon doesn't exist) */}
           {!isLoading && leftIcon && (
             <div className='transition-transform duration-200 group-hover:scale-110'>
               {leftIcon}
             </div>
           )}
           {children}
-          {/* Right icon or loader (if both icons exist or only rightIcon exists) */}
           {isLoading ? (
             rightIcon || (leftIcon && rightIcon) ? (
               <Loader2 className='h-4 w-4 animate-spin' />

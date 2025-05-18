@@ -9,6 +9,14 @@ import { useViewPluginCore } from '../../hooks/useViewPluginCore';
 import type { ViewPluginComponentProps } from '../../viewPluginTypesRenderer';
 
 import RichTextRenderer from '~/components/go-editor/ui/RichTextRenderer';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselIndicators,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from '~/components/ui/carousel/custom-carousel';
 
 export function ViewTapToRevealPlugin({ block, mode }: ViewPluginComponentProps) {
   const {
@@ -48,6 +56,8 @@ export function ViewTapToRevealPlugin({ block, mode }: ViewPluginComponentProps)
   // }, [state, selectedOption, correctAnswer, updatePayload, userScore]);
   const [revealed, setRevealed] = useState(false);
 
+  const itemsPerSlide = '2';
+
   if (!canRender) return <></>;
 
   return (
@@ -56,19 +66,37 @@ export function ViewTapToRevealPlugin({ block, mode }: ViewPluginComponentProps)
         {/* Question */}
         <RichTextRenderer editorState={title} />
         <div>
-          {cards && cards.length
-            ? cards.map(({ frontContent, backContent }, index) => {
-                return (
-                  <TapToRevealCard
-                    key={index}
-                    front={<RichTextRenderer editorState={frontContent} />}
-                    back={<RichTextRenderer editorState={backContent} />}
-                    revealed={revealed}
-                    onToggle={setRevealed}
-                  />
-                );
-              })
-            : null}
+          <Carousel
+            className='mx-auto w-full border border-red-500'
+            key={itemsPerSlide}
+            opts={{
+              align: 'start',
+              slidesToScroll: itemsPerSlide === '2' ? 2 : 1,
+              containScroll: 'trimSnaps',
+            }}
+          >
+            <CarouselContent>
+              {cards && cards.length
+                ? cards.map(({ frontContent, backContent }, index) => (
+                    <CarouselItem
+                      key={index}
+                      className={itemsPerSlide === '2' ? 'basis-1/2' : 'basis-full'}
+                    >
+                      <TapToRevealCard
+                        key={index}
+                        front={<RichTextRenderer editorState={frontContent} />}
+                        back={<RichTextRenderer editorState={backContent} />}
+                        revealed={revealed}
+                        onToggle={setRevealed}
+                      />
+                    </CarouselItem>
+                  ))
+                : null}
+            </CarouselContent>
+            <CarouselPrevious />
+            <CarouselNext />
+            <CarouselIndicators />
+          </Carousel>
         </div>
       </PlayPluginWrapper>
       {/* <TrueOrFalseInteractionDebug interaction={interaction} /> */}
