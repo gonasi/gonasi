@@ -44,27 +44,31 @@ export function EditMultipleChoiceSingleAnswerPlugin({ block }: EditPluginCompon
     });
 
   const updateChoices = (updated: ChoiceType[]) => {
-    form.update({ name: fields.choices.name, value: updated });
+    form.update({
+      name: fields.choices.name,
+      value: updated,
+    });
   };
 
   const addChoice = () => {
     const current = getChoices();
-
-    updateChoices([
-      ...current,
-      {
-        uuid: uuidv4(),
-        choiceState: '',
-      },
-    ]);
+    const newChoice: ChoiceType = {
+      uuid: uuidv4(),
+      choiceState: '',
+    };
+    updateChoices([...current, newChoice]);
   };
 
   const removeChoice = (uuid: string) => {
     const current = getChoices();
     const indexToRemove = current.findIndex((choice) => choice.uuid === uuid);
 
+    console.log('indexToRemove: ', indexToRemove);
     if (indexToRemove !== -1) {
-      form.remove({ name: 'choice', index: indexToRemove });
+      form.remove({ name: fields.choices.name, index: indexToRemove });
+
+      // reset correct answer
+      form.update({ name: fields.correctAnswer.name, value: '' });
     }
   };
 
@@ -99,7 +103,7 @@ export function EditMultipleChoiceSingleAnswerPlugin({ block }: EditPluginCompon
                 'border-danger text-danger': form.allErrors.choices,
               })}
             >
-              <Plus className='mr-2 h-4 w-4' /> Add Option
+              <Plus className='mr-2 h-4 w-4' /> Add Choice
             </OutlineButton>
           </div>
           <div className='flex flex-col space-y-4'>
@@ -109,7 +113,7 @@ export function EditMultipleChoiceSingleAnswerPlugin({ block }: EditPluginCompon
                   const { choiceState, uuid } = choice.getFieldset();
                   return (
                     <motion.div
-                      key={uuid.value} // Make sure to use a stable ID if possible
+                      key={index} // Make sure to use a stable ID if possible
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: 'auto' }}
                       exit={{ opacity: 0, height: 0 }}
@@ -118,7 +122,7 @@ export function EditMultipleChoiceSingleAnswerPlugin({ block }: EditPluginCompon
                     >
                       <RichTextInputField
                         labelProps={{
-                          children: `Option ${index + 1}`,
+                          children: `Choice ${index + 1}`,
                           required: true,
                           endAdornment: (
                             <OutlineButton
@@ -127,11 +131,17 @@ export function EditMultipleChoiceSingleAnswerPlugin({ block }: EditPluginCompon
                               onClick={() => removeChoice(uuid.value ?? '')}
                             >
                               <Trash size={16} />
+                              {uuid.value}
                             </OutlineButton>
                           ),
                         }}
                         meta={choiceState as FieldMetadata<string>}
                         errors={choiceState?.errors}
+                      />
+                      <input
+                        type='hidden'
+                        name={`${fields.choices.name}[${index}].uuid`}
+                        value={uuid.value}
                       />
                     </motion.div>
                   );
@@ -149,7 +159,7 @@ export function EditMultipleChoiceSingleAnswerPlugin({ block }: EditPluginCompon
               const { uuid } = choice.getFieldset();
               return {
                 value: uuid.value ?? '',
-                label: `Option ${index + 1}`,
+                label: `Choice ${index + 1}`,
               };
             })}
             errors={fields.correctAnswer.errors}

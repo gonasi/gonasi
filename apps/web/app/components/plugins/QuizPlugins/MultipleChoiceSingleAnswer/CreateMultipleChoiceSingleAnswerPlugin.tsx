@@ -12,7 +12,7 @@ import {
   type PluginTypeId,
 } from '@gonasi/schemas/plugins';
 
-import { Button, OutlineButton, PlainButton } from '~/components/ui/button';
+import { Button, OutlineButton } from '~/components/ui/button';
 import { ErrorList, RadioButtonField, TextareaField } from '~/components/ui/forms';
 import { RichTextInputField } from '~/components/ui/forms/RichTextInputField';
 import { cn } from '~/lib/utils';
@@ -57,14 +57,11 @@ export function CreateMultipleChoiceSingleAnswerPlugin({
 
   const addChoice = () => {
     const current = getChoices();
-
-    updateChoices([
-      ...current,
-      {
-        uuid: uuidv4(),
-        choiceState: '',
-      },
-    ]);
+    const newChoice: ChoiceType = {
+      uuid: uuidv4(),
+      choiceState: '',
+    };
+    updateChoices([...current, newChoice]);
   };
 
   const removeChoice = (uuid: string) => {
@@ -103,7 +100,7 @@ export function CreateMultipleChoiceSingleAnswerPlugin({
                 'border-danger text-danger': form.allErrors.choices,
               })}
             >
-              <Plus className='mr-2 h-4 w-4' /> Add Option
+              <Plus className='mr-2 h-4 w-4' /> Add Choice
             </OutlineButton>
           </div>
           <div className='bg-card/50 rounded-lg p-4'>
@@ -111,9 +108,10 @@ export function CreateMultipleChoiceSingleAnswerPlugin({
               <AnimatePresence>
                 {choices.map((choice, index) => {
                   const { choiceState, uuid } = choice.getFieldset();
+
                   return (
                     <motion.div
-                      key={uuid.value}
+                      key={index}
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: 'auto' }}
                       exit={{ opacity: 0, height: 0 }}
@@ -121,19 +119,25 @@ export function CreateMultipleChoiceSingleAnswerPlugin({
                     >
                       <RichTextInputField
                         labelProps={{
-                          children: `Option ${uuid.value}`,
+                          children: `Choice ${index + 1} ${uuid.value}`,
                           required: true,
                           endAdornment: (
-                            <PlainButton
+                            <OutlineButton
+                              size='sm'
                               type='button'
                               onClick={() => removeChoice(uuid.value ?? '')}
                             >
                               <Trash size={16} />
-                            </PlainButton>
+                            </OutlineButton>
                           ),
                         }}
                         meta={choiceState as FieldMetadata<string>}
                         errors={choiceState?.errors}
+                      />
+                      <input
+                        type='hidden'
+                        name={`${fields.choices.name}[${index}].uuid`}
+                        value={uuid.value}
                       />
                     </motion.div>
                   );
@@ -146,16 +150,16 @@ export function CreateMultipleChoiceSingleAnswerPlugin({
           </div>
           <RadioButtonField
             field={fields.correctAnswer}
-            labelProps={{ children: 'Choose the correct answer', required: true }}
+            labelProps={{ children: 'Choose the correct answer choice', required: true }}
             options={choices.map((choice, index) => {
               const { uuid } = choice.getFieldset();
               return {
                 value: uuid.value ?? '',
-                label: `Option ${index + 1}`,
+                label: `Choice ${index + 1} - ${uuid.value}`,
               };
             })}
             errors={fields.correctAnswer.errors}
-            description='Select which choice is the correct answer'
+            description='Select which choice is the correct choice'
           />
         </div>
 

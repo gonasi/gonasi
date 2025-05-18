@@ -8,7 +8,9 @@ export const ChoiceSchema = z.object({
     .string({ required_error: 'Choice is required.' })
     .trim()
     .min(5, 'The choice must be at least 5 characters long.'),
-  uuid: z.string({ required_error: 'Card uuid is required' }),
+  uuid: z
+    .string({ required_error: 'Card uuid is required' })
+    .uuid('Card uuid must be a valid UUID'),
 });
 
 export const MultipleChoiceSingleAnswerSchema = z.object({
@@ -22,7 +24,7 @@ export const MultipleChoiceSingleAnswerSchema = z.object({
     .min(2, 'At least two choices are required.')
     .max(10, 'No more than 10 choices are allowed.'),
 
-  correctAnswer: z.number({ required_error: 'Correct answer is required.' }),
+  correctAnswer: z.string({ required_error: 'Correct answer is required.' }),
 
   hint: z
     .string()
@@ -74,4 +76,3 @@ export type MultipleChoiceSingleAnswerInteractionType = z.infer<
 >;
 
 export type ChoiceType = z.infer<typeof ChoiceSchema>;
-export type ChoicesType = z.infer<typeof ChoicesSchema>;
