@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import type { TapToRevealSchemaType } from '@gonasi/schemas/plugins';
 
 import { TapToRevealCard } from './components/TapToRevealCard';
-import { useTapToRevealInteraction } from './hooks/useTapToRevealInteraction'; // <-- Your updated hook
+import { useTapToRevealInteraction } from './hooks/useTapToRevealInteraction';
 import { PlayPluginWrapper } from '../../common/PlayPluginWrapper';
 import { ViewPluginWrapper } from '../../common/ViewPluginWrapper';
 import { useViewPluginCore } from '../../hooks/useViewPluginCore';
@@ -20,7 +20,7 @@ import {
 } from '~/components/ui/carousel/custom-carousel';
 
 export function ViewTapToRevealPlugin({ block, mode }: ViewPluginComponentProps) {
-  const { blockInteractionData } = useViewPluginCore({
+  const { blockInteractionData, updatePayload } = useViewPluginCore({
     blockId: block.id,
     pluginType: block.plugin_type,
     settings: block.settings,
@@ -30,37 +30,66 @@ export function ViewTapToRevealPlugin({ block, mode }: ViewPluginComponentProps)
   const { playbackMode } = block.settings;
   const { title, cards } = block.content as TapToRevealSchemaType;
 
-  const itemsPerSlide = 2; // numeric for logic
-
-  const { state, revealCard, hasInteractedWithCard, canNavigateNext } = useTapToRevealInteraction(
-    cards,
-    itemsPerSlide,
-  );
-
+  const itemsPerSlide = 2;
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
 
+  const { state, revealCard, hasInteractedWithCard, canNavigateNext, getProgress } =
+    useTapToRevealInteraction(cards, itemsPerSlide);
+
+  // Update interaction data when state changes
+  useEffect(() => {
+    if (state) {
+      updatePayload({
+        is_complete: state.continue,
+        state: {
+          ...state,
+          interactionType: 'tap_to_reveal',
+        },
+      });
+    }
+  }, [state, updatePayload, getProgress]);
+
+  // Manage slide change
+  const handleSlideChange = (index: number) => {
+    setCurrentSlideIndex(index);
+  };
+
+  const progress = getProgress();
+
   return (
-    <ViewPluginWrapper isComplete={is_complete} playbackMode={playbackMode} mode={mode}>
+    <ViewPluginWrapper
+      isComplete={is_complete || progress.complete}
+      playbackMode={playbackMode}
+      mode={mode}
+    >
       <PlayPluginWrapper>
-        <RichTextRenderer editorState={title} />
+        <div className='mb-4'>
+          <RichTextRenderer editorState={title} />
+          {progress.total > 0 && (
+            <div className='mt-1 text-sm text-gray-500'>
+              Progress: {progress.revealed}/{progress.total} cards revealed
+            </div>
+          )}
+        </div>
+
         <div>
           <Carousel
             className='mx-auto w-full'
-            key={itemsPerSlide}
+            key={`carousel-${itemsPerSlide}`}
             opts={{
               align: 'start',
               slidesToScroll: itemsPerSlide,
               containScroll: 'trimSnaps',
             }}
-            onSlideChange={(index) => setCurrentSlideIndex(index)}
+            onSlideChange={handleSlideChange}
           >
             <CarouselContent>
-              {cards.map((card, index) => (
+              {cards.map((card) => (
                 <CarouselItem
                   key={card.uuid}
                   className={itemsPerSlide === 2 ? 'basis-1/2' : 'basis-full'}
                 >
-                  <div className='flex w-full items-center justify-center'>
+                  <div className='flex w-full items-center justify-center p-2'>
                     <TapToRevealCard
                       front={<RichTextRenderer editorState={card.frontContent} />}
                       back={<RichTextRenderer editorState={card.backContent} />}

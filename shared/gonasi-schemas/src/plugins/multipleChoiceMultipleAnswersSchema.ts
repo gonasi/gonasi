@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { BaseInteractionSchema } from './baseInteractionSchema';
 import { PluginSettingsSchema } from './pluginSettings';
 
-export const ChoiceSchema = z.object({
+export const MultipleChoiceSchema = z.object({
   choiceState: z
     .string({ required_error: 'Choice is required.' })
     .trim()
@@ -20,7 +20,7 @@ export const MultipleChoiceMultipleAnswersSchema = z.object({
     .min(5, 'The question must be at least 5 characters long.'),
 
   choices: z
-    .array(ChoiceSchema)
+    .array(MultipleChoiceSchema)
     .min(2, 'At least two choices are required.')
     .max(6, 'No more than six choices are allowed.'),
 
@@ -83,4 +83,4 @@ export type MultipleChoiceMultipleAnswersInteractionType = z.infer<
   typeof MultipleChoiceMultipleAnswersInteractionSchema
 >;
 
-export type MultipleChoiceType = z.infer<typeof ChoiceSchema>;
+export type MultipleChoiceType = z.infer<typeof MultipleChoiceSchema>;

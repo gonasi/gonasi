@@ -17,7 +17,7 @@ interface Card {
 
 export function useTapToRevealInteraction(
   cards: Card[],
-  cardsPerSlide: 1 | 2,
+  cardsPerSlide: number,
   initial?: Partial<InteractionState>,
 ) {
   const validCardUuids = useMemo(() => cards.map((card) => card.uuid), [cards]);
@@ -26,6 +26,10 @@ export function useTapToRevealInteraction(
     schema.parse({
       ...initial,
       interactionType: 'tap_to_reveal',
+      revealedCards: initial?.revealedCards || [],
+      attemptsCount: initial?.attemptsCount || 0,
+      continue: initial?.continue || false,
+      canShowContinueButton: initial?.canShowContinueButton || false,
     }),
   );
 
@@ -45,7 +49,7 @@ export function useTapToRevealInteraction(
         return {
           ...prev,
           continue: allRevealed,
-          attemptsCount: 1,
+          attemptsCount: prev.attemptsCount + 1,
           canShowContinueButton: allRevealed,
           revealedCards: newRevealedCards,
         };
@@ -63,9 +67,14 @@ export function useTapToRevealInteraction(
 
   const canNavigateNext = useCallback(
     (currentSlideIndex: number) => {
+      // Calculate the range of cards in the current slide
       const start = currentSlideIndex * cardsPerSlide;
-      const slideCards = cards.slice(start, start + cardsPerSlide);
+      const end = Math.min(start + cardsPerSlide, cards.length);
 
+      // Get the cards in the current slide
+      const slideCards = cards.slice(start, end);
+
+      // Navigation is allowed only if all cards in the current slide have been revealed
       return slideCards.every((card) =>
         state.revealedCards.some((revealed) => revealed.uuid === card.uuid),
       );
@@ -73,10 +82,20 @@ export function useTapToRevealInteraction(
     [cards, cardsPerSlide, state.revealedCards],
   );
 
+  const getProgress = useCallback(() => {
+    return {
+      revealed: state.revealedCards.length,
+      total: validCardUuids.length,
+      percentage: Math.round((state.revealedCards.length / validCardUuids.length) * 100),
+      complete: state.revealedCards.length === validCardUuids.length,
+    };
+  }, [state.revealedCards.length, validCardUuids.length]);
+
   return {
     state,
     revealCard,
     hasInteractedWithCard,
     canNavigateNext,
+    getProgress,
   };
 }
