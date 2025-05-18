@@ -12,9 +12,14 @@ const getTimestamp = () => Date.now();
 /**
  * Custom hook to manage a multiple choice multiple answers quiz interaction state.
  * Uses UUIDs exclusively for tracking choices instead of array indexes.
+ *
+ * @param correctAnswers - UUIDs of correct answers
+ * @param allOptionsUuids - UUIDs of all possible options to disable/enable accordingly
+ * @param initial - initial partial state
  */
 export function useMultipleChoiceMultipleAnswersInteraction(
   correctAnswers: string[],
+  allOptionsUuids: string[],
   initial?: Partial<InteractionState>,
 ) {
   const [state, setState] = useState<InteractionState>(() =>
@@ -141,6 +146,15 @@ export function useMultipleChoiceMultipleAnswersInteraction(
       };
     });
 
+    // Disable all options except correct selected ones
+    const correctSelectedThisRound = selectedOptionsUuids.filter((uuid) =>
+      correctAnswers.includes(uuid),
+    );
+    const newDisabledOptions = allOptionsUuids.filter(
+      (uuid) => !correctSelectedThisRound.includes(uuid),
+    );
+    setDisabledOptionsUuids(newDisabledOptions.length > 0 ? newDisabledOptions : null);
+
     // Update remaining correct answers to select
     setRemainingCorrectToSelect((prev) => {
       const correctSelected = selectedOptionsUuids.filter((uuid) =>
@@ -152,14 +166,14 @@ export function useMultipleChoiceMultipleAnswersInteraction(
     // Clear selections for next round
     setSelectedOptionsUuids(null);
     setHasChecked(false);
-  }, [selectedOptionsUuids, correctAnswers]);
+  }, [selectedOptionsUuids, correctAnswers, allOptionsUuids]);
 
   /**
    * Resets correctness flag for another try and clears disabled options.
    */
   const tryAgain = useCallback(() => {
     setHasChecked(false);
-    setDisabledOptionsUuids(null);
+    setDisabledOptionsUuids(null); // Enable all options again
     setState((prev) => ({
       ...prev,
       isCorrect: null,

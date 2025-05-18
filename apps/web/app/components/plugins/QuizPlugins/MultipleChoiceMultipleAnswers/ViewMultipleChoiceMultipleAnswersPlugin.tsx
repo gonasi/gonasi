@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Check, CheckCheck, PartyPopper, RefreshCw, X, XCircle } from 'lucide-react';
 
 import type {
@@ -11,6 +11,7 @@ import { PlayPluginWrapper } from '../../common/PlayPluginWrapper';
 import { RenderFeedback } from '../../common/RenderFeedback';
 import { ViewPluginWrapper } from '../../common/ViewPluginWrapper';
 import { useViewPluginCore } from '../../hooks/useViewPluginCore';
+import { shuffleArray } from '../../utils';
 import type { ViewPluginComponentProps } from '../../viewPluginTypesRenderer';
 import { calculateMultipleChoiceMultipleAnswersScore } from './utils';
 
@@ -22,6 +23,13 @@ import {
   OutlineButton,
 } from '~/components/ui/button';
 import { cn } from '~/lib/utils';
+
+function getRandomizedChoices(
+  choices: MultipleChoiceMultipleAnswersSchemaType['choices'],
+  strategy: 'none' | 'shuffle',
+) {
+  return strategy === 'shuffle' ? shuffleArray(choices) : choices;
+}
 
 export function ViewMultipleChoiceMultipleAnswersPlugin({ block, mode }: ViewPluginComponentProps) {
   const {
@@ -40,7 +48,7 @@ export function ViewMultipleChoiceMultipleAnswersPlugin({ block, mode }: ViewPlu
   });
 
   const { is_complete, state: blockInteractionStateData } = blockInteractionData ?? {};
-  const { playbackMode, layoutStyle } = block.settings;
+  const { playbackMode, layoutStyle, randomization } = block.settings;
   const { questionState, choices, correctAnswers, explanationState, hint } =
     block.content as MultipleChoiceMultipleAnswersSchemaType;
 
@@ -48,8 +56,11 @@ export function ViewMultipleChoiceMultipleAnswersPlugin({ block, mode }: ViewPlu
 
   const interaction = useMultipleChoiceMultipleAnswersInteraction(
     correctAnswers,
+    choices.map((choice) => choice.uuid),
     blockInteractionStateData as MultipleChoiceMultipleAnswersInteractionType,
   );
+
+  const [randomizedChoices] = useState(() => getRandomizedChoices(choices, randomization));
 
   const {
     state,
@@ -70,9 +81,6 @@ export function ViewMultipleChoiceMultipleAnswersPlugin({ block, mode }: ViewPlu
     wrongAttemptsCount: state.wrongAttempts.length,
     correctSelectedCount: state.correctAttempt?.selected.length || 0,
     totalCorrectAnswers: correctAnswers.length,
-    // Optional time parameters if you want to track timing
-    // timeToAnswer: timeTakenInMilliseconds,
-    // maxTimeExpected: 30000, // 30 seconds as an example
   });
 
   // Sync interaction state with plugin state
@@ -107,7 +115,7 @@ export function ViewMultipleChoiceMultipleAnswersPlugin({ block, mode }: ViewPlu
             'grid grid-cols-2': layoutStyle === 'double',
           })}
         >
-          {choices.map((option) => {
+          {randomizedChoices.map((option) => {
             const optionUuid = option.uuid;
             const isSelected = selectedOptionsUuids?.includes(optionUuid) ?? false;
 

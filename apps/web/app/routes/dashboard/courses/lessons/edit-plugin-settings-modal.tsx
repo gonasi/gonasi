@@ -146,6 +146,20 @@ export default function EditPluginSettingsModal({ loaderData, params }: Route.Co
                   ]}
                 />
 
+                <RadioButtonField
+                  labelProps={{
+                    children: 'Randomization 🎲',
+                    required: true,
+                  }}
+                  field={fields.randomization}
+                  errors={fields.randomization.errors}
+                  description='Select how the plugin block appears within the lesson ✨'
+                  options={[
+                    { value: 'none', label: 'None – blends seamlessly with the content' },
+                    { value: 'shuffle', label: 'Shuffle – stands out to draw attention' },
+                  ]}
+                />
+
                 <SliderField
                   labelProps={{ children: 'Delay Before Showing Block', required: true }}
                   meta={fields.delayBeforeShow}

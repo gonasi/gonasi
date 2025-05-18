@@ -12,9 +12,9 @@ export const PluginSettingsSchema = z.object({
     .describe('Determines how the plugin block is rendered in the lesson'),
 
   /**
-   * Delay (in seconsds) before the plugin block appears after being triggered.
+   * Delay (in seconds) before the plugin block appears after being triggered.
    * Useful for pacing or sequencing multiple blocks smoothly.
-   * Example: delayBeforeShow = 1000 means wait 1 second before showing the block.
+   * Example: delayBeforeShow = 1 means wait 1 second before showing the block.
    */
   delayBeforeShow: z
     .number()
@@ -28,12 +28,22 @@ export const PluginSettingsSchema = z.object({
    * Controls how many items appear per row to adjust visual density.
    * - 'single': 1 item per row
    * - 'double': 2 items per row
-   * Example: layoutStyle = 'double' means display 2 items side by side in each row.
    */
   layoutStyle: z
     .enum(['single', 'double'])
     .default('single')
     .describe("Controls how many items appear per row: 'single' (1) or 'double' (2)"),
+
+  /**
+   * Determines the randomization behavior of the plugin items.
+   * - 'none': Keep original order
+   * - 'shuffle': Fully randomize the order
+   * - 'partial': Partially shuffle items (e.g., group-level shuffling, if applicable)
+   */
+  randomization: z
+    .enum(['none', 'shuffle'])
+    .default('none')
+    .describe('Determines how items are randomized in the plugin block'),
 });
 
 export const WeightSchema = z.number().min(1).max(10).default(5);
