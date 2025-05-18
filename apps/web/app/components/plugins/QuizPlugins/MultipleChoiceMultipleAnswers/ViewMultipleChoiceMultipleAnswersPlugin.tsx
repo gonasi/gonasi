@@ -74,6 +74,21 @@ export function ViewMultipleChoiceMultipleAnswersPlugin({ block, mode }: ViewPlu
     tryAgain,
   } = interaction;
 
+  // Track whether we're in a state where selections should be locked
+  // until the user clicks "Try Again" after incorrect answer
+  const [lockSelectionsUntilTryAgain, setLockSelectionsUntilTryAgain] = useState(false);
+
+  // Update lock state when the correctness state changes
+  useEffect(() => {
+    if (state.isCorrect === false) {
+      // Lock selections when answer is incorrect
+      setLockSelectionsUntilTryAgain(true);
+    } else if (state.isCorrect === null) {
+      // Unlock when Try Again is clicked (which resets isCorrect to null)
+      setLockSelectionsUntilTryAgain(false);
+    }
+  }, [state.isCorrect]);
+
   // Enhanced usage with additional parameters for better scoring
   const userScore = calculateMultipleChoiceMultipleAnswersScore({
     isCorrect: state.isCorrect,
@@ -82,6 +97,12 @@ export function ViewMultipleChoiceMultipleAnswersPlugin({ block, mode }: ViewPlu
     correctSelectedCount: state.correctAttempt?.selected.length || 0,
     totalCorrectAnswers: correctAnswers.length,
   });
+
+  // Custom tryAgain handler that also unlocks selections
+  const handleTryAgain = () => {
+    setLockSelectionsUntilTryAgain(false);
+    tryAgain();
+  };
 
   // Sync interaction state with plugin state
   useEffect(() => {
@@ -130,13 +151,15 @@ export function ViewMultipleChoiceMultipleAnswersPlugin({ block, mode }: ViewPlu
             // 1. It's already been marked as correct
             // 2. It's in the disabled options array AND we haven't clicked "Try Again" (state.isCorrect !== false)
             // 3. User has reached selection limit and this option isn't selected
+            // 4. User got an incorrect answer and hasn't clicked "Try Again" yet (using our new lock state)
             const isDisabled =
               isCorrectAttempt ||
               ((disabledOptionsUuids?.includes(optionUuid) ?? false) &&
                 state.isCorrect !== false) ||
               state.continue ||
               isWrongAttempt ||
-              (!canSelectMore && !isSelected);
+              (!canSelectMore && !isSelected) ||
+              lockSelectionsUntilTryAgain; // New condition
 
             return (
               <div key={optionUuid} className='relative w-full'>
@@ -145,7 +168,8 @@ export function ViewMultipleChoiceMultipleAnswersPlugin({ block, mode }: ViewPlu
                   className={cn('relative h-fit w-full justify-start text-left md:max-h-50', {
                     'border-secondary bg-secondary/20 hover:bg-secondary-10 hover:border-secondary/80':
                       isSelected,
-                    'opacity-50': disabledOptionsUuids?.includes(optionUuid),
+                    'opacity-50':
+                      disabledOptionsUuids?.includes(optionUuid) || lockSelectionsUntilTryAgain,
                   })}
                   disabled={isDisabled}
                 >
@@ -274,7 +298,7 @@ export function ViewMultipleChoiceMultipleAnswersPlugin({ block, mode }: ViewPlu
                   <OutlineButton
                     className='rounded-full'
                     rightIcon={<RefreshCw size={16} />}
-                    onClick={tryAgain}
+                    onClick={handleTryAgain} // Use our custom handler
                   >
                     Try Again
                   </OutlineButton>
