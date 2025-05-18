@@ -40,7 +40,6 @@ export function CreateTapToRevealPlugin({ name }: CreateTapToRevealPluginProps) 
   const getCards = (): TapToRevealCardType[] =>
     cards.map((fieldset) => {
       const { frontContent, backContent, uuid } = fieldset.getFieldset();
-      // Validate or coerce here if needed
       return {
         uuid: uuid.value ?? '',
         frontContent: frontContent.value ?? '',
@@ -112,7 +111,7 @@ export function CreateTapToRevealPlugin({ name }: CreateTapToRevealPluginProps) 
                 const { frontContent, backContent, uuid } = card.getFieldset();
                 return (
                   <motion.div
-                    key={card.id ?? uuid}
+                    key={uuid.value}
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }}
@@ -125,7 +124,7 @@ export function CreateTapToRevealPlugin({ name }: CreateTapToRevealPluginProps) 
                       </PlainButton>
                     </div>
                     <RichTextInputField
-                      labelProps={{ children: `Front of Card ${index + 1}`, required: true }}
+                      labelProps={{ children: `Front of Card ${uuid.value}`, required: true }}
                       meta={frontContent as FieldMetadata<string>}
                       errors={frontContent?.errors}
                     />

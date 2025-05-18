@@ -3,6 +3,14 @@ import { z } from 'zod';
 import { BaseInteractionSchema } from './baseInteractionSchema';
 import { PluginSettingsSchema } from './pluginSettings';
 
+export const ChoiceSchema = z.object({
+  choiceState: z
+    .string({ required_error: 'Choice is required.' })
+    .trim()
+    .min(5, 'The choice must be at least 5 characters long.'),
+  uuid: z.string({ required_error: 'Card uuid is required' }),
+});
+
 export const MultipleChoiceMultipleAnswersSchema = z.object({
   questionState: z
     .string({ required_error: 'Question is required.' })
@@ -10,14 +18,7 @@ export const MultipleChoiceMultipleAnswersSchema = z.object({
     .min(5, 'The question must be at least 5 characters long.'),
 
   choices: z
-    .array(
-      z.object({
-        choiceState: z
-          .string({ required_error: 'Choice is required.' })
-          .trim()
-          .min(5, 'The choice must be at least 5 characters long.'),
-      }),
-    )
+    .array(ChoiceSchema)
     .min(2, 'At least two choices are required.')
     .max(6, 'No more than six choices are allowed.'),
 

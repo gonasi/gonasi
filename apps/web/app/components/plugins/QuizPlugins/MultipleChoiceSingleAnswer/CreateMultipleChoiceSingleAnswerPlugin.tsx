@@ -4,8 +4,13 @@ import { getZodConstraint, parseWithZod } from '@conform-to/zod';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Plus, Save, Trash } from 'lucide-react';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
+import { v4 as uuidv4 } from 'uuid';
 
-import { MultipleChoiceSingleAnswerSchema, type PluginTypeId } from '@gonasi/schemas/plugins';
+import {
+  type ChoiceType,
+  MultipleChoiceSingleAnswerSchema,
+  type PluginTypeId,
+} from '@gonasi/schemas/plugins';
 
 import { Button, OutlineButton, PlainButton } from '~/components/ui/button';
 import { ErrorList, RadioButtonField, TextareaField } from '~/components/ui/forms';
@@ -32,46 +37,41 @@ export function CreateMultipleChoiceSingleAnswerPlugin({
     },
   });
 
-  const handleAddChoice = () => {
-    // Create a new item
-    const newChoice = { choiceState: '' };
+  const choices = fields.choices.getFieldList();
 
-    // Get current items array or initialize it
-    const currentChoices = fields.choices.getFieldList().map((item) => {
-      const choice = item.getFieldset();
+  const getChoices = (): ChoiceType[] =>
+    choices.map((fieldset) => {
+      const { choiceState, uuid } = fieldset.getFieldset();
       return {
-        choiceState: choice.choiceState.value || '',
+        uuid: uuid.value ?? '',
+        choiceState: choiceState.value ?? '',
       };
     });
 
-    // Update the form with the new item added
+  const updateChoices = (updated: ChoiceType[]) => {
     form.update({
       name: fields.choices.name,
-      value: [...currentChoices, newChoice],
+      value: updated,
     });
   };
 
-  // Function to remove an item
-  const handleRemoveChoice = (index: number) => {
-    // Get current items
-    const currentChoices = fields.choices.getFieldList().map((item) => {
-      const choice = item.getFieldset();
-      return {
-        choiceState: choice.choiceState.value || '',
-      };
-    });
+  const addChoice = () => {
+    const current = getChoices();
 
-    // Remove the item at the specified index
-    const updatedChoices = currentChoices.filter((_, i) => i !== index);
-
-    // Update the form with the filtered items
-    form.update({
-      name: fields.choices.name,
-      value: updatedChoices,
-    });
+    updateChoices([
+      ...current,
+      {
+        uuid: uuidv4(),
+        choiceState: '',
+      },
+    ]);
   };
 
-  const optionsList = fields.choices.getFieldList();
+  const removeChoice = (uuid: string) => {
+    const current = getChoices();
+    const updated = current.filter((choice) => choice.uuid !== uuid);
+    updateChoices(updated);
+  };
 
   return (
     <Form method='POST' {...getFormProps(form)}>
@@ -98,8 +98,7 @@ export function CreateMultipleChoiceSingleAnswerPlugin({
             <OutlineButton
               type='button'
               size='sm'
-              onClick={() => handleAddChoice()}
-              disabled={optionsList.length >= 6}
+              onClick={() => addChoice()}
               className={cn({
                 'border-danger text-danger': form.allErrors.choices,
               })}
@@ -108,13 +107,13 @@ export function CreateMultipleChoiceSingleAnswerPlugin({
             </OutlineButton>
           </div>
           <div className='bg-card/50 rounded-lg p-4'>
-            {optionsList && optionsList.length ? (
+            {choices && choices.length ? (
               <AnimatePresence>
-                {optionsList.map((option, index) => {
-                  const optionFields = option.getFieldset();
+                {choices.map((choice, index) => {
+                  const { choiceState, uuid } = choice.getFieldset();
                   return (
                     <motion.div
-                      key={option.id ?? index} // Make sure to use a stable ID if possible
+                      key={uuid.value}
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: 'auto' }}
                       exit={{ opacity: 0, height: 0 }}
@@ -122,16 +121,19 @@ export function CreateMultipleChoiceSingleAnswerPlugin({
                     >
                       <RichTextInputField
                         labelProps={{
-                          children: `Option ${index + 1}`,
+                          children: `Option ${uuid.value}`,
                           required: true,
                           endAdornment: (
-                            <PlainButton type='button' onClick={() => handleRemoveChoice(index)}>
+                            <PlainButton
+                              type='button'
+                              onClick={() => removeChoice(uuid.value ?? '')}
+                            >
                               <Trash size={16} />
                             </PlainButton>
                           ),
                         }}
-                        meta={optionFields.choiceState as FieldMetadata<string>}
-                        errors={optionFields.choiceState?.errors}
+                        meta={choiceState as FieldMetadata<string>}
+                        errors={choiceState?.errors}
                       />
                     </motion.div>
                   );
@@ -145,12 +147,15 @@ export function CreateMultipleChoiceSingleAnswerPlugin({
           <RadioButtonField
             field={fields.correctAnswer}
             labelProps={{ children: 'Choose the correct answer', required: true }}
-            options={optionsList.map((_, index) => ({
-              value: index.toString(),
-              label: `Option ${index + 1}`,
-            }))}
+            options={choices.map((choice, index) => {
+              const { uuid } = choice.getFieldset();
+              return {
+                value: uuid.value ?? '',
+                label: `Option ${index + 1}`,
+              };
+            })}
             errors={fields.correctAnswer.errors}
-            description='Select which option is the correct answer'
+            description='Select which choice is the correct answer'
           />
         </div>
 

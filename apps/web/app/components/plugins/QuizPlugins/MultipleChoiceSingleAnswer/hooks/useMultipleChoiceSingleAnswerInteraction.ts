@@ -53,11 +53,11 @@ export function useMultipleChoiceSingleAnswerInteraction(initial?: Partial<Inter
    * Sets `hasChecked` to true to lock further interaction until reset.
    */
   const checkAnswer = useCallback(
-    (correctAnswerIndex: number) => {
+    (correctAnswerUuid: number) => {
       if (selectedOptionIndex === null) return;
 
       const timestamp = getTimestamp();
-      const isCorrect = selectedOptionIndex === correctAnswerIndex;
+      const isCorrect = selectedOptionIndex === correctAnswerUuid;
 
       setHasChecked(true);
       setState((prev) => {
@@ -105,7 +105,7 @@ export function useMultipleChoiceSingleAnswerInteraction(initial?: Partial<Inter
    * Marks the correct answer as revealed.
    * Useful for feedback after checking or skipping.
    */
-  const revealCorrectAnswer = useCallback((correctAnswerIndex: number) => {
+  const revealCorrectAnswer = useCallback((correctAnswerUuid: number) => {
     const timestamp = getTimestamp();
 
     setState((prev) => ({
@@ -117,7 +117,7 @@ export function useMultipleChoiceSingleAnswerInteraction(initial?: Partial<Inter
       canShowContinueButton: true,
       canShowCorrectAnswer: true,
       canShowExplanationButton: true,
-      correctAttempt: { selected: correctAnswerIndex, timestamp },
+      correctAttempt: { selected: correctAnswerUuid, timestamp },
     }));
   }, []);
 

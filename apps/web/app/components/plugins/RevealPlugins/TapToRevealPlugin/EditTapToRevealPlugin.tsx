@@ -113,7 +113,7 @@ export function EditTapToRevealPlugin({ block }: EditPluginComponentProps) {
                 const { frontContent, backContent, uuid } = card.getFieldset();
                 return (
                   <motion.div
-                    key={card.id ?? uuid}
+                    key={uuid.value}
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }}
