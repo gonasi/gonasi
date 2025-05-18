@@ -212,7 +212,7 @@ export function ViewTrueOrFalsePlugin({ block, mode }: ViewPluginComponentProps)
                   >
                     Try Again
                   </OutlineButton>
-                  {!explanationState && (
+                  {!state.continue && (
                     <Button
                       variant='secondary'
                       className='rounded-full'

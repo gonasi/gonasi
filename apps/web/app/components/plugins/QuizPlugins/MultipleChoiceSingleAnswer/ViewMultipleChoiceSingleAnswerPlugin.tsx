@@ -161,7 +161,7 @@ export function ViewMultipleChoiceSingleAnswerPlugin({ block, mode }: ViewPlugin
                   className='mb-4 rounded-full'
                   rightIcon={<CheckCheck />}
                   disabled={selectedOptionUuid === null || state.continue}
-                  onClick={() => checkAnswer(correctAnswer)}
+                  onClick={() => checkAnswer()}
                 >
                   Check
                 </Button>
@@ -219,11 +219,11 @@ export function ViewMultipleChoiceSingleAnswerPlugin({ block, mode }: ViewPlugin
                   >
                     Try Again
                   </OutlineButton>
-                  {!explanationState && (
+                  {!state.continue && (
                     <Button
                       variant='secondary'
                       className='rounded-full'
-                      onClick={() => revealCorrectAnswer(correctAnswer)}
+                      onClick={() => revealCorrectAnswer()}
                     >
                       Show Answer
                     </Button>

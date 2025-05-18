@@ -55,42 +55,39 @@ export function useMultipleChoiceSingleAnswerInteraction(
    * Updates the interaction state with correctness, attempts, and UI flags.
    * Sets `hasChecked` to true to lock further interaction until reset.
    */
-  const checkAnswer = useCallback(
-    (correctAnswerUuid: string) => {
-      if (selectedOptionUuid === null) return;
+  const checkAnswer = useCallback(() => {
+    if (selectedOptionUuid === null) return;
 
-      const timestamp = getTimestamp();
-      const isCorrect = selectedOptionUuid === correctAnswerUuid;
+    const timestamp = getTimestamp();
+    const isCorrect = selectedOptionUuid === correctAnswerUuid;
 
-      setHasChecked(true);
-      setState((prev) => {
-        if (isCorrect) {
-          return {
-            ...prev,
-            optionSelected: true,
-            isCorrect: true,
-            continue: true,
-            canShowContinueButton: true,
-            canShowCorrectAnswer: true,
-            canShowExplanationButton: true,
-            correctAttempt: { selected: selectedOptionUuid, timestamp },
-            attemptsCount: prev.attemptsCount + 1,
-          };
-        } else {
-          return {
-            ...prev,
-            optionSelected: true,
-            isCorrect: false,
-            canShowCorrectAnswer: true,
-            wrongAttempts: [...prev.wrongAttempts, { selected: selectedOptionUuid, timestamp }],
-            attemptsCount: prev.attemptsCount + 1,
-          };
-        }
-      });
-      setSelectedOptionUuid(null);
-    },
-    [selectedOptionUuid],
-  );
+    setHasChecked(true);
+    setState((prev) => {
+      if (isCorrect) {
+        return {
+          ...prev,
+          optionSelected: true,
+          isCorrect: true,
+          continue: true,
+          canShowContinueButton: true,
+          canShowCorrectAnswer: true,
+          canShowExplanationButton: true,
+          correctAttempt: { selected: selectedOptionUuid, timestamp },
+          attemptsCount: prev.attemptsCount + 1,
+        };
+      } else {
+        return {
+          ...prev,
+          optionSelected: true,
+          isCorrect: false,
+          canShowCorrectAnswer: true,
+          wrongAttempts: [...prev.wrongAttempts, { selected: selectedOptionUuid, timestamp }],
+          attemptsCount: prev.attemptsCount + 1,
+        };
+      }
+    });
+    setSelectedOptionUuid(null);
+  }, [correctAnswerUuid, selectedOptionUuid]);
 
   /**
    * Allows the user to try again after an incorrect attempt.
@@ -108,7 +105,7 @@ export function useMultipleChoiceSingleAnswerInteraction(
    * Marks the correct answer as revealed.
    * Useful for feedback after checking or skipping.
    */
-  const revealCorrectAnswer = useCallback((correctAnswerUuid: string) => {
+  const revealCorrectAnswer = useCallback(() => {
     const timestamp = getTimestamp();
 
     setState((prev) => ({
@@ -122,7 +119,7 @@ export function useMultipleChoiceSingleAnswerInteraction(
       canShowExplanationButton: true,
       correctAttempt: { selected: correctAnswerUuid, timestamp },
     }));
-  }, []);
+  }, [correctAnswerUuid]);
 
   /**
    * Skips the current interaction.
