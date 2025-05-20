@@ -10,6 +10,7 @@ import { useViewPluginCore } from '../../hooks/useViewPluginCore';
 import type { ViewPluginComponentProps } from '../../viewPluginTypesRenderer';
 
 import RichTextRenderer from '~/components/go-editor/ui/RichTextRenderer';
+import { AnimateInButtonWrapper, BlockActionButton } from '~/components/ui/button';
 import {
   Carousel,
   CarouselContent,
@@ -20,11 +21,12 @@ import {
 } from '~/components/ui/carousel/custom-carousel';
 
 export function ViewTapToRevealPlugin({ block, mode }: ViewPluginComponentProps) {
-  const { blockInteractionData, updatePayload } = useViewPluginCore({
-    blockId: block.id,
-    pluginType: block.plugin_type,
-    settings: block.settings,
-  });
+  const { blockInteractionData, updatePayload, loading, canRender, handleContinue, isLastBlock } =
+    useViewPluginCore({
+      blockId: block.id,
+      pluginType: block.plugin_type,
+      settings: block.settings,
+    });
 
   const { is_complete } = blockInteractionData ?? {};
   const { playbackMode } = block.settings;
@@ -35,6 +37,8 @@ export function ViewTapToRevealPlugin({ block, mode }: ViewPluginComponentProps)
 
   const { state, revealCard, hasInteractedWithCard, canNavigateNext, getProgress } =
     useTapToRevealInteraction(cards, itemsPerSlide);
+
+  const shouldShowActionButton = !is_complete && mode !== 'preview';
 
   // Update interaction data when state changes
   useEffect(() => {
@@ -55,6 +59,9 @@ export function ViewTapToRevealPlugin({ block, mode }: ViewPluginComponentProps)
   };
 
   const progress = getProgress();
+  const allCardsRevealed = progress.complete;
+
+  if (!canRender) return <></>;
 
   return (
     <ViewPluginWrapper
@@ -81,7 +88,7 @@ export function ViewTapToRevealPlugin({ block, mode }: ViewPluginComponentProps)
               slidesToScroll: itemsPerSlide,
               containScroll: 'trimSnaps',
             }}
-            onSlideChange={handleSlideChange}
+            // onSlideChange={handleSlideChange}
           >
             <CarouselContent>
               {cards.map((card) => (
@@ -108,6 +115,19 @@ export function ViewTapToRevealPlugin({ block, mode }: ViewPluginComponentProps)
             </div>
           </Carousel>
         </div>
+
+        {/* Continue button for when all cards are revealed */}
+        {allCardsRevealed && shouldShowActionButton && (
+          <div className='mt-4 flex w-full justify-end'>
+            <AnimateInButtonWrapper>
+              <BlockActionButton
+                onClick={handleContinue}
+                loading={loading}
+                isLastBlock={isLastBlock}
+              />
+            </AnimateInButtonWrapper>
+          </div>
+        )}
       </PlayPluginWrapper>
     </ViewPluginWrapper>
   );
