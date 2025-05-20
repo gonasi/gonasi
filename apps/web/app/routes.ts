@@ -131,12 +131,16 @@ export default [
               // view all blocks by course creator
               // /dashboard/:companyId/courses/:courseId/course-content/:chapterId/:lessonId
               route(':lessonId', 'routes/dashboard/courses/lessons/edit-lesson-content.tsx', [
-                route('plugins', 'routes/dashboard/courses/lessons/view-plugins-modal.tsx', [
-                  route(
-                    ':pluginTypeId/new',
-                    'routes/dashboard/courses/lessons/new-plugin-block-modal.tsx',
-                  ),
-                ]),
+                route(
+                  'plugins',
+                  'routes/dashboard/courses/lessons/plugins/view-all-plugins-modal.tsx',
+                  [
+                    route(
+                      ':pluginGroupId',
+                      'routes/dashboard/courses/lessons/plugins/view-plugins-by-category-id-modal.tsx',
+                    ),
+                  ],
+                ),
                 route(':blockId/edit', 'routes/dashboard/courses/lessons/edit-plugin-modal.tsx'),
                 route(
                   ':blockId/settings',
