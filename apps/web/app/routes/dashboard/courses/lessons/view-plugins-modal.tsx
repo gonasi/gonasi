@@ -8,11 +8,10 @@ import { createLessonBlock } from '@gonasi/database/lessons';
 import {
   getContentSchemaByType,
   getPluginNameById,
-  getPluginTypeNameById,
   type PluginTypeId,
 } from '@gonasi/schemas/plugins';
 
-import type { Route } from './+types/plugins-modal';
+import type { Route } from './+types/view-plugins-modal';
 
 import { AppLogo } from '~/components/app-logo';
 import { Spinner } from '~/components/loaders';
@@ -51,7 +50,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 
   return success
     ? redirectWithSuccess(
-        `/dashboard/${params.companyId}/courses/${params.courseId}/course-content/${params.chapterId}/${params.lessonId}/edit-content`,
+        `/dashboard/${params.companyId}/courses/${params.courseId}/course-content/${params.chapterId}/${params.lessonId}`,
         message,
       )
     : dataWithError(null, message);
@@ -59,35 +58,27 @@ export async function action({ request, params }: Route.ActionArgs) {
 
 export default function PluginsModal({ params }: Route.ComponentProps) {
   const navigate = useNavigate();
-  const { activePlugin, activeSubPlugin, updateActivePlugin, updateActiveSubPlugin } = useStore();
+  const { activePlugin, updateActivePlugin } = useStore();
 
   const handleClose = () => {
     navigate(
-      `/dashboard/${params.companyId}/courses/${params.courseId}/course-content/${params.chapterId}/${params.lessonId}/edit-content`,
+      `/dashboard/${params.companyId}/courses/${params.courseId}/course-content/${params.chapterId}/${params.lessonId}`,
     );
   };
 
   const handlePrevious = () => {
-    if (activeSubPlugin) {
-      updateActiveSubPlugin(null);
-    } else if (activePlugin) {
+    if (activePlugin) {
       updateActivePlugin(null);
     }
   };
 
-  const leadingIcon =
-    activePlugin || activeSubPlugin ? (
-      <ArrowLeft onClick={handlePrevious} className='hover:cursor-pointer' />
-    ) : (
-      <AppLogo sizeClass='h-4 md:h-5 -mt-1' />
-    );
+  const leadingIcon = activePlugin ? (
+    <ArrowLeft onClick={handlePrevious} className='hover:cursor-pointer' />
+  ) : (
+    <AppLogo sizeClass='h-4 md:h-5 -mt-1' />
+  );
 
-  const title =
-    activePlugin && activeSubPlugin
-      ? getPluginTypeNameById(activePlugin, activeSubPlugin)
-      : activePlugin
-        ? getPluginNameById(activePlugin)
-        : 'All Gonasi Plugins';
+  const title = activePlugin ? getPluginNameById(activePlugin) : 'All Gonasi Plugins';
 
   return (
     <Modal open onOpenChange={(open) => !open && handleClose()}>

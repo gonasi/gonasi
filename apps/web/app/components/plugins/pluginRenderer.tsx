@@ -1,11 +1,10 @@
 import type { JSX } from 'react';
+import { Link, Outlet, useNavigate, useParams } from 'react-router';
 import { motion } from 'framer-motion';
 import * as LucideIcons from 'lucide-react';
 
 import type { PluginId } from '@gonasi/schemas/plugins';
 import { ALL_PLUGINS } from '@gonasi/schemas/plugins';
-
-import { CreatePluginTypesRenderer } from './createPluginTypesRenderer';
 
 import { Badge } from '~/components/ui/badge';
 import { cn } from '~/lib/utils';
@@ -16,7 +15,11 @@ type PluginConst = PluginCategoryConst['plugins'][number];
 type PluginTypeConst = PluginConst['pluginTypes'][number];
 
 export default function PluginTypeRenderer(): JSX.Element {
-  const { activePlugin, activeSubPlugin, updateActiveSubPlugin } = useStore();
+  const params = useParams();
+  const navigate = useNavigate();
+  const { activePlugin } = useStore();
+
+  const { companyId, courseId, chapterId, lessonId } = params;
 
   function getPluginTypes(id: PluginId | null): Record<string, PluginTypeConst> {
     for (const category of ALL_PLUGINS) {
@@ -38,42 +41,39 @@ export default function PluginTypeRenderer(): JSX.Element {
 
   return (
     <>
-      {activeSubPlugin ? (
-        <CreatePluginTypesRenderer />
-      ) : (
-        <motion.div
-          className='flex flex-col gap-2'
-          initial='hidden'
-          animate='visible'
-          variants={{
-            hidden: { opacity: 0 },
-            visible: {
-              opacity: 1,
-              transition: {
-                staggerChildren: 0.05,
-              },
+      <motion.div
+        className='flex flex-col gap-2'
+        initial='hidden'
+        animate='visible'
+        variants={{
+          hidden: { opacity: 0 },
+          visible: {
+            opacity: 1,
+            transition: {
+              staggerChildren: 0.05,
             },
-          }}
-        >
-          {Object.entries(pluginTypeMap).map(([key, type]) => {
-            const Icon = LucideIcons[type.icon as keyof typeof LucideIcons] as
-              | LucideIcons.LucideIcon
-              | undefined;
+          },
+        }}
+      >
+        {Object.entries(pluginTypeMap).map(([key, type]) => {
+          const Icon = LucideIcons[type.icon as keyof typeof LucideIcons] as
+            | LucideIcons.LucideIcon
+            | undefined;
 
-            const FallbackIcon = LucideIcons.Square;
-            const ResolvedIcon = Icon ?? FallbackIcon;
+          const FallbackIcon = LucideIcons.Square;
+          const ResolvedIcon = Icon ?? FallbackIcon;
 
-            return (
-              <motion.button
-                type='button'
-                key={key}
+          return (
+            <Link
+              to={`/dashboard/${companyId}/courses/${courseId}/course-content/${chapterId}/${lessonId}/plugins/${type.id}/new`}
+              key={key}
+            >
+              <motion.div
                 className={cn(
                   'hover:bg-primary/5 flex w-full cursor-pointer items-center gap-3 rounded-sm p-2 text-left transition-all duration-200 ease-in-out hover:shadow-sm',
                   type.comingSoon &&
                     'cursor-not-allowed opacity-50 hover:bg-transparent hover:shadow-none',
                 )}
-                onClick={() => updateActiveSubPlugin(type.id)}
-                disabled={type.comingSoon}
                 initial={{ opacity: 0, y: 5 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.2 }}
@@ -90,11 +90,12 @@ export default function PluginTypeRenderer(): JSX.Element {
                     {type.description}
                   </div>
                 </div>
-              </motion.button>
-            );
-          })}
-        </motion.div>
-      )}
+              </motion.div>
+            </Link>
+          );
+        })}
+      </motion.div>
+      <Outlet />
     </>
   );
 }

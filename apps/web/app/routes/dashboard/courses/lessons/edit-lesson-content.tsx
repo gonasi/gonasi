@@ -106,7 +106,7 @@ function getLessonPath(params: {
   chapterId: string;
   lessonId: string;
 }) {
-  return `${getBasePath(params)}/${params.chapterId}/${params.lessonId}/edit-content`;
+  return `${getBasePath(params)}/${params.chapterId}/${params.lessonId}`;
 }
 
 // Component

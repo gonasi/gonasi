@@ -41,7 +41,6 @@ export function TapToRevealCard({
       tabIndex={0}
       aria-pressed={revealed}
     >
-      {/* Front Side */}
       <motion.div
         data-side='front'
         className={cn(
@@ -69,7 +68,6 @@ export function TapToRevealCard({
         <div className='flex flex-1 items-center justify-center'>{front}</div>
       </motion.div>
 
-      {/* Back Side */}
       <motion.div
         data-side='back'
         className={cn(

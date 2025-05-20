@@ -17,7 +17,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   }
 
   return redirectWithSuccess(
-    `/dashboard/${params.companyId}/courses/${params.courseId}/course-content/${params.chapterId}/${params.lessonId}/edit-content`,
+    `/dashboard/${params.companyId}/courses/${params.courseId}/course-content/${params.chapterId}/${params.lessonId}`,
     message,
   );
 }

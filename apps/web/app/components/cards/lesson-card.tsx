@@ -59,7 +59,7 @@ export function LessonCard({
     {
       title: 'Edit content',
       icon: Text,
-      to: `${basePath}/edit-content`,
+      to: `${basePath}`,
     },
     {
       title: 'Delete lesson',
@@ -70,7 +70,7 @@ export function LessonCard({
 
   return (
     <Link
-      to={`${basePath}/edit-content`}
+      to={`${basePath}`}
       ref={isMounted ? setNodeRef : undefined}
       style={style}
       className='group bg-background/50 hover:bg-primary/2 flex flex-col space-y-3 rounded-xl border border-transparent p-4 transition-all duration-300 ease-in-out hover:border hover:shadow-sm'

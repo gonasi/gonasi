@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-import type { PluginId, PluginTypeId } from '@gonasi/schemas/plugins';
+import type { PluginId } from '@gonasi/schemas/plugins';
 
 import type { UserActiveSessionLoaderReturnType } from '~/root';
 import type {
@@ -14,9 +14,7 @@ interface StoreState {
 
   // Plugin management
   activePlugin: PluginId | null;
-  activeSubPlugin: PluginTypeId | null;
   updateActivePlugin: (plugin: PluginId | null) => void;
-  updateActiveSubPlugin: (subPlugin: PluginTypeId | null) => void;
 
   // Lesson state
   lessonBlocks: GoLessonPlayLessonBlocksType;
@@ -101,9 +99,7 @@ export const useStore = create<StoreState>((set, get) => ({
   updateActiveSession: (session) => set({ activeSession: session }),
 
   activePlugin: null,
-  activeSubPlugin: null,
   updateActivePlugin: (pluginId) => set({ activePlugin: pluginId }),
-  updateActiveSubPlugin: (subPluginId) => set({ activeSubPlugin: subPluginId }),
 
   lessonBlocks: [],
   lessonBlockInteractions: [],

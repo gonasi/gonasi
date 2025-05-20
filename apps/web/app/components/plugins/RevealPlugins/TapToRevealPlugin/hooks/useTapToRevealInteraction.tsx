@@ -18,7 +18,7 @@ interface Card {
 export function useTapToRevealInteraction(
   cards: Card[],
   cardsPerSlide: number,
-  initial?: Partial<InteractionState>,
+  initial: Partial<InteractionState>,
 ) {
   const validCardUuids = useMemo(() => cards.map((card) => card.uuid), [cards]);
 

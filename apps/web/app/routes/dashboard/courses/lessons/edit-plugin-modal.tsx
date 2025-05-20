@@ -40,7 +40,7 @@ export async function action({ request, params }: Route.ActionArgs) {
     content: submission.value,
   });
 
-  const redirectPath = `/dashboard/${params.companyId}/courses/${params.courseId}/course-content/${params.chapterId}/${params.lessonId}/edit-content`;
+  const redirectPath = `/dashboard/${params.companyId}/courses/${params.courseId}/course-content/${params.chapterId}/${params.lessonId}`;
 
   return success ? redirectWithSuccess(redirectPath, message) : dataWithError(null, message);
 }
@@ -51,7 +51,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   const lessonBlock = await fetchSingleBlockByBlockId(supabase, params.blockId);
 
   if (!lessonBlock.data) {
-    const redirectPath = `/dashboard/${params.companyId}/courses/${params.courseId}/course-content/${params.chapterId}/${params.lessonId}/edit-content`;
+    const redirectPath = `/dashboard/${params.companyId}/courses/${params.courseId}/course-content/${params.chapterId}/${params.lessonId}`;
     return redirectWithError(redirectPath, 'Lesson block not found');
   }
 
@@ -70,7 +70,7 @@ export default function EditPluginsModal({ loaderData, params }: Route.Component
 
   const handleClose = () => {
     navigate(
-      `/dashboard/${params.companyId}/courses/${params.courseId}/course-content/${params.chapterId}/${params.lessonId}/edit-content`,
+      `/dashboard/${params.companyId}/courses/${params.courseId}/course-content/${params.chapterId}/${params.lessonId}`,
     );
   };
 
