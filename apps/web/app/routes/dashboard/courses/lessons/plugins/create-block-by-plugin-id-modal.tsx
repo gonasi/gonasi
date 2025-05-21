@@ -13,7 +13,9 @@ import type { Route } from './+types/create-block-by-plugin-id-modal';
 import { Spinner } from '~/components/loaders';
 import { Modal } from '~/components/ui/modal';
 
-const LazyGonasiPluginGroup = lazy(() => import('~/components/plugins/GonasiPluginGroup'));
+const LazyCreatePluginBlockRenderer = lazy(
+  () => import('~/components/plugins/CreatePluginBlockRenderer'),
+);
 
 export function headers(_: Route.HeadersArgs) {
   return {
@@ -55,7 +57,11 @@ export default function CreateBlockByPluginIdModal({ params }: Route.ComponentPr
           <Modal.Header leadingIcon={<BackButton />} title={modalTitle} />
           <Modal.Body>
             <Suspense fallback={<Spinner />}>
-              {plugin ? <p>Lazy load create component here</p> : <h1>Plugin not found</h1>}
+              {plugin ? (
+                <LazyCreatePluginBlockRenderer pluginTypeId={params.pluginId as PluginTypeId} />
+              ) : (
+                <h1>Plugin not found</h1>
+              )}
             </Suspense>
           </Modal.Body>
         </Modal.Content>

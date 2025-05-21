@@ -13,10 +13,10 @@ import { ErrorList } from '~/components/ui/forms';
 import { RichTextInputField } from '~/components/ui/forms/RichTextInputField';
 
 interface CreateRichTextPluginProps {
-  name: PluginTypeId;
+  pluginTypeId: PluginTypeId;
 }
 
-export function CreateRichTextPlugin({ name }: CreateRichTextPluginProps) {
+export function CreateRichTextPlugin({ pluginTypeId }: CreateRichTextPluginProps) {
   const fetcher = useFetcher();
 
   const [loading, setLoading] = useState(false);
@@ -31,7 +31,7 @@ export function CreateRichTextPlugin({ name }: CreateRichTextPluginProps) {
   }, [fetcher.state, fetcher.data]);
 
   const [form, fields] = useForm({
-    id: `${name}-form`,
+    id: `${pluginTypeId}-form`,
     constraint: getZodConstraint(RichTextSchema),
 
     shouldValidate: 'onBlur',
@@ -70,8 +70,8 @@ export function CreateRichTextPlugin({ name }: CreateRichTextPluginProps) {
           rightIcon={<Save />}
           disabled={loading}
           isLoading={loading}
-          name='intent'
-          value={name}
+          pluginTypeId='intent'
+          value={pluginTypeId}
         >
           Save
         </Button>
