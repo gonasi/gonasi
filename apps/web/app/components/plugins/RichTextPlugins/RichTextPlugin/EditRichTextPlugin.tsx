@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { useFetcher } from 'react-router';
-import { useForm } from '@conform-to/react';
+import { Form, useFetcher } from 'react-router';
+import { getFormProps, useForm } from '@conform-to/react';
 import { getZodConstraint, parseWithZod } from '@conform-to/zod';
 import { Save } from 'lucide-react';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
@@ -44,7 +44,7 @@ export function EditRichTextPlugin({ block }: EditPluginComponentProps) {
   });
 
   return (
-    <form id={form.id} onSubmit={form.onSubmit} className='space-y-4' noValidate>
+    <Form method='POST' {...getFormProps(form)}>
       <HoneypotInputs />
       <RichTextInputField
         labelProps={{ children: 'Rich Text', required: true }}
@@ -53,8 +53,7 @@ export function EditRichTextPlugin({ block }: EditPluginComponentProps) {
         errors={fields.richTextState.errors}
         description='You can format your content using rich text.'
       />
-
-      <ErrorList errors={form.errors} id={form.errorId} />
+      <ErrorList errors={Object.values(form.allErrors).flat()} id={form.errorId} />
       <div className='mt-4 flex justify-end space-x-2'>
         <Button
           type='submit'
@@ -67,6 +66,6 @@ export function EditRichTextPlugin({ block }: EditPluginComponentProps) {
           Edit
         </Button>
       </div>
-    </form>
+    </Form>
   );
 }

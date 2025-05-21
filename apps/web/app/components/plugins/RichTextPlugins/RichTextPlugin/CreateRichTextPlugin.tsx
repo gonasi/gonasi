@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react';
 import { useFetcher } from 'react-router';
 import { useForm } from '@conform-to/react';
 import { getZodConstraint, parseWithZod } from '@conform-to/zod';
@@ -11,6 +10,7 @@ import { RichTextSchema } from '@gonasi/schemas/plugins';
 import { Button } from '~/components/ui/button';
 import { ErrorList } from '~/components/ui/forms';
 import { RichTextInputField } from '~/components/ui/forms/RichTextInputField';
+import { useIsPending } from '~/utils/misc';
 
 interface CreateRichTextPluginProps {
   pluginTypeId: PluginTypeId;
@@ -18,17 +18,7 @@ interface CreateRichTextPluginProps {
 
 export function CreateRichTextPlugin({ pluginTypeId }: CreateRichTextPluginProps) {
   const fetcher = useFetcher();
-
-  const [loading, setLoading] = useState(false);
-
-  // Set up an effect to monitor fetcher state
-  useEffect(() => {
-    if (fetcher.state === 'submitting') {
-      setLoading(true);
-    } else if (fetcher.state === 'idle' && fetcher.data) {
-      setLoading(false);
-    }
-  }, [fetcher.state, fetcher.data]);
+  const pending = useIsPending();
 
   const [form, fields] = useForm({
     id: `${pluginTypeId}-form`,
@@ -68,9 +58,9 @@ export function CreateRichTextPlugin({ pluginTypeId }: CreateRichTextPluginProps
         <Button
           type='submit'
           rightIcon={<Save />}
-          disabled={loading}
-          isLoading={loading}
-          pluginTypeId='intent'
+          disabled={pending}
+          isLoading={pending}
+          name='intent'
           value={pluginTypeId}
         >
           Save
