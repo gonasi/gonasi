@@ -30,26 +30,25 @@ const Content = ({ children, title = '', size = 'md', className }: ContentProps)
 
   return (
     <Dialog.Portal forceMount>
-      <AnimatePresence>
-        <Dialog.Overlay asChild>
-          <motion.div
-            key='overlay'
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className={cn('bg-card/80 fixed inset-0 z-50')}
-          />
-        </Dialog.Overlay>
+      <Dialog.Overlay asChild>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          className={cn('bg-card/80 fixed inset-0 z-50')}
+        />
+      </Dialog.Overlay>
 
-        <div
-          className={cn('fixed inset-0 z-50 flex h-screen items-center justify-center px-4', {
-            'px-0': size === 'full',
-          })}
-        >
-          <Dialog.Content asChild onPointerDownOutside={(e) => e.preventDefault()}>
+      <div
+        className={cn('fixed inset-0 z-50 flex h-screen items-center justify-center px-4', {
+          'px-0': size === 'full',
+        })}
+      >
+        <Dialog.Content asChild onPointerDownOutside={(e) => e.preventDefault()}>
+          <AnimatePresence mode='wait'>
             <motion.div
-              key='modal'
+              key='modal-content'
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
@@ -69,9 +68,9 @@ const Content = ({ children, title = '', size = 'md', className }: ContentProps)
                 {children}
               </div>
             </motion.div>
-          </Dialog.Content>
-        </div>
-      </AnimatePresence>
+          </AnimatePresence>
+        </Dialog.Content>
+      </div>
     </Dialog.Portal>
   );
 };

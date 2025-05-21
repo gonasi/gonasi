@@ -31,61 +31,59 @@ export default function GoPluginsMenuDialog({ pluginTypes }: GonasiPluginGroupPr
   };
 
   return (
-    <>
-      <motion.div
-        initial='hidden'
-        animate='visible'
-        variants={{
-          hidden: { opacity: 0 },
-          visible: {
-            opacity: 1,
-            transition: { staggerChildren: 0.05 },
-          },
-        }}
-      >
-        {pluginTypes && pluginTypes.length ? (
-          pluginTypes.map(({ id, name, description, icon, comingSoon }) => {
-            const ResolvedIcon = getResolvedIcon(icon);
+    <motion.div
+      initial='hidden'
+      animate='visible'
+      variants={{
+        hidden: { opacity: 0 },
+        visible: {
+          opacity: 1,
+          transition: { staggerChildren: 0.05 },
+        },
+      }}
+    >
+      {pluginTypes && pluginTypes.length ? (
+        pluginTypes.map(({ id, name, description, icon, comingSoon }) => {
+          const ResolvedIcon = getResolvedIcon(icon);
 
-            return (
-              <MotionNavLink
-                key={id}
-                to={`/dashboard/${params.companyId}/courses/${params.courseId}/course-content/${params.chapterId}/${params.lessonId}/plugins/${id}`}
-                className={({ isPending }) =>
-                  cn(
-                    'hover:bg-primary/5 flex w-full cursor-pointer items-center gap-3 rounded-sm p-2 text-left transition-all duration-200 ease-in-out hover:shadow-sm',
-                    isPending && 'bg-primary/10 pointer-events-none animate-pulse opacity-60',
-                  )
-                }
-                {...fadeInUpProps}
-              >
-                {({ isPending }) => (
-                  <>
-                    <div className='bg-muted-foreground/5 border-primary/5 rounded-sm border p-2 transition-colors duration-200'>
-                      {isPending ? (
-                        <LucideIcons.LoaderCircle className='text-primary animate-spin' />
-                      ) : (
-                        <ResolvedIcon className='text-primary' />
-                      )}
+          return (
+            <MotionNavLink
+              key={id}
+              to={`/dashboard/${params.companyId}/courses/${params.courseId}/course-content/${params.chapterId}/${params.lessonId}/plugins/${params.pluginGroupId}/${id}/create`}
+              className={({ isPending }) =>
+                cn(
+                  'hover:bg-primary/5 flex w-full cursor-pointer items-center gap-3 rounded-sm p-2 text-left transition-all duration-200 ease-in-out hover:shadow-sm',
+                  isPending && 'bg-primary/10 pointer-events-none animate-pulse opacity-60',
+                )
+              }
+              {...fadeInUpProps}
+            >
+              {({ isPending }) => (
+                <>
+                  <div className='bg-muted-foreground/5 border-primary/5 rounded-sm border p-2 transition-colors duration-200'>
+                    {isPending ? (
+                      <LucideIcons.LoaderCircle className='text-primary animate-spin' />
+                    ) : (
+                      <ResolvedIcon className='text-primary' />
+                    )}
+                  </div>
+                  <div>
+                    <div className='flex items-center gap-2'>
+                      <div className='font-secondary font-semibold'>{name}</div>
+                      {comingSoon && <Badge variant='outline'>Coming Soon</Badge>}
                     </div>
-                    <div>
-                      <div className='flex items-center gap-2'>
-                        <div className='font-secondary font-semibold'>{name}</div>
-                        {comingSoon && <Badge variant='outline'>Coming Soon</Badge>}
-                      </div>
-                      <div className='text-muted-foreground font-secondary text-sm'>
-                        {description}
-                      </div>
+                    <div className='text-muted-foreground font-secondary text-sm'>
+                      {description}
                     </div>
-                  </>
-                )}
-              </MotionNavLink>
-            );
-          })
-        ) : (
-          <p>not found</p>
-        )}
-      </motion.div>
-    </>
+                  </div>
+                </>
+              )}
+            </MotionNavLink>
+          );
+        })
+      ) : (
+        <p>not found</p>
+      )}
+    </motion.div>
   );
 }

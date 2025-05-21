@@ -138,6 +138,12 @@ export default [
                     route(
                       ':pluginGroupId',
                       'routes/dashboard/courses/lessons/plugins/view-plugins-by-plugin-group-id-modal.tsx',
+                      [
+                        route(
+                          ':pluginId/create',
+                          'routes/dashboard/courses/lessons/plugins/create-block-by-plugin-id-modal.tsx',
+                        ),
+                      ],
                     ),
                   ],
                 ),
