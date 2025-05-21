@@ -8,7 +8,7 @@ import { ViewTrueOrFalsePlugin } from './QuizPlugins/TrueOrFalsePlugin/ViewTrueO
 import { ViewTapToRevealPlugin } from './RevealPlugins/TapToRevealPlugin/ViewTapToRevealPlugin';
 import { ViewRichTextPlugin } from './RichTextPlugins/RichTextPlugin/ViewRichTextPlugin';
 
-import type { LessonBlockLoaderReturnType } from '~/routes/dashboard/courses/lessons/edit-plugin-modal';
+import type { LessonBlockLoaderReturnType } from '~/routes/dashboard/courses/lessons/plugins/edit-plugin-modal';
 
 export interface ViewPluginComponentProps {
   block: LessonBlockLoaderReturnType;

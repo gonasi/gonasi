@@ -140,21 +140,24 @@ export default [
                       'routes/dashboard/courses/lessons/plugins/view-plugins-by-plugin-group-id-modal.tsx',
                       [
                         route(
-                          ':pluginId/create',
+                          ':pluginTypeId/create',
                           'routes/dashboard/courses/lessons/plugins/create-block-by-plugin-id-modal.tsx',
                         ),
                       ],
                     ),
                   ],
                 ),
-                route(':blockId/edit', 'routes/dashboard/courses/lessons/edit-plugin-modal.tsx'),
+                route(
+                  ':blockId/edit',
+                  'routes/dashboard/courses/lessons/plugins/edit-plugin-modal.tsx',
+                ),
                 route(
                   ':blockId/settings',
-                  'routes/dashboard/courses/lessons/edit-plugin-settings-modal.tsx',
+                  'routes/dashboard/courses/lessons/plugins/edit-plugin-settings-modal.tsx',
                 ),
                 route(
                   ':blockId/delete',
-                  'routes/dashboard/courses/lessons/delete-plugin-modal.tsx',
+                  'routes/dashboard/courses/lessons/plugins/delete-plugin-modal.tsx',
                 ),
               ]),
             ]),

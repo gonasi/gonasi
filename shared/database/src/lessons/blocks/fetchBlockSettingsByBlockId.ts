@@ -1,5 +1,4 @@
 import type { PluginTypeId } from '@gonasi/schemas/plugins';
-import { getSettingsSchemaByType } from '@gonasi/schemas/plugins';
 
 import type { TypedSupabaseClient } from '../../client';
 
@@ -22,24 +21,12 @@ export const fetchBlockSettingsByBlockId = async (
       };
     }
 
-    const settingsSchema = getSettingsSchemaByType(data.plugin_type as PluginTypeId);
-    const parsedSettings = settingsSchema.safeParse(data.settings);
-
-    if (!parsedSettings.success) {
-      return {
-        success: false,
-        message: 'Wrong settings schema.',
-        data: null,
-      };
-    }
-
     return {
       success: true,
       message: 'Block settings retrieved successfully.',
       data: {
         ...data,
         plugin_type: data.plugin_type as PluginTypeId,
-        settings: parsedSettings.data,
       },
     };
   } catch (err) {

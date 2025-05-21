@@ -1,17 +1,23 @@
 import { lazy, Suspense, useMemo } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router';
+import { parseWithZod } from '@conform-to/zod';
 import { ArrowLeft, LoaderCircle } from 'lucide-react';
+import { dataWithError, redirectWithSuccess } from 'remix-toast';
 
+import { createRichTextBlock } from '@gonasi/database/lessons';
 import {
   getPluginTypeNameById,
   type PluginGroupId,
   type PluginTypeId,
+  schemaMap,
 } from '@gonasi/schemas/plugins';
 
 import type { Route } from './+types/create-block-by-plugin-id-modal';
 
 import { Spinner } from '~/components/loaders';
 import { Modal } from '~/components/ui/modal';
+import { createClient } from '~/lib/supabase/supabase.server';
+import { checkHoneypot } from '~/utils/honeypot.server';
 
 const LazyCreatePluginBlockRenderer = lazy(
   () => import('~/components/plugins/CreatePluginBlockRenderer'),
@@ -21,6 +27,58 @@ export function headers(_: Route.HeadersArgs) {
   return {
     'Cache-Control': 's-maxage=3600, stale-while-revalidate=3600',
   };
+}
+
+// Action
+export async function action({ request, params }: Route.ActionArgs) {
+  const formData = await request.formData();
+  await checkHoneypot(formData);
+
+  const { supabase } = createClient(request);
+
+  const intent = formData.get('intent');
+
+  if (typeof intent !== 'string' || !(intent in schemaMap)) {
+    return dataWithError(null, `Unknown intent: ${intent}`);
+  }
+
+  const typedIntent = intent as PluginTypeId;
+  const schema = schemaMap[typedIntent];
+
+  const submission = parseWithZod(formData, { schema });
+
+  if (submission.status !== 'success') {
+    return { result: submission.reply(), status: submission.status === 'error' ? 400 : 200 };
+  }
+
+  try {
+    switch (typedIntent) {
+      case 'rich_text_editor': {
+        const { success, message } = await createRichTextBlock(supabase, {
+          ...submission.value,
+          lessonId: params.lessonId,
+          pluginType: 'rich_text_editor',
+          weight: 1,
+          settings: {
+            playbackMode: 'inline',
+            weight: 1,
+          },
+        });
+
+        return success
+          ? redirectWithSuccess(
+              `/dashboard/${params.companyId}/courses/${params.courseId}/course-content/${params.chapterId}/${params.lessonId}`,
+              message,
+            )
+          : dataWithError(null, message);
+      }
+      default:
+        throw new Error(`Unhandled intent: ${typedIntent}`);
+    }
+  } catch (error) {
+    console.error('Error creating block: ', error);
+    return dataWithError(null, 'Could not create block. Please try again');
+  }
 }
 
 export default function CreateBlockByPluginIdModal({ params }: Route.ComponentProps) {
@@ -35,8 +93,11 @@ export default function CreateBlockByPluginIdModal({ params }: Route.ComponentPr
   // Use useMemo to prevent unnecessary recalculations
   const plugin = useMemo(
     () =>
-      getPluginTypeNameById(params.pluginGroupId as PluginGroupId, params.pluginId as PluginTypeId),
-    [params.pluginGroupId, params.pluginId],
+      getPluginTypeNameById(
+        params.pluginGroupId as PluginGroupId,
+        params.pluginTypeId as PluginTypeId,
+      ),
+    [params.pluginGroupId, params.pluginTypeId],
   );
 
   const BackButton = () => (
@@ -58,7 +119,7 @@ export default function CreateBlockByPluginIdModal({ params }: Route.ComponentPr
           <Modal.Body>
             <Suspense fallback={<Spinner />}>
               {plugin ? (
-                <LazyCreatePluginBlockRenderer pluginTypeId={params.pluginId as PluginTypeId} />
+                <LazyCreatePluginBlockRenderer pluginTypeId={params.pluginTypeId as PluginTypeId} />
               ) : (
                 <h1>Plugin not found</h1>
               )}

@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 import { BaseInteractionSchema } from './baseInteractionSchema';
-import { PluginSettingsSchema } from './pluginSettings';
+import { BasePluginSettingsSchema } from './pluginSettings';
 
 export const MultipleChoiceSchema = z.object({
   choiceState: z
@@ -47,7 +47,7 @@ export const MultipleChoiceMultipleAnswersSchema = z.object({
   uuid: z.string().optional(),
 });
 
-export const MultipleChoiceMultipleAnswersSettingsSchema = PluginSettingsSchema.extend({});
+export const MultipleChoiceMultipleAnswersSettingsSchema = BasePluginSettingsSchema.extend({});
 
 export type MultipleChoiceMultipleAnswersSchemaType = z.infer<
   typeof MultipleChoiceMultipleAnswersSchema

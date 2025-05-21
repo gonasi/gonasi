@@ -2,12 +2,11 @@ import { z } from 'zod';
 
 import type { PluginTypeId } from '@gonasi/schemas/plugins';
 import {
-  RichTextSchema,
+  RichTextContentSchema,
   RichTextSettingsSchema,
   TrueOrFalseInteractionSchema,
   TrueOrFalseSchema,
   TrueOrFalseSettingsSchema,
-  WeightSchema,
 } from '@gonasi/schemas/plugins';
 
 import { RichTextInteractionSchema } from './interactions/richTextInteractionSchema';
@@ -82,7 +81,7 @@ export const JsonSchema: z.ZodType<Json> = z.lazy(() =>
 export const getContentSchemaByType = (type: PluginTypeId) => {
   switch (type) {
     case 'rich_text_editor':
-      return RichTextSchema;
+      return RichTextContentSchema;
     case 'true_false':
       return TrueOrFalseSchema;
     case 'multiple_choice_single':
@@ -143,7 +142,7 @@ const BlockBaseSchema = z.object({
 const SettingsBaseSchema = z.object({
   block_id: z.string().uuid(),
   plugin_type: PluginType,
-  weight: WeightSchema,
+
   settings: JsonSchema,
 });
 

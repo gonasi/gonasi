@@ -279,7 +279,6 @@ export const ALL_PLUGINS = [
     ],
   },
 ] as const;
-
 // ----------------- INFERRED PLUGIN TYPES -----------------
 
 type PluginGroupConst = (typeof ALL_PLUGINS)[number];

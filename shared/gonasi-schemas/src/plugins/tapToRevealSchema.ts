@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 import { BaseInteractionSchema } from './baseInteractionSchema';
-import { PluginSettingsSchema } from './pluginSettings';
+import { BasePluginSettingsSchema } from './pluginSettings';
 
 export const TapToRevealCardSchema = z.object({
   frontContent: z
@@ -29,7 +29,7 @@ export const TapToRevealSchema = z.object({
   uuid: z.string().optional(),
 });
 
-export const TapToRevealSettingsSchema = PluginSettingsSchema.extend({});
+export const TapToRevealSettingsSchema = BasePluginSettingsSchema.extend({});
 
 export const TapToRevealInteractionSchema = BaseInteractionSchema.extend({
   revealedCards: z

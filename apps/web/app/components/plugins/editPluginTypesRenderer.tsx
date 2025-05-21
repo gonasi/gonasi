@@ -8,7 +8,7 @@ import { EditTrueOrFalsePlugin } from './QuizPlugins/TrueOrFalsePlugin/EditTrueO
 import { EditTapToRevealPlugin } from './RevealPlugins/TapToRevealPlugin/EditTapToRevealPlugin';
 import { EditRichTextPlugin } from './RichTextPlugins/RichTextPlugin/EditRichTextPlugin';
 
-import type { LessonBlockLoaderReturnType } from '~/routes/dashboard/courses/lessons/edit-plugin-modal';
+import type { LessonBlockLoaderReturnType } from '~/routes/dashboard/courses/lessons/plugins/edit-plugin-modal';
 
 export interface EditPluginComponentProps {
   block: LessonBlockLoaderReturnType;

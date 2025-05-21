@@ -11,7 +11,7 @@ import {
   type MultipleChoiceType,
 } from '@gonasi/schemas/plugins';
 
-import type { EditPluginComponentProps } from '../../editPluginTypesRenderer';
+import type { EditPluginComponentProps } from '../../EditPluginTypesRenderer';
 
 import { Button, OutlineButton } from '~/components/ui/button';
 import { Checkbox } from '~/components/ui/checkbox';

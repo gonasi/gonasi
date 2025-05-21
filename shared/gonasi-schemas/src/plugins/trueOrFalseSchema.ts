@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 import { BaseInteractionSchema } from './baseInteractionSchema';
-import { PluginSettingsSchema } from './pluginSettings';
+import { BasePluginSettingsSchema } from './pluginSettings';
 
 export const TrueOrFalseSchema = z.object({
   questionState: z
@@ -28,7 +28,7 @@ export const TrueOrFalseSchema = z.object({
   uuid: z.string().optional(),
 });
 
-export const TrueOrFalseSettingsSchema = PluginSettingsSchema.extend({});
+export const TrueOrFalseSettingsSchema = BasePluginSettingsSchema.extend({});
 
 export type TrueOrFalseSchemaType = z.infer<typeof TrueOrFalseSchema>;
 export type TrueOrFalseSettingsType = z.infer<typeof TrueOrFalseSettingsSchema>;

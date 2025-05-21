@@ -6,3 +6,6 @@ export * from './deleteBlockById';
 export * from './updateBlockPositions';
 export * from './fetchBlockSettingsByBlockId';
 export * from './editBlockSettingsAndWeight';
+
+// Rework
+export * from './richTextEditor';

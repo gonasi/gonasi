@@ -1,45 +1,33 @@
-import { useEffect, useState } from 'react';
-import { Form, useFetcher } from 'react-router';
+import { Form } from 'react-router';
 import { getFormProps, useForm } from '@conform-to/react';
 import { getZodConstraint, parseWithZod } from '@conform-to/zod';
 import { Save } from 'lucide-react';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
 
-import { RichTextSchema, type RichTextSchemaType } from '@gonasi/schemas/plugins';
+import { RichTextContentSchema, type RichTextContentSchemaType } from '@gonasi/schemas/plugins';
 
-import type { EditPluginComponentProps } from '../../editPluginTypesRenderer';
+import { useIsPending } from '../../../../utils/misc';
+import type { EditPluginComponentProps } from '../../EditPluginTypesRenderer';
 
 import { Button } from '~/components/ui/button';
 import { ErrorList } from '~/components/ui/forms';
 import { RichTextInputField } from '~/components/ui/forms/RichTextInputField';
 
 export function EditRichTextPlugin({ block }: EditPluginComponentProps) {
-  const fetcher = useFetcher();
-  const [loading, setLoading] = useState(false);
+  const pending = useIsPending();
 
-  useEffect(() => {
-    setLoading(
-      fetcher.state === 'submitting' || (fetcher.state === 'idle' && fetcher.data !== undefined),
-    );
-  }, [fetcher.state, fetcher.data]);
-
-  const { richTextState } = block.content as RichTextSchemaType;
+  const { content } = block as RichTextContentSchemaType;
 
   const [form, fields] = useForm({
     id: `edit-${block.plugin_type}-form`,
-    constraint: getZodConstraint(RichTextSchema),
+    constraint: getZodConstraint(RichTextContentSchema),
     defaultValue: {
-      richTextState,
+      content,
     },
     shouldValidate: 'onBlur',
     shouldRevalidate: 'onInput',
     onValidate({ formData }) {
-      return parseWithZod(formData, { schema: RichTextSchema });
-    },
-    onSubmit(event, { formData }) {
-      event.preventDefault();
-      if (form.errors?.length) return;
-      fetcher.submit(formData, { method: 'post' });
+      return parseWithZod(formData, { schema: RichTextContentSchema });
     },
   });
 
@@ -48,9 +36,9 @@ export function EditRichTextPlugin({ block }: EditPluginComponentProps) {
       <HoneypotInputs />
       <RichTextInputField
         labelProps={{ children: 'Rich Text', required: true }}
-        meta={fields.richTextState}
+        meta={fields.content}
         placeholder='Start typing...'
-        errors={fields.richTextState.errors}
+        errors={fields.content.errors}
         description='You can format your content using rich text.'
       />
       <ErrorList errors={Object.values(form.allErrors).flat()} id={form.errorId} />
@@ -58,8 +46,8 @@ export function EditRichTextPlugin({ block }: EditPluginComponentProps) {
         <Button
           type='submit'
           rightIcon={<Save />}
-          disabled={loading}
-          isLoading={loading}
+          disabled={pending}
+          isLoading={pending}
           name='intent'
           value={block.plugin_type}
         >
