@@ -36,7 +36,7 @@ import { PluginButton } from '~/components/ui/button';
 import { Modal } from '~/components/ui/modal';
 import { createClient } from '~/lib/supabase/supabase.server';
 
-const ViewPluginTypesRenderer = lazy(() => import('~/components/plugins/viewPluginTypesRenderer'));
+const ViewPluginTypesRenderer = lazy(() => import('~/components/plugins/ViewPluginTypesRenderer'));
 
 function toTitleCaseFromUnderscore(input: string): string {
   return input
@@ -49,6 +49,7 @@ function toTitleCaseFromUnderscore(input: string): string {
 export async function loader({ params, request }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
 
+  // fetch a lesson and blocks associated with the lesson
   const [lesson, lessonBlocks] = await Promise.all([
     fetchUserLessonById(supabase, params.lessonId),
     fetchLessonBlocksByLessonId(supabase, params.lessonId),

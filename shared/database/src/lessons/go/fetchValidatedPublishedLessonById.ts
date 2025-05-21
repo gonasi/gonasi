@@ -1,23 +1,21 @@
 import type { PluginTypeId } from '@gonasi/schemas/plugins';
-import { getContentSchemaByType, getSettingsSchemaByType } from '@gonasi/schemas/plugins';
 
 import type { TypedSupabaseClient } from '../../client';
 
 /**
- * Fetches a published lesson by ID, including its blocks,
- * and validates each block's content against the appropriate plugin schema.
+ * Fetches a published lesson by its ID, including associated blocks,
+ * and casts each block's `plugin_type` to a known `PluginTypeId`.
  *
- * If any block fails schema validation, the function returns `null`.
+ * If the lesson is not found or there’s an error, `null` is returned.
  *
- * @param supabase - A typed Supabase client instance.
- * @param lessonId - The ID of the lesson to fetch.
- * @returns The lesson data with parsed block content, or `null` if not found or validation fails.
+ * @param supabase - The typed Supabase client instance.
+ * @param lessonId - The ID of the lesson to retrieve.
+ * @returns The lesson with typed blocks, or `null` if not found or on error.
  */
 export async function fetchValidatedPublishedLessonById(
   supabase: TypedSupabaseClient,
   lessonId: string,
 ) {
-  // Fetch the lesson and its associated blocks
   const { data, error } = await supabase
     .from('lessons')
     .select(
@@ -47,7 +45,6 @@ export async function fetchValidatedPublishedLessonById(
     .order('position', { ascending: true, referencedTable: 'blocks' })
     .single();
 
-  // Handle error or missing lesson
   if (error || !data) {
     console.error(
       `Failed to fetch lesson with ID ${lessonId}:`,
@@ -56,37 +53,11 @@ export async function fetchValidatedPublishedLessonById(
     return null;
   }
 
-  const validatedBlocks = [];
+  const validatedBlocks = (data.blocks ?? []).map((block) => ({
+    ...block,
+    plugin_type: block.plugin_type as PluginTypeId,
+  }));
 
-  // Validate and parse each block's content based on its plugin type
-  for (const block of data.blocks ?? []) {
-    const pluginType = block.plugin_type as PluginTypeId;
-    const schema = getContentSchemaByType(pluginType);
-    const result = schema.safeParse(block.content);
-
-    const settings = getSettingsSchemaByType(pluginType);
-    const resultSettings = settings.safeParse(block.settings);
-
-    // Abort if any block has invalid content
-    if (!result.success) {
-      console.warn(`Invalid block content for block ID ${block.id}:`, result.error);
-      return null;
-    }
-
-    if (!resultSettings.success) {
-      console.warn(`Invalid block settings for block ID ${block.id}:`, result.error);
-      return null;
-    }
-
-    validatedBlocks.push({
-      ...block,
-      plugin_type: pluginType,
-      content: result.data,
-      settings: resultSettings.data,
-    });
-  }
-
-  // Return lesson data with validated and parsed blocks
   return {
     ...data,
     blocks: validatedBlocks,
