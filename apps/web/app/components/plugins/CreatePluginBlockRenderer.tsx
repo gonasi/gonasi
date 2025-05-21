@@ -4,46 +4,45 @@ import type { PluginTypeId } from '@gonasi/schemas/plugins';
 
 import { CreateRichTextPlugin } from './RichTextPlugins/RichTextPlugin/CreateRichTextPlugin';
 
-export interface CreatePluginComponentProps {
+interface ViewPluginRendererProps {
   pluginTypeId: PluginTypeId;
 }
 
-function unimplementedPlugin(): never {
+function notImplemented(): never {
   throw new Error('Plugin component not implemented.');
 }
 
-const viewPluginComponentMap: Record<
-  PluginTypeId,
-  (props: CreatePluginComponentProps) => JSX.Element
-> = {
-  true_false: unimplementedPlugin,
-  tap_to_reveal: unimplementedPlugin,
+const pluginComponentMap: Record<PluginTypeId, (props: ViewPluginRendererProps) => JSX.Element> = {
+  true_false: notImplemented,
+  tap_to_reveal: notImplemented,
   rich_text_editor: CreateRichTextPlugin,
-  multiple_choice_multiple: unimplementedPlugin,
-  multiple_choice_single: unimplementedPlugin,
-  match_concepts: unimplementedPlugin,
-  sequence_ordering: unimplementedPlugin,
-  categorization: unimplementedPlugin,
-  bar_chart: unimplementedPlugin,
-  line_chart: unimplementedPlugin,
-  pie_chart: unimplementedPlugin,
-  historical_events: unimplementedPlugin,
-  project_milestones: unimplementedPlugin,
-  step_by_step_reveal: unimplementedPlugin,
-  video_player: unimplementedPlugin,
-  audio_player: unimplementedPlugin,
-  slideshow_player: unimplementedPlugin,
-  motion_simulation: unimplementedPlugin,
-  gravity_simulation: unimplementedPlugin,
+  multiple_choice_multiple: notImplemented,
+  multiple_choice_single: notImplemented,
+  match_concepts: notImplemented,
+  sequence_ordering: notImplemented,
+  categorization: notImplemented,
+  bar_chart: notImplemented,
+  line_chart: notImplemented,
+  pie_chart: notImplemented,
+  historical_events: notImplemented,
+  project_milestones: notImplemented,
+  step_by_step_reveal: notImplemented,
+  video_player: notImplemented,
+  audio_player: notImplemented,
+  slideshow_player: notImplemented,
+  motion_simulation: notImplemented,
+  gravity_simulation: notImplemented,
 };
 
-export default function ViewPluginTypesRenderer({
-  pluginTypeId,
-}: CreatePluginComponentProps): JSX.Element {
-  const PluginComponent = viewPluginComponentMap[pluginTypeId];
+function UnsupportedPluginMessage({ pluginTypeId }: { pluginTypeId: PluginTypeId }) {
+  return <div>Unsupported plugin type: {pluginTypeId}</div>;
+}
+
+export default function ViewPluginRenderer({ pluginTypeId }: ViewPluginRendererProps): JSX.Element {
+  const PluginComponent = pluginComponentMap[pluginTypeId];
 
   if (!PluginComponent) {
-    return <div>Unsupported plugin type: {pluginTypeId}</div>;
+    return <UnsupportedPluginMessage pluginTypeId={pluginTypeId} />;
   }
 
   return <PluginComponent pluginTypeId={pluginTypeId} />;
