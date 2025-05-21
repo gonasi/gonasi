@@ -1,9 +1,9 @@
 import { Link, useNavigate } from 'react-router';
 import { ArrowLeft } from 'lucide-react';
 
-import { getPluginNameById, type PluginId } from '@gonasi/schemas/plugins';
+import { getPluginGroupNameByPluginGroupId, type PluginGroupId } from '@gonasi/schemas/plugins';
 
-import type { Route } from './+types/new-plugin-block-modal';
+import type { Route } from './plugins/+types/view-plugins-by-category-id-modal';
 
 import { Modal } from '~/components/ui/modal';
 
@@ -14,7 +14,7 @@ export default function NewPluginBlockModal({ params }: Route.ComponentProps) {
 
   const handleClose = () => navigate(basePath);
 
-  const title = getPluginNameById(params.pluginTypeId as PluginId);
+  const pluginGroupTitle = getPluginGroupNameByPluginGroupId(params.pluginTypeId as PluginGroupId);
 
   console.log('params: ', params.pluginTypeId);
 
@@ -22,7 +22,7 @@ export default function NewPluginBlockModal({ params }: Route.ComponentProps) {
     <Modal open onOpenChange={(open) => !open && handleClose()}>
       <Modal.Content size='lg'>
         <Modal.Header
-          title={title}
+          title={pluginGroupTitle}
           leadingIcon={
             <Link to={`${basePath}/plugins`}>
               <ArrowLeft />

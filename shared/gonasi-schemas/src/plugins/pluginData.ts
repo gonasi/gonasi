@@ -2,8 +2,6 @@ import type { z } from 'zod';
 
 import type { LucideIconSchema } from '../lessonTypes';
 
-// ----------------- CONSTANT PLUGIN DATA -----------------
-
 export interface PluginType {
   id: string;
   name: string;
@@ -21,11 +19,11 @@ export interface Plugin {
   pluginTypes?: PluginType[];
 }
 
-export interface PluginCategory {
+export interface PluginGroup {
   id: string;
   name: string;
   description: string;
-  plugins: Plugin[];
+  pluginGroups: Plugin[];
 }
 
 export const ALL_PLUGINS = [
@@ -33,7 +31,7 @@ export const ALL_PLUGINS = [
     id: 'authoring_tools',
     name: 'Authoring Plugins',
     description: 'Plugins for content creation, formatting, and structuring',
-    plugins: [
+    pluginGroups: [
       {
         id: 'rich_text',
         name: 'Rich Text',
@@ -56,7 +54,7 @@ export const ALL_PLUGINS = [
     id: 'assessment',
     name: 'Assessment Plugins',
     description: 'Plugins for evaluating learner understanding',
-    plugins: [
+    pluginGroups: [
       {
         id: 'quiz',
         name: 'Quiz Plugin',
@@ -127,7 +125,7 @@ export const ALL_PLUGINS = [
     id: 'visualization',
     name: 'Interactive Visualization Plugins',
     description: 'Plugins for interactive visuals and exploration',
-    plugins: [
+    pluginGroups: [
       {
         id: 'graph_builder',
         name: 'Graph/Chart Builder',
@@ -190,7 +188,7 @@ export const ALL_PLUGINS = [
     id: 'content_delivery',
     name: 'Content Delivery Plugins',
     description: 'Plugins for revealing and structuring learning material',
-    plugins: [
+    pluginGroups: [
       {
         id: 'reveal',
         name: 'Reveal Plugin',
@@ -253,7 +251,7 @@ export const ALL_PLUGINS = [
     id: 'simulation',
     name: 'Simulation Plugins',
     description: 'Simulations for lab and interactive modeling',
-    plugins: [
+    pluginGroups: [
       {
         id: 'physics_simulation',
         name: 'Physics Simulation',
@@ -284,24 +282,37 @@ export const ALL_PLUGINS = [
 
 // ----------------- INFERRED PLUGIN TYPES -----------------
 
-type PluginCategoryConst = (typeof ALL_PLUGINS)[number];
-type PluginConst = PluginCategoryConst['plugins'][number];
+type PluginGroupConst = (typeof ALL_PLUGINS)[number];
+type PluginConst = PluginGroupConst['pluginGroups'][number];
 type PluginTypeConst = PluginConst['pluginTypes'][number];
 
-export type PluginId = PluginConst['id'];
+export type PluginGroupId = PluginConst['id'];
 export type PluginTypeId = PluginTypeConst['id'];
 
-export function getPluginNameById(id: PluginId): string {
-  for (const category of ALL_PLUGINS) {
-    const plugin = category.plugins.find((p) => p.id === id);
+export function getPluginTypesFromGroupId(pluginGroupId: PluginGroupId): Plugin | null {
+  for (const group of ALL_PLUGINS) {
+    const plugin = group.pluginGroups.find((p) => p.id === pluginGroupId);
+    if (plugin) {
+      return {
+        ...plugin,
+        pluginTypes: plugin.pluginTypes ? [...plugin.pluginTypes] : undefined, // ensure mutability
+      };
+    }
+  }
+  return null;
+}
+
+export function getPluginGroupNameByPluginGroupId(id: PluginGroupId): string {
+  for (const group of ALL_PLUGINS) {
+    const plugin = group.pluginGroups.find((p) => p.id === id);
     if (plugin) return plugin.name;
   }
   return 'Unknown Plugin';
 }
 
-export function getPluginTypeNameById(pluginId: PluginId, typeId: PluginTypeId): string {
+export function getPluginTypeNameById(pluginId: PluginGroupId, typeId: PluginTypeId): string {
   for (const category of ALL_PLUGINS) {
-    const plugin = category.plugins.find((p) => p.id === pluginId);
+    const plugin = category.pluginGroups.find((p) => p.id === pluginId);
     if (plugin) {
       const pluginType = plugin.pluginTypes?.find((type) => type.id === typeId);
       if (pluginType) return pluginType.name;

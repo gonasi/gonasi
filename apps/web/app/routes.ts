@@ -137,7 +137,7 @@ export default [
                   [
                     route(
                       ':pluginGroupId',
-                      'routes/dashboard/courses/lessons/plugins/view-plugins-by-category-id-modal.tsx',
+                      'routes/dashboard/courses/lessons/plugins/view-plugins-by-plugin-group-id-modal.tsx',
                     ),
                   ],
                 ),
