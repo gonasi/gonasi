@@ -1,6 +1,5 @@
 import type { ComponentProps, ReactNode } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
-import { AnimatePresence, motion } from 'framer-motion';
 import { X } from 'lucide-react';
 
 import { Badge } from '../badge';
@@ -29,46 +28,39 @@ const Content = ({ children, title = '', size = 'md', className }: ContentProps)
   };
 
   return (
-    <Dialog.Portal forceMount>
-      <Dialog.Overlay asChild>
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.2 }}
-          className={cn('bg-card/80 fixed inset-0 z-50')}
-        />
-      </Dialog.Overlay>
-
+    <Dialog.Portal>
+      <Dialog.Overlay
+        className={cn(
+          'bg-card/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50',
+        )}
+      />
       <div
         className={cn('fixed inset-0 z-50 flex h-screen items-center justify-center px-4', {
           'px-0': size === 'full',
         })}
       >
-        <Dialog.Content asChild onPointerDownOutside={(e) => e.preventDefault()}>
-          <AnimatePresence mode='wait'>
-            <motion.div
-              key='modal-content'
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.2 }}
-              className={cn(
-                'border-card bg-background font-mont max-h-screen w-full overflow-hidden overflow-y-auto rounded-lg border shadow-sm',
-                sizeClasses[size],
-                'max-h-[96%]',
-                className,
-              )}
-              aria-describedby={undefined}
-            >
-              <div className={cn({ 'container mx-auto': size === 'full' })}>
-                <Dialog.Title asChild>
-                  <h1>{title}</h1>
-                </Dialog.Title>
-                {children}
-              </div>
-            </motion.div>
-          </AnimatePresence>
+        <Dialog.Content
+          onPointerDownOutside={(e) => e.preventDefault()}
+          className={cn(
+            'border-card bg-background font-mont max-h-screen w-full overflow-hidden overflow-y-auto rounded-lg border shadow-sm duration-200',
+            sizeClasses[size],
+            'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
+            'max-h-[96%]',
+            className,
+          )}
+          aria-describedby={undefined}
+        >
+          {/* Screen-reader accessible title */}
+          <div
+            className={cn({
+              'container mx-auto': size === 'full',
+            })}
+          >
+            <Dialog.Title asChild>
+              <h1>{title}</h1>
+            </Dialog.Title>
+            {children}
+          </div>
         </Dialog.Content>
       </div>
     </Dialog.Portal>
