@@ -8,7 +8,7 @@ import { PlayPluginWrapper } from '../../common/PlayPluginWrapper';
 import { RenderFeedback } from '../../common/RenderFeedback';
 import { ViewPluginWrapper } from '../../common/ViewPluginWrapper';
 import { useViewPluginCore } from '../../hooks/useViewPluginCore';
-import type { ViewPluginComponentProps } from '../../ViewPluginTypesRenderer.Renametsx';
+import type { ViewPluginComponentProps } from '../../ViewPluginTypesRenderer.tsx';
 import { calculateTrueFalseScore } from './utils';
 
 import RichTextRenderer from '~/components/go-editor/ui/RichTextRenderer';
