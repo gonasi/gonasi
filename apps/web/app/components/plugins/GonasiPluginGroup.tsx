@@ -58,7 +58,6 @@ export default function GoPluginsMenuDialog({ pluginTypes }: GonasiPluginGroupPr
                   )
                 }
                 {...fadeInUpProps}
-                prefetch='intent'
               >
                 {({ isPending }) => (
                   <>

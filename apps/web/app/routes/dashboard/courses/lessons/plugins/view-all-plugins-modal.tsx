@@ -10,6 +10,12 @@ import { Modal } from '~/components/ui/modal';
 // Lazy load the dialog component
 const AllGonasiPlugins = lazy(() => import('~/components/plugins/AllGonasiPlugins'));
 
+export function headers(_: Route.HeadersArgs) {
+  return {
+    'Cache-Control': 's-maxage=3600, stale-while-revalidate=3600',
+  };
+}
+
 export default function PluginsModal({ params }: Route.ComponentProps) {
   const navigate = useNavigate();
 

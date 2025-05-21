@@ -11,6 +11,12 @@ import { Modal } from '~/components/ui/modal';
 
 const LazyGonasiPluginGroup = lazy(() => import('~/components/plugins/GonasiPluginGroup'));
 
+export function headers(_: Route.HeadersArgs) {
+  return {
+    'Cache-Control': 's-maxage=3600, stale-while-revalidate=3600',
+  };
+}
+
 export default function PluginsModal({ params }: Route.ComponentProps) {
   const navigate = useNavigate();
 

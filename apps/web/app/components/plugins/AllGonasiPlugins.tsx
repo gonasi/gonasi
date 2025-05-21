@@ -98,7 +98,6 @@ export default function GoPluginsMenuDialog() {
                         )
                       }
                       {...fadeInUpProps}
-                      prefetch='intent'
                     >
                       {({ isPending }) => (
                         <>
