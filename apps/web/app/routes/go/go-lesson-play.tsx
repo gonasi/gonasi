@@ -21,7 +21,7 @@ import { OutlineButton } from '~/components/ui/button';
 import { createClient } from '~/lib/supabase/supabase.server';
 import { useStore } from '~/store';
 
-const ViewPluginTypesRenderer = lazy(() => import('~/components/plugins/upperRend'));
+const ViewPluginTypesRenderer = lazy(() => import('~/components/plugins/ViewPluginTypesRenderer'));
 
 const nudgeAnimation = {
   initial: { opacity: 0, y: 10 },
