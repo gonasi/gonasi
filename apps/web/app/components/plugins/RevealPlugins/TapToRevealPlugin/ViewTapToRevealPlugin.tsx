@@ -7,7 +7,7 @@ import { useTapToRevealInteraction } from './hooks/useTapToRevealInteraction';
 import { PlayPluginWrapper } from '../../common/PlayPluginWrapper';
 import { ViewPluginWrapper } from '../../common/ViewPluginWrapper';
 import { useViewPluginCore } from '../../hooks/useViewPluginCore';
-import type { ViewPluginComponentProps } from '../../ViewPluginTypesRenderer.tsx';
+import type { ViewPluginComponentProps } from '../../upperRend.tsx';
 
 import RichTextRenderer from '~/components/go-editor/ui/RichTextRenderer';
 import { AnimateInButtonWrapper, BlockActionButton } from '~/components/ui/button';

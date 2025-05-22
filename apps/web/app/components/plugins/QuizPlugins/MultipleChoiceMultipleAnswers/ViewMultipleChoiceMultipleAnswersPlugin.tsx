@@ -12,7 +12,7 @@ import { RenderFeedback } from '../../common/RenderFeedback';
 import { ViewPluginWrapper } from '../../common/ViewPluginWrapper';
 import { useViewPluginCore } from '../../hooks/useViewPluginCore';
 import { shuffleArray } from '../../utils';
-import type { ViewPluginComponentProps } from '../../ViewPluginTypesRenderer.tsx';
+import type { ViewPluginComponentProps } from '../../upperRend.tsx';
 import { calculateMultipleChoiceMultipleAnswersScore } from './utils';
 
 import RichTextRenderer from '~/components/go-editor/ui/RichTextRenderer';
