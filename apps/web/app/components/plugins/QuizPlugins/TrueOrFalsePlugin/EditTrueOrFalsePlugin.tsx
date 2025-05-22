@@ -6,7 +6,7 @@ import { HoneypotInputs } from 'remix-utils/honeypot/react';
 
 import { TrueOrFalseSchema } from '@gonasi/schemas/plugins';
 
-import type { EditPluginComponentProps } from '../../EditPluginRenderer';
+import type { EditPluginComponentProps } from '../../EditPluginTypesRenderer';
 
 import { Button } from '~/components/ui/button';
 import { ErrorList, RadioButtonField, TextareaField } from '~/components/ui/forms';

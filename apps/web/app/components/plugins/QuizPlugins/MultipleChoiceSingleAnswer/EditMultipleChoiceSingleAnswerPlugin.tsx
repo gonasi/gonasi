@@ -8,7 +8,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { type ChoiceType, MultipleChoiceSingleAnswerSchema } from '@gonasi/schemas/plugins';
 
-import type { EditPluginComponentProps } from '../../EditPluginRenderer';
+import type { EditPluginComponentProps } from '../../EditPluginTypesRenderer';
 
 import { Button, OutlineButton } from '~/components/ui/button';
 import { ErrorList, RadioButtonField, TextareaField } from '~/components/ui/forms';

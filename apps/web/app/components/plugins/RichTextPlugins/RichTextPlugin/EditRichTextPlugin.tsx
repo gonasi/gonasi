@@ -7,7 +7,7 @@ import { HoneypotInputs } from 'remix-utils/honeypot/react';
 import { RichTextContentSchema, type RichTextContentSchemaType } from '@gonasi/schemas/plugins';
 
 import { useIsPending } from '../../../../utils/misc';
-import type { EditPluginComponentProps } from '../../EditPluginRenderer';
+import type { EditPluginComponentProps } from '../../EditPluginTypesRenderer';
 
 import { Button } from '~/components/ui/button';
 import { ErrorList } from '~/components/ui/forms';
