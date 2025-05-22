@@ -14,9 +14,7 @@ import { Modal } from '~/components/ui/modal';
 import { createClient } from '~/lib/supabase/supabase.server';
 import { checkHoneypot } from '~/utils/honeypot.server';
 
-const LazyEditPluginTypesRenderer = lazy(
-  () => import('~/components/plugins/EditPluginTypesRenderer'),
-);
+const LazyEditPluginTypesRenderer = lazy(() => import('~/components/plugins/EditPluginRenderer'));
 
 // --- Action Handler ---
 export async function action({ request, params }: Route.ActionArgs) {
