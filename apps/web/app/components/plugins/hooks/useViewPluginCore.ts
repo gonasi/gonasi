@@ -94,7 +94,7 @@ export function useViewPluginCore({
     };
 
     const formData = new FormData();
-    formData.append('intent', 'addBlockInteraction');
+    formData.append('intent', updatedPayload.plugin_type);
     formData.append('isLast', isLastBlock ? 'true' : 'false');
     formData.append('payload', JSON.stringify(updatedPayload));
 

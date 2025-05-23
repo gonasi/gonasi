@@ -1,3 +1,5 @@
+import type { z } from 'zod';
+
 import type { PluginTypeId } from './pluginData';
 import {
   RichTextContentSchema,
@@ -70,3 +72,9 @@ export const interactionSchemaMap = {
   motion_simulation: RichTextInteractionSchema,
   gravity_simulation: RichTextInteractionSchema,
 } satisfies Record<PluginTypeId, any>;
+
+// Create a union type of all schema inferred types
+export type BlockInteractionData =
+  (typeof interactionSchemaMap)[keyof typeof interactionSchemaMap] extends z.ZodType<infer U>
+    ? U
+    : never;

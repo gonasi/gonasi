@@ -35,8 +35,8 @@ export async function action({ request, params }: Route.ActionArgs) {
 
   return success
     ? redirectWithSuccess(
-        `/go/course/${params.courseId}/${params.chapterId}/${params.lessonId}/play`,
-        'message',
+        `/go/course/${params.courseId}/${params.chapterId}/${params.lessonId}/play?noCache=true`,
+        message,
       )
     : dataWithError(null, message);
 }

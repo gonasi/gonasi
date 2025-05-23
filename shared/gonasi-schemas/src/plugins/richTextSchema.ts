@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { BaseInteractionSchema } from './baseInteractionSchema';
 import { BasePluginSettingsSchema } from './pluginSettings';
 
 //
@@ -37,7 +38,7 @@ export const SubmitEditRichTextSettingsSchema = RichTextSettingsSchema.extend({
 //
 // Interaction Schema
 //
-export const RichTextInteractionSchema = z.object({
+export const RichTextInteractionSchema = BaseInteractionSchema.extend({
   continue: z.boolean().default(false),
 });
 

@@ -1,8 +1,8 @@
 import { lazy, Suspense, useEffect, useRef } from 'react';
-import { Await, Outlet, redirect, useNavigate } from 'react-router';
+import { Await, data, Outlet, redirect, useNavigate } from 'react-router';
 import { motion } from 'framer-motion';
 import { ArrowRight, LoaderCircle } from 'lucide-react';
-import { dataWithError, dataWithSuccess, redirectWithError } from 'remix-toast';
+import { dataWithError, redirectWithError } from 'remix-toast';
 
 import { fetchNextChapterAndLessonId } from '@gonasi/database/courses';
 import {
@@ -10,9 +10,8 @@ import {
   fetchLessonCompletionStatus,
   fetchUserLessonBlockInteractions,
   fetchValidatedPublishedLessonById,
-  resetBlockInteractionsByLesson,
 } from '@gonasi/database/lessons';
-import type { Interaction } from '@gonasi/schemas/plugins';
+import { interactionSchemaMap, type PluginTypeId } from '@gonasi/schemas/plugins';
 
 import type { Route } from './+types/go-lesson-play';
 
@@ -40,68 +39,63 @@ const nudgeAnimation = {
   },
 };
 
-export function headers(_: Route.HeadersArgs) {
+export function headers({ loaderHeaders }: Route.HeadersArgs) {
   return {
-    'Cache-Control': 's-maxage=1, stale-while-revalidate=59',
+    ...Object.fromEntries(loaderHeaders.entries()),
   };
 }
 
 export async function action({ request, params }: Route.ActionArgs) {
+  const formData = await request.formData();
+
   const { supabase } = createClient(request);
 
-  // Parse form data from the request
-  const formData = await request.formData();
   const intent = formData.get('intent');
   const isLast = formData.get('isLast') === 'true';
 
-  // Validate 'intent' value
-  if (typeof intent !== 'string') {
-    return dataWithError(null, 'Invalid or missing intent', { status: 400 });
+  if (typeof intent !== 'string' || !(intent in interactionSchemaMap)) {
+    return dataWithError(null, `Unknown intent: ${intent}`);
+  }
+
+  const typedIntent = intent as PluginTypeId;
+  const schema = interactionSchemaMap[typedIntent];
+
+  // Extract and parse the JSON payload string from formData
+  const rawPayload = formData.get('payload');
+  if (typeof rawPayload !== 'string') {
+    return dataWithError(null, 'Missing or invalid payload');
+  }
+
+  let parsedPayload: unknown;
+  try {
+    parsedPayload = JSON.parse(rawPayload);
+  } catch {
+    return dataWithError(null, 'Invalid JSON in payload');
+  }
+
+  // Validate the parsed payload directly against the schema
+  const validationResult = schema.safeParse(parsedPayload);
+
+  if (!validationResult.success) {
+    return dataWithError(null, 'Invalid payload data', { status: 400 });
   }
 
   try {
-    // Extract common params for reuse
     const { courseId, chapterId, lessonId } = params;
 
-    switch (intent) {
-      case 'resetLessonProgress': {
-        const { success, message } = await resetBlockInteractionsByLesson(supabase, lessonId);
+    // Use the validated data
+    const { success, message } = await createBlockInteraction(supabase, {
+      ...validationResult.data,
+    });
 
-        return success ? dataWithSuccess(null, message) : dataWithError(null, message);
-      }
-
-      case 'addBlockInteraction': {
-        const rawPayload = formData.get('payload');
-
-        // Validate 'payload' value
-        if (typeof rawPayload !== 'string') {
-          return dataWithError(null, 'Invalid or missing payload', { status: 400 });
-        }
-
-        let payload: Interaction;
-
-        try {
-          payload = JSON.parse(rawPayload);
-        } catch {
-          throw new Response('Failed to parse payload', { status: 400 });
-        }
-
-        const { supabase } = createClient(request);
-        const { success, message } = await createBlockInteraction(supabase, payload);
-
-        if (!success) {
-          return dataWithError(null, message, { status: 400 });
-        }
-
-        if (isLast) {
-          return redirect(`/go/course/${courseId}/${chapterId}/${lessonId}/play/completed`);
-        }
-        return true;
-      }
-
-      default:
-        return dataWithError(null, `Unknown intent: ${intent}`, { status: 400 });
+    if (!success) {
+      return dataWithError(null, message, { status: 400 });
     }
+
+    if (isLast) {
+      return redirect(`/go/course/${courseId}/${chapterId}/${lessonId}/play/completed`);
+    }
+    return true;
   } catch (error) {
     console.error(`Error processing intent "${intent}":`, error);
     const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
@@ -112,19 +106,22 @@ export async function action({ request, params }: Route.ActionArgs) {
 export type GoLessonPlayInteractionReturnType = Exclude<
   Awaited<ReturnType<typeof loader>>,
   Response
->['blockInteractions'];
+>['data']['blockInteractions'];
 
 export type GoLessonPlayLessonType = Exclude<
   Awaited<ReturnType<typeof loader>>,
   Response
->['lesson'];
+>['data']['lesson'];
 
 export type GoLessonPlayLessonBlocksType = Exclude<
   Awaited<ReturnType<typeof loader>>,
   Response
->['lesson']['blocks'];
+>['data']['lesson']['blocks'];
 
 export async function loader({ params, request }: Route.LoaderArgs) {
+  const url = new URL(request.url);
+  const noCache = url.searchParams.get('noCache');
+
   const { supabase } = createClient(request);
 
   const [lesson, blockInteractions] = await Promise.all([
@@ -148,7 +145,14 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     return redirectWithError(`/go/courses/${params.courseId}`, 'Lesson not found');
   }
 
-  return { lesson, blockInteractions, nextChapterAndLessonId, lessonCompletionStatus };
+  const headers = noCache
+    ? { 'Cache-Control': 'no-store' }
+    : { 'Cache-Control': 's-maxage=10, stale-while-revalidate=59' };
+
+  return data(
+    { lesson, blockInteractions, nextChapterAndLessonId, lessonCompletionStatus },
+    { headers },
+  );
 }
 
 export default function GoLessonPlay({ loaderData, params }: Route.ComponentProps) {
