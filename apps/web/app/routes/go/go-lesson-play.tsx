@@ -1,5 +1,5 @@
-import { lazy, useEffect, useRef } from 'react';
-import { Outlet, redirect, useNavigate } from 'react-router';
+import { lazy, Suspense, useEffect, useRef } from 'react';
+import { Await, Outlet, redirect, useNavigate } from 'react-router';
 import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import { dataWithError, dataWithSuccess, redirectWithError } from 'remix-toast';
@@ -17,6 +17,7 @@ import type { Interaction } from '@gonasi/schemas/plugins';
 import type { Route } from './+types/go-lesson-play';
 
 import { CoursePlayLayout } from '~/components/layouts/course';
+import { Spinner } from '~/components/loaders';
 import { OutlineButton } from '~/components/ui/button';
 import { createClient } from '~/lib/supabase/supabase.server';
 import { useStore } from '~/store';
@@ -127,16 +128,22 @@ export type GoLessonPlayLessonBlocksType = Exclude<
 export async function loader({ params, request }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
 
-  const [lesson, blockInteractions, nextChapterAndLessonId, lessonCompletionStatus] =
-    await Promise.all([
-      fetchValidatedPublishedLessonById(supabase, params.lessonId),
-      fetchUserLessonBlockInteractions({
-        supabase,
-        lessonId: params.lessonId,
-      }),
-      fetchNextChapterAndLessonId(supabase, params.courseId, params.chapterId, params.lessonId),
-      fetchLessonCompletionStatus(supabase, params.lessonId),
-    ]);
+  const [lesson, blockInteractions] = await Promise.all([
+    fetchValidatedPublishedLessonById(supabase, params.lessonId),
+    fetchUserLessonBlockInteractions({
+      supabase,
+      lessonId: params.lessonId,
+    }),
+  ]);
+
+  const nextChapterAndLessonId = fetchNextChapterAndLessonId(
+    supabase,
+    params.courseId,
+    params.chapterId,
+    params.lessonId,
+  );
+
+  const lessonCompletionStatus = fetchLessonCompletionStatus(supabase, params.lessonId);
 
   if (!lesson) {
     return redirectWithError(`/go/courses/${params.courseId}`, 'Lesson not found');
@@ -155,8 +162,8 @@ export default function GoLessonPlay({ loaderData, params }: Route.ComponentProp
   const {
     lesson: { blocks },
     blockInteractions,
-    nextChapterAndLessonId,
     lessonCompletionStatus,
+    nextChapterAndLessonId,
   } = loaderData;
 
   useEffect(() => {
@@ -170,20 +177,16 @@ export default function GoLessonPlay({ loaderData, params }: Route.ComponentProp
   }, [blockInteractions, blocks, initializePlayFlow]);
 
   useEffect(() => {
-    if (!lessonCompletionStatus?.is_complete && activeBlock) {
+    if (activeBlock) {
       blockRefs.current[activeBlock]?.scrollIntoView({
         behavior: 'smooth',
         block: 'start',
       });
     }
-  }, [activeBlock, lessonCompletionStatus?.is_complete]);
+  }, [activeBlock]);
 
   if (!visibleBlocks) return null;
 
-  const handleNavigate = () =>
-    navigate(
-      `/go/course/${params.courseId}/${nextChapterAndLessonId?.nextChapterId}/${nextChapterAndLessonId?.nextLessonId}/play`,
-    );
   return (
     <>
       <CoursePlayLayout
@@ -205,21 +208,47 @@ export default function GoLessonPlay({ loaderData, params }: Route.ComponentProp
                 </div>
               ))
             : null}
-          {lessonCompletionStatus?.is_complete ? (
-            <div className='fixed bottom-10'>
-              <motion.div initial={nudgeAnimation.initial} animate={nudgeAnimation.animate}>
-                <OutlineButton
-                  className='bg-card/80 rounded-full'
-                  onClick={handleNavigate}
-                  rightIcon={<ArrowRight />}
-                >
-                  {nextChapterAndLessonId?.nextChapterId === params.chapterId
-                    ? 'Next lesson'
-                    : 'Next chapter'}
-                </OutlineButton>
-              </motion.div>
-            </div>
-          ) : null}
+
+          <Suspense fallback={<Spinner />}>
+            <Await
+              resolve={lessonCompletionStatus}
+              errorElement={<div>Could not load reviews 😬</div>}
+            >
+              {(status) => (
+                <>
+                  {status?.is_complete ? (
+                    <div className='fixed bottom-10'>
+                      <motion.div initial={nudgeAnimation.initial} animate={nudgeAnimation.animate}>
+                        <Suspense>
+                          <Await
+                            resolve={nextChapterAndLessonId}
+                            errorElement={<div>Could not load next chapter and lesson</div>}
+                          >
+                            {(resolved) => (
+                              <OutlineButton
+                                type='button'
+                                className='bg-card/80 rounded-full'
+                                onClick={() =>
+                                  navigate(
+                                    `/go/course/${params.courseId}/${resolved?.nextChapterId}/${resolved?.nextLessonId}/play`,
+                                  )
+                                }
+                                rightIcon={<ArrowRight />}
+                              >
+                                {resolved?.nextChapterId === params.chapterId
+                                  ? 'Next lesson'
+                                  : 'Next chapter'}
+                              </OutlineButton>
+                            )}
+                          </Await>
+                        </Suspense>
+                      </motion.div>
+                    </div>
+                  ) : null}
+                </>
+              )}
+            </Await>
+          </Suspense>
         </section>
       </CoursePlayLayout>
       <Outlet />
