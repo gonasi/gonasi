@@ -53,9 +53,15 @@ export default function GoPluginsMenuDialog({ pluginTypes }: GonasiPluginGroupPr
               className={({ isPending }) =>
                 cn(
                   'hover:bg-primary/5 flex w-full cursor-pointer items-center gap-3 rounded-sm p-2 text-left transition-all duration-200 ease-in-out hover:shadow-sm',
+                  comingSoon && 'hover:cursor-not-allowed hover:bg-none hover:shadow-none',
                   isPending && 'bg-primary/10 pointer-events-none opacity-60',
                 )
               }
+              onClick={(e) => {
+                if (comingSoon) e.preventDefault();
+              }}
+              tabIndex={comingSoon ? -1 : 0} // prevent keyboard focus if disabled
+              aria-disabled={comingSoon ? 'true' : 'false'}
               {...fadeInUpProps}
             >
               {({ isPending }) => (
