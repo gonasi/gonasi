@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useRef } from 'react';
 import { Await, Outlet, redirect, useNavigate } from 'react-router';
 import { motion } from 'framer-motion';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, LoaderCircle } from 'lucide-react';
 import { dataWithError, dataWithSuccess, redirectWithError } from 'remix-toast';
 
 import { fetchNextChapterAndLessonId } from '@gonasi/database/courses';
@@ -17,7 +17,6 @@ import type { Interaction } from '@gonasi/schemas/plugins';
 import type { Route } from './+types/go-lesson-play';
 
 import { CoursePlayLayout } from '~/components/layouts/course';
-import { Spinner } from '~/components/loaders';
 import { OutlineButton } from '~/components/ui/button';
 import { createClient } from '~/lib/supabase/supabase.server';
 import { useStore } from '~/store';
@@ -209,7 +208,7 @@ export default function GoLessonPlay({ loaderData, params }: Route.ComponentProp
               ))
             : null}
 
-          <Suspense fallback={<Spinner />}>
+          <Suspense fallback={<LoaderCircle className='animate-spin' />}>
             <Await
               resolve={lessonCompletionStatus}
               errorElement={<div>Could not load reviews 😬</div>}
@@ -219,7 +218,7 @@ export default function GoLessonPlay({ loaderData, params }: Route.ComponentProp
                   {status?.is_complete ? (
                     <div className='fixed bottom-10'>
                       <motion.div initial={nudgeAnimation.initial} animate={nudgeAnimation.animate}>
-                        <Suspense>
+                        <Suspense fallback={<LoaderCircle className='animate-spin' />}>
                           <Await
                             resolve={nextChapterAndLessonId}
                             errorElement={<div>Could not load next chapter and lesson</div>}
