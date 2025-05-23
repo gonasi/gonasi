@@ -190,6 +190,7 @@ export default function GoLessonPlay({ loaderData, params }: Route.ComponentProp
     <>
       <CoursePlayLayout
         to={`/go/courses/${params.courseId}`}
+        basePath={`/go/course/${params.courseId}/${params.chapterId}/${params.lessonId}/play`}
         progress={lessonProgress}
         loading={false}
       >

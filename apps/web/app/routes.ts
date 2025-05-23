@@ -29,6 +29,7 @@ export default [
     layout('routes/layouts/go/go-lesson-play-layout.tsx', [
       route('play', 'routes/go/go-lesson-play.tsx', [
         route('completed', 'routes/go/go-lesson-completed.tsx'),
+        route('restart', 'routes/go/go-lesson-restart.tsx'),
       ]),
     ]),
   ]),

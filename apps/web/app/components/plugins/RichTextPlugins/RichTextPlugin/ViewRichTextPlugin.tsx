@@ -1,4 +1,7 @@
-import type { RichTextContentSchemaType } from '@gonasi/schemas/plugins';
+import type {
+  RichTextContentSchemaType,
+  RichTextSettingsSchemaType,
+} from '@gonasi/schemas/plugins';
 
 import { useViewPluginCore } from '../../hooks/useViewPluginCore';
 import type { ViewPluginComponentProps } from '../../ViewPluginTypesRenderer';
@@ -8,17 +11,13 @@ import { ViewPluginWrapper } from '~/components/plugins/common/ViewPluginWrapper
 import { BlockActionButton } from '~/components/ui/button';
 
 export function ViewRichTextPlugin({ block, mode }: ViewPluginComponentProps) {
-  const { loading, canRender, handleContinue, blockInteractionData, isLastBlock } =
-    useViewPluginCore({
-      blockId: block.id,
-      pluginType: block.plugin_type,
-      settings: block.settings,
-    });
-
-  if (!canRender) return <></>;
+  const { loading, handleContinue, blockInteractionData, isLastBlock } = useViewPluginCore({
+    blockId: block.id,
+    pluginType: block.plugin_type,
+  });
 
   const { is_complete } = blockInteractionData ?? {};
-  const { playbackMode } = block.settings;
+  const { playbackMode } = block.settings as RichTextSettingsSchemaType;
 
   const shouldShowActionButton = !is_complete && mode !== 'preview';
 

@@ -1,5 +1,5 @@
-import { type PropsWithChildren, useCallback } from 'react';
-import { Link, useFetcher } from 'react-router';
+import { type PropsWithChildren } from 'react';
+import { Link } from 'react-router';
 import { ArrowLeft, LoaderCircle, RotateCcw } from 'lucide-react';
 
 import { Container } from '../container';
@@ -9,21 +9,12 @@ import { Progress } from '~/components/ui/progress';
 
 interface Props extends PropsWithChildren {
   to: string;
+  basePath: string;
   progress: number;
   loading: boolean;
 }
 
-export function CoursePlayLayout({ children, to, progress, loading }: Props) {
-  const fetcher = useFetcher();
-
-  const handleResetLesson = useCallback(() => {
-    const formData = new FormData();
-    formData.append('intent', 'resetLessonProgress');
-    fetcher.submit(formData, {
-      method: 'post',
-    });
-  }, [fetcher]);
-
+export function CoursePlayLayout({ children, to, basePath, progress, loading }: Props) {
   return (
     <div className='pb-[50vh]'>
       <div className='bg-background/80 sticky top-0 z-50 shadow-sm backdrop-blur'>
@@ -41,7 +32,7 @@ export function CoursePlayLayout({ children, to, progress, loading }: Props) {
                   {
                     title: 'Restart lesson',
                     icon: RotateCcw,
-                    onClick: () => handleResetLesson(),
+                    to: `${basePath}/restart`,
                     disabled: progress === 0,
                   },
                 ]}

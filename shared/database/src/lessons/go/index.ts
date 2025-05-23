@@ -7,3 +7,4 @@ export * from './fetchLessonsCompletionStatusByCourse';
 export * from './fetchCoursePlayStatus';
 export * from './fetchUserLessonBlockInteractions';
 export * from './fetchLessonCompletionStatus';
+export * from './fetchLessonById';

@@ -63,3 +63,7 @@ export const LessonPositionUpdateArraySchema = z.array(LessonPositionUpdateSchem
 
 export type LessonPositionUpdate = z.infer<typeof LessonPositionUpdateSchema>;
 export type LessonPositionUpdateArray = z.infer<typeof LessonPositionUpdateArraySchema>;
+
+export const ResetLessonSchema = z.object({
+  lessonId: z.string(),
+});

@@ -1,5 +1,9 @@
 import type { PluginTypeId } from './pluginData';
-import { RichTextContentSchema, RichTextSettingsSchema } from './richTextSchema';
+import {
+  RichTextContentSchema,
+  RichTextInteractionSchema,
+  RichTextSettingsSchema,
+} from './richTextSchema';
 
 export const schemaMap = {
   rich_text_editor: RichTextContentSchema,
@@ -43,4 +47,26 @@ export const settingsSchemaMap = {
   slideshow_player: RichTextSettingsSchema,
   motion_simulation: RichTextSettingsSchema,
   gravity_simulation: RichTextSettingsSchema,
+} satisfies Record<PluginTypeId, any>;
+
+export const interactionSchemaMap = {
+  rich_text_editor: RichTextInteractionSchema,
+  true_false: RichTextInteractionSchema,
+  multiple_choice_single: RichTextInteractionSchema,
+  multiple_choice_multiple: RichTextInteractionSchema,
+  match_concepts: RichTextInteractionSchema,
+  sequence_ordering: RichTextInteractionSchema,
+  categorization: RichTextInteractionSchema,
+  bar_chart: RichTextInteractionSchema,
+  line_chart: RichTextInteractionSchema,
+  pie_chart: RichTextInteractionSchema,
+  historical_events: RichTextInteractionSchema,
+  project_milestones: RichTextInteractionSchema,
+  tap_to_reveal: RichTextInteractionSchema,
+  step_by_step_reveal: RichTextInteractionSchema,
+  video_player: RichTextInteractionSchema,
+  audio_player: RichTextInteractionSchema,
+  slideshow_player: RichTextInteractionSchema,
+  motion_simulation: RichTextInteractionSchema,
+  gravity_simulation: RichTextInteractionSchema,
 } satisfies Record<PluginTypeId, any>;
