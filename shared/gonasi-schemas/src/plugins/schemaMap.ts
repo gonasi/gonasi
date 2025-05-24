@@ -5,8 +5,8 @@ import { TrueOrFalseStateInteractionSchema } from '@gonasi/schemas/plugins';
 import type { PluginTypeId } from './pluginData'; // Type that represents all possible plugin identifiers
 import {
   RichTextContentSchema,
-  RichTextInteractionSchema,
   RichTextSettingsSchema,
+  RichTextStateInteractionSchema,
 } from './richTextSchema';
 import { TrueOrFalseContentSchema } from './trueOrFalseSchema';
 
@@ -102,25 +102,25 @@ export function getSettingsSchema<T extends PluginTypeId>(type: T): SettingsSche
  * It maps plugin type IDs to their corresponding interaction schemas.
  */
 export const interactionSchemaMap = {
-  rich_text_editor: RichTextInteractionSchema,
+  rich_text_editor: RichTextStateInteractionSchema,
   true_or_false: TrueOrFalseStateInteractionSchema,
-  multiple_choice_single: RichTextInteractionSchema,
-  multiple_choice_multiple: RichTextInteractionSchema,
-  match_concepts: RichTextInteractionSchema,
-  sequence_ordering: RichTextInteractionSchema,
-  categorization: RichTextInteractionSchema,
-  bar_chart: RichTextInteractionSchema,
-  line_chart: RichTextInteractionSchema,
-  pie_chart: RichTextInteractionSchema,
-  historical_events: RichTextInteractionSchema,
-  project_milestones: RichTextInteractionSchema,
-  tap_to_reveal: RichTextInteractionSchema,
-  step_by_step_reveal: RichTextInteractionSchema,
-  video_player: RichTextInteractionSchema,
-  audio_player: RichTextInteractionSchema,
-  slideshow_player: RichTextInteractionSchema,
-  motion_simulation: RichTextInteractionSchema,
-  gravity_simulation: RichTextInteractionSchema,
+  multiple_choice_single: RichTextStateInteractionSchema,
+  multiple_choice_multiple: RichTextStateInteractionSchema,
+  match_concepts: RichTextStateInteractionSchema,
+  sequence_ordering: RichTextStateInteractionSchema,
+  categorization: RichTextStateInteractionSchema,
+  bar_chart: RichTextStateInteractionSchema,
+  line_chart: RichTextStateInteractionSchema,
+  pie_chart: RichTextStateInteractionSchema,
+  historical_events: RichTextStateInteractionSchema,
+  project_milestones: RichTextStateInteractionSchema,
+  tap_to_reveal: RichTextStateInteractionSchema,
+  step_by_step_reveal: RichTextStateInteractionSchema,
+  video_player: RichTextStateInteractionSchema,
+  audio_player: RichTextStateInteractionSchema,
+  slideshow_player: RichTextStateInteractionSchema,
+  motion_simulation: RichTextStateInteractionSchema,
+  gravity_simulation: RichTextStateInteractionSchema,
 } as const;
 
 export type InteractionSchemaMapType = typeof interactionSchemaMap;

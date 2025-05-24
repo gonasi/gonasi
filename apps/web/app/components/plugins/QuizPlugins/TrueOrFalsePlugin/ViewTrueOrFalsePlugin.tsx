@@ -65,7 +65,6 @@ export function ViewTrueOrFalsePlugin({ block, mode }: ViewPluginComponentProps)
         plugin_type: 'true_or_false',
         block_id: block.id,
         lesson_id: params.lessonId ?? '',
-        is_complete: isCompleted,
         score,
         attempts: attemptsCount,
         state: { ...state },
@@ -167,7 +166,7 @@ export function ViewTrueOrFalsePlugin({ block, mode }: ViewPluginComponentProps)
               score={score}
               actions={
                 <div className='flex'>
-                  {!isCompleted && (
+                  {!payload?.is_complete && (
                     <BlockActionButton
                       onClick={handleContinue}
                       loading={loading}
@@ -175,6 +174,7 @@ export function ViewTrueOrFalsePlugin({ block, mode }: ViewPluginComponentProps)
                       disabled={mode === 'preview'}
                     />
                   )}
+
                   {!isExplanationBottomSheetOpen && state.canShowExplanationButton && (
                     <AnimateInButtonWrapper>
                       <OutlineButton

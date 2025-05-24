@@ -79,6 +79,7 @@ export function useViewPluginCore(blockId: string | null): ViewPluginCoreResult 
 
     const enrichedPayload: GoLessonPlayInteractionReturnType[number] = {
       ...finalPayload,
+      is_complete: true,
       started_at: startedAt,
       completed_at: completedAt,
       time_spent_seconds: timeSpentSeconds,

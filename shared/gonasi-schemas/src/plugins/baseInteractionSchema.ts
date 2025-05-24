@@ -76,5 +76,5 @@ export type BaseInteractionSchemaType = z.infer<typeof BaseInteractionSchema>;
 
 export type BaseInteractionUpdatableFields = Pick<
   BaseInteractionSchemaType,
-  'plugin_type' | 'block_id' | 'lesson_id' | 'is_complete' | 'score' | 'attempts' | 'state'
+  'plugin_type' | 'block_id' | 'lesson_id' | 'score' | 'attempts' | 'state'
 >;

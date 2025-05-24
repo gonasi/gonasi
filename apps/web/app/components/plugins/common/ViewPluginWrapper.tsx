@@ -21,7 +21,7 @@ export interface ViewPluginWrapperProps {
   isComplete?: boolean;
   playbackMode?: 'inline' | 'standalone';
   mode: 'preview' | 'play';
-  reset: () => void;
+  reset?: () => void;
 }
 
 export function ViewPluginWrapper({
@@ -29,7 +29,7 @@ export function ViewPluginWrapper({
   isComplete = false,
   playbackMode = 'inline',
   mode,
-  reset,
+  reset = () => {},
 }: ViewPluginWrapperProps) {
   const [open, setOpen] = useState(true);
   const { isExplanationBottomSheetOpen, storeExplanationState, closeExplanation } = useStore();

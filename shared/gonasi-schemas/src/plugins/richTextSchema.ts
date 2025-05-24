@@ -1,6 +1,5 @@
 import { z } from 'zod';
 
-import { BaseInteractionSchema } from './baseInteractionSchema';
 import { BasePluginSettingsSchema } from './pluginSettings';
 
 //
@@ -38,7 +37,7 @@ export const SubmitEditRichTextSettingsSchema = RichTextSettingsSchema.extend({
 //
 // Interaction Schema
 //
-export const RichTextInteractionSchema = BaseInteractionSchema.extend({
+export const RichTextStateInteractionSchema = z.object({
   continue: z.boolean().default(false),
 });
 
@@ -49,4 +48,4 @@ export type RichTextContentSchemaType = z.infer<typeof RichTextContentSchema>;
 export type RichTextSettingsSchemaType = z.infer<typeof RichTextSettingsSchema>;
 export type SubmitCreateRichTextSchemaType = z.infer<typeof SubmitCreateRichTextSchema>;
 export type SubmitEditRichTextSettingsSchemaType = z.infer<typeof SubmitEditRichTextSettingsSchema>;
-export type RichTextInteractionSchemaType = z.infer<typeof RichTextInteractionSchema>;
+export type RichTextStateInteractionSchemaType = z.infer<typeof RichTextStateInteractionSchema>;
