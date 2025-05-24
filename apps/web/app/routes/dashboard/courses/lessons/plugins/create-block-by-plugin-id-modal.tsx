@@ -4,11 +4,13 @@ import { parseWithZod } from '@conform-to/zod';
 import { ArrowLeft, LoaderCircle } from 'lucide-react';
 import { dataWithError, redirectWithSuccess } from 'remix-toast';
 
-import { createRichTextBlock } from '@gonasi/database/lessons';
+import { createRichTextBlock, createTrueOrFalseBlock } from '@gonasi/database/lessons';
 import {
   getPluginTypeNameById,
+  getSchema,
   type PluginGroupId,
   type PluginTypeId,
+  type SchemaData,
   schemaMap,
 } from '@gonasi/schemas/plugins';
 
@@ -35,7 +37,6 @@ export async function action({ request, params }: Route.ActionArgs) {
   await checkHoneypot(formData);
 
   const { supabase } = createClient(request);
-
   const intent = formData.get('intent');
 
   if (typeof intent !== 'string' || !(intent in schemaMap)) {
@@ -43,19 +44,22 @@ export async function action({ request, params }: Route.ActionArgs) {
   }
 
   const typedIntent = intent as PluginTypeId;
-  const schema = schemaMap[typedIntent];
-
+  const schema = getSchema(typedIntent);
   const submission = parseWithZod(formData, { schema });
 
   if (submission.status !== 'success') {
-    return { result: submission.reply(), status: submission.status === 'error' ? 400 : 200 };
+    return {
+      result: submission.reply(),
+      status: submission.status === 'error' ? 400 : 200,
+    };
   }
 
   try {
     switch (typedIntent) {
       case 'rich_text_editor': {
+        const value = submission.value as SchemaData<'rich_text_editor'>;
         const { success, message } = await createRichTextBlock(supabase, {
-          ...submission.value,
+          ...value,
           lessonId: params.lessonId,
           pluginType: 'rich_text_editor',
           weight: 1,
@@ -72,6 +76,30 @@ export async function action({ request, params }: Route.ActionArgs) {
             )
           : dataWithError(null, message);
       }
+
+      case 'true_or_false': {
+        const value = submission.value as SchemaData<'true_or_false'>;
+        const { success, message } = await createTrueOrFalseBlock(supabase, {
+          ...value,
+          lessonId: params.lessonId,
+          pluginType: 'true_or_false',
+          weight: 1,
+          settings: {
+            playbackMode: 'inline',
+            weight: 1,
+            layoutStyle: 'single',
+            randomization: 'none',
+          },
+        });
+
+        return success
+          ? redirectWithSuccess(
+              `/dashboard/${params.companyId}/courses/${params.courseId}/course-content/${params.chapterId}/${params.lessonId}`,
+              message,
+            )
+          : dataWithError(null, message);
+      }
+
       default:
         throw new Error(`Unhandled intent: ${typedIntent}`);
     }

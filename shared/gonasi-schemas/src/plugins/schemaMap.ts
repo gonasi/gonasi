@@ -1,15 +1,27 @@
 import type { z } from 'zod';
 
-import type { PluginTypeId } from './pluginData';
+import { TrueOrFalseStateInteractionSchema } from '@gonasi/schemas/plugins';
+
+import type { PluginTypeId } from './pluginData'; // Type that represents all possible plugin identifiers
 import {
   RichTextContentSchema,
   RichTextInteractionSchema,
   RichTextSettingsSchema,
 } from './richTextSchema';
+import { TrueOrFalseContentSchema } from './trueOrFalseSchema';
 
+/**
+ * -----------------------------
+ * CONTENT SCHEMAS
+ * -----------------------------
+ *
+ * Maps each plugin type ID to its corresponding Zod content schema.
+ * These schemas define the expected shape of the "content" data
+ * that a plugin block (like a quiz or chart) should have.
+ */
 export const schemaMap = {
   rich_text_editor: RichTextContentSchema,
-  true_false: RichTextContentSchema,
+  true_or_false: TrueOrFalseContentSchema,
   multiple_choice_single: RichTextContentSchema,
   multiple_choice_multiple: RichTextContentSchema,
   match_concepts: RichTextContentSchema,
@@ -27,11 +39,31 @@ export const schemaMap = {
   slideshow_player: RichTextContentSchema,
   motion_simulation: RichTextContentSchema,
   gravity_simulation: RichTextContentSchema,
-} satisfies Record<PluginTypeId, any>;
+} as const;
 
+// Derive the type of the schema map object
+export type SchemaMapType = typeof schemaMap;
+
+// Type that infers the data shape from a schema for a given plugin type
+export type SchemaData<T extends PluginTypeId> = z.infer<SchemaMapType[T]>;
+
+// Helper function to fetch the content schema for a given plugin type
+export function getSchema<T extends PluginTypeId>(type: T): SchemaMapType[T] {
+  return schemaMap[type];
+}
+
+/**
+ * -----------------------------
+ * SETTINGS SCHEMAS
+ * -----------------------------
+ *
+ * Maps plugin type IDs to their settings schemas.
+ * These define settings/configuration fields for a given block,
+ * separate from the main content or interaction data.
+ */
 export const settingsSchemaMap = {
   rich_text_editor: RichTextSettingsSchema,
-  true_false: RichTextSettingsSchema,
+  true_or_false: RichTextSettingsSchema,
   multiple_choice_single: RichTextSettingsSchema,
   multiple_choice_multiple: RichTextSettingsSchema,
   match_concepts: RichTextSettingsSchema,
@@ -49,11 +81,29 @@ export const settingsSchemaMap = {
   slideshow_player: RichTextSettingsSchema,
   motion_simulation: RichTextSettingsSchema,
   gravity_simulation: RichTextSettingsSchema,
-} satisfies Record<PluginTypeId, any>;
+} as const;
 
+export type SettingsSchemaMapType = typeof settingsSchemaMap;
+
+// Type that infers the settings data shape for a given plugin type
+export type SettingsData<T extends PluginTypeId> = z.infer<SettingsSchemaMapType[T]>;
+
+// Helper function to get the settings schema for a plugin type
+export function getSettingsSchema<T extends PluginTypeId>(type: T): SettingsSchemaMapType[T] {
+  return settingsSchemaMap[type];
+}
+
+/**
+ * -----------------------------
+ * INTERACTION SCHEMAS
+ * -----------------------------
+ *
+ * These define how a user can interact with a plugin (e.g., clicking, dragging).
+ * It maps plugin type IDs to their corresponding interaction schemas.
+ */
 export const interactionSchemaMap = {
   rich_text_editor: RichTextInteractionSchema,
-  true_false: RichTextInteractionSchema,
+  true_or_false: TrueOrFalseStateInteractionSchema,
   multiple_choice_single: RichTextInteractionSchema,
   multiple_choice_multiple: RichTextInteractionSchema,
   match_concepts: RichTextInteractionSchema,
@@ -71,10 +121,25 @@ export const interactionSchemaMap = {
   slideshow_player: RichTextInteractionSchema,
   motion_simulation: RichTextInteractionSchema,
   gravity_simulation: RichTextInteractionSchema,
-} satisfies Record<PluginTypeId, any>;
+} as const;
 
-// Create a union type of all schema inferred types
+export type InteractionSchemaMapType = typeof interactionSchemaMap;
+
+// Type that infers the interaction data shape for a given plugin type
+export type InteractionData<T extends PluginTypeId> = z.infer<InteractionSchemaMapType[T]>;
+
+// Helper to retrieve the interaction schema based on plugin type
+export function getInteractionSchema<T extends PluginTypeId>(type: T): InteractionSchemaMapType[T] {
+  return interactionSchemaMap[type];
+}
+
+/**
+ * -----------------------------
+ * UNION TYPE FOR INTERACTION DATA
+ * -----------------------------
+ *
+ * Represents the possible runtime types for *any* plugin's interaction data.
+ * Useful when working with multiple plugin types generically (e.g., form validation).
+ */
 export type BlockInteractionData =
-  (typeof interactionSchemaMap)[keyof typeof interactionSchemaMap] extends z.ZodType<infer U>
-    ? U
-    : never;
+  InteractionSchemaMapType[keyof InteractionSchemaMapType] extends z.ZodType<infer U> ? U : never;

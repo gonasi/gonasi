@@ -15,7 +15,7 @@ const editPluginSettingsComponentMap: Record<
   PluginTypeId,
   (props: EditPluginSettingsComponentProps) => JSX.Element
 > = {
-  true_false: unimplementedPlugin,
+  true_or_false: unimplementedPlugin,
   multiple_choice_multiple: unimplementedPlugin,
   multiple_choice_single: unimplementedPlugin,
   match_concepts: unimplementedPlugin,

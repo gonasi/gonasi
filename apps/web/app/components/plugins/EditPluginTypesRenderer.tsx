@@ -19,7 +19,7 @@ const editPluginComponentMap: Record<
   PluginTypeId,
   (props: EditPluginComponentProps) => JSX.Element
 > = {
-  true_false: EditTrueOrFalsePlugin,
+  true_or_false: EditTrueOrFalsePlugin,
   multiple_choice_multiple: EditMultipleChoiceMultipleAnswersPlugin,
   multiple_choice_single: EditMultipleChoiceSingleAnswerPlugin,
   match_concepts: unimplementedPlugin,

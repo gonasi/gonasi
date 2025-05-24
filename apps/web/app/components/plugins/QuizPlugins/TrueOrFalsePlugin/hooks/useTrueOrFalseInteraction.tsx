@@ -1,159 +1,207 @@
-import { useCallback, useState } from 'react';
-import type { z } from 'zod';
+import { useCallback, useMemo, useState } from 'react';
 
-import { TrueOrFalseInteractionSchema } from '@gonasi/schemas/plugins';
+import {
+  TrueOrFalseStateInteractionSchema,
+  type TrueOrFalseStateInteractionSchemaType,
+} from '@gonasi/schemas/plugins';
 
-const schema = TrueOrFalseInteractionSchema;
+import { calculateTrueFalseScore } from '../utils';
 
-type InteractionState = z.infer<typeof schema>;
+const schema = TrueOrFalseStateInteractionSchema;
 
+// Returns the current timestamp (used for tracking interaction times)
 const getTimestamp = () => Date.now();
 
 /**
- * Custom hook to manage a true/false quiz interaction state.
+ * Custom React hook to manage the state and logic for a "True or False" quiz interaction.
+ *
+ * @param initial - The initial state for the interaction (can be null)
+ * @param correctAnswer - The correct answer for the question, either 'true' or 'false'
  */
-export function useTrueOrFalseInteraction(initial?: Partial<InteractionState>) {
-  // Main interaction state (parsed with schema)
-  const [state, setState] = useState<InteractionState>(() =>
-    schema.parse({
-      ...initial,
-      interactionType: 'true_false',
-    }),
+export function useTrueOrFalseInteraction(
+  initial: TrueOrFalseStateInteractionSchemaType | null,
+  correctAnswer: 'true' | 'false',
+) {
+  // Fallback state used if `initial` is null
+  const defaultState: TrueOrFalseStateInteractionSchemaType = schema.parse({});
+
+  // Main interaction state validated by schema (parsed from initial or fallback)
+  const [state, setState] = useState<TrueOrFalseStateInteractionSchemaType>(() =>
+    schema.parse(initial ?? defaultState),
   );
 
-  // The option currently selected by the user (true/false/null)
+  // Tracks which option (true/false) the user has selected; null means no selection
   const [selectedOption, setSelectedOption] = useState<boolean | null>(null);
 
-  /**
-   * Indicates whether the user has already checked their answer.
-   * This is used to:
-   * - Prevent multiple checks for the same selection.
-   * - Disable option selection after checking.
-   * - Control conditional UI logic (e.g., show correct answer or feedback).
-   */
-  const [hasChecked, setHasChecked] = useState(false);
+  // Derived state - compute these from the main state instead of maintaining separate state
+  const isCompleted = useMemo(() => {
+    return state.correctAttempt !== null || state.hasRevealedCorrectAnswer;
+  }, [state.correctAttempt, state.hasRevealedCorrectAnswer]);
+
+  const canInteract = useMemo(() => {
+    return !isCompleted && state.showCheckIfAnswerIsCorrectButton;
+  }, [isCompleted, state.showCheckIfAnswerIsCorrectButton]);
+
+  // Count of actual attempts (excludes revealed answers)
+  // User can make at most 2 attempts: 1 wrong + 1 correct, or just 1 correct
+  const attemptsCount = useMemo(() => {
+    let count = 0;
+
+    // Count wrong attempts (max 1 in this flow)
+    if (state.wrongAttempts.length > 0) {
+      count += 1;
+    }
+
+    // Only count correct attempt if it wasn't revealed
+    if (state.correctAttempt !== null && !state.hasRevealedCorrectAnswer) {
+      count += 1;
+    }
+
+    return count;
+  }, [state.wrongAttempts.length, state.correctAttempt, state.hasRevealedCorrectAnswer]);
+
+  // Calculate the actual score
+  const score = useMemo(() => {
+    return calculateTrueFalseScore(state);
+  }, [state]);
 
   /**
-   * Handles user selection of true/false.
-   * If the answer has already been checked, selection is disabled.
-   * Selecting the same option again will unselect it (toggle behavior).
+   * Allows the user to select or toggle an option (true or false).
+   * Selection is disabled if the interaction is completed.
+   * Clicking the selected option again will deselect it.
    */
   const selectOption = useCallback(
     (selection: boolean) => {
-      if (hasChecked) return;
-
+      if (!canInteract) return;
       setSelectedOption((prev) => (prev === selection ? null : selection));
     },
-    [hasChecked],
+    [canInteract],
   );
 
   /**
-   * Checks the user's answer against the correct answer.
-   * Updates the interaction state with correctness, attempts, and UI flags.
-   * Sets `hasChecked` to true to lock further interaction until reset.
+   * Validates the selected answer against the correct one.
+   * Updates the interaction state accordingly, storing timestamps and correctness.
    */
-  const checkAnswer = useCallback(
-    (correctAnswer: boolean) => {
-      if (selectedOption === null) return;
+  const checkAnswer = useCallback(() => {
+    if (selectedOption === null || !canInteract) return;
 
-      const timestamp = getTimestamp();
-      const isCorrect = selectedOption === correctAnswer;
-
-      setSelectedOption(null);
-      setState((prev) => {
-        if (isCorrect) {
-          return {
-            ...prev,
-            optionSelected: true,
-            isCorrect: true,
-            continue: true,
-            canShowContinueButton: true,
-            canShowCorrectAnswer: true,
-            canShowExplanationButton: true,
-            correctAttempt: { selected: selectedOption, timestamp },
-            attemptsCount: prev.attemptsCount + 1,
-          };
-        } else {
-          return {
-            ...prev,
-            optionSelected: true,
-            isCorrect: false,
-            canShowCorrectAnswer: true,
-            wrongAttempts: [...prev.wrongAttempts, { selected: selectedOption, timestamp }],
-            attemptsCount: prev.attemptsCount + 1,
-          };
-        }
-      });
-    },
-    [selectedOption],
-  );
-
-  const tryAgain = useCallback(() => {
-    setState((prev) => ({
-      ...prev,
-      isCorrect: null,
-    }));
-  }, []);
-
-  /**
-   * Marks the correct answer as revealed.
-   * Useful for feedback after checking or skipping.
-   */
-  const revealCorrectAnswer = useCallback((correctAnswer: boolean) => {
     const timestamp = getTimestamp();
+    const isCorrect = selectedOption === (correctAnswer === 'true');
 
-    setState((prev) => ({
-      ...prev,
-      correctAnswerRevealed: true,
-      optionSelected: true,
-      isCorrect: true,
-      continue: true,
-      canShowContinueButton: true,
-      canShowCorrectAnswer: true,
-      canShowExplanationButton: true,
-      correctAttempt: { selected: correctAnswer, timestamp },
-    }));
-  }, []);
+    // Capture the selected value before any state updates
+    const selectedValue = selectedOption;
+
+    setState((prev) => {
+      const newState = {
+        ...prev,
+        showCheckIfAnswerIsCorrectButton: false,
+        showTryAgainButton: false,
+        showShowAnswerButton: false,
+        showContinueButton: false,
+        canShowExplanationButton: false,
+        hasRevealedCorrectAnswer: false,
+      };
+
+      if (isCorrect) {
+        // Correct answer: enable continue and explanation
+        return {
+          ...newState,
+          showContinueButton: true,
+          canShowExplanationButton: true,
+          correctAttempt: { selected: selectedValue, timestamp },
+        };
+      } else {
+        // Wrong answer: allow retry, show correct answer option, record wrong attempt
+        return {
+          ...newState,
+          showTryAgainButton: true,
+          showShowAnswerButton: true,
+          wrongAttempts: [...prev.wrongAttempts, { selected: selectedValue, timestamp }],
+        };
+      }
+    });
+
+    // Clear selection after processing
+    setSelectedOption(null);
+  }, [correctAnswer, selectedOption, canInteract]);
 
   /**
-   * Skips the current interaction.
-   * Enables the user to move forward without answering.
+   * Allows the user to retry the interaction after a wrong attempt.
+   * Resets the UI state and enables selection again.
    */
-  const skip = useCallback(() => {
+  const tryAgain = useCallback(() => {
+    // Only allow retry if not completed and currently in wrong answer state
+    if (isCompleted || !state.showTryAgainButton) return;
+
     setState((prev) => ({
       ...prev,
-      continue: true,
-      canShowContinueButton: true,
-      canShowCorrectAnswer: true,
+      showCheckIfAnswerIsCorrectButton: true,
+      showTryAgainButton: false,
+      showShowAnswerButton: true, // Keep show answer available
+      showContinueButton: false,
+      canShowExplanationButton: false,
+      hasRevealedCorrectAnswer: false,
     }));
-  }, []);
+
+    setSelectedOption(null);
+  }, [isCompleted, state.showTryAgainButton]);
 
   /**
-   * Resets the interaction to its initial state.
-   * Clears the selected option and resets `hasChecked`.
+   * Programmatically reveals the correct answer.
+   * Updates state to reflect the correct answer and enables appropriate UI flags.
+   * This action completes the interaction permanently.
+   */
+  const revealCorrectAnswer = useCallback(() => {
+    if (isCompleted) return;
+
+    const timestamp = getTimestamp();
+    const correctAnswerBoolean = correctAnswer === 'true';
+
+    setState((prev) => ({
+      ...prev,
+      showCheckIfAnswerIsCorrectButton: false,
+      showTryAgainButton: false,
+      showShowAnswerButton: false,
+      showContinueButton: true,
+      canShowExplanationButton: true,
+      hasRevealedCorrectAnswer: true,
+      correctAttempt: { selected: correctAnswerBoolean, timestamp },
+    }));
+
+    setSelectedOption(null);
+  }, [correctAnswer, isCompleted]);
+
+  /**
+   * Reset the entire interaction to its initial state.
+   * Useful for allowing users to restart the quiz.
    */
   const reset = useCallback(() => {
-    setState(() =>
-      schema.parse({
-        interactionType: 'true_false',
-      }),
-    );
+    setState(defaultState);
     setSelectedOption(null);
-    setHasChecked(false);
-  }, []);
+  }, [defaultState]);
 
   return {
+    // State
     state,
     selectedOption,
+
+    // Derived state
+    isCompleted,
+    canInteract,
+    attemptsCount,
+    score,
+
+    // Actions
     selectOption,
     checkAnswer,
     revealCorrectAnswer,
-    skip,
-    reset,
-    hasChecked,
     tryAgain,
+    reset,
+
+    // Deprecated - keeping for backward compatibility but prefer isCompleted
+    hasChecked: isCompleted,
   };
 }
 
-// Inferred return type alias
+// Exported type for external use (e.g., props or testing)
 export type TrueOrFalseInteractionReturn = ReturnType<typeof useTrueOrFalseInteraction>;

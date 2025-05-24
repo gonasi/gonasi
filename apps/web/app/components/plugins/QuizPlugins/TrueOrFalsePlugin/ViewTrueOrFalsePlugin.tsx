@@ -1,15 +1,19 @@
 import { useEffect } from 'react';
+import { useParams } from 'react-router';
 import { Check, CheckCheck, PartyPopper, RefreshCw, X, XCircle } from 'lucide-react';
 
-import type { TrueOrFalseInteractionType, TrueOrFalseSchemaType } from '@gonasi/schemas/plugins';
+import type {
+  TrueOrFalseContentSchemaType,
+  TrueOrFalseSettingsSchemaType,
+  TrueOrFalseStateInteractionSchemaType,
+} from '@gonasi/schemas/plugins';
 
 import { useTrueOrFalseInteraction } from './hooks/useTrueOrFalseInteraction';
 import { PlayPluginWrapper } from '../../common/PlayPluginWrapper';
 import { RenderFeedback } from '../../common/RenderFeedback';
 import { ViewPluginWrapper } from '../../common/ViewPluginWrapper';
 import { useViewPluginCore } from '../../hooks/useViewPluginCore';
-import type { ViewPluginComponentProps } from '../../upperRend.tsx';
-import { calculateTrueFalseScore } from './utils';
+import type { ViewPluginComponentProps } from '../../ViewPluginTypesRenderer';
 
 import RichTextRenderer from '~/components/go-editor/ui/RichTextRenderer';
 import {
@@ -19,69 +23,68 @@ import {
   OutlineButton,
 } from '~/components/ui/button';
 import { cn } from '~/lib/utils';
+import { useStore } from '~/store';
 
 export function ViewTrueOrFalsePlugin({ block, mode }: ViewPluginComponentProps) {
-  const {
-    loading,
-    canRender,
-    handleContinue,
-    blockInteractionData,
-    isLastBlock,
-    updatePayload,
-    setExplanationState,
-    isExplanationBottomSheetOpen,
-  } = useViewPluginCore({
-    blockId: block.id,
-    pluginType: block.plugin_type,
-    settings: block.settings,
-  });
+  const params = useParams();
 
-  const { is_complete, state: blockInteractionStateData } = blockInteractionData ?? {};
-  const { playbackMode, layoutStyle } = block.settings;
+  const { playbackMode, layoutStyle } = block.settings as TrueOrFalseSettingsSchemaType;
   const { questionState, correctAnswer, explanationState, hint } =
-    block.content as TrueOrFalseSchemaType;
+    block.content as TrueOrFalseContentSchemaType['content'];
 
-  const shouldShowActionButton = !is_complete && mode !== 'preview';
+  const { isExplanationBottomSheetOpen, setExplanationState, isLastBlock } = useStore();
 
-  const interaction = useTrueOrFalseInteraction(
-    blockInteractionStateData as TrueOrFalseInteractionType,
+  // Hook for core view plugin logic (e.g. saving state to backend)
+  const { loading, payload, handleContinue, updatePayload } = useViewPluginCore(
+    mode === 'play' ? block.id : null,
   );
 
-  const { state, selectedOption, selectOption, checkAnswer, revealCorrectAnswer, tryAgain } =
-    interaction;
+  // Hook handling answer selection, validation, retry logic
+  const {
+    state,
+    selectedOption,
+    selectOption,
+    checkAnswer,
+    revealCorrectAnswer,
+    isCompleted,
+    tryAgain,
+    canInteract,
+    score,
+    reset,
+  } = useTrueOrFalseInteraction(
+    payload?.state as TrueOrFalseStateInteractionSchemaType,
+    correctAnswer,
+  );
 
-  const userScore = calculateTrueFalseScore({
-    isCorrect: state.isCorrect,
-    correctAnswerRevealed: state.correctAnswerRevealed,
-    wrongAttemptsCount: state.wrongAttempts.length,
-  });
+  const attemptsCount = state.wrongAttempts.length + (state.correctAttempt ? 1 : 0);
 
-  // Sync interaction state with plugin state
+  // Sync interaction state to payload for persistence
   useEffect(() => {
-    updatePayload({
-      is_complete: state.continue,
-      score: userScore,
-      attempts: state.attemptsCount,
-      state: {
-        ...state,
-        interactionType: 'true_false',
-        continue: state.continue,
-        optionSelected: selectedOption,
-        correctAttempt: state.correctAttempt,
-        wrongAttempts: state.wrongAttempts,
-      },
-    });
-  }, [state, selectedOption, correctAnswer, updatePayload, userScore]);
-
-  if (!canRender) return <></>;
+    if (mode === 'play' && updatePayload) {
+      updatePayload({
+        plugin_type: 'true_or_false',
+        block_id: block.id,
+        lesson_id: params.lessonId ?? '',
+        is_complete: isCompleted,
+        score,
+        attempts: attemptsCount,
+        state: { ...state },
+      });
+    }
+  }, [state, isCompleted, mode, updatePayload, block.id, params.lessonId, score, attemptsCount]);
 
   return (
-    <ViewPluginWrapper isComplete={is_complete} playbackMode={playbackMode} mode={mode}>
+    <ViewPluginWrapper
+      isComplete={isCompleted}
+      playbackMode={playbackMode}
+      mode={mode}
+      reset={reset}
+    >
       <PlayPluginWrapper hint={hint}>
         {/* Question */}
         <RichTextRenderer editorState={questionState} />
 
-        {/* Options: True / False */}
+        {/* Answer Options: True / False */}
         <div className='flex flex-col gap-4'>
           <div
             className={cn('gap-4 py-6', {
@@ -92,16 +95,9 @@ export function ViewTrueOrFalsePlugin({ block, mode }: ViewPluginComponentProps)
             {([true, false] as const).map((val) => {
               const isSelected = selectedOption === val;
               const icon = val ? <Check /> : <X />;
-
-              const isCorrectAttempt =
-                !!state.correctAttempt && state.correctAttempt.selected === val;
-
-              const isWrongAttempt = !!state.wrongAttempts?.some(
-                (attempt) => attempt.selected === val,
-              );
-
-              const isDisabled =
-                isCorrectAttempt || isWrongAttempt || state.continue || state.isCorrect !== null;
+              const isCorrectAttempt = state.correctAttempt?.selected === val;
+              const isWrongAttempt = state.wrongAttempts.some((a) => a.selected === val);
+              const isDisabled = !canInteract || isWrongAttempt || isCorrectAttempt;
 
               return (
                 <div key={String(val)} className='relative w-full'>
@@ -117,7 +113,7 @@ export function ViewTrueOrFalsePlugin({ block, mode }: ViewPluginComponentProps)
                     {val ? 'True' : 'False'}
                   </OutlineButton>
 
-                  {/* Indicator icon for selected attempts */}
+                  {/* Feedback Badge */}
                   <div className='absolute -top-1.5 -right-1.5 rounded-full'>
                     {isCorrectAttempt && (
                       <Check
@@ -138,23 +134,23 @@ export function ViewTrueOrFalsePlugin({ block, mode }: ViewPluginComponentProps)
           </div>
         </div>
 
-        {/* Attempt count */}
+        {/* Attempt Info */}
         <div className='text-muted-foreground font-secondary pb-1 text-xs'>
-          Attempts: <span className='font-normal'>{state.attemptsCount}</span>
+          Attempts: <span className='font-normal'>{attemptsCount}</span>
         </div>
 
-        {/* Action buttons: Check, Continue, Try Again */}
+        {/* Interaction Buttons & Feedback */}
         <div className='w-full pb-4'>
-          {/* Check button (before answer is validated) */}
-          {!state.continue && state.isCorrect === null && (
+          {/* "Check" action */}
+          {state.showCheckIfAnswerIsCorrectButton && (
             <div className='flex w-full justify-end'>
               <AnimateInButtonWrapper>
                 <Button
                   variant='secondary'
                   className='mb-4 rounded-full'
                   rightIcon={<CheckCheck />}
-                  disabled={selectedOption === null || state.continue}
-                  onClick={() => checkAnswer(correctAnswer === 'true')}
+                  disabled={selectedOption === null}
+                  onClick={checkAnswer}
                 >
                   Check
                 </Button>
@@ -162,43 +158,40 @@ export function ViewTrueOrFalsePlugin({ block, mode }: ViewPluginComponentProps)
             </div>
           )}
 
-          {/* Feedback: Correct */}
-          {state.continue && (
+          {/* Correct Answer Feedback */}
+          {state.showContinueButton && (
             <RenderFeedback
               color='success'
               icon={<PartyPopper />}
-              label='Correct!'
-              score={userScore}
+              label={state.hasRevealedCorrectAnswer ? 'Answer Revealed' : 'Correct!'}
+              score={score}
               actions={
                 <div className='flex'>
-                  <div>
-                    {shouldShowActionButton && (
-                      <BlockActionButton
-                        onClick={handleContinue}
-                        loading={loading}
-                        isLastBlock={isLastBlock}
-                      />
-                    )}
-                  </div>
-                  <div>
-                    {!isExplanationBottomSheetOpen && state.canShowExplanationButton && (
-                      <AnimateInButtonWrapper>
-                        <OutlineButton
-                          className='ml-4 rounded-full'
-                          onClick={() => setExplanationState(explanationState)}
-                        >
-                          Why?
-                        </OutlineButton>
-                      </AnimateInButtonWrapper>
-                    )}
-                  </div>
+                  {!isCompleted && (
+                    <BlockActionButton
+                      onClick={handleContinue}
+                      loading={loading}
+                      isLastBlock={isLastBlock}
+                      disabled={mode === 'preview'}
+                    />
+                  )}
+                  {!isExplanationBottomSheetOpen && state.canShowExplanationButton && (
+                    <AnimateInButtonWrapper>
+                      <OutlineButton
+                        className='ml-4 rounded-full'
+                        onClick={() => setExplanationState(explanationState)}
+                      >
+                        Why?
+                      </OutlineButton>
+                    </AnimateInButtonWrapper>
+                  )}
                 </div>
               }
             />
           )}
 
-          {/* Feedback: Incorrect */}
-          {state.isCorrect === false && (
+          {/* Incorrect Answer Feedback */}
+          {state.showTryAgainButton && (
             <RenderFeedback
               color='destructive'
               icon={<XCircle />}
@@ -212,11 +205,12 @@ export function ViewTrueOrFalsePlugin({ block, mode }: ViewPluginComponentProps)
                   >
                     Try Again
                   </OutlineButton>
-                  {!state.continue && (
+
+                  {state.showShowAnswerButton && (
                     <Button
                       variant='secondary'
                       className='rounded-full'
-                      onClick={() => revealCorrectAnswer(correctAnswer === 'true')}
+                      onClick={revealCorrectAnswer}
                     >
                       Show Answer
                     </Button>
@@ -227,7 +221,6 @@ export function ViewTrueOrFalsePlugin({ block, mode }: ViewPluginComponentProps)
           )}
         </div>
       </PlayPluginWrapper>
-      {/* <TrueOrFalseInteractionDebug interaction={interaction} /> */}
     </ViewPluginWrapper>
   );
 }

@@ -23,7 +23,7 @@ const viewPluginComponentMap: Record<
   PluginTypeId,
   (props: ViewPluginComponentProps) => JSX.Element
 > = {
-  true_false: ViewTrueOrFalsePlugin,
+  true_or_false: ViewTrueOrFalsePlugin,
   tap_to_reveal: ViewTapToRevealPlugin,
   rich_text_editor: ViewRichTextPlugin,
   multiple_choice_multiple: ViewMultipleChoiceMultipleAnswersPlugin,

@@ -2,6 +2,7 @@ import type { JSX } from 'react';
 
 import type { PluginTypeId } from '@gonasi/schemas/plugins';
 
+import { CreateTrueOrFalsePlugin } from './QuizPlugins/TrueOrFalsePlugin/CreateTrueOrFalsePlugin';
 import { CreateRichTextPlugin } from './RichTextPlugins/RichTextPlugin/CreateRichTextPlugin';
 
 interface ViewPluginRendererProps {
@@ -13,7 +14,7 @@ function notImplemented(): never {
 }
 
 const pluginComponentMap: Record<PluginTypeId, (props: ViewPluginRendererProps) => JSX.Element> = {
-  true_false: notImplemented,
+  true_or_false: CreateTrueOrFalsePlugin,
   tap_to_reveal: notImplemented,
   rich_text_editor: CreateRichTextPlugin,
   multiple_choice_multiple: notImplemented,

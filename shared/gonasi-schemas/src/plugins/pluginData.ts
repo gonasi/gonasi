@@ -62,7 +62,7 @@ export const ALL_PLUGINS = [
         icon: 'ListCheck',
         pluginTypes: [
           {
-            id: 'true_false',
+            id: 'true_or_false',
             name: 'True or False',
             description: 'Classic binary choice.',
             example: 'The Earth is flat.',

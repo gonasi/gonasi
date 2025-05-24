@@ -13,7 +13,7 @@ export type Json = string | number | boolean | null | { [key: string]: Json } | 
  */
 const pluginTypes: PluginTypeId[] = [
   'rich_text_editor',
-  'true_false',
+  'true_or_false',
   'multiple_choice_single',
   'multiple_choice_multiple',
   'match_concepts',
@@ -65,9 +65,16 @@ export const BaseInteractionSchema = z.object({
   score: z.number().min(0).max(100).default(0), // Score given for the interaction
   attempts: z.number().min(1).default(1), // Number of attempts made
   state: JsonSchema, // Current state of the interaction
-  last_response: JsonSchema, // Most recent user response
-  feedback: JsonSchema, // Feedback provided to the user
+  last_response: JsonSchema.default({}), // Most recent user response - Not using it now
+  feedback: JsonSchema.default({}), // Feedback provided by the user
   started_at: z.string().datetime(), // Timestamp when interaction started
   completed_at: z.string().datetime(), // Timestamp when interaction was completed
   time_spent_seconds: z.number().min(0).default(0), // Total time spent on the interaction
 });
+
+export type BaseInteractionSchemaType = z.infer<typeof BaseInteractionSchema>;
+
+export type BaseInteractionUpdatableFields = Pick<
+  BaseInteractionSchemaType,
+  'plugin_type' | 'block_id' | 'lesson_id' | 'is_complete' | 'score' | 'attempts' | 'state'
+>;

@@ -4,7 +4,7 @@ import { getZodConstraint, parseWithZod } from '@conform-to/zod';
 import { Save } from 'lucide-react';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
 
-import { TrueOrFalseSchema } from '@gonasi/schemas/plugins';
+import { TrueOrFalseContentSchema } from '@gonasi/schemas/plugins';
 
 import type { EditPluginComponentProps } from '../../EditPluginTypesRenderer';
 
@@ -18,14 +18,14 @@ export function EditTrueOrFalsePlugin({ block }: EditPluginComponentProps) {
 
   const [form, fields] = useForm({
     id: `edit-${block.plugin_type}-form`,
-    constraint: getZodConstraint(TrueOrFalseSchema),
+    constraint: getZodConstraint(TrueOrFalseContentSchema),
     shouldValidate: 'onBlur',
     shouldRevalidate: 'onInput',
     defaultValue: {
       ...block.content,
     },
     onValidate({ formData }) {
-      return parseWithZod(formData, { schema: TrueOrFalseSchema });
+      return parseWithZod(formData, { schema: TrueOrFalseContentSchema });
     },
   });
 
