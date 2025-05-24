@@ -6,11 +6,11 @@ import { HoneypotInputs } from 'remix-utils/honeypot/react';
 
 import { RichTextSettingsSchema, type RichTextSettingsSchemaType } from '@gonasi/schemas/plugins';
 
+import { BlockWeightField } from '../../common/settings/BlockWeightField';
+import { PlaybackModeField } from '../../common/settings/PlaybackModeField';
 import type { EditPluginSettingsComponentProps } from '../../EditPluginSettingsTypeRenderer';
 
 import { Button } from '~/components/ui/button';
-import { RadioButtonField } from '~/components/ui/forms';
-import { SliderField } from '~/components/ui/forms/SliderInputField';
 import { useIsPending } from '~/utils/misc';
 
 export function EditRichTextSettings({ block }: EditPluginSettingsComponentProps) {
@@ -26,7 +26,6 @@ export function EditRichTextSettings({ block }: EditPluginSettingsComponentProps
     },
     shouldValidate: 'onBlur',
     shouldRevalidate: 'onInput',
-
     onValidate({ formData }) {
       return parseWithZod(formData, { schema: RichTextSettingsSchema });
     },
@@ -37,23 +36,8 @@ export function EditRichTextSettings({ block }: EditPluginSettingsComponentProps
       <div className='flex flex-col space-y-4'>
         <HoneypotInputs />
 
-        <SliderField
-          labelProps={{ children: 'Block Weight', required: true }}
-          meta={fields.weight}
-          min={1}
-          max={10}
-          description='Controls the importance of this block when calculating progress.'
-        />
-
-        <RadioButtonField
-          labelProps={{ children: 'Playback Mode', required: true }}
-          field={fields.playbackMode}
-          description='Choose how this block appears in the lesson.'
-          options={[
-            { value: 'inline', label: 'Inline – blends with surrounding content' },
-            { value: 'standalone', label: 'Standalone – draws more attention' },
-          ]}
-        />
+        <BlockWeightField meta={fields.weight} />
+        <PlaybackModeField field={fields.playbackMode} />
 
         <div className='pt-4'>
           <Button
