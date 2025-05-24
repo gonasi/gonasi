@@ -1,20 +1,20 @@
-import type { RichTextContentSchemaType } from '@gonasi/schemas/plugins';
+import type { MultipleChoiceSingleAnswerContentSchemaType } from '@gonasi/schemas/plugins';
 
 import { getUserId } from '../../../auth';
 import type { TypedSupabaseClient } from '../../../client';
 import type { ApiResponse } from '../../../types';
 
-interface UpdateRichTextBlockParams {
+interface UpdateMultipleChoiceSingleAnswerParams {
   supabase: TypedSupabaseClient;
   blockId: string;
-  content: RichTextContentSchemaType;
+  content: MultipleChoiceSingleAnswerContentSchemaType;
 }
 
-export const updateRichTextBlock = async ({
+export const updateMultipleChoiceSingleAnswer = async ({
   supabase,
   blockId,
   content,
-}: UpdateRichTextBlockParams): Promise<ApiResponse> => {
+}: UpdateMultipleChoiceSingleAnswerParams): Promise<ApiResponse> => {
   const userId = await getUserId(supabase);
 
   try {
@@ -29,19 +29,19 @@ export const updateRichTextBlock = async ({
     if (error) {
       return {
         success: false,
-        message: 'Unable to update block. Please try again.',
+        message: 'Unable to update multiple choice question. Please try again.',
       };
     }
 
     return {
       success: true,
-      message: 'Block updated successfully.',
+      message: 'Multiple choice question updated successfully.',
     };
   } catch (err) {
-    console.error('Unexpected error in updateRichTextBlock:', err);
+    console.error('Error updating multiple choice block:', err);
     return {
       success: false,
-      message: 'Unexpected error occurred. Please try again later.',
+      message: 'Unexpected error. Please try again later.',
     };
   }
 };
