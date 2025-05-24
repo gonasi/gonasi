@@ -24,6 +24,7 @@ const LazyEditPluginTypesRenderer = lazy(
 );
 
 // --- Action Handler ---
+// TODO: DRY
 export async function action({ request, params }: Route.ActionArgs) {
   const formData = await request.formData();
 

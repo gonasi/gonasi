@@ -2,7 +2,7 @@ import type { JSX } from 'react';
 
 import type { PluginTypeId } from '@gonasi/schemas/plugins';
 
-import { EditMultipleChoiceSingleAnswerPlugin } from './QuizPlugins/MultipleChoiceSingleAnswer/EditMultipleChoiceSingleAnswerPlugin';
+import { EditMultipleChoiceSingleAnswerSettings } from './QuizPlugins/MultipleChoiceSingleAnswer/EditMultipleChoiceSingleAnswerSettings';
 import { EditTrueOrFalseSettings } from './QuizPlugins/TrueOrFalsePlugin/EditTrueOrFalseSettings';
 import { EditRichTextSettings } from './RichTextPlugins/RichTextPlugin/EditRichTextSettings';
 
@@ -19,7 +19,7 @@ const editPluginSettingsComponentMap: Record<
 > = {
   true_or_false: EditTrueOrFalseSettings,
   multiple_choice_multiple: unimplementedPlugin,
-  multiple_choice_single: EditMultipleChoiceSingleAnswerPlugin,
+  multiple_choice_single: EditMultipleChoiceSingleAnswerSettings,
   match_concepts: unimplementedPlugin,
   sequence_ordering: unimplementedPlugin,
   categorization: unimplementedPlugin,

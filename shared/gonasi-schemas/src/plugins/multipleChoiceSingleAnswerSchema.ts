@@ -65,6 +65,14 @@ export const SubmitCreateMultipleChoiceSingleAnswerSchema = z.object({
 });
 
 //
+// Edit Block Settings Schema
+//
+export const SubmitMultipleChoiceSingleAnswerSettingsSchema =
+  MultipleChoiceSingleAnswerSettingsSchema.extend({
+    blockId: z.string({ required_error: 'Block ID is required.' }),
+  });
+
+//
 // Interaction Schema
 //
 export const MultipleChoiceSingleAnswerInteractionSchema = z.object({
@@ -101,11 +109,14 @@ export type ChoiceType = z.infer<typeof ChoiceSchema>;
 export type MultipleChoiceSingleAnswerContentSchemaType = z.infer<
   typeof MultipleChoiceSingleAnswerContentSchema
 >;
-export type MultipleChoiceSingleAnswerSettingsType = z.infer<
+export type MultipleChoiceSingleAnswerSettingsSchemaType = z.infer<
   typeof MultipleChoiceSingleAnswerSettingsSchema
 >;
 export type SubmitCreateMultipleChoiceSingleAnswerSchemaType = z.infer<
   typeof SubmitCreateMultipleChoiceSingleAnswerSchema
+>;
+export type SubmitMultipleChoiceSingleAnswerSettingsSchemaType = z.infer<
+  typeof SubmitMultipleChoiceSingleAnswerSettingsSchema
 >;
 export type MultipleChoiceSingleAnswerInteractionType = z.infer<
   typeof MultipleChoiceSingleAnswerInteractionSchema

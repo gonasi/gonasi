@@ -2,6 +2,7 @@ import type { z } from 'zod';
 
 import {
   MultipleChoiceSingleAnswerContentSchema,
+  MultipleChoiceSingleAnswerSettingsSchema,
   TrueOrFalseStateInteractionSchema,
 } from '@gonasi/schemas/plugins';
 
@@ -67,7 +68,7 @@ export function getSchema<T extends PluginTypeId>(type: T): SchemaMapType[T] {
 export const settingsSchemaMap = {
   rich_text_editor: RichTextSettingsSchema,
   true_or_false: TrueOrFalseSettingsSchema,
-  multiple_choice_single: RichTextSettingsSchema,
+  multiple_choice_single: MultipleChoiceSingleAnswerSettingsSchema,
   multiple_choice_multiple: RichTextSettingsSchema,
   match_concepts: RichTextSettingsSchema,
   sequence_ordering: RichTextSettingsSchema,
