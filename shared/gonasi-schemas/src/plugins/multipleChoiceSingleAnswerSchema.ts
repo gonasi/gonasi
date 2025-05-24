@@ -1,19 +1,24 @@
 import { z } from 'zod';
 
-import { BaseInteractionSchema } from './baseInteractionSchema';
-import { BasePluginSettingsSchema } from './pluginSettings';
+import { BasePluginSettingsSchema, LayoutPluginSettingsSchema } from './pluginSettings';
 
+//
+// Choice Schema
+//
 export const ChoiceSchema = z.object({
   choiceState: z
     .string({ required_error: 'Choice is required.' })
     .trim()
     .min(5, 'The choice must be at least 5 characters long.'),
   uuid: z
-    .string({ required_error: 'Card uuid is required' })
-    .uuid('Card uuid must be a valid UUID'),
+    .string({ required_error: 'Card uuid is required.' })
+    .uuid('Card uuid must be a valid UUID.'),
 });
 
-export const MultipleChoiceSingleAnswerSchema = z.object({
+//
+// Content Schema
+//
+export const MultipleChoiceSingleAnswerContentSchema = z.object({
   questionState: z
     .string({ required_error: 'Question is required.' })
     .trim()
@@ -41,16 +46,17 @@ export const MultipleChoiceSingleAnswerSchema = z.object({
   uuid: z.string().optional(),
 });
 
-export const MultipleChoiceSingleAnswerSettingsSchema = BasePluginSettingsSchema.extend({});
+//
+// Plugin Settings Schema
+//
+export const MultipleChoiceSingleAnswerSettingsSchema = BasePluginSettingsSchema.merge(
+  LayoutPluginSettingsSchema,
+).extend({});
 
-export type MultipleChoiceSingleAnswerSchemaType = z.infer<typeof MultipleChoiceSingleAnswerSchema>;
-export type MultipleChoiceSingleAnswerSettingsType = z.infer<
-  typeof MultipleChoiceSingleAnswerSettingsSchema
->;
-
-export const MultipleChoiceSingleAnswerInteractionSchema = BaseInteractionSchema.extend({
-  optionSelected: z.boolean().default(false).nullable(),
-
+//
+// Interaction Schema
+//
+export const MultipleChoiceSingleAnswerInteractionSchema = z.object({
   correctAttempt: z
     .object({
       selected: z.string(),
@@ -68,11 +74,25 @@ export const MultipleChoiceSingleAnswerInteractionSchema = BaseInteractionSchema
     )
     .default([]),
 
-  isCorrect: z.boolean().nullable().default(null),
+  showCheckIfAnswerIsCorrectButton: z.boolean().default(true),
+  showTryAgainButton: z.boolean().default(false),
+  showShowAnswerButton: z.boolean().default(false),
+  showContinueButton: z.boolean().default(false),
+  showScore: z.boolean().default(false),
+  canShowExplanationButton: z.boolean().default(false),
+  hasRevealedCorrectAnswer: z.boolean().default(false),
 });
 
+//
+// Types
+//
+export type ChoiceType = z.infer<typeof ChoiceSchema>;
+export type MultipleChoiceSingleAnswerContentSchemaType = z.infer<
+  typeof MultipleChoiceSingleAnswerContentSchema
+>;
+export type MultipleChoiceSingleAnswerSettingsType = z.infer<
+  typeof MultipleChoiceSingleAnswerSettingsSchema
+>;
 export type MultipleChoiceSingleAnswerInteractionType = z.infer<
   typeof MultipleChoiceSingleAnswerInteractionSchema
 >;
-
-export type ChoiceType = z.infer<typeof ChoiceSchema>;

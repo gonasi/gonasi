@@ -8,32 +8,33 @@ import { v4 as uuidv4 } from 'uuid';
 
 import {
   type ChoiceType,
-  MultipleChoiceSingleAnswerSchema,
+  MultipleChoiceSingleAnswerContentSchema,
   type PluginTypeId,
 } from '@gonasi/schemas/plugins';
 
 import { Button, OutlineButton } from '~/components/ui/button';
 import { ErrorList, RadioButtonField, TextareaField } from '~/components/ui/forms';
 import { RichTextInputField } from '~/components/ui/forms/RichTextInputField';
+import { IconTooltipButton } from '~/components/ui/tooltip';
 import { cn } from '~/lib/utils';
 import { useIsPending } from '~/utils/misc';
 
 interface CreateMultipleChoiceSingleAnswerPluginProps {
-  name: PluginTypeId;
+  pluginTypeId: PluginTypeId;
 }
 
 export function CreateMultipleChoiceSingleAnswerPlugin({
-  name,
+  pluginTypeId,
 }: CreateMultipleChoiceSingleAnswerPluginProps) {
   const pending = useIsPending();
 
   const [form, fields] = useForm({
-    id: `create-${name}-form`,
-    constraint: getZodConstraint(MultipleChoiceSingleAnswerSchema),
+    id: `create-${pluginTypeId}-form`,
+    constraint: getZodConstraint(MultipleChoiceSingleAnswerContentSchema),
     shouldValidate: 'onBlur',
     shouldRevalidate: 'onInput',
     onValidate({ formData }) {
-      return parseWithZod(formData, { schema: MultipleChoiceSingleAnswerSchema });
+      return parseWithZod(formData, { schema: MultipleChoiceSingleAnswerContentSchema });
     },
   });
 
@@ -103,7 +104,7 @@ export function CreateMultipleChoiceSingleAnswerPlugin({
               <Plus className='mr-2 h-4 w-4' /> Add Choice
             </OutlineButton>
           </div>
-          <div className='bg-card/50 rounded-lg p-4'>
+          <div className='flex flex-col space-y-4'>
             {choices && choices.length ? (
               <AnimatePresence>
                 {choices.map((choice, index) => {
@@ -116,19 +117,19 @@ export function CreateMultipleChoiceSingleAnswerPlugin({
                       animate={{ opacity: 1, height: 'auto' }}
                       exit={{ opacity: 0, height: 0 }}
                       transition={{ duration: 0.2 }}
+                      className='bg-card/50 rounded-lg p-4'
                     >
                       <RichTextInputField
                         labelProps={{
-                          children: `Choice ${index + 1} ${uuid.value}`,
+                          children: `Choice ${index + 1}`,
                           required: true,
                           endAdornment: (
-                            <OutlineButton
-                              size='sm'
+                            <IconTooltipButton
+                              title={`Delete Choice ${index + 1}`}
+                              icon={Trash}
                               type='button'
                               onClick={() => removeChoice(uuid.value ?? '')}
-                            >
-                              <Trash size={16} />
-                            </OutlineButton>
+                            />
                           ),
                         }}
                         meta={choiceState as FieldMetadata<string>}
@@ -155,7 +156,7 @@ export function CreateMultipleChoiceSingleAnswerPlugin({
               const { uuid } = choice.getFieldset();
               return {
                 value: uuid.value ?? '',
-                label: `Choice ${index + 1} - ${uuid.value}`,
+                label: `Choice ${index + 1}`,
               };
             })}
             errors={fields.correctAnswer.errors}
@@ -190,7 +191,7 @@ export function CreateMultipleChoiceSingleAnswerPlugin({
             disabled={pending}
             isLoading={pending}
             name='intent'
-            value={name}
+            value={pluginTypeId}
           >
             Save
           </Button>

@@ -2,6 +2,7 @@ import type { JSX } from 'react';
 
 import type { PluginTypeId } from '@gonasi/schemas/plugins';
 
+import { CreateMultipleChoiceSingleAnswerPlugin } from './QuizPlugins/MultipleChoiceSingleAnswer/CreateMultipleChoiceSingleAnswerPlugin';
 import { CreateTrueOrFalsePlugin } from './QuizPlugins/TrueOrFalsePlugin/CreateTrueOrFalsePlugin';
 import { CreateRichTextPlugin } from './RichTextPlugins/RichTextPlugin/CreateRichTextPlugin';
 
@@ -18,7 +19,7 @@ const pluginComponentMap: Record<PluginTypeId, (props: ViewPluginRendererProps) 
   tap_to_reveal: notImplemented,
   rich_text_editor: CreateRichTextPlugin,
   multiple_choice_multiple: notImplemented,
-  multiple_choice_single: notImplemented,
+  multiple_choice_single: CreateMultipleChoiceSingleAnswerPlugin,
   match_concepts: notImplemented,
   sequence_ordering: notImplemented,
   categorization: notImplemented,
