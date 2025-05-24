@@ -10,3 +10,4 @@ export * from './editBlockSettingsAndWeight';
 // Rework
 export * from './richTextEditor';
 export * from './trueOrFalse';
+export * from './multipleChoiceSingleAnswer';

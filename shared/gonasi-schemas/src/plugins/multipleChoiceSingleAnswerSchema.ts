@@ -54,6 +54,17 @@ export const MultipleChoiceSingleAnswerSettingsSchema = BasePluginSettingsSchema
 ).extend({});
 
 //
+// Create Block Schema
+//
+export const SubmitCreateMultipleChoiceSingleAnswerSchema = z.object({
+  content: MultipleChoiceSingleAnswerContentSchema,
+  lessonId: z.string({ required_error: 'Lesson ID is required.' }),
+  pluginType: z.literal('multiple_choice_single').default('multiple_choice_single'),
+  weight: z.number().default(1),
+  settings: MultipleChoiceSingleAnswerSettingsSchema,
+});
+
+//
 // Interaction Schema
 //
 export const MultipleChoiceSingleAnswerInteractionSchema = z.object({
@@ -92,6 +103,9 @@ export type MultipleChoiceSingleAnswerContentSchemaType = z.infer<
 >;
 export type MultipleChoiceSingleAnswerSettingsType = z.infer<
   typeof MultipleChoiceSingleAnswerSettingsSchema
+>;
+export type SubmitCreateMultipleChoiceSingleAnswerSchemaType = z.infer<
+  typeof SubmitCreateMultipleChoiceSingleAnswerSchema
 >;
 export type MultipleChoiceSingleAnswerInteractionType = z.infer<
   typeof MultipleChoiceSingleAnswerInteractionSchema

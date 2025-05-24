@@ -1,6 +1,9 @@
 import type { z } from 'zod';
 
-import { TrueOrFalseStateInteractionSchema } from '@gonasi/schemas/plugins';
+import {
+  MultipleChoiceSingleAnswerContentSchema,
+  TrueOrFalseStateInteractionSchema,
+} from '@gonasi/schemas/plugins';
 
 import type { PluginTypeId } from './pluginData'; // Type that represents all possible plugin identifiers
 import {
@@ -22,7 +25,7 @@ import { TrueOrFalseContentSchema, TrueOrFalseSettingsSchema } from './trueOrFal
 export const schemaMap = {
   rich_text_editor: RichTextContentSchema,
   true_or_false: TrueOrFalseContentSchema,
-  multiple_choice_single: RichTextContentSchema,
+  multiple_choice_single: MultipleChoiceSingleAnswerContentSchema,
   multiple_choice_multiple: RichTextContentSchema,
   match_concepts: RichTextContentSchema,
   sequence_ordering: RichTextContentSchema,
