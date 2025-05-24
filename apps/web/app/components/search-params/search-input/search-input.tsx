@@ -40,6 +40,7 @@ export const SearchInput = ({
   useEffect(() => {
     debouncedSetSearchParams(deferredValue);
     return () => debouncedSetSearchParams.cancel();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deferredValue]);
 
   // Sync query param -> value on back/forward nav or external changes

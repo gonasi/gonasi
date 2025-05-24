@@ -11,8 +11,8 @@ import { PlayPluginWrapper } from '../../common/PlayPluginWrapper';
 import { RenderFeedback } from '../../common/RenderFeedback';
 import { ViewPluginWrapper } from '../../common/ViewPluginWrapper';
 import { useViewPluginCore } from '../../hooks/useViewPluginCore';
-import { shuffleArray } from '../../utils';
 import type { ViewPluginComponentProps } from '../../upperRend.tsx';
+import { shuffleArray } from '../../utils';
 import { calculateMultipleChoiceMultipleAnswersScore } from './utils';
 
 import RichTextRenderer from '~/components/go-editor/ui/RichTextRenderer';
