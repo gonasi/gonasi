@@ -8,7 +8,7 @@ import {
   RichTextSettingsSchema,
   RichTextStateInteractionSchema,
 } from './richTextSchema';
-import { TrueOrFalseContentSchema } from './trueOrFalseSchema';
+import { TrueOrFalseContentSchema, TrueOrFalseSettingsSchema } from './trueOrFalseSchema';
 
 /**
  * -----------------------------
@@ -63,7 +63,7 @@ export function getSchema<T extends PluginTypeId>(type: T): SchemaMapType[T] {
  */
 export const settingsSchemaMap = {
   rich_text_editor: RichTextSettingsSchema,
-  true_or_false: RichTextSettingsSchema,
+  true_or_false: TrueOrFalseSettingsSchema,
   multiple_choice_single: RichTextSettingsSchema,
   multiple_choice_multiple: RichTextSettingsSchema,
   match_concepts: RichTextSettingsSchema,

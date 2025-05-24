@@ -2,12 +2,13 @@ import type { JSX } from 'react';
 
 import type { PluginTypeId } from '@gonasi/schemas/plugins';
 
+import { EditTrueOrFalseSettings } from './QuizPlugins/TrueOrFalsePlugin/EditTrueOrFalseSettings';
 import { EditRichTextSettings } from './RichTextPlugins/RichTextPlugin/EditRichTextSettings';
 
-import type { BlockSettingsLoaderReturnType } from '~/routes/dashboard/courses/lessons/plugins/edit-plugin-settings-modal';
+import type { SettingsLoaderReturnType } from '~/routes/dashboard/courses/lessons/plugins/edit-plugin-settings-modal';
 
 export interface EditPluginSettingsComponentProps {
-  block: BlockSettingsLoaderReturnType;
+  block: SettingsLoaderReturnType;
 }
 
 // Plugin component map
@@ -15,7 +16,7 @@ const editPluginSettingsComponentMap: Record<
   PluginTypeId,
   (props: EditPluginSettingsComponentProps) => JSX.Element
 > = {
-  true_or_false: unimplementedPlugin,
+  true_or_false: EditTrueOrFalseSettings,
   multiple_choice_multiple: unimplementedPlugin,
   multiple_choice_single: unimplementedPlugin,
   match_concepts: unimplementedPlugin,

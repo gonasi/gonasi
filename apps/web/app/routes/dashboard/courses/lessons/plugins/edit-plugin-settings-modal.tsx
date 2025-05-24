@@ -4,8 +4,17 @@ import { parseWithZod } from '@conform-to/zod';
 import { Settings as LucideSettings } from 'lucide-react';
 import { dataWithError, redirectWithError, redirectWithSuccess } from 'remix-toast';
 
-import { editRichTextBlockSettings, fetchBlockSettingsByBlockId } from '@gonasi/database/lessons';
-import { type PluginTypeId, schemaMap, settingsSchemaMap } from '@gonasi/schemas/plugins';
+import {
+  editRichTextBlockSettings,
+  editTrueOrFalseBlockSettings,
+  fetchBlockSettingsByBlockId,
+} from '@gonasi/database/lessons';
+import {
+  type PluginTypeId,
+  schemaMap,
+  type SettingsData,
+  settingsSchemaMap,
+} from '@gonasi/schemas/plugins';
 
 import type { Route } from './+types/edit-plugin-settings-modal';
 
@@ -21,12 +30,14 @@ const LazyEditPluginSettingsTypeRenderer = lazy(
 // --- Action Handler ---
 export async function action({ request, params }: Route.ActionArgs) {
   const formData = await request.formData();
+
+  // Basic bot protection
   await checkHoneypot(formData);
 
   const { supabase } = createClient(request);
-
   const intent = formData.get('intent');
 
+  // Validate intent
   if (typeof intent !== 'string' || !(intent in schemaMap)) {
     return dataWithError(null, `Unknown intent: ${intent}`);
   }
@@ -34,33 +45,51 @@ export async function action({ request, params }: Route.ActionArgs) {
   const typedIntent = intent as PluginTypeId;
   const schema = settingsSchemaMap[typedIntent];
 
+  // Validate form data against schema
   const submission = parseWithZod(formData, { schema });
 
   if (submission.status !== 'success') {
-    return { result: submission.reply(), status: submission.status === 'error' ? 400 : 200 };
+    return {
+      result: submission.reply(),
+      status: submission.status === 'error' ? 400 : 200,
+    };
   }
 
+  const redirectUrl = `/dashboard/${params.companyId}/courses/${params.courseId}/course-content/${params.chapterId}/${params.lessonId}`;
+
   try {
+    let success = false;
+    let message = '';
+
     switch (typedIntent) {
       case 'rich_text_editor': {
-        const { success, message } = await editRichTextBlockSettings({
+        const value = submission.value as SettingsData<'rich_text_editor'>;
+        ({ success, message } = await editRichTextBlockSettings({
           supabase,
           data: {
-            ...submission.value,
+            ...value,
             blockId: params.blockId,
           },
-        });
-
-        return success
-          ? redirectWithSuccess(
-              `/dashboard/${params.companyId}/courses/${params.courseId}/course-content/${params.chapterId}/${params.lessonId}`,
-              message,
-            )
-          : dataWithError(null, message);
+        }));
+        break;
       }
+
+      case 'true_or_false': {
+        const value = submission.value as SettingsData<'true_or_false'>;
+        ({ success, message } = await editTrueOrFalseBlockSettings({
+          supabase,
+          data: {
+            ...value,
+            blockId: params.blockId,
+          },
+        }));
+        break;
+      }
+
       default:
         throw new Error(`Unhandled intent: ${typedIntent}`);
     }
+    return success ? redirectWithSuccess(redirectUrl, message) : dataWithError(null, message);
   } catch (error) {
     console.error('Error creating block: ', error);
     return dataWithError(null, 'Could not create block. Please try again');

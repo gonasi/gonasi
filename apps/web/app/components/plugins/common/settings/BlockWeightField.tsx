@@ -9,11 +9,11 @@ interface BlockWeightFieldProps {
 export function BlockWeightField({ meta }: BlockWeightFieldProps) {
   return (
     <SliderField
-      labelProps={{ children: 'Block Weight', required: true }}
+      labelProps={{ children: 'Block Weight ⚖️', required: true }}
       meta={meta}
       min={1}
       max={10}
-      description='Controls the importance of this block when calculating progress.'
+      description='Adjust how important this block is when calculating overall progress 📊.'
     />
   );
 }
