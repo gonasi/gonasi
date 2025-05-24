@@ -1,9 +1,11 @@
 import { z } from 'zod';
 
-import { BaseInteractionSchema } from './baseInteractionSchema';
-import { BasePluginSettingsSchema } from './pluginSettings';
+import { BasePluginSettingsSchema, LayoutPluginSettingsSchema } from './pluginSettings';
 
-export const TrueOrFalseSchema = z.object({
+//
+// Content Schema
+//
+export const TrueOrFalseContentSchema = z.object({
   questionState: z
     .string({ required_error: 'Question is required.' })
     .trim()
@@ -24,18 +26,37 @@ export const TrueOrFalseSchema = z.object({
     .string({ required_error: 'Explanation is required.' })
     .trim()
     .min(10, 'The explanation must be at least 10 characters long.'),
-
-  uuid: z.string().optional(),
 });
 
-export const TrueOrFalseSettingsSchema = BasePluginSettingsSchema.extend({});
+//
+// Plugin Settings Schema
+//
+export const TrueOrFalseSettingsSchema = BasePluginSettingsSchema.merge(
+  LayoutPluginSettingsSchema,
+).extend({});
 
-export type TrueOrFalseSchemaType = z.infer<typeof TrueOrFalseSchema>;
-export type TrueOrFalseSettingsType = z.infer<typeof TrueOrFalseSettingsSchema>;
+//
+// Create Block Schema
+//
+export const SubmitCreateTrueOrFalseSchema = z.object({
+  content: TrueOrFalseContentSchema,
+  lessonId: z.string({ required_error: 'Lesson ID is required.' }),
+  pluginType: z.literal('true_or_false').default('true_or_false'),
+  weight: z.number().default(1),
+  settings: TrueOrFalseSettingsSchema,
+});
 
-export const TrueOrFalseInteractionSchema = BaseInteractionSchema.extend({
-  optionSelected: z.boolean().default(false).nullable(),
+//
+// Edit Block Settings Schema
+//
+export const SubmitEditTrueOrFalseSettingsSchema = TrueOrFalseSettingsSchema.extend({
+  blockId: z.string({ required_error: 'Block ID is required.' }),
+});
 
+//
+// Interaction Schema
+//
+export const TrueOrFalseStateInteractionSchema = z.object({
   correctAttempt: z
     .object({
       selected: z.boolean(),
@@ -52,29 +73,24 @@ export const TrueOrFalseInteractionSchema = BaseInteractionSchema.extend({
       }),
     )
     .default([]),
-
-  isCorrect: z.boolean().nullable().default(null),
+  showCheckIfAnswerIsCorrectButton: z.boolean().default(true),
+  showTryAgainButton: z.boolean().default(false),
+  showShowAnswerButton: z.boolean().default(false),
+  showContinueButton: z.boolean().default(false),
+  showScore: z.boolean().default(false),
+  canShowExplanationButton: z.boolean().default(false),
+  hasRevealedCorrectAnswer: z.boolean().default(false),
 });
 
-export type TrueOrFalseInteractionType = z.infer<typeof TrueOrFalseInteractionSchema>;
-
-export const MultiSelectInteractionSchema = BaseInteractionSchema.extend({
-  interactionType: z.literal('multiSelect'),
-
-  correctAttempt: z
-    .object({
-      selectedIds: z.array(z.string()),
-      timestamp: z.number(),
-    })
-    .nullable()
-    .default(null),
-
-  wrongAttempts: z
-    .array(
-      z.object({
-        selectedIds: z.array(z.string()),
-        timestamp: z.number(),
-      }),
-    )
-    .default([]),
-});
+//
+// Types
+//
+export type TrueOrFalseContentSchemaType = z.infer<typeof TrueOrFalseContentSchema>;
+export type TrueOrFalseSettingsSchemaType = z.infer<typeof TrueOrFalseSettingsSchema>;
+export type SubmitCreateTrueOrFalseSchemaType = z.infer<typeof SubmitCreateTrueOrFalseSchema>;
+export type SubmitEditTrueOrFalseSettingsSchemaType = z.infer<
+  typeof SubmitEditTrueOrFalseSettingsSchema
+>;
+export type TrueOrFalseStateInteractionSchemaType = z.infer<
+  typeof TrueOrFalseStateInteractionSchema
+>;

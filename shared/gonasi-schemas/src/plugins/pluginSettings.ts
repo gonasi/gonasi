@@ -28,3 +28,27 @@ export const BasePluginSettingsSchema = z.object({
     .default(1)
     .describe('Relative weight of the plugin in progress calculation'),
 });
+
+export const LayoutPluginSettingsSchema = z.object({
+  /**
+   * Layout style for displaying items in the plugin block.
+   * Controls how many items appear per row to adjust visual density.
+   * - 'single': 1 item per row
+   * - 'double': 2 items per row
+   */
+  layoutStyle: z
+    .enum(['single', 'double'])
+    .default('single')
+    .describe("Controls how many items appear per row: 'single' (1) or 'double' (2)"),
+
+  /**
+   * Determines the randomization behavior of the plugin items.
+   * - 'none': Keep original order
+   * - 'shuffle': Fully randomize the order
+   * - 'partial': Partially shuffle items (e.g., group-level shuffling, if applicable)
+   */
+  randomization: z
+    .enum(['none', 'shuffle'])
+    .default('none')
+    .describe('Determines how items are randomized in the plugin block'),
+});

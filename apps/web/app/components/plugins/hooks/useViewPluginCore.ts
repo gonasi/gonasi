@@ -1,115 +1,102 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useFetcher, useParams } from 'react-router';
+import { useFetcher } from 'react-router';
 
-import type { Interaction, Json, PluginTypeId } from '@gonasi/schemas/plugins';
+import type { BaseInteractionUpdatableFields } from '@gonasi/schemas/plugins';
 
 import type { GoLessonPlayInteractionReturnType } from '~/routes/go/go-lesson-play';
 import { useStore } from '~/store';
 
-export interface ViewPluginSettings {
-  delayBeforeShow?: number;
-  [key: string]: any;
-}
-
-export interface ViewPluginCoreProps {
-  blockId: string;
-  pluginType: PluginTypeId;
-}
-
 export interface ViewPluginCoreResult {
   loading: boolean;
+  payload: GoLessonPlayInteractionReturnType[number] | null;
   handleContinue: () => void;
-  updatePayload: (updates: Partial<Interaction>) => void;
-  payload: Interaction;
-  blockInteractionData: GoLessonPlayInteractionReturnType[number] | undefined;
-  isLastBlock: boolean;
-  isActiveBlock: boolean;
-  setExplanationState: (state: string | null) => void;
-  isExplanationBottomSheetOpen: boolean;
+  updatePayload: (updates: BaseInteractionUpdatableFields) => void;
 }
 
-export function useViewPluginCore({
-  blockId,
-  pluginType,
-}: ViewPluginCoreProps): ViewPluginCoreResult {
+/**
+ * Custom hook for managing plugin view interaction.
+ *
+ * Responsibilities:
+ * - Extracts the current block interaction.
+ * - Manages local overrides to the payload.
+ * - Tracks loading state via `useFetcher`.
+ * - Enriches the payload with timing info on submission.
+ */
+export function useViewPluginCore(blockId: string | null): ViewPluginCoreResult {
   const fetcher = useFetcher();
-  const params = useParams();
-  const {
-    getBlockInteraction,
-    isLastBlock,
-    activeBlock,
-    setExplanationState,
-    isExplanationBottomSheetOpen,
-  } = useStore();
+  const { getBlockInteraction, isLastBlock } = useStore();
 
-  const blockInteractionData = getBlockInteraction(blockId);
+  const blockInteraction = getBlockInteraction(blockId ?? '');
 
   const [loading, setLoading] = useState(false);
-  const [startedAt] = useState(() => new Date().toISOString());
-  const [payloadUpdates, setPayloadUpdates] = useState<Partial<Interaction>>({});
+  const [payloadOverrides, setPayloadOverrides] = useState<
+    Partial<GoLessonPlayInteractionReturnType[number]>
+  >({});
 
-  // Loading state tracking
+  // Capture the time the user starts viewing the block
+  const [startedAt] = useState(() => new Date().toISOString());
+
+  // Update loading state based on fetcher's submission state
   useEffect(() => {
     setLoading(fetcher.state === 'submitting');
   }, [fetcher.state]);
 
-  // Interaction payload preparation
-  const payload = useMemo<Interaction>(() => {
+  /**
+   * Final payload used in the view.
+   * Combines the base interaction data with any local overrides.
+   */
+  const finalPayload = useMemo(() => {
     return {
-      plugin_type: pluginType,
-      attempts: 1,
-      block_id: blockId,
-      feedback: {} as Json,
-      last_response: {} as Json,
-      lesson_id: params.lessonId ?? '',
-      score: 0,
-      started_at: startedAt,
-      state: { continue: true } as Json,
-      time_spent_seconds: 0,
-      completed_at: new Date().toISOString(),
-      is_complete: true,
-      ...payloadUpdates, // Apply any user updates
-    };
-  }, [blockId, pluginType, params.lessonId, startedAt, payloadUpdates]);
+      ...blockInteraction,
+      ...payloadOverrides,
+    } as GoLessonPlayInteractionReturnType[number]; // Assumes result is complete
+  }, [blockInteraction, payloadOverrides]);
 
-  // Function to update payload fields
-  const updatePayload = useCallback((updates: Partial<Interaction>) => {
-    setPayloadUpdates((prev) => ({
+  /**
+   * Allows components to update specific fields in the payload
+   */
+  const updatePayload = useCallback((updates: BaseInteractionUpdatableFields) => {
+    setPayloadOverrides((prev) => ({
       ...prev,
       ...updates,
     }));
   }, []);
 
-  // Handler for continuing to next block
+  /**
+   * Submits the current interaction, enriched with:
+   * - start and end timestamps
+   * - time spent
+   * - plugin type
+   * - whether it is the last block
+   */
   const handleContinue = useCallback(() => {
-    const completedAt = new Date();
-    const timeSpentSeconds = Math.floor(
-      (completedAt.getTime() - new Date(payload.started_at).getTime()) / 1000,
+    if (!finalPayload) return;
+
+    const completedAt = new Date().toISOString();
+    const timeSpentSeconds = Math.round(
+      (new Date(completedAt).getTime() - new Date(startedAt).getTime()) / 1000,
     );
 
-    const updatedPayload = {
-      ...payload,
-      completed_at: completedAt.toISOString(),
+    const enrichedPayload: GoLessonPlayInteractionReturnType[number] = {
+      ...finalPayload,
+      is_complete: true,
+      started_at: startedAt,
+      completed_at: completedAt,
       time_spent_seconds: timeSpentSeconds,
     };
 
     const formData = new FormData();
-    formData.append('intent', updatedPayload.plugin_type);
+    formData.append('intent', enrichedPayload.plugin_type ?? '');
     formData.append('isLast', isLastBlock ? 'true' : 'false');
-    formData.append('payload', JSON.stringify(updatedPayload));
+    formData.append('payload', JSON.stringify(enrichedPayload));
 
     fetcher.submit(formData, { method: 'post' });
-  }, [isLastBlock, fetcher, payload]);
+  }, [finalPayload, startedAt, isLastBlock, fetcher]);
 
   return {
     loading,
+    payload: finalPayload,
     handleContinue,
     updatePayload,
-    payload,
-    blockInteractionData,
-    isLastBlock,
-    isActiveBlock: activeBlock === blockId,
-    setExplanationState,
-    isExplanationBottomSheetOpen,
   };
 }

@@ -1,4 +1,4 @@
-import type { BlockInteractionData } from '@gonasi/schemas/plugins';
+import type { BaseInteractionSchemaType } from '@gonasi/schemas/plugins';
 
 import { getUserId } from '../../auth';
 import type { TypedSupabaseClient } from '../../client';
@@ -13,7 +13,7 @@ import type { ApiResponse } from '../../types';
  */
 export const createBlockInteraction = async (
   supabase: TypedSupabaseClient,
-  blockInteractionData: BlockInteractionData,
+  blockInteractionData: BaseInteractionSchemaType,
 ): Promise<ApiResponse> => {
   const userId = await getUserId(supabase);
 

@@ -4,30 +4,34 @@ import { getZodConstraint, parseWithZod } from '@conform-to/zod';
 import { Save } from 'lucide-react';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
 
-import { RichTextSettingsSchema, type RichTextSettingsSchemaType } from '@gonasi/schemas/plugins';
+import {
+  TrueOrFalseSettingsSchema,
+  type TrueOrFalseSettingsSchemaType,
+} from '@gonasi/schemas/plugins';
 
 import { BlockWeightField } from '../../common/settings/BlockWeightField';
+import { LayoutField } from '../../common/settings/LayoutField';
 import { PlaybackModeField } from '../../common/settings/PlaybackModeField';
+import { RandomizationField } from '../../common/settings/RandomizationField';
 import type { EditPluginSettingsComponentProps } from '../../EditPluginSettingsTypeRenderer';
 
 import { Button } from '~/components/ui/button';
 import { useIsPending } from '~/utils/misc';
 
-export function EditRichTextSettings({ block }: EditPluginSettingsComponentProps) {
+export function EditTrueOrFalseSettings({ block }: EditPluginSettingsComponentProps) {
   const pending = useIsPending();
-  const settings = block.settings as RichTextSettingsSchemaType;
+  const settings = block.settings as TrueOrFalseSettingsSchemaType;
 
   const [form, fields] = useForm({
     id: `edit-${block.plugin_type}-settings-form`,
-    constraint: getZodConstraint(RichTextSettingsSchema),
+    constraint: getZodConstraint(TrueOrFalseSettingsSchema),
     defaultValue: {
-      playbackMode: settings.playbackMode,
-      weight: settings.weight,
+      ...settings,
     },
     shouldValidate: 'onBlur',
     shouldRevalidate: 'onInput',
     onValidate({ formData }) {
-      return parseWithZod(formData, { schema: RichTextSettingsSchema });
+      return parseWithZod(formData, { schema: TrueOrFalseSettingsSchema });
     },
   });
 
@@ -38,6 +42,8 @@ export function EditRichTextSettings({ block }: EditPluginSettingsComponentProps
 
         <BlockWeightField meta={fields.weight} />
         <PlaybackModeField field={fields.playbackMode} />
+        <RandomizationField field={fields.randomization} />
+        <LayoutField field={fields.layoutStyle} />
 
         <div className='pt-4'>
           <Button

@@ -1,5 +1,5 @@
 import { z } from 'zod';
 
-export const RichTextInteractionSchema = z.object({
+export const RichTextStateInteractionSchema = z.object({
   continue: z.boolean().default(false),
 });

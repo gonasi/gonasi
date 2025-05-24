@@ -1,40 +1,34 @@
-import { useEffect, useState } from 'react';
-import { Form, useFetcher } from 'react-router';
+import { Form } from 'react-router';
 import { type FieldMetadata, getFormProps, getInputProps, useForm } from '@conform-to/react';
 import { getZodConstraint, parseWithZod } from '@conform-to/zod';
 import { Save } from 'lucide-react';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
 
-import { type PluginTypeId, TrueOrFalseSchema } from '@gonasi/schemas/plugins';
+import { type PluginTypeId, TrueOrFalseContentSchema } from '@gonasi/schemas/plugins';
 
 import { Button } from '~/components/ui/button';
-import { ErrorList, RadioButtonField, TextareaField } from '~/components/ui/forms';
-import { RichTextInputField } from '~/components/ui/forms/RichTextInputField';
+import {
+  ErrorList,
+  RadioButtonField,
+  RichTextFieldWrapper,
+  TextareaField,
+} from '~/components/ui/forms';
+import { useIsPending } from '~/utils/misc';
 
 interface CreateTrueOrFalsePluginProps {
-  name: PluginTypeId;
+  pluginTypeId: PluginTypeId;
 }
 
-export function CreateTrueOrFalsePlugin({ name }: CreateTrueOrFalsePluginProps) {
-  const fetcher = useFetcher();
-  const [loading, setLoading] = useState(false);
-
-  // Set up an effect to monitor fetcher state
-  useEffect(() => {
-    if (fetcher.state === 'submitting') {
-      setLoading(true);
-    } else if (fetcher.state === 'idle' && fetcher.data) {
-      setLoading(false);
-    }
-  }, [fetcher.state, fetcher.data]);
+export function CreateTrueOrFalsePlugin({ pluginTypeId }: CreateTrueOrFalsePluginProps) {
+  const isPending = useIsPending();
 
   const [form, fields] = useForm({
-    id: `create-${name}-form`,
-    constraint: getZodConstraint(TrueOrFalseSchema),
+    id: `create-${pluginTypeId}-form`,
+    constraint: getZodConstraint(TrueOrFalseContentSchema),
     shouldValidate: 'onBlur',
     shouldRevalidate: 'onInput',
     onValidate({ formData }) {
-      return parseWithZod(formData, { schema: TrueOrFalseSchema });
+      return parseWithZod(formData, { schema: TrueOrFalseContentSchema });
     },
   });
 
@@ -42,13 +36,14 @@ export function CreateTrueOrFalsePlugin({ name }: CreateTrueOrFalsePluginProps) 
     <Form method='POST' {...getFormProps(form)}>
       <HoneypotInputs />
 
-      <RichTextInputField
-        labelProps={{ children: 'Question', required: true }}
-        meta={fields.questionState as FieldMetadata<string>}
+      <RichTextFieldWrapper
+        fieldMeta={fields.questionState as FieldMetadata<string>}
+        label='Question'
         placeholder='Type the true or false statement here'
-        errors={fields.questionState.errors}
         description='The main statement students will evaluate as true or false.'
+        required
       />
+
       <RadioButtonField
         field={fields.correctAnswer}
         labelProps={{ children: 'Choose the correct answer', required: true }}
@@ -59,13 +54,15 @@ export function CreateTrueOrFalsePlugin({ name }: CreateTrueOrFalsePluginProps) 
         errors={fields.correctAnswer.errors}
         description='Answer that is correct'
       />
-      <RichTextInputField
-        labelProps={{ children: 'Explanation', required: true }}
-        meta={fields.explanationState as FieldMetadata<string>}
+
+      <RichTextFieldWrapper
+        fieldMeta={fields.explanationState as FieldMetadata<string>}
+        label='Explanation'
         placeholder='Explain the reasoning behind the answer'
-        errors={fields.explanationState?.errors}
         description='Help learners understand the logic or facts that support the answer.'
+        required
       />
+
       <TextareaField
         labelProps={{ children: 'Hint' }}
         textareaProps={{
@@ -75,16 +72,17 @@ export function CreateTrueOrFalsePlugin({ name }: CreateTrueOrFalsePluginProps) 
         errors={fields.hint?.errors}
         description='Give learners a nudge or context clue (optional).'
       />
-      <ErrorList errors={form.errors} id={form.errorId} />
+
+      <ErrorList errors={Object.values(form.allErrors).flat()} id={form.errorId} />
 
       <div className='mt-4 flex justify-end space-x-2'>
         <Button
           type='submit'
           rightIcon={<Save />}
-          disabled={loading}
-          isLoading={loading}
+          disabled={isPending}
+          isLoading={isPending}
           name='intent'
-          value={name}
+          value={pluginTypeId}
         >
           Save
         </Button>

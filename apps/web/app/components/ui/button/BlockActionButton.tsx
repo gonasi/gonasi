@@ -35,6 +35,7 @@ export function BlockActionButton({
         }}
       >
         <Button
+          type='submit'
           onClick={onClick}
           className='rounded-full'
           variant={isLastBlock ? 'default' : 'secondary'}

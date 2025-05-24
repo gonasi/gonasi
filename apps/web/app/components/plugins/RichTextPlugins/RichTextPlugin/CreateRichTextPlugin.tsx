@@ -20,7 +20,7 @@ export function CreateRichTextPlugin({ pluginTypeId }: CreateRichTextPluginProps
   const isPending = useIsPending();
 
   const [form, fields] = useForm({
-    id: `${pluginTypeId}-form`,
+    id: `create-${pluginTypeId}-form`,
     constraint: getZodConstraint(RichTextContentSchema),
     shouldValidate: 'onBlur',
     shouldRevalidate: 'onInput',
@@ -35,9 +35,9 @@ export function CreateRichTextPlugin({ pluginTypeId }: CreateRichTextPluginProps
 
       <RichTextInputField
         labelProps={{ children: 'Rich Text', required: true }}
-        meta={fields.content}
+        meta={fields.richTextState}
         placeholder='Start typing...'
-        errors={fields.content.errors}
+        errors={fields.richTextState.errors}
         description='You can format your content using rich text.'
       />
 

@@ -1,28 +1,27 @@
-import type { RichTextContentSchemaType } from '@gonasi/schemas/plugins';
+import type { TrueOrFalseContentSchemaType } from '@gonasi/schemas/plugins';
 
 import { getUserId } from '../../../auth';
 import type { TypedSupabaseClient } from '../../../client';
 import type { ApiResponse } from '../../../types';
 
-interface UpdateRichTextBlockParams {
+interface UpdateTrueOrFalseBlockParams {
   supabase: TypedSupabaseClient;
   blockId: string;
-  blockData: RichTextContentSchemaType;
+  blockData: TrueOrFalseContentSchemaType;
 }
 
-export const updateRichTextBlock = async ({
+export const updateTrueOrFalseBlock = async ({
   supabase,
   blockId,
   blockData,
-}: UpdateRichTextBlockParams): Promise<ApiResponse> => {
+}: UpdateTrueOrFalseBlockParams): Promise<ApiResponse> => {
   const userId = await getUserId(supabase);
-  const { richTextState } = blockData;
 
   try {
     const { error } = await supabase
       .from('blocks')
       .update({
-        content: { richTextState },
+        content: { ...blockData },
         updated_by: userId,
       })
       .eq('id', blockId);
@@ -30,7 +29,7 @@ export const updateRichTextBlock = async ({
     if (error) {
       return {
         success: false,
-        message: 'Unable to update block. Please try again.',
+        message: 'Failed to update the block. Please try again.',
       };
     }
 
@@ -39,10 +38,10 @@ export const updateRichTextBlock = async ({
       message: 'Block updated successfully.',
     };
   } catch (err) {
-    console.error('Unexpected error in updateRichTextBlock:', err);
+    console.error('Error updating True or False block:', err);
     return {
       success: false,
-      message: 'Unexpected error occurred. Please try again later.',
+      message: 'An unexpected error occurred. Please try again later.',
     };
   }
 };

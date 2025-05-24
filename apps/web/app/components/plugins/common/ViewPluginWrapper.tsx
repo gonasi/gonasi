@@ -1,6 +1,6 @@
 import { type ReactNode, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Settings } from 'lucide-react';
+import { RotateCcw, Settings } from 'lucide-react';
 
 import RichTextRenderer from '~/components/go-editor/ui/RichTextRenderer';
 import { Badge } from '~/components/ui/badge';
@@ -13,6 +13,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from '~/components/ui/sheet';
+import { IconTooltipButton } from '~/components/ui/tooltip';
 import { useStore } from '~/store';
 
 export interface ViewPluginWrapperProps {
@@ -20,6 +21,7 @@ export interface ViewPluginWrapperProps {
   isComplete?: boolean;
   playbackMode?: 'inline' | 'standalone';
   mode: 'preview' | 'play';
+  reset?: () => void;
 }
 
 export function ViewPluginWrapper({
@@ -27,6 +29,7 @@ export function ViewPluginWrapper({
   isComplete = false,
   playbackMode = 'inline',
   mode,
+  reset = () => {},
 }: ViewPluginWrapperProps) {
   const [open, setOpen] = useState(true);
   const { isExplanationBottomSheetOpen, storeExplanationState, closeExplanation } = useStore();
@@ -47,10 +50,15 @@ export function ViewPluginWrapper({
   if (mode === 'preview') {
     content = (
       <div>
-        <Badge className='text-xs' variant='outline'>
-          <Settings />
-          {playbackMode}
-        </Badge>
+        <div className='flex w-full items-center justify-between'>
+          <Badge className='text-xs' variant='outline'>
+            <Settings />
+            {playbackMode}
+          </Badge>
+          {isComplete ? (
+            <IconTooltipButton title='Reset' icon={RotateCcw} onClick={() => reset()} />
+          ) : null}
+        </div>
         {animatedContent}
       </div>
     );
