@@ -7,36 +7,16 @@ import { HoneypotInputs } from 'remix-utils/honeypot/react';
 import { type PluginTypeId, TrueOrFalseContentSchema } from '@gonasi/schemas/plugins';
 
 import { Button } from '~/components/ui/button';
-import { ErrorList, RadioButtonField, TextareaField } from '~/components/ui/forms';
-import { RichTextInputField } from '~/components/ui/forms/RichTextInputField';
+import {
+  ErrorList,
+  RadioButtonField,
+  RichTextFieldWrapper,
+  TextareaField,
+} from '~/components/ui/forms';
 import { useIsPending } from '~/utils/misc';
 
 interface CreateTrueOrFalsePluginProps {
   pluginTypeId: PluginTypeId;
-}
-
-function RichTextFieldWrapper({
-  fieldMeta,
-  label,
-  placeholder,
-  description,
-  required = false,
-}: {
-  fieldMeta: FieldMetadata<string>;
-  label: string;
-  placeholder: string;
-  description: string;
-  required?: boolean;
-}) {
-  return (
-    <RichTextInputField
-      labelProps={{ children: label, required }}
-      meta={fieldMeta}
-      placeholder={placeholder}
-      errors={fieldMeta.errors}
-      description={description}
-    />
-  );
 }
 
 export function CreateTrueOrFalsePlugin({ pluginTypeId }: CreateTrueOrFalsePluginProps) {
@@ -52,14 +32,12 @@ export function CreateTrueOrFalsePlugin({ pluginTypeId }: CreateTrueOrFalsePlugi
     },
   });
 
-  const content = fields.content.getFieldset();
-
   return (
     <Form method='POST' {...getFormProps(form)}>
       <HoneypotInputs />
 
       <RichTextFieldWrapper
-        fieldMeta={content.questionState as FieldMetadata<string>}
+        fieldMeta={fields.questionState as FieldMetadata<string>}
         label='Question'
         placeholder='Type the true or false statement here'
         description='The main statement students will evaluate as true or false.'
@@ -67,18 +45,18 @@ export function CreateTrueOrFalsePlugin({ pluginTypeId }: CreateTrueOrFalsePlugi
       />
 
       <RadioButtonField
-        field={content.correctAnswer}
+        field={fields.correctAnswer}
         labelProps={{ children: 'Choose the correct answer', required: true }}
         options={[
           { value: 'true', label: 'True' },
           { value: 'false', label: 'False' },
         ]}
-        errors={content.correctAnswer.errors}
+        errors={fields.correctAnswer.errors}
         description='Answer that is correct'
       />
 
       <RichTextFieldWrapper
-        fieldMeta={content.explanationState as FieldMetadata<string>}
+        fieldMeta={fields.explanationState as FieldMetadata<string>}
         label='Explanation'
         placeholder='Explain the reasoning behind the answer'
         description='Help learners understand the logic or facts that support the answer.'
@@ -88,10 +66,10 @@ export function CreateTrueOrFalsePlugin({ pluginTypeId }: CreateTrueOrFalsePlugi
       <TextareaField
         labelProps={{ children: 'Hint' }}
         textareaProps={{
-          ...getInputProps(content.hint, { type: 'text' }),
+          ...getInputProps(fields.hint, { type: 'text' }),
           placeholder: 'Optional hint to guide learners',
         }}
-        errors={content.hint?.errors}
+        errors={fields.hint?.errors}
         description='Give learners a nudge or context clue (optional).'
       />
 

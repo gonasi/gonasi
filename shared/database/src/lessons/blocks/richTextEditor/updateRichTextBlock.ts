@@ -16,13 +16,13 @@ export const updateRichTextBlock = async ({
   blockData,
 }: UpdateRichTextBlockParams): Promise<ApiResponse> => {
   const userId = await getUserId(supabase);
-  const { content } = blockData;
+  const { richTextState } = blockData;
 
   try {
     const { error } = await supabase
       .from('blocks')
       .update({
-        content,
+        content: { richTextState },
         updated_by: userId,
       })
       .eq('id', blockId);

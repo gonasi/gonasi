@@ -35,9 +35,9 @@ export function CreateRichTextPlugin({ pluginTypeId }: CreateRichTextPluginProps
 
       <RichTextInputField
         labelProps={{ children: 'Rich Text', required: true }}
-        meta={fields.content}
+        meta={fields.richTextState}
         placeholder='Start typing...'
-        errors={fields.content.errors}
+        errors={fields.richTextState.errors}
         description='You can format your content using rich text.'
       />
 

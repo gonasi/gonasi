@@ -93,8 +93,6 @@ export async function action({ request, params }: Route.ActionArgs) {
   try {
     const { courseId, chapterId, lessonId } = params;
 
-    console.log('data: ', baseSchemaValidation.data);
-
     const { success: recordSuccess, message: recordMessage } = await createBlockInteraction(
       supabase,
       baseSchemaValidation.data,

@@ -5,7 +5,7 @@ import { Pencil } from 'lucide-react';
 import { dataWithError, redirectWithError, redirectWithSuccess } from 'remix-toast';
 
 import { fetchSingleBlockByBlockId, updateRichTextBlock } from '@gonasi/database/lessons';
-import { type PluginTypeId, schemaMap } from '@gonasi/schemas/plugins';
+import { getSchema, type PluginTypeId, type SchemaData, schemaMap } from '@gonasi/schemas/plugins';
 
 import type { Route } from './+types/edit-plugin-modal';
 
@@ -23,6 +23,7 @@ export async function action({ request, params }: Route.ActionArgs) {
   const formData = await request.formData();
   await checkHoneypot(formData);
 
+  const { supabase } = createClient(request);
   const intent = formData.get('intent');
 
   if (typeof intent !== 'string' || !(intent in schemaMap)) {
@@ -30,24 +31,25 @@ export async function action({ request, params }: Route.ActionArgs) {
   }
 
   const typedIntent = intent as PluginTypeId;
-  const schema = schemaMap[typedIntent];
-
+  const schema = getSchema(typedIntent);
   const submission = parseWithZod(formData, { schema });
 
   if (submission.status !== 'success') {
-    return { result: submission.reply(), status: submission.status === 'error' ? 400 : 200 };
+    return {
+      result: submission.reply(),
+      status: submission.status === 'error' ? 400 : 200,
+    };
   }
-
-  const { supabase } = createClient(request);
 
   try {
     switch (typedIntent) {
       case 'rich_text_editor': {
+        const value = submission.value as SchemaData<'rich_text_editor'>;
         const { success, message } = await updateRichTextBlock({
           supabase,
           blockId: params.blockId,
           blockData: {
-            ...submission.value,
+            ...value,
           },
         });
 

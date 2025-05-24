@@ -59,7 +59,9 @@ export async function action({ request, params }: Route.ActionArgs) {
       case 'rich_text_editor': {
         const value = submission.value as SchemaData<'rich_text_editor'>;
         const { success, message } = await createRichTextBlock(supabase, {
-          ...value,
+          content: {
+            ...value,
+          },
           lessonId: params.lessonId,
           pluginType: 'rich_text_editor',
           weight: 1,
@@ -80,7 +82,7 @@ export async function action({ request, params }: Route.ActionArgs) {
       case 'true_or_false': {
         const value = submission.value as SchemaData<'true_or_false'>;
         const { success, message } = await createTrueOrFalseBlock(supabase, {
-          ...value,
+          content: { ...value },
           lessonId: params.lessonId,
           pluginType: 'true_or_false',
           weight: 1,

@@ -16,13 +16,13 @@ import { RichTextInputField } from '~/components/ui/forms/RichTextInputField';
 export function EditRichTextPlugin({ block }: EditPluginComponentProps) {
   const pending = useIsPending();
 
-  const { content } = block as RichTextContentSchemaType;
+  const { richTextState } = block.content as RichTextContentSchemaType;
 
   const [form, fields] = useForm({
     id: `edit-${block.plugin_type}-form`,
     constraint: getZodConstraint(RichTextContentSchema),
     defaultValue: {
-      content,
+      richTextState,
     },
     shouldValidate: 'onBlur',
     shouldRevalidate: 'onInput',
@@ -36,9 +36,9 @@ export function EditRichTextPlugin({ block }: EditPluginComponentProps) {
       <HoneypotInputs />
       <RichTextInputField
         labelProps={{ children: 'Rich Text', required: true }}
-        meta={fields.content}
+        meta={fields.richTextState}
         placeholder='Start typing...'
-        errors={fields.content.errors}
+        errors={fields.richTextState.errors}
         description='You can format your content using rich text.'
       />
       <ErrorList errors={Object.values(form.allErrors).flat()} id={form.errorId} />

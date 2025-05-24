@@ -21,7 +21,7 @@ export function ViewRichTextPlugin({ block, mode }: ViewPluginComponentProps) {
   const { playbackMode } = block.settings as RichTextSettingsSchemaType;
 
   // Safely cast content to the expected structure for rich_text_editor
-  const { content } = block as RichTextContentSchemaType;
+  const { richTextState } = block.content as RichTextContentSchemaType;
 
   const { isLastBlock } = useStore();
 
@@ -48,7 +48,7 @@ export function ViewRichTextPlugin({ block, mode }: ViewPluginComponentProps) {
 
   return (
     <ViewPluginWrapper isComplete={payload?.is_complete} playbackMode={playbackMode} mode={mode}>
-      <RichTextRenderer editorState={content} />
+      <RichTextRenderer editorState={richTextState} />
       <div className='pt-4'>
         {shouldShowActionButton && (
           <BlockActionButton onClick={handleContinue} loading={loading} isLastBlock={isLastBlock} />

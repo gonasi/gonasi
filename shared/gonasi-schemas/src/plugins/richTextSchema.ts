@@ -6,7 +6,7 @@ import { BasePluginSettingsSchema } from './pluginSettings';
 // Content Schema
 //
 export const RichTextContentSchema = z.object({
-  content: z
+  richTextState: z
     .string({ required_error: 'Rich text content is required.' })
     .trim()
     .min(10, 'Rich text content must be at least 10 characters long.'),
@@ -20,7 +20,8 @@ export const RichTextSettingsSchema = BasePluginSettingsSchema.extend({});
 //
 // Create Block Schema
 //
-export const SubmitCreateRichTextSchema = RichTextContentSchema.extend({
+export const SubmitCreateRichTextSchema = z.object({
+  content: RichTextContentSchema,
   lessonId: z.string({ required_error: 'Lesson ID is required.' }),
   pluginType: z.literal('rich_text_editor').default('rich_text_editor'),
   weight: z.number().default(1),
