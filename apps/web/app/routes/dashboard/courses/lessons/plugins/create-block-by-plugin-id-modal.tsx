@@ -31,17 +31,17 @@ export function headers(_: Route.HeadersArgs) {
   };
 }
 
-// Handles creation of different lesson content blocks based on intent
+// Handles plugin block creation based on the submitted intent
 export async function action({ request, params }: Route.ActionArgs) {
   const formData = await request.formData();
 
-  // Basic bot protection
+  // Prevent bots via honeypot check
   await checkHoneypot(formData);
 
   const { supabase } = createClient(request);
   const intent = formData.get('intent');
 
-  // Validate intent
+  // Validate intent type and existence in schemaMap
   if (typeof intent !== 'string' || !(intent in schemaMap)) {
     return dataWithError(null, `Unknown intent: ${intent}`);
   }
@@ -49,7 +49,7 @@ export async function action({ request, params }: Route.ActionArgs) {
   const typedIntent = intent as PluginTypeId;
   const schema = getSchema(typedIntent);
 
-  // Validate form data against schema
+  // Validate form data using the appropriate schema
   const submission = parseWithZod(formData, { schema });
 
   if (submission.status !== 'success') {
@@ -65,37 +65,41 @@ export async function action({ request, params }: Route.ActionArgs) {
     let success = false;
     let message = '';
 
-    if (typedIntent === 'rich_text_editor') {
-      const value = submission.value as SchemaData<'rich_text_editor'>;
-
-      ({ success, message } = await createRichTextBlock(supabase, {
-        content: value,
-        lessonId: params.lessonId,
-        pluginType: 'rich_text_editor',
-        weight: 1,
-        settings: {
-          playbackMode: 'inline',
+    switch (typedIntent) {
+      case 'rich_text_editor': {
+        const value = submission.value as SchemaData<'rich_text_editor'>;
+        ({ success, message } = await createRichTextBlock(supabase, {
+          content: value,
+          lessonId: params.lessonId,
+          pluginType: 'rich_text_editor',
           weight: 1,
-        },
-      }));
-    } else if (typedIntent === 'true_or_false') {
-      const value = submission.value as SchemaData<'true_or_false'>;
+          settings: {
+            playbackMode: 'inline',
+            weight: 1,
+          },
+        }));
+        break;
+      }
 
-      ({ success, message } = await createTrueOrFalseBlock(supabase, {
-        content: value,
-        lessonId: params.lessonId,
-        pluginType: 'true_or_false',
-        weight: 1,
-        settings: {
-          playbackMode: 'inline',
+      case 'true_or_false': {
+        const value = submission.value as SchemaData<'true_or_false'>;
+        ({ success, message } = await createTrueOrFalseBlock(supabase, {
+          content: value,
+          lessonId: params.lessonId,
+          pluginType: 'true_or_false',
           weight: 1,
-          layoutStyle: 'single',
-          randomization: 'none',
-        },
-      }));
-    } else {
-      // In case a new intent is added without logic
-      throw new Error(`Unhandled intent: ${typedIntent}`);
+          settings: {
+            playbackMode: 'inline',
+            weight: 1,
+            layoutStyle: 'single',
+            randomization: 'none',
+          },
+        }));
+        break;
+      }
+
+      default:
+        throw new Error(`Unhandled intent: ${typedIntent}`);
     }
 
     return success ? redirectWithSuccess(redirectUrl, message) : dataWithError(null, message);
