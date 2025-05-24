@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useFetcher } from 'react-router';
+import { useFetcher, useRevalidator } from 'react-router';
 
 import type { BaseInteractionUpdatableFields } from '@gonasi/schemas/plugins';
 
@@ -24,6 +24,8 @@ export interface ViewPluginCoreResult {
  */
 export function useViewPluginCore(blockId: string | null): ViewPluginCoreResult {
   const fetcher = useFetcher();
+  const revalidator = useRevalidator();
+
   const { getBlockInteraction, isLastBlock } = useStore();
 
   const blockInteraction = getBlockInteraction(blockId ?? '');
@@ -38,8 +40,8 @@ export function useViewPluginCore(blockId: string | null): ViewPluginCoreResult 
 
   // Update loading state based on fetcher's submission state
   useEffect(() => {
-    setLoading(fetcher.state === 'submitting');
-  }, [fetcher.state]);
+    setLoading(fetcher.state === 'submitting' || revalidator.state === 'loading');
+  }, [fetcher.state, revalidator.state]);
 
   /**
    * Final payload used in the view.
