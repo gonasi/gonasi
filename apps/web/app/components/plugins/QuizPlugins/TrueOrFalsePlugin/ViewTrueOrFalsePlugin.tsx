@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useParams } from 'react-router';
 import { Check, CheckCheck, PartyPopper, RefreshCw, X, XCircle } from 'lucide-react';
 
@@ -13,6 +13,7 @@ import { PlayPluginWrapper } from '../../common/PlayPluginWrapper';
 import { RenderFeedback } from '../../common/RenderFeedback';
 import { ViewPluginWrapper } from '../../common/ViewPluginWrapper';
 import { useViewPluginCore } from '../../hooks/useViewPluginCore';
+import { shuffleArray } from '../../utils';
 import type { ViewPluginComponentProps } from '../../ViewPluginTypesRenderer';
 
 import RichTextRenderer from '~/components/go-editor/ui/RichTextRenderer';
@@ -28,18 +29,17 @@ import { useStore } from '~/store';
 export function ViewTrueOrFalsePlugin({ block, mode }: ViewPluginComponentProps) {
   const params = useParams();
 
-  const { playbackMode, layoutStyle } = block.settings as TrueOrFalseSettingsSchemaType;
+  const { playbackMode, layoutStyle, randomization } =
+    block.settings as TrueOrFalseSettingsSchemaType;
   const { questionState, correctAnswer, explanationState, hint } =
-    block.content as TrueOrFalseContentSchemaType['content'];
+    block.content as TrueOrFalseContentSchemaType;
 
   const { isExplanationBottomSheetOpen, setExplanationState, isLastBlock } = useStore();
 
-  // Hook for core view plugin logic (e.g. saving state to backend)
   const { loading, payload, handleContinue, updatePayload } = useViewPluginCore(
     mode === 'play' ? block.id : null,
   );
 
-  // Hook handling answer selection, validation, retry logic
   const {
     state,
     selectedOption,
@@ -58,7 +58,11 @@ export function ViewTrueOrFalsePlugin({ block, mode }: ViewPluginComponentProps)
 
   const attemptsCount = state.wrongAttempts.length + (state.correctAttempt ? 1 : 0);
 
-  // Sync interaction state to payload for persistence
+  const answerOptions = useMemo(() => {
+    const options = [true, false];
+    return randomization === 'shuffle' ? shuffleArray(options) : options;
+  }, [randomization]);
+
   useEffect(() => {
     if (mode === 'play' && updatePayload) {
       updatePayload({
@@ -80,10 +84,8 @@ export function ViewTrueOrFalsePlugin({ block, mode }: ViewPluginComponentProps)
       reset={reset}
     >
       <PlayPluginWrapper hint={hint}>
-        {/* Question */}
         <RichTextRenderer editorState={questionState} />
 
-        {/* Answer Options: True / False */}
         <div className='flex flex-col gap-4'>
           <div
             className={cn('gap-4 py-6', {
@@ -91,7 +93,7 @@ export function ViewTrueOrFalsePlugin({ block, mode }: ViewPluginComponentProps)
               'grid grid-cols-2': layoutStyle === 'double',
             })}
           >
-            {([true, false] as const).map((val) => {
+            {answerOptions.map((val) => {
               const isSelected = selectedOption === val;
               const icon = val ? <Check /> : <X />;
               const isCorrectAttempt = state.correctAttempt?.selected === val;
@@ -112,7 +114,6 @@ export function ViewTrueOrFalsePlugin({ block, mode }: ViewPluginComponentProps)
                     {val ? 'True' : 'False'}
                   </OutlineButton>
 
-                  {/* Feedback Badge */}
                   <div className='absolute -top-1.5 -right-1.5 rounded-full'>
                     {isCorrectAttempt && (
                       <Check
@@ -133,14 +134,11 @@ export function ViewTrueOrFalsePlugin({ block, mode }: ViewPluginComponentProps)
           </div>
         </div>
 
-        {/* Attempt Info */}
         <div className='text-muted-foreground font-secondary pb-1 text-xs'>
           Attempts: <span className='font-normal'>{attemptsCount}</span>
         </div>
 
-        {/* Interaction Buttons & Feedback */}
         <div className='w-full pb-4'>
-          {/* "Check" action */}
           {state.showCheckIfAnswerIsCorrectButton && (
             <div className='flex w-full justify-end'>
               <AnimateInButtonWrapper>
@@ -157,7 +155,6 @@ export function ViewTrueOrFalsePlugin({ block, mode }: ViewPluginComponentProps)
             </div>
           )}
 
-          {/* Correct Answer Feedback */}
           {state.showContinueButton && (
             <RenderFeedback
               color='success'
@@ -190,7 +187,6 @@ export function ViewTrueOrFalsePlugin({ block, mode }: ViewPluginComponentProps)
             />
           )}
 
-          {/* Incorrect Answer Feedback */}
           {state.showTryAgainButton && (
             <RenderFeedback
               color='destructive'
