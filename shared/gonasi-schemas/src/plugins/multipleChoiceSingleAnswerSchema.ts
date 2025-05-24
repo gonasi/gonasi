@@ -118,6 +118,6 @@ export type SubmitCreateMultipleChoiceSingleAnswerSchemaType = z.infer<
 export type SubmitMultipleChoiceSingleAnswerSettingsSchemaType = z.infer<
   typeof SubmitMultipleChoiceSingleAnswerSettingsSchema
 >;
-export type MultipleChoiceSingleAnswerInteractionType = z.infer<
+export type MultipleChoiceSingleAnswerInteractionSchemaType = z.infer<
   typeof MultipleChoiceSingleAnswerInteractionSchema
 >;
