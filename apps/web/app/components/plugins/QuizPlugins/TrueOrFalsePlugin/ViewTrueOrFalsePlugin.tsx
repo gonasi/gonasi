@@ -78,7 +78,7 @@ export function ViewTrueOrFalsePlugin({ block, mode }: ViewPluginComponentProps)
 
   return (
     <ViewPluginWrapper
-      isComplete={payload?.is_complete}
+      isComplete={mode === 'play' ? payload?.is_complete : isCompleted}
       playbackMode={playbackMode}
       mode={mode}
       reset={reset}
