@@ -7,7 +7,7 @@ import { HoneypotInputs } from 'remix-utils/honeypot/react';
 import { v4 as uuidv4 } from 'uuid';
 
 import {
-  MultipleChoiceMultipleAnswersSchema,
+  MultipleChoiceMultipleAnswersContentSchema,
   type MultipleChoiceType,
 } from '@gonasi/schemas/plugins';
 
@@ -26,14 +26,14 @@ export function EditMultipleChoiceMultipleAnswersPlugin({ block }: EditPluginCom
 
   const [form, fields] = useForm({
     id: `edit-${block.plugin_type}-form`,
-    constraint: getZodConstraint(MultipleChoiceMultipleAnswersSchema),
+    constraint: getZodConstraint(MultipleChoiceMultipleAnswersContentSchema),
     shouldValidate: 'onBlur',
     shouldRevalidate: 'onInput',
     defaultValue: {
       ...block.content,
     },
     onValidate({ formData }) {
-      return parseWithZod(formData, { schema: MultipleChoiceMultipleAnswersSchema });
+      return parseWithZod(formData, { schema: MultipleChoiceMultipleAnswersContentSchema });
     },
   });
 

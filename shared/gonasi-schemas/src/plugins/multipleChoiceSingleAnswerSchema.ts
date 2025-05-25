@@ -105,7 +105,7 @@ export const MultipleChoiceSingleAnswerInteractionSchema = z.object({
 //
 // Types
 //
-export type ChoiceType = z.infer<typeof ChoiceSchema>;
+export type ChoiceSchemaType = z.infer<typeof ChoiceSchema>;
 export type MultipleChoiceSingleAnswerContentSchemaType = z.infer<
   typeof MultipleChoiceSingleAnswerContentSchema
 >;

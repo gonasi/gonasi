@@ -7,12 +7,12 @@ import { HoneypotInputs } from 'remix-utils/honeypot/react';
 import { v4 as uuidv4 } from 'uuid';
 
 import {
-  type ChoiceType,
+  type ChoiceSchemaType,
   MultipleChoiceSingleAnswerContentSchema,
   type MultipleChoiceSingleAnswerContentSchemaType,
 } from '@gonasi/schemas/plugins';
 
-import type { EditPluginComponentProps } from '../../EditPluginTypesRenderer';
+import type { EditPluginComponentProps } from '../../PluginRenderers/EditPluginTypesRenderer';
 
 import { Button, IconTooltipButton, OutlineButton } from '~/components/ui/button';
 import { ErrorList, RadioButtonField, TextareaField } from '~/components/ui/forms';
@@ -40,7 +40,7 @@ export function EditMultipleChoiceSingleAnswerPlugin({ block }: EditPluginCompon
 
   const choices = fields.choices.getFieldList();
 
-  const getChoices = (): ChoiceType[] =>
+  const getChoices = (): ChoiceSchemaType[] =>
     choices.map((fieldset) => {
       const { choiceState, uuid } = fieldset.getFieldset();
       return {
@@ -49,7 +49,7 @@ export function EditMultipleChoiceSingleAnswerPlugin({ block }: EditPluginCompon
       };
     });
 
-  const updateChoices = (updated: ChoiceType[]) => {
+  const updateChoices = (updated: ChoiceSchemaType[]) => {
     form.update({
       name: fields.choices.name,
       value: updated,
@@ -58,7 +58,7 @@ export function EditMultipleChoiceSingleAnswerPlugin({ block }: EditPluginCompon
 
   const addChoice = () => {
     const current = getChoices();
-    const newChoice: ChoiceType = {
+    const newChoice: ChoiceSchemaType = {
       uuid: uuidv4(),
       choiceState: '',
     };

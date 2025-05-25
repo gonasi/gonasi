@@ -1,7 +1,11 @@
 import type { z } from 'zod';
 
 import {
+  MultipleChoiceMultipleAnswersContentSchema,
+  MultipleChoiceMultipleAnswersInteractionSchema,
+  MultipleChoiceMultipleAnswersSettingsSchema,
   MultipleChoiceSingleAnswerContentSchema,
+  MultipleChoiceSingleAnswerInteractionSchema,
   MultipleChoiceSingleAnswerSettingsSchema,
   TrueOrFalseStateInteractionSchema,
 } from '@gonasi/schemas/plugins';
@@ -27,7 +31,7 @@ export const schemaMap = {
   rich_text_editor: RichTextContentSchema,
   true_or_false: TrueOrFalseContentSchema,
   multiple_choice_single: MultipleChoiceSingleAnswerContentSchema,
-  multiple_choice_multiple: RichTextContentSchema,
+  multiple_choice_multiple: MultipleChoiceMultipleAnswersContentSchema,
   match_concepts: RichTextContentSchema,
   sequence_ordering: RichTextContentSchema,
   categorization: RichTextContentSchema,
@@ -69,7 +73,7 @@ export const settingsSchemaMap = {
   rich_text_editor: RichTextSettingsSchema,
   true_or_false: TrueOrFalseSettingsSchema,
   multiple_choice_single: MultipleChoiceSingleAnswerSettingsSchema,
-  multiple_choice_multiple: RichTextSettingsSchema,
+  multiple_choice_multiple: MultipleChoiceMultipleAnswersSettingsSchema,
   match_concepts: RichTextSettingsSchema,
   sequence_ordering: RichTextSettingsSchema,
   categorization: RichTextSettingsSchema,
@@ -108,8 +112,8 @@ export function getSettingsSchema<T extends PluginTypeId>(type: T): SettingsSche
 export const interactionSchemaMap = {
   rich_text_editor: RichTextStateInteractionSchema,
   true_or_false: TrueOrFalseStateInteractionSchema,
-  multiple_choice_single: RichTextStateInteractionSchema,
-  multiple_choice_multiple: RichTextStateInteractionSchema,
+  multiple_choice_single: MultipleChoiceSingleAnswerInteractionSchema,
+  multiple_choice_multiple: MultipleChoiceMultipleAnswersInteractionSchema,
   match_concepts: RichTextStateInteractionSchema,
   sequence_ordering: RichTextStateInteractionSchema,
   categorization: RichTextStateInteractionSchema,
