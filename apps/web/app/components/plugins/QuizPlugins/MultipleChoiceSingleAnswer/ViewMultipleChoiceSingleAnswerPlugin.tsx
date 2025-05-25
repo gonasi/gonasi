@@ -98,7 +98,7 @@ export function ViewMultipleChoiceSingleAnswerPlugin({ block, mode }: ViewPlugin
 
   return (
     <ViewPluginWrapper
-      isComplete={isCompleted}
+      isComplete={payload?.is_complete}
       playbackMode={playbackMode}
       mode={mode}
       reset={reset}
