@@ -185,14 +185,14 @@ function useScrollAudio(
 
     return new Howl({
       src: [soundSrc],
-      volume: 0.05,
+      volume: 0.5,
       preload: true,
       html5: true, // Better performance for small audio files
       onloaderror: (id, error) => {
-        console.warn('Failed to load scroll sound:', error);
+        console.warn('Failed to load scroll sound:', error, id);
       },
       onplayerror: (id, error) => {
-        console.warn('Failed to play scroll sound:', error);
+        console.warn('Failed to play scroll sound:', error, id);
       },
     });
   }, [soundSrc]);
