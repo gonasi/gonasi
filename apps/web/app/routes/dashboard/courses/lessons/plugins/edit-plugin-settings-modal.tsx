@@ -5,6 +5,7 @@ import { Settings as LucideSettings } from 'lucide-react';
 import { dataWithError, redirectWithError, redirectWithSuccess } from 'remix-toast';
 
 import {
+  editMultipleChoiceMultipleAnswersSettings,
   editMultipleChoiceSingleAnswerSettings,
   editRichTextBlockSettings,
   editTrueOrFalseBlockSettings,
@@ -91,6 +92,18 @@ export async function action({ request, params }: Route.ActionArgs) {
       case 'multiple_choice_single': {
         const value = submission.value as SettingsData<'multiple_choice_single'>;
         ({ success, message } = await editMultipleChoiceSingleAnswerSettings({
+          supabase,
+          data: {
+            ...value,
+            blockId: params.blockId,
+          },
+        }));
+        break;
+      }
+
+      case 'multiple_choice_multiple': {
+        const value = submission.value as SettingsData<'multiple_choice_multiple'>;
+        ({ success, message } = await editMultipleChoiceMultipleAnswersSettings({
           supabase,
           data: {
             ...value,
