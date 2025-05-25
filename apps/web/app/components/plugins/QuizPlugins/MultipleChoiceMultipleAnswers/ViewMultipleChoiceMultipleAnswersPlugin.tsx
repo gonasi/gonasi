@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import { useParams } from 'react-router';
-import { Check, CheckCheck, PartyPopper, RefreshCw, X, XCircle } from 'lucide-react';
+import { Check, PartyPopper, X, XCircle } from 'lucide-react';
 
 import type {
   MultipleChoiceMultipleAnswersContentSchemaType,
@@ -20,8 +20,11 @@ import RichTextRenderer from '~/components/go-editor/ui/RichTextRenderer';
 import {
   AnimateInButtonWrapper,
   BlockActionButton,
-  Button,
+  CheckAnswerButton,
+  ChoiceOptionButton,
   OutlineButton,
+  ShowAnswerButton,
+  TryAgainButton,
 } from '~/components/ui/button';
 import { cn } from '~/lib/utils';
 import { useStore } from '~/store/index.tsx';
@@ -146,22 +149,12 @@ export function ViewMultipleChoiceMultipleAnswersPlugin({ block, mode }: ViewPlu
             return (
               <div key={optionUuid} className='relative w-full'>
                 {/* Option Button */}
-                <OutlineButton
+                <ChoiceOptionButton
+                  choiceState={option.choiceState}
+                  isSelected={isSelected}
+                  isDisabled={isDisabled}
                   onClick={() => selectOption(optionUuid)}
-                  className={cn('relative h-fit w-full justify-start text-left md:max-h-50', {
-                    'border-secondary bg-secondary/20 hover:bg-secondary-10 hover:border-secondary/80':
-                      isSelected,
-                    'opacity-50': isDisabled,
-                  })}
-                  disabled={isDisabled}
-                >
-                  <div className='flex items-start'>
-                    <RichTextRenderer
-                      editorState={option.choiceState}
-                      className='max-h-30 md:max-h-40'
-                    />
-                  </div>
-                </OutlineButton>
+                />
 
                 {/* Status Indicators */}
                 <div className='absolute -top-1.5 -right-1.5 rounded-full'>
@@ -217,21 +210,13 @@ export function ViewMultipleChoiceMultipleAnswersPlugin({ block, mode }: ViewPlu
               ) : (
                 <div />
               )}
-
-              <AnimateInButtonWrapper>
-                <Button
-                  variant='secondary'
-                  className='rounded-full'
-                  rightIcon={<CheckCheck />}
-                  disabled={
-                    selectedOptionsUuids === null ||
-                    selectedOptionsUuids.length !== remainingCorrectToSelect
-                  }
-                  onClick={() => checkAnswer()}
-                >
-                  Check
-                </Button>
-              </AnimateInButtonWrapper>
+              <CheckAnswerButton
+                disabled={
+                  selectedOptionsUuids === null ||
+                  selectedOptionsUuids.length !== remainingCorrectToSelect
+                }
+                onClick={() => checkAnswer()}
+              />
             </div>
           )}
 
@@ -283,23 +268,9 @@ export function ViewMultipleChoiceMultipleAnswersPlugin({ block, mode }: ViewPlu
               actions={
                 <div className='flex items-center space-x-4'>
                   {/* Retry Button */}
-                  <OutlineButton
-                    className='rounded-full'
-                    rightIcon={<RefreshCw size={16} />}
-                    onClick={tryAgain}
-                  >
-                    Try Again
-                  </OutlineButton>
+                  <TryAgainButton onClick={tryAgain} />
                   {/* Show Answer Button (appears after wrong attempt) */}
-                  {state.showShowAnswerButton && (
-                    <Button
-                      variant='secondary'
-                      className='rounded-full'
-                      onClick={() => revealCorrectAnswer()}
-                    >
-                      Show Answer
-                    </Button>
-                  )}
+                  {state.showShowAnswerButton && <ShowAnswerButton onClick={revealCorrectAnswer} />}
                 </div>
               }
             />
