@@ -13,8 +13,8 @@ import { PlayPluginWrapper } from '../../common/PlayPluginWrapper';
 import { RenderFeedback } from '../../common/RenderFeedback';
 import { ViewPluginWrapper } from '../../common/ViewPluginWrapper';
 import { useViewPluginCore } from '../../hooks/useViewPluginCore';
-import { shuffleArray } from '../../utils';
 import type { ViewPluginComponentProps } from '../../PluginRenderers/ViewPluginTypesRenderer';
+import { shuffleArray } from '../../utils';
 
 import RichTextRenderer from '~/components/go-editor/ui/RichTextRenderer';
 import {
