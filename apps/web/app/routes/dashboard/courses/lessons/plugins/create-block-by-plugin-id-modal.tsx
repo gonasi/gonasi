@@ -26,7 +26,7 @@ import { createClient } from '~/lib/supabase/supabase.server';
 import { checkHoneypot } from '~/utils/honeypot.server';
 
 const LazyCreatePluginBlockRenderer = lazy(
-  () => import('~/components/plugins/CreatePluginBlockRenderer'),
+  () => import('~/components/plugins/PluginRenderers/CreatePluginBlockRenderer'),
 );
 
 export function headers(_: Route.HeadersArgs) {
