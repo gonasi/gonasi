@@ -71,14 +71,12 @@ export function ViewMultipleChoiceSingleAnswerPlugin({ block, mode }: ViewPlugin
     canInteract, // Whether user can currently interact
     score, // Calculated score based on attempts
     reset, // Function to reset the entire interaction
+    attemptsCount,
   } = useMultipleChoiceSingleAnswerInteraction(
     payload?.state as MultipleChoiceSingleAnswerInteractionSchemaType,
     correctAnswer,
     choices.length,
   );
-
-  // Calculate total attempts made (for display purposes)
-  const attemptsCount = state.wrongAttempts.length + (state.correctAttempt ? 1 : 0);
 
   // Prepare answer options (shuffle if randomization is enabled)
   const answerOptions = useMemo(() => {

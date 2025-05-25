@@ -54,12 +54,11 @@ export function ViewTrueOrFalsePlugin({ block, mode }: ViewPluginComponentProps)
     canInteract,
     score,
     reset,
+    attemptsCount,
   } = useTrueOrFalseInteraction(
     payload?.state as TrueOrFalseStateInteractionSchemaType,
     correctAnswer,
   );
-
-  const attemptsCount = state.wrongAttempts.length + (state.correctAttempt ? 1 : 0);
 
   const answerOptions = useMemo(() => {
     const options = [true, false];

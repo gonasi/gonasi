@@ -44,11 +44,9 @@ export function useMultipleChoiceSingleAnswerInteraction(
   }, [isCompleted, state.showCheckIfAnswerIsCorrectButton]);
 
   // Count of actual attempts (excludes revealed answers)
-  // User can make at most 2 attempts: 1 wrong + 1 correct, or just 1 correct
   const attemptsCount = useMemo(() => {
     let count = 0;
 
-    // Count wrong attempts (max 1 in this flow)
     if (state.wrongAttempts.length > 0) {
       count += 1;
     }
@@ -57,6 +55,8 @@ export function useMultipleChoiceSingleAnswerInteraction(
     if (state.correctAttempt !== null && !state.hasRevealedCorrectAnswer) {
       count += 1;
     }
+
+    console.log('****** count: ', count);
 
     return count;
   }, [state.wrongAttempts.length, state.correctAttempt, state.hasRevealedCorrectAnswer]);
