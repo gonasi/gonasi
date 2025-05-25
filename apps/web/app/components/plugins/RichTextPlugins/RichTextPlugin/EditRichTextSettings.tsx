@@ -8,7 +8,7 @@ import { RichTextSettingsSchema, type RichTextSettingsSchemaType } from '@gonasi
 
 import { BlockWeightField } from '../../common/settings/BlockWeightField';
 import { PlaybackModeField } from '../../common/settings/PlaybackModeField';
-import type { EditPluginSettingsComponentProps } from '../../EditPluginSettingsTypeRenderer';
+import type { EditPluginSettingsComponentProps } from '../../PluginRenderers/EditPluginSettingsTypeRenderer';
 
 import { Button } from '~/components/ui/button';
 import { useIsPending } from '~/utils/misc';

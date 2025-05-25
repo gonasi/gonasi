@@ -2,9 +2,9 @@ import type { JSX } from 'react';
 
 import type { PluginTypeId } from '@gonasi/schemas/plugins';
 
-import { EditMultipleChoiceSingleAnswerSettings } from './QuizPlugins/MultipleChoiceSingleAnswer/EditMultipleChoiceSingleAnswerSettings';
-import { EditTrueOrFalseSettings } from './QuizPlugins/TrueOrFalsePlugin/EditTrueOrFalseSettings';
-import { EditRichTextSettings } from './RichTextPlugins/RichTextPlugin/EditRichTextSettings';
+import { EditMultipleChoiceSingleAnswerSettings } from '../QuizPlugins/MultipleChoiceSingleAnswer/EditMultipleChoiceSingleAnswerSettings';
+import { EditTrueOrFalseSettings } from '../QuizPlugins/TrueOrFalsePlugin/EditTrueOrFalseSettings';
+import { EditRichTextSettings } from '../RichTextPlugins/RichTextPlugin/EditRichTextSettings';
 
 import type { SettingsLoaderReturnType } from '~/routes/dashboard/courses/lessons/plugins/edit-plugin-settings-modal';
 

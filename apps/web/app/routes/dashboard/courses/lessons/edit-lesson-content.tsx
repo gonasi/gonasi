@@ -36,7 +36,9 @@ import { PluginButton } from '~/components/ui/button';
 import { Modal } from '~/components/ui/modal';
 import { createClient } from '~/lib/supabase/supabase.server';
 
-const ViewPluginTypesRenderer = lazy(() => import('~/components/plugins/ViewPluginTypesRenderer'));
+const ViewPluginTypesRenderer = lazy(
+  () => import('~/components/plugins/PluginRenderers/ViewPluginTypesRenderer'),
+);
 
 function toTitleCaseFromUnderscore(input: string): string {
   return input

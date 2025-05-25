@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import debounce from 'lodash.debounce';
 import * as LucideIcons from 'lucide-react';
 
-import { usePluginOptions } from './usePluginOptions';
+import { usePluginOptions } from './hooks/usePluginOptions';
 
 import { NotFoundCard } from '~/components/cards';
 import { Input } from '~/components/ui/input';

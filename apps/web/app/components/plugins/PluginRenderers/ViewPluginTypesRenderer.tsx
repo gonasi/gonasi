@@ -2,11 +2,11 @@ import type { JSX } from 'react';
 
 import type { PluginTypeId } from '@gonasi/schemas/plugins';
 
-import { ViewMultipleChoiceMultipleAnswersPlugin } from './QuizPlugins/MultipleChoiceMultipleAnswers/ViewMultipleChoiceMultipleAnswersPlugin';
-import { ViewMultipleChoiceSingleAnswerPlugin } from './QuizPlugins/MultipleChoiceSingleAnswer/ViewMultipleChoiceSingleAnswerPlugin';
-import { ViewTrueOrFalsePlugin } from './QuizPlugins/TrueOrFalsePlugin/ViewTrueOrFalsePlugin';
-import { ViewTapToRevealPlugin } from './RevealPlugins/TapToRevealPlugin/ViewTapToRevealPlugin';
-import { ViewRichTextPlugin } from './RichTextPlugins/RichTextPlugin/ViewRichTextPlugin';
+import { ViewMultipleChoiceMultipleAnswersPlugin } from '../QuizPlugins/MultipleChoiceMultipleAnswers/ViewMultipleChoiceMultipleAnswersPlugin';
+import { ViewMultipleChoiceSingleAnswerPlugin } from '../QuizPlugins/MultipleChoiceSingleAnswer/ViewMultipleChoiceSingleAnswerPlugin';
+import { ViewTrueOrFalsePlugin } from '../QuizPlugins/TrueOrFalsePlugin/ViewTrueOrFalsePlugin';
+import { ViewTapToRevealPlugin } from '../RevealPlugins/TapToRevealPlugin/ViewTapToRevealPlugin';
+import { ViewRichTextPlugin } from '../RichTextPlugins/RichTextPlugin/ViewRichTextPlugin';
 
 import type { LessonBlockLoaderReturnType } from '~/routes/dashboard/courses/lessons/plugins/edit-plugin-modal';
 

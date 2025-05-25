@@ -7,7 +7,7 @@ import type {
 } from '@gonasi/schemas/plugins';
 
 import { useViewPluginCore } from '../../hooks/useViewPluginCore';
-import type { ViewPluginComponentProps } from '../../ViewPluginTypesRenderer';
+import type { ViewPluginComponentProps } from '../../PluginRenderers/ViewPluginTypesRenderer';
 
 import RichTextRenderer from '~/components/go-editor/ui/RichTextRenderer';
 import { ViewPluginWrapper } from '~/components/plugins/common/ViewPluginWrapper';

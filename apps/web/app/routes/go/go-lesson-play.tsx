@@ -28,7 +28,9 @@ import { createClient } from '~/lib/supabase/supabase.server';
 import { useStore } from '~/store';
 
 // Lazy-loads the plugin renderer component for performance
-const ViewPluginTypesRenderer = lazy(() => import('~/components/plugins/ViewPluginTypesRenderer'));
+const ViewPluginTypesRenderer = lazy(
+  () => import('~/components/plugins/PluginRenderers/ViewPluginTypesRenderer'),
+);
 
 // Framer Motion animation for nudge effect on the call-to-action button
 const nudgeAnimation = {

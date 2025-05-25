@@ -14,7 +14,7 @@ import { RenderFeedback } from '../../common/RenderFeedback';
 import { ViewPluginWrapper } from '../../common/ViewPluginWrapper';
 import { useViewPluginCore } from '../../hooks/useViewPluginCore';
 import { shuffleArray } from '../../utils';
-import type { ViewPluginComponentProps } from '../../ViewPluginTypesRenderer';
+import type { ViewPluginComponentProps } from '../../PluginRenderers/ViewPluginTypesRenderer';
 
 import RichTextRenderer from '~/components/go-editor/ui/RichTextRenderer';
 import {

@@ -2,9 +2,9 @@ import type { JSX } from 'react';
 
 import type { PluginTypeId } from '@gonasi/schemas/plugins';
 
-import { CreateMultipleChoiceSingleAnswerPlugin } from './QuizPlugins/MultipleChoiceSingleAnswer/CreateMultipleChoiceSingleAnswerPlugin';
-import { CreateTrueOrFalsePlugin } from './QuizPlugins/TrueOrFalsePlugin/CreateTrueOrFalsePlugin';
-import { CreateRichTextPlugin } from './RichTextPlugins/RichTextPlugin/CreateRichTextPlugin';
+import { CreateMultipleChoiceSingleAnswerPlugin } from '../QuizPlugins/MultipleChoiceSingleAnswer/CreateMultipleChoiceSingleAnswerPlugin';
+import { CreateTrueOrFalsePlugin } from '../QuizPlugins/TrueOrFalsePlugin/CreateTrueOrFalsePlugin';
+import { CreateRichTextPlugin } from '../RichTextPlugins/RichTextPlugin/CreateRichTextPlugin';
 
 interface ViewPluginRendererProps {
   pluginTypeId: PluginTypeId;
