@@ -1,76 +1,196 @@
-/**
- * Scoring function for multiple choice, multiple answer questions
- * Uses explicit scoring tiers for common cases with difficulty adjustments
- */
-export function calculateMultipleChoiceMultipleAnswerScore({
-  correctAnswersRevealed,
-  wrongAttemptsCount,
-  totalChoices,
-  totalCorrectAnswers,
-}: {
+import type { MultipleChoiceMultipleAnswersInteractionSchemaType } from '@gonasi/schemas/plugins';
+
+// Define the parameters type for the main scoring function
+export interface ScoringParameters {
+  // Core correctness indicators
+  isCorrect: boolean | null;
   correctAnswersRevealed: boolean;
-  wrongAttemptsCount: number;
-  totalChoices: number;
+
+  // Answer analysis
+  correctAnswersSelected: number;
   totalCorrectAnswers: number;
-}): number {
-  // If correct answer was revealed, score is 0
-  if (correctAnswersRevealed) return 0;
+  wrongAnswersSelected: number;
+  totalChoicesAvailable: number;
 
-  // Score based on total choices and wrong attempts
-  switch (totalChoices) {
-    case 2:
-      // Binary choice: 100% first try, 50% second try
-      return wrongAttemptsCount === 0 ? 100 : 50;
+  // Attempt tracking
+  attemptsCount: number;
+  wrongAttempts?: {
+    selected: string[];
+    timestamp: number;
+    partiallyCorrect?: boolean;
+  }[];
 
-    case 3:
-      // Three choices: 100%, 67%, 33%
-      switch (wrongAttemptsCount) {
-        case 0:
-          return 100;
-        case 1:
-          return 67;
-        default:
-          return 33;
-      }
+  // Difficulty adjustment (optional)
+  difficultyMultiplier?: number;
+}
 
-    case 4:
-      // Four choices: 100%, 75%, 50%, 25%
-      switch (wrongAttemptsCount) {
-        case 0:
-          return 100;
-        case 1:
-          return 75;
-        case 2:
-          return 50;
-        default:
-          return 25;
-      }
+// Define the helper function parameters type
+export interface ScoringExtractionParameters {
+  state: MultipleChoiceMultipleAnswersInteractionSchemaType;
+  correctAnswers: string[];
+  allOptionsUuids: string[];
+  difficultyMultiplier?: number;
+}
 
-    case 5:
-      // Five choices: 100%, 80%, 60%, 40%, 20%
-      switch (wrongAttemptsCount) {
-        case 0:
-          return 100;
-        case 1:
-          return 80;
-        case 2:
-          return 60;
-        case 3:
-          return 40;
-        default:
-          return 20;
-      }
+// Define basic scoring parameters type
+export interface BasicScoringParameters {
+  correctSelected: number;
+  totalCorrect: number;
+  wrongSelected: number;
+  totalChoices: number;
+  isFullyCorrect: boolean;
+  wasRevealed?: boolean;
+}
 
-    default: {
-      // For 6+ choices, use formula approach
-      const penaltyPerWrongAttempt = 100 / totalChoices;
-      const score = 100 - wrongAttemptsCount * penaltyPerWrongAttempt;
+/**
+ * Calculates a comprehensive score for multiple choice questions with multiple answers.
+ * This function provides fair scoring by considering partial correctness, wrong selections,
+ * revealed answers, and the overall difficulty of the question.
+ *
+ * @param params Comprehensive scoring parameters
+ * @returns A score between 0 and 100
+ */
+export function calculateMultipleChoiceMultipleAnswersScore({
+  // Core correctness indicators
+  isCorrect,
+  correctAnswersRevealed,
 
-      // Adjust for difficulty based on correct answer ratio
-      const difficultyRatio = totalCorrectAnswers / totalChoices;
-      const difficultyBonus = difficultyRatio < 0.3 ? 5 : 0; // Small bonus for very selective questions
+  // Answer analysis
+  correctAnswersSelected,
+  totalCorrectAnswers,
+  wrongAnswersSelected,
+  totalChoicesAvailable,
 
-      return Math.max(10, Math.round(score + difficultyBonus));
+  // Attempt tracking
+  attemptsCount,
+  wrongAttempts,
+
+  // Difficulty adjustment (optional)
+  difficultyMultiplier = 1, // 0.1 to 1
+}: ScoringParameters): number {
+  // Validate inputs
+  if (totalCorrectAnswers <= 0 || totalChoicesAvailable <= 0) {
+    return 0;
+  }
+
+  if (correctAnswersSelected < 0 || wrongAnswersSelected < 0) {
+    return 0;
+  }
+
+  // If correct answers were revealed, return minimal score
+  if (correctAnswersRevealed) {
+    return 0;
+  }
+
+  // If user hasn't selected anything, return 0
+  if (correctAnswersSelected === 0 && wrongAnswersSelected === 0) {
+    return 0;
+  }
+
+  // Calculate base score components
+  let score = 0;
+
+  // 1. Correctness Score (60% of total score)
+  const correctnessRatio = correctAnswersSelected / totalCorrectAnswers;
+  const correctnessScore = correctnessRatio * 60;
+
+  // 2. Precision Score (25% of total score) - penalize wrong selections
+  const totalSelected = correctAnswersSelected + wrongAnswersSelected;
+  const precisionRatio = totalSelected > 0 ? correctAnswersSelected / totalSelected : 0;
+  const precisionScore = precisionRatio * 20;
+
+  // 3. Efficiency Score (15% of total score) - reward fewer attempts
+  let efficiencyScore = 10;
+  if (attemptsCount > 1) {
+    // Reduce efficiency score based on number of attempts
+    const attemptPenalty = Math.min((attemptsCount - 1) * 3, 12);
+    efficiencyScore = Math.max(3, efficiencyScore - attemptPenalty);
+  }
+
+  // Combine base scores
+  score = correctnessScore + precisionScore + efficiencyScore;
+
+  // 4. Bonus for complete correctness
+  if (isCorrect === true && wrongAnswersSelected === 0) {
+    // Perfect answer bonus
+    score += 10;
+  } else if (isCorrect === true && wrongAnswersSelected > 0) {
+    // Complete but with wrong selections - smaller bonus
+    score += 5;
+  }
+
+  // 5. Additional penalties for excessive wrong selections
+  if (wrongAnswersSelected > 0) {
+    const wrongSelectionRatio =
+      wrongAnswersSelected / (totalChoicesAvailable - totalCorrectAnswers);
+    const excessPenalty = Math.min(wrongSelectionRatio * 15, 15);
+    score -= excessPenalty;
+  }
+
+  // 6. Partial credit for learning progression
+  if (wrongAttempts && wrongAttempts.length > 0) {
+    const partiallyCorrectAttempts = wrongAttempts.filter(
+      (attempt) => attempt.partiallyCorrect === true,
+    ).length;
+
+    if (partiallyCorrectAttempts > 0) {
+      // Small bonus for showing learning progression
+      const progressionBonus = Math.min(partiallyCorrectAttempts * 2, 5);
+      score += progressionBonus;
     }
   }
+
+  // 7. Apply difficulty multiplier
+  score *= difficultyMultiplier;
+
+  // Ensure score is within bounds
+  score = Math.max(0, Math.min(100, Math.round(score)));
+
+  return score;
+}
+
+/**
+ * Helper function to extract scoring parameters from the hook's state.
+ * This bridges the gap between the hook's data structure and the scoring function.
+ */
+export function extractScoringParams({
+  state,
+  correctAnswers,
+  allOptionsUuids,
+  difficultyMultiplier,
+}: ScoringExtractionParameters): number {
+  const correctAnswersSelected = state.correctAttempt?.selected?.length || 0;
+
+  // Calculate wrong answers by looking at all wrong attempts
+  let wrongAnswersSelected = 0;
+
+  // Count wrong selections from all attempts
+  if (state.wrongAttempts && state.wrongAttempts.length > 0) {
+    wrongAnswersSelected = state.wrongAttempts.reduce((total, attempt) => {
+      const wrongInAttempt = attempt.selected.filter(
+        (uuid: string) => !correctAnswers.includes(uuid),
+      ).length;
+      return total + wrongInAttempt;
+    }, 0);
+  }
+
+  // Determine if fully correct by comparing correct attempt with all required answers
+  const isFullyCorrect =
+    state.correctAttempt?.selected?.length === correctAnswers.length &&
+    state.correctAttempt.selected.every((uuid) => correctAnswers.includes(uuid));
+
+  // Calculate total attempts (wrong attempts + 1 for the final/correct attempt if it exists)
+  const totalAttempts = state.wrongAttempts.length + (state.correctAttempt ? 1 : 0);
+
+  return calculateMultipleChoiceMultipleAnswersScore({
+    isCorrect: isFullyCorrect,
+    correctAnswersRevealed: state.hasRevealedCorrectAnswer,
+    correctAnswersSelected,
+    totalCorrectAnswers: correctAnswers.length,
+    wrongAnswersSelected,
+    totalChoicesAvailable: allOptionsUuids.length,
+    attemptsCount: Math.max(1, totalAttempts),
+    wrongAttempts: state.wrongAttempts,
+    difficultyMultiplier,
+  });
 }

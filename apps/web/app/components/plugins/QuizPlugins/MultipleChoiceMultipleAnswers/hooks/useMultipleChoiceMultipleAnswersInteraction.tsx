@@ -5,7 +5,7 @@ import {
   type MultipleChoiceMultipleAnswersInteractionSchemaType,
 } from '@gonasi/schemas/plugins';
 
-import { calculateMultipleChoiceMultipleAnswerScore } from '../utils';
+import { calculateMultipleChoiceMultipleAnswersScore } from '../utils';
 
 const schema = MultipleChoiceMultipleAnswersInteractionSchema;
 
@@ -89,18 +89,22 @@ export function useMultipleChoiceMultipleAnswersInteraction(
 
   // Calculate the actual score
   const score = useMemo(() => {
-    return calculateMultipleChoiceMultipleAnswerScore({
+    return calculateMultipleChoiceMultipleAnswersScore({
+      // Core correctness indicators
+      isCorrect: state.isCorrect,
       correctAnswersRevealed: state.hasRevealedCorrectAnswer,
-      wrongAttemptsCount: state.wrongAttempts.length,
-      totalChoices: choiceCount,
+
+      // Answer analysis
+      correctAnswersSelected: state.correctAttempt?.selected.length ?? 0,
       totalCorrectAnswers: correctAnswerUuids.length,
+      wrongAnswersSelected: state.wrongAttempts.length,
+      totalChoicesAvailable: choiceCount,
+
+      // Attempt tracking
+      attemptsCount,
+      wrongAttempts: state.wrongAttempts,
     });
-  }, [
-    state.hasRevealedCorrectAnswer,
-    state.wrongAttempts.length,
-    choiceCount,
-    correctAnswerUuids.length,
-  ]);
+  }, [state, correctAnswerUuids.length, choiceCount, attemptsCount]);
 
   /**
    * Compares two arrays regardless of order for equality checking.

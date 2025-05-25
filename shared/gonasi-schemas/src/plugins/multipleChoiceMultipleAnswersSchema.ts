@@ -95,10 +95,12 @@ export const MultipleChoiceMultipleAnswersInteractionSchema = z.object({
       z.object({
         selected: z.array(z.string()),
         timestamp: z.number(),
+        partiallyCorrect: z.boolean().default(false),
       }),
     )
     .default([]),
 
+  isCorrect: z.boolean().default(false).nullable(),
   showCheckIfAnswerIsCorrectButton: z.boolean().default(true),
   showTryAgainButton: z.boolean().default(false),
   showShowAnswerButton: z.boolean().default(false),
