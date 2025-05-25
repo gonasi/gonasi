@@ -6,6 +6,7 @@ import { dataWithError, redirectWithError, redirectWithSuccess } from 'remix-toa
 
 import {
   fetchSingleBlockByBlockId,
+  updateMultipleChoiceMultipleAnswers,
   updateMultipleChoiceSingleAnswer,
   updateRichTextBlock,
   updateTrueOrFalseBlock,
@@ -89,6 +90,16 @@ export async function action({ request, params }: Route.ActionArgs) {
         break;
       }
 
+      case 'multiple_choice_multiple': {
+        const value = submission.value as SchemaData<'multiple_choice_multiple'>;
+        ({ success, message } = await updateMultipleChoiceMultipleAnswers({
+          supabase,
+          blockId: params.blockId,
+          content: value,
+        }));
+        break;
+      }
+
       default:
         throw new Error(`Unhandled intent: ${typedIntent}`);
     }
@@ -96,7 +107,7 @@ export async function action({ request, params }: Route.ActionArgs) {
     return success ? redirectWithSuccess(redirectUrl, message) : dataWithError(null, message);
   } catch (error) {
     console.error('Error creating block: ', error);
-    return dataWithError(null, 'Could not create block. Please try again');
+    return dataWithError(null, 'Could not edit block. Please try again');
   }
 }
 

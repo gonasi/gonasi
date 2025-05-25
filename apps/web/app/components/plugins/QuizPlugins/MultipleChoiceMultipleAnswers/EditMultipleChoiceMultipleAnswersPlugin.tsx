@@ -7,13 +7,14 @@ import { HoneypotInputs } from 'remix-utils/honeypot/react';
 import { v4 as uuidv4 } from 'uuid';
 
 import {
-  MultipleChoiceMultipleAnswersSchema,
-  type MultipleChoiceType,
+  MultipleChoiceMultipleAnswersContentSchema,
+  type MultipleChoiceMultipleAnswersContentSchemaType,
+  type MultipleChoiceSchemaType,
 } from '@gonasi/schemas/plugins';
 
-import type { EditPluginComponentProps } from '../../EditPluginTypesRenderer';
+import type { EditPluginComponentProps } from '../../PluginRenderers/EditPluginTypesRenderer';
 
-import { Button, OutlineButton } from '~/components/ui/button';
+import { Button, IconTooltipButton, OutlineButton } from '~/components/ui/button';
 import { Checkbox } from '~/components/ui/checkbox';
 import { ErrorList, hasErrors, TextareaField } from '~/components/ui/forms';
 import { RichTextInputField } from '~/components/ui/forms/RichTextInputField';
@@ -24,22 +25,24 @@ import { useIsPending } from '~/utils/misc';
 export function EditMultipleChoiceMultipleAnswersPlugin({ block }: EditPluginComponentProps) {
   const isPending = useIsPending();
 
+  const blockContent = block.content as MultipleChoiceMultipleAnswersContentSchemaType;
+
   const [form, fields] = useForm({
     id: `edit-${block.plugin_type}-form`,
-    constraint: getZodConstraint(MultipleChoiceMultipleAnswersSchema),
+    constraint: getZodConstraint(MultipleChoiceMultipleAnswersContentSchema),
     shouldValidate: 'onBlur',
     shouldRevalidate: 'onInput',
     defaultValue: {
-      ...block.content,
+      ...blockContent,
     },
     onValidate({ formData }) {
-      return parseWithZod(formData, { schema: MultipleChoiceMultipleAnswersSchema });
+      return parseWithZod(formData, { schema: MultipleChoiceMultipleAnswersContentSchema });
     },
   });
 
   const choices = fields.choices.getFieldList();
 
-  const getChoices = (): MultipleChoiceType[] =>
+  const getChoices = (): MultipleChoiceSchemaType[] =>
     choices.map((fieldset) => {
       const { choiceState, uuid } = fieldset.getFieldset();
       return {
@@ -48,7 +51,7 @@ export function EditMultipleChoiceMultipleAnswersPlugin({ block }: EditPluginCom
       };
     });
 
-  const updateChoices = (updated: MultipleChoiceType[]) => {
+  const updateChoices = (updated: MultipleChoiceSchemaType[]) => {
     form.update({
       name: fields.choices.name,
       value: updated,
@@ -57,7 +60,7 @@ export function EditMultipleChoiceMultipleAnswersPlugin({ block }: EditPluginCom
 
   const addChoice = () => {
     const current = getChoices();
-    const newChoice: MultipleChoiceType = {
+    const newChoice: MultipleChoiceSchemaType = {
       uuid: uuidv4(),
       choiceState: '',
     };
@@ -122,7 +125,7 @@ export function EditMultipleChoiceMultipleAnswersPlugin({ block }: EditPluginCom
               <Plus className='mr-2 h-4 w-4' /> Add Choice
             </OutlineButton>
           </div>
-          <div className='bg-card/50 rounded-lg p-4'>
+          <div className='flex flex-col space-y-4'>
             {choices && choices.length ? (
               <AnimatePresence>
                 {choices.map((choice, index) => {
@@ -134,19 +137,19 @@ export function EditMultipleChoiceMultipleAnswersPlugin({ block }: EditPluginCom
                       animate={{ opacity: 1, height: 'auto' }}
                       exit={{ opacity: 0, height: 0 }}
                       transition={{ duration: 0.2 }}
+                      className='bg-card/50 rounded-lg p-4'
                     >
                       <RichTextInputField
                         labelProps={{
                           children: `Choice ${index + 1}`,
                           required: true,
                           endAdornment: (
-                            <OutlineButton
-                              size='sm'
+                            <IconTooltipButton
+                              title={`Delete Choice ${index + 1}`}
+                              icon={Trash}
                               type='button'
                               onClick={() => removeChoice(uuid.value ?? '')}
-                            >
-                              <Trash size={16} />
-                            </OutlineButton>
+                            />
                           ),
                         }}
                         meta={choiceState as FieldMetadata<string>}

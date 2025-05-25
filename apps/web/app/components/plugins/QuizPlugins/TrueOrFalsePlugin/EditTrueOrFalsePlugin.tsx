@@ -9,7 +9,7 @@ import {
   type TrueOrFalseContentSchemaType,
 } from '@gonasi/schemas/plugins';
 
-import type { EditPluginComponentProps } from '../../EditPluginTypesRenderer';
+import type { EditPluginComponentProps } from '../../PluginRenderers/EditPluginTypesRenderer';
 
 import { Button } from '~/components/ui/button';
 import { ErrorList, RadioButtonField, TextareaField } from '~/components/ui/forms';

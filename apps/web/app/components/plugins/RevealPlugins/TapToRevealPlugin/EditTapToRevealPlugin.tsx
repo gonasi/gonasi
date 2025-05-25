@@ -8,7 +8,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { type TapToRevealCardType, TapToRevealSchema } from '@gonasi/schemas/plugins';
 
-import type { EditPluginComponentProps } from '../../EditPluginTypesRenderer';
+import type { EditPluginComponentProps } from '../../PluginRenderers/EditPluginTypesRenderer';
 
 import { Button, OutlineButton } from '~/components/ui/button';
 import { ErrorList } from '~/components/ui/forms';

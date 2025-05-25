@@ -7,7 +7,7 @@ import { HoneypotInputs } from 'remix-utils/honeypot/react';
 import { v4 as uuidv4 } from 'uuid';
 
 import {
-  MultipleChoiceMultipleAnswersSchema,
+  MultipleChoiceMultipleAnswersContentSchema,
   type MultipleChoiceType,
   type PluginTypeId,
 } from '@gonasi/schemas/plugins';
@@ -17,25 +17,26 @@ import { Checkbox } from '~/components/ui/checkbox';
 import { ErrorList, hasErrors, TextareaField } from '~/components/ui/forms';
 import { RichTextInputField } from '~/components/ui/forms/RichTextInputField';
 import { Label } from '~/components/ui/label';
+import { IconTooltipButton } from '~/components/ui/tooltip';
 import { cn } from '~/lib/utils';
 import { useIsPending } from '~/utils/misc';
 
 interface CreateMultipleChoiceMultipleAnswersPluginProps {
-  name: PluginTypeId;
+  pluginTypeId: PluginTypeId;
 }
 
 export function CreateMultipleChoiceMultipleAnswersPlugin({
-  name,
+  pluginTypeId,
 }: CreateMultipleChoiceMultipleAnswersPluginProps) {
   const pending = useIsPending();
 
   const [form, fields] = useForm({
-    id: `create-${name}-form`,
-    constraint: getZodConstraint(MultipleChoiceMultipleAnswersSchema),
+    id: `create-${pluginTypeId}-form`,
+    constraint: getZodConstraint(MultipleChoiceMultipleAnswersContentSchema),
     shouldValidate: 'onBlur',
     shouldRevalidate: 'onInput',
     onValidate({ formData }) {
-      return parseWithZod(formData, { schema: MultipleChoiceMultipleAnswersSchema });
+      return parseWithZod(formData, { schema: MultipleChoiceMultipleAnswersContentSchema });
     },
   });
 
@@ -106,7 +107,7 @@ export function CreateMultipleChoiceMultipleAnswersPlugin({
               <Plus className='mr-2 h-4 w-4' /> Add Choice
             </OutlineButton>
           </div>
-          <div className='bg-card/50 rounded-lg p-4'>
+          <div className='flex flex-col space-y-4'>
             {choices && choices.length ? (
               <AnimatePresence>
                 {choices.map((choice, index) => {
@@ -119,19 +120,19 @@ export function CreateMultipleChoiceMultipleAnswersPlugin({
                       animate={{ opacity: 1, height: 'auto' }}
                       exit={{ opacity: 0, height: 0 }}
                       transition={{ duration: 0.2 }}
+                      className='bg-card/50 rounded-lg p-4'
                     >
                       <RichTextInputField
                         labelProps={{
                           children: `Choice ${index + 1}`,
                           required: true,
                           endAdornment: (
-                            <OutlineButton
-                              size='sm'
+                            <IconTooltipButton
+                              title={`Delete Choice ${index + 1}`}
+                              icon={Trash}
                               type='button'
                               onClick={() => removeChoice(uuid.value ?? '')}
-                            >
-                              <Trash size={16} />
-                            </OutlineButton>
+                            />
                           ),
                         }}
                         meta={choiceState as FieldMetadata<string>}
@@ -214,7 +215,7 @@ export function CreateMultipleChoiceMultipleAnswersPlugin({
             disabled={pending}
             isLoading={pending}
             name='intent'
-            value={name}
+            value={pluginTypeId}
           >
             Save
           </Button>

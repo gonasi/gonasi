@@ -5,6 +5,7 @@ import { ArrowLeft, LoaderCircle } from 'lucide-react';
 import { dataWithError, redirectWithSuccess } from 'remix-toast';
 
 import {
+  createMultipleChoiceMultipleAnswersBlock,
   createMultipleChoiceSingleAnswerBlock,
   createRichTextBlock,
   createTrueOrFalseBlock,
@@ -114,6 +115,23 @@ export async function action({ request, params }: Route.ActionArgs) {
           settings: {
             playbackMode: 'inline',
             weight: DEFAULT_WEIGHT,
+            layoutStyle: 'single',
+            randomization: 'none',
+          },
+        }));
+        break;
+      }
+
+      case 'multiple_choice_multiple': {
+        const value = submission.value as SchemaData<'multiple_choice_multiple'>;
+        ({ success, message } = await createMultipleChoiceMultipleAnswersBlock(supabase, {
+          content: value,
+          lessonId: params.lessonId,
+          pluginType: 'multiple_choice_multiple',
+          weight: DEFAULT_WEIGHT + 1,
+          settings: {
+            playbackMode: 'inline',
+            weight: DEFAULT_WEIGHT + 1,
             layoutStyle: 'single',
             randomization: 'none',
           },

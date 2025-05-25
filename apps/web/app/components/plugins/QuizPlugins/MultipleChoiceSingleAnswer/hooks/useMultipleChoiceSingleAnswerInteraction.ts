@@ -48,15 +48,13 @@ export function useMultipleChoiceSingleAnswerInteraction(
     let count = 0;
 
     if (state.wrongAttempts.length > 0) {
-      count += 1;
+      count += state.wrongAttempts.length;
     }
 
     // Only count correct attempt if it wasn't revealed
     if (state.correctAttempt !== null && !state.hasRevealedCorrectAnswer) {
       count += 1;
     }
-
-    console.log('****** count: ', count);
 
     return count;
   }, [state.wrongAttempts.length, state.correctAttempt, state.hasRevealedCorrectAnswer]);
