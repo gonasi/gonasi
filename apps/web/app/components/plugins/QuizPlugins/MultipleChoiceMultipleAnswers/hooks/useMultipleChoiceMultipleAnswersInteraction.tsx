@@ -39,8 +39,13 @@ export function useMultipleChoiceMultipleAnswersInteraction(
 
   // Derived state - compute these from the main state instead of maintaining separate state
   const isCompleted = useMemo(() => {
-    return state.correctAttempt !== null || state.hasRevealedCorrectAnswer;
-  }, [state.correctAttempt, state.hasRevealedCorrectAnswer]);
+    const allChoicesSelected = state.correctAttempt?.selected.length === correctAnswerUuids.length;
+    return allChoicesSelected || state.hasRevealedCorrectAnswer;
+  }, [
+    correctAnswerUuids.length,
+    state.correctAttempt?.selected.length,
+    state.hasRevealedCorrectAnswer,
+  ]);
 
   const canInteract = useMemo(() => {
     return !isCompleted && state.showCheckIfAnswerIsCorrectButton;

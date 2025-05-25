@@ -80,7 +80,7 @@ export function ViewPluginWrapper({
   }
 
   return (
-    <>
+    <div>
       {content}
       <Sheet open={isExplanationBottomSheetOpen} onOpenChange={() => closeExplanation()}>
         <SheetContent
@@ -92,12 +92,11 @@ export function ViewPluginWrapper({
           </SheetHeader>
 
           <div className='flex-1 overflow-y-auto px-4'>
-            <SheetDescription>
-              <RichTextRenderer editorState={storeExplanationState} />
-            </SheetDescription>
+            <SheetDescription />
+            <RichTextRenderer editorState={storeExplanationState} />
           </div>
         </SheetContent>
       </Sheet>
-    </>
+    </div>
   );
 }

@@ -237,6 +237,7 @@ export function ViewMultipleChoiceMultipleAnswersPlugin({ block, mode }: ViewPlu
                         onClick={handleContinue}
                         loading={loading}
                         isLastBlock={isLastBlock}
+                        disabled={mode === 'preview'}
                       />
                     )}
                   </div>
