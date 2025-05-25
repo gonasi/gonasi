@@ -33,6 +33,7 @@ interface RenderFeedbackProps {
   label: string;
   actions: React.ReactNode;
   score?: number;
+  hasBeenPlayed?: boolean;
 }
 
 // Memoized score color function to avoid recalculation
@@ -49,24 +50,31 @@ const getScoreColor = (score: number): string => {
   return 'bg-gray-500 dark:bg-gray-600 text-white';
 };
 
-export function RenderFeedback({ color, icon, label, actions, score }: RenderFeedbackProps) {
-  const { isSoundEnabled, isVibrationsEnabled } = useStore();
+export function RenderFeedback({
+  color,
+  icon,
+  label,
+  actions,
+  score,
+  hasBeenPlayed = false, // use to disable sound play
+}: RenderFeedbackProps) {
+  const { isSoundEnabled, isVibrationEnabled } = useStore();
   const isError = color === 'destructive';
 
   // Play sound effect and vibrate when component mounts or color changes
   useEffect(() => {
-    // Only play sound if enabled
-    if (isSoundEnabled) {
+    // Only play sound if enabled and hasn't been played yet
+    if (isSoundEnabled && !hasBeenPlayed) {
       const soundToPlay = isError ? wrongHowl : rightHowl;
       soundToPlay.play();
     }
 
-    // Add vibration for incorrect answers (mobile devices) if enabled
-    if (isError && isVibrationsEnabled && 'vibrate' in navigator) {
+    // Add vibration for incorrect answers (mobile devices) if enabled and hasn't been played yet
+    if (isError && isVibrationEnabled && !hasBeenPlayed && 'vibrate' in navigator) {
       // Double vibration pattern: vibrate for 100ms, pause 50ms, vibrate 100ms
       navigator.vibrate([100, 50, 100]);
     }
-  }, [isError, isSoundEnabled, isVibrationsEnabled]);
+  }, [isError, isSoundEnabled, isVibrationEnabled, hasBeenPlayed]);
 
   // Memoize variants to avoid recalculation
   const variants = useMemo(

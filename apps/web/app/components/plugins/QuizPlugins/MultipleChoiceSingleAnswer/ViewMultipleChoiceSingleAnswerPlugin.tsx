@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import { useParams } from 'react-router';
-import { Check, CheckCheck, PartyPopper, RefreshCw, X, XCircle } from 'lucide-react';
+import { Check, PartyPopper, X, XCircle } from 'lucide-react';
 
 import type {
   MultipleChoiceSingleAnswerContentSchemaType,
@@ -20,8 +20,11 @@ import RichTextRenderer from '~/components/go-editor/ui/RichTextRenderer';
 import {
   AnimateInButtonWrapper,
   BlockActionButton,
-  Button,
+  CheckAnswerButton,
+  ChoiceOptionButton,
   OutlineButton,
+  ShowAnswerButton,
+  TryAgainButton,
 } from '~/components/ui/button';
 import { cn } from '~/lib/utils';
 import { useStore } from '~/store/index.tsx';
@@ -133,22 +136,12 @@ export function ViewMultipleChoiceSingleAnswerPlugin({ block, mode }: ViewPlugin
             return (
               <div key={option.uuid} className='relative w-full'>
                 {/* Option Button */}
-                <OutlineButton
+                <ChoiceOptionButton
+                  choiceState={option.choiceState}
+                  isSelected={isSelected}
+                  isDisabled={isDisabled}
                   onClick={() => selectOption(option.uuid)}
-                  className={cn('relative h-fit w-full justify-start text-left md:max-h-50', {
-                    // Highlight selected option
-                    'border-secondary bg-secondary/20 hover:bg-secondary-10 hover:border-secondary/80':
-                      isSelected,
-                  })}
-                  disabled={isDisabled}
-                >
-                  <div className='flex items-start'>
-                    <RichTextRenderer
-                      editorState={option.choiceState}
-                      className='max-h-30 md:max-h-40'
-                    />
-                  </div>
-                </OutlineButton>
+                />
 
                 {/* Status Indicators */}
                 <div className='absolute -top-1.5 -right-1.5 rounded-full'>
@@ -178,19 +171,7 @@ export function ViewMultipleChoiceSingleAnswerPlugin({ block, mode }: ViewPlugin
         <div className='w-full pb-4'>
           {/* Initial State: Check Answer Button */}
           {state.showCheckIfAnswerIsCorrectButton && (
-            <div className='flex w-full justify-end'>
-              <AnimateInButtonWrapper>
-                <Button
-                  variant='secondary'
-                  className='mb-4 rounded-full'
-                  rightIcon={<CheckCheck />}
-                  disabled={selectedOptionUuid === null}
-                  onClick={() => checkAnswer()}
-                >
-                  Check
-                </Button>
-              </AnimateInButtonWrapper>
-            </div>
+            <CheckAnswerButton disabled={selectedOptionUuid === null} onClick={checkAnswer} />
           )}
 
           {/* Success State: Correct Answer Feedback */}
@@ -200,6 +181,7 @@ export function ViewMultipleChoiceSingleAnswerPlugin({ block, mode }: ViewPlugin
               icon={<PartyPopper />}
               label={state.hasRevealedCorrectAnswer ? 'Answer Revealed' : 'Correct!'}
               score={score}
+              hasBeenPlayed={payload?.is_complete}
               actions={
                 <div className='flex'>
                   {/* Continue/Next Button */}
@@ -236,26 +218,13 @@ export function ViewMultipleChoiceSingleAnswerPlugin({ block, mode }: ViewPlugin
               color='destructive'
               icon={<XCircle />}
               label='Incorrect!'
+              hasBeenPlayed={payload?.is_complete}
               actions={
                 <div className='flex items-center space-x-4'>
                   {/* Retry Button */}
-                  <OutlineButton
-                    className='rounded-full'
-                    rightIcon={<RefreshCw size={16} />}
-                    onClick={tryAgain}
-                  >
-                    Try Again
-                  </OutlineButton>
+                  <TryAgainButton onClick={tryAgain} />
                   {/* Show Answer Button (appears after wrong attempt) */}
-                  {state.showShowAnswerButton && (
-                    <Button
-                      variant='secondary'
-                      className='rounded-full'
-                      onClick={() => revealCorrectAnswer()}
-                    >
-                      Show Answer
-                    </Button>
-                  )}
+                  {state.showShowAnswerButton && <ShowAnswerButton onClick={revealCorrectAnswer} />}
                 </div>
               }
             />

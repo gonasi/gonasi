@@ -148,6 +148,7 @@ export function ViewTrueOrFalsePlugin({ block, mode }: ViewPluginComponentProps)
               icon={<PartyPopper />}
               label={state.hasRevealedCorrectAnswer ? 'Answer Revealed' : 'Correct!'}
               score={score}
+              hasBeenPlayed={payload?.is_complete}
               actions={
                 <div className='flex'>
                   {!payload?.is_complete && (
@@ -179,6 +180,7 @@ export function ViewTrueOrFalsePlugin({ block, mode }: ViewPluginComponentProps)
               color='destructive'
               icon={<XCircle />}
               label='Incorrect!'
+              hasBeenPlayed={payload?.is_complete}
               actions={
                 <div className='flex items-center space-x-4'>
                   <TryAgainButton onClick={tryAgain} />
