@@ -5,3 +5,7 @@ export * from './PluginButton';
 export * from './BlockActionButton';
 export * from './IconTooltipButton';
 export * from './AnimateInButtonWrapper';
+export * from './TrueOrFalseOptionsButton';
+export * from './CheckAnswerButton';
+export * from './ShowAnswerButton';
+export * from './TryAgainButton';

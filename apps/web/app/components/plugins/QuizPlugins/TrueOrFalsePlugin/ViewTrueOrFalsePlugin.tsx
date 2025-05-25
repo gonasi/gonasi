@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import { useParams } from 'react-router';
-import { Check, CheckCheck, PartyPopper, RefreshCw, X, XCircle } from 'lucide-react';
+import { Check, PartyPopper, X, XCircle } from 'lucide-react';
 
 import type {
   TrueOrFalseContentSchemaType,
@@ -20,8 +20,11 @@ import RichTextRenderer from '~/components/go-editor/ui/RichTextRenderer';
 import {
   AnimateInButtonWrapper,
   BlockActionButton,
-  Button,
+  CheckAnswerButton,
   OutlineButton,
+  ShowAnswerButton,
+  TrueOrFalseOptionsButton,
+  TryAgainButton,
 } from '~/components/ui/button';
 import { cn } from '~/lib/utils';
 import { useStore } from '~/store';
@@ -102,17 +105,13 @@ export function ViewTrueOrFalsePlugin({ block, mode }: ViewPluginComponentProps)
 
               return (
                 <div key={String(val)} className='relative w-full'>
-                  <OutlineButton
-                    onClick={() => selectOption(val)}
-                    leftIcon={icon}
-                    className={cn('relative w-full', {
-                      'border-secondary bg-secondary/20 hover:bg-secondary-10 hover:border-secondary/80':
-                        isSelected,
-                    })}
-                    disabled={isDisabled}
-                  >
-                    {val ? 'True' : 'False'}
-                  </OutlineButton>
+                  <TrueOrFalseOptionsButton
+                    val={val}
+                    icon={icon}
+                    isSelected={isSelected}
+                    isDisabled={isDisabled}
+                    selectOption={() => selectOption(val)}
+                  />
 
                   <div className='absolute -top-1.5 -right-1.5 rounded-full'>
                     {isCorrectAttempt && (
@@ -140,19 +139,7 @@ export function ViewTrueOrFalsePlugin({ block, mode }: ViewPluginComponentProps)
 
         <div className='w-full pb-4'>
           {state.showCheckIfAnswerIsCorrectButton && (
-            <div className='flex w-full justify-end'>
-              <AnimateInButtonWrapper>
-                <Button
-                  variant='secondary'
-                  className='mb-4 rounded-full'
-                  rightIcon={<CheckCheck />}
-                  disabled={selectedOption === null}
-                  onClick={checkAnswer}
-                >
-                  Check
-                </Button>
-              </AnimateInButtonWrapper>
-            </div>
+            <CheckAnswerButton disabled={selectedOption === null} onClick={checkAnswer} />
           )}
 
           {state.showContinueButton && (
@@ -194,23 +181,8 @@ export function ViewTrueOrFalsePlugin({ block, mode }: ViewPluginComponentProps)
               label='Incorrect!'
               actions={
                 <div className='flex items-center space-x-4'>
-                  <OutlineButton
-                    className='rounded-full'
-                    rightIcon={<RefreshCw size={16} />}
-                    onClick={tryAgain}
-                  >
-                    Try Again
-                  </OutlineButton>
-
-                  {state.showShowAnswerButton && (
-                    <Button
-                      variant='secondary'
-                      className='rounded-full'
-                      onClick={revealCorrectAnswer}
-                    >
-                      Show Answer
-                    </Button>
-                  )}
+                  <TryAgainButton onClick={tryAgain} />
+                  {state.showShowAnswerButton && <ShowAnswerButton onClick={revealCorrectAnswer} />}
                 </div>
               }
             />

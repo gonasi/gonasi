@@ -1,7 +1,17 @@
 import { motion } from 'framer-motion';
+import { Howl } from 'howler';
 import { ArrowRight, PartyPopper } from 'lucide-react';
 
+import tapSound from '/assets/sounds/block-action-button.mp3';
 import { Button } from '~/components/ui/button';
+import { useStore } from '~/store';
+
+// Create Howl instance outside component to avoid recreation on every render
+const tapHowl = new Howl({
+  src: [tapSound],
+  volume: 0.5,
+  preload: true, // Preload for better performance
+});
 
 interface BlockActionButtonProps {
   onClick: () => void;
@@ -16,6 +26,17 @@ export function BlockActionButton({
   disabled,
   isLastBlock,
 }: BlockActionButtonProps) {
+  const { isSoundEnabled } = useStore();
+
+  const handleClickWithSound = () => {
+    onClick(); // Fixed: removed erroneous arrow function wrapper
+
+    // Only play sound if not disabled and not loading
+    if (!disabled && !loading && isSoundEnabled) {
+      tapHowl.play();
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, x: -20 }}
@@ -36,7 +57,7 @@ export function BlockActionButton({
       >
         <Button
           type='submit'
-          onClick={onClick}
+          onClick={handleClickWithSound}
           className='rounded-full'
           variant={isLastBlock ? 'default' : 'secondary'}
           isLoading={loading}

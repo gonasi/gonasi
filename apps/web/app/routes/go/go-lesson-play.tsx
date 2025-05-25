@@ -1,7 +1,6 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef } from 'react';
+import { lazy, Suspense, useEffect, useRef } from 'react';
 import { Await, data, Outlet, redirect, useNavigate } from 'react-router';
 import { motion } from 'framer-motion';
-import { Howl } from 'howler';
 import { ArrowRight, LoaderCircle } from 'lucide-react';
 import { dataWithError, redirectWithError } from 'remix-toast';
 
@@ -22,7 +21,7 @@ import {
 
 import type { Route } from './+types/go-lesson-play';
 
-import scrollSound from '/assets/sounds/scroll.mp3';
+import { useScrollAudio } from '~/components/hooks/useAutoScroll';
 import { CoursePlayLayout } from '~/components/layouts/course';
 import { OutlineButton } from '~/components/ui/button';
 import { createClient } from '~/lib/supabase/supabase.server';
@@ -173,85 +172,6 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 }
 
 /**
- * Custom hook for managing scroll audio with better error handling and performance
- */
-function useScrollAudio(
-  soundSrc: string,
-  activeBlock: string | null,
-  blockRefs: React.RefObject<Record<string, HTMLElement | null>>,
-) {
-  const scrollHowl = useMemo(() => {
-    if (!soundSrc) return null;
-
-    return new Howl({
-      src: [soundSrc],
-      volume: 0.5,
-      preload: true,
-      html5: true, // Better performance for small audio files
-      onloaderror: (id, error) => {
-        console.warn('Failed to load scroll sound:', error, id);
-      },
-      onplayerror: (id, error) => {
-        console.warn('Failed to play scroll sound:', error, id);
-      },
-    });
-  }, [soundSrc]);
-
-  // Throttle audio playing to prevent rapid-fire sounds
-  const lastPlayTime = useRef(0);
-  const PLAY_THROTTLE_MS = 150;
-
-  const playScrollSound = useCallback(() => {
-    if (!scrollHowl) return;
-
-    const now = Date.now();
-    if (now - lastPlayTime.current < PLAY_THROTTLE_MS) {
-      return;
-    }
-
-    try {
-      scrollHowl.stop(); // Stop any currently playing instance
-      scrollHowl.play();
-      lastPlayTime.current = now;
-    } catch (error) {
-      console.warn('Error playing scroll sound:', error);
-    }
-  }, [scrollHowl]);
-
-  // Cleanup audio on unmount
-  useEffect(() => {
-    return () => {
-      if (scrollHowl) {
-        scrollHowl.stop();
-        scrollHowl.unload();
-      }
-    };
-  }, [scrollHowl]);
-
-  useEffect(() => {
-    if (!activeBlock || !blockRefs.current?.[activeBlock]) {
-      return;
-    }
-
-    const targetElement = blockRefs.current[activeBlock];
-
-    // Always scroll to the new block (Brilliant.org behavior)
-    requestAnimationFrame(() => {
-      targetElement.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start',
-        inline: 'nearest',
-      });
-
-      // Play sound after a brief delay to sync with scroll animation
-      setTimeout(playScrollSound, 100);
-    });
-  }, [activeBlock, playScrollSound, blockRefs]);
-
-  return { playScrollSound };
-}
-
-/**
  * Main lesson play component. Renders lesson blocks and next lesson button if completed.
  */
 export default function GoLessonPlay({ loaderData, params }: Route.ComponentProps) {
@@ -275,7 +195,7 @@ export default function GoLessonPlay({ loaderData, params }: Route.ComponentProp
   }, [blockInteractions, blocks, initializePlayFlow]);
 
   // Use the improved scroll audio hook
-  useScrollAudio(scrollSound, activeBlock, blockRefs);
+  useScrollAudio(activeBlock, blockRefs);
 
   if (!visibleBlocks) return null;
 

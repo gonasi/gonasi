@@ -1,3 +1,4 @@
+import { useEffect, useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 import {
@@ -8,7 +9,23 @@ import {
   shakeVariants,
 } from './animationVariants';
 
+import rightAnswer from '/assets/sounds/right-answer.mp3';
+import wrongAnswer from '/assets/sounds/wrong-answer.mp3';
 import { cn } from '~/lib/utils';
+import { useStore } from '~/store';
+
+// Create Howl instances once and reuse them
+const rightHowl = new Howl({
+  src: [rightAnswer],
+  volume: 0.5,
+  preload: true,
+});
+
+const wrongHowl = new Howl({
+  src: [wrongAnswer],
+  volume: 0.5,
+  preload: true,
+});
 
 interface RenderFeedbackProps {
   color: 'success' | 'destructive';
@@ -18,42 +35,63 @@ interface RenderFeedbackProps {
   score?: number;
 }
 
-// Moved outside component to avoid recreation on each render
-function getScoreColor(score: number): string {
-  if (score >= 95) {
-    return 'bg-emerald-400 dark:bg-emerald-600 text-black dark:text-white'; // brilliant emerald
-  } else if (score >= 85) {
-    return 'bg-green-400 dark:bg-green-600 text-black dark:text-white'; // bright green
-  } else if (score >= 75) {
-    return 'bg-lime-500 dark:bg-lime-700 text-black dark:text-white'; // lime green
-  } else if (score >= 65) {
-    return 'bg-yellow-300 dark:bg-yellow-600 text-black dark:text-white'; // bright yellow
-  } else if (score >= 55) {
-    return 'bg-amber-400 dark:bg-amber-600 text-black dark:text-white'; // amber
-  } else if (score >= 45) {
-    return 'bg-orange-400 dark:bg-orange-600 text-black dark:text-white'; // orange
-  } else if (score >= 35) {
-    return 'bg-orange-600 dark:bg-orange-700 text-white'; // dark orange
-  } else if (score >= 25) {
-    return 'bg-red-500 dark:bg-red-600 text-white'; // red
-  } else if (score > 0) {
-    return 'bg-red-700 dark:bg-red-800 text-white'; // dark red
-  } else {
-    return 'bg-gray-500 dark:bg-gray-600 text-white'; // zero/no score
-  }
-}
+// Memoized score color function to avoid recalculation
+const getScoreColor = (score: number): string => {
+  if (score >= 95) return 'bg-emerald-400 dark:bg-emerald-600 text-black dark:text-white';
+  if (score >= 85) return 'bg-green-400 dark:bg-green-600 text-black dark:text-white';
+  if (score >= 75) return 'bg-lime-500 dark:bg-lime-700 text-black dark:text-white';
+  if (score >= 65) return 'bg-yellow-300 dark:bg-yellow-600 text-black dark:text-white';
+  if (score >= 55) return 'bg-amber-400 dark:bg-amber-600 text-black dark:text-white';
+  if (score >= 45) return 'bg-orange-400 dark:bg-orange-600 text-black dark:text-white';
+  if (score >= 35) return 'bg-orange-600 dark:bg-orange-700 text-white';
+  if (score >= 25) return 'bg-red-500 dark:bg-red-600 text-white';
+  if (score > 0) return 'bg-red-700 dark:bg-red-800 text-white';
+  return 'bg-gray-500 dark:bg-gray-600 text-white';
+};
 
 export function RenderFeedback({ color, icon, label, actions, score }: RenderFeedbackProps) {
+  const { isSoundEnabled, isVibrationsEnabled } = useStore();
   const isError = color === 'destructive';
 
-  const variants = isError ? { ...shakeVariants, ...resetExitVariant } : feedbackVariants;
+  // Play sound effect and vibrate when component mounts or color changes
+  useEffect(() => {
+    // Only play sound if enabled
+    if (isSoundEnabled) {
+      const soundToPlay = isError ? wrongHowl : rightHowl;
+      soundToPlay.play();
+    }
 
-  const feedbackClassNames = cn(baseFeedbackStyle, 'px-4', {
-    'bg-success/5 text-success': color === 'success',
-    'bg-danger/3 text-danger': color === 'destructive',
-  });
+    // Add vibration for incorrect answers (mobile devices) if enabled
+    if (isError && isVibrationsEnabled && 'vibrate' in navigator) {
+      // Double vibration pattern: vibrate for 100ms, pause 50ms, vibrate 100ms
+      navigator.vibrate([100, 50, 100]);
+    }
+  }, [isError, isSoundEnabled, isVibrationsEnabled]);
 
-  const scoreVariants = score !== undefined ? celebrateVariants : feedbackVariants;
+  // Memoize variants to avoid recalculation
+  const variants = useMemo(
+    () => (isError ? { ...shakeVariants, ...resetExitVariant } : feedbackVariants),
+    [isError],
+  );
+
+  // Memoize score variants
+  const scoreVariants = useMemo(
+    () => (score !== undefined ? celebrateVariants : feedbackVariants),
+    [score],
+  );
+
+  // Memoize feedback class names
+  const feedbackClassNames = useMemo(
+    () =>
+      cn(baseFeedbackStyle, 'px-4', {
+        'bg-success/5 text-success': color === 'success',
+        'bg-danger/3 text-danger': color === 'destructive',
+      }),
+    [color],
+  );
+
+  // Memoize score color class
+  const scoreColorClass = useMemo(() => (score !== undefined ? getScoreColor(score) : ''), [score]);
 
   return (
     <AnimatePresence mode='wait'>
@@ -63,7 +101,7 @@ export function RenderFeedback({ color, icon, label, actions, score }: RenderFee
         animate='animate'
         exit='exit'
         variants={variants}
-        className={cn('-mx-4 -mb-4')}
+        className='-mx-4 -mb-4'
       >
         <div className={feedbackClassNames}>
           <div className='flex w-full items-center justify-between'>
@@ -77,7 +115,7 @@ export function RenderFeedback({ color, icon, label, actions, score }: RenderFee
               {score !== undefined && (
                 <motion.div
                   variants={scoreVariants}
-                  className={cn('rounded-lg p-1 md:p-2', `${getScoreColor(score)}`)}
+                  className={cn('rounded-lg p-1 md:p-2', scoreColorClass)}
                 >
                   +{score} pts!
                 </motion.div>
