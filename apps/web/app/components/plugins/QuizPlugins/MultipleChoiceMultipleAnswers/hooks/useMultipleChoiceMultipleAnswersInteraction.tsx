@@ -60,12 +60,20 @@ export function useMultipleChoiceMultipleAnswersInteraction(
     }
 
     // Only count correct attempt if it wasn't revealed
-    if (state.correctAttempt !== null && !state.hasRevealedCorrectAnswer) {
+    if (
+      state.correctAttempt?.selected.length === correctAnswerUuids.length &&
+      !state.hasRevealedCorrectAnswer
+    ) {
       count += 1;
     }
 
     return count;
-  }, [state.wrongAttempts.length, state.correctAttempt, state.hasRevealedCorrectAnswer]);
+  }, [
+    state.wrongAttempts.length,
+    state.correctAttempt?.selected.length,
+    state.hasRevealedCorrectAnswer,
+    correctAnswerUuids.length,
+  ]);
 
   // Calculate remaining correct answers to select
   const remainingCorrectToSelect = useMemo(() => {
