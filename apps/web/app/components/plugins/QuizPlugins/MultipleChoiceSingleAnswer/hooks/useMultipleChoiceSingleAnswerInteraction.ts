@@ -56,8 +56,6 @@ export function useMultipleChoiceSingleAnswerInteraction(
       count += 1;
     }
 
-    console.log('****** count: ', count);
-
     return count;
   }, [state.wrongAttempts.length, state.correctAttempt, state.hasRevealedCorrectAnswer]);
 

@@ -5,6 +5,7 @@ import { ArrowLeft, LoaderCircle } from 'lucide-react';
 import { dataWithError, redirectWithSuccess } from 'remix-toast';
 
 import {
+  createMultipleChoiceMultipleAnswersBlock,
   createMultipleChoiceSingleAnswerBlock,
   createRichTextBlock,
   createTrueOrFalseBlock,
@@ -19,7 +20,6 @@ import {
 } from '@gonasi/schemas/plugins';
 
 import type { Route } from './+types/create-block-by-plugin-id-modal';
-import { createMultipleChoiceMultipleAnswersBlock } from '../../../../../../../../node_modules/@gonasi/database/src/lessons/blocks/multipleChoiceMultipleAnswers/createMultipleChoiceMultipleAnswersBlock';
 
 import { Spinner } from '~/components/loaders';
 import { Modal } from '~/components/ui/modal';

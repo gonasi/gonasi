@@ -118,7 +118,7 @@ export function EditMultipleChoiceSingleAnswerPlugin({ block }: EditPluginCompon
                   const { choiceState, uuid } = choice.getFieldset();
                   return (
                     <motion.div
-                      key={index} // Make sure to use a stable ID if possible
+                      key={uuid.value ?? index} // Make sure to use a stable ID if possible
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: 'auto' }}
                       exit={{ opacity: 0, height: 0 }}

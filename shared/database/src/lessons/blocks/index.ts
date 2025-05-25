@@ -8,3 +8,4 @@ export * from './fetchBlockSettingsByBlockId';
 export * from './richTextEditor';
 export * from './trueOrFalse';
 export * from './multipleChoiceSingleAnswer';
+export * from './multipleChoiceMultipleAnswers';
