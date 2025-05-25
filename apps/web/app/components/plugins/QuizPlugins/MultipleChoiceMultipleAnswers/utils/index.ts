@@ -1,116 +1,76 @@
 /**
- * Calculates a score for multiple choice questions with multiple answers
- * considering various factors like partial correctness, wrong attempts,
- * and time taken to answer.
- *
- * @param params Scoring parameters
- * @returns A score between 0 and 100
+ * Scoring function for multiple choice, multiple answer questions
+ * Uses explicit scoring tiers for common cases with difficulty adjustments
  */
-export function calculateMultipleChoiceMultipleAnswersScore({
-  isCorrect,
+export function calculateMultipleChoiceMultipleAnswerScore({
   correctAnswersRevealed,
   wrongAttemptsCount,
-  correctSelectedCount,
+  totalChoices,
   totalCorrectAnswers,
-  wrongAttemptsData,
-  correctAnswers,
-  timeToAnswer,
-  maxTimeExpected,
 }: {
-  isCorrect: boolean | null;
   correctAnswersRevealed: boolean;
   wrongAttemptsCount: number;
-  correctSelectedCount?: number;
-  totalCorrectAnswers?: number;
-  wrongAttemptsData?: { selected: number[]; timestamp: number }[];
-  correctAnswers?: number[];
-  timeToAnswer?: number;
-  maxTimeExpected?: number;
+  totalChoices: number;
+  totalCorrectAnswers: number;
 }): number {
-  // If correct answers were revealed by the system, score is 0
+  // If correct answer was revealed, score is 0
   if (correctAnswersRevealed) return 0;
 
-  // If not correct yet and we have enough data for partial scoring
-  if (
-    !isCorrect &&
-    correctSelectedCount !== undefined &&
-    totalCorrectAnswers !== undefined &&
-    totalCorrectAnswers > 0
-  ) {
-    // If user hasn't selected anything correctly yet, return 0
-    if (correctSelectedCount === 0) return 0;
+  // Score based on total choices and wrong attempts
+  switch (totalChoices) {
+    case 2:
+      // Binary choice: 100% first try, 50% second try
+      return wrongAttemptsCount === 0 ? 100 : 50;
 
-    // Calculate partial score as a percentage of correct answers found
-    // but cap it at 40% to encourage complete solutions
-    const partialScore = Math.min((correctSelectedCount / totalCorrectAnswers) * 40, 40);
-    return Math.round(partialScore);
-  }
+    case 3:
+      // Three choices: 100%, 67%, 33%
+      switch (wrongAttemptsCount) {
+        case 0:
+          return 100;
+        case 1:
+          return 67;
+        default:
+          return 33;
+      }
 
-  // Simple score calculation for older implementations
-  if (!correctAnswers && !wrongAttemptsData) {
-    // Fall back to original logic if we don't have the new parameters
-    if (!isCorrect) return 0;
+    case 4:
+      // Four choices: 100%, 75%, 50%, 25%
+      switch (wrongAttemptsCount) {
+        case 0:
+          return 100;
+        case 1:
+          return 75;
+        case 2:
+          return 50;
+        default:
+          return 25;
+      }
 
-    // Score based on number of wrong attempts
-    switch (wrongAttemptsCount) {
-      case 0:
-        return 100; // No wrong attempts = full score
-      case 1:
-        return 75; // One wrong attempt = 75% score
-      case 2:
-        return 50; // Two wrong attempts = 50% score
-      default:
-        return 25; // Three or more wrong attempts = 25% score
+    case 5:
+      // Five choices: 100%, 80%, 60%, 40%, 20%
+      switch (wrongAttemptsCount) {
+        case 0:
+          return 100;
+        case 1:
+          return 80;
+        case 2:
+          return 60;
+        case 3:
+          return 40;
+        default:
+          return 20;
+      }
+
+    default: {
+      // For 6+ choices, use formula approach
+      const penaltyPerWrongAttempt = 100 / totalChoices;
+      const score = 100 - wrongAttemptsCount * penaltyPerWrongAttempt;
+
+      // Adjust for difficulty based on correct answer ratio
+      const difficultyRatio = totalCorrectAnswers / totalChoices;
+      const difficultyBonus = difficultyRatio < 0.3 ? 5 : 0; // Small bonus for very selective questions
+
+      return Math.max(10, Math.round(score + difficultyBonus));
     }
   }
-
-  // Advanced scoring with the full data available
-  // Base score calculation for correct answers
-  let baseScore = 100;
-
-  // Penalty for wrong attempts (more nuanced than the original)
-  const wrongAttemptsPenalty = Math.min(wrongAttemptsCount * 15, 60);
-  baseScore -= wrongAttemptsPenalty;
-
-  // Analyze wrong attempts to find partially correct ones
-  let partiallyCorrectAttempts = 0;
-  if (wrongAttemptsData && correctAnswers) {
-    // Count attempts that had at least one correct answer
-    partiallyCorrectAttempts = wrongAttemptsData.filter((attempt) => {
-      // Check if any of the selected options were correct
-      return attempt.selected.some((option) => correctAnswers.includes(option));
-    }).length;
-
-    // Bonus for partially correct attempts
-    if (partiallyCorrectAttempts > 0) {
-      const partialBonus = Math.min(partiallyCorrectAttempts * 5, 15);
-      baseScore += partialBonus;
-    }
-  }
-
-  // Time-based scoring adjustment (if provided)
-  if (timeToAnswer && maxTimeExpected && maxTimeExpected > 0) {
-    // Fast answers get a bonus, slow answers get a penalty
-    const timeRatio = timeToAnswer / maxTimeExpected;
-    let timeFactor = 0;
-
-    if (timeRatio <= 0.5) {
-      // Answered in half the expected time or less: bonus up to 10 points
-      timeFactor = 10;
-    } else if (timeRatio <= 1) {
-      // Answered within expected time: bonus scales from 10 to 0
-      timeFactor = 10 - 10 * ((timeRatio - 0.5) / 0.5);
-    } else if (timeRatio <= 2) {
-      // Took up to twice the expected time: penalty scales from 0 to -5
-      timeFactor = -5 * ((timeRatio - 1) / 1);
-    } else {
-      // Took more than twice the expected time: max penalty of -5
-      timeFactor = -5;
-    }
-
-    baseScore += timeFactor;
-  }
-
-  // Ensure the final score is between 0 and 100
-  return Math.max(0, Math.min(100, Math.round(baseScore)));
 }
