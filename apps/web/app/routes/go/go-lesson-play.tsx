@@ -207,7 +207,7 @@ export default function GoLessonPlay({ loaderData, params }: Route.ComponentProp
         progress={lessonProgress}
         loading={false}
       >
-        <section className='mx-auto min-h-screen max-w-xl px-4 py-10 md:px-0'>
+        <section className='mx-auto max-w-xl px-4 py-10 md:px-0'>
           {visibleBlocks.length > 0 &&
             visibleBlocks.map((block) => (
               <div
