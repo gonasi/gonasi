@@ -4,7 +4,11 @@ import { parseWithZod } from '@conform-to/zod';
 import { ArrowLeft, LoaderCircle } from 'lucide-react';
 import { dataWithError, redirectWithSuccess } from 'remix-toast';
 
-import { createRichTextBlock, createTrueOrFalseBlock } from '@gonasi/database/lessons';
+import {
+  createMultipleChoiceSingleAnswerBlock,
+  createRichTextBlock,
+  createTrueOrFalseBlock,
+} from '@gonasi/database/lessons';
 import {
   getPluginTypeNameById,
   getSchema,
@@ -65,6 +69,8 @@ export async function action({ request, params }: Route.ActionArgs) {
     let success = false;
     let message = '';
 
+    const DEFAULT_WEIGHT = 1;
+
     switch (typedIntent) {
       case 'rich_text_editor': {
         const value = submission.value as SchemaData<'rich_text_editor'>;
@@ -72,10 +78,10 @@ export async function action({ request, params }: Route.ActionArgs) {
           content: value,
           lessonId: params.lessonId,
           pluginType: 'rich_text_editor',
-          weight: 1,
+          weight: DEFAULT_WEIGHT,
           settings: {
             playbackMode: 'inline',
-            weight: 1,
+            weight: DEFAULT_WEIGHT,
           },
         }));
         break;
@@ -87,10 +93,27 @@ export async function action({ request, params }: Route.ActionArgs) {
           content: value,
           lessonId: params.lessonId,
           pluginType: 'true_or_false',
-          weight: 1,
+          weight: DEFAULT_WEIGHT,
           settings: {
             playbackMode: 'inline',
-            weight: 1,
+            weight: DEFAULT_WEIGHT,
+            layoutStyle: 'single',
+            randomization: 'none',
+          },
+        }));
+        break;
+      }
+
+      case 'multiple_choice_single': {
+        const value = submission.value as SchemaData<'multiple_choice_single'>;
+        ({ success, message } = await createMultipleChoiceSingleAnswerBlock(supabase, {
+          content: value,
+          lessonId: params.lessonId,
+          pluginType: 'multiple_choice_single',
+          weight: DEFAULT_WEIGHT,
+          settings: {
+            playbackMode: 'inline',
+            weight: DEFAULT_WEIGHT,
             layoutStyle: 'single',
             randomization: 'none',
           },

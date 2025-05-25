@@ -6,11 +6,15 @@ import { Plus, Save, Trash } from 'lucide-react';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
 import { v4 as uuidv4 } from 'uuid';
 
-import { type ChoiceType, MultipleChoiceSingleAnswerSchema } from '@gonasi/schemas/plugins';
+import {
+  type ChoiceType,
+  MultipleChoiceSingleAnswerContentSchema,
+  type MultipleChoiceSingleAnswerContentSchemaType,
+} from '@gonasi/schemas/plugins';
 
 import type { EditPluginComponentProps } from '../../EditPluginTypesRenderer';
 
-import { Button, OutlineButton } from '~/components/ui/button';
+import { Button, IconTooltipButton, OutlineButton } from '~/components/ui/button';
 import { ErrorList, RadioButtonField, TextareaField } from '~/components/ui/forms';
 import { RichTextInputField } from '~/components/ui/forms/RichTextInputField';
 import { cn } from '~/lib/utils';
@@ -19,16 +23,18 @@ import { useIsPending } from '~/utils/misc';
 export function EditMultipleChoiceSingleAnswerPlugin({ block }: EditPluginComponentProps) {
   const isPending = useIsPending();
 
+  const blockContent = block.content as MultipleChoiceSingleAnswerContentSchemaType;
+
   const [form, fields] = useForm({
     id: `edit-${block.plugin_type}-form`,
-    constraint: getZodConstraint(MultipleChoiceSingleAnswerSchema),
+    constraint: getZodConstraint(MultipleChoiceSingleAnswerContentSchema),
     shouldValidate: 'onBlur',
     shouldRevalidate: 'onInput',
     defaultValue: {
-      ...block.content,
+      ...blockContent,
     },
     onValidate({ formData }) {
-      return parseWithZod(formData, { schema: MultipleChoiceSingleAnswerSchema });
+      return parseWithZod(formData, { schema: MultipleChoiceSingleAnswerContentSchema });
     },
   });
 
@@ -117,21 +123,19 @@ export function EditMultipleChoiceSingleAnswerPlugin({ block }: EditPluginCompon
                       animate={{ opacity: 1, height: 'auto' }}
                       exit={{ opacity: 0, height: 0 }}
                       transition={{ duration: 0.2 }}
-                      className='bg-card/50 rounded-lg px-4 pt-4'
+                      className='bg-card/50 rounded-lg p-4'
                     >
                       <RichTextInputField
                         labelProps={{
                           children: `Choice ${index + 1}`,
                           required: true,
                           endAdornment: (
-                            <OutlineButton
-                              size='sm'
+                            <IconTooltipButton
+                              title={`Delete Choice ${index + 1}`}
+                              icon={Trash}
                               type='button'
                               onClick={() => removeChoice(uuid.value ?? '')}
-                            >
-                              <Trash size={16} />
-                              {uuid.value}
-                            </OutlineButton>
+                            />
                           ),
                         }}
                         meta={choiceState as FieldMetadata<string>}

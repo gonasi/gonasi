@@ -7,13 +7,13 @@ import type { ApiResponse } from '../../../types';
 interface UpdateTrueOrFalseBlockParams {
   supabase: TypedSupabaseClient;
   blockId: string;
-  blockData: TrueOrFalseContentSchemaType;
+  content: TrueOrFalseContentSchemaType;
 }
 
 export const updateTrueOrFalseBlock = async ({
   supabase,
   blockId,
-  blockData,
+  content,
 }: UpdateTrueOrFalseBlockParams): Promise<ApiResponse> => {
   const userId = await getUserId(supabase);
 
@@ -21,7 +21,7 @@ export const updateTrueOrFalseBlock = async ({
     const { error } = await supabase
       .from('blocks')
       .update({
-        content: { ...blockData },
+        content,
         updated_by: userId,
       })
       .eq('id', blockId);

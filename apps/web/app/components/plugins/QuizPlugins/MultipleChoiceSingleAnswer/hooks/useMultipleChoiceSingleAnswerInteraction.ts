@@ -1,167 +1,210 @@
-import { useCallback, useState } from 'react';
-import type { z } from 'zod';
+import { useCallback, useMemo, useState } from 'react';
 
-import { MultipleChoiceSingleAnswerInteractionSchema } from '@gonasi/schemas/plugins';
+import {
+  MultipleChoiceSingleAnswerInteractionSchema,
+  type MultipleChoiceSingleAnswerInteractionSchemaType,
+} from '@gonasi/schemas/plugins';
+
+import { calculateMultipleChoiceSingleAnswerScore } from '../utils';
 
 const schema = MultipleChoiceSingleAnswerInteractionSchema;
 
-type InteractionState = z.infer<typeof schema>;
-
+// Returns the current timestamp (used for tracking interaction times)
 const getTimestamp = () => Date.now();
 
 /**
- * Custom hook to manage a multiple choice single answer quiz interaction state.
+ * Custom React hook to manage the state and logic for a "Multiple Choice Single Answer" quiz interaction.
+ *
+ * @param initial - The initial state for the interaction (can be null)
+ * @param correctAnswerUuid - The UUID of the correct answer option
  */
 export function useMultipleChoiceSingleAnswerInteraction(
+  initial: MultipleChoiceSingleAnswerInteractionSchemaType | null,
   correctAnswerUuid: string,
-  initial?: Partial<InteractionState>,
+  choiceCount: number,
 ) {
-  // Main interaction state (parsed with schema)
-  const [state, setState] = useState<InteractionState>(() =>
-    schema.parse({
-      ...initial,
-      interactionType: 'multiple_choice_single_answer',
-    }),
+  // Fallback state used if `initial` is null
+  const defaultState: MultipleChoiceSingleAnswerInteractionSchemaType = schema.parse({});
+
+  // Main interaction state validated by schema (parsed from initial or fallback)
+  const [state, setState] = useState<MultipleChoiceSingleAnswerInteractionSchemaType>(() =>
+    schema.parse(initial ?? defaultState),
   );
 
-  // The option uuid currently selected by the user (string | null)
+  // Tracks which option UUID the user has selected; null means no selection
   const [selectedOptionUuid, setSelectedOptionUuid] = useState<string | null>(null);
 
-  /**
-   * Indicates whether the user has already checked their answer.
-   * This is used to:
-   * - Prevent multiple checks for the same selection.
-   * - Disable option selection after checking.
-   * - Control conditional UI logic (e.g., show correct answer or feedback).
-   */
-  const [hasChecked, setHasChecked] = useState(false);
+  // Derived state - compute these from the main state instead of maintaining separate state
+  const isCompleted = useMemo(() => {
+    return state.correctAttempt !== null || state.hasRevealedCorrectAnswer;
+  }, [state.correctAttempt, state.hasRevealedCorrectAnswer]);
+
+  const canInteract = useMemo(() => {
+    return !isCompleted && state.showCheckIfAnswerIsCorrectButton;
+  }, [isCompleted, state.showCheckIfAnswerIsCorrectButton]);
+
+  // Count of actual attempts (excludes revealed answers)
+  // User can make at most 2 attempts: 1 wrong + 1 correct, or just 1 correct
+  const attemptsCount = useMemo(() => {
+    let count = 0;
+
+    // Count wrong attempts (max 1 in this flow)
+    if (state.wrongAttempts.length > 0) {
+      count += 1;
+    }
+
+    // Only count correct attempt if it wasn't revealed
+    if (state.correctAttempt !== null && !state.hasRevealedCorrectAnswer) {
+      count += 1;
+    }
+
+    return count;
+  }, [state.wrongAttempts.length, state.correctAttempt, state.hasRevealedCorrectAnswer]);
+
+  // Calculate the actual score
+  const score = useMemo(() => {
+    return calculateMultipleChoiceSingleAnswerScore({
+      correctAnswerRevealed: state.hasRevealedCorrectAnswer,
+      wrongAttemptsCount: state.wrongAttempts.length,
+      numberOfOptions: choiceCount,
+    });
+  }, [choiceCount, state.hasRevealedCorrectAnswer, state.wrongAttempts.length]);
 
   /**
-   * Handles user selection of an option by uuid.
-   * If the answer has already been checked, selection is disabled.
-   * Selecting the same option again will unselect it (toggle behavior).
+   * Allows the user to select or toggle an option by UUID.
+   * Selection is disabled if the interaction is completed.
+   * Clicking the selected option again will deselect it.
    */
   const selectOption = useCallback(
     (selection: string) => {
-      if (hasChecked) return;
-
+      if (!canInteract) return;
       setSelectedOptionUuid((prev) => (prev === selection ? null : selection));
     },
-    [hasChecked],
+    [canInteract],
   );
 
   /**
-   * Checks the user's answer against the correct answer index.
-   * Updates the interaction state with correctness, attempts, and UI flags.
-   * Sets `hasChecked` to true to lock further interaction until reset.
+   * Validates the selected answer against the correct one.
+   * Updates the interaction state accordingly, storing timestamps and correctness.
    */
   const checkAnswer = useCallback(() => {
-    if (selectedOptionUuid === null) return;
+    if (selectedOptionUuid === null || !canInteract) return;
 
     const timestamp = getTimestamp();
     const isCorrect = selectedOptionUuid === correctAnswerUuid;
 
-    setHasChecked(true);
+    // Capture the selected value before any state updates
+    const selectedValue = selectedOptionUuid;
+
     setState((prev) => {
+      const newState = {
+        ...prev,
+        showCheckIfAnswerIsCorrectButton: false,
+        showTryAgainButton: false,
+        showShowAnswerButton: false,
+        showContinueButton: false,
+        canShowExplanationButton: false,
+        hasRevealedCorrectAnswer: false,
+      };
+
       if (isCorrect) {
+        // Correct answer: enable continue and explanation
         return {
-          ...prev,
-          optionSelected: true,
-          isCorrect: true,
-          continue: true,
-          canShowContinueButton: true,
-          canShowCorrectAnswer: true,
+          ...newState,
+          showContinueButton: true,
           canShowExplanationButton: true,
-          correctAttempt: { selected: selectedOptionUuid, timestamp },
-          attemptsCount: prev.attemptsCount + 1,
+          correctAttempt: { selected: selectedValue, timestamp },
         };
       } else {
+        // Wrong answer: allow retry, show correct answer option, record wrong attempt
         return {
-          ...prev,
-          optionSelected: true,
-          isCorrect: false,
-          canShowCorrectAnswer: true,
-          wrongAttempts: [...prev.wrongAttempts, { selected: selectedOptionUuid, timestamp }],
-          attemptsCount: prev.attemptsCount + 1,
+          ...newState,
+          showTryAgainButton: true,
+          showShowAnswerButton: true,
+          wrongAttempts: [...prev.wrongAttempts, { selected: selectedValue, timestamp }],
         };
       }
     });
+
+    // Clear selection after processing
     setSelectedOptionUuid(null);
-  }, [correctAnswerUuid, selectedOptionUuid]);
+  }, [correctAnswerUuid, selectedOptionUuid, canInteract]);
 
   /**
-   * Allows the user to try again after an incorrect attempt.
-   * Resets the correctness state while preserving attempt history.
+   * Allows the user to retry the interaction after a wrong attempt.
+   * Resets the UI state and enables selection again.
    */
   const tryAgain = useCallback(() => {
-    setHasChecked(false);
+    // Only allow retry if not completed and currently in wrong answer state
+    if (isCompleted || !state.showTryAgainButton) return;
+
     setState((prev) => ({
       ...prev,
-      isCorrect: null,
+      showCheckIfAnswerIsCorrectButton: true,
+      showTryAgainButton: false,
+      showShowAnswerButton: true, // Keep show answer available
+      showContinueButton: false,
+      canShowExplanationButton: false,
+      hasRevealedCorrectAnswer: false,
     }));
-  }, []);
+
+    setSelectedOptionUuid(null);
+  }, [isCompleted, state.showTryAgainButton]);
 
   /**
-   * Marks the correct answer as revealed.
-   * Useful for feedback after checking or skipping.
+   * Programmatically reveals the correct answer.
+   * Updates state to reflect the correct answer and enables appropriate UI flags.
+   * This action completes the interaction permanently.
    */
   const revealCorrectAnswer = useCallback(() => {
+    if (isCompleted) return;
+
     const timestamp = getTimestamp();
 
     setState((prev) => ({
       ...prev,
-      correctAnswerRevealed: true,
-      optionSelected: true,
-      isCorrect: true,
-      continue: true,
-      canShowContinueButton: true,
-      canShowCorrectAnswer: true,
+      showCheckIfAnswerIsCorrectButton: false,
+      showTryAgainButton: false,
+      showShowAnswerButton: false,
+      showContinueButton: true,
       canShowExplanationButton: true,
+      hasRevealedCorrectAnswer: true,
       correctAttempt: { selected: correctAnswerUuid, timestamp },
     }));
-  }, [correctAnswerUuid]);
+
+    setSelectedOptionUuid(null);
+  }, [correctAnswerUuid, isCompleted]);
 
   /**
-   * Skips the current interaction.
-   * Enables the user to move forward without answering.
-   */
-  const skip = useCallback(() => {
-    setState((prev) => ({
-      ...prev,
-      continue: true,
-      canShowContinueButton: true,
-      canShowCorrectAnswer: true,
-    }));
-  }, []);
-
-  /**
-   * Resets the interaction to its initial state.
-   * Clears the selected option and resets `hasChecked`.
+   * Reset the entire interaction to its initial state.
+   * Useful for allowing users to restart the quiz.
    */
   const reset = useCallback(() => {
-    setState(() =>
-      schema.parse({
-        interactionType: 'multiple_choice_single_answer',
-      }),
-    );
+    setState(defaultState);
     setSelectedOptionUuid(null);
-    setHasChecked(false);
-  }, []);
+  }, [defaultState]);
 
   return {
+    // State
     state,
     selectedOptionUuid,
+
+    // Derived state
+    isCompleted,
+    canInteract,
+    attemptsCount,
+    score,
+
+    // Actions
     selectOption,
     checkAnswer,
     revealCorrectAnswer,
-    skip,
-    reset,
-    hasChecked,
     tryAgain,
+    reset,
   };
 }
 
-// Inferred return type alias
+// Exported type for external use (e.g., props or testing)
 export type MultipleChoiceSingleAnswerInteractionReturn = ReturnType<
   typeof useMultipleChoiceSingleAnswerInteraction
 >;

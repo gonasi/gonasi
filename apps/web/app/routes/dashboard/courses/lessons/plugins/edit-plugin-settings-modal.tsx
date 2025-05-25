@@ -5,6 +5,7 @@ import { Settings as LucideSettings } from 'lucide-react';
 import { dataWithError, redirectWithError, redirectWithSuccess } from 'remix-toast';
 
 import {
+  editMultipleChoiceSingleAnswerSettings,
   editRichTextBlockSettings,
   editTrueOrFalseBlockSettings,
   fetchBlockSettingsByBlockId,
@@ -15,6 +16,7 @@ import {
   type SettingsData,
   settingsSchemaMap,
 } from '@gonasi/schemas/plugins';
+import { formatLabel } from '@gonasi/utils/formatLabel';
 
 import type { Route } from './+types/edit-plugin-settings-modal';
 
@@ -86,6 +88,18 @@ export async function action({ request, params }: Route.ActionArgs) {
         break;
       }
 
+      case 'multiple_choice_single': {
+        const value = submission.value as SettingsData<'multiple_choice_single'>;
+        ({ success, message } = await editMultipleChoiceSingleAnswerSettings({
+          supabase,
+          data: {
+            ...value,
+            blockId: params.blockId,
+          },
+        }));
+        break;
+      }
+
       default:
         throw new Error(`Unhandled intent: ${typedIntent}`);
     }
@@ -128,7 +142,10 @@ export default function EditPluginSettingsModal({ loaderData, params }: Route.Co
   return (
     <Modal open onOpenChange={(open) => !open && handleClose()}>
       <Modal.Content size='md'>
-        <Modal.Header leadingIcon={<LucideSettings size={14} />} title='Edit Block Settings' />
+        <Modal.Header
+          leadingIcon={<LucideSettings size={14} />}
+          title={`Edit ${formatLabel(data.plugin_type)} Settings`}
+        />
         <Modal.Body>
           <Suspense fallback={<Spinner />}>
             <LazyEditPluginSettingsTypeRenderer block={data} />

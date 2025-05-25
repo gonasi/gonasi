@@ -21,8 +21,6 @@ export function EditTrueOrFalsePlugin({ block }: EditPluginComponentProps) {
 
   const blockContent = block.content as TrueOrFalseContentSchemaType;
 
-  console.log('block: ', block);
-
   const [form, fields] = useForm({
     id: `edit-${block.plugin_type}-form`,
     constraint: getZodConstraint(TrueOrFalseContentSchema),

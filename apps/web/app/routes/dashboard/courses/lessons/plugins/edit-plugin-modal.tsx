@@ -6,6 +6,7 @@ import { dataWithError, redirectWithError, redirectWithSuccess } from 'remix-toa
 
 import {
   fetchSingleBlockByBlockId,
+  updateMultipleChoiceSingleAnswer,
   updateRichTextBlock,
   updateTrueOrFalseBlock,
 } from '@gonasi/database/lessons';
@@ -23,6 +24,7 @@ const LazyEditPluginTypesRenderer = lazy(
 );
 
 // --- Action Handler ---
+// TODO: DRY
 export async function action({ request, params }: Route.ActionArgs) {
   const formData = await request.formData();
 
@@ -62,9 +64,7 @@ export async function action({ request, params }: Route.ActionArgs) {
         ({ success, message } = await updateRichTextBlock({
           supabase,
           blockId: params.blockId,
-          blockData: {
-            ...value,
-          },
+          content: value,
         }));
         break;
       }
@@ -74,9 +74,17 @@ export async function action({ request, params }: Route.ActionArgs) {
         ({ success, message } = await updateTrueOrFalseBlock({
           supabase,
           blockId: params.blockId,
-          blockData: {
-            ...value,
-          },
+          content: value,
+        }));
+        break;
+      }
+
+      case 'multiple_choice_single': {
+        const value = submission.value as SchemaData<'multiple_choice_single'>;
+        ({ success, message } = await updateMultipleChoiceSingleAnswer({
+          supabase,
+          blockId: params.blockId,
+          content: value,
         }));
         break;
       }
