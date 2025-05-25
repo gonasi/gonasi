@@ -20,7 +20,7 @@ import { createClient } from '~/lib/supabase/supabase.server';
 import { checkHoneypot } from '~/utils/honeypot.server';
 
 const LazyEditPluginTypesRenderer = lazy(
-  () => import('~/components/plugins/EditPluginTypesRenderer'),
+  () => import('~/components/plugins/PluginRenderers/EditPluginTypesRenderer'),
 );
 
 // --- Action Handler ---
