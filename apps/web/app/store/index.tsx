@@ -40,11 +40,17 @@ interface StoreState {
 
   // Selectors
   getBlockInteraction: (blockId: string) => GoLessonPlayInteractionReturnType[number] | undefined;
+
+  // Global settings
+  isSoundEnabled: boolean;
+  toggleSound: () => void;
+  setSound: (enabled: boolean) => void;
+
+  isVibrationEnabled: boolean;
+  toggleVibration: () => void;
+  setVibration: (enabled: boolean) => void;
 }
 
-/**
- * Calculates the lesson completion percentage based on block weights.
- */
 const calculateProgress = (
   blocks: GoLessonPlayLessonBlocksType,
   completedBlockIds: Set<string>,
@@ -59,15 +65,9 @@ const calculateProgress = (
   return (completedWeight / totalWeight) * 100;
 };
 
-/**
- * Extracts the IDs of all completed lesson blocks from interactions.
- */
 const getCompletedBlockIds = (interactions: GoLessonPlayInteractionReturnType): Set<string> =>
   new Set(interactions.filter((i) => i.is_complete).map((i) => i.block_id));
 
-/**
- * Determines which lesson blocks should be visible based on interaction history.
- */
 const computeVisibleBlocks = (
   lessonBlocks: GoLessonPlayLessonBlocksType,
   interactions: GoLessonPlayInteractionReturnType,
@@ -84,16 +84,10 @@ const computeVisibleBlocks = (
   });
 };
 
-/**
- * Returns the ID of the last visible block (i.e., the "active" block).
- */
 const computeActiveBlock = (visibleBlocks: GoLessonPlayLessonBlocksType): string | null => {
   return visibleBlocks.length > 0 ? (visibleBlocks[visibleBlocks.length - 1]?.id ?? null) : null;
 };
 
-/**
- * Checks whether the current active block is the last in the lesson.
- */
 const checkIsLastBlock = (
   activeBlockId: string | null,
   lessonBlocks: GoLessonPlayLessonBlocksType,
@@ -136,9 +130,7 @@ export const useStore = create<StoreState>((set, get) => ({
       isExplanationBottomSheetOpen: false,
     }),
 
-  /**
-   * Updates lesson blocks and recomputes visibility, progress, and active block.
-   */
+  // Lesson update methods
   setCurrentLessonBlocks: (lessonBlocks) =>
     set((state) => {
       try {
@@ -162,9 +154,6 @@ export const useStore = create<StoreState>((set, get) => ({
       }
     }),
 
-  /**
-   * Updates interaction state and recomputes visibility, progress, and active block.
-   */
   setLessonBlockInteractions: (interactions) =>
     set((state) => {
       try {
@@ -185,9 +174,6 @@ export const useStore = create<StoreState>((set, get) => ({
       }
     }),
 
-  /**
-   * Initializes the full lesson play flow: sets blocks, interactions, and computed state.
-   */
   initializePlayFlow: (lesson, interactions) => {
     try {
       const sortedBlocks = [...lesson].sort((a, b) => a.position - b.position);
@@ -210,9 +196,6 @@ export const useStore = create<StoreState>((set, get) => ({
     }
   },
 
-  /**
-   * Resets all lesson-related state to initial defaults.
-   */
   resetPlayFlow: () =>
     set({
       lessonBlocks: [],
@@ -223,9 +206,15 @@ export const useStore = create<StoreState>((set, get) => ({
       isLastBlock: false,
     }),
 
-  /**
-   * Returns a specific interaction by block ID.
-   */
   getBlockInteraction: (blockId) =>
     get().lessonBlockInteractions.find((interaction) => interaction.block_id === blockId),
+
+  // Global settings
+  isSoundEnabled: true,
+  toggleSound: () => set((state) => ({ isSoundEnabled: !state.isSoundEnabled })),
+  setSound: (enabled) => set({ isSoundEnabled: enabled }),
+
+  isVibrationEnabled: true,
+  toggleVibration: () => set((state) => ({ isVibrationEnabled: !state.isVibrationEnabled })),
+  setVibration: (enabled) => set({ isVibrationEnabled: enabled }),
 }));
