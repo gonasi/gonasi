@@ -5,7 +5,6 @@ import type { PluginTypeId } from '@gonasi/schemas/plugins';
 import { ViewMultipleChoiceMultipleAnswersPlugin } from '../QuizPlugins/MultipleChoiceMultipleAnswers/ViewMultipleChoiceMultipleAnswersPlugin';
 import { ViewMultipleChoiceSingleAnswerPlugin } from '../QuizPlugins/MultipleChoiceSingleAnswer/ViewMultipleChoiceSingleAnswerPlugin';
 import { ViewTrueOrFalsePlugin } from '../QuizPlugins/TrueOrFalsePlugin/ViewTrueOrFalsePlugin';
-import { ViewTapToRevealPlugin } from '../RevealPlugins/TapToRevealPlugin/ViewTapToRevealPlugin';
 import { ViewRichTextPlugin } from '../RichTextPlugins/RichTextPlugin/ViewRichTextPlugin';
 
 import type { LessonBlockLoaderReturnType } from '~/routes/dashboard/courses/lessons/plugins/edit-plugin-modal';
@@ -15,8 +14,8 @@ export interface ViewPluginComponentProps {
   mode: 'preview' | 'play';
 }
 
-function unimplementedPlugin(): never {
-  throw new Error('Plugin component not implemented.');
+function unimplementedPlugin() {
+  return <div>Plugin not inplemented</div>;
 }
 
 const viewPluginComponentMap: Record<
@@ -24,7 +23,7 @@ const viewPluginComponentMap: Record<
   (props: ViewPluginComponentProps) => JSX.Element
 > = {
   true_or_false: ViewTrueOrFalsePlugin,
-  tap_to_reveal: ViewTapToRevealPlugin,
+  tap_to_reveal: unimplementedPlugin,
   rich_text_editor: ViewRichTextPlugin,
   multiple_choice_multiple: ViewMultipleChoiceMultipleAnswersPlugin,
   multiple_choice_single: ViewMultipleChoiceSingleAnswerPlugin,

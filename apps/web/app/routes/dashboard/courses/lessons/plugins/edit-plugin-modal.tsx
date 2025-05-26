@@ -9,6 +9,7 @@ import {
   updateMultipleChoiceMultipleAnswers,
   updateMultipleChoiceSingleAnswer,
   updateRichTextBlock,
+  updateTapToReveal,
   updateTrueOrFalseBlock,
 } from '@gonasi/database/lessons';
 import { getSchema, type PluginTypeId, type SchemaData, schemaMap } from '@gonasi/schemas/plugins';
@@ -93,6 +94,16 @@ export async function action({ request, params }: Route.ActionArgs) {
       case 'multiple_choice_multiple': {
         const value = submission.value as SchemaData<'multiple_choice_multiple'>;
         ({ success, message } = await updateMultipleChoiceMultipleAnswers({
+          supabase,
+          blockId: params.blockId,
+          content: value,
+        }));
+        break;
+      }
+
+      case 'tap_to_reveal': {
+        const value = submission.value as SchemaData<'tap_to_reveal'>;
+        ({ success, message } = await updateTapToReveal({
           supabase,
           blockId: params.blockId,
           content: value,

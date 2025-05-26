@@ -6,38 +6,43 @@ import { Plus, Save, Trash } from 'lucide-react';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
 import { v4 as uuidv4 } from 'uuid';
 
-import { type TapToRevealCardType, TapToRevealSchema } from '@gonasi/schemas/plugins';
+import {
+  type TapToRevealCardSchemaType,
+  TapToRevealContentSchema,
+  type TapToRevealContentSchemaType,
+} from '@gonasi/schemas/plugins';
 
 import type { EditPluginComponentProps } from '../../PluginRenderers/EditPluginTypesRenderer';
 
-import { Button, OutlineButton } from '~/components/ui/button';
+import { Button, IconTooltipButton, OutlineButton } from '~/components/ui/button';
 import { ErrorList } from '~/components/ui/forms';
 import { RichTextInputField } from '~/components/ui/forms/RichTextInputField';
 import { cn } from '~/lib/utils';
 import { useIsPending } from '~/utils/misc';
 
 export function EditTapToRevealPlugin({ block }: EditPluginComponentProps) {
-  const pending = useIsPending();
+  const isPending = useIsPending();
+
+  const blockContent = block.content as TapToRevealContentSchemaType;
 
   const [form, fields] = useForm({
     id: `edit-${block.plugin_type}-form`,
-    constraint: getZodConstraint(TapToRevealSchema),
+    constraint: getZodConstraint(TapToRevealContentSchema),
     shouldValidate: 'onBlur',
     shouldRevalidate: 'onInput',
     defaultValue: {
-      ...block.content,
+      ...blockContent,
     },
     onValidate({ formData }) {
-      return parseWithZod(formData, { schema: TapToRevealSchema });
+      return parseWithZod(formData, { schema: TapToRevealContentSchema });
     },
   });
 
   const cards = fields.cards.getFieldList();
 
-  const getCards = (): TapToRevealCardType[] =>
+  const getCards = (): TapToRevealCardSchemaType[] =>
     cards.map((fieldset) => {
       const { frontContent, backContent, uuid } = fieldset.getFieldset();
-      // Validate or coerce here if needed
       return {
         uuid: uuid.value ?? '',
         frontContent: frontContent.value ?? '',
@@ -45,7 +50,7 @@ export function EditTapToRevealPlugin({ block }: EditPluginComponentProps) {
       };
     });
 
-  const updateCards = (updated: TapToRevealCardType[]) => {
+  const updateCards = (updated: TapToRevealCardSchemaType[]) => {
     form.update({ name: fields.cards.name, value: updated });
   };
 
@@ -67,7 +72,7 @@ export function EditTapToRevealPlugin({ block }: EditPluginComponentProps) {
     const indexToRemove = current.findIndex((card) => card.uuid === uuid);
 
     if (indexToRemove !== -1) {
-      form.remove({ name: 'cards', index: indexToRemove });
+      form.remove({ name: fields.cards.name, index: indexToRemove });
     }
   };
 
@@ -106,47 +111,50 @@ export function EditTapToRevealPlugin({ block }: EditPluginComponentProps) {
               Add Card
             </OutlineButton>
           </div>
-
-          {cards.length > 0 ? (
-            <AnimatePresence>
-              {cards.map((card, index) => {
-                const { frontContent, backContent, uuid } = card.getFieldset();
-                return (
-                  <motion.div
-                    key={uuid.value}
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className='bg-card/50 rounded-lg p-4'
-                  >
-                    <div className='flex w-full justify-end py-2'>
-                      <OutlineButton
-                        size='sm'
-                        onClick={() => removeCard(uuid.value ?? '')}
-                        type='button'
-                      >
-                        <Trash size={16} />
-                      </OutlineButton>
-                    </div>
-                    <RichTextInputField
-                      labelProps={{ children: `Front of Card ${index + 1}`, required: true }}
-                      meta={frontContent as FieldMetadata<string>}
-                      errors={frontContent?.errors}
-                    />
-                    <RichTextInputField
-                      labelProps={{ children: `Back of Card ${index + 1}`, required: true }}
-                      meta={backContent as FieldMetadata<string>}
-                      errors={backContent?.errors}
-                    />
-                    <input {...getInputProps(uuid, { type: 'hidden' })} />
-                  </motion.div>
-                );
-              })}
-            </AnimatePresence>
-          ) : (
-            <p className='text-warning text-sm'>No cards added yet.</p>
-          )}
+          <div className='flex flex-col space-y-4'>
+            {cards.length > 0 ? (
+              <AnimatePresence>
+                {cards.map((card, index) => {
+                  const { frontContent, backContent, uuid } = card.getFieldset();
+                  return (
+                    <motion.div
+                      key={uuid.value}
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className='bg-card/50 flex flex-col space-y-4 rounded-lg p-4'
+                    >
+                      <RichTextInputField
+                        labelProps={{
+                          children: `Front of Card ${index + 1}`,
+                          required: true,
+                          endAdornment: (
+                            <IconTooltipButton
+                              title={`Delete Card ${index + 1}`}
+                              icon={Trash}
+                              type='button'
+                              onClick={() => removeCard(uuid.value ?? '')}
+                            />
+                          ),
+                        }}
+                        meta={frontContent as FieldMetadata<string>}
+                        errors={frontContent?.errors}
+                      />
+                      <RichTextInputField
+                        labelProps={{ children: `Back of Card ${index + 1}`, required: true }}
+                        meta={backContent as FieldMetadata<string>}
+                        errors={backContent?.errors}
+                      />
+                      <input {...getInputProps(uuid, { type: 'hidden' })} />
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
+            ) : (
+              <p className='text-warning text-sm'>No cards added yet.</p>
+            )}
+          </div>
           <ErrorList errors={form.allErrors.cards} />
         </div>
 
@@ -156,8 +164,8 @@ export function EditTapToRevealPlugin({ block }: EditPluginComponentProps) {
           <Button
             type='submit'
             rightIcon={<Save />}
-            disabled={pending}
-            isLoading={pending}
+            disabled={isPending}
+            isLoading={isPending}
             name='intent'
             value={block.plugin_type}
           >

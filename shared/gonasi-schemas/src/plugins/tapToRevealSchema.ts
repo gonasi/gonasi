@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 import { BaseInteractionSchema } from './baseInteractionSchema';
-import { BasePluginSettingsSchema } from './pluginSettings';
+import { BasePluginSettingsSchema, LayoutPluginSettingsSchema } from './pluginSettings';
 
 export const TapToRevealCardSchema = z.object({
   frontContent: z
@@ -15,7 +15,10 @@ export const TapToRevealCardSchema = z.object({
   uuid: z.string({ required_error: 'Card uuid is required' }),
 });
 
-export const TapToRevealSchema = z.object({
+//
+// Content Schema
+//
+export const TapToRevealContentSchema = z.object({
   title: z
     .string({ required_error: 'Title is required.' })
     .trim()
@@ -29,9 +32,35 @@ export const TapToRevealSchema = z.object({
   uuid: z.string().optional(),
 });
 
-export const TapToRevealSettingsSchema = BasePluginSettingsSchema.extend({});
+//
+// Plugin Settings Schema
+//
+export const TapToRevealSettingsSchema = BasePluginSettingsSchema.merge(
+  LayoutPluginSettingsSchema,
+).extend({});
 
-export const TapToRevealInteractionSchema = BaseInteractionSchema.extend({
+//
+// Create Block Schema
+//
+export const SubmitCreateTapToRevealSchema = z.object({
+  content: TapToRevealContentSchema,
+  lessonId: z.string({ required_error: 'Lesson ID is required.' }),
+  pluginType: z.literal('tap_to_reveal').default('tap_to_reveal'),
+  weight: z.number().default(1),
+  settings: TapToRevealSettingsSchema,
+});
+
+//
+// Edit Block Settings Schema
+//
+export const SubmitEditTapToRevealSettingsSchema = TapToRevealSettingsSchema.extend({
+  blockId: z.string({ required_error: 'Block ID is required.' }),
+});
+
+//
+// Interaction Schema
+//
+export const TapToRevealStateInteractionSchema = BaseInteractionSchema.extend({
   revealedCards: z
     .array(
       z.object({
@@ -42,8 +71,16 @@ export const TapToRevealInteractionSchema = BaseInteractionSchema.extend({
     .default([]),
 });
 
+//
 // Types
-export type TapToRevealCardType = z.infer<typeof TapToRevealCardSchema>;
-export type TapToRevealSchemaType = z.infer<typeof TapToRevealSchema>;
-export type TapToRevealSettingsType = z.infer<typeof TapToRevealSettingsSchema>;
-export type TapToRevealInteractionType = z.infer<typeof TapToRevealInteractionSchema>;
+//
+export type TapToRevealContentSchemaType = z.infer<typeof TapToRevealContentSchema>;
+export type TapToRevealSettingsSchemaType = z.infer<typeof TapToRevealSettingsSchema>;
+export type SubmitCreateTapToRevealSchemaType = z.infer<typeof SubmitCreateTapToRevealSchema>;
+export type SubmitEditTapToRevealSettingsSchemaType = z.infer<
+  typeof SubmitEditTapToRevealSettingsSchema
+>;
+export type TapToRevealStateInteractionSchemaType = z.infer<
+  typeof TapToRevealStateInteractionSchema
+>;
+export type TapToRevealCardSchemaType = z.infer<typeof TapToRevealCardSchema>;
