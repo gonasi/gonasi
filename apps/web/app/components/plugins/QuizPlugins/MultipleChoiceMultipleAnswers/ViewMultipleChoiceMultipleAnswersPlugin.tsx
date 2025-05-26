@@ -1,5 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import { useParams } from 'react-router';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Check, PartyPopper, X, XCircle } from 'lucide-react';
 
 import type {
@@ -198,24 +199,50 @@ export function ViewMultipleChoiceMultipleAnswersPlugin({ block, mode }: ViewPlu
           {state.showCheckIfAnswerIsCorrectButton && (
             <div className='flex w-full items-center justify-between'>
               {/* Remaining correct answers indicator */}
-              {remainingCorrectToSelect > 0 ? (
-                <div className='font-secondary bg-success/50 rounded-md px-2 py-1 text-xs'>
-                  Select{' '}
-                  <span className='font-primary bg-success/50 rounded-sm p-1'>
-                    {remainingCorrectToSelect}
-                  </span>{' '}
-                  more correct answer
-                  {remainingCorrectToSelect !== 1 ? 's' : ''}
-                </div>
-              ) : (
-                <div />
-              )}
+              {(() => {
+                const selectedCount = selectedOptionsUuids?.length ?? 0;
+                const remainingToSelect = remainingCorrectToSelect - selectedCount;
+                const shouldShowReminder =
+                  remainingCorrectToSelect > 0 && selectedCount !== remainingCorrectToSelect;
+
+                return (
+                  <AnimatePresence mode='wait'>
+                    {shouldShowReminder && (
+                      <motion.div
+                        key='reminder-box'
+                        initial={{ opacity: 0, scale: 0.95, y: -4 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95, y: -4 }}
+                        transition={{ duration: 0.2 }}
+                        className='font-secondary bg-success/50 flex w-fit items-center space-x-1 rounded-md px-2 py-1 text-xs'
+                      >
+                        <span>Select</span>
+                        <AnimatePresence mode='wait' initial={false}>
+                          <motion.span
+                            key={remainingToSelect}
+                            initial={{ opacity: 0, y: -4 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 4 }}
+                            transition={{ duration: 0.2 }}
+                            className='font-primary bg-success/50 rounded-sm px-1'
+                          >
+                            {remainingToSelect}
+                          </motion.span>
+                        </AnimatePresence>
+                        <span>more</span>
+                        <span>choice{remainingToSelect !== 1 ? 's' : ''}</span>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                );
+              })()}
+
               <CheckAnswerButton
                 disabled={
                   selectedOptionsUuids === null ||
                   selectedOptionsUuids.length !== remainingCorrectToSelect
                 }
-                onClick={() => checkAnswer()}
+                onClick={checkAnswer}
               />
             </div>
           )}
