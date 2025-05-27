@@ -10,6 +10,8 @@ export const submitUserFeedback = async (
   const userId = await getUserId(supabase);
   const { experience, hardestPart, bestPart, npsScore, shareFeedback, email } = feedbackData;
 
+  const normalizedUserId = userId && userId.trim() !== '' ? userId : null;
+
   try {
     const { data, error: insertError } = await supabase
       .from('feedback')
@@ -18,15 +20,16 @@ export const submitUserFeedback = async (
         hardest_part: hardestPart,
         best_part: bestPart,
         nps_score: npsScore,
-        share_feedback: shareFeedback === 'Yes',
+        share_feedback: shareFeedback,
         email,
-        created_by: userId,
-        updated_by: userId,
+        created_by: normalizedUserId,
+        updated_by: normalizedUserId,
       })
       .select('id')
       .single();
 
     if (insertError) {
+      console.error('Error submitting feedback: ', insertError);
       return {
         success: false,
         message: 'Failed to submit feedback. Please try again later.',

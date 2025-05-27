@@ -1,47 +1,40 @@
 import { z } from 'zod';
 
-// Experience field
 export const ExperienceSchema = z.enum(['Loved it', 'It was okay', 'I struggled'], {
-  required_error: 'Please select your experience.',
+  required_error: 'Tell us how it went—we really want to know!',
 });
 
-// Hardest part (Pain point) field
 export const HardestPartSchema = z
-  .string({ required_error: 'Please tell us what was hardest.' })
-  .min(3, { message: 'Response is too short.' })
-  .max(500, { message: 'Response is too long.' })
+  .string({ required_error: 'Tell us what stumped you—we’re listening!' })
+  .min(3, { message: 'Too short—we’re all ears, give us more!' })
+  .max(500, { message: 'Whoa, that’s a lot! Can you trim it down a bit?' })
   .trim();
 
-// Best part (Positive feedback) field
 export const BestPartSchema = z
-  .string({ required_error: 'Please tell us what you enjoyed.' })
-  .min(3, { message: 'Response is too short.' })
-  .max(500, { message: 'Response is too long.' })
+  .string({ required_error: 'Tell us what made your day!' })
+  .min(3, { message: 'Give us a little more of the good stuff!' })
+  .max(500, { message: 'That’s a bit too much joy to handle—try shortening it 😄' })
   .trim();
 
-// NPS score field
 export const NpsScoreSchema = z
   .number({
-    required_error: 'Please rate if you would recommend us.',
-    invalid_type_error: 'NPS score must be a number.',
+    required_error: 'Give us a rating—don’t be shy!',
+    invalid_type_error: 'Just slide to a number, please!',
   })
-  .int({ message: 'NPS score must be an integer.' })
-  .min(0, { message: 'Score must be at least 0.' })
-  .max(10, { message: 'Score cannot be more than 10.' });
+  .int({ message: 'Whole numbers only, please!' })
+  .min(0, { message: 'Score must be at least 0!' })
+  .max(10, { message: 'Max is 10—save some stars for later!' });
 
-// Share feedback publicly field
 export const ShareFeedbackSchema = z.enum(['Yes', 'No'], {
-  required_error: 'Please let us know if we can share your feedback.',
+  required_error: 'Let us know if we can shout your feedback from the rooftops!',
 });
 
-// Email (optional) field
 export const EmailSchema = z
   .string()
-  .email({ message: 'Please enter a valid email address.' })
+  .email({ message: 'Oops! That doesn’t look like an email.' })
   .optional()
-  .or(z.literal('')); // allow empty string if they leave it blank
+  .or(z.literal(''));
 
-// Final feedback form schema
 export const FeedbackFormSchema = z.object({
   experience: ExperienceSchema,
   hardestPart: HardestPartSchema,
