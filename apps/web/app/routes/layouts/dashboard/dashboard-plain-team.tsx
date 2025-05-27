@@ -1,40 +1,18 @@
-import { data, Outlet, redirect, useOutletContext } from 'react-router';
+import { Outlet, useOutletContext } from 'react-router';
 
-import { getUserProfile } from '@gonasi/database/profile';
-
-import type { Route } from './+types/dashboard-plain-team';
-
-import { createClient } from '~/lib/supabase/supabase.server';
+import { Spinner } from '~/components/loaders';
+import { useAuthGuard } from '~/hooks/useAuthGuard';
 import type { AppOutletContext } from '~/root';
 
 export function meta() {
   return [{ title: 'Gonasi' }, { name: 'description', content: 'Welcome to Gonasi' }];
 }
 
-export async function loader({ request }: Route.LoaderArgs) {
-  const { supabase } = createClient(request);
-  const { user } = await getUserProfile(supabase);
-
-  if (!user) {
-    return redirect(
-      `/login?${new URLSearchParams({ redirectTo: new URL(request.url).pathname + new URL(request.url).search })}`,
-    );
-  }
-
-  if (user?.is_onboarding_complete === false) {
-    const url = new URL(request.url);
-    const redirectTo = url.pathname + url.search;
-
-    return redirect(
-      `/onboarding/${user.id}/basic-information?${new URLSearchParams({ redirectTo })}`,
-    );
-  }
-
-  return data({ success: true });
-}
-
 export default function DashboardPlainTeamLayout() {
-  const { user, role, activeCompany } = useOutletContext<AppOutletContext>();
+  const { isLoading, user } = useAuthGuard();
+  const { role, activeCompany } = useOutletContext<AppOutletContext>();
+
+  if (isLoading) return <Spinner />;
 
   return (
     <section className='mx-auto max-w-lg md:mt-16'>

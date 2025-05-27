@@ -8,36 +8,36 @@ import { v4 as uuidv4 } from 'uuid';
 
 import {
   type PluginTypeId,
-  type TapToRevealCardType,
-  TapToRevealSchema,
+  type TapToRevealCardSchemaType,
+  TapToRevealContentSchema,
 } from '@gonasi/schemas/plugins';
 
-import { Button, OutlineButton, PlainButton } from '~/components/ui/button';
+import { Button, IconTooltipButton, OutlineButton } from '~/components/ui/button';
 import { ErrorList } from '~/components/ui/forms';
 import { RichTextInputField } from '~/components/ui/forms/RichTextInputField';
 import { cn } from '~/lib/utils';
 import { useIsPending } from '~/utils/misc';
 
 interface CreateTapToRevealPluginProps {
-  name: PluginTypeId;
+  pluginTypeId: PluginTypeId;
 }
 
-export function CreateTapToRevealPlugin({ name }: CreateTapToRevealPluginProps) {
+export function CreateTapToRevealPlugin({ pluginTypeId }: CreateTapToRevealPluginProps) {
   const pending = useIsPending();
 
   const [form, fields] = useForm({
-    id: `create-${name}-form`,
-    constraint: getZodConstraint(TapToRevealSchema),
+    id: `create-${pluginTypeId}-form`,
+    constraint: getZodConstraint(TapToRevealContentSchema),
     shouldValidate: 'onBlur',
     shouldRevalidate: 'onInput',
     onValidate({ formData }) {
-      return parseWithZod(formData, { schema: TapToRevealSchema });
+      return parseWithZod(formData, { schema: TapToRevealContentSchema });
     },
   });
 
   const cards = fields.cards.getFieldList();
 
-  const getCards = (): TapToRevealCardType[] =>
+  const getCards = (): TapToRevealCardSchemaType[] =>
     cards.map((fieldset) => {
       const { frontContent, backContent, uuid } = fieldset.getFieldset();
       return {
@@ -47,7 +47,7 @@ export function CreateTapToRevealPlugin({ name }: CreateTapToRevealPluginProps) 
       };
     });
 
-  const updateCards = (updated: TapToRevealCardType[]) => {
+  const updateCards = (updated: TapToRevealCardSchemaType[]) => {
     form.update({ name: fields.cards.name, value: updated });
   };
 
@@ -104,43 +104,50 @@ export function CreateTapToRevealPlugin({ name }: CreateTapToRevealPluginProps) 
               Add Card
             </OutlineButton>
           </div>
-
-          {cards.length > 0 ? (
-            <AnimatePresence>
-              {cards.map((card, index) => {
-                const { frontContent, backContent, uuid } = card.getFieldset();
-                return (
-                  <motion.div
-                    key={uuid.value}
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className='bg-card/50 rounded-lg p-4'
-                  >
-                    <div className='flex w-full justify-end py-2'>
-                      <PlainButton onClick={() => removeCard(uuid.value ?? '')}>
-                        <Trash size={16} />
-                      </PlainButton>
-                    </div>
-                    <RichTextInputField
-                      labelProps={{ children: `Front of Card ${index + 1}`, required: true }}
-                      meta={frontContent as FieldMetadata<string>}
-                      errors={frontContent?.errors}
-                    />
-                    <RichTextInputField
-                      labelProps={{ children: `Back of Card ${index + 1}`, required: true }}
-                      meta={backContent as FieldMetadata<string>}
-                      errors={backContent?.errors}
-                    />
-                    <input {...getInputProps(uuid, { type: 'hidden' })} />
-                  </motion.div>
-                );
-              })}
-            </AnimatePresence>
-          ) : (
-            <p className='text-warning text-sm'>No cards added yet.</p>
-          )}
+          <div className='flex flex-col space-y-4'>
+            {cards.length > 0 ? (
+              <AnimatePresence>
+                {cards.map((card, index) => {
+                  const { frontContent, backContent, uuid } = card.getFieldset();
+                  return (
+                    <motion.div
+                      key={uuid.value}
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className='bg-card/50 flex flex-col space-y-4 rounded-lg p-4'
+                    >
+                      <RichTextInputField
+                        labelProps={{
+                          children: `Front of Card ${index + 1}`,
+                          required: true,
+                          endAdornment: (
+                            <IconTooltipButton
+                              title={`Delete Card ${index + 1}`}
+                              icon={Trash}
+                              type='button'
+                              onClick={() => removeCard(uuid.value ?? '')}
+                            />
+                          ),
+                        }}
+                        meta={frontContent as FieldMetadata<string>}
+                        errors={frontContent?.errors}
+                      />
+                      <RichTextInputField
+                        labelProps={{ children: `Back of Card ${index + 1}`, required: true }}
+                        meta={backContent as FieldMetadata<string>}
+                        errors={backContent?.errors}
+                      />
+                      <input {...getInputProps(uuid, { type: 'hidden' })} />
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
+            ) : (
+              <p className='text-warning text-sm'>No cards added yet.</p>
+            )}
+          </div>
           <ErrorList errors={form.allErrors.choices} />
         </div>
 
@@ -153,7 +160,7 @@ export function CreateTapToRevealPlugin({ name }: CreateTapToRevealPluginProps) 
             disabled={pending}
             isLoading={pending}
             name='intent'
-            value={name}
+            value={pluginTypeId}
           >
             Save
           </Button>

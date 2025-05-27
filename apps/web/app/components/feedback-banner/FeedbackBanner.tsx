@@ -19,7 +19,7 @@ export function FeedbackBanner() {
           }}
         >
           <Link
-            to='/go/feedback'
+            to='/feedback'
             className='rounded bg-yellow-300 px-3 py-1.5 text-xs font-semibold text-yellow-900 hover:bg-yellow-400'
           >
             Give Feedback 💬

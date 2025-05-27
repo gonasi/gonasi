@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 
-import type { TapToRevealInteractionType, TapToRevealSchemaType } from '@gonasi/schemas/plugins';
+import type {
+  TapToRevealInteractionType,
+  TapToRevealContentSchemaType,
+} from '@gonasi/schemas/plugins';
 
 import { TapToRevealCard } from './components/TapToRevealCard';
 import { useTapToRevealInteraction } from './hooks/useTapToRevealInteraction';
@@ -30,7 +33,7 @@ export function ViewTapToRevealPlugin({ block, mode }: ViewPluginComponentProps)
 
   const { is_complete, state: blockInteractionStateData } = blockInteractionData ?? {};
   const { playbackMode } = block.settings;
-  const { title, cards } = block.content as TapToRevealSchemaType;
+  const { title, cards } = block.content as TapToRevealContentSchemaType;
 
   const itemsPerSlide = 2;
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);

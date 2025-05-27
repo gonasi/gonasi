@@ -5,6 +5,7 @@ import type { PluginTypeId } from '@gonasi/schemas/plugins';
 import { CreateMultipleChoiceMultipleAnswersPlugin } from '../QuizPlugins/MultipleChoiceMultipleAnswers/CreateMultipleChoiceMultipleAnswersPlugin';
 import { CreateMultipleChoiceSingleAnswerPlugin } from '../QuizPlugins/MultipleChoiceSingleAnswer/CreateMultipleChoiceSingleAnswerPlugin';
 import { CreateTrueOrFalsePlugin } from '../QuizPlugins/TrueOrFalsePlugin/CreateTrueOrFalsePlugin';
+import { CreateTapToRevealPlugin } from '../RevealPlugins/TapToRevealPlugin/CreateTapToRevealPlugin';
 import { CreateRichTextPlugin } from '../RichTextPlugins/RichTextPlugin/CreateRichTextPlugin';
 
 interface ViewPluginRendererProps {
@@ -17,7 +18,7 @@ function notImplemented(): never {
 
 const pluginComponentMap: Record<PluginTypeId, (props: ViewPluginRendererProps) => JSX.Element> = {
   true_or_false: CreateTrueOrFalsePlugin,
-  tap_to_reveal: notImplemented,
+  tap_to_reveal: CreateTapToRevealPlugin,
   rich_text_editor: CreateRichTextPlugin,
   multiple_choice_multiple: CreateMultipleChoiceMultipleAnswersPlugin,
   multiple_choice_single: CreateMultipleChoiceSingleAnswerPlugin,

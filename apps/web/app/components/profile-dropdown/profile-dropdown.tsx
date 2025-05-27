@@ -18,7 +18,7 @@ import type {
   UserActiveCompanyLoaderReturnType,
   UserProfileLoaderReturnType,
   UserRoleLoaderReturnType,
-} from '~/routes/layouts/go/go-layout';
+} from '~/root';
 
 interface Props {
   user: UserProfileLoaderReturnType;

@@ -8,6 +8,7 @@ import {
   createMultipleChoiceMultipleAnswersBlock,
   createMultipleChoiceSingleAnswerBlock,
   createRichTextBlock,
+  createTapToRevealBlock,
   createTrueOrFalseBlock,
 } from '@gonasi/database/lessons';
 import {
@@ -132,6 +133,23 @@ export async function action({ request, params }: Route.ActionArgs) {
           settings: {
             playbackMode: 'inline',
             weight: DEFAULT_WEIGHT + 1,
+            layoutStyle: 'single',
+            randomization: 'none',
+          },
+        }));
+        break;
+      }
+
+      case 'tap_to_reveal': {
+        const value = submission.value as SchemaData<'tap_to_reveal'>;
+        ({ success, message } = await createTapToRevealBlock(supabase, {
+          content: value,
+          lessonId: params.lessonId,
+          pluginType: 'tap_to_reveal',
+          weight: DEFAULT_WEIGHT,
+          settings: {
+            playbackMode: 'inline',
+            weight: DEFAULT_WEIGHT,
             layoutStyle: 'single',
             randomization: 'none',
           },

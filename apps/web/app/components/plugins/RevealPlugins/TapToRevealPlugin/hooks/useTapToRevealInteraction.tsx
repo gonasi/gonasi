@@ -1,9 +1,9 @@
 import { useCallback, useMemo, useState } from 'react';
 import type { z } from 'zod';
 
-import { TapToRevealInteractionSchema } from '@gonasi/schemas/plugins';
+import { TapToRevealStateInteractionSchema } from '@gonasi/schemas/plugins';
 
-const schema = TapToRevealInteractionSchema;
+const schema = TapToRevealStateInteractionSchema;
 
 type InteractionState = z.infer<typeof schema>;
 

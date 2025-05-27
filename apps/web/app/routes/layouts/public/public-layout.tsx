@@ -1,24 +1,18 @@
-import { data, Outlet, redirect } from 'react-router';
-
-import { getUserProfile } from '@gonasi/database/profile';
-
-import type { Route } from './+types/public-layout';
+import { Outlet, useOutletContext } from 'react-router';
 
 import { TopNav } from '~/components/go-top-nav';
-import { createClient } from '~/lib/supabase/supabase.server';
-
-export async function loader({ request }: Route.LoaderArgs) {
-  const { supabase } = createClient(request);
-
-  const { user } = await getUserProfile(supabase);
-
-  return user ? redirect('/go') : data({ success: true });
-}
+import type { AppOutletContext } from '~/root';
 
 export default function PublicLayout() {
+  const { user, role, activeCompany } = useOutletContext<AppOutletContext>();
+
   return (
     <div>
-      <TopNav activeCompany={null} />
+      <TopNav
+        user={user ?? undefined}
+        role={user ? role : undefined}
+        activeCompany={user ? activeCompany : null}
+      />
       <section className='container mx-auto'>
         <Outlet />
       </section>

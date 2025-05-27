@@ -10,11 +10,11 @@ interface CheckAnswerButtonProps {
 
 export function CheckAnswerButton({ disabled, onClick }: CheckAnswerButtonProps) {
   return (
-    <div className='flex w-full justify-end'>
+    <div className='flex h-full w-full items-center justify-end'>
       <AnimateInButtonWrapper>
         <Button
           variant='secondary'
-          className='mb-4 rounded-full'
+          className='rounded-full'
           rightIcon={<CheckCheck />}
           disabled={disabled}
           onClick={onClick}
