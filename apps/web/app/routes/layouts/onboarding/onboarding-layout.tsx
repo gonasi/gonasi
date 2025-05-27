@@ -1,38 +1,37 @@
-import { data, Outlet, redirect } from 'react-router';
-
-import { getUserProfile } from '@gonasi/database/profile';
-
-import type { Route } from './+types/plain-onboarding';
+import { useEffect } from 'react';
+import { Outlet, useLocation, useNavigate, useOutletContext } from 'react-router';
 
 import { OnboardingStepperFormLayout } from '~/components/layouts/onboarding';
-import { createClient } from '~/lib/supabase/supabase.server';
+import { Spinner } from '~/components/loaders';
+import type { AppOutletContext } from '~/root';
 
 export function meta() {
   return [{ title: 'Gonasi' }, { name: 'description', content: 'Welcome to Gonasi' }];
 }
 
-export async function loader({ request }: Route.LoaderArgs) {
-  const { supabase } = createClient(request);
-  const { user } = await getUserProfile(supabase);
-
-  if (!user) {
-    return redirect(
-      `/login?${new URLSearchParams({ redirectTo: new URL(request.url).pathname + new URL(request.url).search })}`,
-    );
-  }
-
-  if (user && user.is_onboarding_complete) {
-    return redirect('/go');
-  }
-
-  return data({ success: true });
-}
+const steps = [
+  { id: 'basic-info', title: 'Basic Info', path: 'basic-information' },
+  { id: 'contact-info', title: 'Contact Info', path: 'contact-information' },
+];
 
 export default function OnboardingLayout() {
-  const steps = [
-    { id: 'basic-info', title: 'Basic Info', path: 'basic-information' },
-    { id: 'contact-info', title: 'Contact Info', path: 'contact-information' },
-  ];
+  const { user } = useOutletContext<AppOutletContext>();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (!user) {
+      const redirectTo = location.pathname + location.search;
+      navigate(`/login?${new URLSearchParams({ redirectTo })}`, { replace: true });
+      return;
+    }
+
+    if (user.is_onboarding_complete) {
+      navigate('/go', { replace: true });
+    }
+  }, [user, location, navigate]);
+
+  if (!user || user.is_onboarding_complete) return <Spinner />;
 
   return (
     <section className='mx-auto max-w-lg md:mt-16'>

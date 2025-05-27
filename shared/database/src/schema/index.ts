@@ -741,6 +741,63 @@ export type Database = {
         }
         Relationships: []
       }
+      feedback: {
+        Row: {
+          best_part: string
+          created_at: string
+          created_by: string | null
+          email: string | null
+          experience: string
+          hardest_part: string
+          id: string
+          nps_score: number
+          share_feedback: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          best_part: string
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          experience: string
+          hardest_part: string
+          id?: string
+          nps_score: number
+          share_feedback: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          best_part?: string
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          experience?: string
+          hardest_part?: string
+          id?: string
+          nps_score?: number
+          share_feedback?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feedback_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "feedback_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       file_library: {
         Row: {
           company_id: string

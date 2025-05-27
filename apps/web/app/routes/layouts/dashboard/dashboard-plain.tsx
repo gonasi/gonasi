@@ -1,10 +1,11 @@
 import { data, Outlet, redirect } from 'react-router';
 
-import { getUserProfile } from '@gonasi/database/profile';
 import { canUserViewCompany } from '@gonasi/database/staffMembers';
 
 import type { Route } from './+types/dashboard-plain';
 
+import { Spinner } from '~/components/loaders';
+import { useAuthGuard } from '~/hooks/useAuthGuard';
 import { createClient } from '~/lib/supabase/supabase.server';
 
 export function meta() {
@@ -13,22 +14,6 @@ export function meta() {
 
 export async function loader({ request, params }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
-  const { user } = await getUserProfile(supabase);
-
-  if (!user) {
-    return redirect(
-      `/login?${new URLSearchParams({ redirectTo: new URL(request.url).pathname + new URL(request.url).search })}`,
-    );
-  }
-
-  if (user?.is_onboarding_complete === false) {
-    const url = new URL(request.url);
-    const redirectTo = url.pathname + url.search;
-
-    return redirect(
-      `/onboarding/${user.id}/basic-information?${new URLSearchParams({ redirectTo })}`,
-    );
-  }
 
   // check access to specified company
   const hasAccess = await canUserViewCompany(supabase, params.companyId ?? '');
@@ -39,6 +24,9 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 }
 
 export default function DashboardPlainLayout() {
+  const { isLoading } = useAuthGuard();
+
+  if (isLoading) return <Spinner />;
   return (
     <section className='mx-auto max-w-lg md:mt-16'>
       <Outlet />
