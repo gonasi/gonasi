@@ -84,9 +84,10 @@ interface EditorProps {
   setEditorState: (state: string) => void;
   loading: boolean;
   placeholder?: string;
+  hasError?: boolean;
 }
 
-function GoEditor({ editorState, setEditorState, loading, placeholder }: EditorProps) {
+function GoEditor({ editorState, setEditorState, loading, placeholder, hasError }: EditorProps) {
   const {
     settings: { isCollab },
   } = useSettings();

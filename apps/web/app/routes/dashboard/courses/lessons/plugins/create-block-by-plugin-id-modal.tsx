@@ -1,8 +1,10 @@
 import { lazy, Suspense, useMemo } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router';
-import { parseWithZod } from '@conform-to/zod';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowLeft, LoaderCircle } from 'lucide-react';
+import { getValidatedFormData } from 'remix-hook-form';
 import { dataWithError, redirectWithSuccess } from 'remix-toast';
+import type z from 'zod';
 
 import {
   createMultipleChoiceMultipleAnswersBlock,
@@ -13,10 +15,8 @@ import {
 } from '@gonasi/database/lessons';
 import {
   getPluginTypeNameById,
-  getSchema,
   type PluginGroupId,
   type PluginTypeId,
-  type SchemaData,
   schemaMap,
 } from '@gonasi/schemas/plugins';
 
@@ -44,29 +44,24 @@ export async function action({ request, params }: Route.ActionArgs) {
   // Prevent bots via honeypot check
   await checkHoneypot(formData);
 
-  const { supabase } = createClient(request);
-  const intent = formData.get('intent');
+  const intentRaw = formData.get('intent');
 
-  // Validate intent type and existence in schemaMap
-  if (typeof intent !== 'string' || !(intent in schemaMap)) {
-    return dataWithError(null, `Unknown intent: ${intent}`);
+  if (typeof intentRaw !== 'string') {
+    return dataWithError(null, 'Invalid intent type');
   }
 
-  const typedIntent = intent as PluginTypeId;
-  const schema = getSchema(typedIntent);
+  // Remove surrounding quotes if present
+  const cleanedIntent = intentRaw.trim().replace(/^"(.+)"$/, '$1');
 
-  // Validate form data using the appropriate schema
-  const submission = parseWithZod(formData, { schema });
-
-  if (submission.status !== 'success') {
-    return {
-      result: submission.reply(),
-      status: submission.status === 'error' ? 400 : 200,
-    };
+  if (!(cleanedIntent in schemaMap)) {
+    return dataWithError(null, `Unknown intent: ${cleanedIntent}`);
   }
+
+  const typedIntent = cleanedIntent as PluginTypeId;
 
   const redirectUrl = `/dashboard/${params.companyId}/courses/${params.courseId}/course-content/${params.chapterId}/${params.lessonId}`;
 
+  const { supabase } = createClient(request);
   try {
     let success = false;
     let message = '';
@@ -75,9 +70,21 @@ export async function action({ request, params }: Route.ActionArgs) {
 
     switch (typedIntent) {
       case 'rich_text_editor': {
-        const value = submission.value as SchemaData<'rich_text_editor'>;
+        const schema = schemaMap['rich_text_editor'];
+
+        const resolver = zodResolver(schema);
+        const {
+          errors,
+          data,
+          receivedValues: defaultValues,
+        } = await getValidatedFormData<z.infer<typeof schema>>(formData, resolver);
+
+        if (errors) {
+          return { errors, defaultValues };
+        }
+
         ({ success, message } = await createRichTextBlock(supabase, {
-          content: value,
+          content: data,
           lessonId: params.lessonId,
           pluginType: 'rich_text_editor',
           weight: DEFAULT_WEIGHT,
@@ -90,9 +97,19 @@ export async function action({ request, params }: Route.ActionArgs) {
       }
 
       case 'true_or_false': {
-        const value = submission.value as SchemaData<'true_or_false'>;
+        const schema = schemaMap['true_or_false'];
+        const resolver = zodResolver(schema);
+        const {
+          errors,
+          data,
+          receivedValues: defaultValues,
+        } = await getValidatedFormData<z.infer<typeof schema>>(formData, resolver);
+
+        if (errors) {
+          return { errors, defaultValues };
+        }
         ({ success, message } = await createTrueOrFalseBlock(supabase, {
-          content: value,
+          content: data,
           lessonId: params.lessonId,
           pluginType: 'true_or_false',
           weight: DEFAULT_WEIGHT,
@@ -107,9 +124,19 @@ export async function action({ request, params }: Route.ActionArgs) {
       }
 
       case 'multiple_choice_single': {
-        const value = submission.value as SchemaData<'multiple_choice_single'>;
+        const schema = schemaMap['multiple_choice_single'];
+        const resolver = zodResolver(schema);
+        const {
+          errors,
+          data,
+          receivedValues: defaultValues,
+        } = await getValidatedFormData<z.infer<typeof schema>>(formData, resolver);
+
+        if (errors) {
+          return { errors, defaultValues };
+        }
         ({ success, message } = await createMultipleChoiceSingleAnswerBlock(supabase, {
-          content: value,
+          content: data,
           lessonId: params.lessonId,
           pluginType: 'multiple_choice_single',
           weight: DEFAULT_WEIGHT,
@@ -124,9 +151,19 @@ export async function action({ request, params }: Route.ActionArgs) {
       }
 
       case 'multiple_choice_multiple': {
-        const value = submission.value as SchemaData<'multiple_choice_multiple'>;
+        const schema = schemaMap['multiple_choice_multiple'];
+        const resolver = zodResolver(schema);
+        const {
+          errors,
+          data,
+          receivedValues: defaultValues,
+        } = await getValidatedFormData<z.infer<typeof schema>>(formData, resolver);
+
+        if (errors) {
+          return { errors, defaultValues };
+        }
         ({ success, message } = await createMultipleChoiceMultipleAnswersBlock(supabase, {
-          content: value,
+          content: data,
           lessonId: params.lessonId,
           pluginType: 'multiple_choice_multiple',
           weight: DEFAULT_WEIGHT + 1,
@@ -141,9 +178,19 @@ export async function action({ request, params }: Route.ActionArgs) {
       }
 
       case 'tap_to_reveal': {
-        const value = submission.value as SchemaData<'tap_to_reveal'>;
+        const schema = schemaMap['tap_to_reveal'];
+        const resolver = zodResolver(schema);
+        const {
+          errors,
+          data,
+          receivedValues: defaultValues,
+        } = await getValidatedFormData<z.infer<typeof schema>>(formData, resolver);
+
+        if (errors) {
+          return { errors, defaultValues };
+        }
         ({ success, message } = await createTapToRevealBlock(supabase, {
-          content: value,
+          content: data,
           lessonId: params.lessonId,
           pluginType: 'tap_to_reveal',
           weight: DEFAULT_WEIGHT,

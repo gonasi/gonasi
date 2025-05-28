@@ -52,6 +52,8 @@ export const schemaMap = {
   gravity_simulation: RichTextContentSchema,
 } as const;
 
+// TODO: DELETE BELOW
+
 // Derive the type of the schema map object
 export type SchemaMapType = typeof schemaMap;
 

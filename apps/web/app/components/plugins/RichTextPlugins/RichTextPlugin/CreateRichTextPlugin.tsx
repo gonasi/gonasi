@@ -1,17 +1,16 @@
-import { Form } from 'react-router';
-import { getFormProps, useForm } from '@conform-to/react';
-import { getZodConstraint, parseWithZod } from '@conform-to/zod';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Save } from 'lucide-react';
+import { RemixFormProvider, useRemixForm } from 'remix-hook-form';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
 
-import type { PluginTypeId } from '@gonasi/schemas/plugins';
+import type { PluginTypeId, RichTextContentSchemaType } from '@gonasi/schemas/plugins';
 import { RichTextContentSchema } from '@gonasi/schemas/plugins';
 
 import { Button } from '~/components/ui/button';
-import { ErrorList } from '~/components/ui/forms';
-import { RichTextInputField } from '~/components/ui/forms/RichTextInputField';
+import { GoRichTextInputField } from '~/components/ui/forms/elements';
 import { useIsPending } from '~/utils/misc';
 
+const resolver = zodResolver(RichTextContentSchema);
 interface CreateRichTextPluginProps {
   pluginTypeId: PluginTypeId;
 }
@@ -19,42 +18,36 @@ interface CreateRichTextPluginProps {
 export function CreateRichTextPlugin({ pluginTypeId }: CreateRichTextPluginProps) {
   const isPending = useIsPending();
 
-  const [form, fields] = useForm({
-    id: `create-${pluginTypeId}-form`,
-    constraint: getZodConstraint(RichTextContentSchema),
-    shouldValidate: 'onBlur',
-    shouldRevalidate: 'onInput',
-    onValidate({ formData }) {
-      return parseWithZod(formData, { schema: RichTextContentSchema });
+  const methods = useRemixForm<RichTextContentSchemaType>({
+    mode: 'all',
+    resolver,
+    submitData: {
+      intent: pluginTypeId,
     },
   });
 
   return (
-    <Form method='POST' {...getFormProps(form)}>
-      <HoneypotInputs />
+    <RemixFormProvider {...methods}>
+      <form onSubmit={methods.handleSubmit} method='POST'>
+        <HoneypotInputs />
+        <GoRichTextInputField
+          name='richTextState'
+          labelProps={{ children: 'Rich Text', required: true }}
+          description='You can format your content using rich text.'
+          placeholder='Start typing...'
+        />
 
-      <RichTextInputField
-        labelProps={{ children: 'Rich Text', required: true }}
-        meta={fields.richTextState}
-        placeholder='Start typing...'
-        errors={fields.richTextState.errors}
-        description='You can format your content using rich text.'
-      />
-
-      <ErrorList errors={Object.values(form.allErrors).flat()} id={form.errorId} />
-
-      <div className='mt-4 flex justify-end space-x-2'>
-        <Button
-          type='submit'
-          rightIcon={<Save />}
-          disabled={isPending}
-          isLoading={isPending}
-          name='intent'
-          value={pluginTypeId}
-        >
-          Save
-        </Button>
-      </div>
-    </Form>
+        <div className='mt-4 flex justify-end space-x-2'>
+          <Button
+            type='submit'
+            rightIcon={<Save />}
+            disabled={isPending}
+            isLoading={isPending || methods.formState.isSubmitting}
+          >
+            Save
+          </Button>
+        </div>
+      </form>
+    </RemixFormProvider>
   );
 }
