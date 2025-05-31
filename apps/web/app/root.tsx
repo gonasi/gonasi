@@ -88,12 +88,16 @@ export async function loader({ request }: Route.LoaderArgs) {
   const { toast, headers: toastHeaders } = await getToast(request);
   const honeyProps = await honeypot.getInputProps();
 
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
   return data(
-    { clientEnv, role, user, activeCompany, toast, honeyProps, session },
+    {
+      clientEnv,
+      role,
+      user,
+      activeCompany,
+      toast,
+      honeyProps,
+      session: sessionResult.data.session,
+    },
     {
       headers: combineHeaders(supabaseHeaders, toastHeaders),
     },
