@@ -1,6 +1,6 @@
 import { Outlet, useOutletContext } from 'react-router';
 
-import { TopNav } from '~/components/go-top-nav';
+import { TopNav } from '~/components/navigation/top-nav';
 import type { AppOutletContext } from '~/root';
 
 export default function PublicLayout() {

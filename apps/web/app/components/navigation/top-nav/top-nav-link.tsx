@@ -8,7 +8,7 @@ interface Props {
   name: string;
 }
 
-export function GoTopNavLink({ icon, to, name }: Props) {
+export function TopNavLink({ icon, to, name }: Props) {
   const location = useLocation();
 
   // Ensure "Dashboard" is active on `/dashboard` and `/dashboard/`, but not `/dashboard/something`

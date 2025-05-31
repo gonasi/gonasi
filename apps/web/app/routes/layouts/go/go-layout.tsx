@@ -1,6 +1,6 @@
 import { Outlet, useOutletContext } from 'react-router';
 
-import { TopNav } from '~/components/go-top-nav';
+import { TopNav } from '~/components/navigation/top-nav';
 import { Spinner } from '~/components/loaders';
 import { useAuthGuard } from '~/hooks/useAuthGuard';
 import type { AppOutletContext } from '~/root';
