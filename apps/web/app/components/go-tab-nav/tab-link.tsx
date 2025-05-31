@@ -1,14 +1,16 @@
 import { NavLink, useLocation } from 'react-router';
 import { motion } from 'framer-motion';
+import type { LucideIcon } from 'lucide-react';
 
 import { cn } from '~/lib/utils';
 
 interface Props {
   to: string;
   name: string;
+  icon: LucideIcon;
 }
 
-export function TabLink({ to, name }: Props) {
+export function TabLink({ to, name, icon: Icon }: Props) {
   const location = useLocation();
 
   // Match exact path or any sub-route
@@ -20,22 +22,35 @@ export function TabLink({ to, name }: Props) {
         cn(
           'group font-secondary relative py-2 hover:cursor-pointer',
           'transition-colors duration-200',
-          isActive ? 'text-primary font-bold' : 'text-gray-500',
+          isActive ? 'text-primary font-bold' : 'text-muted-foreground',
           isPending ? 'opacity-50' : '',
         )
       }
       to={to}
       end={false}
     >
-      <span className='transition-opacity duration-200 group-hover:opacity-80'>{name}</span>
+      <div className='flex items-center space-x-0 md:space-x-1'>
+        <Icon />
+        <span
+          className={cn(
+            'w-full transition-opacity duration-200 group-hover:opacity-80',
+            'hidden md:flex',
+          )}
+        >
+          {name}
+        </span>
+      </div>
 
-      {isActive && (
-        <motion.div
-          layoutId='tab-indicator'
-          className='bg-primary absolute bottom-0 left-0 h-[4px] w-full'
-          transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-        />
-      )}
+      {/* Animated gradient underline */}
+      <motion.div
+        className={cn(
+          'from-secondary to-primary via-primary absolute bottom-0 left-0 h-0.5 bg-gradient-to-l',
+          'hidden md:flex',
+        )}
+        initial={false}
+        animate={{ width: isActive ? '100%' : '0%' }}
+        transition={{ duration: 0.3, ease: 'easeInOut' }}
+      />
     </NavLink>
   );
 }

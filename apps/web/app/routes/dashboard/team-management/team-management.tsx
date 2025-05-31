@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { Outlet, useNavigate, useOutletContext } from 'react-router';
+import { Library } from 'lucide-react';
 
 import type { Route } from './+types/team-management';
 
@@ -30,14 +31,17 @@ export default function TeamManagement({ params }: Route.ComponentProps) {
             {
               to: `/dashboard/${params.companyId}/team-management/staff-directory`,
               name: 'Staff Directory',
+              icon: Library,
             },
             {
               to: `/dashboard/${params.companyId}/team-management/staff-teams`,
               name: 'Staff Teams',
+              icon: Library,
             },
             {
               to: `/dashboard/${params.companyId}/team-management/staff-invites`,
               name: 'Staff Invites',
+              icon: Library,
             },
           ]}
         />

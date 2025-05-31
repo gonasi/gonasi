@@ -1,8 +1,12 @@
+import type { LucideIcon } from 'lucide-react';
+
 import { TabLink } from './tab-link';
 
 interface Tab {
   to: string;
   name: string;
+  icon: LucideIcon;
+  isVisible?: boolean; // TODO: Change to required once done
 }
 
 interface GoTabNavProps {
@@ -11,10 +15,14 @@ interface GoTabNavProps {
 
 export function GoTabNav({ tabs }: GoTabNavProps) {
   return (
-    <div className='border-b-card flex items-center space-x-4 border-b pt-4'>
-      {tabs.map((tab) => (
-        <TabLink key={tab.to + tab.name} to={tab.to} name={tab.name} />
-      ))}
+    <div className='border-b-card border-b pt-4'>
+      <div className='mx-auto flex w-full max-w-sm items-center justify-between'>
+        {tabs
+          .filter((tab) => tab.isVisible !== false) // show only visible tabs
+          .map((tab) => (
+            <TabLink key={tab.to + tab.name} to={tab.to} name={tab.name} icon={tab.icon} />
+          ))}
+      </div>
     </div>
   );
 }
