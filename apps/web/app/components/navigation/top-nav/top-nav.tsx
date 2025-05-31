@@ -1,10 +1,10 @@
 import { Link, NavLink } from 'react-router';
 import { House, Telescope } from 'lucide-react';
 
-import { Container } from '../layouts/container';
-import { ProfileDropdown } from '../profile-dropdown';
-import { buttonVariants } from '../ui/button';
-import { GoTopNavLink } from './go-top-nav-link';
+import { Container } from '../../layouts/container';
+import { ProfileDropdown } from '../../profile-dropdown';
+import { buttonVariants } from '../../ui/button';
+import { TopNavLink } from './top-nav-link';
 
 import { AppLogo } from '~/components/app-logo';
 import type {
@@ -30,8 +30,8 @@ export function TopNav({ user, role = 'user', activeCompany }: Props) {
             </Link>
 
             <div className='flex h-full items-center space-x-4'>
-              <GoTopNavLink icon={<House size={20} />} to='/' name='Home' />
-              <GoTopNavLink icon={<Telescope size={20} />} to='/explore' name='Explore' />
+              <TopNavLink icon={<House size={20} />} to='/' name='Home' />
+              <TopNavLink icon={<Telescope size={20} />} to='/explore' name='Explore' />
             </div>
           </div>
           {user ? (
