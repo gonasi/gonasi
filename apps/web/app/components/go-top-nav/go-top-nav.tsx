@@ -1,5 +1,5 @@
 import { Link, NavLink } from 'react-router';
-import { House, LibraryBig } from 'lucide-react';
+import { House, Telescope } from 'lucide-react';
 
 import { Container } from '../layouts/container';
 import { ProfileDropdown } from '../profile-dropdown';
@@ -21,7 +21,7 @@ interface Props {
 
 export function TopNav({ user, role = 'user', activeCompany }: Props) {
   return (
-    <nav className='border-b-card flex h-16 w-full items-center border-b md:h-20'>
+    <nav className='border-b-card hidden h-16 w-full items-center border-b md:flex md:h-20 md:px-4'>
       <Container className='h-full'>
         <div className='flex h-full items-center justify-between'>
           <div className='flex h-full items-center space-x-10'>
@@ -29,24 +29,30 @@ export function TopNav({ user, role = 'user', activeCompany }: Props) {
               <AppLogo />
             </Link>
 
-            {user && (
-              <div className='flex h-full items-center space-x-4'>
-                <GoTopNavLink icon={<House size={20} />} to='/go' name='Home' />
-                <GoTopNavLink icon={<LibraryBig size={20} />} to='/go/courses' name='Courses' />
-              </div>
-            )}
+            <div className='flex h-full items-center space-x-4'>
+              <GoTopNavLink icon={<House size={20} />} to='/' name='Home' />
+              <GoTopNavLink icon={<Telescope size={20} />} to='/explore' name='Explore' />
+            </div>
           </div>
           {user ? (
             <div>
               <ProfileDropdown user={user} role={role} activeCompany={activeCompany} />
             </div>
           ) : (
-            <NavLink
-              to='/login'
-              className={`${buttonVariants({ variant: 'ghost' })} border-card rounded-full border`}
-            >
-              Log in
-            </NavLink>
+            <div className='flex space-x-2'>
+              <NavLink
+                to='/login'
+                className={`${buttonVariants({ variant: 'default' })} rounded-full`}
+              >
+                Log In
+              </NavLink>
+              <NavLink
+                to='/signup'
+                className={`${buttonVariants({ variant: 'ghost' })} border-card rounded-full border`}
+              >
+                Sign Up
+              </NavLink>
+            </div>
           )}
         </div>
       </Container>

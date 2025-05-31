@@ -23,15 +23,14 @@ export function GoTopNavLink({ icon, to, name }: Props) {
           'border-b-2 border-b-transparent',
           'hover:border-muted-foreground/70 transition-colors duration-200',
           `${isActive ? 'hover:border-primary border-b-primary text-primary font-bold' : ''}`,
-          isPending ? 'opacity-50' : '',
+          isPending ? 'animate-pulse opacity-55 hover:cursor-wait' : '',
         )
       }
       to={to}
+      aria-disabled={isActive}
     >
       {icon}
-      <span className='text-sm transition-opacity duration-200 group-hover:opacity-80 md:text-base'>
-        {name}
-      </span>
+      <span className='mt-2 transition-opacity duration-200 group-hover:opacity-80'>{name}</span>
     </NavLink>
   );
 }

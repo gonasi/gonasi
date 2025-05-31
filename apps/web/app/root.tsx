@@ -24,7 +24,6 @@ import { getUserProfile } from '@gonasi/database/profile';
 import { updateUsersActiveCompany } from '@gonasi/database/staffMembers';
 
 import type { Route } from './+types/root';
-import { FeedbackBanner } from './components/feedback-banner';
 import { Spinner } from './components/loaders';
 import { NavigationProgressBar } from './components/progress-bar';
 import { useStore } from './store';
@@ -256,7 +255,6 @@ function App() {
         </div>
       )}
       <NavigationProgressBar />
-      <FeedbackBanner />
 
       <Outlet context={{ user, role, activeCompany, session }} />
       <Toaster
