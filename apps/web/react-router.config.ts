@@ -6,8 +6,4 @@ export default {
   // Server-side render by default, to enable SPA mode set this to `false`
   ssr: true,
   presets: [vercelPreset()],
-  // return a list of URLs to prerender at build time
-  async prerender() {
-    return ['/'];
-  },
 } satisfies Config;
