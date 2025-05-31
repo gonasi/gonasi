@@ -1,3 +1,4 @@
+import { getUserId } from '../auth';
 import type { TypedSupabaseClient } from '../client';
 
 interface GetProfileByUsernameParams {
@@ -6,7 +7,10 @@ interface GetProfileByUsernameParams {
 }
 
 export const getProfileByUsername = async ({ supabase, username }: GetProfileByUsernameParams) => {
-  const { data, error } = await supabase
+  const userId = await getUserId(supabase);
+
+  // Fetch the user profile by username
+  const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select(
       `
@@ -30,9 +34,22 @@ export const getProfileByUsername = async ({ supabase, username }: GetProfileByU
     .eq('username', username)
     .single();
 
-  if (error || !data?.is_onboarding_complete) {
+  // Exit early if there's an error or onboarding is incomplete
+  if (profileError || !profile?.is_onboarding_complete) {
     return null;
   }
 
-  return { user: data };
+  // Check if the user has an active company
+  const { data: company } = await supabase
+    .from('user_active_companies')
+    .select('company_id')
+    .match({ user_id: userId, company_id: profile.id })
+    .single();
+
+  return {
+    user: {
+      ...profile,
+      userCompanyMatch: Boolean(company?.company_id),
+    },
+  };
 };

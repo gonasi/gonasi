@@ -44,7 +44,11 @@ export default function Profile() {
   const { username, full_name, avatar_url } = profileUser.user;
   const staffRole = activeCompany?.staff_role;
 
-  const isStaff = staffRole === 'su' || staffRole === 'admin';
+  const isStaff =
+    (staffRole === 'su' || staffRole === 'admin') && profileUser.user.userCompanyMatch;
+
+  console.log('******** is profileUser: ', profileUser);
+  console.log('******** is activeCompany: ', activeCompany);
 
   const tabs = [
     {
