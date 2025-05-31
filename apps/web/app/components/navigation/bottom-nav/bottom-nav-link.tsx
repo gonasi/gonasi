@@ -28,7 +28,7 @@ export function BottomNavLink({ icon: Icon, to }: Props) {
       to={to}
       aria-disabled={isActive}
     >
-      <Icon className='' size={26} strokeWidth={isActive ? 2 : 1} />
+      <Icon className='' size={28} strokeWidth={isActive ? 2 : 1} />
     </NavLink>
   );
 }

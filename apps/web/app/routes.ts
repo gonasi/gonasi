@@ -6,6 +6,11 @@ export default [
     route('explore', 'routes/public/explore.tsx'),
   ]),
 
+  // all user profiles
+  layout('routes/layouts/profile/profile-layout.tsx', [
+    route(':username', 'routes/profile/profile.tsx'),
+  ]),
+
   layout('routes/layouts/auth/auth-layout.tsx', [
     route('login', 'routes/auth/login.tsx'),
     route('signup', 'routes/auth/signup.tsx'),

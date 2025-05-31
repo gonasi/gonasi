@@ -4,7 +4,7 @@ import { BottomNav } from '~/components/navigation/bottom-nav/bottom-nav';
 import { TopNav } from '~/components/navigation/top-nav';
 import type { AppOutletContext } from '~/root';
 
-export default function MainLayout() {
+export default function ProfileLayout() {
   const { user, role, activeCompany } = useOutletContext<AppOutletContext>();
 
   return (
