@@ -1,9 +1,12 @@
-import { Outlet, useOutletContext } from 'react-router';
+import { Suspense } from 'react';
+import { Await, Outlet, useLoaderData, useOutletContext } from 'react-router';
 
 import { getProfileByUsername } from '@gonasi/database/profiles';
 
 import type { Route } from './+types/profile-layout';
 
+import { NotFoundCard } from '~/components/cards';
+import { Spinner } from '~/components/loaders';
 import { createClient } from '~/lib/supabase/supabase.server';
 import type { AppOutletContext } from '~/root';
 
@@ -12,7 +15,7 @@ export type ProfileLoaderReturnType = Exclude<Awaited<ReturnType<typeof loader>>
 export async function loader({ request, params }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
 
-  const profileUser = await getProfileByUsername({
+  const profileUser = getProfileByUsername({
     supabase,
     username: params.username ?? '',
   });
@@ -20,12 +23,23 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   return profileUser;
 }
 
-export default function ProfileLayout({ loaderData: profileUser }: Route.ComponentProps) {
+export default function ProfileLayout() {
+  const profileUser = useLoaderData();
+
   const { user, role, activeCompany } = useOutletContext<AppOutletContext>();
 
   return (
     <section className='mx-auto max-w-2xl px-4 py-10'>
-      <Outlet context={{ profileUser, user, role, activeCompany }} />
+      <Suspense fallback={<Spinner />}>
+        <Await
+          resolve={profileUser}
+          errorElement={<NotFoundCard message='Could not load profile' />}
+        >
+          {(resolvedProfileUser) => (
+            <Outlet context={{ profileUser: resolvedProfileUser, user, role, activeCompany }} />
+          )}
+        </Await>
+      </Suspense>
     </section>
   );
 }
