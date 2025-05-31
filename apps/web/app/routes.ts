@@ -4,11 +4,10 @@ export default [
   layout('routes/layouts/main/main-layout.tsx', [
     index('routes/public/home.tsx'),
     route('explore', 'routes/public/explore.tsx'),
-  ]),
-
-  // all user profiles
-  layout('routes/layouts/profile/profile-layout.tsx', [
-    route(':username', 'routes/profile/profile.tsx'),
+    // all user profiles
+    layout('routes/layouts/profile/profile-layout.tsx', [
+      route(':username', 'routes/profile/profile.tsx'),
+    ]),
   ]),
 
   layout('routes/layouts/auth/auth-layout.tsx', [

@@ -15,7 +15,7 @@ export default function MainLayout() {
         activeCompany={user ? activeCompany : null}
       />
       <section className='container mx-auto min-h-screen'>
-        <Outlet />
+        <Outlet context={{ user, role, activeCompany }} />
       </section>
       <BottomNav user={user ?? undefined} />
     </div>
