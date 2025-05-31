@@ -13,8 +13,11 @@ interface Props {
 export function TabLink({ to, name, icon: Icon }: Props) {
   const location = useLocation();
 
+  const normalizedTo = to.startsWith('/') ? to : `/${to}`;
+
   // Match exact path or any sub-route
-  const isActive = location.pathname === to || location.pathname.startsWith(`${to}/`);
+  const isActive =
+    location.pathname === normalizedTo || location.pathname.startsWith(`${normalizedTo}/`);
 
   return (
     <NavLink
