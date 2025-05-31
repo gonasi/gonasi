@@ -33,7 +33,7 @@ export const NavigationProgressBar = () => {
       <div
         ref={ref}
         className={cx(
-          'bg-primary h-full rounded-e-sm transition-all duration-500 ease-in-out',
+          'from-secondary to-primary h-full rounded-e-sm bg-gradient-to-r transition-all duration-500 ease-in-out',
           navigation.state === 'idle' && animationComplete && 'w-0 opacity-0 transition-none',
           navigation.state === 'submitting' && 'w-4/12',
           navigation.state === 'loading' && 'w-10/12',
