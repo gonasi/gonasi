@@ -1,6 +1,6 @@
 import { jwtDecode } from 'jwt-decode';
 
-import type { LoginTypes } from '@gonasi/schemas/auth';
+import type { LoginFormSchemaTypes } from '@gonasi/schemas/auth';
 
 import type { TypedSupabaseClient, UserRole } from '../client';
 
@@ -28,7 +28,7 @@ export const logOut = async (supabase: TypedSupabaseClient) => {
 
 export const signInWithEmailAndPassword = async (
   supabase: TypedSupabaseClient,
-  payload: LoginTypes,
+  payload: LoginFormSchemaTypes,
 ) => {
   const { email, password } = payload;
   const { error, data } = await supabase.auth.signInWithPassword({
@@ -39,7 +39,7 @@ export const signInWithEmailAndPassword = async (
   return { error, data };
 };
 
-interface SignUpTypes extends LoginTypes {
+interface SignUpTypes extends LoginFormSchemaTypes {
   emailRedirectTo: string;
 }
 

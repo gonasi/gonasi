@@ -1,7 +1,7 @@
 import { Controller } from 'react-hook-form';
 import { useRemixFormContext } from 'remix-hook-form';
 
-import { Input } from '../../input';
+import { Input, type InputProps } from '../../input';
 import { Label, type LabelProps } from '../../label';
 import { ErrorDisplay, FormDescription } from './Common';
 
@@ -11,6 +11,7 @@ interface GoInputFieldProps {
   description?: string;
   className?: string;
   labelProps: Omit<LabelProps, 'htmlFor' | 'error'>;
+  inputProps?: Omit<InputProps, 'error' | 'aria-invalid' | 'aria-describedby'>;
 }
 
 export function GoInputField({
@@ -19,6 +20,7 @@ export function GoInputField({
   description,
   className,
   labelProps,
+  inputProps,
 }: GoInputFieldProps) {
   const {
     control,
@@ -50,6 +52,7 @@ export function GoInputField({
               aria-invalid={hasError}
               aria-describedby={description ? descriptionId : undefined}
               error={hasError}
+              {...inputProps}
               {...field}
             />
           </div>

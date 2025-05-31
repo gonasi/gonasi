@@ -44,13 +44,13 @@ export function TopNav({ user, role = 'user', activeCompany }: Props) {
                 to='/login'
                 className={`${buttonVariants({ variant: 'default' })} rounded-full`}
               >
-                Log In
+                Log in
               </NavLink>
               <NavLink
                 to='/signup'
                 className={`${buttonVariants({ variant: 'ghost' })} border-card rounded-full border`}
               >
-                Sign Up
+                Sign up
               </NavLink>
             </div>
           )}

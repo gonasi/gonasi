@@ -17,9 +17,9 @@ interface Props {
 
 export function BottomNav({ user, role = 'user', activeCompany }: Props) {
   return (
-    <nav className='fixed bottom-0 w-full px-0 md:hidden'>
+    <nav className='fixed bottom-0 min-h-12 w-full px-0 md:hidden'>
       <div className='from-secondary/30 to-primary/30 h-0.5 bg-gradient-to-r' />
-      <div className='flex h-full items-center justify-between px-4 py-2'>
+      <div className='flex h-full items-center justify-between p-4'>
         <BottomNavLink icon={House} to='/' />
         <BottomNavLink icon={Telescope} to='/explore' />
 

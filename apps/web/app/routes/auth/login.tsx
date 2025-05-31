@@ -1,70 +1,86 @@
 import { Form, redirect, useSearchParams } from 'react-router';
-import { getFormProps, getInputProps, useForm } from '@conform-to/react';
-import { getZodConstraint, parseWithZod } from '@conform-to/zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
 import { dataWithError } from 'remix-toast';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
 import { safeRedirect } from 'remix-utils/safe-redirect';
 
 import { signInWithEmailAndPassword } from '@gonasi/database/auth';
-import { LoginFormSchema } from '@gonasi/schemas/auth';
+import { LoginFormSchema, type LoginFormSchemaTypes } from '@gonasi/schemas/auth';
 
 import type { Route } from './+types/login';
 
 import { GoLink } from '~/components/go-link';
 import { AuthFormLayout } from '~/components/layouts/auth';
 import { Button } from '~/components/ui/button';
-import { Field } from '~/components/ui/forms';
+import { GoInputField } from '~/components/ui/forms/elements';
 import { createClient } from '~/lib/supabase/supabase.server';
 import { checkHoneypot } from '~/utils/honeypot.server';
 import { useIsPending } from '~/utils/misc';
 
+// Metadata for the route
 export function meta() {
   return [
-    { title: 'Login - Gonasi' },
+    { title: 'Login - Build Interactive Courses | Gonasi' },
     {
       name: 'description',
       content:
-        'Create an account on Gonasi and start managing your assets efficiently. Sign up now to access powerful tools for asset management.',
+        'Create and explore gamified courses with Gonasi’s no-code course builder. Engage learners through simulations, challenges, AI feedback, and dynamic progress tracking.',
     },
   ];
 }
 
+const resolver = zodResolver(LoginFormSchema);
+
+/**
+ * Server-side action to handle login form submission.
+ */
 export async function action({ request }: Route.ActionArgs) {
   const formData = await request.formData();
+
+  // Anti-spam measure
   await checkHoneypot(formData);
 
+  // Initialize Supabase and headers for redirect
   const { supabase, headers } = createClient(request);
 
-  const submission = parseWithZod(formData, { schema: LoginFormSchema });
+  // Validate and parse form data with Zod
+  const {
+    errors,
+    data,
+    receivedValues: defaultValues,
+  } = await getValidatedFormData<LoginFormSchemaTypes>(formData, resolver);
 
-  if (submission.status !== 'success') {
-    return { result: submission.reply(), status: submission.status === 'error' ? 400 : 200 };
+  // Return validation errors, if any
+  if (errors) {
+    return { errors, defaultValues };
   }
 
-  const { error } = await signInWithEmailAndPassword(supabase, {
-    ...submission.value,
-  });
+  // Attempt login using Supabase auth
+  const { error } = await signInWithEmailAndPassword(supabase, data);
 
-  const redirectTo = submission.value.redirectTo ?? '/go';
+  // Default redirect path after login
+  const redirectTo = data.redirectTo ?? '/go';
 
+  // If auth failed, return toast error; otherwise, redirect
   return error
     ? dataWithError(null, 'Wrong email and or password')
     : redirect(safeRedirect(redirectTo), { headers });
 }
 
+/**
+ * Login form UI
+ */
 export default function Login() {
   const isPending = useIsPending();
   const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get('redirectTo');
 
-  const [form, fields] = useForm({
-    id: 'login-form',
-    constraint: getZodConstraint(LoginFormSchema),
-    defaultValue: { redirectTo },
-    onValidate({ formData }) {
-      return parseWithZod(formData, { schema: LoginFormSchema });
-    },
-    shouldRevalidate: 'onInput',
+  // Initialize form methods with validation
+  const methods = useRemixForm<LoginFormSchemaTypes>({
+    mode: 'all',
+    resolver,
+    submitData: { redirectTo },
   });
 
   return (
@@ -72,45 +88,52 @@ export default function Login() {
       title='Log in'
       description={
         <div>
-          Not a member yet?{' '}
-          <span>
-            <GoLink to='/signup'>Sign up</GoLink>
-          </span>
+          Not a member yet? <GoLink to='/signup'>Sign up</GoLink>
         </div>
       }
       leftLink='/'
     >
-      <Form method='POST' {...getFormProps(form)}>
-        <HoneypotInputs />
-        <Field
-          labelProps={{ children: 'Email', required: true }}
-          inputProps={{
-            ...getInputProps(fields.email, { type: 'email' }),
-            autoFocus: true,
-            className: 'lowercase',
-            autoComplete: 'email',
-          }}
-          errors={fields.email.errors}
-        />
-        <Field
-          labelProps={{
-            children: 'Password',
-            required: true,
-            endAdornment: <GoLink to='/'>Forgot password?</GoLink>,
-          }}
-          inputProps={{
-            ...getInputProps(fields.password, {
+      <RemixFormProvider {...methods}>
+        <Form method='POST' onSubmit={methods.handleSubmit}>
+          {/* Anti-bot honeypot field */}
+          <HoneypotInputs />
+
+          {/* Email input field */}
+          <GoInputField
+            labelProps={{ children: 'Email', required: true }}
+            name='email'
+            inputProps={{
+              autoFocus: true,
+              className: 'lowercase',
+              autoComplete: 'email',
+            }}
+          />
+
+          {/* Password input field with forgot password link */}
+          <GoInputField
+            labelProps={{
+              children: 'Password',
+              required: true,
+              endAdornment: <GoLink to='/'>Forgot password?</GoLink>,
+            }}
+            name='password'
+            inputProps={{
               type: 'password',
-            }),
-            autoComplete: 'current-password',
-          }}
-          errors={fields.password.errors}
-        />
-        <input {...getInputProps(fields.redirectTo, { type: 'hidden' })} />
-        <Button type='submit' disabled={isPending} isLoading={isPending} className='w-full'>
-          Log in
-        </Button>
-      </Form>
+              autoComplete: 'current-password',
+            }}
+          />
+
+          {/* Submit button with loading state */}
+          <Button
+            type='submit'
+            disabled={isPending}
+            isLoading={isPending || methods.formState.isSubmitting}
+            className='w-full'
+          >
+            Log in
+          </Button>
+        </Form>
+      </RemixFormProvider>
     </AuthFormLayout>
   );
 }
