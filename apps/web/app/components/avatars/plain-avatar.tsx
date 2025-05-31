@@ -62,7 +62,6 @@ export function PlainAvatar({
           className={`absolute rounded-full border-2 border-transparent ${ringSizeClasses[size]}`}
         />
       )}
-
       {avatar}
     </div>
   );

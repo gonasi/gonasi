@@ -139,8 +139,6 @@ export function GoSidebar({ user, role, activeCompany }: Props) {
       <div className='fixed bottom-10 px-3 md:px-6'>
         {user && (
           <ProfileDropdown
-            user={user}
-            role={role}
             activeCompany={activeCompany}
             dropdownPosition='top'
             dropdownAlign='start'

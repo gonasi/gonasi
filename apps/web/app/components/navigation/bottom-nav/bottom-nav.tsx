@@ -4,13 +4,13 @@ import { House, Telescope, UserRound } from 'lucide-react';
 import { BottomNavLink } from './bottom-nav-link';
 
 import { PlainAvatar } from '~/components/avatars';
-import type { UserProfileLoaderReturnType } from '~/root';
+import type { UserActiveCompanyLoaderReturnType } from '~/root';
 
 interface Props {
-  user?: UserProfileLoaderReturnType;
+  activeCompany: UserActiveCompanyLoaderReturnType;
 }
 
-export function BottomNav({ user }: Props) {
+export function BottomNav({ activeCompany }: Props) {
   return (
     <nav className='fixed bottom-0 h-18 w-full px-0 md:hidden'>
       <div className='from-secondary/30 to-primary/30 h-0.5 bg-gradient-to-r' />
@@ -18,14 +18,14 @@ export function BottomNav({ user }: Props) {
         <BottomNavLink icon={House} to='/' />
         <BottomNavLink icon={Telescope} to='/explore' />
         <div>
-          {user ? (
+          {activeCompany ? (
             <div>
-              <NavLink to={`/${user.username}`}>
+              <NavLink to={`/${activeCompany.profiles.username}`}>
                 {({ isActive, isPending }) => (
                   <span aria-disabled={isActive}>
                     <PlainAvatar
-                      username={user.username}
-                      imageUrl={user.avatar_url}
+                      username={activeCompany.profiles.username}
+                      imageUrl={activeCompany.profiles.avatar_url}
                       isActive={isActive}
                       isPending={isPending}
                       size='sm'

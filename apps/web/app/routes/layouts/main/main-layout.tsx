@@ -9,15 +9,11 @@ export default function MainLayout() {
 
   return (
     <div>
-      <TopNav
-        user={user ?? undefined}
-        role={user ? role : undefined}
-        activeCompany={user ? activeCompany : null}
-      />
+      <TopNav activeCompany={user ? activeCompany : null} />
       <section className='container mx-auto min-h-screen'>
         <Outlet context={{ user, role, activeCompany }} />
       </section>
-      <BottomNav user={user ?? undefined} />
+      <BottomNav activeCompany={user ? activeCompany : null} />
     </div>
   );
 }

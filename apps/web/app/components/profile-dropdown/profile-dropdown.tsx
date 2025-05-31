@@ -1,7 +1,7 @@
 import { Link, useLocation } from 'react-router';
-import { ChevronsUpDown, LayoutDashboard, LogOut } from 'lucide-react';
+import { ArrowRightLeft, ChevronsUpDown, LayoutDashboard, LogOut } from 'lucide-react';
 
-import { PlainAvatar, UserAvatar } from '../avatars';
+import { UserAvatar } from '../avatars';
 import { NotFoundCard } from '../cards';
 import { Button } from '../ui/button';
 
@@ -14,36 +14,32 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '~/components/ui/dropdown-menu';
-import type {
-  UserActiveCompanyLoaderReturnType,
-  UserProfileLoaderReturnType,
-  UserRoleLoaderReturnType,
-} from '~/root';
+import type { UserActiveCompanyLoaderReturnType } from '~/root';
 
 interface Props {
-  user: UserProfileLoaderReturnType;
-  role: UserRoleLoaderReturnType;
   activeCompany: UserActiveCompanyLoaderReturnType;
   dropdownPosition?: 'top' | 'bottom' | 'left' | 'right';
   dropdownAlign?: 'start' | 'center' | 'end';
 }
 
 export function ProfileDropdown({
-  user,
-  role,
   activeCompany,
   dropdownPosition = 'bottom',
   dropdownAlign = 'end',
 }: Props) {
   const location = useLocation();
 
-  if (!user || !activeCompany) return <NotFoundCard message='user not found' />;
+  if (!activeCompany) return <NotFoundCard message='user not found' />;
 
-  const { email, full_name } = user;
+  const {
+    profiles: { username, full_name, avatar_url },
+  } = activeCompany;
+
+  const isActive = location.pathname === `/${username}`;
 
   const menuItems = [
-    { to: `/dashboard/${activeCompany.company_id}`, label: 'Dashboard', icon: LayoutDashboard },
-    // { to: '/profile', label: 'Profile', icon: User },
+    { to: `/${username}`, label: 'Profile', icon: LayoutDashboard },
+    { to: '/profile', label: 'Switch account', icon: ArrowRightLeft },
     // { to: '/settings', label: 'Settings', icon: Settings },
     // { to: '/billing', label: 'Billing', icon: CreditCard },
   ];
@@ -51,13 +47,10 @@ export function ProfileDropdown({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button className='bg-background w-full rounded-full p-0 outline-0'>
-          <div className='hidden items-center md:flex'>
-            <UserAvatar username={user.username} imageUrl={user.avatar_url} />
+        <Button className='bg-background w-full rounded-full p-0 px-2 outline-0'>
+          <div className='flex items-center'>
+            <UserAvatar username={username} imageUrl={avatar_url} isActive={isActive} />
             <ChevronsUpDown className='text-muted-foreground mb-0.5' />
-          </div>
-          <div className='flex md:hidden'>
-            <PlainAvatar username={user.username} imageUrl={user.avatar_url} />
           </div>
         </Button>
       </DropdownMenuTrigger>
@@ -70,22 +63,14 @@ export function ProfileDropdown({
         <DropdownMenuLabel>
           <div className='space-y-1'>
             <p className='text-sm font-medium'>{full_name}</p>
-            <p className='text-muted-foreground text-xs'>{email}</p>
-            <p className='text-muted-foreground text-xs'>{role}</p>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           {menuItems.map(({ to, label, icon: Icon }) => {
-            const isActive = location.pathname === to;
             return (
               <DropdownMenuItem key={to} asChild className='group cursor-pointer'>
-                <Link
-                  to={to}
-                  className={`flex items-center space-x-2 ${
-                    isActive ? 'bg-muted text-primary' : ''
-                  }`}
-                >
+                <Link to={to} className='flex items-center space-x-2'>
                   <Icon className='h-4 w-4 transition-transform duration-200 group-hover:scale-110' />
                   <span>{label}</span>
                 </Link>
