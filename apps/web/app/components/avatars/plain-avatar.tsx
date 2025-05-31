@@ -51,12 +51,14 @@ export function PlainAvatar({
     <div className='text-foreground relative flex items-center justify-center'>
       {isPending ? (
         <motion.div
-          className={`border-primary/25 absolute rounded-full border-2 border-b-transparent ${ringSizeClasses[size]}`}
+          className={`border-primary/25 absolute rounded-full border-2 ${ringSizeClasses[size]}`}
           animate={{ rotate: 360 }}
           transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
         />
       ) : isActive ? (
-        <div className={`border-primary absolute rounded-full border-2 ${ringSizeClasses[size]}`} />
+        <div
+          className={`border-primary/25 absolute rounded-full border-2 ${ringSizeClasses[size]}`}
+        />
       ) : (
         <div
           className={`absolute rounded-full border-2 border-transparent ${ringSizeClasses[size]}`}

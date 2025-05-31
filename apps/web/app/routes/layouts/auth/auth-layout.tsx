@@ -13,7 +13,7 @@ export async function loader({ request }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
   const { user } = await getUserProfile(supabase);
 
-  if (user) return redirect('/go');
+  if (user) return redirect('/');
   return data({ success: true });
 }
 
@@ -22,7 +22,7 @@ export default function AuthLayout() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (user) navigate('/go');
+    if (user) navigate('/');
   }, [user, navigate]);
 
   if (user) return <Spinner />;

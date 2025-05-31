@@ -85,7 +85,8 @@ export async function action({ request }: Route.ActionArgs) {
   }
 
   const response = await deleteFormStepperSessionKey(request, FORM_STEPPER_COOKIE_NAMES.basicInfo);
-  return redirectWithSuccess('/go', message, {
+
+  return redirectWithSuccess('/', message, {
     headers: response.headers, // Forward the Set-Cookie header
   });
 }

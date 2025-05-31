@@ -44,7 +44,7 @@ export function GoSidebar({ user, role, activeCompany }: Props) {
     <aside className='border-r-card sticky top-16 h-full min-h-screen flex-none border-r md:top-20'>
       <div className='mb-10 py-2 pr-0 md:py-8 md:pr-10'>
         <div className='flex flex-col items-start space-x-4 py-4 lg:flex-row lg:items-center'>
-          <NavLink to='/go'>
+          <NavLink to='/'>
             <ChevronLeft size={36} />
           </NavLink>
           <NavLink

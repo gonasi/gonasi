@@ -25,7 +25,7 @@ export function TopNav({ user, role = 'user', activeCompany }: Props) {
       <Container className='h-full'>
         <div className='flex h-full items-center justify-between'>
           <div className='flex h-full items-center space-x-10'>
-            <Link to={user ? '/go' : '/'} className='flex items-center'>
+            <Link to='/' className='flex items-center'>
               <AppLogo />
             </Link>
 

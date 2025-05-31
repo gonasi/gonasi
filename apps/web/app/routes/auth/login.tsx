@@ -60,7 +60,7 @@ export async function action({ request }: Route.ActionArgs) {
   const { error } = await signInWithEmailAndPassword(supabase, data);
 
   // Default redirect path after login
-  const redirectTo = data.redirectTo ?? '/go';
+  const redirectTo = data.redirectTo ?? '/';
 
   // If auth failed, return toast error; otherwise, redirect
   return error

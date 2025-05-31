@@ -27,7 +27,7 @@ export default function OnboardingLayout() {
     }
 
     if (user.is_onboarding_complete) {
-      navigate('/go', { replace: true });
+      navigate(`/${user.username}`, { replace: true });
     }
   }, [user, location, navigate]);
 
