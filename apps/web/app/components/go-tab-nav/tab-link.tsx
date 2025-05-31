@@ -23,7 +23,7 @@ export function TabLink({ to, name, icon: Icon }: Props) {
           'flex items-center',
           'group font-secondary relative py-2 hover:cursor-pointer',
           'transition-colors duration-200',
-          isActive ? 'text-primary font-bold' : 'text-muted-foreground',
+          isActive ? 'text-primary' : 'text-muted-foreground',
           isPending ? 'opacity-50' : '',
         )
       }
@@ -31,7 +31,7 @@ export function TabLink({ to, name, icon: Icon }: Props) {
       end={false}
     >
       <div className='flex w-full items-center justify-center space-x-0 md:space-x-1'>
-        <Icon />
+        <Icon size={16} />
         <span
           className={cn('transition-opacity duration-200 group-hover:opacity-80', 'hidden md:flex')}
         >
