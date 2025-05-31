@@ -1,8 +1,10 @@
-import { useOutletContext } from 'react-router';
+import { NavLink, useOutletContext } from 'react-router';
+import { Settings } from 'lucide-react';
 
 import type { Route } from './+types/profile';
 import type { ProfileLoaderReturnType } from '../layouts/profile/profile-layout';
 
+import { PlainAvatar } from '~/components/avatars';
 import { NotFoundCard } from '~/components/cards';
 import type { AppOutletContext } from '~/root';
 
@@ -38,9 +40,25 @@ export default function Profile() {
     );
 
   return (
-    <div>
-      <h1>profile</h1>
-      <div>{profileUser.user.full_name}</div>
+    <div className=''>
+      <div className='flex w-full space-x-4'>
+        <PlainAvatar
+          username={profileUser.user.username}
+          imageUrl={profileUser.user.avatar_url}
+          size='xl'
+        />
+        <div className='w-full'>
+          <div className='flex w-full justify-between'>
+            <h4 className='font-secondary'>{profileUser.user.username}</h4>
+            {activeCompany?.staff_role === 'su' ? (
+              <NavLink to=''>
+                <Settings />
+              </NavLink>
+            ) : null}
+          </div>
+          <h5 className='py-2 text-sm'>{profileUser.user.full_name}</h5>
+        </div>
+      </div>
     </div>
   );
 }

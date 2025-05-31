@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar';
 interface UserAvatarProps {
   username: string | null;
   imageUrl?: string | null;
-  size?: 'xs' | 'sm' | 'md' | 'lg';
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
   isActive?: boolean;
   isPending?: boolean;
 }
@@ -15,6 +15,7 @@ const sizeClasses = {
   sm: 'h-8 w-8',
   md: 'h-10 w-10',
   lg: 'h-14 w-14',
+  xl: 'h-24 w-24',
 };
 
 const ringSizeClasses = {
@@ -22,6 +23,7 @@ const ringSizeClasses = {
   sm: 'h-9 w-9',
   md: 'h-11 w-11',
   lg: 'h-15 w-15',
+  xl: 'h-26 w-26',
 };
 
 export function PlainAvatar({

@@ -17,8 +17,6 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     username: params.username ?? '',
   });
 
-  console.log(profileUser);
-
   return profileUser;
 }
 
@@ -26,8 +24,8 @@ export default function ProfileLayout({ loaderData: profileUser }: Route.Compone
   const { user, role, activeCompany } = useOutletContext<AppOutletContext>();
 
   return (
-    <div>
+    <section className='mx-auto max-w-2xl px-4 py-10'>
       <Outlet context={{ profileUser, user, role, activeCompany }} />
-    </div>
+    </section>
   );
 }
