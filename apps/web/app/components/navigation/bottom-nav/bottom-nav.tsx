@@ -15,8 +15,8 @@ export function BottomNav({ user }: Props) {
     <nav className='fixed bottom-0 h-18 w-full px-0 md:hidden'>
       <div className='from-secondary/30 to-primary/30 h-0.5 bg-gradient-to-r' />
       <div className='flex h-full items-center justify-between px-4'>
-        <BottomNavLink icon={House} to='/' />
-        <BottomNavLink icon={Telescope} to='/explore' />
+        <BottomNavLink icon={House} to='/' name='Home' />
+        <BottomNavLink icon={Telescope} to='/explore' name='Explore' />
         <div>
           {user ? (
             <div>
@@ -34,7 +34,7 @@ export function BottomNav({ user }: Props) {
               </NavLink>
             </div>
           ) : (
-            <BottomNavLink icon={UserRound} to='/login' />
+            <BottomNavLink icon={UserRound} to='/login' name='Account' />
           )}
         </div>
       </div>
