@@ -39,15 +39,13 @@ export function ProfileDropdown({
 
   const menuItems = [
     { to: `/${username}`, label: 'Profile', icon: LayoutDashboard },
-    { to: '/profile', label: 'Switch account', icon: ArrowRightLeft },
-    // { to: '/settings', label: 'Settings', icon: Settings },
-    // { to: '/billing', label: 'Billing', icon: CreditCard },
+    { to: '/profile', label: 'Change account', icon: ArrowRightLeft },
   ];
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button className='bg-background w-full rounded-full p-0 px-2 outline-0'>
+        <Button className='bg-background w-full rounded-full p-1 outline-0'>
           <div className='flex items-center'>
             <UserAvatar username={username} imageUrl={avatar_url} isActive={isActive} />
             <ChevronsUpDown className='text-muted-foreground mb-0.5' />

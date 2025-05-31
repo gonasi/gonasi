@@ -1,4 +1,10 @@
+import { useOutletContext } from 'react-router';
+
 import type { Route } from './+types/profile';
+import type { ProfileLoaderReturnType } from '../layouts/profile/profile-layout';
+
+import { NotFoundCard } from '~/components/cards';
+import type { AppOutletContext } from '~/root';
 
 export function meta() {
   return [
@@ -20,5 +26,21 @@ export function headers(_: Route.HeadersArgs) {
 }
 
 export default function Profile() {
-  return <h2>User Profile</h2>;
+  const { user, role, activeCompany, profileUser } = useOutletContext<
+    AppOutletContext & { profileUser: ProfileLoaderReturnType }
+  >();
+
+  if (!profileUser)
+    return (
+      <div className='py-10'>
+        <NotFoundCard message='Profile not found' />
+      </div>
+    );
+
+  return (
+    <div>
+      <h1>profile</h1>
+      <div>{profileUser.user.full_name}</div>
+    </div>
+  );
 }

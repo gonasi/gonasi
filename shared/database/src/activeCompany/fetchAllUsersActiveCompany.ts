@@ -4,7 +4,7 @@ interface UserActiveCompany {
   id: string;
   user_id: string;
   company_id: string;
-  staff_role: string;
+  staff_role: 'user' | 'su' | 'admin';
   profiles: {
     id: string;
     username: string;
