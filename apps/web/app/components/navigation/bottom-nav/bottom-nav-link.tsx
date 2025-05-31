@@ -29,7 +29,7 @@ export function BottomNavLink({ icon: Icon, to, name }: Props) {
             <div className='flex flex-col items-center gap-1'>
               <Icon size={22} strokeWidth={isActive ? 2 : 1} />
               <div className='flex gap-1'>
-                <span className='text-xs'>{name}</span>
+                <span className='ml-1 text-xs'>{name}</span>
                 <span className={dotClass} />
               </div>
             </div>
