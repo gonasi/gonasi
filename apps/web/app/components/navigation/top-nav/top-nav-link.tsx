@@ -1,4 +1,5 @@
 import { NavLink, useLocation } from 'react-router';
+import { motion } from 'framer-motion';
 
 import { cn } from '~/lib/utils';
 
@@ -11,7 +12,6 @@ interface Props {
 export function TopNavLink({ icon, to, name }: Props) {
   const location = useLocation();
 
-  // Ensure "Dashboard" is active on `/dashboard` and `/dashboard/`, but not `/dashboard/something`
   const isActive =
     location.pathname === to || (to === '/dashboard' && location.pathname === '/dashboard/');
 
@@ -19,11 +19,10 @@ export function TopNavLink({ icon, to, name }: Props) {
     <NavLink
       className={({ isPending }) =>
         cn(
-          'group text-muted-foreground flex h-full items-center space-x-2 hover:cursor-pointer',
-          'border-b-2 border-b-transparent',
-          'hover:border-muted-foreground/70 transition-colors duration-200',
-          `${isActive ? 'hover:border-primary border-b-primary text-primary font-bold' : ''}`,
+          'group text-muted-foreground relative flex h-full items-center space-x-2 px-2',
+          'transition-colors duration-200 hover:cursor-pointer',
           isPending ? 'animate-pulse opacity-55 hover:cursor-wait' : '',
+          isActive ? 'text-primary font-bold' : '',
         )
       }
       to={to}
@@ -31,6 +30,14 @@ export function TopNavLink({ icon, to, name }: Props) {
     >
       {icon}
       <span className='mt-2 transition-opacity duration-200 group-hover:opacity-80'>{name}</span>
+
+      {/* Smooth slide-in bottom border */}
+      <motion.div
+        className='from-secondary to-primary absolute bottom-0 left-0 h-0.5 bg-gradient-to-r'
+        initial={false}
+        animate={{ width: isActive ? '100%' : '0%' }}
+        transition={{ duration: 0.3, ease: 'easeInOut' }}
+      />
     </NavLink>
   );
 }
