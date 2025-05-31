@@ -33,57 +33,61 @@ export default function Profile() {
     AppOutletContext & { profileUser: ProfileLoaderReturnType }
   >();
 
-  if (!profileUser)
+  if (!profileUser) {
     return (
       <div className='py-10'>
         <NotFoundCard message='Profile not found' />
       </div>
     );
+  }
+
+  const { username, full_name, avatar_url } = profileUser.user;
+  const staffRole = activeCompany?.staff_role;
+
+  const isStaff = staffRole === 'su' || staffRole === 'admin';
+
+  const tabs = [
+    {
+      to: `/${username}`,
+      name: 'Courses',
+      icon: Library,
+      isVisible: true,
+    },
+    {
+      to: `${username}/file-library`,
+      name: 'Files',
+      icon: Files,
+      isVisible: isStaff,
+    },
+    {
+      to: `${username}/team-management`,
+      name: 'Team',
+      icon: UsersRound,
+      isVisible: isStaff,
+    },
+  ];
 
   return (
-    <div className=''>
+    <div>
       <div className='flex w-full space-x-4'>
-        <PlainAvatar
-          username={profileUser.user.username}
-          imageUrl={profileUser.user.avatar_url}
-          size='xl'
-        />
+        <PlainAvatar username={username} imageUrl={avatar_url} size='xl' />
         <div className='w-full'>
           <div className='flex w-full justify-between'>
-            <h4 className='font-secondary'>{profileUser.user.username}</h4>
-            {activeCompany?.staff_role === 'su' ? (
+            <h4 className='font-secondary'>{username}</h4>
+            {staffRole === 'su' && (
               <NavLink to='' className='group'>
                 <Settings className='transition-transform duration-200 group-hover:scale-105 group-hover:rotate-15' />
               </NavLink>
-            ) : null}
+            )}
           </div>
-          <h5 className='py-2 text-sm'>{profileUser.user.full_name}</h5>
+          <h5 className='py-2 text-sm'>{full_name}</h5>
         </div>
       </div>
+
       <section className='h-full'>
-        {/* Sticky tab navigation */}
         <div className='bg-background/95 sticky -top-10 z-10'>
-          <GoTabNav
-            tabs={[
-              {
-                to: `/${profileUser.user.username}`,
-                name: 'Courses',
-                icon: Library,
-              },
-              {
-                to: `${profileUser.user.username}/file-library`,
-                name: 'Files',
-                icon: Files,
-              },
-              {
-                to: `${profileUser.user.username}/team-management`,
-                name: 'Team',
-                icon: UsersRound,
-              },
-            ]}
-          />
+          <GoTabNav tabs={tabs} />
         </div>
-        {/* Main content */}
         <div className='mt-4 md:mt-8'>
           <Outlet context={{ user, role, activeCompany }} />
         </div>
