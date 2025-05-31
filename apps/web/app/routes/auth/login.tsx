@@ -25,7 +25,7 @@ export function meta() {
     {
       name: 'description',
       content:
-        'Create and explore gamified courses with Gonasi’s no-code course builder. Engage learners through simulations, challenges, AI feedback, and dynamic progress tracking.',
+        'Create and explore interactive courses with Gonasi’s no-code course builder. Engage learners through simulations, challenges, AI feedback, and dynamic progress tracking.',
     },
   ];
 }
