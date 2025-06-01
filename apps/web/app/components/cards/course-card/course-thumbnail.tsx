@@ -26,7 +26,14 @@ export function CourseThumbnail({ iconUrl, name, badges = [], className }: Cours
 
       {/* Image or fallback */}
       {iconUrl ? (
-        <Image src={iconUrl} layout='fullWidth' alt={name} className='h-full w-full object-cover' />
+        <Image
+          src={iconUrl}
+          layout='fullWidth'
+          alt={name}
+          priority
+          background='auto'
+          className='h-full w-full object-cover'
+        />
       ) : (
         <div className='text-muted-foreground absolute inset-0 flex flex-col items-center justify-center'>
           <ImageIcon className='mb-2 h-12 w-12' />
