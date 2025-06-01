@@ -9,7 +9,7 @@ import type { Route } from './+types/profile-layout';
 import { PlainAvatar } from '~/components/avatars';
 import { NotFoundCard } from '~/components/cards';
 import { GoTabNav } from '~/components/go-tab-nav';
-import { Spinner } from '~/components/loaders';
+import { ProfileLayoutSkeleton } from '~/components/skeletons';
 import { createClient } from '~/lib/supabase/supabase.server';
 import type { AppOutletContext } from '~/root';
 
@@ -34,7 +34,7 @@ export default function ProfileLayout({ loaderData }: Route.ComponentProps) {
   return (
     <section className='mx-auto max-w-2xl px-4 py-10'>
       <div>
-        <Suspense fallback={<Spinner />}>
+        <Suspense fallback={<ProfileLayoutSkeleton />}>
           <Await
             resolve={profileUser}
             errorElement={
