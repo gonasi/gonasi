@@ -1,14 +1,14 @@
 import type { Route } from './+types/profile';
 
-export function meta() {
+export function meta({ params }: Route.MetaArgs) {
+  const username = params.username;
   return [
     {
-      title: 'Gonasi - Interactive Course Builder',
+      title: `Courses by ${username} | Gonasi`,
     },
     {
       name: 'description',
-      content:
-        'Build and manage interactive online courses with Gonasi — the modern, user-friendly course builder platform.',
+      content: `Explore ${username}'s interactive courses on Gonasi — including published content and in-progress lessons.`,
     },
   ];
 }
@@ -19,7 +19,7 @@ export function headers(_: Route.HeadersArgs) {
   };
 }
 
-export default function Profile() {
+export default function Courses() {
   return (
     <div>
       <h2>Courses go here</h2>
