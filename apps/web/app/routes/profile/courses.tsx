@@ -99,7 +99,7 @@ export default function Courses({ loaderData, params }: Route.ComponentProps) {
           <PaginationBar totalItems={count ?? 0} itemsPerPage={12} />
         </div>
       ) : (
-        <NotFoundCard message='No courses found' />
+        <NotFoundCard message='No courses published' />
       )}
     </div>
   );
