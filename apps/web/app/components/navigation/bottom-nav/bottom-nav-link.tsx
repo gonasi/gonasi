@@ -21,7 +21,7 @@ export function BottomNavLink({ icon: Icon, to }: Props) {
 
         const dotClass = cn(
           'absolute h-1 w-1 rounded-full',
-          'top-0 -right-1',
+          'top-0 right-2',
           isPending ? 'bg-primary animate-ping' : 'bg-transparent',
         );
 
