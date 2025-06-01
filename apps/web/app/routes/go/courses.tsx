@@ -1,13 +1,27 @@
-import { data, Outlet } from 'react-router';
-import { Telescope } from 'lucide-react';
+import { Suspense } from 'react';
+import { Await, data } from 'react-router';
 
-import { fetchAllPublishedCoursesWithSignedUrl } from '@gonasi/database/courses';
+import { fetchCompanyCoursesWithSignedUrlsBySuOrAdmin } from '@gonasi/database/courses';
 
 import type { Route } from './+types/courses';
 
 import { CourseCard, NotFoundCard } from '~/components/cards';
-import { PaginationBar } from '~/components/search-params/pagination-bar/paginatinon-bar';
+import { PaginationBar } from '~/components/search-params/pagination-bar';
+import { CourseProfileCardSkeleton } from '~/components/skeletons';
 import { createClient } from '~/lib/supabase/supabase.server';
+
+export function meta({ params }: Route.MetaArgs) {
+  const username = params.username;
+  return [
+    {
+      title: `Courses by ${username} | Gonasi`,
+    },
+    {
+      name: 'description',
+      content: `Explore ${username}'s interactive courses on Gonasi — including published content and in-progress lessons.`,
+    },
+  ];
+}
 
 export function headers(_: Route.HeadersArgs) {
   return {
@@ -15,106 +29,113 @@ export function headers(_: Route.HeadersArgs) {
   };
 }
 
-export function meta() {
-  return [
-    { title: 'Gonasi - Explore Courses' },
-    {
-      name: 'description',
-      content:
-        'Discover top-rated courses and personalized learning pathways on Gonasi. Continue where you left off and advance your skills today!',
-    },
-    {
-      name: 'keywords',
-      content:
-        'online courses, learning platform, education, skills development, career growth, e-learning',
-    },
-    { name: 'author', content: 'Gonasi Team' },
-    { name: 'robots', content: 'index, follow' },
-  ];
-}
+export type AllCoursesLoaderReturnType = Exclude<
+  Awaited<ReturnType<typeof loader>>,
+  Response
+>['data'];
 
-export async function loader({ request }: Route.LoaderArgs) {
+export async function loader({ request, params }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
   const url = new URL(request.url);
   const searchQuery = url.searchParams.get('name') ?? '';
   const page = Number(url.searchParams.get('page')) || 1;
   const limit = 12;
 
-  const courses = await fetchAllPublishedCoursesWithSignedUrl({
+  // Return the promise without awaiting - this allows streaming
+  const coursesPromise = fetchCompanyCoursesWithSignedUrlsBySuOrAdmin({
     supabase,
     searchQuery,
     limit,
     page,
+    username: params.username ?? '',
   });
 
-  return data(courses);
+  return data({ coursesPromise });
 }
 
-export default function Courses({ loaderData }: Route.ComponentProps) {
-  const { data: courses, count } = loaderData;
+// Component to render the courses list
+function CoursesList({ courses, count, params }: { courses: any[]; count: number; params: any }) {
+  if (!courses?.length) {
+    return <NotFoundCard message='No courses published' />;
+  }
 
   return (
-    <>
-      <section className='mx-auto max-w-[1100px] px-4 py-10 md:px-10'>
-        <div>
-          <div className='flex'>
-            <h1 className='text-3xl font-bold'>Featured Courses</h1>
-            <Telescope size={14} />
-          </div>
-          <p className='text-muted-foreground font-secondary text-sm'>
-            Explore top-rated courses, specially selected and featured for you.
-          </p>
-        </div>
+    <div className='flex flex-col space-y-4'>
+      <div className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3'>
+        {courses.map((course) => {
+          const {
+            id: courseId,
+            name,
+            description,
+            signed_url,
+            lesson_count,
+            chapters_count,
+            monthly_subscription_price,
+            created_by_profile,
+            status,
+            updated_at,
+          } = course;
 
-        {courses?.length ? (
-          <section className='flex flex-col space-y-4'>
-            <div className='grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3'>
-              {courses.map((course) => {
-                const {
-                  id: courseId,
-                  name,
-                  description,
-                  signed_url,
-                  lesson_count,
-                  chapters_count,
-                  monthly_subscription_price,
-                  created_by_profile,
-                  status,
-                  updated_at,
-                } = course;
+          return (
+            <CourseCard
+              key={courseId}
+              name={name}
+              description={description}
+              iconUrl={signed_url}
+              lessonsCount={lesson_count}
+              chaptersCount={chapters_count}
+              price={monthly_subscription_price}
+              to={`/dashboard/${params.companyId}/courses/${courseId}/course-details`}
+              author={{
+                displayName:
+                  created_by_profile.username ??
+                  created_by_profile.full_name ??
+                  created_by_profile.email,
+                imageUrl: created_by_profile.avatar_url,
+              }}
+              category={course.course_categories?.name}
+              subcategory={course.course_sub_categories?.name}
+              updatedAt={updated_at}
+              status={status}
+            />
+          );
+        })}
+      </div>
+      <PaginationBar totalItems={count ?? 0} itemsPerPage={12} />
+    </div>
+  );
+}
 
-                return (
-                  <CourseCard
-                    key={courseId}
-                    name={name}
-                    description={description}
-                    iconUrl={signed_url}
-                    lessonsCount={lesson_count}
-                    chaptersCount={chapters_count}
-                    price={monthly_subscription_price}
-                    to={`/go/courses/${courseId}`}
-                    author={{
-                      displayName:
-                        created_by_profile.username ??
-                        created_by_profile.full_name ??
-                        created_by_profile.email,
-                      imageUrl: created_by_profile.avatar_url,
-                    }}
-                    category={course.course_categories?.name}
-                    subcategory={course.course_sub_categories?.name}
-                    updatedAt={updated_at}
-                    status={status}
-                  />
-                );
-              })}
+export default function Courses({ loaderData, params }: Route.ComponentProps) {
+  const { coursesPromise } = loaderData;
+
+  return (
+    <div>
+      <Suspense fallback={<CourseProfileCardSkeleton />}>
+        <Await
+          resolve={coursesPromise}
+          errorElement={
+            <div className='py-8 text-center'>
+              <p className='mb-4 text-red-600'>Could not load courses 😬</p>
+              <button
+                onClick={() => window.location.reload()}
+                className='rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600'
+              >
+                Try Again
+              </button>
             </div>
-            <PaginationBar totalItems={count ?? 0} itemsPerPage={12} />
-          </section>
-        ) : (
-          <NotFoundCard message='No courses found' />
-        )}
-      </section>
-      <Outlet />
-    </>
+          }
+        >
+          {(resolvedCourses) => (
+            // <CoursesList
+            //   courses={resolvedCourses.data}
+            //   count={resolvedCourses.count ?? 0}
+            //   params={params}
+            // />
+            <CourseProfileCardSkeleton />
+          )}
+        </Await>
+      </Suspense>
+    </div>
   );
 }
