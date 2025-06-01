@@ -1,9 +1,10 @@
+import { getUserIdFromUsername } from '../auth';
 import { COURSES_BUCKET } from '../constants';
 import { getPaginationRange } from '../constants/utils';
 import type { FetchAssetsParams } from '../types';
 
 interface FetchCoursesByAdmin extends FetchAssetsParams {
-  companyId: string;
+  username: string;
 }
 /**
  * Fetches user-created courses with signed URLs for images.
@@ -13,8 +14,10 @@ export async function fetchCompanyCoursesWithSignedUrlsBySuOrAdmin({
   searchQuery = '',
   limit = 12,
   page = 1,
-  companyId,
+  username,
 }: FetchCoursesByAdmin) {
+  const companyId = await getUserIdFromUsername(supabase, username);
+
   const { startIndex, endIndex } = getPaginationRange(page, limit);
 
   let query = supabase

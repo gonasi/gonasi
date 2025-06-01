@@ -11,6 +11,21 @@ export async function getUserId(supabase: TypedSupabaseClient): Promise<string> 
   return user?.id ?? '';
 }
 
+export async function getUserIdFromUsername(
+  supabase: TypedSupabaseClient,
+  username: string,
+): Promise<string> {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('username', username)
+    .single();
+
+  if (error || !data) return '';
+
+  return data.id;
+}
+
 export async function getUserRole(supabase: TypedSupabaseClient): Promise<UserRole | 'user'> {
   const { data } = await supabase.auth.getSession();
 
