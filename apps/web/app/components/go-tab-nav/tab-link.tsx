@@ -18,7 +18,7 @@ export function TabLink({ to, name, icon: Icon }: Props) {
     <NavLink
       className={({ isPending }) =>
         cn(
-          'flex w-full items-center',
+          'flex w-28 items-center',
           'group font-secondary relative py-2 hover:cursor-pointer',
           'transition-colors duration-200',
           isPending ? 'animate-pulse opacity-55 hover:cursor-wait' : '',
