@@ -15,6 +15,12 @@ import type { AppOutletContext } from '~/root';
 
 export type ProfileLoaderReturnType = Exclude<Awaited<ReturnType<typeof loader>>, Response>;
 
+export function headers(_: Route.HeadersArgs) {
+  return {
+    'Cache-Control': 's-maxage=1, stale-while-revalidate=59',
+  };
+}
+
 export async function loader({ request, params }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
 
