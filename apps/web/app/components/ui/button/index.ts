@@ -10,3 +10,4 @@ export * from './CheckAnswerButton';
 export * from './ShowAnswerButton';
 export * from './TryAgainButton';
 export * from './ChoiceOptionButton';
+export * from './FloatingActionButton';

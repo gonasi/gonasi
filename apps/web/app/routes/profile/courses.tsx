@@ -1,5 +1,6 @@
 import { Suspense } from 'react';
 import { Await, data } from 'react-router';
+import { Plus } from 'lucide-react';
 
 import { fetchCompanyCoursesWithSignedUrlsBySuOrAdmin } from '@gonasi/database/courses';
 
@@ -8,6 +9,7 @@ import type { Route } from './+types/courses';
 import { CourseCard, NotFoundCard } from '~/components/cards';
 import { ErrorMessageWithRetry } from '~/components/error-message-with-retry';
 import { CourseProfileCardSkeleton } from '~/components/skeletons';
+import { FloatingActionButton } from '~/components/ui/button';
 import { createClient } from '~/lib/supabase/supabase.server';
 
 export function meta({ params }: Route.MetaArgs) {
@@ -124,6 +126,12 @@ export default function Courses({ loaderData, params }: Route.ComponentProps) {
           )}
         </Await>
       </Suspense>
+      <FloatingActionButton
+        onClick={() => console.log('Upload')}
+        tooltip='New Course'
+        icon={<Plus size={20} strokeWidth={3} />}
+        buttonProps={{ variant: 'secondary' }}
+      />
     </div>
   );
 }
