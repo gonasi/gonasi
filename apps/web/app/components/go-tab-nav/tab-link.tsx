@@ -21,27 +21,29 @@ export function TabLink({ to, name, icon: Icon }: Props) {
           'flex w-full items-center',
           'group font-secondary relative py-2 hover:cursor-pointer',
           'transition-colors duration-200',
-          isActive ? 'text-primary' : 'text-muted-foreground',
-          isPending ? 'opacity-50' : '',
+          isPending ? 'animate-pulse opacity-55 hover:cursor-wait' : '',
+          isActive ? 'text-primary font-bold' : 'text-muted-foreground',
         )
       }
       to={to}
       end={false}
+      aria-disabled={isActive}
     >
       <div className='flex w-full items-center justify-center space-x-0 md:space-x-1'>
         <Icon className='h-6 w-6 md:h-4 md:w-4' />
         <span
-          className={cn('transition-opacity duration-200 group-hover:opacity-80', 'hidden md:flex')}
+          className={cn(
+            'mt-1 transition-opacity duration-200 group-hover:opacity-80',
+            'hidden md:flex',
+          )}
         >
           {name}
         </span>
       </div>
 
-      {/* Animated gradient underline */}
+      {/* Smooth slide-in bottom border */}
       <motion.div
-        className={cn(
-          'from-secondary to-primary via-primary absolute bottom-0 left-0 h-0.5 bg-gradient-to-l',
-        )}
+        className='from-secondary to-primary absolute bottom-0 left-0 h-0.5 bg-gradient-to-r'
         initial={false}
         animate={{ width: isActive ? '100%' : '0%' }}
         transition={{ duration: 0.3, ease: 'easeInOut' }}
