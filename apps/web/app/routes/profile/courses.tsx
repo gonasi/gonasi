@@ -7,7 +7,6 @@ import type { Route } from './+types/courses';
 
 import { CourseCard, NotFoundCard } from '~/components/cards';
 import { ErrorMessageWithRetry } from '~/components/error-message-with-retry';
-import { PaginationBar } from '~/components/search-params/pagination-bar';
 import { CourseProfileCardSkeleton } from '~/components/skeletons';
 import { createClient } from '~/lib/supabase/supabase.server';
 
@@ -102,7 +101,6 @@ function CoursesList({ courses, count, params }: { courses: any[]; count: number
           );
         })}
       </div>
-      <PaginationBar totalItems={count ?? 0} itemsPerPage={12} />
     </div>
   );
 }
