@@ -6,7 +6,7 @@ export default [
     route('explore', 'routes/public/explore.tsx'),
     // all user profiles
     layout('routes/layouts/profile/profile-layout.tsx', [
-      route(':username/courses', 'routes/profile/profile.tsx'),
+      route(':username', 'routes/profile/profile.tsx'),
       route(':username/file-library', 'routes/profile/file-library.tsx'),
       route(':username/team-management', 'routes/profile/team-management.tsx'),
     ]),

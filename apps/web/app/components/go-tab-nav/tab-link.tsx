@@ -14,10 +14,20 @@ export function TabLink({ to, name, icon: Icon }: Props) {
   const location = useLocation();
 
   const normalizedTo = to.startsWith('/') ? to : `/${to}`;
+  const pathname = location.pathname;
 
-  // Match exact path or any sub-route
+  // Split paths into segments
+  const toSegments = normalizedTo.split('/');
+  const pathSegments = pathname.split('/');
+
+  // Match if path starts with all segments of `to`
   const isActive =
-    location.pathname === normalizedTo || location.pathname.startsWith(`${normalizedTo}/`);
+    pathSegments.length >= toSegments.length &&
+    toSegments.every((seg, i) => seg === pathSegments[i]);
+
+  console.log('to: ', to);
+  console.log('pathname: ', pathname);
+  console.log('isActive: ', isActive);
 
   return (
     <NavLink
@@ -34,7 +44,7 @@ export function TabLink({ to, name, icon: Icon }: Props) {
       end={false}
     >
       <div className='flex w-full items-center justify-center space-x-0 md:space-x-1'>
-        <Icon size={16} />
+        <Icon className='h-6 w-6 md:h-4 md:w-4' />
         <span
           className={cn('transition-opacity duration-200 group-hover:opacity-80', 'hidden md:flex')}
         >

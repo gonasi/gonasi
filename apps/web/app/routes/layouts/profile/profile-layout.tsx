@@ -37,7 +37,7 @@ export default function ProfileLayout({ loaderData: profileUser }: Route.Compone
 
   const tabs = [
     {
-      to: `/${username}/courses`,
+      to: `/${username}`,
       name: 'Courses',
       icon: Library,
       isVisible: true,
