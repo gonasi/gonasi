@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import {
   data,
   isRouteErrorResponse,
@@ -8,7 +8,6 @@ import {
   Scripts,
   ScrollRestoration,
   useLoaderData,
-  useNavigation,
 } from 'react-router';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/react';
@@ -24,7 +23,6 @@ import { getUserProfile } from '@gonasi/database/profile';
 import { updateUsersActiveCompany } from '@gonasi/database/staffMembers';
 
 import type { Route } from './+types/root';
-import { Spinner } from './components/loaders';
 import { NavigationProgressBar } from './components/progress-bar';
 import { useStore } from './store';
 import './app.css';
@@ -209,8 +207,8 @@ function App() {
   const { user, role, toast, activeCompany, session } = useLoaderData<typeof loader>();
   const { updateActiveSession } = useStore();
 
-  const navigation = useNavigation();
-  const [showLoader, setShowLoader] = useState(false);
+  // const navigation = useNavigation();
+  // const [showLoader, setShowLoader] = useState(false);
 
   useToast(toast);
 
@@ -225,21 +223,21 @@ function App() {
     });
   }, []);
 
-  useEffect(() => {
-    let timeout: NodeJS.Timeout;
+  // useEffect(() => {
+  //   let timeout: NodeJS.Timeout;
 
-    if (navigation.location) {
-      timeout = setTimeout(() => setShowLoader(true), 200);
-    } else {
-      setShowLoader(false);
-    }
+  //   if (navigation.location) {
+  //     timeout = setTimeout(() => setShowLoader(true), 200);
+  //   } else {
+  //     setShowLoader(false);
+  //   }
 
-    return () => clearTimeout(timeout);
-  }, [navigation.location]);
+  //   return () => clearTimeout(timeout);
+  // }, [navigation.location]);
 
   return (
     <main className='relative'>
-      {showLoader && (
+      {/* {showLoader && (
         <div
           style={{
             position: 'fixed',
@@ -253,7 +251,7 @@ function App() {
         >
           <Spinner />
         </div>
-      )}
+      )} */}
       <NavigationProgressBar />
 
       <Outlet context={{ user, role, activeCompany, session }} />
