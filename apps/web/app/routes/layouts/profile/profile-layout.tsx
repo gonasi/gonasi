@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import { Await, NavLink, Outlet, useOutletContext } from 'react-router';
-import { Files, Library, Settings, UsersRound } from 'lucide-react';
+import { BookCopy, Files, Library, Settings, UsersRound } from 'lucide-react';
 
 import { getProfileByUsername } from '@gonasi/database/profiles';
 
@@ -68,7 +68,8 @@ export default function ProfileLayout({ loaderData }: Route.ComponentProps) {
                 resolvedProfileUser.user.userCompanyMatch;
 
               const tabs = [
-                { to: `/${username}`, name: 'Courses', icon: Library, isVisible: true },
+                { to: `/${username}`, name: 'Courses', icon: BookCopy, isVisible: true },
+                { to: `/${username}/pathways`, name: 'Pathways', icon: Library, isVisible: true },
                 { to: `/${username}/file-library`, name: 'Files', icon: Files, isVisible: isStaff },
                 {
                   to: `/${username}/team-management`,
