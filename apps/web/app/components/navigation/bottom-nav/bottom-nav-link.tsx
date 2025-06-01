@@ -27,7 +27,7 @@ export function BottomNavLink({ icon: Icon, to }: Props) {
         return (
           <div className={containerClass} aria-disabled={isActive}>
             <div className='relative'>
-              <Icon size={28} strokeWidth={isActive ? 2 : 1} />
+              <Icon size={24} strokeWidth={isActive ? 2 : 1} />
               <span className={dotClass} />
             </div>
           </div>
