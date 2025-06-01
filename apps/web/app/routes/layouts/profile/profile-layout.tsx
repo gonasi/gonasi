@@ -38,7 +38,7 @@ export default function ProfileLayout({ loaderData }: Route.ComponentProps) {
   const { profileUser } = loaderData;
 
   return (
-    <section className='mx-auto max-w-2xl px-4 py-10'>
+    <section className='mx-auto max-w-4xl px-4 py-10'>
       <div>
         <Suspense fallback={<ProfileLayoutSkeleton />}>
           <Await
