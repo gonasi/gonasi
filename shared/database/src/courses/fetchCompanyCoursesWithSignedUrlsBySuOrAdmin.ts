@@ -55,7 +55,13 @@ export async function fetchCompanyCoursesWithSignedUrlsBySuOrAdmin({
 
       const { data: signedUrlData, error: fileError } = await supabase.storage
         .from(COURSES_BUCKET)
-        .createSignedUrl(course.image_url, 3600);
+        .createSignedUrl(course.image_url, 6000, {
+          transform: {
+            width: 200,
+            height: 113, // Rounded
+            quality: 50,
+          },
+        });
 
       if (fileError) throw new Error(fileError.message);
 
