@@ -95,11 +95,9 @@ export default function ProfileLayout({ loaderData }: Route.ComponentProps) {
                     </div>
                   </div>
 
-                  <section className='h-full'>
-                    <div className='bg-background/95 sticky -top-10 z-10'>
-                      <GoTabNav tabs={tabs} />
-                    </div>
-                  </section>
+                  <div className='bg-background/95 sticky -top-2 z-10'>
+                    <GoTabNav tabs={tabs} />
+                  </div>
                 </>
               );
             }}
