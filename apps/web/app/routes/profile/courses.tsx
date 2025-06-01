@@ -1,4 +1,4 @@
-import type { Route } from './+types/profile';
+import type { Route } from './+types/courses';
 
 export function meta({ params }: Route.MetaArgs) {
   const username = params.username;
