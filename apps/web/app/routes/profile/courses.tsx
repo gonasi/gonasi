@@ -62,7 +62,7 @@ function CoursesList({ courses, count, params }: { courses: any[]; count: number
   }
 
   return (
-    <div className='flex flex-col space-y-4'>
+    <div className='flex flex-col space-y-4 pb-10'>
       <div className='grid grid-cols-1 gap-0 md:grid-cols-2 md:gap-4 lg:grid-cols-3'>
         {courses.map((course) => {
           const {

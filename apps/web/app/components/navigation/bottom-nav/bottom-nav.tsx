@@ -14,26 +14,24 @@ export function BottomNav({ activeCompany }: Props) {
   return (
     <nav className='bg-background/95 fixed bottom-0 h-16 w-full px-0 md:hidden'>
       <div className='from-secondary/30 to-primary/30 h-0.5 bg-gradient-to-r' />
-      <div className='flex h-full items-center justify-between px-4'>
+      <div className='flex h-full w-full items-center justify-between px-4'>
         <BottomNavLink icon={House} to='/' />
         <BottomNavLink icon={Telescope} to='/explore' />
-        <div>
+        <div className='min-w-12'>
           {activeCompany ? (
-            <div>
-              <NavLink to={`/${activeCompany.profiles.username}`}>
-                {({ isActive, isPending }) => (
-                  <span aria-disabled={isActive}>
-                    <PlainAvatar
-                      username={activeCompany.profiles.username}
-                      imageUrl={activeCompany.profiles.avatar_url}
-                      isActive={isActive}
-                      isPending={isPending}
-                      size='sm'
-                    />
-                  </span>
-                )}
-              </NavLink>
-            </div>
+            <NavLink to={`/${activeCompany.profiles.username}`} className='w-full'>
+              {({ isActive, isPending }) => (
+                <span aria-disabled={isActive}>
+                  <PlainAvatar
+                    username={activeCompany.profiles.username}
+                    imageUrl={activeCompany.profiles.avatar_url}
+                    isActive={isActive}
+                    isPending={isPending}
+                    size='sm'
+                  />
+                </span>
+              )}
+            </NavLink>
           ) : (
             <BottomNavLink icon={UserRound} to='/login' />
           )}
