@@ -1,7 +1,8 @@
-import { NavLink, useLocation } from 'react-router';
+import { NavLink } from 'react-router';
 import { motion } from 'framer-motion';
 import type { LucideIcon } from 'lucide-react';
 
+import { useRouteMatch } from '~/hooks/useRouteMatch';
 import { cn } from '~/lib/utils';
 
 interface Props {
@@ -11,23 +12,7 @@ interface Props {
 }
 
 export function TabLink({ to, name, icon: Icon }: Props) {
-  const location = useLocation();
-
-  const normalizedTo = to.startsWith('/') ? to : `/${to}`;
-  const pathname = location.pathname;
-
-  // Split paths into segments
-  const toSegments = normalizedTo.split('/');
-  const pathSegments = pathname.split('/');
-
-  // Match if path starts with all segments of `to`
-  const isActive =
-    pathSegments.length >= toSegments.length &&
-    toSegments.every((seg, i) => seg === pathSegments[i]);
-
-  console.log('to: ', to);
-  console.log('pathname: ', pathname);
-  console.log('isActive: ', isActive);
+  const isActive = useRouteMatch(to);
 
   return (
     <NavLink

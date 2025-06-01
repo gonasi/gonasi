@@ -36,24 +36,9 @@ export default function ProfileLayout({ loaderData: profileUser }: Route.Compone
     (staffRole === 'su' || staffRole === 'admin') && profileUser.user.userCompanyMatch;
 
   const tabs = [
-    {
-      to: `/${username}`,
-      name: 'Courses',
-      icon: Library,
-      isVisible: true,
-    },
-    {
-      to: `${username}/file-library`,
-      name: 'Files',
-      icon: Files,
-      isVisible: isStaff,
-    },
-    {
-      to: `${username}/team-management`,
-      name: 'Team',
-      icon: UsersRound,
-      isVisible: isStaff,
-    },
+    { to: `/${username}`, name: 'Courses', icon: Library, isVisible: true },
+    { to: `/${username}/file-library`, name: 'Files', icon: Files, isVisible: isStaff },
+    { to: `/${username}/team-management`, name: 'Team', icon: UsersRound, isVisible: isStaff },
   ];
 
   return (
