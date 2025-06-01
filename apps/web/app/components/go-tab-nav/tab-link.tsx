@@ -33,7 +33,7 @@ export function TabLink({ to, name, icon: Icon }: Props) {
         );
 
         const dotClass = cn(
-          'absolute h-1 w-1 rounded-full',
+          'absolute md:hidden h-1 w-1 rounded-full',
           'top-0 -right-2',
           isPending ? 'bg-primary animate-ping' : 'bg-transparent',
         );
