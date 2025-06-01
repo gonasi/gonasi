@@ -45,11 +45,13 @@ export function CourseCard({
   const badges: string[] = [];
 
   return (
-    <NavLink to={to}>
+    <NavLink to={to} className='-px-10'>
       {({ isPending }) => (
         <Card
           className={cn(
             'hover:bg-primary/5 h-full w-full overflow-hidden pt-0 transition-all duration-200 hover:shadow-md',
+            'rounded-none md:rounded-lg',
+            'gap-0 pb-0',
             {
               'bg-primary/5': isPending,
             },
@@ -59,7 +61,7 @@ export function CourseCard({
             <CourseThumbnail iconUrl={iconUrl} name={name} badges={badges} />
           </CardHeader>
 
-          <CardContent className='w-full px-4'>
+          <CardContent className='bg-background md:bg-card w-full p-4'>
             <div className='pb-2'>
               <StarOff size={14} />
             </div>

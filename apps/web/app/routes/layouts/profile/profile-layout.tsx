@@ -38,7 +38,7 @@ export default function ProfileLayout({ loaderData }: Route.ComponentProps) {
   const { profileUser } = loaderData;
 
   return (
-    <section className='mx-auto max-w-4xl px-4 py-10'>
+    <section className='mx-auto max-w-4xl py-10'>
       <div>
         <Suspense fallback={<ProfileLayoutSkeleton />}>
           <Await
@@ -81,7 +81,7 @@ export default function ProfileLayout({ loaderData }: Route.ComponentProps) {
 
               return (
                 <>
-                  <div className='flex w-full space-x-4'>
+                  <div className='flex w-full space-x-4 px-4'>
                     <PlainAvatar username={username} imageUrl={avatar_url} size='lg' />
                     <div className='w-full'>
                       <div className='flex w-full justify-between'>
@@ -105,7 +105,7 @@ export default function ProfileLayout({ loaderData }: Route.ComponentProps) {
           </Await>
         </Suspense>
 
-        <div className='mt-4 md:mt-8'>
+        <div className='mt-0 md:mt-8'>
           <Outlet context={{ user, role, activeCompany }} />
         </div>
       </div>
