@@ -16,7 +16,7 @@ interface GoTabNavProps {
 export function GoTabNav({ tabs }: GoTabNavProps) {
   return (
     <div className='border-b-card border-b pt-4'>
-      <div className='mx-auto flex w-full max-w-sm items-center justify-center gap-10'>
+      <div className='mx-auto flex w-full max-w-md items-center justify-center gap-10'>
         {tabs
           .filter((tab) => tab.isVisible !== false)
           .map((tab) => (

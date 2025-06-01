@@ -60,7 +60,7 @@ export default function ProfileLayout({ loaderData: profileUser }: Route.Compone
     <section className='mx-auto max-w-2xl px-4 py-10'>
       <div>
         <div className='flex w-full space-x-4'>
-          <PlainAvatar username={username} imageUrl={avatar_url} size='xl' />
+          <PlainAvatar username={username} imageUrl={avatar_url} size='lg' />
           <div className='w-full'>
             <div className='flex w-full justify-between'>
               <h4 className='font-secondary'>{username}</h4>

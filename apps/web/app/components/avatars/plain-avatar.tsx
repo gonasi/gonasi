@@ -14,16 +14,16 @@ const sizeClasses = {
   xs: 'h-6 w-6',
   sm: 'h-8 w-8',
   md: 'h-10 w-10',
-  lg: 'h-14 w-14',
-  xl: 'h-24 w-24',
+  lg: 'h-14 w-14 md:h-18 md:w-18',
+  xl: 'h-16 w-16',
 };
 
 const ringSizeClasses = {
   xs: 'h-7 w-7',
   sm: 'h-9 w-9',
   md: 'h-11 w-11',
-  lg: 'h-15 w-15',
-  xl: 'h-26 w-26',
+  lg: 'h-15 w-15 md:h-20 md:w-20',
+  xl: 'h-18 w-18',
 };
 
 export function PlainAvatar({

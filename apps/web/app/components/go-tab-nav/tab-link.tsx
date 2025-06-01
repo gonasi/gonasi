@@ -33,7 +33,7 @@ export function TabLink({ to, name, icon: Icon }: Props) {
     <NavLink
       className={({ isPending }) =>
         cn(
-          'flex items-center',
+          'flex w-full items-center',
           'group font-secondary relative py-2 hover:cursor-pointer',
           'transition-colors duration-200',
           isActive ? 'text-primary' : 'text-muted-foreground',
@@ -56,7 +56,6 @@ export function TabLink({ to, name, icon: Icon }: Props) {
       <motion.div
         className={cn(
           'from-secondary to-primary via-primary absolute bottom-0 left-0 h-0.5 bg-gradient-to-l',
-          'hidden md:flex',
         )}
         initial={false}
         animate={{ width: isActive ? '100%' : '0%' }}
