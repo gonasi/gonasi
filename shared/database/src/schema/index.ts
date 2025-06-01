@@ -512,6 +512,7 @@ export type Database = {
         Row: {
           approval_status: Database["public"]["Enums"]["course_approval_status"]
           approved_by: string | null
+          blur_hash: string | null
           category_id: string | null
           company_id: string
           created_at: string
@@ -537,6 +538,7 @@ export type Database = {
         Insert: {
           approval_status?: Database["public"]["Enums"]["course_approval_status"]
           approved_by?: string | null
+          blur_hash?: string | null
           category_id?: string | null
           company_id: string
           created_at?: string
@@ -562,6 +564,7 @@ export type Database = {
         Update: {
           approval_status?: Database["public"]["Enums"]["course_approval_status"]
           approved_by?: string | null
+          blur_hash?: string | null
           category_id?: string | null
           company_id?: string
           created_at?: string
@@ -800,6 +803,7 @@ export type Database = {
       }
       file_library: {
         Row: {
+          blur_hash: string | null
           company_id: string
           created_at: string
           created_by: string
@@ -814,6 +818,7 @@ export type Database = {
           updated_by: string
         }
         Insert: {
+          blur_hash?: string | null
           company_id: string
           created_at?: string
           created_by: string
@@ -828,6 +833,7 @@ export type Database = {
           updated_by: string
         }
         Update: {
+          blur_hash?: string | null
           company_id?: string
           created_at?: string
           created_by?: string
@@ -1060,6 +1066,7 @@ export type Database = {
       }
       pathways: {
         Row: {
+          blur_hash: string | null
           created_at: string
           created_by: string
           description: string
@@ -1070,6 +1077,7 @@ export type Database = {
           updated_by: string
         }
         Insert: {
+          blur_hash?: string | null
           created_at?: string
           created_by: string
           description: string
@@ -1080,6 +1088,7 @@ export type Database = {
           updated_by: string
         }
         Update: {
+          blur_hash?: string | null
           created_at?: string
           created_by?: string
           description?: string
