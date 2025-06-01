@@ -59,7 +59,6 @@ export async function fetchCompanyCoursesWithSignedUrlsBySuOrAdmin({
           transform: {
             width: 200,
             height: 113, // Rounded
-            quality: 50,
           },
         });
 
