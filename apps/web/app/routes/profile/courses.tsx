@@ -61,7 +61,7 @@ function CoursesList({ courses, count, params }: { courses: any[]; count: number
 
   return (
     <div className='flex flex-col space-y-4'>
-      <div className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3'>
+      <div className='grid grid-cols-2 gap-4 lg:grid-cols-3'>
         {courses.map((course) => {
           const {
             id: courseId,
