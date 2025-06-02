@@ -24,7 +24,7 @@ export async function fetchCompanyCoursesWithSignedUrlsBySuOrAdmin({
     .from('courses')
     .select(
       `
-        id, name, description, image_url, monthly_subscription_price, status, created_at, updated_at, 
+        id, name, description, image_url, blur_hash, monthly_subscription_price, status, created_at, updated_at, 
         created_by, updated_by, course_categories(id, name), course_sub_categories(id, name),
         pathways(id, name), lessons(id, name, created_at), chapters(id, name),
         created_by_profile:profiles!courses_created_by_fkey (id, username, email, full_name, avatar_url)
@@ -55,12 +55,7 @@ export async function fetchCompanyCoursesWithSignedUrlsBySuOrAdmin({
 
       const { data: signedUrlData, error: fileError } = await supabase.storage
         .from(COURSES_BUCKET)
-        .createSignedUrl(course.image_url, 6000, {
-          transform: {
-            width: 200,
-            height: 113, // Rounded
-          },
-        });
+        .createSignedUrl(course.image_url, 6000);
 
       if (fileError) throw new Error(fileError.message);
 

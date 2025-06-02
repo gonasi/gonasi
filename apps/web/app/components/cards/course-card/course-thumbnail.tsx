@@ -1,3 +1,4 @@
+import { blurhashToCssGradientString } from '@unpic/placeholder';
 import { Image } from '@unpic/react';
 import { ImageIcon } from 'lucide-react';
 
@@ -5,12 +6,21 @@ import { Badge } from '~/components/ui/badge';
 
 interface CourseThumbnailProps {
   iconUrl: string | null;
+  blurHash: string | null;
   name: string;
   badges?: string[];
   className?: string;
 }
 
-export function CourseThumbnail({ iconUrl, name, badges = [], className }: CourseThumbnailProps) {
+export function CourseThumbnail({
+  iconUrl,
+  blurHash,
+  name,
+  badges = [],
+  className,
+}: CourseThumbnailProps) {
+  const placeholder = blurHash ? blurhashToCssGradientString(blurHash) : 'auto';
+
   return (
     <div
       className={`bg-muted relative aspect-[16/9] max-h-[360px] w-full overflow-hidden ${className}`}
@@ -31,7 +41,7 @@ export function CourseThumbnail({ iconUrl, name, badges = [], className }: Cours
           layout='fullWidth'
           alt={name}
           priority
-          background='auto'
+          background={placeholder}
           className='h-full w-full object-cover'
         />
       ) : (

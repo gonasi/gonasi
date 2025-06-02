@@ -70,6 +70,7 @@ function CoursesList({ courses, count, params }: { courses: any[]; count: number
             name,
             description,
             signed_url,
+            blur_hash,
             lesson_count,
             chapters_count,
             monthly_subscription_price,
@@ -84,6 +85,7 @@ function CoursesList({ courses, count, params }: { courses: any[]; count: number
               name={name}
               description={description}
               iconUrl={signed_url}
+              blurHash={blur_hash}
               lessonsCount={lesson_count}
               chaptersCount={chapters_count}
               price={monthly_subscription_price}

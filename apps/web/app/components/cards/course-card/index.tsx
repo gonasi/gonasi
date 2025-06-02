@@ -18,6 +18,7 @@ export interface CourseCardProps {
   };
   description: string | null;
   iconUrl: string | null;
+  blurHash: string | null;
   lessonsCount: number | null;
   chaptersCount: number | null;
   to: string;
@@ -33,6 +34,7 @@ export function CourseCard({
   author,
   description,
   iconUrl,
+  blurHash,
   lessonsCount,
   chaptersCount,
   price,
@@ -58,7 +60,7 @@ export function CourseCard({
           )}
         >
           <CardHeader className='text-primary p-0'>
-            <CourseThumbnail iconUrl={iconUrl} name={name} badges={badges} />
+            <CourseThumbnail iconUrl={iconUrl} name={name} badges={badges} blurHash={blurHash} />
           </CardHeader>
 
           <CardContent className='bg-background md:bg-card w-full p-4'>
