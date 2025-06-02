@@ -55,7 +55,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
                 className,
               )}
             >
-              <FolderIcon className={cn('mr-2 h-5 w-5', disabled && 'opacity-50')} />
+              <FolderIcon className={cn('mr-2 h-5 w-5 flex-shrink-0', disabled && 'opacity-50')} />
               {fileName || props.placeholder || 'Choose file'}
             </label>
           ) : (

@@ -46,19 +46,29 @@ export const PhoneNumberSchema = z
   .length(9, { message: 'Phone number must be exactly 9 digits' })
   .regex(/^\d{9}$/, { message: 'Phone number must contain only digits' });
 
-export const NewImageSchema = z.instanceof(File).superRefine((file, ctx) => {
+export const NewImageSchema = z.any().superRefine((file, ctx) => {
+  if (!(file instanceof File)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Please select a valid image file',
+    });
+    return;
+  }
+
   if (file.size === 0) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       message: 'Image is required',
     });
   }
+
   if (file.size > MAX_SIZE) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       message: 'Image size must be less than 5MB',
     });
   }
+
   if (!VALID_IMAGE_TYPES.includes(file.type)) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,

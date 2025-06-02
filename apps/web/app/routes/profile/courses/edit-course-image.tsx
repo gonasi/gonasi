@@ -63,7 +63,7 @@ export default function EditCourseImage() {
 
   // Initialize form methods with validation
   const methods = useRemixForm<EditCourseImageSchemaTypes>({
-    mode: 'onBlur',
+    mode: 'all',
     resolver,
     submitData: { imageUrl: image_url },
   });
