@@ -1,26 +1,18 @@
-// 🧠 Core Remix + React Hooks
 import { Form, useNavigate, useOutletContext, useParams } from 'react-router';
-// 🛠 Form validation and handling
 import { zodResolver } from '@hookform/resolvers/zod';
 import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
-// 🍞 Toast helpers
 import { dataWithError, redirectWithSuccess } from 'remix-toast';
-// 🕵️‍♀️ Honeypot spam protection
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
 
-// � Business logic
 import { editCourseImage } from '@gonasi/database/courses';
 import { EditCourseImageSchema, type EditCourseImageSchemaTypes } from '@gonasi/schemas/courses';
 
-// 🧩 Types
 import type { Route } from './+types/edit-course-image';
 import type { CourseOverviewType } from './course-by-id';
 
-// �🧱 UI Components
 import { Button } from '~/components/ui/button';
 import { GoFileField } from '~/components/ui/forms/elements';
 import { Modal } from '~/components/ui/modal';
-// 📦 Server utils & services
 import { createClient } from '~/lib/supabase/supabase.server';
 import { generateBlurHash } from '~/utils/generate-blur-hash.server';
 import { checkHoneypot } from '~/utils/honeypot.server';
@@ -127,7 +119,7 @@ export default function EditCourseImage() {
                 disabled={isPending}
                 isLoading={isPending || methods.formState.isSubmitting}
               >
-                Save Changes
+                Save
               </Button>
             </Form>
           </RemixFormProvider>

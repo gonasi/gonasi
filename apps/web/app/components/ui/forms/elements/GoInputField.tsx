@@ -52,8 +52,8 @@ export function GoInputField({
               aria-invalid={hasError}
               aria-describedby={description ? descriptionId : undefined}
               error={hasError}
-              {...inputProps}
               {...field}
+              {...inputProps}
             />
           </div>
           <div className='min-h-[32px] pt-1 pb-3'>

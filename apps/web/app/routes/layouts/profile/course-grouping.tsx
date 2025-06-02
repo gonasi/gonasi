@@ -4,7 +4,7 @@ import { ArrowLeft } from 'lucide-react';
 import { PlainButton } from '~/components/ui/button';
 import { Modal } from '~/components/ui/modal';
 import { Stepper } from '~/components/ui/stepper';
-import type { CourseOverviewType } from '~/routes/dashboard/courses/course-by-id';
+import type { CourseOverviewType } from '~/routes/profile/courses/course-by-id';
 
 export function meta() {
   return [{ title: 'Gonasi' }, { name: 'description', content: 'Welcome to Gonasi' }];
@@ -35,15 +35,12 @@ export default function UpsertCourseLayout() {
     if (currentStepIndex > 0) {
       const prevStep = steps[currentStepIndex - 1];
       if (prevStep) {
-        navigate(
-          `/dashboard/${params.companyId}/courses/${params.courseId}/grouping/${prevStep.path}`,
-        );
+        navigate(`/${params.username}/course/${params.courseId}/grouping/${prevStep.path}`);
       }
     }
   };
 
-  const handleClose = () =>
-    navigate(`/dashboard/${params.companyId}/courses/${params.courseId}/course-details`);
+  const handleClose = () => navigate(`/${params.username}/course/${params.courseId}/overview`);
 
   return (
     <Modal open onOpenChange={(open) => open || handleClose()}>

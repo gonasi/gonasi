@@ -102,7 +102,7 @@ export default function EditCourseSubcategory({ actionData, loaderData }: Route.
         />
         <ErrorList errors={form.errors} id={form.errorId} />
         <Button type='submit' disabled={isPending} isLoading={isPending}>
-          Save Changes
+          Save
         </Button>
       </FormProvider>
     </Form>

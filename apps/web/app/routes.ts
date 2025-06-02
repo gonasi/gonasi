@@ -114,12 +114,12 @@ export default [
       route(':courseId', 'routes/profile/courses/course-by-id.tsx', [
         route('overview', 'routes/profile/courses/course-overview.tsx', [
           route('edit-image', 'routes/profile/courses/edit-course-image.tsx'),
-          route('edit-details', 'routes/dashboard/courses/edit-course-details.tsx'),
+          route('edit-details', 'routes/profile/courses/edit-course-details.tsx'),
           ...prefix('grouping', [
-            layout('routes/layouts/dashboard/dashboard-course-grouping.tsx', [
-              route('edit-category', 'routes/dashboard/courses/edit-course-category.tsx'),
-              route('edit-subcategory', 'routes/dashboard/courses/edit-course-subcategory.tsx'),
-              route('edit-pathway', 'routes/dashboard/courses/edit-course-pathway.tsx'),
+            layout('routes/layouts/profile/course-grouping.tsx', [
+              route('edit-category', 'routes/profile/courses/edit-course-category.tsx'),
+              route('edit-subcategory', 'routes/profile/courses/edit-course-subcategory.tsx'),
+              route('edit-pathway', 'routes/profile/courses/edit-course-pathway.tsx'),
             ]),
           ]),
         ]),

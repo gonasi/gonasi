@@ -102,7 +102,7 @@ export default function EditLearningPathImageById({
             <Input {...getInputProps(fields.imageUrl, { type: 'hidden' })} />
             <ErrorList errors={form.errors} id={form.errorId} />
             <Button type='submit' disabled={isPending} isLoading={isPending}>
-              Save Changes
+              Save
             </Button>
           </Form>
         </Modal.Body>

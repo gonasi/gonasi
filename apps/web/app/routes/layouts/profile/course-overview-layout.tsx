@@ -3,7 +3,7 @@ import { Outlet, redirect } from 'react-router';
 import { getUserProfile } from '@gonasi/database/profile';
 import { canUserViewCompany } from '@gonasi/database/staffMembers';
 
-import type { Route } from './+types/course-details-layout';
+import type { Route } from './+types/course-overview-layout';
 
 import { createClient } from '~/lib/supabase/supabase.server';
 
