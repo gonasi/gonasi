@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { Await, data } from 'react-router';
+import { Await, data, Outlet } from 'react-router';
 import { Plus } from 'lucide-react';
 
 import { fetchCompanyCoursesWithSignedUrlsBySuOrAdmin } from '@gonasi/database/courses';
@@ -131,6 +131,7 @@ export default function Courses({ loaderData, params }: Route.ComponentProps) {
         tooltip='New Course'
         icon={<Plus size={20} strokeWidth={3} />}
       />
+      <Outlet />
     </div>
   );
 }

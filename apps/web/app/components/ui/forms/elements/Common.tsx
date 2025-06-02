@@ -31,8 +31,9 @@ export function ErrorList({ id, errors }: { errors?: ListOfErrors; id?: string }
 
 export function FormDescription({ id, children }: { id?: string; children: ReactNode }) {
   return (
-    <p id={id} className={cn('text-muted-foreground flex items-center pt-1 text-[0.8rem]')}>
-      <Info className='h-6 w-6 pr-2' /> <span className='pt-1'>{children}</span>
+    <p id={id} className={cn('text-muted-foreground flex items-start pt-1 text-[0.8rem]')}>
+      <Info className='h-6 w-6 flex-shrink-0 pr-2' />
+      <span className='pt-1'>{children}</span>
     </p>
   );
 }

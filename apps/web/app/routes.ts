@@ -7,8 +7,10 @@ export default [
     // all user profiles
     layout('routes/layouts/profile/profile-layout.tsx', [
       route(':username', 'routes/profile/courses/courses.tsx', [
-        // new course title
-        route('course/new', 'routes/profile/courses/new-course-title.tsx'),
+        layout('routes/layouts/profile/course-crud-layout.tsx', [
+          // new course title
+          route('course/new', 'routes/profile/courses/new-course-title.tsx'),
+        ]),
       ]),
       route(':username/pathways', 'routes/profile/pathways.tsx'),
       route(':username/file-library', 'routes/profile/file-library.tsx'),

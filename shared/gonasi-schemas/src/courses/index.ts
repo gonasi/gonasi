@@ -36,7 +36,7 @@ const CourseMonthlySubscriptionPriceSchema = z
 export const NewCourseTitleSchema = z.object({
   name: CourseTitleSchema,
 });
-export type NewCourseTitleTypes = z.infer<typeof NewCourseTitleSchema>;
+export type NewCourseTitleSchemaTypes = z.infer<typeof NewCourseTitleSchema>;
 export const NewCourseTitleSubmit = NewCourseTitleSchema.merge(
   z.object({
     username: z.string(),
