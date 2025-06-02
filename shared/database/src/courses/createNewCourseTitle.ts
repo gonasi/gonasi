@@ -1,6 +1,6 @@
 import type { NewCourseTitleSubmitValues } from '@gonasi/schemas/courses';
 
-import { getUserId } from '../auth';
+import { getUserId, getUserIdFromUsername } from '../auth';
 import type { TypedSupabaseClient } from '../client';
 import type { ApiResponse } from '../types';
 
@@ -25,9 +25,10 @@ export const createNewCourseTitle = async (
   supabase: TypedSupabaseClient,
   courseData: NewCourseTitleSubmitValues,
 ): Promise<ApiResponse<{ id: string }>> => {
-  const userId = await getUserId(supabase);
+  const { name, username } = courseData;
 
-  const { name, companyId } = courseData;
+  const userId = await getUserId(supabase);
+  const companyId = await getUserIdFromUsername(supabase, username);
 
   console.log({
     name,

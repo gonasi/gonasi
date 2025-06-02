@@ -4,7 +4,7 @@ import { Plus } from 'lucide-react';
 
 import { fetchCompanyCoursesWithSignedUrlsBySuOrAdmin } from '@gonasi/database/courses';
 
-import type { Route } from './+types/courses';
+import type { Route } from '../+types/courses';
 
 import { CourseCard, NotFoundCard } from '~/components/cards';
 import { ErrorMessageWithRetry } from '~/components/error-message-with-retry';
@@ -127,10 +127,9 @@ export default function Courses({ loaderData, params }: Route.ComponentProps) {
         </Await>
       </Suspense>
       <FloatingActionButton
-        onClick={() => console.log('Upload')}
+        to={`/${params.username}/course/new`}
         tooltip='New Course'
         icon={<Plus size={20} strokeWidth={3} />}
-        buttonProps={{ variant: 'secondary' }}
       />
     </div>
   );

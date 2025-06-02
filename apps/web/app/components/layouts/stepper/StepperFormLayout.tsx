@@ -13,7 +13,7 @@ interface Step {
 }
 
 interface Props extends PropsWithChildren {
-  companyId: string;
+  username: string;
   steps?: Step[];
   closeLink: string;
   desktopTitle?: string;
@@ -21,7 +21,7 @@ interface Props extends PropsWithChildren {
 }
 
 export function StepperFormLayout({
-  companyId,
+  username,
   steps = [],
   children,
   closeLink,
@@ -43,7 +43,7 @@ export function StepperFormLayout({
     if (currentStepIndex > 0) {
       const prevStep = steps[currentStepIndex - 1];
       if (prevStep) {
-        navigate(`/dashboard/${companyId}/courses/${dynamicParam}/${prevStep.path}`);
+        navigate(`/dashboard/${username}/courses/${dynamicParam}/${prevStep.path}`);
       }
     }
   };

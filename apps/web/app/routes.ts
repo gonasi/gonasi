@@ -6,7 +6,10 @@ export default [
     route('explore', 'routes/public/explore.tsx'),
     // all user profiles
     layout('routes/layouts/profile/profile-layout.tsx', [
-      route(':username', 'routes/profile/courses.tsx'),
+      route(':username', 'routes/profile/courses/courses.tsx', [
+        // new course title
+        route('course/new', 'routes/profile/courses/new-course-title.tsx'),
+      ]),
       route(':username/pathways', 'routes/profile/pathways.tsx'),
       route(':username/file-library', 'routes/profile/file-library.tsx'),
       route(':username/team-management', 'routes/profile/team-management.tsx'),
@@ -85,7 +88,7 @@ export default [
   ...prefix('dashboard', [
     layout('routes/layouts/dashboard/dashboard-plain.tsx', [
       route('/:companyId/learning-paths/new', 'routes/dashboard/pathways/new-learning-path.tsx'),
-      route('/:companyId/courses/new', 'routes/dashboard/courses/new-course-title.tsx'),
+
       route('/:companyId/file-library/new', 'routes/dashboard/file-library/new-file.tsx'),
       route(
         '/:companyId/learning-paths/:learningPathId',

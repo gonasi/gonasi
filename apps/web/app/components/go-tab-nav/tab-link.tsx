@@ -29,7 +29,7 @@ export function TabLink({ to, name, icon: Icon }: Props) {
         const containerClass = cn(
           'flex w-full items-center justify-center space-x-0 md:space-x-1',
           isPending ? 'animate-pulse opacity-55 hover:cursor-wait' : '',
-          isActive ? 'text-primary font-bold' : 'text-muted-foreground',
+          isActive ? 'text-primary' : 'text-muted-foreground',
         );
 
         const dotClass = cn(

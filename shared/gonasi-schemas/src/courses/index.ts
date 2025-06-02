@@ -39,7 +39,7 @@ export const NewCourseTitleSchema = z.object({
 export type NewCourseTitleTypes = z.infer<typeof NewCourseTitleSchema>;
 export const NewCourseTitleSubmit = NewCourseTitleSchema.merge(
   z.object({
-    companyId: z.string(),
+    username: z.string(),
   }),
 );
 export type NewCourseTitleSubmitValues = z.infer<typeof NewCourseTitleSubmit>;
