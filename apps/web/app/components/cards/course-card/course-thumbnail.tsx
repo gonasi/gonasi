@@ -41,7 +41,6 @@ export function CourseThumbnail({
           layout='fullWidth'
           alt={`${name} thumbnail`}
           background={placeholder}
-          className='h-full w-full object-cover'
         />
       ) : (
         <div className='text-muted-foreground absolute inset-0 flex flex-col items-center justify-center'>

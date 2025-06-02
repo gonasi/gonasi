@@ -29,7 +29,6 @@ export function CourseThumbnail({ thumbnail, name, editLink, blurHash }: CourseT
           layout='fullWidth'
           alt={`${name} thumbnail`}
           background={placeholder}
-          className='h-full w-full object-cover'
         />
       ) : (
         <div className='bg-muted text-muted-foreground flex h-full w-full flex-col items-center justify-center'>
