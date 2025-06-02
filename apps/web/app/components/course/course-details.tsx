@@ -11,7 +11,7 @@ interface Props {
   errorMessage?: string[];
 }
 
-export function CourseDetails({ name, description, price, editLink }: Props) {
+export function CourseOverview({ name, description, price, editLink }: Props) {
   return (
     <div className='flex flex-col space-y-4'>
       <div className='flex items-center justify-between'>

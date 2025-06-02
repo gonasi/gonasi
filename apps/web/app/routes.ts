@@ -109,72 +109,64 @@ export default [
     ]),
   ]),
 
-  ...prefix('dashboard/:companyId', [
-    layout('routes/layouts/dashboard/dashboard-course-details.tsx', [
-      ...prefix('courses', [
-        route(':courseId', 'routes/dashboard/courses/course-by-id.tsx', [
-          route('course-details', 'routes/dashboard/courses/course-details.tsx', [
-            route('edit-image', 'routes/dashboard/courses/edit-course-image.tsx'),
-            route('edit-details', 'routes/dashboard/courses/edit-course-details.tsx'),
-            ...prefix('grouping', [
-              layout('routes/layouts/dashboard/dashboard-course-grouping.tsx', [
-                route('edit-category', 'routes/dashboard/courses/edit-course-category.tsx'),
-                route('edit-subcategory', 'routes/dashboard/courses/edit-course-subcategory.tsx'),
-                route('edit-pathway', 'routes/dashboard/courses/edit-course-pathway.tsx'),
-              ]),
+  layout('routes/layouts/profile/course-overview-layout.tsx', [
+    ...prefix(':username/course', [
+      route(':courseId', 'routes/profile/courses/course-by-id.tsx', [
+        route('overview', 'routes/profile/courses/course-overview.tsx', [
+          route('edit-image', 'routes/dashboard/courses/edit-course-image.tsx'),
+          route('edit-details', 'routes/dashboard/courses/edit-course-details.tsx'),
+          ...prefix('grouping', [
+            layout('routes/layouts/dashboard/dashboard-course-grouping.tsx', [
+              route('edit-category', 'routes/dashboard/courses/edit-course-category.tsx'),
+              route('edit-subcategory', 'routes/dashboard/courses/edit-course-subcategory.tsx'),
+              route('edit-pathway', 'routes/dashboard/courses/edit-course-pathway.tsx'),
             ]),
           ]),
-          route('course-content', 'routes/dashboard/courses/course-content.tsx', [
-            ...prefix('chapter', [
-              route('new', 'routes/dashboard/courses/chapters/new-course-chapter.tsx'),
-            ]),
-            ...prefix(':chapterId', [
-              route('edit-chapter', 'routes/dashboard/courses/chapters/edit-course-chapter.tsx'),
+        ]),
+        route('course-content', 'routes/dashboard/courses/course-content.tsx', [
+          ...prefix('chapter', [
+            route('new', 'routes/dashboard/courses/chapters/new-course-chapter.tsx'),
+          ]),
+          ...prefix(':chapterId', [
+            route('edit-chapter', 'routes/dashboard/courses/chapters/edit-course-chapter.tsx'),
+            route('delete-chapter', 'routes/dashboard/courses/chapters/delete-course-chapter.tsx'),
+            route('new-lesson-details', 'routes/dashboard/courses/lessons/new-lesson-details.tsx'),
+            route(
+              ':lessonId/edit-lesson-details',
+              'routes/dashboard/courses/lessons/edit-lesson-details.tsx',
+            ),
+            route(':lessonId/delete', 'routes/dashboard/courses/lessons/delete-lesson.tsx'),
+            // view all blocks by course creator
+            // /dashboard/:companyId/courses/:courseId/course-content/:chapterId/:lessonId
+            route(':lessonId', 'routes/dashboard/courses/lessons/edit-lesson-content.tsx', [
               route(
-                'delete-chapter',
-                'routes/dashboard/courses/chapters/delete-course-chapter.tsx',
+                'plugins',
+                'routes/dashboard/courses/lessons/plugins/view-all-plugins-modal.tsx',
+                [
+                  route(
+                    ':pluginGroupId',
+                    'routes/dashboard/courses/lessons/plugins/view-plugins-by-plugin-group-id-modal.tsx',
+                    [
+                      route(
+                        ':pluginTypeId/create',
+                        'routes/dashboard/courses/lessons/plugins/create-block-by-plugin-id-modal.tsx',
+                      ),
+                    ],
+                  ),
+                ],
               ),
               route(
-                'new-lesson-details',
-                'routes/dashboard/courses/lessons/new-lesson-details.tsx',
+                ':blockId/edit',
+                'routes/dashboard/courses/lessons/plugins/edit-plugin-modal.tsx',
               ),
               route(
-                ':lessonId/edit-lesson-details',
-                'routes/dashboard/courses/lessons/edit-lesson-details.tsx',
+                ':blockId/settings',
+                'routes/dashboard/courses/lessons/plugins/edit-plugin-settings-modal.tsx',
               ),
-              route(':lessonId/delete', 'routes/dashboard/courses/lessons/delete-lesson.tsx'),
-              // view all blocks by course creator
-              // /dashboard/:companyId/courses/:courseId/course-content/:chapterId/:lessonId
-              route(':lessonId', 'routes/dashboard/courses/lessons/edit-lesson-content.tsx', [
-                route(
-                  'plugins',
-                  'routes/dashboard/courses/lessons/plugins/view-all-plugins-modal.tsx',
-                  [
-                    route(
-                      ':pluginGroupId',
-                      'routes/dashboard/courses/lessons/plugins/view-plugins-by-plugin-group-id-modal.tsx',
-                      [
-                        route(
-                          ':pluginTypeId/create',
-                          'routes/dashboard/courses/lessons/plugins/create-block-by-plugin-id-modal.tsx',
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-                route(
-                  ':blockId/edit',
-                  'routes/dashboard/courses/lessons/plugins/edit-plugin-modal.tsx',
-                ),
-                route(
-                  ':blockId/settings',
-                  'routes/dashboard/courses/lessons/plugins/edit-plugin-settings-modal.tsx',
-                ),
-                route(
-                  ':blockId/delete',
-                  'routes/dashboard/courses/lessons/plugins/delete-plugin-modal.tsx',
-                ),
-              ]),
+              route(
+                ':blockId/delete',
+                'routes/dashboard/courses/lessons/plugins/delete-plugin-modal.tsx',
+              ),
             ]),
           ]),
         ]),

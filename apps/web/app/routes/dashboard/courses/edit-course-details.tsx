@@ -8,7 +8,7 @@ import { editCourseDetails } from '@gonasi/database/courses';
 import { EditCourseDetailsSchema } from '@gonasi/schemas/courses';
 
 import type { Route } from './+types/edit-course-details';
-import type { CourseDetailsType } from './course-by-id';
+import type { CourseOverviewType } from './course-by-id';
 
 import { Button } from '~/components/ui/button';
 import { ErrorList, Field, TextareaField } from '~/components/ui/forms';
@@ -47,7 +47,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 
 export default function EditCourseDetails({ actionData }: Route.ComponentProps) {
   const { name, description, monthly_subscription_price } =
-    useOutletContext<CourseDetailsType>() ?? {};
+    useOutletContext<CourseOverviewType>() ?? {};
 
   const courseDetailsDefaults = {
     name,

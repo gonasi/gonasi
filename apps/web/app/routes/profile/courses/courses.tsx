@@ -4,7 +4,7 @@ import { Plus } from 'lucide-react';
 
 import { fetchCompanyCoursesWithSignedUrlsBySuOrAdmin } from '@gonasi/database/courses';
 
-import type { Route } from '../+types/courses';
+import type { Route } from './+types/courses';
 
 import { CourseCard, NotFoundCard } from '~/components/cards';
 import { ErrorMessageWithRetry } from '~/components/error-message-with-retry';
@@ -87,7 +87,7 @@ function CoursesList({ courses, count, params }: { courses: any[]; count: number
               lessonsCount={lesson_count}
               chaptersCount={chapters_count}
               price={monthly_subscription_price}
-              to={`/dashboard/${params.companyId}/courses/${courseId}/course-details`}
+              to={`/${params.username}/course/${courseId}/overview`}
               author={{
                 displayName:
                   created_by_profile.username ??

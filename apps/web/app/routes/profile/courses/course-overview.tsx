@@ -1,18 +1,18 @@
 import { Outlet, useOutletContext } from 'react-router';
 
-import type { Route } from './+types/course-details';
-import type { CourseDetailsType } from './course-by-id';
+import type { Route } from './+types/course-overview';
+import type { CourseOverviewType } from './course-by-id';
 
 import { BannerCard } from '~/components/cards';
 import {
-  CourseCategoryDetails,
-  CourseDetails as CourseInfoDetails,
+  CourseCategoryOverview,
+  CourseOverview as CourseInfoOverview,
   CourseThumbnail,
 } from '~/components/course';
 import { Separator } from '~/components/ui/separator';
 
-export default function CourseDetails({ params }: Route.ComponentProps) {
-  const outletLoaderData = useOutletContext<CourseDetailsType>() ?? {};
+export default function CourseOverview({ params }: Route.ComponentProps) {
+  const outletLoaderData = useOutletContext<CourseOverviewType>() ?? {};
 
   const {
     signedUrl,
@@ -37,7 +37,7 @@ export default function CourseDetails({ params }: Route.ComponentProps) {
             />
           </div>
           <div className='flex-1'>
-            <CourseInfoDetails
+            <CourseInfoOverview
               name={name}
               description={description}
               price={monthly_subscription_price}
@@ -52,7 +52,7 @@ export default function CourseDetails({ params }: Route.ComponentProps) {
             variant='info'
           />
           <div className='max-w-sm'>
-            <CourseCategoryDetails
+            <CourseCategoryOverview
               category={course_categories?.name}
               subCategory={course_sub_categories?.name}
               pathway={pathways?.name}

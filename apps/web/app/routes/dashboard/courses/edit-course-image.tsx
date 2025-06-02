@@ -8,7 +8,7 @@ import { editCourseImage } from '@gonasi/database/courses';
 import { EditCourseImageSchema } from '@gonasi/schemas/courses';
 
 import type { Route } from './+types/edit-course-image';
-import type { CourseDetailsType } from './course-by-id';
+import type { CourseOverviewType } from './course-by-id';
 
 import { Button } from '~/components/ui/button';
 import { ErrorList, Field } from '~/components/ui/forms';
@@ -50,7 +50,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 }
 
 export default function EditCourseImage({ actionData }: Route.ComponentProps) {
-  const { image_url } = useOutletContext<CourseDetailsType>();
+  const { image_url } = useOutletContext<CourseOverviewType>();
 
   const defaultValue = {
     image: null,

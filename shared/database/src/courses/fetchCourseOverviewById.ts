@@ -2,7 +2,7 @@ import type { TypedSupabaseClient } from '../client';
 import { COURSES_BUCKET } from '../constants';
 
 /**
- * Fetches detailed information about a course by its ID.
+ * Fetches overview about a course by its ID.
  *
  * @param {TypedSupabaseClient} supabase - The Supabase client instance.
  * @param {string} courseId - The ID of the course to fetch details for.
@@ -10,15 +10,15 @@ import { COURSES_BUCKET } from '../constants';
  *
  * @example
  * ```ts
- * const courseDetails = await fetchCourseDetailsById(supabase, "course123");
- * if (courseDetails) {
- *   console.log("Course Name:", courseDetails.name);
+ * const courseOverview = await fetchCourseOverviewById(supabase, "course123");
+ * if (courseOverview) {
+ *   console.log("Course Name:", courseOverview.name);
  * } else {
  *   console.log("Course not found.");
  * }
  * ```
  */
-export async function fetchCourseDetailsById(supabase: TypedSupabaseClient, courseId: string) {
+export async function fetchCourseOverviewById(supabase: TypedSupabaseClient, courseId: string) {
   const { data, error } = await supabase
     .from('courses')
     .select(

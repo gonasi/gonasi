@@ -9,7 +9,7 @@ import { fetchCourseSubCategoriesAsSelectOptions } from '@gonasi/database/course
 import { EditCourseSubcategorySchema } from '@gonasi/schemas/courses';
 
 import type { Route } from './+types/edit-course-subcategory';
-import type { CourseDetailsType } from './course-by-id';
+import type { CourseOverviewType } from './course-by-id';
 
 import { Button } from '~/components/ui/button';
 import { ErrorList, SearchDropdownField } from '~/components/ui/forms';
@@ -67,7 +67,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 
 // Component
 export default function EditCourseSubcategory({ actionData, loaderData }: Route.ComponentProps) {
-  const { course_sub_categories, course_categories } = useOutletContext<CourseDetailsType>() ?? {};
+  const { course_sub_categories, course_categories } = useOutletContext<CourseOverviewType>() ?? {};
   const isPending = useIsPending();
 
   const defaultValue = {

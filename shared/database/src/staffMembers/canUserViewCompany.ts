@@ -1,4 +1,4 @@
-import { getUserId } from '../auth';
+import { getUserId, getUserIdFromUsername } from '../auth';
 import type { TypedSupabaseClient } from '../client';
 
 /**
@@ -8,16 +8,17 @@ import type { TypedSupabaseClient } from '../client';
  * is a staff member of the given company.
  *
  * @param supabase - The Supabase client instance to interact with the database.
- * @param companyId - The ID of the company to check access for.
+ * @param username - The ID of the company to check access for.
  * @returns A promise that resolves to `true` if the user can view the company,
  *          or `false` if the user does not have access or an error occurs.
  */
 export async function canUserViewCompany(
   supabase: TypedSupabaseClient,
-  companyId: string,
+  username: string,
 ): Promise<boolean> {
   // Retrieve the user ID from the authentication system
   const userId = await getUserId(supabase);
+  const companyId = await getUserIdFromUsername(supabase, username);
 
   try {
     // Query the staff_members table to check if the user is associated with the company

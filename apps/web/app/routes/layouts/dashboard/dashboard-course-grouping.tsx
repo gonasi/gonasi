@@ -4,14 +4,14 @@ import { ArrowLeft } from 'lucide-react';
 import { PlainButton } from '~/components/ui/button';
 import { Modal } from '~/components/ui/modal';
 import { Stepper } from '~/components/ui/stepper';
-import type { CourseDetailsType } from '~/routes/dashboard/courses/course-by-id';
+import type { CourseOverviewType } from '~/routes/dashboard/courses/course-by-id';
 
 export function meta() {
   return [{ title: 'Gonasi' }, { name: 'description', content: 'Welcome to Gonasi' }];
 }
 
 export default function UpsertCourseLayout() {
-  const courseDetails = useOutletContext<CourseDetailsType>() ?? {};
+  const courseDetails = useOutletContext<CourseOverviewType>() ?? {};
 
   const navigate = useNavigate();
 

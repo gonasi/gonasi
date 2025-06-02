@@ -17,7 +17,7 @@ export function TabLink({ to, name, icon: Icon }: Props) {
   return (
     <NavLink
       className={cn(
-        'flex w-28 items-center',
+        'flex w-12 items-center md:w-28',
         'group font-secondary relative py-2 hover:cursor-pointer',
         'transition-colors duration-200',
       )}
@@ -57,7 +57,9 @@ export function TabLink({ to, name, icon: Icon }: Props) {
 
             {/* Smooth slide-in bottom border */}
             <motion.div
-              className='from-secondary to-primary absolute bottom-0 left-0 h-0.5 bg-gradient-to-r'
+              className={cn(
+                'from-secondary to-primary absolute bottom-0 left-0 h-0.5 bg-gradient-to-r',
+              )}
               initial={false}
               animate={{ width: isActive ? '100%' : '0%' }}
               transition={{ duration: 0.3, ease: 'easeInOut' }}

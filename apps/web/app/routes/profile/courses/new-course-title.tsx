@@ -68,11 +68,8 @@ export async function action({ request, params }: Route.ActionArgs) {
     return dataWithError(null, message);
   }
 
-  // Redirect to course details page on success
-  return redirectWithSuccess(
-    `/dashboard/${params.username}/courses/${submissionData.id}/course-details`,
-    message,
-  );
+  // Redirect to course overview page on success
+  return redirectWithSuccess(`/${params.username}/course/${submissionData.id}/overview`, message);
 }
 
 // Page component

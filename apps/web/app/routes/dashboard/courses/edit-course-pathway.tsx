@@ -8,7 +8,7 @@ import { fetchLearningPathsAsSelectOptions } from '@gonasi/database/learningPath
 import { EditCoursePathwaySchema } from '@gonasi/schemas/courses';
 
 import type { Route } from './+types/edit-course-pathway';
-import type { CourseDetailsType } from './course-by-id';
+import type { CourseOverviewType } from './course-by-id';
 
 import { GoLink } from '~/components/go-link';
 import { Button } from '~/components/ui/button';
@@ -56,7 +56,7 @@ export default function EditCoursePathway({
   loaderData,
   params,
 }: Route.ComponentProps) {
-  const { pathways } = useOutletContext<CourseDetailsType>() ?? {};
+  const { pathways } = useOutletContext<CourseOverviewType>() ?? {};
 
   const defaultValue = {
     pathway: pathways?.id ?? '',

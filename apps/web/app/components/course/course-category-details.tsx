@@ -10,7 +10,7 @@ interface Props {
   editLink: string;
 }
 
-export function CourseCategoryDetails({ category, subCategory, pathway, editLink }: Props) {
+export function CourseCategoryOverview({ category, subCategory, pathway, editLink }: Props) {
   return (
     <div className='border-card rounded-md border-0 px-0 py-4 md:border md:px-4'>
       <div className='flex items-center justify-between pb-4'>

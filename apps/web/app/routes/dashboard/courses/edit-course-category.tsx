@@ -8,7 +8,7 @@ import { editCourseCategory } from '@gonasi/database/courses';
 import { EditCourseCategorySchema } from '@gonasi/schemas/courses';
 
 import type { Route } from './+types/edit-course-category';
-import type { CourseDetailsType } from './course-by-id';
+import type { CourseOverviewType } from './course-by-id';
 
 import { Button } from '~/components/ui/button';
 import { ErrorList, SearchDropdownField } from '~/components/ui/forms';
@@ -52,7 +52,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 }
 
 export default function EditCourseCategory({ actionData, loaderData }: Route.ComponentProps) {
-  const { course_categories } = useOutletContext<CourseDetailsType>() ?? {};
+  const { course_categories } = useOutletContext<CourseOverviewType>() ?? {};
 
   const defaultValue = {
     category: course_categories?.id ?? '',

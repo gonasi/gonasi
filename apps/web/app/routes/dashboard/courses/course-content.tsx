@@ -84,7 +84,7 @@ export async function action({ request }: Route.ActionArgs) {
   throw new Response('Unknown intent', { status: 400 });
 }
 
-export default function CourseDetails({ loaderData, params }: Route.ComponentProps) {
+export default function CourseOverview({ loaderData, params }: Route.ComponentProps) {
   return (
     <>
       <div className='max-w-xl pb-20'>
