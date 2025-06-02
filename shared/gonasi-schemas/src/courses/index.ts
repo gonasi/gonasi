@@ -69,6 +69,7 @@ export type EditCourseImageSchemaTypes = z.infer<typeof EditCourseImageSchema>;
 export const SubmitEditCourseImageSchema = EditCourseImageSchema.merge(
   z.object({
     courseId: z.string(),
+    blurHash: z.string().nullable(),
   }),
 );
 export type EditCourseImageSubmitValues = z.infer<typeof SubmitEditCourseImageSchema>;

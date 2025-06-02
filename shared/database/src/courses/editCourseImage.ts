@@ -17,9 +17,7 @@ export const editCourseImage = async (
 ): Promise<ApiResponse> => {
   const userId = await getUserId(supabase); // Retrieve the user ID from authentication context
 
-  const { image, imageUrl, courseId } = assetData;
-
-  console.log('courseId: ', courseId);
+  const { image, imageUrl, courseId, blurHash } = assetData;
 
   try {
     // Check if the user is authorized to update this course (must be admin or su)
@@ -109,6 +107,7 @@ export const editCourseImage = async (
       .update({
         updated_by: userId,
         image_url: finalImagePath,
+        blur_hash: blurHash,
       })
       .eq('id', courseId);
 

@@ -1,17 +1,25 @@
 import { Link } from 'react-router';
+import { blurhashToCssGradientString } from '@unpic/placeholder';
 import { Image } from '@unpic/react';
 import { EditIcon, ImageIcon } from 'lucide-react';
 
-interface Props {
+interface CourseThumbnailProps {
   thumbnail: string | null;
+  blurHash: string | null;
   name: string;
   editLink: string;
 }
 
-export function CourseThumbnail({ thumbnail, name, editLink }: Props) {
+export function CourseThumbnail({ thumbnail, name, editLink, blurHash }: CourseThumbnailProps) {
+  const placeholder = blurHash ? blurhashToCssGradientString(blurHash) : 'auto';
+
   return (
     <div className='border-card relative aspect-[16/9] h-[200px] overflow-hidden rounded-md border'>
-      <Link to={editLink} className='bg-secondary absolute top-2 right-2 rounded-full p-2'>
+      <Link
+        to={editLink}
+        className='bg-secondary hover:bg-secondary/80 absolute top-2 right-2 rounded-full p-2 transition-colors'
+        aria-label={`Edit ${name}`}
+      >
         <EditIcon className='text-secondary-foreground h-5 w-5' />
       </Link>
 
@@ -19,9 +27,9 @@ export function CourseThumbnail({ thumbnail, name, editLink }: Props) {
         <Image
           src={thumbnail}
           layout='fullWidth'
-          alt={name}
+          alt={`${name} thumbnail`}
           priority
-          background='auto'
+          background={placeholder}
           className='h-full w-full object-cover'
         />
       ) : (
