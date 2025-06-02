@@ -39,8 +39,7 @@ export function CourseThumbnail({
         <Image
           src={iconUrl}
           layout='fullWidth'
-          alt={name}
-          priority
+          alt={`${name} thumbnail`}
           background={placeholder}
           className='h-full w-full object-cover'
         />
