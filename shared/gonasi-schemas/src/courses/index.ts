@@ -22,8 +22,9 @@ const CourseSubcategorySchema = z
 
 const CoursePathwaySchema = z.string({ required_error: 'Course pathway is required' }).trim();
 
-const CourseMonthlySubscriptionPriceSchema = z
+const CourseMonthlySubscriptionPriceSchema = z.coerce
   .number({ required_error: 'Please provide a monthly subscription price.' })
+  .int({ message: 'Price must be a whole number (no decimals allowed).' })
   .refine(
     (value) => {
       const price = value;
