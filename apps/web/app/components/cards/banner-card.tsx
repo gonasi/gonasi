@@ -64,7 +64,7 @@ export function BannerCard({ message, description, variant = 'info', className }
       <div className='w-full'>
         <div className='flex w-full items-center justify-between'>
           <div className='flex items-center space-x-4'>
-            <Icon className={`${textColor}`} size={20} />
+            <Icon className={`${textColor} flex-shrink-0`} size={20} />
             <p className={`${textColor} text-sm`}>{message}</p>
           </div>
 

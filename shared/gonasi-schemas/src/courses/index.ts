@@ -65,7 +65,7 @@ export const EditCourseImageSchema = z.object({
   image: NewImageSchema,
   imageUrl: z.string().nullable().optional(),
 });
-export type EditCourseImageTypes = z.infer<typeof EditCourseImageSchema>;
+export type EditCourseImageSchemaTypes = z.infer<typeof EditCourseImageSchema>;
 export const SubmitEditCourseImageSchema = EditCourseImageSchema.merge(
   z.object({
     courseId: z.string(),

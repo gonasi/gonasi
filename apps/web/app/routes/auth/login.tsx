@@ -106,6 +106,7 @@ export default function Login() {
               autoFocus: true,
               className: 'lowercase',
               autoComplete: 'email',
+              disabled: isPending,
             }}
           />
 
@@ -120,6 +121,7 @@ export default function Login() {
             inputProps={{
               type: 'password',
               autoComplete: 'current-password',
+              disabled: isPending,
             }}
           />
 

@@ -113,7 +113,7 @@ export default [
     ...prefix(':username/course', [
       route(':courseId', 'routes/profile/courses/course-by-id.tsx', [
         route('overview', 'routes/profile/courses/course-overview.tsx', [
-          route('edit-image', 'routes/dashboard/courses/edit-course-image.tsx'),
+          route('edit-image', 'routes/profile/courses/edit-course-image.tsx'),
           route('edit-details', 'routes/dashboard/courses/edit-course-details.tsx'),
           ...prefix('grouping', [
             layout('routes/layouts/dashboard/dashboard-course-grouping.tsx', [
