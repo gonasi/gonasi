@@ -1,5 +1,6 @@
 import { Form, useNavigate, useOutletContext, useParams } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Save } from 'lucide-react';
 import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
 import { dataWithError, redirectWithSuccess } from 'remix-toast';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
@@ -80,9 +81,9 @@ export default function EditCourseDetails() {
   const handleClose = () => navigate(`/${params.username}/course/${params.courseId}/overview`);
 
   return (
-    <Modal open onOpenChange={(open) => open || handleClose()}>
+    <Modal open>
       <Modal.Content size='sm'>
-        <Modal.Header title='Edit Course Details' />
+        <Modal.Header title='Edit Course Details' hasClose={false} closeRoute='/dashboard' />
         <Modal.Body>
           <RemixFormProvider {...methods}>
             <Form method='POST' onSubmit={methods.handleSubmit}>
@@ -114,7 +115,12 @@ export default function EditCourseDetails() {
                 }}
                 description='Specify the monthly subscription fee. 0 if course is free.'
               />
-              <Button type='submit' disabled={isDisabled} isLoading={isDisabled}>
+              <Button
+                type='submit'
+                disabled={isDisabled || !methods.formState.isDirty}
+                isLoading={isDisabled}
+                rightIcon={<Save />}
+              >
                 Save
               </Button>
             </Form>

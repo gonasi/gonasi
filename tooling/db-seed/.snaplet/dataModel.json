@@ -2529,6 +2529,20 @@
           "maxLength": null
         },
         {
+          "id": "public.courses.blur_hash",
+          "name": "blur_hash",
+          "columnName": "blur_hash",
+          "type": "text",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
           "name": "course_categories",
           "type": "course_categories",
           "isRequired": false,
@@ -3625,6 +3639,20 @@
           "isGenerated": false,
           "sequence": false,
           "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.file_library.blur_hash",
+          "name": "blur_hash",
+          "columnName": "blur_hash",
+          "type": "text",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
           "isId": false,
           "maxLength": null
         },
@@ -6305,6 +6333,20 @@
           "columnName": "updated_by",
           "type": "uuid",
           "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.pathways.blur_hash",
+          "name": "blur_hash",
+          "columnName": "blur_hash",
+          "type": "text",
+          "isRequired": false,
           "kind": "scalar",
           "isList": false,
           "isGenerated": false,

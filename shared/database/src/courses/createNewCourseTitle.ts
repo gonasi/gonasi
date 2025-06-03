@@ -1,6 +1,6 @@
-import type { NewCourseTitleSubmitValues } from '@gonasi/schemas/courses';
+import type { NewCourseTitleSubmitSchemaType } from '@gonasi/schemas/courses';
 
-import { getUserId, getUserIdFromUsername } from '../auth';
+import { getUserId } from '../auth';
 import type { TypedSupabaseClient } from '../client';
 import type { ApiResponse } from '../types';
 
@@ -8,7 +8,7 @@ import type { ApiResponse } from '../types';
  * Creates a new course title in the database.
  *
  * @param {TypedSupabaseClient} supabase - The Supabase client instance.
- * @param {NewCourseTitleSubmitValues} courseTitle - The course title data containing name and userId.
+ * @param {NewCourseTitleSubmitSchemaType} courseTitle - The course title data containing name and userId.
  * @returns {Promise<ApiResponse<{ id: string }>>} - The response indicating success or failure with optional course ID data.
  *
  * @example
@@ -23,19 +23,11 @@ import type { ApiResponse } from '../types';
  */
 export const createNewCourseTitle = async (
   supabase: TypedSupabaseClient,
-  courseData: NewCourseTitleSubmitValues,
+  courseData: NewCourseTitleSubmitSchemaType,
 ): Promise<ApiResponse<{ id: string }>> => {
-  const { name, username } = courseData;
+  const { name, companyId } = courseData;
 
   const userId = await getUserId(supabase);
-  const companyId = await getUserIdFromUsername(supabase, username);
-
-  console.log({
-    name,
-    company_id: companyId,
-    created_by: userId,
-    updated_by: userId,
-  });
 
   try {
     const { data, error } = await supabase

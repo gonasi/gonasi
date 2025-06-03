@@ -1,12 +1,17 @@
 // Imports
-import { Form, useNavigate } from 'react-router';
+import { Form, useNavigate, useOutletContext } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
 import { dataWithError, redirectWithSuccess } from 'remix-toast';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
 
 import { createNewCourseTitle } from '@gonasi/database/courses';
-import { NewCourseTitleSchema, type NewCourseTitleSchemaTypes } from '@gonasi/schemas/courses';
+import {
+  NewCourseTitleSchema,
+  type NewCourseTitleSchemaTypes,
+  NewCourseTitleSubmitSchema,
+  type NewCourseTitleSubmitSchemaType,
+} from '@gonasi/schemas/courses';
 
 import type { Route } from './+types/new-course-title';
 
@@ -14,11 +19,9 @@ import { Button } from '~/components/ui/button';
 import { GoInputField } from '~/components/ui/forms/elements';
 import { Modal } from '~/components/ui/modal';
 import { createClient } from '~/lib/supabase/supabase.server';
+import type { AppOutletContext } from '~/root';
 import { checkHoneypot } from '~/utils/honeypot.server';
 import { useIsPending } from '~/utils/misc';
-
-// Setup resolver using Zod schema
-const resolver = zodResolver(NewCourseTitleSchema);
 
 // SEO meta function
 export function meta() {
@@ -32,6 +35,7 @@ export function meta() {
   ];
 }
 
+// Form submission handler
 // Form submission handler
 export async function action({ request, params }: Route.ActionArgs) {
   const formData = await request.formData();
@@ -47,7 +51,10 @@ export async function action({ request, params }: Route.ActionArgs) {
     errors,
     data,
     receivedValues: defaultValues,
-  } = await getValidatedFormData<NewCourseTitleSchemaTypes>(formData, resolver);
+  } = await getValidatedFormData<NewCourseTitleSubmitSchemaType>(
+    formData,
+    zodResolver(NewCourseTitleSubmitSchema),
+  );
 
   if (errors) {
     // Return validation errors to the client
@@ -61,7 +68,6 @@ export async function action({ request, params }: Route.ActionArgs) {
     data: submissionData,
   } = await createNewCourseTitle(supabase, {
     ...data,
-    username: params.username,
   });
 
   if (!success || !submissionData) {
@@ -74,13 +80,18 @@ export async function action({ request, params }: Route.ActionArgs) {
 
 // Page component
 export default function NewCourseTitle({ params }: Route.ComponentProps) {
+  const { activeCompany } = useOutletContext<AppOutletContext>();
+
   const navigate = useNavigate();
   const isPending = useIsPending();
 
   // Hook form setup with validation
   const methods = useRemixForm<NewCourseTitleSchemaTypes>({
     mode: 'all',
-    resolver,
+    resolver: zodResolver(NewCourseTitleSchema),
+    submitData: {
+      companyId: activeCompany?.company_id,
+    },
   });
 
   // Modal close handler

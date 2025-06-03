@@ -1,5 +1,9 @@
-import { Outlet } from 'react-router';
+import { Outlet, useOutletContext } from 'react-router';
+
+import type { AppOutletContext } from '~/root';
 
 export default function CourseCrudLayout() {
-  return <Outlet />;
+  const { user, role, activeCompany } = useOutletContext<AppOutletContext>();
+
+  return <Outlet context={{ user, role, activeCompany }} />;
 }

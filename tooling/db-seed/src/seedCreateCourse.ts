@@ -82,7 +82,7 @@ export async function seedCreateCourse(users: profilesScalars[]) {
     const { data: courseData } = await fetchCompanyCoursesWithSignedUrlsBySuOrAdmin({
       supabase,
       limit: 50,
-      companyId: userId,
+      username: userId,
     });
 
     // Proceed only if there are courses

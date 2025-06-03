@@ -1,4 +1,5 @@
 import type { ComponentProps, ReactNode } from 'react';
+import { NavLink } from 'react-router';
 import * as Dialog from '@radix-ui/react-dialog';
 import { X } from 'lucide-react';
 
@@ -72,11 +73,13 @@ const Header = ({
   title,
   subTitle,
   hasClose = true,
+  closeRoute,
 }: {
   leadingIcon?: React.ReactNode;
   title?: string;
   subTitle?: string;
   hasClose?: boolean;
+  closeRoute?: string;
 }) => {
   return (
     <div className='bg-background sticky top-0 z-10 flex items-center justify-between p-4'>
@@ -98,7 +101,11 @@ const Header = ({
         )}
       </div>
 
-      {hasClose ? (
+      {closeRoute ? (
+        <NavLink to={closeRoute} className='hover:cursor-pointer'>
+          <X size={26} />
+        </NavLink>
+      ) : hasClose ? (
         <Dialog.Close asChild className='hover:cursor-pointer'>
           <X size={26} />
         </Dialog.Close>
