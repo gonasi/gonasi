@@ -52,6 +52,8 @@ schema_paths = [
   './schemas/init.sql',
   './schemas/profiles.sql',
   './schemas/user_roles_and_permissions.sql',
+  './schemas/course_categories_and_sub_categories.sql',
+  './schemas/pathways.sql',
   './schemas/*.sql' 
 ]
 

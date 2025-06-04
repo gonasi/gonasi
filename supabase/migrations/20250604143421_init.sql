@@ -2,6 +2,47 @@ create type "public"."app_permission" as enum ('course_categories.insert', 'cour
 
 create type "public"."app_role" as enum ('go_su', 'go_admin', 'go_staff', 'user');
 
+create table "public"."course_categories" (
+    "id" uuid not null default uuid_generate_v4(),
+    "name" text not null,
+    "description" text not null,
+    "created_at" timestamp with time zone not null default timezone('utc'::text, now()),
+    "updated_at" timestamp with time zone not null default timezone('utc'::text, now()),
+    "created_by" uuid not null,
+    "updated_by" uuid not null
+);
+
+
+alter table "public"."course_categories" enable row level security;
+
+create table "public"."course_sub_categories" (
+    "id" uuid not null default uuid_generate_v4(),
+    "category_id" uuid not null,
+    "name" text not null,
+    "created_at" timestamp with time zone not null default timezone('utc'::text, now()),
+    "updated_at" timestamp with time zone not null default timezone('utc'::text, now()),
+    "created_by" uuid not null,
+    "updated_by" uuid not null
+);
+
+
+alter table "public"."course_sub_categories" enable row level security;
+
+create table "public"."pathways" (
+    "id" uuid not null default uuid_generate_v4(),
+    "name" text not null,
+    "description" text not null,
+    "image_url" text not null,
+    "blur_hash" text not null,
+    "created_at" timestamp with time zone not null default timezone('utc'::text, now()),
+    "updated_at" timestamp with time zone not null default timezone('utc'::text, now()),
+    "created_by" uuid not null,
+    "updated_by" uuid not null
+);
+
+
+alter table "public"."pathways" enable row level security;
+
 create table "public"."profiles" (
     "id" uuid not null,
     "username" text,
@@ -52,6 +93,24 @@ create table "public"."user_roles" (
 
 alter table "public"."user_roles" enable row level security;
 
+CREATE UNIQUE INDEX course_categories_pkey ON public.course_categories USING btree (id);
+
+CREATE UNIQUE INDEX course_sub_categories_pkey ON public.course_sub_categories USING btree (id);
+
+CREATE INDEX idx_course_categories_created_by ON public.course_categories USING btree (created_by);
+
+CREATE INDEX idx_course_categories_updated_by ON public.course_categories USING btree (updated_by);
+
+CREATE INDEX idx_course_sub_categories_category_id ON public.course_sub_categories USING btree (category_id);
+
+CREATE INDEX idx_course_sub_categories_created_by ON public.course_sub_categories USING btree (created_by);
+
+CREATE INDEX idx_course_sub_categories_updated_by ON public.course_sub_categories USING btree (updated_by);
+
+CREATE INDEX idx_pathways_created_by ON public.pathways USING btree (created_by);
+
+CREATE INDEX idx_pathways_updated_by ON public.pathways USING btree (updated_by);
+
 CREATE INDEX idx_profiles_country_code ON public.profiles USING btree (country_code);
 
 CREATE INDEX idx_profiles_created_at ON public.profiles USING btree (created_at);
@@ -65,6 +124,8 @@ CREATE INDEX idx_profiles_username ON public.profiles USING btree (username) WHE
 CREATE INDEX idx_profiles_verified_users ON public.profiles USING btree (id) WHERE (account_verified = true);
 
 CREATE INDEX idx_user_roles_user_id ON public.user_roles USING btree (user_id);
+
+CREATE UNIQUE INDEX pathways_pkey ON public.pathways USING btree (id);
 
 CREATE UNIQUE INDEX profiles_email_key ON public.profiles USING btree (email);
 
@@ -80,11 +141,45 @@ CREATE UNIQUE INDEX user_roles_pkey ON public.user_roles USING btree (id);
 
 CREATE UNIQUE INDEX user_roles_user_id_role_key ON public.user_roles USING btree (user_id, role);
 
+alter table "public"."course_categories" add constraint "course_categories_pkey" PRIMARY KEY using index "course_categories_pkey";
+
+alter table "public"."course_sub_categories" add constraint "course_sub_categories_pkey" PRIMARY KEY using index "course_sub_categories_pkey";
+
+alter table "public"."pathways" add constraint "pathways_pkey" PRIMARY KEY using index "pathways_pkey";
+
 alter table "public"."profiles" add constraint "profiles_pkey" PRIMARY KEY using index "profiles_pkey";
 
 alter table "public"."role_permissions" add constraint "role_permissions_pkey" PRIMARY KEY using index "role_permissions_pkey";
 
 alter table "public"."user_roles" add constraint "user_roles_pkey" PRIMARY KEY using index "user_roles_pkey";
+
+alter table "public"."course_categories" add constraint "course_categories_created_by_fkey" FOREIGN KEY (created_by) REFERENCES profiles(id) not valid;
+
+alter table "public"."course_categories" validate constraint "course_categories_created_by_fkey";
+
+alter table "public"."course_categories" add constraint "course_categories_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES profiles(id) not valid;
+
+alter table "public"."course_categories" validate constraint "course_categories_updated_by_fkey";
+
+alter table "public"."course_sub_categories" add constraint "course_sub_categories_category_id_fkey" FOREIGN KEY (category_id) REFERENCES course_categories(id) ON DELETE CASCADE not valid;
+
+alter table "public"."course_sub_categories" validate constraint "course_sub_categories_category_id_fkey";
+
+alter table "public"."course_sub_categories" add constraint "course_sub_categories_created_by_fkey" FOREIGN KEY (created_by) REFERENCES profiles(id) not valid;
+
+alter table "public"."course_sub_categories" validate constraint "course_sub_categories_created_by_fkey";
+
+alter table "public"."course_sub_categories" add constraint "course_sub_categories_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES profiles(id) not valid;
+
+alter table "public"."course_sub_categories" validate constraint "course_sub_categories_updated_by_fkey";
+
+alter table "public"."pathways" add constraint "pathways_created_by_fkey" FOREIGN KEY (created_by) REFERENCES profiles(id) ON DELETE CASCADE not valid;
+
+alter table "public"."pathways" validate constraint "pathways_created_by_fkey";
+
+alter table "public"."pathways" add constraint "pathways_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
+
+alter table "public"."pathways" validate constraint "pathways_updated_by_fkey";
 
 alter table "public"."profiles" add constraint "email_valid" CHECK ((email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'::text)) not valid;
 
@@ -278,6 +373,132 @@ end;
 $function$
 ;
 
+grant delete on table "public"."course_categories" to "anon";
+
+grant insert on table "public"."course_categories" to "anon";
+
+grant references on table "public"."course_categories" to "anon";
+
+grant select on table "public"."course_categories" to "anon";
+
+grant trigger on table "public"."course_categories" to "anon";
+
+grant truncate on table "public"."course_categories" to "anon";
+
+grant update on table "public"."course_categories" to "anon";
+
+grant delete on table "public"."course_categories" to "authenticated";
+
+grant insert on table "public"."course_categories" to "authenticated";
+
+grant references on table "public"."course_categories" to "authenticated";
+
+grant select on table "public"."course_categories" to "authenticated";
+
+grant trigger on table "public"."course_categories" to "authenticated";
+
+grant truncate on table "public"."course_categories" to "authenticated";
+
+grant update on table "public"."course_categories" to "authenticated";
+
+grant delete on table "public"."course_categories" to "service_role";
+
+grant insert on table "public"."course_categories" to "service_role";
+
+grant references on table "public"."course_categories" to "service_role";
+
+grant select on table "public"."course_categories" to "service_role";
+
+grant trigger on table "public"."course_categories" to "service_role";
+
+grant truncate on table "public"."course_categories" to "service_role";
+
+grant update on table "public"."course_categories" to "service_role";
+
+grant delete on table "public"."course_sub_categories" to "anon";
+
+grant insert on table "public"."course_sub_categories" to "anon";
+
+grant references on table "public"."course_sub_categories" to "anon";
+
+grant select on table "public"."course_sub_categories" to "anon";
+
+grant trigger on table "public"."course_sub_categories" to "anon";
+
+grant truncate on table "public"."course_sub_categories" to "anon";
+
+grant update on table "public"."course_sub_categories" to "anon";
+
+grant delete on table "public"."course_sub_categories" to "authenticated";
+
+grant insert on table "public"."course_sub_categories" to "authenticated";
+
+grant references on table "public"."course_sub_categories" to "authenticated";
+
+grant select on table "public"."course_sub_categories" to "authenticated";
+
+grant trigger on table "public"."course_sub_categories" to "authenticated";
+
+grant truncate on table "public"."course_sub_categories" to "authenticated";
+
+grant update on table "public"."course_sub_categories" to "authenticated";
+
+grant delete on table "public"."course_sub_categories" to "service_role";
+
+grant insert on table "public"."course_sub_categories" to "service_role";
+
+grant references on table "public"."course_sub_categories" to "service_role";
+
+grant select on table "public"."course_sub_categories" to "service_role";
+
+grant trigger on table "public"."course_sub_categories" to "service_role";
+
+grant truncate on table "public"."course_sub_categories" to "service_role";
+
+grant update on table "public"."course_sub_categories" to "service_role";
+
+grant delete on table "public"."pathways" to "anon";
+
+grant insert on table "public"."pathways" to "anon";
+
+grant references on table "public"."pathways" to "anon";
+
+grant select on table "public"."pathways" to "anon";
+
+grant trigger on table "public"."pathways" to "anon";
+
+grant truncate on table "public"."pathways" to "anon";
+
+grant update on table "public"."pathways" to "anon";
+
+grant delete on table "public"."pathways" to "authenticated";
+
+grant insert on table "public"."pathways" to "authenticated";
+
+grant references on table "public"."pathways" to "authenticated";
+
+grant select on table "public"."pathways" to "authenticated";
+
+grant trigger on table "public"."pathways" to "authenticated";
+
+grant truncate on table "public"."pathways" to "authenticated";
+
+grant update on table "public"."pathways" to "authenticated";
+
+grant delete on table "public"."pathways" to "service_role";
+
+grant insert on table "public"."pathways" to "service_role";
+
+grant references on table "public"."pathways" to "service_role";
+
+grant select on table "public"."pathways" to "service_role";
+
+grant trigger on table "public"."pathways" to "service_role";
+
+grant truncate on table "public"."pathways" to "service_role";
+
+grant update on table "public"."pathways" to "service_role";
+
 grant delete on table "public"."profiles" to "anon";
 
 grant insert on table "public"."profiles" to "anon";
@@ -390,6 +611,102 @@ grant truncate on table "public"."user_roles" to "supabase_auth_admin";
 
 grant update on table "public"."user_roles" to "supabase_auth_admin";
 
+create policy "course_categories_delete_authenticated"
+on "public"."course_categories"
+as permissive
+for delete
+to authenticated
+using (authorize('course_categories.delete'::app_permission));
+
+
+create policy "course_categories_insert_authenticated"
+on "public"."course_categories"
+as permissive
+for insert
+to authenticated
+with check (( SELECT authorize('course_categories.insert'::app_permission) AS authorize));
+
+
+create policy "course_categories_select_public"
+on "public"."course_categories"
+as permissive
+for select
+to authenticated, anon
+using (true);
+
+
+create policy "course_categories_update_authenticated"
+on "public"."course_categories"
+as permissive
+for update
+to authenticated
+using (authorize('course_categories.update'::app_permission));
+
+
+create policy "course_sub_categories_delete_authenticated"
+on "public"."course_sub_categories"
+as permissive
+for delete
+to authenticated
+using (authorize('course_sub_categories.delete'::app_permission));
+
+
+create policy "course_sub_categories_insert_authenticated"
+on "public"."course_sub_categories"
+as permissive
+for insert
+to authenticated
+with check (( SELECT authorize('course_sub_categories.insert'::app_permission) AS authorize));
+
+
+create policy "course_sub_categories_select_public"
+on "public"."course_sub_categories"
+as permissive
+for select
+to authenticated, anon
+using (true);
+
+
+create policy "course_sub_categories_update_authenticated"
+on "public"."course_sub_categories"
+as permissive
+for update
+to authenticated
+using (authorize('course_sub_categories.update'::app_permission));
+
+
+create policy "pathways_delete_own_record"
+on "public"."pathways"
+as permissive
+for delete
+to public
+using ((( SELECT auth.uid() AS uid) = created_by));
+
+
+create policy "pathways_insert_own_record"
+on "public"."pathways"
+as permissive
+for insert
+to public
+with check ((( SELECT auth.uid() AS uid) = created_by));
+
+
+create policy "pathways_read_public"
+on "public"."pathways"
+as permissive
+for select
+to authenticated, anon
+using (true);
+
+
+create policy "pathways_update_own_record"
+on "public"."pathways"
+as permissive
+for update
+to public
+using ((( SELECT auth.uid() AS uid) = created_by));
+
+
 create policy "Allow public read access to profiles"
 on "public"."profiles"
 as permissive
@@ -471,6 +788,12 @@ for select
 to supabase_auth_admin
 using (true);
 
+
+CREATE TRIGGER trg_course_categories_set_updated_at BEFORE UPDATE ON public.course_categories FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER trg_course_sub_categories_set_updated_at BEFORE UPDATE ON public.course_sub_categories FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER trg_pathways_set_updated_at BEFORE UPDATE ON public.pathways FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER set_updated_at BEFORE UPDATE ON public.profiles FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
