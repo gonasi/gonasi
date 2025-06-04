@@ -100,7 +100,7 @@ export default function Login() {
 
           {/* Email input field */}
           <GoInputField
-            labelProps={{ children: 'Email', required: true }}
+            labelProps={{ children: 'Email address', required: true }}
             name='email'
             inputProps={{
               autoFocus: true,
@@ -108,14 +108,15 @@ export default function Login() {
               autoComplete: 'email',
               disabled: isPending,
             }}
+            description='The one you signed up with'
           />
 
           {/* Password input field with forgot password link */}
           <GoInputField
             labelProps={{
-              children: 'Password',
+              children: 'Your password',
               required: true,
-              endAdornment: <GoLink to='/'>Forgot password?</GoLink>,
+              endAdornment: <GoLink to='/'>Forgot it?</GoLink>,
             }}
             name='password'
             inputProps={{
@@ -123,6 +124,7 @@ export default function Login() {
               autoComplete: 'current-password',
               disabled: isPending,
             }}
+            description='We won’t tell anyone — promise'
           />
 
           {/* Submit button with loading state */}
@@ -132,7 +134,7 @@ export default function Login() {
             isLoading={isPending || methods.formState.isSubmitting}
             className='w-full'
           >
-            Log in
+            Log me in
           </Button>
         </Form>
       </RemixFormProvider>

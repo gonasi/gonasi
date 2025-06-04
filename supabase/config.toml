@@ -30,7 +30,7 @@ shadow_port = 54320
 # server_version;` on the remote database to check.
 major_version = 15
 
-[db.pooler]
+[db.pooler] 
 enabled = false
 # Port to use for the local connection pooler.
 port = 54329
@@ -48,14 +48,21 @@ max_client_conn = 100
 [db.migrations]
 # Specifies an ordered list of schema files that describe your database.
 # Supports glob patterns relative to supabase directory: "./schemas/*.sql"
-schema_paths = []
+schema_paths = [
+  './schemas/init.sql',
+  './schemas/profiles.sql',
+  './schemas/user_roles_and_permissions.sql',
+  './schemas/*.sql' 
+]
 
 [db.seed]
 # If enabled, seeds the database after migrations during a db reset.
 enabled = true
 # Specifies an ordered list of seed files to load during db reset.
 # Supports glob patterns relative to supabase directory: "./seeds/*.sql"
-sql_paths = ["./role-permissions.sql"]
+sql_paths = [
+  # './seeds/user_roles_and_permissions.sql'
+]
 
 [realtime]
 enabled = true

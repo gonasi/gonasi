@@ -6,7 +6,7 @@ import { HoneypotInputs } from 'remix-utils/honeypot/react';
 import { safeRedirect } from 'remix-utils/safe-redirect';
 
 import { signUpWithEmailAndPassword } from '@gonasi/database/auth';
-import { LoginFormSchema, type LoginFormSchemaTypes } from '@gonasi/schemas/auth';
+import { SignupFormSchema, type SignupFormSchemaTypes } from '@gonasi/schemas/auth';
 
 import type { Route } from './+types/signup';
 
@@ -26,7 +26,7 @@ export function meta() {
   return [{ title: 'Sign up | Gonasi' }, { name: 'description', content: 'Welcome to Gonasi' }];
 }
 
-const resolver = zodResolver(LoginFormSchema);
+const resolver = zodResolver(SignupFormSchema);
 
 /**
  * Handles form submission on the server side
@@ -45,7 +45,7 @@ export async function action({ request }: Route.ActionArgs) {
     errors,
     data,
     receivedValues: defaultValues,
-  } = await getValidatedFormData<LoginFormSchemaTypes>(formData, resolver);
+  } = await getValidatedFormData<SignupFormSchemaTypes>(formData, resolver);
 
   // If validation failed, return errors and default values
   if (errors) {
@@ -55,15 +55,11 @@ export async function action({ request }: Route.ActionArgs) {
   // Attempt to sign up the user
   const { error } = await signUpWithEmailAndPassword(supabase, {
     ...data,
-    emailRedirectTo: `${BASE_URL}/onboarding`,
+    redirectTo: `${BASE_URL}/onboarding`,
   });
 
-  const redirectTo = data.redirectTo ?? '/';
-
   // If sign-up failed, show toast error; else redirect
-  return error
-    ? dataWithError(null, error.message)
-    : redirect(safeRedirect(redirectTo), { headers });
+  return error ? dataWithError(null, error.message) : redirect(safeRedirect('/login'), { headers });
 }
 
 /**
@@ -75,7 +71,7 @@ export default function SignUp() {
   const redirectTo = searchParams.get('redirectTo');
 
   // Initialize form methods with Remix Hook Form
-  const methods = useRemixForm<LoginFormSchemaTypes>({
+  const methods = useRemixForm<SignupFormSchemaTypes>({
     mode: 'all',
     resolver,
     submitData: { redirectTo },
@@ -97,25 +93,36 @@ export default function SignUp() {
           {/* Anti-bot honeypot field */}
           <HoneypotInputs />
 
-          {/* Email input field */}
+          {/* Full name input field */}
           <GoInputField
-            labelProps={{ children: 'Email', required: true }}
-            name='email'
+            labelProps={{ children: 'Your name or company', required: true }}
+            name='fullName'
             inputProps={{
               autoFocus: true,
+            }}
+            description='Let us know who you are — whether it’s just you or your team'
+          />
+
+          {/* Email input field */}
+          <GoInputField
+            labelProps={{ children: 'Email address', required: true }}
+            name='email'
+            inputProps={{
               className: 'lowercase',
               autoComplete: 'email',
             }}
+            description='We’ll use this to keep in touch'
           />
 
           {/* Password input field */}
           <GoInputField
-            labelProps={{ children: 'Password', required: true }}
+            labelProps={{ children: 'Choose a password', required: true }}
             name='password'
             inputProps={{
               type: 'password',
               autoComplete: 'current-password',
             }}
+            description='Make it something secure (but memorable!)'
           />
 
           {/* Submit button with loading state */}
@@ -125,7 +132,7 @@ export default function SignUp() {
             isLoading={isPending || methods.formState.isSubmitting}
             className='w-full'
           >
-            Sign up
+            Let’s get started
           </Button>
         </Form>
       </RemixFormProvider>
