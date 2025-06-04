@@ -1,28 +1,37 @@
 import { useEffect } from 'react';
-import { useLocation, useNavigate, useOutletContext } from 'react-router';
+import { useLocation, useNavigate } from 'react-router';
 
-import type { AppOutletContext } from '~/root';
+import { useStore } from '~/store';
 
+/**
+ * Redirects users to appropriate pages based on their authentication
+ * and onboarding status.
+ */
 export function useAuthGuard() {
-  const { user } = useOutletContext<AppOutletContext>();
+  const { activeUserProfile } = useStore();
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
-    if (!user) {
+    // Redirect to login if user is not authenticated
+    if (!activeUserProfile) {
       const redirectTo = location.pathname + location.search;
       navigate(`/login?${new URLSearchParams({ redirectTo })}`, { replace: true });
       return;
     }
 
-    if (user.is_onboarding_complete === false) {
+    // Redirect to onboarding if onboarding is not complete
+    if (activeUserProfile.is_onboarding_complete === false) {
       const redirectTo = location.pathname + location.search;
-      navigate(`/onboarding/${user.id}/basic-information?${new URLSearchParams({ redirectTo })}`, {
-        replace: true,
-      });
+      navigate(
+        `/onboarding/${activeUserProfile.id}/basic-information?${new URLSearchParams({ redirectTo })}`,
+        { replace: true },
+      );
     }
-  }, [user, location, navigate]);
+  }, [activeUserProfile, location, navigate]);
 
-  const isLoading = !user || !user.is_onboarding_complete;
-  return { isLoading, user };
+  // Indicate loading state until onboarding is complete
+  const isLoading = !activeUserProfile || !activeUserProfile.is_onboarding_complete;
+
+  return { isLoading };
 }

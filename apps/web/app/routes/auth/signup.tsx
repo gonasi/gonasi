@@ -1,5 +1,6 @@
 import { Form, redirect, useSearchParams } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Rocket } from 'lucide-react';
 import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
 import { dataWithError } from 'remix-toast';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
@@ -131,6 +132,7 @@ export default function SignUp() {
             disabled={isPending}
             isLoading={isPending || methods.formState.isSubmitting}
             className='w-full'
+            rightIcon={<Rocket />}
           >
             Let’s get started
           </Button>

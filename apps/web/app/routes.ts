@@ -23,8 +23,8 @@ export default [
     route('signup', 'routes/auth/signup.tsx'),
   ]),
 
-  ...prefix('onboarding', [
-    layout('routes/layouts/onboarding/onboarding-layout.tsx', [
+  layout('routes/layouts/onboarding/onboarding-layout.tsx', [
+    ...prefix('onboarding', [
       route(':userId/basic-information', 'routes/onboarding/basic-information.tsx'),
       route(':userId/contact-information', 'routes/onboarding/contact-information.tsx'),
     ]),

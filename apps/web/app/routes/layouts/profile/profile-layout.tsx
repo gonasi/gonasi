@@ -1,5 +1,5 @@
-import { NavLink, Outlet, useOutletContext } from 'react-router';
-import { BookCopy, Files, Library, Settings, UsersRound } from 'lucide-react';
+import { NavLink, Outlet } from 'react-router';
+import { BookCopy, Files, Library, Settings } from 'lucide-react';
 
 import { getProfileByUsername } from '@gonasi/database/profiles';
 
@@ -9,7 +9,7 @@ import { PlainAvatar } from '~/components/avatars';
 import { NotFoundCard } from '~/components/cards';
 import { GoTabNav } from '~/components/go-tab-nav';
 import { createClient } from '~/lib/supabase/supabase.server';
-import type { AppOutletContext } from '~/root';
+import { useStore } from '~/store';
 
 export type ProfileLoaderReturnType = Exclude<Awaited<ReturnType<typeof loader>>, Response>;
 
@@ -32,7 +32,8 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 }
 
 export default function ProfileLayout({ loaderData }: Route.ComponentProps) {
-  const { user, role, activeCompany } = useOutletContext<AppOutletContext>();
+  const { activeUserProfile } = useStore();
+
   const { profileUser } = loaderData;
 
   if (!profileUser) {
@@ -40,21 +41,13 @@ export default function ProfileLayout({ loaderData }: Route.ComponentProps) {
   }
 
   const { username, full_name, avatar_url } = profileUser.user;
-  const staffRole = activeCompany?.staff_role;
 
-  const isStaff =
-    (staffRole === 'su' || staffRole === 'admin') && profileUser.user.userCompanyMatch;
+  const isMyProfile = activeUserProfile?.username === username;
 
   const tabs = [
     { to: `/${username}`, name: 'Courses', icon: BookCopy, isVisible: true },
     { to: `/${username}/pathways`, name: 'Pathways', icon: Library, isVisible: true },
-    { to: `/${username}/file-library`, name: 'Files', icon: Files, isVisible: isStaff },
-    {
-      to: `/${username}/team-management`,
-      name: 'Team',
-      icon: UsersRound,
-      isVisible: isStaff,
-    },
+    { to: `/${username}/file-library`, name: 'Files', icon: Files, isVisible: isMyProfile },
   ];
 
   return (
@@ -64,7 +57,7 @@ export default function ProfileLayout({ loaderData }: Route.ComponentProps) {
         <div className='w-full'>
           <div className='flex w-full justify-between'>
             <h4 className='font-secondary'>{username}</h4>
-            {staffRole === 'su' && (
+            {isMyProfile && (
               <NavLink to='' className='group'>
                 <Settings className='transition-transform duration-200 group-hover:scale-105 group-hover:rotate-15' />
               </NavLink>
@@ -77,7 +70,7 @@ export default function ProfileLayout({ loaderData }: Route.ComponentProps) {
         <GoTabNav tabs={tabs} />
       </div>
       <div className='mt-0 md:mt-8'>
-        <Outlet context={{ user, role, activeCompany }} />
+        <Outlet />
       </div>
     </section>
   );

@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { Await, data, Outlet, useOutletContext } from 'react-router';
+import { Await, data, Outlet } from 'react-router';
 import { Plus } from 'lucide-react';
 
 import { fetchCompanyCoursesWithSignedUrlsBySuOrAdmin } from '@gonasi/database/courses';
@@ -11,7 +11,6 @@ import { ErrorMessageWithRetry } from '~/components/error-message-with-retry';
 import { CourseProfileCardSkeleton } from '~/components/skeletons';
 import { FloatingActionButton } from '~/components/ui/button';
 import { createClient } from '~/lib/supabase/supabase.server';
-import type { AppOutletContext } from '~/root';
 
 export function meta({ params }: Route.MetaArgs) {
   const username = params.username;
@@ -111,8 +110,6 @@ function CoursesList({ courses, count, params }: { courses: any[]; count: number
 }
 
 export default function Courses({ loaderData, params }: Route.ComponentProps) {
-  const { user, role, activeCompany } = useOutletContext<AppOutletContext>();
-
   const { coursesPromise } = loaderData;
 
   return (
@@ -136,7 +133,7 @@ export default function Courses({ loaderData, params }: Route.ComponentProps) {
         tooltip='New Course'
         icon={<Plus size={20} strokeWidth={3} />}
       />
-      <Outlet context={{ user, role, activeCompany }} />
+      <Outlet />
     </div>
   );
 }

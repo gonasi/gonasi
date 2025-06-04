@@ -39,6 +39,7 @@ export type Database = {
           account_verified: boolean
           avatar_url: string | null
           bio: string | null
+          blur_hash: string | null
           country_code: string | null
           created_at: string
           discord_url: string | null
@@ -66,6 +67,7 @@ export type Database = {
           account_verified?: boolean
           avatar_url?: string | null
           bio?: string | null
+          blur_hash?: string | null
           country_code?: string | null
           created_at?: string
           discord_url?: string | null
@@ -93,6 +95,7 @@ export type Database = {
           account_verified?: boolean
           avatar_url?: string | null
           bio?: string | null
+          blur_hash?: string | null
           country_code?: string | null
           created_at?: string
           discord_url?: string | null
@@ -136,107 +139,6 @@ export type Database = {
         }
         Relationships: []
       }
-      staff_members: {
-        Row: {
-          company_id: string
-          created_at: string
-          created_by: string
-          id: string
-          staff_id: string
-          staff_role: Database["public"]["Enums"]["staff_role_enum"]
-          updated_at: string
-          updated_by: string | null
-        }
-        Insert: {
-          company_id: string
-          created_at?: string
-          created_by: string
-          id?: string
-          staff_id: string
-          staff_role?: Database["public"]["Enums"]["staff_role_enum"]
-          updated_at?: string
-          updated_by?: string | null
-        }
-        Update: {
-          company_id?: string
-          created_at?: string
-          created_by?: string
-          id?: string
-          staff_id?: string
-          staff_role?: Database["public"]["Enums"]["staff_role_enum"]
-          updated_at?: string
-          updated_by?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "staff_members_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "staff_members_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "staff_members_staff_id_fkey"
-            columns: ["staff_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "staff_members_updated_by_fkey"
-            columns: ["updated_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      user_active_companies: {
-        Row: {
-          company_id: string
-          created_at: string
-          id: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          company_id: string
-          created_at?: string
-          id?: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          company_id?: string
-          created_at?: string
-          id?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_active_companies_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_active_companies_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       user_roles: {
         Row: {
           id: string
@@ -265,39 +167,7 @@ export type Database = {
       }
     }
     Views: {
-      company_memberships: {
-        Row: {
-          company_id: string | null
-          staff_id: string | null
-          staff_role: Database["public"]["Enums"]["staff_role_enum"] | null
-        }
-        Insert: {
-          company_id?: string | null
-          staff_id?: string | null
-          staff_role?: Database["public"]["Enums"]["staff_role_enum"] | null
-        }
-        Update: {
-          company_id?: string | null
-          staff_id?: string | null
-          staff_role?: Database["public"]["Enums"]["staff_role_enum"] | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "staff_members_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "staff_members_staff_id_fkey"
-            columns: ["staff_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
+      [_ in never]: never
     }
     Functions: {
       authorize: {
@@ -326,7 +196,6 @@ export type Database = {
         | "lesson_types.update"
         | "lesson_types.delete"
       app_role: "go_su" | "go_admin" | "go_staff" | "user"
-      staff_role_enum: "su" | "admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -460,7 +329,6 @@ export const Constants = {
         "lesson_types.delete",
       ],
       app_role: ["go_su", "go_admin", "go_staff", "user"],
-      staff_role_enum: ["su", "admin"],
     },
   },
 } as const

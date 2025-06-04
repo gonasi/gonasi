@@ -1,9 +1,9 @@
 import { useEffect } from 'react';
-import { Outlet, useLocation, useNavigate, useOutletContext } from 'react-router';
+import { Outlet, useLocation, useNavigate } from 'react-router';
 
 import { OnboardingStepperFormLayout } from '~/components/layouts/onboarding';
 import { Spinner } from '~/components/loaders';
-import type { AppOutletContext } from '~/root';
+import { useStore } from '~/store';
 
 export function meta() {
   return [{ title: 'Gonasi' }, { name: 'description', content: 'Welcome to Gonasi' }];
@@ -15,23 +15,32 @@ const steps = [
 ];
 
 export default function OnboardingLayout() {
-  const { user } = useOutletContext<AppOutletContext>();
+  const { activeUserProfile, isActiveUserProfileLoading } = useStore();
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
-    if (!user) {
+    if (isActiveUserProfileLoading) return;
+
+    if (!activeUserProfile) {
       const redirectTo = location.pathname + location.search;
       navigate(`/login?${new URLSearchParams({ redirectTo })}`, { replace: true });
       return;
     }
 
-    if (user.is_onboarding_complete) {
-      navigate(`/${user.username}`, { replace: true });
+    if (activeUserProfile.is_onboarding_complete) {
+      navigate(`/${activeUserProfile.username}`, { replace: true });
     }
-  }, [user, location, navigate]);
+  }, [activeUserProfile, isActiveUserProfileLoading, location.pathname, location.search, navigate]);
 
-  if (!user || user.is_onboarding_complete) return <Spinner />;
+  if (isActiveUserProfileLoading || !activeUserProfile) {
+    return <Spinner />;
+  }
+
+  if (activeUserProfile.is_onboarding_complete) {
+    // avoid flicker before navigation happens
+    return <Spinner />;
+  }
 
   return (
     <section className='mx-auto max-w-lg md:mt-16'>

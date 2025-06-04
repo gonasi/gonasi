@@ -13,14 +13,12 @@ import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import type { JwtPayload } from 'jwt-decode';
 import { jwtDecode } from 'jwt-decode';
-import { dataWithError, getToast, redirectWithSuccess } from 'remix-toast';
+import { getToast } from 'remix-toast';
 import { HoneypotProvider } from 'remix-utils/honeypot/react';
 import { Toaster } from 'sonner';
 
-import { fetchAllUsersActiveCompany } from '@gonasi/database/activeCompany';
 import type { UserRole } from '@gonasi/database/client';
 import { getUserProfile } from '@gonasi/database/profile';
-import { updateUsersActiveCompany } from '@gonasi/database/staffMembers';
 
 import type { Route } from './+types/root';
 import { NavigationProgressBar } from './components/progress-bar';
@@ -47,11 +45,6 @@ export type UserRoleLoaderReturnType = Exclude<
   Response
 >['data']['role'];
 
-export type UserActiveCompanyLoaderReturnType = Exclude<
-  Awaited<ReturnType<typeof loader>>,
-  Response
->['data']['activeCompany'];
-
 export type UserActiveSessionLoaderReturnType = Exclude<
   Awaited<ReturnType<typeof loader>>,
   Response
@@ -59,7 +52,6 @@ export type UserActiveSessionLoaderReturnType = Exclude<
 export interface AppOutletContext {
   user: UserProfileLoaderReturnType;
   role: UserRoleLoaderReturnType;
-  activeCompany: UserActiveCompanyLoaderReturnType;
   session: UserActiveSessionLoaderReturnType;
 }
 
@@ -68,14 +60,11 @@ export async function loader({ request }: Route.LoaderArgs) {
 
   const { headers: supabaseHeaders, supabase } = createClient(request);
 
-  let role = 'user';
+  let role = 'user' as 'user' | 'go_su' | 'go_admin' | 'go_staff';
 
   const { user } = await getUserProfile(supabase);
 
-  const [activeCompany, sessionResult] = await Promise.all([
-    fetchAllUsersActiveCompany(supabase),
-    supabase.auth.getSession(),
-  ]);
+  const sessionResult = await supabase.auth.getSession();
 
   if (sessionResult.data.session) {
     const { user_role }: GoJwtPayload = jwtDecode(sessionResult.data.session.access_token);
@@ -90,7 +79,6 @@ export async function loader({ request }: Route.LoaderArgs) {
       clientEnv,
       role,
       user,
-      activeCompany,
       toast,
       honeyProps,
       session: sessionResult.data.session,
@@ -99,24 +87,6 @@ export async function loader({ request }: Route.LoaderArgs) {
       headers: combineHeaders(supabaseHeaders, toastHeaders),
     },
   );
-}
-
-export async function action({ request }: Route.ActionArgs) {
-  const formData = await request.formData();
-
-  const companyId = formData.get('companyId') as string | null;
-
-  if (!companyId) {
-    return dataWithError(null, 'Missing companyId');
-  }
-
-  const { supabase } = createClient(request);
-
-  const { success, message, data } = await updateUsersActiveCompany(supabase, companyId);
-
-  return success && data
-    ? redirectWithSuccess(`/dashboard/${data.companyId}/team-management/staff-directory`, message)
-    : dataWithError(null, message);
 }
 
 export const useClientEnv = () => {
@@ -204,94 +174,71 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 function App() {
-  const { user, role, toast, activeCompany, session } = useLoaderData<typeof loader>();
-  const { updateActiveSession } = useStore();
-
-  // const navigation = useNavigation();
-  // const [showLoader, setShowLoader] = useState(false);
+  const { user, role, toast, session } = useLoaderData<typeof loader>();
+  const { updateActiveSession, updateActiveUserProfile, updateActiveUserRole } = useStore();
 
   useToast(toast);
 
+  // Initialize store with loader data
   useEffect(() => {
     updateActiveSession(session);
-  }, [session, updateActiveSession]);
+    updateActiveUserRole(role);
+  }, [session, role, updateActiveSession, updateActiveUserRole]);
 
-  // ✅ Fix FOUT by ensuring fonts are loaded before rendering content
+  useEffect(() => {
+    updateActiveUserProfile(user);
+  }, [updateActiveUserProfile, user]);
+
+  // Prevent FOUT by waiting for fonts
   useEffect(() => {
     document.fonts.ready.then(() => {
       document.body.classList.add('fonts-loaded');
     });
   }, []);
 
-  // useEffect(() => {
-  //   let timeout: NodeJS.Timeout;
-
-  //   if (navigation.location) {
-  //     timeout = setTimeout(() => setShowLoader(true), 200);
-  //   } else {
-  //     setShowLoader(false);
-  //   }
-
-  //   return () => clearTimeout(timeout);
-  // }, [navigation.location]);
-
   return (
     <main className='relative'>
-      {/* {showLoader && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: 'hsla(0, 0%, 0%, 0.5)',
-            zIndex: 1000,
-          }}
-        >
-          <Spinner />
-        </div>
-      )} */}
       <NavigationProgressBar />
 
-      <Outlet context={{ user, role, activeCompany, session }} />
+      <Outlet />
+
       <Toaster
         position='top-right'
         toastOptions={{
           classNames: {
             toast: `
-        group toast
-        group-[.toaster]:bg-background
-        group-[.toaster]:text-foreground
-        group-[.toaster]:border-border
-        group-[.toaster]:shadow-lg
-        rounded-xl px-4 py-3
-      `,
+              group toast
+              group-[.toaster]:bg-background
+              group-[.toaster]:text-foreground
+              group-[.toaster]:border-border
+              group-[.toaster]:shadow-lg
+              rounded-xl px-4 py-3
+            `,
             description: 'group-[.toast]:text-muted-foreground',
             actionButton: `
-        group-[.toast-success]:bg-[--success]
-        group-[.toast-success]:text-[--success-foreground]
-        group-[.toast-success]:hover:bg-[--success-hover]
+              group-[.toast-success]:bg-[--success]
+              group-[.toast-success]:text-[--success-foreground]
+              group-[.toast-success]:hover:bg-[--success-hover]
 
-        group-[.toast-error]:bg-[--danger]
-        group-[.toast-error]:text-[--danger-foreground]
-        group-[.toast-error]:hover:bg-[--danger-hover]
+              group-[.toast-error]:bg-[--danger]
+              group-[.toast-error]:text-[--danger-foreground]
+              group-[.toast-error]:hover:bg-[--danger-hover]
 
-        group-[.toast-warning]:bg-[--warning]
-        group-[.toast-warning]:text-[--warning-foreground]
-        group-[.toast-warning]:hover:bg-[--warning-hover]
+              group-[.toast-warning]:bg-[--warning]
+              group-[.toast-warning]:text-[--warning-foreground]
+              group-[.toast-warning]:hover:bg-[--warning-hover]
 
-        group-[.toast-info]:bg-[--info]
-        group-[.toast-info]:text-[--info-foreground]
-        group-[.toast-info]:hover:bg-[--info-hover]
+              group-[.toast-info]:bg-[--info]
+              group-[.toast-info]:text-[--info-foreground]
+              group-[.toast-info]:hover:bg-[--info-hover]
 
-        px-3 py-1 rounded-md font-medium transition-colors
-      `,
+              px-3 py-1 rounded-md font-medium transition-colors
+            `,
             cancelButton: `
-        group-[.toast]:bg-muted 
-        group-[.toast]:text-muted-foreground 
-        hover:opacity-80 transition-opacity
-      `,
+              group-[.toast]:bg-muted 
+              group-[.toast]:text-muted-foreground 
+              hover:opacity-80 transition-opacity
+            `,
           },
         }}
       />

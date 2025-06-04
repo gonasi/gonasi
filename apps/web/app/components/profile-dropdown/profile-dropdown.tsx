@@ -14,26 +14,24 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '~/components/ui/dropdown-menu';
-import type { UserActiveCompanyLoaderReturnType } from '~/root';
+import type { UserProfileLoaderReturnType } from '~/root';
 
 interface Props {
-  activeCompany: UserActiveCompanyLoaderReturnType;
+  user: UserProfileLoaderReturnType;
   dropdownPosition?: 'top' | 'bottom' | 'left' | 'right';
   dropdownAlign?: 'start' | 'center' | 'end';
 }
 
 export function ProfileDropdown({
-  activeCompany,
+  user,
   dropdownPosition = 'bottom',
   dropdownAlign = 'end',
 }: Props) {
   const location = useLocation();
 
-  if (!activeCompany) return <NotFoundCard message='user not found' />;
+  if (!user) return <NotFoundCard message='user not found' />;
 
-  const {
-    profiles: { username, full_name, avatar_url },
-  } = activeCompany;
+  const { username, full_name, avatar_url } = user;
 
   const isActive = location.pathname === `/${username}`;
 
