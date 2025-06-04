@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 
 import type {
-  TapToRevealInteractionType,
   TapToRevealContentSchemaType,
+  TapToRevealInteractionType,
 } from '@gonasi/schemas/plugins';
 
 import { TapToRevealCard } from './components/TapToRevealCard';

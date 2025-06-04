@@ -101,7 +101,7 @@ export default function SignUp() {
             inputProps={{
               autoFocus: true,
             }}
-            description='Let us know who you are — whether it’s just you or your team'
+            description='Let us know who you are, whether it’s just you or your team'
           />
 
           {/* Email input field */}

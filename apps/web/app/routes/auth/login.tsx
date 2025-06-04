@@ -83,6 +83,8 @@ export default function Login() {
     submitData: { redirectTo },
   });
 
+  const isDisabled = isPending || methods.formState.isSubmitting;
+
   return (
     <AuthFormLayout
       title='Log in'
@@ -106,7 +108,7 @@ export default function Login() {
               autoFocus: true,
               className: 'lowercase',
               autoComplete: 'email',
-              disabled: isPending,
+              disabled: isDisabled,
             }}
             description='The one you signed up with'
           />
@@ -122,18 +124,13 @@ export default function Login() {
             inputProps={{
               type: 'password',
               autoComplete: 'current-password',
-              disabled: isPending,
+              disabled: isDisabled,
             }}
             description='We won’t tell anyone — promise'
           />
 
           {/* Submit button with loading state */}
-          <Button
-            type='submit'
-            disabled={isPending}
-            isLoading={isPending || methods.formState.isSubmitting}
-            className='w-full'
-          >
+          <Button type='submit' disabled={isDisabled} isLoading={isDisabled} className='w-full'>
             Log me in
           </Button>
         </Form>

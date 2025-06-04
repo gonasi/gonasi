@@ -1,10 +1,13 @@
-import type { BasicInformationType, ContactInformationType } from '@gonasi/schemas/onboarding';
+import type {
+  BasicInformationSchemaTypes,
+  ContactInformationSchemaTypes,
+} from '@gonasi/schemas/onboarding';
 
 import { getUserId } from '../auth';
 import type { TypedSupabaseClient } from '../client';
 import type { ApiResponse } from '../types';
 
-type OnboardingData = ContactInformationType & BasicInformationType;
+type OnboardingData = ContactInformationSchemaTypes & BasicInformationSchemaTypes;
 
 export const completeUserOnboarding = async (
   supabase: TypedSupabaseClient,

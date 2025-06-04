@@ -11,5 +11,9 @@ export const ContactInformationSchema = z.object({
   phoneNumber: PhoneNumberSchema,
 });
 
-export type BasicInformationType = z.infer<typeof BasicInformationSchema>;
-export type ContactInformationType = z.infer<typeof ContactInformationSchema>;
+// Merge schemas
+export const CombinedInformationSchema = BasicInformationSchema.merge(ContactInformationSchema);
+
+export type BasicInformationSchemaTypes = z.infer<typeof BasicInformationSchema>;
+export type ContactInformationSchemaTypes = z.infer<typeof ContactInformationSchema>;
+export type CombinedInformationSchemaTypes = z.infer<typeof CombinedInformationSchema>;
