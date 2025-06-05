@@ -1,15 +1,15 @@
 import { z } from 'zod';
 
 const LessonTitleSchema = z
-  .string({ required_error: 'Lesson title is required.' })
-  .min(3, { message: 'Lesson title must be at least 3 characters long.' })
-  .max(100, { message: 'Lesson title cannot exceed 100 characters.' })
+  .string({ required_error: 'Please enter a lesson title' })
+  .min(3, { message: 'Lesson title needs to be at least 3 characters' })
+  .max(100, { message: 'Lesson title can’t be longer than 100 characters' })
   .trim();
 
 const LessonTypeSchema = z
-  .string({ required_error: 'Lesson type is required.' })
-  .min(3, { message: 'Lesson type must be at least 3 characters long.' })
-  .max(100, { message: 'Lesson type cannot exceed 100 characters.' })
+  .string({ required_error: 'Please pick a lesson type' })
+  .min(3, { message: 'Lesson type needs at least 3 characters' })
+  .max(100, { message: 'Lesson type can’t be longer than 100 characters' })
   .trim();
 
 // Schema for creating a new lesson title

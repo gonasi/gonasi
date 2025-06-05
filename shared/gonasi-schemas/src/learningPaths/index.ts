@@ -3,18 +3,17 @@ import { z } from 'zod';
 import { NewImageSchema } from '../userValidation';
 
 const LearningPathsSchema = z
-  .string({ required_error: 'Please enter a learning path name.' })
-  .min(3, { message: 'The name must be at least 3 characters long.' })
-  .max(100, { message: 'The name cannot exceed 100 characters.' })
+  .string({ required_error: 'Give your learning path a name' })
+  .min(3, { message: 'Name should be at least 3 characters' })
+  .max(100, { message: 'Name can’t be longer than 100 characters' })
   .refine((val) => /^[A-Za-z]+(?: [A-Za-z]+)*$/.test(val), {
-    message:
-      'Use only letters with single spaces between words. No extra spaces at the start or end.',
+    message: 'Use just letters with single spaces, no extra spaces at the start or end',
   });
 
 const LearningPathDescriptionSchema = z
-  .string({ required_error: 'Please provide a description.' })
-  .min(10, { message: 'The description should be at least 10 characters long.' })
-  .max(500, { message: 'The description cannot exceed 500 characters.' })
+  .string({ required_error: 'Add a description' })
+  .min(10, { message: 'Description needs to be at least 10 characters' })
+  .max(500, { message: 'Description can’t be longer than 500 characters' })
   .trim();
 
 // NewLearningPathSchema definition
