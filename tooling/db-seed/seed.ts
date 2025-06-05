@@ -32,6 +32,7 @@ const main = async () => {
 
   // Seed lesson types pathways and course categories using profiles
   await seedLessonTypes(profiles);
+
   await seedPathways(profiles);
   await seedCourseCategories(profiles);
 

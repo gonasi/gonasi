@@ -21,6 +21,7 @@ export async function seedPathways(users: profilesScalars[]) {
       name: faker.lorem.words(3),
       description: faker.lorem.paragraph(),
       image,
+      blurHash: null,
     });
 
     console.log(success ? `✅ ${message}` : `❌ ${message}`);

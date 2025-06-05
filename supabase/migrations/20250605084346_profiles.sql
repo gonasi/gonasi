@@ -16,7 +16,7 @@ create table public.profiles (
   -- Personal identity information
   full_name text,               -- Full name of the user
   avatar_url text,              -- URL to user's profile image
-  blur_hash text,               -- Low-res image placeholder for avatar
+  blur_hash text null,               -- Low-res image placeholder for avatar
 
   -- Contact details and verification flags
   phone_number text,            -- Optional phone number

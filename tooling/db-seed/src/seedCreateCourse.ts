@@ -2,11 +2,7 @@ import { faker } from '@faker-js/faker';
 import { type profilesScalars } from '@snaplet/seed';
 
 import { getUserId } from '@gonasi/database/auth';
-import { createCourseChapter } from '@gonasi/database/courseChapters';
-import {
-  createNewCourseTitle,
-  fetchCompanyCoursesWithSignedUrlsBySuOrAdmin,
-} from '@gonasi/database/courses';
+import { createNewCourseTitle } from '@gonasi/database/courses';
 import { fetchAllLessonTypes } from '@gonasi/database/lessonTypes';
 
 import { PASSWORD, supabase } from './constants';
@@ -72,71 +68,71 @@ export async function seedCreateCourse(users: profilesScalars[]) {
 
     // Create a new fake course title
     const courseTitle = generateFakeCourseTitle();
+
     const { success, message } = await createNewCourseTitle(supabase, {
       name: courseTitle,
-      companyId: userId,
     });
 
     // Fetch user's courses with signed URLs
-    const { data: courseData } = await fetchCompanyCoursesWithSignedUrlsBySuOrAdmin({
-      supabase,
-      limit: 50,
-      username: userId,
-    });
+    // const { data: courseData } = await fetchCompanyCoursesWithSignedUrlsBySuOrAdmin({
+    //   supabase,
+    //   limit: 50,
+    //   username: userId,
+    // });
 
-    // Proceed only if there are courses
-    if (courseData?.length) {
-      for (const course of courseData) {
-        const chapterCount = faker.number.int({ min: 4, max: 12 }); // Random number of chapters per course
+    // // Proceed only if there are courses
+    // if (courseData?.length) {
+    //   for (const course of courseData) {
+    //     const chapterCount = faker.number.int({ min: 4, max: 12 }); // Random number of chapters per course
 
-        for (let j = 0; j < chapterCount; j++) {
-          const chapter = generateFakeChapter();
+    //     for (let j = 0; j < chapterCount; j++) {
+    //       const chapter = generateFakeChapter();
 
-          // Create a new chapter for the course
-          const {
-            success: chapterSuccess,
-            message: chapterMessage,
-            data: chapterData,
-          } = await createCourseChapter(supabase, {
-            courseId: course.id,
-            ...chapter,
-          });
+    //       // Create a new chapter for the course
+    //       const {
+    //         success: chapterSuccess,
+    //         message: chapterMessage,
+    //         data: chapterData,
+    //       } = await createCourseChapter(supabase, {
+    //         courseId: course.id,
+    //         ...chapter,
+    //       });
 
-          if (!chapterSuccess || !chapterData) {
-            console.error(`❌ Failed to create chapter for "${course.name}": ${chapterMessage}`);
-            continue;
-          }
+    //       if (!chapterSuccess || !chapterData) {
+    //         console.error(`❌ Failed to create chapter for "${course.name}": ${chapterMessage}`);
+    //         continue;
+    //       }
 
-          console.log(`📘 Created chapter "${chapter.name}" for course "${course.name}"`);
+    //       console.log(`📘 Created chapter "${chapter.name}" for course "${course.name}"`);
 
-          // Create lessons for the chapter
-          // const lessonCount = faker.number.int({ min: 2, max: 12 });
+    //       // Create lessons for the chapter
+    //       // const lessonCount = faker.number.int({ min: 2, max: 12 });
 
-          // for (let k = 0; k < lessonCount; k++) {
-          //   const name = faker.hacker.phrase(); // Generate a fake lesson title
-          //   const lessonType = faker.helpers.arrayElement(lessonTypesData); // Pick a random lesson type
+    //       // for (let k = 0; k < lessonCount; k++) {
+    //       //   const name = faker.hacker.phrase(); // Generate a fake lesson title
+    //       //   const lessonType = faker.helpers.arrayElement(lessonTypesData); // Pick a random lesson type
 
-          //   const {
-          //     success: lessonSuccess,
-          //     message: lessonMessage,
-          //     data: lessonData,
-          //   } = await createLessonDetails(supabase, {
-          //     chapterId: chapterData.id ?? '',
-          //     courseId: course.id,
-          //     lessonType: lessonType.id,
-          //     name,
-          //   });
+    //       //   const {
+    //       //     success: lessonSuccess,
+    //       //     message: lessonMessage,
+    //       //     data: lessonData,
+    //       //   } = await createLessonDetails(supabase, {
+    //       //     chapterId: chapterData.id ?? '',
+    //       //     courseId: course.id,
+    //       //     lessonType: lessonType.id,
+    //       //     name,
+    //       //   });
 
-          //   if (!lessonSuccess || !lessonData) {
-          //     console.error(`❌ Failed to create lesson for "${name}": ${lessonMessage}`);
-          //     break;
-          //   }
+    //       //   if (!lessonSuccess || !lessonData) {
+    //       //     console.error(`❌ Failed to create lesson for "${name}": ${lessonMessage}`);
+    //       //     break;
+    //       //   }
 
-          //   console.log(`🎥 Created lesson "${name}" in chapter "${chapter.name}"`);
-          // }
-        }
-      }
-    }
+    //       //   console.log(`🎥 Created lesson "${name}" in chapter "${chapter.name}"`);
+    //       // }
+    //     }
+    //   }
+    // }
 
     // Log success/failure for course creation
     console.log(

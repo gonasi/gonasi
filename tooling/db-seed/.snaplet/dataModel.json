@@ -821,6 +821,224 @@
         }
       ]
     },
+    "course_collaborators": {
+      "id": "public.course_collaborators",
+      "schemaName": "public",
+      "tableName": "course_collaborators",
+      "fields": [
+        {
+          "id": "public.course_collaborators.id",
+          "name": "id",
+          "columnName": "id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": true,
+          "maxLength": null
+        },
+        {
+          "id": "public.course_collaborators.course_id",
+          "name": "course_id",
+          "columnName": "course_id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.course_collaborators.user_id",
+          "name": "user_id",
+          "columnName": "user_id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.course_collaborators.role",
+          "name": "role",
+          "columnName": "role",
+          "type": "course_role",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.course_collaborators.created_by",
+          "name": "created_by",
+          "columnName": "created_by",
+          "type": "uuid",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.course_collaborators.invited_at",
+          "name": "invited_at",
+          "columnName": "invited_at",
+          "type": "timestamptz",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.course_collaborators.is_accepted",
+          "name": "is_accepted",
+          "columnName": "is_accepted",
+          "type": "bool",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.course_collaborators.accepted_at",
+          "name": "accepted_at",
+          "columnName": "accepted_at",
+          "type": "timestamptz",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.course_collaborators.created_at",
+          "name": "created_at",
+          "columnName": "created_at",
+          "type": "timestamptz",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.course_collaborators.updated_at",
+          "name": "updated_at",
+          "columnName": "updated_at",
+          "type": "timestamptz",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "name": "courses",
+          "type": "courses",
+          "isRequired": true,
+          "kind": "object",
+          "relationName": "course_collaboratorsTocourses",
+          "relationFromFields": [
+            "course_id"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "profiles_course_collaborators_created_byToprofiles",
+          "type": "profiles",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "course_collaborators_created_byToprofiles",
+          "relationFromFields": [
+            "created_by"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "profiles_course_collaborators_user_idToprofiles",
+          "type": "profiles",
+          "isRequired": true,
+          "kind": "object",
+          "relationName": "course_collaborators_user_idToprofiles",
+          "relationFromFields": [
+            "user_id"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        }
+      ],
+      "uniqueConstraints": [
+        {
+          "name": "course_collaborators_course_id_user_id_key",
+          "fields": [
+            "course_id",
+            "user_id"
+          ],
+          "nullNotDistinct": false
+        },
+        {
+          "name": "course_collaborators_pkey",
+          "fields": [
+            "id"
+          ],
+          "nullNotDistinct": false
+        }
+      ]
+    },
     "course_sub_categories": {
       "id": "public.course_sub_categories",
       "schemaName": "public",
@@ -1328,6 +1546,20 @@
           "isRequired": false,
           "kind": "object",
           "relationName": "chaptersTocourses",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "course_collaborators",
+          "type": "course_collaborators",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "course_collaboratorsTocourses",
           "relationFromFields": [],
           "relationToFields": [],
           "isList": true,
@@ -3757,7 +3989,7 @@
           "name": "blur_hash",
           "columnName": "blur_hash",
           "type": "text",
-          "isRequired": true,
+          "isRequired": false,
           "kind": "scalar",
           "isList": false,
           "isGenerated": false,
@@ -4318,6 +4550,34 @@
           "isRequired": false,
           "kind": "object",
           "relationName": "course_categories_updated_byToprofiles",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "course_collaborators_course_collaborators_created_byToprofiles",
+          "type": "course_collaborators",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "course_collaborators_created_byToprofiles",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "course_collaborators_course_collaborators_user_idToprofiles",
+          "type": "course_collaborators",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "course_collaborators_user_idToprofiles",
           "relationFromFields": [],
           "relationToFields": [],
           "isList": true,
@@ -7468,6 +7728,20 @@
         },
         {
           "name": "paid"
+        }
+      ]
+    },
+    "course_role": {
+      "schemaName": "public",
+      "values": [
+        {
+          "name": "admin"
+        },
+        {
+          "name": "editor"
+        },
+        {
+          "name": "viewer"
         }
       ]
     },

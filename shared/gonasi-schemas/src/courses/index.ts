@@ -38,12 +38,8 @@ export const NewCourseTitleSchema = z.object({
   name: CourseTitleSchema,
 });
 export type NewCourseTitleSchemaTypes = z.infer<typeof NewCourseTitleSchema>;
-export const NewCourseTitleSubmitSchema = NewCourseTitleSchema.merge(
-  z.object({
-    companyId: z.string(),
-  }),
-);
-export type NewCourseTitleSubmitSchemaType = z.infer<typeof NewCourseTitleSubmitSchema>;
+
+export type NewCourseTitleSubmitSchemaType = z.infer<typeof NewCourseTitleSchema>;
 // NewCourseTitleSchema definition
 
 // EditCourseDetailsSchema definition

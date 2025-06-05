@@ -6,7 +6,7 @@ create table public.pathways (
   name text not null,
   description text not null,
   image_url text not null,         -- URL of pathway image
-  blur_hash text not null,
+  blur_hash text null,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null,
   created_by uuid not null references public.profiles on delete cascade,

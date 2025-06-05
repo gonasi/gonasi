@@ -59,57 +59,84 @@ execute function update_updated_at_column();
 -- ====================================================================================
 alter table public.chapters enable row level security;
 
--- SELECT: Course owners can view chapters in their courses
-create policy "Select: owner can view chapters"
+-- SELECT: Allow users with admin/editor/viewer roles or course owners to view chapters
+create policy "Select: users with course roles (admin/editor/viewer) or owners can view chapters"
 on public.chapters
 for select
 to authenticated
 using (
   exists (
     select 1 from public.courses c
-    where c.id = chapters.course_id and c.created_by = (select auth.uid())
+    where c.id = chapters.course_id
+      and (
+        is_course_admin(c.id, (select auth.uid()))
+        or is_course_editor(c.id, (select auth.uid()))
+        or is_course_viewer(c.id, (select auth.uid()))
+        or c.created_by = (select auth.uid())
+      )
   )
 );
 
--- INSERT: Course owners can insert chapters into their courses
-create policy "Insert: owner can create chapters"
+-- INSERT: Allow users with admin/editor/viewer roles or course owners to insert chapters
+create policy "Insert: users with course roles (admin/editor/viewer) or owners can add chapters"
 on public.chapters
 for insert
 to authenticated
 with check (
   exists (
     select 1 from public.courses c
-    where c.id = chapters.course_id and c.created_by = (select auth.uid())
+    where c.id = chapters.course_id
+      and (
+        is_course_admin(c.id, (select auth.uid()))
+        or is_course_editor(c.id, (select auth.uid()))
+        or is_course_viewer(c.id, (select auth.uid()))
+        or c.created_by = (select auth.uid())
+      )
   )
 );
 
--- UPDATE: Course owners can update chapters in their courses
-create policy "Update: owner can update chapters"
+-- UPDATE: Allow users with admin/editor roles or course owners to update chapters
+create policy "Update: users with admin/editor roles or owners can modify chapters"
 on public.chapters
 for update
 to authenticated
 using (
   exists (
     select 1 from public.courses c
-    where c.id = chapters.course_id and c.created_by = (select auth.uid())
+    where c.id = chapters.course_id
+      and (
+        is_course_admin(c.id, (select auth.uid()))
+        or is_course_editor(c.id, (select auth.uid()))
+        or c.created_by = (select auth.uid())
+      )
   )
 )
 with check (
   exists (
     select 1 from public.courses c
-    where c.id = chapters.course_id and c.created_by = (select auth.uid())
+    where c.id = chapters.course_id
+      and (
+        is_course_admin(c.id, (select auth.uid()))
+        or is_course_editor(c.id, (select auth.uid()))
+        or c.created_by = (select auth.uid())
+      )
   )
 );
 
--- DELETE: Course owners can delete chapters in their courses
-create policy "Delete: owner can delete chapters"
+-- DELETE: Allow course admins, editors, and owners to delete chapters
+create policy "Delete: course admins, editors, and owners can remove chapters"
 on public.chapters
 for delete
 to authenticated
 using (
   exists (
     select 1 from public.courses c
-    where c.id = chapters.course_id and c.created_by = (select auth.uid())
+    where c.id = chapters.course_id
+      and (
+        is_course_admin(c.id, (select auth.uid()))
+        or is_course_editor(c.id, (select auth.uid()))
+        or c.created_by = (select auth.uid())
+      )
   )
 );
 

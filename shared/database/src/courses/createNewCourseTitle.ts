@@ -25,7 +25,7 @@ export const createNewCourseTitle = async (
   supabase: TypedSupabaseClient,
   courseData: NewCourseTitleSubmitSchemaType,
 ): Promise<ApiResponse<{ id: string }>> => {
-  const { name, companyId } = courseData;
+  const { name } = courseData;
 
   const userId = await getUserId(supabase);
 
@@ -34,7 +34,6 @@ export const createNewCourseTitle = async (
       .from('courses')
       .insert({
         name,
-        company_id: companyId,
         created_by: userId,
         updated_by: userId,
       })

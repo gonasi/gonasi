@@ -21,6 +21,7 @@ export const NewLearningPathSchema = z.object({
   name: LearningPathsSchema,
   description: LearningPathDescriptionSchema,
   image: NewImageSchema,
+  blurHash: z.string().nullable(),
 });
 export type NewLearningPathTypes = z.infer<typeof NewLearningPathSchema>;
 
