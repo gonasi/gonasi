@@ -1,4 +1,4 @@
-import { Form, useNavigate } from 'react-router';
+import { Form } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ChevronRight } from 'lucide-react';
 import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
@@ -68,7 +68,6 @@ export async function action({ request, params }: Route.ActionArgs) {
 
 // Component: New Course Title Modal
 export default function NewCourseTitle({ params }: Route.ComponentProps) {
-  const navigate = useNavigate();
   const isSubmitting = useIsPending();
 
   const methods = useRemixForm<NewCourseTitleSchemaTypes>({
@@ -76,12 +75,13 @@ export default function NewCourseTitle({ params }: Route.ComponentProps) {
     resolver,
   });
 
-  const handleClose = () => navigate(`/${params.username}`);
-
   return (
-    <Modal open onOpenChange={(open) => open || handleClose()}>
+    <Modal open>
       <Modal.Content size='md'>
-        <Modal.Header title="Let's build your course 🛠️" />
+        <Modal.Header
+          title="Let's build your course 🛠️"
+          closeRoute={`/${params.username}/course-builder`}
+        />
         <Modal.Body>
           <RemixFormProvider {...methods}>
             <Form method='POST' onSubmit={methods.handleSubmit}>

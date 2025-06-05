@@ -59,22 +59,23 @@ export function BannerCard({ message, description, variant = 'info', className }
 
   return (
     <div
-      className={`flex transform items-center justify-between space-x-4 rounded-md p-4 transition-opacity duration-200 ease-in-out ${closing ? 'scale-95 opacity-0' : 'scale-100 opacity-100'} ${bgColor} ${className ?? ''} `}
+      className={`flex transform justify-between space-x-4 rounded-md p-4 transition-opacity duration-200 ease-in-out ${closing ? 'scale-95 opacity-0' : 'scale-100 opacity-100'} ${bgColor} ${className ?? ''} `}
     >
       <div className='w-full'>
-        <div className='flex w-full items-center justify-between'>
-          <div className='flex items-center space-x-4'>
+        <div className='relative w-full justify-between'>
+          <div className='flex space-x-2'>
             <Icon className={`${textColor} flex-shrink-0`} size={20} />
             <p className={`${textColor} text-sm`}>{message}</p>
           </div>
-
-          <button
-            onClick={handleClose}
-            className={`${textColor} transition-opacity duration-150 hover:opacity-70`}
-            aria-label='Dismiss'
-          >
-            <X size={20} />
-          </button>
+          <div className='absolute -top-6 -right-4'>
+            <button
+              onClick={handleClose}
+              className={`${textColor} ${bgColor} border-foreground rounded-full border transition-opacity duration-150 hover:cursor-pointer hover:opacity-90`}
+              aria-label='Dismiss'
+            >
+              <X size={20} />
+            </button>
+          </div>
         </div>
 
         {description ? (
