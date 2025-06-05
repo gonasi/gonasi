@@ -49,16 +49,16 @@ max_client_conn = 100
 # Specifies an ordered list of schema files that describe your database.
 # Supports glob patterns relative to supabase directory: "./schemas/*.sql"
 schema_paths = [
-  './schemas/init.sql',
-  './schemas/profiles.sql',
-  './schemas/user_roles_and_permissions.sql',
-  './schemas/course_categories_and_sub_categories.sql',
-  './schemas/pathways.sql',
-  './schemas/courses.sql',
-  './schemas/chapters.sql',
-  './schemas/lesson_types.sql',
-  './schemas/lessons.sql',
-  './schemas/*.sql' 
+  # './schemas/init.sql',
+  # './schemas/profiles.sql',
+  # './schemas/user_roles_and_permissions.sql',
+  # './schemas/course_categories_and_sub_categories.sql',
+  # './schemas/pathways.sql',
+  # './schemas/courses.sql',
+  # './schemas/chapters.sql',
+  # './schemas/lesson_types.sql',
+  # './schemas/lessons.sql',
+  # './schemas/*.sql' 
 ]
 
 [db.seed]

@@ -17,13 +17,13 @@ export async function seedPathways(users: profilesScalars[]) {
       password: PASSWORD,
     });
 
-    const { success } = await createLearningPath(supabase, {
+    const { success, message } = await createLearningPath(supabase, {
       name: faker.lorem.words(3),
       description: faker.lorem.paragraph(),
       image,
     });
 
-    console.log(success ? '✅ Created learning path' : '❌ Could not create learning path');
+    console.log(success ? `✅ ${message}` : `❌ ${message}`);
 
     await supabase.auth.signOut();
   }

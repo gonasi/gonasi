@@ -1,4 +1,5 @@
 import type { NewLearningPathSubmitValues } from '@gonasi/schemas/learningPaths';
+import { generateBlurHash } from '@gonasi/utils/generateBlurHash';
 
 import { getUserId } from '../auth';
 import type { TypedSupabaseClient } from '../client';
@@ -20,6 +21,8 @@ export const createLearningPath = async (
   const fileExtension = image.name.split('.').pop()?.toLowerCase();
   const fileName = `${Date.now()}-${Math.random()}.${fileExtension}`;
 
+  const blurHash = await generateBlurHash(image);
+
   try {
     // Upload image to storage
     const { data: uploadResponse, error: uploadError } = await supabase.storage
@@ -27,6 +30,7 @@ export const createLearningPath = async (
       .upload(fileName, image);
 
     if (uploadError) {
+      console.log('createLearningPaht: Image upload failed: ', uploadError.message);
       return { success: false, message: `Image upload failed: ${uploadError.message}` };
     }
 
@@ -35,6 +39,7 @@ export const createLearningPath = async (
       name,
       description,
       image_url: uploadResponse.path,
+      blur_hash: blurHash,
       created_by: userId,
       updated_by: userId,
     });
