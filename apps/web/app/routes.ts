@@ -6,15 +6,16 @@ export default [
     route('explore', 'routes/public/explore.tsx'),
     // all user profiles
     layout('routes/layouts/profile/profile-layout.tsx', [
-      route(':username', 'routes/profile/courses/courses.tsx', [
-        layout('routes/layouts/profile/course-crud-layout.tsx', [
-          // new course title
-          route('course/new', 'routes/profile/courses/new-course-title.tsx'),
-        ]),
-      ]),
+      route(':username', 'routes/profile/published-courses.tsx'),
       route(':username/pathways', 'routes/profile/pathways.tsx'),
       route(':username/file-library', 'routes/profile/file-library.tsx'),
       route(':username/team-management', 'routes/profile/team-management.tsx'),
+      route(':username/courses', 'routes/profile/courses/courses.tsx', [
+        layout('routes/layouts/profile/course-crud-layout.tsx', [
+          // new course title
+          route(':username/courses/new', 'routes/profile/courses/new-course-title.tsx'),
+        ]),
+      ]),
     ]),
   ]),
 
@@ -27,15 +28,6 @@ export default [
     ...prefix('onboarding', [
       route(':userId/basic-information', 'routes/onboarding/basic-information.tsx'),
       route(':userId/contact-information', 'routes/onboarding/contact-information.tsx'),
-    ]),
-  ]),
-
-  ...prefix('go', [
-    layout('routes/layouts/go/go-layout.tsx', [
-      index('routes/go/go.tsx'),
-      route('courses', 'routes/go/courses.tsx', [
-        route(':courseId', 'routes/go/go-course-details.tsx'),
-      ]),
     ]),
   ]),
 

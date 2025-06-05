@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from 'react-router';
-import { BookCopy, Files, Library, Settings } from 'lucide-react';
+import { BookCopy, BookLock, Files, Library, Settings } from 'lucide-react';
 
 import { getProfileByUsername } from '@gonasi/database/profiles';
 
@@ -9,7 +9,6 @@ import { PlainAvatar } from '~/components/avatars';
 import { NotFoundCard } from '~/components/cards';
 import { GoTabNav } from '~/components/go-tab-nav';
 import { createClient } from '~/lib/supabase/supabase.server';
-import { useStore } from '~/store';
 
 export type ProfileLoaderReturnType = Exclude<Awaited<ReturnType<typeof loader>>, Response>;
 
@@ -32,20 +31,17 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 }
 
 export default function ProfileLayout({ loaderData }: Route.ComponentProps) {
-  const { activeUserProfile } = useStore();
-
   const { profileUser } = loaderData;
 
   if (!profileUser) {
     return <NotFoundCard message='Profile not found' />;
   }
 
-  const { username, full_name, avatar_url } = profileUser.user;
-
-  const isMyProfile = activeUserProfile?.username === username;
+  const { username, full_name, avatar_url, isMyProfile } = profileUser.user;
 
   const tabs = [
     { to: `/${username}`, name: 'Courses', icon: BookCopy, isVisible: true },
+    { to: `/${username}/courses`, name: 'Builder', icon: BookLock, isVisible: isMyProfile },
     { to: `/${username}/pathways`, name: 'Pathways', icon: Library, isVisible: true },
     { to: `/${username}/file-library`, name: 'Files', icon: Files, isVisible: isMyProfile },
   ];

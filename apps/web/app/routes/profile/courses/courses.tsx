@@ -1,17 +1,20 @@
 import { Suspense } from 'react';
-import { Await, data, Outlet } from 'react-router';
+import { Await, data, NavLink, Outlet } from 'react-router';
 import { Plus } from 'lucide-react';
 
-import { fetchCompanyCoursesWithSignedUrlsBySuOrAdmin } from '@gonasi/database/courses';
+import { fetchCoursesForOwnerOrCollaborators } from '@gonasi/database/courses';
 
 import type { Route } from './+types/courses';
 
-import { CourseCard, NotFoundCard } from '~/components/cards';
+import { NotFoundCard } from '~/components/cards';
+import { GoCardContent, GoCourseHeader, GoThumbnail } from '~/components/cards/go-course-card';
 import { ErrorMessageWithRetry } from '~/components/error-message-with-retry';
 import { CourseProfileCardSkeleton } from '~/components/skeletons';
 import { FloatingActionButton } from '~/components/ui/button';
 import { createClient } from '~/lib/supabase/supabase.server';
+import { cn } from '~/lib/utils';
 
+// Metadata for SEO
 export function meta({ params }: Route.MetaArgs) {
   const username = params.username;
   return [
@@ -25,28 +28,34 @@ export function meta({ params }: Route.MetaArgs) {
   ];
 }
 
+// Cache headers
 export function headers(_: Route.HeadersArgs) {
   return {
     'Cache-Control': 's-maxage=1, stale-while-revalidate=59',
   };
 }
 
-export type AllCoursesLoaderReturnType = Exclude<
+// Types
+export type AllCoursesData = Exclude<Awaited<ReturnType<typeof loader>>, Response>['data'];
+
+export type CoursesPromiseType = Exclude<
   Awaited<ReturnType<typeof loader>>,
   Response
->['data'];
+>['data']['coursesPromise'];
 
+type CoursesData = Awaited<CoursesPromiseType>['data'];
+
+// Loader
 export async function loader({ request, params }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
   const url = new URL(request.url);
-  const searchQuery = url.searchParams.get('name') ?? '';
+  const search = url.searchParams.get('name') ?? '';
   const page = Number(url.searchParams.get('page')) || 1;
   const limit = 12;
 
-  // Return the promise without awaiting - this allows streaming
-  const coursesPromise = fetchCompanyCoursesWithSignedUrlsBySuOrAdmin({
+  const coursesPromise = fetchCoursesForOwnerOrCollaborators({
     supabase,
-    searchQuery,
+    searchQuery: search,
     limit,
     page,
     username: params.username ?? '',
@@ -55,62 +64,54 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   return data({ coursesPromise });
 }
 
-// Component to render the courses list
-function CoursesList({ courses, count, params }: { courses: any[]; count: number; params: any }) {
+// Courses Grid
+function CoursesGrid({
+  courses,
+  totalCount,
+  username,
+}: {
+  courses: CoursesData;
+  totalCount: number;
+  username: string;
+}) {
   if (!courses?.length) {
     return <NotFoundCard message='No courses published' />;
   }
 
   return (
     <div className='flex flex-col space-y-4 pb-10'>
-      <div className='grid grid-cols-1 gap-0 md:grid-cols-2 md:gap-4 lg:grid-cols-3'>
-        {courses.map((course) => {
-          const {
-            id: courseId,
-            name,
-            description,
-            signed_url,
-            blur_hash,
-            lesson_count,
-            chapters_count,
-            monthly_subscription_price,
-            created_by_profile,
-            status,
-            updated_at,
-          } = course;
-
-          return (
-            <CourseCard
-              key={courseId}
-              name={name}
-              description={description}
-              iconUrl={signed_url}
-              blurHash={blur_hash}
-              lessonsCount={lesson_count}
-              chaptersCount={chapters_count}
-              price={monthly_subscription_price}
-              to={`/${params.username}/course/${courseId}/overview`}
-              author={{
-                displayName:
-                  created_by_profile.username ??
-                  created_by_profile.full_name ??
-                  created_by_profile.email,
-                imageUrl: created_by_profile.avatar_url,
-              }}
-              category={course.course_categories?.name}
-              subcategory={course.course_sub_categories?.name}
-              updatedAt={updated_at}
-              status={status}
-            />
-          );
-        })}
+      <div className='grid grid-cols-1 gap-0 md:grid-cols-2 md:gap-2 lg:grid-cols-3'>
+        {courses.map(({ id, name }) => (
+          <NavLink key={id} to='/username' className={cn('pb-4 hover:cursor-pointer md:pb-0')}>
+            {({ isPending }) => (
+              <div
+                className={cn(
+                  'group md:bg-card/80 m-0 rounded-none border-none bg-transparent p-0 shadow-none md:rounded-md',
+                  isPending && 'bg-primary/5',
+                )}
+              >
+                <GoThumbnail
+                  iconUrl={null}
+                  blurHash={null}
+                  name=''
+                  className='rounded-t-none md:rounded-t-md'
+                />
+                <GoCardContent>
+                  <GoCourseHeader className='line-clamp-1 text-sm' name={name} />
+                </GoCardContent>
+              </div>
+            )}
+          </NavLink>
+        ))}
       </div>
     </div>
   );
 }
 
-export default function Courses({ loaderData, params }: Route.ComponentProps) {
+// Main Component
+export default function CoursesRoute({ loaderData, params }: Route.ComponentProps) {
   const { coursesPromise } = loaderData;
+  const username = params.username ?? '';
 
   return (
     <div>
@@ -119,20 +120,22 @@ export default function Courses({ loaderData, params }: Route.ComponentProps) {
           resolve={coursesPromise}
           errorElement={<ErrorMessageWithRetry message='Could not load courses' />}
         >
-          {(resolvedCourses) => (
-            <CoursesList
-              courses={resolvedCourses.data}
-              count={resolvedCourses.count ?? 0}
-              params={params}
+          {(resolved) => (
+            <CoursesGrid
+              courses={resolved.data}
+              totalCount={resolved.count ?? 0}
+              username={username}
             />
           )}
         </Await>
       </Suspense>
+
       <FloatingActionButton
-        to={`/${params.username}/course/new`}
+        to={`/${username}/course/new`}
         tooltip='New Course'
         icon={<Plus size={20} strokeWidth={3} />}
       />
+
       <Outlet />
     </div>
   );
