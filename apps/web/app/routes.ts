@@ -173,6 +173,11 @@ export default [
             ]),
           ]),
         ]),
+        // collaborators
+        route(
+          'collaborators',
+          'routes/profile/course-builder/collaborators/view-all-course-collaborators.tsx',
+        ),
       ]),
     ]),
   ]),

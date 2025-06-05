@@ -1,5 +1,5 @@
 import { data, Outlet } from 'react-router';
-import { ChartNoAxesGantt, TableOfContents } from 'lucide-react';
+import { ChartNoAxesGantt, TableOfContents, UsersRound } from 'lucide-react';
 import { redirectWithError } from 'remix-toast';
 
 import { fetchCourseOverviewById } from '@gonasi/database/courses';
@@ -66,6 +66,11 @@ export default function CourseById({ loaderData, params }: Route.ComponentProps)
               to: `/${params.username}/course-builder/${courseId}/content`,
               name: 'Content',
               icon: TableOfContents,
+            },
+            {
+              to: `/${params.username}/course-builder/${courseId}/collaborators`,
+              name: 'Collaborators',
+              icon: UsersRound,
             },
           ]}
         />

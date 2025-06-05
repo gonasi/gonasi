@@ -36,7 +36,7 @@ function GoThumbnail({ iconUrl, blurHash, name, badges = [], className }: GoThum
       )}
 
       {/* Image or fallback with consistent hover animation */}
-      <motion.div className='h-full w-full transition-transform duration-300 ease-in-out group-hover:scale-105'>
+      <motion.div className='h-full w-full transition-transform duration-300 ease-in-out group-hover:scale-101'>
         {iconUrl ? (
           <Image
             src={iconUrl}
