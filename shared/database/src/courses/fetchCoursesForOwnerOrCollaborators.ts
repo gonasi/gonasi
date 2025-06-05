@@ -31,19 +31,26 @@ export async function fetchCoursesForOwnerOrCollaborators({
   const { data: courses, error, count } = await query;
 
   if (error) throw new Error(error.message);
-  if (!courses || courses.length === 0) return { count: 0, data: [] };
+  if (!courses?.length) return { count: 0, data: [] };
 
   const dataWithSignedUrls = await Promise.all(
     courses.map(async (course) => {
       if (!course.image_url) return { ...course, signed_url: null };
 
-      const { data } = supabase.storage
+      const { data: signedUrlData, error: signedUrlError } = await supabase.storage
         .from(COURSES_BUCKET)
-        .getPublicUrl(`${userId}/${course.image_url}`);
+        .createSignedUrl(course.image_url, 3600);
+
+      if (signedUrlError) {
+        console.error(
+          `Failed to create signed URL for ${course.image_url}:`,
+          signedUrlError.message,
+        );
+      }
 
       return {
         ...course,
-        signed_url: data?.publicUrl ?? null,
+        signed_url: signedUrlData?.signedUrl || null,
       };
     }),
   );

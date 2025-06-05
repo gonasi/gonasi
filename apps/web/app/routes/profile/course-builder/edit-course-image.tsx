@@ -1,5 +1,8 @@
-import { Form, useNavigate, useOutletContext, useParams } from 'react-router';
+import { useEffect, useState } from 'react';
+import { Form, useOutletContext, useParams } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { AnimatePresence, motion } from 'framer-motion';
+import { LoaderCircle } from 'lucide-react';
 import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
 import { dataWithError, redirectWithSuccess } from 'remix-toast';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
@@ -28,17 +31,14 @@ export function meta() {
   ];
 }
 
-// Zod resolver for form validation
 const resolver = zodResolver(EditCourseImageSchema);
 
-// 🔁 Form submission logic
 export async function action({ request, params }: Route.ActionArgs) {
   const formData = await request.formData();
   await checkHoneypot(formData);
 
   const { supabase } = createClient(request);
 
-  // Validate form data using Zod schema
   const {
     errors,
     data,
@@ -46,17 +46,14 @@ export async function action({ request, params }: Route.ActionArgs) {
   } = await getValidatedFormData<EditCourseImageSchemaTypes>(formData, resolver);
 
   if (errors) {
-    // Return validation errors to the form
     return { errors, defaultValues };
   }
 
   try {
-    // Check file validity
     if (!(data.image instanceof File)) {
       return dataWithError(null, 'Oops! That doesn’t look like a valid image.');
     }
 
-    // Generate blur hash for a nice preview effect
     const blurHash = await generateBlurHash(data.image);
 
     const { success, message } = await editCourseImage(supabase, {
@@ -66,28 +63,31 @@ export async function action({ request, params }: Route.ActionArgs) {
     });
 
     return success
-      ? redirectWithSuccess(`/${params.username}/course/${params.courseId}/overview`, message)
+      ? redirectWithSuccess(
+          `/${params.username}/course-builder/${params.courseId}/overview`,
+          message,
+        )
       : dataWithError(null, message);
   } catch (error) {
     console.error('Image processing error:', error);
 
-    // Gracefully handle error if blur hash fails
     const { success, message } = await editCourseImage(supabase, {
       ...data,
       courseId: params.courseId,
-      blurHash: null, // fallback: skip blur hash
+      blurHash: null,
     });
 
     return success
-      ? redirectWithSuccess(`/${params.username}/course/${params.courseId}/overview`, message)
+      ? redirectWithSuccess(
+          `/${params.username}/course-builder/${params.courseId}/overview`,
+          message,
+        )
       : dataWithError(null, 'Image saved but preview failed to generate.');
   }
 }
 
-// 🎨 UI for editing course image
 export default function EditCourseImage() {
   const isPending = useIsPending();
-  const navigate = useNavigate();
   const params = useParams();
   const { image_url } = useOutletContext<CourseOverviewType>();
 
@@ -97,28 +97,57 @@ export default function EditCourseImage() {
     submitData: { imageUrl: image_url },
   });
 
-  const handleClose = () => navigate(`/${params.username}/course/${params.courseId}/overview`);
+  const isSubmitting = isPending || methods.formState.isSubmitting;
+  const [showLoadingText, setShowLoadingText] = useState(false);
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+
+    if (isSubmitting) {
+      timer = setTimeout(() => setShowLoadingText(true), 2000);
+    } else {
+      setShowLoadingText(false);
+    }
+
+    return () => clearTimeout(timer);
+  }, [isSubmitting]);
 
   return (
-    <Modal open onOpenChange={(open) => open || handleClose()}>
+    <Modal open>
       <Modal.Content size='sm'>
-        <Modal.Header title='🖼️ Update Course Thumbnail' />
+        <Modal.Header
+          title='🖼️ Update Course Thumbnail'
+          closeRoute={`/${params.username}/course-builder/${params.courseId}/overview`}
+        />
         <Modal.Body>
           <RemixFormProvider {...methods}>
             <Form method='POST' encType='multipart/form-data' onSubmit={methods.handleSubmit}>
               <HoneypotInputs />
+
               <GoFileField
                 labelProps={{ children: 'Course Image', required: true }}
                 name='image'
-                inputProps={{ disabled: isPending }}
+                inputProps={{ disabled: isSubmitting }}
                 description='Upload a fresh new look for your course ✨'
               />
 
-              <Button
-                type='submit'
-                disabled={isPending}
-                isLoading={isPending || methods.formState.isSubmitting}
-              >
+              <AnimatePresence>
+                {showLoadingText && (
+                  <motion.div
+                    key='loading-text'
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 6 }}
+                    transition={{ duration: 0.25 }}
+                    className='flex items-center space-x-2 pb-2'
+                  >
+                    <LoaderCircle size={10} className='animate-spin' />
+                    <p className='font-secondary text-xs'>Generating optimized image…</p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <Button type='submit' disabled={isPending} isLoading={isSubmitting}>
                 Save
               </Button>
             </Form>

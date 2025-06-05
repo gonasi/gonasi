@@ -35,7 +35,7 @@ export default function CourseOverview({ params }: Route.ComponentProps) {
               thumbnail={signedUrl}
               blurHash={blur_hash}
               name={name}
-              editLink={`/${params.username}/course/${courseId}/overview/edit-image`}
+              editLink={`/${params.username}/course-builder/${courseId}/overview/edit-image`}
             />
           </div>
           <div className='flex-1'>
@@ -43,7 +43,7 @@ export default function CourseOverview({ params }: Route.ComponentProps) {
               name={name}
               description={description}
               price={monthly_subscription_price}
-              editLink={`/${params.username}/course/${courseId}/overview/edit-details`}
+              editLink={`/${params.username}/course-builder/${courseId}/overview/edit-details`}
             />
           </div>
         </div>
@@ -58,7 +58,7 @@ export default function CourseOverview({ params }: Route.ComponentProps) {
               category={course_categories?.name}
               subCategory={course_sub_categories?.name}
               pathway={pathways?.name}
-              editLink={`/${params.username}/course/${courseId}/overview/grouping/edit-category`}
+              editLink={`/${params.username}/course-builder/${courseId}/overview/grouping/edit-category`}
             />
           </div>
         </div>

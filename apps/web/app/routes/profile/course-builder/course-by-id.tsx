@@ -52,18 +52,18 @@ export default function CourseById({ loaderData, params }: Route.ComponentProps)
   return (
     <PlainLayout
       border={false}
-      backLink={`/${params.username}`}
+      backLink={`/${params.username}/course-builder`}
       title={courseName}
       navigation={
         <GoTabNav
           tabs={[
             {
-              to: `/${params.username}/course/${courseId}/overview`,
+              to: `/${params.username}/course-builder/${courseId}/overview`,
               name: 'Overview',
               icon: ChartNoAxesGantt,
             },
             {
-              to: `/${params.username}/course/${courseId}/content`,
+              to: `/${params.username}/course-builder/${courseId}/content`,
               name: 'Content',
               icon: TableOfContents,
             },

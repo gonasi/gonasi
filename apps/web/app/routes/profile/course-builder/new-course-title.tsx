@@ -1,17 +1,12 @@
-// Imports
-import { Form, useNavigate, useOutletContext } from 'react-router';
+import { Form, useNavigate } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { ChevronRight } from 'lucide-react';
 import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
 import { dataWithError, redirectWithSuccess } from 'remix-toast';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
 
 import { createNewCourseTitle } from '@gonasi/database/courses';
-import {
-  NewCourseTitleSchema,
-  type NewCourseTitleSchemaTypes,
-  NewCourseTitleSubmitSchema,
-  type NewCourseTitleSubmitSchemaType,
-} from '@gonasi/schemas/courses';
+import { NewCourseTitleSchema, type NewCourseTitleSchemaTypes } from '@gonasi/schemas/courses';
 
 import type { Route } from './+types/new-course-title';
 
@@ -19,11 +14,10 @@ import { Button } from '~/components/ui/button';
 import { GoInputField } from '~/components/ui/forms/elements';
 import { Modal } from '~/components/ui/modal';
 import { createClient } from '~/lib/supabase/supabase.server';
-import type { AppOutletContext } from '~/root';
 import { checkHoneypot } from '~/utils/honeypot.server';
 import { useIsPending } from '~/utils/misc';
 
-// SEO meta function
+// SEO metadata
 export function meta() {
   return [
     { title: 'Create a New Course | Gonasi' },
@@ -35,66 +29,53 @@ export function meta() {
   ];
 }
 
-// Form submission handler
-// Form submission handler
+// Zod resolver for validation
+const resolver = zodResolver(NewCourseTitleSchema);
+
+// Server-side form submission handler
 export async function action({ request, params }: Route.ActionArgs) {
   const formData = await request.formData();
 
-  // Honeypot bot check
+  // Bot protection
   await checkHoneypot(formData);
 
-  // Supabase client for database interaction
   const { supabase } = createClient(request);
 
-  // Validate form data using Zod
+  // Validate form data
   const {
     errors,
     data,
     receivedValues: defaultValues,
-  } = await getValidatedFormData<NewCourseTitleSubmitSchemaType>(
-    formData,
-    zodResolver(NewCourseTitleSubmitSchema),
-  );
+  } = await getValidatedFormData<NewCourseTitleSchemaTypes>(formData, resolver);
 
   if (errors) {
-    // Return validation errors to the client
     return { errors, defaultValues };
   }
 
-  // Attempt to create the course title in the database
-  const {
-    success,
-    message,
-    data: submissionData,
-  } = await createNewCourseTitle(supabase, {
-    ...data,
-  });
+  // Create course title in DB
+  const result = await createNewCourseTitle(supabase, data);
 
-  if (!success || !submissionData) {
-    return dataWithError(null, message);
+  if (!result.success || !result.data) {
+    return dataWithError(null, result.message);
   }
 
-  // Redirect to course overview page on success
-  return redirectWithSuccess(`/${params.username}/course/${submissionData.id}/overview`, message);
+  // Redirect to course overview
+  return redirectWithSuccess(
+    `/${params.username}/course-builder/${result.data.id}/overview`,
+    result.message,
+  );
 }
 
-// Page component
+// Component: New Course Title Modal
 export default function NewCourseTitle({ params }: Route.ComponentProps) {
-  const { activeCompany } = useOutletContext<AppOutletContext>();
-
   const navigate = useNavigate();
-  const isPending = useIsPending();
+  const isSubmitting = useIsPending();
 
-  // Hook form setup with validation
   const methods = useRemixForm<NewCourseTitleSchemaTypes>({
     mode: 'all',
-    resolver: zodResolver(NewCourseTitleSchema),
-    submitData: {
-      companyId: activeCompany?.company_id,
-    },
+    resolver,
   });
 
-  // Modal close handler
   const handleClose = () => navigate(`/${params.username}`);
 
   return (
@@ -111,11 +92,16 @@ export default function NewCourseTitle({ params }: Route.ComponentProps) {
                 inputProps={{
                   autoFocus: true,
                   placeholder: 'e.g. Digital Marketing 101',
-                  disabled: isPending,
+                  disabled: isSubmitting,
                 }}
                 description='Pick a name that clearly describes what your course is about. Make it catchy!'
               />
-              <Button type='submit' disabled={isPending} isLoading={isPending}>
+              <Button
+                type='submit'
+                disabled={isSubmitting}
+                isLoading={isSubmitting}
+                rightIcon={<ChevronRight />}
+              >
                 Save & Continue
               </Button>
             </Form>

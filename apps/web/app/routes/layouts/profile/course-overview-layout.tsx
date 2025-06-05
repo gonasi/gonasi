@@ -1,13 +1,12 @@
 import { Outlet, redirect } from 'react-router';
 
 import { getUserProfile } from '@gonasi/database/profile';
-import { canUserViewCompany } from '@gonasi/database/staffMembers';
 
 import type { Route } from './+types/course-overview-layout';
 
 import { createClient } from '~/lib/supabase/supabase.server';
 
-export async function loader({ params, request }: Route.LoaderArgs) {
+export async function loader({ request }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
   const { user } = await getUserProfile(supabase);
 
@@ -16,10 +15,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     return redirect(`/login?${new URLSearchParams({ redirectTo })}`);
   }
 
-  // check access to specified company
-  const hasAccess = await canUserViewCompany(supabase, params.username ?? '');
-
-  if (!hasAccess) return redirect('/change-team');
+  // TODO: Check if user has permissions for builder
 
   return { success: true };
 }

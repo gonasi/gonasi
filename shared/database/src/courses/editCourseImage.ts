@@ -6,102 +6,55 @@ import { COURSES_BUCKET } from '../constants';
 import type { ApiResponse } from '../types';
 
 /**
- * Updates a course image in storage and updates the course record
- * @param supabase - Typed Supabase client instance
- * @param assetData - Course image data including image file, imageUrl, and courseId
- * @returns ApiResponse with success status and message
+ * Updates a course's image in Supabase Storage and updates the course record in the database.
+ * Always uploads to a new unique path to avoid stale caching, and deletes the old image afterward.
+ *
+ * @param supabase - The Supabase client
+ * @param assetData - Object containing the courseId, image, current imageUrl, and blurHash
+ * @returns A success or error response
  */
 export const editCourseImage = async (
   supabase: TypedSupabaseClient,
   assetData: EditCourseImageSubmitValues,
 ): Promise<ApiResponse> => {
-  const userId = await getUserId(supabase); // Retrieve the user ID from authentication context
-
+  const userId = await getUserId(supabase);
   const { image, imageUrl, courseId, blurHash } = assetData;
 
+  // No image provided — short-circuit
+  if (!image) {
+    return {
+      success: false,
+      message: 'No image found to upload.',
+    };
+  }
+
   try {
-    // Check if the user is authorized to update this course (must be admin or su)
-    const { data: userRoleData, error: userRoleError } = await supabase
-      .from('company_memberships')
-      .select('staff_role, company_id')
-      .eq('staff_id', userId)
-      .in('staff_role', ['su', 'admin'])
-      .single();
+    // Create a unique file name using timestamp + random suffix
+    const fileExtension = image.name.split('.').pop()?.toLowerCase();
+    const newFileName = `${courseId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExtension}`;
 
-    if (userRoleError || !userRoleData) {
+    // Upload the new image to Supabase Storage
+    const { data: uploadResponse, error: uploadError } = await supabase.storage
+      .from(COURSES_BUCKET)
+      .upload(newFileName, image, {
+        cacheControl: '31536000', // 1 year (to allow CDN/browser long-term caching)
+        metadata: {
+          id: courseId, // Used for RLS validation
+        },
+      });
+
+    // If the upload fails, return early with error
+    if (uploadError || !uploadResponse?.path) {
+      console.error('Upload error:', uploadError);
       return {
         success: false,
-        message:
-          'You are not authorized to update course images. Admin or superuser role required.',
+        message: 'Upload didn’t work out. Want to try that again?',
       };
     }
 
-    // Get course company_id to verify user is updating a course within their company
-    const { data: courseData, error: courseError } = await supabase
-      .from('courses')
-      .select('company_id')
-      .eq('id', courseId)
-      .single();
+    const finalImagePath = uploadResponse.path;
 
-    if (courseError || !courseData) {
-      return {
-        success: false,
-        message: 'Course not found.',
-      };
-    }
-
-    // Ensure user is updating a course in their own company
-    if (courseData.company_id !== userRoleData.company_id) {
-      return {
-        success: false,
-        message: 'You are not authorized to update courses from other companies.',
-      };
-    }
-
-    // Handle image upload/update
-    let finalImagePath = imageUrl;
-
-    if (image) {
-      if (imageUrl) {
-        // Update existing image
-        const { error: uploadError } = await supabase.storage
-          .from(COURSES_BUCKET)
-          .update(`${courseId}/${imageUrl.split('/').pop()}`, image, {
-            cacheControl: '3600',
-            upsert: true,
-          });
-
-        if (uploadError) {
-          console.log(uploadError);
-          return {
-            success: false,
-            message: 'Failed to update course image.',
-          };
-        }
-      } else {
-        // Upload new image - ensure we're using courseId as prefix
-        const fileExtension = image.name.split('.').pop()?.toLowerCase();
-        const fileName = `${courseId}/${Date.now()}-${Math.random()}.${fileExtension}`;
-
-        const { data: uploadResponse, error: uploadError } = await supabase.storage
-          .from(COURSES_BUCKET)
-          .upload(fileName, image, {
-            cacheControl: '3600',
-          });
-
-        if (uploadError || !uploadResponse?.path) {
-          console.log('upload error: ', uploadError);
-          return {
-            success: false,
-            message: 'Failed to upload course image.',
-          };
-        }
-
-        finalImagePath = uploadResponse.path;
-      }
-    }
-
-    // Update course record with new image URL
+    // Update the course record with the new image path and blur hash
     const { error: updateError } = await supabase
       .from('courses')
       .update({
@@ -112,26 +65,34 @@ export const editCourseImage = async (
       .eq('id', courseId);
 
     if (updateError) {
-      // Clean up the newly uploaded image if course update fails
-      if (!imageUrl && finalImagePath && finalImagePath !== imageUrl) {
-        await supabase.storage.from(COURSES_BUCKET).remove([finalImagePath]);
-      }
+      // If updating the course record fails, remove the newly uploaded image
+      await supabase.storage.from(COURSES_BUCKET).remove([finalImagePath]);
 
       return {
         success: false,
-        message: 'Failed to update course record.',
+        message: 'Image was uploaded, but saving it to the course didn’t work out.',
       };
+    }
+
+    // After successful update, delete the old image if it exists and isn't the same
+    if (imageUrl && imageUrl !== finalImagePath) {
+      const oldFileName = imageUrl.split('/').pop();
+      if (oldFileName) {
+        const oldPath = `${courseId}/${oldFileName}`;
+        await supabase.storage.from(COURSES_BUCKET).remove([oldPath]);
+      }
     }
 
     return {
       success: true,
-      message: 'Course image updated successfully.',
+      message: 'Your new course image is all set!',
     };
   } catch (error) {
+    // Handle unexpected errors (e.g., network issues)
     console.error('Unexpected error:', error);
     return {
       success: false,
-      message: 'An error occurred. Please try again.',
+      message: 'Something went sideways. Try again shortly.',
     };
   }
 };

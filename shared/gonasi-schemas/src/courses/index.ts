@@ -39,9 +39,6 @@ export const NewCourseTitleSchema = z.object({
 });
 export type NewCourseTitleSchemaTypes = z.infer<typeof NewCourseTitleSchema>;
 
-export type NewCourseTitleSubmitSchemaType = z.infer<typeof NewCourseTitleSchema>;
-// NewCourseTitleSchema definition
-
 // EditCourseDetailsSchema definition
 export const EditCourseDetailsSchema = z.object({
   name: CourseTitleSchema,

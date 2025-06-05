@@ -8,7 +8,7 @@ import { editCourseCategory } from '@gonasi/database/courses';
 import { EditCourseCategorySchema } from '@gonasi/schemas/courses';
 
 import type { Route } from './+types/edit-course-category';
-import type { CourseOverviewType } from './course-by-id';
+import type { CourseOverviewType } from '../course-by-id';
 
 import { Button } from '~/components/ui/button';
 import { ErrorList, SearchDropdownField } from '~/components/ui/forms';

@@ -4,7 +4,7 @@ import { ArrowLeft } from 'lucide-react';
 import { PlainButton } from '~/components/ui/button';
 import { Modal } from '~/components/ui/modal';
 import { Stepper } from '~/components/ui/stepper';
-import type { CourseOverviewType } from '~/routes/profile/courses/course-by-id';
+import type { CourseOverviewType } from '~/routes/profile/course-builder/course-by-id';
 
 export function meta() {
   return [{ title: 'Gonasi' }, { name: 'description', content: 'Welcome to Gonasi' }];

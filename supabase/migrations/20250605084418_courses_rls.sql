@@ -81,6 +81,7 @@ with check (
   and (
     is_course_admin((metadata ->> 'id')::uuid, (select auth.uid()))
     or is_course_editor((metadata ->> 'id')::uuid, (select auth.uid()))
+    or (owner = (select auth.uid()))
   )
 );
 

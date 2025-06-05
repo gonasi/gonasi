@@ -4,7 +4,7 @@ import { Plus } from 'lucide-react';
 
 import { fetchCoursesForOwnerOrCollaborators } from '@gonasi/database/courses';
 
-import type { Route } from './+types/courses';
+import type { Route } from './+types/view-all-courses';
 
 import { NotFoundCard } from '~/components/cards';
 import { GoCardContent, GoCourseHeader, GoThumbnail } from '~/components/cards/go-course-card';
@@ -81,35 +81,41 @@ function CoursesGrid({
   return (
     <div className='flex flex-col space-y-4 pb-10'>
       <div className='grid grid-cols-1 gap-0 md:grid-cols-2 md:gap-2 lg:grid-cols-3'>
-        {courses.map(({ id, name }) => (
-          <NavLink key={id} to='/username' className={cn('pb-4 hover:cursor-pointer md:pb-0')}>
-            {({ isPending }) => (
-              <div
-                className={cn(
-                  'group md:bg-card/80 m-0 rounded-none border-none bg-transparent p-0 shadow-none md:rounded-md',
-                  isPending && 'bg-primary/5',
-                )}
-              >
-                <GoThumbnail
-                  iconUrl={null}
-                  blurHash={null}
-                  name=''
-                  className='rounded-t-none md:rounded-t-md'
-                />
-                <GoCardContent>
-                  <GoCourseHeader className='line-clamp-1 text-sm' name={name} />
-                </GoCardContent>
-              </div>
-            )}
-          </NavLink>
-        ))}
+        {courses.map(({ id, name, signed_url, blur_hash }) => {
+          return (
+            <NavLink
+              key={id}
+              to={`/${username}/course-builder/${id}/overview`}
+              className={cn('pb-4 hover:cursor-pointer md:pb-0')}
+            >
+              {({ isPending }) => (
+                <div
+                  className={cn(
+                    'group md:bg-card/80 m-0 rounded-none border-none bg-transparent p-0 shadow-none md:rounded-md',
+                    isPending && 'bg-primary/5',
+                  )}
+                >
+                  <GoThumbnail
+                    iconUrl={signed_url}
+                    blurHash={blur_hash}
+                    name={name}
+                    className='rounded-t-none md:rounded-t-md'
+                  />
+                  <GoCardContent>
+                    <GoCourseHeader className='line-clamp-1 text-sm' name={name} />
+                  </GoCardContent>
+                </div>
+              )}
+            </NavLink>
+          );
+        })}
       </div>
     </div>
   );
 }
 
 // Main Component
-export default function CoursesRoute({ loaderData, params }: Route.ComponentProps) {
+export default function ViewAllCourses({ loaderData, params }: Route.ComponentProps) {
   const { coursesPromise } = loaderData;
   const username = params.username ?? '';
 
@@ -131,9 +137,9 @@ export default function CoursesRoute({ loaderData, params }: Route.ComponentProp
       </Suspense>
 
       <FloatingActionButton
-        to={`/${username}/course/new`}
+        to={`/${username}/course-builder/new`}
         tooltip='New Course'
-        icon={<Plus size={20} strokeWidth={3} />}
+        icon={<Plus size={20} strokeWidth={4} />}
       />
 
       <Outlet />

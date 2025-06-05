@@ -1,6 +1,5 @@
-import { Form, useNavigate, useOutletContext, useParams } from 'react-router';
+import { Form, useOutletContext, useParams } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Save } from 'lucide-react';
 import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
 import { dataWithError, redirectWithSuccess } from 'remix-toast';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
@@ -51,7 +50,7 @@ export async function action({ request, params }: Route.ActionArgs) {
   });
 
   return success
-    ? redirectWithSuccess(`/${params.username}/course/${params.courseId}/overview`, message)
+    ? redirectWithSuccess(`/${params.username}/course-builder/${params.courseId}/overview`, message)
     : dataWithError(null, message);
 }
 
@@ -66,7 +65,6 @@ export default function EditCourseDetails() {
   };
 
   const isPending = useIsPending();
-  const navigate = useNavigate();
   const params = useParams();
 
   // Initialize form methods with validation
@@ -78,12 +76,14 @@ export default function EditCourseDetails() {
 
   const isDisabled = isPending || methods.formState.isSubmitting;
 
-  const handleClose = () => navigate(`/${params.username}/course/${params.courseId}/overview`);
-
   return (
     <Modal open>
       <Modal.Content size='sm'>
-        <Modal.Header title='Edit Course Details' hasClose={false} closeRoute='/dashboard' />
+        <Modal.Header
+          title='Edit Course Details'
+          hasClose={false}
+          closeRoute={`/${params.username}/course-builder/${params.courseId}/overview`}
+        />
         <Modal.Body>
           <RemixFormProvider {...methods}>
             <Form method='POST' onSubmit={methods.handleSubmit}>
@@ -119,7 +119,6 @@ export default function EditCourseDetails() {
                 type='submit'
                 disabled={isDisabled || !methods.formState.isDirty}
                 isLoading={isDisabled}
-                rightIcon={<Save />}
               >
                 Save
               </Button>

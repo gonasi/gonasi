@@ -41,8 +41,8 @@ export default function ProfileLayout({ loaderData }: Route.ComponentProps) {
 
   const tabs = [
     { to: `/${username}`, name: 'Courses', icon: BookCopy, isVisible: true },
-    { to: `/${username}/courses`, name: 'Builder', icon: BookLock, isVisible: isMyProfile },
     { to: `/${username}/pathways`, name: 'Pathways', icon: Library, isVisible: true },
+    { to: `/${username}/course-builder`, name: 'Builder', icon: BookLock, isVisible: isMyProfile },
     { to: `/${username}/file-library`, name: 'Files', icon: Files, isVisible: isMyProfile },
   ];
 
@@ -66,7 +66,7 @@ export default function ProfileLayout({ loaderData }: Route.ComponentProps) {
         <GoTabNav tabs={tabs} />
       </div>
       <div className='mt-0 md:mt-8'>
-        <Outlet />
+        <Outlet context={{ isMyProfile }} />
       </div>
     </section>
   );

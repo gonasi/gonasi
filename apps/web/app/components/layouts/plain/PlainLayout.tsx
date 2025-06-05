@@ -1,8 +1,7 @@
 import type { PropsWithChildren, ReactNode } from 'react';
-import { Link } from 'react-router';
-import { ArrowLeft } from 'lucide-react';
 
 import { AppLogo } from '~/components/app-logo';
+import { BackArrowNavLink } from '~/components/ui/button';
 import { cn } from '~/lib/utils';
 
 interface Props extends PropsWithChildren {
@@ -22,9 +21,7 @@ export function PlainLayout({ children, backLink, title, navigation, border = tr
       <div className='bg-background sticky top-0 z-10 mb-2 py-2'>
         <div className='flex items-center justify-between'>
           <div className='flex items-center space-x-4'>
-            <Link to={backLink}>
-              <ArrowLeft />
-            </Link>
+            <BackArrowNavLink to={backLink} />
             <h3 className='text-header line-clamp-1 text-xl'>{title}</h3>
           </div>
         </div>

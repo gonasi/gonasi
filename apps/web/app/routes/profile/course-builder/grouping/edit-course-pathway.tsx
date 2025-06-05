@@ -8,7 +8,7 @@ import { fetchLearningPathsAsSelectOptions } from '@gonasi/database/learningPath
 import { EditCoursePathwaySchema } from '@gonasi/schemas/courses';
 
 import type { Route } from './+types/edit-course-pathway';
-import type { CourseOverviewType } from './course-by-id';
+import type { CourseOverviewType } from '../course-by-id';
 
 import { GoLink } from '~/components/go-link';
 import { Button } from '~/components/ui/button';

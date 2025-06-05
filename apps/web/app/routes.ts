@@ -10,10 +10,12 @@ export default [
       route(':username/pathways', 'routes/profile/pathways.tsx'),
       route(':username/file-library', 'routes/profile/file-library.tsx'),
       route(':username/team-management', 'routes/profile/team-management.tsx'),
-      route(':username/courses', 'routes/profile/courses/courses.tsx', [
+
+      // course builder
+      route(':username/course-builder', 'routes/profile/course-builder/view-all-courses.tsx', [
         layout('routes/layouts/profile/course-crud-layout.tsx', [
           // new course title
-          route(':username/courses/new', 'routes/profile/courses/new-course-title.tsx'),
+          route('new', 'routes/profile/course-builder/new-course-title.tsx'),
         ]),
       ]),
     ]),
@@ -102,16 +104,25 @@ export default [
   ]),
 
   layout('routes/layouts/profile/course-overview-layout.tsx', [
-    ...prefix(':username/course', [
-      route(':courseId', 'routes/profile/courses/course-by-id.tsx', [
-        route('overview', 'routes/profile/courses/course-overview.tsx', [
-          route('edit-image', 'routes/profile/courses/edit-course-image.tsx'),
-          route('edit-details', 'routes/profile/courses/edit-course-details.tsx'),
+    ...prefix(':username/course-builder', [
+      route(':courseId', 'routes/profile/course-builder/course-by-id.tsx', [
+        route('overview', 'routes/profile/course-builder/course-overview.tsx', [
+          route('edit-image', 'routes/profile/course-builder/edit-course-image.tsx'),
+          route('edit-details', 'routes/profile/course-builder/edit-course-details.tsx'),
           ...prefix('grouping', [
             layout('routes/layouts/profile/course-grouping.tsx', [
-              route('edit-category', 'routes/profile/courses/edit-course-category.tsx'),
-              route('edit-subcategory', 'routes/profile/courses/edit-course-subcategory.tsx'),
-              route('edit-pathway', 'routes/profile/courses/edit-course-pathway.tsx'),
+              route(
+                'edit-category',
+                'routes/profile/course-builder/grouping/edit-course-category.tsx',
+              ),
+              route(
+                'edit-subcategory',
+                'routes/profile/course-builder/grouping/edit-course-subcategory.tsx',
+              ),
+              route(
+                'edit-pathway',
+                'routes/profile/course-builder/grouping/edit-course-pathway.tsx',
+              ),
             ]),
           ]),
         ]),
