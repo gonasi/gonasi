@@ -35,7 +35,7 @@ export default function CourseOverview({ params }: Route.ComponentProps) {
               thumbnail={signedUrl}
               blurHash={blur_hash}
               name={name}
-              editLink={`/${params.username}/course-builder/${courseId}/overview/edit-image`}
+              editLink={`/${params.username}/course-builder/${courseId}/overview/edit-thumbnail`}
             />
           </div>
           <div className='flex-1'>

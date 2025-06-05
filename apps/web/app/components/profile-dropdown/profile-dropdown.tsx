@@ -80,7 +80,7 @@ export function ProfileDropdown({
           <SignOut
             signOutComponent={
               <div
-                className={`${buttonVariants({ size: 'sm', variant: 'secondary' })} m-2 rounded-full px-4`}
+                className={`${buttonVariants({ size: 'sm', variant: 'secondary' })} m-2 w-full rounded-full px-4`}
               >
                 <span>Sign out</span>
               </div>

@@ -30,7 +30,7 @@ export function SignOut({ signOutComponent }: ISignOutProps) {
     <RemixFormProvider {...methods}>
       <Form method='POST' onSubmit={methods.handleSubmit}>
         <input type='hidden' {...methods.register('intent')} value='signout' />
-        <button type='submit' style={{ all: 'unset' }} disabled={isDisabled}>
+        <button type='submit' disabled={isDisabled}>
           {React.cloneElement(signOutComponent, { loading: isDisabled })}
         </button>
       </Form>

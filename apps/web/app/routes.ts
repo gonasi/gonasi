@@ -107,7 +107,7 @@ export default [
     ...prefix(':username/course-builder', [
       route(':courseId', 'routes/profile/course-builder/course-by-id.tsx', [
         route('overview', 'routes/profile/course-builder/course-overview.tsx', [
-          route('edit-image', 'routes/profile/course-builder/edit-course-image.tsx'),
+          route('edit-thumbnail', 'routes/profile/course-builder/edit-course-thumbnail.tsx'),
           route('edit-details', 'routes/profile/course-builder/edit-course-details.tsx'),
           ...prefix('grouping', [
             layout('routes/layouts/profile/course-grouping.tsx', [
