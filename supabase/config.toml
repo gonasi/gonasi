@@ -54,6 +54,10 @@ schema_paths = [
   './schemas/user_roles_and_permissions.sql',
   './schemas/course_categories_and_sub_categories.sql',
   './schemas/pathways.sql',
+  './schemas/courses.sql',
+  './schemas/chapters.sql',
+  './schemas/lesson_types.sql',
+  './schemas/lessons.sql',
   './schemas/*.sql' 
 ]
 
@@ -63,7 +67,8 @@ enabled = true
 # Specifies an ordered list of seed files to load during db reset.
 # Supports glob patterns relative to supabase directory: "./seeds/*.sql"
 sql_paths = [
-  # './seeds/user_roles_and_permissions.sql'
+  # './seeds/user_and_course_categories_sub_categories.sql',
+  './seeds/user_roles_and_permissions.sql'
 ]
 
 [realtime]
