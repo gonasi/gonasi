@@ -1,9 +1,10 @@
 import { Link, useLocation } from 'react-router';
-import { ArrowRightLeft, ChevronsUpDown, LayoutDashboard, LogOut } from 'lucide-react';
+import { ArrowRightLeft, ChevronsUpDown, LayoutDashboard } from 'lucide-react';
 
 import { UserAvatar } from '../avatars';
 import { NotFoundCard } from '../cards';
-import { Button } from '../ui/button';
+import { SignOut } from '../sign-out';
+import { Button, buttonVariants } from '../ui/button';
 
 import {
   DropdownMenu,
@@ -76,10 +77,15 @@ export function ProfileDropdown({
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild className='group cursor-pointer'>
-          <Link to='/sign-out' className='flex items-center space-x-2'>
-            <LogOut className='h-4 w-4 transition-transform duration-200 group-hover:scale-110' />
-            <span>Sign out</span>
-          </Link>
+          <SignOut
+            signOutComponent={
+              <div
+                className={`${buttonVariants({ size: 'sm', variant: 'secondary' })} m-2 rounded-full px-4`}
+              >
+                <span>Sign out</span>
+              </div>
+            }
+          />
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

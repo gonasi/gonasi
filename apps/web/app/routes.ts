@@ -174,6 +174,5 @@ export default [
     ]),
   ]),
 
-  route('sign-out', 'routes/sign-out.tsx'),
   route('*', 'routes/not-found.tsx'),
 ] satisfies RouteConfig;

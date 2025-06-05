@@ -5,20 +5,27 @@ import {
   Links,
   Meta,
   Outlet,
+  redirect,
   Scripts,
   ScrollRestoration,
   useLoaderData,
 } from 'react-router';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import type { JwtPayload } from 'jwt-decode';
 import { jwtDecode } from 'jwt-decode';
-import { getToast } from 'remix-toast';
+import { getValidatedFormData } from 'remix-hook-form';
+import { dataWithError, getToast } from 'remix-toast';
 import { HoneypotProvider } from 'remix-utils/honeypot/react';
+import { safeRedirect } from 'remix-utils/safe-redirect';
 import { Toaster } from 'sonner';
+import type z from 'zod';
 
+import { logOut, signInWithEmailAndPassword } from '@gonasi/database/auth';
 import type { UserRole } from '@gonasi/database/client';
 import { getUserProfile } from '@gonasi/database/profile';
+import { AuthSchema } from '@gonasi/schemas/auth';
 
 import type { Route } from './+types/root';
 import { NavigationProgressBar } from './components/progress-bar';
@@ -28,9 +35,10 @@ import './app.css';
 import { getClientEnv } from '~/.server/env.server';
 import { useToast } from '~/components/ui/toast';
 import { createClient } from '~/lib/supabase/supabase.server';
-import { honeypot } from '~/utils/honeypot.server';
+import { checkHoneypot, honeypot } from '~/utils/honeypot.server';
 import { combineHeaders } from '~/utils/misc';
 
+// --- Types ---
 export interface GoJwtPayload extends JwtPayload {
   user_role: UserRole;
 }
@@ -49,26 +57,62 @@ export type UserActiveSessionLoaderReturnType = Exclude<
   Awaited<ReturnType<typeof loader>>,
   Response
 >['data']['session'];
+
 export interface AppOutletContext {
   user: UserProfileLoaderReturnType;
   role: UserRoleLoaderReturnType;
   session: UserActiveSessionLoaderReturnType;
 }
 
+type FormData = z.infer<typeof AuthSchema>;
+
+// --- Action ---
+export async function action({ request }: Route.ActionArgs) {
+  const formData = await request.formData();
+  await checkHoneypot(formData);
+
+  const { errors, data } = await getValidatedFormData<FormData>(formData, zodResolver(AuthSchema));
+
+  if (errors) {
+    return dataWithError(null, 'Something went wrong. Please try again.');
+  }
+
+  const { supabase, headers } = createClient(request);
+
+  switch (data.intent) {
+    case 'login': {
+      const { error } = await signInWithEmailAndPassword(supabase, data);
+      const redirectTo = data.redirectTo ?? '/';
+
+      return error
+        ? dataWithError(null, 'Incorrect email or password.')
+        : redirect(safeRedirect(redirectTo), { headers });
+    }
+
+    case 'signout': {
+      const { error } = await logOut(supabase);
+      return error
+        ? dataWithError(null, 'Sign out failed. Please try again.')
+        : redirect('/', { headers });
+    }
+
+    default:
+      return dataWithError(null, 'Invalid action.');
+  }
+}
+
+// --- Loader ---
 export async function loader({ request }: Route.LoaderArgs) {
   const clientEnv = getClientEnv();
-
   const { headers: supabaseHeaders, supabase } = createClient(request);
 
-  let role = 'user' as 'user' | 'go_su' | 'go_admin' | 'go_staff';
-
   const { user } = await getUserProfile(supabase);
-
   const sessionResult = await supabase.auth.getSession();
 
+  let role: UserRole = 'user';
   if (sessionResult.data.session) {
-    const { user_role }: GoJwtPayload = jwtDecode(sessionResult.data.session.access_token);
-    role = user_role;
+    const decoded: GoJwtPayload = jwtDecode(sessionResult.data.session.access_token);
+    role = decoded.user_role;
   }
 
   const { toast, headers: toastHeaders } = await getToast(request);
@@ -89,70 +133,29 @@ export async function loader({ request }: Route.LoaderArgs) {
   );
 }
 
-export const useClientEnv = () => {
-  return useLoaderData<typeof loader>().clientEnv;
-};
+export const useClientEnv = () => useLoaderData<typeof loader>().clientEnv;
 
-// ✅ Preload & use `font-display: swap` to prevent FOUT
+// --- Font Preloads ---
 export const links: Route.LinksFunction = () => [
-  {
+  ...[
+    'Semibold.otf',
+    'Bold.ttf',
+    'BoldItalic.ttf',
+    'Medium.ttf',
+    'MediumItalic.ttf',
+    'Regular.ttf',
+    'SemiBold.ttf',
+    'SemiBoldItalic.ttf',
+  ].map((name) => ({
     rel: 'preload',
-    href: '/assets/fonts/oceanwide/Oceanwide-Semibold.otf',
+    href: `/assets/fonts/montserrat/Montserrat-${name}`,
     as: 'font',
-    type: 'font/otf',
+    type: name.endsWith('.otf') ? 'font/otf' : 'font/ttf',
     crossOrigin: 'anonymous',
-  },
-  {
-    rel: 'preload',
-    href: '/assets/fonts/montserrat/Montserrat-Bold.ttf',
-    as: 'font',
-    type: 'font/ttf',
-    crossOrigin: 'anonymous',
-  },
-  {
-    rel: 'preload',
-    href: '/assets/fonts/montserrat/Montserrat-BoldItalic.ttf',
-    as: 'font',
-    type: 'font/ttf',
-    crossOrigin: 'anonymous',
-  },
-  {
-    rel: 'preload',
-    href: '/assets/fonts/montserrat/Montserrat-Medium.ttf',
-    as: 'font',
-    type: 'font/ttf',
-    crossOrigin: 'anonymous',
-  },
-  {
-    rel: 'preload',
-    href: '/assets/fonts/montserrat/Montserrat-MediumItalic.ttf',
-    as: 'font',
-    type: 'font/ttf',
-    crossOrigin: 'anonymous',
-  },
-  {
-    rel: 'preload',
-    href: '/assets/fonts/montserrat/Montserrat-Regular.ttf',
-    as: 'font',
-    type: 'font/ttf',
-    crossOrigin: 'anonymous',
-  },
-  {
-    rel: 'preload',
-    href: '/assets/fonts/montserrat/Montserrat-SemiBold.ttf',
-    as: 'font',
-    type: 'font/ttf',
-    crossOrigin: 'anonymous',
-  },
-  {
-    rel: 'preload',
-    href: '/assets/fonts/montserrat/Montserrat-SemiBoldItalic.ttf',
-    as: 'font',
-    type: 'font/ttf',
-    crossOrigin: 'anonymous',
-  },
+  })),
 ];
 
+// --- Layout ---
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
     <html lang='en'>
@@ -173,23 +176,22 @@ export function Layout({ children }: { children: React.ReactNode }) {
   );
 }
 
+// --- App Component ---
 function App() {
   const { user, role, toast, session } = useLoaderData<typeof loader>();
   const { updateActiveSession, updateActiveUserProfile, updateActiveUserRole } = useStore();
 
   useToast(toast);
 
-  // Initialize store with loader data
   useEffect(() => {
     updateActiveSession(session);
     updateActiveUserRole(role);
-  }, [session, role, updateActiveSession, updateActiveUserRole]);
+  }, [session, role]);
 
   useEffect(() => {
     updateActiveUserProfile(user);
-  }, [updateActiveUserProfile, user]);
+  }, [user]);
 
-  // Prevent FOUT by waiting for fonts
   useEffect(() => {
     document.fonts.ready.then(() => {
       document.body.classList.add('fonts-loaded');
@@ -199,9 +201,7 @@ function App() {
   return (
     <main className='relative'>
       <NavigationProgressBar />
-
       <Outlet />
-
       <Toaster
         position='top-right'
         toastOptions={{
@@ -219,19 +219,15 @@ function App() {
               group-[.toast-success]:bg-[--success]
               group-[.toast-success]:text-[--success-foreground]
               group-[.toast-success]:hover:bg-[--success-hover]
-
               group-[.toast-error]:bg-[--danger]
               group-[.toast-error]:text-[--danger-foreground]
               group-[.toast-error]:hover:bg-[--danger-hover]
-
               group-[.toast-warning]:bg-[--warning]
               group-[.toast-warning]:text-[--warning-foreground]
               group-[.toast-warning]:hover:bg-[--warning-hover]
-
               group-[.toast-info]:bg-[--info]
               group-[.toast-info]:text-[--info-foreground]
               group-[.toast-info]:hover:bg-[--info-hover]
-
               px-3 py-1 rounded-md font-medium transition-colors
             `,
             cancelButton: `
@@ -246,6 +242,7 @@ function App() {
   );
 }
 
+// --- App With Honeypot Provider ---
 function AppWithProviders() {
   const { honeyProps } = useLoaderData<typeof loader>();
   return (
@@ -257,6 +254,7 @@ function AppWithProviders() {
 
 export default AppWithProviders;
 
+// --- Error Boundary ---
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   let message = 'Oops!';
   let details = 'An unexpected error occurred.';
@@ -265,25 +263,21 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   if (isRouteErrorResponse(error)) {
     message = error.status === 404 ? '404' : 'Error';
     details =
-      error.status === 404 ? 'The requested page could not be found.' : error.statusText || details;
-  } else if (import.meta.env.DEV && error && error instanceof Error) {
+      error.status === 404
+        ? 'The page you’re looking for could not be found.'
+        : error.statusText || details;
+  } else if (import.meta.env.DEV && error instanceof Error) {
     details = error.message;
     stack = error.stack;
   }
 
   return (
-    <main className='container mx-auto p-4 pt-16'>
-      <h1>{message}</h1>
-      <p>{details}</p>
+    <main className='container mx-auto py-10'>
+      <h1 className='text-4xl font-bold'>{message}</h1>
+      <p className='text-muted-foreground mt-4'>{details}</p>
       {stack && (
-        <pre className='w-full overflow-x-auto p-4'>
-          <code>{stack}</code>
-        </pre>
+        <pre className='text-muted-foreground mt-4 text-sm whitespace-pre-wrap'>{stack}</pre>
       )}
     </main>
   );
-}
-
-export function HydrateFallback() {
-  return <div>Loading...</div>;
 }
