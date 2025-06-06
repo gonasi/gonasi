@@ -10,8 +10,8 @@ import {
   type EditCourseDetailsSchemaTypes,
 } from '@gonasi/schemas/courses';
 
-import type { Route } from './+types/edit-course-details';
-import type { CourseOverviewType } from './course-by-id';
+import type { Route } from './+types/edit-details';
+import type { CourseOverviewType } from '../course-id-index';
 
 import { Button } from '~/components/ui/button';
 import { GoInputField, GoTextAreaField } from '~/components/ui/forms/elements';
@@ -55,7 +55,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 }
 
 export default function EditCourseDetails() {
-  const { name, description, monthly_subscription_price } =
+  const { name, description, monthly_subscription_price, pricing_model } =
     useOutletContext<CourseOverviewType>() ?? {};
 
   const courseDetailsDefaults = {
@@ -105,16 +105,18 @@ export default function EditCourseDetails() {
                 }}
                 description='Provide a brief course description.'
               />
-              <GoInputField
-                prefix='KES'
-                labelProps={{ children: 'Monthly subscription price', required: true }}
-                name='monthlySubscriptionPrice'
-                inputProps={{
-                  disabled: isDisabled,
-                  type: 'number',
-                }}
-                description='Specify the monthly subscription fee. 0 if course is free.'
-              />
+              {pricing_model === 'paid' ? (
+                <GoInputField
+                  prefix='KES'
+                  labelProps={{ children: 'Monthly subscription price', required: true }}
+                  name='monthlySubscriptionPrice'
+                  inputProps={{
+                    disabled: isDisabled,
+                    type: 'number',
+                  }}
+                  description='Specify the monthly subscription fee. 0 if course is free.'
+                />
+              ) : null}
               <Button
                 type='submit'
                 disabled={isDisabled || !methods.formState.isDirty}

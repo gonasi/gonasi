@@ -1,5 +1,5 @@
 import { Link } from 'react-router';
-import { BookOpen, Calendar, Pencil, Users } from 'lucide-react';
+import { BookOpen, Calendar, Pencil, Users, Wallet } from 'lucide-react';
 
 import { buttonVariants } from '../ui/button';
 
@@ -9,9 +9,10 @@ interface Props {
   price: number | null;
   editLink: string;
   errorMessage?: string[];
+  pricingModel: 'paid' | 'free';
 }
 
-export function CourseOverview({ name, description, price, editLink }: Props) {
+export function CourseOverview({ name, description, price, editLink, pricingModel }: Props) {
   return (
     <div className='flex flex-col space-y-4'>
       <div className='flex items-center justify-between'>
@@ -38,11 +39,20 @@ export function CourseOverview({ name, description, price, editLink }: Props) {
         </div>
       </div>
       <div className='flex items-baseline justify-end space-x-1 py-4'>
-        <span className='text-muted-foreground text-xs'>Ksh</span>
-        <span className='text-2xl'>
-          {price ? new Intl.NumberFormat('en-KE').format(price) : '__'}
-        </span>
-        <span className='text-muted-foreground font-secondary text-xs'>/month</span>
+        {pricingModel === 'paid' ? (
+          <div>
+            <span className='text-muted-foreground text-xs'>Ksh</span>
+            <span className='text-2xl'>
+              {price ? new Intl.NumberFormat('en-KE').format(price) : '__'}
+            </span>
+            <span className='text-muted-foreground font-secondary text-xs'>/month</span>
+          </div>
+        ) : (
+          <div className='flex items-center space-x-2'>
+            <Wallet strokeWidth={1} />
+            <span className='mt-1'>Free</span>
+          </div>
+        )}
       </div>
     </div>
   );
