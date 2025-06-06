@@ -170,8 +170,8 @@ export default function CourseChapterItem({ chapter, loading }: Props) {
             />
             <ActionDropdown
               items={[
-                { title: 'Edit chapter', icon: Pencil, to: `${basePath}/lesson/edit` },
-                { title: 'Delete chapter', icon: Trash, to: `${basePath}/lesson/delete` },
+                { title: 'Edit chapter', icon: Pencil, to: `${basePath}/edit` },
+                { title: 'Delete chapter', icon: Trash, to: `${basePath}/delete` },
               ]}
             />
           </div>

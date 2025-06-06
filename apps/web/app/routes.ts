@@ -148,13 +148,22 @@ export default [
         route('content', 'routes/profile/course-builder/courseId/content/content-index.tsx', [
           ...prefix('chapter', [
             // /:username/course-builder/:courseId/content/chapter/new
-            route('new', 'routes/profile/course-builder/courseId/content/chapter/new-chapter.tsx'),
+            route(
+              'new',
+              'routes/profile/course-builder/courseId/content/chapter/new-course-chapter.tsx',
+            ),
           ]),
           ...prefix(':chapterId', [
             // /:username/course-builder/:courseId/content/:chapterId/edit-chapter
-            route('edit-chapter', 'routes/dashboard/courses/chapters/edit-course-chapter.tsx'),
+            route(
+              'edit',
+              'routes/profile/course-builder/courseId/content/chapterId/edit-course-chapter.tsx',
+            ),
             // /:username/course-builder/:courseId/content/:chapterId/delete-chapter
-            route('delete-chapter', 'routes/dashboard/courses/chapters/delete-course-chapter.tsx'),
+            route(
+              'delete',
+              'routes/profile/course-builder/courseId/content/chapterId/delete-course-chapter.tsx',
+            ),
             // /:username/course-builder/:courseId/content/:chapterId/new-lesson-details
             route('new-lesson-details', 'routes/dashboard/courses/lessons/new-lesson-details.tsx'),
             // /:username/course-builder/:courseId/content/:chapterId/:lessonId/edit-lesson-details
