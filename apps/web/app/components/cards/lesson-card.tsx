@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router';
+import { Link, useParams } from 'react-router';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVerticalIcon, Info, Pencil, Text, Trash } from 'lucide-react';
@@ -9,36 +9,25 @@ import { Badge } from '../ui/badge';
 import { IconTooltipButton } from '../ui/tooltip';
 import { LucideIconRenderer } from './lucide-icon-renderer';
 
+import type { CourseLessonType } from '~/routes/dashboard/courses/course-content';
+
 interface Props {
-  companyId: string;
-  courseId: string;
-  chapterId: string;
-  lessonId: string;
-  title: string;
+  lesson: CourseLessonType;
   loading: boolean;
-  lucideIcon?: string;
-  lessonTypeName?: string;
-  lessonTypeIconColor?: string;
-  lessonTypeDescription?: string;
 }
 
-export function LessonCard({
-  companyId,
-  courseId,
-  chapterId,
-  lessonId,
-  title,
-  loading,
-  lucideIcon,
-  lessonTypeName,
-  lessonTypeIconColor,
-  lessonTypeDescription,
-}: Props) {
-  const basePath = `/dashboard/${companyId}/courses/${courseId}/course-content/${chapterId}/${lessonId}`;
+export function LessonCard({ lesson, loading }: Props) {
+  const params = useParams();
   const [isMounted, setIsMounted] = useState(false);
 
+  // Extract lesson type fields for reuse
+  const { lucide_icon, bg_color, name: typeName, description } = lesson.lesson_types;
+
+  const basePath = `/${params.username}/course-builder/${params.courseId}/course-content/${lesson.chapter_id}/${lesson.id}`;
+
+  // Setup sortable logic
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
-    id: lessonId,
+    id: lesson.id,
   });
 
   const style = {
@@ -50,44 +39,36 @@ export function LessonCard({
     setIsMounted(true);
   }, []);
 
+  // Dropdown menu options
   const options = [
-    {
-      title: 'Edit details',
-      icon: Pencil,
-      to: `${basePath}/edit-lesson-details`,
-    },
-    {
-      title: 'Edit content',
-      icon: Text,
-      to: `${basePath}`,
-    },
-    {
-      title: 'Delete lesson',
-      icon: Trash,
-      to: `${basePath}/delete`,
-    },
+    { title: 'Edit details', icon: Pencil, to: `${basePath}/edit-lesson-details` },
+    { title: 'Edit content', icon: Text, to: basePath },
+    { title: 'Delete lesson', icon: Trash, to: `${basePath}/delete` },
   ];
 
   return (
     <Link
-      to={`${basePath}`}
+      to={basePath}
       ref={isMounted ? setNodeRef : undefined}
       style={style}
       className='group bg-background/50 hover:bg-primary/2 flex flex-col space-y-3 rounded-xl border border-transparent p-4 transition-all duration-300 ease-in-out hover:border hover:shadow-sm'
     >
       <div className='flex w-full items-start justify-between'>
+        {/* Left: icon + lesson name */}
         <div className='flex min-w-0 flex-1 items-center gap-3'>
           <LucideIconRenderer
-            name={lucideIcon}
+            name={lucide_icon}
             aria-hidden
-            color={lessonTypeIconColor}
+            color={bg_color}
             strokeWidth={3}
             className='shrink-0 rotate-[30deg] transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:rotate-0'
           />
           <p className='group-hover:text-foreground truncate text-base font-medium transition-colors'>
-            {title}
+            {lesson.name}
           </p>
         </div>
+
+        {/* Right: drag handle + actions */}
         <div className='flex shrink-0 items-center gap-2'>
           <IconTooltipButton
             asChild
@@ -101,17 +82,19 @@ export function LessonCard({
           <ActionDropdown items={options} />
         </div>
       </div>
-      {lessonTypeName && (
+
+      {/* Lesson type badge and description */}
+      {typeName && (
         <div className='flex flex-col justify-start space-y-1'>
           <Badge
             variant='outline'
             className='group-hover:border-primary/30 group-hover:text-primary transition-colors duration-300'
           >
-            {lessonTypeName}
+            {typeName}
           </Badge>
           <p className='font-secondary text-muted-foreground flex items-center space-x-1 px-1 text-xs'>
             <Info size={14} />
-            <span>{lessonTypeDescription}</span>
+            <span>{description}</span>
           </p>
         </div>
       )}

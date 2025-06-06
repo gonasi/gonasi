@@ -31,6 +31,8 @@ export function meta() {
 
 // Types for chapter and lesson data, inferred from the loader
 export type CourseChaptersType = Exclude<Awaited<ReturnType<typeof loader>>, Response>['data'];
+export type CourseChapter = NonNullable<CourseChaptersType>[number];
+
 export type CourseLessonType = NonNullable<CourseChaptersType>[number]['lessons'][number];
 
 // Loads all chapters (with their lessons) for a given course
@@ -113,11 +115,7 @@ export default function CourseOverview({ loaderData, params }: Route.ComponentPr
           className='mb-10'
         />
 
-        <CourseChapters
-          username={params.username}
-          chapters={loaderData}
-          courseId={params.courseId}
-        />
+        <CourseChapters chapters={loaderData} />
       </div>
 
       {/* Floating button to add a new chapter */}

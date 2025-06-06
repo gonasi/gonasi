@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useFetcher } from 'react-router';
+import { Link, useFetcher, useParams } from 'react-router';
 import type { DragEndEvent } from '@dnd-kit/core';
 import {
   closestCenter,
@@ -40,35 +40,14 @@ import { buttonVariants } from '../ui/button';
 import { IconTooltipButton } from '../ui/tooltip';
 
 import { cn } from '~/lib/utils';
+import type { CourseChapter } from '~/routes/profile/course-builder/courseId/content/content-index';
 
-interface Lesson {
-  id: string;
-  name: string;
-  course_id: string;
-  chapter_id: string;
-  created_at: string;
-  created_by: string;
-  updated_by: string;
-  position: number | null;
-  lesson_types: {
-    id: string;
-    name: string;
-    description: string;
-    lucide_icon: string;
-    bg_color: string;
-  } | null;
-}
-
-interface Props {
-  companyId: string;
-  chapterId: string;
-  name: string;
-  description: string | null;
-  courseId: string;
-  lessons: Lesson[];
-  requires_payment: boolean | null;
-  lesson_count: number;
-  loading: boolean;
+function useDndSensors() {
+  return useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
 }
 
 function ChapterBadges({
@@ -84,7 +63,7 @@ function ChapterBadges({
         <BookOpen />
         {`${lessonCount} ${lessonCount === 1 ? 'lesson' : 'lessons'}`}
       </Badge>
-      {requiresPayment === true && (
+      {requiresPayment && (
         <Badge className='bg-success text-success-foreground'>
           <CircleDollarSign />
           Paid chapter
@@ -94,87 +73,52 @@ function ChapterBadges({
   );
 }
 
-export default function CourseChapterItem({
-  chapterId,
-  companyId,
-  name,
-  description,
-  courseId,
-  lessons,
-  requires_payment,
-  lesson_count,
-  loading,
-}: Props) {
+function buildLessonUpdateFormData(lessons: LessonPositionUpdateArray) {
+  const formData = new FormData();
+  formData.append('intent', 'reorder-lessons');
+  formData.append('lessons', JSON.stringify(lessons));
+  return formData;
+}
+
+interface Props {
+  chapter: CourseChapter;
+  loading: boolean;
+}
+
+export default function CourseChapterItem({ chapter, loading }: Props) {
   const fetcher = useFetcher();
+  const params = useParams();
+  const sensors = useDndSensors();
 
-  // Always use the hooks, but control when they take effect
-  const [isMounted, setIsMounted] = useState(false);
+  const [lessons, setLessons] = useState(chapter.lessons ?? []);
+  const [lessonLoading, setLessonLoading] = useState(false);
 
-  const [myLessons, setMyLessons] = useState(lessons ?? []);
-  const [lessonLoading, setLessonsLoading] = useState(false);
-
-  useEffect(() => {
-    // Update lessons if prop changes
-    setMyLessons(lessons ?? []);
-  }, [lessons]);
-
-  // Set up an effect to monitor fetcher state
-  useEffect(() => {
-    if (fetcher.state === 'submitting') {
-      setLessonsLoading(true);
-    } else if (fetcher.state === 'idle' && fetcher.data) {
-      setLessonsLoading(false);
-    }
-  }, [fetcher.state, fetcher.data]);
-
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
-    }),
-    useSensor(TouchSensor, {
-      activationConstraint: {
-        delay: 250,
-        tolerance: 8,
-      },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    }),
-  );
-
-  // Always call useSortable, but only use its values when mounted
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
-    id: chapterId,
+    id: chapter.id,
   });
-
-  // Set up the mounting effect
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
   const style = {
-    transform: isMounted ? CSS.Transform.toString(transform) : undefined,
-    transition: isMounted ? transition : undefined,
+    transform: CSS.Transform.toString(transform),
+    transition,
   };
+
+  useEffect(() => {
+    setLessons(chapter.lessons ?? []);
+  }, [chapter.lessons]);
+
+  useEffect(() => {
+    setLessonLoading(fetcher.state === 'submitting');
+  }, [fetcher.state]);
 
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
 
     if (over && active.id !== over.id) {
-      let newLessons: typeof myLessons = [];
+      setLessons((prev) => {
+        const oldIndex = prev.findIndex((item) => item.id === active.id);
+        const newIndex = prev.findIndex((item) => item.id === over.id);
+        const reordered = arrayMove(prev, oldIndex, newIndex);
 
-      setMyLessons((items) => {
-        const oldIndex = items.findIndex((item) => item.id === active.id);
-        const newIndex = items.findIndex((item) => item.id === over.id);
-
-        newLessons = arrayMove(items, oldIndex, newIndex);
-        return newLessons;
-      });
-
-      if (newLessons.length) {
-        const simplifiedlessons: LessonPositionUpdateArray = newLessons.map(
+        const simplified: LessonPositionUpdateArray = reordered.map(
           ({ id, chapter_id, course_id, name, created_by, updated_by }, index) => ({
             id,
             position: index,
@@ -186,78 +130,63 @@ export default function CourseChapterItem({
           }),
         );
 
-        const formData = new FormData();
-
-        formData.append('intent', 'reorder-lessons');
-        formData.append('lessons', JSON.stringify(simplifiedlessons));
-
+        const formData = buildLessonUpdateFormData(simplified);
         fetcher.submit(formData, {
           method: 'post',
-          action: `/dashboard/${companyId}/courses/${courseId}/course-content`,
+          action: `/${params.username}/course-builder/${params.courseId}/content`,
         });
-      }
+
+        return reordered;
+      });
     }
   }
 
+  const basePath = `/${params.username}/course-builder/${params.courseId}/content/${chapter.id}`;
+
   return (
     <AccordionItem
-      value={chapterId}
-      key={chapterId}
+      value={chapter.id}
       className={cn('bg-card/95 touch-none rounded-lg p-4', {
         'disabled animate-pulse': loading,
       })}
-      ref={isMounted ? setNodeRef : undefined}
+      ref={setNodeRef}
       style={style}
     >
       <AccordionTrigger className='w-full text-xl'>
-        <div className='flex w-full flex-row items-center justify-between'>
-          <div className='w-full'>
-            <div className='flex w-full items-center justify-between'>
-              <div className='flex items-center space-x-1'>
-                <ChevronsUpDown size={14} />
-                <h3 className='mt-1 line-clamp-1 text-left text-lg'>{name}</h3>
-              </div>
-              <div className='flex items-center space-x-2'>
-                <IconTooltipButton
-                  asChild
-                  className='cursor-move p-2'
-                  title='Drag and drop to rearrange chapters'
-                  icon={GripVerticalIcon}
-                  {...(isMounted ? attributes : {})}
-                  {...(isMounted ? listeners : {})}
-                  disabled={loading}
-                />
-                <ActionDropdown
-                  items={[
-                    {
-                      title: 'Edit Chapter',
-                      icon: Pencil,
-                      to: `/dashboard/${companyId}/courses/${courseId}/course-content/${chapterId}/edit-chapter`,
-                    },
-                    {
-                      title: 'Delete Chapter',
-                      icon: Trash,
-                      to: `/dashboard/${companyId}/courses/${courseId}/course-content/${chapterId}/delete-chapter`,
-                    },
-                  ]}
-                />
-              </div>
-            </div>
-            <div className='flex w-full items-center justify-between pt-2'>
-              <ChapterBadges lessonCount={lesson_count} requiresPayment={requires_payment} />
-            </div>
+        <div className='flex w-full items-center justify-between'>
+          <div className='flex items-center space-x-1'>
+            <ChevronsUpDown size={14} />
+            <h3 className='mt-1 line-clamp-1 text-left text-lg'>{chapter.name}</h3>
+          </div>
+          <div className='flex items-center space-x-2'>
+            <IconTooltipButton
+              asChild
+              className='cursor-move p-2'
+              title='Drag and drop to rearrange chapters'
+              icon={GripVerticalIcon}
+              {...attributes}
+              {...listeners}
+              disabled={loading}
+            />
+            <ActionDropdown
+              items={[
+                { title: 'Edit chapter', icon: Pencil, to: `${basePath}/lesson/edit` },
+                { title: 'Delete chapter', icon: Trash, to: `${basePath}/lesson/delete` },
+              ]}
+            />
           </div>
         </div>
       </AccordionTrigger>
+
       <AccordionContent>
-        {description && (
+        {chapter.description && (
           <div className='text-muted-foreground font-secondary line-clamp-4 py-2'>
-            {description}
+            {chapter.description}
           </div>
         )}
         <div className='flex w-full justify-end'>
           <Link
-            to={`/dashboard/${companyId}/courses/${courseId}/course-content/${chapterId}/new-lesson-details`}
+            to={`${basePath}/lesson/new`}
             className={buttonVariants({ variant: 'default', size: 'sm' })}
           >
             <Plus /> Add Lesson
@@ -270,22 +199,10 @@ export default function CourseChapterItem({
             collisionDetection={closestCenter}
             onDragEnd={handleDragEnd}
           >
-            <SortableContext items={myLessons} strategy={verticalListSortingStrategy}>
-              {myLessons.length > 0 ? (
-                myLessons.map(({ id: lessonId, name, lesson_types }) => (
-                  <LessonCard
-                    key={lessonId}
-                    companyId={companyId}
-                    lessonId={lessonId}
-                    courseId={courseId}
-                    title={name}
-                    chapterId={chapterId}
-                    loading={lessonLoading}
-                    lucideIcon={lesson_types?.lucide_icon}
-                    lessonTypeName={lesson_types?.name}
-                    lessonTypeDescription={lesson_types?.description}
-                    lessonTypeIconColor={lesson_types?.bg_color}
-                  />
+            <SortableContext items={lessons} strategy={verticalListSortingStrategy}>
+              {lessons.length > 0 ? (
+                lessons.map((lesson) => (
+                  <LessonCard key={lesson.id} lesson={lesson} loading={lessonLoading} />
                 ))
               ) : (
                 <NotFoundCard message='No lessons available' />
@@ -293,6 +210,10 @@ export default function CourseChapterItem({
             </SortableContext>
           </DndContext>
         </div>
+        <ChapterBadges
+          lessonCount={chapter.lesson_count}
+          requiresPayment={chapter.requires_payment}
+        />
       </AccordionContent>
     </AccordionItem>
   );

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useFetcher } from 'react-router';
+import { useFetcher, useParams } from 'react-router';
 import type { DragEndEvent } from '@dnd-kit/core';
 import {
   closestCenter,
@@ -27,13 +27,12 @@ import CourseChapterItem from './course-chapter-item';
 import type { CourseChaptersType } from '~/routes/dashboard/courses/course-content';
 
 interface Props {
-  username: string;
   chapters: CourseChaptersType;
-  courseId: string;
 }
 
-export function CourseChapters({ chapters, courseId, username }: Props) {
+export function CourseChapters({ chapters }: Props) {
   const fetcher = useFetcher();
+  const params = useParams();
 
   const [myChapters, setMyChapters] = useState(chapters ?? []);
   const [loading, setLoading] = useState(false);
@@ -101,7 +100,7 @@ export function CourseChapters({ chapters, courseId, username }: Props) {
 
         fetcher.submit(formData, {
           method: 'post',
-          action: `/dashboard/${username}/courses/${courseId}/course-content`,
+          action: `/${params.username}/course-builder/${params.courseId}/content`,
         });
       }
     }
@@ -122,32 +121,9 @@ export function CourseChapters({ chapters, courseId, username }: Props) {
         <SortableContext items={myChapters} strategy={verticalListSortingStrategy}>
           <Accordion type='single' collapsible className='flex w-full flex-col space-y-4'>
             {myChapters.length > 0 ? (
-              myChapters.map(
-                ({
-                  id: chapterId,
-                  name,
-                  description,
-                  course_id,
-                  lessons,
-                  requires_payment,
-                  lesson_count,
-                }) => {
-                  return (
-                    <CourseChapterItem
-                      key={chapterId}
-                      username={username}
-                      chapterId={chapterId}
-                      name={name}
-                      description={description}
-                      courseId={course_id}
-                      lessons={lessons}
-                      requires_payment={requires_payment}
-                      lesson_count={lesson_count}
-                      loading={loading}
-                    />
-                  );
-                },
-              )
+              myChapters.map((chapter) => {
+                return <CourseChapterItem key={chapter.id} chapter={chapter} loading={loading} />;
+              })
             ) : (
               <NotFoundCard message='Chapters not found' />
             )}
