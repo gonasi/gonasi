@@ -16,12 +16,10 @@ const ChapterDescriptionSchema = z
 export const NewChapterSchema = z.object({
   name: ChapterNameSchema,
   description: ChapterDescriptionSchema,
-  requiresPayment: z
-    .boolean({
-      required_error: 'Payment requirement status is required.',
-      invalid_type_error: 'Payment requirement must be a boolean value.',
-    })
-    .default(false),
+  requiresPayment: z.boolean({
+    required_error: 'Payment requirement status is required.',
+    invalid_type_error: 'Payment requirement must be a boolean value.',
+  }),
 });
 export type NewChapterSchemaTypes = z.infer<typeof NewChapterSchema>;
 

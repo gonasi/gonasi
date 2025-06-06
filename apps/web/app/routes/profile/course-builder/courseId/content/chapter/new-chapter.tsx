@@ -1,7 +1,6 @@
-import { Form, useNavigate, useOutletContext, useParams } from 'react-router';
-import { parseWithZod } from '@conform-to/zod';
+import { Form, useOutletContext, useParams } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { RemixFormProvider, useRemixForm } from 'remix-hook-form';
+import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
 import { dataWithError, redirectWithSuccess } from 'remix-toast';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
 
@@ -17,46 +16,56 @@ import { createClient } from '~/lib/supabase/supabase.server';
 import { checkHoneypot } from '~/utils/honeypot.server';
 import { useIsPending } from '~/utils/misc';
 
+// Meta info for the route
 export function meta() {
   return [
-    { title: 'New Chapter | Gonasi' },
+    { title: 'Add a New Course Chapter | Gonasi Course Builder' },
     {
       name: 'description',
-      content: 'Add new chapter',
+      content:
+        'Create a new chapter for your course on Gonasi. Add a title, description, and configure whether the chapter requires payment. Enhance your course structure and guide learners effectively.',
     },
   ];
 }
 
 const resolver = zodResolver(NewChapterSchema);
 
+// Handles form submission
 export async function action({ request, params }: Route.ActionArgs) {
   const formData = await request.formData();
+
+  // Anti-bot honeypot check
   await checkHoneypot(formData);
 
   const { supabase } = createClient(request);
-  const submission = parseWithZod(formData, { schema: NewChapterSchema });
 
-  if (submission.status !== 'success') {
-    return { result: submission.reply(), status: submission.status === 'error' ? 400 : 200 };
+  // Validate form data with Zod schema
+  const {
+    errors,
+    data,
+    receivedValues: defaultValues,
+  } = await getValidatedFormData<NewChapterSchemaTypes>(formData, resolver);
+
+  // If validation fails, return errors and user-entered values
+  if (errors) {
+    return { errors, defaultValues };
   }
 
+  // Create the chapter in the DB
   const { success, message } = await createCourseChapter(supabase, {
-    ...submission.value,
+    ...data,
     courseId: params.courseId,
   });
 
+  // Return success or error response
   return success
-    ? redirectWithSuccess(
-        `/dashboard/${params.companyId}/courses/${params.courseId}/course-content`,
-        message,
-      )
+    ? redirectWithSuccess(`/${params.username}/course-builder/${params.courseId}/content`, message)
     : dataWithError(null, message);
 }
 
+// UI component for creating a new course chapter
 export default function NewCourseChapter() {
-  const { pricing_model } = useOutletContext<{ pricing_model: 'free' | 'paid' }>() ?? {};
-
-  const navigate = useNavigate();
+  const { pricing_model } = useOutletContext<{ pricing_model: 'free' | 'paid' }>();
   const params = useParams();
 
   const isPending = useIsPending();
@@ -76,42 +85,42 @@ export default function NewCourseChapter() {
       <Modal.Content size='sm'>
         <Modal.Header
           title='Add a new chapter'
-          closeRoute={`/dashboard/${params.companyId}/courses/${params.courseId}/course-content`}
+          closeRoute={`/${params.username}/course-builder/${params.courseId}/content`}
         />
         <Modal.Body>
           <RemixFormProvider {...methods}>
             <Form method='POST' onSubmit={methods.handleSubmit}>
+              {/* Bot trap field */}
               <HoneypotInputs />
 
+              {/* Chapter title */}
               <GoInputField
                 labelProps={{ children: 'Chapter title', required: true }}
                 name='name'
-                inputProps={{
-                  autoFocus: true,
-                  disabled: isDisabled,
-                }}
+                inputProps={{ autoFocus: true, disabled: isDisabled }}
                 description='Give your chapter a short, clear name.'
               />
 
+              {/* Chapter description */}
               <GoTextAreaField
                 name='description'
                 labelProps={{ children: 'What’s this chapter about?', required: true }}
-                textareaProps={{
-                  disabled: isDisabled,
-                }}
+                textareaProps={{ disabled: isDisabled }}
                 description='Just a quick overview to help learners know what to expect.'
               />
 
-              {pricing_model === 'paid' ? (
+              {/* Paid chapter checkbox (shown only if pricing model is paid) */}
+              {pricing_model === 'paid' && (
                 <GoCheckBoxField
                   labelProps={{ children: 'Is this a paid chapter?', required: true }}
                   name='requiresPayment'
                   description='Check this if users need to pay to access it.'
                 />
-              ) : null}
+              )}
 
+              {/* Submit button */}
               <Button type='submit' disabled={isPending} isLoading={isPending}>
-                Create Chapter
+                Create chapter
               </Button>
             </Form>
           </RemixFormProvider>
