@@ -1,98 +1,101 @@
+// External imports
 import { data, Form, useNavigate, useParams } from 'react-router';
-import { getFormProps, getInputProps, useForm } from '@conform-to/react';
-import { getZodConstraint, parseWithZod } from '@conform-to/zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
 import { dataWithError, redirectWithError, redirectWithSuccess } from 'remix-toast';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
 
+// Internal imports: DB + schema
 import { deleteUserChapterById, fetchUserCourseChapterById } from '@gonasi/database/courseChapters';
-import { DeleteChapterSchema } from '@gonasi/schemas/courseChapters';
+import { DeleteChapterSchema, type DeleteChapterSchemaTypes } from '@gonasi/schemas/courseChapters';
 
 import type { Route } from './+types/delete-course-chapter';
 
+// UI components
 import { DeleteConfirmationLayout } from '~/components/layouts/modals';
-import { Input } from '~/components/ui/input';
 import { Modal } from '~/components/ui/modal';
+// Server utils
 import { createClient } from '~/lib/supabase/supabase.server';
 import { checkHoneypot } from '~/utils/honeypot.server';
 import { useIsPending } from '~/utils/misc';
 
+const resolver = zodResolver(DeleteChapterSchema);
+
+/**
+ * Loader: Fetch chapter data for deletion view
+ */
 export async function loader({ params, request }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
-
   const chapter = await fetchUserCourseChapterById(supabase, params.chapterId);
 
-  if (chapter === null)
-    return redirectWithError(
-      `/dashboard/${params.companyId}/courses/${params.courseId}/course-content`,
-      'Chapter path not exist',
-    );
+  if (!chapter) {
+    const redirectTo = `/${params.username}/course-builder/${params.courseId}/content`;
+    return redirectWithError(redirectTo, 'Chapter path not exist');
+  }
 
   return data(chapter);
 }
 
+/**
+ * Action: Handle form submission to delete chapter
+ */
 export async function action({ params, request }: Route.ActionArgs) {
   const formData = await request.formData();
   await checkHoneypot(formData);
 
   const { supabase } = createClient(request);
-  const submission = parseWithZod(formData, { schema: DeleteChapterSchema });
+  const {
+    errors,
+    data,
+    receivedValues: defaultValues,
+  } = await getValidatedFormData<DeleteChapterSchemaTypes>(formData, resolver);
 
-  if (submission.status !== 'success') {
-    return { result: submission.reply(), status: submission.status === 'error' ? 400 : 200 };
-  }
+  if (errors) return { errors, defaultValues };
 
-  const { success, message } = await deleteUserChapterById(supabase, {
-    ...submission.value,
-  });
+  const result = await deleteUserChapterById(supabase, data);
 
-  if (!success) {
-    return dataWithError(null, message);
-  }
+  const redirectTo = `/${params.username}/course-builder/${params.courseId}/content`;
 
-  return redirectWithSuccess(
-    `/dashboard/${params.companyId}/courses/${params.courseId}/course-content`,
-    message,
-  );
+  return result.success
+    ? redirectWithSuccess(redirectTo, result.message)
+    : dataWithError(null, result.message);
 }
 
-export default function DeleteCourseChapter({ loaderData, actionData }: Route.ComponentProps) {
+/**
+ * Component: DeleteCourseChapter modal form
+ */
+export default function DeleteCourseChapter({ loaderData }: Route.ComponentProps) {
   const navigate = useNavigate();
   const params = useParams();
-
-  const handleClose = () =>
-    navigate(`/dashboard/${params.companyId}/courses/${params.courseId}/course-content`);
-
   const isPending = useIsPending();
 
-  const [form, fields] = useForm({
-    id: 'delete-course-chapter-form',
-    constraint: getZodConstraint(DeleteChapterSchema),
-    lastResult: actionData?.result,
-    defaultValue: {
-      chapterId: loaderData.id,
-    },
-    shouldValidate: 'onInput',
-    shouldRevalidate: 'onInput',
-    onValidate({ formData }) {
-      return parseWithZod(formData, { schema: DeleteChapterSchema });
+  const closeRoute = `/${params.username}/course-builder/${params.courseId}/content`;
+
+  const methods = useRemixForm<DeleteChapterSchemaTypes>({
+    mode: 'all',
+    resolver,
+    defaultValues: {
+      chapterId: params.chapterId,
     },
   });
 
   return (
-    <Modal open onOpenChange={(open) => open || handleClose()}>
+    <Modal open>
       <Modal.Content size='sm'>
-        <Modal.Header />
+        <Modal.Header closeRoute={closeRoute} />
         <Modal.Body>
-          <Form method='POST' {...getFormProps(form)}>
-            <HoneypotInputs />
-            <Input {...getInputProps(fields.chapterId, { type: 'text' })} hidden />
-            <DeleteConfirmationLayout
-              titlePrefix='course chapter: '
-              title={loaderData.name}
-              isLoading={isPending}
-              handleClose={handleClose}
-            />
-          </Form>
+          <RemixFormProvider {...methods}>
+            <Form method='POST' onSubmit={methods.handleSubmit}>
+              <HoneypotInputs />
+
+              <DeleteConfirmationLayout
+                titlePrefix='course chapter: '
+                title={loaderData.name}
+                isLoading={isPending}
+                handleClose={() => navigate(closeRoute)}
+              />
+            </Form>
+          </RemixFormProvider>
         </Modal.Body>
       </Modal.Content>
     </Modal>

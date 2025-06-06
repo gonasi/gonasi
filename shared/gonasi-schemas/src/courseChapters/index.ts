@@ -53,7 +53,7 @@ export type EditChapterSubmitValues = z.infer<typeof SubmitEditChapterSchema>;
 export const DeleteChapterSchema = z.object({
   chapterId: z.string(),
 });
-export type DeleteChapterTypes = z.infer<typeof DeleteChapterSchema>;
+export type DeleteChapterSchemaTypes = z.infer<typeof DeleteChapterSchema>;
 export const SubmitDeleteChapterSchema = DeleteChapterSchema.merge(
   z.object({
     chapterId: z.string(),
