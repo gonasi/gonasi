@@ -13,3 +13,4 @@ export * from './ChoiceOptionButton';
 export * from './FloatingActionButton';
 export * from './BackArrowNavLink';
 export * from './CloseIconNavLink';
+export * from './NavLinkButton';

@@ -671,6 +671,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      check_subcategory_belongs_to_category: {
+        Args: { category: string; subcategory: string }
+        Returns: boolean
+      }
       custom_access_token_hook: {
         Args: { event: Json }
         Returns: Json

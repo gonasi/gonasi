@@ -1,18 +1,22 @@
-import { data, Form, useOutletContext } from 'react-router';
-import { FormProvider, getFormProps, useForm } from '@conform-to/react';
-import { getZodConstraint, parseWithZod } from '@conform-to/zod';
+import { data, Form, useOutletContext, useParams } from 'react-router';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
 import { dataWithError, redirectWithSuccess } from 'remix-toast';
 
 import { editCoursePathway } from '@gonasi/database/courses';
 import { fetchLearningPathsAsSelectOptions } from '@gonasi/database/learningPaths';
-import { EditCoursePathwaySchema } from '@gonasi/schemas/courses';
+import {
+  EditCoursePathwaySchema,
+  type EditCoursePathwaySchemaTypes,
+} from '@gonasi/schemas/courses';
 
 import type { Route } from './+types/edit-course-pathway';
 import type { CourseOverviewType } from '../course-by-id';
 
 import { GoLink } from '~/components/go-link';
-import { Button } from '~/components/ui/button';
-import { ErrorList, SearchDropdownField } from '~/components/ui/forms';
+import { Button, NavLinkButton } from '~/components/ui/button';
+import { GoSearchableDropDown } from '~/components/ui/forms/elements';
 import { createClient } from '~/lib/supabase/supabase.server';
 import { checkHoneypot } from '~/utils/honeypot.server';
 import { useIsPending } from '~/utils/misc';
@@ -22,10 +26,12 @@ export function meta() {
     { title: 'Shape Your Pathway | Gonasi' },
     {
       name: 'description',
-      content: 'Give your pathway a glow-up – chart the way forward with Gonasi.',
+      content: "Give your pathway a fresh vibe — let's get you set up with Gonasi.",
     },
   ];
 }
+
+const resolver = zodResolver(EditCoursePathwaySchema);
 
 export async function loader({ request }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
@@ -38,30 +44,30 @@ export async function action({ request, params }: Route.ActionArgs) {
   await checkHoneypot(formData);
 
   const { supabase } = createClient(request);
-  const submission = parseWithZod(formData, { schema: EditCoursePathwaySchema });
 
-  if (submission.status !== 'success') {
-    return { result: submission.reply(), status: submission.status === 'error' ? 400 : 200 };
+  const {
+    errors,
+    data,
+    receivedValues: defaultValues,
+  } = await getValidatedFormData<EditCoursePathwaySchemaTypes>(formData, resolver);
+
+  if (errors) {
+    return { errors, defaultValues };
   }
 
   const { success, message } = await editCoursePathway(supabase, {
-    ...submission.value,
+    ...data,
     courseId: params.courseId,
   });
 
   return success
-    ? redirectWithSuccess(
-        `/dashboard/${params.companyId}/courses/${params.courseId}/course-details`,
-        message,
-      )
+    ? redirectWithSuccess(`/${params.username}/course-builder/${params.courseId}/overview`, message)
     : dataWithError(null, message);
 }
 
-export default function EditCoursePathway({
-  actionData,
-  loaderData,
-  params,
-}: Route.ComponentProps) {
+export default function EditCoursePathway({ loaderData }: Route.ComponentProps) {
+  const params = useParams();
+
   const { pathways } = useOutletContext<CourseOverviewType>() ?? {};
 
   const defaultValue = {
@@ -70,44 +76,53 @@ export default function EditCoursePathway({
 
   const isPending = useIsPending();
 
-  const [form, fields] = useForm({
-    id: 'edit-course-pathway-form',
-    constraint: getZodConstraint(EditCoursePathwaySchema),
-    lastResult: actionData?.result,
-    defaultValue,
-    shouldValidate: 'onInput',
-    shouldRevalidate: 'onInput',
-    onValidate({ formData }) {
-      return parseWithZod(formData, { schema: EditCoursePathwaySchema });
-    },
+  const methods = useRemixForm<EditCoursePathwaySchemaTypes>({
+    mode: 'all',
+    resolver,
+    defaultValues: defaultValue,
   });
 
+  const isDisabled = isPending || methods.formState.isSubmitting;
+
   return (
-    <Form method='POST' {...getFormProps(form)}>
-      <FormProvider context={form.context}>
-        <SearchDropdownField
+    <RemixFormProvider {...methods}>
+      <Form method='POST' onSubmit={methods.handleSubmit}>
+        <GoSearchableDropDown
+          name='pathway'
           labelProps={{
-            children: 'Course Pathway',
+            children: 'Choose your pathway',
             required: true,
             endAdornment: (
-              <GoLink to={`/dashboard/${params.companyId}/learning-paths`}>
-                Create a new pathway?
+              <GoLink to={`/${params.username}/course-builder/${params.courseId}/overview`}>
+                Create new pathway?
               </GoLink>
             ),
           }}
+          description='Pick the pathway that fits your course best.'
           searchDropdownProps={{
-            meta: fields.pathway,
-            disabled: isPending,
             options: loaderData,
           }}
-          errors={fields.pathway?.errors}
-          description='Choose a pathway for this course.'
+          disabled={isDisabled}
         />
-        <ErrorList errors={form.errors} id={form.errorId} />
-        <Button type='submit' disabled={isPending} isLoading={isPending}>
-          Save
-        </Button>
-      </FormProvider>
-    </Form>
+        {!defaultValue.pathway || methods.formState.isDirty ? (
+          <Button
+            type='submit'
+            disabled={isDisabled}
+            isLoading={isDisabled}
+            rightIcon={<ChevronRight />}
+          >
+            Save
+          </Button>
+        ) : (
+          <NavLinkButton
+            to={`/${params.username}/course-builder/${params.courseId}/overview/grouping/edit-subcategory`}
+            leftIcon={<ChevronLeft />}
+            variant='ghost'
+          >
+            Go back
+          </NavLinkButton>
+        )}
+      </Form>
+    </RemixFormProvider>
   );
 }

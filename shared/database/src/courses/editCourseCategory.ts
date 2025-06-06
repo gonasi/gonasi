@@ -5,18 +5,17 @@ import type { TypedSupabaseClient } from '../client';
 import type { ApiResponse } from '../types';
 
 /**
- * Updates the category of a course and sets subcategory to null in the database.
+ * Updates a course's category and clears the subcategory.
  *
- * @param {TypedSupabaseClient} supabase - The Supabase client instance.
- * @param {EditCourseCategorySubmitValues} data - The data containing course ID, user ID, and new category ID.
- * @returns {Promise<ApiResponse>} A promise resolving to the API response indicating success or failure.
+ * @param {TypedSupabaseClient} supabase - Supabase client instance.
+ * @param {EditCourseCategorySubmitValues} data - Includes course ID and the new category.
+ * @returns {Promise<ApiResponse>} Success or error info.
  */
 export const editCourseCategory = async (
   supabase: TypedSupabaseClient,
   data: EditCourseCategorySubmitValues,
 ): Promise<ApiResponse> => {
   const userId = await getUserId(supabase);
-
   const { courseId, category } = data;
 
   try {
@@ -35,19 +34,20 @@ export const editCourseCategory = async (
     if (updateError) {
       return {
         success: false,
-        message: 'Failed to update the course category. Please check your input and try again.',
+        message:
+          "Hmm, couldn't update the category. Double-check the info and give it another shot.",
       };
     }
 
     return {
       success: true,
-      message: 'Course category updated successfully.',
+      message: 'Category updated! All set.',
     };
   } catch (error) {
     console.error('Error updating course category:', error);
     return {
       success: false,
-      message: 'An unexpected error occurred. Please try again later.',
+      message: 'Something went wrong on our end. Try again in a bit.',
     };
   }
 };

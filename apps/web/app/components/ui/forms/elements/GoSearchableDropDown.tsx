@@ -238,6 +238,7 @@ export function GoSearchableDropDown({
                             // Prevent focus issues when clicking items
                             e.preventDefault();
                           }}
+                          className='hover:cursor-pointer'
                         >
                           <div className='flex w-full items-center justify-between'>
                             <div className='flex flex-col space-y-1'>

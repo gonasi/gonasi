@@ -36,7 +36,7 @@ export default function UpsertCourseLayout() {
 
   return (
     <Modal open>
-      <Modal.Content size='sm'>
+      <Modal.Content size='md'>
         <Modal.Header
           title='Let’s group your course'
           closeRoute={`/${params.username}/course-builder/${params.courseId}/overview`}

@@ -1,4 +1,4 @@
-import { data, Form, useOutletContext } from 'react-router';
+import { data, Form, useOutletContext, useParams } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ChevronRight } from 'lucide-react';
 import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
@@ -14,38 +14,38 @@ import {
 import type { Route } from './+types/edit-course-category';
 import type { CourseOverviewType } from '../course-by-id';
 
-import { Button } from '~/components/ui/button';
+import { Button, NavLinkButton } from '~/components/ui/button';
 import { GoSearchableDropDown } from '~/components/ui/forms/elements';
 import { createClient } from '~/lib/supabase/supabase.server';
 import { checkHoneypot } from '~/utils/honeypot.server';
 import { useIsPending } from '~/utils/misc';
 
+// Page meta with a relaxed vibe
 export function meta() {
   return [
     { title: 'Tweak Your Course Vibe | Gonasi' },
     {
       name: 'description',
-      content: 'Fine-tune your course category and keep things fresh – only on Gonasi.',
+      content: 'Switch up your course category to keep things fresh — it only takes a sec.',
     },
   ];
 }
 
 const resolver = zodResolver(EditCourseCategorySchema);
 
+// Handles form submission and updates the course category
 export async function action({ request, params }: Route.ActionArgs) {
   const formData = await request.formData();
   await checkHoneypot(formData);
 
   const { supabase } = createClient(request);
 
-  // Validate and parse form data using zod
   const {
     errors,
     data,
     receivedValues: defaultValues,
   } = await getValidatedFormData<EditCourseCategorySchemaTypes>(formData, resolver);
 
-  // If validation failed, return errors and default values
   if (errors) {
     return { errors, defaultValues };
   }
@@ -63,18 +63,20 @@ export async function action({ request, params }: Route.ActionArgs) {
     : dataWithError(null, message);
 }
 
+// Load dropdown options for categories
 export async function loader({ request }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
   const courseCategories = await fetchCourseCategoriesAsSelectOptions(supabase);
-
   return data(courseCategories);
 }
 
+// The main form UI
 export default function EditCourseCategory({ loaderData }: Route.ComponentProps) {
+  const params = useParams();
   const { course_categories } = useOutletContext<CourseOverviewType>() ?? {};
 
   const defaultValue = {
-    category: course_categories?.id ?? '',
+    category: course_categories?.id,
   };
 
   const isPending = useIsPending();
@@ -92,20 +94,31 @@ export default function EditCourseCategory({ loaderData }: Route.ComponentProps)
       <Form method='POST' onSubmit={methods.handleSubmit}>
         <GoSearchableDropDown
           name='category'
-          labelProps={{ children: 'Course category', required: true }}
-          description='Choose a category for this course.'
+          labelProps={{ children: 'Pick a category', required: true }}
+          description='Select the vibe that best fits your course.'
           searchDropdownProps={{
             options: loaderData,
           }}
-        />
-        <Button
-          type='submit'
           disabled={isDisabled}
-          isLoading={isDisabled}
-          rightIcon={<ChevronRight />}
-        >
-          Save
-        </Button>
+        />
+        {!defaultValue.category || methods.formState.isDirty ? (
+          <Button
+            type='submit'
+            disabled={isDisabled}
+            isLoading={isDisabled}
+            rightIcon={<ChevronRight />}
+          >
+            Save
+          </Button>
+        ) : (
+          <NavLinkButton
+            to={`/${params.username}/course-builder/${params.courseId}/overview/grouping/edit-subcategory`}
+            rightIcon={<ChevronRight />}
+            variant='ghost'
+          >
+            Next
+          </NavLinkButton>
+        )}
       </Form>
     </RemixFormProvider>
   );

@@ -1,18 +1,21 @@
-// Imports
-import { data, Form, useOutletContext } from 'react-router';
-import { FormProvider, getFormProps, useForm } from '@conform-to/react';
-import { getZodConstraint, parseWithZod } from '@conform-to/zod';
+import { data, Form, useOutletContext, useParams } from 'react-router';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { ChevronRight } from 'lucide-react';
+import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
 import { dataWithError, redirectWithSuccess } from 'remix-toast';
 
 import { editCourseSubcategory } from '@gonasi/database/courses';
 import { fetchCourseSubCategoriesAsSelectOptions } from '@gonasi/database/courseSubCategories';
-import { EditCourseSubcategorySchema } from '@gonasi/schemas/courses';
+import {
+  EditCourseSubcategorySchema,
+  type EditCourseSubcategorySchemaTypes,
+} from '@gonasi/schemas/courses';
 
 import type { Route } from './+types/edit-course-subcategory';
 import type { CourseOverviewType } from '../course-by-id';
 
-import { Button } from '~/components/ui/button';
-import { ErrorList, SearchDropdownField } from '~/components/ui/forms';
+import { Button, NavLinkButton } from '~/components/ui/button';
+import { GoSearchableDropDown } from '~/components/ui/forms/elements';
 import { createClient } from '~/lib/supabase/supabase.server';
 import { checkHoneypot } from '~/utils/honeypot.server';
 import { useIsPending } from '~/utils/misc';
@@ -23,10 +26,13 @@ export function meta() {
     { title: 'Course Subcategory, Remixed | Gonasi' },
     {
       name: 'description',
-      content: 'Switch things up! Edit your course subcategory with style on Gonasi.',
+      content:
+        'Ready to shake things up? Pick a new course subcategory and keep your course moving forward on Gonasi.',
     },
   ];
 }
+
+const resolver = zodResolver(EditCourseSubcategorySchema);
 
 // Loader
 export async function loader({ request }: Route.LoaderArgs) {
@@ -41,70 +47,84 @@ export async function action({ request, params }: Route.ActionArgs) {
   await checkHoneypot(formData);
 
   const { supabase } = createClient(request);
-  const submission = parseWithZod(formData, {
-    schema: EditCourseSubcategorySchema,
-  });
 
-  if (submission.status !== 'success') {
-    return {
-      result: submission.reply(),
-      status: submission.status === 'error' ? 400 : 200,
-    };
+  const {
+    errors,
+    data,
+    receivedValues: defaultValues,
+  } = await getValidatedFormData<EditCourseSubcategorySchemaTypes>(formData, resolver);
+
+  if (errors) {
+    return { errors, defaultValues };
   }
 
   const { success, message } = await editCourseSubcategory(supabase, {
-    ...submission.value,
+    ...data,
     courseId: params.courseId,
   });
 
   return success
     ? redirectWithSuccess(
-        `/dashboard/${params.companyId}/courses/${params.courseId}/course-details/grouping/edit-pathway`,
+        `/${params.username}/course-builder/${params.courseId}/overview/grouping/edit-pathway`,
         message,
       )
     : dataWithError(null, message);
 }
 
 // Component
-export default function EditCourseSubcategory({ actionData, loaderData }: Route.ComponentProps) {
+export default function EditCourseSubcategory({ loaderData }: Route.ComponentProps) {
+  const params = useParams();
+
   const { course_sub_categories, course_categories } = useOutletContext<CourseOverviewType>() ?? {};
+
   const isPending = useIsPending();
 
   const defaultValue = {
-    subcategory: course_sub_categories?.id ?? '',
+    subcategory: course_sub_categories?.id,
   };
 
-  const [form, fields] = useForm({
-    id: 'edit-course-subcategory-form',
-    constraint: getZodConstraint(EditCourseSubcategorySchema),
-    lastResult: actionData?.result,
-    defaultValue,
-    shouldValidate: 'onInput',
-    shouldRevalidate: 'onInput',
-    onValidate: ({ formData }) => parseWithZod(formData, { schema: EditCourseSubcategorySchema }),
+  const methods = useRemixForm<EditCourseSubcategorySchemaTypes>({
+    mode: 'all',
+    resolver,
+    defaultValues: defaultValue,
   });
 
   const categoryId = course_categories?.id ?? '';
   const filteredOptions = loaderData.filter((subcategory) => subcategory.categoryId === categoryId);
 
+  const isDisabled = isPending || methods.formState.isSubmitting;
+
   return (
-    <Form method='POST' {...getFormProps(form)}>
-      <FormProvider context={form.context}>
-        <SearchDropdownField
-          labelProps={{ children: 'Course Subcategory', required: true }}
+    <RemixFormProvider {...methods}>
+      <Form method='POST' onSubmit={methods.handleSubmit}>
+        <GoSearchableDropDown
+          name='subcategory'
+          labelProps={{ children: 'Choose your subcategory', required: true }}
+          description='Pick the subcategory that fits your course best.'
           searchDropdownProps={{
-            meta: fields.subcategory,
-            disabled: isPending,
             options: filteredOptions,
           }}
-          errors={fields.subcategory?.errors}
-          description='Select the appropriate subcategory for this course.'
+          disabled={isDisabled}
         />
-        <ErrorList errors={form.errors} id={form.errorId} />
-        <Button type='submit' disabled={isPending} isLoading={isPending}>
-          Save
-        </Button>
-      </FormProvider>
-    </Form>
+        {!defaultValue.subcategory || methods.formState.isDirty ? (
+          <Button
+            type='submit'
+            disabled={isDisabled}
+            isLoading={isDisabled}
+            rightIcon={<ChevronRight />}
+          >
+            Save changes
+          </Button>
+        ) : (
+          <NavLinkButton
+            to={`/${params.username}/course-builder/${params.courseId}/overview/grouping/edit-pathway`}
+            rightIcon={<ChevronRight />}
+            variant='ghost'
+          >
+            Next
+          </NavLinkButton>
+        )}
+      </Form>
+    </RemixFormProvider>
   );
 }

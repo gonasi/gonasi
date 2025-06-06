@@ -18,6 +18,7 @@ const CourseCategorySchema = z.string({ required_error: 'Course category is requ
 
 const CourseSubcategorySchema = z
   .string({ required_error: 'Course subcategory is required' })
+  .min(3, { message: 'Course subcategory is required' })
   .trim();
 
 const CoursePathwaySchema = z.string({ required_error: 'Course pathway is required' }).trim();
@@ -86,7 +87,7 @@ export type EditCourseCategorySubmitValues = z.infer<typeof SubmitEditCourseCate
 export const EditCourseSubcategorySchema = z.object({
   subcategory: CourseSubcategorySchema,
 });
-export type EditCourseSubcategoryTypes = z.infer<typeof EditCourseSubcategorySchema>;
+export type EditCourseSubcategorySchemaTypes = z.infer<typeof EditCourseSubcategorySchema>;
 export const SubmitEditCourseSubcategorySchema = EditCourseSubcategorySchema.merge(
   z.object({
     courseId: z.string(),
@@ -99,7 +100,7 @@ export type EditCourseSubcategorySubmitValues = z.infer<typeof SubmitEditCourseS
 export const EditCoursePathwaySchema = z.object({
   pathway: CoursePathwaySchema,
 });
-export type EditCoursePathwayTypes = z.infer<typeof EditCoursePathwaySchema>;
+export type EditCoursePathwaySchemaTypes = z.infer<typeof EditCoursePathwaySchema>;
 export const SubmitEditCoursePathwaySchema = EditCoursePathwaySchema.merge(
   z.object({
     courseId: z.string(),
