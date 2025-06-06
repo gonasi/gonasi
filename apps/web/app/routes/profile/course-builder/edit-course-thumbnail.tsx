@@ -1,4 +1,3 @@
-// React & 3rd party libraries
 import { useEffect, useState } from 'react';
 import type { Area, Point } from 'react-easy-crop';
 import Cropper from 'react-easy-crop';
@@ -154,7 +153,7 @@ export default function EditCourseImage() {
   const isSubmitting = isPending || methods.formState.isSubmitting;
 
   // Local state
-  const [showLoadingText, setShowLoadingText] = useState(false);
+  const [loadingText, setLoadingText] = useState('');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [originalFile, setOriginalFile] = useState<File | null>(null);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
@@ -206,17 +205,29 @@ export default function EditCourseImage() {
     setOriginalFile(null);
   };
 
-  // Show loading text if form takes long to submit
+  // Handle progressive loading text
   useEffect(() => {
-    let timer: NodeJS.Timeout;
+    let timer1: NodeJS.Timeout;
+    let timer2: NodeJS.Timeout;
 
     if (isSubmitting) {
-      timer = setTimeout(() => setShowLoadingText(true), 2000);
+      // Show first message after 1.5 seconds
+      timer1 = setTimeout(() => {
+        setLoadingText('Generating optimized image…');
+      }, 1500);
+
+      // Show second message after 3 seconds
+      timer2 = setTimeout(() => {
+        setLoadingText('Finishing up...');
+      }, 3500);
     } else {
-      setShowLoadingText(false);
+      setLoadingText('');
     }
 
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+    };
   }, [isSubmitting]);
 
   return (
@@ -284,11 +295,11 @@ export default function EditCourseImage() {
                     <FormDescription>Upload a fresh new look for your course ✨</FormDescription>
                   </div>
 
-                  {/* Optional feedback message when form takes long */}
+                  {/* Progressive loading messages */}
                   <AnimatePresence>
-                    {showLoadingText && (
+                    {loadingText && (
                       <motion.div
-                        key='loading-text'
+                        key={loadingText}
                         initial={{ opacity: 0, y: 6 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 6 }}
@@ -296,7 +307,7 @@ export default function EditCourseImage() {
                         className='flex items-center space-x-2 pb-2'
                       >
                         <LoaderCircle size={10} className='animate-spin' />
-                        <p className='font-secondary text-xs'>Generating optimized image…</p>
+                        <p className='font-secondary text-xs'>{loadingText}</p>
                       </motion.div>
                     )}
                   </AnimatePresence>

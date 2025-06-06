@@ -17,7 +17,13 @@ import { checkHoneypot } from '~/utils/honeypot.server';
 import { useIsPending } from '~/utils/misc';
 
 export function meta() {
-  return [{ title: 'Gonasi' }, { name: 'description', content: 'Welcome to Gonasi' }];
+  return [
+    { title: 'Tweak Your Course Vibe | Gonasi' },
+    {
+      name: 'description',
+      content: 'Fine-tune your course category and keep things fresh – only on Gonasi.',
+    },
+  ];
 }
 
 export async function loader({ request }: Route.LoaderArgs) {

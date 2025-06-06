@@ -1,27 +1,20 @@
-import { Outlet, useLocation, useNavigate, useOutletContext, useParams } from 'react-router';
-import { ArrowLeft } from 'lucide-react';
+import { Outlet, useLocation, useOutletContext, useParams } from 'react-router';
 
-import { PlainButton } from '~/components/ui/button';
+import { BackArrowNavLink } from '~/components/ui/button';
 import { Modal } from '~/components/ui/modal';
 import { Stepper } from '~/components/ui/stepper';
 import type { CourseOverviewType } from '~/routes/profile/course-builder/course-by-id';
 
-export function meta() {
-  return [{ title: 'Gonasi' }, { name: 'description', content: 'Welcome to Gonasi' }];
-}
-
 export default function UpsertCourseLayout() {
   const courseDetails = useOutletContext<CourseOverviewType>() ?? {};
-
-  const navigate = useNavigate();
 
   const location = useLocation();
   const params = useParams();
 
   const steps = [
-    { id: 'edit-category', title: 'Category', path: 'edit-category' },
-    { id: 'edit-subcategory', title: 'Subcategory', path: 'edit-subcategory' },
-    { id: 'edit-pathway', title: 'Pathway', path: 'edit-pathway' },
+    { id: 'edit-category', title: 'Pick a category', path: 'edit-category' },
+    { id: 'edit-subcategory', title: 'Choose a subcategory', path: 'edit-subcategory' },
+    { id: 'edit-pathway', title: 'Set the learning path', path: 'edit-pathway' },
   ];
 
   const currentStepIndex = steps.length
@@ -31,28 +24,24 @@ export default function UpsertCourseLayout() {
       )
     : 0;
 
-  const handleBack = () => {
+  const getBackUrl = () => {
     if (currentStepIndex > 0) {
       const prevStep = steps[currentStepIndex - 1];
       if (prevStep) {
-        navigate(`/${params.username}/course/${params.courseId}/grouping/${prevStep.path}`);
+        return `/${params.username}/course-builder/${params.courseId}/overview/grouping/${prevStep.path}`;
       }
     }
+    return '';
   };
 
-  const handleClose = () => navigate(`/${params.username}/course/${params.courseId}/overview`);
-
   return (
-    <Modal open onOpenChange={(open) => open || handleClose()}>
+    <Modal open>
       <Modal.Content size='sm'>
         <Modal.Header
-          title='Course grouping'
+          title='Let’s group your course'
+          closeRoute={`/${params.username}/course-builder/${params.courseId}/overview`}
           leadingIcon={
-            currentStepIndex > 0 && (
-              <PlainButton onClick={handleBack} className='mr-2 md:mr-4'>
-                <ArrowLeft />
-              </PlainButton>
-            )
+            currentStepIndex > 0 && <BackArrowNavLink to={getBackUrl()} className='mr-2 md:mr-4' />
           }
         />
         <Modal.Body>

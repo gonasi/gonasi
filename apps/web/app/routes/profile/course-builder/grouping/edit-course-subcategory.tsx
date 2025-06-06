@@ -20,10 +20,10 @@ import { useIsPending } from '~/utils/misc';
 // Meta
 export function meta() {
   return [
-    { title: 'Gonasi - Edit Course Subcategory' },
+    { title: 'Course Subcategory, Remixed | Gonasi' },
     {
       name: 'description',
-      content: 'Modify the subcategory for your course in Gonasi.',
+      content: 'Switch things up! Edit your course subcategory with style on Gonasi.',
     },
   ];
 }
