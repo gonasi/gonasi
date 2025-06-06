@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useFetcher, useParams } from 'react-router';
+import { useFetcher, useParams } from 'react-router';
 import type { DragEndEvent } from '@dnd-kit/core';
 import {
   closestCenter,
@@ -36,7 +36,7 @@ import { ActionDropdown } from '../action-dropdown';
 import { NotFoundCard } from '../cards';
 import { LessonCard } from '../cards/lesson-card';
 import { Badge } from '../ui/badge';
-import { buttonVariants } from '../ui/button';
+import { NavLinkButton } from '../ui/button';
 import { IconTooltipButton } from '../ui/tooltip';
 
 import { cn } from '~/lib/utils';
@@ -185,12 +185,14 @@ export default function CourseChapterItem({ chapter, loading }: Props) {
           </div>
         )}
         <div className='flex w-full justify-end'>
-          <Link
-            to={`${basePath}/lesson/new`}
-            className={buttonVariants({ variant: 'default', size: 'sm' })}
+          <NavLinkButton
+            to={`${basePath}/new-lesson-details`}
+            leftIcon={<Plus />}
+            size='sm'
+            variant='secondary'
           >
-            <Plus /> Add Lesson
-          </Link>
+            Add lesson
+          </NavLinkButton>
         </div>
         <div className='flex flex-col space-y-4 py-4'>
           <DndContext

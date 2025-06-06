@@ -66,22 +66,28 @@ const NavLinkButton = React.forwardRef<HTMLAnchorElement, NavLinkButtonProps>(
         >
           {({ isPending }) => (
             <span className='relative z-5 flex h-full w-full items-center justify-center gap-2'>
-              {/* Left icon or loader (if rightIcon doesn't exist) */}
-              {!isLoading && !isPending && leftIcon && (
+              {/* Left icon or loader (when loading and no rightIcon) */}
+              {isLoading || isPending ? (
+                !rightIcon ? (
+                  <Loader2 className='h-4 w-4 animate-spin' />
+                ) : leftIcon ? (
+                  <div className='transition-transform duration-200 group-hover:scale-110'>
+                    {leftIcon}
+                  </div>
+                ) : null
+              ) : leftIcon ? (
                 <div className='transition-transform duration-200 group-hover:scale-110'>
                   {leftIcon}
                 </div>
-              )}
+              ) : null}
 
               <div className='mt-0.5 flex items-center gap-1'>{children}</div>
 
-              {/* Right icon or loader (if both icons exist or only rightIcon exists) */}
+              {/* Right icon or loader (when loading and rightIcon exists) */}
               {isLoading || isPending ? (
-                rightIcon || (leftIcon && rightIcon) ? (
+                rightIcon ? (
                   <Loader2 className='h-4 w-4 animate-spin' />
-                ) : leftIcon ? null : (
-                  <Loader2 className='h-4 w-4 animate-spin' />
-                )
+                ) : null
               ) : rightIcon ? (
                 <div className='transition-transform duration-200 group-hover:scale-110'>
                   {rightIcon}

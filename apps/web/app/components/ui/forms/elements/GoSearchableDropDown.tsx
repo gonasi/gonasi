@@ -87,11 +87,11 @@ export function GoSearchableDropDown({
                   setOpen(isOpen);
                 }
               }}
-              modal={false} // Key fix: Prevent modal behavior in modals
+              modal={false}
             >
               <PopoverTrigger asChild>
                 <button
-                  type='button' // Explicit button type to prevent form submission
+                  type='button'
                   role='combobox'
                   aria-controls='command-list'
                   aria-expanded={open}
@@ -109,21 +109,12 @@ export function GoSearchableDropDown({
                       ? 'hover:bg-background cursor-not-allowed opacity-50'
                       : 'cursor-pointer',
                   )}
-                  onMouseDown={(e) => {
-                    // Prevent focus issues in modals
-                    if (disabled) {
-                      e.preventDefault();
-                      return;
-                    }
-                    e.preventDefault(); // Prevent default focus behavior
-                  }}
                   onClick={(e) => {
                     if (disabled) {
                       e.preventDefault();
                       return;
                     }
-                    e.stopPropagation();
-                    setOpen(!open); // Toggle explicitly
+                    setOpen(!open);
                   }}
                 >
                   <div className='flex w-full items-center justify-between'>
@@ -160,17 +151,13 @@ export function GoSearchableDropDown({
                 className='z-50 p-0'
                 style={{ width: 'var(--radix-popover-trigger-width)' }}
                 onOpenAutoFocus={(e) => {
-                  // More targeted auto-focus prevention
                   e.preventDefault();
                 }}
                 onCloseAutoFocus={(e) => {
-                  // Prevent focus return issues in modals
                   e.preventDefault();
                 }}
                 onPointerDownOutside={(e) => {
-                  // Handle clicks outside more carefully
                   const target = e.target as Element;
-                  // Don't close if clicking on modal backdrop or other modal elements
                   if (
                     target.closest('[role="dialog"]') &&
                     !target.closest('[data-radix-popover-content]')
@@ -181,38 +168,34 @@ export function GoSearchableDropDown({
                   setOpen(false);
                 }}
                 onEscapeKeyDown={(e) => {
-                  // Handle escape key properly in modals
                   e.stopPropagation();
                   setOpen(false);
                 }}
                 onFocusOutside={(e) => {
-                  // Prevent focus outside issues in modals
                   e.preventDefault();
                 }}
               >
-                <Command
-                  onClick={(e) => e.stopPropagation()}
-                  onKeyDown={(e) => {
-                    // Handle keyboard navigation properly
-                    if (e.key === 'Escape') {
-                      e.stopPropagation();
-                      setOpen(false);
-                    }
-                  }}
-                >
+                <Command className='max-h-[300px] overflow-hidden'>
                   <CommandInput
                     placeholder={searchPlaceholder}
-                    onMouseDown={(e) => e.stopPropagation()}
-                    onClick={(e) => e.stopPropagation()}
-                    onFocus={(e) => e.stopPropagation()}
                     onKeyDown={(e) => {
-                      // Prevent escape from bubbling to modal
                       if (e.key === 'Escape') {
                         e.stopPropagation();
                       }
                     }}
                   />
-                  <CommandList id='command-list' onClick={(e) => e.stopPropagation()}>
+                  <CommandList
+                    id='command-list'
+                    className='max-h-[240px] overflow-y-auto'
+                    onWheel={(e) => {
+                      // Allow scrolling within the list, but prevent it from bubbling to parent modal
+                      e.stopPropagation();
+                    }}
+                    onTouchMove={(e) => {
+                      // Allow touch scrolling within the list
+                      e.stopPropagation();
+                    }}
+                  >
                     <CommandEmpty>{notFoundPlaceholder}</CommandEmpty>
                     <CommandGroup>
                       {options.map((option) => (
@@ -220,7 +203,6 @@ export function GoSearchableDropDown({
                           value={option.label}
                           key={option.value}
                           onSelect={(currentValue) => {
-                            // Use onSelect callback properly
                             const selectedOption = options.find(
                               (opt) => opt.label.toLowerCase() === currentValue.toLowerCase(),
                             );
@@ -228,15 +210,6 @@ export function GoSearchableDropDown({
                               field.onChange(selectedOption.value);
                               setOpen(false);
                             }
-                          }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            field.onChange(option.value);
-                            setOpen(false);
-                          }}
-                          onMouseDown={(e) => {
-                            // Prevent focus issues when clicking items
-                            e.preventDefault();
                           }}
                           className='hover:cursor-pointer'
                         >

@@ -17,7 +17,7 @@ export const NewLessonDetailsSchema = z.object({
   name: LessonTitleSchema,
   lessonType: LessonTypeSchema,
 });
-export type NewLessonDetailsTypes = z.infer<typeof NewLessonDetailsSchema>;
+export type NewLessonDetailsSchemaTypes = z.infer<typeof NewLessonDetailsSchema>;
 
 // Schema for submitting a new lesson with additional identifiers
 export const SubmitNewLessonDetailsSchema = NewLessonDetailsSchema.merge(

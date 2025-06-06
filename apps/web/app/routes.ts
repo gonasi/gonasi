@@ -165,7 +165,10 @@ export default [
               'routes/profile/course-builder/courseId/content/chapterId/delete-course-chapter.tsx',
             ),
             // /:username/course-builder/:courseId/content/:chapterId/new-lesson-details
-            route('new-lesson-details', 'routes/dashboard/courses/lessons/new-lesson-details.tsx'),
+            route(
+              'new-lesson-details',
+              'routes/profile/course-builder/courseId/content/chapterId/new-lesson-details.tsx',
+            ),
             // /:username/course-builder/:courseId/content/:chapterId/:lessonId/edit-lesson-details
             route(
               ':lessonId/edit-lesson-details',
