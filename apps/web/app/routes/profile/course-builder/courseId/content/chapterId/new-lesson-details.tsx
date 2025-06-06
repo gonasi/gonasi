@@ -1,5 +1,6 @@
 import { data, Form, useParams } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { ChevronRight } from 'lucide-react';
 import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
 import { dataWithError, redirectWithSuccess } from 'remix-toast';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
@@ -109,13 +110,18 @@ export default function NewLessonDetails({ loaderData }: Route.ComponentProps) {
                   disabled: isDisabled,
                   options: loaderData,
                 }}
-                description='Choose the most relevant lesson type from the list.'
+                description="Pick what best fits the lesson you're making."
               />
 
               <div className='pt-4'>
                 {/* Submit button */}
-                <Button type='submit' disabled={isPending} isLoading={isPending}>
-                  Save & Continue
+                <Button
+                  type='submit'
+                  disabled={isPending}
+                  isLoading={isPending}
+                  rightIcon={<ChevronRight />}
+                >
+                  Save
                 </Button>
               </div>
             </Form>
