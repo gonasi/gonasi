@@ -12,7 +12,7 @@ import {
 } from '@gonasi/schemas/courses';
 
 import type { Route } from './+types/edit-course-pathway';
-import type { CourseOverviewType } from '../..';
+import type { CourseOverviewType } from '../../course-id-index';
 
 import { GoLink } from '~/components/go-link';
 import { Button, NavLinkButton } from '~/components/ui/button';

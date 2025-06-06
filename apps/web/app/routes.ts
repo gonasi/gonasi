@@ -114,9 +114,9 @@ export default [
   layout('routes/layouts/profile/course-overview-layout.tsx', [
     ...prefix(':username/course-builder', [
       // /:username/course-builder/:courseId
-      route(':courseId', 'routes/profile/course-builder/courseId/index.tsx', [
+      route(':courseId', 'routes/profile/course-builder/courseId/course-id-index.tsx', [
         // /:username/course-builder/:courseId/overview
-        route('overview', 'routes/profile/course-builder/courseId/overview/index.tsx', [
+        route('overview', 'routes/profile/course-builder/courseId/overview/overview-index.tsx', [
           // /:username/course-builder/:courseId/overview/edit-thumbnail
           route(
             'edit-thumbnail',
@@ -145,10 +145,10 @@ export default [
           ]),
         ]),
         // /:username/course-builder/:courseId/content
-        route('content', 'routes/profile/course-builder/courseId/content/index.tsx', [
+        route('content', 'routes/profile/course-builder/courseId/content/content-index.tsx', [
           ...prefix('chapter', [
             // /:username/course-builder/:courseId/content/chapter/new
-            route('new', 'routes/dashboard/courses/chapters/new-course-chapter.tsx'),
+            route('new', 'routes/profile/course-builder/courseId/content/chapter/new-chapter.tsx'),
           ]),
           ...prefix(':chapterId', [
             // /:username/course-builder/:courseId/content/:chapterId/edit-chapter

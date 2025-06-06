@@ -4,7 +4,7 @@ import { redirectWithError } from 'remix-toast';
 
 import { fetchCourseOverviewById } from '@gonasi/database/courses';
 
-import type { Route } from './+types/course-by-id';
+import type { Route } from './+types/course-id-index';
 
 import { GoTabNav } from '~/components/go-tab-nav/course-tab-nav';
 import { PlainLayout } from '~/components/layouts/plain';
@@ -37,7 +37,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   const courseOverview = await fetchCourseOverviewById(supabase, courseId);
 
   if (!courseOverview) {
-    return redirectWithError(`/${params.companyId}`, 'Course not found');
+    return redirectWithError(`/${params.username}/course-builder`, 'Course not found');
   }
 
   return data(courseOverview);

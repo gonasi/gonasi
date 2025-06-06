@@ -1,4 +1,4 @@
-import { data, Link, Outlet } from 'react-router';
+import { data, Outlet, useOutletContext } from 'react-router';
 import { Plus } from 'lucide-react';
 import { dataWithError } from 'remix-toast';
 
@@ -10,28 +10,43 @@ import { updateLessonPositions } from '@gonasi/database/lessons';
 import { ChapterPositionUpdateArraySchema } from '@gonasi/schemas/courseChapters';
 import { LessonPositionUpdateArraySchema } from '@gonasi/schemas/lessons';
 
-import type { Route } from '../content/+types';
+import type { Route } from './+types/content-index';
+import type { CourseOverviewType } from '../course-id-index';
 
 import { BannerCard } from '~/components/cards';
 import { CourseChapters } from '~/components/course/course-chapters';
-import { buttonVariants } from '~/components/ui/button';
+import { FloatingActionButton } from '~/components/ui/button';
 import { createClient } from '~/lib/supabase/supabase.server';
 
+export function meta() {
+  return [
+    { title: 'Course Content Layout | Gonasi' },
+    {
+      name: 'description',
+      content:
+        'Structure your course content with ease. View and organize chapters and lessons in one place—perfect for keeping your curriculum clear and student-friendly.',
+    },
+  ];
+}
+
+// Types for chapter and lesson data, inferred from the loader
 export type CourseChaptersType = Exclude<Awaited<ReturnType<typeof loader>>, Response>['data'];
 export type CourseLessonType = NonNullable<CourseChaptersType>[number]['lessons'][number];
 
+// Loads all chapters (with their lessons) for a given course
 export async function loader({ params, request }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
   const courseChapters = await fetchCourseChaptersByCourseId(supabase, params.courseId);
   return data(courseChapters);
 }
 
+// Handles form submissions for reordering chapters or lessons
 export async function action({ request }: Route.ActionArgs) {
   const formData = await request.formData();
   const { supabase } = createClient(request);
-
   const intent = formData.get('intent');
 
+  // Handle reordering chapters
   if (intent === 'reorder-chapters') {
     const chaptersRaw = formData.get('chapters');
 
@@ -55,6 +70,7 @@ export async function action({ request }: Route.ActionArgs) {
     return data({ success: true });
   }
 
+  // Handle reordering lessons
   if (intent === 'reorder-lessons') {
     const lessonsRaw = formData.get('lessons');
 
@@ -78,34 +94,41 @@ export async function action({ request }: Route.ActionArgs) {
     return data({ success: true });
   }
 
+  // If no matching intent is found
   throw new Response('Unknown intent', { status: 400 });
 }
 
+// UI for the Course Overview page
 export default function CourseOverview({ loaderData, params }: Route.ComponentProps) {
+  const outletLoaderData = useOutletContext<CourseOverviewType>() ?? {};
+
+  const { pricing_model } = outletLoaderData;
+
   return (
     <>
       <div className='max-w-xl pb-20'>
         <BannerCard
-          message='Just drag and drop to sort your chapters and lessons. Easy peasy.'
+          message='Want to reorder your chapters and lessons? Just drag and drop.'
           variant='tip'
           className='mb-10'
         />
-        <div className='flex justify-end pb-8'>
-          <Link
-            to={`/dashboard/${params.companyId}/courses/${params.courseId}/course-content/chapter/new`}
-            className={buttonVariants({ variant: 'default', size: 'sm' })}
-          >
-            <Plus className='mr-2 h-4 w-4' />
-            Add a chapter
-          </Link>
-        </div>
+
         <CourseChapters
-          companyId={params.companyId}
+          username={params.username}
           chapters={loaderData}
           courseId={params.courseId}
         />
       </div>
-      <Outlet />
+
+      {/* Floating button to add a new chapter */}
+      <FloatingActionButton
+        to={`/${params.username}/course-builder/${params.courseId}/content/chapter/new`}
+        tooltip='Add new chapter'
+        icon={<Plus size={20} strokeWidth={4} />}
+      />
+
+      {/* Render nested routes if any */}
+      <Outlet context={{ pricing_model }} />
     </>
   );
 }

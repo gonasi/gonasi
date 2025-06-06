@@ -6,3 +6,4 @@ export * from './GoRangeSliderField';
 export * from './GoRichTextInputField';
 export * from './GoFileField';
 export * from './GoSearchableDropDown';
+export * from './GoCheckBoxField';

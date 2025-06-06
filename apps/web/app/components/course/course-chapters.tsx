@@ -27,12 +27,12 @@ import CourseChapterItem from './course-chapter-item';
 import type { CourseChaptersType } from '~/routes/dashboard/courses/course-content';
 
 interface Props {
-  companyId: string;
+  username: string;
   chapters: CourseChaptersType;
   courseId: string;
 }
 
-export function CourseChapters({ chapters, courseId, companyId }: Props) {
+export function CourseChapters({ chapters, courseId, username }: Props) {
   const fetcher = useFetcher();
 
   const [myChapters, setMyChapters] = useState(chapters ?? []);
@@ -101,7 +101,7 @@ export function CourseChapters({ chapters, courseId, companyId }: Props) {
 
         fetcher.submit(formData, {
           method: 'post',
-          action: `/dashboard/${companyId}/courses/${courseId}/course-content`,
+          action: `/dashboard/${username}/courses/${courseId}/course-content`,
         });
       }
     }
@@ -135,7 +135,7 @@ export function CourseChapters({ chapters, courseId, companyId }: Props) {
                   return (
                     <CourseChapterItem
                       key={chapterId}
-                      companyId={companyId}
+                      username={username}
                       chapterId={chapterId}
                       name={name}
                       description={description}

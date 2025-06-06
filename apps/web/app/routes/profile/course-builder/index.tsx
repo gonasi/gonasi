@@ -138,7 +138,7 @@ export default function ViewAllCourses({ loaderData, params }: Route.ComponentPr
 
       <FloatingActionButton
         to={`/${username}/course-builder/new`}
-        tooltip='New Course'
+        tooltip='New course'
         icon={<Plus size={20} strokeWidth={4} />}
       />
 

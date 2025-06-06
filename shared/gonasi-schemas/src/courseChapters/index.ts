@@ -23,7 +23,8 @@ export const NewChapterSchema = z.object({
     })
     .default(false),
 });
-export type NewChapterTypes = z.infer<typeof NewChapterSchema>;
+export type NewChapterSchemaTypes = z.infer<typeof NewChapterSchema>;
+
 export const SubmitNewChapterSchema = NewChapterSchema.merge(
   z.object({
     courseId: z.string(),
