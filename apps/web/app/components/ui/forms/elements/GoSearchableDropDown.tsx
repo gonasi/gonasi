@@ -80,9 +80,18 @@ export function GoSearchableDropDown({
         return (
           <div className={className}>
             <Label htmlFor={id} error={hasError} {...labelProps} />
-            <Popover open={open} onOpenChange={(isOpen) => !disabled && setOpen(isOpen)}>
+            <Popover
+              open={open}
+              onOpenChange={(isOpen) => {
+                if (!disabled) {
+                  setOpen(isOpen);
+                }
+              }}
+              modal={false} // Key fix: Prevent modal behavior in modals
+            >
               <PopoverTrigger asChild>
                 <button
+                  type='button' // Explicit button type to prevent form submission
                   role='combobox'
                   aria-controls='command-list'
                   aria-expanded={open}
@@ -100,12 +109,21 @@ export function GoSearchableDropDown({
                       ? 'hover:bg-background cursor-not-allowed opacity-50'
                       : 'cursor-pointer',
                   )}
+                  onMouseDown={(e) => {
+                    // Prevent focus issues in modals
+                    if (disabled) {
+                      e.preventDefault();
+                      return;
+                    }
+                    e.preventDefault(); // Prevent default focus behavior
+                  }}
                   onClick={(e) => {
                     if (disabled) {
                       e.preventDefault();
                       return;
                     }
                     e.stopPropagation();
+                    setOpen(!open); // Toggle explicitly
                   }}
                 >
                   <div className='flex w-full items-center justify-between'>
@@ -141,42 +159,84 @@ export function GoSearchableDropDown({
               <PopoverContent
                 className='z-50 p-0'
                 style={{ width: 'var(--radix-popover-trigger-width)' }}
-                onOpenAutoFocus={(e) => e.preventDefault()} // Prevent auto focus which can cause issues in modals
-                onInteractOutside={(e) => {
-                  // Only close if clicking outside the popover content itself
+                onOpenAutoFocus={(e) => {
+                  // More targeted auto-focus prevention
+                  e.preventDefault();
+                }}
+                onCloseAutoFocus={(e) => {
+                  // Prevent focus return issues in modals
+                  e.preventDefault();
+                }}
+                onPointerDownOutside={(e) => {
+                  // Handle clicks outside more carefully
                   const target = e.target as Element;
-                  if (!target.closest('[data-radix-popover-content]')) {
-                    setOpen(false);
+                  // Don't close if clicking on modal backdrop or other modal elements
+                  if (
+                    target.closest('[role="dialog"]') &&
+                    !target.closest('[data-radix-popover-content]')
+                  ) {
+                    e.preventDefault();
+                    return;
                   }
+                  setOpen(false);
+                }}
+                onEscapeKeyDown={(e) => {
+                  // Handle escape key properly in modals
+                  e.stopPropagation();
+                  setOpen(false);
+                }}
+                onFocusOutside={(e) => {
+                  // Prevent focus outside issues in modals
+                  e.preventDefault();
                 }}
               >
                 <Command
-                  onClick={(e) => e.stopPropagation()} // Prevent clicks inside from bubbling up
+                  onClick={(e) => e.stopPropagation()}
+                  onKeyDown={(e) => {
+                    // Handle keyboard navigation properly
+                    if (e.key === 'Escape') {
+                      e.stopPropagation();
+                      setOpen(false);
+                    }
+                  }}
                 >
                   <CommandInput
                     placeholder={searchPlaceholder}
-                    onMouseDown={(e) => e.stopPropagation()} // Prevent event bubbling
-                    onClick={(e) => e.stopPropagation()} // Prevent event bubbling
-                    onFocus={(e) => e.stopPropagation()} // Prevent event bubbling
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onClick={(e) => e.stopPropagation()}
+                    onFocus={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => {
+                      // Prevent escape from bubbling to modal
+                      if (e.key === 'Escape') {
+                        e.stopPropagation();
+                      }
+                    }}
                   />
-                  <CommandList
-                    id='command-list'
-                    onClick={(e) => e.stopPropagation()} // Prevent clicks from bubbling up
-                  >
+                  <CommandList id='command-list' onClick={(e) => e.stopPropagation()}>
                     <CommandEmpty>{notFoundPlaceholder}</CommandEmpty>
                     <CommandGroup>
                       {options.map((option) => (
                         <CommandItem
                           value={option.label}
                           key={option.value}
-                          onSelect={() => {
+                          onSelect={(currentValue) => {
+                            // Use onSelect callback properly
+                            const selectedOption = options.find(
+                              (opt) => opt.label.toLowerCase() === currentValue.toLowerCase(),
+                            );
+                            if (selectedOption) {
+                              field.onChange(selectedOption.value);
+                              setOpen(false);
+                            }
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
                             field.onChange(option.value);
                             setOpen(false);
                           }}
-                          onClick={(e) => {
-                            e.stopPropagation(); // Prevent event bubbling
-                            field.onChange(option.value);
-                            setOpen(false);
+                          onMouseDown={(e) => {
+                            // Prevent focus issues when clicking items
+                            e.preventDefault();
                           }}
                         >
                           <div className='flex w-full items-center justify-between'>
