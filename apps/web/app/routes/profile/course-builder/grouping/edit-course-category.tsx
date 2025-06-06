@@ -111,13 +111,16 @@ export default function EditCourseCategory({ loaderData }: Route.ComponentProps)
             Save
           </Button>
         ) : (
-          <NavLinkButton
-            to={`/${params.username}/course-builder/${params.courseId}/overview/grouping/edit-subcategory`}
-            rightIcon={<ChevronRight />}
-            variant='ghost'
-          >
-            Next
-          </NavLinkButton>
+          <div className='flex w-full justify-end'>
+            <NavLinkButton
+              to={`/${params.username}/course-builder/${params.courseId}/overview/grouping/edit-subcategory`}
+              rightIcon={<ChevronRight />}
+              variant='ghost'
+              animate='rtl'
+            >
+              Next
+            </NavLinkButton>
+          </div>
         )}
       </Form>
     </RemixFormProvider>

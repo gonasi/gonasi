@@ -1,6 +1,6 @@
 import { data, Form, useOutletContext, useParams } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
 import { dataWithError, redirectWithSuccess } from 'remix-toast';
 
@@ -113,16 +113,26 @@ export default function EditCourseSubcategory({ loaderData }: Route.ComponentPro
             isLoading={isDisabled}
             rightIcon={<ChevronRight />}
           >
-            Save changes
+            Save
           </Button>
         ) : (
-          <NavLinkButton
-            to={`/${params.username}/course-builder/${params.courseId}/overview/grouping/edit-pathway`}
-            rightIcon={<ChevronRight />}
-            variant='ghost'
-          >
-            Next
-          </NavLinkButton>
+          <div className='flex w-full items-center justify-between'>
+            <NavLinkButton
+              to={`/${params.username}/course-builder/${params.courseId}/overview/grouping/edit-category`}
+              leftIcon={<ChevronLeft />}
+              variant='ghost'
+            >
+              Previous
+            </NavLinkButton>
+            <NavLinkButton
+              to={`/${params.username}/course-builder/${params.courseId}/overview/grouping/edit-pathway`}
+              rightIcon={<ChevronRight />}
+              variant='ghost'
+              animate='rtl'
+            >
+              Next
+            </NavLinkButton>
+          </div>
         )}
       </Form>
     </RemixFormProvider>

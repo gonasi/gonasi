@@ -119,7 +119,7 @@ export default function EditCoursePathway({ loaderData }: Route.ComponentProps) 
             leftIcon={<ChevronLeft />}
             variant='ghost'
           >
-            Go back
+            Previous
           </NavLinkButton>
         )}
       </Form>

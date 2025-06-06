@@ -17,6 +17,7 @@ export interface NavLinkButtonProps
   children: React.ReactNode;
   className?: string;
   showActiveIndicator?: boolean;
+  animate?: 'ltr' | 'rtl';
 }
 
 const NavLinkButton = React.forwardRef<HTMLAnchorElement, NavLinkButtonProps>(
@@ -30,14 +31,22 @@ const NavLinkButton = React.forwardRef<HTMLAnchorElement, NavLinkButtonProps>(
       isLoading,
       children,
       showActiveIndicator = false,
+      animate = 'ltr',
       ...props
     },
     ref,
   ) => {
+    // Define the animation variants based on direction
+    const variants = {
+      initial: { opacity: 0, x: animate === 'ltr' ? -10 : 10 },
+      animate: { opacity: 1, x: 0 },
+    };
+
     return (
       <motion.div
-        initial={{ opacity: 0, x: -10 }}
-        animate={{ opacity: 1, x: 0 }}
+        initial='initial'
+        animate='animate'
+        variants={variants}
         transition={{ delay: 0.2, duration: 0.2, ease: 'easeIn' }}
         className='relative'
       >
