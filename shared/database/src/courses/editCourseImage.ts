@@ -70,7 +70,7 @@ export const editCourseImage = async (
 
       return {
         success: false,
-        message: 'Image was uploaded, but saving it to the course didn’t work out.',
+        message: 'Thumbnail was uploaded, but saving it to the course didn’t work out.',
       };
     }
 
@@ -85,7 +85,7 @@ export const editCourseImage = async (
 
     return {
       success: true,
-      message: 'Your new course image is all set!',
+      message: 'Your new course thumbnail is all set!',
     };
   } catch (error) {
     // Handle unexpected errors (e.g., network issues)

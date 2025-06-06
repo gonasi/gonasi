@@ -80,7 +80,7 @@ export default function EditCourseDetails() {
     <Modal open>
       <Modal.Content size='sm'>
         <Modal.Header
-          title='Edit Course Details'
+          title='Edit course details'
           hasClose={false}
           closeRoute={`/${params.username}/course-builder/${params.courseId}/overview`}
         />
@@ -89,7 +89,7 @@ export default function EditCourseDetails() {
             <Form method='POST' onSubmit={methods.handleSubmit}>
               <HoneypotInputs />
               <GoInputField
-                labelProps={{ children: 'Course Title', required: true }}
+                labelProps={{ children: 'Course title', required: true }}
                 name='name'
                 inputProps={{
                   autoFocus: true,
@@ -98,7 +98,7 @@ export default function EditCourseDetails() {
                 description='Enter the course title.'
               />
               <GoTextAreaField
-                labelProps={{ children: 'Course Description', required: true }}
+                labelProps={{ children: 'Course description', required: true }}
                 name='description'
                 textareaProps={{
                   disabled: isDisabled,
@@ -107,7 +107,7 @@ export default function EditCourseDetails() {
               />
               <GoInputField
                 prefix='KES'
-                labelProps={{ children: 'Monthly Subscription Price', required: true }}
+                labelProps={{ children: 'Monthly subscription price', required: true }}
                 name='monthlySubscriptionPrice'
                 inputProps={{
                   disabled: isDisabled,

@@ -1,17 +1,23 @@
 import { data, Form, useOutletContext } from 'react-router';
-import { FormProvider, getFormProps, useForm } from '@conform-to/react';
-import { getZodConstraint, parseWithZod } from '@conform-to/zod';
+import { parseWithZod } from '@conform-to/zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { ChevronRight } from 'lucide-react';
+import { RemixFormProvider, useRemixForm } from 'remix-hook-form';
 import { dataWithError, redirectWithSuccess } from 'remix-toast';
 
 import { fetchCourseCategoriesAsSelectOptions } from '@gonasi/database/courseCategories';
 import { editCourseCategory } from '@gonasi/database/courses';
-import { EditCourseCategorySchema } from '@gonasi/schemas/courses';
+import {
+  EditCourseCategorySchema,
+  type EditCourseCategorySchemaTypes,
+} from '@gonasi/schemas/courses';
 
 import type { Route } from './+types/edit-course-category';
 import type { CourseOverviewType } from '../course-by-id';
 
+import { GoLink } from '~/components/go-link';
 import { Button } from '~/components/ui/button';
-import { ErrorList, SearchDropdownField } from '~/components/ui/forms';
+import { GoInputField, GoSearchableDropDown } from '~/components/ui/forms/elements';
 import { createClient } from '~/lib/supabase/supabase.server';
 import { checkHoneypot } from '~/utils/honeypot.server';
 import { useIsPending } from '~/utils/misc';
@@ -25,6 +31,8 @@ export function meta() {
     },
   ];
 }
+
+const resolver = zodResolver(EditCourseCategorySchema);
 
 export async function loader({ request }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
@@ -57,6 +65,29 @@ export async function action({ request, params }: Route.ActionArgs) {
     : dataWithError(null, message);
 }
 
+const frameworks = [
+  {
+    value: 'next.js',
+    label: 'Next.js',
+  },
+  {
+    value: 'sveltekit',
+    label: 'SvelteKit',
+  },
+  {
+    value: 'nuxt.js',
+    label: 'Nuxt.js',
+  },
+  {
+    value: 'remix',
+    label: 'Remix',
+  },
+  {
+    value: 'astro',
+    label: 'Astro',
+  },
+];
+
 export default function EditCourseCategory({ actionData, loaderData }: Route.ComponentProps) {
   const { course_categories } = useOutletContext<CourseOverviewType>() ?? {};
 
@@ -66,36 +97,47 @@ export default function EditCourseCategory({ actionData, loaderData }: Route.Com
 
   const isPending = useIsPending();
 
-  const [form, fields] = useForm({
-    id: 'edit-course-category-form',
-    constraint: getZodConstraint(EditCourseCategorySchema),
-    lastResult: actionData?.result,
-    defaultValue,
-    shouldValidate: 'onInput',
-    shouldRevalidate: 'onInput',
-    onValidate({ formData }) {
-      return parseWithZod(formData, { schema: EditCourseCategorySchema });
-    },
+  const methods = useRemixForm<EditCourseCategorySchemaTypes>({
+    mode: 'all',
+    resolver,
   });
 
+  const isDisabled = isPending || methods.formState.isSubmitting;
+
   return (
-    <Form method='POST' {...getFormProps(form)}>
-      <FormProvider context={form.context}>
-        <SearchDropdownField
-          labelProps={{ children: 'Course Category', required: true }}
-          searchDropdownProps={{
-            meta: fields.category,
-            disabled: isPending,
-            options: loaderData,
+    <RemixFormProvider {...methods}>
+      <Form method='POST' onSubmit={methods.handleSubmit}>
+        <GoInputField
+          labelProps={{
+            children: 'Your password',
+            required: true,
+            endAdornment: <GoLink to='/'>Forgot it?</GoLink>,
           }}
-          errors={fields.category?.errors}
-          description='Choose a category for this course.'
+          name='password'
+          inputProps={{
+            type: 'text',
+            autoComplete: 'current-password',
+            disabled: isDisabled,
+          }}
+          description='We won’t tell anyone, promise 😊'
         />
-        <ErrorList errors={form.errors} id={form.errorId} />
-        <Button type='submit' disabled={isPending} isLoading={isPending}>
+        <GoSearchableDropDown
+          name='category'
+          labelProps={{ children: 'Course category', required: true }}
+          description='Choose a category for this course.'
+          searchDropdownProps={{
+            options: frameworks,
+          }}
+        />
+        <Button
+          type='submit'
+          disabled={isDisabled}
+          isLoading={isDisabled}
+          rightIcon={<ChevronRight />}
+        >
           Save
         </Button>
-      </FormProvider>
-    </Form>
+      </Form>
+    </RemixFormProvider>
   );
 }

@@ -79,6 +79,7 @@
     "react-hook-form": "^7.56.4",
     "react-router": "^7.5.3",
     "react-scroll": "^1.9.3",
+    "react-select": "^5.10.1",
     "react-use": "^17.6.0",
     "remix-hook-form": "^7.0.1",
     "remix-toast": "^3.1.0",

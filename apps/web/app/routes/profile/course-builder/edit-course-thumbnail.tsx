@@ -138,7 +138,7 @@ export async function action({ request, params }: Route.ActionArgs) {
   }
 }
 
-// UI Component: Edit Course Image Page
+// UI Component: Edit Course Thumbnail Page
 export default function EditCourseImage() {
   const isPending = useIsPending();
   const params = useParams();
@@ -219,7 +219,7 @@ export default function EditCourseImage() {
       // Show second message after 3 seconds
       timer2 = setTimeout(() => {
         setLoadingText('Finishing up...');
-      }, 3500);
+      }, 4500);
     } else {
       setLoadingText('');
     }
@@ -234,7 +234,7 @@ export default function EditCourseImage() {
     <Modal open>
       <Modal.Content size={showCropper ? 'lg' : 'sm'}>
         <Modal.Header
-          title={showCropper ? '✂️ Crop Your Thumbnail' : '🖼️ Update Course Thumbnail'}
+          title={showCropper ? '✂️ Crop your thumbnail' : '🖼️ Update course thumbnail'}
           closeRoute={`/${params.username}/course-builder/${params.courseId}/overview`}
         />
         <Modal.Body>
@@ -269,7 +269,7 @@ export default function EditCourseImage() {
                   Cancel
                 </Button>
                 <Button variant='secondary' onClick={handleCropConfirm} rightIcon={<Crop />}>
-                  Apply Crop
+                  Apply crop
                 </Button>
               </div>
             </div>
@@ -282,7 +282,7 @@ export default function EditCourseImage() {
                 <div className='space-y-4'>
                   <div>
                     <Label required className='text-sm font-medium'>
-                      Course Image
+                      Course thumbnail
                     </Label>
                     <Input
                       type='file'
@@ -318,7 +318,7 @@ export default function EditCourseImage() {
                     isLoading={isSubmitting}
                     rightIcon={<Upload />}
                   >
-                    Save Image
+                    Save
                   </Button>
                 </div>
               </Form>

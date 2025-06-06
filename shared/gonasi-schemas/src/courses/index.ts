@@ -73,7 +73,7 @@ export type EditCourseImageSubmitValues = z.infer<typeof SubmitEditCourseImageSc
 export const EditCourseCategorySchema = z.object({
   category: CourseCategorySchema,
 });
-export type EditCourseCcategoryTypes = z.infer<typeof EditCourseCategorySchema>;
+export type EditCourseCategorySchemaTypes = z.infer<typeof EditCourseCategorySchema>;
 export const SubmitEditCourseCategorySchema = EditCourseCategorySchema.merge(
   z.object({
     courseId: z.string(),
