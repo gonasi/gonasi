@@ -12,7 +12,7 @@ import {
 } from '@gonasi/schemas/courses';
 
 import type { Route } from './+types/edit-course-subcategory';
-import type { CourseOverviewType } from '../course-by-id';
+import type { CourseOverviewType } from '../..';
 
 import { Button, NavLinkButton } from '~/components/ui/button';
 import { GoSearchableDropDown } from '~/components/ui/forms/elements';

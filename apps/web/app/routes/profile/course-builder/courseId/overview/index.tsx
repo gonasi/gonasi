@@ -1,7 +1,7 @@
 import { Outlet, useOutletContext } from 'react-router';
 
-import type { Route } from './+types/course-overview';
-import type { CourseOverviewType } from './course-by-id';
+import type { Route } from '../../+types/course-overview';
+import type { CourseOverviewType } from '..';
 
 import { BannerCard } from '~/components/cards';
 import {

@@ -8,7 +8,7 @@ import { HoneypotInputs } from 'remix-utils/honeypot/react';
 import { createNewCourseTitle } from '@gonasi/database/courses';
 import { NewCourseTitleSchema, type NewCourseTitleSchemaTypes } from '@gonasi/schemas/courses';
 
-import type { Route } from './+types/new-course-title';
+import type { Route } from './+types/new';
 
 import { Button } from '~/components/ui/button';
 import { GoInputField } from '~/components/ui/forms/elements';

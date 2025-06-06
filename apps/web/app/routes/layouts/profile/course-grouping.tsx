@@ -3,7 +3,7 @@ import { Outlet, useLocation, useOutletContext, useParams } from 'react-router';
 import { BackArrowNavLink } from '~/components/ui/button';
 import { Modal } from '~/components/ui/modal';
 import { Stepper } from '~/components/ui/stepper';
-import type { CourseOverviewType } from '~/routes/profile/course-builder/course-by-id';
+import type { CourseOverviewType } from '~/routes/profile/course-builder/courseId';
 
 export default function UpsertCourseLayout() {
   const courseDetails = useOutletContext<CourseOverviewType>() ?? {};
