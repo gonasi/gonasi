@@ -39,28 +39,6 @@ export default [
     ]),
   ]),
 
-  ...prefix('go/course/:courseId/:chapterId/:lessonId', [
-    layout('routes/layouts/go/go-lesson-play-layout.tsx', [
-      // /go/course/:courseId/:chapterId/:lessonId/play
-      route('play', 'routes/go/go-lesson-play.tsx', [
-        // /go/course/:courseId/:chapterId/:lessonId/play/completed
-        route('completed', 'routes/go/go-lesson-completed.tsx'),
-        // /go/course/:courseId/:chapterId/:lessonId/play/restart
-        route('restart', 'routes/go/go-lesson-restart.tsx'),
-      ]),
-    ]),
-  ]),
-
-  ...prefix('dashboard', [
-    layout('routes/layouts/dashboard/dashboard-plain-team.tsx', [
-      // /dashboard/change-team
-      route('/change-team', 'routes/dashboard/team-management/change-team.tsx', [
-        // /dashboard/change-team/leave-team/:companyId
-        route('leave-team/:companyId', 'routes/dashboard/team-management/leave-team.tsx'),
-      ]),
-    ]),
-  ]),
-
   ...prefix('dashboard/:companyId', [
     layout('routes/layouts/dashboard/dashboard.tsx', [
       // /dashboard/:companyId
@@ -167,7 +145,7 @@ export default [
           ]),
         ]),
         // /:username/course-builder/:courseId/content
-        route('content', 'routes/dashboard/courses/course-content.tsx', [
+        route('content', 'routes/profile/course-builder/courseId/content/index.tsx', [
           ...prefix('chapter', [
             // /:username/course-builder/:courseId/content/chapter/new
             route('new', 'routes/dashboard/courses/chapters/new-course-chapter.tsx'),
