@@ -26,6 +26,9 @@ export default function GoPluginsMenuDialog() {
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const categories = usePluginOptions(debouncedQuery);
 
+  const basePath = `/${params.username}/course-builder/${params.courseId}/content`;
+  const pluginBasePath = `${basePath}/${params.chapterId}/${params.lessonId}/lesson-blocks/plugins`;
+
   const debouncedSetQuery = useMemo(
     () => debounce((value: string) => setDebouncedQuery(value), 300),
     [],
@@ -90,7 +93,7 @@ export default function GoPluginsMenuDialog() {
                   return (
                     <MotionNavLink
                       key={pluginGroup.id}
-                      to={`/dashboard/${params.companyId}/courses/${params.courseId}/course-content/${params.chapterId}/${params.lessonId}/plugins/${pluginGroup.id}`}
+                      to={`${pluginBasePath}/${pluginGroup.id}`}
                       className={({ isPending }) =>
                         cn(
                           'hover:bg-primary/5 flex w-full cursor-pointer items-center gap-3 rounded-sm p-2 text-left transition-all duration-200 ease-in-out hover:shadow-sm',

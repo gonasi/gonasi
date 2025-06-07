@@ -28,7 +28,7 @@ import {
 } from '@gonasi/database/lessons';
 import { BlocksPositionUpdateArraySchema } from '@gonasi/schemas/plugins';
 
-import type { Route } from './+types/lesson-blocks';
+import type { Route } from './+types/lesson-blocks-index';
 
 import { Spinner } from '~/components/loaders';
 import LessonBlockWrapper from '~/components/plugins/LessonBlockWrapper';
@@ -106,65 +106,60 @@ export async function action({ request }: Route.ActionArgs) {
   return true;
 }
 
-// --- Component ---
-// Main edit lesson content UI
 export default function EditLessonContent({ loaderData, params }: Route.ComponentProps) {
   const { lesson, lessonBlocks } = loaderData;
   const fetcher = useFetcher();
   const navigate = useNavigate();
 
-  // Helper to create navigation callbacks to a given path
+  const basePath = `/${params.username}/course-builder/${params.courseId}/content`;
+  const lessonBasePath = `${basePath}/${params.chapterId}/${params.lessonId}/lesson-blocks`;
+
   const navigateTo = (path: string) => () => navigate(path);
 
-  // Local state to manage lesson blocks list and loading indicator
   const [myLessonBlocks, setMyLessonBlocks] = useState(lessonBlocks ?? []);
-  const [lessonLoading, setLessonLoading] = useState(false);
+  const [lessonLoading, setLessonsLoading] = useState(false);
 
-  // Sync local lesson blocks with loaderData updates
   useEffect(() => {
     setMyLessonBlocks(lessonBlocks ?? []);
   }, [lessonBlocks]);
 
-  // Update loading state based on fetcher's state
   useEffect(() => {
-    setLessonLoading(fetcher.state === 'submitting');
-  }, [fetcher.state]);
+    if (fetcher.state === 'submitting') {
+      setLessonsLoading(true);
+    } else if (fetcher.state === 'idle' && fetcher.data) {
+      setLessonsLoading(false);
+    }
+  }, [fetcher.state, fetcher.data]);
 
-  // Set up drag-and-drop sensors (pointer, touch, keyboard)
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 8 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
-  /**
-   * Handle drag end event: update order locally and send update to server
-   */
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
 
-    // Only proceed if dragged over a different item
     if (over && active.id !== over.id) {
-      let updatedBlocks: typeof lessonBlocks = [];
+      let newLessons: typeof lessonBlocks = [];
 
       setMyLessonBlocks((items) => {
         const oldIndex = items.findIndex((item) => item.id === active.id);
         const newIndex = items.findIndex((item) => item.id === over.id);
 
-        updatedBlocks = arrayMove(items, oldIndex, newIndex);
-        return updatedBlocks;
+        newLessons = arrayMove(items, oldIndex, newIndex);
+        return newLessons;
       });
 
-      // Submit updated positions to backend
-      if (updatedBlocks.length) {
-        const simplifiedBlocks = updatedBlocks.map((block, index) => ({
+      if (newLessons.length) {
+        const simplifiedLessonBlocks = newLessons.map((block, index) => ({
           ...block,
           position: index,
         }));
 
         const formData = new FormData();
         formData.append('intent', 'reorder-blocks');
-        formData.append('blocks', JSON.stringify(simplifiedBlocks));
+        formData.append('blocks', JSON.stringify(simplifiedLessonBlocks));
 
         fetcher.submit(formData, { method: 'post' });
       }
@@ -179,53 +174,47 @@ export default function EditLessonContent({ loaderData, params }: Route.Componen
             leadingIcon={<NotebookPen />}
             title={lesson.name}
             subTitle={lesson.lesson_types?.name}
-            closeRoute={`/${params.username}/course-builder/${params.courseId}/content`}
+            closeRoute={basePath}
           />
           <div className='mx-auto flex max-w-xl flex-col space-y-8 px-4 py-10 md:px-0'>
             <DndContext
+              modifiers={[restrictToVerticalAxis]}
               sensors={sensors}
               collisionDetection={closestCenter}
-              modifiers={[restrictToVerticalAxis]}
               onDragEnd={handleDragEnd}
             >
               <SortableContext items={myLessonBlocks} strategy={verticalListSortingStrategy}>
                 {myLessonBlocks.length > 0 ? (
-                  myLessonBlocks.map((block) => (
-                    <LessonBlockWrapper
-                      key={block.id}
-                      id={block.id}
-                      loading={lessonLoading}
-                      title={toTitleCaseFromUnderscore(block.plugin_type)}
-                      onEdit={navigateTo(
-                        `/${params.username}/course-builder/${params.courseId}/content/${params.chapterId}/${params.lessonId}/lesson-blocks/${block.id}/edit`,
-                      )}
-                      onEditSettings={navigateTo(
-                        `/${params.username}/course-builder/${params.courseId}/content/${params.chapterId}/${params.lessonId}/lesson-blocks/${block.id}/settings`,
-                      )}
-                      onDelete={navigateTo(
-                        `/${params.username}/course-builder/${params.courseId}/content/${params.chapterId}/${params.lessonId}/lesson-blocks/${block.id}/delete`,
-                      )}
-                    >
-                      <ClientOnly fallback={<Spinner />}>
-                        {() => (
-                          <Suspense fallback={<Spinner />}>
-                            <ViewPluginTypesRenderer block={block} mode='preview' />
-                          </Suspense>
-                        )}
-                      </ClientOnly>
-                    </LessonBlockWrapper>
-                  ))
+                  myLessonBlocks.map((block) => {
+                    const blockIdPath = `${lessonBasePath}/${block.id}`;
+                    return (
+                      <LessonBlockWrapper
+                        key={block.id}
+                        id={block.id}
+                        loading={lessonLoading}
+                        title={toTitleCaseFromUnderscore(block.plugin_type)}
+                        onEdit={navigateTo(`${blockIdPath}/edit`)}
+                        onEditSettings={navigateTo(`${blockIdPath}/settings`)}
+                        onDelete={navigateTo(`${blockIdPath}/delete`)}
+                      >
+                        <ClientOnly fallback={<Spinner />}>
+                          {() => (
+                            <Suspense fallback={<Spinner />}>
+                              <ViewPluginTypesRenderer block={block} mode='preview' />
+                            </Suspense>
+                          )}
+                        </ClientOnly>
+                      </LessonBlockWrapper>
+                    );
+                  })
                 ) : (
                   <p>No blocks found</p>
                 )}
               </SortableContext>
             </DndContext>
           </div>
-          <PluginButton
-            onClick={navigateTo(
-              `/${params.username}/course-builder/${params.courseId}/content/${params.chapterId}/${params.lessonId}/lesson-blocks/plugins`,
-            )}
-          />
+
+          <PluginButton onClick={navigateTo(`${lessonBasePath}/plugins`)} />
         </Modal.Content>
       </Modal>
       <Outlet />

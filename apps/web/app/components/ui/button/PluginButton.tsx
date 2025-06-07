@@ -19,11 +19,15 @@ export function PluginButton({ onClick }: { onClick: () => void }) {
     >
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button className='border-primary-foreground border-2 shadow-lg' onClick={onClick}>
+          <Button
+            className='border-secondary-foreground border-2 shadow-lg'
+            variant='secondary'
+            onClick={onClick}
+          >
             <Plus className='h-5 w-5' strokeWidth={4} />
           </Button>
         </TooltipTrigger>
-        <TooltipContent side='top'>Add a Go Plugin</TooltipContent>
+        <TooltipContent side='top'>Add a lesson block</TooltipContent>
       </Tooltip>
     </motion.div>
   );

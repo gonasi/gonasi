@@ -1,7 +1,6 @@
 import { lazy, Suspense, useMemo } from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router';
+import { Outlet } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ArrowLeft, LoaderCircle } from 'lucide-react';
 import { getValidatedFormData } from 'remix-hook-form';
 import { dataWithError, redirectWithSuccess } from 'remix-toast';
 import type z from 'zod';
@@ -23,6 +22,7 @@ import {
 import type { Route } from './+types/create-block-by-plugin-id-modal';
 
 import { Spinner } from '~/components/loaders';
+import { BackArrowNavLink } from '~/components/ui/button';
 import { Modal } from '~/components/ui/modal';
 import { createClient } from '~/lib/supabase/supabase.server';
 import { checkHoneypot } from '~/utils/honeypot.server';
@@ -59,7 +59,8 @@ export async function action({ request, params }: Route.ActionArgs) {
 
   const typedIntent = cleanedIntent as PluginTypeId;
 
-  const redirectUrl = `/dashboard/${params.companyId}/courses/${params.courseId}/course-content/${params.chapterId}/${params.lessonId}`;
+  const basePath = `/${params.username}/course-builder/${params.courseId}/content`;
+  const redirectUrl = `${basePath}/${params.chapterId}/${params.lessonId}/lesson-blocks`;
 
   const { supabase } = createClient(request);
   try {
@@ -216,13 +217,8 @@ export async function action({ request, params }: Route.ActionArgs) {
 }
 
 export default function CreateBlockByPluginIdModal({ params }: Route.ComponentProps) {
-  const navigate = useNavigate();
-
-  const handleClose = () => {
-    navigate(
-      `/dashboard/${params.companyId}/courses/${params.courseId}/course-content/${params.chapterId}/${params.lessonId}`,
-    );
-  };
+  const basePath = `/${params.username}/course-builder/${params.courseId}/content`;
+  const lessonBasePath = `${basePath}/${params.chapterId}/${params.lessonId}/lesson-blocks`;
 
   // Use useMemo to prevent unnecessary recalculations
   const plugin = useMemo(
@@ -234,22 +230,20 @@ export default function CreateBlockByPluginIdModal({ params }: Route.ComponentPr
     [params.pluginGroupId, params.pluginTypeId],
   );
 
-  const BackButton = () => (
-    <NavLink
-      to={`/dashboard/${params.companyId}/courses/${params.courseId}/course-content/${params.chapterId}/${params.lessonId}/plugins/${params.pluginGroupId}`}
-    >
-      {({ isPending }) => (isPending ? <LoaderCircle className='animate-spin' /> : <ArrowLeft />)}
-    </NavLink>
-  );
-
   // Determine modal title once
   const modalTitle = plugin || 'Plugin not found';
 
   return (
     <>
-      <Modal open onOpenChange={(open) => !open && handleClose()}>
+      <Modal open>
         <Modal.Content size='md'>
-          <Modal.Header leadingIcon={<BackButton />} title={modalTitle} />
+          <Modal.Header
+            leadingIcon={
+              <BackArrowNavLink to={`${lessonBasePath}/plugins/${params.pluginGroupId}`} />
+            }
+            title={modalTitle}
+            closeRoute={lessonBasePath}
+          />
           <Modal.Body>
             <Suspense fallback={<Spinner />}>
               {plugin ? (

@@ -1,24 +1,19 @@
 import { lazy, Suspense, useMemo } from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router';
-import { ArrowLeft, LoaderCircle } from 'lucide-react';
+import { Outlet } from 'react-router';
 
 import { getPluginTypesFromGroupId, type PluginGroupId } from '@gonasi/schemas/plugins';
 
 import type { Route } from './+types/view-plugins-by-plugin-group-id-modal';
 
 import { Spinner } from '~/components/loaders';
+import { BackArrowNavLink } from '~/components/ui/button';
 import { Modal } from '~/components/ui/modal';
 
 const LazyGonasiPluginGroup = lazy(() => import('~/components/plugins/GonasiPluginGroup'));
 
 export default function PluginsModal({ params }: Route.ComponentProps) {
-  const navigate = useNavigate();
-
-  const handleClose = () => {
-    navigate(
-      `/dashboard/${params.companyId}/courses/${params.courseId}/course-content/${params.chapterId}/${params.lessonId}`,
-    );
-  };
+  const basePath = `/${params.username}/course-builder/${params.courseId}/content`;
+  const lessonBasePath = `${basePath}/${params.chapterId}/${params.lessonId}/lesson-blocks`;
 
   // Use useMemo to prevent unnecessary recalculations
   const pluginGroup = useMemo(
@@ -26,22 +21,20 @@ export default function PluginsModal({ params }: Route.ComponentProps) {
     [params.pluginGroupId],
   );
 
-  const BackButton = () => (
-    <NavLink
-      to={`/dashboard/${params.companyId}/courses/${params.courseId}/course-content/${params.chapterId}/${params.lessonId}/plugins`}
-    >
-      {({ isPending }) => (isPending ? <LoaderCircle className='animate-spin' /> : <ArrowLeft />)}
-    </NavLink>
-  );
+  const BackButton = () => <BackArrowNavLink to={`${lessonBasePath}/plugins`} />;
 
   // Determine modal title once
   const modalTitle = pluginGroup ? pluginGroup.name : 'Plugin not found';
 
   return (
     <>
-      <Modal open onOpenChange={(open) => !open && handleClose()}>
-        <Modal.Content size='lg'>
-          <Modal.Header leadingIcon={<BackButton />} title={modalTitle} />
+      <Modal open>
+        <Modal.Content size='md'>
+          <Modal.Header
+            leadingIcon={<BackButton />}
+            title={modalTitle}
+            closeRoute={lessonBasePath}
+          />
           <Modal.Body>
             <Suspense fallback={<Spinner />}>
               {pluginGroup ? (

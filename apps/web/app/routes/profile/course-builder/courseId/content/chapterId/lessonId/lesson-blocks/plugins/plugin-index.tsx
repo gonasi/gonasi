@@ -1,7 +1,7 @@
 import { lazy, Suspense } from 'react';
-import { Outlet, useNavigate } from 'react-router';
+import { Outlet } from 'react-router';
 
-import type { Route } from './+types/view-all-plugins-modal';
+import type { Route } from './+types/plugin-index';
 
 import { AppLogo } from '~/components/app-logo';
 import { Spinner } from '~/components/loaders';
@@ -17,21 +17,17 @@ export function headers(_: Route.HeadersArgs) {
 }
 
 export default function PluginsModal({ params }: Route.ComponentProps) {
-  const navigate = useNavigate();
-
-  const handleClose = () => {
-    navigate(
-      `/dashboard/${params.companyId}/courses/${params.courseId}/course-content/${params.chapterId}/${params.lessonId}`,
-    );
-  };
+  const basePath = `/${params.username}/course-builder/${params.courseId}/content`;
+  const lessonBasePath = `${basePath}/${params.chapterId}/${params.lessonId}/lesson-blocks`;
 
   return (
     <>
-      <Modal open onOpenChange={(open) => !open && handleClose()}>
+      <Modal open>
         <Modal.Content size='lg'>
           <Modal.Header
             leadingIcon={<AppLogo sizeClass='h-4 md:h-5 -mt-1' />}
             title='All Gonasi Plugins'
+            closeRoute={lessonBasePath}
           />
           <Modal.Body>
             <Suspense fallback={<Spinner />}>

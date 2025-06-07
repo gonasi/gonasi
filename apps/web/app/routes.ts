@@ -182,22 +182,22 @@ export default [
             // /:username/course-builder/:courseId/content/:chapterId/:lessonId
             route(
               ':lessonId/lesson-blocks',
-              'routes/profile/course-builder/courseId/content/chapterId/lessonId/lesson-blocks.tsx',
+              'routes/profile/course-builder/courseId/content/chapterId/lessonId/lesson-blocks/lesson-blocks-index.tsx',
               [
                 // /:username/course-builder/:courseId/content/:chapterId/:lessonId/plugins
                 route(
                   'plugins',
-                  'routes/dashboard/courses/lessons/plugins/view-all-plugins-modal.tsx',
+                  'routes/profile/course-builder/courseId/content/chapterId/lessonId/lesson-blocks/plugins/plugin-index.tsx',
                   [
                     // /:username/course-builder/:courseId/content/:chapterId/:lessonId/plugins/:pluginGroupId
                     route(
                       ':pluginGroupId',
-                      'routes/dashboard/courses/lessons/plugins/view-plugins-by-plugin-group-id-modal.tsx',
+                      'routes/profile/course-builder/courseId/content/chapterId/lessonId/lesson-blocks/plugins/view-plugins-by-plugin-group-id-modal.tsx',
                       [
                         // /:username/course-builder/:courseId/content/:chapterId/:lessonId/plugins/:pluginGroupId/:pluginTypeId/create
                         route(
                           ':pluginTypeId/create',
-                          'routes/dashboard/courses/lessons/plugins/create-block-by-plugin-id-modal.tsx',
+                          'routes/profile/course-builder/courseId/content/chapterId/lessonId/lesson-blocks/plugins/create-block-by-plugin-id-modal.tsx',
                         ),
                       ],
                     ),

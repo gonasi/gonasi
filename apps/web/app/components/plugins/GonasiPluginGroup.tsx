@@ -30,6 +30,9 @@ export default function GoPluginsMenuDialog({ pluginTypes }: GonasiPluginGroupPr
     return Icon ?? LucideIcons.Square;
   };
 
+  const basePath = `/${params.username}/course-builder/${params.courseId}/content`;
+  const pluginGroupBasePath = `${basePath}/${params.chapterId}/${params.lessonId}/lesson-blocks/plugins/${params.pluginGroupId}`;
+
   return (
     <motion.div
       initial='hidden'
@@ -49,7 +52,7 @@ export default function GoPluginsMenuDialog({ pluginTypes }: GonasiPluginGroupPr
           return (
             <MotionNavLink
               key={id}
-              to={`/dashboard/${params.companyId}/courses/${params.courseId}/course-content/${params.chapterId}/${params.lessonId}/plugins/${params.pluginGroupId}/${id}/create`}
+              to={`${pluginGroupBasePath}/${id}/create`}
               className={({ isPending }) =>
                 cn(
                   'hover:bg-primary/5 flex w-full cursor-pointer items-center gap-3 rounded-sm p-2 text-left transition-all duration-200 ease-in-out hover:shadow-sm',
