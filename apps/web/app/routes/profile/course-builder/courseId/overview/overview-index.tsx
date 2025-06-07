@@ -25,6 +25,7 @@ export default function CourseOverview({ params }: Route.ComponentProps) {
     course_categories,
     course_sub_categories,
     pathways,
+    updated_at,
   } = outletLoaderData;
 
   return (
@@ -45,6 +46,7 @@ export default function CourseOverview({ params }: Route.ComponentProps) {
               description={description}
               price={monthly_subscription_price}
               pricingModel={pricing_model}
+              updatedAt={updated_at}
               editLink={`/${params.username}/course-builder/${courseId}/overview/edit-details`}
             />
           </div>
