@@ -126,7 +126,11 @@ export default function EditCourseChapter({ loaderData }: Route.ComponentProps) 
               )}
 
               {/* Submit button */}
-              <Button type='submit' disabled={isDisabled} isLoading={isDisabled}>
+              <Button
+                type='submit'
+                disabled={isDisabled || !methods.formState.isDirty}
+                isLoading={isDisabled}
+              >
                 Save
               </Button>
             </Form>

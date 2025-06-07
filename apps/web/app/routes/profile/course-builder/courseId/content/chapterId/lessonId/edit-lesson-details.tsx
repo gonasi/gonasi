@@ -76,7 +76,7 @@ export async function action({ params, request }: Route.ActionArgs) {
   );
 }
 
-export default function EditLessonDetails({ loaderData }: Route.ComponentProps) {
+export default function EditLessonDetails({ loaderData, params }: Route.ComponentProps) {
   const { lesson, lessonTypes } = loaderData;
 
   const isPending = useIsPending();
@@ -97,7 +97,7 @@ export default function EditLessonDetails({ loaderData }: Route.ComponentProps) 
       <Modal.Content size='sm'>
         <Modal.Header
           title='Edit lesson title & type'
-          closeRoute={`/${loaderData.lesson.id}/course-builder/${loaderData.lesson.id}/content`}
+          closeRoute={`/${params.username}/course-builder/${params.courseId}/content`}
         />
         <Modal.Body>
           <RemixFormProvider {...methods}>
@@ -105,7 +105,7 @@ export default function EditLessonDetails({ loaderData }: Route.ComponentProps) 
               <HoneypotInputs />
               <GoInputField
                 name='name'
-                labelProps={{ children: 'Lesson Title', required: true }}
+                labelProps={{ children: 'Lesson title', required: true }}
                 inputProps={{ autoFocus: true, disabled: isDisabled }}
                 description='Enter the lesson title.'
               />
@@ -119,7 +119,11 @@ export default function EditLessonDetails({ loaderData }: Route.ComponentProps) 
                 description="Pick what best fits the lesson you're making."
               />
               <div className='pt-4'>
-                <Button type='submit' disabled={isDisabled} isLoading={isDisabled}>
+                <Button
+                  type='submit'
+                  disabled={isDisabled || !methods.formState.isDirty}
+                  isLoading={isDisabled}
+                >
                   Save
                 </Button>
               </div>

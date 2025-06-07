@@ -1,20 +1,21 @@
 import { data, Form, useNavigate, useParams } from 'react-router';
-import { getFormProps, getInputProps, useForm } from '@conform-to/react';
-import { getZodConstraint, parseWithZod } from '@conform-to/zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
 import { dataWithError, redirectWithError, redirectWithSuccess } from 'remix-toast';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
 
 import { deleteUserLessonById, fetchUserLessonById } from '@gonasi/database/lessons';
-import { DeleteLessonSchema } from '@gonasi/schemas/lessons';
+import { DeleteLessonSchema, type DeleteLessonSchemaTypes } from '@gonasi/schemas/lessons';
 
 import type { Route } from './+types/delete-lesson';
 
 import { DeleteConfirmationLayout } from '~/components/layouts/modals';
-import { Input } from '~/components/ui/input';
 import { Modal } from '~/components/ui/modal';
 import { createClient } from '~/lib/supabase/supabase.server';
 import { checkHoneypot } from '~/utils/honeypot.server';
 import { useIsPending } from '~/utils/misc';
+
+const resolver = zodResolver(DeleteLessonSchema);
 
 export async function loader({ params, request }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
@@ -23,7 +24,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 
   if (lesson === null)
     return redirectWithError(
-      `/dashboard/${params.companyId}/courses/${params.courseId}/course-content`,
+      `/${params.username}/course-builder/${params.courseId}/content`,
       'Learning path not exist',
     );
 
@@ -35,14 +36,17 @@ export async function action({ params, request }: Route.ActionArgs) {
   await checkHoneypot(formData);
 
   const { supabase } = createClient(request);
-  const submission = parseWithZod(formData, { schema: DeleteLessonSchema });
 
-  if (submission.status !== 'success') {
-    return { result: submission.reply(), status: submission.status === 'error' ? 400 : 200 };
-  }
+  const {
+    errors,
+    data,
+    receivedValues: defaultValues,
+  } = await getValidatedFormData<DeleteLessonSchemaTypes>(formData, resolver);
+
+  if (errors) return { errors, defaultValues };
 
   const { success, message } = await deleteUserLessonById(supabase, {
-    ...submission.value,
+    ...data,
   });
 
   if (!success) {
@@ -50,49 +54,49 @@ export async function action({ params, request }: Route.ActionArgs) {
   }
 
   return redirectWithSuccess(
-    `/dashboard/${params.companyId}/courses/${params.courseId}/course-content`,
+    `/${params.username}/course-builder/${params.courseId}/content`,
     message,
   );
 }
 
-export default function DeleteLesson({ loaderData, actionData }: Route.ComponentProps) {
+export default function DeleteLesson({ loaderData }: Route.ComponentProps) {
   const navigate = useNavigate();
   const params = useParams();
 
   const handleClose = () =>
-    navigate(`/dashboard/${params.companyId}/courses/${params.courseId}/course-content`);
+    navigate(`/${params.username}/course-builder/${params.courseId}/content`);
 
   const isPending = useIsPending();
 
-  const [form, fields] = useForm({
-    id: 'delete-course-chapter-lesson-form',
-    constraint: getZodConstraint(DeleteLessonSchema),
-    lastResult: actionData?.result,
-    defaultValue: {
+  const methods = useRemixForm<DeleteLessonSchemaTypes>({
+    mode: 'all',
+    resolver,
+    defaultValues: {
       lessonId: loaderData.id,
-    },
-    shouldValidate: 'onInput',
-    shouldRevalidate: 'onInput',
-    onValidate({ formData }) {
-      return parseWithZod(formData, { schema: DeleteLessonSchema });
     },
   });
 
+  const isDisabled = isPending || methods.formState.isSubmitting;
+
   return (
-    <Modal open onOpenChange={(open) => open || handleClose()}>
+    <Modal open>
       <Modal.Content size='sm'>
-        <Modal.Header />
+        <Modal.Header
+          closeRoute={`/${params.username}/course-builder/${params.courseId}/content`}
+        />
         <Modal.Body>
-          <Form method='POST' {...getFormProps(form)}>
-            <HoneypotInputs />
-            <Input {...getInputProps(fields.lessonId, { type: 'text' })} hidden />
-            <DeleteConfirmationLayout
-              titlePrefix='lesson: '
-              title={loaderData.name}
-              isLoading={isPending}
-              handleClose={handleClose}
-            />
-          </Form>
+          <RemixFormProvider {...methods}>
+            <Form method='POST' onSubmit={methods.handleSubmit}>
+              <HoneypotInputs />
+
+              <DeleteConfirmationLayout
+                titlePrefix='lesson: '
+                title={loaderData.name}
+                isLoading={isDisabled}
+                handleClose={handleClose}
+              />
+            </Form>
+          </RemixFormProvider>
         </Modal.Body>
       </Modal.Content>
     </Modal>

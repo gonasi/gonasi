@@ -47,7 +47,7 @@ export type EditLessonSubmitValues = z.infer<typeof SubmitEditLessonDetailsSchem
 export const DeleteLessonSchema = z.object({
   lessonId: z.string(),
 });
-export type DeleteLessonDetailsTypes = z.infer<typeof DeleteLessonSchema>;
+export type DeleteLessonSchemaTypes = z.infer<typeof DeleteLessonSchema>;
 
 // Schema for submitting a new lesson with additional identifiers
 export type DeleteLessonSubmitValues = z.infer<typeof DeleteLessonSchema>;
