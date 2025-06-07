@@ -196,22 +196,16 @@ export default [
                       [
                         // /:username/course-builder/:courseId/content/:chapterId/:lessonId/plugins/:pluginGroupId/:pluginTypeId/create
                         route(
-                          ':pluginTypeId/create',
-                          'routes/profile/course-builder/courseId/content/chapterId/lessonId/lesson-blocks/plugins/create-block-by-plugin-id-modal.tsx',
+                          ':pluginTypeId/:blockId/builder',
+                          'routes/profile/course-builder/courseId/content/chapterId/lessonId/lesson-blocks/plugins/builder-block-by-plugin-id-modal.tsx',
                         ),
                       ],
                     ),
                   ],
                 ),
-                // /:username/course-builder/:courseId/content/:chapterId/:lessonId/:blockId/edit
                 route(
-                  ':blockId/edit',
-                  'routes/dashboard/courses/lessons/plugins/edit-plugin-modal.tsx',
-                ),
-                // /:username/course-builder/:courseId/content/:chapterId/:lessonId/:blockId/settings
-                route(
-                  ':blockId/settings',
-                  'routes/dashboard/courses/lessons/plugins/edit-plugin-settings-modal.tsx',
+                  ':blockId/builder',
+                  'routes/profile/course-builder/courseId/content/chapterId/lessonId/lesson-blocks/plugins/builder-block-by-plugin-id-modal.tsx',
                 ),
                 // /:username/course-builder/:courseId/content/:chapterId/:lessonId/:blockId/delete
                 route(

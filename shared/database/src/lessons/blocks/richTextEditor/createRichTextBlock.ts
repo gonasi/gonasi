@@ -1,4 +1,4 @@
-import type { SubmitCreateRichTextSchemaType } from '@gonasi/schemas/plugins';
+import type { RichTextSchemaTypes } from '@gonasi/schemas/plugins';
 
 import { getUserId } from '../../../auth';
 import type { TypedSupabaseClient } from '../../../client';
@@ -7,7 +7,7 @@ import { getNextBlockPosition } from '../blockUtils';
 
 export const createRichTextBlock = async (
   supabase: TypedSupabaseClient,
-  blockData: SubmitCreateRichTextSchemaType,
+  blockData: RichTextSchemaTypes,
 ): Promise<ApiResponse> => {
   const userId = await getUserId(supabase);
   const { content, lessonId, pluginType, settings, weight } = blockData;

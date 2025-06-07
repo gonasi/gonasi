@@ -2,9 +2,6 @@ import { z } from 'zod';
 
 import { BasePluginSettingsSchema } from './pluginSettings';
 
-//
-// Content Schema
-//
 export const RichTextContentSchema = z.object({
   richTextState: z
     .string({ required_error: 'Rich text content is required.' })
@@ -12,21 +9,20 @@ export const RichTextContentSchema = z.object({
     .min(10, 'Rich text content must be at least 10 characters long.'),
 });
 
-//
-// Plugin Settings Schema
-//
 export const RichTextSettingsSchema = BasePluginSettingsSchema.extend({});
 
-//
-// Create Block Schema
-//
-export const SubmitCreateRichTextSchema = z.object({
+export const RichTextSchema = z.object({
+  blockId: z.string().nullable(),
+  courseId: z.string({ required_error: 'Course Id is required.' }),
+  lessonId: z.string({ required_error: 'Lesson Id is required.' }),
+  pluginType: z.literal('rich_text_editor'),
   content: RichTextContentSchema,
-  lessonId: z.string({ required_error: 'Lesson ID is required.' }),
-  pluginType: z.literal('rich_text_editor').default('rich_text_editor'),
-  weight: z.number().default(1),
-  settings: RichTextSettingsSchema.default({}),
+  settings: RichTextSettingsSchema,
 });
+
+export type RichTextSchemaTypes = z.infer<typeof RichTextSchema>;
+
+// TODO: Delete all below when finished
 
 //
 // Edit Block Settings Schema
@@ -47,6 +43,5 @@ export const RichTextStateInteractionSchema = z.object({
 //
 export type RichTextContentSchemaType = z.infer<typeof RichTextContentSchema>;
 export type RichTextSettingsSchemaType = z.infer<typeof RichTextSettingsSchema>;
-export type SubmitCreateRichTextSchemaType = z.infer<typeof SubmitCreateRichTextSchema>;
 export type SubmitEditRichTextSettingsSchemaType = z.infer<typeof SubmitEditRichTextSettingsSchema>;
 export type RichTextStateInteractionSchemaType = z.infer<typeof RichTextStateInteractionSchema>;
