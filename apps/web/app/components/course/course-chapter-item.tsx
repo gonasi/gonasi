@@ -176,6 +176,12 @@ export default function CourseChapterItem({ chapter, loading }: Props) {
             />
           </div>
         </div>
+        <div className='flex w-full items-start'>
+          <ChapterBadges
+            lessonCount={chapter.lesson_count}
+            requiresPayment={chapter.requires_payment}
+          />
+        </div>
       </AccordionTrigger>
 
       <AccordionContent>
@@ -212,10 +218,6 @@ export default function CourseChapterItem({ chapter, loading }: Props) {
             </SortableContext>
           </DndContext>
         </div>
-        <ChapterBadges
-          lessonCount={chapter.lesson_count}
-          requiresPayment={chapter.requires_payment}
-        />
       </AccordionContent>
     </AccordionItem>
   );
