@@ -172,10 +172,13 @@ export default [
             // /:username/course-builder/:courseId/content/:chapterId/:lessonId/edit-lesson-details
             route(
               ':lessonId/edit-lesson-details',
-              'routes/dashboard/courses/lessons/edit-lesson-details.tsx',
+              'routes/profile/course-builder/courseId/content/chapterId/lessonId/edit-lesson-details.tsx',
             ),
             // /:username/course-builder/:courseId/content/:chapterId/:lessonId/delete
-            route(':lessonId/delete', 'routes/dashboard/courses/lessons/delete-lesson.tsx'),
+            route(
+              ':lessonId/delete',
+              'routes/profile/course-builder/courseId/content/chapterId/lessonId/delete-lesson.tsx',
+            ),
             // /:username/course-builder/:courseId/content/:chapterId/:lessonId
             route(':lessonId', 'routes/dashboard/courses/lessons/edit-lesson-content.tsx', [
               // /:username/course-builder/:courseId/content/:chapterId/:lessonId/plugins

@@ -23,7 +23,7 @@ export function LessonCard({ lesson, loading }: Props) {
   // Extract lesson type fields for reuse
   const { lucide_icon, bg_color, name: typeName, description } = lesson.lesson_types;
 
-  const basePath = `/${params.username}/course-builder/${params.courseId}/course-content/${lesson.chapter_id}/${lesson.id}`;
+  const basePath = `/${params.username}/course-builder/${params.courseId}/content/${lesson.chapter_id}/${lesson.id}`;
 
   // Setup sortable logic
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
@@ -42,7 +42,7 @@ export function LessonCard({ lesson, loading }: Props) {
   // Dropdown menu options
   const options = [
     { title: 'Edit details', icon: Pencil, to: `${basePath}/edit-lesson-details` },
-    { title: 'Edit content', icon: Text, to: basePath },
+    { title: 'Edit blocks', icon: Text, to: basePath },
     { title: 'Delete lesson', icon: Trash, to: `${basePath}/delete` },
   ];
 

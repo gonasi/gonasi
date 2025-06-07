@@ -33,7 +33,7 @@ export const EditLessonDetailsSchema = z.object({
   name: LessonTitleSchema,
   lessonType: LessonTypeSchema,
 });
-export type EditLessonDetailsTypes = z.infer<typeof EditLessonDetailsSchema>;
+export type EditLessonDetailsSchemaTypes = z.infer<typeof EditLessonDetailsSchema>;
 
 // Schema for submitting a new lesson with additional identifiers
 export const SubmitEditLessonDetailsSchema = EditLessonDetailsSchema.merge(
