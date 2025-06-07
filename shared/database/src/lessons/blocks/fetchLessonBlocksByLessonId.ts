@@ -27,7 +27,7 @@ export const fetchLessonBlocksByLessonId = async (
 ) => {
   try {
     const { data, error } = await supabase
-      .from('blocks')
+      .from('lesson_blocks')
       .select('id, plugin_type, content, settings, position, lesson_id, updated_by')
       .eq('lesson_id', lessonId)
       .order('position', { ascending: true });

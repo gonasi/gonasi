@@ -36,10 +36,14 @@ import { PluginButton } from '~/components/ui/button';
 import { Modal } from '~/components/ui/modal';
 import { createClient } from '~/lib/supabase/supabase.server';
 
+// Lazy load plugin renderer for better performance
 const ViewPluginTypesRenderer = lazy(
   () => import('~/components/plugins/PluginRenderers/ViewPluginTypesRenderer'),
 );
 
+/**
+ * Utility: Converts strings like "plugin_type_example" to "Plugin Type Example"
+ */
 function toTitleCaseFromUnderscore(input: string): string {
   return input
     .split('_')
@@ -47,37 +51,41 @@ function toTitleCaseFromUnderscore(input: string): string {
     .join(' ');
 }
 
-// Loader
+// --- Loader ---
+// Fetch lesson details and associated blocks using Supabase client
 export async function loader({ params, request }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
 
-  // fetch a lesson and blocks associated with the lesson
   const [lesson, lessonBlocks] = await Promise.all([
     fetchUserLessonById(supabase, params.lessonId),
     fetchLessonBlocksByLessonId(supabase, params.lessonId),
   ]);
 
   if (!lesson || !lessonBlocks.data) {
-    return redirectWithError(getBasePath(params), 'Lesson not found');
+    // Redirect with error if data is missing
+    return redirectWithError(
+      `/${params.username}/course-builder/${params.courseId}/content`,
+      'Lesson not found',
+    );
   }
 
   return { lesson, lessonBlocks: lessonBlocks.data };
 }
 
-// Action
+// --- Action ---
+// Handle form submission for reordering lesson blocks
 export async function action({ request }: Route.ActionArgs) {
   const formData = await request.formData();
   const { supabase } = createClient(request);
 
-  const intent = formData.get('intent');
-
-  if (intent === 'reorder-blocks') {
+  if (formData.get('intent') === 'reorder-blocks') {
     const blocksRaw = formData.get('blocks');
 
     if (typeof blocksRaw !== 'string') {
       throw new Response('Invalid data', { status: 400 });
     }
 
+    // Validate the blocks position data using Zod schema
     const parsed = BlocksPositionUpdateArraySchema.safeParse(JSON.parse(blocksRaw));
 
     if (!parsed.success) {
@@ -85,121 +93,99 @@ export async function action({ request }: Route.ActionArgs) {
       throw new Response('Validation failed', { status: 400 });
     }
 
+    // Update positions in DB
     const { success, message } = await updateBlockPositions(supabase, parsed.data);
 
     if (!success) {
       return dataWithError(null, message ?? 'Could not re-order blocks');
     }
 
-    // Return proper response object instead of true
     return data({ success: true });
   }
 
   return true;
 }
 
-// Helper to build base path
-function getBasePath(params: { companyId: string; courseId: string }) {
-  return `/dashboard/${params.companyId}/courses/${params.courseId}/course-content`;
-}
-
-function getLessonPath(params: {
-  companyId: string;
-  courseId: string;
-  chapterId: string;
-  lessonId: string;
-}) {
-  return `${getBasePath(params)}/${params.chapterId}/${params.lessonId}`;
-}
-
-// Component
+// --- Component ---
+// Main edit lesson content UI
 export default function EditLessonContent({ loaderData, params }: Route.ComponentProps) {
   const { lesson, lessonBlocks } = loaderData;
   const fetcher = useFetcher();
   const navigate = useNavigate();
 
+  // Helper to create navigation callbacks to a given path
   const navigateTo = (path: string) => () => navigate(path);
 
+  // Local state to manage lesson blocks list and loading indicator
   const [myLessonBlocks, setMyLessonBlocks] = useState(lessonBlocks ?? []);
-  const [lessonLoading, setLessonsLoading] = useState(false);
+  const [lessonLoading, setLessonLoading] = useState(false);
 
+  // Sync local lesson blocks with loaderData updates
   useEffect(() => {
-    // Update lessons if prop changes
     setMyLessonBlocks(lessonBlocks ?? []);
   }, [lessonBlocks]);
 
-  // Set up an effect to monitor fetcher state
+  // Update loading state based on fetcher's state
   useEffect(() => {
-    if (fetcher.state === 'submitting') {
-      setLessonsLoading(true);
-    } else if (fetcher.state === 'idle' && fetcher.data) {
-      setLessonsLoading(false);
-    }
-  }, [fetcher.state, fetcher.data]);
+    setLessonLoading(fetcher.state === 'submitting');
+  }, [fetcher.state]);
 
+  // Set up drag-and-drop sensors (pointer, touch, keyboard)
   const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
-    }),
-    useSensor(TouchSensor, {
-      activationConstraint: {
-        delay: 250,
-        tolerance: 8,
-      },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    }),
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
+  /**
+   * Handle drag end event: update order locally and send update to server
+   */
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
 
+    // Only proceed if dragged over a different item
     if (over && active.id !== over.id) {
-      let newLessons: typeof lessonBlocks = [];
+      let updatedBlocks: typeof lessonBlocks = [];
 
       setMyLessonBlocks((items) => {
         const oldIndex = items.findIndex((item) => item.id === active.id);
         const newIndex = items.findIndex((item) => item.id === over.id);
 
-        newLessons = arrayMove(items, oldIndex, newIndex);
-        return newLessons;
+        updatedBlocks = arrayMove(items, oldIndex, newIndex);
+        return updatedBlocks;
       });
 
-      if (newLessons.length) {
-        const simplifiedLessonBlocks = newLessons.map((newLesson, index) => ({
-          ...newLesson,
+      // Submit updated positions to backend
+      if (updatedBlocks.length) {
+        const simplifiedBlocks = updatedBlocks.map((block, index) => ({
+          ...block,
           position: index,
         }));
 
         const formData = new FormData();
-
         formData.append('intent', 'reorder-blocks');
-        formData.append('blocks', JSON.stringify(simplifiedLessonBlocks));
+        formData.append('blocks', JSON.stringify(simplifiedBlocks));
 
-        fetcher.submit(formData, {
-          method: 'post',
-        });
+        fetcher.submit(formData, { method: 'post' });
       }
     }
   }
 
   return (
     <>
-      <Modal open onOpenChange={(open) => open || navigateTo(getBasePath(params))()}>
+      <Modal open>
         <Modal.Content size='full'>
           <Modal.Header
             leadingIcon={<NotebookPen />}
             title={lesson.name}
             subTitle={lesson.lesson_types?.name}
+            closeRoute={`/${params.username}/course-builder/${params.courseId}/content`}
           />
           <div className='mx-auto flex max-w-xl flex-col space-y-8 px-4 py-10 md:px-0'>
             <DndContext
-              modifiers={[restrictToVerticalAxis]}
               sensors={sensors}
               collisionDetection={closestCenter}
+              modifiers={[restrictToVerticalAxis]}
               onDragEnd={handleDragEnd}
             >
               <SortableContext items={myLessonBlocks} strategy={verticalListSortingStrategy}>
@@ -210,9 +196,15 @@ export default function EditLessonContent({ loaderData, params }: Route.Componen
                       id={block.id}
                       loading={lessonLoading}
                       title={toTitleCaseFromUnderscore(block.plugin_type)}
-                      onEdit={navigateTo(`${getLessonPath(params)}/${block.id}/edit`)}
-                      onEditSettings={navigateTo(`${getLessonPath(params)}/${block.id}/settings`)}
-                      onDelete={navigateTo(`${getLessonPath(params)}/${block.id}/delete`)}
+                      onEdit={navigateTo(
+                        `/${params.username}/course-builder/${params.courseId}/content/${params.chapterId}/${params.lessonId}/lesson-blocks/${block.id}/edit`,
+                      )}
+                      onEditSettings={navigateTo(
+                        `/${params.username}/course-builder/${params.courseId}/content/${params.chapterId}/${params.lessonId}/lesson-blocks/${block.id}/settings`,
+                      )}
+                      onDelete={navigateTo(
+                        `/${params.username}/course-builder/${params.courseId}/content/${params.chapterId}/${params.lessonId}/lesson-blocks/${block.id}/delete`,
+                      )}
                     >
                       <ClientOnly fallback={<Spinner />}>
                         {() => (
@@ -229,7 +221,11 @@ export default function EditLessonContent({ loaderData, params }: Route.Componen
               </SortableContext>
             </DndContext>
           </div>
-          <PluginButton onClick={navigateTo(`${getLessonPath(params)}/plugins`)} />
+          <PluginButton
+            onClick={navigateTo(
+              `/${params.username}/course-builder/${params.courseId}/content/${params.chapterId}/${params.lessonId}/lesson-blocks/plugins`,
+            )}
+          />
         </Modal.Content>
       </Modal>
       <Outlet />
