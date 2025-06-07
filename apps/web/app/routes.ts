@@ -180,42 +180,46 @@ export default [
               'routes/profile/course-builder/courseId/content/chapterId/lessonId/delete-lesson.tsx',
             ),
             // /:username/course-builder/:courseId/content/:chapterId/:lessonId
-            route(':lessonId', 'routes/dashboard/courses/lessons/edit-lesson-content.tsx', [
-              // /:username/course-builder/:courseId/content/:chapterId/:lessonId/plugins
-              route(
-                'plugins',
-                'routes/dashboard/courses/lessons/plugins/view-all-plugins-modal.tsx',
-                [
-                  // /:username/course-builder/:courseId/content/:chapterId/:lessonId/plugins/:pluginGroupId
-                  route(
-                    ':pluginGroupId',
-                    'routes/dashboard/courses/lessons/plugins/view-plugins-by-plugin-group-id-modal.tsx',
-                    [
-                      // /:username/course-builder/:courseId/content/:chapterId/:lessonId/plugins/:pluginGroupId/:pluginTypeId/create
-                      route(
-                        ':pluginTypeId/create',
-                        'routes/dashboard/courses/lessons/plugins/create-block-by-plugin-id-modal.tsx',
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              // /:username/course-builder/:courseId/content/:chapterId/:lessonId/:blockId/edit
-              route(
-                ':blockId/edit',
-                'routes/dashboard/courses/lessons/plugins/edit-plugin-modal.tsx',
-              ),
-              // /:username/course-builder/:courseId/content/:chapterId/:lessonId/:blockId/settings
-              route(
-                ':blockId/settings',
-                'routes/dashboard/courses/lessons/plugins/edit-plugin-settings-modal.tsx',
-              ),
-              // /:username/course-builder/:courseId/content/:chapterId/:lessonId/:blockId/delete
-              route(
-                ':blockId/delete',
-                'routes/dashboard/courses/lessons/plugins/delete-plugin-modal.tsx',
-              ),
-            ]),
+            route(
+              ':lessonId/lesson-blocks',
+              'routes/profile/course-builder/courseId/content/chapterId/lessonId/lesson-blocks.tsx',
+              [
+                // /:username/course-builder/:courseId/content/:chapterId/:lessonId/plugins
+                route(
+                  'plugins',
+                  'routes/dashboard/courses/lessons/plugins/view-all-plugins-modal.tsx',
+                  [
+                    // /:username/course-builder/:courseId/content/:chapterId/:lessonId/plugins/:pluginGroupId
+                    route(
+                      ':pluginGroupId',
+                      'routes/dashboard/courses/lessons/plugins/view-plugins-by-plugin-group-id-modal.tsx',
+                      [
+                        // /:username/course-builder/:courseId/content/:chapterId/:lessonId/plugins/:pluginGroupId/:pluginTypeId/create
+                        route(
+                          ':pluginTypeId/create',
+                          'routes/dashboard/courses/lessons/plugins/create-block-by-plugin-id-modal.tsx',
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                // /:username/course-builder/:courseId/content/:chapterId/:lessonId/:blockId/edit
+                route(
+                  ':blockId/edit',
+                  'routes/dashboard/courses/lessons/plugins/edit-plugin-modal.tsx',
+                ),
+                // /:username/course-builder/:courseId/content/:chapterId/:lessonId/:blockId/settings
+                route(
+                  ':blockId/settings',
+                  'routes/dashboard/courses/lessons/plugins/edit-plugin-settings-modal.tsx',
+                ),
+                // /:username/course-builder/:courseId/content/:chapterId/:lessonId/:blockId/delete
+                route(
+                  ':blockId/delete',
+                  'routes/dashboard/courses/lessons/plugins/delete-plugin-modal.tsx',
+                ),
+              ],
+            ),
           ]),
         ]),
         // /:username/course-builder/:courseId/collaborators

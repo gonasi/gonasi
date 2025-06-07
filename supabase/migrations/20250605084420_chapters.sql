@@ -81,7 +81,6 @@ with check (
       and (
         is_course_admin(c.id, (select auth.uid()))
         or is_course_editor(c.id, (select auth.uid()))
-        or is_course_viewer(c.id, (select auth.uid()))
         or c.created_by = (select auth.uid())
       )
   )

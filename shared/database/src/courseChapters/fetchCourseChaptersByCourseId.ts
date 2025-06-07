@@ -38,7 +38,6 @@ export async function fetchCourseChaptersByCourseId(
           updated_at,
           created_by, 
           updated_by, 
-          metadata,
           settings, 
           lesson_types(
             id,
@@ -55,6 +54,7 @@ export async function fetchCourseChaptersByCourseId(
     .order('position', { ascending: true }) // ✅ Order chapters by position
     .order('position', { ascending: true, referencedTable: 'lessons' }); // ✅ Order lessons by position
 
+  console.log('error: ', error);
   if (error || !data) {
     console.error('Error fetching course chapters:', error?.message ?? 'Chapters not found');
     return null;

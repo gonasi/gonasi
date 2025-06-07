@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router';
+import { NavLink, useParams } from 'react-router';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVerticalIcon, Info, Pencil, Text, Trash } from 'lucide-react';
@@ -42,13 +42,13 @@ export function LessonCard({ lesson, loading }: Props) {
   // Dropdown menu options
   const options = [
     { title: 'Edit details', icon: Pencil, to: `${basePath}/edit-lesson-details` },
-    { title: 'Edit blocks', icon: Text, to: basePath },
+    { title: 'Edit blocks', icon: Text, to: `${basePath}/lesson-blocks` },
     { title: 'Delete lesson', icon: Trash, to: `${basePath}/delete` },
   ];
 
   return (
-    <Link
-      to={basePath}
+    <NavLink
+      to={`${basePath}/lesson-blocks`}
       ref={isMounted ? setNodeRef : undefined}
       style={style}
       className='group bg-background/50 hover:bg-primary/2 flex flex-col space-y-3 rounded-xl border border-transparent p-4 transition-all duration-300 ease-in-out hover:border hover:shadow-sm'
@@ -98,6 +98,6 @@ export function LessonCard({ lesson, loading }: Props) {
           </p>
         </div>
       )}
-    </Link>
+    </NavLink>
   );
 }

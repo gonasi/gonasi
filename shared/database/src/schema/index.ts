@@ -346,6 +346,77 @@ export type Database = {
           },
         ]
       }
+      lesson_blocks: {
+        Row: {
+          content: Json
+          course_id: string
+          created_at: string
+          created_by: string
+          id: string
+          lesson_id: string
+          plugin_type: string
+          position: number
+          settings: Json
+          updated_at: string
+          updated_by: string
+        }
+        Insert: {
+          content?: Json
+          course_id: string
+          created_at?: string
+          created_by: string
+          id?: string
+          lesson_id: string
+          plugin_type: string
+          position?: number
+          settings?: Json
+          updated_at?: string
+          updated_by: string
+        }
+        Update: {
+          content?: Json
+          course_id?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          lesson_id?: string
+          plugin_type?: string
+          position?: number
+          settings?: Json
+          updated_at?: string
+          updated_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lesson_blocks_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lesson_blocks_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lesson_blocks_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lesson_blocks_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lesson_types: {
         Row: {
           bg_color: string
@@ -405,7 +476,6 @@ export type Database = {
           created_by: string
           id: string
           lesson_type_id: string
-          metadata: Json
           name: string
           position: number | null
           settings: Json
@@ -419,7 +489,6 @@ export type Database = {
           created_by: string
           id?: string
           lesson_type_id: string
-          metadata?: Json
           name: string
           position?: number | null
           settings?: Json
@@ -433,7 +502,6 @@ export type Database = {
           created_by?: string
           id?: string
           lesson_type_id?: string
-          metadata?: Json
           name?: string
           position?: number | null
           settings?: Json
@@ -693,6 +761,10 @@ export type Database = {
       }
       reorder_chapters: {
         Args: { chapters: Json }
+        Returns: undefined
+      }
+      reorder_lesson_blocks: {
+        Args: { blocks: Json }
         Returns: undefined
       }
       reorder_lessons: {
