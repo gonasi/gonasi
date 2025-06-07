@@ -47,14 +47,6 @@ comment on column public.chapters.created_by is 'User ID of the chapter creator.
 comment on column public.chapters.updated_by is 'User ID of the last person who updated the chapter.';
 
 -- ====================================================================================
--- TRIGGERS
--- ====================================================================================
-create trigger trg_chapters_set_updated_at 
-before update on public.chapters
-for each row
-execute function update_updated_at_column();
-
--- ====================================================================================
 -- ROW LEVEL SECURITY
 -- ====================================================================================
 alter table public.chapters enable row level security;

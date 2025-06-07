@@ -46,15 +46,6 @@ create index idx_lessons_position        on public.lessons(position);
 comment on table public.lessons is 'Stores all lessons for chapters within a course';
 
 -- ====================================================================================
--- TRIGGERS
--- ====================================================================================
--- Automatically update `updated_at` on any modification
-create trigger trg_lessons_set_updated_at 
-before update on public.lessons
-for each row
-execute function update_updated_at_column();
-
--- ====================================================================================
 -- ROW-LEVEL SECURITY (RLS)
 -- ====================================================================================
 alter table public.lessons enable row level security;

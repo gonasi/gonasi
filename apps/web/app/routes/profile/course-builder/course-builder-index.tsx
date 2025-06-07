@@ -4,7 +4,7 @@ import { Plus } from 'lucide-react';
 
 import { fetchCoursesForOwnerOrCollaborators } from '@gonasi/database/courses';
 
-import type { Route } from './+types/view-all-courses';
+import type { Route } from './+types/course-builder-index';
 
 import { NotFoundCard } from '~/components/cards';
 import { GoCardContent, GoCourseHeader, GoThumbnail } from '~/components/cards/go-course-card';

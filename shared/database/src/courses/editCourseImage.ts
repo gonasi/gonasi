@@ -65,6 +65,7 @@ export const editCourseImage = async (
       .eq('id', courseId);
 
     if (updateError) {
+      console.log('Upload course thumbanil error: ', updateError);
       // If updating the course record fails, remove the newly uploaded image
       await supabase.storage.from(COURSES_BUCKET).remove([finalImagePath]);
 

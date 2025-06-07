@@ -14,7 +14,7 @@ export default [
       // /:username/file-library
       route(':username/file-library', 'routes/profile/file-library/index.tsx'),
       // /:username/course-builder
-      route(':username/course-builder', 'routes/profile/course-builder/index.tsx', [
+      route(':username/course-builder', 'routes/profile/course-builder/course-builder-index.tsx', [
         layout('routes/layouts/profile/course-crud-layout.tsx', [
           // /:username/course-builder/new
           route('new', 'routes/profile/course-builder/new.tsx'),

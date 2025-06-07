@@ -99,13 +99,3 @@ create index idx_courses_visibility on public.courses (visibility);
 comment on table public.courses is 'stores all course-related metadata and relationships';
 comment on column public.courses.image_url is 'url of the course thumbnail';
 comment on column public.courses.monthly_subscription_price is 'price for monthly access, applicable when course is paid';
-
--- ====================================================================================
--- TRIGGERS
--- ====================================================================================
-
--- automatically update `updated_at` on update
-create or replace trigger trg_courses_set_updated_at
-before update on public.courses
-for each row
-execute function update_updated_at_column();

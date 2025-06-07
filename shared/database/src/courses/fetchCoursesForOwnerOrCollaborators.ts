@@ -30,7 +30,13 @@ export async function fetchCoursesForOwnerOrCollaborators({
 
   const { data: courses, error, count } = await query;
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    console.error('Error fetchCoursesForOwnerOrCollaborators: ', error);
+    return {
+      count: 0,
+      data: [{ signed_url: null, id: '', name: '', image_url: null, blur_hash: null }],
+    };
+  }
   if (!courses?.length) return { count: 0, data: [] };
 
   const dataWithSignedUrls = await Promise.all(
