@@ -43,12 +43,11 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 }
 
 // Handles form submissions for reordering chapters or lessons
-export async function action({ request }: Route.ActionArgs) {
+export async function action({ request, params }: Route.ActionArgs) {
   const formData = await request.formData();
   const { supabase } = createClient(request);
   const intent = formData.get('intent');
 
-  // Handle reordering chapters
   if (intent === 'reorder-chapters') {
     const chaptersRaw = formData.get('chapters');
 
@@ -56,20 +55,22 @@ export async function action({ request }: Route.ActionArgs) {
       throw new Response('Invalid data', { status: 400 });
     }
 
-    const parsed = ChapterPositionUpdateArraySchema.safeParse(JSON.parse(chaptersRaw));
+    const parsedChapters = ChapterPositionUpdateArraySchema.safeParse(JSON.parse(chaptersRaw));
 
-    if (!parsed.success) {
-      console.error(parsed.error);
+    if (!parsedChapters.success) {
+      console.error(parsedChapters.error);
       throw new Response('Validation failed', { status: 400 });
     }
 
-    const { success, message } = await updateChapterPositions(supabase, parsed.data);
+    const result = await updateChapterPositions({
+      supabase,
+      courseId: params.courseId,
+      chapterPositions: parsedChapters.data,
+    });
 
-    if (!success) {
-      return dataWithError(null, message ?? 'Could not re-order chapters');
-    }
-
-    return data({ success: true });
+    return result.success
+      ? data({ success: true })
+      : dataWithError(null, result.message ?? 'Could not re-order chapters');
   }
 
   // Handle reordering lessons

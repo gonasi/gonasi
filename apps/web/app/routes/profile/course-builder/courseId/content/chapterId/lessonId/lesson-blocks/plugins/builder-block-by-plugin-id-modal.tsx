@@ -23,7 +23,7 @@ import { checkHoneypot } from '~/utils/honeypot.server';
 
 // Lazy-load plugin block renderer for performance
 const LazyCreatePluginBlockRenderer = lazy(
-  () => import('~/components/plugins/PluginRenderers/CreatePluginBlockRenderer'),
+  () => import('~/components/plugins/PluginRenderers/BuilderPluginBlockRenderer'),
 );
 
 export function headers(_: Route.HeadersArgs) {

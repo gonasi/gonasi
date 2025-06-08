@@ -205,7 +205,7 @@ export default [
                 ),
                 route(
                   ':blockId/builder',
-                  'routes/profile/course-builder/courseId/content/chapterId/lessonId/lesson-blocks/plugins/builder-block-by-plugin-id-modal.tsx',
+                  'routes/profile/course-builder/courseId/content/chapterId/lessonId/lesson-blocks/plugins/temp.tsx',
                 ),
                 // /:username/course-builder/:courseId/content/:chapterId/:lessonId/:blockId/delete
                 route(

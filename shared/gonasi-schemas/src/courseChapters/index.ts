@@ -65,12 +65,10 @@ export type DeleteChapterSubmitValues = z.infer<typeof SubmitDeleteChapterSchema
 export const ChapterPositionUpdateSchema = z.object({
   id: z.string(),
   position: z.number(),
-  course_id: z.string(),
-  name: z.string(),
-  created_by: z.string(),
 });
 
 export const ChapterPositionUpdateArraySchema = z.array(ChapterPositionUpdateSchema);
 
-export type ChapterPositionUpdate = z.infer<typeof ChapterPositionUpdateSchema>;
-export type ChapterPositionUpdateArray = z.infer<typeof ChapterPositionUpdateArraySchema>;
+export type ChapterPositionUpdateArraySchemaTypes = z.infer<
+  typeof ChapterPositionUpdateArraySchema
+>;

@@ -10,7 +10,9 @@ export const createRichTextBlock = async (
   blockData: RichTextSchemaTypes,
 ): Promise<ApiResponse> => {
   const userId = await getUserId(supabase);
-  const { content, lessonId, pluginType, settings, weight } = blockData;
+  const { content, lessonId, courseId, pluginType, settings } = blockData;
+
+  console.log('block: ', blockData);
 
   try {
     const nextPosition = await getNextBlockPosition({
@@ -20,14 +22,14 @@ export const createRichTextBlock = async (
 
     // Insert the new rich text block
     const { error: insertError } = await supabase
-      .from('blocks')
+      .from('lesson_blocks')
       .insert({
         lesson_id: lessonId,
+        course_id: courseId,
         plugin_type: pluginType,
         position: nextPosition,
         content,
         settings,
-        weight,
         created_by: userId,
         updated_by: userId,
       })

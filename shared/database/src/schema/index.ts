@@ -760,7 +760,7 @@ export type Database = {
         Returns: boolean
       }
       reorder_chapters: {
-        Args: { chapters: Json }
+        Args: { p_course_id: string; chapter_positions: Json }
         Returns: undefined
       }
       reorder_lesson_blocks: {
