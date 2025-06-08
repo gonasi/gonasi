@@ -768,7 +768,7 @@ export type Database = {
         Returns: undefined
       }
       reorder_lessons: {
-        Args: { lessons: Json }
+        Args: { p_chapter_id: string; lesson_positions: Json }
         Returns: undefined
       }
     }

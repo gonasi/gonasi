@@ -28,7 +28,7 @@ create table public.chapters (
 -- ====================================================================================
 
 create index idx_chapters_course_id on public.chapters (course_id);
-create index idx_chapters_created_by on public.chapters (created_by);
+create index idx_chapters_created_by on public.chapters (created_by); 
 create index idx_chapters_updated_by on public.chapters (updated_by);
 create index idx_chapters_position on public.chapters (course_id, position);
 
