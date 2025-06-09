@@ -44,7 +44,7 @@ export default function LessonBlockWrapper({
 
   return (
     <div
-      className='bg-card/20 rounded-lg pt-6'
+      className='bg-card/50 border-card rounded-lg border pt-6'
       ref={isMounted ? setNodeRef : undefined}
       style={style}
     >

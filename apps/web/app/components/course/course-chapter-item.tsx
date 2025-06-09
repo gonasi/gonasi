@@ -2,15 +2,7 @@ import { useEffect, useState } from 'react';
 import { useFetcher, useParams } from 'react-router';
 import { AccordionContent, AccordionItem, AccordionTrigger } from '@radix-ui/react-accordion';
 import { Reorder, useDragControls, useMotionValue } from 'framer-motion';
-import {
-  BookOpen,
-  ChevronsUpDown,
-  CircleDollarSign,
-  GripVerticalIcon,
-  Pencil,
-  Plus,
-  Trash,
-} from 'lucide-react';
+import { BookOpen, CircleDollarSign, GripVerticalIcon, Pencil, Plus, Trash } from 'lucide-react';
 
 import { ActionDropdown } from '../action-dropdown';
 import { NotFoundCard } from '../cards';
@@ -107,7 +99,7 @@ export default function CourseChapterItem({ chapter, loading }: Props) {
       dragControls={courseDragControls}
     >
       <div className='relative'>
-        <div className='absolute top-0 -left-10'>
+        <div className='absolute top-3 -left-4'>
           <ReorderIconTooltip
             asChild
             title='Drag and drop to rearrange chapters'
@@ -127,8 +119,7 @@ export default function CourseChapterItem({ chapter, loading }: Props) {
             <div className='flex w-full items-center justify-between'>
               {/* Chapter title and reorder icon */}
               <div className='flex items-center space-x-1'>
-                <ChevronsUpDown size={16} />
-                <h3 className='mt-1 line-clamp-1 text-left text-lg'>{chapter.name}</h3>
+                <h3 className='mt-1 ml-2 line-clamp-1 text-left text-lg'>{chapter.name}</h3>
               </div>
 
               {/* Chapter action controls */}

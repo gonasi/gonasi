@@ -45,7 +45,7 @@ export function LessonCard({ lesson, loading }: Props) {
       dragControls={lessonDragControls}
     >
       <div className='relative'>
-        <div className='absolute top-0 -left-0'>
+        <div className='absolute top-4 -left-0'>
           <ReorderIconTooltip
             asChild
             title='Drag and drop to rearrange lessons'
@@ -56,11 +56,11 @@ export function LessonCard({ lesson, loading }: Props) {
         </div>
         <NavLink
           to={`${basePath}/lesson-blocks`}
-          className='group bg-background/60 hover:border-primary/2 ml-10 flex flex-col space-y-3 rounded-xl border border-transparent p-4 transition-all duration-300 ease-in-out hover:border hover:shadow-sm'
+          className='group bg-background/60 hover:border-primary/2 ml-4 flex flex-col space-y-3 rounded-xl border border-transparent p-4 transition-all duration-300 ease-in-out hover:border hover:shadow-sm'
         >
           <div className='flex w-full items-start justify-between'>
             {/* Left: icon + lesson name */}
-            <div className='flex min-w-0 flex-1 items-center gap-3'>
+            <div className='mt-1.5 ml-3 flex min-w-0 flex-1 items-center gap-1'>
               <LucideIconRenderer
                 name={lucide_icon}
                 aria-hidden

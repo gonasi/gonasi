@@ -121,7 +121,7 @@ export default function CourseOverview({ loaderData, params }: Route.ComponentPr
           className='mb-10'
         />
 
-        <div className='ml-8 md:ml-10'>
+        <div className='ml-4'>
           <CourseChapters chapters={loaderData} />
         </div>
       </div>
