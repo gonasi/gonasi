@@ -142,22 +142,13 @@ begin
   end if;
 
   -- Get the course_id for the chapter to check permissions
-  select l.course_id into v_course_id
-  from public.lessons l
-  where l.chapter_id = p_chapter_id
-  limit 1;
+  select c.course_id into v_course_id
+  from public.chapters c
+  where c.id = p_chapter_id;
 
-  -- If no lessons found for this chapter, still need to validate chapter exists
+  -- Check if chapter exists
   if v_course_id is null then
-    -- Check if chapter exists by looking at chapters table
-    -- Assuming chapters table exists with course_id reference
-    select c.course_id into v_course_id
-    from public.chapters c
-    where c.id = p_chapter_id;
-    
-    if v_course_id is null then
-      raise exception 'Chapter does not exist';
-    end if;
+    raise exception 'Chapter does not exist';
   end if;
 
   -- Verify user has permission to modify lessons in this chapter
@@ -166,8 +157,8 @@ begin
     from public.courses c
     where c.id = v_course_id
       and (
-        is_course_admin(c.id, p_updated_by) or
-        is_course_editor(c.id, p_updated_by) or
+        public.is_course_admin(c.id, p_updated_by) or
+        public.is_course_editor(c.id, p_updated_by) or
         c.created_by = p_updated_by
       )
   ) then
@@ -194,7 +185,6 @@ begin
   end if;
 
   -- Validate that we're not missing any lessons from the chapter
-  -- (Optional: Remove this check if partial reordering should be allowed)
   if (
     select count(*)
     from public.lessons
@@ -203,48 +193,33 @@ begin
     raise exception 'All lessons in the chapter must be included in the reorder operation';
   end if;
 
+  -- Check for duplicate positions in the input
+  if (
+    select count(distinct (lp->>'position')::int)
+    from jsonb_array_elements(lesson_positions) as lp
+  ) != jsonb_array_length(lesson_positions) then
+    raise exception 'Duplicate position values are not allowed';
+  end if;
+
   -- Temporarily shift all lesson positions to avoid unique constraint conflicts
   update public.lessons
   set position = position + temp_offset
   where chapter_id = p_chapter_id;
 
-  -- Set lessons to their new positions (normalized to consecutive positions starting from 1)
-  -- and update audit fields
+  -- Apply new positions and update audit fields
   update public.lessons
   set 
-    position = row_number() over (order by (lp->>'position')::int),
+    position = new_positions.position,
     updated_at = timezone('utc', now()),
     updated_by = p_updated_by
-  from jsonb_array_elements(lesson_positions) as lp
-  where public.lessons.id = (lp->>'id')::uuid
+  from (
+    select 
+      (lp->>'id')::uuid as id,
+      row_number() over (order by (lp->>'position')::int) as position
+    from jsonb_array_elements(lesson_positions) as lp
+  ) as new_positions
+  where public.lessons.id = new_positions.id
     and public.lessons.chapter_id = p_chapter_id;
 
 end;
 $$;
-
--- ====================================================================================
--- Usage Examples
--- ====================================================================================
-/*
--- Example 1: Reorder lessons with consecutive positions (recommended)
-select reorder_lessons(
-  'chapter-uuid-here',
-  '[
-    {"id": "lesson-1-uuid", "position": 1},
-    {"id": "lesson-2-uuid", "position": 2},
-    {"id": "lesson-3-uuid", "position": 3}
-  ]'::jsonb,
-  'user-uuid-here'
-);
-
--- Example 2: Reorder lessons preserving exact positions (allows gaps)
-select reorder_lessons_preserve_positions(
-  'chapter-uuid-here',
-  '[
-    {"id": "lesson-1-uuid", "position": 1},
-    {"id": "lesson-2-uuid", "position": 5},
-    {"id": "lesson-3-uuid", "position": 10}
-  ]'::jsonb,
-  'user-uuid-here'
-);
-*/

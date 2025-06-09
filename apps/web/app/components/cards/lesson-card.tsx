@@ -24,7 +24,9 @@ export function LessonCard({ lesson, loading }: Props) {
   const basePath = `/${params.username}/course-builder/${params.courseId}/content/${lesson.chapter_id}/${lesson.id}`;
 
   const lessonY = useMotionValue(0);
-  const lessonBoxShadow = useRaisedShadow(lessonY);
+  const lessonBoxShadow = useRaisedShadow(lessonY, {
+    borderRadius: '12px',
+  });
   const lessonDragControls = useDragControls();
 
   // Dropdown menu options
@@ -42,55 +44,58 @@ export function LessonCard({ lesson, loading }: Props) {
       dragListener={false}
       dragControls={lessonDragControls}
     >
-      <NavLink
-        to={`${basePath}/lesson-blocks`}
-        className='group bg-background/50 hover:bg-primary/2 flex flex-col space-y-3 rounded-xl border border-transparent p-4 transition-all duration-300 ease-in-out hover:border hover:shadow-sm'
-      >
-        <div className='flex w-full items-start justify-between'>
-          {/* Left: icon + lesson name */}
-          <div className='flex min-w-0 flex-1 items-center gap-3'>
-            <LucideIconRenderer
-              name={lucide_icon}
-              aria-hidden
-              color={bg_color}
-              strokeWidth={3}
-              className='shrink-0 rotate-[30deg] transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:rotate-0'
-            />
-            <p className='group-hover:text-foreground truncate text-base font-medium transition-colors'>
-              {lesson.name}
-            </p>
-          </div>
-
-          {/* Right: drag handle + actions */}
-          <div className='flex shrink-0 items-center gap-2'>
-            <ReorderIconTooltip
-              asChild
-              className='cursor-move p-2'
-              title='Drag and drop to rearrange lessons'
-              icon={GripVerticalIcon}
-              disabled={loading}
-              dragControls={lessonDragControls}
-            />
-            <ActionDropdown items={options} />
-          </div>
+      <div className='relative'>
+        <div className='absolute top-0 -left-0'>
+          <ReorderIconTooltip
+            asChild
+            title='Drag and drop to rearrange lessons'
+            icon={GripVerticalIcon}
+            disabled={loading}
+            dragControls={lessonDragControls}
+          />
         </div>
+        <NavLink
+          to={`${basePath}/lesson-blocks`}
+          className='group bg-background/60 hover:border-primary/2 ml-10 flex flex-col space-y-3 rounded-xl border border-transparent p-4 transition-all duration-300 ease-in-out hover:border hover:shadow-sm'
+        >
+          <div className='flex w-full items-start justify-between'>
+            {/* Left: icon + lesson name */}
+            <div className='flex min-w-0 flex-1 items-center gap-3'>
+              <LucideIconRenderer
+                name={lucide_icon}
+                aria-hidden
+                color={bg_color}
+                strokeWidth={3}
+                className='shrink-0 rotate-[30deg] transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:rotate-0'
+              />
+              <p className='group-hover:text-foreground truncate text-base font-medium transition-colors'>
+                {lesson.name}
+              </p>
+            </div>
 
-        {/* Lesson type badge and description */}
-        {typeName && (
-          <div className='flex flex-col justify-start space-y-1'>
-            <Badge
-              variant='outline'
-              className='group-hover:border-primary/30 group-hover:text-primary transition-colors duration-300'
-            >
-              {typeName}
-            </Badge>
-            <p className='font-secondary text-muted-foreground flex items-center space-x-1 px-1 text-xs'>
-              <Info size={14} />
-              <span>{description}</span>
-            </p>
+            {/* Right: drag handle + actions */}
+            <div className='flex shrink-0 items-center gap-2'>
+              <ActionDropdown items={options} />
+            </div>
           </div>
-        )}
-      </NavLink>
+
+          {/* Lesson type badge and description */}
+          {typeName && (
+            <div className='flex flex-col justify-start space-y-1'>
+              <Badge
+                variant='outline'
+                className='group-hover:border-primary/30 group-hover:text-primary transition-colors duration-300'
+              >
+                {typeName}
+              </Badge>
+              <p className='font-secondary text-muted-foreground flex items-center space-x-1 px-1 text-xs'>
+                <Info size={14} />
+                <span>{description}</span>
+              </p>
+            </div>
+          )}
+        </NavLink>
+      </div>
     </Reorder.Item>
   );
 }

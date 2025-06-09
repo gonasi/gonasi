@@ -76,8 +76,9 @@ export async function action({ request, params }: Route.ActionArgs) {
   // Handle reordering lessons
   if (intent === 'reorder-lessons') {
     const lessonsRaw = formData.get('lessons');
+    const chapterId = formData.get('chapterId');
 
-    if (typeof lessonsRaw !== 'string') {
+    if (typeof lessonsRaw !== 'string' || typeof chapterId !== 'string') {
       throw new Response('Invalid data', { status: 400 });
     }
 
@@ -88,7 +89,11 @@ export async function action({ request, params }: Route.ActionArgs) {
       throw new Response('Validation failed', { status: 400 });
     }
 
-    const { success, message } = await updateLessonPositions(supabase, parsed.data);
+    const { success, message } = await updateLessonPositions({
+      supabase,
+      chapterId: chapterId ?? '',
+      lessonPositions: parsed.data,
+    });
 
     if (!success) {
       return dataWithError(null, message ?? 'Could not re-order lessons');
@@ -109,14 +114,16 @@ export default function CourseOverview({ loaderData, params }: Route.ComponentPr
 
   return (
     <>
-      <div className='max-w-xl pb-20'>
+      <div className='max-w-2xl pb-20'>
         <BannerCard
           message='Want to reorder your chapters and lessons? Just drag and drop.'
           variant='tip'
           className='mb-10'
         />
 
-        <CourseChapters chapters={loaderData} />
+        <div className='ml-8 md:ml-10'>
+          <CourseChapters chapters={loaderData} />
+        </div>
       </div>
 
       {/* Floating button to add a new chapter */}

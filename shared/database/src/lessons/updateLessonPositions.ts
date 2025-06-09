@@ -1,40 +1,35 @@
-import type { LessonPositionUpdateArray } from '@gonasi/schemas/lessons';
+import type { LessonPositionUpdateArraySchemaTypes } from '@gonasi/schemas/lessons';
 
 import { getUserId } from '../auth';
 import type { TypedSupabaseClient } from '../client';
 
-/**
- * Reorders lessons using a Supabase Postgres function to ensure atomic update.
- *
- * @param supabase - The Supabase client
- * @param reorderedLessons - Lessons in new order
- * @returns Success result with optional error message
- */
-export async function updateLessonPositions(
-  supabase: TypedSupabaseClient,
-  reorderedLessons: LessonPositionUpdateArray,
-): Promise<{ success: boolean; message?: string }> {
-  if (reorderedLessons.length === 0) {
-    return {
-      success: true,
-      message: 'No lessons to reorder.',
-    };
-  }
+interface UpdateLessonPositionsParams {
+  supabase: TypedSupabaseClient;
+  chapterId: string;
+  lessonPositions: LessonPositionUpdateArraySchemaTypes;
+}
 
+export async function updateLessonPositions({
+  supabase,
+  chapterId,
+  lessonPositions,
+}: UpdateLessonPositionsParams) {
   const userId = await getUserId(supabase);
-
-  const enrichedLessons = reorderedLessons.map((lesson) => ({
-    ...lesson,
-    updated_by: userId,
-  }));
 
   try {
     const { error } = await supabase.rpc('reorder_lessons', {
-      lessons: enrichedLessons,
+      p_chapter_id: chapterId,
+      lesson_positions: lessonPositions,
+      p_updated_by: userId,
     });
 
     if (error) {
-      console.error('Error calling reorder_lessons:', error);
+      console.error('[updateLessonPositions] Supabase RPC error:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+      });
       return {
         success: false,
         message: 'Could not update lesson order. Please try again.',
@@ -45,7 +40,7 @@ export async function updateLessonPositions(
       success: true,
     };
   } catch (err) {
-    console.error('Unexpected error during reorder:', err);
+    console.error('[updateLessonPositions] Unexpected error:', err);
     return {
       success: false,
       message: 'Something went wrong while reordering chapters.',

@@ -26,7 +26,7 @@ export function ReorderIconTooltip({
           <Button
             variant='ghost'
             size='sm'
-            className={cn('z-5', {
+            className={cn('z-5', 'cursor-grab p-2', {
               'bg-primary/10': active,
             })}
             {...buttonProps}

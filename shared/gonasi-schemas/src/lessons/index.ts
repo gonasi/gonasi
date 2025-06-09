@@ -55,14 +55,11 @@ export type DeleteLessonSubmitValues = z.infer<typeof DeleteLessonSchema>;
 export const LessonPositionUpdateSchema = z.object({
   id: z.string().uuid(),
   position: z.number().int(),
-  updated_by: z.string().uuid(),
-  chapter_id: z.string().uuid().optional(), // optional if used for validation/filtering
 });
 
 export const LessonPositionUpdateArraySchema = z.array(LessonPositionUpdateSchema);
 
-export type LessonPositionUpdate = z.infer<typeof LessonPositionUpdateSchema>;
-export type LessonPositionUpdateArray = z.infer<typeof LessonPositionUpdateArraySchema>;
+export type LessonPositionUpdateArraySchemaTypes = z.infer<typeof LessonPositionUpdateArraySchema>;
 
 export const ResetLessonSchema = z.object({
   lessonId: z.string(),
