@@ -30,7 +30,7 @@ export function ReorderIconTooltip({
               'bg-card': active,
             })}
             {...buttonProps}
-            style={{ zIndex: '5' }}
+            style={{ zIndex: '5', touchAction: 'none' }}
             onPointerDown={(event) => dragControls.start(event)}
           >
             <Icon
