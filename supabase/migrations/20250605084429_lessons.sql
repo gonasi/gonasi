@@ -53,7 +53,8 @@ comment on table public.lessons is 'Stores all lessons associated with chapters 
 -- Trigger: Auto-set Lesson Position
 -- ====================================================================================
 -- Before inserting a new lesson, if position is not provided or zero,
--- automatically assign the next available position within the course.
+-- automatically assign the next available position within the CHAPTER (not course).
+-- Fixed to align with unique constraint scope.
 create or replace function public.set_lesson_position()
 returns trigger
 as $$
@@ -62,7 +63,7 @@ begin
     select coalesce(max(position), 0) + 1
     into new.position
     from public.lessons
-    where course_id = new.course_id;
+    where chapter_id = new.chapter_id;  -- Fixed: changed from course_id to chapter_id
   end if;
   return new;
 end;
@@ -166,57 +167,3 @@ using (
       )
   )
 );
-
--- ====================================================================================
--- Function: reorder_lessons
--- ====================================================================================
--- Reorders lessons within a chapter using a JSONB array input specifying
--- lesson IDs and their new positions.
---
--- Implementation notes:
--- 1. Validates input presence and that all lesson IDs exist and belong to the chapter.
--- 2. Temporarily shifts all lesson positions by a large offset to avoid unique constraint conflicts.
--- 3. Updates each lesson with its new position and updates timestamp to current UTC time.
-create or replace function reorder_lessons(
-  p_chapter_id uuid,
-  lesson_positions jsonb -- JSONB array of objects {id: uuid, position: int}
-)
-returns void
-language plpgsql
-security definer
-set search_path = ''
-as $$
-declare
-  temp_offset int := 1000000;  -- large offset to avoid unique position conflicts during update
-begin
-  -- Validate that lesson_positions array is not empty or null
-  if lesson_positions is null or jsonb_array_length(lesson_positions) = 0 then
-    raise exception 'lesson_positions array cannot be null or empty';
-  end if;
-
-  -- Validate that all lesson IDs exist and belong to the specified chapter
-  if exists (
-    select 1 
-    from jsonb_array_elements(lesson_positions) as lp
-    left join public.lessons l on l.id = (lp->>'id')::uuid
-    where l.id is null or l.chapter_id != p_chapter_id
-  ) then
-    raise exception 'One or more lesson IDs do not exist or do not belong to the specified chapter';
-  end if;
-
-  -- Temporarily shift all lesson positions to avoid unique constraint conflicts
-  update public.lessons
-  set position = position + temp_offset
-  where chapter_id = p_chapter_id;
-
-  -- Set lessons to their new positions and update their updated_at timestamp
-  update public.lessons
-  set 
-    position = (lp->>'position')::int,
-    updated_at = timezone('utc', now())
-  from jsonb_array_elements(lesson_positions) as lp
-  where public.lessons.id = (lp->>'id')::uuid
-    and public.lessons.chapter_id = p_chapter_id;
-
-end;
-$$;

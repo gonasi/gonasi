@@ -1,5 +1,6 @@
 import type { ChapterPositionUpdateArraySchemaTypes } from '@gonasi/schemas/courseChapters';
 
+import { getUserId } from '../auth';
 import type { TypedSupabaseClient } from '../client';
 
 interface UpdateChapterPositionsParams {
@@ -13,10 +14,13 @@ export async function updateChapterPositions({
   courseId,
   chapterPositions,
 }: UpdateChapterPositionsParams) {
+  const userId = await getUserId(supabase);
+
   try {
     const { error } = await supabase.rpc('reorder_chapters', {
       p_course_id: courseId,
       chapter_positions: chapterPositions,
+      p_updated_by: userId,
     });
 
     if (error) {

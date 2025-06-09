@@ -12,8 +12,6 @@ import {
   Trash,
 } from 'lucide-react';
 
-import type { LessonPositionUpdateArray } from '@gonasi/schemas/lessons';
-
 import { ActionDropdown } from '../action-dropdown';
 import { NotFoundCard } from '../cards';
 import { LessonCard } from '../cards/lesson-card';
@@ -25,13 +23,13 @@ import { useRaisedShadow } from '~/hooks/useRaisedShadow';
 import { cn } from '~/lib/utils';
 import type { CourseChapter } from '~/routes/profile/course-builder/courseId/content/content-index';
 
-function ChapterBadges({
-  lessonCount,
-  requiresPayment,
-}: {
+interface ChapterBadgesProps {
   lessonCount: number;
   requiresPayment: boolean | null;
-}) {
+}
+
+// Renders badges for lesson count and payment requirement
+function ChapterBadges({ lessonCount, requiresPayment }: ChapterBadgesProps) {
   return (
     <div className='flex space-x-2'>
       <Badge variant='outline'>
@@ -48,44 +46,61 @@ function ChapterBadges({
   );
 }
 
-function buildLessonUpdateFormData(lessons: LessonPositionUpdateArray) {
-  const formData = new FormData();
-  formData.append('intent', 'reorder-lessons');
-  formData.append('lessons', JSON.stringify(lessons));
-  return formData;
-}
-
 interface Props {
   chapter: CourseChapter;
   loading: boolean;
 }
 
+type Lesson = CourseChapter['lessons'][number];
+
 export default function CourseChapterItem({ chapter, loading }: Props) {
   const fetcher = useFetcher();
   const params = useParams();
 
-  const [lessons, setLessons] = useState(chapter.lessons ?? []);
-  const [lessonLoading, setLessonLoading] = useState(false);
+  const [reorderedLessons, setReorderedLessons] = useState<Lesson[]>(chapter.lessons ?? []);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const courseY = useMotionValue(0);
   const courseBoxShadow = useRaisedShadow(courseY);
   const courseDragControls = useDragControls();
 
+  const basePath = `/${params.username}/course-builder/${params.courseId}/content/${chapter.id}`;
+  const reorderEndpoint = `/${params.username}/course-builder/${params.courseId}/content`;
+
+  // Sync internal reordered list with external chapter lessons
   useEffect(() => {
-    setLessons(chapter.lessons ?? []);
+    setReorderedLessons(chapter.lessons ?? []);
   }, [chapter.lessons]);
 
+  // Track if a form is being submitted
   useEffect(() => {
-    setLessonLoading(fetcher.state === 'submitting');
+    setIsSubmitting(fetcher.state === 'submitting');
   }, [fetcher.state]);
 
-  const basePath = `/${params.username}/course-builder/${params.courseId}/content/${chapter.id}`;
+  // Reorder lessons handler
+  const handleLessonReorder = (updated: Lesson[]) => {
+    setReorderedLessons(updated);
+
+    const orderedData = updated.map((lesson, index) => ({
+      id: lesson.id,
+      position: index + 1,
+    }));
+
+    const formData = new FormData();
+    formData.append('intent', 'reorder-lessons');
+    formData.append('chapters', JSON.stringify(orderedData));
+
+    fetcher.submit(formData, {
+      method: 'post',
+      action: reorderEndpoint,
+    });
+  };
 
   return (
     <Reorder.Item
       value={chapter}
       id={chapter.id}
-      style={{ courseBoxShadow, courseY }}
+      style={{ boxShadow: courseBoxShadow, y: courseY }}
       dragListener={false}
       dragControls={courseDragControls}
     >
@@ -97,10 +112,13 @@ export default function CourseChapterItem({ chapter, loading }: Props) {
       >
         <AccordionTrigger className='w-full text-xl'>
           <div className='flex w-full items-center justify-between'>
+            {/* Chapter title and reorder icon */}
             <div className='flex items-center space-x-1'>
               <ChevronsUpDown size={14} />
               <h3 className='mt-1 line-clamp-1 text-left text-lg'>{chapter.name}</h3>
             </div>
+
+            {/* Chapter action controls */}
             <div className='flex items-center space-x-2'>
               <ReorderIconTooltip
                 asChild
@@ -118,6 +136,8 @@ export default function CourseChapterItem({ chapter, loading }: Props) {
               />
             </div>
           </div>
+
+          {/* Badges for metadata */}
           <div className='flex w-full items-start'>
             <ChapterBadges
               lessonCount={chapter.lesson_count}
@@ -127,11 +147,14 @@ export default function CourseChapterItem({ chapter, loading }: Props) {
         </AccordionTrigger>
 
         <AccordionContent>
+          {/* Optional chapter description */}
           {chapter.description && (
             <div className='text-muted-foreground font-secondary line-clamp-4 py-2'>
               {chapter.description}
             </div>
           )}
+
+          {/* Add lesson button */}
           <div className='flex w-full justify-end'>
             <NavLinkButton
               to={`${basePath}/new-lesson-details`}
@@ -142,13 +165,19 @@ export default function CourseChapterItem({ chapter, loading }: Props) {
               Add lesson
             </NavLinkButton>
           </div>
-          <div className='flex flex-col space-y-4 py-4'>
-            {lessons.length > 0 ? (
-              lessons.map((lesson) => (
-                <LessonCard key={lesson.id} lesson={lesson} loading={lessonLoading} />
-              ))
+
+          {/* Lessons list */}
+          <div className='py-4'>
+            {reorderedLessons.length === 0 ? (
+              <NotFoundCard message='No lessons found' />
             ) : (
-              <NotFoundCard message='No lessons available' />
+              <div className='flex flex-col space-y-4'>
+                <Reorder.Group axis='y' values={reorderedLessons} onReorder={handleLessonReorder}>
+                  {reorderedLessons.map((lesson) => (
+                    <LessonCard key={lesson.id} lesson={lesson} loading={isSubmitting} />
+                  ))}
+                </Reorder.Group>
+              </div>
             )}
           </div>
         </AccordionContent>

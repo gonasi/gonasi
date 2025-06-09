@@ -20,7 +20,7 @@ import { createClient } from '~/lib/supabase/supabase.server';
 
 export function meta() {
   return [
-    { title: 'Course Content Layout | Gonasi' },
+    { title: 'Course Content | Gonasi' },
     {
       name: 'description',
       content:
