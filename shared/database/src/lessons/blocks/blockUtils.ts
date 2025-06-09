@@ -10,12 +10,14 @@ export const getNextBlockPosition = async ({
   lessonId,
 }: GetNextBlockPositionArgs): Promise<number> => {
   const { data: maxPositionResult, error: positionError } = await supabase
-    .from('blocks')
+    .from('lesson_blocks')
     .select('position')
     .eq('lesson_id', lessonId)
     .order('position', { ascending: false })
     .limit(1)
     .single();
+
+  console.error('Position error******: ', positionError);
 
   if (positionError && positionError.code !== 'PGRST116') {
     throw new Error('Failed to fetch the current max position for blocks.');

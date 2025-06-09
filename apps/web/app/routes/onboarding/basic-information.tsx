@@ -1,19 +1,19 @@
 import { data, Form, redirect } from 'react-router';
-import { getFormProps, getInputProps, useForm } from '@conform-to/react';
-import { getZodConstraint, parseWithZod } from '@conform-to/zod';
-import { ChevronRight } from 'lucide-react';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { ChevronRight, LoaderCircle } from 'lucide-react';
+import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
-import { z } from 'zod';
 
 import { checkUserNameExists } from '@gonasi/database/onboarding';
-import type { BasicInformationType } from '@gonasi/schemas/onboarding';
+import type { BasicInformationSchemaTypes } from '@gonasi/schemas/onboarding';
 import { BasicInformationSchema } from '@gonasi/schemas/onboarding';
 
 import type { Route } from './+types/basic-information';
 
 import { Button } from '~/components/ui/button';
-import { ErrorList, Field } from '~/components/ui/forms';
+import { GoInputField } from '~/components/ui/forms/elements';
 import { createClient } from '~/lib/supabase/supabase.server';
+import { useStore } from '~/store';
 import {
   FORM_STEPPER_COOKIE_NAMES,
   formStepperSessionStorage,
@@ -24,15 +24,17 @@ import { useIsPending } from '~/utils/misc';
 
 export function meta() {
   return [
-    { title: 'Gonasi | Personal Information' },
-    { name: 'description', content: 'Welcome to Gonasi' },
+    { title: 'Gonasi | Personal Info' },
+    { name: 'description', content: 'Let’s get started with a few basics.' },
   ];
 }
+
+const resolver = zodResolver(BasicInformationSchema);
 
 export async function loader({ request }: Route.LoaderArgs) {
   const session = await getFormStepperSessionData(request);
   const storedData = session.get(FORM_STEPPER_COOKIE_NAMES.basicInfo) || {};
-  return data(storedData as BasicInformationType);
+  return data(storedData as BasicInformationSchemaTypes);
 }
 
 export async function action({ request, params }: Route.ActionArgs) {
@@ -40,87 +42,98 @@ export async function action({ request, params }: Route.ActionArgs) {
   await checkHoneypot(formData);
 
   const { supabase } = createClient(request);
-
   const session = await getFormStepperSessionData(request);
 
-  const submission = await parseWithZod(formData, {
-    schema: (intent) =>
-      BasicInformationSchema.transform(async (data, ctx) => {
-        if (intent !== null) return data;
+  // Validate and parse form data with Zod
+  const {
+    errors,
+    data,
+    receivedValues: defaultValues,
+  } = await getValidatedFormData<BasicInformationSchemaTypes>(formData, resolver);
 
-        const usernameExists = await checkUserNameExists(supabase, data.username);
-
-        if (usernameExists) {
-          ctx.addIssue({
-            path: ['username'],
-            code: z.ZodIssueCode.custom,
-            message: 'A user already exists with this username',
-          });
-          return z.NEVER;
-        }
-
-        const storedData = (session.get(FORM_STEPPER_COOKIE_NAMES.basicInfo) ||
-          {}) as BasicInformationType;
-        session.set(FORM_STEPPER_COOKIE_NAMES.basicInfo, { ...storedData, ...data });
-
-        return { data };
-      }),
-    async: true,
-  });
-
-  if (submission.status !== 'success') {
-    return data(
-      { result: submission.reply() },
-      { status: submission.status === 'error' ? 400 : 200 },
-    );
+  // Return validation errors, if any
+  if (errors) {
+    return { errors, defaultValues };
   }
+
+  const usernameExists = await checkUserNameExists(supabase, data.username);
+
+  if (usernameExists) {
+    return {
+      errors: {
+        username: {
+          message: 'Username already exists',
+        },
+      },
+      defaultValues,
+    };
+  }
+
+  const storedData = session.get(FORM_STEPPER_COOKIE_NAMES.basicInfo) || {};
+  session.set(FORM_STEPPER_COOKIE_NAMES.basicInfo, { ...storedData, ...data });
 
   return redirect(`/onboarding/${params.userId}/contact-information`, {
     headers: { 'Set-Cookie': await formStepperSessionStorage.commitSession(session) },
   });
 }
 
-export default function PersonalInformation({ loaderData, actionData }: Route.ComponentProps) {
+export default function PersonalInformation({ loaderData }: Route.ComponentProps) {
   const isPending = useIsPending();
-  const [form, fields] = useForm({
-    id: 'basic-information-onboarding-form',
-    constraint: getZodConstraint(BasicInformationSchema),
-    lastResult: actionData?.result,
-    defaultValue: loaderData,
-    shouldValidate: 'onInput',
-    onValidate({ formData }) {
-      return parseWithZod(formData, { schema: BasicInformationSchema });
+  const { activeUserProfile } = useStore();
+
+  const methods = useRemixForm<BasicInformationSchemaTypes>({
+    mode: 'all',
+    resolver,
+    defaultValues: {
+      fullName: activeUserProfile?.full_name || loaderData.fullName,
+      username: loaderData.username,
     },
-    shouldRevalidate: 'onInput',
   });
 
+  const isDisabled = isPending || methods.formState.isSubmitting;
+
+  console.log('error: ', methods.formState.errors);
+
   return (
-    <Form method='POST' {...getFormProps(form)}>
-      <HoneypotInputs />
-      <Field
-        labelProps={{ children: 'Name / Company name', required: true }}
-        inputProps={{ ...getInputProps(fields.fullName, { type: 'text' }), autoFocus: true }}
-        errors={fields.fullName?.errors}
-      />
-      <Field
-        labelProps={{ children: 'Username', required: true }}
-        inputProps={{
-          ...getInputProps(fields.username, { type: 'text' }),
-          className: 'lowercase',
-        }}
-        errors={fields.username?.errors}
-      />
-      <ErrorList errors={form.errors} id={form.errorId} />
-      <div className='flex w-full justify-end'>
-        <Button
-          type='submit'
-          disabled={isPending}
-          isLoading={isPending}
-          rightIcon={<ChevronRight />}
-        >
-          Next
-        </Button>
-      </div>
-    </Form>
+    <RemixFormProvider {...methods}>
+      <Form method='POST' onSubmit={methods.handleSubmit}>
+        <HoneypotInputs />
+
+        <GoInputField
+          labelProps={{ children: 'Your name or company', required: true }}
+          name='fullName'
+          inputProps={{
+            autoFocus: true,
+            disabled: isDisabled,
+          }}
+          description='Let us know who you are, whether it’s just you or your team'
+        />
+
+        <GoInputField
+          labelProps={{
+            children: 'Username',
+            required: true,
+            endAdornment: isDisabled ? <LoaderCircle size={12} className='animate-spin' /> : null,
+          }}
+          name='username'
+          inputProps={{
+            className: 'lowercase',
+            disabled: isDisabled,
+          }}
+          description='Pick something short and memorable... like a handle.'
+        />
+
+        <div className='mt-6 flex w-full justify-end'>
+          <Button
+            type='submit'
+            disabled={isDisabled}
+            isLoading={isDisabled}
+            rightIcon={<ChevronRight />}
+          >
+            Next
+          </Button>
+        </div>
+      </Form>
+    </RemixFormProvider>
   );
 }

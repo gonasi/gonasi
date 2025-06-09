@@ -7,13 +7,13 @@ import { buttonVariants } from '../../ui/button';
 import { TopNavLink } from './top-nav-link';
 
 import { AppLogo } from '~/components/app-logo';
-import type { UserActiveCompanyLoaderReturnType } from '~/root';
+import type { UserProfileLoaderReturnType } from '~/root';
 
 interface Props {
-  activeCompany: UserActiveCompanyLoaderReturnType;
+  user: UserProfileLoaderReturnType;
 }
 
-export function TopNav({ activeCompany }: Props) {
+export function TopNav({ user }: Props) {
   return (
     <nav className='border-b-card hidden h-16 w-full items-center border-b md:flex md:h-20 md:px-4'>
       <Container className='h-full'>
@@ -28,9 +28,9 @@ export function TopNav({ activeCompany }: Props) {
               <TopNavLink icon={<Telescope size={20} />} to='/explore' name='Explore' />
             </div>
           </div>
-          {activeCompany ? (
+          {user ? (
             <div>
-              <ProfileDropdown activeCompany={activeCompany} />
+              <ProfileDropdown user={user} />
             </div>
           ) : (
             <div className='flex space-x-2'>

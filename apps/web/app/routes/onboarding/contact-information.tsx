@@ -1,18 +1,26 @@
 import { data, Form } from 'react-router';
-import { getFormProps, getInputProps, useForm } from '@conform-to/react';
-import { getZodConstraint, parseWithZod } from '@conform-to/zod';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { ChevronRight } from 'lucide-react';
-import { dataWithError, redirectWithSuccess } from 'remix-toast';
+import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
+import { dataWithError, redirectWithError, redirectWithSuccess } from 'remix-toast';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
 
-import { completeUserOnboarding } from '@gonasi/database/onboarding';
-import type { BasicInformationType, ContactInformationType } from '@gonasi/schemas/onboarding';
-import { BasicInformationSchema, ContactInformationSchema } from '@gonasi/schemas/onboarding';
+import { checkUserNameExists, completeUserOnboarding } from '@gonasi/database/onboarding';
+import type {
+  BasicInformationSchemaTypes,
+  CombinedInformationSchemaTypes,
+  ContactInformationSchemaTypes,
+} from '@gonasi/schemas/onboarding';
+import {
+  BasicInformationSchema,
+  CombinedInformationSchema,
+  ContactInformationSchema,
+} from '@gonasi/schemas/onboarding';
 
 import type { Route } from './+types/contact-information';
 
 import { Button } from '~/components/ui/button';
-import { ErrorList, Field } from '~/components/ui/forms';
+import { GoInputField } from '~/components/ui/forms/elements';
 import { createClient } from '~/lib/supabase/supabase.server';
 import {
   deleteFormStepperSessionKey,
@@ -30,6 +38,8 @@ export function meta() {
   ];
 }
 
+const resolver = zodResolver(ContactInformationSchema);
+
 export async function loader({ params, request }: Route.LoaderArgs) {
   const session = await getFormStepperSessionData(request);
 
@@ -40,95 +50,122 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     `/onboarding/${params.userId}/basic-information`,
   );
 
-  return data({} as ContactInformationType);
+  return data({} as ContactInformationSchemaTypes);
 }
 
-export async function action({ request }: Route.ActionArgs) {
+export async function action({ request, params }: Route.ActionArgs) {
+  // Load form session to access previously saved basic info
   const session = await getFormStepperSessionData(request);
 
-  const basicInfo = session.get(FORM_STEPPER_COOKIE_NAMES.basicInfo) as BasicInformationType;
+  // Extract the basic info step data from the session (e.g., name, username)
+  const basicInfo = session.get(FORM_STEPPER_COOKIE_NAMES.basicInfo) as BasicInformationSchemaTypes;
+
+  // Read submitted contact form data (e.g., phone number)
   const formData = await request.formData();
 
+  // Run honeypot bot check (silently fail bots)
   await checkHoneypot(formData);
 
-  const schema = BasicInformationSchema.merge(ContactInformationSchema);
-
-  // Convert FormData to a plain object that contains both basicInfo and contactInfo fields
+  // Convert FormData into a plain object
   const contactInfoObj = Object.fromEntries(formData.entries());
 
-  // Now merge both objects properly
+  // Merge previous step's data (basic info) with current step (contact info)
   const mergedData = {
     ...basicInfo,
     ...contactInfoObj,
   };
 
-  // Create a new FormData object for parseWithZod
+  // Reconstruct a FormData object from merged data to validate with Zod
   const mergedFormData = new FormData();
   for (const [key, value] of Object.entries(mergedData)) {
     mergedFormData.append(key, value as string);
   }
 
-  const submission = parseWithZod(mergedFormData, { schema });
+  // Create a Zod resolver that can validate both basic and contact info together
+  const mergeResolver = zodResolver(CombinedInformationSchema);
 
-  if (submission.status !== 'success') {
-    return { result: submission.reply(), status: submission.status === 'error' ? 400 : 200 };
+  // Validate the merged form data
+  const {
+    errors,
+    data,
+    receivedValues: defaultValues,
+  } = await getValidatedFormData<CombinedInformationSchemaTypes>(mergedFormData, mergeResolver);
+
+  // If validation fails, return errors and values to re-populate the form
+  if (errors) {
+    return { errors, defaultValues };
   }
 
+  // Create Supabase client to interact with the DB
   const { supabase } = createClient(request);
 
-  const { success, message } = await completeUserOnboarding(supabase, {
-    ...submission.value,
-  });
+  // Check if the submitted username already exists in the DB
+  const usernameExists = await checkUserNameExists(supabase, data.username);
 
-  if (!success) {
-    return dataWithError(null, message);
+  if (usernameExists) {
+    // If the username is taken, redirect to basic info step with an error toast
+    return redirectWithError(
+      `/onboarding/${params.userId}/basic-information`,
+      'That username’s taken — try something else?',
+    );
   }
 
+  // Complete onboarding by saving merged user info to DB
+  const { success, message } = await completeUserOnboarding(supabase, { ...data });
+
+  // Clean up the form session (no need to keep basic info anymore)
   const response = await deleteFormStepperSessionKey(request, FORM_STEPPER_COOKIE_NAMES.basicInfo);
 
-  return redirectWithSuccess('/', message, {
-    headers: response.headers, // Forward the Set-Cookie header
+  if (!success) {
+    // If DB update failed, show error toast
+    return dataWithError(null, message || 'Something went wrong. Give it another go.');
+  }
+
+  // On success, show welcome toast and redirect to homepage
+  return redirectWithSuccess('/', 'You’re all set! Welcome aboard 👋', {
+    headers: response.headers, // ensure session cookie updates propagate
   });
 }
 
-export default function ContactInformation({ loaderData, actionData }: Route.ComponentProps) {
+export default function ContactInformation({ loaderData }: Route.ComponentProps) {
   const isPending = useIsPending();
-  const [form, fields] = useForm({
-    id: 'contact-information-onboarding-form',
-    constraint: getZodConstraint(ContactInformationSchema),
-    lastResult: actionData?.result,
-    defaultValue: loaderData,
-    shouldValidate: 'onInput',
-    onValidate({ formData }) {
-      return parseWithZod(formData, { schema: ContactInformationSchema });
+
+  const methods = useRemixForm<ContactInformationSchemaTypes>({
+    mode: 'all',
+    resolver,
+    defaultValues: {
+      ...loaderData,
     },
-    shouldRevalidate: 'onInput',
   });
 
+  const isDisabled = isPending || methods.formState.isSubmitting;
+
   return (
-    <Form method='POST' {...getFormProps(form)}>
-      <HoneypotInputs />
-      <Field
-        prefix='+254'
-        labelProps={{ children: 'Phone number', required: true }}
-        inputProps={{
-          ...getInputProps(fields.phoneNumber, { type: 'text' }),
-          autoFocus: true,
-        }}
-        errors={fields.phoneNumber?.errors}
-      />
+    <RemixFormProvider {...methods}>
+      <Form method='POST' onSubmit={methods.handleSubmit}>
+        <HoneypotInputs />
 
-      <ErrorList errors={form.errors} id={form.errorId} />
+        <GoInputField
+          prefix='+254'
+          labelProps={{ children: 'Phone number', required: true }}
+          name='phoneNumber'
+          inputProps={{
+            autoFocus: true,
+            disabled: isDisabled,
+          }}
+          description='Your phone please'
+        />
 
-      <Button
-        type='submit'
-        disabled={isPending}
-        isLoading={isPending}
-        rightIcon={<ChevronRight />}
-        className='w-full'
-      >
-        Complete
-      </Button>
-    </Form>
+        <Button
+          type='submit'
+          disabled={isDisabled}
+          isLoading={isDisabled}
+          rightIcon={<ChevronRight />}
+          className='w-full'
+        >
+          Complete
+        </Button>
+      </Form>
+    </RemixFormProvider>
   );
 }

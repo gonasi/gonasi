@@ -19,26 +19,6 @@ export const createCourseChapter = async (
   const { courseId, name, description, requiresPayment } = chapterData;
 
   try {
-    // Step 1: Get current max position for the course
-    const { data: maxPositionResult, error: positionError } = await supabase
-      .from('chapters')
-      .select('position')
-      .eq('course_id', courseId)
-      .order('position', { ascending: false })
-      .limit(1)
-      .single();
-
-    if (positionError && positionError.code !== 'PGRST116') {
-      // PGRST116 = no rows found, ignore if it's just an empty course
-      return {
-        success: false,
-        message: 'Could not determine the chapter position.',
-      };
-    }
-
-    const nextPosition = maxPositionResult?.position != null ? maxPositionResult.position + 1 : 0;
-
-    // Step 2: Insert new chapter with the next position
     const { data, error: insertError } = await supabase
       .from('chapters')
       .insert({
@@ -46,7 +26,6 @@ export const createCourseChapter = async (
         name,
         description,
         requires_payment: requiresPayment,
-        position: nextPosition,
         created_by: userId,
         updated_by: userId,
       })
@@ -54,6 +33,7 @@ export const createCourseChapter = async (
       .single();
 
     if (insertError) {
+      console.error('createCourseChapter: Could not create new course chapter.', insertError);
       return { success: false, message: 'Could not create new course chapter.' };
     }
 

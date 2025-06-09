@@ -1,24 +1,6 @@
 import { useEffect, useState } from 'react';
-import { useFetcher } from 'react-router';
-import type { DragEndEvent } from '@dnd-kit/core';
-import {
-  closestCenter,
-  DndContext,
-  KeyboardSensor,
-  PointerSensor,
-  TouchSensor,
-  useSensor,
-  useSensors,
-} from '@dnd-kit/core';
-import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
-
-import type { ChapterPositionUpdateArray } from '@gonasi/schemas/courseChapters';
+import { useFetcher, useParams } from 'react-router';
+import { Reorder } from 'framer-motion';
 
 import { NotFoundCard } from '../cards';
 import { Accordion } from '../ui/accordion';
@@ -27,133 +9,61 @@ import CourseChapterItem from './course-chapter-item';
 import type { CourseChaptersType } from '~/routes/dashboard/courses/course-content';
 
 interface Props {
-  companyId: string;
   chapters: CourseChaptersType;
-  courseId: string;
 }
 
-export function CourseChapters({ chapters, courseId, companyId }: Props) {
+type Chapter = NonNullable<CourseChaptersType>[number];
+
+export function CourseChapters({ chapters }: Props) {
   const fetcher = useFetcher();
+  const params = useParams();
 
-  const [myChapters, setMyChapters] = useState(chapters ?? []);
-  const [loading, setLoading] = useState(false);
+  const [reorderedChapters, setReorderedChapters] = useState<Chapter[]>(chapters ?? []);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Update local state when `chapters` prop changes
   useEffect(() => {
-    // Update chapters if prop changes
-    setMyChapters(chapters ?? []);
+    setReorderedChapters(chapters ?? []);
   }, [chapters]);
 
-  // Set up an effect to monitor fetcher state
+  // Track fetcher state to show loading status
   useEffect(() => {
-    if (fetcher.state === 'submitting') {
-      setLoading(true);
-    } else if (fetcher.state === 'idle' && fetcher.data) {
-      setLoading(false);
-    }
-  }, [fetcher.state, fetcher.data]);
+    setIsSubmitting(fetcher.state === 'submitting');
+  }, [fetcher.state]);
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
-    }),
-    useSensor(TouchSensor, {
-      activationConstraint: {
-        delay: 250,
-        tolerance: 8,
-      },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    }),
-  );
+  // Handle chapter reordering and submit new order
+  const handleReorder = (updated: Chapter[]) => {
+    setReorderedChapters(updated);
 
-  function handleDragEnd(event: DragEndEvent) {
-    const { active, over } = event;
+    const orderedData = updated.map((chapter, index) => ({
+      id: chapter.id,
+      position: index + 1,
+    }));
 
-    if (over && active.id !== over.id) {
-      let newChapters: typeof myChapters = [];
+    const formData = new FormData();
+    formData.append('intent', 'reorder-chapters');
+    formData.append('chapters', JSON.stringify(orderedData));
 
-      setMyChapters((items) => {
-        const oldIndex = items.findIndex((item) => item.id === active.id);
-        const newIndex = items.findIndex((item) => item.id === over.id);
+    fetcher.submit(formData, {
+      method: 'post',
+      action: `/${params.username}/course-builder/${params.courseId}/content`,
+    });
+  };
 
-        newChapters = arrayMove(items, oldIndex, newIndex);
-        return newChapters;
-      });
-
-      if (newChapters.length) {
-        const simplifiedChapters: ChapterPositionUpdateArray = newChapters.map(
-          ({ id, course_id, name, created_by }, index) => ({
-            id,
-            position: index,
-            course_id,
-            name,
-            created_by,
-          }),
-        );
-
-        const formData = new FormData();
-
-        formData.append('intent', 'reorder-chapters');
-        formData.append('chapters', JSON.stringify(simplifiedChapters));
-
-        fetcher.submit(formData, {
-          method: 'post',
-          action: `/dashboard/${companyId}/courses/${courseId}/course-content`,
-        });
-      }
-    }
-  }
-
-  if (myChapters === null || myChapters.length === 0) {
+  // Show fallback UI when no chapters exist
+  if (reorderedChapters.length === 0) {
     return <NotFoundCard message='No course chapters found' />;
   }
 
   return (
     <div>
-      <DndContext
-        modifiers={[restrictToVerticalAxis]}
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragEnd={handleDragEnd}
-      >
-        <SortableContext items={myChapters} strategy={verticalListSortingStrategy}>
-          <Accordion type='single' collapsible className='flex w-full flex-col space-y-4'>
-            {myChapters.length > 0 ? (
-              myChapters.map(
-                ({
-                  id: chapterId,
-                  name,
-                  description,
-                  course_id,
-                  lessons,
-                  requires_payment,
-                  lesson_count,
-                }) => {
-                  return (
-                    <CourseChapterItem
-                      key={chapterId}
-                      companyId={companyId}
-                      chapterId={chapterId}
-                      name={name}
-                      description={description}
-                      courseId={course_id}
-                      lessons={lessons}
-                      requires_payment={requires_payment}
-                      lesson_count={lesson_count}
-                      loading={loading}
-                    />
-                  );
-                },
-              )
-            ) : (
-              <NotFoundCard message='Chapters not found' />
-            )}
-          </Accordion>
-        </SortableContext>
-      </DndContext>
+      <Reorder.Group axis='y' values={reorderedChapters} onReorder={handleReorder}>
+        <Accordion type='single' collapsible className='flex w-full flex-col space-y-4'>
+          {reorderedChapters.map((chapter) => (
+            <CourseChapterItem key={chapter.id} chapter={chapter} loading={isSubmitting} />
+          ))}
+        </Accordion>
+      </Reorder.Group>
     </div>
   );
 }

@@ -1,25 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Link, useFetcher } from 'react-router';
-import type { DragEndEvent } from '@dnd-kit/core';
-import {
-  closestCenter,
-  DndContext,
-  KeyboardSensor,
-  PointerSensor,
-  TouchSensor,
-  useSensor,
-  useSensors,
-} from '@dnd-kit/core';
-import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  useSortable,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+import { useFetcher, useParams } from 'react-router';
 import { AccordionContent, AccordionItem, AccordionTrigger } from '@radix-ui/react-accordion';
+import { Reorder, useDragControls, useMotionValue } from 'framer-motion';
 import {
   BookOpen,
   ChevronsUpDown,
@@ -30,61 +12,31 @@ import {
   Trash,
 } from 'lucide-react';
 
-import type { LessonPositionUpdateArray } from '@gonasi/schemas/lessons';
-
 import { ActionDropdown } from '../action-dropdown';
 import { NotFoundCard } from '../cards';
 import { LessonCard } from '../cards/lesson-card';
 import { Badge } from '../ui/badge';
-import { buttonVariants } from '../ui/button';
-import { IconTooltipButton } from '../ui/tooltip';
+import { NavLinkButton } from '../ui/button';
+import { ReorderIconTooltip } from '../ui/tooltip/ReorderIconToolTip';
 
+import { useRaisedShadow } from '~/hooks/useRaisedShadow';
 import { cn } from '~/lib/utils';
+import type { CourseChapter } from '~/routes/profile/course-builder/courseId/content/content-index';
 
-interface Lesson {
-  id: string;
-  name: string;
-  course_id: string;
-  chapter_id: string;
-  created_at: string;
-  created_by: string;
-  updated_by: string;
-  position: number | null;
-  lesson_types: {
-    id: string;
-    name: string;
-    description: string;
-    lucide_icon: string;
-    bg_color: string;
-  } | null;
-}
-
-interface Props {
-  companyId: string;
-  chapterId: string;
-  name: string;
-  description: string | null;
-  courseId: string;
-  lessons: Lesson[];
-  requires_payment: boolean | null;
-  lesson_count: number;
-  loading: boolean;
-}
-
-function ChapterBadges({
-  lessonCount,
-  requiresPayment,
-}: {
+interface ChapterBadgesProps {
   lessonCount: number;
   requiresPayment: boolean | null;
-}) {
+}
+
+// Renders badges for lesson count and payment requirement
+function ChapterBadges({ lessonCount, requiresPayment }: ChapterBadgesProps) {
   return (
     <div className='flex space-x-2'>
       <Badge variant='outline'>
         <BookOpen />
         {`${lessonCount} ${lessonCount === 1 ? 'lesson' : 'lessons'}`}
       </Badge>
-      {requiresPayment === true && (
+      {requiresPayment && (
         <Badge className='bg-success text-success-foreground'>
           <CircleDollarSign />
           Paid chapter
@@ -94,206 +46,142 @@ function ChapterBadges({
   );
 }
 
-export default function CourseChapterItem({
-  chapterId,
-  companyId,
-  name,
-  description,
-  courseId,
-  lessons,
-  requires_payment,
-  lesson_count,
-  loading,
-}: Props) {
+interface Props {
+  chapter: CourseChapter;
+  loading: boolean;
+}
+
+type Lesson = CourseChapter['lessons'][number];
+
+export default function CourseChapterItem({ chapter, loading }: Props) {
   const fetcher = useFetcher();
+  const params = useParams();
 
-  // Always use the hooks, but control when they take effect
-  const [isMounted, setIsMounted] = useState(false);
+  const [reorderedLessons, setReorderedLessons] = useState<Lesson[]>(chapter.lessons ?? []);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const [myLessons, setMyLessons] = useState(lessons ?? []);
-  const [lessonLoading, setLessonsLoading] = useState(false);
+  const courseY = useMotionValue(0);
+  const courseBoxShadow = useRaisedShadow(courseY);
+  const courseDragControls = useDragControls();
 
+  const basePath = `/${params.username}/course-builder/${params.courseId}/content/${chapter.id}`;
+  const reorderEndpoint = `/${params.username}/course-builder/${params.courseId}/content`;
+
+  // Sync internal reordered list with external chapter lessons
   useEffect(() => {
-    // Update lessons if prop changes
-    setMyLessons(lessons ?? []);
-  }, [lessons]);
+    setReorderedLessons(chapter.lessons ?? []);
+  }, [chapter.lessons]);
 
-  // Set up an effect to monitor fetcher state
+  // Track if a form is being submitted
   useEffect(() => {
-    if (fetcher.state === 'submitting') {
-      setLessonsLoading(true);
-    } else if (fetcher.state === 'idle' && fetcher.data) {
-      setLessonsLoading(false);
-    }
-  }, [fetcher.state, fetcher.data]);
+    setIsSubmitting(fetcher.state === 'submitting');
+  }, [fetcher.state]);
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
-    }),
-    useSensor(TouchSensor, {
-      activationConstraint: {
-        delay: 250,
-        tolerance: 8,
-      },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    }),
-  );
+  // Reorder lessons handler
+  const handleLessonReorder = (updated: Lesson[]) => {
+    setReorderedLessons(updated);
 
-  // Always call useSortable, but only use its values when mounted
-  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
-    id: chapterId,
-  });
+    const orderedData = updated.map((lesson, index) => ({
+      id: lesson.id,
+      position: index + 1,
+    }));
 
-  // Set up the mounting effect
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
+    const formData = new FormData();
+    formData.append('intent', 'reorder-lessons');
+    formData.append('chapters', JSON.stringify(orderedData));
 
-  const style = {
-    transform: isMounted ? CSS.Transform.toString(transform) : undefined,
-    transition: isMounted ? transition : undefined,
+    fetcher.submit(formData, {
+      method: 'post',
+      action: reorderEndpoint,
+    });
   };
 
-  function handleDragEnd(event: DragEndEvent) {
-    const { active, over } = event;
-
-    if (over && active.id !== over.id) {
-      let newLessons: typeof myLessons = [];
-
-      setMyLessons((items) => {
-        const oldIndex = items.findIndex((item) => item.id === active.id);
-        const newIndex = items.findIndex((item) => item.id === over.id);
-
-        newLessons = arrayMove(items, oldIndex, newIndex);
-        return newLessons;
-      });
-
-      if (newLessons.length) {
-        const simplifiedlessons: LessonPositionUpdateArray = newLessons.map(
-          ({ id, chapter_id, course_id, name, created_by, updated_by }, index) => ({
-            id,
-            position: index,
-            chapter_id,
-            course_id,
-            name,
-            created_by,
-            updated_by,
-          }),
-        );
-
-        const formData = new FormData();
-
-        formData.append('intent', 'reorder-lessons');
-        formData.append('lessons', JSON.stringify(simplifiedlessons));
-
-        fetcher.submit(formData, {
-          method: 'post',
-          action: `/dashboard/${companyId}/courses/${courseId}/course-content`,
-        });
-      }
-    }
-  }
-
   return (
-    <AccordionItem
-      value={chapterId}
-      key={chapterId}
-      className={cn('bg-card/95 touch-none rounded-lg p-4', {
-        'disabled animate-pulse': loading,
-      })}
-      ref={isMounted ? setNodeRef : undefined}
-      style={style}
+    <Reorder.Item
+      value={chapter}
+      id={chapter.id}
+      style={{ boxShadow: courseBoxShadow, y: courseY }}
+      dragListener={false}
+      dragControls={courseDragControls}
     >
-      <AccordionTrigger className='w-full text-xl'>
-        <div className='flex w-full flex-row items-center justify-between'>
-          <div className='w-full'>
-            <div className='flex w-full items-center justify-between'>
-              <div className='flex items-center space-x-1'>
-                <ChevronsUpDown size={14} />
-                <h3 className='mt-1 line-clamp-1 text-left text-lg'>{name}</h3>
-              </div>
-              <div className='flex items-center space-x-2'>
-                <IconTooltipButton
-                  asChild
-                  className='cursor-move p-2'
-                  title='Drag and drop to rearrange chapters'
-                  icon={GripVerticalIcon}
-                  {...(isMounted ? attributes : {})}
-                  {...(isMounted ? listeners : {})}
-                  disabled={loading}
-                />
-                <ActionDropdown
-                  items={[
-                    {
-                      title: 'Edit Chapter',
-                      icon: Pencil,
-                      to: `/dashboard/${companyId}/courses/${courseId}/course-content/${chapterId}/edit-chapter`,
-                    },
-                    {
-                      title: 'Delete Chapter',
-                      icon: Trash,
-                      to: `/dashboard/${companyId}/courses/${courseId}/course-content/${chapterId}/delete-chapter`,
-                    },
-                  ]}
-                />
-              </div>
+      <AccordionItem
+        value={chapter.id}
+        className={cn('bg-card/95 touch-none rounded-lg p-4', {
+          'disabled animate-pulse': loading,
+        })}
+      >
+        <AccordionTrigger className='w-full text-xl'>
+          <div className='flex w-full items-center justify-between'>
+            {/* Chapter title and reorder icon */}
+            <div className='flex items-center space-x-1'>
+              <ChevronsUpDown size={14} />
+              <h3 className='mt-1 line-clamp-1 text-left text-lg'>{chapter.name}</h3>
             </div>
-            <div className='flex w-full items-center justify-between pt-2'>
-              <ChapterBadges lessonCount={lesson_count} requiresPayment={requires_payment} />
+
+            {/* Chapter action controls */}
+            <div className='flex items-center space-x-2'>
+              <ReorderIconTooltip
+                asChild
+                className='cursor-move p-2'
+                title='Drag and drop to rearrange chapters'
+                icon={GripVerticalIcon}
+                disabled={loading}
+                dragControls={courseDragControls}
+              />
+              <ActionDropdown
+                items={[
+                  { title: 'Edit chapter', icon: Pencil, to: `${basePath}/edit` },
+                  { title: 'Delete chapter', icon: Trash, to: `${basePath}/delete` },
+                ]}
+              />
             </div>
           </div>
-        </div>
-      </AccordionTrigger>
-      <AccordionContent>
-        {description && (
-          <div className='text-muted-foreground font-secondary line-clamp-4 py-2'>
-            {description}
+
+          {/* Badges for metadata */}
+          <div className='flex w-full items-start'>
+            <ChapterBadges
+              lessonCount={chapter.lesson_count}
+              requiresPayment={chapter.requires_payment}
+            />
           </div>
-        )}
-        <div className='flex w-full justify-end'>
-          <Link
-            to={`/dashboard/${companyId}/courses/${courseId}/course-content/${chapterId}/new-lesson-details`}
-            className={buttonVariants({ variant: 'default', size: 'sm' })}
-          >
-            <Plus /> Add Lesson
-          </Link>
-        </div>
-        <div className='flex flex-col space-y-4 py-4'>
-          <DndContext
-            modifiers={[restrictToVerticalAxis]}
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={handleDragEnd}
-          >
-            <SortableContext items={myLessons} strategy={verticalListSortingStrategy}>
-              {myLessons.length > 0 ? (
-                myLessons.map(({ id: lessonId, name, lesson_types }) => (
-                  <LessonCard
-                    key={lessonId}
-                    companyId={companyId}
-                    lessonId={lessonId}
-                    courseId={courseId}
-                    title={name}
-                    chapterId={chapterId}
-                    loading={lessonLoading}
-                    lucideIcon={lesson_types?.lucide_icon}
-                    lessonTypeName={lesson_types?.name}
-                    lessonTypeDescription={lesson_types?.description}
-                    lessonTypeIconColor={lesson_types?.bg_color}
-                  />
-                ))
-              ) : (
-                <NotFoundCard message='No lessons available' />
-              )}
-            </SortableContext>
-          </DndContext>
-        </div>
-      </AccordionContent>
-    </AccordionItem>
+        </AccordionTrigger>
+
+        <AccordionContent>
+          {/* Optional chapter description */}
+          {chapter.description && (
+            <div className='text-muted-foreground font-secondary line-clamp-4 py-2'>
+              {chapter.description}
+            </div>
+          )}
+
+          {/* Add lesson button */}
+          <div className='flex w-full justify-end'>
+            <NavLinkButton
+              to={`${basePath}/new-lesson-details`}
+              leftIcon={<Plus />}
+              size='sm'
+              variant='secondary'
+            >
+              Add lesson
+            </NavLinkButton>
+          </div>
+
+          {/* Lessons list */}
+          <div className='py-4'>
+            {reorderedLessons.length === 0 ? (
+              <NotFoundCard message='No lessons found' />
+            ) : (
+              <div className='flex flex-col space-y-4'>
+                <Reorder.Group axis='y' values={reorderedLessons} onReorder={handleLessonReorder}>
+                  {reorderedLessons.map((lesson) => (
+                    <LessonCard key={lesson.id} lesson={lesson} loading={isSubmitting} />
+                  ))}
+                </Reorder.Group>
+              </div>
+            )}
+          </div>
+        </AccordionContent>
+      </AccordionItem>
+    </Reorder.Item>
   );
 }

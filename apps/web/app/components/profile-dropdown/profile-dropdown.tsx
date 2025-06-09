@@ -1,9 +1,10 @@
 import { Link, useLocation } from 'react-router';
-import { ArrowRightLeft, ChevronsUpDown, LayoutDashboard, LogOut } from 'lucide-react';
+import { ArrowRightLeft, ChevronsUpDown, LayoutDashboard } from 'lucide-react';
 
 import { UserAvatar } from '../avatars';
 import { NotFoundCard } from '../cards';
-import { Button } from '../ui/button';
+import { SignOut } from '../sign-out';
+import { Button, buttonVariants } from '../ui/button';
 
 import {
   DropdownMenu,
@@ -14,26 +15,24 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '~/components/ui/dropdown-menu';
-import type { UserActiveCompanyLoaderReturnType } from '~/root';
+import type { UserProfileLoaderReturnType } from '~/root';
 
 interface Props {
-  activeCompany: UserActiveCompanyLoaderReturnType;
+  user: UserProfileLoaderReturnType;
   dropdownPosition?: 'top' | 'bottom' | 'left' | 'right';
   dropdownAlign?: 'start' | 'center' | 'end';
 }
 
 export function ProfileDropdown({
-  activeCompany,
+  user,
   dropdownPosition = 'bottom',
   dropdownAlign = 'end',
 }: Props) {
   const location = useLocation();
 
-  if (!activeCompany) return <NotFoundCard message='user not found' />;
+  if (!user) return <NotFoundCard message='user not found' />;
 
-  const {
-    profiles: { username, full_name, avatar_url },
-  } = activeCompany;
+  const { username, full_name, avatar_url } = user;
 
   const isActive = location.pathname === `/${username}`;
 
@@ -78,10 +77,15 @@ export function ProfileDropdown({
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild className='group cursor-pointer'>
-          <Link to='/sign-out' className='flex items-center space-x-2'>
-            <LogOut className='h-4 w-4 transition-transform duration-200 group-hover:scale-110' />
-            <span>Sign out</span>
-          </Link>
+          <SignOut
+            signOutComponent={
+              <div
+                className={`${buttonVariants({ size: 'sm', variant: 'secondary' })} m-2 w-full rounded-full px-4`}
+              >
+                <span>Sign out</span>
+              </div>
+            }
+          />
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

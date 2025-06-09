@@ -86,7 +86,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
               {leftIcon}
             </div>
           )}
-          {children}
+          <div className='mt-0.5'>{children}</div>
           {/* Right icon or loader (if both icons exist or only rightIcon exists) */}
           {isLoading ? (
             rightIcon || (leftIcon && rightIcon) ? (

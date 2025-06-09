@@ -14,7 +14,7 @@ export function CourseCategoryOverview({ category, subCategory, pathway, editLin
   return (
     <div className='border-card rounded-md border-0 px-0 py-4 md:border md:px-4'>
       <div className='flex items-center justify-between pb-4'>
-        <h2 className='text-xl'>Grouping</h2>
+        <h2 className='text-xl'>How it’s grouped</h2>
         <Link
           to={editLink}
           className={buttonVariants({ variant: 'secondary', size: 'sm' })}
@@ -25,13 +25,17 @@ export function CourseCategoryOverview({ category, subCategory, pathway, editLin
       </div>
       <div className='space-y-3'>
         {[
-          { label: 'Pathway', value: pathway },
-          { label: 'Category', value: category },
-          { label: 'Subcategory', value: subCategory },
-        ].map(({ label, value }) => (
+          { label: 'Pathway', value: pathway, emptyMsg: 'No pathway set yet' },
+          { label: 'Category', value: category, emptyMsg: 'Category is missing' },
+          { label: 'Sub category', value: subCategory, emptyMsg: 'No sub category added' },
+        ].map(({ label, value, emptyMsg }) => (
           <div key={label} className='flex flex-col space-y-2'>
             <span className='text-muted-foreground font-secondary text-xs'>{label}</span>
-            <span>{value}</span>
+            {value ? (
+              <span>{value}</span>
+            ) : (
+              <span className='bg-danger/20 w-fit rounded-sm px-2 py-1 text-xs'>{emptyMsg}</span>
+            )}
           </div>
         ))}
       </div>

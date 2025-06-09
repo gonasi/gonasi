@@ -34,259 +34,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      assigned_courses_to_members: {
-        Row: {
-          assigned_at: string
-          assigned_by: string | null
-          course_id: string
-          id: string
-          user_id: string
-        }
-        Insert: {
-          assigned_at?: string
-          assigned_by?: string | null
-          course_id: string
-          id?: string
-          user_id: string
-        }
-        Update: {
-          assigned_at?: string
-          assigned_by?: string | null
-          course_id?: string
-          id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "assigned_courses_to_members_assigned_by_fkey"
-            columns: ["assigned_by"]
-            isOneToOne: false
-            referencedRelation: "staff_members"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "assigned_courses_to_members_course_id_fkey"
-            columns: ["course_id"]
-            isOneToOne: false
-            referencedRelation: "courses"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "assigned_courses_to_members_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "staff_members"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      block_interactions: {
-        Row: {
-          attempts: number
-          block_id: string
-          completed_at: string | null
-          created_at: string
-          feedback: Json
-          id: string
-          is_complete: boolean
-          last_response: Json
-          lesson_id: string
-          score: number | null
-          started_at: string | null
-          state: Json
-          time_spent_seconds: number | null
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          attempts?: number
-          block_id: string
-          completed_at?: string | null
-          created_at?: string
-          feedback?: Json
-          id?: string
-          is_complete?: boolean
-          last_response?: Json
-          lesson_id: string
-          score?: number | null
-          started_at?: string | null
-          state?: Json
-          time_spent_seconds?: number | null
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          attempts?: number
-          block_id?: string
-          completed_at?: string | null
-          created_at?: string
-          feedback?: Json
-          id?: string
-          is_complete?: boolean
-          last_response?: Json
-          lesson_id?: string
-          score?: number | null
-          started_at?: string | null
-          state?: Json
-          time_spent_seconds?: number | null
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "block_interactions_block_id_fkey"
-            columns: ["block_id"]
-            isOneToOne: false
-            referencedRelation: "blocks"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "block_interactions_lesson_id_fkey"
-            columns: ["lesson_id"]
-            isOneToOne: false
-            referencedRelation: "lessons"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "block_interactions_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      blocks: {
-        Row: {
-          content: Json
-          created_at: string
-          created_by: string
-          id: string
-          lesson_id: string
-          plugin_type: string
-          position: number
-          settings: Json
-          updated_at: string
-          updated_by: string
-          weight: number
-        }
-        Insert: {
-          content?: Json
-          created_at?: string
-          created_by: string
-          id?: string
-          lesson_id: string
-          plugin_type: string
-          position?: number
-          settings?: Json
-          updated_at?: string
-          updated_by: string
-          weight?: number
-        }
-        Update: {
-          content?: Json
-          created_at?: string
-          created_by?: string
-          id?: string
-          lesson_id?: string
-          plugin_type?: string
-          position?: number
-          settings?: Json
-          updated_at?: string
-          updated_by?: string
-          weight?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "blocks_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "blocks_lesson_id_fkey"
-            columns: ["lesson_id"]
-            isOneToOne: false
-            referencedRelation: "lessons"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "blocks_updated_by_fkey"
-            columns: ["updated_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      chapter_progress: {
-        Row: {
-          chapter_id: string
-          completed_lessons_count: number
-          course_id: string
-          created_at: string
-          id: string
-          is_complete: boolean
-          progress_percentage: number
-          total_lessons_count: number
-          total_time_spent_seconds: number
-          updated_at: string
-          user_id: string
-          weighted_average_score: number | null
-        }
-        Insert: {
-          chapter_id: string
-          completed_lessons_count?: number
-          course_id: string
-          created_at?: string
-          id?: string
-          is_complete?: boolean
-          progress_percentage?: number
-          total_lessons_count?: number
-          total_time_spent_seconds?: number
-          updated_at?: string
-          user_id: string
-          weighted_average_score?: number | null
-        }
-        Update: {
-          chapter_id?: string
-          completed_lessons_count?: number
-          course_id?: string
-          created_at?: string
-          id?: string
-          is_complete?: boolean
-          progress_percentage?: number
-          total_lessons_count?: number
-          total_time_spent_seconds?: number
-          updated_at?: string
-          user_id?: string
-          weighted_average_score?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "chapter_progress_chapter_id_fkey"
-            columns: ["chapter_id"]
-            isOneToOne: false
-            referencedRelation: "chapters"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "chapter_progress_course_id_fkey"
-            columns: ["course_id"]
-            isOneToOne: false
-            referencedRelation: "courses"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "chapter_progress_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       chapters: {
         Row: {
           course_id: string
@@ -393,62 +140,60 @@ export type Database = {
           },
         ]
       }
-      course_progress: {
+      course_collaborators: {
         Row: {
-          completed_chapters_count: number
-          completed_lessons_count: number
+          accepted_at: string | null
           course_id: string
           created_at: string
+          created_by: string | null
           id: string
-          is_complete: boolean
-          progress_percentage: number
-          total_chapters_count: number
-          total_lessons_count: number
-          total_time_spent_seconds: number
+          invited_at: string
+          is_accepted: boolean | null
+          role: Database["public"]["Enums"]["course_role"]
           updated_at: string
           user_id: string
-          weighted_average_score: number | null
         }
         Insert: {
-          completed_chapters_count?: number
-          completed_lessons_count?: number
+          accepted_at?: string | null
           course_id: string
           created_at?: string
+          created_by?: string | null
           id?: string
-          is_complete?: boolean
-          progress_percentage?: number
-          total_chapters_count?: number
-          total_lessons_count?: number
-          total_time_spent_seconds?: number
+          invited_at?: string
+          is_accepted?: boolean | null
+          role?: Database["public"]["Enums"]["course_role"]
           updated_at?: string
           user_id: string
-          weighted_average_score?: number | null
         }
         Update: {
-          completed_chapters_count?: number
-          completed_lessons_count?: number
+          accepted_at?: string | null
           course_id?: string
           created_at?: string
+          created_by?: string | null
           id?: string
-          is_complete?: boolean
-          progress_percentage?: number
-          total_chapters_count?: number
-          total_lessons_count?: number
-          total_time_spent_seconds?: number
+          invited_at?: string
+          is_accepted?: boolean | null
+          role?: Database["public"]["Enums"]["course_role"]
           updated_at?: string
           user_id?: string
-          weighted_average_score?: number | null
         }
         Relationships: [
           {
-            foreignKeyName: "course_progress_course_id_fkey"
+            foreignKeyName: "course_collaborators_course_id_fkey"
             columns: ["course_id"]
             isOneToOne: false
             referencedRelation: "courses"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "course_progress_user_id_fkey"
+            foreignKeyName: "course_collaborators_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_collaborators_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -510,91 +255,60 @@ export type Database = {
       }
       courses: {
         Row: {
-          approval_status: Database["public"]["Enums"]["course_approval_status"]
-          approved_by: string | null
           blur_hash: string | null
           category_id: string | null
-          company_id: string
           created_at: string
           created_by: string
           description: string | null
           id: string
           image_url: string | null
-          last_approved_at: string | null
-          last_approved_by: string | null
-          last_rejected_at: string | null
-          last_rejected_by: string | null
+          last_published: string | null
           monthly_subscription_price: number | null
           name: string
           pathway_id: string | null
           pricing_model: Database["public"]["Enums"]["course_pricing"]
-          status: Database["public"]["Enums"]["course_status"]
           subcategory_id: string | null
           updated_at: string
           updated_by: string
-          validation_complete: boolean
           visibility: Database["public"]["Enums"]["course_access"]
         }
         Insert: {
-          approval_status?: Database["public"]["Enums"]["course_approval_status"]
-          approved_by?: string | null
           blur_hash?: string | null
           category_id?: string | null
-          company_id: string
           created_at?: string
           created_by: string
           description?: string | null
           id?: string
           image_url?: string | null
-          last_approved_at?: string | null
-          last_approved_by?: string | null
-          last_rejected_at?: string | null
-          last_rejected_by?: string | null
+          last_published?: string | null
           monthly_subscription_price?: number | null
           name: string
           pathway_id?: string | null
           pricing_model?: Database["public"]["Enums"]["course_pricing"]
-          status?: Database["public"]["Enums"]["course_status"]
           subcategory_id?: string | null
           updated_at?: string
           updated_by: string
-          validation_complete?: boolean
           visibility?: Database["public"]["Enums"]["course_access"]
         }
         Update: {
-          approval_status?: Database["public"]["Enums"]["course_approval_status"]
-          approved_by?: string | null
           blur_hash?: string | null
           category_id?: string | null
-          company_id?: string
           created_at?: string
           created_by?: string
           description?: string | null
           id?: string
           image_url?: string | null
-          last_approved_at?: string | null
-          last_approved_by?: string | null
-          last_rejected_at?: string | null
-          last_rejected_by?: string | null
+          last_published?: string | null
           monthly_subscription_price?: number | null
           name?: string
           pathway_id?: string | null
           pricing_model?: Database["public"]["Enums"]["course_pricing"]
-          status?: Database["public"]["Enums"]["course_status"]
           subcategory_id?: string | null
           updated_at?: string
           updated_by?: string
-          validation_complete?: boolean
           visibility?: Database["public"]["Enums"]["course_access"]
         }
         Relationships: [
-          {
-            foreignKeyName: "courses_approved_by_fkey"
-            columns: ["approved_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "courses_category_id_fkey"
             columns: ["category_id"]
@@ -603,29 +317,8 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "courses_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "courses_created_by_fkey"
             columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "courses_last_approved_by_fkey"
-            columns: ["last_approved_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "courses_last_rejected_by_fkey"
-            columns: ["last_rejected_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -653,279 +346,71 @@ export type Database = {
           },
         ]
       }
-      featured_courses: {
+      lesson_blocks: {
         Row: {
+          content: Json
           course_id: string
           created_at: string
           created_by: string
-          end_date: string | null
-          feature_package: string
           id: string
-          payment_status: string
-          start_date: string | null
-          total_price: number | null
+          lesson_id: string
+          plugin_type: string
+          position: number
+          settings: Json
           updated_at: string
-          updated_by: string | null
+          updated_by: string
         }
         Insert: {
+          content?: Json
           course_id: string
           created_at?: string
           created_by: string
-          end_date?: string | null
-          feature_package?: string
           id?: string
-          payment_status?: string
-          start_date?: string | null
-          total_price?: number | null
+          lesson_id: string
+          plugin_type: string
+          position?: number
+          settings?: Json
           updated_at?: string
-          updated_by?: string | null
+          updated_by: string
         }
         Update: {
+          content?: Json
           course_id?: string
           created_at?: string
           created_by?: string
-          end_date?: string | null
-          feature_package?: string
           id?: string
-          payment_status?: string
-          start_date?: string | null
-          total_price?: number | null
-          updated_at?: string
-          updated_by?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "featured_courses_course_id_fkey"
-            columns: ["course_id"]
-            isOneToOne: true
-            referencedRelation: "courses"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "featured_courses_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "featured_courses_updated_by_fkey"
-            columns: ["updated_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      featured_courses_pricing: {
-        Row: {
-          created_at: string
-          daily_rate: number
-          description: string
-          feature_package: string
-          id: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          daily_rate: number
-          description: string
-          feature_package: string
-          id?: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          daily_rate?: number
-          description?: string
-          feature_package?: string
-          id?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      feedback: {
-        Row: {
-          best_part: string
-          created_at: string
-          created_by: string | null
-          email: string | null
-          experience: string
-          hardest_part: string
-          id: string
-          nps_score: number
-          share_feedback: string
-          updated_at: string
-          updated_by: string | null
-        }
-        Insert: {
-          best_part: string
-          created_at?: string
-          created_by?: string | null
-          email?: string | null
-          experience: string
-          hardest_part: string
-          id?: string
-          nps_score: number
-          share_feedback: string
-          updated_at?: string
-          updated_by?: string | null
-        }
-        Update: {
-          best_part?: string
-          created_at?: string
-          created_by?: string | null
-          email?: string | null
-          experience?: string
-          hardest_part?: string
-          id?: string
-          nps_score?: number
-          share_feedback?: string
-          updated_at?: string
-          updated_by?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "feedback_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "feedback_updated_by_fkey"
-            columns: ["updated_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      file_library: {
-        Row: {
-          blur_hash: string | null
-          company_id: string
-          created_at: string
-          created_by: string
-          extension: string
-          file_type: Database["public"]["Enums"]["file_type"]
-          id: string
-          mime_type: string
-          name: string
-          path: string
-          size: number
-          updated_at: string
-          updated_by: string
-        }
-        Insert: {
-          blur_hash?: string | null
-          company_id: string
-          created_at?: string
-          created_by: string
-          extension: string
-          file_type?: Database["public"]["Enums"]["file_type"]
-          id?: string
-          mime_type: string
-          name: string
-          path: string
-          size: number
-          updated_at?: string
-          updated_by: string
-        }
-        Update: {
-          blur_hash?: string | null
-          company_id?: string
-          created_at?: string
-          created_by?: string
-          extension?: string
-          file_type?: Database["public"]["Enums"]["file_type"]
-          id?: string
-          mime_type?: string
-          name?: string
-          path?: string
-          size?: number
+          lesson_id?: string
+          plugin_type?: string
+          position?: number
+          settings?: Json
           updated_at?: string
           updated_by?: string
         }
         Relationships: [
           {
-            foreignKeyName: "file_library_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "file_library_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "file_library_updated_by_fkey"
-            columns: ["updated_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      lesson_progress: {
-        Row: {
-          course_id: string
-          created_at: string
-          id: string
-          is_complete: boolean
-          lesson_id: string
-          progress_percentage: number
-          total_time_spent_seconds: number
-          updated_at: string
-          user_id: string
-          weighted_average_score: number | null
-        }
-        Insert: {
-          course_id: string
-          created_at?: string
-          id?: string
-          is_complete?: boolean
-          lesson_id: string
-          progress_percentage?: number
-          total_time_spent_seconds?: number
-          updated_at?: string
-          user_id: string
-          weighted_average_score?: number | null
-        }
-        Update: {
-          course_id?: string
-          created_at?: string
-          id?: string
-          is_complete?: boolean
-          lesson_id?: string
-          progress_percentage?: number
-          total_time_spent_seconds?: number
-          updated_at?: string
-          user_id?: string
-          weighted_average_score?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fk_lesson_progress_course"
+            foreignKeyName: "lesson_blocks_course_id_fkey"
             columns: ["course_id"]
             isOneToOne: false
             referencedRelation: "courses"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "lesson_progress_lesson_id_fkey"
+            foreignKeyName: "lesson_blocks_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lesson_blocks_lesson_id_fkey"
             columns: ["lesson_id"]
             isOneToOne: false
             referencedRelation: "lessons"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "lesson_progress_user_id_fkey"
-            columns: ["user_id"]
+            foreignKeyName: "lesson_blocks_updated_by_fkey"
+            columns: ["updated_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -991,7 +476,6 @@ export type Database = {
           created_by: string
           id: string
           lesson_type_id: string
-          metadata: Json
           name: string
           position: number | null
           settings: Json
@@ -1005,7 +489,6 @@ export type Database = {
           created_by: string
           id?: string
           lesson_type_id: string
-          metadata?: Json
           name: string
           position?: number | null
           settings?: Json
@@ -1019,7 +502,6 @@ export type Database = {
           created_by?: string
           id?: string
           lesson_type_id?: string
-          metadata?: Json
           name?: string
           position?: number | null
           settings?: Json
@@ -1120,6 +602,9 @@ export type Database = {
           account_verified: boolean
           avatar_url: string | null
           bio: string | null
+          blur_hash: string | null
+          country_code: string | null
+          created_at: string
           discord_url: string | null
           email: string
           email_verified: boolean
@@ -1133,18 +618,21 @@ export type Database = {
           notifications_enabled: boolean
           phone_number: string | null
           phone_number_verified: boolean
-          status: Database["public"]["Enums"]["user_status"] | null
+          preferred_language: string | null
           tiktok_url: string | null
           twitter_url: string | null
-          updated_at: string | null
+          updated_at: string
           username: string | null
-          website: string | null
+          website_url: string | null
           youtube_url: string | null
         }
         Insert: {
           account_verified?: boolean
           avatar_url?: string | null
           bio?: string | null
+          blur_hash?: string | null
+          country_code?: string | null
+          created_at?: string
           discord_url?: string | null
           email: string
           email_verified?: boolean
@@ -1158,18 +646,21 @@ export type Database = {
           notifications_enabled?: boolean
           phone_number?: string | null
           phone_number_verified?: boolean
-          status?: Database["public"]["Enums"]["user_status"] | null
+          preferred_language?: string | null
           tiktok_url?: string | null
           twitter_url?: string | null
-          updated_at?: string | null
+          updated_at?: string
           username?: string | null
-          website?: string | null
+          website_url?: string | null
           youtube_url?: string | null
         }
         Update: {
           account_verified?: boolean
           avatar_url?: string | null
           bio?: string | null
+          blur_hash?: string | null
+          country_code?: string | null
+          created_at?: string
           discord_url?: string | null
           email?: string
           email_verified?: boolean
@@ -1183,12 +674,12 @@ export type Database = {
           notifications_enabled?: boolean
           phone_number?: string | null
           phone_number_verified?: boolean
-          status?: Database["public"]["Enums"]["user_status"] | null
+          preferred_language?: string | null
           tiktok_url?: string | null
           twitter_url?: string | null
-          updated_at?: string | null
+          updated_at?: string
           username?: string | null
-          website?: string | null
+          website_url?: string | null
           youtube_url?: string | null
         }
         Relationships: []
@@ -1210,174 +701,6 @@ export type Database = {
           role?: Database["public"]["Enums"]["app_role"]
         }
         Relationships: []
-      }
-      staff_invites: {
-        Row: {
-          company_id: string
-          confirmed_at: string | null
-          expires_at: string
-          id: string
-          invite_token: string
-          invited_at: string
-          invited_by: string
-          invited_email: string | null
-          is_confirmed: boolean
-          last_resent_at: string | null
-          resend_count: number
-          staff_id: string | null
-        }
-        Insert: {
-          company_id: string
-          confirmed_at?: string | null
-          expires_at?: string
-          id?: string
-          invite_token: string
-          invited_at?: string
-          invited_by: string
-          invited_email?: string | null
-          is_confirmed?: boolean
-          last_resent_at?: string | null
-          resend_count?: number
-          staff_id?: string | null
-        }
-        Update: {
-          company_id?: string
-          confirmed_at?: string | null
-          expires_at?: string
-          id?: string
-          invite_token?: string
-          invited_at?: string
-          invited_by?: string
-          invited_email?: string | null
-          is_confirmed?: boolean
-          last_resent_at?: string | null
-          resend_count?: number
-          staff_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "staff_invites_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "staff_invites_invited_by_fkey"
-            columns: ["invited_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "staff_invites_staff_id_fkey"
-            columns: ["staff_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      staff_members: {
-        Row: {
-          company_id: string
-          created_at: string
-          created_by: string
-          id: string
-          staff_id: string
-          staff_role: Database["public"]["Enums"]["staff_role_enum"]
-          updated_at: string
-          updated_by: string | null
-        }
-        Insert: {
-          company_id: string
-          created_at?: string
-          created_by: string
-          id?: string
-          staff_id: string
-          staff_role?: Database["public"]["Enums"]["staff_role_enum"]
-          updated_at?: string
-          updated_by?: string | null
-        }
-        Update: {
-          company_id?: string
-          created_at?: string
-          created_by?: string
-          id?: string
-          staff_id?: string
-          staff_role?: Database["public"]["Enums"]["staff_role_enum"]
-          updated_at?: string
-          updated_by?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "staff_members_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "staff_members_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "staff_members_staff_id_fkey"
-            columns: ["staff_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "staff_members_updated_by_fkey"
-            columns: ["updated_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      user_active_companies: {
-        Row: {
-          company_id: string
-          created_at: string
-          id: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          company_id: string
-          created_at?: string
-          id?: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          company_id?: string
-          created_at?: string
-          id?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_active_companies_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_active_companies_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       user_roles: {
         Row: {
@@ -1407,133 +730,53 @@ export type Database = {
       }
     }
     Views: {
-      company_memberships: {
-        Row: {
-          company_id: string | null
-          staff_id: string | null
-          staff_role: Database["public"]["Enums"]["staff_role_enum"] | null
-        }
-        Insert: {
-          company_id?: string | null
-          staff_id?: string | null
-          staff_role?: Database["public"]["Enums"]["staff_role_enum"] | null
-        }
-        Update: {
-          company_id?: string | null
-          staff_id?: string | null
-          staff_role?: Database["public"]["Enums"]["staff_role_enum"] | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "staff_members_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "staff_members_staff_id_fkey"
-            columns: ["staff_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
+      [_ in never]: never
     }
     Functions: {
-      accept_staff_invitation: {
-        Args: { p_user_id: string; p_invite_id: string; p_company_id: string }
-        Returns: undefined
-      }
       authorize: {
         Args: {
           requested_permission: Database["public"]["Enums"]["app_permission"]
         }
         Returns: boolean
       }
-      check_user_role: {
-        Args: { user_id: string; allowed_roles: string[] }
+      check_subcategory_belongs_to_category: {
+        Args: { category: string; subcategory: string }
         Returns: boolean
       }
       custom_access_token_hook: {
         Args: { event: Json }
         Returns: Json
       }
-      determine_file_type: {
-        Args: { extension: string }
-        Returns: Database["public"]["Enums"]["file_type"]
+      is_course_admin: {
+        Args: { course_id: string; user_id: string }
+        Returns: boolean
       }
-      get_course_completion_status: {
-        Args: { p_user_id: string; p_course_id: string }
-        Returns: Json
+      is_course_editor: {
+        Args: { course_id: string; user_id: string }
+        Returns: boolean
       }
-      get_user_active_company: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
+      is_course_viewer: {
+        Args: { course_id: string; user_id: string }
+        Returns: boolean
       }
-      get_user_companies: {
-        Args: { user_id: string }
-        Returns: string[]
-      }
-      gtrgm_compress: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gtrgm_decompress: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gtrgm_in: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gtrgm_options: {
-        Args: { "": unknown }
+      reorder_chapters: {
+        Args: {
+          p_course_id: string
+          chapter_positions: Json
+          p_updated_by: string
+        }
         Returns: undefined
       }
-      gtrgm_out: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      recalculate_all_course_progress: {
-        Args: { p_user_id: string }
-        Returns: undefined
-      }
-      recalculate_lesson_progress: {
-        Args: { p_user_id: string; p_lesson_id: string }
-        Returns: undefined
-      }
-      reorder_blocks: {
+      reorder_lesson_blocks: {
         Args: { blocks: Json }
         Returns: undefined
       }
-      reorder_chapters: {
-        Args: { chapters: Json }
-        Returns: undefined
-      }
       reorder_lessons: {
-        Args: { lessons: Json }
-        Returns: undefined
-      }
-      set_limit: {
-        Args: { "": number }
-        Returns: number
-      }
-      show_limit: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
-      show_trgm: {
-        Args: { "": string }
-        Returns: string[]
-      }
-      update_chapter_progress: {
-        Args: { p_user_id: string; p_chapter_id: string }
-        Returns: undefined
-      }
-      update_course_progress: {
-        Args: { p_user_id: string; p_course_id: string }
+        Args: {
+          p_chapter_id: string
+          lesson_positions: Json
+          p_updated_by: string
+        }
         Returns: undefined
       }
     }
@@ -1553,12 +796,8 @@ export type Database = {
         | "lesson_types.delete"
       app_role: "go_su" | "go_admin" | "go_staff" | "user"
       course_access: "public" | "private"
-      course_approval_status: "pending" | "approved" | "rejected"
       course_pricing: "free" | "paid"
-      course_status: "draft" | "published"
-      file_type: "image" | "audio" | "video" | "model3d" | "document" | "other"
-      staff_role_enum: "su" | "admin" | "user"
-      user_status: "ONLINE" | "OFFLINE"
+      course_role: "admin" | "editor" | "viewer"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1693,12 +932,8 @@ export const Constants = {
       ],
       app_role: ["go_su", "go_admin", "go_staff", "user"],
       course_access: ["public", "private"],
-      course_approval_status: ["pending", "approved", "rejected"],
       course_pricing: ["free", "paid"],
-      course_status: ["draft", "published"],
-      file_type: ["image", "audio", "video", "model3d", "document", "other"],
-      staff_role_enum: ["su", "admin", "user"],
-      user_status: ["ONLINE", "OFFLINE"],
+      course_role: ["admin", "editor", "viewer"],
     },
   },
 } as const

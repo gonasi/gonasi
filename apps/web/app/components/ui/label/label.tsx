@@ -32,7 +32,7 @@ const Label = React.forwardRef<React.ComponentRef<typeof LabelPrimitive.Root>, L
   ({ className, error, required, endAdornment, endAdornmentClassName, ...props }, ref) => (
     <LabelPrimitive.Root
       ref={ref}
-      className={cn(labelVariants({ error }), 'flex items-center justify-between', className)}
+      className={cn(labelVariants({ error }), 'flex items-center justify-between pt-2', className)}
       {...props}
     >
       <span>

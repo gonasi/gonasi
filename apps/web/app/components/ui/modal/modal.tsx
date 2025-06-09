@@ -1,9 +1,9 @@
 import type { ComponentProps, ReactNode } from 'react';
-import { NavLink } from 'react-router';
 import * as Dialog from '@radix-ui/react-dialog';
 import { X } from 'lucide-react';
 
 import { Badge } from '../badge';
+import { CloseIconNavLink } from '../button';
 
 import { cn } from '~/lib/utils';
 
@@ -102,12 +102,10 @@ const Header = ({
       </div>
 
       {closeRoute ? (
-        <NavLink to={closeRoute} className='hover:cursor-pointer'>
-          <X size={26} />
-        </NavLink>
+        <CloseIconNavLink to={closeRoute} />
       ) : hasClose ? (
         <Dialog.Close asChild className='hover:cursor-pointer'>
-          <X size={26} />
+          <X size={22} />
         </Dialog.Close>
       ) : null}
     </div>

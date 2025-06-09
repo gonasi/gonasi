@@ -1,6 +1,10 @@
 import { create } from 'zustand';
 
-import type { UserActiveSessionLoaderReturnType } from '~/root';
+import type {
+  UserActiveSessionLoaderReturnType,
+  UserProfileLoaderReturnType,
+  UserRoleLoaderReturnType,
+} from '~/root';
 import type {
   GoLessonPlayInteractionReturnType,
   GoLessonPlayLessonBlocksType,
@@ -11,7 +15,13 @@ import type {
  */
 interface StoreState {
   activeSession: UserActiveSessionLoaderReturnType;
+  activeUserProfile: UserProfileLoaderReturnType;
+  activeUserRole: UserRoleLoaderReturnType;
+  isActiveUserProfileLoading: boolean;
+
   updateActiveSession: (session: UserActiveSessionLoaderReturnType) => void;
+  updateActiveUserProfile: (user: UserProfileLoaderReturnType) => void;
+  updateActiveUserRole: (role: UserRoleLoaderReturnType) => void;
 
   // Lesson state
   lessonBlocks: GoLessonPlayLessonBlocksType;
@@ -106,7 +116,14 @@ const checkIsLastBlock = (
 export const useStore = create<StoreState>((set, get) => ({
   // User session
   activeSession: null,
+  activeUserProfile: null,
+  activeUserRole: 'user',
+  isActiveUserProfileLoading: true,
+
   updateActiveSession: (session) => set({ activeSession: session }),
+  updateActiveUserProfile: (user) =>
+    set({ activeUserProfile: user, isActiveUserProfileLoading: false }),
+  updateActiveUserRole: (role) => set({ activeUserRole: role }),
 
   // Lesson state
   lessonBlocks: [],

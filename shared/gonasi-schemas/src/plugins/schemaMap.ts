@@ -1,4 +1,4 @@
-import type { z } from 'zod';
+import { z } from 'zod';
 
 import {
   MultipleChoiceMultipleAnswersContentSchema,
@@ -16,10 +16,13 @@ import {
 import type { PluginTypeId } from './pluginData'; // Type that represents all possible plugin identifiers
 import {
   RichTextContentSchema,
+  RichTextSchema,
   RichTextSettingsSchema,
   RichTextStateInteractionSchema,
 } from './richTextSchema';
 import { TrueOrFalseContentSchema, TrueOrFalseSettingsSchema } from './trueOrFalseSchema';
+
+export const BuilderSchema = z.discriminatedUnion('pluginType', [RichTextSchema]);
 
 /**
  * -----------------------------

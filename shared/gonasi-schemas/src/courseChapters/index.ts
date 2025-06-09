@@ -16,14 +16,13 @@ const ChapterDescriptionSchema = z
 export const NewChapterSchema = z.object({
   name: ChapterNameSchema,
   description: ChapterDescriptionSchema,
-  requiresPayment: z
-    .boolean({
-      required_error: 'Payment requirement status is required.',
-      invalid_type_error: 'Payment requirement must be a boolean value.',
-    })
-    .default(false),
+  requiresPayment: z.boolean({
+    required_error: 'Payment requirement status is required.',
+    invalid_type_error: 'Payment requirement must be a boolean value.',
+  }),
 });
-export type NewChapterTypes = z.infer<typeof NewChapterSchema>;
+export type NewChapterSchemaTypes = z.infer<typeof NewChapterSchema>;
+
 export const SubmitNewChapterSchema = NewChapterSchema.merge(
   z.object({
     courseId: z.string(),
@@ -36,14 +35,12 @@ export type NewChapterSubmitValues = z.infer<typeof SubmitNewChapterSchema>;
 export const EditChapterSchema = z.object({
   name: ChapterNameSchema,
   description: ChapterDescriptionSchema,
-  requiresPayment: z
-    .boolean({
-      required_error: 'Payment requirement status is required.',
-      invalid_type_error: 'Payment requirement must be a boolean value.',
-    })
-    .default(false),
+  requiresPayment: z.boolean({
+    required_error: 'Payment requirement status is required.',
+    invalid_type_error: 'Payment requirement must be a boolean value.',
+  }),
 });
-export type EditChapterTypes = z.infer<typeof EditChapterSchema>;
+export type EditChapterSchemaTypes = z.infer<typeof EditChapterSchema>;
 export const SubmitEditChapterSchema = EditChapterSchema.merge(
   z.object({
     chapterId: z.string(),
@@ -56,7 +53,7 @@ export type EditChapterSubmitValues = z.infer<typeof SubmitEditChapterSchema>;
 export const DeleteChapterSchema = z.object({
   chapterId: z.string(),
 });
-export type DeleteChapterTypes = z.infer<typeof DeleteChapterSchema>;
+export type DeleteChapterSchemaTypes = z.infer<typeof DeleteChapterSchema>;
 export const SubmitDeleteChapterSchema = DeleteChapterSchema.merge(
   z.object({
     chapterId: z.string(),
@@ -68,12 +65,10 @@ export type DeleteChapterSubmitValues = z.infer<typeof SubmitDeleteChapterSchema
 export const ChapterPositionUpdateSchema = z.object({
   id: z.string(),
   position: z.number(),
-  course_id: z.string(),
-  name: z.string(),
-  created_by: z.string(),
 });
 
 export const ChapterPositionUpdateArraySchema = z.array(ChapterPositionUpdateSchema);
 
-export type ChapterPositionUpdate = z.infer<typeof ChapterPositionUpdateSchema>;
-export type ChapterPositionUpdateArray = z.infer<typeof ChapterPositionUpdateArraySchema>;
+export type ChapterPositionUpdateArraySchemaTypes = z.infer<
+  typeof ChapterPositionUpdateArraySchema
+>;

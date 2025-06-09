@@ -11,3 +11,6 @@ export * from './ShowAnswerButton';
 export * from './TryAgainButton';
 export * from './ChoiceOptionButton';
 export * from './FloatingActionButton';
+export * from './BackArrowNavLink';
+export * from './CloseIconNavLink';
+export * from './NavLinkButton';

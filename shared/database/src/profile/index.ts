@@ -4,7 +4,7 @@ import type { TypedSupabaseClient } from '../client';
 export const getUserProfile = async (supabase: TypedSupabaseClient) => {
   const id = await getUserId(supabase);
 
-  const { data } = await supabase.from('profiles').select().eq('id', id).single();
+  const { data } = await supabase.from('profiles').select('*').eq('id', id).single();
 
   return { user: data };
 };

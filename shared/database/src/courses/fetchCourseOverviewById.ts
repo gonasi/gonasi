@@ -29,6 +29,7 @@ export async function fetchCourseOverviewById(supabase: TypedSupabaseClient, cou
       image_url,
       blur_hash,
       monthly_subscription_price,
+      pricing_model,
       created_at,
       updated_at,
       created_by,
