@@ -64,7 +64,7 @@ export async function action({ params, request }: Route.ActionArgs) {
 
   // Return success response
   return redirectWithSuccess(
-    `/${params.username}/course-builder/${params.courseId}/content/${params.chapterId}/${lessonData.id}`,
+    `/${params.username}/course-builder/${params.courseId}/content/${params.chapterId}/${lessonData.id}/lesson-blocks`,
     message,
   );
 }
