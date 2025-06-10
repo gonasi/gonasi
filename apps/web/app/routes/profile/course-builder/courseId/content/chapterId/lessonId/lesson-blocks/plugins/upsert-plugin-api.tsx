@@ -55,5 +55,9 @@ export async function action({ request, params }: Route.ActionArgs) {
 }
 
 export default function UpsertPluginApi() {
-  return <></>;
+  return (
+    <>
+      <h1>UPSERT</h1>
+    </>
+  );
 }

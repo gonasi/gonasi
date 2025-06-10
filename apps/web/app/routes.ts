@@ -196,7 +196,7 @@ export default [
                       [
                         // /:username/course-builder/:courseId/content/:chapterId/:lessonId/plugins/:pluginGroupId/:pluginTypeId/create
                         route(
-                          ':pluginTypeId/:blockId/create',
+                          ':pluginTypeId/create',
                           'routes/profile/course-builder/courseId/content/chapterId/lessonId/lesson-blocks/plugins/create-block-by-plugin-id-modal.tsx',
                         ),
                       ],
@@ -207,10 +207,7 @@ export default [
                   ':blockId/upsert',
                   'routes/profile/course-builder/courseId/content/chapterId/lessonId/lesson-blocks/plugins/upsert-plugin-api.tsx',
                 ),
-                route(
-                  ':blockId/edit',
-                  'routes/profile/course-builder/courseId/content/chapterId/lessonId/lesson-blocks/plugins/temp.tsx',
-                ),
+
                 // /:username/course-builder/:courseId/content/:chapterId/:lessonId/:blockId/delete
                 route(
                   ':blockId/delete',

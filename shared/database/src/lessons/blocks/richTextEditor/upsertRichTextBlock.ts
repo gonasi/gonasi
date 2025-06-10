@@ -11,10 +11,12 @@ export const upsertRichTextBlock = async (
   const userId = await getUserId(supabase);
   const { blockId, content, lessonId, courseId, pluginType, settings } = blockData;
 
+  // Create new is important, it's what's used in the routes to create new since id doesn't exist in db yet
+  const id = blockId === 'create-new' ? undefined : blockId;
+
   try {
-    // Insert the new rich text block
     const { error: insertError } = await supabase.from('lesson_blocks').upsert({
-      id: blockId,
+      id,
       lesson_id: lessonId,
       course_id: courseId,
       plugin_type: pluginType,

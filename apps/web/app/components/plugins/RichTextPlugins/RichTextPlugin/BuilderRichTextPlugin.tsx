@@ -4,31 +4,29 @@ import { Save } from 'lucide-react';
 import { RemixFormProvider, useRemixForm } from 'remix-hook-form';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
 
-import type { PluginTypeId, RichTextSchemaTypes } from '@gonasi/schemas/plugins';
+import type { RichTextSchemaTypes } from '@gonasi/schemas/plugins';
 import { RichTextSchema } from '@gonasi/schemas/plugins';
 
 import { Button } from '~/components/ui/button';
 import { GoRichTextInputField } from '~/components/ui/forms/elements';
+import type { LessonBlockLoaderReturnType } from '~/routes/dashboard/courses/lessons/plugins/edit-plugin-modal';
+import { getActionUrl } from '~/utils/get-action-url';
 import { useIsPending } from '~/utils/misc';
 
 const resolver = zodResolver(RichTextSchema);
 
 interface BuilderRichTextPluginProps {
-  pluginTypeId: PluginTypeId;
+  block?: LessonBlockLoaderReturnType;
 }
 
-export function BuilderRichTextPlugin({ pluginTypeId }: BuilderRichTextPluginProps) {
+export function BuilderRichTextPlugin({ block }: BuilderRichTextPluginProps) {
   const params = useParams();
   const isPending = useIsPending();
 
   const methods = useRemixForm<RichTextSchemaTypes>({
     mode: 'all',
     resolver,
-    submitData: {
-      pluginType: 'rich_text_editor',
-    },
     defaultValues: {
-      blockId: '',
       courseId: params.courseId,
       lessonId: params.lessonId,
       pluginType: 'rich_text_editor',
@@ -39,11 +37,21 @@ export function BuilderRichTextPlugin({ pluginTypeId }: BuilderRichTextPluginPro
     },
   });
 
-  console.log('errors: ', methods.getValues('content.richTextState'));
+  const actionUrl = getActionUrl(
+    {
+      username: params.username,
+      courseId: params.courseId,
+      chapterId: params.chapterId,
+      lessonId: params.lessonId,
+    },
+    { id: block && block.id ? block.id : undefined },
+  );
+
+  console.log('action url: ', actionUrl);
 
   return (
     <RemixFormProvider {...methods}>
-      <form onSubmit={methods.handleSubmit} method='POST'>
+      <form onSubmit={methods.handleSubmit} method='POST' action={actionUrl}>
         <HoneypotInputs />
         <GoRichTextInputField
           name='content.richTextState'

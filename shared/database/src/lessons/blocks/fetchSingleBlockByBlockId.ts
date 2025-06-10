@@ -5,33 +5,33 @@ import type { TypedSupabaseClient } from '../../client';
 export const fetchSingleBlockByBlockId = async (supabase: TypedSupabaseClient, blockId: string) => {
   try {
     const { data, error } = await supabase
-      .from('blocks')
+      .from('lesson_blocks')
       .select('id, plugin_type, content, settings')
       .eq('id', blockId)
       .single();
 
     if (error || !data) {
-      console.error('Failed to fetch block: ', error);
+      console.error('Could not get block:', error);
       return {
         success: false,
-        message: 'Failed to fetch the block.',
+        message: 'Couldn’t load that block.',
         data: null,
       };
     }
 
     return {
       success: true,
-      message: 'Block fetched successfully.',
+      message: 'Got the block!',
       data: {
         ...data,
         plugin_type: data.plugin_type as PluginTypeId,
       },
     };
   } catch (err) {
-    console.error('Unexpected error in fetchSingleBlockByBlockId:', err);
+    console.error('Error grabbing block:', err);
     return {
       success: false,
-      message: 'An unexpected error occurred while fetching the block.',
+      message: 'Something went wrong while loading the block.',
       data: null,
     };
   }
