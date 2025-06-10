@@ -890,6 +890,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      set_course_free: {
+        Args: { p_course_id: string; p_user_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_permission:

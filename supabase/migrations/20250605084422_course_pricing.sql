@@ -24,9 +24,9 @@ create table public.course_pricing_tiers (
   payment_frequency payment_frequency not null,
 
   -- Free tier flag
-  is_free boolean not null default false,
+  is_free boolean not null default true,
 
-  -- Base price for the tier
+  -- Base price for the tier 
   price numeric(19,4) not null check (price >= 0),
 
   -- ISO 4217 currency code (e.g., USD, EUR)
@@ -101,7 +101,7 @@ create index idx_course_pricing_tiers_popular_recommended on public.course_prici
 comment on table public.course_pricing_tiers is 'Subscription pricing options for a course, supporting multiple payment frequencies, promotional pricing, and free access tiers.';
 
 -- ====================================================================================
--- triggers
+-- TRIGGERS: Automatically set the tier position when not provided
 -- ====================================================================================
 
 create or replace function public.set_course_pricing_tier_position()
@@ -124,6 +124,109 @@ create trigger trg_set_course_pricing_tier_position
 before insert on public.course_pricing_tiers
 for each row
 execute function public.set_course_pricing_tier_position();
+
+-- ====================================================================================
+-- TRIGGERS: Business logic for handling free tiers and paid-tier enforcement
+-- ====================================================================================
+
+-- Deletes all other pricing tiers for a course if a free tier is added
+create or replace function public.trg_delete_other_tiers_if_free()
+returns trigger as $$
+begin
+  if new.is_free = true then
+    delete from public.course_pricing_tiers
+    where course_id = new.course_id
+      and id != new.id;
+  end if;
+  return new;
+end;
+$$ language plpgsql
+set search_path = '';
+
+
+create trigger trg_handle_free_tier
+after insert or update on public.course_pricing_tiers
+for each row
+execute function public.trg_delete_other_tiers_if_free();
+
+-- Prevent deletion of the last paid tier for a course
+create or replace function public.trg_prevent_deleting_last_paid_tier()
+returns trigger as $$
+declare
+  remaining_paid_tiers int;
+begin
+  if old.is_free = false then
+    select count(*) into remaining_paid_tiers
+    from public.course_pricing_tiers
+    where course_id = old.course_id
+      and id != old.id
+      and is_free = false;
+
+    if remaining_paid_tiers = 0 then
+      raise exception 'Cannot delete the last paid tier for a paid course (course_id=%)', old.course_id;
+    end if;
+  end if;
+  return old;
+end;
+$$ language plpgsql
+set search_path = '';
+
+
+create trigger trg_prevent_last_paid_tier_deletion
+before delete on public.course_pricing_tiers
+for each row
+execute function public.trg_prevent_deleting_last_paid_tier();
+
+
+-- ====================================================================================
+-- RPC: Set a course as free and delete other tiers
+-- Purpose: Converts a course to free by deleting all tiers and inserting a free one.
+-- Params:
+--   - p_course_id: UUID of the course to update
+--   - p_user_id: UUID of the user performing the action
+-- Access: Requires course admin/editor or creator permissions
+-- ====================================================================================
+
+create or replace function public.set_course_free(p_course_id uuid, p_user_id uuid)
+returns void
+language plpgsql
+set search_path = ''
+as $$ 
+declare
+  has_access boolean;
+begin
+  -- Check if the user has sufficient permission to modify the course
+  select exists (
+    select 1 from public.courses c
+    where c.id = p_course_id
+      and (
+        is_course_admin(c.id, p_user_id)
+        or is_course_editor(c.id, p_user_id)
+        or c.created_by = p_user_id
+      )
+  ) into has_access;
+
+  if not has_access then
+    raise exception 'Permission denied: You do not have access to modify this course (course_id=%)', p_course_id
+      using errcode = '42501'; -- insufficient_privilege
+  end if;
+
+  -- Delete all tiers related to the course
+  delete from public.course_pricing_tiers
+  where course_id = p_course_id;
+
+  -- Insert the free tier
+  insert into public.course_pricing_tiers (
+    course_id, is_free, price, currency_code, created_by, updated_by,
+    payment_frequency, tier_name
+  ) values (
+    p_course_id, true, 0, 'KES', p_user_id, p_user_id,
+    'monthly', 'Free Tier'
+  );
+end;
+$$;
+
+
 
 -- ====================================================================================
 -- ENABLE ROW LEVEL SECURITY
@@ -210,3 +313,93 @@ using (
       )
   )
 );
+
+
+-- ====================================================================================
+-- FUNCTION: add_default_free_pricing_tier
+-- ====================================================================================
+-- Purpose:
+--   Automatically creates a default free pricing tier for a newly created course.
+--
+-- When Triggered:
+--   After a row is inserted into the `courses` table.
+--
+-- Behavior:
+--   - Inserts a single free pricing tier for the new course.
+--   - Uses the creator of the course (`created_by`) as both creator and updater.
+--   - Sets default values:
+--       - is_free: true
+--       - price: 0
+--       - currency_code: 'KES'
+--       - payment_frequency: 'monthly'
+--       - tier_name: 'Free Tier'
+--
+-- Assumptions:
+--   - The `courses` table has a `created_by` field.
+--   - The `course_pricing_tiers` table supports default tier creation without violating constraints.
+--
+-- Notes:
+--   - This function does not check if other tiers already exist (runs only on insert).
+--   - It’s designed to work in tandem with triggers enforcing uniqueness constraints.
+-- ====================================================================================
+
+create or replace function public.add_default_free_pricing_tier()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  insert into public.course_pricing_tiers (
+    course_id,
+    is_free,
+    price,
+    currency_code,
+    created_by,
+    updated_by,
+    payment_frequency,
+    tier_name
+  )
+  values (
+    new.id,
+    true,
+    0,
+    'KES',
+    new.created_by,
+    new.created_by,
+    'monthly',
+    'Free Tier'
+  );
+
+  return new;
+end;
+$$;
+
+
+-- ====================================================================================
+-- TRIGGER: trg_add_default_free_pricing_tier
+-- ====================================================================================
+-- Purpose:
+--   Automatically invokes the `add_default_free_pricing_tier` function after a course
+--   is inserted into the `courses` table.
+--
+-- Timing:
+--   AFTER INSERT
+--
+-- Table:
+--   public.courses
+--
+-- Scope:
+--   FOR EACH ROW — Executes once per inserted course
+--
+-- Behavior:
+--   - Ensures every course starts with a basic free tier
+--   - Simplifies initial setup and ensures pricing model is consistent
+--
+-- Dependencies:
+--   - Relies on the trigger function `add_default_free_pricing_tier`
+-- ====================================================================================
+
+create trigger trg_add_default_free_pricing_tier
+after insert on public.courses
+for each row
+execute function public.add_default_free_pricing_tier();
