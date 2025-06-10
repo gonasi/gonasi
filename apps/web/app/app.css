@@ -89,7 +89,7 @@
     --card: hsl(217, 39%, 25%); /* Darker card */
     --card-foreground: hsl(0, 0%, 98%);
     --card-border: hsl(217, 39%, 50%);
-    --popover: hsl(217, 39%, 25%);
+    --popover: hsl(217, 39%, 18%);
     --popover-foreground: hsl(0, 0%, 98%);
     --muted: hsl(217, 39%, 35%);
     --muted-foreground: hsl(0, 0%, 63%);

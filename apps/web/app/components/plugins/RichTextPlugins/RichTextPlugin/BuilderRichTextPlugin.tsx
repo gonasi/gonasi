@@ -13,7 +13,11 @@ import {
 } from '@gonasi/schemas/plugins';
 
 import { BackArrowNavLink, Button } from '~/components/ui/button';
-import { GoRichTextInputField } from '~/components/ui/forms/elements';
+import {
+  GoRadioGroupField,
+  GoRichTextInputField,
+  GoSliderField,
+} from '~/components/ui/forms/elements';
 import { Modal } from '~/components/ui/modal';
 import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover';
 import type { LessonBlockLoaderReturnType } from '~/routes/profile/course-builder/courseId/content/chapterId/lessonId/lesson-blocks/plugins/edit-plugin-modal';
@@ -75,34 +79,50 @@ export function BuilderRichTextPlugin({ block }: BuilderRichTextPluginProps) {
 
   return (
     <Modal.Content size='md'>
-      <Modal.Header
-        leadingIcon={<BackArrowNavLink to={backRoute} />}
-        title='Rich Text Editor'
-        closeRoute={lessonPath}
-        settingsPopover={
-          <Popover>
-            <PopoverTrigger asChild>
-              <Settings
-                className='transition-transform duration-200 hover:scale-105 hover:rotate-15 hover:cursor-pointer'
-                size={20}
-              />
-            </PopoverTrigger>
-            <PopoverContent className='max-w-sm'>
-              <div className='grid gap-4'>
-                <div className='space-y-2'>
-                  <h4 className='leading-none font-medium'>Dimensions</h4>
-                  <p className='text-muted-foreground text-sm'>Set the dimensions for the layer.</p>
-                </div>
-                <div className='grid gap-2'>hello</div>
-              </div>
-            </PopoverContent>
-          </Popover>
-        }
-      />
-      <Modal.Body>
-        <RemixFormProvider {...methods}>
-          <form onSubmit={methods.handleSubmit} method='POST' action={actionUrl}>
-            <HoneypotInputs />
+      <RemixFormProvider {...methods}>
+        <form onSubmit={methods.handleSubmit} method='POST' action={actionUrl}>
+          <HoneypotInputs />
+          <Modal.Header
+            leadingIcon={block && block.id ? null : <BackArrowNavLink to={backRoute} />}
+            title={block && block.id ? 'Edit Rich Text' : 'Add Rich Text'}
+            closeRoute={lessonPath}
+            settingsPopover={
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Settings
+                    className='transition-transform duration-200 hover:scale-105 hover:rotate-15 hover:cursor-pointer'
+                    size={20}
+                  />
+                </PopoverTrigger>
+                <PopoverContent className='w-full max-w-md'>
+                  <div className='grid gap-4'>
+                    <div className='space-y-2'>
+                      <h4 className='leading-none font-medium'>Block Settings</h4>
+                    </div>
+                    <div className='grid gap-2'>
+                      <GoSliderField
+                        labelProps={{ children: 'Block Weight ⚖️' }}
+                        name='settings.weight'
+                        min={1}
+                        max={10}
+                        description='How important this block is for progress.'
+                      />
+                      <GoRadioGroupField
+                        labelProps={{ children: 'Playback Mode ▶️' }}
+                        name='settings.playbackMode'
+                        description='How this block appears in lessons.'
+                        options={[
+                          { value: 'inline', label: 'Inline – blends with content 🔄' },
+                          { value: 'standalone', label: 'Standalone – draws attention' },
+                        ]}
+                      />
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            }
+          />
+          <Modal.Body>
             <GoRichTextInputField
               name='content.richTextState'
               labelProps={{ children: 'Rich Text', required: true }}
@@ -120,9 +140,9 @@ export function BuilderRichTextPlugin({ block }: BuilderRichTextPluginProps) {
                 Save
               </Button>
             </div>
-          </form>
-        </RemixFormProvider>
-      </Modal.Body>
+          </Modal.Body>
+        </form>
+      </RemixFormProvider>
     </Modal.Content>
   );
 }
