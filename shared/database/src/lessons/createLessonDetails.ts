@@ -40,7 +40,7 @@ export const createLessonDetails = async (
     if (error) {
       return {
         success: false,
-        message: "Couldn't save the lesson—give it another shot.",
+        message: "Couldn't save the lesson... give it another shot.",
       };
     }
 

@@ -204,6 +204,11 @@ export default [
                   ],
                 ),
                 route(
+                  ':blockId/edit',
+                  'routes/profile/course-builder/courseId/content/chapterId/lessonId/lesson-blocks/plugins/edit-plugin-modal.tsx',
+                ),
+                // contains action to both edit and create block
+                route(
                   ':blockId/upsert',
                   'routes/profile/course-builder/courseId/content/chapterId/lessonId/lesson-blocks/plugins/upsert-plugin-api.tsx',
                 ),
@@ -211,7 +216,7 @@ export default [
                 // /:username/course-builder/:courseId/content/:chapterId/:lessonId/:blockId/delete
                 route(
                   ':blockId/delete',
-                  'routes/dashboard/courses/lessons/plugins/delete-plugin-modal.tsx',
+                  'routes/profile/course-builder/courseId/content/chapterId/lessonId/lesson-blocks/plugins/delete-plugin-modal.tsx',
                 ),
               ],
             ),

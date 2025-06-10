@@ -23,13 +23,6 @@ export type RichTextSchemaTypes = z.infer<typeof RichTextSchema>;
 // TODO: Delete all below when finished
 
 //
-// Edit Block Settings Schema
-//
-export const SubmitEditRichTextSettingsSchema = RichTextSettingsSchema.extend({
-  blockId: z.string({ required_error: 'Block ID is required.' }),
-});
-
-//
 // Interaction Schema
 //
 export const RichTextStateInteractionSchema = z.object({
@@ -41,5 +34,4 @@ export const RichTextStateInteractionSchema = z.object({
 //
 export type RichTextContentSchemaType = z.infer<typeof RichTextContentSchema>;
 export type RichTextSettingsSchemaType = z.infer<typeof RichTextSettingsSchema>;
-export type SubmitEditRichTextSettingsSchemaType = z.infer<typeof SubmitEditRichTextSettingsSchema>;
 export type RichTextStateInteractionSchemaType = z.infer<typeof RichTextStateInteractionSchema>;

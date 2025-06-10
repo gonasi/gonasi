@@ -5,7 +5,12 @@ import { RemixFormProvider, useRemixForm } from 'remix-hook-form';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
 
 import type { RichTextSchemaTypes } from '@gonasi/schemas/plugins';
-import { RichTextSchema } from '@gonasi/schemas/plugins';
+import {
+  EMPTY_LEXICAL_STATE,
+  RichTextContentSchema,
+  RichTextSchema,
+  RichTextSettingsSchema,
+} from '@gonasi/schemas/plugins';
 
 import { Button } from '~/components/ui/button';
 import { GoRichTextInputField } from '~/components/ui/forms/elements';
@@ -24,17 +29,28 @@ export function BuilderRichTextPlugin({ block }: BuilderRichTextPluginProps) {
   const isPending = useIsPending();
 
   const methods = useRemixForm<RichTextSchemaTypes>({
-    mode: 'all',
+    mode: 'onBlur',
     resolver,
-    defaultValues: {
-      courseId: params.courseId,
-      lessonId: params.lessonId,
-      pluginType: 'rich_text_editor',
-      settings: {
-        playbackMode: 'inline',
-        weight: 1,
-      },
-    },
+    defaultValues: block
+      ? {
+          blockId: block.id,
+          courseId: params.courseId!,
+          lessonId: params.lessonId!,
+          pluginType: 'rich_text_editor',
+          content: RichTextContentSchema.safeParse(block.content).success
+            ? RichTextContentSchema.parse(block.content)
+            : { richTextState: EMPTY_LEXICAL_STATE },
+          settings: RichTextSettingsSchema.safeParse(block.settings).success
+            ? RichTextSettingsSchema.parse(block.settings)
+            : { playbackMode: 'inline', weight: 1 },
+        }
+      : {
+          courseId: params.courseId!,
+          lessonId: params.lessonId!,
+          pluginType: 'rich_text_editor',
+          content: { richTextState: EMPTY_LEXICAL_STATE },
+          settings: { playbackMode: 'inline', weight: 1 },
+        },
   });
 
   const actionUrl = getActionUrl(
@@ -46,8 +62,6 @@ export function BuilderRichTextPlugin({ block }: BuilderRichTextPluginProps) {
     },
     { id: block && block.id ? block.id : undefined },
   );
-
-  console.log('action url: ', actionUrl);
 
   return (
     <RemixFormProvider {...methods}>

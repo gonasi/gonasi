@@ -10,3 +10,4 @@ export * from './tapToRevealSchema';
 // redo
 export * from './schemaMap';
 export * from './baseInteractionSchema';
+export * from './utils';

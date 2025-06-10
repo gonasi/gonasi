@@ -747,6 +747,10 @@ export type Database = {
         Args: { event: Json }
         Returns: Json
       }
+      delete_lesson_block: {
+        Args: { p_block_id: string; p_deleted_by: string }
+        Returns: undefined
+      }
       is_course_admin: {
         Args: { course_id: string; user_id: string }
         Returns: boolean

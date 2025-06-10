@@ -6,6 +6,11 @@ import type { Route } from './+types/delete-plugin-modal';
 
 import { createClient } from '~/lib/supabase/supabase.server';
 
+type Params = Route.LoaderArgs['params'];
+
+const getBasePath = (params: Params) =>
+  `/${params.username}/course-builder/${params.courseId}/content`;
+
 // Use loader instead of action for automatic invocation on route visit
 export async function loader({ request, params }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
@@ -16,8 +21,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     return dataWithError(null, message);
   }
 
-  return redirectWithSuccess(
-    `/dashboard/${params.companyId}/courses/${params.courseId}/course-content/${params.chapterId}/${params.lessonId}`,
-    message,
-  );
+  const redirectUrl = `${getBasePath(params)}/${params.chapterId}/${params.lessonId}/lesson-blocks`;
+
+  return redirectWithSuccess(redirectUrl, message);
 }

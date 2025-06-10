@@ -87,7 +87,7 @@ const Header = ({
         {leadingIcon ?? null}
         {title ? (
           <div className='flex w-full items-center justify-between'>
-            <h2 className='line-clamp-1 text-lg font-semibold text-ellipsis'>{title}</h2>
+            <h2 className='mt-1 line-clamp-1 text-lg font-semibold text-ellipsis'>{title}</h2>
             {subTitle ? (
               <Badge variant='outline' className='font-secondary mr-4 hidden text-sm md:flex'>
                 {subTitle}

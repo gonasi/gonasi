@@ -17,6 +17,22 @@ const LexicalEditorStateSchema = z.object({
   }),
 });
 
+export const EMPTY_LEXICAL_STATE = JSON.stringify({
+  root: {
+    type: 'root',
+    version: 1,
+    children: [
+      {
+        type: 'paragraph',
+        version: 1,
+        children: [],
+        textFormat: 0,
+        textStyle: '',
+      },
+    ],
+  },
+});
+
 export const NonEmptyLexicalState = z.string({ required_error: 'Please add some content.' }).refine(
   (val) => {
     try {
