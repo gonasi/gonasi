@@ -1,68 +1,62 @@
-import { useEffect, useState } from 'react';
-import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+import { Reorder, useDragControls, useMotionValue } from 'framer-motion';
 import { GripVerticalIcon, Pencil, Settings, Trash } from 'lucide-react';
 
 import { ActionDropdown } from '../action-dropdown';
-import { IconTooltipButton } from '../ui/tooltip';
+import { ReorderIconTooltip } from '../ui/tooltip/ReorderIconToolTip';
 
+import { useRaisedShadow } from '~/hooks/useRaisedShadow';
 import { cn } from '~/lib/utils';
+import type { Block } from '~/routes/profile/course-builder/courseId/content/chapterId/lessonId/lesson-blocks/lesson-blocks-index';
 
+/**
+ * Utility: Converts strings like "plugin_type_example" to "Plugin Type Example"
+ */
+function toTitleCaseFromUnderscore(input: string): string {
+  return input
+    .split('_')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
 interface LessonBlockWrapperProps {
-  id: string;
   children: React.ReactNode;
   onEdit?: () => void;
   onDelete?: () => void;
   onEditSettings?: () => void;
   loading?: boolean;
-  title: string;
+  block: Block;
 }
 
-export default function LessonBlockWrapper({
-  id,
-  children,
-  onEdit,
-  onDelete,
-  onEditSettings,
-  loading,
-  title,
-}: LessonBlockWrapperProps) {
-  const [isMounted, setIsMounted] = useState(false);
+export default function LessonBlockWrapper(props: LessonBlockWrapperProps) {
+  const { children, onEdit, onDelete, onEditSettings, loading, block } = props;
 
-  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
-    id,
-  });
+  const title = toTitleCaseFromUnderscore(block.plugin_type ?? 'Edit');
 
-  const style = {
-    transform: isMounted ? CSS.Transform.toString(transform) : undefined,
-    transition: isMounted ? transition : undefined,
-  };
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
+  const courseY = useMotionValue(0);
+  const blockBoxShadow = useRaisedShadow(courseY);
+  const blockDragControls = useDragControls();
 
   return (
-    <div
-      className='bg-card/50 border-card rounded-lg border pt-6'
-      ref={isMounted ? setNodeRef : undefined}
-      style={style}
+    <Reorder.Item
+      value={block}
+      id={block.id}
+      style={{ boxShadow: blockBoxShadow, y: courseY }}
+      dragListener={false}
+      dragControls={blockDragControls}
+      className='bg-card/80 border-card w-full rounded-lg border'
     >
-      <div className={cn('relative m-2 p-2')}>
+      <div className={cn('relative px-4 pt-4')}>
         <>
-          <div className='absolute -top-4 -left-4'>
-            <IconTooltipButton
+          <div className='absolute top-3 -left-4'>
+            <ReorderIconTooltip
               asChild
-              className='bg-card/80 cursor-move p-2'
               title='Drag and drop to rearrange blocks'
               icon={GripVerticalIcon}
-              {...(isMounted ? attributes : {})}
-              {...(isMounted ? listeners : {})}
               disabled={loading}
+              dragControls={blockDragControls}
             />
           </div>
-          <div className='text-muted-foreground absolute -top-2 left-6 text-sm'>{title}</div>
-          <div className='bg-card/80 absolute -top-4 -right-4 rounded-lg'>
+          <div className='flex w-full items-center justify-between'>
+            <div className='text-muted-foreground ml-4 text-sm'>{title}</div>
             <ActionDropdown
               items={[
                 { title: 'Edit', icon: Pencil, onClick: onEdit },
@@ -74,6 +68,6 @@ export default function LessonBlockWrapper({
         </>
         <div className='mt-4'>{children}</div>
       </div>
-    </div>
+    </Reorder.Item>
   );
 }

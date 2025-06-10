@@ -63,6 +63,8 @@ export function BuilderRichTextPlugin({ block }: BuilderRichTextPluginProps) {
     { id: block && block.id ? block.id : undefined },
   );
 
+  const isDisabled = isPending || methods.formState.isSubmitting;
+
   return (
     <RemixFormProvider {...methods}>
       <form onSubmit={methods.handleSubmit} method='POST' action={actionUrl}>
@@ -78,8 +80,8 @@ export function BuilderRichTextPlugin({ block }: BuilderRichTextPluginProps) {
           <Button
             type='submit'
             rightIcon={<Save />}
-            disabled={isPending}
-            isLoading={isPending || methods.formState.isSubmitting}
+            disabled={isDisabled || !methods.formState.isDirty}
+            isLoading={isDisabled}
           >
             Save
           </Button>

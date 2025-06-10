@@ -119,7 +119,9 @@ export default function CourseChapterItem({ chapter, loading }: Props) {
             <div className='flex w-full items-center justify-between'>
               {/* Chapter title and reorder icon */}
               <div className='flex items-center space-x-1'>
-                <h3 className='mt-1 ml-2 line-clamp-1 text-left text-lg'>{chapter.name}</h3>
+                <h3 className='mt-1 ml-2 line-clamp-1 text-left text-base md:text-lg'>
+                  {chapter.name}
+                </h3>
               </div>
 
               {/* Chapter action controls */}
@@ -145,7 +147,7 @@ export default function CourseChapterItem({ chapter, loading }: Props) {
           <AccordionContent>
             {/* Optional chapter description */}
             {chapter.description && (
-              <div className='text-muted-foreground font-secondary line-clamp-4 py-2'>
+              <div className='text-muted-foreground font-secondary line-clamp-4 py-2 text-sm md:text-base'>
                 {chapter.description}
               </div>
             )}

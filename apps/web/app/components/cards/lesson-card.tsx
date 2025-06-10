@@ -68,7 +68,7 @@ export function LessonCard({ lesson, loading }: Props) {
                 strokeWidth={3}
                 className='shrink-0 rotate-[30deg] transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:rotate-0'
               />
-              <p className='group-hover:text-foreground truncate text-base font-medium transition-colors'>
+              <p className='group-hover:text-foreground truncate text-sm font-medium transition-colors md:text-base'>
                 {lesson.name}
               </p>
             </div>
