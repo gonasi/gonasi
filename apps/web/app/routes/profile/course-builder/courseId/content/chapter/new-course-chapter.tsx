@@ -1,4 +1,4 @@
-import { Form, useOutletContext, useParams } from 'react-router';
+import { Form, useParams } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
 import { dataWithError, redirectWithSuccess } from 'remix-toast';
@@ -10,7 +10,7 @@ import { NewChapterSchema, type NewChapterSchemaTypes } from '@gonasi/schemas/co
 import type { Route } from './+types/new-course-chapter';
 
 import { Button } from '~/components/ui/button';
-import { GoCheckBoxField, GoInputField, GoTextAreaField } from '~/components/ui/forms/elements';
+import { GoInputField, GoTextAreaField } from '~/components/ui/forms/elements';
 import { Modal } from '~/components/ui/modal';
 import { createClient } from '~/lib/supabase/supabase.server';
 import { checkHoneypot } from '~/utils/honeypot.server';
@@ -65,7 +65,6 @@ export async function action({ request, params }: Route.ActionArgs) {
 
 // UI component for creating a new course chapter
 export default function NewCourseChapter() {
-  const { pricing_model } = useOutletContext<{ pricing_model: 'free' | 'paid' }>();
   const params = useParams();
 
   const isPending = useIsPending();
@@ -73,9 +72,6 @@ export default function NewCourseChapter() {
   const methods = useRemixForm<NewChapterSchemaTypes>({
     mode: 'all',
     resolver,
-    defaultValues: {
-      requiresPayment: pricing_model !== 'free',
-    },
   });
 
   const isDisabled = isPending || methods.formState.isSubmitting;
@@ -108,15 +104,6 @@ export default function NewCourseChapter() {
                 textareaProps={{ disabled: isDisabled }}
                 description='Just a quick overview to help learners know what to expect.'
               />
-
-              {/* Paid chapter checkbox (shown only if pricing model is paid) */}
-              {pricing_model === 'paid' && (
-                <GoCheckBoxField
-                  labelProps={{ children: 'Is this a paid chapter?', required: true }}
-                  name='requiresPayment'
-                  description='Check this if users need to pay to access it.'
-                />
-              )}
 
               {/* Submit button */}
               <Button type='submit' disabled={isPending} isLoading={isPending}>

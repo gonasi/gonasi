@@ -1,4 +1,4 @@
-import { data, Outlet, useOutletContext } from 'react-router';
+import { data, Outlet } from 'react-router';
 import { Plus } from 'lucide-react';
 import { dataWithError } from 'remix-toast';
 
@@ -11,7 +11,6 @@ import { ChapterPositionUpdateArraySchema } from '@gonasi/schemas/courseChapters
 import { LessonPositionUpdateArraySchema } from '@gonasi/schemas/lessons';
 
 import type { Route } from './+types/content-index';
-import type { CourseOverviewType } from '../course-id-index';
 
 import { BannerCard } from '~/components/cards';
 import { CourseChapters } from '~/components/course/course-chapters';
@@ -108,10 +107,6 @@ export async function action({ request, params }: Route.ActionArgs) {
 
 // UI for the Course Overview page
 export default function CourseOverview({ loaderData, params }: Route.ComponentProps) {
-  const outletLoaderData = useOutletContext<CourseOverviewType>() ?? {};
-
-  const { pricing_model } = outletLoaderData;
-
   return (
     <>
       <div className='max-w-2xl pb-20'>
@@ -134,7 +129,7 @@ export default function CourseOverview({ loaderData, params }: Route.ComponentPr
       />
 
       {/* Render nested routes if any */}
-      <Outlet context={{ pricing_model }} />
+      <Outlet />
     </>
   );
 }

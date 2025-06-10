@@ -1,4 +1,4 @@
-import { data, Form, useOutletContext, useParams } from 'react-router';
+import { data, Form, useParams } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
 import { dataWithError, redirectWithError, redirectWithSuccess } from 'remix-toast';
@@ -10,7 +10,7 @@ import { EditChapterSchema, type EditChapterSchemaTypes } from '@gonasi/schemas/
 import type { Route } from './+types/edit-course-chapter';
 
 import { Button } from '~/components/ui/button';
-import { GoCheckBoxField, GoInputField, GoTextAreaField } from '~/components/ui/forms/elements';
+import { GoInputField, GoTextAreaField } from '~/components/ui/forms/elements';
 import { Modal } from '~/components/ui/modal';
 import { createClient } from '~/lib/supabase/supabase.server';
 import { checkHoneypot } from '~/utils/honeypot.server';
@@ -68,13 +68,10 @@ export async function action({ request, params }: Route.ActionArgs) {
 
 // Component: Edit course chapter form
 export default function EditCourseChapter({ loaderData }: Route.ComponentProps) {
-  const { pricing_model } = useOutletContext<{
-    pricing_model: 'free' | 'paid';
-  }>();
   const params = useParams();
   const isPending = useIsPending();
 
-  const { name, description, requiresPayment } = loaderData;
+  const { name, description } = loaderData;
 
   const methods = useRemixForm<EditChapterSchemaTypes>({
     mode: 'all',
@@ -82,7 +79,6 @@ export default function EditCourseChapter({ loaderData }: Route.ComponentProps) 
     defaultValues: {
       name,
       description: description ?? '',
-      requiresPayment: requiresPayment ?? pricing_model !== 'free', // fallback to pricing model
     },
   });
 
@@ -115,15 +111,6 @@ export default function EditCourseChapter({ loaderData }: Route.ComponentProps) 
                 textareaProps={{ disabled: isDisabled }}
                 description='Just a quick overview to help learners know what to expect.'
               />
-
-              {/* Paid chapter checkbox (only for paid courses) */}
-              {pricing_model === 'paid' && (
-                <GoCheckBoxField
-                  name='requiresPayment'
-                  labelProps={{ children: 'Is this a paid chapter?', required: true }}
-                  description='Check this if users need to pay to access it.'
-                />
-              )}
 
               {/* Submit button */}
               <Button
