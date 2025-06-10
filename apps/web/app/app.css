@@ -106,9 +106,9 @@
     --success-foreground: hsl(0, 0%, 98%);
     --success-hover: hsl(150, 60%, 38%);
 
-    --info: hsl(210, 90%, 65%);
-    --info-foreground: hsl(0, 0%, 98%);
-    --info-hover: hsl(210, 85%, 60%);
+    --info: hsl(210, 90%, 55%);
+    --info-foreground: hsl(0, 0%, 100%);
+    --info-hover: hsl(210, 90%, 65%);
 
     --warning: hsl(45, 95%, 45%);
     --warning-foreground: hsl(217, 39%, 15%);
