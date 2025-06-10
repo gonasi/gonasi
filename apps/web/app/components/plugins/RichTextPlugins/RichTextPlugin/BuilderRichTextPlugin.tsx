@@ -12,10 +12,12 @@ import {
   RichTextSettingsSchema,
 } from '@gonasi/schemas/plugins';
 
-import { Button } from '~/components/ui/button';
+import { BackArrowNavLink, Button } from '~/components/ui/button';
 import { GoRichTextInputField } from '~/components/ui/forms/elements';
-import type { LessonBlockLoaderReturnType } from '~/routes/dashboard/courses/lessons/plugins/edit-plugin-modal';
+import { Modal } from '~/components/ui/modal';
+import type { LessonBlockLoaderReturnType } from '~/routes/profile/course-builder/courseId/content/chapterId/lessonId/lesson-blocks/plugins/edit-plugin-modal';
 import { getActionUrl } from '~/utils/get-action-url';
+import { getLessonPath } from '~/utils/get-lesson-path';
 import { useIsPending } from '~/utils/misc';
 
 const resolver = zodResolver(RichTextSchema);
@@ -27,6 +29,11 @@ interface BuilderRichTextPluginProps {
 export function BuilderRichTextPlugin({ block }: BuilderRichTextPluginProps) {
   const params = useParams();
   const isPending = useIsPending();
+
+  const { username, courseId, chapterId, lessonId, pluginGroupId } = params;
+
+  const lessonPath = getLessonPath({ username, courseId, chapterId, lessonId });
+  const backRoute = `${lessonPath}/plugins/${pluginGroupId}`;
 
   const methods = useRemixForm<RichTextSchemaTypes>({
     mode: 'onBlur',
@@ -66,27 +73,36 @@ export function BuilderRichTextPlugin({ block }: BuilderRichTextPluginProps) {
   const isDisabled = isPending || methods.formState.isSubmitting;
 
   return (
-    <RemixFormProvider {...methods}>
-      <form onSubmit={methods.handleSubmit} method='POST' action={actionUrl}>
-        <HoneypotInputs />
-        <GoRichTextInputField
-          name='content.richTextState'
-          labelProps={{ children: 'Rich Text', required: true }}
-          description='You can format your content using rich text.'
-          placeholder='Start typing...'
-        />
+    <Modal.Content size='md'>
+      <Modal.Header
+        leadingIcon={<BackArrowNavLink to={backRoute} />}
+        title='Rich Text Editor'
+        closeRoute={lessonPath}
+      />
+      <Modal.Body>
+        <RemixFormProvider {...methods}>
+          <form onSubmit={methods.handleSubmit} method='POST' action={actionUrl}>
+            <HoneypotInputs />
+            <GoRichTextInputField
+              name='content.richTextState'
+              labelProps={{ children: 'Rich Text', required: true }}
+              description='You can format your content using rich text.'
+              placeholder='Start typing...'
+            />
 
-        <div className='mt-4 flex justify-end space-x-2'>
-          <Button
-            type='submit'
-            rightIcon={<Save />}
-            disabled={isDisabled || !methods.formState.isDirty}
-            isLoading={isDisabled}
-          >
-            Save
-          </Button>
-        </div>
-      </form>
-    </RemixFormProvider>
+            <div className='mt-4 flex justify-end space-x-2'>
+              <Button
+                type='submit'
+                rightIcon={<Save />}
+                disabled={isDisabled || !methods.formState.isDirty}
+                isLoading={isDisabled}
+              >
+                Save
+              </Button>
+            </div>
+          </form>
+        </RemixFormProvider>
+      </Modal.Body>
+    </Modal.Content>
   );
 }
