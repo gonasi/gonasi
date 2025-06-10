@@ -747,6 +747,14 @@ export type Database = {
         Args: { event: Json }
         Returns: Json
       }
+      delete_chapter: {
+        Args: { p_chapter_id: string; p_deleted_by: string }
+        Returns: undefined
+      }
+      delete_lesson: {
+        Args: { p_lesson_id: string; p_deleted_by: string }
+        Returns: undefined
+      }
       delete_lesson_block: {
         Args: { p_block_id: string; p_deleted_by: string }
         Returns: undefined

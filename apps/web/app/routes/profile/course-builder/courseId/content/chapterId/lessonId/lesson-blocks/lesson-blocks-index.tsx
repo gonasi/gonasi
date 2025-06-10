@@ -106,6 +106,8 @@ export default function EditLessonContent({ loaderData, params }: Route.Componen
   useEffect(() => {
     if (fetcher.state === 'submitting') {
       setIsSubmitting(true);
+    } else {
+      setIsSubmitting(false);
     }
   }, [fetcher.state]);
 
@@ -134,6 +136,8 @@ export default function EditLessonContent({ loaderData, params }: Route.Componen
             subTitle={lesson.lesson_types?.name}
             closeRoute={basePath}
           />
+          {fetcher.state}
+          <p>isSubmitting: {`${isSubmitting}`}</p>
           <div className='mx-auto flex max-w-xl pr-4 pl-8 md:px-0'>
             {reorderedBlocks.length > 0 ? (
               <Reorder.Group
