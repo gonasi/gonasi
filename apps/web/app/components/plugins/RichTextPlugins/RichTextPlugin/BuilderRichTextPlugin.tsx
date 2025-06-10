@@ -1,6 +1,6 @@
 import { useParams } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Save } from 'lucide-react';
+import { Save, Settings } from 'lucide-react';
 import { RemixFormProvider, useRemixForm } from 'remix-hook-form';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
 
@@ -15,6 +15,7 @@ import {
 import { BackArrowNavLink, Button } from '~/components/ui/button';
 import { GoRichTextInputField } from '~/components/ui/forms/elements';
 import { Modal } from '~/components/ui/modal';
+import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover';
 import type { LessonBlockLoaderReturnType } from '~/routes/profile/course-builder/courseId/content/chapterId/lessonId/lesson-blocks/plugins/edit-plugin-modal';
 import { getActionUrl } from '~/utils/get-action-url';
 import { getLessonPath } from '~/utils/get-lesson-path';
@@ -78,6 +79,25 @@ export function BuilderRichTextPlugin({ block }: BuilderRichTextPluginProps) {
         leadingIcon={<BackArrowNavLink to={backRoute} />}
         title='Rich Text Editor'
         closeRoute={lessonPath}
+        settingsPopover={
+          <Popover>
+            <PopoverTrigger asChild>
+              <Settings
+                className='transition-transform duration-200 hover:scale-105 hover:rotate-15 hover:cursor-pointer'
+                size={20}
+              />
+            </PopoverTrigger>
+            <PopoverContent className='max-w-sm'>
+              <div className='grid gap-4'>
+                <div className='space-y-2'>
+                  <h4 className='leading-none font-medium'>Dimensions</h4>
+                  <p className='text-muted-foreground text-sm'>Set the dimensions for the layer.</p>
+                </div>
+                <div className='grid gap-2'>hello</div>
+              </div>
+            </PopoverContent>
+          </Popover>
+        }
       />
       <Modal.Body>
         <RemixFormProvider {...methods}>
