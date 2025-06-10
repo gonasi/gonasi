@@ -44,7 +44,6 @@ export type NewCourseTitleSchemaTypes = z.infer<typeof NewCourseTitleSchema>;
 export const EditCourseDetailsSchema = z.object({
   name: CourseTitleSchema,
   description: CourseDescriptionSchema,
-  monthlySubscriptionPrice: CourseMonthlySubscriptionPriceSchema,
 });
 export type EditCourseDetailsSchemaTypes = z.infer<typeof EditCourseDetailsSchema>;
 export const SubmitCourseDetailsSchema = EditCourseDetailsSchema.merge(

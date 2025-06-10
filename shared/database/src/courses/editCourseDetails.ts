@@ -17,7 +17,7 @@ export const editCourseDetails = async (
 ): Promise<ApiResponse> => {
   const userId = await getUserId(supabase);
 
-  const { courseId, name, description, monthlySubscriptionPrice } = assetData;
+  const { courseId, name, description } = assetData;
 
   try {
     const { error: updateError } = await supabase
@@ -25,7 +25,6 @@ export const editCourseDetails = async (
       .update({
         name,
         description,
-        monthly_subscription_price: monthlySubscriptionPrice,
         updated_by: userId,
       })
       .match({

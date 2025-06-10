@@ -201,6 +201,97 @@ export type Database = {
           },
         ]
       }
+      course_pricing_tiers: {
+        Row: {
+          course_id: string
+          created_at: string
+          created_by: string
+          currency_code: string
+          discount_percentage: number | null
+          id: string
+          is_active: boolean
+          is_free: boolean
+          is_popular: boolean
+          is_recommended: boolean
+          payment_frequency: Database["public"]["Enums"]["payment_frequency"]
+          position: number
+          price: number
+          promotion_end_date: string | null
+          promotion_start_date: string | null
+          promotional_price: number | null
+          tier_description: string | null
+          tier_name: string | null
+          updated_at: string
+          updated_by: string
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          created_by: string
+          currency_code?: string
+          discount_percentage?: number | null
+          id?: string
+          is_active?: boolean
+          is_free?: boolean
+          is_popular?: boolean
+          is_recommended?: boolean
+          payment_frequency: Database["public"]["Enums"]["payment_frequency"]
+          position?: number
+          price: number
+          promotion_end_date?: string | null
+          promotion_start_date?: string | null
+          promotional_price?: number | null
+          tier_description?: string | null
+          tier_name?: string | null
+          updated_at?: string
+          updated_by: string
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          created_by?: string
+          currency_code?: string
+          discount_percentage?: number | null
+          id?: string
+          is_active?: boolean
+          is_free?: boolean
+          is_popular?: boolean
+          is_recommended?: boolean
+          payment_frequency?: Database["public"]["Enums"]["payment_frequency"]
+          position?: number
+          price?: number
+          promotion_end_date?: string | null
+          promotion_start_date?: string | null
+          promotional_price?: number | null
+          tier_description?: string | null
+          tier_name?: string | null
+          updated_at?: string
+          updated_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_pricing_tiers_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_pricing_tiers_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_pricing_tiers_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       course_sub_categories: {
         Row: {
           category_id: string
@@ -263,10 +354,8 @@ export type Database = {
           id: string
           image_url: string | null
           last_published: string | null
-          monthly_subscription_price: number | null
           name: string
           pathway_id: string | null
-          pricing_model: Database["public"]["Enums"]["course_pricing"]
           subcategory_id: string | null
           updated_at: string
           updated_by: string
@@ -281,10 +370,8 @@ export type Database = {
           id?: string
           image_url?: string | null
           last_published?: string | null
-          monthly_subscription_price?: number | null
           name: string
           pathway_id?: string | null
-          pricing_model?: Database["public"]["Enums"]["course_pricing"]
           subcategory_id?: string | null
           updated_at?: string
           updated_by: string
@@ -299,10 +386,8 @@ export type Database = {
           id?: string
           image_url?: string | null
           last_published?: string | null
-          monthly_subscription_price?: number | null
           name?: string
           pathway_id?: string | null
-          pricing_model?: Database["public"]["Enums"]["course_pricing"]
           subcategory_id?: string | null
           updated_at?: string
           updated_by?: string
@@ -751,6 +836,10 @@ export type Database = {
         Args: { p_chapter_id: string; p_deleted_by: string }
         Returns: undefined
       }
+      delete_course_pricing_tier: {
+        Args: { p_tier_id: string; p_deleted_by: string }
+        Returns: undefined
+      }
       delete_lesson: {
         Args: { p_lesson_id: string; p_deleted_by: string }
         Returns: undefined
@@ -775,6 +864,14 @@ export type Database = {
         Args: {
           p_course_id: string
           chapter_positions: Json
+          p_updated_by: string
+        }
+        Returns: undefined
+      }
+      reorder_course_pricing_tiers: {
+        Args: {
+          p_course_id: string
+          tier_positions: Json
           p_updated_by: string
         }
         Returns: undefined
@@ -810,8 +907,13 @@ export type Database = {
         | "lesson_types.delete"
       app_role: "go_su" | "go_admin" | "go_staff" | "user"
       course_access: "public" | "private"
-      course_pricing: "free" | "paid"
       course_role: "admin" | "editor" | "viewer"
+      payment_frequency:
+        | "monthly"
+        | "bi_monthly"
+        | "quarterly"
+        | "semi_annual"
+        | "annual"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -946,8 +1048,14 @@ export const Constants = {
       ],
       app_role: ["go_su", "go_admin", "go_staff", "user"],
       course_access: ["public", "private"],
-      course_pricing: ["free", "paid"],
       course_role: ["admin", "editor", "viewer"],
+      payment_frequency: [
+        "monthly",
+        "bi_monthly",
+        "quarterly",
+        "semi_annual",
+        "annual",
+      ],
     },
   },
 } as const

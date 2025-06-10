@@ -17,7 +17,7 @@ $$;
 -- ========================================
 -- function: trg_touch_course_updated_at
 -- purpose: updates the parent course's updated_at field when a chapter,
---          lesson, or lesson_block is inserted, updated, or deleted
+--          lesson, lesson_block or course_pricing_tiers is inserted, updated, or deleted
 -- ========================================
 create or replace function public.trg_touch_course_updated_at()
 returns trigger
@@ -75,5 +75,11 @@ execute function public.trg_touch_course_updated_at();
 -- update parent course's updated_at when lesson_blocks change
 create trigger trg_touch_course_on_lesson_block_update
 after insert or update or delete on public.lesson_blocks
+for each row
+execute function public.trg_touch_course_updated_at();
+
+-- update parent course's updated_at when course_pricing_tiers change
+create trigger trg_touch_course_on_course_pricing_tiers_update
+after insert or update or delete on public.course_pricing_tiers
 for each row
 execute function public.trg_touch_course_updated_at();

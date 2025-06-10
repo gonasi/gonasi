@@ -55,13 +55,11 @@ export async function action({ request, params }: Route.ActionArgs) {
 }
 
 export default function EditCourseDetails() {
-  const { name, description, monthly_subscription_price, pricing_model } =
-    useOutletContext<CourseOverviewType>() ?? {};
+  const { name, description } = useOutletContext<CourseOverviewType>() ?? {};
 
   const courseDetailsDefaults = {
     name,
     description: description ?? '',
-    monthlySubscriptionPrice: monthly_subscription_price ?? 0,
   };
 
   const isPending = useIsPending();
@@ -80,7 +78,7 @@ export default function EditCourseDetails() {
     <Modal open>
       <Modal.Content size='sm'>
         <Modal.Header
-          title='Edit course details'
+          title='Edit Course Details'
           hasClose={false}
           closeRoute={`/${params.username}/course-builder/${params.courseId}/overview`}
         />
@@ -105,18 +103,6 @@ export default function EditCourseDetails() {
                 }}
                 description='Provide a brief course description.'
               />
-              {pricing_model === 'paid' ? (
-                <GoInputField
-                  prefix='KES'
-                  labelProps={{ children: 'Monthly subscription price', required: true }}
-                  name='monthlySubscriptionPrice'
-                  inputProps={{
-                    disabled: isDisabled,
-                    type: 'number',
-                  }}
-                  description='Specify the monthly subscription fee. 0 if course is free.'
-                />
-              ) : null}
               <Button
                 type='submit'
                 disabled={isDisabled || !methods.formState.isDirty}

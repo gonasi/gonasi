@@ -2,9 +2,6 @@
 -- ENUM TYPES
 -- ====================================================================================
 
--- defines pricing models for courses
-create type course_pricing as enum ('free', 'paid');
-
 -- defines course access levels
 create type course_access as enum ('public', 'private');
 
@@ -47,15 +44,11 @@ create table public.courses (
   category_id uuid null references course_categories(id) on delete set null,
   subcategory_id uuid null references course_sub_categories(id) on delete set null,
 
-  -- metadata
+  -- metadata 
   name text not null,
   description text null,
   image_url text null, -- url of the course image
   blur_hash text null,
-
-  -- pricing
-  pricing_model course_pricing not null default 'free',
-  monthly_subscription_price numeric(19,4) null, -- used only when pricing_model is 'paid'
 
   -- access control
   visibility course_access not null default 'public',
@@ -66,14 +59,9 @@ create table public.courses (
   last_published timestamptz null,
 
   -- ownership
-  created_by uuid not null references profiles(id) on delete restrict,
-  updated_by uuid not null references profiles(id) on delete restrict,
+  created_by uuid not null references profiles(id) on delete cascade,
+  updated_by uuid not null references profiles(id) on delete cascade,
 
-  -- constraints
-  constraint check_paid_courses_subscription_price check (
-    pricing_model = 'free'
-    or (pricing_model = 'paid' and monthly_subscription_price is not null and monthly_subscription_price > 0)
-  ),
 
   -- new constraint to ensure subcategory belongs to category
   constraint chk_subcategory_belongs_to_category check (
@@ -98,4 +86,3 @@ create index idx_courses_visibility on public.courses (visibility);
 
 comment on table public.courses is 'stores all course-related metadata and relationships';
 comment on column public.courses.image_url is 'url of the course thumbnail';
-comment on column public.courses.monthly_subscription_price is 'price for monthly access, applicable when course is paid';
