@@ -1,5 +1,5 @@
 import { Reorder, useDragControls, useMotionValue } from 'framer-motion';
-import { GripVerticalIcon, Pencil, Settings, Trash } from 'lucide-react';
+import { GripVerticalIcon, Pencil, Trash } from 'lucide-react';
 
 import { ActionDropdown } from '../action-dropdown';
 import { ReorderIconTooltip } from '../ui/tooltip/ReorderIconToolTip';
@@ -21,13 +21,12 @@ interface LessonBlockWrapperProps {
   children: React.ReactNode;
   onEdit?: () => void;
   onDelete?: () => void;
-  onEditSettings?: () => void;
   loading?: boolean;
   block: Block;
 }
 
 export default function LessonBlockWrapper(props: LessonBlockWrapperProps) {
-  const { children, onEdit, onDelete, onEditSettings, loading, block } = props;
+  const { children, onEdit, onDelete, loading, block } = props;
 
   const title = toTitleCaseFromUnderscore(block.plugin_type ?? 'Edit');
 
@@ -60,7 +59,6 @@ export default function LessonBlockWrapper(props: LessonBlockWrapperProps) {
             <ActionDropdown
               items={[
                 { title: 'Edit', icon: Pencil, onClick: onEdit },
-                { title: 'Settings', icon: Settings, onClick: onEditSettings },
                 { title: 'Delete', icon: Trash, onClick: onDelete },
               ]}
             />

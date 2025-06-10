@@ -1,6 +1,6 @@
 import { type ReactNode, useState } from 'react';
 import { motion } from 'framer-motion';
-import { RotateCcw, Settings } from 'lucide-react';
+import { RotateCcw, Settings, Weight } from 'lucide-react';
 
 import RichTextRenderer from '~/components/go-editor/ui/RichTextRenderer';
 import { Badge } from '~/components/ui/badge';
@@ -20,6 +20,7 @@ export interface ViewPluginWrapperProps {
   children: ReactNode;
   isComplete?: boolean;
   playbackMode?: 'inline' | 'standalone';
+  weight: number;
   mode: 'preview' | 'play';
   reset?: () => void;
 }
@@ -28,6 +29,7 @@ export function ViewPluginWrapper({
   children,
   isComplete = false,
   playbackMode = 'inline',
+  weight,
   mode,
   reset = () => {},
 }: ViewPluginWrapperProps) {
@@ -51,10 +53,16 @@ export function ViewPluginWrapper({
     content = (
       <div>
         <div className='flex w-full items-center justify-between'>
-          <Badge className='text-xs' variant='outline'>
-            <Settings />
-            {playbackMode}
-          </Badge>
+          <div className='flex items-center space-x-2'>
+            <Badge className='text-xs' variant='outline'>
+              <Settings />
+              {playbackMode}
+            </Badge>
+            <Badge className='text-xs' variant='outline'>
+              <Weight />
+              {weight}
+            </Badge>
+          </div>
           {isComplete ? (
             <IconTooltipButton title='Reset' icon={RotateCcw} onClick={() => reset()} />
           ) : null}

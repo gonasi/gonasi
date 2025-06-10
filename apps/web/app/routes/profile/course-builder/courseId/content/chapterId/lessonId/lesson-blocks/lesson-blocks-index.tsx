@@ -148,7 +148,6 @@ export default function EditLessonContent({ loaderData, params }: Route.Componen
                       block={block}
                       loading={isSubmitting}
                       onEdit={navigateTo(`${blockIdPath}/edit`)}
-                      onEditSettings={navigateTo(`${blockIdPath}/settings`)}
                       onDelete={navigateTo(`${blockIdPath}/delete`)}
                     >
                       <ClientOnly fallback={<Spinner />}>
