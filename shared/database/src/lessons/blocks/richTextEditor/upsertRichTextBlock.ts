@@ -3,37 +3,26 @@ import type { RichTextSchemaTypes } from '@gonasi/schemas/plugins';
 import { getUserId } from '../../../auth';
 import type { TypedSupabaseClient } from '../../../client';
 import type { ApiResponse } from '../../../types';
-import { getNextBlockPosition } from '../blockUtils';
 
-export const createRichTextBlock = async (
+export const upsertRichTextBlock = async (
   supabase: TypedSupabaseClient,
   blockData: RichTextSchemaTypes,
 ): Promise<ApiResponse> => {
   const userId = await getUserId(supabase);
-  const { content, lessonId, courseId, pluginType, settings } = blockData;
-
-  console.log('block: ', blockData);
+  const { blockId, content, lessonId, courseId, pluginType, settings } = blockData;
 
   try {
-    const nextPosition = await getNextBlockPosition({
-      supabase,
-      lessonId,
-    });
-
     // Insert the new rich text block
-    const { error: insertError } = await supabase
-      .from('lesson_blocks')
-      .insert({
-        lesson_id: lessonId,
-        course_id: courseId,
-        plugin_type: pluginType,
-        position: nextPosition,
-        content,
-        settings,
-        created_by: userId,
-        updated_by: userId,
-      })
-      .select('id');
+    const { error: insertError } = await supabase.from('lesson_blocks').upsert({
+      id: blockId,
+      lesson_id: lessonId,
+      course_id: courseId,
+      plugin_type: pluginType,
+      content,
+      settings,
+      created_by: userId,
+      updated_by: userId,
+    });
 
     if (insertError) {
       return {

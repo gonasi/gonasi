@@ -204,6 +204,10 @@ export default [
                   ],
                 ),
                 route(
+                  ':blockId/upsert',
+                  'routes/profile/course-builder/courseId/content/chapterId/lessonId/lesson-blocks/plugins/upsert-plugin-api.tsx',
+                ),
+                route(
                   ':blockId/edit',
                   'routes/profile/course-builder/courseId/content/chapterId/lessonId/lesson-blocks/plugins/temp.tsx',
                 ),
