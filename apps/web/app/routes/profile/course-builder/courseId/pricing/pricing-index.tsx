@@ -1,4 +1,12 @@
 import { BannerCard } from '~/components/cards';
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '~/components/ui/table';
 
 export default function CoursePricing() {
   return (
@@ -10,7 +18,21 @@ export default function CoursePricing() {
         className='mb-10'
       />
 
-      <h2>pricing</h2>
+      <Table>
+        <TableCaption>A list of your recent invoices.</TableCaption>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Status</TableHead>
+            <TableHead>Name</TableHead>
+            <TableHead>Frequency</TableHead>
+            <TableHead>Price</TableHead>
+            <TableHead>Promotion</TableHead>
+            <TableHead>Flags</TableHead>
+            <TableHead />
+          </TableRow>
+        </TableHeader>
+        <TableBody />
+      </Table>
     </div>
   );
 }
