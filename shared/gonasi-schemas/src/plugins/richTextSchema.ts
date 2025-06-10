@@ -1,12 +1,10 @@
 import { z } from 'zod';
 
 import { BasePluginSettingsSchema } from './pluginSettings';
+import { NonEmptyLexicalState } from './utils';
 
 export const RichTextContentSchema = z.object({
-  richTextState: z
-    .string({ required_error: 'Rich text content is required.' })
-    .trim()
-    .min(10, 'Rich text content must be at least 10 characters long.'),
+  richTextState: NonEmptyLexicalState,
 });
 
 export const RichTextSettingsSchema = BasePluginSettingsSchema.extend({});

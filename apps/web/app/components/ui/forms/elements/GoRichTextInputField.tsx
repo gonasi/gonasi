@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { Controller } from 'react-hook-form';
+import { Controller, get } from 'react-hook-form';
 import { useRemixFormContext } from 'remix-hook-form';
 
 import { Label, type LabelProps } from '../../label';
@@ -32,7 +32,7 @@ export function GoRichTextInputField({
 
   const id = name;
   const descriptionId = `${id}-description`;
-  const error = errors[name];
+  const error = get(errors, name); // correct way to access nested errors
   const hasError = !!error;
   const errorMessage = error?.message?.toString() || 'This field has an error';
 

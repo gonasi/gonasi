@@ -54,7 +54,7 @@ export default function GoPluginsMenuDialog({ pluginTypes }: GonasiPluginGroupPr
           return (
             <MotionNavLink
               key={id}
-              to={`${pluginGroupBasePath}/${id}/${newBlockId}/builder`}
+              to={`${pluginGroupBasePath}/${id}/${newBlockId}/create`}
               className={({ isPending }) =>
                 cn(
                   'hover:bg-primary/5 flex w-full cursor-pointer items-center gap-3 rounded-sm p-2 text-left transition-all duration-200 ease-in-out hover:shadow-sm',
