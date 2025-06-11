@@ -97,6 +97,8 @@ export default function CourseChapterItem({ chapter, loading }: Props) {
       style={{ boxShadow: courseBoxShadow, y: courseY }}
       dragListener={false}
       dragControls={courseDragControls}
+      layoutScroll
+      className='select-none'
     >
       <div className='relative'>
         <div className='absolute top-3 -left-4'>
@@ -169,7 +171,14 @@ export default function CourseChapterItem({ chapter, loading }: Props) {
               {reorderedLessons.length === 0 ? (
                 <NotFoundCard message='No lessons found' />
               ) : (
-                <Reorder.Group axis='y' values={reorderedLessons} onReorder={handleLessonReorder}>
+                <Reorder.Group
+                  axis='y'
+                  values={reorderedLessons}
+                  onReorder={handleLessonReorder}
+                  layoutScroll
+                  className='overflow-y-scroll select-none'
+                  as='div'
+                >
                   <div className='flex flex-col space-y-4'>
                     {reorderedLessons.map((lesson) => (
                       <LessonCard key={lesson.id} lesson={lesson} loading={isSubmitting} />

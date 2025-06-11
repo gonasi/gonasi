@@ -57,7 +57,13 @@ export function CourseChapters({ chapters }: Props) {
 
   return (
     <div>
-      <Reorder.Group axis='y' values={reorderedChapters} onReorder={handleReorder}>
+      <Reorder.Group
+        axis='y'
+        values={reorderedChapters}
+        onReorder={handleReorder}
+        layoutScroll
+        className='select-none'
+      >
         <Accordion type='single' collapsible className='flex w-full flex-col space-y-4'>
           {reorderedChapters.map((chapter) => (
             <CourseChapterItem key={chapter.id} chapter={chapter} loading={isSubmitting} />

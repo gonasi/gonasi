@@ -43,6 +43,7 @@ export function LessonCard({ lesson, loading }: Props) {
       style={{ boxShadow: lessonBoxShadow, y: lessonY }}
       dragListener={false}
       dragControls={lessonDragControls}
+      className='select-none'
     >
       <div className='relative'>
         <div className='absolute top-4 -left-0'>
