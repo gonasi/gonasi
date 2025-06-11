@@ -28,21 +28,83 @@ import { formatCurrency } from '~/utils/format-currency';
 export async function loader({ params, request }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
   const courseId = params.courseId ?? '';
-
   const pricing = await fetchCoursePricing({ supabase, courseId });
-
   return { pricing };
 }
 
-export default function CoursePricing({ loaderData, params }: Route.ComponentProps) {
+export default function CoursePricing({ loaderData }: Route.ComponentProps) {
   const { pricing } = loaderData;
 
-  if (!pricing || !pricing.length)
+  if (!pricing?.length) {
     return (
       <div className='mx-auto max-w-3xl'>
         <NotFoundCard message='No course pricing found' />
       </div>
     );
+  }
+
+  const StatusBadge = ({ isActive }: { isActive: boolean }) => (
+    <Badge variant={isActive ? 'success' : 'error'}>
+      {isActive ? <Check /> : <X />} {isActive ? 'Active' : 'Inactive'}
+    </Badge>
+  );
+
+  const PromoSection = ({ price }: { price: (typeof pricing)[0] }) => {
+    if (price.discount_percentage) {
+      return (
+        <>
+          <Badge variant='secondary'>{price.discount_percentage}% off</Badge>
+          {price.promotional_price && (
+            <div className='mt-1 text-sm'>
+              {formatCurrency(price.promotional_price, price.currency_code)}
+            </div>
+          )}
+        </>
+      );
+    }
+
+    if (price.promotional_price) {
+      return (
+        <>
+          <Badge variant='secondary'>Special price</Badge>
+          <div className='mt-1 text-sm'>
+            {formatCurrency(price.promotional_price, price.currency_code)}
+          </div>
+        </>
+      );
+    }
+
+    return <span className='text-muted-foreground'>None</span>;
+  };
+
+  const PriceCell = ({ price }: { price: (typeof pricing)[0] }) => {
+    if (price.is_free) {
+      return (
+        <div className='flex items-center gap-2'>
+          <Badge variant='secondary'>FREE</Badge>
+          <span className='text-muted-foreground text-sm'>No cost</span>
+        </div>
+      );
+    }
+
+    return (
+      <div className='flex flex-col'>
+        <span className='font-medium'>{formatCurrency(price.price, price.currency_code)}</span>
+        {price.promotional_price && (
+          <span className='text-success text-sm font-medium'>
+            Promo: {formatCurrency(price.promotional_price, price.currency_code)}
+          </span>
+        )}
+      </div>
+    );
+  };
+
+  const FlagBadges = ({ price }: { price: (typeof pricing)[0] }) => (
+    <div className='flex flex-col gap-1'>
+      {price.is_popular && <Badge variant='outline'>Popular</Badge>}
+      {price.is_recommended && <Badge variant='outline'>Recommended</Badge>}
+    </div>
+  );
 
   return (
     <div className='mx-auto max-w-3xl'>
@@ -69,15 +131,7 @@ export default function CoursePricing({ loaderData, params }: Route.ComponentPro
           {pricing.map((price) => (
             <TableRow key={price.id}>
               <TableCell className='font-medium'>
-                {price.is_active ? (
-                  <Badge variant='success'>
-                    <Check /> Active
-                  </Badge>
-                ) : (
-                  <Badge variant='error'>
-                    <X /> Inactive
-                  </Badge>
-                )}
+                <StatusBadge isActive={price.is_active} />
               </TableCell>
               <TableCell>
                 <div className='flex items-center gap-2'>
@@ -91,50 +145,13 @@ export default function CoursePricing({ loaderData, params }: Route.ComponentPro
                 </div>
               </TableCell>
               <TableCell>
-                {price.is_free ? (
-                  <div className='flex items-center gap-2'>
-                    <Badge variant='secondary'>FREE</Badge>
-                    <span className='text-muted-foreground text-sm'>No cost</span>
-                  </div>
-                ) : (
-                  <div className='flex flex-col'>
-                    <span className='font-medium'>
-                      {formatCurrency(price.price, price.currency_code)}
-                    </span>
-                    {price.promotional_price && (
-                      <span className='text-success text-sm font-medium'>
-                        Promo: {formatCurrency(price.promotional_price, price.currency_code)}
-                      </span>
-                    )}
-                  </div>
-                )}
+                <PriceCell price={price} />
               </TableCell>
               <TableCell>
-                {price.discount_percentage ? (
-                  <div>
-                    <Badge variant='secondary'>{price.discount_percentage}% off</Badge>
-                    {price.promotional_price && (
-                      <div className='mt-1 text-sm'>
-                        {formatCurrency(price.promotional_price, price.currency_code)}
-                      </div>
-                    )}
-                  </div>
-                ) : price.promotional_price ? (
-                  <div>
-                    <Badge variant='secondary'>Special price</Badge>
-                    <div className='mt-1 text-sm'>
-                      {formatCurrency(price.promotional_price, price.currency_code)}
-                    </div>
-                  </div>
-                ) : (
-                  <span className='text-muted-foreground'>None</span>
-                )}
+                <PromoSection price={price} />
               </TableCell>
               <TableCell>
-                <div className='flex flex-col gap-1'>
-                  {price.is_popular && <Badge variant='outline'>Popular</Badge>}
-                  {price.is_recommended && <Badge variant='outline'>Recommended</Badge>}
-                </div>
+                <FlagBadges price={price} />
               </TableCell>
               <TableCell className='text-right'>
                 <DropdownMenu>
