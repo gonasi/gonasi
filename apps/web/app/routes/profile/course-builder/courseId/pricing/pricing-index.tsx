@@ -1,12 +1,13 @@
-import { Check, Edit, MoreHorizontal, Trash2, X } from 'lucide-react';
+import { Check, Edit, MoreHorizontal, Plus, Trash2, X } from 'lucide-react';
 
 import { fetchCoursePricing } from '@gonasi/database/courses';
 
 import type { Route } from './+types/pricing-index';
 
 import { BannerCard, NotFoundCard } from '~/components/cards';
+import { CourseToggle } from '~/components/cards/course-toggle';
 import { Badge } from '~/components/ui/badge';
-import { Button } from '~/components/ui/button';
+import { Button, NavLinkButton } from '~/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,17 +29,17 @@ import { formatCurrency } from '~/utils/format-currency';
 export async function loader({ params, request }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
   const courseId = params.courseId ?? '';
-  const pricing = await fetchCoursePricing({ supabase, courseId });
-  return { pricing };
+  const pricingData = await fetchCoursePricing({ supabase, courseId });
+  return { pricingData };
 }
 
 export default function CoursePricing({ loaderData }: Route.ComponentProps) {
-  const { pricing } = loaderData;
+  const { pricingData } = loaderData;
 
-  if (!pricing?.length) {
+  if (!pricingData?.length) {
     return (
       <div className='mx-auto max-w-3xl'>
-        <NotFoundCard message='No course pricing found' />
+        <NotFoundCard message='No pricing tiers found for this course' />
       </div>
     );
   }
@@ -49,7 +50,7 @@ export default function CoursePricing({ loaderData }: Route.ComponentProps) {
     </Badge>
   );
 
-  const PromoSection = ({ price }: { price: (typeof pricing)[0] }) => {
+  const PromoDetails = ({ price }: { price: (typeof pricingData)[0] }) => {
     if (price.discount_percentage) {
       return (
         <>
@@ -66,7 +67,7 @@ export default function CoursePricing({ loaderData }: Route.ComponentProps) {
     if (price.promotional_price) {
       return (
         <>
-          <Badge variant='secondary'>Special price</Badge>
+          <Badge variant='secondary'>Promo price</Badge>
           <div className='mt-1 text-sm'>
             {formatCurrency(price.promotional_price, price.currency_code)}
           </div>
@@ -74,10 +75,10 @@ export default function CoursePricing({ loaderData }: Route.ComponentProps) {
       );
     }
 
-    return <span className='text-muted-foreground'>None</span>;
+    return <span className='text-muted-foreground'>No promotions</span>;
   };
 
-  const PriceCell = ({ price }: { price: (typeof pricing)[0] }) => {
+  const PriceInfo = ({ price }: { price: (typeof pricingData)[0] }) => {
     if (price.is_free) {
       return (
         <div className='flex items-center gap-2'>
@@ -99,7 +100,7 @@ export default function CoursePricing({ loaderData }: Route.ComponentProps) {
     );
   };
 
-  const FlagBadges = ({ price }: { price: (typeof pricing)[0] }) => (
+  const FeatureFlags = ({ price }: { price: (typeof pricingData)[0] }) => (
     <div className='flex flex-col gap-1'>
       {price.is_popular && <Badge variant='outline'>Popular</Badge>}
       {price.is_recommended && <Badge variant='outline'>Recommended</Badge>}
@@ -109,49 +110,54 @@ export default function CoursePricing({ loaderData }: Route.ComponentProps) {
   return (
     <div className='mx-auto max-w-3xl'>
       <BannerCard
-        message='Your new prices go live instantly, no need to hit publish!'
-        description='Just updating the price? It updates right away. Only content changes need publishing.'
+        message='Your pricing updates are live immediately!'
+        description='Price updates are applied instantly. No need to publish. Content changes still require publishing.'
         variant='info'
         className='mb-10'
       />
-
+      <div className='flex items-end justify-between py-4'>
+        <CourseToggle />
+        <NavLinkButton variant='secondary' to='' leftIcon={<Plus />}>
+          Add Pricing Tier
+        </NavLinkButton>
+      </div>
       <Table>
-        <TableCaption>A list of your recent invoices.</TableCaption>
+        <TableCaption>A list of pricing options for this course</TableCaption>
         <TableHeader>
           <TableRow>
             <TableHead>Status</TableHead>
-            <TableHead>Course Details</TableHead>
-            <TableHead>Pricing</TableHead>
-            <TableHead>Promotion</TableHead>
-            <TableHead>Flags</TableHead>
-            <TableHead />
+            <TableHead>Tier Details</TableHead>
+            <TableHead>Base Price</TableHead>
+            <TableHead>Promotions</TableHead>
+            <TableHead>Highlights</TableHead>
+            <TableHead className='w-[70px] text-right'>Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {pricing.map((price) => (
-            <TableRow key={price.id}>
+          {pricingData.map((priceTier) => (
+            <TableRow key={priceTier.id}>
               <TableCell className='font-medium'>
-                <StatusBadge isActive={price.is_active} />
+                <StatusBadge isActive={priceTier.is_active} />
               </TableCell>
               <TableCell>
                 <div className='flex items-center gap-2'>
                   <div>
-                    <div className='font-medium'>{price.tier_name || 'Unnamed Tier'}</div>
+                    <div className='font-medium'>{priceTier.tier_name || 'Unnamed Tier'}</div>
                     <div className='text-muted-foreground font-secondary text-sm capitalize'>
-                      {price.payment_frequency}
+                      {priceTier.payment_frequency}
                     </div>
                   </div>
-                  {price.is_free && <Badge variant='outline'>Free Course</Badge>}
+                  {priceTier.is_free && <Badge variant='outline'>Free</Badge>}
                 </div>
               </TableCell>
               <TableCell>
-                <PriceCell price={price} />
+                <PriceInfo price={priceTier} />
               </TableCell>
               <TableCell>
-                <PromoSection price={price} />
+                <PromoDetails price={priceTier} />
               </TableCell>
               <TableCell>
-                <FlagBadges price={price} />
+                <FeatureFlags price={priceTier} />
               </TableCell>
               <TableCell className='text-right'>
                 <DropdownMenu>
