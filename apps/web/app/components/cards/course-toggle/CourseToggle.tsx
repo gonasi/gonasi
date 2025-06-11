@@ -1,35 +1,36 @@
-import { useState } from 'react';
-import { useNavigate, useParams } from 'react-router';
+import { useNavigate, useNavigation, useParams } from 'react-router';
 import { motion } from 'framer-motion';
 
 import { Label } from '~/components/ui/label';
 import { cn } from '~/lib/utils';
 
 interface ICourseToggleProps {
-  isPaid: boolean;
+  isPaidState: boolean;
 }
 
-export function CourseToggle(props: ICourseToggleProps) {
+export function CourseToggle({ isPaidState }: ICourseToggleProps) {
   const navigate = useNavigate();
   const params = useParams();
+  const navigation = useNavigation();
 
-  const [isPaid, setIsPaid] = useState(props.isPaid);
+  const isNavigating = navigation.state !== 'idle';
 
   const toggleCourseType = () => {
-    setIsPaid(!isPaid);
-    navigate(
-      `/${params.username}/course-builder/${params.courseId}/pricing/type/${isPaid ? 'paid' : 'free'}`,
-    );
+    if (!isNavigating) {
+      navigate(
+        `/${params.username}/course-builder/${params.courseId}/pricing/switch-from/${isPaidState ? 'paid' : 'free'}`,
+      );
+    }
   };
 
   return (
     <div>
       <Label>Course type</Label>
-      <div className='bg-card/80 flex items-center justify-center space-x-4 rounded-lg p-3'>
+      <div className='bg-card/80 flex items-center justify-center space-x-4 rounded-lg px-3 py-2'>
         <span
           className={cn(
             'text-sm font-medium transition-colors',
-            !isPaid ? 'text-secondary' : 'text-muted-foreground',
+            !isPaidState ? 'text-secondary' : 'text-muted-foreground',
           )}
         >
           Free
@@ -38,17 +39,21 @@ export function CourseToggle(props: ICourseToggleProps) {
         <motion.button
           className={cn(
             'relative flex h-8 w-14 items-center rounded-full p-1 transition-colors',
-            'hover:cursor-pointer',
             'border',
-            isPaid ? 'bg-primary/30 border-primary/40' : 'bg-secondary/30 border-secondary/40',
+            isPaidState ? 'bg-primary/30 border-primary/40' : 'bg-secondary/30 border-secondary/40',
+            isNavigating && 'animate-pulse cursor-not-allowed opacity-50',
           )}
           onClick={toggleCourseType}
           role='switch'
-          aria-checked={isPaid}
-          aria-label={`Switch to ${isPaid ? 'free' : 'paid'} course`}
+          aria-checked={isPaidState}
+          aria-label={`Switch to ${isPaidState ? 'free' : 'paid'} course`}
+          disabled={isNavigating}
         >
           <motion.div
-            className='bg-foreground h-6 w-6 rounded-full shadow-md'
+            className={cn(
+              'bg-foreground h-6 w-6 rounded-full shadow-md',
+              isNavigating && 'animate-pulse',
+            )}
             layout
             transition={{
               type: 'spring',
@@ -56,7 +61,7 @@ export function CourseToggle(props: ICourseToggleProps) {
               damping: 30,
             }}
             style={{
-              x: isPaid ? 24 : 0,
+              x: isPaidState ? 24 : 0,
             }}
           />
         </motion.button>
@@ -64,7 +69,7 @@ export function CourseToggle(props: ICourseToggleProps) {
         <span
           className={cn(
             'text-sm font-medium transition-colors',
-            isPaid ? 'text-primary' : 'text-muted-foreground',
+            isPaidState ? 'text-primary' : 'text-muted-foreground',
           )}
         >
           Paid

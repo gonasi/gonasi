@@ -75,7 +75,7 @@ function CoursesGrid({
   username: string;
 }) {
   if (!courses?.length) {
-    return <NotFoundCard message='No courses published' />;
+    return <NotFoundCard message='No courses found' />;
   }
 
   return (

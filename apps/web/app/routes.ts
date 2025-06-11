@@ -146,8 +146,8 @@ export default [
         ]),
         route('pricing', 'routes/profile/course-builder/courseId/pricing/pricing-index.tsx', [
           route(
-            'type/:courseType',
-            'routes/profile/course-builder/courseId/pricing/pricing-type.tsx',
+            'switch-from/:courseType',
+            'routes/profile/course-builder/courseId/pricing/switch-from-pricing-modal.tsx',
           ),
         ]),
         // /:username/course-builder/:courseId/content
