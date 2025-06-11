@@ -894,6 +894,10 @@ export type Database = {
         Args: { p_course_id: string; p_user_id: string }
         Returns: undefined
       }
+      set_course_paid: {
+        Args: { p_course_id: string; p_user_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_permission:

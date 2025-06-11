@@ -178,55 +178,6 @@ for each row
 execute function public.trg_prevent_deleting_last_paid_tier();
 
 
--- ====================================================================================
--- RPC: Set a course as free and delete other tiers
--- Purpose: Converts a course to free by deleting all tiers and inserting a free one.
--- Params:
---   - p_course_id: UUID of the course to update
---   - p_user_id: UUID of the user performing the action
--- Access: Requires course admin/editor or creator permissions
--- ====================================================================================
-
-create or replace function public.set_course_free(p_course_id uuid, p_user_id uuid)
-returns void
-language plpgsql
-set search_path = ''
-as $$ 
-declare
-  has_access boolean;
-begin
-  -- Check if the user has sufficient permission to modify the course
-  select exists (
-    select 1 from public.courses c
-    where c.id = p_course_id
-      and (
-        is_course_admin(c.id, p_user_id)
-        or is_course_editor(c.id, p_user_id)
-        or c.created_by = p_user_id
-      )
-  ) into has_access;
-
-  if not has_access then
-    raise exception 'Permission denied: You do not have access to modify this course (course_id=%)', p_course_id
-      using errcode = '42501'; -- insufficient_privilege
-  end if;
-
-  -- Delete all tiers related to the course
-  delete from public.course_pricing_tiers
-  where course_id = p_course_id;
-
-  -- Insert the free tier
-  insert into public.course_pricing_tiers (
-    course_id, is_free, price, currency_code, created_by, updated_by,
-    payment_frequency, tier_name
-  ) values (
-    p_course_id, true, 0, 'KES', p_user_id, p_user_id,
-    'monthly', 'Free Tier'
-  );
-end;
-$$;
-
-
 
 -- ====================================================================================
 -- ENABLE ROW LEVEL SECURITY
@@ -403,3 +354,124 @@ create trigger trg_add_default_free_pricing_tier
 after insert on public.courses
 for each row
 execute function public.add_default_free_pricing_tier();
+
+
+-- ====================================================================================
+-- RPC: Set a course as free and delete other tiers
+-- Purpose: Converts a course to free by deleting all tiers and inserting a free one.
+-- Params:
+--   - p_course_id: UUID of the course to update
+--   - p_user_id: UUID of the user performing the action
+-- Access: Requires course admin/editor or creator permissions
+-- ====================================================================================
+
+create or replace function public.set_course_free(p_course_id uuid, p_user_id uuid)
+returns void
+language plpgsql
+set search_path = ''
+as $$ 
+declare
+  has_access boolean;
+begin
+  -- Check if the user has sufficient permission to modify the course
+  select exists (
+    select 1 from public.courses c
+    where c.id = p_course_id
+      and (
+        is_course_admin(c.id, p_user_id)
+        or is_course_editor(c.id, p_user_id)
+        or c.created_by = p_user_id
+      )
+  ) into has_access;
+
+  if not has_access then
+    raise exception 'Permission denied: You do not have access to modify this course (course_id=%)', p_course_id
+      using errcode = '42501'; -- insufficient_privilege
+  end if;
+
+  -- Delete all tiers related to the course
+  delete from public.course_pricing_tiers
+  where course_id = p_course_id;
+
+  -- Insert the free tier
+  insert into public.course_pricing_tiers (
+    course_id, is_free, price, currency_code, created_by, updated_by,
+    payment_frequency, tier_name
+  ) values (
+    p_course_id, true, 0, 'KES', p_user_id, p_user_id,
+    'monthly', 'Free Tier'
+  );
+end;
+$$;
+
+
+-- ====================================================================================
+-- RPC: set_course_paid
+-- Purpose:
+--   Sets a course as paid by inserting a default paid pricing tier
+--   if none exist. Ensures at least one tier exists for the course.
+--
+-- Params:
+--   - p_course_id: UUID of the course to modify
+--   - p_user_id: UUID of the user performing the operation
+--
+-- Access: Must be course owner, admin, or editor
+-- ====================================================================================
+
+create or replace function public.set_course_paid(p_course_id uuid, p_user_id uuid)
+returns void
+language plpgsql
+set search_path = ''
+as $$
+declare
+  has_access boolean;
+  paid_tiers_count integer;
+begin
+  -- Check access
+  select exists (
+    select 1 from public.courses c
+    where c.id = p_course_id
+      and (
+        is_course_admin(c.id, p_user_id)
+        or is_course_editor(c.id, p_user_id)
+        or c.created_by = p_user_id
+      )
+  ) into has_access;
+
+  if not has_access then
+    raise exception 'Permission denied: You do not have access to modify this course (course_id=%)', p_course_id
+      using errcode = '42501';
+  end if;
+
+  -- Check if course already has any paid tiers
+  select count(*) into paid_tiers_count
+  from public.course_pricing_tiers
+  where course_id = p_course_id
+    and is_free = false;
+
+  -- Insert default paid tier only if none exists
+  if paid_tiers_count = 0 then
+    insert into public.course_pricing_tiers (
+      course_id,
+      is_free,
+      price,
+      currency_code,
+      created_by,
+      updated_by,
+      payment_frequency,
+      tier_name,
+      tier_description
+    ) values (
+      p_course_id,
+      false,
+      100.00,
+      'KES',
+      p_user_id,
+      p_user_id,
+      'monthly',
+      'Standard Plan',
+      'Automatically added paid tier. You can update this.'
+    );
+  end if;
+end;
+$$;

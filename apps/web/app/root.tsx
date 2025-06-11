@@ -186,11 +186,11 @@ function App() {
   useEffect(() => {
     updateActiveSession(session);
     updateActiveUserRole(role);
-  }, [session, role]);
+  }, [session, role, updateActiveSession, updateActiveUserRole]);
 
   useEffect(() => {
     updateActiveUserProfile(user);
-  }, [user]);
+  }, [updateActiveUserProfile, user]);
 
   useEffect(() => {
     document.fonts.ready.then(() => {

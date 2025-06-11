@@ -1,3 +1,4 @@
+import { Outlet } from 'react-router';
 import { Check, Edit, MoreHorizontal, Plus, Trash2, X } from 'lucide-react';
 
 import { fetchCoursePricing } from '@gonasi/database/courses';
@@ -26,15 +27,27 @@ import {
 import { createClient } from '~/lib/supabase/supabase.server';
 import { formatCurrency } from '~/utils/format-currency';
 
+export type CoursePricingleLoaderReturnType = Exclude<
+  Awaited<ReturnType<typeof loader>>,
+  Response
+>['pricingData'];
+
+type CoursePricingType = NonNullable<CoursePricingleLoaderReturnType>[number];
+
 export async function loader({ params, request }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
   const courseId = params.courseId ?? '';
   const pricingData = await fetchCoursePricing({ supabase, courseId });
-  return { pricingData };
+
+  const isPaid = Array.isArray(pricingData)
+    ? pricingData.some((item) => item.is_free === false)
+    : false;
+
+  return { pricingData, isPaid };
 }
 
 export default function CoursePricing({ loaderData }: Route.ComponentProps) {
-  const { pricingData } = loaderData;
+  const { pricingData, isPaid } = loaderData;
 
   if (!pricingData?.length) {
     return (
@@ -50,7 +63,7 @@ export default function CoursePricing({ loaderData }: Route.ComponentProps) {
     </Badge>
   );
 
-  const PromoDetails = ({ price }: { price: (typeof pricingData)[0] }) => {
+  const PromoDetails = ({ price }: { price: CoursePricingType }) => {
     if (price.discount_percentage) {
       return (
         <>
@@ -78,7 +91,7 @@ export default function CoursePricing({ loaderData }: Route.ComponentProps) {
     return <span className='text-muted-foreground'>No promotions</span>;
   };
 
-  const PriceInfo = ({ price }: { price: (typeof pricingData)[0] }) => {
+  const PriceInfo = ({ price }: { price: CoursePricingType }) => {
     if (price.is_free) {
       return (
         <div className='flex items-center gap-2'>
@@ -100,7 +113,7 @@ export default function CoursePricing({ loaderData }: Route.ComponentProps) {
     );
   };
 
-  const FeatureFlags = ({ price }: { price: (typeof pricingData)[0] }) => (
+  const FeatureFlags = ({ price }: { price: CoursePricingType }) => (
     <div className='flex flex-col gap-1'>
       {price.is_popular && <Badge variant='outline'>Popular</Badge>}
       {price.is_recommended && <Badge variant='outline'>Recommended</Badge>}
@@ -116,7 +129,7 @@ export default function CoursePricing({ loaderData }: Route.ComponentProps) {
         className='mb-10'
       />
       <div className='flex items-end justify-between py-4'>
-        <CourseToggle />
+        <CourseToggle isPaid={isPaid} />
         <NavLinkButton variant='secondary' to='' leftIcon={<Plus />}>
           Add Pricing Tier
         </NavLinkButton>
@@ -183,6 +196,7 @@ export default function CoursePricing({ loaderData }: Route.ComponentProps) {
           ))}
         </TableBody>
       </Table>
+      <Outlet />
     </div>
   );
 }

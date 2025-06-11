@@ -1,24 +1,35 @@
 import { useState } from 'react';
+import { useNavigate, useParams } from 'react-router';
 import { motion } from 'framer-motion';
 
 import { Label } from '~/components/ui/label';
 import { cn } from '~/lib/utils';
 
-export function CourseToggle() {
-  const [isPaid, setIsPaid] = useState(false);
+interface ICourseToggleProps {
+  isPaid: boolean;
+}
+
+export function CourseToggle(props: ICourseToggleProps) {
+  const navigate = useNavigate();
+  const params = useParams();
+
+  const [isPaid, setIsPaid] = useState(props.isPaid);
 
   const toggleCourseType = () => {
     setIsPaid(!isPaid);
+    navigate(
+      `/${params.username}/course-builder/${params.courseId}/pricing/type/${isPaid ? 'paid' : 'free'}`,
+    );
   };
 
   return (
     <div>
       <Label>Course type</Label>
-      <div className='bg-card/50 flex items-center justify-center space-x-4 rounded-lg p-3'>
+      <div className='bg-card/80 flex items-center justify-center space-x-4 rounded-lg p-3'>
         <span
           className={cn(
             'text-sm font-medium transition-colors',
-            !isPaid ? 'text-success' : 'text-muted-foreground',
+            !isPaid ? 'text-secondary' : 'text-muted-foreground',
           )}
         >
           Free
@@ -27,7 +38,9 @@ export function CourseToggle() {
         <motion.button
           className={cn(
             'relative flex h-8 w-14 items-center rounded-full p-1 transition-colors',
-            isPaid ? 'bg-secondary' : 'bg-gray-300',
+            'hover:cursor-pointer',
+            'border',
+            isPaid ? 'bg-primary/30 border-primary/40' : 'bg-secondary/30 border-secondary/40',
           )}
           onClick={toggleCourseType}
           role='switch'
@@ -35,7 +48,7 @@ export function CourseToggle() {
           aria-label={`Switch to ${isPaid ? 'free' : 'paid'} course`}
         >
           <motion.div
-            className='h-6 w-6 rounded-full bg-white shadow-md'
+            className='bg-foreground h-6 w-6 rounded-full shadow-md'
             layout
             transition={{
               type: 'spring',
@@ -51,7 +64,7 @@ export function CourseToggle() {
         <span
           className={cn(
             'text-sm font-medium transition-colors',
-            isPaid ? 'text-secondary' : 'text-muted-foreground',
+            isPaid ? 'text-primary' : 'text-muted-foreground',
           )}
         >
           Paid

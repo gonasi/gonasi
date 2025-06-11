@@ -144,7 +144,12 @@ export default [
             ]),
           ]),
         ]),
-        route('pricing', 'routes/profile/course-builder/courseId/pricing/pricing-index.tsx'),
+        route('pricing', 'routes/profile/course-builder/courseId/pricing/pricing-index.tsx', [
+          route(
+            'type/:courseType',
+            'routes/profile/course-builder/courseId/pricing/pricing-type.tsx',
+          ),
+        ]),
         // /:username/course-builder/:courseId/content
         route('content', 'routes/profile/course-builder/courseId/content/content-index.tsx', [
           ...prefix('chapter', [
