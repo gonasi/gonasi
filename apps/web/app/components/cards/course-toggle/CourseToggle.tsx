@@ -1,4 +1,4 @@
-import { useNavigate, useNavigation, useParams } from 'react-router';
+import { NavLink, useParams } from 'react-router';
 import { motion } from 'framer-motion';
 
 import { Label } from '~/components/ui/label';
@@ -8,18 +8,12 @@ interface ICourseToggleProps {
   isPaidState: boolean;
 }
 
+const MotionNavLink = motion(NavLink);
+
 export function CourseToggle({ isPaidState }: ICourseToggleProps) {
-  const navigate = useNavigate();
   const params = useParams();
-  const navigation = useNavigation();
 
-  const isNavigating = navigation.state !== 'idle';
-
-  const toggleCourseType = () => {
-    if (!isNavigating) {
-      navigate(`/${params.username}/course-builder/${params.courseId}/pricing/update-pricing-type`);
-    }
-  };
+  const targetPath = `/${params.username}/course-builder/${params.courseId}/pricing/update-pricing-type`;
 
   return (
     <div>
@@ -34,25 +28,25 @@ export function CourseToggle({ isPaidState }: ICourseToggleProps) {
           Free
         </span>
 
-        <motion.button
-          className={cn(
-            'relative flex h-8 w-14 items-center rounded-full p-1 transition-colors',
-            'border',
-            'hover:cursor-pointer',
-            isPaidState ? 'bg-primary/30 border-primary/40' : 'bg-secondary/30 border-secondary/40',
-            isNavigating && 'animate-pulse cursor-not-allowed opacity-50',
-          )}
-          onClick={toggleCourseType}
+        <MotionNavLink
+          to={targetPath}
+          className={({ isPending }) =>
+            cn(
+              'relative flex h-8 w-14 items-center rounded-full p-1 transition-colors',
+              'border',
+              'hover:cursor-pointer',
+              isPaidState
+                ? 'bg-primary/30 border-primary/40'
+                : 'bg-secondary/30 border-secondary/40',
+              isPending && 'animate-pulse cursor-not-allowed',
+            )
+          }
           role='switch'
           aria-checked={isPaidState}
           aria-label={`Switch to ${isPaidState ? 'free' : 'paid'} course`}
-          disabled={isNavigating}
         >
           <motion.div
-            className={cn(
-              'bg-foreground h-6 w-6 rounded-full shadow-md',
-              isNavigating && 'animate-pulse',
-            )}
+            className={cn('bg-foreground h-6 w-6 rounded-full shadow-md')}
             layout
             transition={{
               type: 'spring',
@@ -63,7 +57,7 @@ export function CourseToggle({ isPaidState }: ICourseToggleProps) {
               x: isPaidState ? 24 : 0,
             }}
           />
-        </motion.button>
+        </MotionNavLink>
 
         <span
           className={cn(

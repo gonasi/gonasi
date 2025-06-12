@@ -27,6 +27,17 @@ import {
 import { createClient } from '~/lib/supabase/supabase.server';
 import { formatCurrency } from '~/utils/format-currency';
 
+export function meta() {
+  return [
+    { title: 'Course Pricing Overview | Gonasi' },
+    {
+      name: 'description',
+      content:
+        'View and manage all pricing tiers for your courses on Gonasi. Compare free and paid options, set access levels, and optimize your course monetization strategy.',
+    },
+  ];
+}
+
 export type CoursePricingleLoaderReturnType = Exclude<
   Awaited<ReturnType<typeof loader>>,
   Response

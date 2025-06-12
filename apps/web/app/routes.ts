@@ -150,7 +150,7 @@ export default [
             'routes/profile/course-builder/courseId/pricing/update-pricing-type-modal.tsx',
           ),
           route(
-            'manage-pricing-tier/:actionType',
+            'manage-pricing-tier/:coursePricingId',
             'routes/profile/course-builder/courseId/pricing/manage-pricing-tier-modal.tsx',
           ),
         ]),

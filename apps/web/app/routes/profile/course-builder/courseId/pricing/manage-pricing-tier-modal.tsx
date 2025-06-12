@@ -1,5 +1,4 @@
-import { memo } from 'react';
-import { Form } from 'react-router';
+import { Form, useOutletContext } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
 import { dataWithError, redirectWithSuccess } from 'remix-toast';
@@ -13,6 +12,7 @@ import {
 
 import type { Route } from './+types/manage-pricing-tier-modal';
 
+import { BannerCard } from '~/components/cards';
 import { Button } from '~/components/ui/button';
 import { Modal } from '~/components/ui/modal';
 import { createClient } from '~/lib/supabase/supabase.server';
@@ -21,14 +21,16 @@ import { useIsPending } from '~/utils/misc';
 
 const resolver = zodResolver(UpdateCoursePricingTypeSchema);
 
-const Tag = memo(
-  ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
-    <span className={`bg-card/50 text-foreground rounded px-1 py-0.5 font-medium ${className}`}>
-      {children}
-    </span>
-  ),
-);
-Tag.displayName = 'Tag';
+export function meta() {
+  return [
+    { title: 'Manage Pricing Tier | Gonasi' },
+    {
+      name: 'description',
+      content:
+        'Configure and manage pricing tiers for your course on Gonasi. Set pricing details, access permissions, and enhance your monetization strategy effectively.',
+    },
+  ];
+}
 
 export async function action({ params, request }: Route.ActionArgs) {
   // Parse form data and run spam protection
@@ -68,7 +70,10 @@ export async function action({ params, request }: Route.ActionArgs) {
 }
 
 export default function AddPricingTierModal({ params }: Route.ComponentProps) {
-  const { username, courseId, actionType } = params;
+  const { username, courseId, coursePricingId } = params;
+
+  const { isPaid } = useOutletContext<{ isPaid: boolean }>() ?? {};
+
   const isPending = useIsPending();
 
   const closeRoute = `/${username}/course-builder/${courseId}/pricing`;
@@ -85,22 +90,31 @@ export default function AddPricingTierModal({ params }: Route.ComponentProps) {
       <Modal.Content size='sm'>
         <Modal.Header closeRoute={closeRoute} />
         <Modal.Body>
-          <RemixFormProvider {...methods}>
-            <Form method='POST' onSubmit={methods.handleSubmit}>
-              <HoneypotInputs />
+          {!isPaid ? (
+            <BannerCard
+              variant='error'
+              message='Pricing tiers are only available for paid courses'
+              description='To enable tiered pricing, switch this course to paid.'
+              showCloseIcon={false}
+            />
+          ) : (
+            <RemixFormProvider {...methods}>
+              <Form method='POST' onSubmit={methods.handleSubmit}>
+                <HoneypotInputs />
 
-              <div className='px-1 py-4'>
-                <Button
-                  className='w-full'
-                  type='submit'
-                  disabled={isDisabled}
-                  isLoading={isDisabled}
-                >
-                  Add
-                </Button>
-              </div>
-            </Form>
-          </RemixFormProvider>
+                <div className='px-1 py-4'>
+                  <Button
+                    className='w-full'
+                    type='submit'
+                    disabled={isDisabled}
+                    isLoading={isDisabled}
+                  >
+                    Add
+                  </Button>
+                </div>
+              </Form>
+            </RemixFormProvider>
+          )}
         </Modal.Body>
       </Modal.Content>
     </Modal>

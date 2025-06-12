@@ -23,6 +23,17 @@ import { useIsPending } from '~/utils/misc';
 
 const resolver = zodResolver(UpdateCoursePricingTypeSchema);
 
+export function meta() {
+  return [
+    { title: 'Update Course Pricing | Gonasi' },
+    {
+      name: 'description',
+      content:
+        'Switch your course pricing between free and paid on Gonasi. Easily manage access models to match your content strategy and audience needs.',
+    },
+  ];
+}
+
 const Tag = memo(
   ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
     <span className={`bg-card/50 text-foreground rounded px-1 py-0.5 font-medium ${className}`}>
