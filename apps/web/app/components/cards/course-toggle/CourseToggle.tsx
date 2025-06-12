@@ -17,9 +17,7 @@ export function CourseToggle({ isPaidState }: ICourseToggleProps) {
 
   const toggleCourseType = () => {
     if (!isNavigating) {
-      navigate(
-        `/${params.username}/course-builder/${params.courseId}/pricing/switch-from/${isPaidState ? 'paid' : 'free'}`,
-      );
+      navigate(`/${params.username}/course-builder/${params.courseId}/pricing/update-pricing-type`);
     }
   };
 

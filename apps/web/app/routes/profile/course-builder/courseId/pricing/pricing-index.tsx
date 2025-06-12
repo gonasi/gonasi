@@ -46,7 +46,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   return { pricingData, isPaid };
 }
 
-export default function CoursePricing({ loaderData }: Route.ComponentProps) {
+export default function CoursePricing({ loaderData, params }: Route.ComponentProps) {
   const { pricingData, isPaid } = loaderData;
 
   if (!pricingData?.length) {
@@ -131,7 +131,12 @@ export default function CoursePricing({ loaderData }: Route.ComponentProps) {
       <div className='flex items-end justify-between py-4'>
         <CourseToggle isPaidState={isPaid} />
         {isPaid ? (
-          <NavLinkButton variant='secondary' to='' leftIcon={<Plus />} disabled={!isPaid}>
+          <NavLinkButton
+            variant='secondary'
+            to={`/${params.username}/course-builder/${params.courseId}/pricing/manage-pricing-tier/add-new-tier`}
+            leftIcon={<Plus />}
+            disabled={!isPaid}
+          >
             Add Pricing Tier
           </NavLinkButton>
         ) : null}
@@ -198,7 +203,7 @@ export default function CoursePricing({ loaderData }: Route.ComponentProps) {
           ))}
         </TableBody>
       </Table>
-      <Outlet />
+      <Outlet context={{ isPaid }} />
     </div>
   );
 }

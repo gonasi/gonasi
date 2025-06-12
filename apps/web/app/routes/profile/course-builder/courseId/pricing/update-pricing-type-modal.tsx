@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { Form } from 'react-router';
+import { Form, useOutletContext } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { CircleAlert, CircleOff, HandCoins } from 'lucide-react';
 import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
@@ -12,7 +12,7 @@ import {
   type UpdateCoursePricingTypeSchemaTypes,
 } from '@gonasi/schemas/coursePricing';
 
-import type { Route } from './+types/switch-from-pricing-modal';
+import type { Route } from './+types/update-pricing-type-modal';
 
 import { Button } from '~/components/ui/button';
 import { Modal } from '~/components/ui/modal';
@@ -69,13 +69,15 @@ export async function action({ params, request }: Route.ActionArgs) {
     : dataWithError(null, result.message);
 }
 
-export default function SwitchFromPricingModal({ params }: Route.ComponentProps) {
-  const { username, courseId, courseType } = params;
+export default function UpdatePricingTypeModal({ params }: Route.ComponentProps) {
+  const { username, courseId } = params;
+
+  const { isPaid } = useOutletContext<{ isPaid: boolean }>() ?? {};
+
   const isPending = useIsPending();
 
   const closeRoute = `/${username}/course-builder/${courseId}/pricing`;
 
-  const isPaid = courseType === 'paid';
   const nextType = isPaid ? 'Free' : 'Paid';
 
   const methods = useRemixForm<UpdateCoursePricingTypeSchemaTypes>({
@@ -100,8 +102,8 @@ export default function SwitchFromPricingModal({ params }: Route.ComponentProps)
 
               <h2 className='text-center text-xl'>Course Pricing</h2>
               <p className='text-muted-foreground font-secondary text-center'>
-                {`You're `} about to switch from <Tag>{capitalize(courseType)}</Tag> to{' '}
-                <Tag>{nextType}</Tag> pricing.
+                {`You're `} about to switch from <Tag>{capitalize(isPaid ? 'Paid' : 'Free')}</Tag>{' '}
+                to <Tag>{nextType}</Tag> pricing.
               </p>
 
               <div className='space-y-3 py-6'>

@@ -11,7 +11,7 @@ import {
   type UpdateCoursePricingTypeSchemaTypes,
 } from '@gonasi/schemas/coursePricing';
 
-import type { Route } from './+types/add-pricing-tier-modal';
+import type { Route } from './+types/manage-pricing-tier-modal';
 
 import { Button } from '~/components/ui/button';
 import { Modal } from '~/components/ui/modal';

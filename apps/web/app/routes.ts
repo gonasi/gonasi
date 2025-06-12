@@ -146,12 +146,12 @@ export default [
         ]),
         route('pricing', 'routes/profile/course-builder/courseId/pricing/pricing-index.tsx', [
           route(
-            'switch-from/:courseType',
-            'routes/profile/course-builder/courseId/pricing/switch-from-pricing-modal.tsx',
+            'update-pricing-type',
+            'routes/profile/course-builder/courseId/pricing/update-pricing-type-modal.tsx',
           ),
           route(
-            'add-pricing-tier/:actionType',
-            'routes/profile/course-builder/courseId/pricing/add-pricing-tier-modal.tsx',
+            'manage-pricing-tier/:actionType',
+            'routes/profile/course-builder/courseId/pricing/manage-pricing-tier-modal.tsx',
           ),
         ]),
         // /:username/course-builder/:courseId/content
