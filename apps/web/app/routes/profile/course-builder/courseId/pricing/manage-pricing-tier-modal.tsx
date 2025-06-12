@@ -6,7 +6,8 @@ import { HoneypotInputs } from 'remix-utils/honeypot/react';
 
 import { fetchCoursePricingTierById, setCourseFree, setCoursePaid } from '@gonasi/database/courses';
 import {
-  UpdateCoursePricingTypeSchema,
+  CoursePricingSchema,
+  type CoursePricingSchemaTypes,
   type UpdateCoursePricingTypeSchemaTypes,
 } from '@gonasi/schemas/coursePricing';
 
@@ -15,12 +16,13 @@ import type { AvailableFrequenciesLoaderReturnType } from './pricing-index';
 
 import { BannerCard } from '~/components/cards';
 import { Button } from '~/components/ui/button';
+import { GoInputField, GoSelectInputField } from '~/components/ui/forms/elements';
 import { Modal } from '~/components/ui/modal';
 import { createClient } from '~/lib/supabase/supabase.server';
 import { checkHoneypot } from '~/utils/honeypot.server';
 import { useIsPending } from '~/utils/misc';
 
-const resolver = zodResolver(UpdateCoursePricingTypeSchema);
+const resolver = zodResolver(CoursePricingSchema);
 
 export function meta() {
   return [
@@ -100,7 +102,7 @@ export default function AddPricingTierModal({ params, loaderData }: Route.Compon
 
   const closeRoute = `/${username}/course-builder/${courseId}/pricing`;
 
-  const methods = useRemixForm<UpdateCoursePricingTypeSchemaTypes>({
+  const methods = useRemixForm<CoursePricingSchemaTypes>({
     mode: 'all',
     resolver,
   });
@@ -109,7 +111,7 @@ export default function AddPricingTierModal({ params, loaderData }: Route.Compon
 
   return (
     <Modal open>
-      <Modal.Content size='sm'>
+      <Modal.Content size='md'>
         <Modal.Header
           title={coursePricingId === 'add-new-tier' ? 'Add New Pricing Tier' : 'Edit Pricing Tier'}
           closeRoute={closeRoute}
@@ -133,6 +135,20 @@ export default function AddPricingTierModal({ params, loaderData }: Route.Compon
             <RemixFormProvider {...methods}>
               <Form method='POST' onSubmit={methods.handleSubmit}>
                 <HoneypotInputs />
+
+                <GoSelectInputField
+                  labelProps={{ children: 'How did this feel?', required: true }}
+                  name='experience'
+                  description='Give us the vibe check! 📚'
+                  selectProps={{
+                    placeholder: 'Select a payment frequency',
+                    options: availableFrequencies,
+                  }}
+                />
+                <GoInputField
+                  name='name'
+                  labelProps={{ children: 'How did this feel?', required: true }}
+                />
 
                 <div className='px-1 py-4'>
                   <Button

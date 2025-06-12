@@ -7,3 +7,4 @@ export * from './GoRichTextInputField';
 export * from './GoFileField';
 export * from './GoSearchableDropDown';
 export * from './GoCheckBoxField';
+export * from './GoSelectInputField';

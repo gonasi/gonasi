@@ -5,6 +5,16 @@ interface FetchAvailablePaymentFrequenciesParams {
   courseId: string;
 }
 
+const frequencyLabels = {
+  monthly: 'Monthly – billed every month',
+  bi_monthly: 'Bi Monthly – billed every 2 months',
+  quarterly: 'Quarterly – billed every 3 months',
+  semi_annual: 'Semi Annual – billed twice a year',
+  annual: 'Annual – billed once a year',
+} as const;
+
+type FrequencyValue = keyof typeof frequencyLabels;
+
 /**
  * Retrieves unused payment frequency tiers for a specific course
  * via the Supabase RPC function `get_available_payment_frequencies`.
@@ -16,7 +26,7 @@ interface FetchAvailablePaymentFrequenciesParams {
 export async function fetchAvailablePaymentFrequencies({
   supabase,
   courseId,
-}: FetchAvailablePaymentFrequenciesParams) {
+}: FetchAvailablePaymentFrequenciesParams): Promise<{ label: string; value: string }[] | null> {
   const { data, error } = await supabase.rpc('get_available_payment_frequencies', {
     p_course_id: courseId,
   });
@@ -29,5 +39,8 @@ export async function fetchAvailablePaymentFrequencies({
     return null;
   }
 
-  return data;
+  return data.map((value: string) => ({
+    value,
+    label: frequencyLabels[value as FrequencyValue] ?? value,
+  }));
 }
