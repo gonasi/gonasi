@@ -130,9 +130,11 @@ export default function CoursePricing({ loaderData }: Route.ComponentProps) {
       />
       <div className='flex items-end justify-between py-4'>
         <CourseToggle isPaidState={isPaid} />
-        <NavLinkButton variant='secondary' to='' leftIcon={<Plus />}>
-          Add Pricing Tier
-        </NavLinkButton>
+        {isPaid ? (
+          <NavLinkButton variant='secondary' to='' leftIcon={<Plus />} disabled={!isPaid}>
+            Add Pricing Tier
+          </NavLinkButton>
+        ) : null}
       </div>
       <Table>
         <TableCaption>A list of pricing options for this course</TableCaption>

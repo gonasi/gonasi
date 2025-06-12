@@ -149,6 +149,10 @@ export default [
             'switch-from/:courseType',
             'routes/profile/course-builder/courseId/pricing/switch-from-pricing-modal.tsx',
           ),
+          route(
+            'add-pricing-tier/:actionType',
+            'routes/profile/course-builder/courseId/pricing/add-pricing-tier-modal.tsx',
+          ),
         ]),
         // /:username/course-builder/:courseId/content
         route('content', 'routes/profile/course-builder/courseId/content/content-index.tsx', [

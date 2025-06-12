@@ -18,6 +18,7 @@ export interface NavLinkButtonProps
   className?: string;
   showActiveIndicator?: boolean;
   animate?: 'ltr' | 'rtl';
+  disabled?: boolean;
 }
 
 const NavLinkButton = React.forwardRef<HTMLAnchorElement, NavLinkButtonProps>(
@@ -29,6 +30,7 @@ const NavLinkButton = React.forwardRef<HTMLAnchorElement, NavLinkButtonProps>(
       leftIcon,
       rightIcon,
       isLoading,
+      disabled,
       children,
       showActiveIndicator = false,
       animate = 'ltr',
@@ -36,7 +38,6 @@ const NavLinkButton = React.forwardRef<HTMLAnchorElement, NavLinkButtonProps>(
     },
     ref,
   ) => {
-    // Define the animation variants based on direction
     const variants = {
       initial: { opacity: 0, x: animate === 'ltr' ? -10 : 10 },
       animate: { opacity: 1, x: 0 },
@@ -52,21 +53,27 @@ const NavLinkButton = React.forwardRef<HTMLAnchorElement, NavLinkButtonProps>(
       >
         <NavLink
           ref={ref}
+          {...props}
+          onClick={(e) => {
+            if (disabled || isLoading) {
+              e.preventDefault();
+              e.stopPropagation();
+            }
+            props.onClick?.(e);
+          }}
           className={({ isActive }) =>
             cn(
               buttonVariants({ variant, size }),
-              isLoading && 'pointer-events-none cursor-not-allowed opacity-50',
+              (isLoading || disabled) && 'pointer-events-none cursor-not-allowed opacity-50',
               isActive &&
                 showActiveIndicator &&
                 'ring-primary ring-offset-background ring-2 ring-offset-2',
               className,
             )
           }
-          {...props}
         >
           {({ isPending }) => (
             <span className='relative z-5 flex h-full w-full items-center justify-center gap-2'>
-              {/* Left icon or loader (when loading and no rightIcon) */}
               {isLoading || isPending ? (
                 !rightIcon ? (
                   <Loader2 className='h-4 w-4 animate-spin' />
@@ -83,7 +90,6 @@ const NavLinkButton = React.forwardRef<HTMLAnchorElement, NavLinkButtonProps>(
 
               <div className='mt-0.5 flex items-center gap-1'>{children}</div>
 
-              {/* Right icon or loader (when loading and rightIcon exists) */}
               {isLoading || isPending ? (
                 rightIcon ? (
                   <Loader2 className='h-4 w-4 animate-spin' />

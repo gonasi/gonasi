@@ -40,6 +40,7 @@ export function CourseToggle({ isPaidState }: ICourseToggleProps) {
           className={cn(
             'relative flex h-8 w-14 items-center rounded-full p-1 transition-colors',
             'border',
+            'hover:cursor-pointer',
             isPaidState ? 'bg-primary/30 border-primary/40' : 'bg-secondary/30 border-secondary/40',
             isNavigating && 'animate-pulse cursor-not-allowed opacity-50',
           )}

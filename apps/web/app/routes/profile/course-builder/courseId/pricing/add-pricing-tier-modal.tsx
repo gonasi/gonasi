@@ -1,7 +1,6 @@
 import { memo } from 'react';
 import { Form } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CircleAlert, CircleOff, HandCoins } from 'lucide-react';
 import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
 import { dataWithError, redirectWithSuccess } from 'remix-toast';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
@@ -12,7 +11,7 @@ import {
   type UpdateCoursePricingTypeSchemaTypes,
 } from '@gonasi/schemas/coursePricing';
 
-import type { Route } from './+types/switch-from-pricing-modal';
+import type { Route } from './+types/add-pricing-tier-modal';
 
 import { Button } from '~/components/ui/button';
 import { Modal } from '~/components/ui/modal';
@@ -68,19 +67,15 @@ export async function action({ params, request }: Route.ActionArgs) {
     : dataWithError(null, result.message);
 }
 
-export default function SwitchFromPricingModal({ params }: Route.ComponentProps) {
-  const { username, courseId, courseType } = params;
+export default function AddPricingTierModal({ params }: Route.ComponentProps) {
+  const { username, courseId, actionType } = params;
   const isPending = useIsPending();
 
   const closeRoute = `/${username}/course-builder/${courseId}/pricing`;
 
-  const isPaid = courseType === 'paid';
-  const nextType = isPaid ? 'Free' : 'Paid';
-
   const methods = useRemixForm<UpdateCoursePricingTypeSchemaTypes>({
     mode: 'all',
     resolver,
-    defaultValues: { setToType: isPaid ? 'free' : 'paid' },
   });
 
   const isDisabled = isPending || methods.formState.isSubmitting;
@@ -93,49 +88,15 @@ export default function SwitchFromPricingModal({ params }: Route.ComponentProps)
           <RemixFormProvider {...methods}>
             <Form method='POST' onSubmit={methods.handleSubmit}>
               <HoneypotInputs />
-              <div className='flex items-center justify-center pb-4'>
-                <CircleAlert className='text-warning' size={40} />
-              </div>
-
-              <h2 className='text-center text-xl'>Course Pricing</h2>
-              <p className='text-muted-foreground font-secondary text-center'>
-                {`You're `} about to switch from <Tag>{capitalize(courseType)}</Tag> to{' '}
-                <Tag>{nextType}</Tag> pricing.
-              </p>
-
-              <div className='space-y-3 py-6'>
-                <ul className='text-muted-foreground font-secondary list-disc space-y-3 pl-5 leading-relaxed'>
-                  {isPaid ? (
-                    <li>
-                      This will <Tag className='bg-danger/50'>delete 🗑️</Tag> all your current{' '}
-                      <Tag>paid options</Tag>.
-                    </li>
-                  ) : (
-                    <li>
-                      This will remove the{' '}
-                      <span className='text-warning font-medium'>free default</span> and set up a{' '}
-                      <span className='text-foreground font-medium'>default paid option</span>. You
-                      can tweak or add more paid options later. 💸
-                    </li>
-                  )}
-                </ul>
-
-                <p className='text-muted-foreground font-secondary px-2 pt-4 text-sm'>
-                  <strong>Note:</strong> Current users keep their pricing until their plan ends. To
-                  get the new rate, they’ll need to re-enroll.
-                </p>
-              </div>
 
               <div className='px-1 py-4'>
                 <Button
-                  variant={isPaid ? 'secondary' : 'default'}
                   className='w-full'
-                  leftIcon={isPaid ? <CircleOff /> : <HandCoins />}
                   type='submit'
                   disabled={isDisabled}
                   isLoading={isDisabled}
                 >
-                  Switch to {nextType}
+                  Add
                 </Button>
               </div>
             </Form>
@@ -144,8 +105,4 @@ export default function SwitchFromPricingModal({ params }: Route.ComponentProps)
       </Modal.Content>
     </Modal>
   );
-}
-
-function capitalize(str: string) {
-  return str.charAt(0).toUpperCase() + str.slice(1);
 }
