@@ -23,17 +23,6 @@ const CourseSubcategorySchema = z
 
 const CoursePathwaySchema = z.string({ required_error: 'Course pathway is required' }).trim();
 
-const CourseMonthlySubscriptionPriceSchema = z.coerce
-  .number({ required_error: 'Please provide a monthly subscription price.' })
-  .int({ message: 'Price must be a whole number (no decimals allowed).' })
-  .refine(
-    (value) => {
-      const price = value;
-      return price >= 0 && price <= 50000;
-    },
-    { message: 'The maximum monthly subscription price is KES 50,000.' },
-  );
-
 // NewCourseTitleSchema definition
 export const NewCourseTitleSchema = z.object({
   name: CourseTitleSchema,

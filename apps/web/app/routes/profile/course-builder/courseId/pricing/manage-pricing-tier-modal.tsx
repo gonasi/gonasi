@@ -1,15 +1,13 @@
+import { useState } from 'react';
 import { Form, useOutletContext } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
-import { dataWithError, redirectWithError, redirectWithSuccess } from 'remix-toast';
+import { Check, ChevronLeft, ChevronRight } from 'lucide-react';
+import { RemixFormProvider, useRemixForm } from 'remix-hook-form';
+import { redirectWithError } from 'remix-toast';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
 
-import { fetchCoursePricingTierById, setCourseFree, setCoursePaid } from '@gonasi/database/courses';
-import {
-  CoursePricingSchema,
-  type CoursePricingSchemaTypes,
-  type UpdateCoursePricingTypeSchemaTypes,
-} from '@gonasi/schemas/coursePricing';
+import { fetchCoursePricingTierById } from '@gonasi/database/courses';
+import { CoursePricingSchema, type CoursePricingSchemaTypes } from '@gonasi/schemas/coursePricing';
 
 import type { Route } from './+types/manage-pricing-tier-modal';
 import type { AvailableFrequenciesLoaderReturnType } from './pricing-index';
@@ -18,6 +16,7 @@ import { BannerCard } from '~/components/cards';
 import { Button } from '~/components/ui/button';
 import { GoInputField, GoSelectInputField } from '~/components/ui/forms/elements';
 import { Modal } from '~/components/ui/modal';
+import { Stepper } from '~/components/ui/stepper';
 import { createClient } from '~/lib/supabase/supabase.server';
 import { checkHoneypot } from '~/utils/honeypot.server';
 import { useIsPending } from '~/utils/misc';
@@ -55,41 +54,33 @@ export async function action({ params, request }: Route.ActionArgs) {
   // Parse form data and run spam protection
   const formData = await request.formData();
   await checkHoneypot(formData);
-
-  // Initialize Supabase client and validate the form data
-  const { supabase } = createClient(request);
-  const {
-    errors,
-    data,
-    receivedValues: defaultValues,
-  } = await getValidatedFormData<UpdateCoursePricingTypeSchemaTypes>(formData, resolver);
-
-  // If validation errors exist, return them along with default values
-  if (errors) return { errors, defaultValues };
-
-  const redirectTo = `/${params.username}/course-builder/${params.courseId}/pricing`;
-
-  // Define handlers for different pricing types
-  const pricingHandlers = {
-    free: setCourseFree,
-    paid: setCoursePaid,
-  };
-
-  const handler = pricingHandlers[data.setToType as keyof typeof pricingHandlers];
-
-  if (!handler) {
-    return dataWithError(null, 'Unknown type found');
-  }
-
-  const result = await handler({ supabase, courseId: params.courseId });
-
-  return result.success
-    ? redirectWithSuccess(redirectTo, result.message)
-    : dataWithError(null, result.message);
+  return true;
 }
 
-export default function AddPricingTierModal({ params, loaderData }: Route.ComponentProps) {
-  console.log('******* loader data is: ', loaderData);
+const STEPS = [
+  {
+    id: 'basic-config',
+    title: 'Basic Configuration',
+
+    path: 'basic-config',
+  },
+  {
+    id: 'promotional-pricing',
+    title: 'Promotional Pricing',
+
+    path: 'promotional-pricing',
+  },
+  {
+    id: 'display-and-marketing',
+    title: 'Display & Marketing',
+
+    path: 'display-and-marketing',
+  },
+] as const;
+
+type StepId = (typeof STEPS)[number]['id'];
+
+export default function ManagePricingTierModal({ params, loaderData }: Route.ComponentProps) {
   const { username, courseId, coursePricingId } = params;
 
   const { isPaid, availableFrequencies } =
@@ -102,12 +93,174 @@ export default function AddPricingTierModal({ params, loaderData }: Route.Compon
 
   const closeRoute = `/${username}/course-builder/${courseId}/pricing`;
 
+  const [currentStep, setCurrentStep] = useState<StepId>('basic-config');
+
   const methods = useRemixForm<CoursePricingSchemaTypes>({
     mode: 'all',
     resolver,
   });
 
+  const { watch, trigger } = methods;
+  const watchedValues = watch();
+
+  // Step navigation
+  const currentStepIndex = STEPS.findIndex((step) => step.id === currentStep);
+  const isFirstStep = currentStepIndex === 0;
+  const isLastStep = currentStepIndex === STEPS.length - 1;
+
+  const goToNextStep = async () => {
+    const isValid = await validateCurrentStep();
+    const nextStep = STEPS[currentStepIndex + 1];
+
+    if (isValid && !isLastStep && nextStep) {
+      setCurrentStep(nextStep.id);
+    }
+  };
+
+  const goToPreviousStep = () => {
+    if (!isFirstStep) {
+      const prevStep = STEPS[currentStepIndex - 1];
+      if (prevStep) {
+        setCurrentStep(prevStep.id);
+      }
+    }
+  };
+
+  const goToStep = (stepId: StepId) => {
+    setCurrentStep(stepId);
+  };
+
+  const validateCurrentStep = async () => {
+    switch (currentStep) {
+      case 'basic-config':
+        return await trigger(['paymentFrequency', 'price', 'currencyCode']);
+      case 'promotional-pricing':
+        return await trigger([
+          'enablePromotionalPricing',
+          'discountPercentage',
+          'promotionalPrice',
+          'promotionStartDate',
+          'promotionEndDate',
+        ]);
+      case 'display-and-marketing':
+        return await trigger([
+          'tierName',
+          'tierDescription',
+          'isActive',
+          'isPopular',
+          'isRecommended',
+        ]);
+      default:
+        return true;
+    }
+  };
+
+  // Check if step is completed
+  const isStepCompleted = (stepId: StepId) => {
+    switch (stepId) {
+      case 'basic-config': {
+        return (
+          !!watchedValues.paymentFrequency && !!watchedValues.price && !!watchedValues.currencyCode
+        );
+      }
+
+      case 'promotional-pricing': {
+        const promoEnabled: boolean = watchedValues.enablePromotionalPricing;
+        return promoEnabled
+          ? !!watchedValues.discountPercentage &&
+              !!watchedValues.promotionalPrice &&
+              !!watchedValues.promotionStartDate &&
+              !!watchedValues.promotionEndDate
+          : true;
+      }
+
+      case 'display-and-marketing': {
+        return (
+          !!watchedValues.tierName &&
+          !!watchedValues.tierDescription &&
+          watchedValues.isActive !== undefined &&
+          watchedValues.isPopular !== undefined &&
+          watchedValues.isRecommended !== undefined
+        );
+      }
+
+      default:
+        return false;
+    }
+  };
+
   const isDisabled = isPending || methods.formState.isSubmitting;
+
+  // Render step content
+  const renderStepContent = () => {
+    switch (currentStep) {
+      case 'basic-config':
+        return (
+          <div>
+            <GoSelectInputField
+              labelProps={{ children: 'Payment Frequency', required: true }}
+              name='paymentFrequency'
+              description='How often user subscribes and repays the course 📚'
+              selectProps={{
+                placeholder: 'Select a payment frequency',
+                options:
+                  availableFrequencies && availableFrequencies.length ? availableFrequencies : [],
+                disabled: isDisabled,
+              }}
+            />
+            <div>
+              <div className='flex items-start justify-start space-x-4'>
+                <GoSelectInputField
+                  className='max-w-30'
+                  labelProps={{ children: 'Currency', required: true }}
+                  name='currencyCode'
+                  selectProps={{
+                    placeholder: 'Currency',
+                    options: [
+                      {
+                        label: 'KES',
+                        value: 'KES',
+                      },
+                      {
+                        label: 'USD',
+                        value: 'USD',
+                      },
+                    ],
+
+                    disabled: isDisabled,
+                  }}
+                />
+                <GoInputField
+                  className='flex-1'
+                  name='price'
+                  inputProps={{
+                    type: 'number',
+                    disabled: isDisabled,
+                    autoFocus: false,
+                  }}
+                  labelProps={{ children: 'Pirce', required: true }}
+                />
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'promotional-pricing':
+        return <div />;
+
+      case 'display-and-marketing':
+        return (
+          <GoInputField
+            name='name'
+            labelProps={{ children: 'Tier Name', required: true }}
+            description='Give this pricing tier a descriptive name'
+          />
+        );
+
+      default:
+        return null;
+    }
+  };
 
   return (
     <Modal open>
@@ -132,36 +285,51 @@ export default function AddPricingTierModal({ params, loaderData }: Route.Compon
               showCloseIcon={false}
             />
           ) : (
-            <RemixFormProvider {...methods}>
-              <Form method='POST' onSubmit={methods.handleSubmit}>
-                <HoneypotInputs />
+            <div className='py-4'>
+              <div className='pb-6'>
+                {/* Step indicator */}
+                {STEPS.length > 0 && (
+                  <Stepper steps={[...STEPS]} currentStepIndex={currentStepIndex} />
+                )}
+              </div>
 
-                <GoSelectInputField
-                  labelProps={{ children: 'How did this feel?', required: true }}
-                  name='experience'
-                  description='Give us the vibe check! 📚'
-                  selectProps={{
-                    placeholder: 'Select a payment frequency',
-                    options: availableFrequencies,
-                  }}
-                />
-                <GoInputField
-                  name='name'
-                  labelProps={{ children: 'How did this feel?', required: true }}
-                />
+              <RemixFormProvider {...methods}>
+                <Form method='POST' onSubmit={methods.handleSubmit}>
+                  <HoneypotInputs />
 
-                <div className='px-1 py-4'>
-                  <Button
-                    className='w-full'
-                    type='submit'
-                    disabled={isDisabled}
-                    isLoading={isDisabled}
-                  >
-                    Add
-                  </Button>
-                </div>
-              </Form>
-            </RemixFormProvider>
+                  {renderStepContent()}
+
+                  {/* Navigation buttons */}
+                  <div className='flex justify-between'>
+                    <Button
+                      type='button'
+                      variant='ghost'
+                      onClick={goToPreviousStep}
+                      disabled={isFirstStep}
+                      leftIcon={<ChevronLeft />}
+                    >
+                      Previous
+                    </Button>
+
+                    {isLastStep ? (
+                      <Button type='submit' className='flex items-center'>
+                        Complete Setup
+                        <Check className='ml-2 h-4 w-4' />
+                      </Button>
+                    ) : (
+                      <Button
+                        type='button'
+                        variant='ghost'
+                        onClick={goToNextStep}
+                        rightIcon={<ChevronRight />}
+                      >
+                        Next
+                      </Button>
+                    )}
+                  </div>
+                </Form>
+              </RemixFormProvider>
+            </div>
           )}
         </Modal.Body>
       </Modal.Content>

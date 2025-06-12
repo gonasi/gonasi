@@ -6,11 +6,11 @@ interface FetchAvailablePaymentFrequenciesParams {
 }
 
 const frequencyLabels = {
-  monthly: 'Monthly – billed every month',
-  bi_monthly: 'Bi Monthly – billed every 2 months',
-  quarterly: 'Quarterly – billed every 3 months',
-  semi_annual: 'Semi Annual – billed twice a year',
-  annual: 'Annual – billed once a year',
+  monthly: '📅 Monthly – billed every month',
+  bi_monthly: '🗓️ Bi Monthly – billed every 2 months',
+  quarterly: '📆 Quarterly – billed every 3 months',
+  semi_annual: '🧭 Semi Annual – billed twice a year',
+  annual: '🎯 Annual – billed once a year',
 } as const;
 
 type FrequencyValue = keyof typeof frequencyLabels;
