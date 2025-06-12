@@ -50,15 +50,6 @@ export const CoursePricingSchema = z
       invalid_type_error: 'enablePromotionalPricing must be true or false.',
     }),
 
-    discountPercentage: z.coerce
-      .number({
-        invalid_type_error: 'Discount must be a number.',
-      })
-      .min(0, 'Discount can’t be less than 0%.')
-      .max(100, 'Whoa! discount can’t be more than 100%.')
-      .nullable()
-      .optional(),
-
     promotionalPrice: z.coerce
       .number({
         invalid_type_error: 'Promo price must be a number.',
@@ -128,7 +119,7 @@ export const CoursePricingSchema = z
     if (data.price <= 0) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: 'Paid tiers need to cost something — bump up that price.',
+        message: 'Paid tiers need to cost something, bump up that price.',
         path: ['price'],
       });
     }
@@ -152,11 +143,38 @@ export const CoursePricingSchema = z
       }
     }
 
-    // Promotional price logic
+    // Promotional pricing requirements
+    if (data.enablePromotionalPricing) {
+      if (data.promotionalPrice == null) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Promotional price is equired.',
+          path: ['promotionalPrice'],
+        });
+      }
+
+      if (data.promotionStartDate == null) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Required.',
+          path: ['promotionStartDate'],
+        });
+      }
+
+      if (data.promotionEndDate == null) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Required.',
+          path: ['promotionEndDate'],
+        });
+      }
+    }
+
+    // Validate promo price against regular price
     if (typeof data.promotionalPrice === 'number' && data.promotionalPrice >= data.price) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: 'Promo price should be less than the regular price — otherwise, what’s the deal?',
+        message: `Promo price should be less than the regular price (${data.currencyCode} ${data.price})`,
         path: ['promotionalPrice'],
       });
     }

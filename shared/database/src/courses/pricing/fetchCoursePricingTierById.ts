@@ -26,7 +26,6 @@ export async function fetchCoursePricingTierById({
       is_free,
       price,
       currency_code,
-      discount_percentage,
       promotional_price,
       promotion_start_date,
       promotion_end_date,

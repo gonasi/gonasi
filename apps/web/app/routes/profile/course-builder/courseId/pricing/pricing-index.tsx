@@ -84,19 +84,6 @@ export default function CoursePricing({ loaderData, params }: Route.ComponentPro
   );
 
   const PromoDetails = ({ price }: { price: CoursePricingType }) => {
-    if (price.discount_percentage) {
-      return (
-        <>
-          <Badge variant='secondary'>{price.discount_percentage}% off</Badge>
-          {price.promotional_price && (
-            <div className='mt-1 text-sm'>
-              {formatCurrency(price.promotional_price, price.currency_code)}
-            </div>
-          )}
-        </>
-      );
-    }
-
     if (price.promotional_price) {
       return (
         <>

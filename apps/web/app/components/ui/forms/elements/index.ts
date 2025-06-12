@@ -8,3 +8,4 @@ export * from './GoFileField';
 export * from './GoSearchableDropDown';
 export * from './GoCheckBoxField';
 export * from './GoSelectInputField';
+export * from './GoSwitchField';

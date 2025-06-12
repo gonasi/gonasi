@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Form, useOutletContext } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Check, ChevronLeft, ChevronRight } from 'lucide-react';
 import { RemixFormProvider, useRemixForm } from 'remix-hook-form';
 import { redirectWithError } from 'remix-toast';
@@ -14,7 +15,7 @@ import type { AvailableFrequenciesLoaderReturnType } from './pricing-index';
 
 import { BannerCard } from '~/components/cards';
 import { Button } from '~/components/ui/button';
-import { GoInputField, GoSelectInputField } from '~/components/ui/forms/elements';
+import { GoInputField, GoSelectInputField, GoSwitchField } from '~/components/ui/forms/elements';
 import { Modal } from '~/components/ui/modal';
 import { Stepper } from '~/components/ui/stepper';
 import { createClient } from '~/lib/supabase/supabase.server';
@@ -137,7 +138,6 @@ export default function ManagePricingTierModal({ params, loaderData }: Route.Com
       case 'promotional-pricing':
         return await trigger([
           'enablePromotionalPricing',
-          'discountPercentage',
           'promotionalPrice',
           'promotionStartDate',
           'promotionEndDate',
@@ -167,8 +167,7 @@ export default function ManagePricingTierModal({ params, loaderData }: Route.Com
       case 'promotional-pricing': {
         const promoEnabled: boolean = watchedValues.enablePromotionalPricing;
         return promoEnabled
-          ? !!watchedValues.discountPercentage &&
-              !!watchedValues.promotionalPrice &&
+          ? !!watchedValues.promotionalPrice &&
               !!watchedValues.promotionStartDate &&
               !!watchedValues.promotionEndDate
           : true;
@@ -190,6 +189,13 @@ export default function ManagePricingTierModal({ params, loaderData }: Route.Com
   };
 
   const isDisabled = isPending || methods.formState.isSubmitting;
+
+  //
+  useEffect(() => {
+    if (watchedValues.currencyCode) {
+      trigger('price');
+    }
+  }, [trigger, watchedValues.currencyCode]);
 
   // Render step content
   const renderStepContent = () => {
@@ -246,7 +252,39 @@ export default function ManagePricingTierModal({ params, loaderData }: Route.Com
         );
 
       case 'promotional-pricing':
-        return <div />;
+        return (
+          <div>
+            <GoSwitchField
+              name='enablePromotionalPricing'
+              labelProps={{ children: 'Enable promotional price', required: true }}
+              description='Set up promotions for this tier'
+            />
+
+            <AnimatePresence>
+              {watchedValues.enablePromotionalPricing && (
+                <motion.div
+                  key='promotionalPriceField'
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <GoInputField
+                    className='flex-1'
+                    name='promotionalPrice'
+                    inputProps={{
+                      type: 'number',
+                      disabled: isDisabled,
+                      autoFocus: false,
+                      leftIcon: <div className='mt-1 text-xs'>{watchedValues.currencyCode}</div>,
+                    }}
+                    labelProps={{ children: 'Promotional price', required: true }}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        );
 
       case 'display-and-marketing':
         return (
@@ -296,9 +334,7 @@ export default function ManagePricingTierModal({ params, loaderData }: Route.Com
               <RemixFormProvider {...methods}>
                 <Form method='POST' onSubmit={methods.handleSubmit}>
                   <HoneypotInputs />
-
-                  {renderStepContent()}
-
+                  <div className='rounded-lg'>{renderStepContent()}</div>
                   {/* Navigation buttons */}
                   <div className='flex justify-between'>
                     <Button
@@ -314,7 +350,7 @@ export default function ManagePricingTierModal({ params, loaderData }: Route.Com
                     {isLastStep ? (
                       <Button type='submit' className='flex items-center'>
                         Complete Setup
-                        <Check className='ml-2 h-4 w-4' />
+                        <Check />
                       </Button>
                     ) : (
                       <Button

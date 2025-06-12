@@ -1129,20 +1129,6 @@
           "maxLength": 3
         },
         {
-          "id": "public.course_pricing_tiers.discount_percentage",
-          "name": "discount_percentage",
-          "columnName": "discount_percentage",
-          "type": "numeric",
-          "isRequired": false,
-          "kind": "scalar",
-          "isList": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false,
-          "isId": false,
-          "maxLength": null
-        },
-        {
           "id": "public.course_pricing_tiers.promotional_price",
           "name": "promotional_price",
           "columnName": "promotional_price",

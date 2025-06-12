@@ -207,7 +207,6 @@ export type Database = {
           created_at: string
           created_by: string
           currency_code: string
-          discount_percentage: number | null
           id: string
           is_active: boolean
           is_free: boolean
@@ -229,7 +228,6 @@ export type Database = {
           created_at?: string
           created_by: string
           currency_code?: string
-          discount_percentage?: number | null
           id?: string
           is_active?: boolean
           is_free?: boolean
@@ -251,7 +249,6 @@ export type Database = {
           created_at?: string
           created_by?: string
           currency_code?: string
-          discount_percentage?: number | null
           id?: string
           is_active?: boolean
           is_free?: boolean

@@ -41,10 +41,6 @@ create table public.course_pricing_tiers (
   currency_code char(3) not null default 'KES' check (currency_code in ('KES', 'USD')),
 
   -- promotional pricing system
-  -- allows temporary discounts with percentage or fixed price reductions
-  discount_percentage numeric(5,2) null check (
-    discount_percentage >= 0 and discount_percentage <= 100
-  ),
   promotional_price numeric(19,4) null check (promotional_price >= 0),
   promotion_start_date timestamptz null,
   promotion_end_date timestamptz null,
@@ -94,7 +90,6 @@ create table public.course_pricing_tiers (
   constraint chk_free_has_no_promo check (
     is_free = false or (
       promotional_price is null and 
-      discount_percentage is null and 
       promotion_start_date is null and 
       promotion_end_date is null
     )
