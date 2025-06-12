@@ -17,6 +17,7 @@ import type { Route } from './+types/switch-from-pricing-modal';
 import { Button } from '~/components/ui/button';
 import { Modal } from '~/components/ui/modal';
 import { createClient } from '~/lib/supabase/supabase.server';
+import { cn } from '~/lib/utils';
 import { checkHoneypot } from '~/utils/honeypot.server';
 import { useIsPending } from '~/utils/misc';
 
@@ -94,7 +95,7 @@ export default function SwitchFromPricingModal({ params }: Route.ComponentProps)
             <Form method='POST' onSubmit={methods.handleSubmit}>
               <HoneypotInputs />
               <div className='flex items-center justify-center pb-4'>
-                <CircleAlert className='text-warning' size={40} />
+                <CircleAlert className={cn(isPaid ? 'text-secondary' : 'text-primary')} size={40} />
               </div>
 
               <h2 className='text-center text-xl'>Course Pricing</h2>
@@ -108,12 +109,14 @@ export default function SwitchFromPricingModal({ params }: Route.ComponentProps)
                   {isPaid ? (
                     <li>
                       This will <Tag className='bg-danger/50'>delete 🗑️</Tag> all your current{' '}
-                      <Tag>paid options</Tag>.
+                      <Tag>paid options</Tag> and add the{' '}
+                      <span className='text-warning font-medium'>free default pricing option</span>.
                     </li>
                   ) : (
                     <li>
                       This will remove the{' '}
-                      <span className='text-warning font-medium'>free default</span> and set up a{' '}
+                      <span className='text-warning font-medium'>free default pricing option</span>{' '}
+                      and set up a{' '}
                       <span className='text-foreground font-medium'>default paid option</span>. You
                       can tweak or add more paid options later. 💸
                     </li>
