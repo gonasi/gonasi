@@ -1,7 +1,7 @@
 import { Outlet } from 'react-router';
 import { Check, Edit, MoreHorizontal, Plus, Trash2, X } from 'lucide-react';
 
-import { fetchCoursePricing } from '@gonasi/database/courses';
+import { fetchAvailablePaymentFrequencies, fetchCoursePricing } from '@gonasi/database/courses';
 
 import type { Route } from './+types/pricing-index';
 
@@ -43,22 +43,31 @@ export type CoursePricingleLoaderReturnType = Exclude<
   Response
 >['pricingData'];
 
+export type AvailableFrequenciesLoaderReturnType = Exclude<
+  Awaited<ReturnType<typeof loader>>,
+  Response
+>['availableFrequencies'];
+
 type CoursePricingType = NonNullable<CoursePricingleLoaderReturnType>[number];
 
 export async function loader({ params, request }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
   const courseId = params.courseId ?? '';
-  const pricingData = await fetchCoursePricing({ supabase, courseId });
+
+  const [pricingData, availableFrequencies] = await Promise.all([
+    fetchCoursePricing({ supabase, courseId }),
+    fetchAvailablePaymentFrequencies({ supabase, courseId }),
+  ]);
 
   const isPaid = Array.isArray(pricingData)
     ? pricingData.some((item) => item.is_free === false)
     : false;
 
-  return { pricingData, isPaid };
+  return { pricingData, isPaid, availableFrequencies };
 }
 
 export default function CoursePricing({ loaderData, params }: Route.ComponentProps) {
-  const { pricingData, isPaid } = loaderData;
+  const { pricingData, isPaid, availableFrequencies } = loaderData;
 
   if (!pricingData?.length) {
     return (
@@ -141,7 +150,7 @@ export default function CoursePricing({ loaderData, params }: Route.ComponentPro
       />
       <div className='flex items-end justify-between py-4'>
         <CourseToggle isPaidState={isPaid} />
-        {isPaid ? (
+        {isPaid || (availableFrequencies && availableFrequencies.length) ? (
           <NavLinkButton
             variant='secondary'
             to={`/${params.username}/course-builder/${params.courseId}/pricing/manage-pricing-tier/add-new-tier`}
@@ -214,7 +223,7 @@ export default function CoursePricing({ loaderData, params }: Route.ComponentPro
           ))}
         </TableBody>
       </Table>
-      <Outlet context={{ isPaid }} />
+      <Outlet context={{ isPaid, availableFrequencies }} />
     </div>
   );
 }

@@ -543,3 +543,39 @@ begin
 
 end;
 $$;
+
+-- ============================================================================
+-- Function: get_available_payment_frequencies(p_course_id uuid)
+-- Purpose : Returns a list of unused payment_frequency enum values for a course
+-- Inputs  : p_course_id - UUID of the course
+-- Returns : public.payment_frequency[] - Array of available (unused) enum values
+-- Notes   : 
+--   - Assumes a custom enum type `public.payment_frequency`
+--   - Assumes a table `public.course_pricing_tiers` with a column of this enum type
+--   - Explicitly sets search_path to ensure schema resolution must be qualified
+-- ============================================================================
+create or replace function get_available_payment_frequencies(p_course_id uuid)
+returns public.payment_frequency[] as $$
+declare
+  all_frequencies public.payment_frequency[]; -- All possible enum values
+  used_frequencies public.payment_frequency[]; -- Values already used for this course
+begin
+  -- Get all possible enum values
+  select enum_range(null::public.payment_frequency)
+  into all_frequencies;
+
+  -- Get used frequencies for the course (only active tiers)
+  select array_agg(payment_frequency)
+  into used_frequencies
+  from public.course_pricing_tiers
+  where course_id = p_course_id;
+
+  -- Return unused frequencies
+  return (
+    select array_agg(freq)
+    from unnest(all_frequencies) as freq
+    where used_frequencies is null or freq != all(used_frequencies)
+  );
+end;
+$$ language plpgsql
+set search_path = '';

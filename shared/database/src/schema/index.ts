@@ -848,6 +848,10 @@ export type Database = {
         Args: { p_block_id: string; p_deleted_by: string }
         Returns: undefined
       }
+      get_available_payment_frequencies: {
+        Args: { p_course_id: string }
+        Returns: Database["public"]["Enums"]["payment_frequency"][]
+      }
       is_course_admin: {
         Args: { course_id: string; user_id: string }
         Returns: boolean

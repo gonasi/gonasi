@@ -1,16 +1,17 @@
 import { Form, useOutletContext } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
-import { dataWithError, redirectWithSuccess } from 'remix-toast';
+import { dataWithError, redirectWithError, redirectWithSuccess } from 'remix-toast';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
 
-import { setCourseFree, setCoursePaid } from '@gonasi/database/courses';
+import { fetchCoursePricingTierById, setCourseFree, setCoursePaid } from '@gonasi/database/courses';
 import {
   UpdateCoursePricingTypeSchema,
   type UpdateCoursePricingTypeSchemaTypes,
 } from '@gonasi/schemas/coursePricing';
 
 import type { Route } from './+types/manage-pricing-tier-modal';
+import type { AvailableFrequenciesLoaderReturnType } from './pricing-index';
 
 import { BannerCard } from '~/components/cards';
 import { Button } from '~/components/ui/button';
@@ -30,6 +31,22 @@ export function meta() {
         'Configure and manage pricing tiers for your course on Gonasi. Set pricing details, access permissions, and enhance your monetization strategy effectively.',
     },
   ];
+}
+
+export async function loader({ params, request }: Route.LoaderArgs) {
+  const { supabase } = createClient(request);
+  const { coursePricingId, courseId, username } = params;
+
+  const redirectToPricingPage = (message: string) =>
+    redirectWithError(`/${username}/course-builder/${courseId}/pricing`, message);
+
+  const pricingTier = await fetchCoursePricingTierById({ supabase, coursePricingId });
+
+  if (!pricingTier && coursePricingId !== 'add-new-tier') {
+    return redirectToPricingPage('Pricing tier does not exist or you lack permissions');
+  }
+
+  return { pricingTier };
 }
 
 export async function action({ params, request }: Route.ActionArgs) {
@@ -69,10 +86,15 @@ export async function action({ params, request }: Route.ActionArgs) {
     : dataWithError(null, result.message);
 }
 
-export default function AddPricingTierModal({ params }: Route.ComponentProps) {
+export default function AddPricingTierModal({ params, loaderData }: Route.ComponentProps) {
+  console.log('******* loader data is: ', loaderData);
   const { username, courseId, coursePricingId } = params;
 
-  const { isPaid } = useOutletContext<{ isPaid: boolean }>() ?? {};
+  const { isPaid, availableFrequencies } =
+    useOutletContext<{
+      isPaid: boolean;
+      availableFrequencies: AvailableFrequenciesLoaderReturnType;
+    }>() ?? {};
 
   const isPending = useIsPending();
 
@@ -88,13 +110,23 @@ export default function AddPricingTierModal({ params }: Route.ComponentProps) {
   return (
     <Modal open>
       <Modal.Content size='sm'>
-        <Modal.Header closeRoute={closeRoute} />
+        <Modal.Header
+          title={coursePricingId === 'add-new-tier' ? 'Add New Pricing Tier' : 'Edit Pricing Tier'}
+          closeRoute={closeRoute}
+        />
         <Modal.Body>
           {!isPaid ? (
             <BannerCard
               variant='error'
               message='Pricing tiers are only available for paid courses'
               description='To enable tiered pricing, switch this course to paid.'
+              showCloseIcon={false}
+            />
+          ) : !availableFrequencies || !availableFrequencies.length ? (
+            <BannerCard
+              variant='error'
+              message='All pricing options are in use'
+              description='Please delete or update a tier, as all available frequencies—monthly, bi-monthly, quarterly, semi-annual, and annual—have already been used.'
               showCloseIcon={false}
             />
           ) : (
