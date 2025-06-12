@@ -193,7 +193,7 @@ export default function ManagePricingTierModal({ params, loaderData }: Route.Com
   //
   useEffect(() => {
     if (watchedValues.currencyCode) {
-      trigger('price');
+      trigger(['price', 'promotionalPrice']);
     }
   }, [trigger, watchedValues.currencyCode]);
 
