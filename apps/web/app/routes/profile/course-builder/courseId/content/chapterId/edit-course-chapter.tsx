@@ -1,4 +1,4 @@
-import { data, Form, useParams } from 'react-router';
+import { Form, useParams } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
 import { dataWithError, redirectWithError, redirectWithSuccess } from 'remix-toast';
@@ -10,7 +10,7 @@ import { EditChapterSchema, type EditChapterSchemaTypes } from '@gonasi/schemas/
 import type { Route } from './+types/edit-course-chapter';
 
 import { Button } from '~/components/ui/button';
-import { GoInputField, GoTextAreaField } from '~/components/ui/forms/elements';
+import { GoInputField, GoSwitchField, GoTextAreaField } from '~/components/ui/forms/elements';
 import { Modal } from '~/components/ui/modal';
 import { createClient } from '~/lib/supabase/supabase.server';
 import { checkHoneypot } from '~/utils/honeypot.server';
@@ -36,10 +36,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     );
   }
 
-  return data({
-    ...chapter,
-    requiresPayment: chapter.requires_payment,
-  });
+  return { chapter };
 }
 
 // Action: handle form submission
@@ -71,7 +68,7 @@ export default function EditCourseChapter({ loaderData }: Route.ComponentProps) 
   const params = useParams();
   const isPending = useIsPending();
 
-  const { name, description } = loaderData;
+  const { name, description, requires_payment } = loaderData.chapter;
 
   const methods = useRemixForm<EditChapterSchemaTypes>({
     mode: 'all',
@@ -79,6 +76,7 @@ export default function EditCourseChapter({ loaderData }: Route.ComponentProps) 
     defaultValues: {
       name,
       description: description ?? '',
+      requiresPayment: requires_payment ?? false,
     },
   });
 
@@ -110,6 +108,11 @@ export default function EditCourseChapter({ loaderData }: Route.ComponentProps) 
                 labelProps={{ children: 'What’s this chapter about?', required: true }}
                 textareaProps={{ disabled: isDisabled }}
                 description='Just a quick overview to help learners know what to expect.'
+              />
+
+              <GoSwitchField
+                name='requiresPayment'
+                labelProps={{ children: 'If course is paid, require payment for this chapter' }}
               />
 
               {/* Submit button */}
