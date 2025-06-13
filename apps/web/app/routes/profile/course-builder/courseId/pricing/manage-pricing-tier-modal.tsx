@@ -2,12 +2,12 @@ import { useEffect, useState } from 'react';
 import { Form, useOutletContext } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Check, ChevronLeft, ChevronRight, Star, TrendingUp } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, Sparkle, Star, TrendingUp } from 'lucide-react';
 import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
-import { redirectWithError } from 'remix-toast';
+import { dataWithError, redirectWithError, redirectWithSuccess } from 'remix-toast';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
 
-import { fetchCoursePricingTierById } from '@gonasi/database/courses';
+import { fetchCoursePricingTierById, managePricingTier } from '@gonasi/database/courses';
 import { CoursePricingSchema, type CoursePricingSchemaTypes } from '@gonasi/schemas/coursePricing';
 
 import type { Route } from './+types/manage-pricing-tier-modal';
@@ -24,7 +24,6 @@ import {
   GoTextAreaField,
 } from '~/components/ui/forms/elements';
 import { Modal } from '~/components/ui/modal';
-import { Separator } from '~/components/ui/separator';
 import { Stepper } from '~/components/ui/stepper';
 import { createClient } from '~/lib/supabase/supabase.server';
 import { checkHoneypot } from '~/utils/honeypot.server';
@@ -73,8 +72,22 @@ export async function action({ params, request }: Route.ActionArgs) {
     return { errors, defaultValues };
   }
 
-  console.log('data is: ', data);
-  return true;
+  console.log('****** data: ', data);
+  console.log('****** errors: ', errors);
+
+  const { supabase } = createClient(request);
+
+  const result = await managePricingTier({
+    supabase,
+    data,
+  });
+
+  return result.success
+    ? redirectWithSuccess(
+        `/${params.username}/course-builder/${params.courseId}/pricing`,
+        result.message,
+      )
+    : dataWithError(null, result.message);
 }
 
 const STEPS = [
@@ -118,7 +131,13 @@ export default function ManagePricingTierModal({ params, loaderData }: Route.Com
   const methods = useRemixForm<CoursePricingSchemaTypes>({
     mode: 'all',
     resolver,
+    defaultValues: {
+      courseId: params.courseId ?? '',
+      isFree: !isPaid,
+    },
   });
+
+  console.log('errors: ', methods.formState.errors);
 
   const { watch, trigger } = methods;
   const watchedValues = watch();
@@ -146,10 +165,6 @@ export default function ManagePricingTierModal({ params, loaderData }: Route.Com
     }
   };
 
-  const goToStep = (stepId: StepId) => {
-    setCurrentStep(stepId);
-  };
-
   const validateCurrentStep = async () => {
     switch (currentStep) {
       case 'basic-config':
@@ -171,39 +186,6 @@ export default function ManagePricingTierModal({ params, loaderData }: Route.Com
         ]);
       default:
         return true;
-    }
-  };
-
-  // Check if step is completed
-  const isStepCompleted = (stepId: StepId) => {
-    switch (stepId) {
-      case 'basic-config': {
-        return (
-          !!watchedValues.paymentFrequency && !!watchedValues.price && !!watchedValues.currencyCode
-        );
-      }
-
-      case 'promotional-pricing': {
-        const promoEnabled: boolean = watchedValues.enablePromotionalPricing;
-        return promoEnabled
-          ? !!watchedValues.promotionalPrice &&
-              !!watchedValues.promotionStartDate &&
-              !!watchedValues.promotionEndDate
-          : true;
-      }
-
-      case 'display-and-marketing': {
-        return (
-          !!watchedValues.tierName &&
-          !!watchedValues.tierDescription &&
-          watchedValues.isActive !== undefined &&
-          watchedValues.isPopular !== undefined &&
-          watchedValues.isRecommended !== undefined
-        );
-      }
-
-      default:
-        return false;
     }
   };
 
@@ -297,17 +279,17 @@ export default function ManagePricingTierModal({ params, loaderData }: Route.Com
                       autoFocus: false,
                       leftIcon: <div className='mt-1 text-xs'>{watchedValues.currencyCode}</div>,
                     }}
-                    labelProps={{ children: 'Promotional Price', required: true }}
+                    labelProps={{ children: 'Promotional price', required: true }}
                     description='Enter the discounted price for the promotion.'
                   />
                   <GoCalendar26
                     name='promotionStartDate'
-                    labelProps={{ children: 'Promotion Start Date', required: true }}
+                    labelProps={{ children: 'Promotion start date', required: true }}
                     description='Select the date when the promotional price will begin.'
                   />
                   <GoCalendar26
                     name='promotionEndDate'
-                    labelProps={{ children: 'Promotion End Date', required: true }}
+                    labelProps={{ children: 'Promotion end date', required: true }}
                     description='Select the date when the promotional price will end.'
                   />
                 </motion.div>
@@ -331,8 +313,10 @@ export default function ManagePricingTierModal({ params, loaderData }: Route.Com
               description='Tell us a bit more about what this tier offers'
             />
             <div>
-              <Separator className='my-4' />
-              <h2 className='py-4'>Enhancement Badges</h2>
+              <div className='flex items-center space-x-1.5 py-4'>
+                <Sparkle />
+                <h2 className='border-b-border/10 mt-1 border-b text-xl'>Enhancement Badges</h2>
+              </div>
               <div className='grid grid-cols-1 gap-0 md:grid-cols-2 md:gap-x-4'>
                 <GoSwitchField
                   name='isPopular'
@@ -413,34 +397,45 @@ export default function ManagePricingTierModal({ params, loaderData }: Route.Com
                   <HoneypotInputs />
                   <div className='rounded-lg'>{renderStepContent()}</div>
                   {/* Navigation buttons */}
-                  <div className='flex justify-between'>
-                    <Button
-                      type='button'
-                      variant='ghost'
-                      onClick={goToPreviousStep}
-                      disabled={isFirstStep}
-                      leftIcon={<ChevronLeft />}
-                    >
-                      Previous
-                    </Button>
-
+                  <div className='flex w-full justify-end'>
                     {isLastStep ? (
-                      <Button type='submit' className='flex items-center' rightIcon={<Check />}>
+                      <Button
+                        type='submit'
+                        className='flex items-center'
+                        rightIcon={<Check />}
+                        disabled={isDisabled}
+                        isLoading={isDisabled}
+                      >
                         Create Pricing Tier
                       </Button>
                     ) : (
-                      <Button
-                        type='button'
-                        variant='ghost'
-                        onClick={goToNextStep}
-                        rightIcon={<ChevronRight />}
-                      >
-                        Next
-                      </Button>
+                      <div className='h-12' />
                     )}
                   </div>
                 </Form>
               </RemixFormProvider>
+              <div className='-mt-12 flex justify-between'>
+                <Button
+                  type='button'
+                  variant='ghost'
+                  onClick={goToPreviousStep}
+                  disabled={isFirstStep}
+                  leftIcon={<ChevronLeft />}
+                >
+                  Previous
+                </Button>
+
+                {!isLastStep ? (
+                  <Button
+                    type='button'
+                    variant='ghost'
+                    onClick={goToNextStep}
+                    rightIcon={<ChevronRight />}
+                  >
+                    Next
+                  </Button>
+                ) : null}
+              </div>
             </div>
           )}
         </Modal.Body>

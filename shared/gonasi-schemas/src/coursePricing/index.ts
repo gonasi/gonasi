@@ -31,15 +31,18 @@ const TierPrice = z.coerce
 
 export const CoursePricingSchema = z
   .object({
+    pricingId: z.string().optional(),
+
     courseId: z
       .string({
         required_error: 'Course ID is required.',
         invalid_type_error: 'Course ID must be a string.',
       })
-      .uuid('That doesn’t look like a valid course ID.')
-      .optional(),
+      .uuid('That doesn’t look like a valid course ID.'),
 
     paymentFrequency: PaymentFrequencyEnum,
+
+    isFree: z.boolean(),
 
     price: TierPrice,
 

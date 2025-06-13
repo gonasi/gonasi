@@ -135,24 +135,26 @@ comment on table public.course_pricing_tiers is
 -- trigger functions and business logic automation
 -- ============================================================================
 
-create or replace function enforce_at_least_one_active_tier()
-returns trigger as $$
+create or replace function public.enforce_at_least_one_active_tier()
+returns trigger
+as $$
 begin
-  if NEW.is_active = false then
+  if new.is_active = false then
     -- check if this is the last active tier for this course
     if not exists (
       select 1
       from course_pricing_tiers
-      where course_id = NEW.course_id
-        and id != NEW.id
+      where course_id = new.course_id
+        and id != new.id
         and is_active = true
     ) then
-      raise exception 'Each course must have at least one active pricing tier.';
+      raise exception 'each course must have at least one active pricing tier.';
     end if;
   end if;
-  return NEW;
+  return new;
 end;
-$$ language plpgsql;
+$$ language plpgsql
+set search_path = '';
 
 
 create trigger trg_check_active_tiers

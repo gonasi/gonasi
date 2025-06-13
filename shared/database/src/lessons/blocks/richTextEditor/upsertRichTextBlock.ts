@@ -28,7 +28,7 @@ export const upsertRichTextBlock = async (
   const id = blockId === 'create-new' ? undefined : blockId;
 
   try {
-    const { error: insertError } = await supabase.from('lesson_blocks').upsert({
+    const { error } = await supabase.from('lesson_blocks').upsert({
       id,
       lesson_id: lessonId,
       course_id: courseId,
@@ -39,7 +39,7 @@ export const upsertRichTextBlock = async (
       updated_by: userId,
     });
 
-    if (insertError) {
+    if (error) {
       return {
         success: false,
         message: 'Failed to create the new rich text block. Please try again.',

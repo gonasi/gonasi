@@ -101,14 +101,14 @@ export function BuilderRichTextPlugin({ block }: BuilderRichTextPluginProps) {
                     </div>
                     <div className='grid gap-2'>
                       <GoSliderField
-                        labelProps={{ children: 'Block Weight ⚖️' }}
+                        labelProps={{ children: 'Block weight ⚖️' }}
                         name='settings.weight'
                         min={1}
                         max={10}
                         description='How important this block is for progress.'
                       />
                       <GoRadioGroupField
-                        labelProps={{ children: 'Playback Mode ▶️' }}
+                        labelProps={{ children: 'Playback mode ▶️' }}
                         name='settings.playbackMode'
                         description='How this block appears in lessons.'
                         options={[
@@ -130,7 +130,7 @@ export function BuilderRichTextPlugin({ block }: BuilderRichTextPluginProps) {
               placeholder='Start typing...'
             />
 
-            <div className='mt-4 flex justify-end space-x-2'>
+            <div className='mt-4 flex justify-between space-x-2'>
               <Button
                 type='submit'
                 rightIcon={<Save />}

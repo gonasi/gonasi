@@ -1,6 +1,6 @@
 import { type ReactNode, useState } from 'react';
 import { motion } from 'framer-motion';
-import { RotateCcw, Settings, Weight } from 'lucide-react';
+import { LayoutTemplate, RotateCcw, Weight } from 'lucide-react';
 
 import RichTextRenderer from '~/components/go-editor/ui/RichTextRenderer';
 import { Badge } from '~/components/ui/badge';
@@ -55,7 +55,7 @@ export function ViewPluginWrapper({
         <div className='flex w-full items-center justify-between'>
           <div className='flex items-center space-x-2'>
             <Badge className='text-xs' variant='outline'>
-              <Settings />
+              <LayoutTemplate />
               {playbackMode}
             </Badge>
             <Badge className='text-xs' variant='outline'>

@@ -136,7 +136,8 @@ export function GoCalendar26({
                   </PopoverContent>
                 </Popover>
               </div>
-              <div className='pt-7.5'>
+              <div>
+                <Label required>Time</Label>
                 <Input
                   type='time'
                   id={`${name}-time`}
