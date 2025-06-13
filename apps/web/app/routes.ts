@@ -153,6 +153,10 @@ export default [
             'manage-pricing-tier/:coursePricingId',
             'routes/profile/course-builder/courseId/pricing/manage-pricing-tier-modal.tsx',
           ),
+          route(
+            'manage-pricing-tier/:coursePricingId/delete',
+            'routes/profile/course-builder/courseId/pricing/delete-pricing-tier-modal.tsx',
+          ),
         ]),
         // /:username/course-builder/:courseId/content
         route('content', 'routes/profile/course-builder/courseId/content/content-index.tsx', [

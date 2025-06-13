@@ -205,9 +205,14 @@ export default function CoursePricing({ loaderData, params }: Route.ComponentPro
                         Edit
                       </NavLink>
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => {}}>
-                      <Trash2 className='mr-2 h-4 w-4' />
-                      Delete
+                    <DropdownMenuItem>
+                      <NavLink
+                        to={`/${params.username}/course-builder/${params.courseId}/pricing/manage-pricing-tier/${priceTier.id}/delete`}
+                        className={cn('flex items-center space-x-4')}
+                      >
+                        <Trash2 className='mr-2 h-4 w-4' />
+                        Delete
+                      </NavLink>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
