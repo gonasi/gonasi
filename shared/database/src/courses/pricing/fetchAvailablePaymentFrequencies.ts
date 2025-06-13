@@ -13,7 +13,31 @@ const frequencyLabels = {
   annual: '🎯 Annual – billed once a year',
 } as const;
 
-type FrequencyValue = keyof typeof frequencyLabels;
+export type FrequencyValue = keyof typeof frequencyLabels;
+
+export interface FrequencyOption {
+  label: string;
+  value: FrequencyValue;
+}
+
+/**
+ * Adds a frequency to the list if it's not already present
+ */
+// TODO: Move to an appropriate file
+export function addFrequencyOption(
+  freqKey: FrequencyValue,
+  availableFrequencies: FrequencyOption[] | null,
+): FrequencyOption[] {
+  const frequencies = availableFrequencies ?? [];
+
+  const alreadyExists = frequencies.some((f) => f.value === freqKey);
+
+  if (alreadyExists) return frequencies;
+
+  const label = frequencyLabels[freqKey];
+
+  return [...frequencies, { value: freqKey, label }];
+}
 
 /**
  * Retrieves unused payment frequency tiers for a specific course
@@ -26,7 +50,7 @@ type FrequencyValue = keyof typeof frequencyLabels;
 export async function fetchAvailablePaymentFrequencies({
   supabase,
   courseId,
-}: FetchAvailablePaymentFrequenciesParams): Promise<{ label: string; value: string }[] | null> {
+}: FetchAvailablePaymentFrequenciesParams): Promise<FrequencyOption[] | null> {
   const { data, error } = await supabase.rpc('get_available_payment_frequencies', {
     p_course_id: courseId,
   });
@@ -39,8 +63,11 @@ export async function fetchAvailablePaymentFrequencies({
     return null;
   }
 
-  return data.map((value: string) => ({
-    value,
-    label: frequencyLabels[value as FrequencyValue] ?? value,
-  }));
+  return data.map((value: string) => {
+    const isValid = value in frequencyLabels;
+    return {
+      value: value as FrequencyValue,
+      label: isValid ? frequencyLabels[value as FrequencyValue] : value,
+    };
+  });
 }

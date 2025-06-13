@@ -388,7 +388,7 @@ begin
     new.created_by,      -- course creator
     new.created_by,      -- course creator
     'monthly',           -- default frequency
-    'free tier'          -- descriptive name
+    'Free'          -- descriptive name
   );
 
   return new;
@@ -480,7 +480,7 @@ begin
     p_user_id,      -- conversion performer
     p_user_id,      -- conversion performer
     'monthly',      -- default frequency
-    'free tier',    -- standard name
+    'Free',    -- standard name
     true            -- active tier
   );
 end;

@@ -58,36 +58,33 @@ export function GoSelectInputField({
     <Controller
       name={name}
       control={control}
-      render={({ field }) => (
-        <div className={className}>
-          <Label htmlFor={name} error={hasError} {...labelProps} />
-          <Select
-            onValueChange={field.onChange}
-            value={field.value}
-            defaultValue={field.value}
-            disabled={disabled}
-          >
-            <SelectTrigger className='h-12 w-full' error={error} disabled={disabled}>
-              <SelectValue placeholder={placeholder} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                {options.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
-          <div className='min-h-[32px] pt-1 pb-3'>
-            {hasError && errorMessage && <ErrorDisplay error={errorMessage} />}
-            {description && (
-              <FormDescription id={`${name}-description`}>{description}</FormDescription>
-            )}
+      render={({ field }) => {
+        return (
+          <div className={className}>
+            <Label htmlFor={name} error={hasError} {...labelProps} />
+            <Select onValueChange={field.onChange} value={field.value} disabled={disabled}>
+              <SelectTrigger className='h-12 w-full' error={error} disabled={disabled}>
+                <SelectValue placeholder={placeholder} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  {options.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+            <div className='min-h-[32px] pt-1 pb-3'>
+              {hasError && errorMessage && <ErrorDisplay error={errorMessage} />}
+              {description && (
+                <FormDescription id={`${name}-description`}>{description}</FormDescription>
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        );
+      }}
     />
   );
 }

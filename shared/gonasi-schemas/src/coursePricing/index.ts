@@ -21,6 +21,8 @@ const CurrencyCodeEnum = z.enum(['KES', 'USD'], {
   invalid_type_error: 'Only KES and USD are supported at the moment.',
 });
 
+export type CurrencyCodeEnumType = z.infer<typeof CurrencyCodeEnum>;
+
 // Price schema — coerced to number
 const TierPrice = z.coerce
   .number({

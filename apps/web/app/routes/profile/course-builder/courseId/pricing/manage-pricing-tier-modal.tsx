@@ -7,8 +7,17 @@ import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hoo
 import { dataWithError, redirectWithError, redirectWithSuccess } from 'remix-toast';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
 
-import { fetchCoursePricingTierById, managePricingTier } from '@gonasi/database/courses';
-import { CoursePricingSchema, type CoursePricingSchemaTypes } from '@gonasi/schemas/coursePricing';
+import {
+  addFrequencyOption,
+  fetchCoursePricingTierById,
+  type FrequencyOption,
+  managePricingTier,
+} from '@gonasi/database/courses';
+import {
+  CoursePricingSchema,
+  type CoursePricingSchemaTypes,
+  type CurrencyCodeEnumType,
+} from '@gonasi/schemas/coursePricing';
 
 import type { Route } from './+types/manage-pricing-tier-modal';
 import type { AvailableFrequenciesLoaderReturnType } from './pricing-index';
@@ -72,9 +81,6 @@ export async function action({ params, request }: Route.ActionArgs) {
     return { errors, defaultValues };
   }
 
-  console.log('****** data: ', data);
-  console.log('****** errors: ', errors);
-
   const { supabase } = createClient(request);
 
   const result = await managePricingTier({
@@ -116,6 +122,8 @@ type StepId = (typeof STEPS)[number]['id'];
 export default function ManagePricingTierModal({ params, loaderData }: Route.ComponentProps) {
   const { username, courseId, coursePricingId } = params;
 
+  const { pricingTier } = loaderData;
+
   const { isPaid, availableFrequencies } =
     useOutletContext<{
       isPaid: boolean;
@@ -132,12 +140,32 @@ export default function ManagePricingTierModal({ params, loaderData }: Route.Com
     mode: 'all',
     resolver,
     defaultValues: {
-      courseId: params.courseId ?? '',
+      pricingId: coursePricingId,
+      courseId: courseId ?? '',
+      paymentFrequency: pricingTier?.payment_frequency,
       isFree: !isPaid,
+      price: pricingTier?.price,
+      currencyCode: pricingTier?.currency_code as CurrencyCodeEnumType,
+      enablePromotionalPricing: !!pricingTier?.promotional_price,
+      promotionalPrice: pricingTier?.promotional_price,
+      promotionStartDate: pricingTier?.promotion_start_date
+        ? new Date(pricingTier.promotion_start_date)
+        : undefined,
+      promotionEndDate: pricingTier?.promotion_end_date
+        ? new Date(pricingTier.promotion_end_date)
+        : undefined,
+      tierName: pricingTier?.tier_name,
+      tierDescription: pricingTier?.tier_description,
+      isActive: pricingTier?.is_active,
+      isRecommended: pricingTier?.is_recommended,
     },
   });
 
-  console.log('errors: ', methods.formState.errors);
+  const normalizedFrequencies = availableFrequencies ?? [];
+  const frequencyOptions: FrequencyOption[] =
+    coursePricingId === 'add-new-tier'
+      ? normalizedFrequencies
+      : addFrequencyOption(pricingTier?.payment_frequency ?? 'monthly', normalizedFrequencies);
 
   const { watch, trigger } = methods;
   const watchedValues = watch();
@@ -210,9 +238,7 @@ export default function ManagePricingTierModal({ params, loaderData }: Route.Com
               description="User's subscription and repayment frequency 📚"
               selectProps={{
                 placeholder: 'Select a payment frequency',
-                options:
-                  availableFrequencies && availableFrequencies.length ? availableFrequencies : [],
-                disabled: isDisabled,
+                options: frequencyOptions,
               }}
             />
             <div>
@@ -406,7 +432,9 @@ export default function ManagePricingTierModal({ params, loaderData }: Route.Com
                         disabled={isDisabled}
                         isLoading={isDisabled}
                       >
-                        Create Pricing Tier
+                        {pricingTier?.id === 'add-new-tier'
+                          ? 'Create Pricing Tier'
+                          : 'Edit Pricing Tier'}
                       </Button>
                     ) : (
                       <div className='h-12' />

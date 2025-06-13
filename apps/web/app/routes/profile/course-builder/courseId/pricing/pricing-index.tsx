@@ -1,4 +1,4 @@
-import { Outlet } from 'react-router';
+import { NavLink, Outlet } from 'react-router';
 import { Check, Edit, MoreHorizontal, Plus, Trash2, X } from 'lucide-react';
 
 import { fetchAvailablePaymentFrequencies, fetchCoursePricing } from '@gonasi/database/courses';
@@ -25,6 +25,7 @@ import {
   TableRow,
 } from '~/components/ui/table';
 import { createClient } from '~/lib/supabase/supabase.server';
+import { cn } from '~/lib/utils';
 import { formatCurrency } from '~/utils/format-currency';
 
 export function meta() {
@@ -195,9 +196,14 @@ export default function CoursePricing({ loaderData, params }: Route.ComponentPro
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align='end'>
-                    <DropdownMenuItem onClick={() => {}}>
-                      <Edit className='mr-2 h-4 w-4' />
-                      Edit
+                    <DropdownMenuItem>
+                      <NavLink
+                        to={`/${params.username}/course-builder/${params.courseId}/pricing/manage-pricing-tier/${priceTier.id}`}
+                        className={cn('flex items-center space-x-4')}
+                      >
+                        <Edit className='mr-2 h-4 w-4' />
+                        Edit
+                      </NavLink>
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => {}}>
                       <Trash2 className='mr-2 h-4 w-4' />
