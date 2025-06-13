@@ -115,6 +115,9 @@ export const CoursePricingSchema = z
       .optional(),
   })
   .superRefine((data, ctx) => {
+    const now = new Date();
+    now.setHours(0, 0, 0, 0); // Normalize to start of today
+
     // Ensure paid tiers have a price greater than 0
     if (data.price <= 0) {
       ctx.addIssue({
@@ -148,7 +151,7 @@ export const CoursePricingSchema = z
       if (data.promotionalPrice == null) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'Promotional price is equired.',
+          message: 'Promotional price is required.',
           path: ['promotionalPrice'],
         });
       }
@@ -156,7 +159,7 @@ export const CoursePricingSchema = z
       if (data.promotionStartDate == null) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'Required.',
+          message: 'Promotional start date is required.',
           path: ['promotionStartDate'],
         });
       }
@@ -164,8 +167,16 @@ export const CoursePricingSchema = z
       if (data.promotionEndDate == null) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'Required.',
+          message: 'Promotional end date is required.',
           path: ['promotionEndDate'],
+        });
+      }
+
+      if (data.promotionStartDate instanceof Date && data.promotionStartDate < now) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Promotion start date must be today or in the future.',
+          path: ['promotionStartDate'],
         });
       }
     }
@@ -187,8 +198,7 @@ export const CoursePricingSchema = z
     ) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message:
-          'Promotion start date needs to come before the end date — time flows forward, not backward.',
+        message: 'Promotion start date needs to come before the end date.',
         path: ['promotionStartDate'],
       });
     }

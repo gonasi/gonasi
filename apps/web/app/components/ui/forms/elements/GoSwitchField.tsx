@@ -50,7 +50,7 @@ export function GoSwitchField({
             />
             <Label htmlFor={id} error={hasError} {...labelProps} />
           </div>
-          <div className='min-h-[12px] pt-1 pb-3'>
+          <div className='-mt-1 min-h-[32px] pb-3'>
             {description && <FormDescription id={descriptionId}>{description}</FormDescription>}
           </div>
         </div>

@@ -3,7 +3,7 @@ import { Form, useOutletContext } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Check, ChevronLeft, ChevronRight, Star, TrendingUp } from 'lucide-react';
-import { RemixFormProvider, useRemixForm } from 'remix-hook-form';
+import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
 import { redirectWithError } from 'remix-toast';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
 
@@ -60,9 +60,20 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 }
 
 export async function action({ params, request }: Route.ActionArgs) {
-  // Parse form data and run spam protection
   const formData = await request.formData();
   await checkHoneypot(formData);
+
+  const {
+    errors,
+    data,
+    receivedValues: defaultValues,
+  } = await getValidatedFormData<CoursePricingSchemaTypes>(formData, resolver); // ← Pass formData here
+
+  if (errors) {
+    return { errors, defaultValues };
+  }
+
+  console.log('data is: ', data);
   return true;
 }
 
@@ -103,8 +114,6 @@ export default function ManagePricingTierModal({ params, loaderData }: Route.Com
   const closeRoute = `/${username}/course-builder/${courseId}/pricing`;
 
   const [currentStep, setCurrentStep] = useState<StepId>('basic-config');
-
-  const [date, setDate] = useState<Date | undefined>(new Date(2025, 5, 12));
 
   const methods = useRemixForm<CoursePricingSchemaTypes>({
     mode: 'all',
@@ -216,7 +225,7 @@ export default function ManagePricingTierModal({ params, loaderData }: Route.Com
             <GoSelectInputField
               labelProps={{ children: 'Payment Frequency', required: true }}
               name='paymentFrequency'
-              description='How often user subscribes and repays the course 📚'
+              description="User's subscription and repayment frequency 📚"
               selectProps={{
                 placeholder: 'Select a payment frequency',
                 options:
@@ -267,7 +276,7 @@ export default function ManagePricingTierModal({ params, loaderData }: Route.Com
             <GoSwitchField
               name='enablePromotionalPricing'
               labelProps={{ children: 'Enable promotional price', required: true }}
-              description='Set up promotions for this tier'
+              description='Allow promotional pricing for this tier'
             />
 
             <AnimatePresence>
@@ -288,15 +297,18 @@ export default function ManagePricingTierModal({ params, loaderData }: Route.Com
                       autoFocus: false,
                       leftIcon: <div className='mt-1 text-xs'>{watchedValues.currencyCode}</div>,
                     }}
-                    labelProps={{ children: 'Promotional price', required: true }}
+                    labelProps={{ children: 'Promotional Price', required: true }}
+                    description='Enter the discounted price for the promotion.'
                   />
                   <GoCalendar26
                     name='promotionStartDate'
-                    labelProps={{ children: 'Promotion start date', required: true }}
+                    labelProps={{ children: 'Promotion Start Date', required: true }}
+                    description='Select the date when the promotional price will begin.'
                   />
                   <GoCalendar26
                     name='promotionEndDate'
-                    labelProps={{ children: 'Promotion end date', required: true }}
+                    labelProps={{ children: 'Promotion End Date', required: true }}
+                    description='Select the date when the promotional price will end.'
                   />
                 </motion.div>
               )}
@@ -308,22 +320,22 @@ export default function ManagePricingTierModal({ params, loaderData }: Route.Com
         return (
           <div>
             <GoInputField
-              name='name'
-              labelProps={{ children: 'Tier name', required: true }}
-              description='Give this pricing tier a descriptive name'
+              name='tierName'
+              labelProps={{ children: 'Tier name' }}
+              description='What should we call this tier?'
             />
             <GoTextAreaField
-              labelProps={{ children: 'Toughest Bit', required: true }}
-              name='hardestPart'
-              textareaProps={{ placeholder: 'Where did things get tricky?' }}
-              description='What tripped you up the most? Be honest—we want to fix it!'
+              labelProps={{ children: 'Tier description' }}
+              name='tierDescription'
+              textareaProps={{ placeholder: 'Give us the details' }}
+              description='Tell us a bit more about what this tier offers'
             />
             <div>
               <Separator className='my-4' />
               <h2 className='py-4'>Enhancement Badges</h2>
               <div className='grid grid-cols-1 gap-0 md:grid-cols-2 md:gap-x-4'>
                 <GoSwitchField
-                  name=''
+                  name='isPopular'
                   labelProps={{
                     children: (
                       <div className='flex items-center space-x-2'>
@@ -334,21 +346,27 @@ export default function ManagePricingTierModal({ params, loaderData }: Route.Com
                       </div>
                     ),
                   }}
+                  description='Let users know this one’s a fan favorite'
                 />
                 <GoSwitchField
-                  name=''
+                  name='isRecommended'
                   labelProps={{
                     children: (
                       <div className='flex items-center space-x-2'>
-                        <TrendingUp size={16} />{' '}
+                        <TrendingUp size={16} />
                         <span>
                           Mark as <Badge variant='tip'>Recommended</Badge>
                         </span>
                       </div>
                     ),
                   }}
+                  description='Highlight this tier as your top pick'
                 />
-                <GoSwitchField name='' labelProps={{ children: 'Active (visible to customers)' }} />
+                <GoSwitchField
+                  name='isActive'
+                  labelProps={{ children: 'Active (visible to customers)' }}
+                  description='Turn this on to make the tier publicly available'
+                />
               </div>
             </div>
           </div>
