@@ -221,6 +221,7 @@ export default function CoursePricing({ loaderData, params }: Route.ComponentPro
         <TableCaption>A list of pricing options for this course</TableCaption>
         <TableHeader>
           <TableRow>
+            <TableHead />
             <TableHead>Status</TableHead>
             <TableHead>Tier Details</TableHead>
             <TableHead>Base Price</TableHead>
@@ -244,10 +245,18 @@ export default function CoursePricing({ loaderData, params }: Route.ComponentPro
               id={priceTier.id}
               as='tr'
               className={cn(
-                'hover:bg-muted data-[state=selected]:bg-muted border-border/50 border-b transition-colors',
+                'data-[state=selected]:bg-muted border-border/50 border-b transition-colors',
                 isSubmitting && 'animate-pulse hover:cursor-wait',
               )}
             >
+              <TableCell className='px-0'>
+                <ReorderIconTooltip
+                  title='Drag and drop to pricing tiers'
+                  icon={GripVerticalIcon}
+                  disabled={isSubmitting}
+                  dragControls={coursePricingTierDragControls}
+                />
+              </TableCell>
               <TableCell className='font-medium'>
                 <StatusBadge isActive={priceTier.is_active} />
               </TableCell>
@@ -300,12 +309,6 @@ export default function CoursePricing({ loaderData, params }: Route.ComponentPro
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-                <ReorderIconTooltip
-                  title='Drag and drop to pricing tiers'
-                  icon={GripVerticalIcon}
-                  disabled={isSubmitting}
-                  dragControls={coursePricingTierDragControls}
-                />
               </TableCell>
             </Reorder.Item>
           ))}

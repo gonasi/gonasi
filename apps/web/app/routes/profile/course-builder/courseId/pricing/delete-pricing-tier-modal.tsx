@@ -4,7 +4,7 @@ import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hoo
 import { dataWithError, redirectWithSuccess } from 'remix-toast';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
 
-import { deleteUserLessonById } from '@gonasi/database/lessons';
+import { deleteCoursePricingTier } from '@gonasi/database/courses/pricing';
 import {
   DeleteCoursePricingTierSchema,
   type DeleteCoursePricingTierSchemaTypes,
@@ -22,10 +22,13 @@ const resolver = zodResolver(DeleteCoursePricingTierSchema);
 
 export async function action({ params, request }: Route.ActionArgs) {
   const formData = await request.formData();
+
+  // Anti-bot check using honeypot
   await checkHoneypot(formData);
 
   const { supabase } = createClient(request);
 
+  // Validate form data against schema
   const {
     errors,
     data,
@@ -34,28 +37,25 @@ export async function action({ params, request }: Route.ActionArgs) {
 
   if (errors) return { errors, defaultValues };
 
-  const { success, message } = await deleteUserLessonById(supabase, {
-    ...data,
-  });
+  // Attempt to delete the pricing tier
+  const { success, message } = await deleteCoursePricingTier(supabase, data);
 
   if (!success) {
     return dataWithError(null, message);
   }
 
-  return redirectWithSuccess(
-    `/${params.username}/course-builder/${params.courseId}/content`,
-    message,
-  );
+  // Redirect on success
+  const redirectPath = `/${params.username}/course-builder/${params.courseId}/pricing`;
+  return redirectWithSuccess(redirectPath, message);
 }
 
 export default function DeletePricingTier({ params }: Route.ComponentProps) {
   const navigate = useNavigate();
-
-  const handleClose = () =>
-    navigate(`/${params.username}/course-builder/${params.courseId}/content`);
-
   const isPending = useIsPending();
 
+  const redirectPath = `/${params.username}/course-builder/${params.courseId}/pricing`;
+
+  // Form setup with Remix Hook Form and Zod schema
   const methods = useRemixForm<DeleteCoursePricingTierSchemaTypes>({
     mode: 'all',
     resolver,
@@ -66,17 +66,17 @@ export default function DeletePricingTier({ params }: Route.ComponentProps) {
 
   const isDisabled = isPending || methods.formState.isSubmitting;
 
+  const handleClose = () => navigate(redirectPath);
+
   return (
     <Modal open>
       <Modal.Content size='sm'>
-        <Modal.Header
-          closeRoute={`/${params.username}/course-builder/${params.courseId}/pricing`}
-        />
+        <Modal.Header closeRoute={redirectPath} />
         <Modal.Body>
           <RemixFormProvider {...methods}>
             <Form method='POST' onSubmit={methods.handleSubmit}>
+              {/* Honeypot field for spam protection */}
               <HoneypotInputs />
-
               <DeleteConfirmationLayout
                 titlePrefix='this'
                 title='Pricing Tier'

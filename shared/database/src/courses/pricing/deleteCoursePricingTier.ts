@@ -4,10 +4,10 @@ import { getUserId } from '../../auth';
 import type { TypedSupabaseClient } from '../../client';
 
 /**
- * Deletes a lesson by its ID if it was created by the specified user.
+ * Deletes a pricing tier by its ID if it was created by the specified user.
  *
  * @param {TypedSupabaseClient} supabase - The Supabase client instance.
- * @param {DeleteCoursePricingTierSchemaTypes} lessonData - The lesson ID and user ID for deletion.
+ * @param {DeleteCoursePricingTierSchemaTypes} data - The pricing tier ID and user ID for deletion.
  * @returns {Promise<ApiResponse>} The response indicating success or failure.
  */
 export const deleteCoursePricingTier = async (
@@ -18,21 +18,21 @@ export const deleteCoursePricingTier = async (
   const { coursePricingTierId } = data;
 
   try {
-    const { error } = await supabase.rpc('delete_lesson', {
-      p_lesson_id: lessonId,
+    const { error } = await supabase.rpc('delete_pricing_tier', {
+      p_tier_id: coursePricingTierId,
       p_deleted_by: userId,
     });
 
     if (error) {
       return {
         success: false,
-        message: 'Unable to delete the lesson. Please try again.',
+        message: error.message,
       };
     }
 
-    return { success: true, message: 'Lesson successfully deleted.' };
+    return { success: true, message: 'Pricing tier successfully deleted.' };
   } catch (error) {
-    console.error('Unexpected error while deleting lesson:', error);
+    console.error('Unexpected error while deleting pricing tier:', error);
     return { success: false, message: 'An unexpected error occurred. Please try again later.' };
   }
 };

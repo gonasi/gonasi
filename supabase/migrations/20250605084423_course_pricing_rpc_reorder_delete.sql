@@ -99,10 +99,19 @@ $$;
 -- ====================================================================================
 -- Function: delete_pricing_tier
 -- ====================================================================================
--- Marks a pricing tier as inactive and reorders remaining active tiers.
+-- Soft-deletes a pricing tier by removing it from the `course_pricing_tiers` table, 
+-- and reorders the remaining tiers for the same course to maintain continuous positions.
 --
--- @param p_tier_id: UUID of the pricing tier to delete (soft delete)
--- @param p_deleted_by: UUID of user performing the operation
+-- Parameters:
+--   @param p_tier_id UUID       -- ID of the pricing tier to delete
+--   @param p_deleted_by UUID    -- ID of the user performing the deletion
+--
+-- Behavior:
+--   - Verifies the pricing tier exists and retrieves its course ID and position.
+--   - Checks that the user has sufficient permissions (admin, editor, or creator).
+--   - Deletes the tier from the table.
+--   - Decrements the `position` of remaining tiers that come after the deleted one.
+
 create or replace function delete_pricing_tier(
   p_tier_id uuid,
   p_deleted_by uuid
@@ -120,11 +129,11 @@ begin
   select course_id, position
   into v_course_id, v_position
   from public.course_pricing_tiers
-  where id = p_tier_id and is_active;
+  where id = p_tier_id;
 
   -- Check existence
   if v_course_id is null then
-    raise exception 'Pricing tier does not exist or is already inactive';
+    raise exception 'Pricing tier does not exist';
   end if;
 
   -- Permission check
@@ -141,20 +150,16 @@ begin
     raise exception 'Insufficient permissions to delete pricing tiers in this course';
   end if;
 
-  -- Soft delete tier
-  update public.course_pricing_tiers
-  set 
-    is_active = false,
-    updated_at = timezone('utc', now()),
-    updated_by = p_deleted_by
+  -- Delete the tier
+  delete from public.course_pricing_tiers
   where id = p_tier_id;
 
-  -- Reorder remaining active tiers
+  -- Reorder remaining tiers
   update public.course_pricing_tiers
   set 
     position = position - 1,
     updated_at = timezone('utc', now()),
     updated_by = p_deleted_by
-  where course_id = v_course_id and is_active and position > v_position;
+  where course_id = v_course_id and position > v_position;
 end;
 $$;
