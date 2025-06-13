@@ -1,11 +1,14 @@
-import { Form, useNavigate, useParams } from 'react-router';
+import { Form, useNavigate } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
 import { dataWithError, redirectWithSuccess } from 'remix-toast';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
 
 import { deleteUserLessonById } from '@gonasi/database/lessons';
-import { DeleteLessonSchema, type DeleteLessonSchemaTypes } from '@gonasi/schemas/lessons';
+import {
+  DeleteCoursePricingTierSchema,
+  type DeleteCoursePricingTierSchemaTypes,
+} from '@gonasi/schemas/coursePricing';
 
 import type { Route } from './+types/delete-pricing-tier-modal';
 
@@ -15,7 +18,7 @@ import { createClient } from '~/lib/supabase/supabase.server';
 import { checkHoneypot } from '~/utils/honeypot.server';
 import { useIsPending } from '~/utils/misc';
 
-const resolver = zodResolver(DeleteLessonSchema);
+const resolver = zodResolver(DeleteCoursePricingTierSchema);
 
 export async function action({ params, request }: Route.ActionArgs) {
   const formData = await request.formData();
@@ -27,7 +30,7 @@ export async function action({ params, request }: Route.ActionArgs) {
     errors,
     data,
     receivedValues: defaultValues,
-  } = await getValidatedFormData<DeleteLessonSchemaTypes>(formData, resolver);
+  } = await getValidatedFormData<DeleteCoursePricingTierSchemaTypes>(formData, resolver);
 
   if (errors) return { errors, defaultValues };
 
@@ -45,20 +48,19 @@ export async function action({ params, request }: Route.ActionArgs) {
   );
 }
 
-export default function DeletePricingTier({ loaderData }: Route.ComponentProps) {
+export default function DeletePricingTier({ params }: Route.ComponentProps) {
   const navigate = useNavigate();
-  const params = useParams();
 
   const handleClose = () =>
     navigate(`/${params.username}/course-builder/${params.courseId}/content`);
 
   const isPending = useIsPending();
 
-  const methods = useRemixForm<DeleteLessonSchemaTypes>({
+  const methods = useRemixForm<DeleteCoursePricingTierSchemaTypes>({
     mode: 'all',
     resolver,
     defaultValues: {
-      lessonId: loaderData.id,
+      coursePricingTierId: params.coursePricingId,
     },
   });
 
@@ -68,7 +70,7 @@ export default function DeletePricingTier({ loaderData }: Route.ComponentProps) 
     <Modal open>
       <Modal.Content size='sm'>
         <Modal.Header
-          closeRoute={`/${params.username}/course-builder/${params.courseId}/content`}
+          closeRoute={`/${params.username}/course-builder/${params.courseId}/pricing`}
         />
         <Modal.Body>
           <RemixFormProvider {...methods}>
@@ -76,8 +78,8 @@ export default function DeletePricingTier({ loaderData }: Route.ComponentProps) 
               <HoneypotInputs />
 
               <DeleteConfirmationLayout
-                titlePrefix='lesson: '
-                title={loaderData.name}
+                titlePrefix='this'
+                title='Pricing Tier'
                 isLoading={isDisabled}
                 handleClose={handleClose}
               />

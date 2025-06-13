@@ -210,3 +210,8 @@ export const CoursePricingSchema = z
   });
 
 export type CoursePricingSchemaTypes = z.infer<typeof CoursePricingSchema>;
+
+export const DeleteCoursePricingTierSchema = z.object({
+  coursePricingTierId: z.string(),
+});
+export type DeleteCoursePricingTierSchemaTypes = z.infer<typeof DeleteCoursePricingTierSchema>;
