@@ -3,7 +3,7 @@ import { useRemixFormContext } from 'remix-hook-form';
 
 import { Label, type LabelProps } from '../../label';
 import { Switch } from '../../switch';
-import { ErrorDisplay, FormDescription } from './Common';
+import { FormDescription } from './Common';
 
 interface GoSwitchFieldProps {
   name: string;
@@ -29,7 +29,6 @@ export function GoSwitchField({
   const descriptionId = `${id}-description`;
   const error = errors[name];
   const hasError = !!error;
-  const errorMessage = error?.message?.toString() || 'This field has an error';
 
   return (
     <Controller
@@ -51,8 +50,7 @@ export function GoSwitchField({
             />
             <Label htmlFor={id} error={hasError} {...labelProps} />
           </div>
-          <div className='min-h-[32px] pt-1 pb-3'>
-            {hasError && errorMessage && <ErrorDisplay error={errorMessage} />}
+          <div className='min-h-[12px] pt-1 pb-3'>
             {description && <FormDescription id={descriptionId}>{description}</FormDescription>}
           </div>
         </div>

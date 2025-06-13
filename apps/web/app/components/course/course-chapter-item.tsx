@@ -103,7 +103,6 @@ export default function CourseChapterItem({ chapter, loading }: Props) {
       <div className='relative'>
         <div className='absolute top-3 -left-4'>
           <ReorderIconTooltip
-            asChild
             title='Drag and drop to rearrange chapters'
             icon={GripVerticalIcon}
             disabled={loading}
@@ -139,10 +138,7 @@ export default function CourseChapterItem({ chapter, loading }: Props) {
 
             {/* Badges for metadata */}
             <div className='flex w-full items-start'>
-              <ChapterBadges
-                lessonCount={chapter.lesson_count}
-                requiresPayment={chapter.requires_payment}
-              />
+              <ChapterBadges lessonCount={chapter.lesson_count} requiresPayment={false} />
             </div>
           </AccordionTrigger>
 

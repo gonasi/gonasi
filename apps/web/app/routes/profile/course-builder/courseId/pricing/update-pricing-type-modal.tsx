@@ -123,13 +123,13 @@ export default function UpdatePricingTypeModal({ params }: Route.ComponentProps)
                     <li>
                       This will <Tag className='bg-danger/50'>delete 🗑️</Tag> all your current{' '}
                       <Tag>paid options</Tag> and add the{' '}
-                      <span className='text-warning font-medium'>free default pricing option</span>.
+                      <Tag className='font-medium underline'>free default pricing option</Tag>.
                     </li>
                   ) : (
                     <li>
                       This will remove the{' '}
-                      <span className='text-warning font-medium'>free default pricing option</span>{' '}
-                      and set up a{' '}
+                      <Tag className='font-medium underline'>free default pricing option</Tag> and
+                      set up a{' '}
                       <span className='text-foreground font-medium'>default paid option</span>. You
                       can tweak or add more paid options later. 💸
                     </li>

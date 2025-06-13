@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Form, useOutletContext } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Check, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, Star, TrendingUp } from 'lucide-react';
 import { RemixFormProvider, useRemixForm } from 'remix-hook-form';
 import { redirectWithError } from 'remix-toast';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
@@ -14,9 +14,17 @@ import type { Route } from './+types/manage-pricing-tier-modal';
 import type { AvailableFrequenciesLoaderReturnType } from './pricing-index';
 
 import { BannerCard } from '~/components/cards';
+import { Badge } from '~/components/ui/badge';
 import { Button } from '~/components/ui/button';
-import { GoInputField, GoSelectInputField, GoSwitchField } from '~/components/ui/forms/elements';
+import {
+  GoCalendar26,
+  GoInputField,
+  GoSelectInputField,
+  GoSwitchField,
+  GoTextAreaField,
+} from '~/components/ui/forms/elements';
 import { Modal } from '~/components/ui/modal';
+import { Separator } from '~/components/ui/separator';
 import { Stepper } from '~/components/ui/stepper';
 import { createClient } from '~/lib/supabase/supabase.server';
 import { checkHoneypot } from '~/utils/honeypot.server';
@@ -95,6 +103,8 @@ export default function ManagePricingTierModal({ params, loaderData }: Route.Com
   const closeRoute = `/${username}/course-builder/${courseId}/pricing`;
 
   const [currentStep, setCurrentStep] = useState<StepId>('basic-config');
+
+  const [date, setDate] = useState<Date | undefined>(new Date(2025, 5, 12));
 
   const methods = useRemixForm<CoursePricingSchemaTypes>({
     mode: 'all',
@@ -280,6 +290,14 @@ export default function ManagePricingTierModal({ params, loaderData }: Route.Com
                     }}
                     labelProps={{ children: 'Promotional price', required: true }}
                   />
+                  <GoCalendar26
+                    name='promotionStartDate'
+                    labelProps={{ children: 'Promotion start date', required: true }}
+                  />
+                  <GoCalendar26
+                    name='promotionEndDate'
+                    labelProps={{ children: 'Promotion end date', required: true }}
+                  />
                 </motion.div>
               )}
             </AnimatePresence>
@@ -288,11 +306,52 @@ export default function ManagePricingTierModal({ params, loaderData }: Route.Com
 
       case 'display-and-marketing':
         return (
-          <GoInputField
-            name='name'
-            labelProps={{ children: 'Tier Name', required: true }}
-            description='Give this pricing tier a descriptive name'
-          />
+          <div>
+            <GoInputField
+              name='name'
+              labelProps={{ children: 'Tier name', required: true }}
+              description='Give this pricing tier a descriptive name'
+            />
+            <GoTextAreaField
+              labelProps={{ children: 'Toughest Bit', required: true }}
+              name='hardestPart'
+              textareaProps={{ placeholder: 'Where did things get tricky?' }}
+              description='What tripped you up the most? Be honest—we want to fix it!'
+            />
+            <div>
+              <Separator className='my-4' />
+              <h2 className='py-4'>Enhancement Badges</h2>
+              <div className='grid grid-cols-1 gap-0 md:grid-cols-2 md:gap-x-4'>
+                <GoSwitchField
+                  name=''
+                  labelProps={{
+                    children: (
+                      <div className='flex items-center space-x-2'>
+                        <Star size={16} />
+                        <span>
+                          Mark as <Badge variant='success'>Most Popular</Badge>
+                        </span>
+                      </div>
+                    ),
+                  }}
+                />
+                <GoSwitchField
+                  name=''
+                  labelProps={{
+                    children: (
+                      <div className='flex items-center space-x-2'>
+                        <TrendingUp size={16} />{' '}
+                        <span>
+                          Mark as <Badge variant='tip'>Recommended</Badge>
+                        </span>
+                      </div>
+                    ),
+                  }}
+                />
+                <GoSwitchField name='' labelProps={{ children: 'Active (visible to customers)' }} />
+              </div>
+            </div>
+          </div>
         );
 
       default:
@@ -348,9 +407,8 @@ export default function ManagePricingTierModal({ params, loaderData }: Route.Com
                     </Button>
 
                     {isLastStep ? (
-                      <Button type='submit' className='flex items-center'>
-                        Complete Setup
-                        <Check />
+                      <Button type='submit' className='flex items-center' rightIcon={<Check />}>
+                        Create Pricing Tier
                       </Button>
                     ) : (
                       <Button

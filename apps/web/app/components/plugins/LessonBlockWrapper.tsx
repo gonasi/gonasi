@@ -47,7 +47,6 @@ export default function LessonBlockWrapper(props: LessonBlockWrapperProps) {
         <>
           <div className='absolute top-3 -left-4'>
             <ReorderIconTooltip
-              asChild
               title='Drag and drop to rearrange blocks'
               icon={GripVerticalIcon}
               disabled={loading}

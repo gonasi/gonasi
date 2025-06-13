@@ -95,11 +95,9 @@ create table public.course_pricing_tiers (
     )
   ),
 
-  -- ensures only one active tier per payment frequency per course
-  -- this prevents confusion and duplicate pricing options
-  constraint uq_active_frequency_per_course unique (
-    course_id, payment_frequency, is_active
-  ) deferrable initially deferred
+  constraint uq_one_active_tier_per_frequency
+  unique (course_id, payment_frequency, is_active)
+  deferrable initially deferred
 );
 
 -- ============================================================================
@@ -136,6 +134,33 @@ comment on table public.course_pricing_tiers is
 -- ============================================================================
 -- trigger functions and business logic automation
 -- ============================================================================
+
+create or replace function enforce_at_least_one_active_tier()
+returns trigger as $$
+begin
+  if NEW.is_active = false then
+    -- check if this is the last active tier for this course
+    if not exists (
+      select 1
+      from course_pricing_tiers
+      where course_id = NEW.course_id
+        and id != NEW.id
+        and is_active = true
+    ) then
+      raise exception 'Each course must have at least one active pricing tier.';
+    end if;
+  end if;
+  return NEW;
+end;
+$$ language plpgsql;
+
+
+create trigger trg_check_active_tiers
+before update on public.course_pricing_tiers
+for each row
+when (OLD.is_active = true and NEW.is_active = false)
+execute function enforce_at_least_one_active_tier();
+
 
 -- automatically sets position for new pricing tiers
 -- when a tier is created without specifying position, it gets the next available number

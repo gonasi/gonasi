@@ -101,7 +101,6 @@ export function GoSearchableDropDown({
                   className={cn(
                     `bg-background flex ${selectedOption?.description ? 'h-20' : 'h-12'} w-full items-center justify-center rounded-md border px-3 py-2 text-sm transition-colors`,
                     'font-secondary text-foreground',
-                    'hover:bg-muted',
                     'focus-visible:ring-ring focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:outline-none',
                     !field.value && 'text-muted-foreground',
                     hasError ? 'border-danger text-danger' : 'border-input',

@@ -1374,7 +1374,7 @@
           "nullNotDistinct": false
         },
         {
-          "name": "uq_active_frequency_per_course",
+          "name": "uq_one_active_tier_per_frequency",
           "fields": [
             "course_id",
             "is_active",

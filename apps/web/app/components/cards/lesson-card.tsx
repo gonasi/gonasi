@@ -48,7 +48,6 @@ export function LessonCard({ lesson, loading }: Props) {
       <div className='relative'>
         <div className='absolute top-4 -left-0'>
           <ReorderIconTooltip
-            asChild
             title='Drag and drop to rearrange lessons'
             icon={GripVerticalIcon}
             disabled={loading}
