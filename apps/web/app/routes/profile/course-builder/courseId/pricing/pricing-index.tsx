@@ -1,7 +1,15 @@
-import { NavLink, Outlet } from 'react-router';
-import { Check, Edit, MoreHorizontal, Plus, Trash2, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { data, NavLink, Outlet, useFetcher } from 'react-router';
+import { Reorder, useDragControls } from 'framer-motion';
+import { Check, Edit, GripVerticalIcon, MoreHorizontal, Plus, Trash2, X } from 'lucide-react';
+import { dataWithError } from 'remix-toast';
 
-import { fetchAvailablePaymentFrequencies, fetchCoursePricing } from '@gonasi/database/courses';
+import {
+  fetchAvailablePaymentFrequencies,
+  fetchCoursePricing,
+  updatePricingTierPositions,
+} from '@gonasi/database/courses';
+import { CourseTierPositionUpdateArraySchema } from '@gonasi/schemas/coursePricing';
 
 import type { Route } from './+types/pricing-index';
 
@@ -17,13 +25,13 @@ import {
 } from '~/components/ui/dropdown-menu';
 import {
   Table,
-  TableBody,
   TableCaption,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
 } from '~/components/ui/table';
+import { ReorderIconTooltip } from '~/components/ui/tooltip/ReorderIconToolTip';
 import { createClient } from '~/lib/supabase/supabase.server';
 import { cn } from '~/lib/utils';
 import { formatCurrency } from '~/utils/format-currency';
@@ -67,8 +75,68 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   return { pricingData, isPaid, availableFrequencies };
 }
 
+export async function action({ request, params }: Route.ActionArgs) {
+  const formData = await request.formData();
+  const { supabase } = createClient(request);
+
+  const pricingTiersRaw = formData.get('pricingTiers');
+
+  if (typeof pricingTiersRaw !== 'string') {
+    throw new Response('Invalid data', { status: 400 });
+  }
+
+  // Validate the blocks position data using Zod schema
+  const parsed = CourseTierPositionUpdateArraySchema.safeParse(JSON.parse(pricingTiersRaw));
+
+  if (!parsed.success) {
+    console.error(parsed.error);
+    throw new Response('Validation failed', { status: 400 });
+  }
+
+  // Update positions in DB
+  const result = await updatePricingTierPositions({
+    supabase,
+    courseId: params.courseId,
+    pricingTierPositions: parsed.data,
+  });
+
+  return result.success
+    ? data({ success: true })
+    : dataWithError(null, result.message ?? 'Could not re-order pricing tiers');
+}
+
 export default function CoursePricing({ loaderData, params }: Route.ComponentProps) {
   const { pricingData, isPaid, availableFrequencies } = loaderData;
+  const fetcher = useFetcher();
+
+  const [reorderedPricingTiers, setReorderedPricingTiers] = useState<CoursePricingType[]>(
+    pricingData ?? [],
+  );
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const coursePricingTierDragControls = useDragControls();
+
+  useEffect(() => {
+    setReorderedPricingTiers(pricingData ?? []);
+  }, [pricingData]);
+
+  useEffect(() => {
+    setIsSubmitting(fetcher.state === 'submitting');
+  }, [fetcher.state]);
+
+  function handleReorder(updated: CoursePricingType[]) {
+    setReorderedPricingTiers(updated);
+
+    const orderedData = updated.map((chapter, index) => ({
+      id: chapter.id,
+      position: index + 1,
+    }));
+
+    const formData = new FormData();
+    formData.append('pricingTiers', JSON.stringify(orderedData));
+
+    fetcher.submit(formData, { method: 'post' });
+  }
 
   if (!pricingData?.length) {
     return (
@@ -161,9 +229,25 @@ export default function CoursePricing({ loaderData, params }: Route.ComponentPro
             <TableHead className='w-[70px] text-right'>Actions</TableHead>
           </TableRow>
         </TableHeader>
-        <TableBody>
-          {pricingData.map((priceTier) => (
-            <TableRow key={priceTier.id}>
+
+        <Reorder.Group
+          axis='y'
+          values={reorderedPricingTiers}
+          onReorder={handleReorder}
+          as='tbody'
+          className={cn('[&_tr:last-child]:border-0')}
+        >
+          {reorderedPricingTiers.map((priceTier) => (
+            <Reorder.Item
+              value={priceTier}
+              key={priceTier.id}
+              id={priceTier.id}
+              as='tr'
+              className={cn(
+                'hover:bg-muted data-[state=selected]:bg-muted border-border/50 border-b transition-colors',
+                isSubmitting && 'animate-pulse hover:cursor-wait',
+              )}
+            >
               <TableCell className='font-medium'>
                 <StatusBadge isActive={priceTier.is_active} />
               </TableCell>
@@ -216,10 +300,16 @@ export default function CoursePricing({ loaderData, params }: Route.ComponentPro
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
+                <ReorderIconTooltip
+                  title='Drag and drop to pricing tiers'
+                  icon={GripVerticalIcon}
+                  disabled={isSubmitting}
+                  dragControls={coursePricingTierDragControls}
+                />
               </TableCell>
-            </TableRow>
+            </Reorder.Item>
           ))}
-        </TableBody>
+        </Reorder.Group>
       </Table>
       <Outlet context={{ isPaid, availableFrequencies }} />
     </div>

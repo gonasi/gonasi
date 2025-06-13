@@ -137,6 +137,9 @@ comment on table public.course_pricing_tiers is
 
 create or replace function public.enforce_at_least_one_active_tier()
 returns trigger
+language plpgsql
+security definer
+set search_path = ''
 as $$
 begin
   if new.is_active = false then
@@ -153,15 +156,7 @@ begin
   end if;
   return new;
 end;
-$$ language plpgsql
-set search_path = '';
-
-
-create trigger trg_check_active_tiers
-before update on public.course_pricing_tiers
-for each row
-when (OLD.is_active = true and NEW.is_active = false)
-execute function enforce_at_least_one_active_tier();
+$$;
 
 
 -- automatically sets position for new pricing tiers
@@ -558,8 +553,8 @@ begin
     p_user_id,                                                  -- conversion performer
     p_user_id,                                                  -- conversion performer
     'monthly',                                                  -- most common frequency
-    'standard plan',                                            -- professional name
-    'automatically added paid tier. you can update this.',     -- helpful description
+    'Free Plan',                                                -- professional name
+    'automatically added paid tier. you can update this.',      -- helpful description
     true                                                        -- active tier
   );
 

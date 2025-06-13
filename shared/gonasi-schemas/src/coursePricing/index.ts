@@ -215,3 +215,13 @@ export const DeleteCoursePricingTierSchema = z.object({
   coursePricingTierId: z.string(),
 });
 export type DeleteCoursePricingTierSchemaTypes = z.infer<typeof DeleteCoursePricingTierSchema>;
+
+export const CourseTierPositionUpdateSchema = z.object({
+  id: z.string().uuid(),
+  position: z.number().int(),
+});
+
+export const CourseTierPositionUpdateArraySchema = z.array(CourseTierPositionUpdateSchema);
+
+export type CourseTierPositionUpdate = z.infer<typeof CourseTierPositionUpdateSchema>;
+export type CourseTierPositionUpdateArrayType = z.infer<typeof CourseTierPositionUpdateArraySchema>;

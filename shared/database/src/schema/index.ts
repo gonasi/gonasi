@@ -845,6 +845,10 @@ export type Database = {
         Args: { p_block_id: string; p_deleted_by: string }
         Returns: undefined
       }
+      delete_pricing_tier: {
+        Args: { p_tier_id: string; p_deleted_by: string }
+        Returns: undefined
+      }
       get_available_payment_frequencies: {
         Args: { p_course_id: string }
         Returns: Database["public"]["Enums"]["payment_frequency"][]
@@ -887,6 +891,14 @@ export type Database = {
         Args: {
           p_chapter_id: string
           lesson_positions: Json
+          p_updated_by: string
+        }
+        Returns: undefined
+      }
+      reorder_pricing_tiers: {
+        Args: {
+          p_course_id: string
+          tier_positions: Json
           p_updated_by: string
         }
         Returns: undefined
