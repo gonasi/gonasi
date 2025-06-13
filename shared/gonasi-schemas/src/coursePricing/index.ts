@@ -50,6 +50,8 @@ export const CoursePricingSchema = z
 
     currencyCode: CurrencyCodeEnum,
 
+    position: z.number().int().optional(),
+
     enablePromotionalPricing: z.coerce.boolean({
       required_error: 'Enable promotional pricing.',
       invalid_type_error: 'enablePromotionalPricing must be true or false.',

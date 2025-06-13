@@ -61,9 +61,9 @@ begin
   -- Ensure all tiers are included
   if (
     select count(*) from public.course_pricing_tiers
-    where course_id = p_course_id and is_active
+    where course_id = p_course_id
   ) != jsonb_array_length(tier_positions) then
-    raise exception 'All active pricing tiers for the course must be included in the reorder operation';
+    raise exception 'All tiers for the course must be included in the reorder operation';
   end if;
 
   -- Check for duplicate positions
@@ -77,7 +77,7 @@ begin
   -- Temporarily shift all active tier positions
   update public.course_pricing_tiers
   set position = position + temp_offset
-  where course_id = p_course_id and is_active;
+  where course_id = p_course_id;
 
   -- Apply new positions and audit
   update public.course_pricing_tiers

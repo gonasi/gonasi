@@ -227,7 +227,7 @@ export default function CoursePricing({ loaderData, params }: Route.ComponentPro
             <TableHead>Base Price</TableHead>
             <TableHead>Promotions</TableHead>
             <TableHead>Highlights</TableHead>
-            <TableHead className='w-[70px] text-right'>Actions</TableHead>
+            {isPaid ? <TableHead className='w-[70px] text-right'>Actions</TableHead> : null}
           </TableRow>
         </TableHeader>
 
@@ -280,36 +280,38 @@ export default function CoursePricing({ loaderData, params }: Route.ComponentPro
               <TableCell>
                 <FeatureFlags price={priceTier} />
               </TableCell>
-              <TableCell className='text-right'>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant='ghost' className='h-8 w-8 p-0'>
-                      <span className='sr-only'>Open menu</span>
-                      <MoreHorizontal className='h-4 w-4' />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align='end'>
-                    <DropdownMenuItem>
-                      <NavLink
-                        to={`/${params.username}/course-builder/${params.courseId}/pricing/manage-pricing-tier/${priceTier.id}`}
-                        className={cn('flex items-center space-x-4')}
-                      >
-                        <Edit className='mr-2 h-4 w-4' />
-                        Edit
-                      </NavLink>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <NavLink
-                        to={`/${params.username}/course-builder/${params.courseId}/pricing/manage-pricing-tier/${priceTier.id}/delete`}
-                        className={cn('flex items-center space-x-4')}
-                      >
-                        <Trash2 className='mr-2 h-4 w-4' />
-                        Delete
-                      </NavLink>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </TableCell>
+              {isPaid ? (
+                <TableCell className='text-right'>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant='ghost' className='h-8 w-8 p-0'>
+                        <span className='sr-only'>Open menu</span>
+                        <MoreHorizontal className='h-4 w-4' />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align='end'>
+                      <DropdownMenuItem>
+                        <NavLink
+                          to={`/${params.username}/course-builder/${params.courseId}/pricing/manage-pricing-tier/${priceTier.id}`}
+                          className={cn('flex items-center space-x-4')}
+                        >
+                          <Edit className='mr-2 h-4 w-4' />
+                          Edit
+                        </NavLink>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem>
+                        <NavLink
+                          to={`/${params.username}/course-builder/${params.courseId}/pricing/manage-pricing-tier/${priceTier.id}/delete`}
+                          className={cn('flex items-center space-x-4')}
+                        >
+                          <Trash2 className='mr-2 h-4 w-4' />
+                          Delete
+                        </NavLink>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
+              ) : null}
             </Reorder.Item>
           ))}
         </Reorder.Group>

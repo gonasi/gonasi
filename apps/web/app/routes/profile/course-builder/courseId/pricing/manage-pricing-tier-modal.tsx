@@ -140,11 +140,12 @@ export default function ManagePricingTierModal({ params, loaderData }: Route.Com
     mode: 'all',
     resolver,
     defaultValues: {
-      pricingId: coursePricingId,
+      pricingId: params.coursePricingId,
       courseId: courseId ?? '',
       paymentFrequency: pricingTier?.payment_frequency,
       isFree: !isPaid,
       price: pricingTier?.price,
+      position: pricingTier?.position,
       currencyCode: pricingTier?.currency_code as CurrencyCodeEnumType,
       enablePromotionalPricing: !!pricingTier?.promotional_price,
       promotionalPrice: pricingTier?.promotional_price,
@@ -432,7 +433,7 @@ export default function ManagePricingTierModal({ params, loaderData }: Route.Com
                         disabled={isDisabled}
                         isLoading={isDisabled}
                       >
-                        {pricingTier?.id === 'add-new-tier'
+                        {params.coursePricingId === 'add-new-tier'
                           ? 'Create Pricing Tier'
                           : 'Edit Pricing Tier'}
                       </Button>

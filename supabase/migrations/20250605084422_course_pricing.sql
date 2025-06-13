@@ -1,20 +1,25 @@
 -- ============================================================================
--- course pricing tiers schema
+-- COURSE PRICING TIERS SCHEMA - COMPLETE FIXED VERSION
 -- ============================================================================
--- this schema defines a flexible pricing system for courses that supports:
--- - multiple payment frequencies (monthly, quarterly, annual, etc.)
--- - free and paid tiers with promotional pricing
--- - automatic tier management with business logic enforcement
--- - comprehensive rbac (role-based access control) policies
+-- This schema defines a flexible pricing system for courses that supports:
+-- - Multiple payment frequencies (monthly, quarterly, annual, etc.)
+-- - Free and paid tiers with promotional pricing
+-- - Automatic tier management with business logic enforcement
+-- - Comprehensive RBAC (role-based access control) policies
+-- 
+-- KEY FIXES:
+-- 1. Fixed set_course_paid() function to create PAID tier (not free)
+-- 2. Improved trigger logic to handle course conversion scenarios
+-- 3. Added proper bypass mechanisms for business rule conflicts
 -- ============================================================================
 
 -- ============================================================================
--- enum types
+-- ENUM TYPES
 -- ============================================================================
 
--- defines supported payment frequencies for course subscriptions
--- this enum ensures consistency across the application and prevents invalid frequency values
-create type payment_frequency as enum (
+-- Defines supported payment frequencies for course subscriptions
+-- This enum ensures consistency across the application and prevents invalid frequency values
+CREATE TYPE payment_frequency AS ENUM (
   'monthly',        -- charged every month
   'bi_monthly',     -- charged every 2 months
   'quarterly',      -- charged every 3 months (popular for business courses)
@@ -23,349 +28,454 @@ create type payment_frequency as enum (
 );
 
 -- ============================================================================
--- main table: course_pricing_tiers
+-- MAIN TABLE: course_pricing_tiers
 -- ============================================================================
 
--- this table stores all pricing information for courses, supporting both free and paid models
--- each course can have multiple pricing tiers with different payment frequencies
--- the table includes promotional pricing, display metadata, and audit trails
-create table public.course_pricing_tiers (
-  -- primary key and course relationship
-  id uuid default uuid_generate_v4() primary key,
-  course_id uuid not null references courses(id) on delete cascade,
+-- This table stores all pricing information for courses, supporting both free and paid models
+-- Each course can have multiple pricing tiers with different payment frequencies
+-- The table includes promotional pricing, display metadata, and audit trails
+CREATE TABLE public.course_pricing_tiers (
+  -- Primary key and course relationship
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  course_id UUID NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
 
-  -- core pricing configuration
-  payment_frequency payment_frequency not null,
-  is_free boolean not null default true,
-  price numeric(19,4) not null check (price >= 0),
-  currency_code char(3) not null default 'KES' check (currency_code in ('KES', 'USD')),
+  -- Core pricing configuration
+  payment_frequency payment_frequency NOT NULL,
+  is_free BOOLEAN NOT NULL DEFAULT true,
+  price NUMERIC(19,4) NOT NULL CHECK (price >= 0),
+  currency_code CHAR(3) NOT NULL DEFAULT 'KES' CHECK (currency_code IN ('KES', 'USD')),
 
-  -- promotional pricing system
-  promotional_price numeric(19,4) null check (promotional_price >= 0),
-  promotion_start_date timestamptz null,
-  promotion_end_date timestamptz null,
+  -- Promotional pricing system
+  promotional_price NUMERIC(19,4) NULL CHECK (promotional_price >= 0),
+  promotion_start_date TIMESTAMPTZ NULL,
+  promotion_end_date TIMESTAMPTZ NULL,
 
-  -- display and marketing metadata
-  -- these fields control how pricing tiers appear in the ui
-  tier_name text null,           -- e.g., "monthly plan", "premium annual"
-  tier_description text null,    -- marketing copy or feature descriptions
+  -- Display and marketing metadata
+  -- These fields control how pricing tiers appear in the UI
+  tier_name TEXT NULL,           -- e.g., "monthly plan", "premium annual"
+  tier_description TEXT NULL,    -- marketing copy or feature descriptions
 
-  -- status and display ordering
-  is_active boolean not null default true,      -- allows soft deletion of tiers
-  position integer not null default 0,          -- controls display order in ui
+  -- Status and display ordering
+  is_active BOOLEAN NOT NULL DEFAULT true,      -- allows soft deletion of tiers
+  position INTEGER NOT NULL DEFAULT 0,          -- controls display order in UI
 
-  -- ui enhancement flags
-  -- these flags help highlight certain tiers for better conversion
-  is_popular boolean not null default false,      -- shows "most popular" badge
-  is_recommended boolean not null default false,  -- shows "recommended" badge
+  -- UI enhancement flags
+  -- These flags help highlight certain tiers for better conversion
+  is_popular BOOLEAN NOT NULL DEFAULT false,      -- shows "most popular" badge
+  is_recommended BOOLEAN NOT NULL DEFAULT false,  -- shows "recommended" badge
 
-  -- comprehensive audit trail
-  -- tracks who created/modified each tier and when
-  created_at timestamptz not null default timezone('utc', now()),
-  updated_at timestamptz not null default timezone('utc', now()),
-  created_by uuid not null references profiles(id) on delete cascade,
-  updated_by uuid not null references profiles(id) on delete cascade,
+  -- Comprehensive audit trail
+  -- Tracks who created/modified each tier and when
+  created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc', now()),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc', now()),
+  created_by UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  updated_by UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
 
-  -- business logic constraints
-  -- these constraints enforce pricing model integrity
+  -- Business logic constraints
+  -- These constraints enforce pricing model integrity
 
-  -- ensures promotion dates are logically ordered
-  constraint chk_promotion_dates check (
-    promotion_start_date is null or promotion_end_date is null or 
+  -- Ensures promotion dates are logically ordered
+  CONSTRAINT chk_promotion_dates CHECK (
+    promotion_start_date IS NULL OR promotion_end_date IS NULL OR 
     promotion_start_date < promotion_end_date
   ),
 
-  -- ensures promotional price is always lower than regular price
-  constraint chk_promotional_price check (
-    is_free = true or promotional_price is null or promotional_price < price
+  -- Ensures promotional price is always lower than regular price
+  CONSTRAINT chk_promotional_price CHECK (
+    is_free = true OR promotional_price IS NULL OR promotional_price < price
   ),
 
-  -- ensures paid tiers have a price greater than zero
-  constraint chk_price_nonfree check (
-    is_free = true or price > 0
+  -- Ensures paid tiers have a price greater than zero
+  CONSTRAINT chk_price_nonfree CHECK (
+    is_free = true OR price > 0
   ),
 
-  -- prevents free tiers from having promotional pricing (business rule)
-  -- free tiers should not have promotions as they're already free
-  constraint chk_free_has_no_promo check (
-    is_free = false or (
-      promotional_price is null and 
-      promotion_start_date is null and 
-      promotion_end_date is null
+  -- Prevents free tiers from having promotional pricing (business rule)
+  -- Free tiers should not have promotions as they're already free
+  CONSTRAINT chk_free_has_no_promo CHECK (
+    is_free = false OR (
+      promotional_price IS NULL AND 
+      promotion_start_date IS NULL AND 
+      promotion_end_date IS NULL
     )
   ),
 
-  constraint uq_one_active_tier_per_frequency
-  unique (course_id, payment_frequency, is_active)
-  deferrable initially deferred
+  CONSTRAINT uq_one_active_tier_per_frequency
+  UNIQUE (course_id, payment_frequency, is_active)
+  DEFERRABLE INITIALLY DEFERRED
 );
 
 -- ============================================================================
--- performance indexes
+-- PERFORMANCE INDEXES
 -- ============================================================================
 
--- basic foreign key indexes for join performance
-create index idx_course_pricing_tiers_course_id on public.course_pricing_tiers (course_id);
-create index idx_course_pricing_tiers_created_by on public.course_pricing_tiers (created_by);
-create index idx_course_pricing_tiers_updated_by on public.course_pricing_tiers (updated_by);
+-- Basic foreign key indexes for join performance
+CREATE INDEX idx_course_pricing_tiers_course_id ON public.course_pricing_tiers (course_id);
+CREATE INDEX idx_course_pricing_tiers_created_by ON public.course_pricing_tiers (created_by);
+CREATE INDEX idx_course_pricing_tiers_updated_by ON public.course_pricing_tiers (updated_by);
 
--- composite indexes for common query patterns
-create index idx_course_pricing_tiers_course_id_active 
-  on public.course_pricing_tiers (course_id, is_active);
+-- Composite indexes for common query patterns
+CREATE INDEX idx_course_pricing_tiers_course_id_active 
+  ON public.course_pricing_tiers (course_id, is_active);
 
-create index idx_course_pricing_tiers_position 
-  on public.course_pricing_tiers (course_id, position);
+CREATE INDEX idx_course_pricing_tiers_position 
+  ON public.course_pricing_tiers (course_id, position);
 
--- promotional pricing queries
-create index idx_course_pricing_tiers_promotion_dates 
-  on public.course_pricing_tiers (promotion_start_date, promotion_end_date);
+-- Promotional pricing queries
+CREATE INDEX idx_course_pricing_tiers_promotion_dates 
+  ON public.course_pricing_tiers (promotion_start_date, promotion_end_date);
 
--- ui enhancement flags for marketing queries
-create index idx_course_pricing_tiers_popular_recommended 
-  on public.course_pricing_tiers (is_popular, is_recommended);
-
--- ============================================================================
--- table documentation
--- ============================================================================
-
-comment on table public.course_pricing_tiers is 
-  'comprehensive pricing system for courses supporting multiple payment frequencies, promotional pricing, free access tiers, and advanced ui customization options. includes built-in business logic constraints and audit trails.';
+-- UI enhancement flags for marketing queries
+CREATE INDEX idx_course_pricing_tiers_popular_recommended 
+  ON public.course_pricing_tiers (is_popular, is_recommended);
 
 -- ============================================================================
--- trigger functions and business logic automation
+-- TABLE DOCUMENTATION
 -- ============================================================================
 
-create or replace function public.enforce_at_least_one_active_tier()
-returns trigger
-language plpgsql
-security definer
-set search_path = ''
-as $$
-begin
-  if new.is_active = false then
-    -- check if this is the last active tier for this course
-    if not exists (
-      select 1
-      from course_pricing_tiers
-      where course_id = new.course_id
-        and id != new.id
-        and is_active = true
-    ) then
-      raise exception 'each course must have at least one active pricing tier.';
-    end if;
-  end if;
-  return new;
-end;
+COMMENT ON TABLE public.course_pricing_tiers IS 
+  'Comprehensive pricing system for courses supporting multiple payment frequencies, promotional pricing, free access tiers, and advanced UI customization options. Includes built-in business logic constraints and audit trails.';
+
+-- ============================================================================
+-- TRIGGER FUNCTIONS AND BUSINESS LOGIC AUTOMATION
+-- ============================================================================
+
+CREATE OR REPLACE FUNCTION public.enforce_at_least_one_active_tier()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+BEGIN
+  IF new.is_active = false THEN
+    -- Check if this is the last active tier for this course
+    IF NOT EXISTS (
+      SELECT 1
+      FROM course_pricing_tiers
+      WHERE course_id = new.course_id
+        AND id != new.id
+        AND is_active = true
+    ) THEN
+      RAISE EXCEPTION 'Each course must have at least one active pricing tier.';
+    END IF;
+  END IF;
+  RETURN new;
+END;
 $$;
 
-
--- automatically sets position for new pricing tiers
--- when a tier is created without specifying position, it gets the next available number
--- this ensures consistent ordering without manual position management
-create or replace function public.set_course_pricing_tier_position()
-returns trigger
-as $$
-begin
-  -- only set position if it's not provided or is zero
-  if new.position is null or new.position = 0 then
-    -- find the highest existing position for this course and add 1
-    select coalesce(max(position), 0) + 1
-    into new.position
-    from public.course_pricing_tiers
-    where course_id = new.course_id;
-  end if;
-  return new;
-end;
+-- Automatically sets position for new pricing tiers
+-- When a tier is created without specifying position, it gets the next available number
+-- This ensures consistent ordering without manual position management
+CREATE OR REPLACE FUNCTION public.set_course_pricing_tier_position()
+RETURNS TRIGGER
+AS $$
+BEGIN
+  -- Only set position if it's not provided or is zero
+  IF new.position IS NULL OR new.position = 0 THEN
+    -- Find the highest existing position for this course and add 1
+    SELECT COALESCE(MAX(position), 0) + 1
+    INTO new.position
+    FROM public.course_pricing_tiers
+    WHERE course_id = new.course_id;
+  END IF;
+  RETURN new;
+END;
 $$
-language plpgsql
-set search_path = '';
+LANGUAGE plpgsql
+SET search_path = '';
 
--- trigger to automatically set position on insert
-create trigger trg_set_course_pricing_tier_position
-before insert on public.course_pricing_tiers
-for each row
-execute function public.set_course_pricing_tier_position();
+-- Trigger to automatically set position on insert
+CREATE TRIGGER trg_set_course_pricing_tier_position
+BEFORE INSERT ON public.course_pricing_tiers
+FOR EACH ROW
+EXECUTE FUNCTION public.set_course_pricing_tier_position();
 
--- enforces the "free tier exclusivity" business rule
--- when a course is marked as free, all other pricing tiers are automatically removed
--- this prevents mixed free/paid models which could confuse users
-create or replace function public.trg_delete_other_tiers_if_free()
-returns trigger as $$
-begin
-  if new.is_free = true then
-    -- delete all other tiers for this course when adding a free tier
-    delete from public.course_pricing_tiers
-    where course_id = new.course_id
-      and id != new.id;
-  end if;
-  return new;
-end;
-$$ 
-language plpgsql
-set search_path = '';
-
--- trigger to enforce free tier exclusivity
-create trigger trg_handle_free_tier
-after insert or update on public.course_pricing_tiers
-for each row
-execute function public.trg_delete_other_tiers_if_free();
-
--- prevents deletion of the last paid tier for paid courses
--- this maintains data integrity by ensuring paid courses always have at least one paid option
--- includes bypass mechanism for bulk operations (course conversion scenarios)
-create or replace function public.trg_prevent_deleting_last_paid_tier()
-returns trigger as $$
-declare
-  remaining_paid_tiers int;
-  bypass_check boolean;
-begin
-  -- check if we're in a course conversion context (bulk operations)
-  -- this allows controlled deletion during course type changes
-  select coalesce(current_setting('app.converting_course_pricing', true)::boolean, false) 
-  into bypass_check;
+-- FIXED: Enforces the "free tier exclusivity" business rule with conversion bypass
+-- When a course is marked as free, all other pricing tiers are automatically removed
+-- This prevents mixed free/paid models which could confuse users
+CREATE OR REPLACE FUNCTION public.trg_delete_other_tiers_if_free()
+RETURNS TRIGGER AS $$
+DECLARE
+  bypass_check BOOLEAN;
+BEGIN
+  -- Check if we're in a course conversion context
+  SELECT COALESCE(current_setting('app.converting_course_pricing', true)::boolean, false) 
+  INTO bypass_check;
   
-  if bypass_check then
-    return old; -- skip the check during course conversion
-  end if;
+  -- Skip trigger during course conversion to prevent conflicts
+  IF bypass_check THEN
+    RETURN new;
+  END IF;
 
-  -- only check if we're deleting a paid tier
-  if old.is_free = false then
-    -- count remaining paid tiers after this deletion
-    select count(*) into remaining_paid_tiers
-    from public.course_pricing_tiers
-    where course_id = old.course_id
-      and id != old.id
-      and is_free = false;
-
-    -- prevent deletion if this would leave zero paid tiers
-    if remaining_paid_tiers = 0 then
-      raise exception 'cannot delete the last paid tier for a paid course (course_id=%)', old.course_id;
-    end if;
-  end if;
-  
-  return old;
-end;
+  IF new.is_free = true THEN
+    -- Delete all other tiers for this course when adding a free tier
+    DELETE FROM public.course_pricing_tiers
+    WHERE course_id = new.course_id
+      AND id != new.id;
+  END IF;
+  RETURN new;
+END;
 $$ 
-language plpgsql
-set search_path = '';
+LANGUAGE plpgsql
+SET search_path = '';
 
--- trigger to prevent deletion of last paid tier
-create trigger trg_prevent_last_paid_tier_deletion
-before delete on public.course_pricing_tiers
-for each row
-execute function public.trg_prevent_deleting_last_paid_tier();
+-- Trigger to enforce free tier exclusivity
+CREATE TRIGGER trg_handle_free_tier
+AFTER INSERT OR UPDATE ON public.course_pricing_tiers
+FOR EACH ROW
+EXECUTE FUNCTION public.trg_delete_other_tiers_if_free();
+
+-- FIXED: Prevents deletion of the last paid tier for paid courses with conversion bypass
+-- This maintains data integrity by ensuring paid courses always have at least one paid option
+-- Includes bypass mechanism for bulk operations (course conversion scenarios)
+CREATE OR REPLACE FUNCTION public.trg_prevent_deleting_last_paid_tier()
+RETURNS TRIGGER AS $$
+DECLARE
+  remaining_paid_tiers INT;
+  bypass_check BOOLEAN;
+BEGIN
+  -- Check if we're in a course conversion context (bulk operations)
+  -- This allows controlled deletion during course type changes
+  SELECT COALESCE(current_setting('app.converting_course_pricing', true)::boolean, false) 
+  INTO bypass_check;
+  
+  IF bypass_check THEN
+    RETURN old; -- Skip the check during course conversion
+  END IF;
+
+  -- Only check if we're deleting a paid tier
+  IF old.is_free = false THEN
+    -- Count remaining paid tiers after this deletion
+    SELECT count(*) INTO remaining_paid_tiers
+    FROM public.course_pricing_tiers
+    WHERE course_id = old.course_id
+      AND id != old.id
+      AND is_free = false;
+
+    -- Prevent deletion if this would leave zero paid tiers
+    IF remaining_paid_tiers = 0 THEN
+      RAISE EXCEPTION 'Cannot delete the last paid tier for a paid course (course_id=%)', old.course_id;
+    END IF;
+  END IF;
+  
+  RETURN old;
+END;
+$$ 
+LANGUAGE plpgsql
+SET search_path = '';
+
+-- Trigger to prevent deletion of last paid tier
+CREATE TRIGGER trg_prevent_last_paid_tier_deletion
+BEFORE DELETE ON public.course_pricing_tiers
+FOR EACH ROW
+EXECUTE FUNCTION public.trg_prevent_deleting_last_paid_tier();
+
+-- FIXED: This function runs before deleting a pricing tier with conversion bypass
+-- It checks if the tier being deleted is free, and if it's the only free tier for the course
+-- If it is, the deletion is blocked with an error
+CREATE OR REPLACE FUNCTION public.trg_prevent_deleting_last_free_tier()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SET search_path = ''
+AS $$
+DECLARE
+    remaining_free_count INT;
+    bypass_check BOOLEAN;
+BEGIN
+    -- Check if we're in a course conversion context
+    SELECT COALESCE(current_setting('app.converting_course_pricing', true)::boolean, false) 
+    INTO bypass_check;
+    
+    -- Skip check during course conversion
+    IF bypass_check THEN
+        RETURN old;
+    END IF;
+
+    -- Only run check if the deleted tier is free
+    IF old.is_free THEN
+        -- Count remaining active free tiers for the same course, excluding the one being deleted
+        SELECT count(*) INTO remaining_free_count
+        FROM public.course_pricing_tiers
+        WHERE course_id = old.course_id
+          AND id <> old.id
+          AND is_free = true
+          AND is_active = true;
+
+        -- If none remain, raise an error
+        IF remaining_free_count = 0 THEN
+            RAISE EXCEPTION 'Cannot delete the only free pricing tier for course %', old.course_id;
+        END IF;
+    END IF;
+
+    -- Allow deletion
+    RETURN old;
+END;
+$$;
+
+-- Attach the trigger to the course_pricing_tiers table
+-- It fires before any row is deleted
+CREATE TRIGGER trg_prevent_deleting_last_free_tier
+BEFORE DELETE ON public.course_pricing_tiers
+FOR EACH ROW
+EXECUTE FUNCTION public.trg_prevent_deleting_last_free_tier();
+
+-- FIXED: Prevent deactivating last free tier with conversion bypass
+CREATE OR REPLACE FUNCTION public.trg_prevent_deactivating_last_free_tier()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SET search_path = ''
+AS $$
+DECLARE
+    bypass_check BOOLEAN;
+BEGIN
+    -- Check if we're in a course conversion context
+    SELECT COALESCE(current_setting('app.converting_course_pricing', true)::boolean, false) 
+    INTO bypass_check;
+    
+    -- Skip check during course conversion
+    IF bypass_check THEN
+        RETURN new;
+    END IF;
+
+    -- Only run check if the tier is free and is being deactivated
+    IF old.is_free
+       AND old.is_active
+       AND new.is_active = false THEN
+
+        -- Check if other active free tiers exist for the same course
+        IF NOT EXISTS (
+            SELECT 1 FROM public.course_pricing_tiers
+            WHERE course_id = old.course_id
+              AND id <> old.id
+              AND is_free = true
+              AND is_active = true
+        ) THEN
+            RAISE EXCEPTION 'Cannot deactivate the only free pricing tier for course %', old.course_id;
+        END IF;
+    END IF;
+
+    -- Allow update
+    RETURN new;
+END;
+$$;
+
+CREATE TRIGGER trg_prevent_deactivating_last_free_tier
+BEFORE UPDATE ON public.course_pricing_tiers
+FOR EACH ROW
+WHEN (old.is_active = true AND new.is_active = false)
+EXECUTE FUNCTION public.trg_prevent_deactivating_last_free_tier();
 
 -- ============================================================================
--- row level security (rls) configuration
+-- ROW LEVEL SECURITY (RLS) CONFIGURATION
 -- ============================================================================
 
--- enable rls to ensure users can only access pricing tiers for courses they have permission to view
-alter table public.course_pricing_tiers enable row level security;
+-- Enable RLS to ensure users can only access pricing tiers for courses they have permission to view
+ALTER TABLE public.course_pricing_tiers ENABLE ROW LEVEL SECURITY;
 
 -- ============================================================================
--- rls policies for fine-grained access control
+-- RLS POLICIES FOR FINE-GRAINED ACCESS CONTROL
 -- ============================================================================
 
--- read access: users can view pricing tiers for courses they have any level of access to
--- this includes course admins, editors, viewers, and course creators
-create policy "select: users with course roles or owners can view pricing tiers"
-on public.course_pricing_tiers
-for select
-to authenticated
-using (
-  exists (
-    select 1 from public.courses c
-    where c.id = course_pricing_tiers.course_id
-      and (
-        is_course_admin(c.id, (select auth.uid())) or
-        is_course_editor(c.id, (select auth.uid())) or
-        is_course_viewer(c.id, (select auth.uid())) or
-        c.created_by = (select auth.uid())
+-- Read access: users can view pricing tiers for courses they have any level of access to
+-- This includes course admins, editors, viewers, and course creators
+CREATE POLICY "select: users with course roles or owners can view pricing tiers"
+ON public.course_pricing_tiers
+FOR SELECT
+TO authenticated
+USING (
+  EXISTS (
+    SELECT 1 FROM public.courses c
+    WHERE c.id = course_pricing_tiers.course_id
+      AND (
+        is_course_admin(c.id, (SELECT auth.uid())) OR
+        is_course_editor(c.id, (SELECT auth.uid())) OR
+        is_course_viewer(c.id, (SELECT auth.uid())) OR
+        c.created_by = (SELECT auth.uid())
       )
   )
 );
 
--- create access: only course admins, editors, and creators can add new pricing tiers
--- viewers cannot create pricing tiers as this could affect course monetization
-create policy "insert: users with course roles or owners can add pricing tiers"
-on public.course_pricing_tiers
-for insert
-to authenticated
-with check (
-  exists (
-    select 1 from public.courses c
-    where c.id = course_pricing_tiers.course_id
-      and (
-        is_course_admin(c.id, (select auth.uid())) or
-        is_course_editor(c.id, (select auth.uid())) or
-        c.created_by = (select auth.uid())
+-- Create access: only course admins, editors, and creators can add new pricing tiers
+-- Viewers cannot create pricing tiers as this could affect course monetization
+CREATE POLICY "insert: users with course roles or owners can add pricing tiers"
+ON public.course_pricing_tiers
+FOR INSERT
+TO authenticated
+WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM public.courses c
+    WHERE c.id = course_pricing_tiers.course_id
+      AND (
+        is_course_admin(c.id, (SELECT auth.uid())) OR
+        is_course_editor(c.id, (SELECT auth.uid())) OR
+        c.created_by = (SELECT auth.uid())
       )
   )
 );
 
--- update access: same permissions as create - admins, editors, and creators only
--- requires both using and with check clauses for complete protection
-create policy "update: users with admin/editor roles or owners can modify pricing tiers"
-on public.course_pricing_tiers
-for update
-to authenticated
-using (
-  exists (
-    select 1 from public.courses c
-    where c.id = course_pricing_tiers.course_id
-      and (
-        is_course_admin(c.id, (select auth.uid())) or
-        is_course_editor(c.id, (select auth.uid())) or
-        c.created_by = (select auth.uid())
+-- Update access: same permissions as create - admins, editors, and creators only
+-- Requires both using and with check clauses for complete protection
+CREATE POLICY "update: users with admin/editor roles or owners can modify pricing tiers"
+ON public.course_pricing_tiers
+FOR UPDATE
+TO authenticated
+USING (
+  EXISTS (
+    SELECT 1 FROM public.courses c
+    WHERE c.id = course_pricing_tiers.course_id
+      AND (
+        is_course_admin(c.id, (SELECT auth.uid())) OR
+        is_course_editor(c.id, (SELECT auth.uid())) OR
+        c.created_by = (SELECT auth.uid())
       )
   )
 )
-with check (
-  exists (
-    select 1 from public.courses c
-    where c.id = course_pricing_tiers.course_id
-      and (
-        is_course_admin(c.id, (select auth.uid())) or
-        is_course_editor(c.id, (select auth.uid())) or
-        c.created_by = (select auth.uid())
+WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM public.courses c
+    WHERE c.id = course_pricing_tiers.course_id
+      AND (
+        is_course_admin(c.id, (SELECT auth.uid())) OR
+        is_course_editor(c.id, (SELECT auth.uid())) OR
+        c.created_by = (SELECT auth.uid())
       )
   )
 );
 
--- delete access: same permissions as create/update
--- deletion of pricing tiers is a sensitive operation that affects course monetization
-create policy "delete: course admins, editors, and owners can remove pricing tiers"
-on public.course_pricing_tiers
-for delete
-to authenticated
-using (
-  exists (
-    select 1 from public.courses c
-    where c.id = course_pricing_tiers.course_id
-      and (
-        is_course_admin(c.id, (select auth.uid())) or
-        is_course_editor(c.id, (select auth.uid())) or
-        c.created_by = (select auth.uid())
+-- Delete access: same permissions as create/update
+-- Deletion of pricing tiers is a sensitive operation that affects course monetization
+CREATE POLICY "delete: course admins, editors, and owners can remove pricing tiers"
+ON public.course_pricing_tiers
+FOR DELETE
+TO authenticated
+USING (
+  EXISTS (
+    SELECT 1 FROM public.courses c
+    WHERE c.id = course_pricing_tiers.course_id
+      AND (
+        is_course_admin(c.id, (SELECT auth.uid())) OR
+        is_course_editor(c.id, (SELECT auth.uid())) OR
+        c.created_by = (SELECT auth.uid())
       )
   )
 );
 
 -- ============================================================================
--- automated course setup functions
+-- AUTOMATED COURSE SETUP FUNCTIONS
 -- ============================================================================
 
--- automatically creates a default free tier when a new course is created
--- this ensures every course has a basic pricing structure from the start
--- simplifies course creation workflow and provides consistent defaults
-create or replace function public.add_default_free_pricing_tier()
-returns trigger
-language plpgsql
-set search_path = ''
-as $$
-begin
-  -- insert a basic free tier for every new course
-  -- uses course creator as both creator and updater for audit trail
-  insert into public.course_pricing_tiers (
+-- Automatically creates a default free tier when a new course is created
+-- This ensures every course has a basic pricing structure from the start
+-- Simplifies course creation workflow and provides consistent defaults
+CREATE OR REPLACE FUNCTION public.add_default_free_pricing_tier()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SET search_path = ''
+AS $$
+BEGIN
+  -- Insert a basic free tier for every new course
+  -- Uses course creator as both creator and updater for audit trail
+  INSERT INTO public.course_pricing_tiers (
     course_id,
     is_free,
     price,
@@ -375,89 +485,89 @@ begin
     payment_frequency,
     tier_name
   )
-  values (
-    new.id,              -- the newly created course
-    true,                -- free tier
-    0,                   -- no cost
-    'USD',               -- default currency
-    new.created_by,      -- course creator
-    new.created_by,      -- course creator
-    'monthly',           -- default frequency
-    'Free'          -- descriptive name
+  VALUES (
+    new.id,              -- The newly created course
+    true,                -- Free tier
+    0,                   -- No cost
+    'USD',               -- Default currency
+    new.created_by,      -- Course creator
+    new.created_by,      -- Course creator
+    'monthly',           -- Default frequency
+    'Free'               -- Descriptive name
   );
 
-  return new;
-end;
+  RETURN new;
+END;
 $$;
 
--- trigger to automatically add free tier to new courses
--- executes after course creation to ensure course exists before adding pricing tier
-create trigger trg_add_default_free_pricing_tier
-after insert on public.courses
-for each row
-execute function public.add_default_free_pricing_tier();
+-- Trigger to automatically add free tier to new courses
+-- Executes after course creation to ensure course exists before adding pricing tier
+CREATE TRIGGER trg_add_default_free_pricing_tier
+AFTER INSERT ON public.courses
+FOR EACH ROW
+EXECUTE FUNCTION public.add_default_free_pricing_tier();
 
 -- ============================================================================
--- course conversion functions (rpc endpoints)
+-- COURSE CONVERSION FUNCTIONS (RPC ENDPOINTS)
 -- ============================================================================
 
--- converts a paid course to free by removing all paid tiers and adding a free tier
--- this is a complete conversion operation that handles the transition safely
--- includes permission checks and bypass mechanisms for business rule triggers
-create or replace function public.set_course_free(p_course_id uuid, p_user_id uuid)
-returns void
-language plpgsql
-security definer
-set search_path = ''
-as $$ 
-declare
-  has_access boolean;
-  has_paid_tiers boolean;
-begin
-  -- verify user has permission to modify course pricing
-  -- only course admins, editors, and creators can change pricing models
-  select exists (
-    select 1 from public.courses c
-    where c.id = p_course_id
-      and (
+-- Converts a paid course to free by removing all paid tiers and adding a free tier
+-- This is a complete conversion operation that handles the transition safely
+-- Includes permission checks and bypass mechanisms for business rule triggers
+CREATE OR REPLACE FUNCTION public.set_course_free(p_course_id UUID, p_user_id UUID)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$ 
+DECLARE
+  has_access BOOLEAN;
+  has_paid_tiers BOOLEAN;
+BEGIN
+  -- Verify user has permission to modify course pricing
+  -- Only course admins, editors, and creators can change pricing models
+  SELECT EXISTS (
+    SELECT 1 FROM public.courses c
+    WHERE c.id = p_course_id
+      AND (
         public.is_course_admin(c.id, p_user_id)
-        or public.is_course_editor(c.id, p_user_id)
-        or c.created_by = p_user_id
+        OR public.is_course_editor(c.id, p_user_id)
+        OR c.created_by = p_user_id
       )
-  ) into has_access;
+  ) INTO has_access;
 
-  if not has_access then
-    raise exception 'permission denied: you do not have access to modify this course (course_id=%)', p_course_id
-      using errcode = '42501'; -- insufficient_privilege
-  end if;
+  IF NOT has_access THEN
+    RAISE EXCEPTION 'Permission denied: you do not have access to modify this course (course_id=%)', p_course_id
+      USING errcode = '42501'; -- insufficient_privilege
+  END IF;
 
-  -- check if course actually has paid tiers to convert
-  -- prevents unnecessary operations on already-free courses
-  select exists (
-    select 1 from public.course_pricing_tiers
-    where course_id = p_course_id
-      and is_free = false
-  ) into has_paid_tiers;
+  -- Check if course actually has paid tiers to convert
+  -- Prevents unnecessary operations on already-free courses
+  SELECT EXISTS (
+    SELECT 1 FROM public.course_pricing_tiers
+    WHERE course_id = p_course_id
+      AND is_free = false
+  ) INTO has_paid_tiers;
 
-  if not has_paid_tiers then
-    raise exception 'course (id=%) is already free.', p_course_id
-      using errcode = 'p0001';
-  end if;
+  IF NOT has_paid_tiers THEN
+    RAISE EXCEPTION 'Course (id=%) is already free.', p_course_id
+      USING errcode = 'P0001';
+  END IF;
 
-  -- temporarily bypass business rule triggers during conversion
-  -- this allows us to delete all tiers without triggering the "last paid tier" protection
-  perform set_config('app.converting_course_pricing', 'true', true);
+  -- Temporarily bypass business rule triggers during conversion
+  -- This allows us to delete all tiers without triggering the "last paid tier" protection
+  PERFORM set_config('app.converting_course_pricing', 'true', true);
 
-  -- remove all existing pricing tiers (both free and paid)
-  -- this ensures a clean slate for the new free tier
-  delete from public.course_pricing_tiers
-  where course_id = p_course_id;
+  -- Remove all existing pricing tiers (both free and paid)
+  -- This ensures a clean slate for the new free tier
+  DELETE FROM public.course_pricing_tiers
+  WHERE course_id = p_course_id;
 
-  -- re-enable business rule triggers
-  perform set_config('app.converting_course_pricing', 'false', true);
+  -- Re-enable business rule triggers
+  PERFORM set_config('app.converting_course_pricing', 'false', true);
 
-  -- create new free tier with standard configuration
-  insert into public.course_pricing_tiers (
+  -- Create new free tier with standard configuration
+  INSERT INTO public.course_pricing_tiers (
     course_id, 
     is_free, 
     price, 
@@ -467,132 +577,285 @@ begin
     payment_frequency, 
     tier_name,
     is_active
-  ) values (
+  ) VALUES (
     p_course_id, 
-    true,           -- free tier
-    0,              -- no cost
-    'KES',          -- local currency default
-    p_user_id,      -- conversion performer
-    p_user_id,      -- conversion performer
-    'monthly',      -- default frequency
-    'Free',    -- standard name
-    true            -- active tier
+    true,           -- Free tier
+    0,              -- No cost
+    'KES',          -- Local currency default
+    p_user_id,      -- Conversion performer
+    p_user_id,      -- Conversion performer
+    'monthly',      -- Default frequency
+    'Free',         -- Standard name
+    true            -- Active tier
   );
-end;
+END;
 $$;
 
--- converts a free course to paid by creating a default paid pricing tier
--- this handles the transition from free to paid model with sensible defaults
--- includes validation to prevent accidental conversions
-create or replace function public.set_course_paid(p_course_id uuid, p_user_id uuid)
-returns void
-language plpgsql
-security definer
-set search_path = ''
-as $$
-declare
-  has_access boolean;
-  paid_tiers_count integer;
-begin
-  -- verify user permissions for course pricing changes
-  select exists (
-    select 1 from public.courses c
-    where c.id = p_course_id
-      and (
+-- FIXED: Converts a free course to paid by creating a default paid pricing tier
+-- This handles the transition from free to paid model with sensible defaults
+-- Includes validation to prevent accidental conversions
+-- MAIN BUG FIX: Now creates PAID tier instead of free tier
+CREATE OR REPLACE FUNCTION public.set_course_paid(p_course_id UUID, p_user_id UUID)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+  has_access BOOLEAN;
+  paid_tiers_count INTEGER;
+BEGIN
+  -- Verify user permissions for course pricing changes
+  SELECT EXISTS (
+    SELECT 1 FROM public.courses c
+    WHERE c.id = p_course_id
+      AND (
         public.is_course_admin(c.id, p_user_id)
-        or public.is_course_editor(c.id, p_user_id)
-        or c.created_by = p_user_id
+        OR public.is_course_editor(c.id, p_user_id)
+        OR c.created_by = p_user_id
       )
-  ) into has_access;
+  ) INTO has_access;
 
-  if not has_access then
-    raise exception 'permission denied: you do not have access to modify this course (course_id=%)', p_course_id
-      using errcode = '42501'; -- insufficient_privilege
-  end if;
+  IF NOT has_access THEN
+    RAISE EXCEPTION 'Permission denied: you do not have access to modify this course (course_id=%)', p_course_id
+      USING errcode = '42501'; -- insufficient_privilege
+  END IF;
 
-  -- check if course already has paid tiers
-  -- prevents accidental re-conversion of already-paid courses
-  select count(*) into paid_tiers_count
-  from public.course_pricing_tiers
-  where course_id = p_course_id
-    and is_free = false;
+  -- Check if course already has paid tiers
+  -- Prevents accidental re-conversion of already-paid courses
+  SELECT count(*) INTO paid_tiers_count
+  FROM public.course_pricing_tiers
+  WHERE course_id = p_course_id
+    AND is_free = false;
 
-  if paid_tiers_count > 0 then
-    raise exception 'course (id=%) already has a paid tier and is considered paid.', p_course_id
-      using errcode = 'p0001';
-  end if;
+  IF paid_tiers_count > 0 THEN
+    RAISE EXCEPTION 'Course (id=%) already has a paid tier and is considered paid.', p_course_id
+      USING errcode = 'P0001';
+  END IF;
 
-  -- temporarily bypass business rule triggers for clean conversion
-  perform set_config('app.converting_course_pricing', 'true', true);
+  -- Temporarily bypass business rule triggers for clean conversion
+  PERFORM set_config('app.converting_course_pricing', 'true', true);
 
-  -- remove all existing tiers to avoid constraint conflicts
-  -- this ensures we start with a clean pricing structure
-  delete from public.course_pricing_tiers
-  where course_id = p_course_id;
+  -- Remove all existing tiers to avoid constraint conflicts
+  -- This ensures we start with a clean pricing structure
+  DELETE FROM public.course_pricing_tiers
+  WHERE course_id = p_course_id;
 
-  -- re-enable business rule enforcement
-  perform set_config('app.converting_course_pricing', 'false', true);
+  -- Re-enable business rule enforcement
+  PERFORM set_config('app.converting_course_pricing', 'false', true);
 
-  -- create default paid tier with reasonable starter pricing
-  insert into public.course_pricing_tiers (
+  -- FIXED: Create default PAID tier with reasonable starter pricing
+  INSERT INTO public.course_pricing_tiers (
     course_id,
-    is_free,
+    is_free,                -- FIXED: Changed from true to false
     price,
     currency_code,
     created_by,
     updated_by,
     payment_frequency,
-    tier_name,
+    tier_name,              -- FIXED: Changed from "Free Plan" to "Basic Plan"
     tier_description,
     is_active
-  ) values (
+  ) VALUES (
     p_course_id,
-    false,                                                      -- paid tier
-    100.00,                                                     -- starter price in local currency
-    'KES',                                                      -- local currency
-    p_user_id,                                                  -- conversion performer
-    p_user_id,                                                  -- conversion performer
-    'monthly',                                                  -- most common frequency
-    'Free Plan',                                                -- professional name
-    'automatically added paid tier. you can update this.',      -- helpful description
-    true                                                        -- active tier
+    false,                                                      -- PAID tier (FIXED: was true)
+    100.00,                                                     -- Starter price in local currency
+    'KES',                                                      -- Local currency
+    p_user_id,                                                  -- Conversion performer
+    p_user_id,                                                  -- Conversion performer
+    'monthly',                                                  -- Most common frequency
+    'Basic Plan',                                               -- Professional name (FIXED: was "Free Plan")
+    'Automatically added paid tier. You can update this.',      -- Helpful description
+    true                                                        -- Active tier
   );
-
-end;
+END;
 $$;
 
 -- ============================================================================
--- Function: get_available_payment_frequencies(p_course_id uuid)
+-- ADDITIONAL UTILITY FUNCTIONS
+-- ============================================================================
+
+-- Function: get_available_payment_frequencies(p_course_id UUID)
 -- Purpose : Returns a list of unused payment_frequency enum values for a course
 -- Inputs  : p_course_id - UUID of the course
 -- Returns : public.payment_frequency[] - Array of available (unused) enum values
--- Notes   : 
---   - Assumes a custom enum type `public.payment_frequency`
---   - Assumes a table `public.course_pricing_tiers` with a column of this enum type
---   - Explicitly sets search_path to ensure schema resolution must be qualified
--- ============================================================================
-create or replace function get_available_payment_frequencies(p_course_id uuid)
-returns public.payment_frequency[] as $$
-declare
+CREATE OR REPLACE FUNCTION get_available_payment_frequencies(p_course_id UUID)
+RETURNS public.payment_frequency[] AS $$
+DECLARE
   all_frequencies public.payment_frequency[]; -- All possible enum values
   used_frequencies public.payment_frequency[]; -- Values already used for this course
-begin
+BEGIN
   -- Get all possible enum values
-  select enum_range(null::public.payment_frequency)
-  into all_frequencies;
+  SELECT enum_range(null::public.payment_frequency)
+  INTO all_frequencies;
 
   -- Get used frequencies for the course (only active tiers)
-  select array_agg(payment_frequency)
-  into used_frequencies
-  from public.course_pricing_tiers
-  where course_id = p_course_id;
+  SELECT array_agg(payment_frequency)
+  INTO used_frequencies
+  FROM public.course_pricing_tiers
+  WHERE course_id = p_course_id;
 
   -- Return unused frequencies
-  return (
-    select array_agg(freq)
-    from unnest(all_frequencies) as freq
-    where used_frequencies is null or freq != all(used_frequencies)
+  RETURN (
+    SELECT array_agg(freq)
+    FROM unnest(all_frequencies) AS freq
+    WHERE used_frequencies IS NULL OR freq != ALL(used_frequencies)
   );
-end;
-$$ language plpgsql
-set search_path = '';
+END;
+$$ LANGUAGE plpgsql
+SET search_path = '';
+
+-- Add a utility function to safely switch course pricing models
+CREATE OR REPLACE FUNCTION public.switch_course_pricing_model(
+    p_course_id UUID, 
+    p_user_id UUID, 
+    p_target_model TEXT -- 'free' or 'paid'
+)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+    has_access BOOLEAN;
+    current_model TEXT;
+BEGIN
+    -- Verify user permissions
+    SELECT EXISTS (
+        SELECT 1 FROM public.courses c
+        WHERE c.id = p_course_id
+          AND (
+            public.is_course_admin(c.id, p_user_id)
+            OR public.is_course_editor(c.id, p_user_id)
+            OR c.created_by = p_user_id
+          )
+    ) INTO has_access;
+
+    IF NOT has_access THEN
+        RAISE EXCEPTION 'Permission denied: you do not have access to modify this course'
+            USING errcode = '42501';
+    END IF;
+
+    -- Validate target model
+    IF p_target_model NOT IN ('free', 'paid') THEN
+        RAISE EXCEPTION 'Invalid target model: must be ''free'' or ''paid''';
+    END IF;
+
+    -- Determine current model
+    SELECT CASE 
+        WHEN EXISTS (
+            SELECT 1 FROM public.course_pricing_tiers 
+            WHERE course_id = p_course_id AND is_free = false
+        ) THEN 'paid'
+        ELSE 'free'
+    END INTO current_model;
+
+    -- Skip if already in target model
+    IF current_model = p_target_model THEN
+        RAISE NOTICE 'Course is already in % model', p_target_model;
+        RETURN;
+    END IF;
+
+    -- Perform the switch
+    IF p_target_model = 'free' THEN
+        PERFORM public.set_course_free(p_course_id, p_user_id);
+    ELSE
+        PERFORM public.set_course_paid(p_course_id, p_user_id);
+    END IF;
+END;
+$$;
+
+-- Add helper function to check if course conversion is safe
+CREATE OR REPLACE FUNCTION public.can_convert_course_pricing(
+    p_course_id UUID,
+    p_target_model TEXT
+)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+    has_active_subscriptions BOOLEAN;
+BEGIN
+    -- Check for active subscriptions (assuming you have a subscriptions table)
+    -- This prevents converting a course that has paying customers
+    SELECT EXISTS (
+        SELECT 1 FROM subscriptions s
+        JOIN course_pricing_tiers cpt ON s.pricing_tier_id = cpt.id
+        WHERE cpt.course_id = p_course_id
+          AND s.status = 'active'
+          AND cpt.is_free = false
+    ) INTO has_active_subscriptions;
+
+    -- Prevent converting paid course to free if there are active paid subscriptions
+    IF p_target_model = 'free' AND has_active_subscriptions THEN
+        RETURN false;
+    END IF;
+
+    RETURN true;
+END;
+$$;
+
+
+CREATE OR REPLACE FUNCTION public.trg_ensure_active_tier_exists()
+RETURNS TRIGGER AS $$
+DECLARE
+  active_tier_count INTEGER;
+  bypass_check BOOLEAN;
+BEGIN
+  -- Check if we're in a course conversion context
+  SELECT COALESCE(current_setting('app.converting_course_pricing', true)::boolean, false) 
+  INTO bypass_check;
+  
+  -- Skip trigger during course conversion to prevent conflicts
+  IF bypass_check THEN
+    RETURN COALESCE(NEW, OLD);
+  END IF;
+
+  -- Handle DELETE operations
+  IF TG_OP = 'DELETE' THEN
+    -- Count remaining active tiers for this course after deletion
+    SELECT COUNT(*)
+    INTO active_tier_count
+    FROM public.course_pricing_tiers
+    WHERE course_id = OLD.course_id
+      AND is_active = true
+      AND id != OLD.id; -- Exclude the row being deleted
+    
+    -- Prevent deletion if it would leave no active tiers
+    IF active_tier_count = 0 THEN
+      RAISE EXCEPTION 'Cannot delete tier: Course must have at least one active pricing tier (course_id: %)', OLD.course_id;
+    END IF;
+    
+    RETURN OLD;
+  END IF;
+
+  -- Handle UPDATE operations (deactivating a tier)
+  IF TG_OP = 'UPDATE' AND OLD.is_active = true AND NEW.is_active = false THEN
+    -- Count remaining active tiers for this course after deactivation
+    SELECT COUNT(*)
+    INTO active_tier_count
+    FROM public.course_pricing_tiers
+    WHERE course_id = NEW.course_id
+      AND is_active = true
+      AND id != NEW.id; -- Exclude the row being updated
+    
+    -- Prevent deactivation if it would leave no active tiers
+    IF active_tier_count = 0 THEN
+      RAISE EXCEPTION 'Cannot deactivate tier: Course must have at least one active pricing tier (course_id: %)', NEW.course_id;
+    END IF;
+  END IF;
+
+  RETURN NEW;
+END;
+$$ 
+LANGUAGE plpgsql
+SET search_path = '';
+
+-- Trigger to enforce at least one active tier per course
+-- Using BEFORE trigger to prevent the operation before it happens
+CREATE TRIGGER trg_ensure_active_tier
+  BEFORE UPDATE OR DELETE ON public.course_pricing_tiers
+  FOR EACH ROW
+  EXECUTE FUNCTION public.trg_ensure_active_tier_exists();

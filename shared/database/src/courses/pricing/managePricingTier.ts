@@ -26,6 +26,7 @@ export const managePricingTier = async ({
     paymentFrequency,
     isFree,
     price,
+    position,
     currencyCode,
     promotionalPrice,
     promotionStartDate,
@@ -44,6 +45,7 @@ export const managePricingTier = async ({
       payment_frequency: paymentFrequency,
       is_free: isFree,
       price,
+      position,
       currency_code: currencyCode,
       promotional_price: promotionalPrice,
       promotion_start_date: promotionStartDate?.toISOString() || null, // Format dates to ISO string
@@ -66,7 +68,7 @@ export const managePricingTier = async ({
       console.error('Database upsert error:', error);
       return {
         success: false,
-        message: 'Unable to save pricing tier. Please review the data and try again.',
+        message: error.message,
       };
     }
 

@@ -24,6 +24,7 @@ export const deleteCoursePricingTier = async (
     });
 
     if (error) {
+      console.error(`[delete_pricing_tier]: `, error);
       return {
         success: false,
         message: error.message,

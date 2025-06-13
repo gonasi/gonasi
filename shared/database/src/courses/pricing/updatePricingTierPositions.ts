@@ -27,7 +27,7 @@ export async function updatePricingTierPositions({
       console.error('Error calling reorder_pricing_tiers:', error);
       return {
         success: false,
-        message: 'Could not update pricing tier order. Please try again.',
+        message: error.message,
       };
     }
 

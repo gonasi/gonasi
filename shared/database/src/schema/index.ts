@@ -821,6 +821,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      can_convert_course_pricing: {
+        Args: { p_course_id: string; p_target_model: string }
+        Returns: boolean
+      }
       check_subcategory_belongs_to_category: {
         Args: { category: string; subcategory: string }
         Returns: boolean
@@ -909,6 +913,10 @@ export type Database = {
       }
       set_course_paid: {
         Args: { p_course_id: string; p_user_id: string }
+        Returns: undefined
+      }
+      switch_course_pricing_model: {
+        Args: { p_course_id: string; p_user_id: string; p_target_model: string }
         Returns: undefined
       }
     }
