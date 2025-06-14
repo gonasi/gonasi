@@ -214,16 +214,18 @@ export function InsertFileDialogBody({
 
               {/* ✅ End of File List Message */}
               {!hasMore && files.data.length > 0 && (
-                <p className='mt-4 text-center text-sm text-gray-500'>No more files to load</p>
+                <p className='text-muted-foreground mt-4 text-center text-sm'>
+                  No more files to load
+                </p>
               )}
             </div>
           ) : (
             // ❌ No Files Found
             <div className='flex h-40 items-center justify-center'>
-              <p className='text-gray-500'>
+              <p className='text-muted-foreground'>
                 {debouncedSearchQuery
-                  ? `No files found matching "${debouncedSearchQuery}"`
-                  : 'No files available'}
+                  ? `No files found in this course matching "${debouncedSearchQuery}". You can upload one to get started!`
+                  : 'This course doesn’t have any files yet — feel free to upload one!'}
               </p>
             </div>
           )}

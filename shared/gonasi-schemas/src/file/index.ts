@@ -186,11 +186,7 @@ export type EditFileSchemaTypes = z.infer<typeof EditFileSchema>;
 export const DeleteFileSchema = z.object({
   path: z.string(),
   name: z.string(),
+  fileId: z.string(),
 });
 
-export const SubmitFileDeleteSchema = DeleteFileSchema.merge(
-  z.object({
-    fileId: z.string(),
-  }),
-);
-export type DeleteFileSubmitValues = z.infer<typeof SubmitFileDeleteSchema>;
+export type DeleteFileSchemaTypes = z.infer<typeof DeleteFileSchema>;
