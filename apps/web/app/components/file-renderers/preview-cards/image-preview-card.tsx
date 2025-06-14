@@ -1,7 +1,18 @@
+import { Image } from '@unpic/react';
+import { motion } from 'framer-motion';
+
 import type { FileLoaderItemType } from '~/routes/dashboard/file-library/all-files';
 
 export const ImagePreviewCard = ({ file }: { file: FileLoaderItemType }) => (
-  <div className='flex h-full w-full flex-1 items-center justify-center'>
-    <img src={file.signed_url} alt={file.name} className='h-full rounded-md object-contain' />
-  </div>
+  <motion.div className='h-full w-full overflow-hidden rounded-t-lg transition-transform duration-300 ease-in-out group-hover:scale-101'>
+    <Image
+      src={file.signed_url}
+      alt={`${file.name} thumbnail`}
+      layout='constrained'
+      height={300}
+      aspectRatio={16 / 9}
+      className='h-full w-full object-contain'
+      background='auto'
+    />
+  </motion.div>
 );

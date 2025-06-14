@@ -98,6 +98,7 @@ create table public.file_library (
   mime_type text not null,
   extension text not null,
   file_type public.file_type not null default 'other',
+  blur_preview text null,
 
   -- audit timestamps
   created_at timestamptz not null default timezone('utc', now()),
