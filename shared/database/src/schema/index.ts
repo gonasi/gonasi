@@ -43,7 +43,6 @@ export type Database = {
           id: string
           name: string
           position: number | null
-          requires_payment: boolean | null
           updated_at: string
           updated_by: string
         }
@@ -55,7 +54,6 @@ export type Database = {
           id?: string
           name: string
           position?: number | null
-          requires_payment?: boolean | null
           updated_at?: string
           updated_by: string
         }
@@ -67,7 +65,6 @@ export type Database = {
           id?: string
           name?: string
           position?: number | null
-          requires_payment?: boolean | null
           updated_at?: string
           updated_by?: string
         }

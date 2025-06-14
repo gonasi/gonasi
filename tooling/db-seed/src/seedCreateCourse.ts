@@ -32,12 +32,10 @@ function generateFakeCourseTitle(): string {
 function generateFakeChapter(): {
   name: string;
   description: string;
-  requiresPayment: boolean;
 } {
   return {
     name: faker.company.catchPhrase(),
     description: faker.lorem.paragraph(),
-    requiresPayment: false,
   };
 }
 
@@ -118,7 +116,6 @@ export async function seedCreateCourse(users: profilesScalars[]) {
             courseId: course.id,
             name: chapter.name,
             description: chapter.description,
-            requiresPayment: chapter.requiresPayment,
           });
 
           if (!chapterSuccess || !chapterData) {

@@ -16,7 +16,7 @@ export const createCourseChapter = async (
   chapterData: NewChapterSubmitValues,
 ): Promise<ApiResponse<{ id: string }>> => {
   const userId = await getUserId(supabase);
-  const { courseId, name, description, requiresPayment } = chapterData;
+  const { courseId, name, description } = chapterData;
 
   try {
     const { data, error: insertError } = await supabase
@@ -25,7 +25,6 @@ export const createCourseChapter = async (
         course_id: courseId,
         name,
         description,
-        requires_payment: requiresPayment,
         created_by: userId,
         updated_by: userId,
       })

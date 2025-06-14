@@ -1,7 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router';
 import { motion } from 'framer-motion';
-import { BookLock, LockOpen } from 'lucide-react';
 
 import { NotFoundCard } from '../cards';
 import { LessonHoverCard } from '../cards/lesson-hover-card';
@@ -88,9 +87,6 @@ export function ChapterLessonTree({ courseId, chapters, activeChapterAndLesson }
             >
               <div className='bg-background/90 sticky top-14 z-5 pt-2 pb-4'>
                 <div className='flex items-center space-x-1'>
-                  <div className='flex-shrink-0'>
-                    {chapter.requires_payment ? <BookLock size={16} /> : <LockOpen size={16} />}
-                  </div>
                   <h1 className={cn('line-clamp-1 text-xl font-bold md:text-2xl')}>
                     {chapter.name}
                   </h1>

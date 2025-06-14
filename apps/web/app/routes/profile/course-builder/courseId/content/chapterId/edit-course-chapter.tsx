@@ -10,7 +10,7 @@ import { EditChapterSchema, type EditChapterSchemaTypes } from '@gonasi/schemas/
 import type { Route } from './+types/edit-course-chapter';
 
 import { Button } from '~/components/ui/button';
-import { GoInputField, GoSwitchField, GoTextAreaField } from '~/components/ui/forms/elements';
+import { GoInputField, GoTextAreaField } from '~/components/ui/forms/elements';
 import { Modal } from '~/components/ui/modal';
 import { createClient } from '~/lib/supabase/supabase.server';
 import { checkHoneypot } from '~/utils/honeypot.server';
@@ -68,7 +68,7 @@ export default function EditCourseChapter({ loaderData }: Route.ComponentProps) 
   const params = useParams();
   const isPending = useIsPending();
 
-  const { name, description, requires_payment } = loaderData.chapter;
+  const { name, description } = loaderData.chapter;
 
   const methods = useRemixForm<EditChapterSchemaTypes>({
     mode: 'all',
@@ -76,7 +76,6 @@ export default function EditCourseChapter({ loaderData }: Route.ComponentProps) 
     defaultValues: {
       name,
       description: description ?? '',
-      requiresPayment: requires_payment ?? false,
     },
   });
 
@@ -108,11 +107,6 @@ export default function EditCourseChapter({ loaderData }: Route.ComponentProps) 
                 labelProps={{ children: 'What’s this chapter about?', required: true }}
                 textareaProps={{ disabled: isDisabled }}
                 description='Just a quick overview to help learners know what to expect.'
-              />
-
-              <GoSwitchField
-                name='requiresPayment'
-                labelProps={{ children: 'If course is paid, require payment for this chapter' }}
               />
 
               {/* Submit button */}

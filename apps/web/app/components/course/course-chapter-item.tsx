@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useFetcher, useParams } from 'react-router';
 import { AccordionContent, AccordionItem, AccordionTrigger } from '@radix-ui/react-accordion';
 import { Reorder, useDragControls, useMotionValue } from 'framer-motion';
-import { BookOpen, CircleDollarSign, GripVerticalIcon, Pencil, Plus, Trash } from 'lucide-react';
+import { BookOpen, GripVerticalIcon, Pencil, Plus, Trash } from 'lucide-react';
 
 import { ActionDropdown } from '../action-dropdown';
 import { NotFoundCard } from '../cards';
@@ -17,23 +17,16 @@ import type { CourseChapter } from '~/routes/profile/course-builder/courseId/con
 
 interface ChapterBadgesProps {
   lessonCount: number;
-  requiresPayment: boolean | null;
 }
 
 // Renders badges for lesson count and payment requirement
-function ChapterBadges({ lessonCount, requiresPayment }: ChapterBadgesProps) {
+function ChapterBadges({ lessonCount }: ChapterBadgesProps) {
   return (
     <div className='flex space-x-2'>
       <Badge variant='outline'>
         <BookOpen />
         {`${lessonCount} ${lessonCount === 1 ? 'lesson' : 'lessons'}`}
       </Badge>
-      {requiresPayment && (
-        <Badge className='bg-success text-success-foreground'>
-          <CircleDollarSign />
-          Paid chapter
-        </Badge>
-      )}
     </div>
   );
 }
@@ -138,7 +131,7 @@ export default function CourseChapterItem({ chapter, loading }: Props) {
 
             {/* Badges for metadata */}
             <div className='flex w-full items-start'>
-              <ChapterBadges lessonCount={chapter.lesson_count} requiresPayment={false} />
+              <ChapterBadges lessonCount={chapter.lesson_count} />
             </div>
           </AccordionTrigger>
 

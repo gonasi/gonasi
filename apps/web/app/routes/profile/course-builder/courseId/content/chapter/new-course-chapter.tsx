@@ -11,7 +11,7 @@ import { NewChapterSchema, type NewChapterSchemaTypes } from '@gonasi/schemas/co
 import type { Route } from './+types/new-course-chapter';
 
 import { Button } from '~/components/ui/button';
-import { GoInputField, GoSwitchField, GoTextAreaField } from '~/components/ui/forms/elements';
+import { GoInputField, GoTextAreaField } from '~/components/ui/forms/elements';
 import { Modal } from '~/components/ui/modal';
 import { createClient } from '~/lib/supabase/supabase.server';
 import { checkHoneypot } from '~/utils/honeypot.server';
@@ -75,9 +75,6 @@ export default function NewCourseChapter() {
   const methods = useRemixForm<NewChapterSchemaTypes>({
     mode: 'all',
     resolver,
-    defaultValues: {
-      requiresPayment: false,
-    },
   });
 
   const isDisabled = isPending || methods.formState.isSubmitting;
@@ -109,11 +106,6 @@ export default function NewCourseChapter() {
                 labelProps={{ children: 'What’s this chapter about?', required: true }}
                 textareaProps={{ disabled: isDisabled }}
                 description='Just a quick overview to help learners know what to expect.'
-              />
-
-              <GoSwitchField
-                name='requiresPayment'
-                labelProps={{ children: 'If course is paid, require payment for this chapter' }}
               />
 
               {/* Submit button */}
