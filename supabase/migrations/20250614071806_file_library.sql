@@ -52,6 +52,7 @@ create table public.file_library (
   id uuid primary key default uuid_generate_v4(),
 
   -- Foreign key: related lesson
+  course_id uuid not null references public.courses(id) on delete cascade,
   lesson_id uuid not null references public.lessons(id) on delete cascade,
 
   -- Audit fields
