@@ -177,14 +177,11 @@ export type EditFileNameSchemaTypes = z.infer<typeof EditFileNameSchema>;
 
 export const EditFileSchema = z.object({
   file: NewFileTypeSchema,
+  fileId: z.string(),
   path: z.string(),
 });
 
-export const EditFileSubmitSchema = EditFileSchema.extend({
-  fileId: z.string(),
-});
-
-export type EditFileSubmitValues = z.infer<typeof EditFileSubmitSchema>;
+export type EditFileSchemaTypes = z.infer<typeof EditFileSchema>;
 
 export const DeleteFileSchema = z.object({
   path: z.string(),
