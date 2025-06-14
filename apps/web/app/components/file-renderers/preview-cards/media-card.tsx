@@ -13,8 +13,8 @@ interface MediaCardProps {
 }
 
 export const MediaCard: React.FC<MediaCardProps> = ({ file, media }) => {
-  const { companyId } = useParams();
-  const basePath = `/dashboard/${companyId}/file-library/${file.id}`;
+  const { username, courseId } = useParams();
+  const basePath = `/${username}/course-builder/${courseId}/file-library/${file.id}`;
 
   const options = [
     { title: 'Edit', icon: Pencil, to: `${basePath}/edit` },
@@ -22,14 +22,14 @@ export const MediaCard: React.FC<MediaCardProps> = ({ file, media }) => {
   ];
 
   return (
-    <div className='group bg-card/10 hover:bg-card/30 relative w-full rounded-lg transition-colors duration-300 hover:cursor-pointer'>
+    <div className='group bg-card/10 hover:bg-card/30 relative w-full transition-colors duration-300 hover:cursor-pointer'>
       {/* Media Preview */}
-      <div className='border-border/5 flex h-40 w-full max-w-full items-center justify-center border-b md:h-60'>
+      <div className='bg-card flex h-40 w-full max-w-full items-center justify-center md:h-60'>
         {media}
       </div>
 
       {/* File Info */}
-      <div className='flex items-center justify-between p-4'>
+      <div className='bg-background flex items-center justify-between p-4 md:bg-transparent'>
         <div>
           <h3 className='truncate font-medium'>{file.name}</h3>
           <div className='font-secondary text-muted-foreground flex flex-col justify-between text-xs'>

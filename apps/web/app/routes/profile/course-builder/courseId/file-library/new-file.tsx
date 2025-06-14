@@ -58,6 +58,8 @@ export default function NewFile({ params }: Route.ComponentProps) {
     },
   });
 
+  const isDisabled = isPending || methods.formState.isSubmitting;
+
   return (
     <Modal open>
       <Modal.Content size='sm'>
@@ -72,19 +74,19 @@ export default function NewFile({ params }: Route.ComponentProps) {
                 name='file'
                 labelProps={{ children: 'Upload file', required: true }}
                 inputProps={{
-                  disabled: isPending,
+                  disabled: isDisabled,
                 }}
                 description='Choose a file to upload.'
               />
               <GoInputField
                 labelProps={{ children: 'File name', required: true }}
                 inputProps={{
-                  disabled: isPending,
+                  disabled: isDisabled,
                 }}
                 name='name'
                 description='Enter a name for your file.'
               />
-              <Button type='submit' disabled={isPending} isLoading={isPending}>
+              <Button type='submit' disabled={isDisabled} isLoading={isDisabled}>
                 Save
               </Button>
             </Form>
