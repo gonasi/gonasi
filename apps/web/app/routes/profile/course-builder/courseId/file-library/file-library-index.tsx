@@ -42,6 +42,7 @@ export default function AllFiles({ loaderData, params }: Route.ComponentProps) {
 
   return (
     <div className='mx-auto max-w-3xl pb-20'>
+      {/* <StorageIndicator /> */}
       <div className='pb-4'>
         <SearchInput placeholder='Search for course files...' />
       </div>
