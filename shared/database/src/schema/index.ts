@@ -427,12 +427,12 @@ export type Database = {
       }
       file_library: {
         Row: {
+          course_id: string
           created_at: string
           created_by: string
           extension: string
           file_type: Database["public"]["Enums"]["file_type"]
           id: string
-          lesson_id: string
           mime_type: string
           name: string
           path: string
@@ -441,12 +441,12 @@ export type Database = {
           updated_by: string | null
         }
         Insert: {
+          course_id: string
           created_at?: string
           created_by: string
           extension: string
           file_type?: Database["public"]["Enums"]["file_type"]
           id?: string
-          lesson_id: string
           mime_type: string
           name: string
           path: string
@@ -455,12 +455,12 @@ export type Database = {
           updated_by?: string | null
         }
         Update: {
+          course_id?: string
           created_at?: string
           created_by?: string
           extension?: string
           file_type?: Database["public"]["Enums"]["file_type"]
           id?: string
-          lesson_id?: string
           mime_type?: string
           name?: string
           path?: string
@@ -470,17 +470,17 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "file_library_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "file_library_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "file_library_lesson_id_fkey"
-            columns: ["lesson_id"]
-            isOneToOne: false
-            referencedRelation: "lessons"
             referencedColumns: ["id"]
           },
           {
@@ -925,26 +925,6 @@ export type Database = {
         Args: { p_course_id: string }
         Returns: Database["public"]["Enums"]["payment_frequency"][]
       }
-      gtrgm_compress: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gtrgm_decompress: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gtrgm_in: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gtrgm_options: {
-        Args: { "": unknown }
-        Returns: undefined
-      }
-      gtrgm_out: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
       is_course_admin: {
         Args: { course_id: string; user_id: string }
         Returns: boolean
@@ -1002,18 +982,6 @@ export type Database = {
       set_course_paid: {
         Args: { p_course_id: string; p_user_id: string }
         Returns: undefined
-      }
-      set_limit: {
-        Args: { "": number }
-        Returns: number
-      }
-      show_limit: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
-      show_trgm: {
-        Args: { "": string }
-        Returns: string[]
       }
       switch_course_pricing_model: {
         Args: { p_course_id: string; p_user_id: string; p_target_model: string }

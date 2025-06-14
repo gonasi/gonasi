@@ -1,4 +1,5 @@
-import { getFileMetadata, type NewFileLibrarySubmitValues } from '@gonasi/schemas/file';
+import type { NewFileSchemaTypes } from '@gonasi/schemas/file';
+import { getFileMetadata } from '@gonasi/schemas/file';
 
 import { getUserId } from '../auth';
 import type { TypedSupabaseClient } from '../client';
@@ -14,10 +15,11 @@ import type { ApiResponse } from '../types';
  */
 export const createFile = async (
   supabase: TypedSupabaseClient,
-  newFileData: NewFileLibrarySubmitValues,
+  newFileData: NewFileSchemaTypes,
 ): Promise<ApiResponse> => {
   const userId = await getUserId(supabase);
-  const { file, name, companyId } = newFileData;
+
+  const { file, name, courseId } = newFileData;
 
   if (!file) {
     return { success: false, message: 'A file must be provided.' };
@@ -29,7 +31,7 @@ export const createFile = async (
     // Upload file to Supabase storage
     const { data: uploadResponse, error: uploadError } = await supabase.storage
       .from(FILE_LIBRARY_BUCKET)
-      .upload(`${companyId}/${fileName}`, file, {
+      .upload(`${userId}/${courseId}/${fileName}`, file, {
         contentType: mime_type,
       });
 
@@ -39,7 +41,7 @@ export const createFile = async (
 
     // Create file metadata entry in the database
     const { error: insertError } = await supabase.from('file_library').insert({
-      company_id: companyId,
+      course_id: courseId,
       name,
       path: uploadResponse.path,
       size,

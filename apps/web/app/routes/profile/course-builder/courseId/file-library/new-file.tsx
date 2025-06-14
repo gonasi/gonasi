@@ -1,0 +1,96 @@
+import { Form } from 'react-router';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
+import { dataWithError, redirectWithSuccess } from 'remix-toast';
+
+import { createFile } from '@gonasi/database/files';
+import { NewFileLibrarySchema, type NewFileSchemaTypes } from '@gonasi/schemas/file';
+
+import type { Route } from './+types/new-file';
+
+import { Button } from '~/components/ui/button';
+import { GoFileField, GoInputField } from '~/components/ui/forms/elements';
+import { Modal } from '~/components/ui/modal';
+import { createClient } from '~/lib/supabase/supabase.server';
+import { checkHoneypot } from '~/utils/honeypot.server';
+import { useIsPending } from '~/utils/misc';
+
+const resolver = zodResolver(NewFileLibrarySchema);
+
+export async function action({ request, params }: Route.ActionArgs) {
+  const formData = await request.formData();
+  await checkHoneypot(formData);
+
+  const { supabase } = createClient(request);
+
+  const {
+    errors,
+    data,
+    receivedValues: defaultValues,
+  } = await getValidatedFormData<NewFileSchemaTypes>(formData, resolver);
+
+  // If validation failed, return errors and default values
+  if (errors) {
+    return { errors, defaultValues };
+  }
+
+  const { success, message } = await createFile(supabase, {
+    ...data,
+    courseId: params.courseId,
+  });
+
+  return success
+    ? redirectWithSuccess(
+        `/${params.username}/course-builder/${params.courseId}/file-library`,
+        message,
+      )
+    : dataWithError(null, message);
+}
+
+export default function NewFile({ params }: Route.ComponentProps) {
+  const isPending = useIsPending();
+
+  const methods = useRemixForm<NewFileSchemaTypes>({
+    mode: 'all',
+    resolver,
+    defaultValues: {
+      courseId: params.courseId,
+    },
+  });
+
+  return (
+    <Modal open>
+      <Modal.Content size='sm'>
+        <Modal.Header
+          title='Course File Upload'
+          closeRoute={`/${params.username}/course-builder/${params.courseId}/file-library`}
+        />
+        <Modal.Body>
+          <RemixFormProvider {...methods}>
+            <Form method='POST' encType='multipart/form-data' onSubmit={methods.handleSubmit}>
+              <GoFileField
+                name='file'
+                labelProps={{ children: 'Upload file', required: true }}
+                inputProps={{
+                  disabled: isPending,
+                }}
+                description='Choose a file to upload.'
+              />
+              <GoInputField
+                labelProps={{ children: 'File name', required: true }}
+                inputProps={{
+                  disabled: isPending,
+                }}
+                name='name'
+                description='Enter a name for your file.'
+              />
+              <Button type='submit' disabled={isPending} isLoading={isPending}>
+                Save
+              </Button>
+            </Form>
+          </RemixFormProvider>
+        </Modal.Body>
+      </Modal.Content>
+    </Modal>
+  );
+}

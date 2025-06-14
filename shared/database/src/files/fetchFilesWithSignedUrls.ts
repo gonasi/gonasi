@@ -5,12 +5,12 @@ import { getPaginationRange } from '../constants/utils';
 import type { FetchDataParams } from '../types';
 
 interface FetchFilesParams extends FetchDataParams {
-  companyId: string;
+  courseId: string;
 }
 
 export async function fetchFilesWithSignedUrls({
   supabase,
-  companyId,
+  courseId,
   searchQuery = '',
   limit = 12,
   page = 1,
@@ -23,7 +23,7 @@ export async function fetchFilesWithSignedUrls({
     .from('file_library')
     .select('*', { count: 'exact' })
     .order('created_at', { ascending: false })
-    .eq('company_id', companyId);
+    .eq('course_id', courseId);
 
   if (searchQuery) {
     query = query.ilike('name', `%${searchQuery}%`);

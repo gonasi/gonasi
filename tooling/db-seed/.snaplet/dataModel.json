@@ -1886,6 +1886,20 @@
           "hasDefaultValue": false
         },
         {
+          "name": "file_library",
+          "type": "file_library",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "file_libraryTocourses",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
           "name": "lesson_blocks",
           "type": "lesson_blocks",
           "isRequired": false,
@@ -2063,9 +2077,9 @@
           "maxLength": null
         },
         {
-          "id": "public.file_library.lesson_id",
-          "name": "lesson_id",
-          "columnName": "lesson_id",
+          "id": "public.file_library.course_id",
+          "name": "course_id",
+          "columnName": "course_id",
           "type": "uuid",
           "isRequired": true,
           "kind": "scalar",
@@ -2217,13 +2231,13 @@
           "maxLength": null
         },
         {
-          "name": "lessons",
-          "type": "lessons",
+          "name": "courses",
+          "type": "courses",
           "isRequired": true,
           "kind": "object",
-          "relationName": "file_libraryTolessons",
+          "relationName": "file_libraryTocourses",
           "relationFromFields": [
-            "lesson_id"
+            "course_id"
           ],
           "relationToFields": [
             "id"
@@ -2280,9 +2294,9 @@
           "nullNotDistinct": false
         },
         {
-          "name": "unique_file_path_per_lesson",
+          "name": "unique_file_path_per_course",
           "fields": [
-            "lesson_id",
+            "course_id",
             "path"
           ],
           "nullNotDistinct": false
@@ -3627,20 +3641,6 @@
             "id"
           ],
           "isList": false,
-          "isId": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false
-        },
-        {
-          "name": "file_library",
-          "type": "file_library",
-          "isRequired": false,
-          "kind": "object",
-          "relationName": "file_libraryTolessons",
-          "relationFromFields": [],
-          "relationToFields": [],
-          "isList": true,
           "isId": false,
           "isGenerated": false,
           "sequence": false,

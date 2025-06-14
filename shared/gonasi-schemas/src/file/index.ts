@@ -164,13 +164,9 @@ export const NewFileTypeSchema = z.instanceof(File).superRefine((file, ctx) => {
 export const NewFileLibrarySchema = z.object({
   file: NewFileTypeSchema,
   name: FileNameSchema,
+  courseId: z.string(),
 });
-export type NewFileTypes = z.infer<typeof NewFileLibrarySchema>;
-
-export const NewFileLibrarySubmitSchema = NewFileLibrarySchema.extend({
-  companyId: z.string(),
-});
-export type NewFileLibrarySubmitValues = z.infer<typeof NewFileLibrarySubmitSchema>;
+export type NewFileSchemaTypes = z.infer<typeof NewFileLibrarySchema>;
 
 export const EditFileNameSchema = z.object({
   name: FileNameSchema,
