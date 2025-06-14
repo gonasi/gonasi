@@ -425,6 +425,73 @@ export type Database = {
           },
         ]
       }
+      file_library: {
+        Row: {
+          created_at: string
+          created_by: string
+          extension: string
+          file_type: Database["public"]["Enums"]["file_type"]
+          id: string
+          lesson_id: string
+          mime_type: string
+          name: string
+          path: string
+          size: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          extension: string
+          file_type?: Database["public"]["Enums"]["file_type"]
+          id?: string
+          lesson_id: string
+          mime_type: string
+          name: string
+          path: string
+          size: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          extension?: string
+          file_type?: Database["public"]["Enums"]["file_type"]
+          id?: string
+          lesson_id?: string
+          mime_type?: string
+          name?: string
+          path?: string
+          size?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "file_library_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "file_library_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "file_library_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lesson_blocks: {
         Row: {
           content: Json
@@ -850,9 +917,33 @@ export type Database = {
         Args: { p_tier_id: string; p_deleted_by: string }
         Returns: undefined
       }
+      determine_file_type: {
+        Args: { extension: string }
+        Returns: Database["public"]["Enums"]["file_type"]
+      }
       get_available_payment_frequencies: {
         Args: { p_course_id: string }
         Returns: Database["public"]["Enums"]["payment_frequency"][]
+      }
+      gtrgm_compress: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gtrgm_decompress: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gtrgm_in: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gtrgm_options: {
+        Args: { "": unknown }
+        Returns: undefined
+      }
+      gtrgm_out: {
+        Args: { "": unknown }
+        Returns: unknown
       }
       is_course_admin: {
         Args: { course_id: string; user_id: string }
@@ -912,6 +1003,18 @@ export type Database = {
         Args: { p_course_id: string; p_user_id: string }
         Returns: undefined
       }
+      set_limit: {
+        Args: { "": number }
+        Returns: number
+      }
+      show_limit: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      show_trgm: {
+        Args: { "": string }
+        Returns: string[]
+      }
       switch_course_pricing_model: {
         Args: { p_course_id: string; p_user_id: string; p_target_model: string }
         Returns: undefined
@@ -934,6 +1037,7 @@ export type Database = {
       app_role: "go_su" | "go_admin" | "go_staff" | "user"
       course_access: "public" | "private"
       course_role: "admin" | "editor" | "viewer"
+      file_type: "image" | "audio" | "video" | "model3d" | "document" | "other"
       payment_frequency:
         | "monthly"
         | "bi_monthly"
@@ -1075,6 +1179,7 @@ export const Constants = {
       app_role: ["go_su", "go_admin", "go_staff", "user"],
       course_access: ["public", "private"],
       course_role: ["admin", "editor", "viewer"],
+      file_type: ["image", "audio", "video", "model3d", "document", "other"],
       payment_frequency: [
         "monthly",
         "bi_monthly",
