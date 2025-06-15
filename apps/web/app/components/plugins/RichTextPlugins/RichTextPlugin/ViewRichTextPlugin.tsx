@@ -18,7 +18,7 @@ export function ViewRichTextPlugin({ block, mode }: ViewPluginComponentProps) {
   const params = useParams();
 
   // settings
-  const { playbackMode } = block.settings as RichTextSettingsSchemaType;
+  const { playbackMode, weight } = block.settings as RichTextSettingsSchemaType;
 
   // Safely cast content to the expected structure for rich_text_editor
   const { richTextState } = block.content as RichTextContentSchemaType;
@@ -47,7 +47,12 @@ export function ViewRichTextPlugin({ block, mode }: ViewPluginComponentProps) {
   }, [mode, updatePayload, block.id, params.lessonId]);
 
   return (
-    <ViewPluginWrapper isComplete={payload?.is_complete} playbackMode={playbackMode} mode={mode}>
+    <ViewPluginWrapper
+      isComplete={payload?.is_complete}
+      playbackMode={playbackMode}
+      mode={mode}
+      weight={weight}
+    >
       <RichTextRenderer editorState={richTextState} />
       <div className='pt-4'>
         {shouldShowActionButton && (

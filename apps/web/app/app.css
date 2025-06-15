@@ -89,7 +89,7 @@
     --card: hsl(217, 39%, 25%); /* Darker card */
     --card-foreground: hsl(0, 0%, 98%);
     --card-border: hsl(217, 39%, 50%);
-    --popover: hsl(217, 39%, 25%);
+    --popover: hsl(217, 39%, 18%);
     --popover-foreground: hsl(0, 0%, 98%);
     --muted: hsl(217, 39%, 35%);
     --muted-foreground: hsl(0, 0%, 63%);
@@ -106,9 +106,9 @@
     --success-foreground: hsl(0, 0%, 98%);
     --success-hover: hsl(150, 60%, 38%);
 
-    --info: hsl(210, 90%, 65%);
-    --info-foreground: hsl(0, 0%, 98%);
-    --info-hover: hsl(210, 85%, 60%);
+    --info: hsl(210, 90%, 55%);
+    --info-foreground: hsl(0, 0%, 100%);
+    --info-hover: hsl(210, 90%, 65%);
 
     --warning: hsl(45, 95%, 45%);
     --warning-foreground: hsl(217, 39%, 15%);
@@ -281,6 +281,25 @@ body {
 
 .margin-left-custom {
   margin-left: var(--ml);
+}
+
+.editor-scroller {
+  min-height: 150px;
+  max-width: 100%;
+  border: 0;
+  display: flex;
+  position: relative;
+  outline: 0;
+  z-index: 0;
+  resize: vertical;
+}
+
+.editor {
+  flex: auto;
+  max-width: 100%;
+  position: relative;
+  resize: vertical;
+  z-index: -1;
 }
 
 .editor-shell {

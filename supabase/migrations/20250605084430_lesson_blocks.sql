@@ -45,6 +45,30 @@ create unique index unique_lesson_block_position_per_lesson
 comment on table public.lesson_blocks is
   'blocks within a lesson, ordered by position, supporting various plugin types';
 
+-- triggers
+-- ====================================================================================
+
+create or replace function public.set_lesson_block_position()
+returns trigger
+as $$
+begin
+  if new.position is null or new.position = 0 then
+    select coalesce(max(position), 0) + 1
+    into new.position
+    from public.lesson_blocks
+    where lesson_id = new.lesson_id;
+  end if;
+  return new;
+end;
+$$
+language plpgsql
+set search_path = '';
+
+create trigger trg_set_lesson_block_position
+before insert on public.lesson_blocks
+for each row
+execute function set_lesson_block_position();
+
 -- ====================================================================================
 -- row-level security (rls)
 -- ====================================================================================

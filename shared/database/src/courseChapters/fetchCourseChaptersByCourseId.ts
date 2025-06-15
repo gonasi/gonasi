@@ -25,8 +25,8 @@ export async function fetchCourseChaptersByCourseId(
         created_at,
         updated_at,
         created_by,
-        requires_payment,
         position,
+        requires_payment,
         lessons(
           id,
           course_id, 

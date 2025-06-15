@@ -11,8 +11,6 @@ export default [
       route(':username', 'routes/profile/published-courses/index.tsx'),
       // /:username/pathways
       route(':username/pathways', 'routes/profile/pathways/index.tsx'),
-      // /:username/file-library
-      route(':username/file-library', 'routes/profile/file-library/index.tsx'),
       // /:username/course-builder
       route(':username/course-builder', 'routes/profile/course-builder/course-builder-index.tsx', [
         layout('routes/layouts/profile/course-crud-layout.tsx', [
@@ -39,84 +37,13 @@ export default [
     ]),
   ]),
 
-  ...prefix('dashboard/:companyId', [
-    layout('routes/layouts/dashboard/dashboard.tsx', [
-      // /dashboard/:companyId
-      index('routes/dashboard/dashboard.tsx'),
-      // /dashboard/:companyId/team-management
-      route('/team-management', 'routes/dashboard/team-management/team-management.tsx', [
-        // /dashboard/:companyId/team-management/staff-directory
-        route('staff-directory', 'routes/dashboard/team-management/staff-directory.tsx', [
-          // /dashboard/:companyId/team-management/staff-directory/edit-role/:staffId
-          route('edit-role/:staffId', 'routes/dashboard/team-management/edit-staff-role.tsx'),
-          // /dashboard/:companyId/team-management/staff-directory/remove-staff/:staffId
-          route('remove-staff/:staffId', 'routes/dashboard/team-management/remove-staff.tsx'),
-        ]),
-        // /dashboard/:companyId/team-management/staff-teams
-        route('staff-teams', 'routes/dashboard/team-management/staff-teams.tsx'),
-        // /dashboard/:companyId/team-management/staff-invites
-        route('staff-invites', 'routes/dashboard/team-management/staff-invites.tsx', [
-          // /dashboard/:companyId/team-management/staff-invites/new
-          route('new', 'routes/dashboard/team-management/new-staff-invite.tsx'),
-        ]),
-      ]),
-      // /dashboard/:companyId/learning-paths
-      route('learning-paths', 'routes/dashboard/pathways/all-learning-paths.tsx'),
-      // /dashboard/:companyId/courses
-      route('courses', 'routes/dashboard/courses/all-courses.tsx'),
-      // /dashboard/:companyId/resource-center
-      route('resource-center', 'routes/dashboard/resource-center.tsx'),
-      // /dashboard/:companyId/file-library
-      route('file-library', 'routes/dashboard/file-library/all-files.tsx', [
-        ...prefix(':fileId', [
-          // /dashboard/:companyId/file-library/:fileId/edit
-          route('edit', 'routes/dashboard/file-library/edit-file-name.tsx'),
-          // /dashboard/:companyId/file-library/:fileId/edit/image
-          route('edit/image', 'routes/dashboard/file-library/edit-file-image.tsx'),
-          // /dashboard/:companyId/file-library/:fileId/delete
-          route('delete', 'routes/dashboard/file-library/delete-file.tsx'),
-        ]),
-      ]),
-      // /dashboard/:companyId/revenue
-      route('revenue', 'routes/dashboard/revenue.tsx'),
-    ]),
-  ]),
-
-  ...prefix('dashboard', [
-    layout('routes/layouts/dashboard/dashboard-plain.tsx', [
-      // /dashboard/:companyId/learning-paths/new
-      route('/:companyId/learning-paths/new', 'routes/dashboard/pathways/new-learning-path.tsx'),
-      // /dashboard/:companyId/file-library/new
-      route('/:companyId/file-library/new', 'routes/dashboard/file-library/new-file.tsx'),
-      // /dashboard/:companyId/learning-paths/:learningPathId
-      route(
-        '/:companyId/learning-paths/:learningPathId',
-        'routes/dashboard/pathways/view-learning-path-by-id.tsx',
-        [
-          // /dashboard/:companyId/learning-paths/:learningPathId/edit
-          route('edit', 'routes/dashboard/pathways/edit-learning-path-details-by-id.tsx'),
-          // /dashboard/:companyId/learning-paths/:learningPathId/edit/image
-          route('edit/image', 'routes/dashboard/pathways/edit-learning-path-image-by-id.tsx'),
-          // /dashboard/:companyId/learning-paths/:learningPathId/delete
-          route('delete', 'routes/dashboard/pathways/delete-learning-path-by-id.tsx'),
-          // /dashboard/:companyId/learning-paths/:learningPathId/course/add
-          route('course/add', 'routes/dashboard/pathways/add-course-to-learning-path.tsx'),
-          // /dashboard/:companyId/learning-paths/:learningPathId/course/:courseId/remove
-          route(
-            'course/:courseId/remove',
-            'routes/dashboard/pathways/remove-course-to-learning-path.tsx',
-          ),
-        ],
-      ),
-    ]),
-  ]),
-
   layout('routes/layouts/profile/course-overview-layout.tsx', [
     ...prefix(':username/course-builder', [
       // /:username/course-builder/:courseId
       route(':courseId', 'routes/profile/course-builder/courseId/course-id-index.tsx', [
         // /:username/course-builder/:courseId/overview
         route('overview', 'routes/profile/course-builder/courseId/overview/overview-index.tsx', [
+          route('publish', 'routes/profile/course-builder/courseId/overview/publish-course.tsx'),
           // /:username/course-builder/:courseId/overview/edit-thumbnail
           route(
             'edit-thumbnail',
@@ -143,6 +70,20 @@ export default [
               ),
             ]),
           ]),
+        ]),
+        route('pricing', 'routes/profile/course-builder/courseId/pricing/pricing-index.tsx', [
+          route(
+            'update-pricing-type',
+            'routes/profile/course-builder/courseId/pricing/update-pricing-type-modal.tsx',
+          ),
+          route(
+            'manage-pricing-tier/:coursePricingId',
+            'routes/profile/course-builder/courseId/pricing/manage-pricing-tier-modal.tsx',
+          ),
+          route(
+            'manage-pricing-tier/:coursePricingId/delete',
+            'routes/profile/course-builder/courseId/pricing/delete-pricing-tier-modal.tsx',
+          ),
         ]),
         // /:username/course-builder/:courseId/content
         route('content', 'routes/profile/course-builder/courseId/content/content-index.tsx', [
@@ -196,26 +137,56 @@ export default [
                       [
                         // /:username/course-builder/:courseId/content/:chapterId/:lessonId/plugins/:pluginGroupId/:pluginTypeId/create
                         route(
-                          ':pluginTypeId/:blockId/builder',
-                          'routes/profile/course-builder/courseId/content/chapterId/lessonId/lesson-blocks/plugins/builder-block-by-plugin-id-modal.tsx',
+                          ':pluginTypeId/create',
+                          'routes/profile/course-builder/courseId/content/chapterId/lessonId/lesson-blocks/plugins/create-block-by-plugin-id-modal.tsx',
                         ),
                       ],
                     ),
                   ],
                 ),
                 route(
-                  ':blockId/builder',
-                  'routes/profile/course-builder/courseId/content/chapterId/lessonId/lesson-blocks/plugins/temp.tsx',
+                  ':blockId/edit',
+                  'routes/profile/course-builder/courseId/content/chapterId/lessonId/lesson-blocks/plugins/edit-plugin-modal.tsx',
                 ),
+                // contains action to both edit and create block
+                route(
+                  ':blockId/upsert',
+                  'routes/profile/course-builder/courseId/content/chapterId/lessonId/lesson-blocks/plugins/upsert-plugin-api.tsx',
+                ),
+
                 // /:username/course-builder/:courseId/content/:chapterId/:lessonId/:blockId/delete
                 route(
                   ':blockId/delete',
-                  'routes/dashboard/courses/lessons/plugins/delete-plugin-modal.tsx',
+                  'routes/profile/course-builder/courseId/content/chapterId/lessonId/lesson-blocks/plugins/delete-plugin-modal.tsx',
                 ),
               ],
             ),
           ]),
         ]),
+        route(
+          'file-library',
+          'routes/profile/course-builder/courseId/file-library/file-library-index.tsx',
+          [
+            route('new', 'routes/profile/course-builder/courseId/file-library/new-file.tsx'),
+            ...prefix(':fileId', [
+              route(
+                'edit',
+                'routes/profile/course-builder/courseId/file-library/edit-file-name.tsx',
+              ),
+
+              route(
+                'edit/image',
+                'routes/profile/course-builder/courseId/file-library/edit-file-image.tsx',
+              ),
+
+              route(
+                'delete',
+                'routes/profile/course-builder/courseId/file-library/delete-file.tsx',
+              ),
+            ]),
+          ],
+        ),
+
         // /:username/course-builder/:courseId/collaborators
         route(
           'collaborators',

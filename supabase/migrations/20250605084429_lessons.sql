@@ -12,7 +12,7 @@ create table public.lessons (
   id uuid primary key default uuid_generate_v4(),                -- Unique lesson identifier
   course_id uuid not null,                                        -- Foreign key: associated course
   chapter_id uuid not null,                                       -- Foreign key: associated chapter
-  lesson_type_id uuid not null,                                   -- Foreign key: lesson type
+  lesson_type_id uuid not null,                                    -- Foreign key: lesson type
   name text not null,                                             -- Lesson title
   position integer default 0,                                     -- Position/order within the chapter
   created_at timestamptz not null default timezone('utc', now()),-- Timestamp when lesson was created (UTC)

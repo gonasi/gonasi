@@ -164,43 +164,29 @@ export const NewFileTypeSchema = z.instanceof(File).superRefine((file, ctx) => {
 export const NewFileLibrarySchema = z.object({
   file: NewFileTypeSchema,
   name: FileNameSchema,
+  courseId: z.string(),
 });
-export type NewFileTypes = z.infer<typeof NewFileLibrarySchema>;
-
-export const NewFileLibrarySubmitSchema = NewFileLibrarySchema.extend({
-  companyId: z.string(),
-});
-export type NewFileLibrarySubmitValues = z.infer<typeof NewFileLibrarySubmitSchema>;
+export type NewFileSchemaTypes = z.infer<typeof NewFileLibrarySchema>;
 
 export const EditFileNameSchema = z.object({
   name: FileNameSchema,
-});
-
-export const EditFileNameSubmitSchema = EditFileNameSchema.extend({
   fileId: z.string(),
 });
 
-export type EditFileNameSubmitValues = z.infer<typeof EditFileNameSubmitSchema>;
+export type EditFileNameSchemaTypes = z.infer<typeof EditFileNameSchema>;
 
 export const EditFileSchema = z.object({
   file: NewFileTypeSchema,
+  fileId: z.string(),
   path: z.string(),
 });
 
-export const EditFileSubmitSchema = EditFileSchema.extend({
-  fileId: z.string(),
-});
-
-export type EditFileSubmitValues = z.infer<typeof EditFileSubmitSchema>;
+export type EditFileSchemaTypes = z.infer<typeof EditFileSchema>;
 
 export const DeleteFileSchema = z.object({
   path: z.string(),
   name: z.string(),
+  fileId: z.string(),
 });
 
-export const SubmitFileDeleteSchema = DeleteFileSchema.merge(
-  z.object({
-    fileId: z.string(),
-  }),
-);
-export type DeleteFileSubmitValues = z.infer<typeof SubmitFileDeleteSchema>;
+export type DeleteFileSchemaTypes = z.infer<typeof DeleteFileSchema>;

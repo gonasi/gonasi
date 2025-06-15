@@ -2,19 +2,29 @@ import { useEffect } from 'react';
 import type { MotionValue } from 'framer-motion';
 import { animate, useMotionValue } from 'framer-motion';
 
-const inactiveShadow = '0px 0px 0px rgba(0,0,0,0.8)';
+const inactiveShadow = '0px 0px 0px rgba(0, 0, 0, 0.1)';
+const activeShadow = '2px 4px 6px rgba(0, 0, 0, 0.15)';
 
-export function useRaisedShadow(value: MotionValue<number>) {
+interface UseRaisedShadowOptions {
+  borderRadius?: string;
+}
+
+export function useRaisedShadow(value: MotionValue<number>, options: UseRaisedShadowOptions = {}) {
   const boxShadow = useMotionValue(inactiveShadow);
+  const borderRadius = useMotionValue(options.borderRadius ?? '0px');
 
   useEffect(() => {
     let isActive = false;
-    value.onChange((latest) => {
+
+    // Explicitly ignore deprecation warning using ts-ignore
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    const unsubscribe = value.onChange((latest) => {
       const wasActive = isActive;
       if (latest !== 0) {
         isActive = true;
         if (isActive !== wasActive) {
-          animate(boxShadow, '5px 5px 10px rgba(0,0,0,0.3)');
+          animate(boxShadow, activeShadow);
         }
       } else {
         isActive = false;
@@ -23,7 +33,9 @@ export function useRaisedShadow(value: MotionValue<number>) {
         }
       }
     });
+
+    return () => unsubscribe();
   }, [value, boxShadow]);
 
-  return boxShadow;
+  return { boxShadow, borderRadius };
 }

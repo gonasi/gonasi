@@ -1,16 +1,18 @@
-import { Form, useOutletContext, useParams } from 'react-router';
+import { Form, useParams } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { LockKeyhole, LockKeyholeOpen, Plus } from 'lucide-react';
 import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
 import { dataWithError, redirectWithSuccess } from 'remix-toast';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
 
 import { createCourseChapter } from '@gonasi/database/courseChapters';
+import { fetchCoursePricing } from '@gonasi/database/courses';
 import { NewChapterSchema, type NewChapterSchemaTypes } from '@gonasi/schemas/courseChapters';
 
 import type { Route } from './+types/new-course-chapter';
 
 import { Button } from '~/components/ui/button';
-import { GoCheckBoxField, GoInputField, GoTextAreaField } from '~/components/ui/forms/elements';
+import { GoInputField, GoSwitchField, GoTextAreaField } from '~/components/ui/forms/elements';
 import { Modal } from '~/components/ui/modal';
 import { createClient } from '~/lib/supabase/supabase.server';
 import { checkHoneypot } from '~/utils/honeypot.server';
@@ -33,6 +35,8 @@ const resolver = zodResolver(NewChapterSchema);
 // Handles form submission
 export async function action({ request, params }: Route.ActionArgs) {
   const formData = await request.formData();
+
+  console.log('***** got here');
 
   // Anti-bot honeypot check
   await checkHoneypot(formData);
@@ -63,22 +67,38 @@ export async function action({ request, params }: Route.ActionArgs) {
     : dataWithError(null, message);
 }
 
+// Loader: fetch chapter data
+export async function loader({ params, request }: Route.LoaderArgs) {
+  const { supabase } = createClient(request);
+
+  const pricingData = await fetchCoursePricing({ supabase, courseId: params.courseId });
+
+  const isPaid = Array.isArray(pricingData)
+    ? pricingData.some((item) => item.is_free === false)
+    : false;
+
+  return { isPaid };
+}
+
 // UI component for creating a new course chapter
-export default function NewCourseChapter() {
-  const { pricing_model } = useOutletContext<{ pricing_model: 'free' | 'paid' }>();
+export default function NewCourseChapter({ loaderData }: Route.ComponentProps) {
   const params = useParams();
 
   const isPending = useIsPending();
+
+  const { isPaid } = loaderData;
 
   const methods = useRemixForm<NewChapterSchemaTypes>({
     mode: 'all',
     resolver,
     defaultValues: {
-      requiresPayment: pricing_model !== 'free',
+      requiresPayment: isPaid,
     },
   });
 
   const isDisabled = isPending || methods.formState.isSubmitting;
+
+  const watchRequiresPayment = methods.watch('requiresPayment');
 
   return (
     <Modal open>
@@ -109,18 +129,32 @@ export default function NewCourseChapter() {
                 description='Just a quick overview to help learners know what to expect.'
               />
 
-              {/* Paid chapter checkbox (shown only if pricing model is paid) */}
-              {pricing_model === 'paid' && (
-                <GoCheckBoxField
-                  labelProps={{ children: 'Is this a paid chapter?', required: true }}
-                  name='requiresPayment'
-                  description='Check this if users need to pay to access it.'
-                />
-              )}
+              <GoSwitchField
+                name='requiresPayment'
+                disabled={!isPaid}
+                labelProps={{
+                  children: (
+                    <p className='flex items-center space-x-1'>
+                      <span>Paid chapter</span>
+                      {watchRequiresPayment ? (
+                        <LockKeyhole size={12} />
+                      ) : (
+                        <LockKeyholeOpen size={12} />
+                      )}
+                    </p>
+                  ),
+                  required: false,
+                }}
+                description={
+                  isPaid
+                    ? 'Enable this to make the chapter available only to paying users.'
+                    : 'This course is free, so all chapters are accessible. Set the course to paid to restrict chapter access.'
+                }
+              />
 
               {/* Submit button */}
-              <Button type='submit' disabled={isPending} isLoading={isPending}>
-                Create chapter
+              <Button type='submit' disabled={isPending} isLoading={isPending} rightIcon={<Plus />}>
+                Add
               </Button>
             </Form>
           </RemixFormProvider>

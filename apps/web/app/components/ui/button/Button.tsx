@@ -47,6 +47,9 @@ export interface ButtonProps
   asChild?: boolean;
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
+  leftIconAtEdge?: boolean;
+  rightIconAtEdge?: boolean;
+  childrenAlign?: 'left' | 'right' | 'center';
   isLoading?: boolean;
 }
 
@@ -59,6 +62,9 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       asChild = false,
       leftIcon,
       rightIcon,
+      leftIconAtEdge = false,
+      rightIconAtEdge = false,
+      childrenAlign = 'center',
       isLoading,
       children,
       disabled,
@@ -68,6 +74,58 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ) => {
     const Comp = asChild ? Slot : 'button';
 
+    // Adjust padding when edge icons are present
+    const edgeIconStyles = {
+      paddingLeft: leftIcon && leftIconAtEdge ? '2.5rem' : undefined,
+      paddingRight: rightIcon && rightIconAtEdge ? '2.5rem' : undefined,
+    };
+
+    // Get alignment classes for children
+    const getChildrenAlignment = () => {
+      switch (childrenAlign) {
+        case 'left':
+          return 'justify-start';
+        case 'right':
+          return 'justify-end';
+        case 'center':
+        default:
+          return 'justify-center';
+      }
+    };
+
+    // Render left icon
+    const renderLeftIcon = () => {
+      if (!leftIcon) return null;
+
+      const iconContent =
+        isLoading && !rightIcon ? (
+          <Loader2 className='h-4 w-4 animate-spin' />
+        ) : !isLoading ? (
+          <div className='transition-transform duration-200 group-hover:scale-110'>{leftIcon}</div>
+        ) : null;
+
+      if (leftIconAtEdge) {
+        return <div className='absolute top-1/2 left-3 z-10 -translate-y-1/2'>{iconContent}</div>;
+      }
+      return iconContent;
+    };
+
+    // Render right icon
+    const renderRightIcon = () => {
+      if (!rightIcon) return null;
+
+      const iconContent = isLoading ? (
+        <Loader2 className='h-4 w-4 animate-spin' />
+      ) : (
+        <div className='transition-transform duration-200 group-hover:scale-110'>{rightIcon}</div>
+      );
+
+      if (rightIconAtEdge) {
+        return <div className='absolute top-1/2 right-3 z-10 -translate-y-1/2'>{iconContent}</div>;
+      }
+      return iconContent;
+    };
+
     return (
       <Comp
         className={cn(
@@ -75,31 +133,29 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
           (disabled || isLoading) && 'pointer-events-none cursor-not-allowed opacity-50',
           className,
         )}
+        style={edgeIconStyles}
         ref={ref}
         disabled={!asChild && (disabled || isLoading)}
         {...props}
       >
-        <span className='relative z-5 flex h-full w-full items-center justify-center gap-2'>
-          {/* Left icon or loader (if rightIcon doesn't exist) */}
-          {!isLoading && leftIcon && (
-            <div className='transition-transform duration-200 group-hover:scale-110'>
-              {leftIcon}
-            </div>
+        {/* Left icon when at edge */}
+        {leftIconAtEdge && renderLeftIcon()}
+
+        <span
+          className={cn(
+            'relative z-5 flex h-full w-full items-center gap-2',
+            getChildrenAlignment(),
           )}
+        >
+          {/* Left icon when not at edge */}
+          {!leftIconAtEdge && renderLeftIcon()}
           <div className='mt-0.5'>{children}</div>
-          {/* Right icon or loader (if both icons exist or only rightIcon exists) */}
-          {isLoading ? (
-            rightIcon || (leftIcon && rightIcon) ? (
-              <Loader2 className='h-4 w-4 animate-spin' />
-            ) : leftIcon ? null : (
-              <Loader2 className='h-4 w-4 animate-spin' />
-            )
-          ) : rightIcon ? (
-            <div className='transition-transform duration-200 group-hover:scale-110'>
-              {rightIcon}
-            </div>
-          ) : null}
+          {/* Right icon when not at edge */}
+          {!rightIconAtEdge && renderRightIcon()}
         </span>
+
+        {/* Right icon when at edge */}
+        {rightIconAtEdge && renderRightIcon()}
       </Comp>
     );
   },

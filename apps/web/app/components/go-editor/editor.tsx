@@ -27,9 +27,10 @@ import { cn } from '~/lib/utils';
 
 interface Props {
   placeholder?: string;
+  hasError?: boolean;
 }
 
-export default function Editor({ placeholder = 'Enter text' }: Props): JSX.Element {
+export default function Editor({ placeholder = 'Enter text', hasError }: Props): JSX.Element {
   const { historyState } = useSharedHistoryContext();
   const { settings } = useSettings();
   const [editor] = useLexicalComposerContext();
@@ -52,7 +53,7 @@ export default function Editor({ placeholder = 'Enter text' }: Props): JSX.Eleme
         <HistoryPlugin externalHistoryState={historyState} />
         <RichTextPlugin
           contentEditable={
-            <div className='editor-scroller mx-auto max-w-xl'>
+            <div className='editor-scroller'>
               <div className='editor'>
                 <ContentEditable placeholder={placeholder} />
               </div>

@@ -1,22 +1,6 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { data, Outlet, useFetcher, useNavigate } from 'react-router';
-import {
-  closestCenter,
-  DndContext,
-  type DragEndEvent,
-  KeyboardSensor,
-  PointerSensor,
-  TouchSensor,
-  useSensor,
-  useSensors,
-} from '@dnd-kit/core';
-import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
+import { Reorder } from 'framer-motion';
 import { NotebookPen } from 'lucide-react';
 import { dataWithError, redirectWithError } from 'remix-toast';
 import { ClientOnly } from 'remix-utils/client-only';
@@ -41,15 +25,9 @@ const ViewPluginTypesRenderer = lazy(
   () => import('~/components/plugins/PluginRenderers/ViewPluginTypesRenderer'),
 );
 
-/**
- * Utility: Converts strings like "plugin_type_example" to "Plugin Type Example"
- */
-function toTitleCaseFromUnderscore(input: string): string {
-  return input
-    .split('_')
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
-}
+export type Block = NonNullable<BlockType>[number];
+
+export type BlockType = Exclude<Awaited<ReturnType<typeof loader>>, Response>['lessonBlocks'];
 
 // --- Loader ---
 // Fetch lesson details and associated blocks using Supabase client
@@ -74,7 +52,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 
 // --- Action ---
 // Handle form submission for reordering lesson blocks
-export async function action({ request }: Route.ActionArgs) {
+export async function action({ request, params }: Route.ActionArgs) {
   const formData = await request.formData();
   const { supabase } = createClient(request);
 
@@ -94,13 +72,15 @@ export async function action({ request }: Route.ActionArgs) {
     }
 
     // Update positions in DB
-    const { success, message } = await updateBlockPositions(supabase, parsed.data);
+    const result = await updateBlockPositions({
+      supabase,
+      lessonId: params.lessonId,
+      blockPositions: parsed.data,
+    });
 
-    if (!success) {
-      return dataWithError(null, message ?? 'Could not re-order blocks');
-    }
-
-    return data({ success: true });
+    return result.success
+      ? data({ success: true })
+      : dataWithError(null, result.message ?? 'Could not re-order blocks');
   }
 
   return true;
@@ -116,54 +96,30 @@ export default function EditLessonContent({ loaderData, params }: Route.Componen
 
   const navigateTo = (path: string) => () => navigate(path);
 
-  const [myLessonBlocks, setMyLessonBlocks] = useState(lessonBlocks ?? []);
-  const [lessonLoading, setLessonsLoading] = useState(false);
+  const [reorderedBlocks, setReorderedBlocks] = useState<Block[]>(lessonBlocks ?? []);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    setMyLessonBlocks(lessonBlocks ?? []);
+    setReorderedBlocks(lessonBlocks ?? []);
   }, [lessonBlocks]);
 
   useEffect(() => {
-    if (fetcher.state === 'submitting') {
-      setLessonsLoading(true);
-    } else if (fetcher.state === 'idle' && fetcher.data) {
-      setLessonsLoading(false);
-    }
-  }, [fetcher.state, fetcher.data]);
+    setIsSubmitting(fetcher.state === 'submitting');
+  }, [fetcher.state]);
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 8 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
-  );
+  function handleReorder(updated: Block[]) {
+    setReorderedBlocks(updated);
 
-  function handleDragEnd(event: DragEndEvent) {
-    const { active, over } = event;
+    const orderedData = updated.map((chapter, index) => ({
+      id: chapter.id,
+      position: index + 1,
+    }));
 
-    if (over && active.id !== over.id) {
-      let newLessons: typeof lessonBlocks = [];
+    const formData = new FormData();
+    formData.append('intent', 'reorder-blocks');
+    formData.append('blocks', JSON.stringify(orderedData));
 
-      setMyLessonBlocks((items) => {
-        const oldIndex = items.findIndex((item) => item.id === active.id);
-        const newIndex = items.findIndex((item) => item.id === over.id);
-
-        newLessons = arrayMove(items, oldIndex, newIndex);
-        return newLessons;
-      });
-
-      if (newLessons.length) {
-        const simplifiedLessonBlocks = newLessons.map((block, index) => ({
-          ...block,
-          position: index,
-        }));
-
-        const formData = new FormData();
-        formData.append('intent', 'reorder-blocks');
-        formData.append('blocks', JSON.stringify(simplifiedLessonBlocks));
-
-        fetcher.submit(formData, { method: 'post' });
-      }
-    }
+    fetcher.submit(formData, { method: 'post' });
   }
 
   return (
@@ -176,42 +132,38 @@ export default function EditLessonContent({ loaderData, params }: Route.Componen
             subTitle={lesson.lesson_types?.name}
             closeRoute={basePath}
           />
-          <div className='mx-auto flex max-w-xl flex-col space-y-8 px-4 py-10 md:px-0'>
-            <DndContext
-              modifiers={[restrictToVerticalAxis]}
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragEnd={handleDragEnd}
-            >
-              <SortableContext items={myLessonBlocks} strategy={verticalListSortingStrategy}>
-                {myLessonBlocks.length > 0 ? (
-                  myLessonBlocks.map((block) => {
-                    const blockIdPath = `${lessonBasePath}/${block.id}`;
-                    return (
-                      <LessonBlockWrapper
-                        key={block.id}
-                        id={block.id}
-                        loading={lessonLoading}
-                        title={toTitleCaseFromUnderscore(block.plugin_type)}
-                        onEdit={navigateTo(`${blockIdPath}/edit`)}
-                        onEditSettings={navigateTo(`${blockIdPath}/settings`)}
-                        onDelete={navigateTo(`${blockIdPath}/delete`)}
-                      >
-                        <ClientOnly fallback={<Spinner />}>
-                          {() => (
-                            <Suspense fallback={<Spinner />}>
-                              <ViewPluginTypesRenderer block={block} mode='preview' />
-                            </Suspense>
-                          )}
-                        </ClientOnly>
-                      </LessonBlockWrapper>
-                    );
-                  })
-                ) : (
-                  <p>No blocks found</p>
-                )}
-              </SortableContext>
-            </DndContext>
+          <div className='mx-auto flex max-w-xl pr-4 pl-8 md:px-0'>
+            {reorderedBlocks.length > 0 ? (
+              <Reorder.Group
+                axis='y'
+                values={reorderedBlocks}
+                onReorder={handleReorder}
+                className='flex w-full flex-col space-y-8 py-10'
+              >
+                {reorderedBlocks.map((block) => {
+                  const blockIdPath = `${lessonBasePath}/${block.id}`;
+                  return (
+                    <LessonBlockWrapper
+                      key={block.id}
+                      block={block}
+                      loading={isSubmitting}
+                      onEdit={navigateTo(`${blockIdPath}/edit`)}
+                      onDelete={navigateTo(`${blockIdPath}/delete`)}
+                    >
+                      <ClientOnly fallback={<Spinner />}>
+                        {() => (
+                          <Suspense fallback={<Spinner />}>
+                            <ViewPluginTypesRenderer block={block} mode='preview' />
+                          </Suspense>
+                        )}
+                      </ClientOnly>
+                    </LessonBlockWrapper>
+                  );
+                })}
+              </Reorder.Group>
+            ) : (
+              <p>No blocks found</p>
+            )}
           </div>
 
           <PluginButton onClick={navigateTo(`${lessonBasePath}/plugins`)} />

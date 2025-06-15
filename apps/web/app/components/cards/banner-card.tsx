@@ -7,6 +7,7 @@ interface BannerCardProps {
   description?: string;
   variant?: 'info' | 'success' | 'warning' | 'error' | 'tip';
   className?: string;
+  showCloseIcon?: boolean;
 }
 
 const variantStyles: Record<
@@ -34,8 +35,8 @@ const variantStyles: Record<
   },
   error: {
     icon: AlertOctagon,
-    textColor: 'text-error',
-    bgColor: 'bg-error-foreground',
+    textColor: 'text-danger',
+    bgColor: 'bg-danger-foreground',
   },
   tip: {
     icon: Lightbulb,
@@ -44,7 +45,13 @@ const variantStyles: Record<
   },
 };
 
-export function BannerCard({ message, description, variant = 'info', className }: BannerCardProps) {
+export function BannerCard({
+  message,
+  description,
+  variant = 'info',
+  showCloseIcon = true,
+  className,
+}: BannerCardProps) {
   const [closing, setClosing] = useState(false);
   const [visible, setVisible] = useState(true);
 
@@ -67,15 +74,17 @@ export function BannerCard({ message, description, variant = 'info', className }
             <Icon className={`${textColor} flex-shrink-0`} size={20} />
             <p className={`${textColor} text-sm`}>{message}</p>
           </div>
-          <div className='absolute -top-6 -right-4'>
-            <button
-              onClick={handleClose}
-              className={`${textColor} ${bgColor} border-foreground rounded-full border transition-opacity duration-150 hover:cursor-pointer hover:opacity-90`}
-              aria-label='Dismiss'
-            >
-              <X size={20} />
-            </button>
-          </div>
+          {showCloseIcon ? (
+            <div className='absolute -top-6 -right-4'>
+              <button
+                onClick={handleClose}
+                className={`${textColor} ${bgColor} border-foreground rounded-full border transition-opacity duration-150 hover:cursor-pointer hover:opacity-90`}
+                aria-label='Dismiss'
+              >
+                <X size={20} />
+              </button>
+            </div>
+          ) : null}
         </div>
 
         {description ? (

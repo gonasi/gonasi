@@ -7,7 +7,7 @@ create table public.chapters (
   course_id uuid not null,                                           -- fk: references parent course
   name text not null,                                                -- chapter name/title
   description text,                                                  -- optional chapter description
-  requires_payment boolean default false,                            -- true if payment is required to access
+  requires_payment boolean not null default false,
   position integer default 0,                                        -- chapter order in course
   created_at timestamptz not null default timezone('utc', now()),    -- timestamp of creation
   updated_at timestamptz not null default timezone('utc', now()),    -- timestamp of last update
@@ -22,7 +22,7 @@ create table public.chapters (
   -- unique constraint to prevent duplicate position within a course
   constraint unique_chapter_position_per_course unique (course_id, position)
 );
-
+ 
 -- ====================================================================================
 -- indexes
 -- ====================================================================================
@@ -41,7 +41,6 @@ comment on column public.chapters.id is 'unique identifier for the chapter';
 comment on column public.chapters.course_id is 'id of the parent course';
 comment on column public.chapters.name is 'title of the chapter';
 comment on column public.chapters.description is 'optional description of the chapter';
-comment on column public.chapters.requires_payment is 'whether the chapter requires payment to access';
 comment on column public.chapters.position is 'position of the chapter in the course order';
 comment on column public.chapters.created_at is 'timestamp when the chapter was created';
 comment on column public.chapters.updated_at is 'timestamp when the chapter was last updated';

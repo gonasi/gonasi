@@ -1,4 +1,4 @@
-import type { DeleteFileSubmitValues } from '@gonasi/schemas/file';
+import type { DeleteFileSchemaTypes } from '@gonasi/schemas/file';
 
 import type { TypedSupabaseClient } from '../client';
 import { FILE_LIBRARY_BUCKET } from '../constants';
@@ -6,7 +6,7 @@ import type { ApiResponse } from '../types';
 
 export const deleteFile = async (
   supabase: TypedSupabaseClient,
-  fileData: DeleteFileSubmitValues,
+  fileData: DeleteFileSchemaTypes,
 ): Promise<ApiResponse> => {
   const { fileId, path } = fileData;
 

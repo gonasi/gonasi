@@ -7,6 +7,7 @@ import {
   createNewCourseTitle,
   fetchCoursesForOwnerOrCollaborators,
 } from '@gonasi/database/courses';
+import { createLessonDetails } from '@gonasi/database/lessons';
 import { fetchAllLessonTypes } from '@gonasi/database/lessonTypes';
 import { getUserProfile } from '@gonasi/database/profile';
 
@@ -31,12 +32,10 @@ function generateFakeCourseTitle(): string {
 function generateFakeChapter(): {
   name: string;
   description: string;
-  requiresPayment: boolean;
 } {
   return {
     name: faker.company.catchPhrase(),
     description: faker.lorem.paragraph(),
-    requiresPayment: false,
   };
 }
 
@@ -117,7 +116,6 @@ export async function seedCreateCourse(users: profilesScalars[]) {
             courseId: course.id,
             name: chapter.name,
             description: chapter.description,
-            requiresPayment: chapter.requiresPayment,
           });
 
           if (!chapterSuccess || !chapterData) {
@@ -128,30 +126,30 @@ export async function seedCreateCourse(users: profilesScalars[]) {
           console.log(`📘 Created chapter "${chapter.name}" for course "${course.name}"`);
 
           // Create lessons for the chapter
-          // const lessonCount = faker.number.int({ min: 2, max: 12 });
+          const lessonCount = faker.number.int({ min: 2, max: 12 });
 
-          // for (let k = 0; k < lessonCount; k++) {
-          //   const name = faker.hacker.phrase(); // Generate a fake lesson title
-          //   const lessonType = faker.helpers.arrayElement(lessonTypesData); // Pick a random lesson type
+          for (let k = 0; k < lessonCount; k++) {
+            const name = faker.hacker.phrase(); // Generate a fake lesson title
+            const lessonType = faker.helpers.arrayElement(lessonTypesData); // Pick a random lesson type
 
-          //   const {
-          //     success: lessonSuccess,
-          //     message: lessonMessage,
-          //     data: lessonData,
-          //   } = await createLessonDetails(supabase, {
-          //     chapterId: chapterData.id ?? '',
-          //     courseId: course.id,
-          //     lessonType: lessonType.id,
-          //     name,
-          //   });
+            const {
+              success: lessonSuccess,
+              message: lessonMessage,
+              data: lessonData,
+            } = await createLessonDetails(supabase, {
+              chapterId: chapterData.id ?? '',
+              courseId: course.id,
+              lessonType: lessonType.id,
+              name,
+            });
 
-          //   if (!lessonSuccess || !lessonData) {
-          //     console.error(`❌ Failed to create lesson for "${name}": ${lessonMessage}`);
-          //     break;
-          //   }
+            if (!lessonSuccess || !lessonData) {
+              console.error(`❌ Failed to create lesson for "${name}": ${lessonMessage}`);
+              break;
+            }
 
-          //   console.log(`🎥 Created lesson "${name}" in chapter "${chapter.name}"`);
-          // }
+            console.log(`🎥 Created lesson "${name}" in chapter "${chapter.name}"`);
+          }
         }
       }
     }

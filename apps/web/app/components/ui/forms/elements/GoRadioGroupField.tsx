@@ -54,7 +54,10 @@ export function GoRadioGroupField({
             {...field}
           >
             {options.map((option) => (
-              <div key={option.value} className='flex h-full items-center space-x-2'>
+              <div
+                key={option.value}
+                className='flex h-full items-center space-x-2 hover:cursor-pointer'
+              >
                 <RadioGroupItem
                   id={`${id}-${option.value}`}
                   value={option.value}

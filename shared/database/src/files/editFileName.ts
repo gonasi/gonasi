@@ -1,4 +1,4 @@
-import type { EditFileNameSubmitValues } from '@gonasi/schemas/file';
+import type { EditFileNameSchemaTypes } from '@gonasi/schemas/file';
 
 import { getUserId } from '../auth';
 import type { TypedSupabaseClient } from '../client';
@@ -6,7 +6,7 @@ import type { ApiResponse } from '../types';
 
 export const editFileName = async (
   supabase: TypedSupabaseClient,
-  { name, fileId }: EditFileNameSubmitValues,
+  { name, fileId }: EditFileNameSchemaTypes,
 ): Promise<ApiResponse> => {
   try {
     const userId = await getUserId(supabase);

@@ -1,4 +1,4 @@
-import type { EditFileSubmitValues } from '@gonasi/schemas/file';
+import type { EditFileSchemaTypes } from '@gonasi/schemas/file';
 import { getFileMetadata } from '@gonasi/schemas/file';
 
 import { getUserId } from '../auth';
@@ -9,7 +9,7 @@ import type { ApiResponse } from '../types';
 // Updates a file in the file library bucket and its metadata in the database
 export const editFile = async (
   supabase: TypedSupabaseClient,
-  fileData: EditFileSubmitValues,
+  fileData: EditFileSchemaTypes,
 ): Promise<ApiResponse> => {
   const userId = await getUserId(supabase);
   const { fileId, path, file } = fileData;

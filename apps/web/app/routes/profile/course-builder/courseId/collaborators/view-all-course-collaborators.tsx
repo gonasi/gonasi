@@ -1,5 +1,16 @@
 import { BannerCard } from '~/components/cards';
 
+export function meta() {
+  return [
+    { title: 'Invite Collaborators | Gonasi' },
+    {
+      name: 'description',
+      content:
+        'Invite collaborators to join your course project on Gonasi. Share editing access, assign roles, and build your course content together more efficiently.',
+    },
+  ];
+}
+
 export default function ViewAllCourseCollaborators() {
   return (
     <div className='max-w-xl pb-20'>

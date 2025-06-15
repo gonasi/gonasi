@@ -1,4 +1,4 @@
-import { data, Outlet, useOutletContext } from 'react-router';
+import { data, Outlet } from 'react-router';
 import { Plus } from 'lucide-react';
 import { dataWithError } from 'remix-toast';
 
@@ -11,7 +11,6 @@ import { ChapterPositionUpdateArraySchema } from '@gonasi/schemas/courseChapters
 import { LessonPositionUpdateArraySchema } from '@gonasi/schemas/lessons';
 
 import type { Route } from './+types/content-index';
-import type { CourseOverviewType } from '../course-id-index';
 
 import { BannerCard } from '~/components/cards';
 import { CourseChapters } from '~/components/course/course-chapters';
@@ -76,8 +75,9 @@ export async function action({ request, params }: Route.ActionArgs) {
   // Handle reordering lessons
   if (intent === 'reorder-lessons') {
     const lessonsRaw = formData.get('lessons');
+    const chapterId = formData.get('chapterId');
 
-    if (typeof lessonsRaw !== 'string') {
+    if (typeof lessonsRaw !== 'string' || typeof chapterId !== 'string') {
       throw new Response('Invalid data', { status: 400 });
     }
 
@@ -88,7 +88,11 @@ export async function action({ request, params }: Route.ActionArgs) {
       throw new Response('Validation failed', { status: 400 });
     }
 
-    const { success, message } = await updateLessonPositions(supabase, parsed.data);
+    const { success, message } = await updateLessonPositions({
+      supabase,
+      chapterId: chapterId ?? '',
+      lessonPositions: parsed.data,
+    });
 
     if (!success) {
       return dataWithError(null, message ?? 'Could not re-order lessons');
@@ -103,20 +107,18 @@ export async function action({ request, params }: Route.ActionArgs) {
 
 // UI for the Course Overview page
 export default function CourseOverview({ loaderData, params }: Route.ComponentProps) {
-  const outletLoaderData = useOutletContext<CourseOverviewType>() ?? {};
-
-  const { pricing_model } = outletLoaderData;
-
   return (
     <>
-      <div className='max-w-xl pb-20'>
+      <div className='max-w-2xl pb-20'>
         <BannerCard
           message='Want to reorder your chapters and lessons? Just drag and drop.'
           variant='tip'
           className='mb-10'
         />
 
-        <CourseChapters chapters={loaderData} />
+        <div className='ml-4'>
+          <CourseChapters chapters={loaderData} />
+        </div>
       </div>
 
       {/* Floating button to add a new chapter */}
@@ -127,7 +129,7 @@ export default function CourseOverview({ loaderData, params }: Route.ComponentPr
       />
 
       {/* Render nested routes if any */}
-      <Outlet context={{ pricing_model }} />
+      <Outlet />
     </>
   );
 }

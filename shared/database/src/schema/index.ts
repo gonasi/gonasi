@@ -43,7 +43,7 @@ export type Database = {
           id: string
           name: string
           position: number | null
-          requires_payment: boolean | null
+          requires_payment: boolean
           updated_at: string
           updated_by: string
         }
@@ -55,7 +55,7 @@ export type Database = {
           id?: string
           name: string
           position?: number | null
-          requires_payment?: boolean | null
+          requires_payment?: boolean
           updated_at?: string
           updated_by: string
         }
@@ -67,7 +67,7 @@ export type Database = {
           id?: string
           name?: string
           position?: number | null
-          requires_payment?: boolean | null
+          requires_payment?: boolean
           updated_at?: string
           updated_by?: string
         }
@@ -201,6 +201,94 @@ export type Database = {
           },
         ]
       }
+      course_pricing_tiers: {
+        Row: {
+          course_id: string
+          created_at: string
+          created_by: string
+          currency_code: string
+          id: string
+          is_active: boolean
+          is_free: boolean
+          is_popular: boolean
+          is_recommended: boolean
+          payment_frequency: Database["public"]["Enums"]["payment_frequency"]
+          position: number
+          price: number
+          promotion_end_date: string | null
+          promotion_start_date: string | null
+          promotional_price: number | null
+          tier_description: string | null
+          tier_name: string | null
+          updated_at: string
+          updated_by: string
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          created_by: string
+          currency_code?: string
+          id?: string
+          is_active?: boolean
+          is_free?: boolean
+          is_popular?: boolean
+          is_recommended?: boolean
+          payment_frequency: Database["public"]["Enums"]["payment_frequency"]
+          position?: number
+          price: number
+          promotion_end_date?: string | null
+          promotion_start_date?: string | null
+          promotional_price?: number | null
+          tier_description?: string | null
+          tier_name?: string | null
+          updated_at?: string
+          updated_by: string
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          created_by?: string
+          currency_code?: string
+          id?: string
+          is_active?: boolean
+          is_free?: boolean
+          is_popular?: boolean
+          is_recommended?: boolean
+          payment_frequency?: Database["public"]["Enums"]["payment_frequency"]
+          position?: number
+          price?: number
+          promotion_end_date?: string | null
+          promotion_start_date?: string | null
+          promotional_price?: number | null
+          tier_description?: string | null
+          tier_name?: string | null
+          updated_at?: string
+          updated_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_pricing_tiers_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_pricing_tiers_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_pricing_tiers_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       course_sub_categories: {
         Row: {
           category_id: string
@@ -263,10 +351,8 @@ export type Database = {
           id: string
           image_url: string | null
           last_published: string | null
-          monthly_subscription_price: number | null
           name: string
           pathway_id: string | null
-          pricing_model: Database["public"]["Enums"]["course_pricing"]
           subcategory_id: string | null
           updated_at: string
           updated_by: string
@@ -281,10 +367,8 @@ export type Database = {
           id?: string
           image_url?: string | null
           last_published?: string | null
-          monthly_subscription_price?: number | null
           name: string
           pathway_id?: string | null
-          pricing_model?: Database["public"]["Enums"]["course_pricing"]
           subcategory_id?: string | null
           updated_at?: string
           updated_by: string
@@ -299,10 +383,8 @@ export type Database = {
           id?: string
           image_url?: string | null
           last_published?: string | null
-          monthly_subscription_price?: number | null
           name?: string
           pathway_id?: string | null
-          pricing_model?: Database["public"]["Enums"]["course_pricing"]
           subcategory_id?: string | null
           updated_at?: string
           updated_by?: string
@@ -339,6 +421,76 @@ export type Database = {
           },
           {
             foreignKeyName: "courses_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      file_library: {
+        Row: {
+          blur_preview: string | null
+          course_id: string
+          created_at: string
+          created_by: string
+          extension: string
+          file_type: Database["public"]["Enums"]["file_type"]
+          id: string
+          mime_type: string
+          name: string
+          path: string
+          size: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          blur_preview?: string | null
+          course_id: string
+          created_at?: string
+          created_by: string
+          extension: string
+          file_type?: Database["public"]["Enums"]["file_type"]
+          id?: string
+          mime_type: string
+          name: string
+          path: string
+          size: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          blur_preview?: string | null
+          course_id?: string
+          created_at?: string
+          created_by?: string
+          extension?: string
+          file_type?: Database["public"]["Enums"]["file_type"]
+          id?: string
+          mime_type?: string
+          name?: string
+          path?: string
+          size?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "file_library_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "file_library_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "file_library_updated_by_fkey"
             columns: ["updated_by"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -739,6 +891,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      can_convert_course_pricing: {
+        Args: { p_course_id: string; p_target_model: string }
+        Returns: boolean
+      }
       check_subcategory_belongs_to_category: {
         Args: { category: string; subcategory: string }
         Returns: boolean
@@ -746,6 +902,34 @@ export type Database = {
       custom_access_token_hook: {
         Args: { event: Json }
         Returns: Json
+      }
+      delete_chapter: {
+        Args: { p_chapter_id: string; p_deleted_by: string }
+        Returns: undefined
+      }
+      delete_course_pricing_tier: {
+        Args: { p_tier_id: string; p_deleted_by: string }
+        Returns: undefined
+      }
+      delete_lesson: {
+        Args: { p_lesson_id: string; p_deleted_by: string }
+        Returns: undefined
+      }
+      delete_lesson_block: {
+        Args: { p_block_id: string; p_deleted_by: string }
+        Returns: undefined
+      }
+      delete_pricing_tier: {
+        Args: { p_tier_id: string; p_deleted_by: string }
+        Returns: undefined
+      }
+      determine_file_type: {
+        Args: { extension: string }
+        Returns: Database["public"]["Enums"]["file_type"]
+      }
+      get_available_payment_frequencies: {
+        Args: { p_course_id: string }
+        Returns: Database["public"]["Enums"]["payment_frequency"][]
       }
       is_course_admin: {
         Args: { course_id: string; user_id: string }
@@ -767,8 +951,18 @@ export type Database = {
         }
         Returns: undefined
       }
+      reorder_course_pricing_tiers: {
+        Args: {
+          p_course_id: string
+          tier_positions: Json
+          p_updated_by: string
+        }
+        Returns: undefined
+      }
       reorder_lesson_blocks: {
-        Args: { blocks: Json }
+        Args:
+          | { blocks: Json }
+          | { p_lesson_id: string; block_positions: Json; p_updated_by: string }
         Returns: undefined
       }
       reorder_lessons: {
@@ -777,6 +971,26 @@ export type Database = {
           lesson_positions: Json
           p_updated_by: string
         }
+        Returns: undefined
+      }
+      reorder_pricing_tiers: {
+        Args: {
+          p_course_id: string
+          tier_positions: Json
+          p_updated_by: string
+        }
+        Returns: undefined
+      }
+      set_course_free: {
+        Args: { p_course_id: string; p_user_id: string }
+        Returns: undefined
+      }
+      set_course_paid: {
+        Args: { p_course_id: string; p_user_id: string }
+        Returns: undefined
+      }
+      switch_course_pricing_model: {
+        Args: { p_course_id: string; p_user_id: string; p_target_model: string }
         Returns: undefined
       }
     }
@@ -796,8 +1010,14 @@ export type Database = {
         | "lesson_types.delete"
       app_role: "go_su" | "go_admin" | "go_staff" | "user"
       course_access: "public" | "private"
-      course_pricing: "free" | "paid"
       course_role: "admin" | "editor" | "viewer"
+      file_type: "image" | "audio" | "video" | "model3d" | "document" | "other"
+      payment_frequency:
+        | "monthly"
+        | "bi_monthly"
+        | "quarterly"
+        | "semi_annual"
+        | "annual"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -932,8 +1152,15 @@ export const Constants = {
       ],
       app_role: ["go_su", "go_admin", "go_staff", "user"],
       course_access: ["public", "private"],
-      course_pricing: ["free", "paid"],
       course_role: ["admin", "editor", "viewer"],
+      file_type: ["image", "audio", "video", "model3d", "document", "other"],
+      payment_frequency: [
+        "monthly",
+        "bi_monthly",
+        "quarterly",
+        "semi_annual",
+        "annual",
+      ],
     },
   },
 } as const

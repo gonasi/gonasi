@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from 'react-router';
-import { BookCopy, BookLock, Files, Library, Settings } from 'lucide-react';
+import { BookCopy, BookLock, Settings } from 'lucide-react';
 
 import { getProfileByUsername } from '@gonasi/database/profiles';
 
@@ -41,9 +41,7 @@ export default function ProfileLayout({ loaderData }: Route.ComponentProps) {
 
   const tabs = [
     { to: `/${username}`, name: 'Courses', icon: BookCopy, isVisible: true },
-    { to: `/${username}/pathways`, name: 'Pathways', icon: Library, isVisible: true },
     { to: `/${username}/course-builder`, name: 'Builder', icon: BookLock, isVisible: isMyProfile },
-    { to: `/${username}/file-library`, name: 'Files', icon: Files, isVisible: isMyProfile },
   ];
 
   return (

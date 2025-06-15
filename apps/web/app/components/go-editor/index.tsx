@@ -127,7 +127,7 @@ function GoEditor({ editorState, setEditorState, loading, placeholder, hasError 
               <TableContext>
                 <ToolbarContext>
                   <div className='editor-shell'>
-                    <Editor placeholder={placeholder} />
+                    <Editor placeholder={placeholder} hasError={hasError} />
                     <OnChangePlugin
                       onChange={(editorState) => {
                         editorState.read(() => {

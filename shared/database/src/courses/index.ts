@@ -11,3 +11,4 @@ export * from './fetchCourseByPathwayId';
 export * from './removeCourseFromLearningPath';
 
 export * from './go';
+export * from './pricing';

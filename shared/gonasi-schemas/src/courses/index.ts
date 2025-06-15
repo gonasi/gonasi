@@ -2,13 +2,13 @@ import { z } from 'zod';
 
 import { NewImageSchema } from '../userValidation';
 
-const CourseTitleSchema = z
+export const CourseTitleSchema = z
   .string({ required_error: 'Please enter a course title.' })
   .trim()
   .min(3, { message: 'The course title must be at least 3 characters long.' })
   .max(100, { message: 'The course title cannot exceed 100 characters.' });
 
-const CourseDescriptionSchema = z
+export const CourseDescriptionSchema = z
   .string({ required_error: 'Please provide a description.' })
   .min(10, { message: 'The description should be at least 10 characters long.' })
   .max(500, { message: 'The description cannot exceed 500 characters.' })
@@ -23,17 +23,6 @@ const CourseSubcategorySchema = z
 
 const CoursePathwaySchema = z.string({ required_error: 'Course pathway is required' }).trim();
 
-const CourseMonthlySubscriptionPriceSchema = z.coerce
-  .number({ required_error: 'Please provide a monthly subscription price.' })
-  .int({ message: 'Price must be a whole number (no decimals allowed).' })
-  .refine(
-    (value) => {
-      const price = value;
-      return price >= 0 && price <= 50000;
-    },
-    { message: 'The maximum monthly subscription price is KES 50,000.' },
-  );
-
 // NewCourseTitleSchema definition
 export const NewCourseTitleSchema = z.object({
   name: CourseTitleSchema,
@@ -44,7 +33,6 @@ export type NewCourseTitleSchemaTypes = z.infer<typeof NewCourseTitleSchema>;
 export const EditCourseDetailsSchema = z.object({
   name: CourseTitleSchema,
   description: CourseDescriptionSchema,
-  monthlySubscriptionPrice: CourseMonthlySubscriptionPriceSchema,
 });
 export type EditCourseDetailsSchemaTypes = z.infer<typeof EditCourseDetailsSchema>;
 export const SubmitCourseDetailsSchema = EditCourseDetailsSchema.merge(

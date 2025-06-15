@@ -4,9 +4,9 @@ import { AccordionContent, AccordionItem, AccordionTrigger } from '@radix-ui/rea
 import { Reorder, useDragControls, useMotionValue } from 'framer-motion';
 import {
   BookOpen,
-  ChevronsUpDown,
-  CircleDollarSign,
   GripVerticalIcon,
+  LockKeyhole,
+  LockKeyholeOpen,
   Pencil,
   Plus,
   Trash,
@@ -25,7 +25,7 @@ import type { CourseChapter } from '~/routes/profile/course-builder/courseId/con
 
 interface ChapterBadgesProps {
   lessonCount: number;
-  requiresPayment: boolean | null;
+  requiresPayment: boolean;
 }
 
 // Renders badges for lesson count and payment requirement
@@ -36,12 +36,9 @@ function ChapterBadges({ lessonCount, requiresPayment }: ChapterBadgesProps) {
         <BookOpen />
         {`${lessonCount} ${lessonCount === 1 ? 'lesson' : 'lessons'}`}
       </Badge>
-      {requiresPayment && (
-        <Badge className='bg-success text-success-foreground'>
-          <CircleDollarSign />
-          Paid chapter
-        </Badge>
-      )}
+      <Badge variant={requiresPayment ? 'tip' : 'outline'}>
+        {requiresPayment ? 'Paid Chapter' : 'Free Chapter'}
+      </Badge>
     </div>
   );
 }
@@ -65,7 +62,6 @@ export default function CourseChapterItem({ chapter, loading }: Props) {
   const courseDragControls = useDragControls();
 
   const basePath = `/${params.username}/course-builder/${params.courseId}/content/${chapter.id}`;
-  const reorderEndpoint = `/${params.username}/course-builder/${params.courseId}/content`;
 
   // Sync internal reordered list with external chapter lessons
   useEffect(() => {
@@ -86,13 +82,16 @@ export default function CourseChapterItem({ chapter, loading }: Props) {
       position: index + 1,
     }));
 
+    console.log(orderedData);
+
     const formData = new FormData();
     formData.append('intent', 'reorder-lessons');
-    formData.append('chapters', JSON.stringify(orderedData));
+    formData.append('lessons', JSON.stringify(orderedData));
+    formData.append('chapterId', chapter.id);
 
     fetcher.submit(formData, {
       method: 'post',
-      action: reorderEndpoint,
+      action: `/${params.username}/course-builder/${params.courseId}/content`,
     });
   };
 
@@ -103,85 +102,103 @@ export default function CourseChapterItem({ chapter, loading }: Props) {
       style={{ boxShadow: courseBoxShadow, y: courseY }}
       dragListener={false}
       dragControls={courseDragControls}
+      layoutScroll
+      className='select-none'
     >
-      <AccordionItem
-        value={chapter.id}
-        className={cn('bg-card/95 touch-none rounded-lg p-4', {
-          'disabled animate-pulse': loading,
-        })}
-      >
-        <AccordionTrigger className='w-full text-xl'>
-          <div className='flex w-full items-center justify-between'>
-            {/* Chapter title and reorder icon */}
-            <div className='flex items-center space-x-1'>
-              <ChevronsUpDown size={14} />
-              <h3 className='mt-1 line-clamp-1 text-left text-lg'>{chapter.name}</h3>
+      <div className='relative'>
+        <div className='absolute top-3 -left-4'>
+          <ReorderIconTooltip
+            title='Drag and drop to rearrange chapters'
+            icon={GripVerticalIcon}
+            disabled={loading}
+            dragControls={courseDragControls}
+          />
+        </div>
+
+        <AccordionItem
+          value={chapter.id}
+          className={cn('bg-card/95 touch-none rounded-lg p-4', 'hover:cursor-pointer', {
+            'disabled animate-pulse': loading,
+          })}
+        >
+          <AccordionTrigger className='w-full text-xl'>
+            <div className='flex w-full items-center justify-between'>
+              {/* Chapter title and reorder icon */}
+              <div className='flex items-center space-x-1'>
+                <div className='ml-2'>
+                  {chapter.requires_payment ? (
+                    <LockKeyhole size={12} />
+                  ) : (
+                    <LockKeyholeOpen size={12} />
+                  )}
+                </div>
+                <h3 className='mt-1 line-clamp-1 text-left text-base md:text-lg'>{chapter.name}</h3>
+              </div>
+
+              {/* Chapter action controls */}
+              <div className='flex items-center space-x-2'>
+                <ActionDropdown
+                  items={[
+                    { title: 'Edit chapter', icon: Pencil, to: `${basePath}/edit` },
+                    { title: 'Delete chapter', icon: Trash, to: `${basePath}/delete` },
+                  ]}
+                />
+              </div>
             </div>
 
-            {/* Chapter action controls */}
-            <div className='flex items-center space-x-2'>
-              <ReorderIconTooltip
-                asChild
-                className='cursor-move p-2'
-                title='Drag and drop to rearrange chapters'
-                icon={GripVerticalIcon}
-                disabled={loading}
-                dragControls={courseDragControls}
+            {/* Badges for metadata */}
+            <div className='flex w-full items-start'>
+              <ChapterBadges
+                lessonCount={chapter.lesson_count}
+                requiresPayment={chapter.requires_payment}
               />
-              <ActionDropdown
-                items={[
-                  { title: 'Edit chapter', icon: Pencil, to: `${basePath}/edit` },
-                  { title: 'Delete chapter', icon: Trash, to: `${basePath}/delete` },
-                ]}
-              />
             </div>
-          </div>
+          </AccordionTrigger>
 
-          {/* Badges for metadata */}
-          <div className='flex w-full items-start'>
-            <ChapterBadges
-              lessonCount={chapter.lesson_count}
-              requiresPayment={chapter.requires_payment}
-            />
-          </div>
-        </AccordionTrigger>
-
-        <AccordionContent>
-          {/* Optional chapter description */}
-          {chapter.description && (
-            <div className='text-muted-foreground font-secondary line-clamp-4 py-2'>
-              {chapter.description}
-            </div>
-          )}
-
-          {/* Add lesson button */}
-          <div className='flex w-full justify-end'>
-            <NavLinkButton
-              to={`${basePath}/new-lesson-details`}
-              leftIcon={<Plus />}
-              size='sm'
-              variant='secondary'
-            >
-              Add lesson
-            </NavLinkButton>
-          </div>
-
-          {/* Lessons list */}
-          <div className='py-4'>
-            {reorderedLessons.length === 0 ? (
-              <NotFoundCard message='No lessons found' />
-            ) : (
-              <div className='flex flex-col space-y-4'>
-                <Reorder.Group axis='y' values={reorderedLessons} onReorder={handleLessonReorder}>
-                  {reorderedLessons.map((lesson) => (
-                    <LessonCard key={lesson.id} lesson={lesson} loading={isSubmitting} />
-                  ))}
-                </Reorder.Group>
+          <AccordionContent>
+            {/* Optional chapter description */}
+            {chapter.description && (
+              <div className='text-muted-foreground font-secondary line-clamp-4 py-2 text-sm md:text-base'>
+                {chapter.description}
               </div>
             )}
-          </div>
-        </AccordionContent>
-      </AccordionItem>
+
+            {/* Add lesson button */}
+            <div className='flex w-full justify-end'>
+              <NavLinkButton
+                to={`${basePath}/new-lesson-details`}
+                leftIcon={<Plus />}
+                size='sm'
+                variant='secondary'
+              >
+                Add lesson
+              </NavLinkButton>
+            </div>
+
+            {/* Lessons list */}
+            <div className='py-4'>
+              {reorderedLessons.length === 0 ? (
+                <NotFoundCard message='No lessons found' />
+              ) : (
+                <Reorder.Group
+                  axis='y'
+                  values={reorderedLessons}
+                  onReorder={handleLessonReorder}
+                  layoutScroll
+                  className='overflow-y-scroll select-none'
+                  as='div'
+                >
+                  <div className='flex flex-col space-y-4'>
+                    {reorderedLessons.map((lesson) => (
+                      <LessonCard key={lesson.id} lesson={lesson} loading={isSubmitting} />
+                    ))}
+                  </div>
+                </Reorder.Group>
+              )}
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+      </div>
     </Reorder.Item>
   );
 }

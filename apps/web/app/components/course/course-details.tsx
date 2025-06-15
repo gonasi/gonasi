@@ -1,68 +1,78 @@
-import { Link } from 'react-router';
-import { BookOpen, History, Pencil, Users, Wallet } from 'lucide-react';
+import { Link, useParams } from 'react-router';
+import { motion } from 'framer-motion';
+import { BookOpen, History, Pencil, Rocket, Users } from 'lucide-react';
 
 import { timeAgo } from '@gonasi/utils/timeAgo';
 
-import { buttonVariants } from '../ui/button';
+import { buttonVariants, NavLinkButton } from '../ui/button';
 
 interface Props {
   name: string;
   description: string | null;
-  price: number | null;
   editLink: string;
   errorMessage?: string[];
-  pricingModel: 'paid' | 'free';
   updatedAt: string;
 }
 
-export function CourseOverview({
-  name,
-  description,
-  price,
-  editLink,
-  pricingModel,
-  updatedAt,
-}: Props) {
+const AnimatedRocket = () => (
+  <motion.div
+    animate={{
+      x: [0, 5, 0, 5, 0], // move right-up twice, then back
+      y: [0, -5, 0, -5, 0], // move up-right twice, then back
+    }}
+    transition={{
+      duration: 1, // total animation time
+      times: [0, 0.2, 0.4, 0.6, 1], // control frame pacing
+      repeat: Infinity,
+      repeatDelay: 5, // wait 5s after each loop
+      ease: 'easeInOut',
+    }}
+  >
+    <Rocket />
+  </motion.div>
+);
+
+export function CourseOverview({ name, description, editLink, updatedAt }: Props) {
+  const params = useParams();
+
+  const canPublish = true;
   return (
-    <div className='flex flex-col space-y-4'>
-      <div className='flex items-center justify-between'>
-        <h2 className='text-lg md:text-2xl'>{name}</h2>
-        <Link to={editLink} className={buttonVariants({ variant: 'secondary', size: 'sm' })}>
-          <Pencil />
-        </Link>
-      </div>
-      <div className='font-secondary text-muted-foreground py-2 text-sm'>
-        <p>{description ? description : 'No description provided...'}</p>
-      </div>
-      <div className='text-muted-foreground font-secondary flex flex-wrap items-center gap-4 text-sm'>
-        <div className='flex items-center gap-1'>
-          <BookOpen size={14} />
-          <span>0 lessons</span>
+    <div className='flex h-full flex-col justify-between space-y-4'>
+      <div>
+        <div className='flex items-center justify-between'>
+          <h2 className='text-lg md:text-2xl'>{name}</h2>
+          <Link to={editLink} className={buttonVariants({ variant: 'secondary', size: 'sm' })}>
+            <Pencil />
+          </Link>
         </div>
-        <div className='flex items-center gap-1'>
-          <Users size={14} />
-          <span>0 Collaborators</span>
+        <div className='font-secondary text-muted-foreground py-2 text-sm'>
+          <p>{description ? description : 'No description provided...'}</p>
         </div>
-        <div className='flex items-center gap-1'>
-          <History size={14} />
-          <span>{timeAgo(updatedAt)}</span>
-        </div>
-      </div>
-      <div className='flex items-baseline justify-end space-x-1 py-4'>
-        {pricingModel === 'paid' ? (
-          <div>
-            <span className='text-muted-foreground text-xs'>Ksh</span>
-            <span className='text-2xl'>
-              {price ? new Intl.NumberFormat('en-KE').format(price) : '__'}
-            </span>
-            <span className='text-muted-foreground font-secondary text-xs'>/month</span>
+        <div className='text-muted-foreground font-secondary flex flex-wrap items-center gap-4 text-sm'>
+          <div className='flex items-center gap-1'>
+            <BookOpen size={14} />
+            <span>0 lessons</span>
           </div>
-        ) : (
-          <div className='flex items-center space-x-2'>
-            <Wallet strokeWidth={1} />
-            <span className='mt-1'>Free</span>
+          <div className='flex items-center gap-1'>
+            <Users size={14} />
+            <span>0 Collaborators</span>
           </div>
-        )}
+          <div className='flex items-center gap-1'>
+            <History size={14} />
+            <span>{timeAgo(updatedAt)}</span>
+          </div>
+        </div>
+      </div>
+      <div className='w-full'>
+        <div className='w-full'>
+          <NavLinkButton
+            to={`/${params.username}/course-builder/${params.courseId}/overview/publish`}
+            rightIcon={<AnimatedRocket />}
+            className='w-full md:w-48'
+          >
+            Publish
+          </NavLinkButton>
+        </div>
       </div>
     </div>
   );

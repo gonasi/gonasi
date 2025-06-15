@@ -13,37 +13,32 @@ interface MediaCardProps {
 }
 
 export const MediaCard: React.FC<MediaCardProps> = ({ file, media }) => {
-  const params = useParams();
-
-  const basePath = `/dashboard/${params.companyId}/file-library/${file.id}`;
+  const { username, courseId } = useParams();
+  const basePath = `/${username}/course-builder/${courseId}/file-library/${file.id}`;
 
   const options = [
-    {
-      title: 'Edit',
-      icon: Pencil,
-      to: `${basePath}/edit`,
-    },
-    {
-      title: 'Delete',
-      icon: Trash,
-      to: `${basePath}/delete`,
-    },
+    { title: 'Edit', icon: Pencil, to: `${basePath}/edit` },
+    { title: 'Delete', icon: Trash, to: `${basePath}/delete` },
   ];
 
   return (
-    <div className='bg-card/80 hover:bg-card relative h-60 w-full rounded-lg p-4 transition-colors duration-300 hover:cursor-pointer md:h-82'>
-      {/* Top-right button */}
-      <div className='bg-card absolute top-2 right-2 z-10 rounded-sm'>
-        <ActionDropdown items={options} />
+    <div className='group bg-card/10 hover:bg-card/30 relative w-full transition-colors duration-300 hover:cursor-pointer'>
+      {/* Media Preview */}
+      <div className='bg-card flex h-40 w-full max-w-full items-center justify-center md:h-60'>
+        {media}
       </div>
 
-      <div className='flex h-40 w-full items-center justify-center md:h-60'>{media}</div>
-
-      <div className='mt-2'>
-        <h3 className='truncate font-medium'>{file.name}</h3>
-        <div className='text-muted-foreground font-secondary flex justify-between text-xs'>
-          <span>{formatFileSize(file.size)}</span>
-          <span>{new Date(file.created_at).toLocaleDateString()}</span>
+      {/* File Info */}
+      <div className='bg-background flex items-center justify-between p-4 md:bg-transparent'>
+        <div>
+          <h3 className='truncate font-medium'>{file.name}</h3>
+          <div className='font-secondary text-muted-foreground flex flex-col justify-between text-xs'>
+            <span>{formatFileSize(file.size)}</span>
+            <span className='pt-1'>{new Date(file.created_at).toLocaleDateString()}</span>
+          </div>
+        </div>
+        <div className=''>
+          <ActionDropdown items={options} />
         </div>
       </div>
     </div>

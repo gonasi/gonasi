@@ -3,7 +3,6 @@ import type { SubmitCreateTrueOrFalseSchemaType } from '@gonasi/schemas/plugins'
 import { getUserId } from '../../../auth';
 import type { TypedSupabaseClient } from '../../../client';
 import type { ApiResponse } from '../../../types';
-import { getNextBlockPosition } from '../blockUtils';
 
 export const createTrueOrFalseBlock = async (
   supabase: TypedSupabaseClient,
@@ -13,17 +12,11 @@ export const createTrueOrFalseBlock = async (
   const { content, lessonId, pluginType, settings, weight } = blockData;
 
   try {
-    const nextPosition = await getNextBlockPosition({
-      supabase,
-      lessonId,
-    });
-
     const { error: insertError } = await supabase
-      .from('blocks')
+      .from('lesson_blocks')
       .insert({
         lesson_id: lessonId,
         plugin_type: pluginType,
-        position: nextPosition,
         content,
         settings,
         weight,

@@ -33,7 +33,7 @@ export function ActionDropdown({
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <span
-          className='border-input text-muted-foreground hover:bg-accent hover:text-accent-foreground focus-visible:ring-ring flex h-8 w-8 items-center justify-center rounded-md border bg-transparent p-0 focus-visible:ring-1 focus-visible:outline-none'
+          className='border-border/80 text-muted-foreground hover:bg-accent hover:text-accent-foreground focus-visible:ring-ring flex h-8 w-8 items-center justify-center rounded-md border bg-transparent p-0 focus-visible:ring-1 focus-visible:outline-none'
           role='button'
           tabIndex={0}
         >

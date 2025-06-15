@@ -20,8 +20,6 @@ export default function CourseOverview({ params }: Route.ComponentProps) {
     name,
     id: courseId,
     description,
-    monthly_subscription_price,
-    pricing_model,
     course_categories,
     course_sub_categories,
     pathways,
@@ -44,8 +42,6 @@ export default function CourseOverview({ params }: Route.ComponentProps) {
             <CourseInfoOverview
               name={name}
               description={description}
-              price={monthly_subscription_price}
-              pricingModel={pricing_model}
               updatedAt={updated_at}
               editLink={`/${params.username}/course-builder/${courseId}/overview/edit-details`}
             />

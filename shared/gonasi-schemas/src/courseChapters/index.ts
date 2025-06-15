@@ -16,10 +16,7 @@ const ChapterDescriptionSchema = z
 export const NewChapterSchema = z.object({
   name: ChapterNameSchema,
   description: ChapterDescriptionSchema,
-  requiresPayment: z.boolean({
-    required_error: 'Payment requirement status is required.',
-    invalid_type_error: 'Payment requirement must be a boolean value.',
-  }),
+  requiresPayment: z.boolean(),
 });
 export type NewChapterSchemaTypes = z.infer<typeof NewChapterSchema>;
 
@@ -35,10 +32,7 @@ export type NewChapterSubmitValues = z.infer<typeof SubmitNewChapterSchema>;
 export const EditChapterSchema = z.object({
   name: ChapterNameSchema,
   description: ChapterDescriptionSchema,
-  requiresPayment: z.boolean({
-    required_error: 'Payment requirement status is required.',
-    invalid_type_error: 'Payment requirement must be a boolean value.',
-  }),
+  requiresPayment: z.boolean(),
 });
 export type EditChapterSchemaTypes = z.infer<typeof EditChapterSchema>;
 export const SubmitEditChapterSchema = EditChapterSchema.merge(

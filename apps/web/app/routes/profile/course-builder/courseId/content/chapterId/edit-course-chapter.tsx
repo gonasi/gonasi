@@ -1,16 +1,18 @@
-import { data, Form, useOutletContext, useParams } from 'react-router';
+import { Form, useParams } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { LockKeyhole, LockKeyholeOpen } from 'lucide-react';
 import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
 import { dataWithError, redirectWithError, redirectWithSuccess } from 'remix-toast';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
 
 import { editCourseChapterById, fetchUserCourseChapterById } from '@gonasi/database/courseChapters';
+import { fetchCoursePricing } from '@gonasi/database/courses';
 import { EditChapterSchema, type EditChapterSchemaTypes } from '@gonasi/schemas/courseChapters';
 
 import type { Route } from './+types/edit-course-chapter';
 
 import { Button } from '~/components/ui/button';
-import { GoCheckBoxField, GoInputField, GoTextAreaField } from '~/components/ui/forms/elements';
+import { GoInputField, GoSwitchField, GoTextAreaField } from '~/components/ui/forms/elements';
 import { Modal } from '~/components/ui/modal';
 import { createClient } from '~/lib/supabase/supabase.server';
 import { checkHoneypot } from '~/utils/honeypot.server';
@@ -27,7 +29,11 @@ const resolver = zodResolver(EditChapterSchema);
 // Loader: fetch chapter data
 export async function loader({ params, request }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
-  const chapter = await fetchUserCourseChapterById(supabase, params.chapterId);
+
+  const [chapter, pricingData] = await Promise.all([
+    fetchUserCourseChapterById(supabase, params.chapterId),
+    fetchCoursePricing({ supabase, courseId: params.courseId }),
+  ]);
 
   if (!chapter) {
     return redirectWithError(
@@ -36,10 +42,11 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     );
   }
 
-  return data({
-    ...chapter,
-    requiresPayment: chapter.requires_payment,
-  });
+  const isPaid = Array.isArray(pricingData)
+    ? pricingData.some((item) => item.is_free === false)
+    : false;
+
+  return { chapter, isPaid };
 }
 
 // Action: handle form submission
@@ -68,13 +75,13 @@ export async function action({ request, params }: Route.ActionArgs) {
 
 // Component: Edit course chapter form
 export default function EditCourseChapter({ loaderData }: Route.ComponentProps) {
-  const { pricing_model } = useOutletContext<{
-    pricing_model: 'free' | 'paid';
-  }>();
   const params = useParams();
   const isPending = useIsPending();
 
-  const { name, description, requiresPayment } = loaderData;
+  const {
+    chapter: { name, description, requires_payment },
+    isPaid,
+  } = loaderData;
 
   const methods = useRemixForm<EditChapterSchemaTypes>({
     mode: 'all',
@@ -82,11 +89,13 @@ export default function EditCourseChapter({ loaderData }: Route.ComponentProps) 
     defaultValues: {
       name,
       description: description ?? '',
-      requiresPayment: requiresPayment ?? pricing_model !== 'free', // fallback to pricing model
+      requiresPayment: requires_payment,
     },
   });
 
   const isDisabled = isPending || methods.formState.isSubmitting;
+
+  const watchRequiresPayment = methods.watch('requiresPayment');
 
   return (
     <Modal open>
@@ -116,14 +125,28 @@ export default function EditCourseChapter({ loaderData }: Route.ComponentProps) 
                 description='Just a quick overview to help learners know what to expect.'
               />
 
-              {/* Paid chapter checkbox (only for paid courses) */}
-              {pricing_model === 'paid' && (
-                <GoCheckBoxField
-                  name='requiresPayment'
-                  labelProps={{ children: 'Is this a paid chapter?', required: true }}
-                  description='Check this if users need to pay to access it.'
-                />
-              )}
+              <GoSwitchField
+                name='requiresPayment'
+                disabled={!isPaid}
+                labelProps={{
+                  children: (
+                    <p className='flex items-center space-x-1'>
+                      <span>Paid chapter</span>
+                      {watchRequiresPayment ? (
+                        <LockKeyhole size={12} />
+                      ) : (
+                        <LockKeyholeOpen size={12} />
+                      )}
+                    </p>
+                  ),
+                  required: false,
+                }}
+                description={
+                  isPaid
+                    ? 'Enable this to make the chapter available only to paying users.'
+                    : 'This course is free, so all chapters are accessible. Set the course to paid to restrict chapter access.'
+                }
+              />
 
               {/* Submit button */}
               <Button

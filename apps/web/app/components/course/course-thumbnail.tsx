@@ -14,10 +14,10 @@ export function CourseThumbnail({ thumbnail, name, editLink, blurHash }: CourseT
   const placeholder = blurHash ? blurhashToCssGradientString(blurHash) : 'auto';
 
   return (
-    <div className='border-card relative aspect-[16/9] h-[200px] overflow-hidden rounded-md border'>
+    <div className='relative aspect-[16/9] min-h-[200px] overflow-hidden'>
       <Link
         to={editLink}
-        className='bg-secondary hover:bg-secondary/80 absolute top-2 right-2 z-10 rounded-full p-2 transition-colors'
+        className='bg-secondary hover:bg-secondary/80 absolute top-2 right-2 z-5 rounded-full p-2 transition-colors'
         aria-label={`Edit ${name}`}
       >
         <EditIcon className='text-secondary-foreground h-5 w-5' />

@@ -74,12 +74,14 @@ const Header = ({
   subTitle,
   hasClose = true,
   closeRoute,
+  settingsPopover,
 }: {
   leadingIcon?: React.ReactNode;
   title?: string;
   subTitle?: string;
   hasClose?: boolean;
   closeRoute?: string;
+  settingsPopover?: React.ReactNode;
 }) => {
   return (
     <div className='bg-background sticky top-0 z-10 flex items-center justify-between p-4'>
@@ -87,7 +89,7 @@ const Header = ({
         {leadingIcon ?? null}
         {title ? (
           <div className='flex w-full items-center justify-between'>
-            <h2 className='line-clamp-1 text-lg font-semibold text-ellipsis'>{title}</h2>
+            <h2 className='mt-1 line-clamp-1 text-lg font-semibold text-ellipsis'>{title}</h2>
             {subTitle ? (
               <Badge variant='outline' className='font-secondary mr-4 hidden text-sm md:flex'>
                 {subTitle}
@@ -101,13 +103,16 @@ const Header = ({
         )}
       </div>
 
-      {closeRoute ? (
-        <CloseIconNavLink to={closeRoute} />
-      ) : hasClose ? (
-        <Dialog.Close asChild className='hover:cursor-pointer'>
-          <X size={22} />
-        </Dialog.Close>
-      ) : null}
+      <div className='flex items-center space-x-2'>
+        {settingsPopover ? settingsPopover : null}
+        {closeRoute ? (
+          <CloseIconNavLink to={closeRoute} />
+        ) : hasClose ? (
+          <Dialog.Close asChild className='hover:cursor-pointer'>
+            <X size={22} />
+          </Dialog.Close>
+        ) : null}
+      </div>
     </div>
   );
 };
