@@ -11,6 +11,7 @@ interface ReorderIconTooltipProps {
   active?: boolean;
   dragControls: DragControls;
   disabled?: boolean;
+  className?: string;
 }
 
 export function ReorderIconTooltip({
@@ -19,6 +20,7 @@ export function ReorderIconTooltip({
   active = false,
   dragControls,
   disabled,
+  className,
 }: ReorderIconTooltipProps) {
   return (
     <TooltipProvider>
@@ -27,9 +29,14 @@ export function ReorderIconTooltip({
           <Button
             variant='ghost'
             size='sm'
-            className={cn('z-5', 'bg-border/80 border-card/10 cursor-grab border p-2', {
-              'bg-border': active,
-            })}
+            className={cn(
+              'z-5',
+              'bg-border/80 border-card/10 cursor-grab border p-2',
+              {
+                'bg-border': active,
+              },
+              className,
+            )}
             style={{ zIndex: '5', touchAction: 'none' }}
             onPointerDown={(event) => dragControls.start(event)}
             disabled={disabled}

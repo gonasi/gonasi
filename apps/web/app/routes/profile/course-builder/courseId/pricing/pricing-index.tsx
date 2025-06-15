@@ -13,7 +13,7 @@ import { CourseTierPositionUpdateArraySchema } from '@gonasi/schemas/coursePrici
 
 import type { Route } from './+types/pricing-index';
 
-import { BannerCard, NotFoundCard } from '~/components/cards';
+import { NotFoundCard } from '~/components/cards';
 import { CourseToggle } from '~/components/cards/course-toggle';
 import { Badge } from '~/components/ui/badge';
 import { Button, NavLinkButton } from '~/components/ui/button';
@@ -191,19 +191,13 @@ export default function CoursePricing({ loaderData, params }: Route.ComponentPro
 
   const FeatureFlags = ({ price }: { price: CoursePricingType }) => (
     <div className='flex flex-col gap-1'>
-      {price.is_popular && <Badge variant='outline'>Popular</Badge>}
-      {price.is_recommended && <Badge variant='outline'>Recommended</Badge>}
+      {price.is_popular && <Badge variant='tip'>Popular</Badge>}
+      {price.is_recommended && <Badge variant='info'>Recommended</Badge>}
     </div>
   );
 
   return (
     <div className='mx-auto max-w-3xl'>
-      <BannerCard
-        message='Your pricing updates are live immediately!'
-        description='Price updates are applied instantly. No need to publish. Content changes still require publishing.'
-        variant='info'
-        className='mb-10'
-      />
       <div className='flex items-end justify-between py-4'>
         <CourseToggle isPaidState={isPaid} />
         {isPaid || (availableFrequencies && availableFrequencies.length) ? (
@@ -220,7 +214,7 @@ export default function CoursePricing({ loaderData, params }: Route.ComponentPro
       <Table>
         <TableCaption>A list of pricing options for this course</TableCaption>
         <TableHeader>
-          <TableRow>
+          <TableRow className='border-border/60'>
             <TableHead />
             <TableHead>Status</TableHead>
             <TableHead>Tier Details</TableHead>
@@ -245,7 +239,7 @@ export default function CoursePricing({ loaderData, params }: Route.ComponentPro
               id={priceTier.id}
               as='tr'
               className={cn(
-                'data-[state=selected]:bg-muted border-border/50 border-b transition-colors',
+                'data-[state=selected]:bg-muted border-border/60 border-b transition-colors',
                 isSubmitting && 'animate-pulse hover:cursor-wait',
               )}
             >
@@ -255,6 +249,7 @@ export default function CoursePricing({ loaderData, params }: Route.ComponentPro
                   icon={GripVerticalIcon}
                   disabled={isSubmitting}
                   dragControls={coursePricingTierDragControls}
+                  className='border-border/60 border bg-transparent'
                 />
               </TableCell>
               <TableCell className='font-medium'>

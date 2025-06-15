@@ -9,7 +9,7 @@ import type { Route } from './+types/course-builder-index';
 import { NotFoundCard } from '~/components/cards';
 import { GoCardContent, GoCourseHeader, GoThumbnail } from '~/components/cards/go-course-card';
 import { ErrorMessageWithRetry } from '~/components/error-message-with-retry';
-import { CourseProfileCardSkeleton } from '~/components/skeletons';
+import { Spinner } from '~/components/loaders';
 import { FloatingActionButton } from '~/components/ui/button';
 import { createClient } from '~/lib/supabase/supabase.server';
 import { cn } from '~/lib/utils';
@@ -91,7 +91,7 @@ function CoursesGrid({
               {({ isPending }) => (
                 <div
                   className={cn(
-                    'group md:bg-card/80 m-0 rounded-none border-none bg-transparent p-0 shadow-none md:rounded-md',
+                    'group md:bg-card/80 m-0 rounded-none border-none bg-transparent p-0 shadow-none',
                     isPending && 'bg-primary/5',
                   )}
                 >
@@ -99,7 +99,7 @@ function CoursesGrid({
                     iconUrl={signed_url}
                     blurHash={blur_hash}
                     name={name}
-                    className='rounded-t-none md:rounded-t-md'
+                    className='rounded-t-none'
                   />
                   <GoCardContent>
                     <GoCourseHeader className='line-clamp-1 text-sm' name={name} />
@@ -121,7 +121,7 @@ export default function ViewAllCourses({ loaderData, params }: Route.ComponentPr
 
   return (
     <div>
-      <Suspense fallback={<CourseProfileCardSkeleton />}>
+      <Suspense fallback={<Spinner />}>
         <Await
           resolve={coursesPromise}
           errorElement={<ErrorMessageWithRetry message='Could not load courses' />}

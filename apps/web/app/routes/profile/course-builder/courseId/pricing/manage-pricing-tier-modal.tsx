@@ -352,7 +352,7 @@ export default function ManagePricingTierModal({ params, loaderData }: Route.Com
                       <div className='flex items-center space-x-2'>
                         <Star size={16} />
                         <span>
-                          Mark as <Badge variant='success'>Most Popular</Badge>
+                          Mark as <Badge variant='info'>Most Popular</Badge>
                         </span>
                       </div>
                     ),
@@ -407,7 +407,7 @@ export default function ManagePricingTierModal({ params, loaderData }: Route.Com
             <BannerCard
               variant='error'
               message='All pricing options are in use'
-              description='Please delete or update a tier, as all available frequencies—monthly, bi-monthly, quarterly, semi-annual, and annual—have already been used.'
+              description='Please delete or update a tier, as all available frequencies. Monthly, bi-monthly, quarterly, semi-annual, and annual have already been used.'
               showCloseIcon={false}
             />
           ) : (
