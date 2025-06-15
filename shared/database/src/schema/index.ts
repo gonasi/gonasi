@@ -43,6 +43,7 @@ export type Database = {
           id: string
           name: string
           position: number | null
+          requires_payment: boolean
           updated_at: string
           updated_by: string
         }
@@ -54,6 +55,7 @@ export type Database = {
           id?: string
           name: string
           position?: number | null
+          requires_payment?: boolean
           updated_at?: string
           updated_by: string
         }
@@ -65,6 +67,7 @@ export type Database = {
           id?: string
           name?: string
           position?: number | null
+          requires_payment?: boolean
           updated_at?: string
           updated_by?: string
         }
@@ -427,6 +430,7 @@ export type Database = {
       }
       file_library: {
         Row: {
+          blur_preview: string | null
           course_id: string
           created_at: string
           created_by: string
@@ -441,6 +445,7 @@ export type Database = {
           updated_by: string | null
         }
         Insert: {
+          blur_preview?: string | null
           course_id: string
           created_at?: string
           created_by: string
@@ -455,6 +460,7 @@ export type Database = {
           updated_by?: string | null
         }
         Update: {
+          blur_preview?: string | null
           course_id?: string
           created_at?: string
           created_by?: string

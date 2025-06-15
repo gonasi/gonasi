@@ -20,6 +20,7 @@ export async function fetchUserCourseChapterById(supabase: TypedSupabaseClient, 
         course_id,
         name,
         description,
+        requires_payment,
         position
       `,
       )

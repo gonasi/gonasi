@@ -473,6 +473,20 @@
           "maxLength": null
         },
         {
+          "id": "public.chapters.requires_payment",
+          "name": "requires_payment",
+          "columnName": "requires_payment",
+          "type": "bool",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
           "id": "public.chapters.position",
           "name": "position",
           "columnName": "position",
@@ -2199,6 +2213,20 @@
           "isGenerated": false,
           "sequence": false,
           "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.file_library.blur_preview",
+          "name": "blur_preview",
+          "columnName": "blur_preview",
+          "type": "text",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
           "isId": false,
           "maxLength": null
         },

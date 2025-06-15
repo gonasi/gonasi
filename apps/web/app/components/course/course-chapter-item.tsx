@@ -2,7 +2,15 @@ import { useEffect, useState } from 'react';
 import { useFetcher, useParams } from 'react-router';
 import { AccordionContent, AccordionItem, AccordionTrigger } from '@radix-ui/react-accordion';
 import { Reorder, useDragControls, useMotionValue } from 'framer-motion';
-import { BookOpen, GripVerticalIcon, Pencil, Plus, Trash } from 'lucide-react';
+import {
+  BookOpen,
+  GripVerticalIcon,
+  LockKeyhole,
+  LockKeyholeOpen,
+  Pencil,
+  Plus,
+  Trash,
+} from 'lucide-react';
 
 import { ActionDropdown } from '../action-dropdown';
 import { NotFoundCard } from '../cards';
@@ -17,15 +25,19 @@ import type { CourseChapter } from '~/routes/profile/course-builder/courseId/con
 
 interface ChapterBadgesProps {
   lessonCount: number;
+  requiresPayment: boolean;
 }
 
 // Renders badges for lesson count and payment requirement
-function ChapterBadges({ lessonCount }: ChapterBadgesProps) {
+function ChapterBadges({ lessonCount, requiresPayment }: ChapterBadgesProps) {
   return (
     <div className='flex space-x-2'>
       <Badge variant='outline'>
         <BookOpen />
         {`${lessonCount} ${lessonCount === 1 ? 'lesson' : 'lessons'}`}
+      </Badge>
+      <Badge variant={requiresPayment ? 'tip' : 'outline'}>
+        {requiresPayment ? 'Paid Chapter' : 'Free Chapter'}
       </Badge>
     </div>
   );
@@ -113,9 +125,14 @@ export default function CourseChapterItem({ chapter, loading }: Props) {
             <div className='flex w-full items-center justify-between'>
               {/* Chapter title and reorder icon */}
               <div className='flex items-center space-x-1'>
-                <h3 className='mt-1 ml-2 line-clamp-1 text-left text-base md:text-lg'>
-                  {chapter.name}
-                </h3>
+                <div className='ml-2'>
+                  {chapter.requires_payment ? (
+                    <LockKeyhole size={12} />
+                  ) : (
+                    <LockKeyholeOpen size={12} />
+                  )}
+                </div>
+                <h3 className='mt-1 line-clamp-1 text-left text-base md:text-lg'>{chapter.name}</h3>
               </div>
 
               {/* Chapter action controls */}
@@ -131,7 +148,10 @@ export default function CourseChapterItem({ chapter, loading }: Props) {
 
             {/* Badges for metadata */}
             <div className='flex w-full items-start'>
-              <ChapterBadges lessonCount={chapter.lesson_count} />
+              <ChapterBadges
+                lessonCount={chapter.lesson_count}
+                requiresPayment={chapter.requires_payment}
+              />
             </div>
           </AccordionTrigger>
 

@@ -7,6 +7,7 @@ create table public.chapters (
   course_id uuid not null,                                           -- fk: references parent course
   name text not null,                                                -- chapter name/title
   description text,                                                  -- optional chapter description
+  requires_payment boolean not null default false,
   position integer default 0,                                        -- chapter order in course
   created_at timestamptz not null default timezone('utc', now()),    -- timestamp of creation
   updated_at timestamptz not null default timezone('utc', now()),    -- timestamp of last update
@@ -21,7 +22,7 @@ create table public.chapters (
   -- unique constraint to prevent duplicate position within a course
   constraint unique_chapter_position_per_course unique (course_id, position)
 );
-
+ 
 -- ====================================================================================
 -- indexes
 -- ====================================================================================

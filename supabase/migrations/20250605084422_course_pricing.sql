@@ -508,66 +508,69 @@ FOR EACH ROW
 EXECUTE FUNCTION public.add_default_free_pricing_tier();
 
 -- ============================================================================
--- COURSE CONVERSION FUNCTIONS (RPC ENDPOINTS)
+-- course conversion functions (rpc endpoints)
 -- ============================================================================
 
--- Converts a paid course to free by removing all paid tiers and adding a free tier
--- This is a complete conversion operation that handles the transition safely
--- Includes permission checks and bypass mechanisms for business rule triggers
-CREATE OR REPLACE FUNCTION public.set_course_free(p_course_id UUID, p_user_id UUID)
-RETURNS VOID
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = ''
-AS $$ 
-DECLARE
-  has_access BOOLEAN;
-  has_paid_tiers BOOLEAN;
-BEGIN
-  -- Verify user has permission to modify course pricing
-  -- Only course admins, editors, and creators can change pricing models
-  SELECT EXISTS (
-    SELECT 1 FROM public.courses c
-    WHERE c.id = p_course_id
-      AND (
+-- converts a paid course to free by:
+-- 1. removing all pricing tiers (both free and paid)
+-- 2. inserting a standard free pricing tier
+-- 3. updating all chapters to not require payment
+-- this is a complete conversion operation that handles the transition safely
+-- includes permission checks and bypass mechanisms for business rule triggers
+
+create or replace function public.set_course_free(p_course_id uuid, p_user_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$ 
+declare
+  has_access boolean;
+  has_paid_tiers boolean;
+begin
+  -- verify user has permission to modify course pricing
+  -- only course admins, editors, and creators can change pricing models
+  select exists (
+    select 1 from public.courses c
+    where c.id = p_course_id
+      and (
         public.is_course_admin(c.id, p_user_id)
-        OR public.is_course_editor(c.id, p_user_id)
-        OR c.created_by = p_user_id
+        or public.is_course_editor(c.id, p_user_id)
+        or c.created_by = p_user_id
       )
-  ) INTO has_access;
+  ) into has_access;
 
-  IF NOT has_access THEN
-    RAISE EXCEPTION 'Permission denied: you do not have access to modify this course (course_id=%)', p_course_id
-      USING errcode = '42501'; -- insufficient_privilege
-  END IF;
+  if not has_access then
+    raise exception 'permission denied: you do not have access to modify this course (course_id=%)', p_course_id
+      using errcode = '42501'; -- insufficient_privilege
+  end if;
 
-  -- Check if course actually has paid tiers to convert
-  -- Prevents unnecessary operations on already-free courses
-  SELECT EXISTS (
-    SELECT 1 FROM public.course_pricing_tiers
-    WHERE course_id = p_course_id
-      AND is_free = false
-  ) INTO has_paid_tiers;
+  -- check if course actually has paid tiers to convert
+  -- prevents unnecessary operations on already-free courses
+  select exists (
+    select 1 from public.course_pricing_tiers
+    where course_id = p_course_id
+      and is_free = false
+  ) into has_paid_tiers;
 
-  IF NOT has_paid_tiers THEN
-    RAISE EXCEPTION 'Course (id=%) is already free.', p_course_id
-      USING errcode = 'P0001';
-  END IF;
+  if not has_paid_tiers then
+    raise exception 'course (id=%) is already free.', p_course_id
+      using errcode = 'P0001';
+  end if;
 
-  -- Temporarily bypass business rule triggers during conversion
-  -- This allows us to delete all tiers without triggering the "last paid tier" protection
-  PERFORM set_config('app.converting_course_pricing', 'true', true);
+  -- temporarily bypass business rule triggers during conversion
+  -- this allows deletion of all tiers without triggering "last paid tier" protection
+  perform set_config('app.converting_course_pricing', 'true', true);
 
-  -- Remove all existing pricing tiers (both free and paid)
-  -- This ensures a clean slate for the new free tier
-  DELETE FROM public.course_pricing_tiers
-  WHERE course_id = p_course_id;
+  -- remove all existing pricing tiers (both free and paid)
+  delete from public.course_pricing_tiers
+  where course_id = p_course_id;
 
-  -- Re-enable business rule triggers
-  PERFORM set_config('app.converting_course_pricing', 'false', true);
+  -- re-enable business rule triggers
+  perform set_config('app.converting_course_pricing', 'false', true);
 
-  -- Create new free tier with standard configuration
-  INSERT INTO public.course_pricing_tiers (
+  -- insert a new standard free tier
+  insert into public.course_pricing_tiers (
     course_id, 
     is_free, 
     price, 
@@ -577,99 +580,116 @@ BEGIN
     payment_frequency, 
     tier_name,
     is_active
-  ) VALUES (
+  ) values (
     p_course_id, 
-    true,           -- Free tier
-    0,              -- No cost
-    'KES',          -- Local currency default
-    p_user_id,      -- Conversion performer
-    p_user_id,      -- Conversion performer
-    'monthly',      -- Default frequency
-    'Free',         -- Standard name
-    true            -- Active tier
+    true,           -- free tier
+    0,              -- no cost
+    'KES',          -- local currency default
+    p_user_id,      -- conversion performer
+    p_user_id,      -- conversion performer
+    'monthly',      -- default frequency
+    'Free',         -- standard name
+    true            -- active tier
   );
-END;
+
+  -- mark all chapters in the course as not requiring payment
+  update public.chapters
+  set requires_payment = false
+  where course_id = p_course_id;
+end;
 $$;
 
--- FIXED: Converts a free course to paid by creating a default paid pricing tier
--- This handles the transition from free to paid model with sensible defaults
--- Includes validation to prevent accidental conversions
--- MAIN BUG FIX: Now creates PAID tier instead of free tier
-CREATE OR REPLACE FUNCTION public.set_course_paid(p_course_id UUID, p_user_id UUID)
-RETURNS VOID
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = ''
-AS $$
-DECLARE
-  has_access BOOLEAN;
-  paid_tiers_count INTEGER;
-BEGIN
-  -- Verify user permissions for course pricing changes
-  SELECT EXISTS (
-    SELECT 1 FROM public.courses c
-    WHERE c.id = p_course_id
-      AND (
+-- ============================================================================
+-- course conversion functions (rpc endpoints)
+-- ============================================================================
+
+-- converts a free course to paid by:
+-- 1. removing all existing pricing tiers
+-- 2. creating a default paid pricing tier
+-- 3. marking all chapters as requiring payment
+-- includes validation to prevent accidental conversions
+-- handles permission checks and trigger bypassing
+
+create or replace function public.set_course_paid(p_course_id uuid, p_user_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  has_access boolean;
+  paid_tiers_count integer;
+begin
+  -- verify user permissions for course pricing changes
+  select exists (
+    select 1 from public.courses c
+    where c.id = p_course_id
+      and (
         public.is_course_admin(c.id, p_user_id)
-        OR public.is_course_editor(c.id, p_user_id)
-        OR c.created_by = p_user_id
+        or public.is_course_editor(c.id, p_user_id)
+        or c.created_by = p_user_id
       )
-  ) INTO has_access;
+  ) into has_access;
 
-  IF NOT has_access THEN
-    RAISE EXCEPTION 'Permission denied: you do not have access to modify this course (course_id=%)', p_course_id
-      USING errcode = '42501'; -- insufficient_privilege
-  END IF;
+  if not has_access then
+    raise exception 'permission denied: you do not have access to modify this course (course_id=%)', p_course_id
+      using errcode = '42501'; -- insufficient_privilege
+  end if;
 
-  -- Check if course already has paid tiers
-  -- Prevents accidental re-conversion of already-paid courses
-  SELECT count(*) INTO paid_tiers_count
-  FROM public.course_pricing_tiers
-  WHERE course_id = p_course_id
-    AND is_free = false;
+  -- check if course already has paid tiers
+  -- prevents accidental re-conversion of already-paid courses
+  select count(*) into paid_tiers_count
+  from public.course_pricing_tiers
+  where course_id = p_course_id
+    and is_free = false;
 
-  IF paid_tiers_count > 0 THEN
-    RAISE EXCEPTION 'Course (id=%) already has a paid tier and is considered paid.', p_course_id
-      USING errcode = 'P0001';
-  END IF;
+  if paid_tiers_count > 0 then
+    raise exception 'course (id=%) already has a paid tier and is considered paid.', p_course_id
+      using errcode = 'P0001';
+  end if;
 
-  -- Temporarily bypass business rule triggers for clean conversion
-  PERFORM set_config('app.converting_course_pricing', 'true', true);
+  -- temporarily bypass business rule triggers for clean conversion
+  perform set_config('app.converting_course_pricing', 'true', true);
 
-  -- Remove all existing tiers to avoid constraint conflicts
-  -- This ensures we start with a clean pricing structure
-  DELETE FROM public.course_pricing_tiers
-  WHERE course_id = p_course_id;
+  -- remove all existing tiers to avoid constraint conflicts
+  delete from public.course_pricing_tiers
+  where course_id = p_course_id;
 
-  -- Re-enable business rule enforcement
-  PERFORM set_config('app.converting_course_pricing', 'false', true);
+  -- re-enable business rule enforcement
+  perform set_config('app.converting_course_pricing', 'false', true);
 
-  -- FIXED: Create default PAID tier with reasonable starter pricing
-  INSERT INTO public.course_pricing_tiers (
+  -- create default paid tier with starter pricing
+  insert into public.course_pricing_tiers (
     course_id,
-    is_free,                -- FIXED: Changed from true to false
+    is_free,
     price,
     currency_code,
     created_by,
     updated_by,
     payment_frequency,
-    tier_name,              -- FIXED: Changed from "Free Plan" to "Basic Plan"
+    tier_name,
     tier_description,
     is_active
-  ) VALUES (
+  ) values (
     p_course_id,
-    false,                                                      -- PAID tier (FIXED: was true)
-    100.00,                                                     -- Starter price in local currency
-    'KES',                                                      -- Local currency
-    p_user_id,                                                  -- Conversion performer
-    p_user_id,                                                  -- Conversion performer
-    'monthly',                                                  -- Most common frequency
-    'Basic Plan',                                               -- Professional name (FIXED: was "Free Plan")
-    'Automatically added paid tier. You can update this.',      -- Helpful description
-    true                                                        -- Active tier
+    false,                                                      -- paid tier
+    100.00,                                                     -- starter price
+    'KES',                                                      -- local currency
+    p_user_id,
+    p_user_id,
+    'monthly',
+    'Basic Plan',
+    'automatically added paid tier. you can update this.',
+    true
   );
-END;
+
+  -- mark all chapters in the course as requiring payment
+  update public.chapters
+  set requires_payment = true
+  where course_id = p_course_id;
+end;
 $$;
+
 
 -- ============================================================================
 -- ADDITIONAL UTILITY FUNCTIONS
