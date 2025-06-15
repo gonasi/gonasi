@@ -13,7 +13,7 @@ import { CourseTierPositionUpdateArraySchema } from '@gonasi/schemas/coursePrici
 
 import type { Route } from './+types/pricing-index';
 
-import { NotFoundCard } from '~/components/cards';
+import { BannerCard, NotFoundCard } from '~/components/cards';
 import { CourseToggle } from '~/components/cards/course-toggle';
 import { Badge } from '~/components/ui/badge';
 import { Button, NavLinkButton } from '~/components/ui/button';
@@ -72,7 +72,11 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     ? pricingData.some((item) => item.is_free === false)
     : false;
 
-  return { pricingData, isPaid, availableFrequencies };
+  const hasInactiveTier = Array.isArray(pricingData)
+    ? pricingData.some((item) => item.is_active === false)
+    : false;
+
+  return { pricingData, isPaid, availableFrequencies, hasInactiveTier };
 }
 
 export async function action({ request, params }: Route.ActionArgs) {
@@ -106,7 +110,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 }
 
 export default function CoursePricing({ loaderData, params }: Route.ComponentProps) {
-  const { pricingData, isPaid, availableFrequencies } = loaderData;
+  const { pricingData, isPaid, availableFrequencies, hasInactiveTier } = loaderData;
   const fetcher = useFetcher();
 
   const [reorderedPricingTiers, setReorderedPricingTiers] = useState<CoursePricingType[]>(
@@ -198,6 +202,15 @@ export default function CoursePricing({ loaderData, params }: Route.ComponentPro
 
   return (
     <div className='mx-auto max-w-3xl'>
+      {hasInactiveTier ? (
+        <BannerCard
+          message='Some tiers are inactive'
+          description="Inactive tiers won't be visible to users when the course is published. Please review them before publishing."
+          variant='error'
+          className='mb-10'
+        />
+      ) : null}
+
       <div className='flex items-end justify-between py-4'>
         <CourseToggle isPaidState={isPaid} />
         {isPaid ? (

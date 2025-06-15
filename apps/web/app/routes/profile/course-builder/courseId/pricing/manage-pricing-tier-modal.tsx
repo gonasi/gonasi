@@ -2,7 +2,16 @@ import { useEffect, useState } from 'react';
 import { Form, useOutletContext } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Check, ChevronLeft, ChevronRight, Sparkle, Star, TrendingUp } from 'lucide-react';
+import {
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Eye,
+  EyeOff,
+  Sparkle,
+  Star,
+  TrendingUp,
+} from 'lucide-react';
 import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
 import { dataWithError, redirectWithError, redirectWithSuccess } from 'remix-toast';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
@@ -35,6 +44,7 @@ import {
 import { Modal } from '~/components/ui/modal';
 import { Stepper } from '~/components/ui/stepper';
 import { createClient } from '~/lib/supabase/supabase.server';
+import { cn } from '~/lib/utils';
 import { checkHoneypot } from '~/utils/honeypot.server';
 import { useIsPending } from '~/utils/misc';
 
@@ -352,7 +362,10 @@ export default function ManagePricingTierModal({ params, loaderData }: Route.Com
                       <div className='flex items-center space-x-2'>
                         <Star size={16} />
                         <span>
-                          Mark as <Badge variant='info'>Most Popular</Badge>
+                          Mark as{' '}
+                          <Badge variant={watchedValues.isPopular ? 'info' : 'outline'}>
+                            Most Popular
+                          </Badge>
                         </span>
                       </div>
                     ),
@@ -366,7 +379,10 @@ export default function ManagePricingTierModal({ params, loaderData }: Route.Com
                       <div className='flex items-center space-x-2'>
                         <TrendingUp size={16} />
                         <span>
-                          Mark as <Badge variant='tip'>Recommended</Badge>
+                          Mark as{' '}
+                          <Badge variant={watchedValues.isRecommended ? 'tip' : 'outline'}>
+                            Recommended
+                          </Badge>
                         </span>
                       </div>
                     ),
@@ -375,7 +391,21 @@ export default function ManagePricingTierModal({ params, loaderData }: Route.Com
                 />
                 <GoSwitchField
                   name='isActive'
-                  labelProps={{ children: 'Active (visible to customers)' }}
+                  labelProps={{
+                    children: (
+                      <div className='flex items-center space-x-1'>
+                        <span>Active</span>
+                        <span
+                          className={cn(
+                            watchedValues.isActive ? 'text-foreground' : 'text-muted-foreground',
+                          )}
+                        >
+                          (Visible to customers)
+                        </span>
+                        {watchedValues.isActive ? <Eye size={16} /> : <EyeOff size={16} />}
+                      </div>
+                    ),
+                  }}
                   description='Turn this on to make the tier publicly available'
                 />
               </div>
