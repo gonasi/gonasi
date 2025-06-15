@@ -200,12 +200,12 @@ export default function CoursePricing({ loaderData, params }: Route.ComponentPro
     <div className='mx-auto max-w-3xl'>
       <div className='flex items-end justify-between py-4'>
         <CourseToggle isPaidState={isPaid} />
-        {isPaid || (availableFrequencies && availableFrequencies.length) ? (
+        {isPaid ? (
           <NavLinkButton
             variant='secondary'
             to={`/${params.username}/course-builder/${params.courseId}/pricing/manage-pricing-tier/add-new-tier`}
             leftIcon={<Plus />}
-            disabled={!isPaid}
+            disabled={!isPaid || !availableFrequencies || availableFrequencies?.length === 0}
           >
             Add Pricing Tier
           </NavLinkButton>

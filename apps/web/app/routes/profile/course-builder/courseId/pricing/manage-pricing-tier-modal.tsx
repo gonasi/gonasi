@@ -403,7 +403,8 @@ export default function ManagePricingTierModal({ params, loaderData }: Route.Com
               description='To enable tiered pricing, switch this course to paid.'
               showCloseIcon={false}
             />
-          ) : !availableFrequencies || !availableFrequencies.length ? (
+          ) : coursePricingId === 'add-new-tier' &&
+            (!availableFrequencies || !availableFrequencies.length) ? (
             <BannerCard
               variant='error'
               message='All pricing options are in use'
