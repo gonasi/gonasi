@@ -298,19 +298,19 @@ export default function CoursePricing({ loaderData, params }: Route.ComponentPro
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align='end'>
-                      <DropdownMenuItem>
+                      <DropdownMenuItem className='w-full'>
                         <NavLink
                           to={`/${params.username}/course-builder/${params.courseId}/pricing/manage-pricing-tier/${priceTier.id}`}
-                          className={cn('flex items-center space-x-4')}
+                          className={cn('flex h-full w-full items-center space-x-4')}
                         >
                           <Edit className='mr-2 h-4 w-4' />
                           Edit
                         </NavLink>
                       </DropdownMenuItem>
-                      <DropdownMenuItem>
+                      <DropdownMenuItem className='w-full'>
                         <NavLink
                           to={`/${params.username}/course-builder/${params.courseId}/pricing/manage-pricing-tier/${priceTier.id}/delete`}
-                          className={cn('flex items-center space-x-4')}
+                          className={cn('flex w-full items-center space-x-4')}
                         >
                           <Trash2 className='mr-2 h-4 w-4' />
                           Delete

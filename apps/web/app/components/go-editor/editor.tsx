@@ -53,9 +53,9 @@ export default function Editor({ placeholder = 'Enter text', hasError }: Props):
         <HistoryPlugin externalHistoryState={historyState} />
         <RichTextPlugin
           contentEditable={
-            <div className='editor-scroller mx-auto max-w-xl'>
+            <div className='editor-scroller'>
               <div className='editor'>
-                <ContentEditable placeholder={placeholder} hasError={hasError} />
+                <ContentEditable placeholder={placeholder} />
               </div>
             </div>
           }

@@ -10,3 +10,4 @@ export * from './GoCheckBoxField';
 export * from './GoSelectInputField';
 export * from './GoSwitchField';
 export * from './GoCalendar26';
+export * from './GoValidationCheckField';
