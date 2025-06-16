@@ -1,14 +1,23 @@
 // hooks/useValidationFields.ts
 import { useMemo } from 'react';
 
+import type { ValidateChaptersSchemaTypes } from '@gonasi/schemas/publish';
+
 import type { ValidationField } from './ValidationSection';
 
 interface UseValidationFieldsProps {
   rootRoute: string;
   pricingData?: any[];
+  courseChapters?: ValidateChaptersSchemaTypes;
+  lessonsWithBlocks?: any[];
 }
 
-export function useValidationFields({ rootRoute, pricingData }: UseValidationFieldsProps) {
+export function useValidationFields({
+  rootRoute,
+  pricingData,
+  courseChapters,
+  lessonsWithBlocks,
+}: UseValidationFieldsProps) {
   const courseOverviewFields = useMemo(
     (): ValidationField[] => [
       { name: 'courseOverview.id', title: 'Course id', fix: '/' },
@@ -20,7 +29,7 @@ export function useValidationFields({ rootRoute, pricingData }: UseValidationFie
       },
       {
         name: 'courseOverview.imageUrl',
-        title: 'Course Thumbnail',
+        title: 'Course thumbnail',
         fix: `${rootRoute}/overview/edit-thumbnail`,
       },
       {
@@ -84,5 +93,22 @@ export function useValidationFields({ rootRoute, pricingData }: UseValidationFie
     return [...basePricingFields, ...pricingTierFields];
   }, [rootRoute, pricingData]);
 
-  return { courseOverviewFields, pricingFields };
+  const courseChaptersFields = useMemo((): ValidationField[] => {
+    const baseChapterFields: ValidationField[] = [];
+
+    const courseChapterFields: ValidationField[] = courseChapters?.flatMap((_, index) => []) ?? [];
+
+    return [...baseChapterFields, ...courseChapterFields];
+  }, [rootRoute, courseChapters]);
+
+  const lessonsWithBlocksFields = useMemo((): ValidationField[] => {
+    const baseLessonsWithBlocksFields: ValidationField[] = [];
+
+    const lessonsWithBlocksFields: ValidationField[] =
+      courseChapters?.flatMap((_, index) => []) ?? [];
+
+    return [...baseLessonsWithBlocksFields, ...lessonsWithBlocksFields];
+  }, [rootRoute, courseChapters]);
+
+  return { courseOverviewFields, pricingFields, courseChaptersFields, lessonsWithBlocksFields };
 }

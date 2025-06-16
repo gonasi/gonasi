@@ -1,6 +1,8 @@
 // routes/publish-course/publish-course.tsx
-import { Form } from 'react-router';
+import { useEffect } from 'react';
+import { Form, Link } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { RefreshCw } from 'lucide-react';
 import { RemixFormProvider, useRemixForm } from 'remix-hook-form';
 import { redirectWithError } from 'remix-toast';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
@@ -34,12 +36,21 @@ export function meta() {
 
 const resolver = zodResolver(PublishCourseSchema);
 
+export type LoaderReturnType = Exclude<Awaited<ReturnType<typeof loader>>, Response>;
+
 export type CoursePricingLoaderReturnType = Exclude<
   Awaited<ReturnType<typeof loader>>,
   Response
 >['pricingData'];
 
+export type CourseChaptersLessonsLoaderReturnType = Exclude<
+  Awaited<ReturnType<typeof loader>>,
+  Response
+>['courseChapters'];
+
 type PricingType = CoursePricingLoaderReturnType[number];
+
+type CourseChaptersType = CourseChaptersLessonsLoaderReturnType[number];
 
 export async function loader({ params, request }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
@@ -58,7 +69,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   if (!courseChapters)
     return redirectWithError(redirectPath, 'Could not load chapters and lessons');
 
-  const chaptersWithBlocks = await Promise.all(
+  const lessonsWithBlocks = await Promise.all(
     courseChapters.map(async (chapter) => {
       const lessonsWithBlocks = await Promise.all(
         chapter.lessons.map(async (lesson) => {
@@ -66,19 +77,25 @@ export async function loader({ params, request }: Route.LoaderArgs) {
           return { ...lesson, blocks };
         }),
       );
-      return { ...chapter, lessons: lessonsWithBlocks };
+      return lessonsWithBlocks;
     }),
   );
 
   return {
     courseOverview,
     pricingData,
-    courseChapters: chaptersWithBlocks,
+    courseChapters,
+    lessonsWithBlocks,
   };
 }
 
 export default function PublishCourse({ loaderData, params }: Route.ComponentProps) {
-  const { courseOverview, pricingData } = loaderData;
+  const {
+    courseOverview,
+    pricingData,
+    courseChapters: publishCourseChapters,
+    lessonsWithBlocks,
+  } = loaderData;
   const isPending = useIsPending();
 
   console.log('pricing data: ', pricingData);
@@ -94,12 +111,12 @@ export default function PublishCourse({ loaderData, params }: Route.ComponentPro
         id: courseOverview.id,
         name: courseOverview.name,
         description: courseOverview.description ?? undefined,
-        imageUrl: courseOverview.image_url ?? undefined,
-        courseCategory: courseOverview.course_categories ?? undefined,
-        courseSubCategory: courseOverview.course_sub_categories ?? undefined,
+        image_url: courseOverview.image_url ?? undefined,
+        course_categories: courseOverview.course_categories ?? undefined,
+        course_sub_categories: courseOverview.course_sub_categories ?? undefined,
         pathways: courseOverview.pathways ?? undefined,
       },
-      pricing:
+      pricingData:
         pricingData?.map((p: PricingType) => ({
           id: p.id,
           courseId: p.course_id,
@@ -117,14 +134,31 @@ export default function PublishCourse({ loaderData, params }: Route.ComponentPro
           isPopular: p.is_popular,
           isRecommended: p.is_recommended,
         })) ?? [],
+      courseChapters:
+        publishCourseChapters?.map((chapter: CourseChaptersType) => ({
+          lesson_count: chapter.lessons?.length ?? 0,
+          id: chapter.id,
+          course_id: chapter.course_id,
+          name: chapter.name,
+          description: chapter.description ?? null,
+          created_at: chapter.created_at,
+          updated_at: chapter.updated_at,
+          created_by: chapter.created_by,
+          position: chapter.position ?? null,
+          requires_payment: chapter.requires_payment,
+          lessons: chapter.lessons ?? [],
+        })) ?? [],
     },
   });
 
   // Use our custom hooks
-  const { courseOverviewFields, pricingFields } = useValidationFields({
-    rootRoute,
-    pricingData,
-  });
+  const { courseOverviewFields, pricingFields, courseChapters, lessonsWithBlocks } =
+    useValidationFields({
+      rootRoute,
+      pricingData,
+      courseChapters: publishCourseChapters,
+      lessonsWithBlocks,
+    });
 
   const { createValidator, isLoading } = useAsyncValidation<PublishCourseSchemaTypes>({
     trigger: methods.trigger,
@@ -132,14 +166,46 @@ export default function PublishCourse({ loaderData, params }: Route.ComponentPro
 
   // Create validators using the factory function
   const validateCourseOverview = createValidator('courseOverview', ['courseOverview']);
-  const validatePricing = createValidator('pricing', ['pricing']);
+  const validatePricingData = createValidator('pricingData', ['pricingData']);
+  const validateCourseChapters = createValidator('courseChapters', ['courseChapters']);
+  const validateLessons = createValidator('lessonsWithBlocks', ['lessonsWithBlocks']);
+
+  const runInitialValidation = async () => {
+    try {
+      console.log('Running initial validation...');
+      await Promise.all([
+        validateCourseOverview(),
+        validatePricingData(),
+        validateLessons(),
+        validateCourseChapters(),
+      ]);
+      console.log('Initial validation completed');
+    } catch (error) {
+      console.error('Error during initial validation:', error);
+    } finally {
+    }
+  };
+
+  // Run validation on mount
+  useEffect(() => {
+    runInitialValidation();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty dependency array - only run once on mount
 
   const isDisabled = isPending || methods.formState.isSubmitting;
 
   return (
     <Modal open>
       <Modal.Content size='md'>
-        <Modal.Header title={`Publish Course - ${courseOverview.name}`} closeRoute={closeRoute} />
+        <Modal.Header
+          title={`Publish Course - ${courseOverview.name}`}
+          settingsPopover={
+            <Link to={`${closeRoute}/publish`} reloadDocument>
+              <RefreshCw size={18} />
+            </Link>
+          }
+          closeRoute={closeRoute}
+        />
         <Modal.Body>
           <RemixFormProvider {...methods}>
             <Form method='POST' onSubmit={methods.handleSubmit}>
@@ -148,17 +214,29 @@ export default function PublishCourse({ loaderData, params }: Route.ComponentPro
               <ValidationSection
                 title='Pricing'
                 fields={pricingFields}
-                hasErrors={!!methods.formState.errors.pricing}
-                onValidate={validatePricing}
-                isLoading={isLoading('pricing')}
+                hasErrors={!!methods.formState.errors.pricingData}
+                isLoading={isLoading('pricingData')}
               />
 
               <ValidationSection
                 title='Overview'
                 fields={courseOverviewFields}
                 hasErrors={!!methods.formState.errors.courseOverview}
-                onValidate={validateCourseOverview}
                 isLoading={isLoading('courseOverview')}
+              />
+
+              <ValidationSection
+                title='Chapters'
+                fields={courseChapters}
+                hasErrors={!!methods.formState.errors.courseChapters}
+                isLoading={isLoading('courseChapters')}
+              />
+
+              <ValidationSection
+                title='Lessons & Blocks'
+                fields={lessonsWithBlocks}
+                hasErrors={!!methods.formState.errors.lessonsWithBlocks}
+                isLoading={isLoading('lessonsWithBlocks')}
               />
 
               <div className='mt-6'>
