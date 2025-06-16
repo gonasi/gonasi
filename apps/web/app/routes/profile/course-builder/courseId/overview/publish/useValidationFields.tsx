@@ -95,7 +95,27 @@ export function useValidationFields({
     const chapterFields: ValidationField[] =
       courseChapters?.flatMap((_chapter, index) => [
         {
+          name: `courseChapters.${index}.lesson_count`,
+          fix: `${rootRoute}/content`,
+        },
+        {
+          name: `courseChapters.${index}.id`,
+          fix: `${rootRoute}/content`,
+        },
+        {
+          name: `courseChapters.${index}.course_id`,
+          fix: `${rootRoute}/content`,
+        },
+        {
           name: `courseChapters.${index}.name`,
+          fix: `${rootRoute}/content`,
+        },
+        {
+          name: `courseChapters.${index}.description`,
+          fix: `${rootRoute}/content`,
+        },
+        {
+          name: `courseChapters.${index}.position`,
           fix: `${rootRoute}/content`,
         },
         {

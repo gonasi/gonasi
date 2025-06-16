@@ -69,21 +69,38 @@ const LessonWithBlocksSchema = z.object({
  */
 const ChapterSchema = z
   .object({
-    lesson_count: z.number(),
-    id: z.string(),
-    course_id: z.string(),
+    lesson_count: z
+      .number({ invalid_type_error: 'Lesson count must be a number.' })
+      .nonnegative({ message: 'Lesson count must be zero or a positive number.' }),
+
+    id: z
+      .string({ required_error: 'Chapter ID is required.' })
+      .nonempty('Chapter ID cannot be empty.'),
+
+    course_id: z
+      .string({ required_error: 'Course ID is required.' })
+      .nonempty('Course ID cannot be empty.'),
+
     name: z
-      .string()
+      .string({ required_error: 'Chapter name is required.' })
       .min(3, { message: 'Chapter name must be at least 3 characters long.' })
       .max(100, { message: 'Chapter name must be under 100 characters.' }),
+
     description: z
-      .string()
-      .min(20, { message: 'Chapter description must be at least 20 characters.' }),
+      .string({ required_error: 'Chapter description is required.' })
+      .min(10, { message: 'Chapter description must be at least 10 characters.' }),
+
     position: z
-      .number()
+      .number({ invalid_type_error: 'Chapter position must be a number.' })
       .nonnegative({ message: 'Chapter position must be zero or a positive number.' }),
-    requires_payment: z.boolean(),
-    lessons: z.array(LessonSchema),
+
+    requires_payment: z.boolean({
+      invalid_type_error: 'Please specify if this chapter requires payment.',
+    }),
+
+    lessons: z.array(LessonSchema, {
+      invalid_type_error: 'Lessons must be an array of valid lesson objects.',
+    }),
   })
   .superRefine((data, ctx) => {
     if (data.lessons.length < 2) {
@@ -143,21 +160,38 @@ export type CourseOverviewSchemaTypes = z.infer<typeof CourseOverviewSchema>;
  */
 export const PricingSchema = z.array(
   z.object({
-    id: z.string(),
-    course_id: z.string(),
-    payment_frequency: z.enum(['monthly', 'bi_monthly', 'quarterly', 'semi_annual', 'annual']),
-    is_free: z.boolean(),
-    price: z.number(),
-    currency_code: z.string(),
-    promotional_price: z.number().nullable(),
+    id: z
+      .string({ required_error: 'Pricing ID is required.' })
+      .nonempty('Pricing ID cannot be empty.'),
+    course_id: z
+      .string({ required_error: 'Course ID is required.' })
+      .nonempty('Course ID cannot be empty.'),
+    payment_frequency: z.enum(['monthly', 'bi_monthly', 'quarterly', 'semi_annual', 'annual'], {
+      invalid_type_error: 'Select a valid payment frequency.',
+    }),
+    is_free: z.boolean({ invalid_type_error: 'Please specify if the course is free.' }),
+    price: z
+      .number({ invalid_type_error: 'Price must be a number.' })
+      .min(0, 'Price cannot be negative.'),
+    currency_code: z
+      .string({ required_error: 'Currency code is required.' })
+      .length(3, 'Currency code must be a 3-letter ISO code.'),
+    promotional_price: z
+      .number({ invalid_type_error: 'Promotional price must be a number.' })
+      .min(0, 'Promotional price cannot be negative.')
+      .nullable(),
     promotion_start_date: z.string().nullable(),
     promotion_end_date: z.string().nullable(),
     tier_name: z.string().nullable(),
     tier_description: z.string().nullable(),
-    is_active: z.boolean(),
-    position: z.number(),
-    is_popular: z.boolean(),
-    is_recommended: z.boolean(),
+    is_active: z.boolean({ invalid_type_error: 'Please indicate if the pricing tier is active.' }),
+    position: z
+      .number({ invalid_type_error: 'Position must be a number.' })
+      .min(0, 'Position must be zero or a positive number.'),
+    is_popular: z.boolean({ invalid_type_error: 'Please indicate if this tier is popular.' }),
+    is_recommended: z.boolean({
+      invalid_type_error: 'Please indicate if this tier is recommended.',
+    }),
   }),
 );
 
