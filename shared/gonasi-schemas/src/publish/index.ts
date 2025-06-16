@@ -152,8 +152,8 @@ export type ValidateChaptersSchemaTypes = z.infer<typeof ValidateChaptersSchema>
  */
 export const PublishCourseSchema = z
   .object({
-    courseOverview: CourseOverviewSchema,
     pricingData: PricingSchema,
+    courseOverview: CourseOverviewSchema,
     courseChapters: ValidateChaptersSchema,
     lessonsWithBlocks: FlatLessonsWithBlocksSchema,
   })
