@@ -74,6 +74,8 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     return redirectToPricingPage('Pricing tier does not exist or you lack permissions');
   }
 
+  console.log(pricingTier);
+
   return { pricingTier };
 }
 
@@ -167,6 +169,7 @@ export default function ManagePricingTierModal({ params, loaderData }: Route.Com
         : undefined,
       tierName: pricingTier?.tier_name,
       tierDescription: pricingTier?.tier_description,
+      isPopular: pricingTier?.is_popular,
       isActive: pricingTier?.is_active,
       isRecommended: pricingTier?.is_recommended,
     },
