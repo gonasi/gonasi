@@ -192,13 +192,19 @@ begin
   end if;
 
   -- Reorder remaining blocks: shift down all blocks that were positioned after the deleted block
-  update public.lesson_blocks
+  update  public.lesson_blocks
+  set position = position - 1000000
+  where chapter_id = v_chapter_id
+    and position > v_lesson_position;
+
+  -- Step 2: Apply the final position update with metadata
+  update  public.lesson_blocks
   set 
-    position = position - 1,
+    position = position + 999999,
     updated_at = timezone('utc', now()),
     updated_by = p_deleted_by
-  where lesson_id = v_lesson_id
-    and position > v_block_position;
+  where chapter_id = v_chapter_id
+    and position < 0;
 
 end;
 $$;

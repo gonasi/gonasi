@@ -53,18 +53,20 @@ export function GoValidationCheckField({
             >
               {({ isPending }) => (
                 <div>
-                  <div className='flex items-center space-x-2'>
-                    {loading || isPending ? (
-                      <LoaderCircle size={16} className='animate-spin' />
-                    ) : hasError ? (
-                      <CircleX size={16} />
-                    ) : (
-                      <Check size={16} />
-                    )}
-                    <div className='flex space-x-1'>
-                      <span>{title}</span>
-                      {hasError && fixLink && <ExternalLink size={12} />}
+                  <div className='flex items-start space-x-2'>
+                    <div className='pt-1'>
+                      {loading || isPending ? (
+                        <LoaderCircle size={16} className='flex-shrink-0 animate-spin' />
+                      ) : hasError ? (
+                        <CircleX size={16} className='text-danger flex-shrink-0' />
+                      ) : (
+                        <Check size={16} className='text-success flex-shrink-0' />
+                      )}
                     </div>
+                    <p>
+                      {error?.message}
+                      {hasError && fixLink && <ExternalLink size={12} className='-mt-4 inline' />}
+                    </p>
                   </div>
                 </div>
               )}

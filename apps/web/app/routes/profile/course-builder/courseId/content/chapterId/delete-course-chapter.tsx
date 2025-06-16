@@ -1,5 +1,5 @@
 // External imports
-import { data, Form, useNavigate, useParams } from 'react-router';
+import { Form, useNavigate, useParams } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
 import { dataWithError, redirectWithError, redirectWithSuccess } from 'remix-toast';
@@ -33,7 +33,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     return redirectWithError(redirectTo, 'Chapter path not exist');
   }
 
-  return data(chapter);
+  return { chapter };
 }
 
 /**
@@ -65,6 +65,9 @@ export async function action({ params, request }: Route.ActionArgs) {
  * Component: DeleteCourseChapter modal form
  */
 export default function DeleteCourseChapter({ loaderData }: Route.ComponentProps) {
+  const {
+    chapter: { id, name },
+  } = loaderData;
   const navigate = useNavigate();
   const params = useParams();
   const isPending = useIsPending();
@@ -75,7 +78,7 @@ export default function DeleteCourseChapter({ loaderData }: Route.ComponentProps
     mode: 'all',
     resolver,
     defaultValues: {
-      chapterId: params.chapterId,
+      chapterId: id,
     },
   });
 
@@ -90,7 +93,7 @@ export default function DeleteCourseChapter({ loaderData }: Route.ComponentProps
 
               <DeleteConfirmationLayout
                 titlePrefix='course chapter: '
-                title={loaderData.name}
+                title={name}
                 isLoading={isPending}
                 handleClose={() => navigate(closeRoute)}
               />

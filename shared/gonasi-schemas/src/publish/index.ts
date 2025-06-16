@@ -1,4 +1,8 @@
 import { z } from 'zod';
+/**
+ * Schema for course overview information shown at the top level.
+ */
+import { z } from 'zod';
 
 // Use flexible JSON schema for content/settings fields.
 // Can be replaced later with more specific validation schemas.
@@ -77,34 +81,42 @@ const ChapterSchema = z.object({
   lessons: z.array(LessonSchema),
 });
 
-/**
- * Schema for course overview information shown at the top level.
- */
-export const CourseOverviewSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  description: z.string(),
-  image_url: z.string(),
-  blur_hash: z.string().nullable(),
-  course_categories: z
-    .object({
-      id: z.string(),
-      name: z.string(),
-    })
-    .nullable(),
-  course_sub_categories: z
-    .object({
-      id: z.string(),
-      name: z.string(),
-    })
-    .nullable(),
-  pathways: z
-    .object({
-      id: z.string(),
-      name: z.string(),
-    })
-    .nullable(),
-});
+export const CourseOverviewSchema = z
+  .object({
+    id: z.string({ required_error: 'Course ID is required.' }),
+    name: z
+      .string({ required_error: 'Course name is required.' })
+      .min(1, 'Course name cannot be empty.'),
+    description: z
+      .string({ required_error: 'Course description is required.' })
+      .min(10, 'Course description cannot be empty.'),
+    image_url: z
+      .string({ required_error: 'Image URL is required.' })
+      .min(1, 'Course thumbnail is missing.'),
+    blur_hash: z.string().nullable(),
+
+    course_categories: z.unknown(), // Temporarily loose; strict check comes later
+    course_sub_categories: z.unknown(),
+    pathways: z.unknown(),
+  })
+  .superRefine((data, ctx) => {
+    const objectFields = [
+      { key: 'course_categories', message: 'Course needs to have a category.' },
+      { key: 'course_sub_categories', message: 'No subcategory found.' },
+      { key: 'pathways', message: 'Add a pathway, related courses are grouped this way.' },
+    ];
+
+    for (const { key, message } of objectFields) {
+      const value = data[key as keyof typeof data];
+      if (value === null || typeof value !== 'object' || Array.isArray(value)) {
+        ctx.addIssue({
+          path: [key],
+          code: z.ZodIssueCode.custom,
+          message,
+        });
+      }
+    }
+  });
 
 export type CourseOverviewSchemaTypes = z.infer<typeof CourseOverviewSchema>;
 
@@ -168,8 +180,7 @@ export const PublishCourseSchema = z
       ctx.addIssue({
         path: ['courseChapters'],
         code: z.ZodIssueCode.custom,
-        message:
-          'At least one chapter must have requires_payment = false if pricing is not fully free.',
+        message: `Courses with pricing must include at least one chapter that's free to access.`,
       });
     }
 
@@ -186,6 +197,15 @@ export const PublishCourseSchema = z
 
     // Rule 3: Every lesson must have at least 2 blocks
     const flatLessons = lessonsWithBlocks.flat();
+
+    if (flatLessons.length <= 2) {
+      ctx.addIssue({
+        path: ['lessonsWithBlocks'],
+        code: z.ZodIssueCode.custom,
+        message: `Lessons are required.`,
+      });
+    }
+
     for (const lesson of flatLessons) {
       const blockCount = lesson.blocks?.length ?? 0;
       if (blockCount < 2) {

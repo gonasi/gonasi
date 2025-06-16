@@ -124,7 +124,7 @@ $$;
 -- @param p_deleted_by: UUID of user performing the deletion operation
 create or replace function delete_chapter(
   p_chapter_id uuid,    -- ID of the chapter to delete
-  p_deleted_by uuid     -- User performing the operation
+  p_deleted_by uuid     -- ID of the user performing the deletion
 )
 returns void
 language plpgsql
@@ -132,23 +132,23 @@ security definer
 set search_path = ''
 as $$
 declare
-  v_course_id uuid;        -- to store the course_id for permission checking
-  v_chapter_position int;  -- position of the chapter being deleted
+  v_course_id uuid;         -- Course that owns the chapter
+  v_chapter_position int;   -- Position of the chapter being deleted
 begin
-  -- Get the course_id and current position of the chapter to be deleted
+  -- Step 1: Fetch the course ID and position of the chapter to be deleted
   select c.course_id, c.position
   into v_course_id, v_chapter_position
   from public.chapters c
   where c.id = p_chapter_id;
 
-  -- Check if chapter exists
+  -- Step 2: Ensure the chapter exists
   if v_course_id is null then
     raise exception 'Chapter does not exist';
   end if;
 
-  -- Verify user has permission to modify chapters in this course
+  -- Step 3: Permission check – ensure user can delete chapters in this course
   if not exists (
-    select 1 
+    select 1
     from public.courses c
     where c.id = v_course_id
       and (
@@ -160,23 +160,29 @@ begin
     raise exception 'Insufficient permissions to delete chapters in this course';
   end if;
 
-  -- Delete the specified chapter (this will cascade delete all related lessons and blocks)
+  -- Step 4: Delete the chapter (this will cascade delete lessons and blocks, if FK is configured)
   delete from public.chapters
   where id = p_chapter_id;
 
-  -- Check if the delete was successful
+  -- Step 5: Confirm that the chapter was actually deleted
   if not found then
     raise exception 'Failed to delete chapter';
   end if;
 
-  -- Reorder remaining chapters: shift down all chapters that were positioned after the deleted chapter
+  -- Step 6: Reorder remaining chapters in the same course
+  -- Temporarily move affected chapters far below to avoid conflicts with any unique index on position
   update public.chapters
-  set 
-    position = position - 1,
-    updated_at = timezone('utc', now()),
-    updated_by = p_deleted_by
+  set position = position - 1000000
   where course_id = v_course_id
     and position > v_chapter_position;
 
+  -- Step 7: Move them back with corrected positions
+  update public.chapters
+  set 
+    position = position + 999999,  -- Net effect is: position = position - 1
+    updated_at = timezone('utc', now()),
+    updated_by = p_deleted_by
+  where course_id = v_course_id
+    and position < 0;
 end;
 $$;

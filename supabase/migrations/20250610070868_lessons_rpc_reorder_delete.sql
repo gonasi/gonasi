@@ -181,13 +181,20 @@ begin
   end if;
 
   -- Reorder remaining lessons: shift down all lessons that were positioned after the deleted lesson within the same chapter
+  -- Step 1: Temporarily offset positions to avoid unique constraint conflict
+  update public.lessons
+  set position = position - 1000000
+  where chapter_id = v_chapter_id
+    and position > v_lesson_position;
+
+  -- Step 2: Apply the final position update with metadata
   update public.lessons
   set 
-    position = position - 1,
+    position = position + 999999,
     updated_at = timezone('utc', now()),
     updated_by = p_deleted_by
   where chapter_id = v_chapter_id
-    and position > v_lesson_position;
+    and position < 0;
 
 end;
 $$;

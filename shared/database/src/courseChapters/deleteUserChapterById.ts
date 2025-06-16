@@ -18,6 +18,8 @@ export const deleteUserChapterById = async (
   const userId = await getUserId(supabase);
   const { chapterId } = chapterData;
 
+  console.log('******* chapter id: ', chapterId);
+
   try {
     const { error } = await supabase.rpc('delete_chapter', {
       p_chapter_id: chapterId,
@@ -27,7 +29,7 @@ export const deleteUserChapterById = async (
     if (error) {
       return {
         success: false,
-        message: 'Unable to delete the chapter. Please try again.',
+        message: error.message,
       };
     }
 

@@ -110,29 +110,30 @@ export default function PublishCourse({ loaderData, params }: Route.ComponentPro
       courseOverview: {
         id: courseOverview.id,
         name: courseOverview.name,
-        description: courseOverview.description ?? undefined,
-        image_url: courseOverview.image_url ?? undefined,
-        course_categories: courseOverview.course_categories ?? undefined,
-        course_sub_categories: courseOverview.course_sub_categories ?? undefined,
-        pathways: courseOverview.pathways ?? undefined,
+        description: courseOverview.description ?? '',
+        image_url: courseOverview.image_url ?? '',
+        blur_hash: courseOverview.blur_hash ?? null,
+        course_categories: courseOverview.course_categories ?? null,
+        course_sub_categories: courseOverview.course_sub_categories ?? null,
+        pathways: courseOverview.pathways ?? null,
       },
       pricingData:
         pricingData?.map((p: PricingType) => ({
           id: p.id,
-          courseId: p.course_id,
-          paymentFrequency: p.payment_frequency,
-          isFree: p.is_free,
+          course_id: p.course_id,
+          payment_frequency: p.payment_frequency,
+          is_free: p.is_free,
           price: p.price,
-          currencyCode: p.currency_code,
-          promotionalPrice: p.promotional_price ?? null,
-          promotionStartDate: p.promotion_start_date ?? null,
-          promotionEndDate: p.promotion_end_date ?? null,
-          tierName: p.tier_name ?? null,
-          tierDescription: p.tier_description ?? null,
-          isActive: p.is_active,
+          currency_code: p.currency_code,
+          promotional_price: p.promotional_price ?? null,
+          promotion_start_date: p.promotion_start_date ?? null,
+          promotion_end_date: p.promotion_end_date ?? null,
+          tier_name: p.tier_name ?? null,
+          tier_description: p.tier_description ?? null,
+          is_active: p.is_active,
           position: p.position,
-          isPopular: p.is_popular,
-          isRecommended: p.is_recommended,
+          is_popular: p.is_popular,
+          is_recommended: p.is_recommended,
         })) ?? [],
       courseChapters:
         publishCourseChapters?.map((chapter: CourseChaptersType) => ({
@@ -148,11 +149,12 @@ export default function PublishCourse({ loaderData, params }: Route.ComponentPro
           requires_payment: chapter.requires_payment,
           lessons: chapter.lessons ?? [],
         })) ?? [],
+      lessonsWithBlocks: lessonsWithBlocks ?? [],
     },
   });
 
   // Use our custom hooks
-  const { courseOverviewFields, pricingFields, courseChapters, lessonsWithBlocks } =
+  const { courseOverviewFields, pricingFields, courseChaptersFields, lessonsWithBlocksFields } =
     useValidationFields({
       rootRoute,
       pricingData,
@@ -168,7 +170,7 @@ export default function PublishCourse({ loaderData, params }: Route.ComponentPro
   const validateCourseOverview = createValidator('courseOverview', ['courseOverview']);
   const validatePricingData = createValidator('pricingData', ['pricingData']);
   const validateCourseChapters = createValidator('courseChapters', ['courseChapters']);
-  const validateLessons = createValidator('lessonsWithBlocks', ['lessonsWithBlocks']);
+  const validateLessonsWithBlocks = createValidator('lessonsWithBlocks', ['lessonsWithBlocks']);
 
   const runInitialValidation = async () => {
     try {
@@ -176,8 +178,8 @@ export default function PublishCourse({ loaderData, params }: Route.ComponentPro
       await Promise.all([
         validateCourseOverview(),
         validatePricingData(),
-        validateLessons(),
         validateCourseChapters(),
+        validateLessonsWithBlocks(),
       ]);
       console.log('Initial validation completed');
     } catch (error) {
@@ -227,21 +229,21 @@ export default function PublishCourse({ loaderData, params }: Route.ComponentPro
 
               <ValidationSection
                 title='Chapters'
-                fields={courseChapters}
+                fields={courseChaptersFields}
                 hasErrors={!!methods.formState.errors.courseChapters}
                 isLoading={isLoading('courseChapters')}
               />
 
               <ValidationSection
                 title='Lessons & Blocks'
-                fields={lessonsWithBlocks}
+                fields={lessonsWithBlocksFields}
                 hasErrors={!!methods.formState.errors.lessonsWithBlocks}
                 isLoading={isLoading('lessonsWithBlocks')}
               />
 
               <div className='mt-6'>
                 <Button type='submit' disabled={isDisabled}>
-                  Save
+                  Publish Course
                 </Button>
               </div>
             </Form>
