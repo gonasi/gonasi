@@ -90,6 +90,10 @@ export function useValidationFields({
         name: 'courseChapters.pricing',
         fix: `${rootRoute}/content`,
       },
+      {
+        name: 'courseChapters.length',
+        fix: `${rootRoute}/content`,
+      },
     ];
 
     const chapterFields: ValidationField[] =

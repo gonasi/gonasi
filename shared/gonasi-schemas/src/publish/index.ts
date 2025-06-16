@@ -1,8 +1,4 @@
 import { z } from 'zod';
-/**
- * Schema for course overview information shown at the top level.
- */
-import { z } from 'zod';
 
 // Use flexible JSON schema for content/settings fields.
 // Can be replaced later with more specific validation schemas.
@@ -70,36 +66,42 @@ const LessonWithBlocksSchema = z.object({
 const ChapterSchema = z
   .object({
     lesson_count: z
-      .number({ invalid_type_error: 'Lesson count must be a number.' })
-      .nonnegative({ message: 'Lesson count must be zero or a positive number.' }),
+      .number({ invalid_type_error: 'Lesson count must be a <span>number</span>.' })
+      .nonnegative({
+        message: 'Lesson count must be <span>zero</span> or a <span>positive number</span>.',
+      }),
 
     id: z
-      .string({ required_error: 'Chapter ID is required.' })
-      .nonempty('Chapter ID cannot be empty.'),
+      .string({ required_error: 'Chapter <span>ID</span> is required.' })
+      .nonempty('Chapter <span>ID</span> cannot be empty.'),
 
     course_id: z
-      .string({ required_error: 'Course ID is required.' })
-      .nonempty('Course ID cannot be empty.'),
+      .string({ required_error: 'Course <span>ID</span> is required.' })
+      .nonempty('Course <span>ID</span> cannot be empty.'),
 
     name: z
-      .string({ required_error: 'Chapter name is required.' })
-      .min(3, { message: 'Chapter name must be at least 3 characters long.' })
-      .max(100, { message: 'Chapter name must be under 100 characters.' }),
+      .string({ required_error: 'Chapter <span>name</span> is required.' })
+      .min(3, { message: 'Chapter name must be at least <span>3 characters</span> long.' })
+      .max(100, { message: 'Chapter name must be under <span>100 characters</span>.' }),
 
     description: z
-      .string({ required_error: 'Chapter description is required.' })
-      .min(10, { message: 'Chapter description must be at least 10 characters.' }),
+      .string({ required_error: 'Chapter <span>description</span> is required.' })
+      .min(10, { message: 'Chapter description must be at least <span>10 characters</span>.' }),
 
     position: z
-      .number({ invalid_type_error: 'Chapter position must be a number.' })
-      .nonnegative({ message: 'Chapter position must be zero or a positive number.' }),
+      .number({
+        invalid_type_error: 'Chapter <span>position</span> must be a <span>number</span>.',
+      })
+      .nonnegative({
+        message: 'Chapter position must be <span>zero</span> or a <span>positive number</span>.',
+      }),
 
     requires_payment: z.boolean({
-      invalid_type_error: 'Please specify if this chapter requires payment.',
+      invalid_type_error: 'Please specify if this chapter <span>requires payment</span>.',
     }),
 
     lessons: z.array(LessonSchema, {
-      invalid_type_error: 'Lessons must be an array of valid lesson objects.',
+      invalid_type_error: '<span>Lessons</span> must be an array of valid lesson objects.',
     }),
   })
   .superRefine((data, ctx) => {
@@ -110,34 +112,41 @@ const ChapterSchema = z
         type: 'array',
         inclusive: true,
         path: ['lessons'],
-        message: `Chapter "${data.name}" must contain at least two lessons.`,
+        message: `Chapter <span>${data.name}</span> must contain at least <span>two lessons</span>.`,
       });
     }
   });
 
 export const CourseOverviewSchema = z
   .object({
-    id: z.string({ required_error: 'Course ID is required.' }),
+    id: z.string({ required_error: 'Course <span>ID</span> is required.' }),
+
     name: z
-      .string({ required_error: 'Course name is required.' })
-      .min(1, 'Course name cannot be empty.'),
+      .string({ required_error: 'Course <span>name</span> is required.' })
+      .min(1, 'Course <span>name</span> cannot be empty.'),
+
     description: z
-      .string({ required_error: 'Course description is required.' })
-      .min(10, 'Course description cannot be empty.'),
+      .string({ required_error: 'Course <span>description</span> is required.' })
+      .min(10, 'Course <span>description</span> cannot be empty.'),
+
     image_url: z
-      .string({ required_error: 'Image URL is required.' })
-      .min(1, 'Course thumbnail is missing.'),
+      .string({ required_error: '<span>Image URL</span> is required.' })
+      .min(1, 'Course <span>thumbnail</span> is missing.'),
+
     blur_hash: z.string().nullable(),
 
-    course_categories: z.unknown(), // Temporarily loose; strict check comes later
+    course_categories: z.unknown(),
     course_sub_categories: z.unknown(),
     pathways: z.unknown(),
   })
   .superRefine((data, ctx) => {
     const objectFields = [
-      { key: 'course_categories', message: 'Course needs to have a category.' },
-      { key: 'course_sub_categories', message: 'No subcategory found.' },
-      { key: 'pathways', message: 'Add a pathway, related courses are grouped this way.' },
+      { key: 'course_categories', message: 'Course needs to have a <span>category</span>.' },
+      { key: 'course_sub_categories', message: 'No <span>subcategory</span> found.' },
+      {
+        key: 'pathways',
+        message: 'Add a <span>pathway</span>, related courses are grouped this way.',
+      },
     ];
 
     for (const { key, message } of objectFields) {
@@ -226,6 +235,14 @@ export const PublishCourseSchema = z
     // Rule 1: If any pricing is not free, there must be at least one free chapter
     const isFree = pricingData.every((p) => p.is_free);
     const hasFreeChapter = courseChapters.some((chapter) => chapter.requires_payment === false);
+
+    if (courseChapters.length < 2) {
+      ctx.addIssue({
+        path: ['courseChapters.length'],
+        code: z.ZodIssueCode.custom,
+        message: `A course must contain at least <span>2 chapters</span> to be valid.`,
+      });
+    }
 
     if (!isFree && !hasFreeChapter) {
       ctx.addIssue({

@@ -1,5 +1,7 @@
 import { Controller, get } from 'react-hook-form';
 import { NavLink } from 'react-router';
+import type { DOMNode, Element as DomElement, HTMLReactParserOptions } from 'html-react-parser';
+import parse, { domToReact } from 'html-react-parser';
 import { Check, CircleX, ExternalLink, LoaderCircle } from 'lucide-react';
 import { useRemixFormContext } from 'remix-hook-form';
 
@@ -12,6 +14,21 @@ interface GoValidationCheckFieldProps {
   fixLink?: string;
   loading?: boolean;
 }
+
+const options: HTMLReactParserOptions = {
+  replace: (domNode: DOMNode) => {
+    if (domNode.type === 'tag' && (domNode as DomElement).name === 'span') {
+      const el = domNode as DomElement;
+      return (
+        <span className='bg-danger/5 mt-1 rounded-sm px-1 py-0.5 font-bold'>
+          {domToReact(el.children as unknown as DOMNode[], options)}
+        </span>
+      );
+    }
+
+    return undefined;
+  },
+};
 
 export function GoValidationCheckField({
   name,
@@ -62,7 +79,7 @@ export function GoValidationCheckField({
                       )}
                     </div>
                     <p>
-                      {error?.message}
+                      {parse(error?.message ?? '', options)}
                       {hasError && fixLink && <ExternalLink size={12} className='-mt-4 inline' />}
                     </p>
                   </div>
