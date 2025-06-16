@@ -91,7 +91,7 @@ export function useValidationFields({
         fix: `${rootRoute}/content`,
       },
       {
-        name: 'courseChapters.length',
+        name: 'courseChapters.chapterCount',
         fix: `${rootRoute}/content`,
       },
     ];

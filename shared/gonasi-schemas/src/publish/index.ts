@@ -1,15 +1,23 @@
 import { z } from 'zod';
 
-// Use flexible JSON schema for content/settings fields.
-// Can be replaced later with more specific validation schemas.
-const JsonSchema = z.any();
+export type Json = string | number | boolean | null | { [key: string]: Json } | Json[];
 
 /**
- * Schema for a block within a lesson.
- * Each block corresponds to a plugin and contains settings and content.
+ * Recursive Zod schema for validating arbitrary JSON structures
  */
+export const JsonSchema: z.ZodType<Json> = z.lazy(() =>
+  z.union([
+    z.string(),
+    z.number(),
+    z.boolean(),
+    z.null(),
+    z.array(JsonSchema),
+    z.record(JsonSchema),
+  ]),
+);
+
 const BlockSchema = z.object({
-  plugin_type: z.string(), // PluginTypeId in actual data
+  plugin_type: z.string(),
   id: z.string(),
   content: JsonSchema,
   settings: JsonSchema,
@@ -18,9 +26,6 @@ const BlockSchema = z.object({
   updated_by: z.string(),
 });
 
-/**
- * Schema describing a type of lesson (e.g. video, quiz, article).
- */
 const LessonTypeSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -29,40 +34,29 @@ const LessonTypeSchema = z.object({
   bg_color: z.string(),
 });
 
-/**
- * Schema representing a basic lesson within a chapter.
- * Does not include blocks.
- */
 const LessonSchema = z.object({
   id: z.string(),
   course_id: z.string(),
   chapter_id: z.string(),
   lesson_type_id: z.string(),
   name: z.string(),
-  position: z.number().nullable(),
+  position: z.number(),
   settings: JsonSchema,
-  lesson_types: LessonTypeSchema, // Denormalized info for easier client use
+  lesson_types: LessonTypeSchema,
 });
 
-/**
- * Schema for a lesson that includes its blocks.
- * This is used when fetching detailed lesson data.
- */
 const LessonWithBlocksSchema = z.object({
-  blocks: z.array(BlockSchema).nullable(),
+  blocks: z.array(BlockSchema),
   id: z.string(),
   course_id: z.string(),
   chapter_id: z.string(),
   lesson_type_id: z.string(),
   name: z.string(),
-  position: z.number().nullable(),
+  position: z.number(),
   settings: JsonSchema,
   lesson_types: LessonTypeSchema,
 });
 
-/**
- * Schema representing a course chapter, which contains lessons.
- */
 const ChapterSchema = z
   .object({
     lesson_count: z
@@ -70,24 +64,19 @@ const ChapterSchema = z
       .nonnegative({
         message: 'Lesson count must be <span>zero</span> or a <span>positive number</span>.',
       }),
-
     id: z
       .string({ required_error: 'Chapter <span>ID</span> is required.' })
       .nonempty('Chapter <span>ID</span> cannot be empty.'),
-
     course_id: z
       .string({ required_error: 'Course <span>ID</span> is required.' })
       .nonempty('Course <span>ID</span> cannot be empty.'),
-
     name: z
       .string({ required_error: 'Chapter <span>name</span> is required.' })
       .min(3, { message: 'Chapter name must be at least <span>3 characters</span> long.' })
       .max(100, { message: 'Chapter name must be under <span>100 characters</span>.' }),
-
     description: z
       .string({ required_error: 'Chapter <span>description</span> is required.' })
       .min(10, { message: 'Chapter description must be at least <span>10 characters</span>.' }),
-
     position: z
       .number({
         invalid_type_error: 'Chapter <span>position</span> must be a <span>number</span>.',
@@ -95,11 +84,9 @@ const ChapterSchema = z
       .nonnegative({
         message: 'Chapter position must be <span>zero</span> or a <span>positive number</span>.',
       }),
-
     requires_payment: z.boolean({
       invalid_type_error: 'Please specify if this chapter <span>requires payment</span>.',
     }),
-
     lessons: z.array(LessonSchema, {
       invalid_type_error: '<span>Lessons</span> must be an array of valid lesson objects.',
     }),
@@ -120,21 +107,16 @@ const ChapterSchema = z
 export const CourseOverviewSchema = z
   .object({
     id: z.string({ required_error: 'Course <span>ID</span> is required.' }),
-
     name: z
       .string({ required_error: 'Course <span>name</span> is required.' })
       .min(1, 'Course <span>name</span> cannot be empty.'),
-
     description: z
       .string({ required_error: 'Course <span>description</span> is required.' })
       .min(10, 'Course <span>description</span> cannot be empty.'),
-
     image_url: z
       .string({ required_error: '<span>Image URL</span> is required.' })
       .min(1, 'Course <span>thumbnail</span> is missing.'),
-
     blur_hash: z.string().nullable(),
-
     course_categories: z.unknown(),
     course_sub_categories: z.unknown(),
     pathways: z.unknown(),
@@ -148,7 +130,6 @@ export const CourseOverviewSchema = z
         message: 'Add a <span>pathway</span>, related courses are grouped this way.',
       },
     ];
-
     for (const { key, message } of objectFields) {
       const value = data[key as keyof typeof data];
       if (value === null || typeof value !== 'object' || Array.isArray(value)) {
@@ -163,65 +144,55 @@ export const CourseOverviewSchema = z
 
 export type CourseOverviewSchemaTypes = z.infer<typeof CourseOverviewSchema>;
 
-/**
- * Schema for pricing plans associated with a course.
- * Includes frequency, promotion details, and tiering options.
- */
 export const PricingSchema = z.array(
   z.object({
     id: z
-      .string({ required_error: 'Pricing ID is required.' })
-      .nonempty('Pricing ID cannot be empty.'),
+      .string({ required_error: '<span>Pricing ID</span> is required.' })
+      .nonempty('<span>Pricing ID</span> cannot be empty.'),
     course_id: z
-      .string({ required_error: 'Course ID is required.' })
-      .nonempty('Course ID cannot be empty.'),
+      .string({ required_error: '<span>Course ID</span> is required.' })
+      .nonempty('<span>Course ID</span> cannot be empty.'),
     payment_frequency: z.enum(['monthly', 'bi_monthly', 'quarterly', 'semi_annual', 'annual'], {
-      invalid_type_error: 'Select a valid payment frequency.',
+      invalid_type_error: 'Select a valid <span>payment frequency</span>.',
     }),
-    is_free: z.boolean({ invalid_type_error: 'Please specify if the course is free.' }),
+    is_free: z.boolean({
+      invalid_type_error: 'Please specify if the course is <span>free</span>.',
+    }),
     price: z
-      .number({ invalid_type_error: 'Price must be a number.' })
-      .min(0, 'Price cannot be negative.'),
+      .number({ invalid_type_error: 'Price must be a <span>number</span>.' })
+      .min(0, 'Price cannot be <span>negative</span>.'),
     currency_code: z
-      .string({ required_error: 'Currency code is required.' })
-      .length(3, 'Currency code must be a 3-letter ISO code.'),
+      .string({ required_error: '<span>Currency code</span> is required.' })
+      .length(3, '<span>Currency code</span> must be a 3-letter ISO code.'),
     promotional_price: z
-      .number({ invalid_type_error: 'Promotional price must be a number.' })
-      .min(0, 'Promotional price cannot be negative.')
+      .number({ invalid_type_error: 'Promotional price must be a <span>number</span>.' })
+      .min(0, 'Promotional price cannot be <span>negative</span>.')
       .nullable(),
     promotion_start_date: z.string().nullable(),
     promotion_end_date: z.string().nullable(),
     tier_name: z.string().nullable(),
     tier_description: z.string().nullable(),
-    is_active: z.boolean({ invalid_type_error: 'Please indicate if the pricing tier is active.' }),
+    is_active: z.boolean({
+      invalid_type_error: 'Please indicate if the <span>pricing tier</span> is active.',
+    }),
     position: z
-      .number({ invalid_type_error: 'Position must be a number.' })
-      .min(0, 'Position must be zero or a positive number.'),
-    is_popular: z.boolean({ invalid_type_error: 'Please indicate if this tier is popular.' }),
+      .number({ invalid_type_error: '<span>Position</span> must be a number.' })
+      .min(0, '<span>Position</span> must be <span>zero</span> or a <span>positive number</span>.'),
+    is_popular: z.boolean({
+      invalid_type_error: 'Please indicate if this tier is <span>popular</span>.',
+    }),
     is_recommended: z.boolean({
-      invalid_type_error: 'Please indicate if this tier is recommended.',
+      invalid_type_error: 'Please indicate if this tier is <span>recommended</span>.',
     }),
   }),
 );
 
 export type PricingSchemaTypes = z.infer<typeof PricingSchema>;
 
-/**
- * Flattened version of all lessons (with blocks) grouped per chapter.
- * Used to validate total course structure.
- */
 const FlatLessonsWithBlocksSchema = z.array(z.array(LessonWithBlocksSchema));
-
-/**
- * Array of chapter objects (each with nested lessons).
- */
 const ValidateChaptersSchema = z.array(ChapterSchema);
 export type ValidateChaptersSchemaTypes = z.infer<typeof ValidateChaptersSchema>;
 
-/**
- * Master schema for validating full course publishing payload.
- * Includes deep validation via `.superRefine()`.
- */
 export const PublishCourseSchema = z
   .object({
     pricingData: PricingSchema,
@@ -231,14 +202,12 @@ export const PublishCourseSchema = z
   })
   .superRefine((data, ctx) => {
     const { pricingData, courseChapters } = data;
-
-    // Rule 1: If any pricing is not free, there must be at least one free chapter
     const isFree = pricingData.every((p) => p.is_free);
     const hasFreeChapter = courseChapters.some((chapter) => chapter.requires_payment === false);
 
     if (courseChapters.length < 2) {
       ctx.addIssue({
-        path: ['courseChapters.length'],
+        path: ['courseChapters.chapterCount'],
         code: z.ZodIssueCode.custom,
         message: `A course must contain at least <span>2 chapters</span> to be valid.`,
       });
@@ -248,7 +217,7 @@ export const PublishCourseSchema = z
       ctx.addIssue({
         path: ['courseChapters.pricing'],
         code: z.ZodIssueCode.custom,
-        message: `Courses with pricing must include at least one chapter that's free to access.`,
+        message: `Courses with pricing must include at least <span>one chapter</span> that's <span>free to access</span>.`,
       });
     }
   });

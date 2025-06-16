@@ -20,7 +20,7 @@ const options: HTMLReactParserOptions = {
     if (domNode.type === 'tag' && (domNode as DomElement).name === 'span') {
       const el = domNode as DomElement;
       return (
-        <span className='bg-danger/5 mt-1 rounded-sm px-1 py-0.5 font-bold'>
+        <span className='bg-danger/10 rounded-sm px-1 py-0.5 font-medium'>
           {domToReact(el.children as unknown as DOMNode[], options)}
         </span>
       );
