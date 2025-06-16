@@ -7,7 +7,6 @@ import { cn } from '~/lib/utils';
 
 export interface ValidationField {
   name: string;
-  title: string;
   fix: string;
 }
 
@@ -84,11 +83,7 @@ export function ValidationSection({ title, fields, hasErrors, isLoading }: Valid
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.05 * index }}
                 >
-                  <GoValidationCheckField
-                    name={field.name}
-                    title={field.title}
-                    fixLink={field.fix}
-                  />
+                  <GoValidationCheckField name={field.name} fixLink={field.fix} />
                 </motion.div>
               ))}
             </div>

@@ -67,19 +67,36 @@ const LessonWithBlocksSchema = z.object({
 /**
  * Schema representing a course chapter, which contains lessons.
  */
-const ChapterSchema = z.object({
-  lesson_count: z.number(), // Redundant but helps with summaries
-  id: z.string(),
-  course_id: z.string(),
-  name: z.string(),
-  description: z.string().nullable(),
-  created_at: z.string(),
-  updated_at: z.string(),
-  created_by: z.string(),
-  position: z.number().nullable(),
-  requires_payment: z.boolean(),
-  lessons: z.array(LessonSchema),
-});
+const ChapterSchema = z
+  .object({
+    lesson_count: z.number(),
+    id: z.string(),
+    course_id: z.string(),
+    name: z
+      .string()
+      .min(3, { message: 'Chapter name must be at least 3 characters long.' })
+      .max(100, { message: 'Chapter name must be under 100 characters.' }),
+    description: z
+      .string()
+      .min(20, { message: 'Chapter description must be at least 20 characters.' }),
+    position: z
+      .number()
+      .nonnegative({ message: 'Chapter position must be zero or a positive number.' }),
+    requires_payment: z.boolean(),
+    lessons: z.array(LessonSchema),
+  })
+  .superRefine((data, ctx) => {
+    if (data.lessons.length < 2) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.too_small,
+        minimum: 2,
+        type: 'array',
+        inclusive: true,
+        path: ['lessons'],
+        message: `Chapter "${data.name}" must contain at least two lessons.`,
+      });
+    }
+  });
 
 export const CourseOverviewSchema = z
   .object({
@@ -170,7 +187,7 @@ export const PublishCourseSchema = z
     lessonsWithBlocks: FlatLessonsWithBlocksSchema,
   })
   .superRefine((data, ctx) => {
-    const { pricingData, lessonsWithBlocks, courseChapters } = data;
+    const { pricingData, courseChapters } = data;
 
     // Rule 1: If any pricing is not free, there must be at least one free chapter
     const isFree = pricingData.every((p) => p.is_free);
@@ -178,43 +195,10 @@ export const PublishCourseSchema = z
 
     if (!isFree && !hasFreeChapter) {
       ctx.addIssue({
-        path: ['courseChapters'],
+        path: ['courseChapters.pricing'],
         code: z.ZodIssueCode.custom,
         message: `Courses with pricing must include at least one chapter that's free to access.`,
       });
-    }
-
-    // Rule 2: Every chapter must contain at least 2 lessons
-    for (const chapter of courseChapters) {
-      if (chapter.lessons.length < 2) {
-        ctx.addIssue({
-          path: ['courseChapters'],
-          code: z.ZodIssueCode.custom,
-          message: `Chapter ${chapter.id} must have at least 2 lessons.`,
-        });
-      }
-    }
-
-    // Rule 3: Every lesson must have at least 2 blocks
-    const flatLessons = lessonsWithBlocks.flat();
-
-    if (flatLessons.length <= 2) {
-      ctx.addIssue({
-        path: ['lessonsWithBlocks'],
-        code: z.ZodIssueCode.custom,
-        message: `Lessons are required.`,
-      });
-    }
-
-    for (const lesson of flatLessons) {
-      const blockCount = lesson.blocks?.length ?? 0;
-      if (blockCount < 2) {
-        ctx.addIssue({
-          path: ['lessonsWithBlocks'],
-          code: z.ZodIssueCode.custom,
-          message: `Lesson ${lesson.id} must have at least 2 blocks.`,
-        });
-      }
     }
   });
 

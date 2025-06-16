@@ -11,12 +11,10 @@ interface GoValidationCheckFieldProps {
   className?: string;
   fixLink?: string;
   loading?: boolean;
-  title: string;
 }
 
 export function GoValidationCheckField({
   name,
-  title,
   disabled = false,
   className,
   fixLink,
