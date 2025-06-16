@@ -149,9 +149,41 @@ export default function PublishCourse({ loaderData, params }: Route.ComponentPro
           description: chapter.description ?? '',
           position: chapter.position ?? 0,
           requires_payment: chapter.requires_payment,
-          lessons: chapter.lessons ?? [],
+          lessons:
+            chapter.lessons?.map((lesson) => ({
+              id: lesson.id,
+              course_id: lesson.course_id,
+              chapter_id: lesson.chapter_id,
+              lesson_type_id: lesson.lesson_type_id,
+              name: lesson.name,
+              position: lesson.position,
+              settings: lesson.settings,
+              lesson_types: lesson.lesson_types,
+            })) ?? [],
         })) ?? [],
-      lessonsWithBlocks: lessonsWithBlocks?.map(() => {}) ?? [],
+      lessonsWithBlocks:
+        lessonsWithBlocks?.map((chapterLessons) =>
+          chapterLessons.map((lesson) => ({
+            id: lesson.id,
+            course_id: lesson.course_id,
+            chapter_id: lesson.chapter_id,
+            lesson_type_id: lesson.lesson_type_id,
+            name: lesson.name,
+            position: lesson.position,
+            settings: lesson.settings,
+            lesson_types: lesson.lesson_types,
+            blocks:
+              lesson.blocks?.map((block) => ({
+                plugin_type: block.plugin_type,
+                id: block.id,
+                content: block.content,
+                settings: block.settings,
+                position: block.position,
+                lesson_id: block.lesson_id,
+                updated_by: block.updated_by,
+              })) ?? null,
+          })),
+        ) ?? [],
     },
   });
 

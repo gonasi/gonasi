@@ -52,7 +52,7 @@ export function useValidationFields({
     const basePricingFields: ValidationField[] = [
       {
         name: 'pricingData',
-        fix: `${rootRoute}/content`,
+        fix: `${rootRoute}/pricing`,
       },
     ];
 
@@ -100,38 +100,38 @@ export function useValidationFields({
     ];
 
     const chapterFields: ValidationField[] =
-      courseChapters?.flatMap((_chapter, index) => [
+      courseChapters?.flatMap((chapter, index) => [
         {
           name: `courseChapters.${index}.lesson_count`,
-          fix: `${rootRoute}/content`,
+          fix: `${rootRoute}/chapters/edit/${chapter.id}`,
         },
         {
           name: `courseChapters.${index}.id`,
-          fix: `${rootRoute}/content`,
+          fix: `${rootRoute}/chapters/edit/${chapter.id}`,
         },
         {
           name: `courseChapters.${index}.course_id`,
-          fix: `${rootRoute}/content`,
+          fix: `${rootRoute}/chapters/edit/${chapter.id}`,
         },
         {
           name: `courseChapters.${index}.name`,
-          fix: `${rootRoute}/content`,
+          fix: `${rootRoute}/chapters/edit/${chapter.id}`,
         },
         {
           name: `courseChapters.${index}.description`,
-          fix: `${rootRoute}/content`,
+          fix: `${rootRoute}/chapters/edit/${chapter.id}`,
         },
         {
           name: `courseChapters.${index}.position`,
-          fix: `${rootRoute}/content`,
+          fix: `${rootRoute}/chapters/edit/${chapter.id}`,
         },
         {
           name: `courseChapters.${index}.lessons`,
-          fix: `${rootRoute}/content`,
+          fix: `${rootRoute}/chapters/${chapter.id}/lessons`,
         },
         {
           name: `courseChapters.${index}.requires_payment`,
-          fix: `${rootRoute}/content`,
+          fix: `${rootRoute}/chapters/edit/${chapter.id}`,
         },
       ]) ?? [];
 
@@ -141,31 +141,99 @@ export function useValidationFields({
   const lessonsWithBlocksFields = useMemo((): ValidationField[] => {
     const baseLessonsFields: ValidationField[] = [
       {
-        name: 'lessonsWithBlocks.noBlocksFound',
-        fix: `${rootRoute}/chapters`,
+        name: 'lessonsWithBlocks.noLessonsInCourse',
+        fix: `${rootRoute}/content`,
       },
     ];
 
     const lessonFields: ValidationField[] =
-      lessonsWithBlocks?.flatMap((chapterLessons, chapterIndex) =>
-        chapterLessons.flatMap((lesson: any, lessonIndex: number) => [
+      lessonsWithBlocks?.flatMap((chapterLessons, chapterIndex) => {
+        // Chapter-level validation fields
+        const chapterLessonFields: ValidationField[] = [
           {
-            name: `lessonsWithBlocks.${chapterIndex}.${lessonIndex}.name`,
-            fix: `${rootRoute}/lessons/edit/${lesson.id}`,
+            name: `lessonsWithBlocks.${chapterIndex}.lessons`,
+            fix: `${rootRoute}/chapters/${courseChapters?.[chapterIndex]?.id || chapterIndex}/lessons`,
           },
-          {
-            name: `lessonsWithBlocks.${chapterIndex}.${lessonIndex}.blocks`,
-            fix: `${rootRoute}/lessons/${lesson.id}/blocks`,
-          },
-          {
-            name: `lessonsWithBlocks.${chapterIndex}.${lessonIndex}.lesson_type_id`,
-            fix: `${rootRoute}/lessons/edit/${lesson.id}`,
-          },
-        ]),
-      ) ?? [];
+        ];
+
+        // Individual lesson validation fields
+        const lessonSpecificFields: ValidationField[] = chapterLessons.flatMap(
+          (lesson: any, lessonIndex: number) => [
+            {
+              name: `lessonsWithBlocks.${chapterIndex}.${lessonIndex}.id`,
+              fix: `${rootRoute}/lessons/edit/${lesson.id}`,
+            },
+            {
+              name: `lessonsWithBlocks.${chapterIndex}.${lessonIndex}.course_id`,
+              fix: `${rootRoute}/lessons/edit/${lesson.id}`,
+            },
+            {
+              name: `lessonsWithBlocks.${chapterIndex}.${lessonIndex}.chapter_id`,
+              fix: `${rootRoute}/lessons/edit/${lesson.id}`,
+            },
+            {
+              name: `lessonsWithBlocks.${chapterIndex}.${lessonIndex}.name`,
+              fix: `${rootRoute}/lessons/edit/${lesson.id}`,
+            },
+            {
+              name: `lessonsWithBlocks.${chapterIndex}.${lessonIndex}.lesson_type_id`,
+              fix: `${rootRoute}/lessons/edit/${lesson.id}`,
+            },
+            {
+              name: `lessonsWithBlocks.${chapterIndex}.${lessonIndex}.position`,
+              fix: `${rootRoute}/lessons/edit/${lesson.id}`,
+            },
+            {
+              name: `lessonsWithBlocks.${chapterIndex}.${lessonIndex}.settings`,
+              fix: `${rootRoute}/lessons/edit/${lesson.id}`,
+            },
+            {
+              name: `lessonsWithBlocks.${chapterIndex}.${lessonIndex}.lesson_types`,
+              fix: `${rootRoute}/lessons/edit/${lesson.id}`,
+            },
+            {
+              name: `lessonsWithBlocks.${chapterIndex}.${lessonIndex}.blocks`,
+              fix: `${rootRoute}/lessons/${lesson.id}/blocks`,
+            },
+            // Individual block validation fields
+            ...(lesson.blocks?.flatMap((block: any, blockIndex: number) => [
+              {
+                name: `lessonsWithBlocks.${chapterIndex}.${lessonIndex}.blocks.${blockIndex}.plugin_type`,
+                fix: `${rootRoute}/lessons/${lesson.id}/blocks/edit/${block.id}`,
+              },
+              {
+                name: `lessonsWithBlocks.${chapterIndex}.${lessonIndex}.blocks.${blockIndex}.id`,
+                fix: `${rootRoute}/lessons/${lesson.id}/blocks/edit/${block.id}`,
+              },
+              {
+                name: `lessonsWithBlocks.${chapterIndex}.${lessonIndex}.blocks.${blockIndex}.content`,
+                fix: `${rootRoute}/lessons/${lesson.id}/blocks/edit/${block.id}`,
+              },
+              {
+                name: `lessonsWithBlocks.${chapterIndex}.${lessonIndex}.blocks.${blockIndex}.settings`,
+                fix: `${rootRoute}/lessons/${lesson.id}/blocks/edit/${block.id}`,
+              },
+              {
+                name: `lessonsWithBlocks.${chapterIndex}.${lessonIndex}.blocks.${blockIndex}.position`,
+                fix: `${rootRoute}/lessons/${lesson.id}/blocks/edit/${block.id}`,
+              },
+              {
+                name: `lessonsWithBlocks.${chapterIndex}.${lessonIndex}.blocks.${blockIndex}.lesson_id`,
+                fix: `${rootRoute}/lessons/${lesson.id}/blocks/edit/${block.id}`,
+              },
+              {
+                name: `lessonsWithBlocks.${chapterIndex}.${lessonIndex}.blocks.${blockIndex}.updated_by`,
+                fix: `${rootRoute}/lessons/${lesson.id}/blocks/edit/${block.id}`,
+              },
+            ]) || []),
+          ],
+        );
+
+        return [...chapterLessonFields, ...lessonSpecificFields];
+      }) ?? [];
 
     return [...baseLessonsFields, ...lessonFields];
-  }, [rootRoute, lessonsWithBlocks]);
+  }, [rootRoute, lessonsWithBlocks, courseChapters]);
 
   return {
     courseOverviewFields,

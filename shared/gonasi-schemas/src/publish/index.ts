@@ -14,7 +14,7 @@ const BlockSchema = z.object({
   content: JsonSchema,
   settings: JsonSchema,
   position: z.number({
-    required_error: 'Let’s set a <span>position</span> for this block.',
+    required_error: `Let's set a <span>position</span> for this block.`,
     invalid_type_error: 'The <span>position</span> must be a number (e.g., 1, 2, 3).',
   }),
   lesson_id: z.string({
@@ -33,7 +33,7 @@ const LessonTypeSchema = z.object({
     invalid_type_error: '<span>Lesson type ID</span> should be a string.',
   }),
   name: z.string({
-    required_error: 'What’s the <span>name</span> of this lesson type?',
+    required_error: `What's the <span>name</span> of this lesson type?`,
     invalid_type_error: '<span>Name</span> must be a string.',
   }),
   description: z.string({
@@ -116,25 +116,25 @@ const LessonWithBlocksSchema = z
     lesson_types: LessonTypeSchema,
   })
   .superRefine((data, ctx) => {
+    // Check if blocks array is null or undefined
     if (!data.blocks) {
       ctx.addIssue({
-        code: z.ZodIssueCode.too_small,
-        minimum: 2,
-        type: 'array',
-        inclusive: true,
-        path: ['lessonsWithBlocks.noBlocksFound'],
-        message: `Lesson <span>${data.name}</span> contains no <span>blocks</span>.`,
+        code: z.ZodIssueCode.custom,
+        path: ['blocks'],
+        message: `Lesson <span>${data.name}</span> contains no <span>blocks</span>. Add some content to continue.`,
       });
+      return;
     }
 
-    if (data.blocks && data.blocks.length < 2) {
+    // Check if lesson has at least 2 blocks
+    if (data.blocks.length < 2) {
       ctx.addIssue({
         code: z.ZodIssueCode.too_small,
         minimum: 2,
         type: 'array',
         inclusive: true,
-        path: ['lessonsWithBlocks.lessThanTwoBlocks'],
-        message: `Lesson <span>${data.name}</span> must contain at least <span>two blocks</span>.`,
+        path: ['blocks'],
+        message: `Lesson <span>${data.name}</span> must contain at least <span>2 blocks</span> to be published.`,
       });
     }
   });
@@ -174,6 +174,7 @@ const ChapterSchema = z
     }),
   })
   .superRefine((data, ctx) => {
+    // Check if chapter has at least 2 lessons
     if (data.lessons.length < 2) {
       ctx.addIssue({
         code: z.ZodIssueCode.too_small,
@@ -181,7 +182,7 @@ const ChapterSchema = z
         type: 'array',
         inclusive: true,
         path: ['lessons'],
-        message: `Chapter <span>${data.name}</span> must contain at least <span>two lessons</span>.`,
+        message: `Chapter <span>${data.name}</span> must contain at least <span>2 lessons</span> to be published.`,
       });
     }
   });
@@ -271,7 +272,35 @@ export const PricingSchema = z.array(
 
 export type PricingSchemaTypes = z.infer<typeof PricingSchema>;
 
-const FlatLessonsWithBlocksSchema = z.array(z.array(LessonWithBlocksSchema));
+// Updated schema to properly handle the 2D array structure
+const FlatLessonsWithBlocksSchema = z
+  .array(z.array(LessonWithBlocksSchema))
+  .superRefine((data, ctx) => {
+    // Check if there are any chapters with lessons
+    if (data.length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['lessonsWithBlocks.noLessonsInCourse'],
+        message: 'No <span>lessons with blocks</span> found. Please add content to your chapters.',
+      });
+      return;
+    }
+
+    // Validate each chapter's lessons
+    data.forEach((chapterLessons, chapterIndex) => {
+      // Validate each lesson's blocks
+      chapterLessons.forEach((lesson, lessonIndex) => {
+        if (!lesson.blocks || lesson.blocks.length < 2) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: [`${chapterIndex}`, `${lessonIndex}`, 'blocks'],
+            message: `Lesson <span>${lesson.name}</span> must have at least <span>2 blocks</span>.`,
+          });
+        }
+      });
+    });
+  });
+
 const ValidateChaptersSchema = z.array(ChapterSchema);
 export type ValidateChaptersSchemaTypes = z.infer<typeof ValidateChaptersSchema>;
 
@@ -289,7 +318,7 @@ export const PublishCourseSchema = z
 
     if (courseChapters.length < 2) {
       ctx.addIssue({
-        path: ['courseChapters.chapterCount'],
+        path: ['courseChapters', 'chapterCount'],
         code: z.ZodIssueCode.custom,
         message: `A course must contain at least <span>2 chapters</span> to be valid.`,
       });
@@ -297,7 +326,7 @@ export const PublishCourseSchema = z
 
     if (!isFree && !hasFreeChapter) {
       ctx.addIssue({
-        path: ['courseChapters.pricing'],
+        path: ['courseChapters', 'pricing'],
         code: z.ZodIssueCode.custom,
         message: `Courses with pricing must include at least <span>one chapter</span> that's <span>free to access</span>.`,
       });
