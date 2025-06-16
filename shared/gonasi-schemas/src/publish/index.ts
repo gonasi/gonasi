@@ -1,61 +1,143 @@
 import { z } from 'zod';
 
-export type Json = string | number | boolean | null | { [key: string]: Json } | Json[];
-
-/**
- * Recursive Zod schema for validating arbitrary JSON structures
- */
-export const JsonSchema: z.ZodType<Json> = z.lazy(() =>
-  z.union([
-    z.string(),
-    z.number(),
-    z.boolean(),
-    z.null(),
-    z.array(JsonSchema),
-    z.record(JsonSchema),
-  ]),
-);
+const JsonSchema = z.any();
 
 const BlockSchema = z.object({
-  plugin_type: z.string(),
-  id: z.string(),
+  plugin_type: z.string({
+    required_error: 'Please select a <span>plugin type</span> to continue.',
+    invalid_type_error: 'The <span>plugin type</span> must be a text value.',
+  }),
+  id: z.string({
+    required_error: 'Oops! Every block needs an <span>ID</span>.',
+    invalid_type_error: '<span>Block ID</span> should be a string.',
+  }),
   content: JsonSchema,
   settings: JsonSchema,
-  position: z.number(),
-  lesson_id: z.string(),
-  updated_by: z.string(),
+  position: z.number({
+    required_error: 'Let’s set a <span>position</span> for this block.',
+    invalid_type_error: 'The <span>position</span> must be a number (e.g., 1, 2, 3).',
+  }),
+  lesson_id: z.string({
+    required_error: 'Each block must be linked to a <span>lesson</span>.',
+    invalid_type_error: '<span>Lesson ID</span> must be a string.',
+  }),
+  updated_by: z.string({
+    required_error: 'Please include who <span>updated</span> this block.',
+    invalid_type_error: '<span>Updated by</span> should be a string (user ID).',
+  }),
 });
 
 const LessonTypeSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  description: z.string(),
-  lucide_icon: z.string(),
-  bg_color: z.string(),
+  id: z.string({
+    required_error: 'Missing <span>lesson type ID</span> — please provide one.',
+    invalid_type_error: '<span>Lesson type ID</span> should be a string.',
+  }),
+  name: z.string({
+    required_error: 'What’s the <span>name</span> of this lesson type?',
+    invalid_type_error: '<span>Name</span> must be a string.',
+  }),
+  description: z.string({
+    required_error: 'Give a brief <span>description</span> of this lesson type.',
+    invalid_type_error: '<span>Description</span> must be a string.',
+  }),
+  lucide_icon: z.string({
+    required_error: 'Please choose an <span>icon</span> to represent this type.',
+    invalid_type_error: '<span>Icon</span> should be a string value.',
+  }),
+  bg_color: z.string({
+    required_error: 'Pick a <span>background color</span> for this lesson type.',
+    invalid_type_error: '<span>Background color</span> must be a string.',
+  }),
 });
 
 const LessonSchema = z.object({
-  id: z.string(),
-  course_id: z.string(),
-  chapter_id: z.string(),
-  lesson_type_id: z.string(),
-  name: z.string(),
-  position: z.number(),
+  id: z.string({
+    required_error: 'Each lesson needs a unique <span>ID</span>.',
+    invalid_type_error: '<span>Lesson ID</span> should be a string.',
+  }),
+  course_id: z.string({
+    required_error: 'Please link this lesson to a <span>course</span>.',
+    invalid_type_error: '<span>Course ID</span> must be a string.',
+  }),
+  chapter_id: z.string({
+    required_error: 'Every lesson belongs to a <span>chapter</span>.',
+    invalid_type_error: '<span>Chapter ID</span> must be a string.',
+  }),
+  lesson_type_id: z.string({
+    required_error: 'Choose a <span>lesson type</span> for this lesson.',
+    invalid_type_error: '<span>Lesson type ID</span> must be a string.',
+  }),
+  name: z.string({
+    required_error: 'Give your lesson a clear <span>name</span>.',
+    invalid_type_error: '<span>Lesson name</span> must be a string.',
+  }),
+  position: z
+    .number({
+      invalid_type_error: '<span>Lesson position</span> should be a number, like 1 or 2.',
+    })
+    .nullable(),
   settings: JsonSchema,
   lesson_types: LessonTypeSchema,
 });
 
-const LessonWithBlocksSchema = z.object({
-  blocks: z.array(BlockSchema),
-  id: z.string(),
-  course_id: z.string(),
-  chapter_id: z.string(),
-  lesson_type_id: z.string(),
-  name: z.string(),
-  position: z.number(),
-  settings: JsonSchema,
-  lesson_types: LessonTypeSchema,
-});
+const LessonWithBlocksSchema = z
+  .object({
+    blocks: z
+      .array(BlockSchema, {
+        invalid_type_error: '<span>Blocks</span> must be a list of valid block objects.',
+      })
+      .nullable(),
+    id: z.string({
+      required_error: 'Missing <span>lesson ID</span> — please provide one.',
+      invalid_type_error: '<span>Lesson ID</span> should be a string.',
+    }),
+    course_id: z.string({
+      required_error: 'Which <span>course</span> is this lesson part of?',
+      invalid_type_error: '<span>Course ID</span> should be a string.',
+    }),
+    chapter_id: z.string({
+      required_error: 'Which <span>chapter</span> is this lesson in?',
+      invalid_type_error: '<span>Chapter ID</span> should be a string.',
+    }),
+    lesson_type_id: z.string({
+      required_error: 'Please assign a <span>lesson type</span>.',
+      invalid_type_error: '<span>Lesson type ID</span> must be a string.',
+    }),
+    name: z.string({
+      required_error: 'Give your lesson a <span>name</span> so users can find it.',
+      invalid_type_error: '<span>Lesson name</span> must be a string.',
+    }),
+    position: z
+      .number({
+        invalid_type_error: '<span>Lesson position</span> should be a number.',
+      })
+      .nullable(),
+    settings: JsonSchema,
+    lesson_types: LessonTypeSchema,
+  })
+  .superRefine((data, ctx) => {
+    if (!data.blocks) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.too_small,
+        minimum: 2,
+        type: 'array',
+        inclusive: true,
+        path: ['lessonsWithBlocks.noBlocksFound'],
+        message: `Lesson <span>${data.name}</span> contains no <span>blocks</span>.`,
+      });
+    }
+
+    if (data.blocks && data.blocks.length < 2) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.too_small,
+        minimum: 2,
+        type: 'array',
+        inclusive: true,
+        path: ['lessonsWithBlocks.lessThanTwoBlocks'],
+        message: `Lesson <span>${data.name}</span> must contain at least <span>two blocks</span>.`,
+      });
+    }
+  });
 
 const ChapterSchema = z
   .object({

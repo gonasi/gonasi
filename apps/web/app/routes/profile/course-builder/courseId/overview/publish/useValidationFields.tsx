@@ -1,14 +1,17 @@
 // hooks/useValidationFields.ts
 import { useMemo } from 'react';
 
-import type { CourseChaptersLessonsLoaderReturnType } from '../publish-course';
+import type {
+  CourseChaptersLessonsLoaderReturnType,
+  LessonBlocksLoaderReturnType,
+} from '../publish-course';
 import type { ValidationField } from './ValidationSection';
 
 interface UseValidationFieldsProps {
   rootRoute: string;
   pricingData?: any[];
   courseChapters?: CourseChaptersLessonsLoaderReturnType;
-  lessonsWithBlocks?: any[];
+  lessonsWithBlocks?: LessonBlocksLoaderReturnType;
 }
 
 export function useValidationFields({
@@ -138,7 +141,7 @@ export function useValidationFields({
   const lessonsWithBlocksFields = useMemo((): ValidationField[] => {
     const baseLessonsFields: ValidationField[] = [
       {
-        name: 'lessonsWithBlocks',
+        name: 'lessonsWithBlocks.noBlocksFound',
         fix: `${rootRoute}/chapters`,
       },
     ];

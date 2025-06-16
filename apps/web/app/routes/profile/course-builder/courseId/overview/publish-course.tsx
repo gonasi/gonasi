@@ -48,6 +48,11 @@ export type CourseChaptersLessonsLoaderReturnType = Exclude<
   Response
 >['courseChapters'];
 
+export type LessonBlocksLoaderReturnType = Exclude<
+  Awaited<ReturnType<typeof loader>>,
+  Response
+>['lessonsWithBlocks'];
+
 type PricingType = CoursePricingLoaderReturnType[number];
 
 type CourseChaptersType = CourseChaptersLessonsLoaderReturnType[number];
@@ -146,7 +151,7 @@ export default function PublishCourse({ loaderData, params }: Route.ComponentPro
           requires_payment: chapter.requires_payment,
           lessons: chapter.lessons ?? [],
         })) ?? [],
-      lessonsWithBlocks: lessonsWithBlocks ?? [],
+      lessonsWithBlocks: lessonsWithBlocks?.map(() => {}) ?? [],
     },
   });
 
