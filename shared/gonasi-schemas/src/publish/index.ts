@@ -4,76 +4,76 @@ const JsonSchema = z.any();
 
 const BlockSchema = z.object({
   plugin_type: z.string({
-    required_error: 'Please select a <span>plugin type</span> to continue.',
-    invalid_type_error: 'The <span>plugin type</span> must be a text value.',
+    required_error: `Just need to pick a <span>plugin type</span> and we're good to go!`,
+    invalid_type_error: `The <span>plugin type</span> should be text.`,
   }),
   id: z.string({
-    required_error: 'Oops! Every block needs an <span>ID</span>.',
-    invalid_type_error: '<span>Block ID</span> should be a string.',
+    required_error: `Every block needs a unique <span>ID</span> - no worries, this is usually automatic!`,
+    invalid_type_error: `<span>Block ID</span> should be text.`,
   }),
   content: JsonSchema,
   settings: JsonSchema,
   position: z.number({
-    required_error: `Let's set a <span>position</span> for this block.`,
-    invalid_type_error: 'The <span>position</span> must be a number (e.g., 1, 2, 3).',
+    required_error: `Let's add a <span>position</span> for this block so everything stays organized.`,
+    invalid_type_error: `The <span>position</span> should be a number like 1, 2, or 3.`,
   }),
   lesson_id: z.string({
-    required_error: 'Each block must be linked to a <span>lesson</span>.',
-    invalid_type_error: '<span>Lesson ID</span> must be a string.',
+    required_error: `This block needs to be connected to a <span>lesson</span>.`,
+    invalid_type_error: `<span>Lesson ID</span> should be text.`,
   }),
   updated_by: z.string({
-    required_error: 'Please include who <span>updated</span> this block.',
-    invalid_type_error: '<span>Updated by</span> should be a string (user ID).',
+    required_error: `We just need to know who <span>last updated</span> this block.`,
+    invalid_type_error: `<span>Updated by</span> should be a user ID.`,
   }),
 });
 
 const LessonTypeSchema = z.object({
   id: z.string({
-    required_error: 'Missing <span>lesson type ID</span> — please provide one.',
-    invalid_type_error: '<span>Lesson type ID</span> should be a string.',
+    required_error: `This lesson type needs an <span>ID</span> to identify it.`,
+    invalid_type_error: `<span>Lesson type ID</span> should be text.`,
   }),
   name: z.string({
-    required_error: `What's the <span>name</span> of this lesson type?`,
-    invalid_type_error: '<span>Name</span> must be a string.',
+    required_error: `What would you like to call this <span>lesson type</span>?`,
+    invalid_type_error: `<span>Name</span> should be text.`,
   }),
   description: z.string({
-    required_error: 'Give a brief <span>description</span> of this lesson type.',
-    invalid_type_error: '<span>Description</span> must be a string.',
+    required_error: `A quick <span>description</span> would help users understand this lesson type.`,
+    invalid_type_error: `<span>Description</span> should be text.`,
   }),
   lucide_icon: z.string({
-    required_error: 'Please choose an <span>icon</span> to represent this type.',
-    invalid_type_error: '<span>Icon</span> should be a string value.',
+    required_error: `Pick an <span>icon</span> that represents this lesson type nicely.`,
+    invalid_type_error: `<span>Icon</span> should be text.`,
   }),
   bg_color: z.string({
-    required_error: 'Pick a <span>background color</span> for this lesson type.',
-    invalid_type_error: '<span>Background color</span> must be a string.',
+    required_error: `Choose a <span>background color</span> that looks good for this type.`,
+    invalid_type_error: `<span>Background color</span> should be text.`,
   }),
 });
 
 const LessonSchema = z.object({
   id: z.string({
-    required_error: 'Each lesson needs a unique <span>ID</span>.',
-    invalid_type_error: '<span>Lesson ID</span> should be a string.',
+    required_error: `Each lesson needs its own unique <span>ID</span>.`,
+    invalid_type_error: `<span>Lesson ID</span> should be text.`,
   }),
   course_id: z.string({
-    required_error: 'Please link this lesson to a <span>course</span>.',
-    invalid_type_error: '<span>Course ID</span> must be a string.',
+    required_error: `This lesson needs to be linked to a <span>course</span>.`,
+    invalid_type_error: `<span>Course ID</span> should be text.`,
   }),
   chapter_id: z.string({
-    required_error: 'Every lesson belongs to a <span>chapter</span>.',
-    invalid_type_error: '<span>Chapter ID</span> must be a string.',
+    required_error: `Every lesson belongs in a <span>chapter</span>.`,
+    invalid_type_error: `<span>Chapter ID</span> should be text.`,
   }),
   lesson_type_id: z.string({
-    required_error: 'Choose a <span>lesson type</span> for this lesson.',
-    invalid_type_error: '<span>Lesson type ID</span> must be a string.',
+    required_error: `Please choose what <span>type of lesson</span> this is.`,
+    invalid_type_error: `<span>Lesson type ID</span> should be text.`,
   }),
   name: z.string({
-    required_error: 'Give your lesson a clear <span>name</span>.',
-    invalid_type_error: '<span>Lesson name</span> must be a string.',
+    required_error: `Your lesson needs a catchy <span>name</span> so students know what to expect.`,
+    invalid_type_error: `<span>Lesson name</span> should be text.`,
   }),
   position: z
     .number({
-      invalid_type_error: '<span>Lesson position</span> should be a number, like 1 or 2.',
+      invalid_type_error: `<span>Lesson position</span> should be a number to keep things in order.`,
     })
     .nullable(),
   settings: JsonSchema,
@@ -84,32 +84,32 @@ const LessonWithBlocksSchema = z
   .object({
     blocks: z
       .array(BlockSchema, {
-        invalid_type_error: '<span>Blocks</span> must be a list of valid block objects.',
+        invalid_type_error: `<span>Blocks</span> should be a list of content blocks.`,
       })
       .nullable(),
     id: z.string({
-      required_error: 'Missing <span>lesson ID</span> — please provide one.',
-      invalid_type_error: '<span>Lesson ID</span> should be a string.',
+      required_error: `This lesson is missing an <span>ID</span> - let's add one!`,
+      invalid_type_error: `<span>Lesson ID</span> should be text.`,
     }),
     course_id: z.string({
-      required_error: 'Which <span>course</span> is this lesson part of?',
-      invalid_type_error: '<span>Course ID</span> should be a string.',
+      required_error: `Which <span>course</span> does this lesson belong to?`,
+      invalid_type_error: `<span>Course ID</span> should be text.`,
     }),
     chapter_id: z.string({
-      required_error: 'Which <span>chapter</span> is this lesson in?',
-      invalid_type_error: '<span>Chapter ID</span> should be a string.',
+      required_error: `Which <span>chapter</span> should this lesson go in?`,
+      invalid_type_error: `<span>Chapter ID</span> should be text.`,
     }),
     lesson_type_id: z.string({
-      required_error: 'Please assign a <span>lesson type</span>.',
-      invalid_type_error: '<span>Lesson type ID</span> must be a string.',
+      required_error: `Let's pick a <span>lesson type</span> for this one.`,
+      invalid_type_error: `<span>Lesson type ID</span> should be text.`,
     }),
     name: z.string({
-      required_error: 'Give your lesson a <span>name</span> so users can find it.',
-      invalid_type_error: '<span>Lesson name</span> must be a string.',
+      required_error: `Give your lesson a great <span>name</span> that students will love.`,
+      invalid_type_error: `<span>Lesson name</span> should be text.`,
     }),
     position: z
       .number({
-        invalid_type_error: '<span>Lesson position</span> should be a number.',
+        invalid_type_error: `<span>Lesson position</span> should be a number.`,
       })
       .nullable(),
     settings: JsonSchema,
@@ -121,7 +121,7 @@ const LessonWithBlocksSchema = z
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['blocks'],
-        message: `Lesson <span>${data.name}</span> contains no <span>blocks</span>. Add some content to continue.`,
+        message: `Lesson <span>${data.name}</span> is looking a bit empty - let's add some <span>content blocks</span> to make it shine!`,
       });
       return;
     }
@@ -134,7 +134,7 @@ const LessonWithBlocksSchema = z
         type: 'array',
         inclusive: true,
         path: ['blocks'],
-        message: `Lesson <span>${data.name}</span> must contain at least <span>2 blocks</span> to be published.`,
+        message: `Lesson <span>${data.name}</span> needs at least <span>2 content blocks</span> to be ready for students.`,
       });
     }
   });
@@ -142,35 +142,39 @@ const LessonWithBlocksSchema = z
 const ChapterSchema = z
   .object({
     lesson_count: z
-      .number({ invalid_type_error: 'Lesson count must be a <span>number</span>.' })
+      .number({ invalid_type_error: `Lesson count should be a <span>number</span>.` })
       .nonnegative({
-        message: 'Lesson count must be <span>zero</span> or a <span>positive number</span>.',
+        message: `Lesson count should be <span>zero or more</span>.`,
       }),
     id: z
-      .string({ required_error: 'Chapter <span>ID</span> is required.' })
-      .nonempty('Chapter <span>ID</span> cannot be empty.'),
+      .string({ required_error: `This chapter needs an <span>ID</span>.` })
+      .nonempty(`Chapter <span>ID</span> can't be empty.`),
     course_id: z
-      .string({ required_error: 'Course <span>ID</span> is required.' })
-      .nonempty('Course <span>ID</span> cannot be empty.'),
+      .string({ required_error: `Which <span>course</span> does this chapter belong to?` })
+      .nonempty(`<span>Course ID</span> can't be empty.`),
     name: z
-      .string({ required_error: 'Chapter <span>name</span> is required.' })
-      .min(3, { message: 'Chapter name must be at least <span>3 characters</span> long.' })
-      .max(100, { message: 'Chapter name must be under <span>100 characters</span>.' }),
+      .string({ required_error: `Your chapter needs a <span>name</span>.` })
+      .min(3, { message: `Chapter name should be at least <span>3 characters</span> long.` })
+      .max(100, { message: `Keep the chapter name under <span>100 characters</span>.` }),
     description: z
-      .string({ required_error: 'Chapter <span>description</span> is required.' })
-      .min(10, { message: 'Chapter description must be at least <span>10 characters</span>.' }),
+      .string({
+        required_error: `Add a <span>description</span> to help students know what to expect.`,
+      })
+      .min(10, {
+        message: `Chapter description should be at least <span>10 characters</span> long.`,
+      }),
     position: z
       .number({
-        invalid_type_error: 'Chapter <span>position</span> must be a <span>number</span>.',
+        invalid_type_error: `Chapter <span>position</span> should be a <span>number</span>.`,
       })
       .nonnegative({
-        message: 'Chapter position must be <span>zero</span> or a <span>positive number</span>.',
+        message: `Chapter position should be <span>zero or higher</span>.`,
       }),
     requires_payment: z.boolean({
-      invalid_type_error: 'Please specify if this chapter <span>requires payment</span>.',
+      invalid_type_error: `Please let us know if this chapter <span>requires payment</span>.`,
     }),
     lessons: z.array(LessonSchema, {
-      invalid_type_error: '<span>Lessons</span> must be an array of valid lesson objects.',
+      invalid_type_error: `<span>Lessons</span> should be a list of lesson objects.`,
     }),
   })
   .superRefine((data, ctx) => {
@@ -182,23 +186,30 @@ const ChapterSchema = z
         type: 'array',
         inclusive: true,
         path: ['lessons'],
-        message: `Chapter <span>${data.name}</span> must contain at least <span>2 lessons</span> to be published.`,
+        message: `Chapter <span>${data.name}</span> needs at least <span>2 lessons</span> to be complete.`,
       });
     }
   });
 
 export const CourseOverviewSchema = z
   .object({
-    id: z.string({ required_error: 'Course <span>ID</span> is required.' }),
+    id: z.string({ required_error: `Your course needs a unique <span>ID</span>.` }),
     name: z
-      .string({ required_error: 'Course <span>name</span> is required.' })
-      .min(1, 'Course <span>name</span> cannot be empty.'),
+      .string({ required_error: `What's your course called? Add a <span>name</span> here.` })
+      .min(1, `Course <span>name</span> can't be empty.`),
     description: z
-      .string({ required_error: 'Course <span>description</span> is required.' })
-      .min(10, 'Course <span>description</span> cannot be empty.'),
+      .string({
+        required_error: `Tell students what your course is about with a <span>description</span>.`,
+      })
+      .min(
+        10,
+        `Course <span>description</span> should be a bit longer to help students understand what they'll learn.`,
+      ),
     image_url: z
-      .string({ required_error: '<span>Image URL</span> is required.' })
-      .min(1, 'Course <span>thumbnail</span> is missing.'),
+      .string({
+        required_error: `Add an eye-catching <span>thumbnail image</span> for your course.`,
+      })
+      .min(1, `Your course needs a <span>thumbnail image</span> to look professional.`),
     blur_hash: z.string().nullable(),
     course_categories: z.unknown(),
     course_sub_categories: z.unknown(),
@@ -206,11 +217,17 @@ export const CourseOverviewSchema = z
   })
   .superRefine((data, ctx) => {
     const objectFields = [
-      { key: 'course_categories', message: 'Course needs to have a <span>category</span>.' },
-      { key: 'course_sub_categories', message: 'No <span>subcategory</span> found.' },
+      {
+        key: 'course_categories',
+        message: `Pick a <span>category</span> that fits your course best.`,
+      },
+      {
+        key: 'course_sub_categories',
+        message: `Choose a <span>subcategory</span> to help students find your course.`,
+      },
       {
         key: 'pathways',
-        message: 'Add a <span>pathway</span>, related courses are grouped this way.',
+        message: `Add your course to a <span>learning pathway</span> so students can discover related content.`,
       },
     ];
     for (const { key, message } of objectFields) {
@@ -230,42 +247,42 @@ export type CourseOverviewSchemaTypes = z.infer<typeof CourseOverviewSchema>;
 export const PricingSchema = z.array(
   z.object({
     id: z
-      .string({ required_error: '<span>Pricing ID</span> is required.' })
-      .nonempty('<span>Pricing ID</span> cannot be empty.'),
+      .string({ required_error: `This pricing option needs an <span>ID</span>.` })
+      .nonempty(`<span>Pricing ID</span> can't be empty.`),
     course_id: z
-      .string({ required_error: '<span>Course ID</span> is required.' })
-      .nonempty('<span>Course ID</span> cannot be empty.'),
+      .string({ required_error: `Link this pricing to a <span>course</span>.` })
+      .nonempty(`<span>Course ID</span> can't be empty.`),
     payment_frequency: z.enum(['monthly', 'bi_monthly', 'quarterly', 'semi_annual', 'annual'], {
-      invalid_type_error: 'Select a valid <span>payment frequency</span>.',
+      invalid_type_error: `Choose how often students will pay with a <span>payment frequency</span>.`,
     }),
     is_free: z.boolean({
-      invalid_type_error: 'Please specify if the course is <span>free</span>.',
+      invalid_type_error: `Let us know if this course is <span>free</span> or paid.`,
     }),
     price: z
-      .number({ invalid_type_error: 'Price must be a <span>number</span>.' })
-      .min(0, 'Price cannot be <span>negative</span>.'),
+      .number({ invalid_type_error: `<span>Price</span> should be a number.` })
+      .min(0, `<span>Price</span> can't be negative.`),
     currency_code: z
-      .string({ required_error: '<span>Currency code</span> is required.' })
-      .length(3, '<span>Currency code</span> must be a 3-letter ISO code.'),
+      .string({ required_error: `What <span>currency</span> are you using?` })
+      .length(3, `<span>Currency code</span> should be 3 letters (like USD, EUR, GBP).`),
     promotional_price: z
-      .number({ invalid_type_error: 'Promotional price must be a <span>number</span>.' })
-      .min(0, 'Promotional price cannot be <span>negative</span>.')
+      .number({ invalid_type_error: `<span>Promotional price</span> should be a number.` })
+      .min(0, `<span>Promotional price</span> can't be negative.`)
       .nullable(),
     promotion_start_date: z.string().nullable(),
     promotion_end_date: z.string().nullable(),
     tier_name: z.string().nullable(),
     tier_description: z.string().nullable(),
     is_active: z.boolean({
-      invalid_type_error: 'Please indicate if the <span>pricing tier</span> is active.',
+      invalid_type_error: `Is this <span>pricing option</span> currently available to students?`,
     }),
     position: z
-      .number({ invalid_type_error: '<span>Position</span> must be a number.' })
-      .min(0, '<span>Position</span> must be <span>zero</span> or a <span>positive number</span>.'),
+      .number({ invalid_type_error: `<span>Position</span> should be a number.` })
+      .min(0, `<span>Position</span> should be zero or higher.`),
     is_popular: z.boolean({
-      invalid_type_error: 'Please indicate if this tier is <span>popular</span>.',
+      invalid_type_error: `Is this your <span>most popular</span> pricing option?`,
     }),
     is_recommended: z.boolean({
-      invalid_type_error: 'Please indicate if this tier is <span>recommended</span>.',
+      invalid_type_error: `Do you <span>recommend</span> this pricing tier to most students?`,
     }),
   }),
 );
@@ -281,7 +298,7 @@ const FlatLessonsWithBlocksSchema = z
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['lessonsWithBlocks.noLessonsInCourse'],
-        message: 'No <span>lessons with blocks</span> found. Please add content to your chapters.',
+        message: `Your course is looking empty! Let's add some <span>lessons with content</span> to your chapters.`,
       });
       return;
     }
@@ -294,7 +311,7 @@ const FlatLessonsWithBlocksSchema = z
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             path: [`${chapterIndex}`, `${lessonIndex}`, 'blocks'],
-            message: `Lesson <span>${lesson.name}</span> must have at least <span>2 blocks</span>.`,
+            message: `Lesson <span>${lesson.name}</span> needs at least <span>2 content blocks</span> to give students a great learning experience.`,
           });
         }
       });
@@ -320,7 +337,7 @@ export const PublishCourseSchema = z
       ctx.addIssue({
         path: ['courseChapters', 'chapterCount'],
         code: z.ZodIssueCode.custom,
-        message: `A course must contain at least <span>2 chapters</span> to be valid.`,
+        message: `Your course needs at least <span>2 chapters</span> to provide a complete learning journey.`,
       });
     }
 
@@ -328,7 +345,7 @@ export const PublishCourseSchema = z
       ctx.addIssue({
         path: ['courseChapters', 'pricing'],
         code: z.ZodIssueCode.custom,
-        message: `Courses with pricing must include at least <span>one chapter</span> that's <span>free to access</span>.`,
+        message: `Since your course has paid content, you'll need at least <span>one free chapter</span> so students can preview what they're getting.`,
       });
     }
   });
