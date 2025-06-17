@@ -1,0 +1,1 @@
+alter table public.user_roles enable row level security;
