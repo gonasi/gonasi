@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 const ChapterNameSchema = z
   .string({
-    required_error: `<lucide name="Type" size="12" /> Give your <span class="go-title">chapter a name</span> to get started.`,
+    required_error: `<lucide name="Type" size="12" /> Give your <span class="go-title">chapter a title</span> to get started.`,
   })
   .min(3, {
     message: `<span class="go-title">Chapter name</span> is too short. Try at least 3 characters.`,

@@ -112,19 +112,16 @@ const STEPS = [
   {
     id: 'basic-config',
     title: 'Basic Configuration',
-
     path: 'basic-config',
   },
   {
     id: 'promotional-pricing',
     title: 'Promotional Pricing',
-
     path: 'promotional-pricing',
   },
   {
     id: 'display-and-marketing',
     title: 'Display & Marketing',
-
     path: 'display-and-marketing',
   },
 ] as const;
@@ -143,6 +140,18 @@ export default function ManagePricingTierModal({ params, loaderData }: Route.Com
     }>() ?? {};
 
   const isPending = useIsPending();
+
+  const badgeVariants = {
+    initial: { opacity: 0, scale: 0.9 },
+    animate: { opacity: 1, scale: 1, transition: { duration: 0.2 } },
+    exit: { opacity: 0, scale: 0.9, transition: { duration: 0.15 } },
+  };
+
+  const iconVariants = {
+    initial: { opacity: 0, rotate: -15, scale: 0.8 },
+    animate: { opacity: 1, rotate: 0, scale: 1, transition: { duration: 0.2 } },
+    exit: { opacity: 0, rotate: 15, scale: 0.8, transition: { duration: 0.15 } },
+  };
 
   const closeRoute = `/${username}/course-builder/${courseId}/pricing`;
 
@@ -364,28 +373,49 @@ export default function ManagePricingTierModal({ params, loaderData }: Route.Com
                     children: (
                       <div className='flex items-center space-x-2'>
                         <Star size={16} />
-                        <span>
+                        <span className='flex items-center gap-1'>
                           Mark as{' '}
-                          <Badge variant={watchedValues.isPopular ? 'info' : 'outline'}>
-                            Most Popular
-                          </Badge>
+                          <AnimatePresence mode='wait' initial={false}>
+                            <motion.div
+                              key={watchedValues.isPopular ? 'info' : 'outline'}
+                              variants={badgeVariants}
+                              initial='initial'
+                              animate='animate'
+                              exit='exit'
+                            >
+                              <Badge variant={watchedValues.isPopular ? 'info' : 'outline'}>
+                                Most Popular
+                              </Badge>
+                            </motion.div>
+                          </AnimatePresence>
                         </span>
                       </div>
                     ),
                   }}
                   description='Let users know this one’s a fan favorite'
                 />
+
                 <GoSwitchField
                   name='isRecommended'
                   labelProps={{
                     children: (
                       <div className='flex items-center space-x-2'>
                         <TrendingUp size={16} />
-                        <span>
+                        <span className='flex items-center gap-1'>
                           Mark as{' '}
-                          <Badge variant={watchedValues.isRecommended ? 'tip' : 'outline'}>
-                            Recommended
-                          </Badge>
+                          <AnimatePresence mode='wait' initial={false}>
+                            <motion.div
+                              key={watchedValues.isRecommended ? 'tip' : 'outline'}
+                              variants={badgeVariants}
+                              initial='initial'
+                              animate='animate'
+                              exit='exit'
+                            >
+                              <Badge variant={watchedValues.isRecommended ? 'tip' : 'outline'}>
+                                Recommended
+                              </Badge>
+                            </motion.div>
+                          </AnimatePresence>
                         </span>
                       </div>
                     ),
@@ -405,7 +435,18 @@ export default function ManagePricingTierModal({ params, loaderData }: Route.Com
                         >
                           (Visible to customers)
                         </span>
-                        {watchedValues.isActive ? <Eye size={16} /> : <EyeOff size={16} />}
+
+                        <AnimatePresence mode='wait' initial={false}>
+                          <motion.span
+                            key={watchedValues.isActive ? 'eye' : 'eye-off'}
+                            variants={iconVariants}
+                            initial='initial'
+                            animate='animate'
+                            exit='exit'
+                          >
+                            {watchedValues.isActive ? <Eye size={16} /> : <EyeOff size={16} />}
+                          </motion.span>
+                        </AnimatePresence>
                       </div>
                     ),
                   }}
