@@ -120,7 +120,7 @@ const LessonWithBlocksSchema = z
     if (!data.blocks) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        path: ['blocks'],
+        path: ['blocks', data.chapter_id],
         message: `Lesson <span>${data.name}</span> is looking a bit empty - let's add some <span>content blocks</span> to make it shine!`,
       });
       return;
@@ -276,7 +276,7 @@ export const PricingSchema = z.array(
 export type PricingSchemaTypes = z.infer<typeof PricingSchema>;
 
 // Updated schema to use ID-based error paths instead of indexes
-const FlatLessonsWithBlocksSchema = z
+const LessonsWithBlocksSchema = z
   .array(z.array(LessonWithBlocksSchema))
   .superRefine((data, ctx) => {
     const isTrulyEmpty = data.every((item) => Array.isArray(item) && item.length === 0);
@@ -287,103 +287,7 @@ const FlatLessonsWithBlocksSchema = z
         path: ['noLessonsInCourse'],
         message: `<span>No lessons</span> found in this course.`,
       });
-      return;
     }
-
-    // Check if there are any chapters with lessons
-    if (data.length === 0) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['noLessonsInCourse'],
-        message: `Your course is looking empty! Let's add some <span>lessons with content</span> to your chapters.`,
-      });
-      return;
-    }
-
-    // Create a map to track chapter IDs for better error reporting
-    const chapterMap = new Map<string, number>();
-
-    // Validate each chapter's lessons
-    data.forEach((chapterLessons, chapterIndex) => {
-      // Get the first lesson's chapter_id to identify the chapter
-      const chapterId = chapterLessons[0]?.chapter_id;
-
-      if (chapterId) {
-        chapterMap.set(chapterId, chapterIndex);
-      }
-
-      // Validate each lesson's blocks
-      chapterLessons.forEach((lesson) => {
-        if (!lesson.blocks || lesson.blocks.length < 2) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            path: ['lessons', lesson.id, 'blocks'],
-            message: `Lesson <span>${lesson.name}</span>  needs at least <span>2 content blocks</span> to give students a great learning experience.`,
-          });
-        }
-
-        // Validate individual blocks within the lesson
-        if (lesson.blocks) {
-          lesson.blocks.forEach((block) => {
-            // Add any block-specific validations here if needed
-            // For example, checking if block content is valid
-            if (!block.content) {
-              ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                path: ['lessons', lesson.id, 'blocks', block.id, 'content'],
-                message: `Block <span>${block.id}</span> in lesson <span>${lesson.name}</span> is missing content.`,
-              });
-            }
-          });
-        }
-      });
-    });
-  });
-
-// Alternative approach: Create a lookup-friendly structure
-const ChapterLessonsMapSchema = z
-  .record(z.string(), z.array(LessonWithBlocksSchema)) // chapter_id -> lessons[]
-  .superRefine((data, ctx) => {
-    const chapterIds = Object.keys(data);
-
-    if (chapterIds.length === 0) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['noChapters'],
-        message: `Your course is looking empty! Let's add some <span>chapters with lessons</span>.`,
-      });
-      return;
-    }
-
-    // Validate each chapter's lessons by chapter ID
-    chapterIds.forEach((chapterId) => {
-      const lessons = data[chapterId];
-
-      if (!lessons || !lessons.length) return;
-
-      lessons.forEach((lesson) => {
-        if (!lesson.blocks || lesson.blocks.length < 2) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            path: [chapterId, 'lessons', lesson.id, 'blocks'],
-            message: `Lesson <span>${lesson.name}</span> in chapter <span>${chapterId}</span> needs at least <span>2 content blocks</span> to give students a great learning experience.`,
-          });
-        }
-
-        // Validate individual blocks
-        if (lesson.blocks) {
-          lesson.blocks.forEach((block) => {
-            if (!block.content) {
-              ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                path: [chapterId, 'lessons', lesson.id, 'blocks', block.id, 'content'],
-                message: `Block <span>${block.id}</span> in lesson <span>${lesson.name}</span> needs content to be complete.`,
-              });
-            }
-          });
-        }
-      });
-    });
   });
 
 const ValidateChaptersSchema = z.array(ChapterSchema);
@@ -394,7 +298,7 @@ export const PublishCourseSchema = z
     pricingData: PricingSchema,
     courseOverview: CourseOverviewSchema,
     courseChapters: ValidateChaptersSchema,
-    lessonsWithBlocks: FlatLessonsWithBlocksSchema,
+    lessonsWithBlocks: LessonsWithBlocksSchema,
   })
   .superRefine((data, ctx) => {
     const { pricingData, courseChapters } = data;
@@ -411,7 +315,6 @@ export const PublishCourseSchema = z
 
     if (courseChapters.length) {
       courseChapters.forEach((chapter) => {
-        console.log('***************** GOT HERE: ', chapter.lessons.length);
         if (chapter.lessons.length < 2) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,

@@ -105,7 +105,7 @@ export function useValidationFields({
       courseChapters?.flatMap((chapter) => [
         {
           name: `courseChapters.${chapter.id}.lesson_count`,
-          fix: `${rootRoute}/chapters/edit/${chapter.id}`,
+          fix: `${rootRoute}/content/${chapter.id}/edit`,
         },
         {
           name: `courseChapters.${chapter.id}.insufficientLessons`,
@@ -113,31 +113,31 @@ export function useValidationFields({
         },
         {
           name: `courseChapters.${chapter.id}.id`,
-          fix: `${rootRoute}/chapters/edit/${chapter.id}`,
+          fix: `${rootRoute}/content/${chapter.id}/edit`,
         },
         {
           name: `courseChapters.${chapter.id}.course_id`,
-          fix: `${rootRoute}/chapters/edit/${chapter.id}`,
+          fix: `${rootRoute}/content/${chapter.id}/edit`,
         },
         {
           name: `courseChapters.${chapter.id}.name`,
-          fix: `${rootRoute}/chapters/edit/${chapter.id}`,
+          fix: `${rootRoute}/content/${chapter.id}/edit`,
         },
         {
           name: `courseChapters.${chapter.id}.description`,
-          fix: `${rootRoute}/chapters/edit/${chapter.id}`,
+          fix: `${rootRoute}/content/${chapter.id}/edit`,
         },
         {
           name: `courseChapters.${chapter.id}.position`,
-          fix: `${rootRoute}/chapters/edit/${chapter.id}`,
+          fix: `${rootRoute}/content/${chapter.id}/edit`,
         },
         {
           name: `courseChapters.${chapter.id}.lessons`,
-          fix: `${rootRoute}/chapters/${chapter.id}/lessons`,
+          fix: `${rootRoute}/content`,
         },
         {
           name: `courseChapters.${chapter.id}.requires_payment`,
-          fix: `${rootRoute}/chapters/edit/${chapter.id}`,
+          fix: `${rootRoute}/content/${chapter.id}/edit`,
         },
       ]) ?? [];
 
@@ -150,10 +150,6 @@ export function useValidationFields({
         name: 'lessonsWithBlocks.noLessonsInCourse',
         fix: `${rootRoute}/content`,
       },
-      {
-        name: 'noLessonsInCourse',
-        fix: `${rootRoute}/content`,
-      },
     ];
 
     // Create a helper to map chapter index to chapter ID for legacy error paths
@@ -164,16 +160,11 @@ export function useValidationFields({
     const lessonFields: ValidationField[] =
       lessonsWithBlocks?.flatMap((chapterLessons, chapterIndex) => {
         const chapterId = getChapterIdByIndex(chapterIndex);
-
+        console.log('*******************: ', chapterLessons);
         // Chapter-level validation fields (updated to use chapter IDs)
         const chapterLessonFields: ValidationField[] = [
           {
-            name: `lessonsWithBlocks.${chapterIndex}.lessons`,
-            fix: `${rootRoute}/chapters/${chapterId}/lessons`,
-          },
-          // New ID-based error path for chapters
-          {
-            name: `chapters.${chapterId}.lessons`,
+            name: `lessonsWithBlocks.h.lessons`,
             fix: `${rootRoute}/chapters/${chapterId}/lessons`,
           },
         ];

@@ -75,15 +75,12 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     return redirectWithError(redirectPath, 'Could not load chapters and lessons');
 
   const lessonsWithBlocks = await Promise.all(
-    courseChapters.map(async (chapter) => {
-      const lessonsWithBlocks = await Promise.all(
-        chapter.lessons.map(async (lesson) => {
-          const { data: blocks } = await fetchLessonBlocksByLessonId(supabase, lesson.id);
-          return { ...lesson, blocks };
-        }),
-      );
-      return lessonsWithBlocks;
-    }),
+    courseChapters.flatMap(async (chapter) =>
+      chapter.lessons.map(async (lesson) => {
+        const { data: blocks } = await fetchLessonBlocksByLessonId(supabase, lesson.id);
+        return { ...lesson, blocks };
+      }),
+    ),
   );
 
   return {
@@ -228,7 +225,7 @@ export default function PublishCourse({ loaderData, params }: Route.ComponentPro
 
   const isDisabled = isPending || methods.formState.isSubmitting;
 
-  console.log('Errors: ', methods.formState.errors.courseChapters);
+  console.log('Errors: ', methods.formState.errors.lessonsWithBlocks);
 
   return (
     <Modal open>
