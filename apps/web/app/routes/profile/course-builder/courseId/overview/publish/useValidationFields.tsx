@@ -150,290 +150,143 @@ export function useValidationFields({
         name: 'lessonsWithBlocks.noLessonsInCourse',
         fix: `${rootRoute}/content`,
       },
-    ];
-
-    // Create a helper to map chapter index to chapter ID for legacy error paths
-    const getChapterIdByIndex = (chapterIndex: number): string => {
-      return courseChapters?.[chapterIndex]?.id || `chapter-${chapterIndex}`;
-    };
-
-    const lessonFields: ValidationField[] =
-      lessonsWithBlocks?.flatMap((chapterLessons, chapterIndex) => {
-        const chapterId = getChapterIdByIndex(chapterIndex);
-        console.log('*******************: ', chapterLessons);
-        // Chapter-level validation fields (updated to use chapter IDs)
-        const chapterLessonFields: ValidationField[] = [
-          {
-            name: `lessonsWithBlocks.h.lessons`,
-            fix: `${rootRoute}/chapters/${chapterId}/lessons`,
-          },
-        ];
-
-        // Individual lesson validation fields (updated to use lesson IDs)
-        const lessonSpecificFields: ValidationField[] = chapterLessons.flatMap((lesson: any) => {
-          const baseLessonFields = [
-            // Legacy index-based paths (for backward compatibility)
-            {
-              name: `lessonsWithBlocks.${chapterIndex}.${lesson.id}.id`,
-              fix: `${rootRoute}/lessons/edit/${lesson.id}`,
-            },
-            {
-              name: `lessonsWithBlocks.${chapterIndex}.${lesson.id}.course_id`,
-              fix: `${rootRoute}/lessons/edit/${lesson.id}`,
-            },
-            {
-              name: `lessonsWithBlocks.${chapterIndex}.${lesson.id}.chapter_id`,
-              fix: `${rootRoute}/lessons/edit/${lesson.id}`,
-            },
-            {
-              name: `lessonsWithBlocks.${chapterIndex}.${lesson.id}.name`,
-              fix: `${rootRoute}/lessons/edit/${lesson.id}`,
-            },
-            {
-              name: `lessonsWithBlocks.${chapterIndex}.${lesson.id}.lesson_type_id`,
-              fix: `${rootRoute}/lessons/edit/${lesson.id}`,
-            },
-            {
-              name: `lessonsWithBlocks.${chapterIndex}.${lesson.id}.position`,
-              fix: `${rootRoute}/lessons/edit/${lesson.id}`,
-            },
-            {
-              name: `lessonsWithBlocks.${chapterIndex}.${lesson.id}.settings`,
-              fix: `${rootRoute}/lessons/edit/${lesson.id}`,
-            },
-            {
-              name: `lessonsWithBlocks.${chapterIndex}.${lesson.id}.lesson_types`,
-              fix: `${rootRoute}/lessons/edit/${lesson.id}`,
-            },
-            {
-              name: `lessonsWithBlocks.${chapterIndex}.${lesson.id}.blocks`,
-              fix: `${rootRoute}/lessons/${lesson.id}/blocks`,
-            },
-            // New ID-based error paths from updated schema
-            {
-              name: `lessons.${lesson.id}.id`,
-              fix: `${rootRoute}/lessons/edit/${lesson.id}`,
-            },
-            {
-              name: `lessons.${lesson.id}.course_id`,
-              fix: `${rootRoute}/lessons/edit/${lesson.id}`,
-            },
-            {
-              name: `lessons.${lesson.id}.chapter_id`,
-              fix: `${rootRoute}/lessons/edit/${lesson.id}`,
-            },
-            {
-              name: `lessons.${lesson.id}.name`,
-              fix: `${rootRoute}/lessons/edit/${lesson.id}`,
-            },
-            {
-              name: `lessons.${lesson.id}.lesson_type_id`,
-              fix: `${rootRoute}/lessons/edit/${lesson.id}`,
-            },
-            {
-              name: `lessons.${lesson.id}.position`,
-              fix: `${rootRoute}/lessons/edit/${lesson.id}`,
-            },
-            {
-              name: `lessons.${lesson.id}.settings`,
-              fix: `${rootRoute}/lessons/edit/${lesson.id}`,
-            },
-            {
-              name: `lessons.${lesson.id}.lesson_types`,
-              fix: `${rootRoute}/lessons/edit/${lesson.id}`,
-            },
-            {
-              name: `lessons.${lesson.id}.blocks`,
-              fix: `${rootRoute}/lessons/${lesson.id}/blocks`,
-            },
-          ];
-
-          // Block validation fields (updated to use block IDs)
-          const blockFields =
-            lesson.blocks?.flatMap((block: any) => [
-              // Legacy index-based paths
-              {
-                name: `lessonsWithBlocks.${chapterIndex}.${lesson.id}.blocks.${block.id}.plugin_type`,
-                fix: `${rootRoute}/lessons/${lesson.id}/blocks/edit/${block.id}`,
-              },
-              {
-                name: `lessonsWithBlocks.${chapterIndex}.${lesson.id}.blocks.${block.id}.id`,
-                fix: `${rootRoute}/lessons/${lesson.id}/blocks/edit/${block.id}`,
-              },
-              {
-                name: `lessonsWithBlocks.${chapterIndex}.${lesson.id}.blocks.${block.id}.content`,
-                fix: `${rootRoute}/lessons/${lesson.id}/blocks/edit/${block.id}`,
-              },
-              {
-                name: `lessonsWithBlocks.${chapterIndex}.${lesson.id}.blocks.${block.id}.settings`,
-                fix: `${rootRoute}/lessons/${lesson.id}/blocks/edit/${block.id}`,
-              },
-              {
-                name: `lessonsWithBlocks.${chapterIndex}.${lesson.id}.blocks.${block.id}.position`,
-                fix: `${rootRoute}/lessons/${lesson.id}/blocks/edit/${block.id}`,
-              },
-              {
-                name: `lessonsWithBlocks.${chapterIndex}.${lesson.id}.blocks.${block.id}.lesson_id`,
-                fix: `${rootRoute}/lessons/${lesson.id}/blocks/edit/${block.id}`,
-              },
-              {
-                name: `lessonsWithBlocks.${chapterIndex}.${lesson.id}.blocks.${block.id}.updated_by`,
-                fix: `${rootRoute}/lessons/${lesson.id}/blocks/edit/${block.id}`,
-              },
-              // New ID-based error paths from updated schema
-              {
-                name: `lessons.${lesson.id}.blocks.${block.id}.plugin_type`,
-                fix: `${rootRoute}/lessons/${lesson.id}/blocks/edit/${block.id}`,
-              },
-              {
-                name: `lessons.${lesson.id}.blocks.${block.id}.id`,
-                fix: `${rootRoute}/lessons/${lesson.id}/blocks/edit/${block.id}`,
-              },
-              {
-                name: `lessons.${lesson.id}.blocks.${block.id}.content`,
-                fix: `${rootRoute}/lessons/${lesson.id}/blocks/edit/${block.id}`,
-              },
-              {
-                name: `lessons.${lesson.id}.blocks.${block.id}.settings`,
-                fix: `${rootRoute}/lessons/${lesson.id}/blocks/edit/${block.id}`,
-              },
-              {
-                name: `lessons.${lesson.id}.blocks.${block.id}.position`,
-                fix: `${rootRoute}/lessons/${lesson.id}/blocks/edit/${block.id}`,
-              },
-              {
-                name: `lessons.${lesson.id}.blocks.${block.id}.lesson_id`,
-                fix: `${rootRoute}/lessons/${lesson.id}/blocks/edit/${block.id}`,
-              },
-              {
-                name: `lessons.${lesson.id}.blocks.${block.id}.updated_by`,
-                fix: `${rootRoute}/lessons/${lesson.id}/blocks/edit/${block.id}`,
-              },
-            ]) || [];
-
-          return [...baseLessonFields, ...blockFields];
-        });
-
-        return [...chapterLessonFields, ...lessonSpecificFields];
-      }) ?? [];
-
-    return [...baseLessonsFields, ...lessonFields];
-  }, [rootRoute, lessonsWithBlocks, courseChapters]);
-
-  // Alternative approach: If you're using the map-based schema structure
-  const createMapBasedLessonFields = useMemo((): ValidationField[] => {
-    if (!lessonsWithBlocks || !courseChapters) return [];
-
-    const fields: ValidationField[] = [
       {
-        name: 'noChapters',
+        name: 'lessonsWithBlocks.orphanedLessons',
         fix: `${rootRoute}/content`,
       },
     ];
 
-    // For each chapter, create validation fields
-    courseChapters.forEach((chapter) => {
-      const chapterLessons = lessonsWithBlocks.find(
-        (chapterLessonArray) => chapterLessonArray[0]?.chapter_id === chapter.id,
-      );
+    if (!lessonsWithBlocks || lessonsWithBlocks.length === 0) {
+      return baseLessonsFields;
+    }
 
-      if (chapterLessons) {
-        // Chapter-level fields
-        fields.push({
-          name: `${chapter.id}.lessons`,
-          fix: `${rootRoute}/chapters/${chapter.id}/lessons`,
-        });
+    // Create validation fields for each lesson
+    const lessonFields: ValidationField[] = lessonsWithBlocks.flatMap(
+      (lesson: any, lessonIndex: number) => {
+        const baseLessonFields = [
+          // Direct lesson validation paths (flattened array structure)
+          {
+            name: `lessonsWithBlocks.${lessonIndex}.id`,
+            fix: `${rootRoute}/lessons/edit/${lesson.id}`,
+          },
+          {
+            name: `lessonsWithBlocks.${lessonIndex}.course_id`,
+            fix: `${rootRoute}/lessons/edit/${lesson.id}`,
+          },
+          {
+            name: `lessonsWithBlocks.${lessonIndex}.chapter_id`,
+            fix: `${rootRoute}/lessons/edit/${lesson.id}`,
+          },
+          {
+            name: `lessonsWithBlocks.${lessonIndex}.name`,
+            fix: `${rootRoute}/lessons/edit/${lesson.id}`,
+          },
+          {
+            name: `lessonsWithBlocks.${lessonIndex}.lesson_type_id`,
+            fix: `${rootRoute}/lessons/edit/${lesson.id}`,
+          },
+          {
+            name: `lessonsWithBlocks.${lessonIndex}.position`,
+            fix: `${rootRoute}/lessons/edit/${lesson.id}`,
+          },
+          {
+            name: `lessonsWithBlocks.${lessonIndex}.settings`,
+            fix: `${rootRoute}/lessons/edit/${lesson.id}`,
+          },
+          {
+            name: `lessonsWithBlocks.${lessonIndex}.lesson_types.id`,
+            fix: `${rootRoute}/lessons/edit/${lesson.id}`,
+          },
+          {
+            name: `lessonsWithBlocks.${lessonIndex}.lesson_types.name`,
+            fix: `${rootRoute}/lessons/edit/${lesson.id}`,
+          },
+          {
+            name: `lessonsWithBlocks.${lessonIndex}.lesson_types.description`,
+            fix: `${rootRoute}/lessons/edit/${lesson.id}`,
+          },
+          {
+            name: `lessonsWithBlocks.${lessonIndex}.lesson_types.lucide_icon`,
+            fix: `${rootRoute}/lessons/edit/${lesson.id}`,
+          },
+          {
+            name: `lessonsWithBlocks.${lessonIndex}.lesson_types.bg_color`,
+            fix: `${rootRoute}/lessons/edit/${lesson.id}`,
+          },
+          {
+            name: `lessonsWithBlocks.${lessonIndex}.blocks`,
+            fix: `${rootRoute}/lessons/${lesson.id}/blocks`,
+          },
+        ];
 
-        // Lesson-level fields
-        chapterLessons.forEach((lesson: any) => {
-          fields.push(
+        // Block validation fields
+        const blockFields =
+          lesson.blocks?.flatMap((block: any, blockIndex: number) => [
             {
-              name: `${chapter.id}.lessons.${lesson.id}.blocks`,
-              fix: `${rootRoute}/lessons/${lesson.id}/blocks`,
-            },
-            {
-              name: `${chapter.id}.lessons.${lesson.id}.name`,
-              fix: `${rootRoute}/lessons/edit/${lesson.id}`,
-            },
-          );
-
-          // Block-level fields
-          lesson.blocks?.forEach((block: any) => {
-            fields.push({
-              name: `${chapter.id}.lessons.${lesson.id}.blocks.${block.id}.content`,
+              name: `lessonsWithBlocks.${lessonIndex}.blocks.${blockIndex}.plugin_type`,
               fix: `${rootRoute}/lessons/${lesson.id}/blocks/edit/${block.id}`,
-            });
-          });
-        });
-      }
+            },
+            {
+              name: `lessonsWithBlocks.${lessonIndex}.blocks.${blockIndex}.id`,
+              fix: `${rootRoute}/lessons/${lesson.id}/blocks/edit/${block.id}`,
+            },
+            {
+              name: `lessonsWithBlocks.${lessonIndex}.blocks.${blockIndex}.content`,
+              fix: `${rootRoute}/lessons/${lesson.id}/blocks/edit/${block.id}`,
+            },
+            {
+              name: `lessonsWithBlocks.${lessonIndex}.blocks.${blockIndex}.settings`,
+              fix: `${rootRoute}/lessons/${lesson.id}/blocks/edit/${block.id}`,
+            },
+            {
+              name: `lessonsWithBlocks.${lessonIndex}.blocks.${blockIndex}.position`,
+              fix: `${rootRoute}/lessons/${lesson.id}/blocks/edit/${block.id}`,
+            },
+            {
+              name: `lessonsWithBlocks.${lessonIndex}.blocks.${blockIndex}.lesson_id`,
+              fix: `${rootRoute}/lessons/${lesson.id}/blocks/edit/${block.id}`,
+            },
+            {
+              name: `lessonsWithBlocks.${lessonIndex}.blocks.${blockIndex}.updated_by`,
+              fix: `${rootRoute}/lessons/${lesson.id}/blocks/edit/${block.id}`,
+            },
+          ]) || [];
+
+        return [...baseLessonFields, ...blockFields];
+      },
+    );
+
+    // Add chapter-specific validation fields for groupBy validation
+    const chapterFields: ValidationField[] = [];
+
+    // Group lessons by chapter to create chapter-specific error paths
+    const lessonsByChapter = lessonsWithBlocks.reduce(
+      (acc, lesson) => {
+        const chapterId = lesson.chapter_id;
+        if (!acc[chapterId]) {
+          acc[chapterId] = [];
+        }
+        acc[chapterId].push(lesson);
+        return acc;
+      },
+      {} as Record<string, any[]>,
+    );
+
+    // Create validation fields for chapter-specific errors
+    Object.keys(lessonsByChapter).forEach((chapterId) => {
+      chapterFields.push({
+        name: `lessonsWithBlocks.chapters.${chapterId}.noLessons`,
+        fix: `${rootRoute}/content/${chapterId}/new-lesson-details`,
+      });
     });
 
-    return fields;
-  }, [rootRoute, lessonsWithBlocks, courseChapters]);
+    return [...baseLessonsFields, ...lessonFields, ...chapterFields];
+  }, [rootRoute, lessonsWithBlocks]);
 
   return {
     courseOverviewFields,
     pricingFields,
     courseChaptersFields,
     lessonsWithBlocksFields,
-    // Include the map-based fields if you switch to that schema approach
-    mapBasedLessonFields: createMapBasedLessonFields,
   };
-}
-
-// Helper function to create a lookup map for validation fields
-export function createValidationFieldLookup(
-  fields: ValidationField[],
-): Map<string, ValidationField> {
-  return new Map(fields.map((field) => [field.name, field]));
-}
-
-// Helper function to find validation field by error path
-export function findValidationFieldByPath(
-  errorPath: string[],
-  validationFields: ValidationField[],
-): ValidationField | undefined {
-  const pathString = errorPath.join('.');
-  return validationFields.find((field) => field.name === pathString);
-}
-
-// Helper function to handle both old index-based and new ID-based error paths
-export function resolveValidationField(
-  errorPath: string[],
-  allValidationFields: {
-    courseOverviewFields: ValidationField[];
-    pricingFields: ValidationField[];
-    courseChaptersFields: ValidationField[];
-    lessonsWithBlocksFields: ValidationField[];
-  },
-): ValidationField | undefined {
-  const pathString = errorPath.join('.');
-  const allFields = [
-    ...allValidationFields.courseOverviewFields,
-    ...allValidationFields.pricingFields,
-    ...allValidationFields.courseChaptersFields,
-    ...allValidationFields.lessonsWithBlocksFields,
-  ];
-
-  // First try exact match
-  let field = allFields.find((f) => f.name === pathString);
-
-  if (!field) {
-    // Try partial matches for dynamic paths
-    field = allFields.find((f) => {
-      const fieldParts = f.name.split('.');
-      const pathParts = errorPath;
-
-      // Match patterns like "lessons.{id}.blocks" with "lessons.lesson-123.blocks"
-      if (fieldParts.length === pathParts.length) {
-        return fieldParts.every((part, index) => {
-          return part === pathParts[index] || part.includes('{') || pathParts[index]?.includes('-');
-        });
-      }
-
-      return false;
-    });
-  }
-
-  return field;
 }
