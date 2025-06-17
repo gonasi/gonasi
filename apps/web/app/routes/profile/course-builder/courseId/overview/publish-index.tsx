@@ -1,4 +1,4 @@
-// routes/publish-course/publish-course.tsx
+// routes/publish-index/publish-index.tsx
 import { useEffect } from 'react';
 import { Form, Link } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -12,7 +12,7 @@ import { fetchCourseOverviewById, fetchCoursePricing } from '@gonasi/database/co
 import { fetchLessonBlocksByLessonId } from '@gonasi/database/lessons';
 import { PublishCourseSchema, type PublishCourseSchemaTypes } from '@gonasi/schemas/publish';
 
-import type { Route } from './+types/publish-course';
+import type { Route } from './+types/publish-index';
 import { useAsyncValidation } from './publish/useAsyncValidation';
 import { useValidationFields } from './publish/useValidationFields';
 // Import our reusable components and hooks

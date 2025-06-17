@@ -2,6 +2,8 @@ import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Info } from 'lucide-react';
 
+import GoParsedContent from './GoParsedContent';
+
 import { cn } from '~/lib/utils';
 
 export type ListOfErrors = (string | null | undefined)[] | null | undefined;
@@ -11,8 +13,27 @@ export const hasErrors = (listOfErrors: ListOfErrors) => {
 };
 
 export function ErrorDisplay({ error }: { error?: string }) {
-  if (!error) return null;
-  return <span className='font-secondary text-danger text-xs'>{error}</span>;
+  return (
+    <AnimatePresence mode='wait'>
+      {error && (
+        <motion.div
+          key='error'
+          initial={{ opacity: 0, y: 4 }}
+          animate={{
+            opacity: 1,
+            y: 0,
+            transition: { type: 'spring', stiffness: 300, damping: 20 },
+          }}
+          exit={{ opacity: 0, y: 4 }}
+          className='text-danger font-secondary flex items-start gap-2 pl-4 text-xs font-thin'
+        >
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}>
+            <GoParsedContent html={error} />
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
 }
 
 export function ErrorList({ id, errors }: { errors?: ListOfErrors; id?: string }) {
@@ -31,10 +52,23 @@ export function ErrorList({ id, errors }: { errors?: ListOfErrors; id?: string }
 
 export function FormDescription({ id, children }: { id?: string; children: ReactNode }) {
   return (
-    <p id={id} className={cn('text-muted-foreground flex items-start pt-1 text-[0.8rem]')}>
+    <motion.p
+      id={id}
+      initial={{ opacity: 0, y: 4 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, ease: 'easeOut' }}
+      className={cn('text-muted-foreground flex items-start pt-1 text-[0.8rem]')}
+    >
       <Info className='h-6 w-6 flex-shrink-0 pr-2' />
-      <span className='pt-1'>{children}</span>
-    </p>
+      <motion.span
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.15, duration: 0.3 }}
+        className='pt-1'
+      >
+        {children}
+      </motion.span>
+    </motion.p>
   );
 }
 

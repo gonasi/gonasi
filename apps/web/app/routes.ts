@@ -43,7 +43,7 @@ export default [
       route(':courseId', 'routes/profile/course-builder/courseId/course-id-index.tsx', [
         // /:username/course-builder/:courseId/overview
         route('overview', 'routes/profile/course-builder/courseId/overview/overview-index.tsx', [
-          route('publish', 'routes/profile/course-builder/courseId/overview/publish-course.tsx'),
+          route('publish', 'routes/profile/course-builder/courseId/overview/publish-index.tsx'),
           // /:username/course-builder/:courseId/overview/edit-thumbnail
           route(
             'edit-thumbnail',
