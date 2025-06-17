@@ -67,12 +67,17 @@ const COMPONENT_STYLES = {
 const createAnimatedComponent = (
   key: keyof typeof COMPONENT_STYLES,
   animation: keyof typeof ANIMATIONS,
-) =>
-  memo<VariantProps>(({ children, variant }) => (
+) => {
+  const AnimatedComponent = memo<VariantProps>(({ children, variant }) => (
     <motion.span {...ANIMATIONS[animation]} className={COMPONENT_STYLES[key](variant)}>
       {children}
     </motion.span>
   ));
+
+  AnimatedComponent.displayName = `AnimatedComponent(${key}, ${animation})`;
+
+  return AnimatedComponent;
+};
 
 // Create memoized components
 const Error = createAnimatedComponent('error', 'default');
@@ -102,7 +107,10 @@ const LucideIcon = memo<{
   className?: string;
   children: React.ReactNode;
 }>(({ iconName, size, strokeWidth, className = '', children }) => {
-  const Icon = useMemo(() => (LucideIcons as Record<string, React.FC<any>>)[iconName], [iconName]);
+  const Icon = useMemo(
+    () => (LucideIcons as unknown as Record<string, React.FC<any>>)[iconName],
+    [iconName],
+  );
 
   if (!Icon) return null;
 
@@ -112,13 +120,15 @@ const LucideIcon = memo<{
         <Icon
           size={size}
           strokeWidth={strokeWidth}
-          className={`mb-0.5 inline align-middle ${className}`}
+          className={`mb-1 inline align-middle ${className}`}
         />
       </motion.span>
       {children}
     </span>
   );
 });
+
+LucideIcon.displayName = 'LucideIcon';
 
 //
 // --- Parser Factory ---

@@ -2,13 +2,13 @@ import { z } from 'zod';
 
 const ChapterNameSchema = z
   .string({
-    required_error: `Give your <span class="go-title">chapter a name</span> to get started.`,
+    required_error: `<lucide name="Type" size="12" /> Give your <span class="go-title">chapter a name</span> to get started.`,
   })
   .min(3, {
-    message: `<span class="go-title">Chapter name</span> is too short, try at least 3 characters.`,
+    message: `<span class="go-title">Chapter name</span> is too short. Try at least 3 characters.`,
   })
   .max(100, {
-    message: `<span class="go-title">Chapter name</span> is a bit too long — keep it under 100 characters.`,
+    message: `<span class="go-title">Chapter name</span> is too long. Keep it under 100 characters.`,
   })
   .trim();
 
@@ -17,10 +17,10 @@ const ChapterDescriptionSchema = z
     required_error: `A quick <span class="go-title">description</span> helps others understand what this chapter is about.`,
   })
   .min(10, {
-    message: `<span class="go-title">Description</span> is too short, add a bit more detail.`,
+    message: `<lucide name="Info" size="12" /> <span class="go-title">Description</span> is too short. Add a bit more detail.`,
   })
   .max(500, {
-    message: `<span class="go-title">Description</span> is too long, try to keep it under 500 characters.`,
+    message: `<span class="go-title">Description</span> is too long. Try to keep it under 500 characters.`,
   })
   .trim();
 
