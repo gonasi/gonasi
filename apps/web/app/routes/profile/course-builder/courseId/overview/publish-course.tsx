@@ -103,8 +103,6 @@ export default function PublishCourse({ loaderData, params }: Route.ComponentPro
   } = loaderData;
   const isPending = useIsPending();
 
-  console.log('pricing data: ', pricingData);
-
   const rootRoute = `/${params.username}/course-builder/${params.courseId}`;
   const closeRoute = `${rootRoute}/overview`;
 

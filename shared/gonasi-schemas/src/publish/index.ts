@@ -297,7 +297,7 @@ const FlatLessonsWithBlocksSchema = z
     if (data.length === 0) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        path: ['lessonsWithBlocks.noLessonsInCourse'],
+        path: ['noLessonsInCourse'],
         message: `Your course is looking empty! Let's add some <span>lessons with content</span> to your chapters.`,
       });
       return;
