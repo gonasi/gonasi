@@ -74,8 +74,9 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   if (!courseChapters)
     return redirectWithError(redirectPath, 'Could not load chapters and lessons');
 
+  // Updated to use flatMap - flattens all lessons from all chapters into a single array
   const lessonsWithBlocks = await Promise.all(
-    courseChapters.flatMap(async (chapter) =>
+    courseChapters.flatMap((chapter) =>
       chapter.lessons.map(async (lesson) => {
         const { data: blocks } = await fetchLessonBlocksByLessonId(supabase, lesson.id);
         return { ...lesson, blocks };
@@ -156,29 +157,28 @@ export default function PublishCourse({ loaderData, params }: Route.ComponentPro
               lesson_types: lesson.lesson_types,
             })) ?? [],
         })) ?? [],
+      // Updated to match flattened structure - single array of lessons
       lessonsWithBlocks:
-        lessonsWithBlocks?.map((chapterLessons) =>
-          chapterLessons.map((lesson) => ({
-            id: lesson.id,
-            course_id: lesson.course_id,
-            chapter_id: lesson.chapter_id,
-            lesson_type_id: lesson.lesson_type_id,
-            name: lesson.name,
-            position: lesson.position,
-            settings: lesson.settings,
-            lesson_types: lesson.lesson_types,
-            blocks:
-              lesson.blocks?.map((block) => ({
-                plugin_type: block.plugin_type,
-                id: block.id,
-                content: block.content,
-                settings: block.settings,
-                position: block.position,
-                lesson_id: block.lesson_id,
-                updated_by: block.updated_by,
-              })) ?? null,
-          })),
-        ) ?? [],
+        lessonsWithBlocks?.map((lesson) => ({
+          id: lesson.id,
+          course_id: lesson.course_id,
+          chapter_id: lesson.chapter_id,
+          lesson_type_id: lesson.lesson_type_id,
+          name: lesson.name,
+          position: lesson.position,
+          settings: lesson.settings,
+          lesson_types: lesson.lesson_types,
+          blocks:
+            lesson.blocks?.map((block) => ({
+              plugin_type: block.plugin_type,
+              id: block.id,
+              content: block.content,
+              settings: block.settings,
+              position: block.position,
+              lesson_id: block.lesson_id,
+              updated_by: block.updated_by,
+            })) ?? null,
+        })) ?? [],
     },
   });
 

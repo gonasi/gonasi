@@ -120,7 +120,7 @@ const LessonWithBlocksSchema = z
     if (!data.blocks) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        path: ['blocks', data.chapter_id],
+        path: ['blocks'],
         message: `Lesson <span>${data.name}</span> is looking a bit empty - let's add some <span>content blocks</span> to make it shine!`,
       });
       return;
@@ -275,20 +275,44 @@ export const PricingSchema = z.array(
 
 export type PricingSchemaTypes = z.infer<typeof PricingSchema>;
 
-// Updated schema to use ID-based error paths instead of indexes
-const LessonsWithBlocksSchema = z
-  .array(z.array(LessonWithBlocksSchema))
-  .superRefine((data, ctx) => {
-    const isTrulyEmpty = data.every((item) => Array.isArray(item) && item.length === 0);
+// Updated schema to use flattened array structure instead of nested arrays
+const LessonsWithBlocksSchema = z.array(LessonWithBlocksSchema).superRefine((data, ctx) => {
+  // Check if the array is empty or all lessons are empty
+  if (!data || data.length === 0) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['noLessonsInCourse'],
+      message: `<span>No lessons</span> found in this course. Add some lessons to get started!`,
+    });
+    return;
+  }
 
-    if (isTrulyEmpty) {
+  // Group lessons by chapter for validation
+  const lessonsByChapter = data.reduce(
+    (acc, lesson) => {
+      const chapterId = lesson.chapter_id;
+
+      if (!acc[chapterId]) {
+        acc[chapterId] = [];
+      }
+
+      acc[chapterId].push(lesson);
+      return acc;
+    },
+    {} as Record<string, typeof data>,
+  );
+
+  // Validate each chapter has at least one lesson
+  Object.entries(lessonsByChapter).forEach(([chapterId, lessons]) => {
+    if (lessons.length === 0) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        path: ['noLessonsInCourse'],
-        message: `<span>No lessons</span> found in this course.`,
+        path: ['chapters', chapterId, 'noLessons'],
+        message: `Chapter <span>${chapterId}</span> needs at least one lesson.`,
       });
     }
   });
+});
 
 const ValidateChaptersSchema = z.array(ChapterSchema);
 export type ValidateChaptersSchemaTypes = z.infer<typeof ValidateChaptersSchema>;
@@ -301,7 +325,7 @@ export const PublishCourseSchema = z
     lessonsWithBlocks: LessonsWithBlocksSchema,
   })
   .superRefine((data, ctx) => {
-    const { pricingData, courseChapters } = data;
+    const { pricingData, courseChapters, lessonsWithBlocks } = data;
     const isFree = pricingData.every((p) => p.is_free);
     const hasFreeChapter = courseChapters.some((chapter) => chapter.requires_payment === false);
 
@@ -320,6 +344,22 @@ export const PublishCourseSchema = z
             code: z.ZodIssueCode.custom,
             path: ['courseChapters', chapter.id, 'insufficientLessons'],
             message: `Each chapter must include at least 2 lessons. <span>${chapter.name}</span> currently has only <span>${chapter.lessons.length}</span>.`,
+          });
+        }
+      });
+    }
+
+    // Validate that chapters referenced in lessonsWithBlocks actually exist
+    if (lessonsWithBlocks.length > 0) {
+      const chapterIds = new Set(courseChapters.map((c) => c.id));
+      const lessonChapterIds = new Set(lessonsWithBlocks.map((l) => l.chapter_id));
+
+      lessonChapterIds.forEach((chapterId) => {
+        if (!chapterIds.has(chapterId)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['lessonsWithBlocks', 'orphanedLessons'],
+            message: `Found lessons referencing non-existent chapter <span>${chapterId}</span>.`,
           });
         }
       });
