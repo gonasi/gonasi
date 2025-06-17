@@ -4,50 +4,83 @@ const MAX_SIZE = 1024 * 1024 * 5; // 5MB
 const VALID_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif'];
 
 export const EmailSchema = z
-  .string({ required_error: 'Please enter your email' })
-  .email({ message: 'That doesn’t look like a valid email' })
-  .min(3, { message: 'Email seems too short' })
-  .max(100, { message: 'Email is a bit too long' })
+  .string({
+    required_error:
+      'Just need your <span class="go-title">email address</span> to continue <lucide name="Mail" size="12" />',
+  })
+  .email({
+    message: 'Hmm, that email doesn’t look quite right <lucide name="AlertCircle" size="12" />',
+  })
+  .min(3, {
+    message:
+      '<span class="warning">That email looks a bit short</span> <lucide name="MoveHorizontal" size="12" />',
+  })
+  .max(100, {
+    message:
+      '<span class="warning">That email’s a little too long</span> <lucide name="ScanLine" size="12" />',
+  })
+  .trim()
   .transform((value) => value.toLowerCase());
 
 export const PasswordSchema = z
-  .string({ required_error: 'Password is missing' })
-  .min(6, { message: 'Try a longer password (6+ characters)' })
-  .refine((val) => new TextEncoder().encode(val).length <= 72, {
-    message: 'Password is too long. Keep it under 72 characters',
+  .string({
+    required_error: `<lucide name="Lock" size="12" /> We’ll need a <span class="go-title">password</span> to continue`,
+  })
+  .min(6, {
+    message: `<span class="warning">Too short!</span> Make it at least 6 characters <lucide name="ArrowRight" size="12" />`,
+  })
+  .refine((val) => new TextEncoder().encode(val).length <= 40, {
+    message: `<lucide name="Minimize" size="12" /> <span class="warning">Whoa, that’s a long one</span> — keep it under 40 characters`,
   });
 
 export const FullNameSchema = z
-  .string({ required_error: 'Name is required' })
-  .min(3, { message: 'Name is too short' })
-  .max(100, { message: 'Name is too long' })
+  .string({
+    required_error: `<lucide name="User" size="12" /> We’ll need your full name`,
+  })
+  .min(3, {
+    message: `<span class="warning">That name's a little short</span> <lucide name="MoveVertical" size="12" />`,
+  })
+  .max(100, {
+    message: `<span class="warning">That name’s a bit too long</span> <lucide name="ScanLine" size="12" />`,
+  })
   .refine((val) => /^[A-Za-z]+(?: [A-Za-z]+)*$/.test(val), {
-    message: 'Only use letters and single spaces between words',
+    message: `Only use letters and single spaces <lucide name="Type" size="12" />`,
   });
 
 export const UsernameSchema = z
-  .string({ required_error: 'Username is required' })
-  .min(3, { message: 'Username is too short' })
-  .max(50, { message: 'Username is too long' })
+  .string({
+    required_error: `<lucide name="UserCircle2" size="12" /> Pick a <span class="go-title">username</span>`,
+  })
+  .min(3, {
+    message: `<span class="warning">Too short!</span> Usernames need 3+ characters <lucide name="ArrowRight" size="12" />`,
+  })
+  .max(50, {
+    message: `<span class="warning">That username’s too long</span> <lucide name="ScanLine" size="12" />`,
+  })
   .trim()
   .toLowerCase()
   .regex(/^(?!.*[_.]{2})[a-z0-9][a-z0-9._]*[a-z0-9]$/, {
-    message:
-      'Use only letters, numbers, dots, and underscores. No starting or ending with them, and no doubles',
+    message: `Use only lowercase letters, numbers, dots, and underscores <lucide name="Code2" size="12" /> — no doubles or ending/starting with symbols`,
   })
   .transform((value) => value.toLowerCase());
 
 export const PhoneNumberSchema = z
-  .string({ required_error: 'Phone number is required' })
+  .string({
+    required_error: `<lucide name="Phone" size="12" /> A phone number is required`,
+  })
   .trim()
-  .length(9, { message: 'Phone number should be 9 digits' })
-  .regex(/^\d{9}$/, { message: 'Only digits please' });
+  .length(9, {
+    message: `<span class="warning">Should be exactly 9 digits</span> <lucide name="ScanLine" size="12" />`,
+  })
+  .regex(/^\d{9}$/, {
+    message: `Just the digits please <lucide name="Hash" size="12" />`,
+  });
 
 export const NewImageSchema = z.any().superRefine((file, ctx) => {
   if (!(file instanceof File)) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      message: 'Please select a valid image file',
+      message: 'Please upload a valid image file <lucide name="ImageOff" size="12" />',
     });
     return;
   }
@@ -55,21 +88,21 @@ export const NewImageSchema = z.any().superRefine((file, ctx) => {
   if (file.size === 0) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      message: 'Looks like no image was selected',
+      message: 'Looks like you didn’t select an image <lucide name="FileQuestion" size="12" />',
     });
   }
 
   if (file.size > MAX_SIZE) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      message: 'Image must be under 5MB',
+      message: 'That image is too large — max 5MB please <lucide name="FileWarning" size="12" />',
     });
   }
 
   if (!VALID_IMAGE_TYPES.includes(file.type)) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      message: 'Only PNG, JPG, JPEG or GIF images are allowed 🖼️',
+      message: 'Only PNG, JPG, JPEG, or GIF images allowed <lucide name="Image" size="12" />',
     });
   }
 });
