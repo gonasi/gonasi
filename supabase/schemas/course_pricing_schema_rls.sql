@@ -3,6 +3,8 @@
 -- defines fine-grained access based on user roles and course ownership
 -- ============================================================================
 
+alter table public.course_pricing_tiers enable row level security;
+
 -- allow read access to pricing tiers for users who:
 -- - are course admins, editors, viewers, or the course creator
 create policy "select: users with course roles or owners can view pricing tiers"
