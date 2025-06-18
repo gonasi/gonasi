@@ -26,7 +26,8 @@ revoke truncate on table "public"."user_roles" from "authenticated";
 
 revoke update on table "public"."user_roles" from "authenticated";
 
+alter table "public"."course_categories" alter column "updated_by" drop not null;
 
-CREATE TRIGGER on_auth_user_created AFTER INSERT ON auth.users FOR EACH ROW EXECUTE FUNCTION handle_new_user();
+alter table "public"."course_sub_categories" alter column "updated_by" drop not null;
 
 

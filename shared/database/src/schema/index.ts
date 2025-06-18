@@ -37,30 +37,30 @@ export type Database = {
       course_categories: {
         Row: {
           created_at: string
-          created_by: string
+          created_by: string | null
           description: string
           id: string
           name: string
           updated_at: string
-          updated_by: string
+          updated_by: string | null
         }
         Insert: {
           created_at?: string
-          created_by: string
+          created_by?: string | null
           description: string
           id?: string
           name: string
           updated_at?: string
-          updated_by: string
+          updated_by?: string | null
         }
         Update: {
           created_at?: string
-          created_by?: string
+          created_by?: string | null
           description?: string
           id?: string
           name?: string
           updated_at?: string
-          updated_by?: string
+          updated_by?: string | null
         }
         Relationships: [
           {
@@ -83,29 +83,29 @@ export type Database = {
         Row: {
           category_id: string
           created_at: string
-          created_by: string
+          created_by: string | null
           id: string
           name: string
           updated_at: string
-          updated_by: string
+          updated_by: string | null
         }
         Insert: {
           category_id: string
           created_at?: string
-          created_by: string
+          created_by?: string | null
           id?: string
           name: string
           updated_at?: string
-          updated_by: string
+          updated_by?: string | null
         }
         Update: {
           category_id?: string
           created_at?: string
-          created_by?: string
+          created_by?: string | null
           id?: string
           name?: string
           updated_at?: string
-          updated_by?: string
+          updated_by?: string | null
         }
         Relationships: [
           {

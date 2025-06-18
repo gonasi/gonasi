@@ -8,7 +8,7 @@ create table public.course_categories (
   description text not null,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null,
-  created_by uuid references public.profiles not null,
+  created_by uuid references public.profiles null,
   updated_by uuid references public.profiles not null
 );
 
@@ -75,7 +75,7 @@ create table public.course_sub_categories (
   name text not null,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null,
-  created_by uuid references public.profiles not null,
+  created_by uuid references public.profiles null,
   updated_by uuid references public.profiles not null
 );
 
