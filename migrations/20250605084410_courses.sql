@@ -48,7 +48,7 @@ create table public.courses (
   name text not null,
   description text null,
   image_url text null, -- url of the course image
-  blur_hash text null,
+  blur_hash text null, 
 
   -- access control
   visibility course_access not null default 'public',
