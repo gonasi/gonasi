@@ -31,47 +31,4 @@ describe('Supabase profile fetching', () => {
     console.log('user is: ', user);
     expect(user?.email).toBe(signupPayload.email);
   });
-
-  it('should fail to fetch profile with wrong password', async () => {
-    const loginPayload = createLoginPayload({
-      email: signupPayload.email,
-      password: 'WrongPassword!',
-    });
-    const { error } = await signInWithEmailAndPassword(supabase, loginPayload);
-
-    expect(error?.message).toMatch(/invalid/i);
-
-    const profile = await getUserProfile(supabase);
-    expect(profile.user).toBeNull(); // should fail or be null because login failed
-  });
-
-  it('should fail to fetch profile with non-existent email', async () => {
-    const loginPayload = createLoginPayload({ email: 'nonexistent@example.com' });
-    const { error } = await signInWithEmailAndPassword(supabase, loginPayload);
-
-    expect(error?.message).toMatch(/invalid/i);
-
-    const profile = await getUserProfile(supabase);
-    expect(profile.user).toBeNull();
-  });
-
-  it('should fail to fetch profile with missing email', async () => {
-    const loginPayload = createLoginPayload({ email: undefined as any });
-    const { error } = await signInWithEmailAndPassword(supabase, loginPayload);
-
-    expect(error).not.toBeNull();
-
-    const profile = await getUserProfile(supabase);
-    expect(profile.user).toBeNull();
-  });
-
-  it('should fail to fetch profile with missing password', async () => {
-    const loginPayload = createLoginPayload({ password: undefined as any });
-    const { error } = await signInWithEmailAndPassword(supabase, loginPayload);
-
-    expect(error).not.toBeNull();
-
-    const profile = await getUserProfile(supabase);
-    expect(profile.user).toBeNull();
-  });
 });

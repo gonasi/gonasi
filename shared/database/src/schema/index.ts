@@ -34,6 +34,154 @@ export type Database = {
   }
   public: {
     Tables: {
+      course_categories: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string
+          id: string
+          name: string
+          updated_at: string
+          updated_by: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description: string
+          id?: string
+          name: string
+          updated_at?: string
+          updated_by: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string
+          id?: string
+          name?: string
+          updated_at?: string
+          updated_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_categories_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_categories_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      course_sub_categories: {
+        Row: {
+          category_id: string
+          created_at: string
+          created_by: string
+          id: string
+          name: string
+          updated_at: string
+          updated_by: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          created_by: string
+          id?: string
+          name: string
+          updated_at?: string
+          updated_by: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          name?: string
+          updated_at?: string
+          updated_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_sub_categories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "course_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_sub_categories_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_sub_categories_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pathways: {
+        Row: {
+          blur_hash: string | null
+          created_at: string
+          created_by: string
+          description: string
+          id: string
+          image_url: string
+          name: string
+          updated_at: string
+          updated_by: string
+        }
+        Insert: {
+          blur_hash?: string | null
+          created_at?: string
+          created_by: string
+          description: string
+          id?: string
+          image_url: string
+          name: string
+          updated_at?: string
+          updated_by: string
+        }
+        Update: {
+          blur_hash?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string
+          id?: string
+          image_url?: string
+          name?: string
+          updated_at?: string
+          updated_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pathways_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pathways_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           account_verified: boolean

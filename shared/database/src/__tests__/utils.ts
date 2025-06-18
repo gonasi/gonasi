@@ -2,9 +2,12 @@ import { adminClient } from './lib/supabase';
 
 const ZERO_UUID = '00000000-0000-0000-0000-000000000000';
 
-export type ClearableTable = 'profiles' | 'role_permissions' | 'user_roles';
+// user_roles, role_permissions, course_categories, course_sub_categories
+// should be populated by migration code
 
-const DEFAULT_TABLES_TO_CLEAR: ClearableTable[] = ['profiles', 'role_permissions', 'user_roles'];
+export type ClearableTable = 'profiles' | 'user_roles' | 'pathways';
+
+const DEFAULT_TABLES_TO_CLEAR: ClearableTable[] = ['profiles', 'user_roles', 'pathways'];
 
 interface ResetDatabaseOptions {
   tables?: ClearableTable[]; // optional specific tables
