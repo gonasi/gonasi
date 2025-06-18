@@ -47,7 +47,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     session,
     FORM_STEPPER_COOKIE_NAMES.basicInfo,
     BasicInformationSchema,
-    `/onboarding/${params.userId}/basic-information`,
+    `/go/onboarding/${params.userId}/basic-information`,
   );
 
   return data({} as ContactInformationSchemaTypes);
@@ -105,7 +105,7 @@ export async function action({ request, params }: Route.ActionArgs) {
   if (usernameExists) {
     // If the username is taken, redirect to basic info step with an error toast
     return redirectWithError(
-      `/onboarding/${params.userId}/basic-information`,
+      `/go/onboarding/${params.userId}/basic-information`,
       'That username’s taken — try something else?',
     );
   }

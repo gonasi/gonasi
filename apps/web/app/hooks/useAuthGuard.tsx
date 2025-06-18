@@ -24,7 +24,7 @@ export function useAuthGuard() {
     if (activeUserProfile.is_onboarding_complete === false) {
       const redirectTo = location.pathname + location.search;
       navigate(
-        `/onboarding/${activeUserProfile.id}/basic-information?${new URLSearchParams({ redirectTo })}`,
+        `/go/${activeUserProfile.id}/basic-information?${new URLSearchParams({ redirectTo })}`,
         { replace: true },
       );
     }

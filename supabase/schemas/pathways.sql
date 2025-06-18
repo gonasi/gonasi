@@ -87,11 +87,11 @@ with check (bucket_id = 'pathways');
 
 -- Allow insert into 'pathways' bucket
 create policy pathways_bucket_insert
-on storage.objects
+on storage.objects 
 for insert
 with check (bucket_id = 'pathways');
 
--- Allow read access to all objects in 'pathways' bucket
+-- Allow read access to all objects in 'pathways' bucket 
 create policy pathways_bucket_read
 on storage.objects
 for select
@@ -103,12 +103,3 @@ on storage.objects
 for delete
 using ((select auth.uid()) = owner and bucket_id = 'pathways');
 
--- ========================================
--- Enable "replica identity full" for CDC or logical decoding
--- ========================================
-alter table public.pathways replica identity full;
-
--- ========================================
--- Add pathways table to the realtime publication
--- ========================================
-alter publication supabase_realtime add table public.pathways;

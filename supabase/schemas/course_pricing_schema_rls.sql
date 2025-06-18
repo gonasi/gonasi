@@ -13,9 +13,9 @@ for select
 to authenticated
 using (
   exists (
-    select 1 from public.courses c
+    select 1 from public.courses c 
     where c.id = course_pricing_tiers.course_id
-      and (
+      and ( 
         is_course_admin(c.id, (select auth.uid())) or
         is_course_editor(c.id, (select auth.uid())) or
         is_course_viewer(c.id, (select auth.uid())) or

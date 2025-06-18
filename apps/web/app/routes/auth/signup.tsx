@@ -56,7 +56,7 @@ export async function action({ request }: Route.ActionArgs) {
   // Attempt to sign up the user
   const { error } = await signUpWithEmailAndPassword(supabase, {
     ...data,
-    redirectTo: `${BASE_URL}/onboarding`,
+    redirectTo: `${BASE_URL}/go.onboarding`,
   });
 
   // If sign-up failed, show toast error; else redirect

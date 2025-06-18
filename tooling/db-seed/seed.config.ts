@@ -21,8 +21,5 @@ export default defineConfig({
     'auth.identities',
     'auth.sessions',
     '!public.role_permissions',
-    '!public.course_categories',
-    '!public.course_sub_categories',
-    '!public.lesson_types',
   ],
 });

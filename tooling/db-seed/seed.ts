@@ -7,7 +7,9 @@ import {
 
 import { convertKeysToCamelCase, supabase } from './src/constants';
 import { seedCompleteOnboarding } from './src/seedCompleteOnboarding';
+import { seedCourseCategories } from './src/seedCourseCategories';
 import { seedCreateCourse } from './src/seedCreateCourse';
+import { seedLessonTypes } from './src/seedLessonTypes';
 import { seedPathways } from './src/seedPathways';
 import { signUpUsers } from './src/signUpUsers';
 
@@ -27,6 +29,9 @@ const main = async () => {
 
   // complete onboarding
   await seedCompleteOnboarding(profiles);
+
+  await seedLessonTypes(profiles);
+  await seedCourseCategories(profiles);
 
   await seedPathways(profiles);
 

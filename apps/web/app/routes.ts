@@ -29,7 +29,7 @@ export default [
   ]),
 
   layout('routes/layouts/onboarding/onboarding-layout.tsx', [
-    ...prefix('onboarding', [
+    ...prefix('go/onboarding', [
       // /onboarding/:userId/basic-information
       route(':userId/basic-information', 'routes/onboarding/basic-information.tsx'),
       // /onboarding/:userId/contact-information

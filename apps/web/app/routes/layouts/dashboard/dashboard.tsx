@@ -28,7 +28,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     const redirectTo = url.pathname + url.search;
 
     return redirect(
-      `/onboarding/${user.id}/basic-information?${new URLSearchParams({ redirectTo })}`,
+      `/go/onboarding/${user.id}/basic-information?${new URLSearchParams({ redirectTo })}`,
     );
   }
 
