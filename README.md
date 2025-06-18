@@ -8,6 +8,6 @@ supabase functions serve --no-verify-jwt
 
 supabase db diff -f some-migration-name
 
-rm -rf migrations && supabase stop && supabase db diff --schema public --schema auth -f init && supabase start && supabase db reset
+rm -rf migrations && supabase stop && supabase db diff --schema public --schema auth --schema extensions -f init && supabase start && supabase db reset
 
 supabase test db

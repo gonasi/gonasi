@@ -3,24 +3,24 @@ create extension if not exists "uuid-ossp";
 
 -- insert categories and subcategories
 with inserted_categories as (
-  insert into public.course_categories (id, name, description, created_by, updated_by)
+  insert into public.course_categories (id, name, description)
   values
-    (uuid_generate_v4(), '📘 General Education', 'Build a strong academic foundation with essential school subjects.', null, null),
-    (uuid_generate_v4(), '🏫 Primary School', 'Courses tailored to early learners building core literacy and numeracy.', null, null),
-    (uuid_generate_v4(), '🏫 High School', 'Courses aligned with secondary school curriculum and exams.', null, null),
-    (uuid_generate_v4(), '🌐 Language Learning', 'Master new languages and improve fluency across skills.', null, null),
-    (uuid_generate_v4(), '💼 Professional Skills', 'Gain practical skills to thrive in the modern workplace.', null, null),
-    (uuid_generate_v4(), '🖥️ Technology', 'Explore the digital world through coding, data, and innovation.', null, null),
-    (uuid_generate_v4(), '🧠 Personal Development', 'Grow your mindset, habits, and everyday life skills.', null, null),
-    (uuid_generate_v4(), '🎨 Creative Arts', 'Unlock your creative potential through art, music, and design.', null, null),
-    (uuid_generate_v4(), '📚 Test Prep & Study', 'Prepare for exams and improve your academic performance.', null, null),
-    (uuid_generate_v4(), '🚗 Driving & Safety', 'Learn safe driving skills and pass official road tests.', null, null),
-    (uuid_generate_v4(), '⚙️ Vocational Training', 'Get hands-on training for skilled trades and careers.', null, null),
-    (uuid_generate_v4(), '🧘 Lifestyle & Wellness', 'Live a healthier, more balanced life with wellness practices.', null, null)
+    (uuid_generate_v4(), '📘 General Education', 'Build a strong academic foundation with essential school subjects.'),
+    (uuid_generate_v4(), '🏫 Primary School', 'Courses tailored to early learners building core literacy and numeracy.'),
+    (uuid_generate_v4(), '🏫 High School', 'Courses aligned with secondary school curriculum and exams.'),
+    (uuid_generate_v4(), '🌐 Language Learning', 'Master new languages and improve fluency across skills.'),
+    (uuid_generate_v4(), '💼 Professional Skills', 'Gain practical skills to thrive in the modern workplace.'),
+    (uuid_generate_v4(), '🖥️ Technology', 'Explore the digital world through coding, data, and innovation.'),
+    (uuid_generate_v4(), '🧠 Personal Development', 'Grow your mindset, habits, and everyday life skills.'),
+    (uuid_generate_v4(), '🎨 Creative Arts', 'Unlock your creative potential through art, music, and design.'),
+    (uuid_generate_v4(), '📚 Test Prep & Study', 'Prepare for exams and improve your academic performance.'),
+    (uuid_generate_v4(), '🚗 Driving & Safety', 'Learn safe driving skills and pass official road tests.'),
+    (uuid_generate_v4(), '⚙️ Vocational Training', 'Get hands-on training for skilled trades and careers.'),
+    (uuid_generate_v4(), '🧘 Lifestyle & Wellness', 'Live a healthier, more balanced life with wellness practices.')
   returning id, name
 )
-insert into public.course_sub_categories (id, category_id, name, created_by, updated_by)
-select uuid_generate_v4(), ic.id, sub, null, null
+insert into public.course_sub_categories (id, category_id, name)
+select uuid_generate_v4(), ic.id, sub
 from inserted_categories ic,
 lateral (
   select unnest(array[

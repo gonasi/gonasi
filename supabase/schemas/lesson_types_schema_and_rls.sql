@@ -8,15 +8,15 @@ create table public.lesson_types (
   name text not null unique,                          -- Display name of the lesson type
   description text not null,                   -- Description of what the lesson type entails
   lucide_icon text not null,                   -- Icon name (Lucide icon set)
-  bg_color text not null unique,               -- Unique hex background color
+  bg_color text not null unique,               -- Unique hex background color 
   created_at timestamp with time zone 
     default timezone('utc'::text, now()) not null, -- UTC timestamp of record creation
   updated_at timestamp with time zone 
     default timezone('utc'::text, now()) not null, -- UTC timestamp of last update
 
-  created_by uuid not null 
+  created_by uuid null 
     references public.profiles on delete cascade,  -- Creator of the record
-  updated_by uuid not null 
+  updated_by uuid null 
     references public.profiles on delete set null  -- Last user to update the record
 );
 

@@ -18,7 +18,7 @@ for update
 using ((select auth.uid()) = owner)
 with check (bucket_id = 'avatars');
 
-create policy "Allow user to delete own avatar"
+create policy "Allow user to delete own avatar" 
 on storage.objects
 for delete
-using ((select auth.uid()) = owner and bucket_id = 'avatars');
+using ((select auth.uid()) = owner and bucket_id = 'avatars'); 

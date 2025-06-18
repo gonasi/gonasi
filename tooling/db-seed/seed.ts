@@ -7,9 +7,7 @@ import {
 
 import { convertKeysToCamelCase, supabase } from './src/constants';
 import { seedCompleteOnboarding } from './src/seedCompleteOnboarding';
-import { seedCourseCategories } from './src/seedCourseCategories';
 import { seedCreateCourse } from './src/seedCreateCourse';
-import { seedLessonTypes } from './src/seedLessonTypes';
 import { seedPathways } from './src/seedPathways';
 import { signUpUsers } from './src/signUpUsers';
 
@@ -30,11 +28,7 @@ const main = async () => {
   // complete onboarding
   await seedCompleteOnboarding(profiles);
 
-  // Seed lesson types pathways and course categories using profiles
-  await seedLessonTypes(profiles);
-
   await seedPathways(profiles);
-  await seedCourseCategories(profiles);
 
   // Fetch course categories
   const { data: databaseCategories } = await supabase.from('course_categories').select();

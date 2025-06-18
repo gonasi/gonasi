@@ -1,16 +1,4 @@
 -- =======================================
--- extensions
--- =======================================
-
--- enable pg_trgm extension for gin trigram indexing (text search)
-create schema if not exists extensions;
-create extension if not exists pg_trgm with schema extensions;
-
--- enable uuid-ossp extension for uuid generation
-create extension if not exists "uuid-ossp";
-
-
--- =======================================
 -- enum types
 -- =======================================
 
@@ -129,8 +117,6 @@ create index idx_file_library_updated_by on public.file_library (updated_by);
 create index idx_file_library_created_at_desc on public.file_library (created_at desc);
 create index idx_file_library_extension on public.file_library (extension);
 create index idx_file_library_file_type on public.file_library (file_type);
-create index idx_file_library_name_trgm on public.file_library using gin (name gin_trgm_ops);
-
 
 -- =======================================
 -- comments

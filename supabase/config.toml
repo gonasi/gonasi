@@ -121,7 +121,8 @@ enabled = true
 # Supports glob patterns relative to supabase directory: "./seeds/*.sql"
 sql_paths = [
   './seeds/user_roles_and_permissions.sql',
-  './seeds/course_categories_and_sub_categories.sql'
+  './seeds/course_categories_and_sub_categories.sql',
+  './seeds/lesson_types.sql'
 ]
 
 [realtime]

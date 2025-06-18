@@ -159,8 +159,8 @@ create table "public"."lesson_types" (
     "bg_color" text not null,
     "created_at" timestamp with time zone not null default timezone('utc'::text, now()),
     "updated_at" timestamp with time zone not null default timezone('utc'::text, now()),
-    "created_by" uuid not null,
-    "updated_by" uuid not null
+    "created_by" uuid,
+    "updated_by" uuid
 );
 
 
@@ -325,8 +325,6 @@ CREATE INDEX idx_file_library_created_by ON public.file_library USING btree (cre
 CREATE INDEX idx_file_library_extension ON public.file_library USING btree (extension);
 
 CREATE INDEX idx_file_library_file_type ON public.file_library USING btree (file_type);
-
-CREATE INDEX idx_file_library_name_trgm ON public.file_library USING gin (name gin_trgm_ops);
 
 CREATE INDEX idx_file_library_updated_by ON public.file_library USING btree (updated_by);
 

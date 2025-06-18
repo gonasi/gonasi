@@ -3355,7 +3355,7 @@
           "name": "created_by",
           "columnName": "created_by",
           "type": "uuid",
-          "isRequired": true,
+          "isRequired": false,
           "kind": "scalar",
           "isList": false,
           "isGenerated": false,
@@ -3369,7 +3369,7 @@
           "name": "updated_by",
           "columnName": "updated_by",
           "type": "uuid",
-          "isRequired": true,
+          "isRequired": false,
           "kind": "scalar",
           "isList": false,
           "isGenerated": false,
@@ -3381,7 +3381,7 @@
         {
           "name": "profiles_lesson_types_created_byToprofiles",
           "type": "profiles",
-          "isRequired": true,
+          "isRequired": false,
           "kind": "object",
           "relationName": "lesson_types_created_byToprofiles",
           "relationFromFields": [
@@ -3399,7 +3399,7 @@
         {
           "name": "profiles_lesson_types_updated_byToprofiles",
           "type": "profiles",
-          "isRequired": true,
+          "isRequired": false,
           "kind": "object",
           "relationName": "lesson_types_updated_byToprofiles",
           "relationFromFields": [
