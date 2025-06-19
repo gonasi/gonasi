@@ -1,4 +1,4 @@
-// routes/publish-index/publish-index.tsx
+// routes/publish-course/publish-course.tsx
 import { useEffect } from 'react';
 import { Form, Link } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -191,39 +191,35 @@ export default function PublishCourse({ loaderData, params }: Route.ComponentPro
       lessonsWithBlocks,
     });
 
-  const { createValidator, isLoading } = useAsyncValidation<PublishCourseSchemaTypes>({
-    trigger: methods.trigger,
-  });
+  const { createSequentialValidator, getValidationState, isAnyLoading } =
+    useAsyncValidation<PublishCourseSchemaTypes>({
+      trigger: methods.trigger,
+    });
 
-  // Create validators using the factory function
-  const validateCourseOverview = createValidator('courseOverview', ['courseOverview']);
-  const validatePricingData = createValidator('pricingData', ['pricingData']);
-  const validateCourseChapters = createValidator('courseChapters', ['courseChapters']);
-  const validateLessonsWithBlocks = createValidator('lessonsWithBlocks', ['lessonsWithBlocks']);
+  // Create sequential validation that processes validations one by one
+  const runSequentialValidation = createSequentialValidator([
+    { key: 'courseOverview', fields: ['courseOverview'] },
+    { key: 'pricingData', fields: ['pricingData'] },
+    { key: 'courseChapters', fields: ['courseChapters'] },
+    { key: 'lessonsWithBlocks', fields: ['lessonsWithBlocks'] },
+  ]);
 
-  const runInitialValidation = async () => {
-    try {
-      console.log('Running initial validation...');
-      await Promise.all([
-        validateCourseOverview(),
-        validatePricingData(),
-        validateCourseChapters(),
-        validateLessonsWithBlocks(),
-      ]);
-      console.log('Initial validation completed');
-    } catch (error) {
-      console.error('Error during initial validation:', error);
-    } finally {
-    }
-  };
-
-  // Run validation on mount
+  // Run validation on mount - now sequential
   useEffect(() => {
-    runInitialValidation();
+    console.log('Starting sequential validation...');
+    runSequentialValidation()
+      .then(() => {
+        console.log('Sequential validation completed');
+      })
+      .catch((error) => {
+        console.error('Error during sequential validation:', error);
+      });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Empty dependency array - only run once on mount
 
-  const isDisabled = isPending || methods.formState.isSubmitting;
+  const isDisabled = isPending || methods.formState.isSubmitting || isAnyLoading();
+
+  console.log('Errors: ', methods.formState.errors.lessonsWithBlocks);
 
   return (
     <Modal open>
@@ -243,39 +239,44 @@ export default function PublishCourse({ loaderData, params }: Route.ComponentPro
               <HoneypotInputs />
 
               <ValidationSection
-                title='Pricing'
-                fields={pricingFields}
-                hasErrors={!!methods.formState.errors.pricingData}
-                isLoading={isLoading('pricingData')}
-              />
-
-              <ValidationSection
                 title='Overview'
                 fields={courseOverviewFields}
                 hasErrors={!!methods.formState.errors.courseOverview}
-                isLoading={isLoading('courseOverview')}
+                validationState={getValidationState('courseOverview')}
+              />
+
+              <ValidationSection
+                title='Pricing'
+                fields={pricingFields}
+                hasErrors={!!methods.formState.errors.pricingData}
+                validationState={getValidationState('pricingData')}
               />
 
               <ValidationSection
                 title='Chapters'
                 fields={courseChaptersFields}
                 hasErrors={!!methods.formState.errors.courseChapters}
-                isLoading={isLoading('courseChapters')}
+                validationState={getValidationState('courseChapters')}
               />
 
               <ValidationSection
                 title='Lessons & Blocks'
                 fields={lessonsWithBlocksFields}
                 hasErrors={!!methods.formState.errors.lessonsWithBlocks}
-                isLoading={isLoading('lessonsWithBlocks')}
+                validationState={getValidationState('lessonsWithBlocks')}
               />
 
               <div className='mt-6'>
-                {methods.formState.isValid ? (
-                  <Button type='submit' disabled={isDisabled}>
-                    Publish Course
-                  </Button>
-                ) : null}
+                <Button type='submit' disabled={isDisabled}>
+                  {isAnyLoading() ? 'Validating...' : 'Publish Course'}
+                </Button>
+
+                {/* Validation progress indicator */}
+                {isAnyLoading() && (
+                  <div className='text-muted-foreground mt-2 text-sm'>
+                    Running validation checks...
+                  </div>
+                )}
               </div>
             </Form>
           </RemixFormProvider>

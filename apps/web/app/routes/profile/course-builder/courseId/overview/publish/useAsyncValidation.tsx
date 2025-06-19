@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 import type { FieldValues, UseFormTrigger } from 'react-hook-form';
 
 const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
@@ -9,56 +9,107 @@ interface UseAsyncValidationProps<T extends FieldValues = FieldValues> {
 }
 
 type LoadingStates = Record<string, boolean>;
+type ValidationStates = Record<string, 'pending' | 'loading' | 'success' | 'error'>;
+type ValidationQueue = {
+  key: string;
+  fields: Parameters<UseFormTrigger<any>>[0];
+  validator: () => Promise<void>;
+}[];
 
 export function useAsyncValidation<T extends FieldValues = FieldValues>({
   trigger,
 }: UseAsyncValidationProps<T>) {
   const [loadingStates, setLoadingStates] = useState<LoadingStates>({});
-  const abortControllersRef = useRef<Record<string, AbortController>>({});
+  const [validationStates, setValidationStates] = useState<ValidationStates>({});
+  const [isProcessingQueue, setIsProcessingQueue] = useState(false);
 
-  const setLoading = useCallback((key: string, loading: boolean) => {
-    setLoadingStates((prev) => {
-      if (prev[key] === loading) return prev; // Prevent unnecessary re-renders
-      return { ...prev, [key]: loading };
+  const createValidator = useCallback(
+    (key: string, fields: Parameters<UseFormTrigger<T>>[0]) => async () => {
+      setLoadingStates((prev) => ({ ...prev, [key]: true }));
+      setValidationStates((prev) => ({ ...prev, [key]: 'loading' }));
+
+      try {
+        const [validationResult] = await Promise.all([trigger(fields), sleep(getRandomDelay())]);
+
+        // Check if validation passed (no errors for this field)
+        const hasErrors = !validationResult;
+        setValidationStates((prev) => ({
+          ...prev,
+          [key]: hasErrors ? 'error' : 'success',
+        }));
+      } catch (error) {
+        setValidationStates((prev) => ({ ...prev, [key]: 'error' }));
+      } finally {
+        setLoadingStates((prev) => ({ ...prev, [key]: false }));
+      }
+    },
+    [trigger],
+  );
+
+  // Initialize validation states as pending
+  const initializeValidationStates = useCallback((keys: string[]) => {
+    setValidationStates((prev) => {
+      const newStates = { ...prev };
+      keys.forEach((key) => {
+        if (!newStates[key]) {
+          newStates[key] = 'pending';
+        }
+      });
+      return newStates;
     });
   }, []);
 
-  const createValidator = useCallback(
-    (key: string, fields: Parameters<UseFormTrigger<T>>[0]) => async (): Promise<void> => {
-      // Cancel previous validation for this key
-      if (abortControllersRef.current[key]) {
-        abortControllersRef.current[key].abort();
-      }
+  // Sequential validation processor
+  const processValidationQueue = useCallback(
+    async (validationQueue: ValidationQueue) => {
+      if (isProcessingQueue) return;
 
-      const controller = new AbortController();
-      abortControllersRef.current[key] = controller;
-
-      setLoading(key, true);
+      setIsProcessingQueue(true);
 
       try {
-        await Promise.all([
-          trigger(fields),
-          sleep(getRandomDelay()).then(() => {
-            // Check if validation was cancelled
-            if (controller.signal.aborted) {
-              throw new Error('Validation cancelled');
-            }
-          }),
-        ]);
+        for (const { validator } of validationQueue) {
+          await validator();
+          // Small delay between validations to prevent UI blocking
+          await sleep(100);
+        }
       } catch (error) {
-        // Only handle non-abort errors
-        if (error instanceof Error && error.message !== 'Validation cancelled') {
-          console.error('Validation error:', error);
-        }
+        console.error('Error during sequential validation:', error);
       } finally {
-        // Only update loading state if this validation wasn't cancelled
-        if (!controller.signal.aborted) {
-          setLoading(key, false);
-          delete abortControllersRef.current[key];
-        }
+        setIsProcessingQueue(false);
       }
     },
-    [trigger, setLoading],
+    [isProcessingQueue],
+  );
+
+  // Create a sequential validator that processes validations one by one
+  const createSequentialValidator = useCallback(
+    (
+      validationConfigs: {
+        key: string;
+        fields: Parameters<UseFormTrigger<T>>[0];
+      }[],
+    ) => {
+      return async () => {
+        // Initialize all states as pending
+        initializeValidationStates(validationConfigs.map((config) => config.key));
+
+        const validationQueue: ValidationQueue = validationConfigs.map(({ key, fields }) => ({
+          key,
+          fields,
+          validator: createValidator(key, fields),
+        }));
+
+        await processValidationQueue(validationQueue);
+      };
+    },
+    [createValidator, processValidationQueue, initializeValidationStates],
+  );
+
+  const getValidationState = useCallback(
+    (key: string): 'pending' | 'loading' | 'success' | 'error' => {
+      return validationStates[key] || 'pending';
+    },
+    [validationStates],
   );
 
   const isLoading = useCallback(
@@ -68,19 +119,19 @@ export function useAsyncValidation<T extends FieldValues = FieldValues>({
     [loadingStates],
   );
 
-  // Cleanup function to cancel all pending validations
-  const cancelAllValidations = useCallback(() => {
-    Object.values(abortControllersRef.current).forEach((controller) => {
-      controller.abort();
-    });
-    abortControllersRef.current = {};
-    setLoadingStates({});
-  }, []);
+  const isAnyLoading = useCallback((): boolean => {
+    return Object.values(loadingStates).some(Boolean) || isProcessingQueue;
+  }, [loadingStates, isProcessingQueue]);
 
   return {
     loadingStates,
+    validationStates,
     createValidator,
+    createSequentialValidator,
+    initializeValidationStates,
+    getValidationState,
     isLoading,
-    cancelAllValidations,
+    isAnyLoading,
+    isProcessingQueue,
   };
 }
