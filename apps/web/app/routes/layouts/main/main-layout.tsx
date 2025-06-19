@@ -13,10 +13,10 @@ export default function MainLayout() {
   const isOnboardingIncomplete = activeUserProfile && !activeUserProfile.is_onboarding_complete;
 
   useEffect(() => {
-    if (!isActiveUserProfileLoading && isOnboardingIncomplete) {
+    if (!isActiveUserProfileLoading && activeUserProfile && isOnboardingIncomplete) {
       navigate(`/go/onboarding/${activeUserProfile.id}/contact-information`);
     }
-  }, [isActiveUserProfileLoading, isOnboardingIncomplete, navigate, activeUserProfile?.id]);
+  }, [isActiveUserProfileLoading, isOnboardingIncomplete, navigate, activeUserProfile]);
 
   if (isActiveUserProfileLoading || isOnboardingIncomplete) {
     return <Spinner />;

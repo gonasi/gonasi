@@ -1,93 +1,91 @@
+
+-- Enable RLS to ensure users can only access pricing tiers for courses they have permission to view
+ALTER TABLE public.course_pricing_tiers ENABLE ROW LEVEL SECURITY;
+
 -- ============================================================================
--- row-level security (rls) policies for course_pricing_tiers table
--- defines fine-grained access based on user roles and course ownership
+-- RLS POLICIES FOR FINE-GRAINED ACCESS CONTROL
 -- ============================================================================
 
-alter table public.course_pricing_tiers enable row level security;
-
--- allow read access to pricing tiers for users who:
--- - are course admins, editors, viewers, or the course creator
-create policy "select: users with course roles or owners can view pricing tiers"
-on public.course_pricing_tiers
-for select
-to authenticated
-using (
-  exists (
-    select 1 from public.courses c 
-    where c.id = course_pricing_tiers.course_id
-      and ( 
-        is_course_admin(c.id, (select auth.uid())) or
-        is_course_editor(c.id, (select auth.uid())) or
-        is_course_viewer(c.id, (select auth.uid())) or
-        c.created_by = (select auth.uid())
+-- Read access: users can view pricing tiers for courses they have any level of access to
+-- This includes course admins, editors, viewers, and course creators
+CREATE POLICY "select: users with course roles or owners can view pricing tiers"
+ON public.course_pricing_tiers
+FOR SELECT
+TO authenticated
+USING (
+  EXISTS (
+    SELECT 1 FROM public.courses c
+    WHERE c.id = course_pricing_tiers.course_id
+      AND (
+        is_course_admin(c.id, (SELECT auth.uid())) OR
+        is_course_editor(c.id, (SELECT auth.uid())) OR
+        is_course_viewer(c.id, (SELECT auth.uid())) OR
+        c.created_by = (SELECT auth.uid())
       )
   )
 );
 
--- allow insert access only to users who:
--- - are course admins, editors, or the course creator
--- viewers are explicitly excluded
-create policy "insert: users with course roles or owners can add pricing tiers"
-on public.course_pricing_tiers
-for insert
-to authenticated
-with check (
-  exists (
-    select 1 from public.courses c
-    where c.id = course_pricing_tiers.course_id
-      and (
-        is_course_admin(c.id, (select auth.uid())) or
-        is_course_editor(c.id, (select auth.uid())) or
-        c.created_by = (select auth.uid())
+-- Create access: only course admins, editors, and creators can add new pricing tiers
+-- Viewers cannot create pricing tiers as this could affect course monetization
+CREATE POLICY "insert: users with course roles or owners can add pricing tiers"
+ON public.course_pricing_tiers
+FOR INSERT
+TO authenticated
+WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM public.courses c
+    WHERE c.id = course_pricing_tiers.course_id
+      AND (
+        is_course_admin(c.id, (SELECT auth.uid())) OR
+        is_course_editor(c.id, (SELECT auth.uid())) OR
+        c.created_by = (SELECT auth.uid())
       )
   )
 );
 
--- allow update access under the same conditions as insert:
--- - course admins, editors, or the course creator
--- both using and with check are used to ensure safe updates
-create policy "update: users with admin/editor roles or owners can modify pricing tiers"
-on public.course_pricing_tiers
-for update
-to authenticated
-using (
-  exists (
-    select 1 from public.courses c
-    where c.id = course_pricing_tiers.course_id
-      and (
-        is_course_admin(c.id, (select auth.uid())) or
-        is_course_editor(c.id, (select auth.uid())) or
-        c.created_by = (select auth.uid())
+-- Update access: same permissions as create - admins, editors, and creators only
+-- Requires both using and with check clauses for complete protection
+CREATE POLICY "update: users with admin/editor roles or owners can modify pricing tiers"
+ON public.course_pricing_tiers
+FOR UPDATE
+TO authenticated
+USING (
+  EXISTS (
+    SELECT 1 FROM public.courses c
+    WHERE c.id = course_pricing_tiers.course_id
+      AND (
+        is_course_admin(c.id, (SELECT auth.uid())) OR
+        is_course_editor(c.id, (SELECT auth.uid())) OR
+        c.created_by = (SELECT auth.uid())
       )
   )
 )
-with check (
-  exists (
-    select 1 from public.courses c
-    where c.id = course_pricing_tiers.course_id
-      and (
-        is_course_admin(c.id, (select auth.uid())) or
-        is_course_editor(c.id, (select auth.uid())) or
-        c.created_by = (select auth.uid())
+WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM public.courses c
+    WHERE c.id = course_pricing_tiers.course_id
+      AND (
+        is_course_admin(c.id, (SELECT auth.uid())) OR
+        is_course_editor(c.id, (SELECT auth.uid())) OR
+        c.created_by = (SELECT auth.uid())
       )
   )
 );
 
--- allow deletion of pricing tiers only for:
--- - course admins, editors, or the course creator
--- restricts monetization-impacting actions to trusted roles
-create policy "delete: course admins, editors, and owners can remove pricing tiers"
-on public.course_pricing_tiers
-for delete
-to authenticated
-using (
-  exists (
-    select 1 from public.courses c
-    where c.id = course_pricing_tiers.course_id
-      and (
-        is_course_admin(c.id, (select auth.uid())) or
-        is_course_editor(c.id, (select auth.uid())) or
-        c.created_by = (select auth.uid())
+-- Delete access: same permissions as create/update
+-- Deletion of pricing tiers is a sensitive operation that affects course monetization
+CREATE POLICY "delete: course admins, editors, and owners can remove pricing tiers"
+ON public.course_pricing_tiers
+FOR DELETE
+TO authenticated
+USING (
+  EXISTS (
+    SELECT 1 FROM public.courses c
+    WHERE c.id = course_pricing_tiers.course_id
+      AND (
+        is_course_admin(c.id, (SELECT auth.uid())) OR
+        is_course_editor(c.id, (SELECT auth.uid())) OR
+        c.created_by = (SELECT auth.uid())
       )
   )
 );

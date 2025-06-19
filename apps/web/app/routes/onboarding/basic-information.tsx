@@ -92,8 +92,6 @@ export default function PersonalInformation({ loaderData }: Route.ComponentProps
 
   const isDisabled = isPending || methods.formState.isSubmitting;
 
-  console.log('error: ', methods.formState.errors);
-
   return (
     <RemixFormProvider {...methods}>
       <Form method='POST' onSubmit={methods.handleSubmit}>

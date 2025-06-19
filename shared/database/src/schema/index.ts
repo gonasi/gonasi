@@ -209,7 +209,7 @@ export type Database = {
           course_id: string
           created_at: string
           created_by: string
-          currency_code: string
+          currency_code: Database["public"]["Enums"]["currency_code"]
           id: string
           is_active: boolean
           is_free: boolean
@@ -230,7 +230,7 @@ export type Database = {
           course_id: string
           created_at?: string
           created_by: string
-          currency_code?: string
+          currency_code?: Database["public"]["Enums"]["currency_code"]
           id?: string
           is_active?: boolean
           is_free?: boolean
@@ -251,7 +251,7 @@ export type Database = {
           course_id?: string
           created_at?: string
           created_by?: string
-          currency_code?: string
+          currency_code?: Database["public"]["Enums"]["currency_code"]
           id?: string
           is_active?: boolean
           is_free?: boolean
@@ -909,16 +909,16 @@ export type Database = {
         Args: { p_chapter_id: string; p_deleted_by: string }
         Returns: undefined
       }
-      delete_course_pricing_tier: {
-        Args: { p_tier_id: string; p_deleted_by: string }
-        Returns: undefined
-      }
       delete_lesson: {
         Args: { p_lesson_id: string; p_deleted_by: string }
         Returns: undefined
       }
       delete_lesson_block: {
         Args: { p_block_id: string; p_deleted_by: string }
+        Returns: undefined
+      }
+      delete_pricing_tier: {
+        Args: { p_tier_id: string; p_deleted_by: string }
         Returns: undefined
       }
       determine_file_type: {
@@ -949,14 +949,6 @@ export type Database = {
         }
         Returns: undefined
       }
-      reorder_course_pricing_tiers: {
-        Args: {
-          p_course_id: string
-          tier_positions: Json
-          p_updated_by: string
-        }
-        Returns: undefined
-      }
       reorder_lesson_blocks: {
         Args:
           | { blocks: Json }
@@ -967,6 +959,14 @@ export type Database = {
         Args: {
           p_chapter_id: string
           lesson_positions: Json
+          p_updated_by: string
+        }
+        Returns: undefined
+      }
+      reorder_pricing_tiers: {
+        Args: {
+          p_course_id: string
+          tier_positions: Json
           p_updated_by: string
         }
         Returns: undefined
@@ -1001,6 +1001,7 @@ export type Database = {
       app_role: "go_su" | "go_admin" | "go_staff" | "user"
       course_access: "public" | "private"
       course_role: "admin" | "editor" | "viewer"
+      currency_code: "KES" | "USD"
       file_type: "image" | "audio" | "video" | "model3d" | "document" | "other"
       payment_frequency:
         | "monthly"
@@ -1143,6 +1144,7 @@ export const Constants = {
       app_role: ["go_su", "go_admin", "go_staff", "user"],
       course_access: ["public", "private"],
       course_role: ["admin", "editor", "viewer"],
+      currency_code: ["KES", "USD"],
       file_type: ["image", "audio", "video", "model3d", "document", "other"],
       payment_frequency: [
         "monthly",

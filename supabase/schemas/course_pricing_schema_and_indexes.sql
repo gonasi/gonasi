@@ -40,6 +40,11 @@ create type payment_frequency as enum (
   'annual'          -- every 12 months (typically discounted)
 );
 
+create type currency_code as enum (
+  'KES',
+  'USD'
+);
+
 -- ============================================================================
 -- table: course_pricing_tiers
 -- ============================================================================
@@ -55,8 +60,7 @@ create table public.course_pricing_tiers (
   payment_frequency payment_frequency not null,
   is_free boolean not null default true, -- free vs paid tier
   price numeric(19,4) not null check (price >= 0), -- base price if paid
-  currency_code char(3) not null default 'KES'
-    check (currency_code in ('KES', 'USD')), -- restrict to accepted currencies
+  currency_code currency_code not null default 'KES',
 
   -- optional promotional pricing window
   promotional_price numeric(19,4) null check (promotional_price >= 0),

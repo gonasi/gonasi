@@ -16,7 +16,7 @@ import { SpeedInsights } from '@vercel/speed-insights/react';
 import type { JwtPayload } from 'jwt-decode';
 import { jwtDecode } from 'jwt-decode';
 import { getValidatedFormData } from 'remix-hook-form';
-import { dataWithError, getToast } from 'remix-toast';
+import { dataWithError, dataWithSuccess, getToast } from 'remix-toast';
 import { HoneypotProvider } from 'remix-utils/honeypot/react';
 import { safeRedirect } from 'remix-utils/safe-redirect';
 import { Toaster } from 'sonner';
@@ -93,7 +93,7 @@ export async function action({ request }: Route.ActionArgs) {
       const { error } = await logOut(supabase);
       return error
         ? dataWithError(null, 'Sign out failed. Please try again.')
-        : redirect('/', { headers });
+        : dataWithSuccess(null, 'Sign out successful');
     }
 
     default:

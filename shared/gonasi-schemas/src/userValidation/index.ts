@@ -38,11 +38,12 @@ export const FullNameSchema = z
     required_error: `<lucide name="User" size="12" /> We’ll need your full name`,
   })
   .min(3, {
-    message: `<span class="warning">That name's a little short</span> <lucide name="MoveVertical" size="12" />`,
+    message: `That name's a little <span class="warning">short</span> <lucide name="MoveVertical" size="12" />`,
   })
   .max(100, {
     message: `<span class="warning">That name’s a bit too long</span> <lucide name="ScanLine" size="12" />`,
   })
+  .trim()
   .refine((val) => /^[A-Za-z]+(?: [A-Za-z]+)*$/.test(val), {
     message: `Only use letters and single spaces <lucide name="Type" size="12" />`,
   });
