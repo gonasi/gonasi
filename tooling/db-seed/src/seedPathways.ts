@@ -3,10 +3,11 @@ import { type profilesScalars } from '@snaplet/seed';
 
 import { createLearningPath } from '@gonasi/database/learningPaths';
 
+import { TOTAL_PATHWAYS } from './config';
 import { generateRealImage, PASSWORD, supabase } from './constants';
 
 export async function seedPathways(users: profilesScalars[]) {
-  const total = 50;
+  const total = TOTAL_PATHWAYS;
 
   for (let i = 0; i < total; i++) {
     const user = faker.helpers.arrayElement(users);

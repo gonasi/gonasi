@@ -11,6 +11,7 @@ import { createLessonDetails, upsertRichTextBlock } from '@gonasi/database/lesso
 import { fetchAllLessonTypes } from '@gonasi/database/lessonTypes';
 import { getUserProfile } from '@gonasi/database/profile';
 
+import { CHAPTER_COUNT, LESSONS_FOR_CHAPTER_COUNT, TOTAL_COURSES } from './config';
 import { PASSWORD, supabase } from './constants';
 import { FAKE_LEXICAL_STATE } from './fakeLexicalData';
 
@@ -42,7 +43,7 @@ function generateFakeChapter(): {
 
 // Seeds the database with course titles, chapters, and lessons for random users
 export async function seedCreateCourse(users: profilesScalars[]) {
-  const total = 30; // Total number of courses to create
+  const total = TOTAL_COURSES; // Total number of courses to create
 
   for (let i = 0; i < total; i++) {
     const user = faker.helpers.arrayElement(users); // Pick a random user
@@ -63,7 +64,7 @@ export async function seedCreateCourse(users: profilesScalars[]) {
     // Fetch lesson types
     const { data: lessonTypesData } = await fetchAllLessonTypes({
       supabase,
-      limit: 10,
+      limit: 50,
     });
 
     if (!lessonTypesData.length) {
@@ -91,7 +92,7 @@ export async function seedCreateCourse(users: profilesScalars[]) {
     // Fetch user's courses with signed URLs
     const { data: courseData } = await fetchCoursesForOwnerOrCollaborators({
       supabase,
-      limit: 10,
+      limit: 100,
       username: userProfile?.username ?? '',
     });
 
@@ -103,7 +104,7 @@ export async function seedCreateCourse(users: profilesScalars[]) {
           break;
         }
 
-        const chapterCount = faker.number.int({ min: 4, max: 12 }); // Random number of chapters per course
+        const chapterCount = faker.number.int(CHAPTER_COUNT); // Random number of chapters per course
 
         for (let j = 0; j < chapterCount; j++) {
           const chapter = generateFakeChapter();
@@ -128,7 +129,7 @@ export async function seedCreateCourse(users: profilesScalars[]) {
           console.log(`📘 Created chapter "${chapter.name}" for course "${course.name}"`);
 
           // Create lessons for the chapter
-          const lessonCount = faker.number.int({ min: 2, max: 12 });
+          const lessonCount = faker.number.int(LESSONS_FOR_CHAPTER_COUNT);
           for (let k = 0; k < lessonCount; k++) {
             const name = faker.hacker.phrase(); // Generate a fake lesson title
             const lessonType = faker.helpers.arrayElement(lessonTypesData); // Pick a random lesson type
@@ -152,7 +153,7 @@ export async function seedCreateCourse(users: profilesScalars[]) {
             console.log(`🎥 Created lesson "${name}" in chapter "${chapter.name}"`);
 
             // Create blocks for the lesson
-            const blockCount = faker.number.int({ min: 2, max: 12 });
+            const blockCount = faker.number.int(BLOCKS_FOR_LESSON_COUNT);
             const playbackMode = faker.helpers.arrayElement(['inline', 'standalone'] as const);
 
             for (let l = 0; l < blockCount; l++) {
