@@ -3355,3 +3355,136 @@ CREATE TRIGGER set_updated_at BEFORE UPDATE ON public.profiles FOR EACH ROW EXEC
 CREATE TRIGGER on_auth_user_created AFTER INSERT ON auth.users FOR EACH ROW EXECUTE FUNCTION handle_new_user();
 
 
+create policy "Allow public access to avatar images"
+on "storage"."objects"
+as permissive
+for select
+to public
+using ((bucket_id = 'avatars'::text));
+
+
+create policy "Allow uploading avatar images"
+on "storage"."objects"
+as permissive
+for insert
+to public
+with check ((bucket_id = 'avatars'::text));
+
+
+create policy "Allow user to delete own avatar"
+on "storage"."objects"
+as permissive
+for delete
+to public
+using (((( SELECT auth.uid() AS uid) = owner) AND (bucket_id = 'avatars'::text)));
+
+
+create policy "Allow user to update own avatar"
+on "storage"."objects"
+as permissive
+for update
+to public
+using ((( SELECT auth.uid() AS uid) = owner))
+with check ((bucket_id = 'avatars'::text));
+
+
+create policy "Delete: owner can delete course thumbnails"
+on "storage"."objects"
+as permissive
+for delete
+to public
+using (((bucket_id = 'courses'::text) AND (owner = ( SELECT auth.uid() AS uid))));
+
+
+create policy "Insert: allow only admin/editor to upload to courses bucket"
+on "storage"."objects"
+as permissive
+for insert
+to public
+with check (((bucket_id = 'courses'::text) AND (is_course_admin(((metadata ->> 'id'::text))::uuid, ( SELECT auth.uid() AS uid)) OR is_course_editor(((metadata ->> 'id'::text))::uuid, ( SELECT auth.uid() AS uid)) OR (owner = ( SELECT auth.uid() AS uid)))));
+
+
+create policy "Select: allow public read access to course thumbnails"
+on "storage"."objects"
+as permissive
+for select
+to public
+using ((bucket_id = 'courses'::text));
+
+
+create policy "Update: admin/editor/owner can update course thumbnails"
+on "storage"."objects"
+as permissive
+for update
+to public
+using (((bucket_id = 'courses'::text) AND (is_course_admin(((metadata ->> 'id'::text))::uuid, ( SELECT auth.uid() AS uid)) OR is_course_editor(((metadata ->> 'id'::text))::uuid, ( SELECT auth.uid() AS uid)) OR (owner = ( SELECT auth.uid() AS uid)))))
+with check ((bucket_id = 'courses'::text));
+
+
+create policy "allow files bucket delete access"
+on "storage"."objects"
+as permissive
+for delete
+to public
+using (((( SELECT auth.uid() AS uid) = (owner_id)::uuid) AND (bucket_id = 'files'::text)));
+
+
+create policy "allow files bucket insert access"
+on "storage"."objects"
+as permissive
+for insert
+to public
+with check (((( SELECT auth.uid() AS uid) = (owner_id)::uuid) AND (bucket_id = 'files'::text)));
+
+
+create policy "allow files bucket select access"
+on "storage"."objects"
+as permissive
+for select
+to public
+using (((auth.role() = 'authenticated'::text) AND (bucket_id = 'files'::text)));
+
+
+create policy "allow files bucket update access"
+on "storage"."objects"
+as permissive
+for update
+to public
+using ((( SELECT auth.uid() AS uid) = (owner_id)::uuid))
+with check ((bucket_id = 'files'::text));
+
+
+create policy "pathways_bucket_delete_own_object"
+on "storage"."objects"
+as permissive
+for delete
+to public
+using (((( SELECT auth.uid() AS uid) = owner) AND (bucket_id = 'pathways'::text)));
+
+
+create policy "pathways_bucket_insert"
+on "storage"."objects"
+as permissive
+for insert
+to public
+with check ((bucket_id = 'pathways'::text));
+
+
+create policy "pathways_bucket_read"
+on "storage"."objects"
+as permissive
+for select
+to public
+using ((bucket_id = 'pathways'::text));
+
+
+create policy "pathways_bucket_update_own_object"
+on "storage"."objects"
+as permissive
+for update
+to public
+using ((( SELECT auth.uid() AS uid) = owner))
+with check ((bucket_id = 'pathways'::text));
+
+
+

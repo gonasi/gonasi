@@ -1132,7 +1132,7 @@
           "id": "public.course_pricing_tiers.currency_code",
           "name": "currency_code",
           "columnName": "currency_code",
-          "type": "bpchar",
+          "type": "currency_code",
           "isRequired": true,
           "kind": "scalar",
           "isList": false,
@@ -1140,7 +1140,7 @@
           "sequence": false,
           "hasDefaultValue": true,
           "isId": false,
-          "maxLength": 3
+          "maxLength": null
         },
         {
           "id": "public.course_pricing_tiers.promotional_price",
@@ -8712,6 +8712,17 @@
         },
         {
           "name": "viewer"
+        }
+      ]
+    },
+    "currency_code": {
+      "schemaName": "public",
+      "values": [
+        {
+          "name": "KES"
+        },
+        {
+          "name": "USD"
         }
       ]
     },
