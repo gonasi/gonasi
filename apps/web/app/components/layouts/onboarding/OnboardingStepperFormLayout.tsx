@@ -34,7 +34,7 @@ export function OnboardingStepperFormLayout({ steps, children }: Props) {
     if (steps?.length && currentStepIndex > 0) {
       const prevStep = steps[currentStepIndex - 1];
       if (!prevStep) return;
-      navigate(`/onboarding/${dynamicParam}/${prevStep.path}`);
+      navigate(`/go/onboarding/${dynamicParam}/${prevStep.path}`);
     }
   };
 

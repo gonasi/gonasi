@@ -97,31 +97,34 @@ export type Database = {
       }
       course_categories: {
         Row: {
+          course_count: number
           created_at: string
-          created_by: string
+          created_by: string | null
           description: string
           id: string
           name: string
           updated_at: string
-          updated_by: string
+          updated_by: string | null
         }
         Insert: {
+          course_count?: number
           created_at?: string
-          created_by: string
+          created_by?: string | null
           description: string
           id?: string
           name: string
           updated_at?: string
-          updated_by: string
+          updated_by?: string | null
         }
         Update: {
+          course_count?: number
           created_at?: string
-          created_by?: string
+          created_by?: string | null
           description?: string
           id?: string
           name?: string
           updated_at?: string
-          updated_by?: string
+          updated_by?: string | null
         }
         Relationships: [
           {
@@ -206,7 +209,7 @@ export type Database = {
           course_id: string
           created_at: string
           created_by: string
-          currency_code: string
+          currency_code: Database["public"]["Enums"]["currency_code"]
           id: string
           is_active: boolean
           is_free: boolean
@@ -227,7 +230,7 @@ export type Database = {
           course_id: string
           created_at?: string
           created_by: string
-          currency_code?: string
+          currency_code?: Database["public"]["Enums"]["currency_code"]
           id?: string
           is_active?: boolean
           is_free?: boolean
@@ -248,7 +251,7 @@ export type Database = {
           course_id?: string
           created_at?: string
           created_by?: string
-          currency_code?: string
+          currency_code?: Database["public"]["Enums"]["currency_code"]
           id?: string
           is_active?: boolean
           is_free?: boolean
@@ -292,30 +295,33 @@ export type Database = {
       course_sub_categories: {
         Row: {
           category_id: string
+          course_count: number
           created_at: string
-          created_by: string
+          created_by: string | null
           id: string
           name: string
           updated_at: string
-          updated_by: string
+          updated_by: string | null
         }
         Insert: {
           category_id: string
+          course_count?: number
           created_at?: string
-          created_by: string
+          created_by?: string | null
           id?: string
           name: string
           updated_at?: string
-          updated_by: string
+          updated_by?: string | null
         }
         Update: {
           category_id?: string
+          course_count?: number
           created_at?: string
-          created_by?: string
+          created_by?: string | null
           id?: string
           name?: string
           updated_at?: string
-          updated_by?: string
+          updated_by?: string | null
         }
         Relationships: [
           {
@@ -573,35 +579,35 @@ export type Database = {
         Row: {
           bg_color: string
           created_at: string
-          created_by: string
+          created_by: string | null
           description: string
           id: string
           lucide_icon: string
           name: string
           updated_at: string
-          updated_by: string
+          updated_by: string | null
         }
         Insert: {
           bg_color: string
           created_at?: string
-          created_by: string
+          created_by?: string | null
           description: string
           id?: string
           lucide_icon: string
           name: string
           updated_at?: string
-          updated_by: string
+          updated_by?: string | null
         }
         Update: {
           bg_color?: string
           created_at?: string
-          created_by?: string
+          created_by?: string | null
           description?: string
           id?: string
           lucide_icon?: string
           name?: string
           updated_at?: string
-          updated_by?: string
+          updated_by?: string | null
         }
         Relationships: [
           {
@@ -836,6 +842,121 @@ export type Database = {
         }
         Relationships: []
       }
+      published_courses: {
+        Row: {
+          blur_hash: string | null
+          course_categories: Json | null
+          course_category_id: string
+          course_chapters: Json | null
+          course_id: string
+          course_sub_categories: Json | null
+          course_sub_category_id: string
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          image_url: string | null
+          lessons_with_blocks: Json | null
+          name: string
+          pathway_id: string
+          pathways: Json | null
+          pricing_data: Json | null
+          published_at: string
+          updated_at: string
+          updated_by: string
+          version: number
+        }
+        Insert: {
+          blur_hash?: string | null
+          course_categories?: Json | null
+          course_category_id: string
+          course_chapters?: Json | null
+          course_id: string
+          course_sub_categories?: Json | null
+          course_sub_category_id: string
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          lessons_with_blocks?: Json | null
+          name: string
+          pathway_id: string
+          pathways?: Json | null
+          pricing_data?: Json | null
+          published_at?: string
+          updated_at?: string
+          updated_by: string
+          version?: number
+        }
+        Update: {
+          blur_hash?: string | null
+          course_categories?: Json | null
+          course_category_id?: string
+          course_chapters?: Json | null
+          course_id?: string
+          course_sub_categories?: Json | null
+          course_sub_category_id?: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          lessons_with_blocks?: Json | null
+          name?: string
+          pathway_id?: string
+          pathways?: Json | null
+          pricing_data?: Json | null
+          published_at?: string
+          updated_at?: string
+          updated_by?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "published_courses_course_category_id_fkey"
+            columns: ["course_category_id"]
+            isOneToOne: false
+            referencedRelation: "course_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "published_courses_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "published_courses_course_sub_category_id_fkey"
+            columns: ["course_sub_category_id"]
+            isOneToOne: false
+            referencedRelation: "course_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "published_courses_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "published_courses_pathway_id_fkey"
+            columns: ["pathway_id"]
+            isOneToOne: false
+            referencedRelation: "pathways"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "published_courses_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       role_permissions: {
         Row: {
           id: string
@@ -895,20 +1016,12 @@ export type Database = {
         Args: { p_course_id: string; p_target_model: string }
         Returns: boolean
       }
-      check_subcategory_belongs_to_category: {
-        Args: { category: string; subcategory: string }
-        Returns: boolean
-      }
       custom_access_token_hook: {
         Args: { event: Json }
         Returns: Json
       }
       delete_chapter: {
         Args: { p_chapter_id: string; p_deleted_by: string }
-        Returns: undefined
-      }
-      delete_course_pricing_tier: {
-        Args: { p_tier_id: string; p_deleted_by: string }
         Returns: undefined
       }
       delete_lesson: {
@@ -947,14 +1060,6 @@ export type Database = {
         Args: {
           p_course_id: string
           chapter_positions: Json
-          p_updated_by: string
-        }
-        Returns: undefined
-      }
-      reorder_course_pricing_tiers: {
-        Args: {
-          p_course_id: string
-          tier_positions: Json
           p_updated_by: string
         }
         Returns: undefined
@@ -1011,6 +1116,7 @@ export type Database = {
       app_role: "go_su" | "go_admin" | "go_staff" | "user"
       course_access: "public" | "private"
       course_role: "admin" | "editor" | "viewer"
+      currency_code: "KES" | "USD"
       file_type: "image" | "audio" | "video" | "model3d" | "document" | "other"
       payment_frequency:
         | "monthly"
@@ -1153,6 +1259,7 @@ export const Constants = {
       app_role: ["go_su", "go_admin", "go_staff", "user"],
       course_access: ["public", "private"],
       course_role: ["admin", "editor", "viewer"],
+      currency_code: ["KES", "USD"],
       file_type: ["image", "audio", "video", "model3d", "document", "other"],
       payment_frequency: [
         "monthly",

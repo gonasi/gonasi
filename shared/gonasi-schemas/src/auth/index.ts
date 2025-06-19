@@ -12,12 +12,21 @@ export const LoginFormSchema = z.object({
 export type LoginFormSchemaTypes = z.infer<typeof LoginFormSchema>;
 
 export const SignupFormSchema = z.object({
+  intent: z.literal('signup'),
   fullName: z
-    .string({ required_error: 'Please enter your full name or company name.' })
+    .string({
+      required_error:
+        '<lucide name="User" size="12" /> Please enter your <span class="go-title">full name</span> or <span class="go-title">company name</span>',
+    })
     .trim()
-    .min(5, 'Name must be at least 5 characters long.')
-    .max(100, 'Name can’t be longer than 100 characters.'),
-
+    .min(5, {
+      message:
+        '<span class="warning">That name’s a bit short</span> minimum 5 characters <lucide name="ArrowRight" size="12" />',
+    })
+    .max(100, {
+      message:
+        '<span class="warning">That’s a long one</span> — keep it under 100 characters <lucide name="ScanLine" size="12" />',
+    }),
   email: EmailSchema,
   password: PasswordSchema,
   redirectTo: z.string().optional().nullable(),
@@ -32,4 +41,8 @@ export const SignOutFormSchema = z.object({
 export type SignOutFormSchemaTypes = z.infer<typeof SignOutFormSchema>;
 
 // Discriminated union
-export const AuthSchema = z.discriminatedUnion('intent', [LoginFormSchema, SignOutFormSchema]);
+export const AuthSchema = z.discriminatedUnion('intent', [
+  SignupFormSchema,
+  LoginFormSchema,
+  SignOutFormSchema,
+]);

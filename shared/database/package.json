@@ -11,6 +11,8 @@
   "scripts": {
     "lint": "eslint src",
     "lint:fix": "npm run lint --fix",
+    "test": "vitest",
+    "test:ui": "vitest --ui --coverage.enabled=true",
     "typecheck": "tsc --noEmit"
   },
   "eslintConfig": {

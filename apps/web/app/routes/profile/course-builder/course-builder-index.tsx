@@ -28,13 +28,6 @@ export function meta({ params }: Route.MetaArgs) {
   ];
 }
 
-// Cache headers
-export function headers(_: Route.HeadersArgs) {
-  return {
-    'Cache-Control': 's-maxage=1, stale-while-revalidate=59',
-  };
-}
-
 // Types
 export type AllCoursesData = Exclude<Awaited<ReturnType<typeof loader>>, Response>['data'];
 

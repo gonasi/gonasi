@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import type {
   CourseChaptersLessonsLoaderReturnType,
   LessonBlocksLoaderReturnType,
-} from '../publish-course';
+} from '../publish-index';
 import type { ValidationField } from './ValidationSection';
 
 interface UseValidationFieldsProps {

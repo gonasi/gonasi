@@ -30,11 +30,10 @@ const main = async () => {
   // complete onboarding
   await seedCompleteOnboarding(profiles);
 
-  // Seed lesson types pathways and course categories using profiles
   await seedLessonTypes(profiles);
+  await seedCourseCategories(profiles);
 
   await seedPathways(profiles);
-  await seedCourseCategories(profiles);
 
   // Fetch course categories
   const { data: databaseCategories } = await supabase.from('course_categories').select();

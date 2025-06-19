@@ -7,11 +7,12 @@ import {
   createNewCourseTitle,
   fetchCoursesForOwnerOrCollaborators,
 } from '@gonasi/database/courses';
-import { createLessonDetails } from '@gonasi/database/lessons';
+import { createLessonDetails, upsertRichTextBlock } from '@gonasi/database/lessons';
 import { fetchAllLessonTypes } from '@gonasi/database/lessonTypes';
 import { getUserProfile } from '@gonasi/database/profile';
 
 import { PASSWORD, supabase } from './constants';
+import { FAKE_LEXICAL_STATE } from './fakeLexicalData';
 
 // Generate a realistic fake course title using random subject + prefix
 function generateFakeCourseTitle(): string {
@@ -41,7 +42,7 @@ function generateFakeChapter(): {
 
 // Seeds the database with course titles, chapters, and lessons for random users
 export async function seedCreateCourse(users: profilesScalars[]) {
-  const total = 20; // Total number of courses to create
+  const total = 30; // Total number of courses to create
 
   for (let i = 0; i < total; i++) {
     const user = faker.helpers.arrayElement(users); // Pick a random user
@@ -116,6 +117,7 @@ export async function seedCreateCourse(users: profilesScalars[]) {
             courseId: course.id,
             name: chapter.name,
             description: chapter.description,
+            requiresPayment: false,
           });
 
           if (!chapterSuccess || !chapterData) {
@@ -127,7 +129,6 @@ export async function seedCreateCourse(users: profilesScalars[]) {
 
           // Create lessons for the chapter
           const lessonCount = faker.number.int({ min: 2, max: 12 });
-
           for (let k = 0; k < lessonCount; k++) {
             const name = faker.hacker.phrase(); // Generate a fake lesson title
             const lessonType = faker.helpers.arrayElement(lessonTypesData); // Pick a random lesson type
@@ -149,6 +150,37 @@ export async function seedCreateCourse(users: profilesScalars[]) {
             }
 
             console.log(`🎥 Created lesson "${name}" in chapter "${chapter.name}"`);
+
+            // Create blocks for the lesson
+            const blockCount = faker.number.int({ min: 2, max: 12 });
+            const playbackMode = faker.helpers.arrayElement(['inline', 'standalone'] as const);
+
+            for (let l = 0; l < blockCount; l++) {
+              const richTextSchema = {
+                courseId: course.id,
+                lessonId: lessonData.id,
+                pluginType: 'rich_text_editor' as const,
+                content: {
+                  richTextState: FAKE_LEXICAL_STATE,
+                },
+                settings: {
+                  playbackMode,
+                  weight: faker.number.int({ min: 1, max: 10 }),
+                },
+              };
+
+              const { success: blockSuccess, message: blockMessage } = await upsertRichTextBlock(
+                supabase,
+                richTextSchema,
+              );
+
+              if (!blockSuccess) {
+                console.error(`❌ Failed to create block: ${blockMessage}`);
+                break;
+              } else {
+                console.log(`Lesson block added: ${blockMessage}"`);
+              }
+            }
           }
         }
       }

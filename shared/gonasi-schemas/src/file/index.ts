@@ -129,18 +129,28 @@ export const getFileMetadata = (file: File): FileMetadata => {
 // ----------------------
 
 export const FileNameSchema = z
-  .string({ required_error: 'Please enter a name.' })
-  .min(3, { message: 'The name must be at least 3 characters.' })
-  .max(100, { message: 'The name must be 100 characters or fewer.' })
+  .string({
+    required_error: 'Just give your <span class="go-title">file a name</span> to get started.',
+  })
+  .min(3, {
+    message:
+      '<lucide name="Minimize" size="12" /> Let’s make that <span class="go-title">file name</span> a bit longer, at least 3 characters.',
+  })
+  .max(100, {
+    message:
+      '<lucide name="Maximize2" size="12" /> That’s a long one! Keep your <span class="go-title">file name</span> under 100 characters.',
+  })
   .refine((val) => /^[\w\d\-_. ]+$/.test(val), {
-    message: 'Name must contain only letters, numbers, spaces, dashes, or underscores.',
+    message:
+      '<lucide name="BadgeAlert" size="12" /> Use only letters, numbers, spaces, dashes (`-`), underscores (`_`), or dots (`.`) in your <span class="go-title">file name</span>.',
   });
 
 export const NewFileTypeSchema = z.instanceof(File).superRefine((file, ctx) => {
   if (file.size === 0) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      message: 'File is required.',
+      message:
+        '<lucide name="FileWarning" size="12" /> Looks like you forgot to pick a <span class="go-title">file</span>.',
     });
     return;
   }
@@ -148,7 +158,8 @@ export const NewFileTypeSchema = z.instanceof(File).superRefine((file, ctx) => {
   if (file.size > MAX_FILE_SIZE) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      message: 'File size must be less than 100MB.',
+      message:
+        '<lucide name="FileX" size="12" /> That <span class="go-title">file</span> is a bit too big—keep it under 100MB.',
     });
   }
 
@@ -156,7 +167,8 @@ export const NewFileTypeSchema = z.instanceof(File).superRefine((file, ctx) => {
   if (!ALL_EXTENSIONS.includes(extension)) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      message: 'Unsupported file type.',
+      message:
+        '<lucide name="FileCode2" size="12" /> Hmm… we can’t use that <span class="go-title">file type</span>. Try a different one.',
     });
   }
 });

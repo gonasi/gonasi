@@ -1,6 +1,5 @@
 import { Form, useParams } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { LockKeyhole, LockKeyholeOpen } from 'lucide-react';
 import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
 import { dataWithError, redirectWithError, redirectWithSuccess } from 'remix-toast';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
@@ -11,6 +10,7 @@ import { EditChapterSchema, type EditChapterSchemaTypes } from '@gonasi/schemas/
 
 import type { Route } from './+types/edit-course-chapter';
 
+import { LockToggleIcon } from '~/components/icons';
 import { Button } from '~/components/ui/button';
 import { GoInputField, GoSwitchField, GoTextAreaField } from '~/components/ui/forms/elements';
 import { Modal } from '~/components/ui/modal';
@@ -132,11 +132,7 @@ export default function EditCourseChapter({ loaderData }: Route.ComponentProps) 
                   children: (
                     <p className='flex items-center space-x-1'>
                       <span>Paid chapter</span>
-                      {watchRequiresPayment ? (
-                        <LockKeyhole size={12} />
-                      ) : (
-                        <LockKeyholeOpen size={12} />
-                      )}
+                      <LockToggleIcon lock={watchRequiresPayment} />
                     </p>
                   ),
                   required: false,

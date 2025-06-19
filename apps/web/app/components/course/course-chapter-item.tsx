@@ -2,19 +2,12 @@ import { useEffect, useState } from 'react';
 import { useFetcher, useParams } from 'react-router';
 import { AccordionContent, AccordionItem, AccordionTrigger } from '@radix-ui/react-accordion';
 import { Reorder, useDragControls, useMotionValue } from 'framer-motion';
-import {
-  BookOpen,
-  GripVerticalIcon,
-  LockKeyhole,
-  LockKeyholeOpen,
-  Pencil,
-  Plus,
-  Trash,
-} from 'lucide-react';
+import { BookOpen, GripVerticalIcon, Pencil, Plus, Trash } from 'lucide-react';
 
 import { ActionDropdown } from '../action-dropdown';
 import { NotFoundCard } from '../cards';
 import { LessonCard } from '../cards/lesson-card';
+import { LockToggleIcon } from '../icons';
 import { Badge } from '../ui/badge';
 import { NavLinkButton } from '../ui/button';
 import { ReorderIconTooltip } from '../ui/tooltip/ReorderIconToolTip';
@@ -126,11 +119,7 @@ export default function CourseChapterItem({ chapter, loading }: Props) {
               {/* Chapter title and reorder icon */}
               <div className='flex items-center space-x-1'>
                 <div className='ml-2'>
-                  {chapter.requires_payment ? (
-                    <LockKeyhole size={12} />
-                  ) : (
-                    <LockKeyholeOpen size={12} />
-                  )}
+                  <LockToggleIcon lock={chapter.requires_payment} size={14} />
                 </div>
                 <h3 className='mt-1 line-clamp-1 text-left text-base md:text-lg'>{chapter.name}</h3>
               </div>

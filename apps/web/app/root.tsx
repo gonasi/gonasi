@@ -16,13 +16,17 @@ import { SpeedInsights } from '@vercel/speed-insights/react';
 import type { JwtPayload } from 'jwt-decode';
 import { jwtDecode } from 'jwt-decode';
 import { getValidatedFormData } from 'remix-hook-form';
-import { dataWithError, getToast } from 'remix-toast';
+import { dataWithError, dataWithSuccess, getToast } from 'remix-toast';
 import { HoneypotProvider } from 'remix-utils/honeypot/react';
 import { safeRedirect } from 'remix-utils/safe-redirect';
 import { Toaster } from 'sonner';
 import type z from 'zod';
 
-import { logOut, signInWithEmailAndPassword } from '@gonasi/database/auth';
+import {
+  logOut,
+  signInWithEmailAndPassword,
+  signUpWithEmailAndPassword,
+} from '@gonasi/database/auth';
 import type { UserRole } from '@gonasi/database/client';
 import { getUserProfile } from '@gonasi/database/profile';
 import { AuthSchema } from '@gonasi/schemas/auth';
@@ -80,6 +84,14 @@ export async function action({ request }: Route.ActionArgs) {
   const { supabase, headers } = createClient(request);
 
   switch (data.intent) {
+    case 'signup': {
+      const { error } = await signUpWithEmailAndPassword(supabase, data);
+      const redirectTo = data.redirectTo ?? '/';
+
+      return error
+        ? dataWithError(null, 'Incorrect email or password.')
+        : redirect(safeRedirect(redirectTo), { headers });
+    }
     case 'login': {
       const { error } = await signInWithEmailAndPassword(supabase, data);
       const redirectTo = data.redirectTo ?? '/';
@@ -93,7 +105,7 @@ export async function action({ request }: Route.ActionArgs) {
       const { error } = await logOut(supabase);
       return error
         ? dataWithError(null, 'Sign out failed. Please try again.')
-        : redirect('/', { headers });
+        : dataWithSuccess(null, 'Sign out successful');
     }
 
     default:
@@ -151,7 +163,7 @@ export const links: Route.LinksFunction = () => [
     href: `/assets/fonts/montserrat/Montserrat-${name}`,
     as: 'font',
     type: name.endsWith('.otf') ? 'font/otf' : 'font/ttf',
-    crossOrigin: 'anonymous',
+    crossOrigin: 'anonymous' as 'anonymous', // cast to the exact string literal type
   })),
 ];
 

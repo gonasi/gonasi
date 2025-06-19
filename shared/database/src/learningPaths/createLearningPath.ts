@@ -27,7 +27,7 @@ export const createLearningPath = async (
       .upload(fileName, image);
 
     if (uploadError) {
-      console.log('createLearningPath: Image upload failed:', uploadError.message);
+      console.error('[createLearningPath]: Image upload failed:', uploadError);
       return { success: false, message: `Image upload failed: ${uploadError.message}` };
     }
 

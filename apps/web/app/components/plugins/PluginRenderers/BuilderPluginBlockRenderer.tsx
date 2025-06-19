@@ -4,7 +4,7 @@ import type { PluginTypeId } from '@gonasi/schemas/plugins';
 
 import { BuilderRichTextPlugin } from '../RichTextPlugins/RichTextPlugin/BuilderRichTextPlugin';
 
-import type { LessonBlockLoaderReturnType } from '~/routes/dashboard/courses/lessons/plugins/edit-plugin-modal';
+import type { LessonBlockLoaderReturnType } from '~/routes/profile/course-builder/courseId/content/chapterId/lessonId/lesson-blocks/plugins/edit-plugin-modal';
 
 interface BuilderPluginRendererProps {
   pluginTypeId: PluginTypeId;

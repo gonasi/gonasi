@@ -51,6 +51,13 @@ export const signInWithEmailAndPassword = async (
     password,
   });
 
+  if (error) {
+    console.error(`[signInWithEmailAndPassword]: `, {
+      error: error.message,
+      email,
+    });
+  }
+
   return { error, data };
 };
 
@@ -69,6 +76,13 @@ export const signUpWithEmailAndPassword = async (
       },
     },
   });
+
+  if (error) {
+    console.error(`[signUpWithEmailAndPassword]: `, {
+      error: error.message,
+      email,
+    });
+  }
 
   return { error, data };
 };

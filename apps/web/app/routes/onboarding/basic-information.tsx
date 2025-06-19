@@ -72,7 +72,7 @@ export async function action({ request, params }: Route.ActionArgs) {
   const storedData = session.get(FORM_STEPPER_COOKIE_NAMES.basicInfo) || {};
   session.set(FORM_STEPPER_COOKIE_NAMES.basicInfo, { ...storedData, ...data });
 
-  return redirect(`/onboarding/${params.userId}/contact-information`, {
+  return redirect(`/go/onboarding/${params.userId}/contact-information`, {
     headers: { 'Set-Cookie': await formStepperSessionStorage.commitSession(session) },
   });
 }
@@ -91,8 +91,6 @@ export default function PersonalInformation({ loaderData }: Route.ComponentProps
   });
 
   const isDisabled = isPending || methods.formState.isSubmitting;
-
-  console.log('error: ', methods.formState.errors);
 
   return (
     <RemixFormProvider {...methods}>
