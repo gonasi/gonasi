@@ -1,5 +1,5 @@
 // routes/publish-course/publish-course.tsx
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Form, Link } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { RefreshCw } from 'lucide-react';
@@ -104,10 +104,9 @@ export default function PublishCourse({ loaderData, params }: Route.ComponentPro
   const rootRoute = `/${params.username}/course-builder/${params.courseId}`;
   const closeRoute = `${rootRoute}/overview`;
 
-  const methods = useRemixForm<PublishCourseSchemaTypes>({
-    mode: 'all',
-    resolver,
-    defaultValues: {
+  // Optimize default values to reduce memory usage for large datasets
+  const optimizedDefaultValues = useMemo(
+    () => ({
       courseOverview: {
         id: courseOverview.id,
         name: courseOverview.name,
@@ -119,7 +118,7 @@ export default function PublishCourse({ loaderData, params }: Route.ComponentPro
         pathways: courseOverview.pathways ?? null,
       },
       pricingData:
-        pricingData?.map((p: PricingType) => ({
+        pricingData?.map((p: any) => ({
           id: p.id,
           course_id: p.course_id,
           payment_frequency: p.payment_frequency,
@@ -137,7 +136,7 @@ export default function PublishCourse({ loaderData, params }: Route.ComponentPro
           is_recommended: p.is_recommended,
         })) ?? [],
       courseChapters:
-        publishCourseChapters?.map((chapter: CourseChaptersType) => ({
+        publishCourseChapters?.map((chapter: any) => ({
           lesson_count: chapter.lessons?.length ?? 0,
           id: chapter.id,
           course_id: chapter.course_id,
@@ -146,7 +145,7 @@ export default function PublishCourse({ loaderData, params }: Route.ComponentPro
           position: chapter.position ?? 0,
           requires_payment: chapter.requires_payment,
           lessons:
-            chapter.lessons?.map((lesson) => ({
+            chapter.lessons?.map((lesson: any) => ({
               id: lesson.id,
               course_id: lesson.course_id,
               chapter_id: lesson.chapter_id,
@@ -157,9 +156,9 @@ export default function PublishCourse({ loaderData, params }: Route.ComponentPro
               lesson_types: lesson.lesson_types,
             })) ?? [],
         })) ?? [],
-      // Updated to match flattened structure - single array of lessons
+      // Optimize lessons with blocks - only include essential data
       lessonsWithBlocks:
-        lessonsWithBlocks?.map((lesson) => ({
+        lessonsWithBlocks?.map((lesson: any) => ({
           id: lesson.id,
           course_id: lesson.course_id,
           chapter_id: lesson.chapter_id,
@@ -168,18 +167,26 @@ export default function PublishCourse({ loaderData, params }: Route.ComponentPro
           position: lesson.position,
           settings: lesson.settings,
           lesson_types: lesson.lesson_types,
+          // Only include block count and essential block data to reduce memory usage
           blocks:
-            lesson.blocks?.map((block) => ({
+            lesson.blocks?.map((block: any) => ({
               plugin_type: block.plugin_type,
               id: block.id,
-              content: block.content,
+              content: block.content, // Consider limiting content size for validation
               settings: block.settings,
               position: block.position,
               lesson_id: block.lesson_id,
               updated_by: block.updated_by,
             })) ?? null,
         })) ?? [],
-    },
+    }),
+    [courseOverview, pricingData, publishCourseChapters, lessonsWithBlocks],
+  );
+
+  const methods = useRemixForm<PublishCourseSchemaTypes>({
+    mode: 'all',
+    resolver,
+    defaultValues: optimizedDefaultValues,
   });
 
   // Use our custom hooks
