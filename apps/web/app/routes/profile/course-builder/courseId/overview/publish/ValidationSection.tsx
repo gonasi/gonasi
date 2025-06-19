@@ -1,7 +1,6 @@
 // components/ValidationSection.tsx
-import type { CSSProperties } from 'react';
 import { useCallback, useMemo } from 'react';
-import { VariableSizeList as List } from 'react-window';
+import { Virtuoso } from 'react-virtuoso';
 import { motion } from 'framer-motion';
 import { Ban, CheckCheck, Clock, LoaderCircle } from 'lucide-react';
 
@@ -95,29 +94,20 @@ export function ValidationSection({ title, fields, validationState }: Validation
     }
   }, [validationState]);
 
-  // Calculate item size based on content
-  const getItemSize = useCallback(
+  // Item renderer for Virtuoso
+  const ItemRenderer = useCallback(
     (index: number) => {
       const field = fields[index];
-      if (!field) return 0; // fallback size
+      if (!field) return null;
 
-      // Base size + estimated size based on content length
-      const baseSize = 20;
-      const nameLines = Math.ceil(field.name.length / 50); // Estimate lines for name
-      const fixLines = Math.ceil(field.fix.length / 40); // Estimate lines for fix
-
-      return baseSize + Math.max(nameLines, fixLines) * 20;
+      return (
+        <div className='bg-card/10 mb-2 rounded-lg p-2'>
+          <GoValidationCheckField name={field.name} fixLink={field.fix} />
+        </div>
+      );
     },
     [fields],
   );
-
-  // Calculate total height with max limit
-  const listHeight = useMemo(() => {
-    if (fields.length === 0) return 0;
-
-    const totalHeight = fields.reduce((acc, _, index) => acc + getItemSize(index), 0);
-    return Math.min(totalHeight, 400); // Max height of 400px
-  }, [fields, getItemSize]);
 
   const showErrorFields = validationState === 'error' && fields.length > 0;
 
@@ -149,37 +139,18 @@ export function ValidationSection({ title, fields, validationState }: Validation
           transition={{ duration: 0.3 }}
           className='mt-2 overflow-hidden'
         >
-          <List
-            height={listHeight}
-            itemCount={fields.length}
-            itemSize={getItemSize}
-            width='100%'
-            itemData={fields}
-          >
-            {ValidationRow}
-          </List>
+          <div className='w-full' style={{ height: `${fields.length * 60}px` }}>
+            <Virtuoso
+              data={fields}
+              totalCount={fields.length}
+              itemContent={ItemRenderer}
+              computeItemKey={(index) => `validation-${index}-${fields[index]?.name}`}
+              style={{ height: '100%' }}
+              className='scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted-foreground/20'
+            />
+          </div>
         </motion.div>
       )}
     </div>
   );
 }
-
-// Optimized Row Renderer
-interface RowProps {
-  index: number;
-  style: CSSProperties;
-  data: ValidationField[];
-}
-
-const ValidationRow = ({ index, style, data }: RowProps) => {
-  const field = data[index];
-  if (!field) return null;
-
-  return (
-    <div style={style} className='bg-card/10 rounded-lg p-2'>
-      <GoValidationCheckField name={field.name} fixLink={field.fix} />
-    </div>
-  );
-};
-
-ValidationRow.displayName = 'ValidationRow';

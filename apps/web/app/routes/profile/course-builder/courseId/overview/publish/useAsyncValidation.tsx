@@ -37,7 +37,8 @@ export function useAsyncValidation<T extends FieldValues = FieldValues>({
           ...prev,
           [key]: hasErrors ? 'error' : 'success',
         }));
-      } catch (error) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      } catch (_error) {
         setValidationStates((prev) => ({ ...prev, [key]: 'error' }));
       } finally {
         setLoadingStates((prev) => ({ ...prev, [key]: false }));
