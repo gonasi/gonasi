@@ -41,7 +41,7 @@ export function GoValidationCheckField({
               to={fixLink}
               className={({ isPending }) =>
                 cn(
-                  'font-secondary flex items-center justify-between py-0.5 pl-4',
+                  'font-secondary flex items-center justify-between px-4 py-2',
                   fixLink && 'hover:underline',
                   hasError && 'text-danger',
                   !hasError && 'text-success',

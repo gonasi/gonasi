@@ -15,7 +15,10 @@ import { PublishCourseSchema, type PublishCourseSchemaTypes } from '@gonasi/sche
 import type { Route } from './+types/publish-index';
 import { getErrorFieldPathsBySection } from './publish/getErrorFieldPathsBySection';
 import { useAsyncValidation } from './publish/useAsyncValidation';
-import { useValidationFields } from './publish/useValidationFields';
+import { useCourseChaptersFields } from './publish/validation/useCourseChaptersFields';
+import { useCourseOverviewFields } from './publish/validation/useCourseOverviewFields';
+import { useLessonsWithBlocksFields } from './publish/validation/useLessonsWithBlocksFields';
+import { usePricingFields } from './publish/validation/usePricingFields';
 import { ValidationSection } from './publish/ValidationSection';
 
 // Import our reusable components and hooks
@@ -194,15 +197,28 @@ export default function PublishCourse({ loaderData, params }: Route.ComponentPro
 
   const validationErrors = getErrorFieldPathsBySection(methods.formState.errors);
 
-  // Use our custom hooks
-  const { courseOverviewFields, pricingFields, courseChaptersFields, lessonsWithBlocksFields } =
-    useValidationFields({
-      rootRoute,
-      pricingData,
-      courseChapters: publishCourseChapters,
-      lessonsWithBlocks,
-      validationErrors,
-    });
+  const { fields: courseOverviewFields } = useCourseOverviewFields({
+    rootRoute,
+    validationErrors: validationErrors?.courseOverview,
+  });
+
+  const { fields: pricingFields } = usePricingFields({
+    rootRoute,
+    pricingData,
+    validationErrors: validationErrors?.pricingData,
+  });
+
+  const { fields: courseChaptersFields } = useCourseChaptersFields({
+    rootRoute,
+    courseChapters: publishCourseChapters,
+    validationErrors: validationErrors?.courseChapters,
+  });
+
+  const { fields: lessonsWithBlocksFields } = useLessonsWithBlocksFields({
+    rootRoute,
+    lessonsWithBlocks,
+    validationErrors: validationErrors?.lessonsWithBlocks,
+  });
 
   const { createSequentialValidator, getValidationState, isAnyLoading } =
     useAsyncValidation<PublishCourseSchemaTypes>({

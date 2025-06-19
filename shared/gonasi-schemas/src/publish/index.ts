@@ -121,7 +121,7 @@ const LessonWithBlocksSchema = z
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['blocks'],
-        message: `Lesson <span class="warning">${data.name}</span> is looking a bit empty - let's add some <span class="go-title">content blocks</span> to make it shine!`,
+        message: `Lesson <span class="warning">${data.name}</span> is looking a bit empty, let's add some <span class="go-title">content blocks</span> to make it shine!`,
       });
       return;
     }

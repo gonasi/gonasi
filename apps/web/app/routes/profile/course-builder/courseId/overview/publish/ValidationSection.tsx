@@ -1,5 +1,8 @@
 // components/ValidationSection.tsx
-import { AnimatePresence, motion } from 'framer-motion';
+import type { CSSProperties } from 'react';
+import { useCallback, useMemo } from 'react';
+import { VariableSizeList as List } from 'react-window';
+import { motion } from 'framer-motion';
 import { Ban, CheckCheck, Clock, LoaderCircle } from 'lucide-react';
 
 import { Badge } from '~/components/ui/badge';
@@ -18,81 +21,41 @@ interface ValidationSectionProps {
   validationState: 'pending' | 'loading' | 'success' | 'error';
 }
 
-const iconVariants = {
-  hidden: { opacity: 0, scale: 0.8 },
-  visible: { opacity: 1, scale: 1 },
+// Simplified animation variants
+const fadeVariants = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1 },
+};
+
+// Memoized status icon component
+const StatusIcon = ({ validationState }: { validationState: string }) => {
+  const iconMap = useMemo(
+    () => ({
+      pending: <Clock size={18} className='text-muted-foreground' />,
+      loading: <LoaderCircle size={18} className='text-muted-foreground animate-spin' />,
+      error: <Ban size={18} className='text-danger' />,
+      success: <CheckCheck size={18} className='text-success' />,
+    }),
+    [],
+  );
+
+  return (
+    <motion.div
+      variants={fadeVariants}
+      initial='hidden'
+      animate='visible'
+      transition={{ duration: 0.2 }}
+      key={validationState}
+    >
+      {iconMap[validationState as keyof typeof iconMap] || iconMap.pending}
+    </motion.div>
+  );
 };
 
 export function ValidationSection({ title, fields, validationState }: ValidationSectionProps) {
-  const getStatusIcon = () => {
+  // Memoize style calculations
+  const titleColor = useMemo(() => {
     switch (validationState) {
-      case 'pending':
-        return (
-          <motion.div variants={iconVariants} initial='hidden' animate='visible' key='pending'>
-            <Clock size={18} className='text-muted-foreground' />
-          </motion.div>
-        );
-      case 'loading':
-        return (
-          <motion.div variants={iconVariants} initial='hidden' animate='visible' key='loading'>
-            <LoaderCircle size={18} className='text-muted-foreground animate-spin' />
-          </motion.div>
-        );
-      case 'error':
-        return (
-          <motion.div variants={iconVariants} initial='hidden' animate='visible' key='error'>
-            <Ban size={18} className='text-danger' />
-          </motion.div>
-        );
-      case 'success':
-        return (
-          <motion.div variants={iconVariants} initial='hidden' animate='visible' key='success'>
-            <CheckCheck size={18} className='text-success' />
-          </motion.div>
-        );
-      default:
-        return (
-          <motion.div variants={iconVariants} initial='hidden' animate='visible' key='pending'>
-            <Clock size={18} className='text-muted-foreground' />
-          </motion.div>
-        );
-    }
-  };
-
-  // Animation variants
-  const variants = {
-    initial: { opacity: 0, y: -4 },
-    animate: (state: string) => {
-      switch (state) {
-        case 'success':
-          return {
-            opacity: 1,
-            scale: [0.95, 1.05, 1],
-            transition: { duration: 0.4, ease: 'easeOut' },
-          };
-        case 'error':
-          return {
-            opacity: 1,
-            x: [0, -6, 6, -4, 4, 0],
-            transition: { duration: 0.4, ease: 'easeInOut' },
-          };
-        default:
-          return {
-            opacity: 1,
-            y: 0,
-            transition: { duration: 0.2 },
-          };
-      }
-    },
-    exit: { opacity: 0, y: 4, transition: { duration: 0.2 } },
-  };
-
-  const getTitleColor = () => {
-    switch (validationState) {
-      case 'pending':
-        return 'text-muted-foreground';
-      case 'loading':
-        return 'text-muted-foreground';
       case 'error':
         return 'text-danger';
       case 'success':
@@ -100,11 +63,10 @@ export function ValidationSection({ title, fields, validationState }: Validation
       default:
         return 'text-muted-foreground';
     }
-  };
+  }, [validationState]);
 
-  // Utility function to determine badge variant
-  const getBadgeVariant = (state: string) => {
-    switch (state) {
+  const badgeVariant = useMemo(() => {
+    switch (validationState) {
       case 'error':
         return 'destructive';
       case 'loading':
@@ -116,9 +78,9 @@ export function ValidationSection({ title, fields, validationState }: Validation
       default:
         return 'outline';
     }
-  };
+  }, [validationState]);
 
-  const getStatusText = () => {
+  const statusText = useMemo(() => {
     switch (validationState) {
       case 'pending':
         return 'Not validated';
@@ -131,93 +93,93 @@ export function ValidationSection({ title, fields, validationState }: Validation
       default:
         return 'Not validated';
     }
-  };
+  }, [validationState]);
+
+  // Calculate item size based on content
+  const getItemSize = useCallback(
+    (index: number) => {
+      const field = fields[index];
+      if (!field) return 0; // fallback size
+
+      // Base size + estimated size based on content length
+      const baseSize = 20;
+      const nameLines = Math.ceil(field.name.length / 50); // Estimate lines for name
+      const fixLines = Math.ceil(field.fix.length / 40); // Estimate lines for fix
+
+      return baseSize + Math.max(nameLines, fixLines) * 20;
+    },
+    [fields],
+  );
+
+  // Calculate total height with max limit
+  const listHeight = useMemo(() => {
+    if (fields.length === 0) return 0;
+
+    const totalHeight = fields.reduce((acc, _, index) => acc + getItemSize(index), 0);
+    return Math.min(totalHeight, 400); // Max height of 400px
+  }, [fields, getItemSize]);
+
+  const showErrorFields = validationState === 'error' && fields.length > 0;
 
   return (
-    <motion.div
-      layout
-      className='flex flex-col'
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.3 }}
-    >
+    <div className='flex flex-col'>
       <div className='flex items-center justify-between'>
-        <motion.div layout className={cn('flex items-center space-x-2', getTitleColor())}>
-          <AnimatePresence mode='wait'>{getStatusIcon()}</AnimatePresence>
-          <motion.h2
-            layout
-            className='mt-1 text-lg font-medium'
-            transition={{ type: 'spring', stiffness: 300 }}
-          >
-            {title}
-          </motion.h2>
-        </motion.div>
+        <div className={cn('flex items-center space-x-2', titleColor)}>
+          <StatusIcon validationState={validationState} />
+          <h2 className='mt-1 text-lg font-medium'>{title}</h2>
+        </div>
 
-        {/* Status indicator */}
-        <AnimatePresence mode='wait'>
-          <motion.div
-            key={validationState}
-            custom={validationState}
-            variants={variants}
-            initial='initial'
-            animate='animate'
-            exit='exit'
-            className={cn('font-secondary text-sm font-medium italic', getTitleColor())}
-          >
-            <Badge variant={getBadgeVariant(validationState)}>{getStatusText()}</Badge>
-          </motion.div>
-        </AnimatePresence>
+        <motion.div
+          key={validationState}
+          variants={fadeVariants}
+          initial='hidden'
+          animate='visible'
+          transition={{ duration: 0.2 }}
+          className={cn('font-secondary text-sm font-medium italic', titleColor)}
+        >
+          <Badge variant={badgeVariant}>{statusText}</Badge>
+        </motion.div>
       </div>
 
-      <AnimatePresence mode='wait'>
-        {validationState !== 'loading' && validationState !== 'pending' && (
-          <motion.div
-            key='fields'
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.3, delay: 0.1 }}
-            layout
+      {showErrorFields && (
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: 'auto' }}
+          exit={{ opacity: 0, height: 0 }}
+          transition={{ duration: 0.3 }}
+          className='mt-2 overflow-hidden'
+        >
+          <List
+            height={listHeight}
+            itemCount={fields.length}
+            itemSize={getItemSize}
+            width='100%'
+            itemData={fields}
           >
-            <div className='mt-2 flex flex-col'>
-              {validationState === 'error' &&
-                fields.map((field, index) => (
-                  <motion.div
-                    key={field.name}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.05 * index }}
-                  >
-                    <GoValidationCheckField name={field.name} fixLink={field.fix} />
-                  </motion.div>
-                ))}
-
-              {/* {validationState === 'success' && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className='text-success pl-4 text-sm'
-                >
-                  All validation checks passed ✓
-                </motion.div>
-              )} */}
-            </div>
-          </motion.div>
-        )}
-
-        {/* {validationState === 'pending' && (
-          <motion.div
-            key='pending-message'
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.3 }}
-            className='text-muted-foreground mt-2 text-sm'
-          >
-            Waiting to validate...
-          </motion.div>
-        )} */}
-      </AnimatePresence>
-    </motion.div>
+            {ValidationRow}
+          </List>
+        </motion.div>
+      )}
+    </div>
   );
 }
+
+// Optimized Row Renderer
+interface RowProps {
+  index: number;
+  style: CSSProperties;
+  data: ValidationField[];
+}
+
+const ValidationRow = ({ index, style, data }: RowProps) => {
+  const field = data[index];
+  if (!field) return null;
+
+  return (
+    <div style={style} className='bg-card/10 rounded-lg p-2'>
+      <GoValidationCheckField name={field.name} fixLink={field.fix} />
+    </div>
+  );
+};
+
+ValidationRow.displayName = 'ValidationRow';
