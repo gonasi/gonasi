@@ -35,6 +35,9 @@ export default function Login() {
     mode: 'all',
     resolver,
     submitData: { redirectTo },
+    defaultValues: {
+      intent: 'login',
+    },
     submitConfig: {
       action: '/',
     },
@@ -85,9 +88,6 @@ export default function Login() {
             }}
             description='We won’t tell anyone, promise 😊'
           />
-
-          {/* Hidden field for action intent */}
-          <input type='hidden' {...methods.register('intent')} value='login' />
 
           {/* Submit button */}
           <Button type='submit' disabled={isDisabled} isLoading={isDisabled} className='w-full'>

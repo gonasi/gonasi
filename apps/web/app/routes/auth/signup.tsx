@@ -1,26 +1,16 @@
-import { Form, redirect, useSearchParams } from 'react-router';
+import { Form, useSearchParams } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Rocket } from 'lucide-react';
-import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
-import { dataWithError } from 'remix-toast';
+import { RemixFormProvider, useRemixForm } from 'remix-hook-form';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
-import { safeRedirect } from 'remix-utils/safe-redirect';
 
-import { signUpWithEmailAndPassword } from '@gonasi/database/auth';
 import { SignupFormSchema, type SignupFormSchemaTypes } from '@gonasi/schemas/auth';
 
-import type { Route } from './+types/signup';
-
-import { getClientEnv } from '~/.server/env.server';
 import { GoLink } from '~/components/go-link';
 import { AuthFormLayout } from '~/components/layouts/auth';
 import { Button } from '~/components/ui/button';
 import { GoInputField } from '~/components/ui/forms/elements';
-import { createClient } from '~/lib/supabase/supabase.server';
-import { checkHoneypot } from '~/utils/honeypot.server';
 import { useIsPending } from '~/utils/misc';
-
-const { BASE_URL } = getClientEnv();
 
 // SEO metadata for the Sign Up page
 export function meta() {
@@ -28,40 +18,6 @@ export function meta() {
 }
 
 const resolver = zodResolver(SignupFormSchema);
-
-/**
- * Handles form submission on the server side
- */
-export async function action({ request }: Route.ActionArgs) {
-  const formData = await request.formData();
-
-  // Anti-spam honeypot check
-  await checkHoneypot(formData);
-
-  // Create Supabase client instance
-  const { supabase, headers } = createClient(request);
-
-  // Validate and parse form data using zod
-  const {
-    errors,
-    data,
-    receivedValues: defaultValues,
-  } = await getValidatedFormData<SignupFormSchemaTypes>(formData, resolver);
-
-  // If validation failed, return errors and default values
-  if (errors) {
-    return { errors, defaultValues };
-  }
-
-  // Attempt to sign up the user
-  const { error } = await signUpWithEmailAndPassword(supabase, {
-    ...data,
-    redirectTo: `${BASE_URL}/go.onboarding`,
-  });
-
-  // If sign-up failed, show toast error; else redirect
-  return error ? dataWithError(null, error.message) : redirect(safeRedirect('/login'), { headers });
-}
 
 /**
  * Sign-up form component
@@ -76,7 +32,15 @@ export default function SignUp() {
     mode: 'all',
     resolver,
     submitData: { redirectTo },
+    defaultValues: {
+      intent: 'signup',
+    },
+    submitConfig: {
+      action: '/',
+    },
   });
+
+  const isDisabled = isPending || methods.formState.isSubmitting;
 
   return (
     <AuthFormLayout
@@ -100,6 +64,7 @@ export default function SignUp() {
             name='fullName'
             inputProps={{
               autoFocus: true,
+              disabled: isDisabled,
             }}
             description='Let us know who you are, whether it’s just you or your team'
           />
@@ -111,6 +76,7 @@ export default function SignUp() {
             inputProps={{
               className: 'lowercase',
               autoComplete: 'email',
+              disabled: isDisabled,
             }}
             description='We’ll use this to keep in touch'
           />
@@ -122,6 +88,7 @@ export default function SignUp() {
             inputProps={{
               type: 'password',
               autoComplete: 'current-password',
+              disabled: isDisabled,
             }}
             description='Make it something secure (but memorable!)'
           />
@@ -130,11 +97,11 @@ export default function SignUp() {
           <Button
             type='submit'
             disabled={isPending}
-            isLoading={isPending || methods.formState.isSubmitting}
+            isLoading={isDisabled}
             className='w-full'
             rightIcon={<Rocket />}
           >
-            Let’s get started
+            Sign Up
           </Button>
         </Form>
       </RemixFormProvider>
