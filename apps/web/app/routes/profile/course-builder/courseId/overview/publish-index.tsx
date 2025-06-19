@@ -18,7 +18,7 @@ import { useValidationFields } from './publish/useValidationFields';
 // Import our reusable components and hooks
 import { ValidationSection } from './publish/ValidationSection';
 
-import { Button } from '~/components/ui/button';
+import { Button, NavLinkButton } from '~/components/ui/button';
 import { Modal } from '~/components/ui/modal';
 import { createClient } from '~/lib/supabase/supabase.server';
 import { useIsPending } from '~/utils/misc';
@@ -266,18 +266,31 @@ export default function PublishCourse({ loaderData, params }: Route.ComponentPro
                 validationState={getValidationState('lessonsWithBlocks')}
               />
 
-              <div className='mt-6'>
-                <Button type='submit' disabled={isDisabled}>
-                  {isAnyLoading() ? 'Validating...' : 'Publish Course'}
-                </Button>
-
-                {/* Validation progress indicator */}
-                {isAnyLoading() && (
-                  <div className='text-muted-foreground mt-2 text-sm'>
-                    Running validation checks...
-                  </div>
-                )}
+              <div className='my-6'>
+                <div className='flex w-full items-center justify-between space-x-4'>
+                  <NavLinkButton
+                    to={closeRoute}
+                    className='w-full'
+                    variant='ghost'
+                    disabled={isDisabled}
+                  >
+                    Cancel
+                  </NavLinkButton>
+                  <Button
+                    type='submit'
+                    className='w-full'
+                    disabled={isDisabled || !methods.formState.isValid}
+                  >
+                    {isAnyLoading() ? 'Validating...' : 'Publish Course'}
+                  </Button>
+                </div>
               </div>
+
+              {!isAnyLoading() && !methods.formState.isValid ? (
+                <p className='font-secondary text-muted-foreground w-full pt-4 text-center text-sm'>
+                  Almost there! Just fix a few things and you’ll be good to go 🚀
+                </p>
+              ) : null}
             </Form>
           </RemixFormProvider>
         </Modal.Body>

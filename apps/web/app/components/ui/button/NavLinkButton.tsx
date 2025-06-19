@@ -49,7 +49,7 @@ const NavLinkButton = React.forwardRef<HTMLAnchorElement, NavLinkButtonProps>(
         animate='animate'
         variants={variants}
         transition={{ delay: 0.2, duration: 0.2, ease: 'easeIn' }}
-        className='relative'
+        className='relative w-full'
       >
         <NavLink
           ref={ref}
