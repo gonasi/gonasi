@@ -13,11 +13,12 @@ import { fetchLessonBlocksByLessonId } from '@gonasi/database/lessons';
 import { PublishCourseSchema, type PublishCourseSchemaTypes } from '@gonasi/schemas/publish';
 
 import type { Route } from './+types/publish-index';
+import { getErrorFieldPathsBySection } from './publish/getErrorFieldPathsBySection';
 import { useAsyncValidation } from './publish/useAsyncValidation';
 import { useValidationFields } from './publish/useValidationFields';
-// Import our reusable components and hooks
 import { ValidationSection } from './publish/ValidationSection';
 
+// Import our reusable components and hooks
 import { Button, NavLinkButton } from '~/components/ui/button';
 import { Modal } from '~/components/ui/modal';
 import { createClient } from '~/lib/supabase/supabase.server';
@@ -191,6 +192,8 @@ export default function PublishCourse({ loaderData, params }: Route.ComponentPro
     defaultValues: optimizedDefaultValues,
   });
 
+  const validationErrors = getErrorFieldPathsBySection(methods.formState.errors);
+
   // Use our custom hooks
   const { courseOverviewFields, pricingFields, courseChaptersFields, lessonsWithBlocksFields } =
     useValidationFields({
@@ -198,6 +201,7 @@ export default function PublishCourse({ loaderData, params }: Route.ComponentPro
       pricingData,
       courseChapters: publishCourseChapters,
       lessonsWithBlocks,
+      validationErrors,
     });
 
   const { createSequentialValidator, getValidationState, isAnyLoading } =
@@ -227,8 +231,6 @@ export default function PublishCourse({ loaderData, params }: Route.ComponentPro
   }, []); // Empty dependency array - only run once on mount
 
   const isDisabled = isPending || methods.formState.isSubmitting || isAnyLoading();
-
-  console.log('Errors: ', methods.formState.errors.lessonsWithBlocks);
 
   return (
     <Modal open>
