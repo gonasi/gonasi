@@ -232,6 +232,31 @@ create table "public"."profiles" (
 
 alter table "public"."profiles" enable row level security;
 
+create table "public"."published_courses" (
+    "id" uuid not null default gen_random_uuid(),
+    "course_id" uuid not null,
+    "published_at" timestamp with time zone not null default now(),
+    "version" integer not null default 1,
+    "name" text not null,
+    "description" text,
+    "image_url" text,
+    "blur_hash" text,
+    "course_category_id" uuid not null,
+    "course_sub_category_id" uuid not null,
+    "course_categories" jsonb,
+    "course_sub_categories" jsonb,
+    "pathway_id" uuid not null,
+    "pathways" jsonb,
+    "pricing_data" jsonb,
+    "course_chapters" jsonb,
+    "lessons_with_blocks" jsonb,
+    "created_by" uuid not null,
+    "updated_by" uuid not null,
+    "created_at" timestamp with time zone not null default timezone('utc'::text, now()),
+    "updated_at" timestamp with time zone not null default timezone('utc'::text, now())
+);
+
+
 create table "public"."role_permissions" (
     "id" uuid not null default uuid_generate_v4(),
     "role" app_role not null,
@@ -372,6 +397,16 @@ CREATE INDEX idx_profiles_username ON public.profiles USING btree (username) WHE
 
 CREATE INDEX idx_profiles_verified_users ON public.profiles USING btree (id) WHERE (account_verified = true);
 
+CREATE INDEX idx_published_courses_category_id ON public.published_courses USING btree (course_category_id);
+
+CREATE INDEX idx_published_courses_course_id ON public.published_courses USING btree (course_id);
+
+CREATE INDEX idx_published_courses_pathway_id ON public.published_courses USING btree (pathway_id);
+
+CREATE INDEX idx_published_courses_published_at ON public.published_courses USING btree (published_at);
+
+CREATE INDEX idx_published_courses_sub_category_id ON public.published_courses USING btree (course_sub_category_id);
+
 CREATE INDEX idx_user_roles_user_id ON public.user_roles USING btree (user_id);
 
 CREATE UNIQUE INDEX lesson_blocks_pkey ON public.lesson_blocks USING btree (id);
@@ -391,6 +426,8 @@ CREATE UNIQUE INDEX profiles_email_key ON public.profiles USING btree (email);
 CREATE UNIQUE INDEX profiles_pkey ON public.profiles USING btree (id);
 
 CREATE UNIQUE INDEX profiles_username_key ON public.profiles USING btree (username);
+
+CREATE UNIQUE INDEX published_courses_pkey ON public.published_courses USING btree (id);
 
 CREATE UNIQUE INDEX role_permissions_pkey ON public.role_permissions USING btree (id);
 
@@ -433,6 +470,8 @@ alter table "public"."lessons" add constraint "lessons_pkey" PRIMARY KEY using i
 alter table "public"."pathways" add constraint "pathways_pkey" PRIMARY KEY using index "pathways_pkey";
 
 alter table "public"."profiles" add constraint "profiles_pkey" PRIMARY KEY using index "profiles_pkey";
+
+alter table "public"."published_courses" add constraint "published_courses_pkey" PRIMARY KEY using index "published_courses_pkey";
 
 alter table "public"."role_permissions" add constraint "role_permissions_pkey" PRIMARY KEY using index "role_permissions_pkey";
 
@@ -681,6 +720,30 @@ alter table "public"."profiles" validate constraint "username_length";
 alter table "public"."profiles" add constraint "username_lowercase" CHECK ((username = lower(username))) not valid;
 
 alter table "public"."profiles" validate constraint "username_lowercase";
+
+alter table "public"."published_courses" add constraint "published_courses_course_category_id_fkey" FOREIGN KEY (course_category_id) REFERENCES course_categories(id) ON DELETE RESTRICT not valid;
+
+alter table "public"."published_courses" validate constraint "published_courses_course_category_id_fkey";
+
+alter table "public"."published_courses" add constraint "published_courses_course_id_fkey" FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE not valid;
+
+alter table "public"."published_courses" validate constraint "published_courses_course_id_fkey";
+
+alter table "public"."published_courses" add constraint "published_courses_course_sub_category_id_fkey" FOREIGN KEY (course_sub_category_id) REFERENCES course_categories(id) ON DELETE RESTRICT not valid;
+
+alter table "public"."published_courses" validate constraint "published_courses_course_sub_category_id_fkey";
+
+alter table "public"."published_courses" add constraint "published_courses_created_by_fkey" FOREIGN KEY (created_by) REFERENCES profiles(id) ON DELETE RESTRICT not valid;
+
+alter table "public"."published_courses" validate constraint "published_courses_created_by_fkey";
+
+alter table "public"."published_courses" add constraint "published_courses_pathway_id_fkey" FOREIGN KEY (pathway_id) REFERENCES pathways(id) ON DELETE RESTRICT not valid;
+
+alter table "public"."published_courses" validate constraint "published_courses_pathway_id_fkey";
+
+alter table "public"."published_courses" add constraint "published_courses_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES profiles(id) ON DELETE RESTRICT not valid;
+
+alter table "public"."published_courses" validate constraint "published_courses_updated_by_fkey";
 
 alter table "public"."role_permissions" add constraint "role_permissions_role_permission_key" UNIQUE using index "role_permissions_role_permission_key";
 
@@ -2747,6 +2810,48 @@ grant trigger on table "public"."profiles" to "service_role";
 grant truncate on table "public"."profiles" to "service_role";
 
 grant update on table "public"."profiles" to "service_role";
+
+grant delete on table "public"."published_courses" to "anon";
+
+grant insert on table "public"."published_courses" to "anon";
+
+grant references on table "public"."published_courses" to "anon";
+
+grant select on table "public"."published_courses" to "anon";
+
+grant trigger on table "public"."published_courses" to "anon";
+
+grant truncate on table "public"."published_courses" to "anon";
+
+grant update on table "public"."published_courses" to "anon";
+
+grant delete on table "public"."published_courses" to "authenticated";
+
+grant insert on table "public"."published_courses" to "authenticated";
+
+grant references on table "public"."published_courses" to "authenticated";
+
+grant select on table "public"."published_courses" to "authenticated";
+
+grant trigger on table "public"."published_courses" to "authenticated";
+
+grant truncate on table "public"."published_courses" to "authenticated";
+
+grant update on table "public"."published_courses" to "authenticated";
+
+grant delete on table "public"."published_courses" to "service_role";
+
+grant insert on table "public"."published_courses" to "service_role";
+
+grant references on table "public"."published_courses" to "service_role";
+
+grant select on table "public"."published_courses" to "service_role";
+
+grant trigger on table "public"."published_courses" to "service_role";
+
+grant truncate on table "public"."published_courses" to "service_role";
+
+grant update on table "public"."published_courses" to "service_role";
 
 grant delete on table "public"."role_permissions" to "anon";
 

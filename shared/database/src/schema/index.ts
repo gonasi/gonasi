@@ -842,6 +842,121 @@ export type Database = {
         }
         Relationships: []
       }
+      published_courses: {
+        Row: {
+          blur_hash: string | null
+          course_categories: Json | null
+          course_category_id: string
+          course_chapters: Json | null
+          course_id: string
+          course_sub_categories: Json | null
+          course_sub_category_id: string
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          image_url: string | null
+          lessons_with_blocks: Json | null
+          name: string
+          pathway_id: string
+          pathways: Json | null
+          pricing_data: Json | null
+          published_at: string
+          updated_at: string
+          updated_by: string
+          version: number
+        }
+        Insert: {
+          blur_hash?: string | null
+          course_categories?: Json | null
+          course_category_id: string
+          course_chapters?: Json | null
+          course_id: string
+          course_sub_categories?: Json | null
+          course_sub_category_id: string
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          lessons_with_blocks?: Json | null
+          name: string
+          pathway_id: string
+          pathways?: Json | null
+          pricing_data?: Json | null
+          published_at?: string
+          updated_at?: string
+          updated_by: string
+          version?: number
+        }
+        Update: {
+          blur_hash?: string | null
+          course_categories?: Json | null
+          course_category_id?: string
+          course_chapters?: Json | null
+          course_id?: string
+          course_sub_categories?: Json | null
+          course_sub_category_id?: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          lessons_with_blocks?: Json | null
+          name?: string
+          pathway_id?: string
+          pathways?: Json | null
+          pricing_data?: Json | null
+          published_at?: string
+          updated_at?: string
+          updated_by?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "published_courses_course_category_id_fkey"
+            columns: ["course_category_id"]
+            isOneToOne: false
+            referencedRelation: "course_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "published_courses_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "published_courses_course_sub_category_id_fkey"
+            columns: ["course_sub_category_id"]
+            isOneToOne: false
+            referencedRelation: "course_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "published_courses_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "published_courses_pathway_id_fkey"
+            columns: ["pathway_id"]
+            isOneToOne: false
+            referencedRelation: "pathways"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "published_courses_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       role_permissions: {
         Row: {
           id: string
