@@ -7,7 +7,7 @@ import { ViewMultipleChoiceSingleAnswerPlugin } from '../QuizPlugins/MultipleCho
 import { ViewTrueOrFalsePlugin } from '../QuizPlugins/TrueOrFalsePlugin/ViewTrueOrFalsePlugin';
 import { ViewRichTextPlugin } from '../RichTextPlugins/RichTextPlugin/ViewRichTextPlugin';
 
-import type { LessonBlockLoaderReturnType } from '~/routes/dashboard/courses/lessons/plugins/edit-plugin-modal';
+import type { LessonBlockLoaderReturnType } from '~/routes/profile/course-builder/courseId/content/chapterId/lessonId/lesson-blocks/plugins/edit-plugin-modal';
 
 export interface ViewPluginComponentProps {
   block: LessonBlockLoaderReturnType;
