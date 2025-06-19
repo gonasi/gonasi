@@ -11,7 +11,12 @@ import { createLessonDetails, upsertRichTextBlock } from '@gonasi/database/lesso
 import { fetchAllLessonTypes } from '@gonasi/database/lessonTypes';
 import { getUserProfile } from '@gonasi/database/profile';
 
-import { CHAPTER_COUNT, LESSONS_FOR_CHAPTER_COUNT, TOTAL_COURSES } from './config';
+import {
+  BLOCKS_FOR_LESSON_COUNT,
+  CHAPTER_COUNT,
+  LESSONS_FOR_CHAPTER_COUNT,
+  TOTAL_COURSES,
+} from './config';
 import { PASSWORD, supabase } from './constants';
 import { FAKE_LEXICAL_STATE } from './fakeLexicalData';
 
