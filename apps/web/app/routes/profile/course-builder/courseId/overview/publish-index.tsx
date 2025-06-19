@@ -225,8 +225,6 @@ export default function PublishCourse({ loaderData, params }: Route.ComponentPro
 
   const isDisabled = isPending || methods.formState.isSubmitting;
 
-  console.log('Errors: ', methods.formState.errors.lessonsWithBlocks);
-
   return (
     <Modal open>
       <Modal.Content size='md'>
@@ -273,9 +271,11 @@ export default function PublishCourse({ loaderData, params }: Route.ComponentPro
               />
 
               <div className='mt-6'>
-                <Button type='submit' disabled={isDisabled}>
-                  Publish Course
-                </Button>
+                {methods.formState.isValid ? (
+                  <Button type='submit' disabled={isDisabled}>
+                    Publish Course
+                  </Button>
+                ) : null}
               </div>
             </Form>
           </RemixFormProvider>

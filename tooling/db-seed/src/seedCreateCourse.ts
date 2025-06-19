@@ -42,7 +42,7 @@ function generateFakeChapter(): {
 
 // Seeds the database with course titles, chapters, and lessons for random users
 export async function seedCreateCourse(users: profilesScalars[]) {
-  const total = 20; // Total number of courses to create
+  const total = 30; // Total number of courses to create
 
   for (let i = 0; i < total; i++) {
     const user = faker.helpers.arrayElement(users); // Pick a random user
