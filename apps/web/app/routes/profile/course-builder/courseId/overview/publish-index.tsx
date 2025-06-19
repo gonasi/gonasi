@@ -57,6 +57,8 @@ type PricingType = CoursePricingLoaderReturnType[number];
 
 type CourseChaptersType = CourseChaptersLessonsLoaderReturnType[number];
 
+type LessonType = LessonBlocksLoaderReturnType[number];
+
 export async function loader({ params, request }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
   const courseId = params.courseId ?? '';
@@ -118,7 +120,7 @@ export default function PublishCourse({ loaderData, params }: Route.ComponentPro
         pathways: courseOverview.pathways ?? null,
       },
       pricingData:
-        pricingData?.map((p: any) => ({
+        pricingData?.map((p: PricingType) => ({
           id: p.id,
           course_id: p.course_id,
           payment_frequency: p.payment_frequency,
@@ -136,7 +138,7 @@ export default function PublishCourse({ loaderData, params }: Route.ComponentPro
           is_recommended: p.is_recommended,
         })) ?? [],
       courseChapters:
-        publishCourseChapters?.map((chapter: any) => ({
+        publishCourseChapters?.map((chapter: CourseChaptersType) => ({
           lesson_count: chapter.lessons?.length ?? 0,
           id: chapter.id,
           course_id: chapter.course_id,
@@ -145,7 +147,7 @@ export default function PublishCourse({ loaderData, params }: Route.ComponentPro
           position: chapter.position ?? 0,
           requires_payment: chapter.requires_payment,
           lessons:
-            chapter.lessons?.map((lesson: any) => ({
+            chapter.lessons?.map((lesson) => ({
               id: lesson.id,
               course_id: lesson.course_id,
               chapter_id: lesson.chapter_id,
@@ -158,7 +160,7 @@ export default function PublishCourse({ loaderData, params }: Route.ComponentPro
         })) ?? [],
       // Optimize lessons with blocks - only include essential data
       lessonsWithBlocks:
-        lessonsWithBlocks?.map((lesson: any) => ({
+        lessonsWithBlocks?.map((lesson: LessonType) => ({
           id: lesson.id,
           course_id: lesson.course_id,
           chapter_id: lesson.chapter_id,
@@ -169,7 +171,7 @@ export default function PublishCourse({ loaderData, params }: Route.ComponentPro
           lesson_types: lesson.lesson_types,
           // Only include block count and essential block data to reduce memory usage
           blocks:
-            lesson.blocks?.map((block: any) => ({
+            lesson.blocks?.map((block) => ({
               plugin_type: block.plugin_type,
               id: block.id,
               content: block.content, // Consider limiting content size for validation
