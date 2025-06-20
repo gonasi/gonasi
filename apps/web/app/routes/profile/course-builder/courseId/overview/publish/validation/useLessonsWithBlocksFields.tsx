@@ -40,31 +40,31 @@ export function useLessonsWithBlocksFields({
       return [
         {
           name: `lessonsWithBlocks.${lessonIndex}.blocks.${blockIndex}.plugin_type`,
-          fix: `${rootRoute}/lessons/${lessonId}/blocks/edit/${block.id}`,
+          fix: `${rootRoute}/content/${lessonId}/blocks/edit/${block.id}`,
         },
         {
           name: `lessonsWithBlocks.${lessonIndex}.blocks.${blockIndex}.id`,
-          fix: `${rootRoute}/lessons/${lessonId}/blocks/edit/${block.id}`,
+          fix: `${rootRoute}/content/${lessonId}/blocks/edit/${block.id}`,
         },
         {
           name: `lessonsWithBlocks.${lessonIndex}.blocks.${blockIndex}.content`,
-          fix: `${rootRoute}/lessons/${lessonId}/blocks/edit/${block.id}`,
+          fix: `${rootRoute}/content/${lessonId}/blocks/edit/${block.id}`,
         },
         {
           name: `lessonsWithBlocks.${lessonIndex}.blocks.${blockIndex}.settings`,
-          fix: `${rootRoute}/lessons/${lessonId}/blocks/edit/${block.id}`,
+          fix: `${rootRoute}/content/${lessonId}/blocks/edit/${block.id}`,
         },
         {
           name: `lessonsWithBlocks.${lessonIndex}.blocks.${blockIndex}.position`,
-          fix: `${rootRoute}/lessons/${lessonId}/blocks/edit/${block.id}`,
+          fix: `${rootRoute}/content/${lessonId}/blocks/edit/${block.id}`,
         },
         {
           name: `lessonsWithBlocks.${lessonIndex}.blocks.${blockIndex}.lesson_id`,
-          fix: `${rootRoute}/lessons/${lessonId}/blocks/edit/${block.id}`,
+          fix: `${rootRoute}/content/${lessonId}/blocks/edit/${block.id}`,
         },
         {
           name: `lessonsWithBlocks.${lessonIndex}.blocks.${blockIndex}.updated_by`,
-          fix: `${rootRoute}/lessons/${lessonId}/blocks/edit/${block.id}`,
+          fix: `${rootRoute}/content/${lessonId}/blocks/edit/${block.id}`,
         },
       ];
     },
@@ -72,59 +72,59 @@ export function useLessonsWithBlocksFields({
   );
 
   const createLessonFields = useCallback(
-    (lesson: any, lessonIndex: number): ValidationField[] => {
+    (chapterId: string, lessonId: string, lessonIndex: number): ValidationField[] => {
       return [
         {
           name: `lessonsWithBlocks.${lessonIndex}.id`,
-          fix: `${rootRoute}/lessons/edit/${lesson.id}`,
+          fix: `${rootRoute}/content/${chapterId}/${lessonId}/edit-lesson-details`,
         },
         {
           name: `lessonsWithBlocks.${lessonIndex}.course_id`,
-          fix: `${rootRoute}/lessons/edit/${lesson.id}`,
+          fix: `${rootRoute}/content/${chapterId}/${lessonId}/edit-lesson-details`,
         },
         {
           name: `lessonsWithBlocks.${lessonIndex}.chapter_id`,
-          fix: `${rootRoute}/lessons/edit/${lesson.id}`,
+          fix: `${rootRoute}/content/${chapterId}/${lessonId}/edit-lesson-details`,
         },
         {
           name: `lessonsWithBlocks.${lessonIndex}.name`,
-          fix: `${rootRoute}/lessons/edit/${lesson.id}`,
+          fix: `${rootRoute}/content/${chapterId}/${lessonId}/edit-lesson-details`,
         },
         {
           name: `lessonsWithBlocks.${lessonIndex}.lesson_type_id`,
-          fix: `${rootRoute}/lessons/edit/${lesson.id}`,
+          fix: `${rootRoute}/content/${chapterId}/${lessonId}/edit-lesson-details`,
         },
         {
           name: `lessonsWithBlocks.${lessonIndex}.position`,
-          fix: `${rootRoute}/lessons/edit/${lesson.id}`,
+          fix: `${rootRoute}/content/${chapterId}/${lessonId}/edit-lesson-details`,
         },
         {
           name: `lessonsWithBlocks.${lessonIndex}.settings`,
-          fix: `${rootRoute}/lessons/edit/${lesson.id}`,
+          fix: `${rootRoute}/content/${chapterId}/${lessonId}/edit-lesson-details`,
         },
         {
           name: `lessonsWithBlocks.${lessonIndex}.lesson_types.id`,
-          fix: `${rootRoute}/lessons/edit/${lesson.id}`,
+          fix: `${rootRoute}/content/${chapterId}/${lessonId}/edit-lesson-details`,
         },
         {
           name: `lessonsWithBlocks.${lessonIndex}.lesson_types.name`,
-          fix: `${rootRoute}/lessons/edit/${lesson.id}`,
+          fix: `${rootRoute}/content/${chapterId}/${lessonId}/edit-lesson-details`,
         },
         {
           name: `lessonsWithBlocks.${lessonIndex}.lesson_types.description`,
-          fix: `${rootRoute}/lessons/edit/${lesson.id}`,
+          fix: `${rootRoute}/content/${chapterId}/${lessonId}/edit-lesson-details`,
         },
         {
           name: `lessonsWithBlocks.${lessonIndex}.lesson_types.lucide_icon`,
-          fix: `${rootRoute}/lessons/edit/${lesson.id}`,
+          fix: `${rootRoute}/content/${chapterId}/${lessonId}/edit-lesson-details`,
         },
         {
           name: `lessonsWithBlocks.${lessonIndex}.lesson_types.bg_color`,
-          fix: `${rootRoute}/lessons/edit/${lesson.id}`,
+          fix: `${rootRoute}/content/${chapterId}/${lessonId}/edit-lesson-details`,
         },
         {
           name: `lessonsWithBlocks.${lessonIndex}.blocks`,
-          fix: `${rootRoute}/lessons/${lesson.id}/blocks`,
+          fix: `${rootRoute}/content/${chapterId}/${lessonId}/lesson-blocks`,
         },
       ];
     },
@@ -158,7 +158,7 @@ export function useLessonsWithBlocksFields({
 
       // Process lessons and blocks efficiently
       lessonsWithBlocks.forEach((lesson, lessonIndex) => {
-        const lessonFields = createLessonFields(lesson, lessonIndex);
+        const lessonFields = createLessonFields(lesson.chapter_id, lesson.id, lessonIndex);
         result.push(...lessonFields);
 
         if (lesson.blocks) {
@@ -198,7 +198,11 @@ export function useLessonsWithBlocksFields({
       const lesson = lessonsWithBlocks[lessonIndex];
 
       // Check lesson fields
-      const lessonFields = createLessonFields(lesson, lessonIndex);
+      const lessonFields = createLessonFields(
+        lesson?.chapter_id || '',
+        lesson?.id || '',
+        lessonIndex,
+      );
       for (const field of lessonFields) {
         if (errorSet.has(field.name)) {
           result.push(field);

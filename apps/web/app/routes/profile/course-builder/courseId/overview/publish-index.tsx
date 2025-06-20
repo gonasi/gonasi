@@ -268,28 +268,24 @@ export default function PublishCourse({ loaderData, params }: Route.ComponentPro
               <ValidationSection
                 title='Overview'
                 fields={courseOverviewFields}
-                hasErrors={!!methods.formState.errors.courseOverview}
                 validationState={getValidationState('courseOverview')}
               />
 
               <ValidationSection
                 title='Pricing'
                 fields={pricingFields}
-                hasErrors={!!methods.formState.errors.pricingData}
                 validationState={getValidationState('pricingData')}
               />
 
               <ValidationSection
                 title='Chapters'
                 fields={courseChaptersFields}
-                hasErrors={!!methods.formState.errors.courseChapters}
                 validationState={getValidationState('courseChapters')}
               />
 
               <ValidationSection
                 title='Lessons & Blocks'
                 fields={lessonsWithBlocksFields}
-                hasErrors={!!methods.formState.errors.lessonsWithBlocks}
                 validationState={getValidationState('lessonsWithBlocks')}
               />
 

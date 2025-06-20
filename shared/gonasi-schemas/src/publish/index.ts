@@ -117,7 +117,7 @@ const LessonWithBlocksSchema = z
   })
   .superRefine((data, ctx) => {
     // Check if blocks array is null or undefined
-    if (!data.blocks) {
+    if (!data.blocks || data.blocks.length === 0) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['blocks'],
@@ -188,28 +188,31 @@ const ChapterSchema = z.object({
 export const CourseOverviewSchema = z
   .object({
     id: z.string({
-      required_error: `Your course needs a unique <span class="go-title">ID</span>.`,
+      required_error: `<lucide name="KeyRound" size="12" /> Your course needs a unique <span class="go-title">ID</span>.`,
     }),
     name: z
       .string({
-        required_error: `What's your course called? Add a <span class="go-title">name</span> here.`,
-      })
-      .min(1, `Course <span class="go-title">name</span> can't be empty.`),
-    description: z
-      .string({
-        required_error: `Tell students what your course is about with a <span class="go-title">description</span>.`,
-      })
-      .min(
-        10,
-        `Course <span class="go-title">description</span> should be a bit longer to help students understand what they'll learn.`,
-      ),
-    image_url: z
-      .string({
-        required_error: `Add an eye-catching <span class="go-title">thumbnail image</span> for your course.`,
+        required_error: `<lucide name="Type" size="12" /> What's your course called? Add a <span class="go-title">name</span> here.`,
       })
       .min(
         1,
-        `Your course needs a <span class="warning">thumbnail image</span> to look professional.`,
+        `<lucide name="AlertCircle" size="12" /> Course <span class="go-title">name</span> can’t be empty.`,
+      ),
+    description: z
+      .string({
+        required_error: `<lucide name="AlignLeft" size="12" /> Tell students what your course is about with a <span class="go-title">description</span>.`,
+      })
+      .min(
+        10,
+        `<lucide name="FileText" size="12" /> Course <span class="go-title">description</span> should be a bit longer to help students understand what they'll learn.`,
+      ),
+    image_url: z
+      .string({
+        required_error: `<lucide name="Image" size="12" /> Add an eye-catching <span class="go-title">thumbnail image</span> for your course.`,
+      })
+      .min(
+        1,
+        `<lucide name="ImageOff" size="12" /> Your course needs a <span class="go-title">thumbnail image</span> to look professional.`,
       ),
     blur_hash: z.string().nullable(),
     course_categories: z.unknown(),

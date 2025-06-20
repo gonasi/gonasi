@@ -1,13 +1,11 @@
-import { copycat } from '@snaplet/copycat';
-
-import { TOTAL_USERS } from './config';
 import { PASSWORD, SU_EMAIL, supabase } from './constants';
 
 export async function signUpUsers() {
   const emails = [
     SU_EMAIL,
+    // 'mcdalinoluoch@gmail.com',
+    // ...Array.from({ length: TOTAL_USERS }, (_, i) => copycat.email(i).toLowerCase()),
     'mcdalinoluoch@gmail.com',
-    ...Array.from({ length: TOTAL_USERS }, (_, i) => copycat.email(i).toLowerCase()),
   ];
 
   for (const email of emails) {
