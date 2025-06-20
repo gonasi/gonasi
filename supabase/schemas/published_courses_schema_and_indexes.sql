@@ -1,11 +1,8 @@
 -- table to store immutable snapshots of published course versions
 create table published_courses (
-    -- unique id for the published course snapshot
-    id uuid primary key default gen_random_uuid(),
-
-    -- 1:1 reference to the original editable course
-    course_id uuid not null,
-
+    -- same as the course_id; reused to indicate the published version of a specific course
+    id uuid primary key,                     -- same as course_id
+    
     -- timestamp when this version was published
     published_at timestamptz not null default now(),
 
@@ -44,17 +41,17 @@ create table published_courses (
     updated_at timestamptz not null default timezone('utc', now()),
 
     -- foreign key constraints enforcing relational integrity
-    foreign key (course_id) references public.courses(id) on delete cascade,
+    foreign key (id) references public.courses(id) on delete cascade,
     foreign key (course_category_id) references public.course_categories(id) on delete restrict,
-    foreign key (course_sub_category_id) references public.course_categories(id) on delete restrict,
+    foreign key (course_sub_category_id) references public.course_sub_categories(id) on delete restrict,
     foreign key (pathway_id) references public.pathways(id) on delete restrict,
     foreign key (created_by) references public.profiles(id) on delete restrict,
     foreign key (updated_by) references public.profiles(id) on delete restrict
 );
 
 -- indexes to support efficient filtering and lookups
-create index idx_published_courses_course_id on published_courses(course_id);
+create index idx_published_courses_id on published_courses(id);
 create index idx_published_courses_published_at on published_courses(published_at);
 create index idx_published_courses_category_id on published_courses(course_category_id);
-create index idx_published_courses_sub_category_id on published_courses(course_sub_category_id);
+create index idx_published_courses_sub_category_id on published_courses(course_sub_categories);
 create index idx_published_courses_pathway_id on published_courses(pathway_id);

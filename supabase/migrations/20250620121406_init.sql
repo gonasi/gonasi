@@ -233,8 +233,7 @@ create table "public"."profiles" (
 alter table "public"."profiles" enable row level security;
 
 create table "public"."published_courses" (
-    "id" uuid not null default gen_random_uuid(),
-    "course_id" uuid not null,
+    "id" uuid not null,
     "published_at" timestamp with time zone not null default now(),
     "version" integer not null default 1,
     "name" text not null,
@@ -399,13 +398,13 @@ CREATE INDEX idx_profiles_verified_users ON public.profiles USING btree (id) WHE
 
 CREATE INDEX idx_published_courses_category_id ON public.published_courses USING btree (course_category_id);
 
-CREATE INDEX idx_published_courses_course_id ON public.published_courses USING btree (course_id);
+CREATE INDEX idx_published_courses_id ON public.published_courses USING btree (id);
 
 CREATE INDEX idx_published_courses_pathway_id ON public.published_courses USING btree (pathway_id);
 
 CREATE INDEX idx_published_courses_published_at ON public.published_courses USING btree (published_at);
 
-CREATE INDEX idx_published_courses_sub_category_id ON public.published_courses USING btree (course_sub_category_id);
+CREATE INDEX idx_published_courses_sub_category_id ON public.published_courses USING btree (course_sub_categories);
 
 CREATE INDEX idx_user_roles_user_id ON public.user_roles USING btree (user_id);
 
@@ -725,17 +724,17 @@ alter table "public"."published_courses" add constraint "published_courses_cours
 
 alter table "public"."published_courses" validate constraint "published_courses_course_category_id_fkey";
 
-alter table "public"."published_courses" add constraint "published_courses_course_id_fkey" FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE not valid;
-
-alter table "public"."published_courses" validate constraint "published_courses_course_id_fkey";
-
-alter table "public"."published_courses" add constraint "published_courses_course_sub_category_id_fkey" FOREIGN KEY (course_sub_category_id) REFERENCES course_categories(id) ON DELETE RESTRICT not valid;
+alter table "public"."published_courses" add constraint "published_courses_course_sub_category_id_fkey" FOREIGN KEY (course_sub_category_id) REFERENCES course_sub_categories(id) ON DELETE RESTRICT not valid;
 
 alter table "public"."published_courses" validate constraint "published_courses_course_sub_category_id_fkey";
 
 alter table "public"."published_courses" add constraint "published_courses_created_by_fkey" FOREIGN KEY (created_by) REFERENCES profiles(id) ON DELETE RESTRICT not valid;
 
 alter table "public"."published_courses" validate constraint "published_courses_created_by_fkey";
+
+alter table "public"."published_courses" add constraint "published_courses_id_fkey" FOREIGN KEY (id) REFERENCES courses(id) ON DELETE CASCADE not valid;
+
+alter table "public"."published_courses" validate constraint "published_courses_id_fkey";
 
 alter table "public"."published_courses" add constraint "published_courses_pathway_id_fkey" FOREIGN KEY (pathway_id) REFERENCES pathways(id) ON DELETE RESTRICT not valid;
 

@@ -825,25 +825,11 @@
           "hasDefaultValue": false
         },
         {
-          "name": "published_courses_published_courses_course_category_idTocourse_categories",
+          "name": "published_courses",
           "type": "published_courses",
           "isRequired": false,
           "kind": "object",
-          "relationName": "published_courses_course_category_idTocourse_categories",
-          "relationFromFields": [],
-          "relationToFields": [],
-          "isList": true,
-          "isId": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false
-        },
-        {
-          "name": "published_courses_published_courses_course_sub_category_idTocourse_categories",
-          "type": "published_courses",
-          "isRequired": false,
-          "kind": "object",
-          "relationName": "published_courses_course_sub_category_idTocourse_categories",
+          "relationName": "published_coursesTocourse_categories",
           "relationFromFields": [],
           "relationToFields": [],
           "isList": true,
@@ -1603,6 +1589,20 @@
           "isRequired": false,
           "kind": "object",
           "relationName": "coursesTocourse_sub_categories",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "published_courses",
+          "type": "published_courses",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "published_coursesTocourse_sub_categories",
           "relationFromFields": [],
           "relationToFields": [],
           "isList": true,
@@ -5845,22 +5845,8 @@
           "isList": false,
           "isGenerated": false,
           "sequence": false,
-          "hasDefaultValue": true,
-          "isId": true,
-          "maxLength": null
-        },
-        {
-          "id": "public.published_courses.course_id",
-          "name": "course_id",
-          "columnName": "course_id",
-          "type": "uuid",
-          "isRequired": true,
-          "kind": "scalar",
-          "isList": false,
-          "isGenerated": false,
-          "sequence": false,
           "hasDefaultValue": false,
-          "isId": false,
+          "isId": true,
           "maxLength": null
         },
         {
@@ -6130,11 +6116,11 @@
           "maxLength": null
         },
         {
-          "name": "course_categories_published_courses_course_category_idTocourse_categories",
+          "name": "course_categories",
           "type": "course_categories",
           "isRequired": true,
           "kind": "object",
-          "relationName": "published_courses_course_category_idTocourse_categories",
+          "relationName": "published_coursesTocourse_categories",
           "relationFromFields": [
             "course_category_id"
           ],
@@ -6148,11 +6134,11 @@
           "hasDefaultValue": false
         },
         {
-          "name": "course_categories_published_courses_course_sub_category_idTocourse_categories",
-          "type": "course_categories",
+          "name": "course_sub_categories",
+          "type": "course_sub_categories",
           "isRequired": true,
           "kind": "object",
-          "relationName": "published_courses_course_sub_category_idTocourse_categories",
+          "relationName": "published_coursesTocourse_sub_categories",
           "relationFromFields": [
             "course_sub_category_id"
           ],
@@ -6172,7 +6158,7 @@
           "kind": "object",
           "relationName": "published_coursesTocourses",
           "relationFromFields": [
-            "course_id"
+            "id"
           ],
           "relationToFields": [
             "id"

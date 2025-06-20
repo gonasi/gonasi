@@ -848,7 +848,6 @@ export type Database = {
           course_categories: Json | null
           course_category_id: string
           course_chapters: Json | null
-          course_id: string
           course_sub_categories: Json | null
           course_sub_category_id: string
           created_at: string
@@ -871,13 +870,12 @@ export type Database = {
           course_categories?: Json | null
           course_category_id: string
           course_chapters?: Json | null
-          course_id: string
           course_sub_categories?: Json | null
           course_sub_category_id: string
           created_at?: string
           created_by: string
           description?: string | null
-          id?: string
+          id: string
           image_url?: string | null
           lessons_with_blocks?: Json | null
           name: string
@@ -894,7 +892,6 @@ export type Database = {
           course_categories?: Json | null
           course_category_id?: string
           course_chapters?: Json | null
-          course_id?: string
           course_sub_categories?: Json | null
           course_sub_category_id?: string
           created_at?: string
@@ -921,17 +918,10 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "published_courses_course_id_fkey"
-            columns: ["course_id"]
-            isOneToOne: false
-            referencedRelation: "courses"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "published_courses_course_sub_category_id_fkey"
             columns: ["course_sub_category_id"]
             isOneToOne: false
-            referencedRelation: "course_categories"
+            referencedRelation: "course_sub_categories"
             referencedColumns: ["id"]
           },
           {
@@ -939,6 +929,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "published_courses_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "courses"
             referencedColumns: ["id"]
           },
           {

@@ -215,9 +215,18 @@ export const CourseOverviewSchema = z
         `<lucide name="ImageOff" size="12" /> Your course needs a <span class="go-title">thumbnail image</span> to look professional.`,
       ),
     blur_hash: z.string().nullable(),
-    course_categories: z.unknown(),
-    course_sub_categories: z.unknown(),
-    pathways: z.unknown(),
+    course_categories: z.object({
+      id: z.string(),
+      name: z.string(),
+    }),
+    course_sub_categories: z.object({
+      id: z.string(),
+      name: z.string(),
+    }),
+    pathways: z.object({
+      id: z.string(),
+      name: z.string(),
+    }),
   })
   .superRefine((data, ctx) => {
     const objectFields = [

@@ -3,13 +3,14 @@ import { useEffect, useMemo } from 'react';
 import { Form, Link } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { RefreshCw } from 'lucide-react';
-import { RemixFormProvider, useRemixForm } from 'remix-hook-form';
-import { redirectWithError } from 'remix-toast';
+import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
+import { dataWithError, redirectWithError, redirectWithSuccess } from 'remix-toast';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
 
 import { fetchCourseChaptersByCourseId } from '@gonasi/database/courseChapters';
 import { fetchCourseOverviewById, fetchCoursePricing } from '@gonasi/database/courses';
 import { fetchLessonBlocksByLessonId } from '@gonasi/database/lessons';
+import { upsertPublishCourse } from '@gonasi/database/publishedCourses';
 import { PublishCourseSchema, type PublishCourseSchemaTypes } from '@gonasi/schemas/publish';
 
 import type { Route } from './+types/publish-index';
@@ -25,6 +26,7 @@ import { ValidationSection } from './publish/ValidationSection';
 import { Button, NavLinkButton } from '~/components/ui/button';
 import { Modal } from '~/components/ui/modal';
 import { createClient } from '~/lib/supabase/supabase.server';
+import { checkHoneypot } from '~/utils/honeypot.server';
 import { useIsPending } from '~/utils/misc';
 
 export function meta() {
@@ -39,6 +41,34 @@ export function meta() {
 }
 
 const resolver = zodResolver(PublishCourseSchema);
+
+export async function action({ request, params }: Route.ActionArgs) {
+  const formData = await request.formData();
+  await checkHoneypot(formData);
+
+  // Initialize Supabase and headers for redirect
+  const { supabase } = createClient(request);
+
+  // Validate and parse form data with Zod
+  const {
+    errors,
+    data,
+    receivedValues: defaultValues,
+  } = await getValidatedFormData<PublishCourseSchemaTypes>(formData, resolver);
+
+  // Return validation errors, if any
+  if (errors) {
+    return { errors, defaultValues };
+  }
+
+  const { success, message } = await upsertPublishCourse(supabase, {
+    ...data,
+  });
+
+  return success
+    ? redirectWithSuccess(`/${params.username}/course-builder/${params.courseId}/overview`, message)
+    : dataWithError(null, message);
+}
 
 export type LoaderReturnType = Exclude<Awaited<ReturnType<typeof loader>>, Response>;
 
@@ -119,9 +149,9 @@ export default function PublishCourse({ loaderData, params }: Route.ComponentPro
         description: courseOverview.description ?? '',
         image_url: courseOverview.image_url ?? '',
         blur_hash: courseOverview.blur_hash ?? null,
-        course_categories: courseOverview.course_categories ?? null,
-        course_sub_categories: courseOverview.course_sub_categories ?? null,
-        pathways: courseOverview.pathways ?? null,
+        course_categories: courseOverview.course_categories ?? undefined,
+        course_sub_categories: courseOverview.course_sub_categories ?? undefined,
+        pathways: courseOverview.pathways ?? undefined,
       },
       pricingData:
         pricingData?.map((p: PricingType) => ({
