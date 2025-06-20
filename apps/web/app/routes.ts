@@ -8,7 +8,7 @@ export default [
     route('explore', 'routes/public/explore.tsx'),
     layout('routes/layouts/profile/profile-layout.tsx', [
       // /:username
-      route(':username', 'routes/profile/published-courses/index.tsx'),
+      route(':username', 'routes/profile/published-courses/published-courses-index.tsx'),
       // /:username/pathways
       route(':username/pathways', 'routes/profile/pathways/index.tsx'),
       // /:username/course-builder
