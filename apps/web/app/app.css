@@ -97,7 +97,7 @@
     --accent-foreground: hsl(0, 0%, 98%);
     --destructive: hsl(0, 62%, 40%);
     --destructive-foreground: hsl(0, 0%, 98%);
-    --border: hsl(217, 39%, 60%);
+    --border: hsl(217, 39%, 30%);
     --input: hsl(217, 39%, 25%);
     --ring: hsl(0, 0%, 83%);
 

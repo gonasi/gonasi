@@ -86,10 +86,10 @@ export default function PublishedCourses() {
                           blurHash={blur_hash}
                           name={name}
                           className='rounded-t-none'
-                          badges={['ugali', 'mboga']}
+                          // badges={['ugali', 'mboga']}
                         />
                         <GoCardContent>
-                          <GoCourseHeader className='line-clamp-2 text-sm' name={name} />
+                          <GoCourseHeader className='line-clamp-2 h-12 text-sm' name={name} />
 
                           <div className='flex w-full justify-end'>
                             <GoPricingSheet pricingData={pricing_data} />

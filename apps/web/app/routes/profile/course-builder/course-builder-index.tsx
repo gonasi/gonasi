@@ -93,7 +93,6 @@ function CoursesGrid({
                     blurHash={blur_hash}
                     name={name}
                     className='rounded-t-none'
-                    badges={['']}
                   />
                   <GoCardContent>
                     <GoCourseHeader className='line-clamp-1 text-sm' name={name} />

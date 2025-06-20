@@ -234,7 +234,7 @@ export default function EditCourseImage() {
     <Modal open>
       <Modal.Content size={showCropper ? 'lg' : 'sm'}>
         <Modal.Header
-          title={showCropper ? '✂️ Crop your thumbnail' : '🖼️ Update course thumbnail'}
+          title={showCropper ? '✂️ Crop your thumbnail' : '🖼️ Update Course Thumbnail'}
           closeRoute={`/${params.username}/course-builder/${params.courseId}/overview`}
         />
         <Modal.Body>

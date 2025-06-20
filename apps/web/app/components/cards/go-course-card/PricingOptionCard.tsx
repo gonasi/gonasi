@@ -84,7 +84,7 @@ export function PricingOptionCard({
         {badges.length > 0 && (
           <div className='absolute -top-3 left-3 flex items-center space-x-2'>{badges}</div>
         )}
-        <div className='bg-card/10 border/50 rounded-sm border p-3 shadow-md'>
+        <div className='bg-card/20 border/50 rounded-sm border p-3 shadow-none'>
           <motion.div
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
