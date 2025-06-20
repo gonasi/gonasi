@@ -215,41 +215,71 @@ export const CourseOverviewSchema = z
         `<lucide name="ImageOff" size="12" /> Your course needs a <span class="go-title">thumbnail image</span> to look professional.`,
       ),
     blur_hash: z.string().nullable(),
-    course_categories: z.object({
-      id: z.string(),
-      name: z.string(),
-    }),
-    course_sub_categories: z.object({
-      id: z.string(),
-      name: z.string(),
-    }),
-    pathways: z.object({
-      id: z.string(),
-      name: z.string(),
-    }),
+
+    // Allow these to be nullable/optional so custom errors run in superRefine
+    course_categories: z
+      .object({
+        id: z.string(),
+        name: z.string(),
+      })
+      .optional()
+      .nullable(),
+
+    course_sub_categories: z
+      .object({
+        id: z.string(),
+        name: z.string(),
+      })
+      .optional()
+      .nullable(),
+
+    pathways: z
+      .object({
+        id: z.string(),
+        name: z.string(),
+      })
+      .optional()
+      .nullable(),
   })
   .superRefine((data, ctx) => {
     const objectFields = [
       {
         key: 'course_categories',
+        label: 'category',
+        icon: 'ListTree',
         message: `Pick a <span class="go-title">category</span> that fits your course best.`,
       },
       {
         key: 'course_sub_categories',
+        label: 'subcategory',
+        icon: 'ListCollapse',
         message: `Choose a <span class="go-title">subcategory</span> to help students find your course.`,
       },
       {
         key: 'pathways',
+        label: 'pathway',
+        icon: 'Route',
         message: `Add your course to a <span class="go-title">learning pathway</span> so students can discover related content.`,
       },
     ];
-    for (const { key, message } of objectFields) {
+
+    for (const { key, message, icon } of objectFields) {
       const value = data[key as keyof typeof data];
-      if (value === null || typeof value !== 'object' || Array.isArray(value)) {
+
+      const isMissingOrInvalid =
+        value === null ||
+        typeof value !== 'object' ||
+        Array.isArray(value) ||
+        !('id' in value) ||
+        !('name' in value) ||
+        typeof value.id !== 'string' ||
+        typeof value.name !== 'string';
+
+      if (isMissingOrInvalid) {
         ctx.addIssue({
           path: [key],
           code: z.ZodIssueCode.custom,
-          message,
+          message: `<lucide name="${icon}" size="12" /> ${message}`,
         });
       }
     }

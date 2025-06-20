@@ -28,7 +28,7 @@ function GoThumbnail({ iconUrl, blurHash, name, badges = [], className }: GoThum
     >
       {/* Badges */}
       {badges.length > 0 && (
-        <div className='absolute top-2 left-2 z-10 flex space-x-1'>
+        <div className='absolute top-2 left-2 z-5 flex space-x-1'>
           {badges.map((badge, index) => (
             <Badge key={index}>{badge}</Badge>
           ))}
@@ -63,7 +63,7 @@ interface CourseHeaderProps {
 }
 
 function GoCourseHeader({ name, className }: CourseHeaderProps) {
-  return <CardTitle className={cn('text-md line-clamp-1', className)}>{name}</CardTitle>;
+  return <CardTitle className={cn('text-md line-clamp-2', className)}>{name}</CardTitle>;
 }
 
 export { GoThumbnail, GoCourseHeader, GoCardContent };

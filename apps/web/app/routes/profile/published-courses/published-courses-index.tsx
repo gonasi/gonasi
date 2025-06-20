@@ -1,4 +1,5 @@
-import { NavLink } from 'react-router';
+import { Suspense } from 'react';
+import { Await, NavLink, useLoaderData } from 'react-router';
 
 import { fetchPublishedCoursesByUser } from '@gonasi/database/publishedCourses';
 
@@ -6,9 +7,12 @@ import type { Route } from './+types/published-courses-index';
 
 import { NotFoundCard } from '~/components/cards';
 import { GoCardContent, GoCourseHeader, GoThumbnail } from '~/components/cards/go-course-card';
+import { GoPricingSheet } from '~/components/cards/go-course-card/GoPricingSheet';
+import { Spinner } from '~/components/loaders';
 import { createClient } from '~/lib/supabase/supabase.server';
 import { cn } from '~/lib/utils';
 
+// Meta
 export function meta({ params }: Route.MetaArgs) {
   const username = params.username;
   return [
@@ -30,7 +34,8 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   const page = Number(url.searchParams.get('page')) || 1;
   const limit = 12;
 
-  const publishedCourses = await fetchPublishedCoursesByUser({
+  // Awaited immediately
+  const publishedCoursesPromise = fetchPublishedCoursesByUser({
     supabase,
     searchQuery: search,
     limit,
@@ -38,49 +43,70 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     username: params.username ?? '',
   });
 
-  return { publishedCourses };
+  return {
+    publishedCourses: publishedCoursesPromise, // not awaited
+  };
 }
 
-export default function PublishedCourses({ loaderData, params }: Route.ComponentProps) {
-  const { publishedCourses } = loaderData;
+// Component
+export default function PublishedCourses({ params }: Route.ComponentProps) {
+  const { publishedCourses } = useLoaderData() as {
+    publishedCourses: ReturnType<typeof fetchPublishedCoursesByUser>;
+  };
+
   const { username } = params;
 
   return (
-    <div className='flex flex-col space-y-4 pb-10'>
-      <div className='grid grid-cols-1 gap-0 md:grid-cols-2 md:gap-2 lg:grid-cols-3'>
-        {publishedCourses.data.length ? (
-          publishedCourses.data.map(({ id, name, signed_url, blur_hash }) => {
-            return (
-              <NavLink
-                key={id}
-                to={`/${username}/course-builder/${id}/overview`}
-                className={cn('pb-4 hover:cursor-pointer md:pb-0')}
-              >
-                {({ isPending }) => (
-                  <div
-                    className={cn(
-                      'group md:bg-card/80 m-0 rounded-none border-none bg-transparent p-0 shadow-none',
-                      isPending && 'bg-primary/5',
-                    )}
+    <div className='flex min-h-screen flex-col space-y-4 pb-10'>
+      <Suspense fallback={<Spinner />}>
+        <Await
+          resolve={publishedCourses}
+          errorElement={<NotFoundCard message='Failed to load courses.' />}
+        >
+          {(resolvedCourses) =>
+            resolvedCourses.data.length ? (
+              <div className='grid grid-cols-1 gap-0 md:grid-cols-2 md:gap-2 lg:grid-cols-3'>
+                {resolvedCourses.data.map(({ id, name, signed_url, blur_hash, pricing_data }) => (
+                  <NavLink
+                    key={id}
+                    to={`/${username}/course-builder/${id}/overview`}
+                    className={cn('pb-4 hover:cursor-pointer md:pb-0')}
                   >
-                    <GoThumbnail
-                      iconUrl={signed_url}
-                      blurHash={blur_hash}
-                      name={name}
-                      className='rounded-t-none'
-                    />
-                    <GoCardContent>
-                      <GoCourseHeader className='line-clamp-1 text-sm' name={name} />
-                    </GoCardContent>
-                  </div>
-                )}
-              </NavLink>
-            );
-          })
-        ) : (
-          <NotFoundCard message='No published courses found' />
-        )}
-      </div>
+                    {({ isPending }) => (
+                      <div
+                        className={cn(
+                          'group md:bg-card/80 m-0 rounded-none border-none bg-transparent p-0 shadow-none',
+                          isPending && 'bg-primary/5',
+                        )}
+                      >
+                        <GoThumbnail
+                          iconUrl={signed_url}
+                          blurHash={blur_hash}
+                          name={name}
+                          className='rounded-t-none'
+                          badges={['ugali', 'mboga']}
+                        />
+                        <GoCardContent>
+                          <GoCourseHeader
+                            className='line-clamp-2 text-sm'
+                            name='som aksdflkasdf jkasldfasadf kasdkf jaklsdfj askldfj aklsdjf aklsdjf lkasdf'
+                          />
+
+                          <div className='flex w-full justify-end'>
+                            <GoPricingSheet pricingData={pricing_data} />
+                          </div>
+                        </GoCardContent>
+                      </div>
+                    )}
+                  </NavLink>
+                ))}
+              </div>
+            ) : (
+              <NotFoundCard message='No published courses found' />
+            )
+          }
+        </Await>
+      </Suspense>
     </div>
   );
 }

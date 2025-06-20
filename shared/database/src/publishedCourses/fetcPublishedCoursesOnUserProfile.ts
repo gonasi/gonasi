@@ -1,3 +1,5 @@
+import { PricingSchema } from '@gonasi/schemas/publish';
+
 import { getUserIdFromUsername } from '../auth';
 import { COURSES_BUCKET } from '../constants';
 import { getPaginationRange } from '../constants/utils';
@@ -56,36 +58,54 @@ export async function fetchPublishedCoursesByUser({
   if (error) {
     console.error('[fetchPublishedCoursesByUser] Error fetching courses:', error.message);
     return {
-      count: 0,
+      count: count ?? 0,
       data: [],
     };
   }
 
   // Return empty data if no courses found
-  if (!courses?.length) return { count: 0, data: [] };
+  if (!courses?.length) return { count: count ?? 0, data: [] };
 
-  // Fetch signed image URLs for each course
-  const dataWithSignedUrls = await Promise.all(
+  // Filter out invalid pricing_data and add signed URLs
+  const validCourses = await Promise.all(
     courses.map(async (course) => {
-      if (!course.image_url) return { ...course, signed_url: null };
-
-      const { data: signedUrlData, error: signedUrlError } = await supabase.storage
-        .from(COURSES_BUCKET)
-        .createSignedUrl(course.image_url, 3600);
-
-      if (signedUrlError) {
+      const parsed = PricingSchema.safeParse(course.pricing_data);
+      if (!parsed.success) {
         console.error(
-          `[fetchPublishedCoursesByUser] Failed to create signed URL for ${course.image_url}:`,
-          signedUrlError.message,
+          `[fetchPublishedCoursesByUser] Invalid pricing_data for course ${course.id}:`,
+          parsed.error.format(),
         );
+        return null;
+      }
+
+      let signedUrl: string | null = null;
+      if (course.image_url) {
+        const { data: signedUrlData, error: signedUrlError } = await supabase.storage
+          .from(COURSES_BUCKET)
+          .createSignedUrl(course.image_url, 3600);
+
+        if (signedUrlError) {
+          console.error(
+            `[fetchPublishedCoursesByUser] Failed to create signed URL for ${course.image_url}:`,
+            signedUrlError.message,
+          );
+        } else {
+          signedUrl = signedUrlData?.signedUrl || null;
+        }
       }
 
       return {
         ...course,
-        signed_url: signedUrlData?.signedUrl || null,
+        pricing_data: parsed.data,
+        signed_url: signedUrl,
       };
     }),
   );
 
-  return { count, data: dataWithSignedUrls };
+  const filteredCourses = validCourses.filter((c): c is Exclude<typeof c, null> => c !== null);
+
+  return {
+    count: filteredCourses.length,
+    data: filteredCourses,
+  };
 }
