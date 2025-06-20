@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { Await, NavLink, useLoaderData } from 'react-router';
+import { Await, NavLink, useLoaderData, useLocation } from 'react-router';
 
 import { fetchPublishedCoursesByUser } from '@gonasi/database/publishedCourses';
 
@@ -50,9 +50,13 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 
 // Component
 export default function PublishedCourses() {
+  const location = useLocation();
+
   const { publishedCourses } = useLoaderData() as {
     publishedCourses: ReturnType<typeof fetchPublishedCoursesByUser>;
   };
+
+  const redirectTo = location.pathname + location.search;
 
   return (
     <div className='flex min-h-screen flex-col space-y-4 pb-10'>
@@ -67,7 +71,7 @@ export default function PublishedCourses() {
                 {resolvedCourses.data.map(({ id, name, signed_url, blur_hash, pricing_data }) => (
                   <NavLink
                     key={id}
-                    to={`/c/${id}`}
+                    to={`/c/${id}?${new URLSearchParams({ redirectTo })}`}
                     className={cn('pb-4 hover:cursor-pointer md:pb-0')}
                   >
                     {({ isPending }) => (

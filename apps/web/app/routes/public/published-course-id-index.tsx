@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router';
+import { Link } from 'react-router';
 import {
   BookOpen,
   ChevronRight,
@@ -68,14 +68,20 @@ export default function PublishedCourseIdIndex({ loaderData }: Route.ComponentPr
     pricing_data,
   } = loaderData.courseOverview;
 
-  const navigate = useNavigate();
-  const handleClose = () => navigate(`/go/courses`);
+  const params = new URLSearchParams(location.search);
+  const redirectTo = params.get('redirectTo');
+
+  let closeLink = '/';
+
+  if (redirectTo) {
+    closeLink = redirectTo;
+  }
 
   const categoryName = course_categories?.name;
   const subcategoryName = course_sub_categories?.name;
 
   return (
-    <Modal open onOpenChange={(open) => open || handleClose()}>
+    <Modal open>
       <Modal.Content size='full'>
         <Modal.Header
           leadingIcon={
@@ -84,12 +90,13 @@ export default function PublishedCourseIdIndex({ loaderData }: Route.ComponentPr
             </div>
           }
           title={name}
+          closeRoute={closeLink}
         />
         <Modal.Body>
-          <div>
+          <div className='min-h-screen'>
             <div className='flex flex-col-reverse space-x-0 py-2 md:flex-row md:space-x-10 md:py-10'>
               {/* Left Content */}
-              <div className='bg-card/20 flex flex-1 flex-col space-y-4 rounded-2xl p-4'>
+              <div className='md:bg-card/50 flex flex-1 flex-col space-y-4 rounded-2xl bg-transparent p-0 md:p-4'>
                 <div className='flex items-center space-x-2 overflow-auto'>
                   <Badge variant='outline'>{categoryName}</Badge>
                   <ChevronRight size={12} />

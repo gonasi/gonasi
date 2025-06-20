@@ -73,7 +73,7 @@ function CoursesGrid({
 
   return (
     <div className='flex flex-col space-y-4 pb-10'>
-      <div className='grid grid-cols-1 gap-0 md:grid-cols-2 md:gap-2 lg:grid-cols-3'>
+      <div className='grid grid-cols-2 gap-0 md:grid-cols-3 md:gap-2 lg:grid-cols-4'>
         {courses.map(({ id, name, signed_url, blur_hash }) => {
           return (
             <NavLink
@@ -93,6 +93,7 @@ function CoursesGrid({
                     blurHash={blur_hash}
                     name={name}
                     className='rounded-t-none'
+                    badges={['']}
                   />
                   <GoCardContent>
                     <GoCourseHeader className='line-clamp-1 text-sm' name={name} />
