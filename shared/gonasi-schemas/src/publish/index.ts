@@ -383,7 +383,7 @@ const LessonsWithBlocksSchema = z.array(LessonWithBlocksSchema).superRefine((dat
   });
 });
 
-const ValidateChaptersSchema = z.array(ChapterSchema);
+export const ValidateChaptersSchema = z.array(ChapterSchema);
 export type ValidateChaptersSchemaTypes = z.infer<typeof ValidateChaptersSchema>;
 
 export const PublishCourseSchema = z

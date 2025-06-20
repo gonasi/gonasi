@@ -16,7 +16,9 @@ import { timeAgo } from '@gonasi/utils/timeAgo';
 import type { Route } from './+types/published-course-id-index';
 
 import { UserAvatar } from '~/components/avatars';
+import { GoThumbnail } from '~/components/cards/go-course-card';
 import { GoPricingSheet } from '~/components/cards/go-course-card/GoPricingSheet';
+import { ChapterLessonTree } from '~/components/course';
 import { Badge } from '~/components/ui/badge';
 import { buttonVariants } from '~/components/ui/button';
 import { Modal } from '~/components/ui/modal';
@@ -28,6 +30,26 @@ export function headers(_: Route.HeadersArgs) {
     'Cache-Control': 's-maxage=1, stale-while-revalidate=59',
   };
 }
+
+// Top-level return type of the loader
+export type CourseOverviewLoaderReturn = Exclude<Awaited<ReturnType<typeof loader>>, Response>;
+
+// Only the `courseOverview` object from the return value
+export type CourseOverviewType = CourseOverviewLoaderReturn['courseOverview'];
+
+// Further specific inferences if needed:
+export type CoursePricingDataType = CourseOverviewType['pricing_data'][number];
+
+export type CourseCategoryType = CourseOverviewType['course_categories'];
+
+export type CourseSubCategoryType = CourseOverviewType['course_sub_categories'];
+
+export type CoursePathwayType = CourseOverviewType['pathways'];
+
+export type CourseChaptersType = CourseOverviewType['course_chapters'];
+
+// Example: Lessons inside chapters
+export type CourseLessonType = CourseChaptersType[number]['lessons'][number];
 
 // Loader
 export async function loader({ params, request }: Route.LoaderArgs) {
@@ -66,6 +88,7 @@ export default function PublishedCourseIdIndex({ loaderData }: Route.ComponentPr
     lessons_count,
     chapters_count,
     pricing_data,
+    course_chapters,
   } = loaderData.courseOverview;
 
   const params = new URLSearchParams(location.search);
@@ -137,15 +160,14 @@ export default function PublishedCourseIdIndex({ loaderData }: Route.ComponentPr
               {/* Right Content */}
               <div className='mb-4 min-w-full md:mb-0 md:min-w-xs lg:min-w-sm'>
                 <div className='flex flex-col'>
-                  {/* <CourseThumbnail
-                    iconUrl={signedUrl}
+                  <GoThumbnail
+                    iconUrl='signedUrl'
                     name={name}
-                    className='rounded-t-2xl'
-                    // badges={
+                    blurHash={null} // badges={
                     //   loaderData.activeChapterAndLesson?.status === 'complete' ? ['Completed'] : []
                     // }
-                  /> */}
-                  <div className='bg-card rounded-b-2xl px-4 pb-4 md:rounded-b-none md:bg-transparent md:px-0 md:pb-0'>
+                  />
+                  <div className='bg-card px-4 pb-4 md:bg-transparent md:px-0 md:pb-0'>
                     <div className='py-4'>
                       <GoPricingSheet pricingData={pricing_data} side='left' textSize='lg' />
                     </div>
@@ -160,11 +182,11 @@ export default function PublishedCourseIdIndex({ loaderData }: Route.ComponentPr
 
             {/* Chapter Tree */}
             <div className='max-w-md md:max-w-xl'>
-              {/* <ChapterLessonTree
-                courseId={params.courseId}
-                chapters={chapters}
-                activeChapterAndLesson={loaderData.activeChapterAndLesson}
-              /> */}
+              <ChapterLessonTree
+                publishedCourseId={loaderData.courseOverview.id}
+                chapters={course_chapters}
+                // activeChapterAndLesson={loaderData.activeChapterAndLesson}
+              />
             </div>
           </div>
         </Modal.Body>

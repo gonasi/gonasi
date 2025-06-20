@@ -8,15 +8,13 @@ import { LessonViewCard } from '../cards/lesson-view-card';
 import { DisplayMode } from '../search-params/display-mode';
 
 import { cn } from '~/lib/utils';
-import type {
-  UserActiveChapterAndLessonLoaderReturnType,
-  UserCourseChaptersLoaderReturnType,
-} from '~/routes/go/go-course-details';
+import type { UserActiveChapterAndLessonLoaderReturnType } from '~/routes/go/go-course-details';
+import type { CourseChaptersType } from '~/routes/public/published-course-id-index';
 
 interface Props {
-  courseId: string;
-  chapters: UserCourseChaptersLoaderReturnType;
-  activeChapterAndLesson: UserActiveChapterAndLessonLoaderReturnType;
+  publishedCourseId: string;
+  chapters: CourseChaptersType;
+  activeChapterAndLesson?: UserActiveChapterAndLessonLoaderReturnType;
 }
 export interface ColorClass {
   bg: string;
@@ -45,7 +43,7 @@ const itemVariants = {
   },
 };
 
-export function ChapterLessonTree({ courseId, chapters, activeChapterAndLesson }: Props) {
+export function ChapterLessonTree({ publishedCourseId, chapters, activeChapterAndLesson }: Props) {
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
   const lessonRefs = useRef<Record<string, HTMLElement | null>>({});
 
@@ -135,16 +133,19 @@ export function ChapterLessonTree({ courseId, chapters, activeChapterAndLesson }
                           <LessonHoverCard
                             lessonTypes={lesson.lesson_types}
                             name={lesson.name}
-                            to={`/go/course/${courseId}/${chapter.id}/${lesson.id}/play`}
-                            isCompleted={lesson.isCompleted}
+                            to={`/go/course/${publishedCourseId}/${chapter.id}/${lesson.id}/play`}
+                            // isCompleted={lesson.isCompleted}
+                            isCompleted={false}
                             isActiveLesson={lesson.id === activeChapterAndLesson?.lessonId}
                           />
                         ) : (
                           <LessonViewCard
                             lessonTypes={lesson.lesson_types}
                             name={lesson.name}
-                            to={`/go/course/${courseId}/${chapter.id}/${lesson.id}/play`}
-                            isCompleted={lesson.isCompleted}
+                            to={`/go/course/${publishedCourseId}/${chapter.id}/${lesson.id}/play`}
+                            // isCompleted={lesson.isCompleted}
+
+                            isCompleted={false}
                             isActiveLesson={lesson.id === activeChapterAndLesson?.lessonId}
                           />
                         )}

@@ -1,4 +1,4 @@
-import { ObjectSchema, PricingSchema } from '@gonasi/schemas/publish';
+import { ObjectSchema, PricingSchema, ValidateChaptersSchema } from '@gonasi/schemas/publish';
 
 import type { TypedSupabaseClient } from '../client';
 
@@ -59,6 +59,7 @@ export async function fetchPublishedCourseById({
   const categoriesResult = ObjectSchema.safeParse(data.course_categories);
   const subCategoriesResult = ObjectSchema.safeParse(data.course_sub_categories);
   const pathwaysResult = ObjectSchema.safeParse(data.pathways);
+  const courseChaptersResult = ValidateChaptersSchema.safeParse(data.course_chapters);
 
   if (!pricingResult.success) {
     console.error('[fetchPublishedCourseById] Invalid pricing_data:', pricingResult.error);
@@ -83,11 +84,20 @@ export async function fetchPublishedCourseById({
     return null;
   }
 
+  if (!courseChaptersResult.success) {
+    console.error(
+      '[fetchPublishedCourseById] Invalid courseChaptersResult:',
+      courseChaptersResult.error,
+    );
+    return null;
+  }
+
   return {
     ...data,
     pricing_data: pricingResult.data,
     course_categories: categoriesResult.data,
     course_sub_categories: subCategoriesResult.data,
     pathways: pathwaysResult.data,
+    course_chapters: courseChaptersResult.data,
   };
 }
