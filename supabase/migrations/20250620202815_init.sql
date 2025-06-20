@@ -247,6 +247,8 @@ create table "public"."published_courses" (
     "pathway_id" uuid not null,
     "pathways" jsonb,
     "pricing_data" jsonb,
+    "chapters_count" integer not null default 0,
+    "lessons_count" integer not null default 0,
     "course_chapters" jsonb,
     "lessons_with_blocks" jsonb,
     "created_by" uuid not null,

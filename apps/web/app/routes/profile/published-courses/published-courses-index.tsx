@@ -49,12 +49,10 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 }
 
 // Component
-export default function PublishedCourses({ params }: Route.ComponentProps) {
+export default function PublishedCourses() {
   const { publishedCourses } = useLoaderData() as {
     publishedCourses: ReturnType<typeof fetchPublishedCoursesByUser>;
   };
-
-  const { username } = params;
 
   return (
     <div className='flex min-h-screen flex-col space-y-4 pb-10'>
@@ -69,7 +67,7 @@ export default function PublishedCourses({ params }: Route.ComponentProps) {
                 {resolvedCourses.data.map(({ id, name, signed_url, blur_hash, pricing_data }) => (
                   <NavLink
                     key={id}
-                    to={`/${username}/course-builder/${id}/overview`}
+                    to={`/c/${id}`}
                     className={cn('pb-4 hover:cursor-pointer md:pb-0')}
                   >
                     {({ isPending }) => (
@@ -87,10 +85,7 @@ export default function PublishedCourses({ params }: Route.ComponentProps) {
                           badges={['ugali', 'mboga']}
                         />
                         <GoCardContent>
-                          <GoCourseHeader
-                            className='line-clamp-2 text-sm'
-                            name='som aksdflkasdf jkasldfasadf kasdkf jaklsdfj askldfj aklsdjf aklsdjf lkasdf'
-                          />
+                          <GoCourseHeader className='line-clamp-2 text-sm' name={name} />
 
                           <div className='flex w-full justify-end'>
                             <GoPricingSheet pricingData={pricing_data} />

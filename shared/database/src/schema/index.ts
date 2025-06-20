@@ -845,6 +845,7 @@ export type Database = {
       published_courses: {
         Row: {
           blur_hash: string | null
+          chapters_count: number
           course_categories: Json | null
           course_category_id: string
           course_chapters: Json | null
@@ -855,6 +856,7 @@ export type Database = {
           description: string | null
           id: string
           image_url: string | null
+          lessons_count: number
           lessons_with_blocks: Json | null
           name: string
           pathway_id: string
@@ -867,6 +869,7 @@ export type Database = {
         }
         Insert: {
           blur_hash?: string | null
+          chapters_count?: number
           course_categories?: Json | null
           course_category_id: string
           course_chapters?: Json | null
@@ -877,6 +880,7 @@ export type Database = {
           description?: string | null
           id: string
           image_url?: string | null
+          lessons_count?: number
           lessons_with_blocks?: Json | null
           name: string
           pathway_id: string
@@ -889,6 +893,7 @@ export type Database = {
         }
         Update: {
           blur_hash?: string | null
+          chapters_count?: number
           course_categories?: Json | null
           course_category_id?: string
           course_chapters?: Json | null
@@ -899,6 +904,7 @@ export type Database = {
           description?: string | null
           id?: string
           image_url?: string | null
+          lessons_count?: number
           lessons_with_blocks?: Json | null
           name?: string
           pathway_id?: string

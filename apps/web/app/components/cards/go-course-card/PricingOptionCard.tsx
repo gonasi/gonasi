@@ -62,7 +62,7 @@ export function PricingOptionCard({
         initial='hidden'
         animate='visible'
       >
-        <Badge variant='info'>Popular</Badge>
+        <Badge variant='tip'>Popular</Badge>
       </motion.div>
     ),
     is_recommended && (
@@ -73,7 +73,7 @@ export function PricingOptionCard({
         initial='hidden'
         animate='visible'
       >
-        <Badge variant='tip'>Recommended</Badge>
+        <Badge variant='info'>Recommended</Badge>
       </motion.div>
     ),
   ].filter(Boolean);

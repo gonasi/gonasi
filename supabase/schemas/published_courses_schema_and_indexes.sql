@@ -30,6 +30,9 @@ create table published_courses (
     -- pricing plans or tiers at the time of publishing
     pricing_data jsonb,
 
+    chapters_count integer not null default 0,
+    lessons_count integer not null default 0,
+
     -- course structure at the time of publishing
     course_chapters jsonb,                   -- chapters with nested lessons
     lessons_with_blocks jsonb,               -- optional: full lessons with content blocks

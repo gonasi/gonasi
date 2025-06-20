@@ -5,6 +5,11 @@ import type { TypedSupabaseClient } from '../client';
 import type { ApiResponse } from '../types';
 
 /**
+ * Validates that a given value is a non-empty string (for ID checks).
+ */
+const isValidId = (id: unknown): id is string => typeof id === 'string' && id.trim().length > 0;
+
+/**
  * Upserts (inserts or updates) a published course with associated metadata.
  * @param supabase - Typed Supabase client
  * @param data - Course data to publish
@@ -16,7 +21,25 @@ export const upsertPublishCourse = async (
 ): Promise<ApiResponse> => {
   const userId = await getUserId(supabase);
 
+  const categoryId = data.courseOverview.course_categories?.id;
+  const subCategoryId = data.courseOverview.course_sub_categories?.id;
+  const pathwayId = data.courseOverview.pathways?.id;
+
+  // Validate required foreign keys
+  if (!isValidId(categoryId)) {
+    return { success: false, message: 'Invalid course category selected.' };
+  }
+  if (!isValidId(subCategoryId)) {
+    return { success: false, message: 'Invalid course sub-category selected.' };
+  }
+  if (!isValidId(pathwayId)) {
+    return { success: false, message: 'Invalid course pathway selected.' };
+  }
+
   try {
+    // Filter only active pricing options
+    const activePricingData = data.pricingData.filter((item) => item.is_active);
+
     const { error } = await supabase.from('published_courses').upsert({
       id: data.courseOverview.id,
       name: data.courseOverview.name,
@@ -24,31 +47,31 @@ export const upsertPublishCourse = async (
       image_url: data.courseOverview.image_url,
       blur_hash: data.courseOverview.blur_hash,
 
-      // Foreign key IDs
-      course_category_id: data.courseOverview.course_categories.id,
-      course_sub_category_id: data.courseOverview.course_sub_categories.id,
-      pathway_id: data.courseOverview.pathways.id,
+      // Foreign keys
+      course_category_id: categoryId,
+      course_sub_category_id: subCategoryId,
+      pathway_id: pathwayId,
 
-      // Optional nested data for denormalized caching
+      // Optional denormalized metadata for fast querying
       course_categories: data.courseOverview.course_categories,
       course_sub_categories: data.courseOverview.course_sub_categories,
       pathways: data.courseOverview.pathways,
 
-      // Nested structured content
-      pricing_data: data.pricingData,
+      // Structured content
+      pricing_data: activePricingData, // ✅ only active pricing
       course_chapters: data.courseChapters,
       lessons_with_blocks: data.lessonsWithBlocks,
 
-      // Audit trail
+      chapters_count: data.courseChapters.length,
+      lessons_count: data.lessonsWithBlocks.length,
+
+      // Audit
       created_by: userId,
       updated_by: userId,
     });
 
     if (error) {
-      console.error({
-        function: `[upsertPublishCourse]`,
-        message: error.message,
-      });
+      console.error('[upsertPublishCourse] Supabase error:', error);
       return {
         success: false,
         message: 'Failed to publish the course. Please try again.',
@@ -60,7 +83,7 @@ export const upsertPublishCourse = async (
       message: 'Course published successfully.',
     };
   } catch (err) {
-    console.error('Unexpected error in upsertPublishCourse:', err);
+    console.error('[upsertPublishCourse] Unexpected error:', err);
     return {
       success: false,
       message: 'An unexpected error occurred while publishing the course. Please try again later.',

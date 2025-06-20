@@ -19,6 +19,7 @@ export default [
         ]),
       ]),
     ]),
+    route('c/:publishedCourseId', 'routes/public/published-course-id-index.tsx'),
   ]),
 
   layout('routes/layouts/auth/auth-layout.tsx', [

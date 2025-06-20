@@ -2,6 +2,13 @@ import { z } from 'zod';
 
 const JsonSchema = z.any();
 
+export const ObjectSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+});
+
+export type ObjectSchemaTypes = z.infer<typeof ObjectSchema>;
+
 const BlockSchema = z.object({
   plugin_type: z.string({
     required_error: `Just need to pick a <span class="go-title">plugin type</span> and we're good to go!`,
