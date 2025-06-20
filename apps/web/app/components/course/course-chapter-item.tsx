@@ -153,15 +153,18 @@ export default function CourseChapterItem({ chapter, loading }: Props) {
             )}
 
             {/* Add lesson button */}
-            <div className='flex w-full justify-end'>
-              <NavLinkButton
-                to={`${basePath}/new-lesson-details`}
-                leftIcon={<Plus />}
-                size='sm'
-                variant='secondary'
-              >
-                Add lesson
-              </NavLinkButton>
+
+            <div className='flex w-full items-center justify-end'>
+              <div className='w-fit'>
+                <NavLinkButton
+                  to={`${basePath}/new-lesson-details`}
+                  leftIcon={<Plus />}
+                  size='sm'
+                  variant='secondary'
+                >
+                  Add Lesson
+                </NavLinkButton>
+              </div>
             </div>
 
             {/* Lessons list */}
