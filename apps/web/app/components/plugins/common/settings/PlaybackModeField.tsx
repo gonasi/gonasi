@@ -1,19 +1,26 @@
-import { RadioButtonField } from '~/components/ui/forms';
+import { LayoutPanelTop, SquareStack } from 'lucide-react';
+
+import { GoRadioGroupField } from '~/components/ui/forms/elements';
 
 interface PlaybackModeFieldProps {
-  // Temporarily accept any to bypass type error
-  field: any;
+  name: string;
+  watchValue: 'inline' | 'standalone';
 }
 
-export function PlaybackModeField({ field }: PlaybackModeFieldProps) {
+export function PlaybackModeField({ name, watchValue }: PlaybackModeFieldProps) {
   return (
-    <RadioButtonField
-      labelProps={{ children: 'Playback Mode ▶️', required: true }}
-      field={field}
-      description='Select how this block appears in the lesson 📚.'
+    <GoRadioGroupField
+      labelProps={{
+        children: 'Playback mode',
+        endAdornment:
+          watchValue === 'inline' ? <LayoutPanelTop size={14} /> : <SquareStack size={14} />,
+        endAdornmentKey: watchValue, // 👈 this is what makes the animation work
+      }}
+      name={name}
+      description='How this block appears in lessons.'
       options={[
-        { value: 'inline', label: 'Inline – blends with surrounding content 🔄' },
-        { value: 'standalone', label: 'Standalone – draws more attention ✨' },
+        { value: 'inline', label: 'Inline – blends with content 🔄' },
+        { value: 'standalone', label: 'Standalone – draws attention' },
       ]}
     />
   );

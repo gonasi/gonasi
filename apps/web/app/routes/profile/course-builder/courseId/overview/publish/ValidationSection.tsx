@@ -139,7 +139,12 @@ export function ValidationSection({ title, fields, validationState }: Validation
           transition={{ duration: 0.3 }}
           className='mt-2 overflow-hidden'
         >
-          <div className='w-full' style={{ height: `${fields.length * 60}px` }}>
+          <div
+            className='w-full'
+            style={{
+              height: `${Math.min(fields.length * 80, 400)}px`,
+            }}
+          >
             <Virtuoso
               data={fields}
               totalCount={fields.length}

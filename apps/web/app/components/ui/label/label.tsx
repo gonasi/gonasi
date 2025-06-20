@@ -1,6 +1,7 @@
 import * as React from 'react';
 import * as LabelPrimitive from '@radix-ui/react-label';
 import { cva, type VariantProps } from 'class-variance-authority';
+import { AnimatePresence, motion } from 'framer-motion';
 
 import { cn } from '~/lib/utils';
 
@@ -26,10 +27,14 @@ export interface LabelProps
   required?: boolean;
   endAdornment?: React.ReactNode;
   endAdornmentClassName?: string;
+  endAdornmentKey?: string | number;
 }
 
 const Label = React.forwardRef<React.ComponentRef<typeof LabelPrimitive.Root>, LabelProps>(
-  ({ className, error, required, endAdornment, endAdornmentClassName, ...props }, ref) => (
+  (
+    { className, error, required, endAdornment, endAdornmentClassName, endAdornmentKey, ...props },
+    ref,
+  ) => (
     <LabelPrimitive.Root
       ref={ref}
       className={cn(labelVariants({ error }), 'flex items-center justify-between pt-2', className)}
@@ -39,7 +44,21 @@ const Label = React.forwardRef<React.ComponentRef<typeof LabelPrimitive.Root>, L
         {props.children}
         {required && <span className={cn('text-foreground', { 'text-danger': error })}> *</span>}
       </span>
-      {endAdornment && <span className={`ml-auto ${endAdornmentClassName}`}>{endAdornment}</span>}
+
+      <AnimatePresence mode='wait' initial={false}>
+        {endAdornment && (
+          <motion.span
+            key={endAdornmentKey ?? 'static'} // Use a changing key if provided
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 4 }}
+            transition={{ duration: 0.2 }}
+            className={cn('ml-auto', endAdornmentClassName)}
+          >
+            {endAdornment}
+          </motion.span>
+        )}
+      </AnimatePresence>
     </LabelPrimitive.Root>
   ),
 );

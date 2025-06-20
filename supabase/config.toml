@@ -111,6 +111,9 @@ schema_paths = [
 
   './schemas/file_library_schema_indexes_rls_bucket.sql',
 
+  # published
+  './schemas/published_courses_schema_and_indexes.sql',
+
   # rest
   './schemas/*.sql' 
 ]

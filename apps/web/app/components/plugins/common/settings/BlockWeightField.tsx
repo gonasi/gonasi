@@ -1,19 +1,17 @@
-import type { FieldMetadata } from '@conform-to/react';
-
-import { SliderField } from '~/components/ui/forms/SliderInputField';
+import { GoSliderField } from '~/components/ui/forms/elements';
 
 interface BlockWeightFieldProps {
-  meta: FieldMetadata<number>;
+  name: string;
 }
 
-export function BlockWeightField({ meta }: BlockWeightFieldProps) {
+export function BlockWeightField({ name }: BlockWeightFieldProps) {
   return (
-    <SliderField
-      labelProps={{ children: 'Block weight ⚖️', required: true }}
-      meta={meta}
+    <GoSliderField
+      labelProps={{ children: 'Block weight' }}
+      name={name}
       min={1}
       max={10}
-      description='Adjust how important this block is when calculating overall progress 📊.'
+      description='How important this block is for progress.'
     />
   );
 }
