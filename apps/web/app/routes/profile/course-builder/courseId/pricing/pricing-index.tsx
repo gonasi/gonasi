@@ -211,18 +211,20 @@ export default function CoursePricing({ loaderData, params }: Route.ComponentPro
         />
       ) : null}
 
-      <div className='flex items-end justify-between py-4'>
+      <div className='flex w-full items-end justify-between py-4'>
         <CourseToggle isPaidState={isPaid} />
-        {isPaid ? (
-          <NavLinkButton
-            variant='secondary'
-            to={`/${params.username}/course-builder/${params.courseId}/pricing/manage-pricing-tier/add-new-tier`}
-            leftIcon={<Plus />}
-            disabled={!isPaid || !availableFrequencies || availableFrequencies?.length === 0}
-          >
-            Add Pricing Tier
-          </NavLinkButton>
-        ) : null}
+        <div>
+          {isPaid ? (
+            <NavLinkButton
+              variant='secondary'
+              to={`/${params.username}/course-builder/${params.courseId}/pricing/manage-pricing-tier/add-new-tier`}
+              leftIcon={<Plus />}
+              disabled={!isPaid || !availableFrequencies || availableFrequencies?.length === 0}
+            >
+              Add Pricing Tier
+            </NavLinkButton>
+          ) : null}
+        </div>
       </div>
       <Table>
         <TableCaption>A list of pricing options for this course</TableCaption>
