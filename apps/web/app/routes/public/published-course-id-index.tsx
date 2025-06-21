@@ -88,6 +88,8 @@ export default function PublishedCourseIdIndex({ loaderData }: Route.ComponentPr
     chapters_count,
     pricing_data,
     course_chapters,
+    blur_hash,
+    signed_url,
   } = loaderData.courseOverview;
 
   const params = new URLSearchParams(location.search);
@@ -160,9 +162,9 @@ export default function PublishedCourseIdIndex({ loaderData }: Route.ComponentPr
               <div className='mb-4 min-w-full md:mb-0 md:min-w-xs lg:min-w-sm'>
                 <div className='flex flex-col'>
                   <GoThumbnail
-                    iconUrl='signedUrl'
+                    iconUrl={signed_url}
                     name={name}
-                    blurHash={null} // badges={
+                    blurHash={blur_hash} // badges={
                     //   loaderData.activeChapterAndLesson?.status === 'complete' ? ['Completed'] : []
                     // }
                   />

@@ -1,6 +1,7 @@
 import { ObjectSchema, PricingSchema, ValidateChaptersSchema } from '@gonasi/schemas/publish';
 
 import type { TypedSupabaseClient } from '../client';
+import { PUBLISHED_THUMBNAILS } from '../constants';
 
 interface FetchPublishedCourseByIdParams {
   supabase: TypedSupabaseClient;
@@ -92,6 +93,10 @@ export async function fetchPublishedCourseById({
     return null;
   }
 
+  const { data: signedUrlData } = await supabase.storage
+    .from(PUBLISHED_THUMBNAILS)
+    .createSignedUrl(data.image_url ?? '', 3600);
+
   return {
     ...data,
     pricing_data: pricingResult.data,
@@ -99,5 +104,6 @@ export async function fetchPublishedCourseById({
     course_sub_categories: subCategoriesResult.data,
     pathways: pathwaysResult.data,
     course_chapters: courseChaptersResult.data,
+    signed_url: signedUrlData?.signedUrl ?? '',
   };
 }
