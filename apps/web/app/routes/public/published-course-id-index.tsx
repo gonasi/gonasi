@@ -183,13 +183,7 @@ export default function PublishedCourseIdIndex({ loaderData }: Route.ComponentPr
               {/* Right Content */}
               <div className='mb-4 min-w-full md:mb-0 md:min-w-xs lg:min-w-sm'>
                 <div className='flex flex-col'>
-                  <GoThumbnail
-                    iconUrl={signed_url}
-                    name={name}
-                    blurHash={blur_hash} // badges={
-                    //   loaderData.activeChapterAndLesson?.status === 'complete' ? ['Completed'] : []
-                    // }
-                  />
+                  <GoThumbnail iconUrl={signed_url} name={name} blurHash={blur_hash} />
                   <div className='bg-card px-4 pb-4 md:bg-transparent md:px-0 md:pb-0'>
                     <div className='flex w-full items-center justify-between py-4'>
                       <div className='font-secondary inline-flex font-light'>
@@ -200,10 +194,14 @@ export default function PublishedCourseIdIndex({ loaderData }: Route.ComponentPr
                       <GoPricingSheet pricingData={pricing_data} side='left' variant='primary' />
                     </div>
                     {pricing_data[0]?.is_free ? null : (
-                      <div className='flex w-full flex-col items-center justify-center'>
+                      <div className='flex w-full flex-col items-center justify-center space-y-4'>
                         <div className='text-muted-foreground'>OR</div>
                         <div>
-                          <Button variant='ghost' rightIcon={<ArrowDown />}>
+                          <Button
+                            variant='ghost'
+                            rightIcon={<ArrowDown />}
+                            className='border-border border'
+                          >
                             View Free Chapters
                           </Button>
                         </div>
