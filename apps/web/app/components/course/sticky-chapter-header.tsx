@@ -27,10 +27,10 @@ export function StickyChapterHeader({ name }: { name: string }) {
     <motion.div
       ref={ref}
       animate={controls}
-      className='bg-background/90 sticky top-14 z-5 pt-2 pb-4'
+      className='bg-background/90 sticky top-16 z-5 pt-2 pb-2'
     >
       <div className='flex items-center space-x-1'>
-        <h1 className='line-clamp-1 text-xl font-bold md:text-2xl'>{name}</h1>
+        <h1 className='line-clamp-1 text-lg font-bold md:text-2xl'>{name}</h1>
       </div>
     </motion.div>
   );

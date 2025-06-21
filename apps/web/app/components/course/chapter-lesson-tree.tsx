@@ -82,7 +82,7 @@ export function ChapterLessonTree({ publishedCourseId, chapters, activeChapterAn
                 sectionRefs.current[chapter.id] = el;
               }}
               id={chapter.id}
-              className='mb-8 scroll-mt-16'
+              className='mb-8 scroll-mt-18'
             >
               <StickyChapterHeader name={chapter.name} />
               <div>

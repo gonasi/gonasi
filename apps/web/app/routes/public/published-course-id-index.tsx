@@ -1,13 +1,5 @@
 import { Link } from 'react-router';
-import {
-  ArrowDown,
-  BookOpen,
-  ChevronRight,
-  Clock,
-  ImageIcon,
-  StarOff,
-  TableOfContents,
-} from 'lucide-react';
+import { ArrowDown, BookOpen, ChevronRight, Clock, StarOff, TableOfContents } from 'lucide-react';
 import { redirectWithError } from 'remix-toast';
 
 import { fetchPublishedCourseById } from '@gonasi/database/publishedCourses';
@@ -138,8 +130,8 @@ export default function PublishedCourseIdIndex({ loaderData }: Route.ComponentPr
       <Modal.Content size='full'>
         <Modal.Header
           leadingIcon={
-            <div className='text-primary-foreground border-primary bg-primary flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border'>
-              <ImageIcon size={18} />
+            <div className='border-foreground/20 flex w-10 flex-shrink-0 items-center justify-center rounded-full border'>
+              <GoThumbnail iconUrl={signed_url} name={name} blurHash={blur_hash} objectFit='fill' />
             </div>
           }
           title={name}
@@ -149,13 +141,14 @@ export default function PublishedCourseIdIndex({ loaderData }: Route.ComponentPr
           <div className='min-h-screen'>
             <div className='flex flex-col-reverse space-x-0 py-2 md:flex-row md:space-x-10 md:py-10'>
               {/* Left Content */}
-              <div className='md:bg-card/50 flex flex-1 flex-col space-y-4 rounded-sm bg-transparent p-0 p-4'>
+              <div className='md:bg-card/50 flex flex-1 flex-col space-y-4 rounded-sm bg-transparent p-4'>
                 <div className='flex items-center space-x-2 overflow-auto'>
                   <Badge variant='outline'>{categoryName}</Badge>
                   <ChevronRight size={12} />
                   <Badge variant='outline'>{subcategoryName}</Badge>
                 </div>
 
+                <h2 className='line-clamp-3 text-xl'>{name}</h2>
                 <p className='font-secondary text-muted-foreground'>{description}</p>
 
                 <div className='pb-2'>

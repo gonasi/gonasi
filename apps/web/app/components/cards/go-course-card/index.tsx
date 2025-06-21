@@ -11,20 +11,40 @@ function GoCardContent({ className, ...props }: React.ComponentProps<'div'>) {
   return <div data-slot='go-card-content' className={cn('px-4 py-2', className)} {...props} />;
 }
 
+type AspectRatioOption = '16/9' | '4/3' | '1/1' | '3/2' | '9/16';
+
+const aspectRatioClasses: Record<AspectRatioOption, string> = {
+  '16/9': 'aspect-[16/9]',
+  '4/3': 'aspect-[4/3]',
+  '1/1': 'aspect-square',
+  '3/2': 'aspect-[3/2]',
+  '9/16': 'aspect-[9/16]',
+};
 interface GoThumbnailProps {
   iconUrl: string | null;
   blurHash: string | null;
   name: string;
   badges?: string[];
   className?: string;
+  objectFit?: 'contain' | 'cover' | 'fill' | 'none' | 'scale-down' | 'inherit' | 'initial';
+  aspectRatio?: AspectRatioOption;
 }
 
-function GoThumbnail({ iconUrl, blurHash, name, badges = [], className }: GoThumbnailProps) {
+function GoThumbnail({
+  iconUrl,
+  blurHash,
+  name,
+  badges = [],
+  className,
+  objectFit = 'cover',
+  aspectRatio = '16/9',
+}: GoThumbnailProps) {
   const placeholder = blurHash ? blurhashToCssGradientString(blurHash) : 'auto';
+  const aspectClass = aspectRatioClasses[aspectRatio];
 
   return (
     <div
-      className={`group bg-muted relative aspect-[16/9] max-h-[360px] w-full overflow-hidden ${className}`}
+      className={`group bg-muted relative max-h-[360px] w-full overflow-hidden ${aspectClass} ${className}`}
     >
       {/* Badges */}
       {badges.length > 0 && (
@@ -41,7 +61,7 @@ function GoThumbnail({ iconUrl, blurHash, name, badges = [], className }: GoThum
           <Image
             src={iconUrl}
             layout='fullWidth'
-            objectFit='cover'
+            objectFit={objectFit}
             alt={`${name} thumbnail`}
             background={placeholder}
             className='h-full w-full object-cover'
