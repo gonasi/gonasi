@@ -114,6 +114,13 @@ schema_paths = [
   # published
   './schemas/published_courses_schema_and_indexes.sql',
 
+  './schemas/enrollments_schema_indexes_rls.sql',
+
+  './schemas/enrollment_activities_schema_indexes_rls.sql',
+
+  './schemas/payments_schema_indexes_rls.sql',
+
+
   # rest
   './schemas/*.sql' 
 ]

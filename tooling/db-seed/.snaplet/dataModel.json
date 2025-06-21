@@ -1391,6 +1391,20 @@
           "isGenerated": false,
           "sequence": false,
           "hasDefaultValue": false
+        },
+        {
+          "name": "published_course_enrollment_activities",
+          "type": "published_course_enrollment_activities",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "published_course_enrollment_activitiesTocourse_pricing_tiers",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
         }
       ],
       "uniqueConstraints": [
@@ -5068,6 +5082,269 @@
         }
       ]
     },
+    "payments": {
+      "id": "public.payments",
+      "schemaName": "public",
+      "tableName": "payments",
+      "fields": [
+        {
+          "id": "public.payments.id",
+          "name": "id",
+          "columnName": "id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": true,
+          "maxLength": null
+        },
+        {
+          "id": "public.payments.user_id",
+          "name": "user_id",
+          "columnName": "user_id",
+          "type": "uuid",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.payments.enrollment_activity_id",
+          "name": "enrollment_activity_id",
+          "columnName": "enrollment_activity_id",
+          "type": "uuid",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.payments.published_course_id",
+          "name": "published_course_id",
+          "columnName": "published_course_id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.payments.provider",
+          "name": "provider",
+          "columnName": "provider",
+          "type": "text",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.payments.provider_reference",
+          "name": "provider_reference",
+          "columnName": "provider_reference",
+          "type": "text",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.payments.status",
+          "name": "status",
+          "columnName": "status",
+          "type": "text",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.payments.currency_code",
+          "name": "currency_code",
+          "columnName": "currency_code",
+          "type": "currency_code",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.payments.amount",
+          "name": "amount",
+          "columnName": "amount",
+          "type": "numeric",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.payments.paid_at",
+          "name": "paid_at",
+          "columnName": "paid_at",
+          "type": "timestamptz",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.payments.created_at",
+          "name": "created_at",
+          "columnName": "created_at",
+          "type": "timestamptz",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.payments.created_by",
+          "name": "created_by",
+          "columnName": "created_by",
+          "type": "uuid",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "name": "profiles_payments_created_byToprofiles",
+          "type": "profiles",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "payments_created_byToprofiles",
+          "relationFromFields": [
+            "created_by"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "profiles_payments_user_idToprofiles",
+          "type": "profiles",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "payments_user_idToprofiles",
+          "relationFromFields": [
+            "user_id"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "published_course_enrollment_activities",
+          "type": "published_course_enrollment_activities",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "paymentsTopublished_course_enrollment_activities",
+          "relationFromFields": [
+            "enrollment_activity_id"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "published_courses",
+          "type": "published_courses",
+          "isRequired": true,
+          "kind": "object",
+          "relationName": "paymentsTopublished_courses",
+          "relationFromFields": [
+            "published_course_id"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        }
+      ],
+      "uniqueConstraints": [
+        {
+          "name": "payments_pkey",
+          "fields": [
+            "id"
+          ],
+          "nullNotDistinct": false
+        },
+        {
+          "name": "payments_provider_reference_key",
+          "fields": [
+            "provider_reference"
+          ],
+          "nullNotDistinct": false
+        }
+      ]
+    },
     "profiles": {
       "id": "public.profiles",
       "schemaName": "public",
@@ -5764,6 +6041,62 @@
           "hasDefaultValue": false
         },
         {
+          "name": "payments_payments_created_byToprofiles",
+          "type": "payments",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "payments_created_byToprofiles",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "payments_payments_user_idToprofiles",
+          "type": "payments",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "payments_user_idToprofiles",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "published_course_enrollment_activities",
+          "type": "published_course_enrollment_activities",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "published_course_enrollment_activitiesToprofiles",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "published_course_enrollments",
+          "type": "published_course_enrollments",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "published_course_enrollmentsToprofiles",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
           "name": "published_courses_published_courses_created_byToprofiles",
           "type": "published_courses",
           "isRequired": false,
@@ -5825,6 +6158,458 @@
           "name": "profiles_username_key",
           "fields": [
             "username"
+          ],
+          "nullNotDistinct": false
+        }
+      ]
+    },
+    "published_course_enrollment_activities": {
+      "id": "public.published_course_enrollment_activities",
+      "schemaName": "public",
+      "tableName": "published_course_enrollment_activities",
+      "fields": [
+        {
+          "id": "public.published_course_enrollment_activities.id",
+          "name": "id",
+          "columnName": "id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": true,
+          "maxLength": null
+        },
+        {
+          "id": "public.published_course_enrollment_activities.enrollment_id",
+          "name": "enrollment_id",
+          "columnName": "enrollment_id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.published_course_enrollment_activities.pricing_tier_id",
+          "name": "pricing_tier_id",
+          "columnName": "pricing_tier_id",
+          "type": "uuid",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.published_course_enrollment_activities.tier_name",
+          "name": "tier_name",
+          "columnName": "tier_name",
+          "type": "text",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.published_course_enrollment_activities.tier_description",
+          "name": "tier_description",
+          "columnName": "tier_description",
+          "type": "text",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.published_course_enrollment_activities.payment_frequency",
+          "name": "payment_frequency",
+          "columnName": "payment_frequency",
+          "type": "payment_frequency",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.published_course_enrollment_activities.currency_code",
+          "name": "currency_code",
+          "columnName": "currency_code",
+          "type": "currency_code",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.published_course_enrollment_activities.is_free",
+          "name": "is_free",
+          "columnName": "is_free",
+          "type": "bool",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.published_course_enrollment_activities.price_paid",
+          "name": "price_paid",
+          "columnName": "price_paid",
+          "type": "numeric",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.published_course_enrollment_activities.promotional_price",
+          "name": "promotional_price",
+          "columnName": "promotional_price",
+          "type": "numeric",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.published_course_enrollment_activities.was_promotional",
+          "name": "was_promotional",
+          "columnName": "was_promotional",
+          "type": "bool",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.published_course_enrollment_activities.access_start",
+          "name": "access_start",
+          "columnName": "access_start",
+          "type": "timestamptz",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.published_course_enrollment_activities.access_end",
+          "name": "access_end",
+          "columnName": "access_end",
+          "type": "timestamptz",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.published_course_enrollment_activities.created_at",
+          "name": "created_at",
+          "columnName": "created_at",
+          "type": "timestamptz",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.published_course_enrollment_activities.created_by",
+          "name": "created_by",
+          "columnName": "created_by",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "name": "course_pricing_tiers",
+          "type": "course_pricing_tiers",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "published_course_enrollment_activitiesTocourse_pricing_tiers",
+          "relationFromFields": [
+            "pricing_tier_id"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "profiles",
+          "type": "profiles",
+          "isRequired": true,
+          "kind": "object",
+          "relationName": "published_course_enrollment_activitiesToprofiles",
+          "relationFromFields": [
+            "created_by"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "published_course_enrollments",
+          "type": "published_course_enrollments",
+          "isRequired": true,
+          "kind": "object",
+          "relationName": "published_course_enrollment_activitiesTopublished_course_enrollments",
+          "relationFromFields": [
+            "enrollment_id"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "payments",
+          "type": "payments",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "paymentsTopublished_course_enrollment_activities",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        }
+      ],
+      "uniqueConstraints": [
+        {
+          "name": "published_course_enrollment_activities_pkey",
+          "fields": [
+            "id"
+          ],
+          "nullNotDistinct": false
+        }
+      ]
+    },
+    "published_course_enrollments": {
+      "id": "public.published_course_enrollments",
+      "schemaName": "public",
+      "tableName": "published_course_enrollments",
+      "fields": [
+        {
+          "id": "public.published_course_enrollments.id",
+          "name": "id",
+          "columnName": "id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": true,
+          "maxLength": null
+        },
+        {
+          "id": "public.published_course_enrollments.user_id",
+          "name": "user_id",
+          "columnName": "user_id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.published_course_enrollments.published_course_id",
+          "name": "published_course_id",
+          "columnName": "published_course_id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.published_course_enrollments.enrolled_at",
+          "name": "enrolled_at",
+          "columnName": "enrolled_at",
+          "type": "timestamptz",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.published_course_enrollments.expires_at",
+          "name": "expires_at",
+          "columnName": "expires_at",
+          "type": "timestamptz",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.published_course_enrollments.is_active",
+          "name": "is_active",
+          "columnName": "is_active",
+          "type": "bool",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "name": "profiles",
+          "type": "profiles",
+          "isRequired": true,
+          "kind": "object",
+          "relationName": "published_course_enrollmentsToprofiles",
+          "relationFromFields": [
+            "user_id"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "published_courses",
+          "type": "published_courses",
+          "isRequired": true,
+          "kind": "object",
+          "relationName": "published_course_enrollmentsTopublished_courses",
+          "relationFromFields": [
+            "published_course_id"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "published_course_enrollment_activities",
+          "type": "published_course_enrollment_activities",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "published_course_enrollment_activitiesTopublished_course_enrollments",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        }
+      ],
+      "uniqueConstraints": [
+        {
+          "name": "published_course_enrollments_pkey",
+          "fields": [
+            "id"
+          ],
+          "nullNotDistinct": false
+        },
+        {
+          "name": "uq_user_course",
+          "fields": [
+            "published_course_id",
+            "user_id"
           ],
           "nullNotDistinct": false
         }
@@ -6246,6 +7031,34 @@
             "id"
           ],
           "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "payments",
+          "type": "payments",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "paymentsTopublished_courses",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "published_course_enrollments",
+          "type": "published_course_enrollments",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "published_course_enrollmentsTopublished_courses",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
           "isId": false,
           "isGenerated": false,
           "sequence": false,

@@ -755,6 +755,80 @@ export type Database = {
           },
         ]
       }
+      payments: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string | null
+          currency_code: Database["public"]["Enums"]["currency_code"]
+          enrollment_activity_id: string | null
+          id: string
+          paid_at: string
+          provider: string
+          provider_reference: string
+          published_course_id: string
+          status: string
+          user_id: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          created_by?: string | null
+          currency_code: Database["public"]["Enums"]["currency_code"]
+          enrollment_activity_id?: string | null
+          id?: string
+          paid_at?: string
+          provider?: string
+          provider_reference: string
+          published_course_id: string
+          status: string
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          currency_code?: Database["public"]["Enums"]["currency_code"]
+          enrollment_activity_id?: string | null
+          id?: string
+          paid_at?: string
+          provider?: string
+          provider_reference?: string
+          published_course_id?: string
+          status?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_enrollment_activity_id_fkey"
+            columns: ["enrollment_activity_id"]
+            isOneToOne: false
+            referencedRelation: "published_course_enrollment_activities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_published_course_id_fkey"
+            columns: ["published_course_id"]
+            isOneToOne: false
+            referencedRelation: "published_courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           account_verified: boolean
@@ -841,6 +915,124 @@ export type Database = {
           youtube_url?: string | null
         }
         Relationships: []
+      }
+      published_course_enrollment_activities: {
+        Row: {
+          access_end: string
+          access_start: string
+          created_at: string
+          created_by: string
+          currency_code: Database["public"]["Enums"]["currency_code"]
+          enrollment_id: string
+          id: string
+          is_free: boolean
+          payment_frequency: Database["public"]["Enums"]["payment_frequency"]
+          price_paid: number
+          pricing_tier_id: string | null
+          promotional_price: number | null
+          tier_description: string | null
+          tier_name: string | null
+          was_promotional: boolean
+        }
+        Insert: {
+          access_end: string
+          access_start: string
+          created_at?: string
+          created_by: string
+          currency_code: Database["public"]["Enums"]["currency_code"]
+          enrollment_id: string
+          id?: string
+          is_free: boolean
+          payment_frequency: Database["public"]["Enums"]["payment_frequency"]
+          price_paid?: number
+          pricing_tier_id?: string | null
+          promotional_price?: number | null
+          tier_description?: string | null
+          tier_name?: string | null
+          was_promotional?: boolean
+        }
+        Update: {
+          access_end?: string
+          access_start?: string
+          created_at?: string
+          created_by?: string
+          currency_code?: Database["public"]["Enums"]["currency_code"]
+          enrollment_id?: string
+          id?: string
+          is_free?: boolean
+          payment_frequency?: Database["public"]["Enums"]["payment_frequency"]
+          price_paid?: number
+          pricing_tier_id?: string | null
+          promotional_price?: number | null
+          tier_description?: string | null
+          tier_name?: string | null
+          was_promotional?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "published_course_enrollment_activities_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "published_course_enrollment_activities_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "published_course_enrollments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "published_course_enrollment_activities_pricing_tier_id_fkey"
+            columns: ["pricing_tier_id"]
+            isOneToOne: false
+            referencedRelation: "course_pricing_tiers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      published_course_enrollments: {
+        Row: {
+          enrolled_at: string
+          expires_at: string
+          id: string
+          is_active: boolean
+          published_course_id: string
+          user_id: string
+        }
+        Insert: {
+          enrolled_at?: string
+          expires_at: string
+          id?: string
+          is_active?: boolean
+          published_course_id: string
+          user_id: string
+        }
+        Update: {
+          enrolled_at?: string
+          expires_at?: string
+          id?: string
+          is_active?: boolean
+          published_course_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "published_course_enrollments_published_course_id_fkey"
+            columns: ["published_course_id"]
+            isOneToOne: false
+            referencedRelation: "published_courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "published_course_enrollments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       published_courses: {
         Row: {

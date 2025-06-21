@@ -200,6 +200,22 @@ create table "public"."pathways" (
 
 alter table "public"."pathways" enable row level security;
 
+create table "public"."payments" (
+    "id" uuid not null default uuid_generate_v4(),
+    "user_id" uuid,
+    "enrollment_activity_id" uuid,
+    "published_course_id" uuid not null,
+    "provider" text not null default 'paystack'::text,
+    "provider_reference" text not null,
+    "status" text not null,
+    "currency_code" currency_code not null,
+    "amount" numeric(19,4) not null,
+    "paid_at" timestamp with time zone not null default timezone('utc'::text, now()),
+    "created_at" timestamp with time zone not null default timezone('utc'::text, now()),
+    "created_by" uuid
+);
+
+
 create table "public"."profiles" (
     "id" uuid not null,
     "username" text,
@@ -231,6 +247,39 @@ create table "public"."profiles" (
 
 
 alter table "public"."profiles" enable row level security;
+
+create table "public"."published_course_enrollment_activities" (
+    "id" uuid not null default uuid_generate_v4(),
+    "enrollment_id" uuid not null,
+    "pricing_tier_id" uuid,
+    "tier_name" text,
+    "tier_description" text,
+    "payment_frequency" payment_frequency not null,
+    "currency_code" currency_code not null,
+    "is_free" boolean not null,
+    "price_paid" numeric(19,4) not null default 0,
+    "promotional_price" numeric(19,4),
+    "was_promotional" boolean not null default false,
+    "access_start" timestamp with time zone not null,
+    "access_end" timestamp with time zone not null,
+    "created_at" timestamp with time zone not null default timezone('utc'::text, now()),
+    "created_by" uuid not null
+);
+
+
+alter table "public"."published_course_enrollment_activities" enable row level security;
+
+create table "public"."published_course_enrollments" (
+    "id" uuid not null default uuid_generate_v4(),
+    "user_id" uuid not null,
+    "published_course_id" uuid not null,
+    "enrolled_at" timestamp with time zone not null default timezone('utc'::text, now()),
+    "expires_at" timestamp with time zone not null,
+    "is_active" boolean not null default true
+);
+
+
+alter table "public"."published_course_enrollments" enable row level security;
 
 create table "public"."published_courses" (
     "id" uuid not null,
@@ -344,6 +393,24 @@ CREATE INDEX idx_courses_updated_by ON public.courses USING btree (updated_by);
 
 CREATE INDEX idx_courses_visibility ON public.courses USING btree (visibility);
 
+CREATE INDEX idx_enrollment_activities_access_window ON public.published_course_enrollment_activities USING btree (access_start, access_end);
+
+CREATE INDEX idx_enrollment_activities_created_at ON public.published_course_enrollment_activities USING btree (created_at);
+
+CREATE INDEX idx_enrollment_activities_created_by ON public.published_course_enrollment_activities USING btree (created_by);
+
+CREATE INDEX idx_enrollment_activities_enrollment_id ON public.published_course_enrollment_activities USING btree (enrollment_id);
+
+CREATE INDEX idx_enrollment_activities_pricing_tier_id ON public.published_course_enrollment_activities USING btree (pricing_tier_id);
+
+CREATE INDEX idx_enrollments_course_id ON public.published_course_enrollments USING btree (published_course_id);
+
+CREATE INDEX idx_enrollments_expires_at ON public.published_course_enrollments USING btree (expires_at);
+
+CREATE INDEX idx_enrollments_is_active ON public.published_course_enrollments USING btree (is_active);
+
+CREATE INDEX idx_enrollments_user_id ON public.published_course_enrollments USING btree (user_id);
+
 CREATE INDEX idx_file_library_course_id ON public.file_library USING btree (course_id);
 
 CREATE INDEX idx_file_library_created_at_desc ON public.file_library USING btree (created_at DESC);
@@ -422,11 +489,19 @@ CREATE UNIQUE INDEX lessons_pkey ON public.lessons USING btree (id);
 
 CREATE UNIQUE INDEX pathways_pkey ON public.pathways USING btree (id);
 
+CREATE UNIQUE INDEX payments_pkey ON public.payments USING btree (id);
+
+CREATE UNIQUE INDEX payments_provider_reference_key ON public.payments USING btree (provider_reference);
+
 CREATE UNIQUE INDEX profiles_email_key ON public.profiles USING btree (email);
 
 CREATE UNIQUE INDEX profiles_pkey ON public.profiles USING btree (id);
 
 CREATE UNIQUE INDEX profiles_username_key ON public.profiles USING btree (username);
+
+CREATE UNIQUE INDEX published_course_enrollment_activities_pkey ON public.published_course_enrollment_activities USING btree (id);
+
+CREATE UNIQUE INDEX published_course_enrollments_pkey ON public.published_course_enrollments USING btree (id);
 
 CREATE UNIQUE INDEX published_courses_pkey ON public.published_courses USING btree (id);
 
@@ -443,6 +518,8 @@ CREATE UNIQUE INDEX unique_lesson_block_position_per_lesson ON public.lesson_blo
 CREATE UNIQUE INDEX unique_lesson_position_per_chapter ON public.lessons USING btree (chapter_id, "position");
 
 CREATE UNIQUE INDEX uq_one_active_tier_per_frequency ON public.course_pricing_tiers USING btree (course_id, payment_frequency, is_active);
+
+CREATE UNIQUE INDEX uq_user_course ON public.published_course_enrollments USING btree (user_id, published_course_id);
 
 CREATE UNIQUE INDEX user_roles_pkey ON public.user_roles USING btree (id);
 
@@ -470,7 +547,13 @@ alter table "public"."lessons" add constraint "lessons_pkey" PRIMARY KEY using i
 
 alter table "public"."pathways" add constraint "pathways_pkey" PRIMARY KEY using index "pathways_pkey";
 
+alter table "public"."payments" add constraint "payments_pkey" PRIMARY KEY using index "payments_pkey";
+
 alter table "public"."profiles" add constraint "profiles_pkey" PRIMARY KEY using index "profiles_pkey";
+
+alter table "public"."published_course_enrollment_activities" add constraint "published_course_enrollment_activities_pkey" PRIMARY KEY using index "published_course_enrollment_activities_pkey";
+
+alter table "public"."published_course_enrollments" add constraint "published_course_enrollments_pkey" PRIMARY KEY using index "published_course_enrollments_pkey";
 
 alter table "public"."published_courses" add constraint "published_courses_pkey" PRIMARY KEY using index "published_courses_pkey";
 
@@ -658,6 +741,24 @@ alter table "public"."pathways" add constraint "pathways_updated_by_fkey" FOREIG
 
 alter table "public"."pathways" validate constraint "pathways_updated_by_fkey";
 
+alter table "public"."payments" add constraint "payments_created_by_fkey" FOREIGN KEY (created_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
+
+alter table "public"."payments" validate constraint "payments_created_by_fkey";
+
+alter table "public"."payments" add constraint "payments_enrollment_activity_id_fkey" FOREIGN KEY (enrollment_activity_id) REFERENCES published_course_enrollment_activities(id) ON DELETE SET NULL not valid;
+
+alter table "public"."payments" validate constraint "payments_enrollment_activity_id_fkey";
+
+alter table "public"."payments" add constraint "payments_provider_reference_key" UNIQUE using index "payments_provider_reference_key";
+
+alter table "public"."payments" add constraint "payments_published_course_id_fkey" FOREIGN KEY (published_course_id) REFERENCES published_courses(id) ON DELETE SET NULL not valid;
+
+alter table "public"."payments" validate constraint "payments_published_course_id_fkey";
+
+alter table "public"."payments" add constraint "payments_user_id_fkey" FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE SET NULL not valid;
+
+alter table "public"."payments" validate constraint "payments_user_id_fkey";
+
 alter table "public"."profiles" add constraint "email_valid" CHECK ((email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'::text)) not valid;
 
 alter table "public"."profiles" validate constraint "email_valid";
@@ -721,6 +822,28 @@ alter table "public"."profiles" validate constraint "username_length";
 alter table "public"."profiles" add constraint "username_lowercase" CHECK ((username = lower(username))) not valid;
 
 alter table "public"."profiles" validate constraint "username_lowercase";
+
+alter table "public"."published_course_enrollment_activities" add constraint "published_course_enrollment_activities_created_by_fkey" FOREIGN KEY (created_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
+
+alter table "public"."published_course_enrollment_activities" validate constraint "published_course_enrollment_activities_created_by_fkey";
+
+alter table "public"."published_course_enrollment_activities" add constraint "published_course_enrollment_activities_enrollment_id_fkey" FOREIGN KEY (enrollment_id) REFERENCES published_course_enrollments(id) ON DELETE CASCADE not valid;
+
+alter table "public"."published_course_enrollment_activities" validate constraint "published_course_enrollment_activities_enrollment_id_fkey";
+
+alter table "public"."published_course_enrollment_activities" add constraint "published_course_enrollment_activities_pricing_tier_id_fkey" FOREIGN KEY (pricing_tier_id) REFERENCES course_pricing_tiers(id) not valid;
+
+alter table "public"."published_course_enrollment_activities" validate constraint "published_course_enrollment_activities_pricing_tier_id_fkey";
+
+alter table "public"."published_course_enrollments" add constraint "published_course_enrollments_published_course_id_fkey" FOREIGN KEY (published_course_id) REFERENCES published_courses(id) ON DELETE CASCADE not valid;
+
+alter table "public"."published_course_enrollments" validate constraint "published_course_enrollments_published_course_id_fkey";
+
+alter table "public"."published_course_enrollments" add constraint "published_course_enrollments_user_id_fkey" FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE not valid;
+
+alter table "public"."published_course_enrollments" validate constraint "published_course_enrollments_user_id_fkey";
+
+alter table "public"."published_course_enrollments" add constraint "uq_user_course" UNIQUE using index "uq_user_course";
 
 alter table "public"."published_courses" add constraint "published_courses_course_category_id_fkey" FOREIGN KEY (course_category_id) REFERENCES course_categories(id) ON DELETE RESTRICT not valid;
 
@@ -1727,6 +1850,30 @@ begin
     where course_id = new.course_id;
   end if;
   return new;
+end;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.set_course_enrollment_expiry()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+begin
+  if NEW.payment_frequency = 'monthly' then
+    NEW.expires_at := NEW.enrolled_at + interval '1 month';
+  elsif NEW.payment_frequency = 'bi_monthly' then
+    NEW.expires_at := NEW.enrolled_at + interval '2 months';
+  elsif NEW.payment_frequency = 'quarterly' then
+    NEW.expires_at := NEW.enrolled_at + interval '3 months';
+  elsif NEW.payment_frequency = 'semi_annual' then
+    NEW.expires_at := NEW.enrolled_at + interval '6 months';
+  elsif NEW.payment_frequency = 'annual' then
+    NEW.expires_at := NEW.enrolled_at + interval '12 months';
+  else
+    raise exception 'Unknown payment_frequency';
+  end if;
+
+  return NEW;
 end;
 $function$
 ;
@@ -2770,6 +2917,48 @@ grant truncate on table "public"."pathways" to "service_role";
 
 grant update on table "public"."pathways" to "service_role";
 
+grant delete on table "public"."payments" to "anon";
+
+grant insert on table "public"."payments" to "anon";
+
+grant references on table "public"."payments" to "anon";
+
+grant select on table "public"."payments" to "anon";
+
+grant trigger on table "public"."payments" to "anon";
+
+grant truncate on table "public"."payments" to "anon";
+
+grant update on table "public"."payments" to "anon";
+
+grant delete on table "public"."payments" to "authenticated";
+
+grant insert on table "public"."payments" to "authenticated";
+
+grant references on table "public"."payments" to "authenticated";
+
+grant select on table "public"."payments" to "authenticated";
+
+grant trigger on table "public"."payments" to "authenticated";
+
+grant truncate on table "public"."payments" to "authenticated";
+
+grant update on table "public"."payments" to "authenticated";
+
+grant delete on table "public"."payments" to "service_role";
+
+grant insert on table "public"."payments" to "service_role";
+
+grant references on table "public"."payments" to "service_role";
+
+grant select on table "public"."payments" to "service_role";
+
+grant trigger on table "public"."payments" to "service_role";
+
+grant truncate on table "public"."payments" to "service_role";
+
+grant update on table "public"."payments" to "service_role";
+
 grant delete on table "public"."profiles" to "anon";
 
 grant insert on table "public"."profiles" to "anon";
@@ -2811,6 +3000,90 @@ grant trigger on table "public"."profiles" to "service_role";
 grant truncate on table "public"."profiles" to "service_role";
 
 grant update on table "public"."profiles" to "service_role";
+
+grant delete on table "public"."published_course_enrollment_activities" to "anon";
+
+grant insert on table "public"."published_course_enrollment_activities" to "anon";
+
+grant references on table "public"."published_course_enrollment_activities" to "anon";
+
+grant select on table "public"."published_course_enrollment_activities" to "anon";
+
+grant trigger on table "public"."published_course_enrollment_activities" to "anon";
+
+grant truncate on table "public"."published_course_enrollment_activities" to "anon";
+
+grant update on table "public"."published_course_enrollment_activities" to "anon";
+
+grant delete on table "public"."published_course_enrollment_activities" to "authenticated";
+
+grant insert on table "public"."published_course_enrollment_activities" to "authenticated";
+
+grant references on table "public"."published_course_enrollment_activities" to "authenticated";
+
+grant select on table "public"."published_course_enrollment_activities" to "authenticated";
+
+grant trigger on table "public"."published_course_enrollment_activities" to "authenticated";
+
+grant truncate on table "public"."published_course_enrollment_activities" to "authenticated";
+
+grant update on table "public"."published_course_enrollment_activities" to "authenticated";
+
+grant delete on table "public"."published_course_enrollment_activities" to "service_role";
+
+grant insert on table "public"."published_course_enrollment_activities" to "service_role";
+
+grant references on table "public"."published_course_enrollment_activities" to "service_role";
+
+grant select on table "public"."published_course_enrollment_activities" to "service_role";
+
+grant trigger on table "public"."published_course_enrollment_activities" to "service_role";
+
+grant truncate on table "public"."published_course_enrollment_activities" to "service_role";
+
+grant update on table "public"."published_course_enrollment_activities" to "service_role";
+
+grant delete on table "public"."published_course_enrollments" to "anon";
+
+grant insert on table "public"."published_course_enrollments" to "anon";
+
+grant references on table "public"."published_course_enrollments" to "anon";
+
+grant select on table "public"."published_course_enrollments" to "anon";
+
+grant trigger on table "public"."published_course_enrollments" to "anon";
+
+grant truncate on table "public"."published_course_enrollments" to "anon";
+
+grant update on table "public"."published_course_enrollments" to "anon";
+
+grant delete on table "public"."published_course_enrollments" to "authenticated";
+
+grant insert on table "public"."published_course_enrollments" to "authenticated";
+
+grant references on table "public"."published_course_enrollments" to "authenticated";
+
+grant select on table "public"."published_course_enrollments" to "authenticated";
+
+grant trigger on table "public"."published_course_enrollments" to "authenticated";
+
+grant truncate on table "public"."published_course_enrollments" to "authenticated";
+
+grant update on table "public"."published_course_enrollments" to "authenticated";
+
+grant delete on table "public"."published_course_enrollments" to "service_role";
+
+grant insert on table "public"."published_course_enrollments" to "service_role";
+
+grant references on table "public"."published_course_enrollments" to "service_role";
+
+grant select on table "public"."published_course_enrollments" to "service_role";
+
+grant trigger on table "public"."published_course_enrollments" to "service_role";
+
+grant truncate on table "public"."published_course_enrollments" to "service_role";
+
+grant update on table "public"."published_course_enrollments" to "service_role";
 
 grant delete on table "public"."published_courses" to "anon";
 
@@ -3360,6 +3633,66 @@ using ((( SELECT auth.uid() AS uid) = id))
 with check ((( SELECT auth.uid() AS uid) = id));
 
 
+create policy "Authenticated users can insert their enrollment activities"
+on "public"."published_course_enrollment_activities"
+as permissive
+for insert
+to authenticated
+with check ((EXISTS ( SELECT 1
+   FROM published_course_enrollments e
+  WHERE ((e.id = published_course_enrollment_activities.enrollment_id) AND (e.user_id = auth.uid())))));
+
+
+create policy "Authenticated users can read their enrollment activities"
+on "public"."published_course_enrollment_activities"
+as permissive
+for select
+to authenticated
+using ((EXISTS ( SELECT 1
+   FROM published_course_enrollments e
+  WHERE ((e.id = published_course_enrollment_activities.enrollment_id) AND (e.user_id = auth.uid())))));
+
+
+create policy "Authenticated users can update their enrollment activities"
+on "public"."published_course_enrollment_activities"
+as permissive
+for update
+to authenticated
+using ((EXISTS ( SELECT 1
+   FROM published_course_enrollments e
+  WHERE ((e.id = published_course_enrollment_activities.enrollment_id) AND (e.user_id = auth.uid())))))
+with check ((EXISTS ( SELECT 1
+   FROM published_course_enrollments e
+  WHERE ((e.id = published_course_enrollment_activities.enrollment_id) AND (e.user_id = auth.uid())))));
+
+
+create policy "Allow authenticated users to insert their enrollments"
+on "public"."published_course_enrollments"
+as permissive
+for insert
+to authenticated
+with check ((user_id = auth.uid()));
+
+
+create policy "Allow authenticated users to update their enrollments"
+on "public"."published_course_enrollments"
+as permissive
+for update
+to authenticated
+using ((user_id = auth.uid()))
+with check ((user_id = auth.uid()));
+
+
+create policy "select: users with course roles (admin/editor/viewer) or owners"
+on "public"."published_course_enrollments"
+as permissive
+for select
+to authenticated
+using (((user_id = auth.uid()) OR (EXISTS ( SELECT 1
+   FROM courses c
+  WHERE ((c.id = published_course_enrollments.published_course_id) AND (is_course_admin(c.id, auth.uid()) OR is_course_editor(c.id, auth.uid()) OR is_course_viewer(c.id, auth.uid()) OR (c.created_by = auth.uid())))))));
+
+
 create policy "role_permissions_delete_policy"
 on "public"."role_permissions"
 as permissive
@@ -3456,6 +3789,8 @@ CREATE TRIGGER trg_touch_course_on_lesson_update AFTER INSERT OR DELETE OR UPDAT
 CREATE TRIGGER trg_pathways_set_updated_at BEFORE UPDATE ON public.pathways FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER set_updated_at BEFORE UPDATE ON public.profiles FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER trg_set_expiry BEFORE INSERT ON public.published_course_enrollments FOR EACH ROW EXECUTE FUNCTION set_course_enrollment_expiry();
 
 
 CREATE TRIGGER on_auth_user_created AFTER INSERT ON auth.users FOR EACH ROW EXECUTE FUNCTION handle_new_user();
