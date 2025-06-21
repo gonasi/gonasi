@@ -1,8 +1,11 @@
--- table to store immutable snapshots of published course versions
-create table published_courses (
+-- ====================================================================================
+-- TABLE: published_courses (immutable snapshots of published course versions)
+-- ====================================================================================
+
+create table public.published_courses (
     -- same as the course_id; reused to indicate the published version of a specific course
     id uuid primary key,                     -- same as course_id
-    
+
     -- timestamp when this version was published
     published_at timestamptz not null default now(),
 
@@ -52,9 +55,25 @@ create table published_courses (
     foreign key (updated_by) references public.profiles(id) on delete restrict
 );
 
--- indexes to support efficient filtering and lookups
-create index idx_published_courses_id on published_courses(id);
-create index idx_published_courses_published_at on published_courses(published_at);
-create index idx_published_courses_category_id on published_courses(course_category_id);
-create index idx_published_courses_sub_category_id on published_courses(course_sub_categories);
-create index idx_published_courses_pathway_id on published_courses(pathway_id);
+-- ====================================================================================
+-- INDEXES: for performance on foreign keys and common queries
+-- ====================================================================================
+
+-- Course identity and publish time
+create index idx_published_courses_id on public.published_courses(id);
+create index idx_published_courses_published_at on public.published_courses(published_at);
+
+-- Category filters
+create index idx_published_courses_category_id on public.published_courses(course_category_id);
+create index idx_published_courses_course_sub_category_id on public.published_courses(course_sub_category_id);
+
+-- Pathway filter
+create index idx_published_courses_pathway_id on public.published_courses(pathway_id);
+
+-- Audit filter indexes
+create index idx_published_courses_created_by on public.published_courses(created_by);
+create index idx_published_courses_updated_by on public.published_courses(updated_by);
+
+-- Indexes for JSONB fields (GIN for fast key/element access)
+create index idx_published_courses_categories_jsonb on public.published_courses using gin(course_categories);
+create index idx_published_courses_sub_categories_jsonb on public.published_courses using gin(course_sub_categories);

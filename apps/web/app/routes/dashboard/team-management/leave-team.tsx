@@ -5,7 +5,7 @@ import { CircleAlert, Trash2 } from 'lucide-react';
 import { dataWithError, redirectWithError, redirectWithSuccess } from 'remix-toast';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
 
-import { getCompanyProfileById } from '@gonasi/database/profile';
+import { getUserProfileById } from '@gonasi/database/profile';
 import { canUserExitFromTeam, deleteUserFromTeamStaffMembers } from '@gonasi/database/staffMembers';
 import { LeaveTeamSchema } from '@gonasi/schemas/staffDirectory';
 
@@ -24,7 +24,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 
   const [userExit, company] = await Promise.all([
     canUserExitFromTeam(supabase, params.companyId),
-    getCompanyProfileById(supabase, params.companyId),
+    getUserProfileById(supabase, params.companyId),
   ]);
 
   if (!userExit) return redirectWithError('', 'some stuff');

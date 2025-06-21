@@ -27,7 +27,7 @@ export const getUserCompanies = async (supabase: TypedSupabaseClient) => {
   return { companies: data };
 };
 
-export const getCompanyProfileById = async (supabase: TypedSupabaseClient, companyId: string) => {
+export const getUserProfileById = async (supabase: TypedSupabaseClient, companyId: string) => {
   const { data } = await supabase
     .from('profiles')
     .select('id, username, full_name')

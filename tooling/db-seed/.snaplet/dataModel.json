@@ -5337,8 +5337,9 @@
           "nullNotDistinct": false
         },
         {
-          "name": "payments_provider_reference_key",
+          "name": "payments_provider_provider_reference_key",
           "fields": [
+            "provider",
             "provider_reference"
           ],
           "nullNotDistinct": false

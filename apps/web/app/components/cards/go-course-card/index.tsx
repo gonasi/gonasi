@@ -8,7 +8,7 @@ import { CardTitle } from '~/components/ui/card';
 import { cn } from '~/lib/utils';
 
 function GoCardContent({ className, ...props }: React.ComponentProps<'div'>) {
-  return <div data-slot='go-card-content' className={cn('p-4', className)} {...props} />;
+  return <div data-slot='go-card-content' className={cn('px-4 py-2', className)} {...props} />;
 }
 
 interface GoThumbnailProps {
@@ -49,7 +49,7 @@ function GoThumbnail({ iconUrl, blurHash, name, badges = [], className }: GoThum
         ) : (
           <div className='text-muted-foreground bg-muted flex h-full w-full flex-col items-center justify-center'>
             <ImageIcon className='h-12 w-12' />
-            <span className='font-secondary'>No thumbnail available</span>
+            <span className='font-secondary text-sm md:text-base'>No thumbnail available</span>
           </div>
         )}
       </motion.div>

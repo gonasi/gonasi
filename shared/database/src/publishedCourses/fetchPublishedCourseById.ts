@@ -2,6 +2,7 @@ import { ObjectSchema, PricingSchema, ValidateChaptersSchema } from '@gonasi/sch
 
 import type { TypedSupabaseClient } from '../client';
 import { PUBLISHED_THUMBNAILS } from '../constants';
+import { getUserProfileById } from '../profile';
 
 interface FetchPublishedCourseByIdParams {
   supabase: TypedSupabaseClient;
@@ -97,6 +98,13 @@ export async function fetchPublishedCourseById({
     .from(PUBLISHED_THUMBNAILS)
     .createSignedUrl(data.image_url ?? '', 3600);
 
+  // user profile
+  const userProfile = await getUserProfileById(supabase, data.created_by);
+
+  if (!userProfile) {
+    return null;
+  }
+
   return {
     ...data,
     pricing_data: pricingResult.data,
@@ -105,5 +113,6 @@ export async function fetchPublishedCourseById({
     pathways: pathwaysResult.data,
     course_chapters: courseChaptersResult.data,
     signed_url: signedUrlData?.signedUrl ?? '',
+    user: userProfile,
   };
 }

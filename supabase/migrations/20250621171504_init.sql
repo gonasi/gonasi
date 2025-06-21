@@ -453,6 +453,22 @@ CREATE INDEX idx_pathways_created_by ON public.pathways USING btree (created_by)
 
 CREATE INDEX idx_pathways_updated_by ON public.pathways USING btree (updated_by);
 
+CREATE INDEX idx_payments_created_at ON public.payments USING btree (created_at);
+
+CREATE INDEX idx_payments_created_by ON public.payments USING btree (created_by);
+
+CREATE INDEX idx_payments_enrollment_activity_id ON public.payments USING btree (enrollment_activity_id);
+
+CREATE INDEX idx_payments_paid_at ON public.payments USING btree (paid_at);
+
+CREATE INDEX idx_payments_provider ON public.payments USING btree (provider);
+
+CREATE INDEX idx_payments_published_course_id ON public.payments USING btree (published_course_id);
+
+CREATE INDEX idx_payments_status ON public.payments USING btree (status);
+
+CREATE INDEX idx_payments_user_id ON public.payments USING btree (user_id);
+
 CREATE INDEX idx_profiles_country_code ON public.profiles USING btree (country_code);
 
 CREATE INDEX idx_profiles_created_at ON public.profiles USING btree (created_at);
@@ -465,7 +481,13 @@ CREATE INDEX idx_profiles_username ON public.profiles USING btree (username) WHE
 
 CREATE INDEX idx_profiles_verified_users ON public.profiles USING btree (id) WHERE (account_verified = true);
 
+CREATE INDEX idx_published_courses_categories_jsonb ON public.published_courses USING gin (course_categories);
+
 CREATE INDEX idx_published_courses_category_id ON public.published_courses USING btree (course_category_id);
+
+CREATE INDEX idx_published_courses_course_sub_category_id ON public.published_courses USING btree (course_sub_category_id);
+
+CREATE INDEX idx_published_courses_created_by ON public.published_courses USING btree (created_by);
 
 CREATE INDEX idx_published_courses_id ON public.published_courses USING btree (id);
 
@@ -473,7 +495,9 @@ CREATE INDEX idx_published_courses_pathway_id ON public.published_courses USING 
 
 CREATE INDEX idx_published_courses_published_at ON public.published_courses USING btree (published_at);
 
-CREATE INDEX idx_published_courses_sub_category_id ON public.published_courses USING btree (course_sub_categories);
+CREATE INDEX idx_published_courses_sub_categories_jsonb ON public.published_courses USING gin (course_sub_categories);
+
+CREATE INDEX idx_published_courses_updated_by ON public.published_courses USING btree (updated_by);
 
 CREATE INDEX idx_user_roles_user_id ON public.user_roles USING btree (user_id);
 
@@ -491,7 +515,7 @@ CREATE UNIQUE INDEX pathways_pkey ON public.pathways USING btree (id);
 
 CREATE UNIQUE INDEX payments_pkey ON public.payments USING btree (id);
 
-CREATE UNIQUE INDEX payments_provider_reference_key ON public.payments USING btree (provider_reference);
+CREATE UNIQUE INDEX payments_provider_provider_reference_key ON public.payments USING btree (provider, provider_reference);
 
 CREATE UNIQUE INDEX profiles_email_key ON public.profiles USING btree (email);
 
@@ -741,6 +765,10 @@ alter table "public"."pathways" add constraint "pathways_updated_by_fkey" FOREIG
 
 alter table "public"."pathways" validate constraint "pathways_updated_by_fkey";
 
+alter table "public"."payments" add constraint "payments_amount_check" CHECK ((amount > (0)::numeric)) not valid;
+
+alter table "public"."payments" validate constraint "payments_amount_check";
+
 alter table "public"."payments" add constraint "payments_created_by_fkey" FOREIGN KEY (created_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
 
 alter table "public"."payments" validate constraint "payments_created_by_fkey";
@@ -749,9 +777,9 @@ alter table "public"."payments" add constraint "payments_enrollment_activity_id_
 
 alter table "public"."payments" validate constraint "payments_enrollment_activity_id_fkey";
 
-alter table "public"."payments" add constraint "payments_provider_reference_key" UNIQUE using index "payments_provider_reference_key";
+alter table "public"."payments" add constraint "payments_provider_provider_reference_key" UNIQUE using index "payments_provider_provider_reference_key";
 
-alter table "public"."payments" add constraint "payments_published_course_id_fkey" FOREIGN KEY (published_course_id) REFERENCES published_courses(id) ON DELETE SET NULL not valid;
+alter table "public"."payments" add constraint "payments_published_course_id_fkey" FOREIGN KEY (published_course_id) REFERENCES published_courses(id) ON DELETE RESTRICT not valid;
 
 alter table "public"."payments" validate constraint "payments_published_course_id_fkey";
 

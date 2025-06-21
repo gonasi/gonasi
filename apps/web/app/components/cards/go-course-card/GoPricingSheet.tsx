@@ -99,8 +99,11 @@ export function GoPricingSheet({
             />
           </Button>
         </SheetTrigger>
-        <SheetContent side={side} className='max-h-screen w-96 overflow-y-auto pb-10'>
-          <div className='p-6 md:p-4'>
+        <SheetContent
+          side={side}
+          className='max-h-screen w-full overflow-y-auto pb-10 sm:w-[28rem]'
+        >
+          <div className='p-4'>
             <div className='space-y-2'>
               <h4 className='py-2 text-lg leading-none'>Pricing Tiers</h4>
               {pricingData.map((pricingData) => (

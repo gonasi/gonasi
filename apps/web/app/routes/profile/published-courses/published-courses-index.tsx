@@ -68,37 +68,44 @@ export default function PublishedCourses() {
           {(resolvedCourses) =>
             resolvedCourses.data.length ? (
               <div className='grid grid-cols-1 gap-0 md:grid-cols-2 md:gap-2 lg:grid-cols-3'>
-                {resolvedCourses.data.map(({ id, name, signed_url, blur_hash, pricing_data }) => (
-                  <NavLink
-                    key={id}
-                    to={`/c/${id}?${new URLSearchParams({ redirectTo })}`}
-                    className={cn('pb-4 hover:cursor-pointer md:pb-0')}
-                  >
-                    {({ isPending }) => (
-                      <div
-                        className={cn(
-                          'group md:bg-card/80 m-0 rounded-none border-none bg-transparent p-0 shadow-none',
-                          isPending && 'bg-primary/5',
-                        )}
-                      >
-                        <GoThumbnail
-                          iconUrl={signed_url}
-                          blurHash={blur_hash}
-                          name={name}
-                          className='rounded-t-none'
-                          // badges={['ugali', 'mboga']}
-                        />
-                        <GoCardContent>
-                          <GoCourseHeader className='line-clamp-2 h-12 text-sm' name={name} />
-
-                          <div className='flex w-full justify-end'>
-                            <GoPricingSheet pricingData={pricing_data} />
-                          </div>
-                        </GoCardContent>
-                      </div>
-                    )}
-                  </NavLink>
-                ))}
+                {resolvedCourses.data.map(
+                  ({ id, name, description, signed_url, blur_hash, pricing_data }) => (
+                    <NavLink
+                      key={id}
+                      to={`/c/${id}?${new URLSearchParams({ redirectTo })}`}
+                      className={cn('pb-4 hover:cursor-pointer md:pb-0')}
+                    >
+                      {({ isPending }) => (
+                        <div
+                          className={cn(
+                            'group md:bg-card/80 m-0 rounded-none border-none bg-transparent p-0 shadow-none',
+                            isPending && 'bg-primary/5',
+                          )}
+                        >
+                          <GoThumbnail
+                            iconUrl={signed_url}
+                            blurHash={blur_hash}
+                            name={name}
+                            className='rounded-t-none'
+                            // badges={['ugali', 'mboga']}
+                          />
+                          <GoCardContent>
+                            <GoCourseHeader
+                              className='text-md line-clamp-2 h-fit md:h-12'
+                              name={name}
+                            />
+                            <p className='font-secondary text-muted-foreground line-clamp-1 text-sm'>
+                              {description}
+                            </p>
+                            <div className='flex w-full justify-end'>
+                              <GoPricingSheet pricingData={pricing_data} />
+                            </div>
+                          </GoCardContent>
+                        </div>
+                      )}
+                    </NavLink>
+                  ),
+                )}
               </div>
             ) : (
               <NotFoundCard message='No published courses found' />

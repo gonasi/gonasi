@@ -30,6 +30,35 @@ export function headers(_: Route.HeadersArgs) {
   };
 }
 
+// Meta
+export function meta({ data }: Route.MetaArgs) {
+  const course = data?.courseOverview;
+  const username = data?.courseOverview.user.username;
+
+  if (!course) {
+    return [
+      { title: 'Course Not Found | Gonasi' },
+      {
+        name: 'description',
+        content: 'This course could not be found. Explore other learning opportunities on Gonasi.',
+      },
+    ];
+  }
+
+  const title = course.name;
+  const shortDescription = course.description?.slice(0, 150) ?? 'Join this course on Gonasi.';
+
+  return [
+    {
+      title: `${title} by ${username} | Gonasi`,
+    },
+    {
+      name: 'description',
+      content: `${shortDescription} — an interactive course by ${username} on Gonasi.`,
+    },
+  ];
+}
+
 // Top-level return type of the loader
 export type CourseOverviewLoaderReturn = Exclude<Awaited<ReturnType<typeof loader>>, Response>;
 
@@ -109,18 +138,18 @@ export default function PublishedCourseIdIndex({ loaderData }: Route.ComponentPr
       <Modal.Content size='full'>
         <Modal.Header
           leadingIcon={
-            <div className='text-primary-foreground border-primary bg-primary flex h-8 w-8 items-center justify-center rounded-full border'>
+            <div className='text-primary-foreground border-primary bg-primary flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border'>
               <ImageIcon size={18} />
             </div>
           }
           title={name}
           closeRoute={closeLink}
         />
-        <Modal.Body>
+        <Modal.Body className='px-0 md:px-4'>
           <div className='min-h-screen'>
             <div className='flex flex-col-reverse space-x-0 py-2 md:flex-row md:space-x-10 md:py-10'>
               {/* Left Content */}
-              <div className='md:bg-card/50 flex flex-1 flex-col space-y-4 rounded-sm bg-transparent p-0 md:p-4'>
+              <div className='md:bg-card/50 flex flex-1 flex-col space-y-4 rounded-sm bg-transparent p-0 p-4'>
                 <div className='flex items-center space-x-2 overflow-auto'>
                   <Badge variant='outline'>{categoryName}</Badge>
                   <ChevronRight size={12} />
@@ -193,7 +222,7 @@ export default function PublishedCourseIdIndex({ loaderData }: Route.ComponentPr
             </div>
 
             {/* Chapter Tree */}
-            <div className='max-w-md md:max-w-xl'>
+            <div className='max-w-md px-4 md:max-w-xl md:px-0'>
               <ChapterLessonTree
                 publishedCourseId={loaderData.courseOverview.id}
                 chapters={course_chapters}
