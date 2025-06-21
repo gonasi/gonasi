@@ -4,7 +4,6 @@ import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 console.log('[initialize-paystack-transaction]');
 
 const PAYSTACK_SECRET_KEY = Deno.env.get('PAYSTACK_SECRET_KEY');
-const PAYSTACK_PUBLIC_KEY = Deno.env.get('PAYSTACK_PUBLIC_KEY');
 
 Deno.serve(async (req) => {
   if (req.method !== 'POST') {
@@ -40,14 +39,44 @@ Deno.serve(async (req) => {
     });
   }
 
-  const data = {
-    message: `Hello ${name}!`,
-    email,
-    amount,
-    currencyCode,
-  };
+  // Call Paystack
+  try {
+    const paystackRes = await fetch('https://api.paystack.co/transaction/initialize', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email,
+        name,
+        amount,
+        currency: currencyCode.toUpperCase(),
+      }),
+    });
 
-  return new Response(JSON.stringify(data), {
-    headers: { 'Content-Type': 'application/json' },
-  });
+    const paystackData = await paystackRes.json();
+
+    if (!paystackRes.ok) {
+      console.error('Paystack error:', paystackData);
+      return new Response(
+        JSON.stringify({
+          error: 'Failed to initialize Paystack transaction',
+          details: paystackData,
+        }),
+        {
+          status: 500,
+        },
+      );
+    }
+
+    return new Response(JSON.stringify({ success: true, data: paystackData }), {
+      headers: { 'Content-Type': 'application/json' },
+    });
+  } catch (error) {
+    console.error('Unexpected error initializing transaction:', error);
+    return new Response(JSON.stringify({ error: 'Unexpected error occurred' }), {
+      status: 500,
+    });
+  }
 });

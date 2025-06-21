@@ -47,10 +47,15 @@ export async function action({ request, params }: Route.ActionArgs) {
     return { errors, defaultValues };
   }
 
-  const { success, message } = await initializeTransactionEnroll(supabase, {
+  const {
+    success,
+    message,
+    data: successData,
+  } = await initializeTransactionEnroll(supabase, {
     ...data,
   });
 
+  console.log('successdata: ', successData);
   return success ? dataWithSuccess(null, message) : dataWithError(null, message);
 }
 
