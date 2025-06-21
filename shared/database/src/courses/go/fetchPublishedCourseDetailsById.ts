@@ -1,5 +1,5 @@
 import type { TypedSupabaseClient } from '../../client';
-import { COURSES_BUCKET } from '../../constants';
+import { THUMBNAILS_BUCKET } from '../../constants';
 
 /**
  * Retrieves the full details of a specific course by its ID.
@@ -96,7 +96,7 @@ export async function fetchPublishedCourseDetailsById(
   }
 
   const { data: signedUrlData } = await supabase.storage
-    .from(COURSES_BUCKET)
+    .from(THUMBNAILS_BUCKET)
     .createSignedUrl(data.image_url, 3600);
 
   return {

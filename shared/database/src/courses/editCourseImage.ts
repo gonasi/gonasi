@@ -2,7 +2,7 @@ import type { EditCourseImageSubmitValues } from '@gonasi/schemas/courses';
 
 import { getUserId } from '../auth';
 import type { TypedSupabaseClient } from '../client';
-import { COURSES_BUCKET } from '../constants';
+import { THUMBNAILS_BUCKET } from '../constants';
 import type { ApiResponse } from '../types';
 
 /**
@@ -35,7 +35,7 @@ export const editCourseImage = async (
 
     // Upload the new image to Supabase Storage
     const { data: uploadResponse, error: uploadError } = await supabase.storage
-      .from(COURSES_BUCKET)
+      .from(THUMBNAILS_BUCKET)
       .upload(newFileName, image, {
         cacheControl: '31536000', // 1 year (to allow CDN/browser long-term caching)
         metadata: {
@@ -67,7 +67,7 @@ export const editCourseImage = async (
     if (updateError) {
       console.log('Upload course thumbanil error: ', updateError);
       // If updating the course record fails, remove the newly uploaded image
-      await supabase.storage.from(COURSES_BUCKET).remove([finalImagePath]);
+      await supabase.storage.from(THUMBNAILS_BUCKET).remove([finalImagePath]);
 
       return {
         success: false,
@@ -80,7 +80,7 @@ export const editCourseImage = async (
       const oldFileName = imageUrl.split('/').pop();
       if (oldFileName) {
         const oldPath = `${courseId}/${oldFileName}`;
-        await supabase.storage.from(COURSES_BUCKET).remove([oldPath]);
+        await supabase.storage.from(THUMBNAILS_BUCKET).remove([oldPath]);
       }
     }
 

@@ -2,7 +2,7 @@ import { isGoSuOrGoAdminOrGoStaff } from '@gonasi/utils/roleFunctions';
 
 import { getUserId, getUserRole } from '../auth';
 import type { TypedSupabaseClient } from '../client';
-import { COURSES_BUCKET, LEARNING_PATHWAYS_BUCKET } from '../constants';
+import { THUMBNAILS_BUCKET, LEARNING_PATHWAYS_BUCKET } from '../constants';
 
 export async function fetchLearningPathById(supabase: TypedSupabaseClient, id: string) {
   const userId = await getUserId(supabase);
@@ -42,7 +42,7 @@ export async function fetchLearningPathById(supabase: TypedSupabaseClient, id: s
       let courseSignedUrl = '';
       if (course.image_url) {
         const { data: courseSignedUrlData, error: courseUrlError } = await supabase.storage
-          .from(COURSES_BUCKET)
+          .from(THUMBNAILS_BUCKET)
           .createSignedUrl(course.image_url, 3600);
 
         if (courseUrlError) {

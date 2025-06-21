@@ -53,15 +53,15 @@ using (
 );
 
 -- ====================================================================================
--- STORAGE BUCKET: COURSES
+-- STORAGE BUCKET: THUMBNAILS
 -- ====================================================================================
 
 insert into storage.buckets (id, name, public)
-values ('courses', 'courses', true)
+values ('thumbnails', 'thumbnails', true)
 on conflict (id) do nothing;
 
 -- ====================================================================================
--- RLS POLICIES: STORAGE OBJECTS (Bucket: courses)
+-- RLS POLICIES: STORAGE OBJECTS (Bucket: thumbnails)
 -- ====================================================================================
 
 -- Allow public to read course thumbnails (public bucket)
@@ -69,15 +69,15 @@ create policy "Select: allow public read access to course thumbnails"
 on storage.objects 
 for select
 using (
-  bucket_id = 'courses'
+  bucket_id = 'thumbnails'
 );
 
--- Allow only admin/editor to upload objects to the courses bucket
-create policy "Insert: allow only admin/editor to upload to courses bucket"
+-- Allow only admin/editor to upload objects to the thumbnails bucket
+create policy "Insert: allow only admin/editor to upload to thumbnails bucket"
 on storage.objects
 for insert
 with check (
-  bucket_id = 'courses'
+  bucket_id = 'thumbnails'
   and (
     is_course_admin((metadata ->> 'id')::uuid, (select auth.uid()))
     or is_course_editor((metadata ->> 'id')::uuid, (select auth.uid()))
@@ -90,14 +90,14 @@ create policy "Update: admin/editor/owner can update course thumbnails"
 on storage.objects
 for update
 using (
-  bucket_id = 'courses' AND (
+  bucket_id = 'thumbnails' AND (
     is_course_admin((metadata ->> 'id')::uuid, (select auth.uid()))
     or is_course_editor((metadata ->> 'id')::uuid, (select auth.uid()))
     or (owner = (select auth.uid()))
   )
 )
 with check (
-  bucket_id = 'courses'
+  bucket_id = 'thumbnails'
 );
 
 -- Allow owner to delete course thumbnails
@@ -105,7 +105,7 @@ create policy "Delete: owner can delete course thumbnails"
 on storage.objects
 for delete
 using (
-  bucket_id = 'courses' AND (
+  bucket_id = 'thumbnails' AND (
     owner = (select auth.uid())
   )
 );

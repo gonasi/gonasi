@@ -91,7 +91,7 @@ export default function Login() {
 
           {/* Submit button */}
           <Button type='submit' disabled={isDisabled} isLoading={isDisabled} className='w-full'>
-            Log me in
+            Log In
           </Button>
         </Form>
       </RemixFormProvider>

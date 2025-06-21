@@ -1,7 +1,7 @@
 import { PricingSchema } from '@gonasi/schemas/publish';
 
 import { getUserIdFromUsername } from '../auth';
-import { COURSES_BUCKET } from '../constants';
+import { THUMBNAILS_BUCKET } from '../constants';
 import { getPaginationRange } from '../constants/utils';
 import type { FetchAssetsParams } from '../types';
 
@@ -81,7 +81,7 @@ export async function fetchPublishedCoursesByUser({
       let signedUrl: string | null = null;
       if (course.image_url) {
         const { data: signedUrlData, error: signedUrlError } = await supabase.storage
-          .from(COURSES_BUCKET)
+          .from(THUMBNAILS_BUCKET)
           .createSignedUrl(course.image_url, 3600);
 
         if (signedUrlError) {

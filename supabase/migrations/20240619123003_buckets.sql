@@ -19,9 +19,23 @@ insert into storage.buckets (id, name)
 values ('files', 'files')
 on conflict (id) do nothing;
 
+-- ====================================================
+-- ensure private storage bucket exists for general files
+-- ====================================================
+insert into storage.buckets (id, name)
+values ('published_files', 'published_files')
+on conflict (id) do nothing;
+
 -- ============================================
 -- set up public storage bucket for course media
 -- ============================================
 insert into storage.buckets (id, name, public)
-values ('courses', 'courses', true)
+values ('thumbnails', 'thumbnails', true)
+on conflict (id) do nothing;
+
+-- ============================================
+-- set up public storage bucket for course media
+-- ============================================
+insert into storage.buckets (id, name, public)
+values ('published_thumbnails', 'published_thumbnails', true)
 on conflict (id) do nothing;

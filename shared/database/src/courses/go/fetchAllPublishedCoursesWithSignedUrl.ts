@@ -1,4 +1,4 @@
-import { COURSES_BUCKET } from '../../constants';
+import { THUMBNAILS_BUCKET } from '../../constants';
 import { getPaginationRange } from '../../constants/utils';
 import type { FetchAssetsParams } from '../../types';
 
@@ -44,7 +44,7 @@ export async function fetchAllPublishedCoursesWithSignedUrl({
       if (!course.image_url) return { ...course, lesson_count, chapters_count, signed_url: null };
 
       const { data: signedUrlData, error: fileError } = await supabase.storage
-        .from(COURSES_BUCKET)
+        .from(THUMBNAILS_BUCKET)
         .createSignedUrl(course.image_url, 3600);
 
       if (fileError) throw new Error(fileError.message);

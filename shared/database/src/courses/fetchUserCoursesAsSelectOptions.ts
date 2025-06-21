@@ -1,6 +1,6 @@
 import { getUserId } from '../auth';
 import type { TypedSupabaseClient } from '../client';
-import { COURSES_BUCKET } from '../constants';
+import { THUMBNAILS_BUCKET } from '../constants';
 
 /**
  * Retrieves course categories from the database and maps them into
@@ -41,7 +41,7 @@ export async function fetchUserCoursesAsSelectOptions(
       if (!image_url) return { value: id, label: name, imageUrl: undefined };
 
       const { data: signedUrlData, error: fileError } = await supabase.storage
-        .from(COURSES_BUCKET)
+        .from(THUMBNAILS_BUCKET)
         .createSignedUrl(image_url, 3600);
 
       if (fileError) {

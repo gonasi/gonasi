@@ -3834,15 +3834,15 @@ on "storage"."objects"
 as permissive
 for delete
 to public
-using (((bucket_id = 'courses'::text) AND (owner = ( SELECT auth.uid() AS uid))));
+using (((bucket_id = 'thumbnails'::text) AND (owner = ( SELECT auth.uid() AS uid))));
 
 
-create policy "Insert: allow only admin/editor to upload to courses bucket"
+create policy "Insert: allow only admin/editor to upload to thumbnails bucket"
 on "storage"."objects"
 as permissive
 for insert
 to public
-with check (((bucket_id = 'courses'::text) AND (is_course_admin(((metadata ->> 'id'::text))::uuid, ( SELECT auth.uid() AS uid)) OR is_course_editor(((metadata ->> 'id'::text))::uuid, ( SELECT auth.uid() AS uid)) OR (owner = ( SELECT auth.uid() AS uid)))));
+with check (((bucket_id = 'thumbnails'::text) AND (is_course_admin(((metadata ->> 'id'::text))::uuid, ( SELECT auth.uid() AS uid)) OR is_course_editor(((metadata ->> 'id'::text))::uuid, ( SELECT auth.uid() AS uid)) OR (owner = ( SELECT auth.uid() AS uid)))));
 
 
 create policy "Select: allow public read access to course thumbnails"
@@ -3850,7 +3850,7 @@ on "storage"."objects"
 as permissive
 for select
 to public
-using ((bucket_id = 'courses'::text));
+using ((bucket_id = 'thumbnails'::text));
 
 
 create policy "Update: admin/editor/owner can update course thumbnails"
@@ -3858,8 +3858,8 @@ on "storage"."objects"
 as permissive
 for update
 to public
-using (((bucket_id = 'courses'::text) AND (is_course_admin(((metadata ->> 'id'::text))::uuid, ( SELECT auth.uid() AS uid)) OR is_course_editor(((metadata ->> 'id'::text))::uuid, ( SELECT auth.uid() AS uid)) OR (owner = ( SELECT auth.uid() AS uid)))))
-with check ((bucket_id = 'courses'::text));
+using (((bucket_id = 'thumbnails'::text) AND (is_course_admin(((metadata ->> 'id'::text))::uuid, ( SELECT auth.uid() AS uid)) OR is_course_editor(((metadata ->> 'id'::text))::uuid, ( SELECT auth.uid() AS uid)) OR (owner = ( SELECT auth.uid() AS uid)))))
+with check ((bucket_id = 'thumbnails'::text));
 
 
 create policy "allow files bucket delete access"
