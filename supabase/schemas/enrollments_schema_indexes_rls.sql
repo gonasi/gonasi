@@ -33,14 +33,14 @@ comment on table public.published_course_enrollments is 'tracks enrollment of us
 
 alter table public.published_course_enrollments enable row level security;
 
--- Allow users to read only their own enrollments
+-- Allow users to read only their own enrollments or those they have a course role in
 create policy "select: users with course roles (admin/editor/viewer) or owners"
 on public.published_course_enrollments
 for select
 to authenticated
 using (
-  -- the user owns the enrollment
-  user_id = auth.uid()
+  -- cache auth.uid() to avoid per-row evaluation
+  user_id = (select auth.uid())
 
   -- OR the user has a role on the corresponding course
   OR exists (
@@ -48,28 +48,25 @@ using (
     from public.courses c
     where c.id = published_course_enrollments.published_course_id
       and (
-        is_course_admin(c.id, auth.uid()) OR
-        is_course_editor(c.id, auth.uid()) OR
-        is_course_viewer(c.id, auth.uid()) OR
-        c.created_by = auth.uid()
+        is_course_admin(c.id, (select auth.uid())) OR
+        is_course_editor(c.id, (select auth.uid())) OR
+        is_course_viewer(c.id, (select auth.uid())) OR
+        c.created_by = (select auth.uid())
       )
   )
 );
-
 
 -- Allow users to insert their own enrollments
 create policy "Allow authenticated users to insert their enrollments"
 on public.published_course_enrollments
 for insert
 to authenticated
-with check (user_id = auth.uid()); 
+with check (user_id = (select auth.uid())); 
 
 -- Allow users to update their own enrollments
 create policy "Allow authenticated users to update their enrollments"
 on public.published_course_enrollments
 for update
 to authenticated
-using (user_id = auth.uid())
-with check (user_id = auth.uid());
-
-
+using (user_id = (select auth.uid()))
+with check (user_id = (select auth.uid()));

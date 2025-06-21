@@ -46,7 +46,6 @@ export type EditCourseDetailsSubmitValues = z.infer<typeof SubmitCourseDetailsSc
 // EditCourseImageSchema definition
 export const EditCourseImageSchema = z.object({
   image: NewImageSchema,
-  imageUrl: z.string().nullable().optional(),
 });
 export type EditCourseImageSchemaTypes = z.infer<typeof EditCourseImageSchema>;
 export const SubmitEditCourseImageSchema = EditCourseImageSchema.merge(

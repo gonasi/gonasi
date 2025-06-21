@@ -1857,6 +1857,7 @@ $function$
 CREATE OR REPLACE FUNCTION public.set_course_enrollment_expiry()
  RETURNS trigger
  LANGUAGE plpgsql
+ SET search_path TO ''
 AS $function$
 begin
   if NEW.payment_frequency = 'monthly' then
@@ -1870,7 +1871,7 @@ begin
   elsif NEW.payment_frequency = 'annual' then
     NEW.expires_at := NEW.enrolled_at + interval '12 months';
   else
-    raise exception 'Unknown payment_frequency';
+    raise exception 'Unknown payment_frequency: %', NEW.payment_frequency;
   end if;
 
   return NEW;
@@ -3640,7 +3641,7 @@ for insert
 to authenticated
 with check ((EXISTS ( SELECT 1
    FROM published_course_enrollments e
-  WHERE ((e.id = published_course_enrollment_activities.enrollment_id) AND (e.user_id = auth.uid())))));
+  WHERE ((e.id = published_course_enrollment_activities.enrollment_id) AND (e.user_id = ( SELECT auth.uid() AS uid))))));
 
 
 create policy "Authenticated users can read their enrollment activities"
@@ -3650,7 +3651,7 @@ for select
 to authenticated
 using ((EXISTS ( SELECT 1
    FROM published_course_enrollments e
-  WHERE ((e.id = published_course_enrollment_activities.enrollment_id) AND (e.user_id = auth.uid())))));
+  WHERE ((e.id = published_course_enrollment_activities.enrollment_id) AND (e.user_id = ( SELECT auth.uid() AS uid))))));
 
 
 create policy "Authenticated users can update their enrollment activities"
@@ -3660,10 +3661,10 @@ for update
 to authenticated
 using ((EXISTS ( SELECT 1
    FROM published_course_enrollments e
-  WHERE ((e.id = published_course_enrollment_activities.enrollment_id) AND (e.user_id = auth.uid())))))
+  WHERE ((e.id = published_course_enrollment_activities.enrollment_id) AND (e.user_id = ( SELECT auth.uid() AS uid))))))
 with check ((EXISTS ( SELECT 1
    FROM published_course_enrollments e
-  WHERE ((e.id = published_course_enrollment_activities.enrollment_id) AND (e.user_id = auth.uid())))));
+  WHERE ((e.id = published_course_enrollment_activities.enrollment_id) AND (e.user_id = ( SELECT auth.uid() AS uid))))));
 
 
 create policy "Allow authenticated users to insert their enrollments"
@@ -3671,7 +3672,7 @@ on "public"."published_course_enrollments"
 as permissive
 for insert
 to authenticated
-with check ((user_id = auth.uid()));
+with check ((user_id = ( SELECT auth.uid() AS uid)));
 
 
 create policy "Allow authenticated users to update their enrollments"
@@ -3679,8 +3680,8 @@ on "public"."published_course_enrollments"
 as permissive
 for update
 to authenticated
-using ((user_id = auth.uid()))
-with check ((user_id = auth.uid()));
+using ((user_id = ( SELECT auth.uid() AS uid)))
+with check ((user_id = ( SELECT auth.uid() AS uid)));
 
 
 create policy "select: users with course roles (admin/editor/viewer) or owners"
@@ -3688,9 +3689,9 @@ on "public"."published_course_enrollments"
 as permissive
 for select
 to authenticated
-using (((user_id = auth.uid()) OR (EXISTS ( SELECT 1
+using (((user_id = ( SELECT auth.uid() AS uid)) OR (EXISTS ( SELECT 1
    FROM courses c
-  WHERE ((c.id = published_course_enrollments.published_course_id) AND (is_course_admin(c.id, auth.uid()) OR is_course_editor(c.id, auth.uid()) OR is_course_viewer(c.id, auth.uid()) OR (c.created_by = auth.uid())))))));
+  WHERE ((c.id = published_course_enrollments.published_course_id) AND (is_course_admin(c.id, ( SELECT auth.uid() AS uid)) OR is_course_editor(c.id, ( SELECT auth.uid() AS uid)) OR is_course_viewer(c.id, ( SELECT auth.uid() AS uid)) OR (c.created_by = ( SELECT auth.uid() AS uid))))))));
 
 
 create policy "role_permissions_delete_policy"
@@ -3790,8 +3791,6 @@ CREATE TRIGGER trg_pathways_set_updated_at BEFORE UPDATE ON public.pathways FOR 
 
 CREATE TRIGGER set_updated_at BEFORE UPDATE ON public.profiles FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER trg_set_expiry BEFORE INSERT ON public.published_course_enrollments FOR EACH ROW EXECUTE FUNCTION set_course_enrollment_expiry();
-
 
 CREATE TRIGGER on_auth_user_created AFTER INSERT ON auth.users FOR EACH ROW EXECUTE FUNCTION handle_new_user();
 
@@ -3829,12 +3828,28 @@ using ((( SELECT auth.uid() AS uid) = owner))
 with check ((bucket_id = 'avatars'::text));
 
 
+create policy "Delete: allow owner to delete from published_thumbnails"
+on "storage"."objects"
+as permissive
+for delete
+to public
+using (((bucket_id = 'published_thumbnails'::text) AND (owner = ( SELECT auth.uid() AS uid))));
+
+
 create policy "Delete: owner can delete course thumbnails"
 on "storage"."objects"
 as permissive
 for delete
 to public
 using (((bucket_id = 'thumbnails'::text) AND (owner = ( SELECT auth.uid() AS uid))));
+
+
+create policy "Insert: allow course admin/editor/owner to upload to published_"
+on "storage"."objects"
+as permissive
+for insert
+to public
+with check (((bucket_id = 'published_thumbnails'::text) AND (is_course_admin(((metadata ->> 'id'::text))::uuid, ( SELECT auth.uid() AS uid)) OR is_course_editor(((metadata ->> 'id'::text))::uuid, ( SELECT auth.uid() AS uid)) OR (owner = ( SELECT auth.uid() AS uid)))));
 
 
 create policy "Insert: allow only admin/editor to upload to thumbnails bucket"
@@ -3853,6 +3868,14 @@ to public
 using ((bucket_id = 'thumbnails'::text));
 
 
+create policy "Select: allow public read from published_thumbnails"
+on "storage"."objects"
+as permissive
+for select
+to public
+using ((bucket_id = 'published_thumbnails'::text));
+
+
 create policy "Update: admin/editor/owner can update course thumbnails"
 on "storage"."objects"
 as permissive
@@ -3860,6 +3883,15 @@ for update
 to public
 using (((bucket_id = 'thumbnails'::text) AND (is_course_admin(((metadata ->> 'id'::text))::uuid, ( SELECT auth.uid() AS uid)) OR is_course_editor(((metadata ->> 'id'::text))::uuid, ( SELECT auth.uid() AS uid)) OR (owner = ( SELECT auth.uid() AS uid)))))
 with check ((bucket_id = 'thumbnails'::text));
+
+
+create policy "Update: allow course admin/editor/owner to update published_thu"
+on "storage"."objects"
+as permissive
+for update
+to public
+using (((bucket_id = 'published_thumbnails'::text) AND (is_course_admin(((metadata ->> 'id'::text))::uuid, ( SELECT auth.uid() AS uid)) OR is_course_editor(((metadata ->> 'id'::text))::uuid, ( SELECT auth.uid() AS uid)) OR (owner = ( SELECT auth.uid() AS uid)))))
+with check ((bucket_id = 'published_thumbnails'::text));
 
 
 create policy "allow files bucket delete access"

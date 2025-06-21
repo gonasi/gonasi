@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { Area, Point } from 'react-easy-crop';
 import Cropper from 'react-easy-crop';
-import { Form, useOutletContext, useParams } from 'react-router';
+import { Form, useParams } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AnimatePresence, motion } from 'framer-motion';
 import { CircleX, Crop, LoaderCircle, Upload } from 'lucide-react';
@@ -13,10 +13,9 @@ import { HoneypotInputs } from 'remix-utils/honeypot/react';
 import { editCourseImage } from '@gonasi/database/courses';
 import { EditCourseImageSchema, type EditCourseImageSchemaTypes } from '@gonasi/schemas/courses';
 
-// Local types
-import type { Route } from './+types/edit-course-image';
-import type { CourseOverviewType } from './course-by-id';
+import type { Route } from './+types/edit-thumbnail';
 
+// Local types
 // UI Components
 import { Button } from '~/components/ui/button';
 import { FormDescription } from '~/components/ui/forms/elements/Common';
@@ -142,12 +141,10 @@ export async function action({ request, params }: Route.ActionArgs) {
 export default function EditCourseImage() {
   const isPending = useIsPending();
   const params = useParams();
-  const { image_url } = useOutletContext<CourseOverviewType>();
 
   const methods = useRemixForm<EditCourseImageSchemaTypes>({
     mode: 'all',
     resolver,
-    submitData: { imageUrl: image_url },
   });
 
   const isSubmitting = isPending || methods.formState.isSubmitting;

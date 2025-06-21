@@ -2,6 +2,7 @@ import type { PublishCourseSchemaTypes } from '@gonasi/schemas/publish';
 
 import { getUserId } from '../auth';
 import type { TypedSupabaseClient } from '../client';
+import { PUBLISHED_THUMBNAILS, THUMBNAILS_BUCKET } from '../constants';
 import type { ApiResponse } from '../types';
 
 /**
@@ -37,6 +38,26 @@ export const upsertPublishCourse = async (
   }
 
   try {
+    // get files
+    // thumbnail
+    // First, attempt to delete the file in the destination bucket (if it exists)
+    await supabase.storage.from(PUBLISHED_THUMBNAILS).remove([data.courseOverview.image_url]);
+
+    // Then, copy the thumbnail to the published bucket
+    const { error: copyError } = await supabase.storage
+      .from(THUMBNAILS_BUCKET)
+      .copy(data.courseOverview.image_url, data.courseOverview.image_url, {
+        destinationBucket: PUBLISHED_THUMBNAILS,
+      });
+
+    if (copyError) {
+      console.error('[upsertPublishCourse] Thumbnail copy error:', copyError);
+      return {
+        success: false,
+        message: 'Failed to copy course thumbnail to the published bucket.',
+      };
+    }
+
     // Filter only active pricing options
     const activePricingData = data.pricingData.filter((item) => item.is_active);
 

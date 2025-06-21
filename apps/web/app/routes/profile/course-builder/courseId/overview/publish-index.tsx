@@ -1,4 +1,3 @@
-// routes/publish-course/publish-course.tsx
 import { useEffect, useMemo } from 'react';
 import { Form, Link } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';

@@ -18,9 +18,8 @@ export const editCourseImage = async (
   assetData: EditCourseImageSubmitValues,
 ): Promise<ApiResponse> => {
   const userId = await getUserId(supabase);
-  const { image, imageUrl, courseId, blurHash } = assetData;
+  const { image, courseId, blurHash } = assetData;
 
-  // No image provided — short-circuit
   if (!image) {
     return {
       success: false,
@@ -29,21 +28,21 @@ export const editCourseImage = async (
   }
 
   try {
-    // Create a unique file name using timestamp + random suffix
+    // Use a consistent file name to avoid duplicates and stale caching
     const fileExtension = image.name.split('.').pop()?.toLowerCase();
-    const newFileName = `${courseId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExtension}`;
+    const stableFileName = `${courseId}/thumbnail.${fileExtension}`;
 
-    // Upload the new image to Supabase Storage
+    // Upload the new image and allow overwrite
     const { data: uploadResponse, error: uploadError } = await supabase.storage
       .from(THUMBNAILS_BUCKET)
-      .upload(newFileName, image, {
-        cacheControl: '31536000', // 1 year (to allow CDN/browser long-term caching)
+      .upload(stableFileName, image, {
+        upsert: true, // allows overwriting existing file
+        cacheControl: '31536000', // still apply long cache; update with CDN strategy if needed
         metadata: {
-          id: courseId, // Used for RLS validation
+          id: courseId,
         },
       });
 
-    // If the upload fails, return early with error
     if (uploadError || !uploadResponse?.path) {
       console.error('Upload error:', uploadError);
       return {
@@ -54,7 +53,6 @@ export const editCourseImage = async (
 
     const finalImagePath = uploadResponse.path;
 
-    // Update the course record with the new image path and blur hash
     const { error: updateError } = await supabase
       .from('courses')
       .update({
@@ -65,8 +63,8 @@ export const editCourseImage = async (
       .eq('id', courseId);
 
     if (updateError) {
-      console.log('Upload course thumbanil error: ', updateError);
-      // If updating the course record fails, remove the newly uploaded image
+      console.error('Upload course thumbnail error: ', updateError);
+      // Revert by deleting the uploaded image
       await supabase.storage.from(THUMBNAILS_BUCKET).remove([finalImagePath]);
 
       return {
@@ -75,21 +73,11 @@ export const editCourseImage = async (
       };
     }
 
-    // After successful update, delete the old image if it exists and isn't the same
-    if (imageUrl && imageUrl !== finalImagePath) {
-      const oldFileName = imageUrl.split('/').pop();
-      if (oldFileName) {
-        const oldPath = `${courseId}/${oldFileName}`;
-        await supabase.storage.from(THUMBNAILS_BUCKET).remove([oldPath]);
-      }
-    }
-
     return {
       success: true,
       message: 'Your new course thumbnail is all set!',
     };
   } catch (error) {
-    // Handle unexpected errors (e.g., network issues)
     console.error('Unexpected error:', error);
     return {
       success: false,

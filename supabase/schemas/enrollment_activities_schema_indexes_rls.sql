@@ -53,7 +53,6 @@ comment on table public.published_course_enrollment_activities is
 -- ====================================================================================
 
 alter table public.published_course_enrollment_activities enable row level security;
-
 -- Policy: Allow users to view only their own enrollment activities
 create policy "Authenticated users can read their enrollment activities"
 on public.published_course_enrollment_activities
@@ -62,7 +61,7 @@ to authenticated
 using (
   exists (
     select 1 from public.published_course_enrollments e
-    where e.id = enrollment_id and e.user_id = auth.uid()
+    where e.id = enrollment_id and e.user_id = (select auth.uid())
   )
 );
 
@@ -74,7 +73,7 @@ to authenticated
 with check (
   exists (
     select 1 from public.published_course_enrollments e
-    where e.id = enrollment_id and e.user_id = auth.uid()
+    where e.id = enrollment_id and e.user_id = (select auth.uid())
   )
 );
 
@@ -86,12 +85,12 @@ to authenticated
 using (
   exists (
     select 1 from public.published_course_enrollments e
-    where e.id = enrollment_id and e.user_id = auth.uid()
+    where e.id = enrollment_id and e.user_id = (select auth.uid())
   )
 )
 with check (
   exists (
     select 1 from public.published_course_enrollments e
-    where e.id = enrollment_id and e.user_id = auth.uid()
+    where e.id = enrollment_id and e.user_id = (select auth.uid())
   )
 );
