@@ -1,4 +1,4 @@
-import { Link } from 'react-router';
+import { Link, Outlet } from 'react-router';
 import { ArrowDown, BookOpen, ChevronRight, Clock, StarOff, TableOfContents } from 'lucide-react';
 import { redirectWithError } from 'remix-toast';
 
@@ -126,103 +126,111 @@ export default function PublishedCourseIdIndex({ loaderData }: Route.ComponentPr
   const subcategoryName = course_sub_categories?.name;
 
   return (
-    <Modal open>
-      <Modal.Content size='full'>
-        <Modal.Header
-          leadingIcon={
-            <div className='border-foreground/20 flex w-10 flex-shrink-0 items-center justify-center rounded-full border'>
-              <GoThumbnail iconUrl={signed_url} name={name} blurHash={blur_hash} objectFit='fill' />
-            </div>
-          }
-          title={name}
-          closeRoute={closeLink}
-        />
-        <Modal.Body className='px-0 md:px-4'>
-          <div className='min-h-screen'>
-            <div className='flex flex-col-reverse space-x-0 py-2 md:flex-row md:space-x-10 md:py-10'>
-              {/* Left Content */}
-              <div className='md:bg-card/50 flex flex-1 flex-col space-y-4 rounded-sm bg-transparent p-4'>
-                <div className='flex items-center space-x-2 overflow-auto'>
-                  <Badge variant='outline'>{categoryName}</Badge>
-                  <ChevronRight size={12} />
-                  <Badge variant='outline'>{subcategoryName}</Badge>
-                </div>
-
-                <h2 className='line-clamp-3 text-xl'>{name}</h2>
-                <p className='font-secondary text-muted-foreground'>{description}</p>
-
-                <div className='pb-2'>
-                  <StarOff size={14} className='text-gold' />
-                </div>
-
-                <Link to='/'>
-                  <UserAvatar username='username' imageUrl='' size='xs' />
-                </Link>
-
-                <div className='flex flex-col space-y-2 md:flex-row md:space-y-0 md:space-x-4'>
-                  <MetaInfoItem label='Published' timestamp={created_at} />
-                  <MetaInfoItem label='Updated' timestamp={updated_at} />
-                </div>
-
-                <div className='flex items-center space-x-8 pt-2'>
-                  <div className='flex items-center space-x-1'>
-                    <TableOfContents size={12} />
-                    <span>
-                      {chapters_count} {chapters_count === 1 ? 'chapter' : 'chapters'}
-                    </span>
-                  </div>
-                  <div className='flex items-center space-x-1'>
-                    <BookOpen size={12} />
-                    <span>
-                      {lessons_count} {lessons_count === 1 ? 'lesson' : 'lessons'}
-                    </span>
-                  </div>
-                </div>
+    <>
+      <Modal open>
+        <Modal.Content size='full'>
+          <Modal.Header
+            leadingIcon={
+              <div className='border-foreground/20 flex w-10 flex-shrink-0 items-center justify-center rounded-full border'>
+                <GoThumbnail
+                  iconUrl={signed_url}
+                  name={name}
+                  blurHash={blur_hash}
+                  objectFit='fill'
+                />
               </div>
+            }
+            title={name}
+            closeRoute={closeLink}
+          />
+          <Modal.Body className='px-0 md:px-4'>
+            <div className='min-h-screen'>
+              <div className='flex flex-col-reverse space-x-0 py-2 md:flex-row md:space-x-10 md:py-10'>
+                {/* Left Content */}
+                <div className='md:bg-card/50 flex flex-1 flex-col space-y-4 rounded-sm bg-transparent p-4'>
+                  <div className='flex items-center space-x-2 overflow-auto'>
+                    <Badge variant='outline'>{categoryName}</Badge>
+                    <ChevronRight size={12} />
+                    <Badge variant='outline'>{subcategoryName}</Badge>
+                  </div>
 
-              {/* Right Content */}
-              <div className='mb-4 min-w-full md:mb-0 md:min-w-xs lg:min-w-sm'>
-                <div className='flex flex-col'>
-                  <GoThumbnail iconUrl={signed_url} name={name} blurHash={blur_hash} />
-                  <div className='bg-card px-4 pb-4 md:bg-transparent md:px-0 md:pb-0'>
-                    <div className='flex w-full items-center justify-between py-4'>
-                      <div className='font-secondary inline-flex font-light'>
-                        <span>
-                          Select <span className='font-semibold'>tier</span> to continue...
-                        </span>
-                      </div>
-                      <GoPricingSheet pricingData={pricing_data} side='left' variant='primary' />
+                  <h2 className='line-clamp-3 text-xl'>{name}</h2>
+                  <p className='font-secondary text-muted-foreground'>{description}</p>
+
+                  <div className='pb-2'>
+                    <StarOff size={14} className='text-gold' />
+                  </div>
+
+                  <Link to='/'>
+                    <UserAvatar username='username' imageUrl='' size='xs' />
+                  </Link>
+
+                  <div className='flex flex-col space-y-2 md:flex-row md:space-y-0 md:space-x-4'>
+                    <MetaInfoItem label='Published' timestamp={created_at} />
+                    <MetaInfoItem label='Updated' timestamp={updated_at} />
+                  </div>
+
+                  <div className='flex items-center space-x-8 pt-2'>
+                    <div className='flex items-center space-x-1'>
+                      <TableOfContents size={12} />
+                      <span>
+                        {chapters_count} {chapters_count === 1 ? 'chapter' : 'chapters'}
+                      </span>
                     </div>
-                    {pricing_data[0]?.is_free ? null : (
-                      <div className='flex w-full flex-col items-center justify-center space-y-4'>
-                        <div className='text-muted-foreground'>OR</div>
-                        <div>
-                          <Button
-                            variant='ghost'
-                            rightIcon={<ArrowDown />}
-                            className='border-border border'
-                          >
-                            View Free Chapters
-                          </Button>
+                    <div className='flex items-center space-x-1'>
+                      <BookOpen size={12} />
+                      <span>
+                        {lessons_count} {lessons_count === 1 ? 'lesson' : 'lessons'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right Content */}
+                <div className='mb-4 min-w-full md:mb-0 md:min-w-xs lg:min-w-sm'>
+                  <div className='flex flex-col'>
+                    <GoThumbnail iconUrl={signed_url} name={name} blurHash={blur_hash} />
+                    <div className='bg-card px-4 pb-4 md:bg-transparent md:px-0 md:pb-0'>
+                      <div className='flex w-full items-center justify-between py-4'>
+                        <div className='font-secondary inline-flex font-light'>
+                          <span>
+                            Select <span className='font-semibold'>tier</span> to continue...
+                          </span>
                         </div>
+                        <GoPricingSheet pricingData={pricing_data} side='left' variant='primary' />
                       </div>
-                    )}
+                      {pricing_data[0]?.is_free ? null : (
+                        <div className='flex w-full flex-col items-center justify-center space-y-4'>
+                          <div className='text-muted-foreground'>OR</div>
+                          <div>
+                            <Button
+                              variant='ghost'
+                              rightIcon={<ArrowDown />}
+                              className='border-border border'
+                            >
+                              View Free Chapters
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            {/* Chapter Tree */}
-            <div className='max-w-md px-4 md:max-w-xl md:px-0'>
-              <ChapterLessonTree
-                publishedCourseId={loaderData.courseOverview.id}
-                chapters={course_chapters}
-                // activeChapterAndLesson={loaderData.activeChapterAndLesson}
-              />
+              {/* Chapter Tree */}
+              <div className='max-w-md px-4 md:max-w-xl md:px-0'>
+                <ChapterLessonTree
+                  publishedCourseId={loaderData.courseOverview.id}
+                  chapters={course_chapters}
+                  // activeChapterAndLesson={loaderData.activeChapterAndLesson}
+                />
+              </div>
             </div>
-          </div>
-        </Modal.Body>
-      </Modal.Content>
-    </Modal>
+          </Modal.Body>
+        </Modal.Content>
+      </Modal>
+      <Outlet context={{ name, pricingData: pricing_data }} />
+    </>
   );
 }

@@ -19,7 +19,9 @@ export default [
         ]),
       ]),
     ]),
-    route('c/:publishedCourseId', 'routes/public/published-course-id-index.tsx'),
+    route('c/:publishedCourseId', 'routes/public/published-course-id-index.tsx', [
+      route('enroll/:pricingTierId', 'routes/publishedCourses/enroll-index.tsx'),
+    ]),
   ]),
 
   layout('routes/layouts/auth/auth-layout.tsx', [

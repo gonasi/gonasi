@@ -11,11 +11,13 @@ import { NavLinkButton } from '~/components/ui/button';
 interface PricingOptionCardProps {
   pricingData: PricingSchemaTypes[number];
   hideDescription?: boolean;
+  hideContinueButton?: boolean;
 }
 
 export function PricingOptionCard({
   pricingData,
   hideDescription = false,
+  hideContinueButton = false,
 }: PricingOptionCardProps) {
   const {
     is_popular,
@@ -117,11 +119,18 @@ export function PricingOptionCard({
               payment_frequency={payment_frequency}
               showOriginalPrice={showOriginalPrice}
             />
-            <div>
-              <NavLinkButton to='' size='sm' variant='secondary' rightIcon={<MoveRight />}>
-                Continue
-              </NavLinkButton>
-            </div>
+            {!hideContinueButton && (
+              <div>
+                <NavLinkButton
+                  to={`/c/${pricingData.course_id}/enroll/${pricingData.id}`}
+                  size='sm'
+                  variant='secondary'
+                  rightIcon={<MoveRight />}
+                >
+                  Continue
+                </NavLinkButton>
+              </div>
+            )}
           </div>
         </div>
       </div>
