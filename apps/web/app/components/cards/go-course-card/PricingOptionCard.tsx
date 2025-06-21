@@ -1,10 +1,12 @@
 import { motion } from 'framer-motion';
+import { MoveRight } from 'lucide-react';
 
 import type { PricingSchemaTypes } from '@gonasi/schemas/publish';
 
 import { PricingDisplay } from './PricingDisplay';
 
 import { Badge } from '~/components/ui/badge';
+import { NavLinkButton } from '~/components/ui/button';
 
 interface PricingOptionCardProps {
   pricingData: PricingSchemaTypes[number];
@@ -107,13 +109,20 @@ export function PricingOptionCard({
             </motion.p>
           )}
 
-          <PricingDisplay
-            finalPrice={finalPrice}
-            price={price}
-            currency_code={currency_code}
-            payment_frequency={payment_frequency}
-            showOriginalPrice={showOriginalPrice}
-          />
+          <div className='flex items-center justify-between'>
+            <PricingDisplay
+              finalPrice={finalPrice}
+              price={price}
+              currency_code={currency_code}
+              payment_frequency={payment_frequency}
+              showOriginalPrice={showOriginalPrice}
+            />
+            <div>
+              <NavLinkButton to='' size='sm' variant='secondary' rightIcon={<MoveRight />}>
+                Continue
+              </NavLinkButton>
+            </div>
+          </div>
         </div>
       </div>
     </motion.div>

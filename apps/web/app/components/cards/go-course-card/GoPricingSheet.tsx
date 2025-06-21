@@ -54,15 +54,7 @@ export function GoPricingSheet({ pricingData, className, side = 'right' }: GoPri
       <Button
         type='button'
         variant='ghost'
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-        }}
-        className={cn(
-          'border-border/50 border pb-4 hover:bg-transparent',
-          showOriginalPrice && 'pb-5',
-          className,
-        )}
+        className={cn('border-border/50 border py-2 hover:bg-transparent', className)}
       >
         <PricingDisplay
           finalPrice={finalPrice}
@@ -104,7 +96,7 @@ export function GoPricingSheet({ pricingData, className, side = 'right' }: GoPri
               e.stopPropagation();
               setOpen(true);
             }}
-            className={cn('border-border/50 border pb-4', showOriginalPrice && 'pb-5', className)}
+            className={cn('border-border/50 border pb-4', showOriginalPrice && 'pb-2', className)}
             rightIcon={side === 'right' ? <AnimatedChevronRight /> : undefined}
             leftIcon={side === 'left' ? <AnimatedChevronLeft /> : undefined}
             rightIconAtEdge
@@ -119,10 +111,10 @@ export function GoPricingSheet({ pricingData, className, side = 'right' }: GoPri
             />
           </Button>
         </SheetTrigger>
-        <SheetContent side={side} className='w-96'>
+        <SheetContent side={side} className='max-h-screen w-96 overflow-y-auto pb-10'>
           <div className='p-6 md:p-4'>
             <div className='space-y-2'>
-              <h4 className='leading-none font-medium'>All Pricing Tiers</h4>
+              <h4 className='py-2 text-lg leading-none'>Explore Tiers</h4>
               {pricingData.map((pricingData) => (
                 <PricingOptionCard key={pricingData.id} pricingData={pricingData} />
               ))}

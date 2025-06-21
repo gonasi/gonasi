@@ -35,7 +35,7 @@ export function PricingDisplay({
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3, duration: 0.4 }}
-        className={`flex w-full flex-col ${isSmall ? 'pt-2' : 'pt-3'}`}
+        className='flex w-full flex-col py-2'
       >
         <div className={`text-foreground font-semibold ${isSmall ? 'text-base' : 'text-xl'}`}>
           Free
@@ -49,7 +49,7 @@ export function PricingDisplay({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.3, duration: 0.4 }}
-      className={`flex w-full flex-col space-x-3 ${isSmall ? 'pt-2' : 'pt-3'}`}
+      className='flex w-full flex-col space-x-3 py-2'
     >
       {showOriginalPrice && (
         <motion.div
