@@ -38,9 +38,15 @@ interface GoPricingSheetProps {
   pricingData: PricingSchemaTypes;
   className?: string;
   side?: 'left' | 'right' | 'top' | 'bottom';
+  variant?: 'primary' | 'default';
 }
 
-export function GoPricingSheet({ pricingData, className, side = 'right' }: GoPricingSheetProps) {
+export function GoPricingSheet({
+  pricingData,
+  className,
+  side = 'right',
+  variant = 'default',
+}: GoPricingSheetProps) {
   const [open, setOpen] = useState(false);
   const defaultPricing = pricingData[0];
 
@@ -49,25 +55,6 @@ export function GoPricingSheet({ pricingData, className, side = 'right' }: GoPri
   const finalPrice = defaultPricing.promotional_price ?? defaultPricing.price;
   const showOriginalPrice = defaultPricing.promotional_price != null;
 
-  if (pricingData.length < 2) {
-    return (
-      <Button
-        type='button'
-        variant='ghost'
-        className={cn('border-border/50 border py-2 hover:bg-transparent', className)}
-      >
-        <PricingDisplay
-          finalPrice={finalPrice}
-          price={defaultPricing.price}
-          currency_code={defaultPricing.currency_code}
-          payment_frequency={defaultPricing.payment_frequency}
-          showOriginalPrice={showOriginalPrice}
-          size='sm'
-        />
-      </Button>
-    );
-  }
-
   return (
     <button
       type='button'
@@ -75,7 +62,7 @@ export function GoPricingSheet({ pricingData, className, side = 'right' }: GoPri
         e.preventDefault();
         e.stopPropagation();
       }}
-      className={cn('border-none bg-transparent p-0', className)}
+      className={cn('border-none bg-transparent p-0')}
     >
       <Sheet
         open={open}
@@ -90,13 +77,13 @@ export function GoPricingSheet({ pricingData, className, side = 'right' }: GoPri
         <SheetTrigger asChild>
           <Button
             type='button'
-            variant='ghost'
+            variant={variant === 'default' ? 'ghost' : 'default'}
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
               setOpen(true);
             }}
-            className={cn('border-border/50 border pb-4', showOriginalPrice && 'pb-2', className)}
+            className={cn('h-14', className)}
             rightIcon={side === 'right' ? <AnimatedChevronRight /> : undefined}
             leftIcon={side === 'left' ? <AnimatedChevronLeft /> : undefined}
             rightIconAtEdge
@@ -108,13 +95,14 @@ export function GoPricingSheet({ pricingData, className, side = 'right' }: GoPri
               payment_frequency={defaultPricing.payment_frequency}
               showOriginalPrice={showOriginalPrice}
               size='sm'
+              variant={variant}
             />
           </Button>
         </SheetTrigger>
         <SheetContent side={side} className='max-h-screen w-96 overflow-y-auto pb-10'>
           <div className='p-6 md:p-4'>
             <div className='space-y-2'>
-              <h4 className='py-2 text-lg leading-none'>Explore Tiers</h4>
+              <h4 className='py-2 text-lg leading-none'>Pricing Tiers</h4>
               {pricingData.map((pricingData) => (
                 <PricingOptionCard key={pricingData.id} pricingData={pricingData} />
               ))}

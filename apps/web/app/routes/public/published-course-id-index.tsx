@@ -1,10 +1,10 @@
 import { Link } from 'react-router';
 import {
+  ArrowDown,
   BookOpen,
   ChevronRight,
   Clock,
   ImageIcon,
-  MoveRight,
   StarOff,
   TableOfContents,
 } from 'lucide-react';
@@ -20,10 +20,9 @@ import { GoThumbnail } from '~/components/cards/go-course-card';
 import { GoPricingSheet } from '~/components/cards/go-course-card/GoPricingSheet';
 import { ChapterLessonTree } from '~/components/course';
 import { Badge } from '~/components/ui/badge';
-import { buttonVariants } from '~/components/ui/button';
+import { Button } from '~/components/ui/button';
 import { Modal } from '~/components/ui/modal';
 import { createClient } from '~/lib/supabase/supabase.server';
-import { cn } from '~/lib/utils';
 
 export function headers(_: Route.HeadersArgs) {
   return {
@@ -119,7 +118,7 @@ export default function PublishedCourseIdIndex({ loaderData }: Route.ComponentPr
           <div className='min-h-screen'>
             <div className='flex flex-col-reverse space-x-0 py-2 md:flex-row md:space-x-10 md:py-10'>
               {/* Left Content */}
-              <div className='md:bg-card/50 flex flex-1 flex-col space-y-4 rounded-2xl bg-transparent p-0 md:p-4'>
+              <div className='md:bg-card/50 flex flex-1 flex-col space-y-4 rounded-sm bg-transparent p-0 md:p-4'>
                 <div className='flex items-center space-x-2 overflow-auto'>
                   <Badge variant='outline'>{categoryName}</Badge>
                   <ChevronRight size={12} />
@@ -168,13 +167,24 @@ export default function PublishedCourseIdIndex({ loaderData }: Route.ComponentPr
                     // }
                   />
                   <div className='bg-card px-4 pb-4 md:bg-transparent md:px-0 md:pb-0'>
-                    <div className='py-4'>
-                      <GoPricingSheet pricingData={pricing_data} side='left' textSize='lg' />
+                    <div className='flex w-full items-center justify-between py-4'>
+                      <div className='font-secondary inline-flex font-light'>
+                        <span>
+                          Select <span className='font-semibold'>tier</span> to continue...
+                        </span>
+                      </div>
+                      <GoPricingSheet pricingData={pricing_data} side='left' variant='primary' />
                     </div>
-                    <Link to='' className={cn(buttonVariants({ variant: 'default' }), 'w-full')}>
-                      Start for Free
-                      <MoveRight />
-                    </Link>
+                    {pricing_data[0]?.is_free ? null : (
+                      <div className='flex w-full flex-col items-center justify-center'>
+                        <div className='text-muted-foreground'>OR</div>
+                        <div>
+                          <Button variant='ghost' rightIcon={<ArrowDown />}>
+                            View Free Chapters
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

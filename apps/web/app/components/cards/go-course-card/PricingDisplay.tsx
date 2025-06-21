@@ -9,6 +9,7 @@ interface PricingDisplayProps {
   payment_frequency: PaymentFrequency;
   showOriginalPrice?: boolean;
   size?: 'sm' | 'md';
+  variant?: 'primary' | 'default';
 }
 
 export const frequencyLabels: Record<PaymentFrequency, string> = {
@@ -26,23 +27,13 @@ export function PricingDisplay({
   payment_frequency,
   showOriginalPrice = false,
   size = 'md',
+  variant = 'default',
 }: PricingDisplayProps) {
   const isSmall = size === 'sm';
+  const isPrimary = variant === 'primary';
 
-  if (finalPrice === 0) {
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3, duration: 0.4 }}
-        className='flex w-full flex-col py-2'
-      >
-        <div className={`text-foreground font-semibold ${isSmall ? 'text-base' : 'text-xl'}`}>
-          Free
-        </div>
-      </motion.div>
-    );
-  }
+  const priceTextColor = isPrimary ? 'text-primary-foreground' : 'text-foreground';
+  const mutedTextColor = isPrimary ? 'text-primary-foreground/80' : 'text-muted-foreground';
 
   return (
     <motion.div
@@ -56,7 +47,7 @@ export function PricingDisplay({
           initial={{ opacity: 0, x: 10 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.35, duration: 0.4 }}
-          className={`text-muted-foreground mt-1 flex h-full items-center justify-start line-through ${
+          className={`${mutedTextColor} mt-1 flex h-full items-center justify-start line-through ${
             isSmall ? 'text-sm' : 'text-md'
           }`}
         >
@@ -67,18 +58,20 @@ export function PricingDisplay({
         </motion.div>
       )}
       <div
-        className={`text-foreground relative flex items-baseline space-x-0.5 font-semibold ${
+        className={`${priceTextColor} relative flex items-baseline space-x-0.5 font-semibold ${
           isSmall ? 'text-base' : 'text-xl'
         }`}
       >
         <div>
-          {new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: currency_code,
-          }).format(finalPrice)}
+          {finalPrice === 0
+            ? 'FREE'
+            : new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: currency_code,
+              }).format(finalPrice)}
         </div>
-        <div className='text-muted-foreground text-xs'>/</div>
-        <div className={`text-muted-foreground -mt-1 ${isSmall ? 'text-[10px]' : 'text-xs'}`}>
+        <div className={`${mutedTextColor} text-xs`}>/</div>
+        <div className={`${mutedTextColor} -mt-1 ${isSmall ? 'text-[10px]' : 'text-xs'}`}>
           {frequencyLabels[payment_frequency]}
         </div>
       </div>
