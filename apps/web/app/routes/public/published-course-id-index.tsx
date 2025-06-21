@@ -165,7 +165,7 @@ export default function PublishedCourseIdIndex({ loaderData }: Route.ComponentPr
                     <UserAvatar username='username' imageUrl='' size='xs' />
                   </Link>
 
-                  <div className='flex flex-col space-y-2 md:flex-row md:space-y-0 md:space-x-4'>
+                  <div className='flex flex-col space-y-2 lg:flex-row lg:space-y-0 lg:space-x-4'>
                     <MetaInfoItem label='Published' timestamp={created_at} />
                     <MetaInfoItem label='Updated' timestamp={updated_at} />
                   </div>
