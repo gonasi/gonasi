@@ -2,6 +2,8 @@ import { motion } from 'framer-motion';
 
 import type { PricingSchemaTypes } from '@gonasi/schemas/publish';
 
+import { PricingDisplay } from './PricingDisplay';
+
 import { Badge } from '~/components/ui/badge';
 
 interface PricingOptionCardProps {
@@ -105,35 +107,13 @@ export function PricingOptionCard({
             </motion.p>
           )}
 
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, duration: 0.4 }}
-            className='flex w-full space-x-3 pt-3'
-          >
-            <div className='text-foreground flex flex-col items-center text-xl font-semibold'>
-              <div>
-                {new Intl.NumberFormat('en-US', {
-                  style: 'currency',
-                  currency: currency_code,
-                }).format(finalPrice)}
-              </div>
-              <div className='text-muted-foreground -mt-1 text-xs'>
-                {payment_frequency.replace(/_/g, ' ')}
-              </div>
-            </div>
-
-            {showOriginalPrice && (
-              <motion.div
-                initial={{ opacity: 0, x: 10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.35, duration: 0.4 }}
-                className='text-muted-foreground mt-1 flex h-full items-center justify-center line-through'
-              >
-                {price.toLocaleString()}
-              </motion.div>
-            )}
-          </motion.div>
+          <PricingDisplay
+            finalPrice={finalPrice}
+            price={price}
+            currency_code={currency_code}
+            payment_frequency={payment_frequency}
+            showOriginalPrice={showOriginalPrice}
+          />
         </div>
       </div>
     </motion.div>

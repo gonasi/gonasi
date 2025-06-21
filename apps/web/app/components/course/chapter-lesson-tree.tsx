@@ -6,6 +6,7 @@ import { NotFoundCard } from '../cards';
 import { LessonHoverCard } from '../cards/lesson-hover-card';
 import { LessonViewCard } from '../cards/lesson-view-card';
 import { DisplayMode } from '../search-params/display-mode';
+import { StickyChapterHeader } from './sticky-chapter-header';
 
 import { cn } from '~/lib/utils';
 import type { UserActiveChapterAndLessonLoaderReturnType } from '~/routes/go/go-course-details';
@@ -83,13 +84,7 @@ export function ChapterLessonTree({ publishedCourseId, chapters, activeChapterAn
               id={chapter.id}
               className='mb-8 scroll-mt-16'
             >
-              <div className='bg-background/90 sticky top-14 z-5 pt-2 pb-4'>
-                <div className='flex items-center space-x-1'>
-                  <h1 className={cn('line-clamp-1 text-xl font-bold md:text-2xl')}>
-                    {chapter.name}
-                  </h1>
-                </div>
-              </div>
+              <StickyChapterHeader name={chapter.name} />
               <div>
                 <p className='text-muted-foreground font-secondary line-clamp-3 text-sm'>
                   {chapter.description}

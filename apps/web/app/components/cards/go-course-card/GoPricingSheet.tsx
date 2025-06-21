@@ -4,6 +4,7 @@ import { MoveLeft, MoveRight } from 'lucide-react';
 
 import type { PricingSchemaTypes } from '@gonasi/schemas/publish';
 
+import { PricingDisplay } from './PricingDisplay';
 import { PricingOptionCard } from './PricingOptionCard';
 
 import { Button } from '~/components/ui/button';
@@ -37,61 +38,16 @@ interface GoPricingSheetProps {
   pricingData: PricingSchemaTypes;
   className?: string;
   side?: 'left' | 'right' | 'top' | 'bottom';
-  textSize?: 'sm' | 'lg';
 }
 
-function PricingDisplay({
-  pricing,
-  textSize,
-}: {
-  pricing: PricingSchemaTypes[number];
-  textSize?: 'sm' | 'lg';
-}) {
-  const isLarge = textSize === 'lg';
-  const isSmall = textSize === 'sm';
-
-  const baseStyles = cn(
-    'flex items-baseline space-x-1',
-    isLarge && 'text-2xl',
-    isSmall && 'text-base',
-    !textSize && 'text-lg',
-  );
-
-  const currencyStyle = cn('font-light', isLarge ? 'text-lg' : isSmall ? 'text-xs' : 'text-sm');
-
-  const frequencyStyle = cn(
-    'font-light italic',
-    isLarge ? 'text-lg' : isSmall ? 'text-xs' : 'text-sm',
-  );
-
-  if (pricing?.is_free) {
-    return <span className={baseStyles}>Free</span>;
-  }
-
-  return (
-    <span className={baseStyles}>
-      <span className={currencyStyle}>{pricing?.currency_code}</span>
-      <span>{pricing?.price}</span>
-      <span className={frequencyStyle}>
-        {pricing?.payment_frequency
-          ?.split('_')
-          .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-          .join(' ')}
-      </span>
-    </span>
-  );
-}
-
-export function GoPricingSheet({
-  pricingData,
-  className,
-  side = 'right',
-  textSize = 'sm',
-}: GoPricingSheetProps) {
+export function GoPricingSheet({ pricingData, className, side = 'right' }: GoPricingSheetProps) {
   const [open, setOpen] = useState(false);
   const defaultPricing = pricingData[0];
 
   if (!defaultPricing) return <p>No pricing</p>;
+
+  const finalPrice = defaultPricing.promotional_price ?? defaultPricing.price;
+  const showOriginalPrice = defaultPricing.promotional_price != null;
 
   if (pricingData.length < 2) {
     return (
@@ -102,9 +58,20 @@ export function GoPricingSheet({
           e.preventDefault();
           e.stopPropagation();
         }}
-        className={cn('hover:bg-transparent', className)}
+        className={cn(
+          'border-border/50 border pb-4 hover:bg-transparent',
+          showOriginalPrice && 'pb-5',
+          className,
+        )}
       >
-        <PricingDisplay pricing={defaultPricing} textSize={textSize} />
+        <PricingDisplay
+          finalPrice={finalPrice}
+          price={defaultPricing.price}
+          currency_code={defaultPricing.currency_code}
+          payment_frequency={defaultPricing.payment_frequency}
+          showOriginalPrice={showOriginalPrice}
+          size='sm'
+        />
       </Button>
     );
   }
@@ -137,12 +104,19 @@ export function GoPricingSheet({
               e.stopPropagation();
               setOpen(true);
             }}
-            className={cn(className)}
+            className={cn('border-border/50 border pb-4', showOriginalPrice && 'pb-5', className)}
             rightIcon={side === 'right' ? <AnimatedChevronRight /> : undefined}
             leftIcon={side === 'left' ? <AnimatedChevronLeft /> : undefined}
             rightIconAtEdge
           >
-            <PricingDisplay pricing={defaultPricing} textSize={textSize} />
+            <PricingDisplay
+              finalPrice={finalPrice}
+              price={defaultPricing.price}
+              currency_code={defaultPricing.currency_code}
+              payment_frequency={defaultPricing.payment_frequency}
+              showOriginalPrice={showOriginalPrice}
+              size='sm'
+            />
           </Button>
         </SheetTrigger>
         <SheetContent side={side} className='w-96'>
