@@ -18,7 +18,7 @@ Deno.serve(async (req) => {
     return new Response('Invalid JSON body', { status: 400 });
   }
 
-  const { email, amount, currencyCode, name } = body;
+  const { email, name, amount, currencyCode } = body;
 
   // Validation
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
