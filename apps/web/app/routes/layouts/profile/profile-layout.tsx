@@ -1,4 +1,4 @@
-import { NavLink, Outlet } from 'react-router';
+import { NavLink, Outlet, useLocation } from 'react-router';
 import { BookCopy, BookLock, Settings } from 'lucide-react';
 
 import { getProfileByUsername } from '@gonasi/database/profiles';
@@ -33,6 +33,10 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 export default function ProfileLayout({ loaderData, params }: Route.ComponentProps) {
   const { profileUser } = loaderData;
 
+  const location = useLocation();
+
+  const redirectTo = location.pathname + location.search;
+
   if (!profileUser) {
     return <NotFoundCard message='Profile not found' />;
   }
@@ -52,7 +56,10 @@ export default function ProfileLayout({ loaderData, params }: Route.ComponentPro
           <div className='flex w-full justify-between'>
             <h4 className='font-secondary'>{username}</h4>
             {isMyProfile && (
-              <NavLink to={`/${params.username}/settings`} className='group'>
+              <NavLink
+                to={`/${params.username}/settings?${new URLSearchParams({ redirectTo })}`}
+                className='group'
+              >
                 <Settings className='transition-transform duration-200 group-hover:scale-105 group-hover:rotate-15' />
               </NavLink>
             )}
