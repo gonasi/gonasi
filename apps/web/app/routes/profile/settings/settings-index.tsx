@@ -61,7 +61,7 @@ export default function SettingsIndex({ params }: Route.ComponentProps) {
           icon: Wallet,
         },
         {
-          name: 'Earnings Summary',
+          name: 'Summary',
           to: `/${params.username}/settings/earnings-summary`,
           icon: ReceiptText,
         },
@@ -70,8 +70,8 @@ export default function SettingsIndex({ params }: Route.ComponentProps) {
   ];
 
   return (
-    <div className='mx-auto flex max-w-2xl space-x-4 md:space-x-8'>
-      <aside className='border-r-border sticky h-full min-h-screen w-fit flex-none border-r md:w-48 lg:w-56'>
+    <div className='mx-auto flex space-x-4 lg:space-x-8'>
+      <aside className='border-r-border sticky h-full min-h-screen w-fit flex-none border-r pl-0 md:w-48 md:pl-2 lg:w-56'>
         <div className='mb-10 pt-8 pr-0 md:pr-10'>
           <div className='flex items-center justify-center space-x-6 md:justify-start'>
             <div className='hidden md:flex'>
@@ -94,7 +94,7 @@ export default function SettingsIndex({ params }: Route.ComponentProps) {
         ))}
       </aside>
 
-      <section className='w-full py-8 pr-4'>
+      <section className='w-full py-8 pr-4 lg:pr-0'>
         <div className='flex w-full justify-end pb-4 md:hidden'>
           <CloseIconNavLink to={redirectTo} />
         </div>

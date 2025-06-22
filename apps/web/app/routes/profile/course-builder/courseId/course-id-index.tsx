@@ -51,55 +51,57 @@ export default function CourseById({ loaderData, params }: Route.ComponentProps)
   const { id: courseId, name: courseName, signedUrl, blur_hash } = loaderData;
 
   return (
-    <PlainLayout
-      border={false}
-      backLink={`/${params.username}/course-builder`}
-      title={courseName}
-      thumbnail={
-        <div>
-          <GoThumbnail
-            iconUrl={signedUrl}
-            blurHash={blur_hash}
-            name={`${courseName}'s title`}
-            className='h-10 w-10 rounded-full md:h-12 md:w-12'
-            aspectRatio='1/1'
+    <div>
+      <PlainLayout
+        border={false}
+        backLink={`/${params.username}/course-builder`}
+        title={courseName}
+        thumbnail={
+          <div>
+            <GoThumbnail
+              iconUrl={signedUrl}
+              blurHash={blur_hash}
+              name={`${courseName}'s title`}
+              className='h-10 w-10 rounded-full md:h-12 md:w-12'
+              aspectRatio='1/1'
+            />
+          </div>
+        }
+        navigation={
+          <GoTabNav
+            tabs={[
+              {
+                to: `/${params.username}/course-builder/${courseId}/overview`,
+                name: 'Overview',
+                icon: ChartNoAxesGantt,
+              },
+              {
+                to: `/${params.username}/course-builder/${courseId}/pricing`,
+                name: 'Pricing',
+                icon: BanknoteIcon,
+              },
+              {
+                to: `/${params.username}/course-builder/${courseId}/content`,
+                name: 'Content',
+                icon: TableOfContents,
+              },
+              {
+                to: `/${params.username}/course-builder/${courseId}/file-library`,
+                name: 'Files',
+                icon: Files,
+              },
+              {
+                to: `/${params.username}/course-builder/${courseId}/collaborators`,
+                name: 'Collaborators',
+                icon: UsersRound,
+              },
+            ]}
           />
-        </div>
-      }
-      navigation={
-        <GoTabNav
-          tabs={[
-            {
-              to: `/${params.username}/course-builder/${courseId}/overview`,
-              name: 'Overview',
-              icon: ChartNoAxesGantt,
-            },
-            {
-              to: `/${params.username}/course-builder/${courseId}/pricing`,
-              name: 'Pricing',
-              icon: BanknoteIcon,
-            },
-            {
-              to: `/${params.username}/course-builder/${courseId}/content`,
-              name: 'Content',
-              icon: TableOfContents,
-            },
-            {
-              to: `/${params.username}/course-builder/${courseId}/file-library`,
-              name: 'Files',
-              icon: Files,
-            },
-            {
-              to: `/${params.username}/course-builder/${courseId}/collaborators`,
-              name: 'Collaborators',
-              icon: UsersRound,
-            },
-          ]}
-        />
-      }
-    >
-      {/* The nested routes (overview/content) will be rendered here */}
-      <Outlet context={loaderData} />
-    </PlainLayout>
+        }
+      >
+        {/* The nested routes (overview/content) will be rendered here */}
+        <Outlet context={loaderData} />
+      </PlainLayout>
+    </div>
   );
 }

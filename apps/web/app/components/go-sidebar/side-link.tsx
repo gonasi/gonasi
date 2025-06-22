@@ -36,12 +36,18 @@ export function SideLink({ icon: Icon, to, name, end }: Props) {
 
         return (
           <>
-            {/* Right border animation */}
+            {/* Animated right border being drawn top to bottom */}
             <motion.div
-              className='from-secondary to-primary absolute top-0 right-0 bottom-0 w-1 bg-gradient-to-b'
+              className='from-secondary to-primary absolute right-0 w-1 bg-gradient-to-b'
               initial={false}
-              animate={{ opacity: isActive ? 1 : 0 }}
-              transition={{ duration: 0.3, ease: 'easeInOut' }}
+              animate={{
+                height: isActive ? '100%' : '0%',
+              }}
+              transition={{
+                duration: 0.3,
+                ease: 'easeInOut',
+              }}
+              style={{ top: 0 }}
             />
 
             {/* Main content */}

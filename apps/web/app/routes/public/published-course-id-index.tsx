@@ -147,7 +147,7 @@ export default function PublishedCourseIdIndex({ loaderData }: Route.ComponentPr
             <div className='min-h-screen'>
               <div className='flex flex-col-reverse space-x-0 py-2 md:flex-row md:space-x-10 md:py-10'>
                 {/* Left Content */}
-                <div className='md:bg-card/50 flex flex-1 flex-col space-y-4 rounded-sm bg-transparent p-4'>
+                <div className='md:bg-card/50 flex flex-1 flex-col space-y-4 bg-transparent p-4'>
                   <div className='flex items-center space-x-2 overflow-auto'>
                     <Badge variant='outline'>{categoryName}</Badge>
                     <ChevronRight size={12} />
