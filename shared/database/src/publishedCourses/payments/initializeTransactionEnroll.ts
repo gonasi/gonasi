@@ -1,3 +1,5 @@
+import { v4 as uuidv4 } from 'uuid';
+
 import type { InitializeEnrollTransactionSchemaTypes } from '@gonasi/schemas/payments';
 import { PricingSchema } from '@gonasi/schemas/publish';
 
@@ -83,6 +85,7 @@ export const initializeTransactionEnroll = async (
           name: userProfile.user.full_name,
           amount: finalAmount,
           currencyCode: selectedTier.currency_code,
+          reference: uuidv4(),
         },
       },
     );
