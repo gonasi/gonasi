@@ -33,9 +33,9 @@ export const PasswordSchema = z
     message: `<lucide name="Minimize" size="12" /> <span class="warning">Whoa, that’s a long one</span> — keep it under 40 characters`,
   });
 
-export const FullNameSchema = z
+export const FullNameOrCompanySchema = z
   .string({
-    required_error: `<lucide name="User" size="12" /> We’ll need your full name`,
+    required_error: `<lucide name="User" size="12" /> We’ll need a name or company name`,
   })
   .min(3, {
     message: `That name's a little <span class="warning">short</span> <lucide name="MoveVertical" size="12" />`,
@@ -44,8 +44,8 @@ export const FullNameSchema = z
     message: `<span class="warning">That name’s a bit too long</span> <lucide name="ScanLine" size="12" />`,
   })
   .trim()
-  .refine((val) => /^[A-Za-z]+(?: [A-Za-z]+)*$/.test(val), {
-    message: `Only use letters and single spaces <lucide name="Type" size="12" />`,
+  .refine((val) => /^[A-Za-z0-9&.,'’\-]+(?: [A-Za-z0-9&.,'’\-]+)*$/.test(val), {
+    message: `Use letters, numbers, or basic punctuation <lucide name="Type" size="12" />`,
   });
 
 export const UsernameSchema = z

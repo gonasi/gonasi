@@ -1,9 +1,9 @@
 import { z } from 'zod';
 
-import { FullNameSchema, PhoneNumberSchema, UsernameSchema } from '../userValidation';
+import { FullNameOrCompanySchema, PhoneNumberSchema, UsernameSchema } from '../userValidation';
 
 export const BasicInformationSchema = z.object({
-  fullName: FullNameSchema,
+  fullName: FullNameOrCompanySchema,
   username: UsernameSchema,
 });
 
