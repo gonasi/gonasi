@@ -95,7 +95,7 @@ export default function SettingsIndex({ params }: Route.ComponentProps) {
       </aside>
 
       <section className='w-full py-8 pr-4 lg:pr-0'>
-        <div className='flex w-full justify-end pb-4 md:hidden'>
+        <div className='flex w-full justify-end pb-6 md:hidden md:pb-4'>
           <CloseIconNavLink to={redirectTo} />
         </div>
         <div>

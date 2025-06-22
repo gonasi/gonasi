@@ -93,7 +93,7 @@ export function ChapterLessonTree({ publishedCourseId, chapters, activeChapterAn
               {chapter.lessons?.length ? (
                 <motion.div
                   className={cn(
-                    { 'bg-card/30 rounded-2xl py-2': isPath },
+                    { 'md:bg-card/20 bg-card/10 py-2': isPath },
                     { 'flex flex-col space-y-4': !isPath },
                   )}
                   variants={containerVariants}
