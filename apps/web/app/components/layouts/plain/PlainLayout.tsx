@@ -36,7 +36,7 @@ export function PlainLayout({
               {thumbnail ? thumbnail : null}
               <h3 className='text-header mt-1 line-clamp-1 text-lg md:text-xl'>{title}</h3>
             </div>
-            {rightComponent ? rightComponent : null}
+            {rightComponent ? <div className='flex-shrink-0'>{rightComponent}</div> : null}
           </div>
         </div>
         {navigation && navigation}
