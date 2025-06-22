@@ -3,8 +3,7 @@ import { ArrowRightLeft, ChevronsUpDown, LayoutDashboard } from 'lucide-react';
 
 import { UserAvatar } from '../avatars';
 import { NotFoundCard } from '../cards';
-import { SignOut } from '../sign-out';
-import { Button, buttonVariants } from '../ui/button';
+import { Button } from '../ui/button';
 
 import {
   DropdownMenu,
@@ -77,15 +76,11 @@ export function ProfileDropdown({
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild className='group cursor-pointer'>
-          <SignOut
-            signOutComponent={
-              <div
-                className={`${buttonVariants({ size: 'sm', variant: 'secondary' })} m-2 w-full rounded-full px-4`}
-              >
-                <span>Sign out</span>
-              </div>
-            }
-          />
+          <DropdownMenuItem asChild className='group cursor-pointer'>
+            <Link to='/signout' className='flex items-center space-x-2'>
+              <span>Sign Out</span>
+            </Link>
+          </DropdownMenuItem>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

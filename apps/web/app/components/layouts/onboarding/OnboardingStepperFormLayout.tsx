@@ -1,10 +1,9 @@
 import type { PropsWithChildren } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router';
-import { ArrowLeft, LogOut } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 
 import { AppLogo } from '~/components/app-logo';
-import { SignOut } from '~/components/sign-out';
-import { buttonVariants } from '~/components/ui/button';
+import { NavLinkButton } from '~/components/ui/button';
 import { PlainButton } from '~/components/ui/button/PlainButton';
 import { Stepper } from '~/components/ui/stepper';
 
@@ -52,14 +51,7 @@ export function OnboardingStepperFormLayout({ steps, children }: Props) {
           <AppLogo />
         </div>
         <div className='justify-self-end'>
-          <SignOut
-            signOutComponent={
-              <div className={`${buttonVariants({ size: 'sm' })} rounded-full`}>
-                Sign out
-                <LogOut />
-              </div>
-            }
-          />
+          <NavLinkButton to='/signout'>Sign Out</NavLinkButton>
         </div>
       </div>
       {steps?.length && <Stepper steps={steps} currentStepIndex={currentStepIndex} />}

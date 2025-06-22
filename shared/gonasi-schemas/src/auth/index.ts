@@ -3,7 +3,6 @@ import { z } from 'zod';
 import { EmailSchema, PasswordSchema } from '../userValidation';
 
 export const LoginFormSchema = z.object({
-  intent: z.literal('login'),
   email: EmailSchema,
   password: PasswordSchema,
   redirectTo: z.string().optional().nullable(),
@@ -12,7 +11,6 @@ export const LoginFormSchema = z.object({
 export type LoginFormSchemaTypes = z.infer<typeof LoginFormSchema>;
 
 export const SignupFormSchema = z.object({
-  intent: z.literal('signup'),
   fullName: z
     .string({
       required_error:
@@ -39,10 +37,3 @@ export const SignOutFormSchema = z.object({
 });
 
 export type SignOutFormSchemaTypes = z.infer<typeof SignOutFormSchema>;
-
-// Discriminated union
-export const AuthSchema = z.discriminatedUnion('intent', [
-  SignupFormSchema,
-  LoginFormSchema,
-  SignOutFormSchema,
-]);

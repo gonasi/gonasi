@@ -1,17 +1,23 @@
-import { Form, useSearchParams } from 'react-router';
+import { Form, redirectDocument, useSearchParams } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { RemixFormProvider, useRemixForm } from 'remix-hook-form';
+import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
+import { dataWithError } from 'remix-toast';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
+import { safeRedirect } from 'remix-utils/safe-redirect';
 
+import { signInWithEmailAndPassword } from '@gonasi/database/auth';
 import { LoginFormSchema, type LoginFormSchemaTypes } from '@gonasi/schemas/auth';
+
+import type { Route } from './+types/login';
 
 import { GoLink } from '~/components/go-link';
 import { AuthFormLayout } from '~/components/layouts/auth';
 import { Button } from '~/components/ui/button';
 import { GoInputField } from '~/components/ui/forms/elements';
+import { createClient } from '~/lib/supabase/supabase.server';
+import { checkHoneypot } from '~/utils/honeypot.server';
 import { useIsPending } from '~/utils/misc';
 
-// SEO metadata
 export function meta() {
   return [
     { title: 'Log in to Gonasi | Build Interactive Courses Easily' },
@@ -23,9 +29,20 @@ export function meta() {
   ];
 }
 
-const resolver = zodResolver(LoginFormSchema);
+export async function action({ request }: Route.ActionArgs) {
+  const formData = await request.formData();
+  await checkHoneypot(formData);
 
-// Login page component
+  const { errors, data } = await getValidatedFormData(formData, zodResolver(LoginFormSchema));
+  if (errors) return dataWithError(null, 'Something went wrong. Please try again.');
+
+  const { supabase, headers } = createClient(request);
+  const { error } = await signInWithEmailAndPassword(supabase, data);
+  if (error) return dataWithError(null, 'Incorrect email or password.');
+
+  return redirectDocument(safeRedirect(data.redirectTo ?? '/'), { headers });
+}
+
 export default function Login() {
   const isPending = useIsPending();
   const [searchParams] = useSearchParams();
@@ -33,17 +50,11 @@ export default function Login() {
 
   const methods = useRemixForm<LoginFormSchemaTypes>({
     mode: 'all',
-    resolver,
+    resolver: zodResolver(LoginFormSchema),
     submitData: { redirectTo },
-    defaultValues: {
-      intent: 'login',
-    },
-    submitConfig: {
-      action: '/',
-    },
   });
 
-  const isDisabled = isPending || methods.formState.isSubmitting;
+  const isDisabled = isPending;
 
   return (
     <AuthFormLayout
@@ -57,10 +68,7 @@ export default function Login() {
     >
       <RemixFormProvider {...methods}>
         <Form method='POST' onSubmit={methods.handleSubmit}>
-          {/* Bot protection */}
           <HoneypotInputs />
-
-          {/* Email input */}
           <GoInputField
             labelProps={{ children: 'Email address', required: true }}
             name='email'
@@ -72,8 +80,6 @@ export default function Login() {
             }}
             description='Enter the email you registered with.'
           />
-
-          {/* Password input */}
           <GoInputField
             labelProps={{
               children: 'Your password',
@@ -88,8 +94,6 @@ export default function Login() {
             }}
             description='We won’t tell anyone, promise 😊'
           />
-
-          {/* Submit button */}
           <Button type='submit' disabled={isDisabled} isLoading={isDisabled} className='w-full'>
             Log In
           </Button>

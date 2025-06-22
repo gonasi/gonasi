@@ -5,31 +5,20 @@ import {
   Links,
   Meta,
   Outlet,
-  redirect,
   Scripts,
   ScrollRestoration,
   useLoaderData,
 } from 'react-router';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import type { JwtPayload } from 'jwt-decode';
 import { jwtDecode } from 'jwt-decode';
-import { getValidatedFormData } from 'remix-hook-form';
-import { dataWithError, dataWithSuccess, getToast } from 'remix-toast';
+import { getToast } from 'remix-toast';
 import { HoneypotProvider } from 'remix-utils/honeypot/react';
-import { safeRedirect } from 'remix-utils/safe-redirect';
 import { Toaster } from 'sonner';
-import type z from 'zod';
 
-import {
-  logOut,
-  signInWithEmailAndPassword,
-  signUpWithEmailAndPassword,
-} from '@gonasi/database/auth';
 import type { UserRole } from '@gonasi/database/client';
 import { getUserProfile } from '@gonasi/database/profile';
-import { AuthSchema } from '@gonasi/schemas/auth';
 
 import type { Route } from './+types/root';
 import { NavigationProgressBar } from './components/progress-bar';
@@ -39,7 +28,7 @@ import './app.css';
 import { getClientEnv } from '~/.server/env.server';
 import { useToast } from '~/components/ui/toast';
 import { createClient } from '~/lib/supabase/supabase.server';
-import { checkHoneypot, honeypot } from '~/utils/honeypot.server';
+import { honeypot } from '~/utils/honeypot.server';
 import { combineHeaders } from '~/utils/misc';
 
 // --- Types ---
@@ -66,51 +55,6 @@ export interface AppOutletContext {
   user: UserProfileLoaderReturnType;
   role: UserRoleLoaderReturnType;
   session: UserActiveSessionLoaderReturnType;
-}
-
-type FormData = z.infer<typeof AuthSchema>;
-
-// --- Action ---
-export async function action({ request }: Route.ActionArgs) {
-  const formData = await request.formData();
-  await checkHoneypot(formData);
-
-  const { errors, data } = await getValidatedFormData<FormData>(formData, zodResolver(AuthSchema));
-
-  if (errors) {
-    return dataWithError(null, 'Something went wrong. Please try again.');
-  }
-
-  const { supabase, headers } = createClient(request);
-
-  switch (data.intent) {
-    case 'signup': {
-      const { error } = await signUpWithEmailAndPassword(supabase, data);
-      const redirectTo = data.redirectTo ?? '/';
-
-      return error
-        ? dataWithError(null, 'Incorrect email or password.')
-        : redirect(safeRedirect(redirectTo), { headers });
-    }
-    case 'login': {
-      const { error } = await signInWithEmailAndPassword(supabase, data);
-      const redirectTo = data.redirectTo ?? '/';
-
-      return error
-        ? dataWithError(null, 'Incorrect email or password.')
-        : redirect(safeRedirect(redirectTo), { headers });
-    }
-
-    case 'signout': {
-      const { error } = await logOut(supabase);
-      return error
-        ? dataWithError(null, 'Sign out failed. Please try again.')
-        : dataWithSuccess(null, 'Sign out successful');
-    }
-
-    default:
-      return dataWithError(null, 'Invalid action.');
-  }
 }
 
 // --- Loader ---

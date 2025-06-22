@@ -1,15 +1,22 @@
-import { Form, useSearchParams } from 'react-router';
+import { Form, redirectDocument, useSearchParams } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Rocket } from 'lucide-react';
-import { RemixFormProvider, useRemixForm } from 'remix-hook-form';
+import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
+import { dataWithError } from 'remix-toast';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
+import { safeRedirect } from 'remix-utils/safe-redirect';
 
+import { signUpWithEmailAndPassword } from '@gonasi/database/auth';
 import { SignupFormSchema, type SignupFormSchemaTypes } from '@gonasi/schemas/auth';
+
+import type { Route } from './+types/signup';
 
 import { GoLink } from '~/components/go-link';
 import { AuthFormLayout } from '~/components/layouts/auth';
 import { Button } from '~/components/ui/button';
 import { GoInputField } from '~/components/ui/forms/elements';
+import { createClient } from '~/lib/supabase/supabase.server';
+import { checkHoneypot } from '~/utils/honeypot.server';
 import { useIsPending } from '~/utils/misc';
 
 // SEO metadata for the Sign Up page
@@ -18,6 +25,20 @@ export function meta() {
 }
 
 const resolver = zodResolver(SignupFormSchema);
+
+export async function action({ request }: Route.ActionArgs) {
+  const formData = await request.formData();
+  await checkHoneypot(formData);
+
+  const { errors, data } = await getValidatedFormData(formData, zodResolver(SignupFormSchema));
+  if (errors) return dataWithError(null, 'Something went wrong. Please try again.');
+
+  const { supabase, headers } = createClient(request);
+  const { error } = await signUpWithEmailAndPassword(supabase, data);
+  if (error) return dataWithError(null, 'Incorrect email or password.');
+
+  return redirectDocument(safeRedirect(data.redirectTo ?? '/'), { headers });
+}
 
 /**
  * Sign-up form component
@@ -32,12 +53,6 @@ export default function SignUp() {
     mode: 'all',
     resolver,
     submitData: { redirectTo },
-    defaultValues: {
-      intent: 'signup',
-    },
-    submitConfig: {
-      action: '/',
-    },
   });
 
   const isDisabled = isPending || methods.formState.isSubmitting;

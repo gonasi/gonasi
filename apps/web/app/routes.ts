@@ -19,6 +19,7 @@ export default [
         ]),
       ]),
     ]),
+
     route('c/:publishedCourseId', 'routes/public/published-course-id-index.tsx', [
       route('enroll/:pricingTierId', 'routes/publishedCourses/enroll-index.tsx'),
     ]),
@@ -41,6 +42,8 @@ export default [
   ]),
 
   layout('routes/layouts/profile/course-overview-layout.tsx', [
+    route(':username/settings', 'routes/profile/settings/settings-index.tsx'),
+
     ...prefix(':username/course-builder', [
       // /:username/course-builder/:courseId
       route(':courseId', 'routes/profile/course-builder/courseId/course-id-index.tsx', [
@@ -198,6 +201,8 @@ export default [
       ]),
     ]),
   ]),
+
+  route('signout', 'routes/auth/signout.tsx'),
 
   // /*
   route('*', 'routes/not-found.tsx'),
