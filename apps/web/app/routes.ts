@@ -43,7 +43,14 @@ export default [
 
   layout('routes/layouts/profile/course-overview-layout.tsx', [
     route(':username/settings', 'routes/profile/settings/settings-index.tsx', [
-      route('profile', 'routes/profile/settings/profile-settings.tsx'),
+      route('profile-information', 'routes/profile/settings/profile-information.tsx'),
+      route('login-and-security', 'routes/profile/settings/login-and-security.tsx'),
+      route('notifications', 'routes/profile/settings/notifications.tsx'),
+      route('plan-and-usage', 'routes/profile/settings/plan-and-usage.tsx'),
+      route('billing-history', 'routes/profile/settings/billing-history.tsx'),
+      route('payment-methods', 'routes/profile/settings/payment-methods.tsx'),
+      route('payout-settings', 'routes/profile/settings/payout-settings.tsx'),
+      route('earnings-summary', 'routes/profile/settings/earnings-summary.tsx'),
     ]),
 
     ...prefix(':username/course-builder', [

@@ -24,7 +24,7 @@ export function SideLink({ icon: Icon, to, name, end }: Props) {
     >
       {({ isPending }) => {
         const contentClass = cn(
-          'flex w-full items-center space-x-4 px-4 py-2 transition-colors duration-200',
+          'flex w-full items-center space-x-0 md:space-x-4 px-4 py-2 transition-colors duration-200',
           isPending ? 'animate-pulse opacity-55 hover:cursor-wait' : '',
           isActive ? 'text-primary' : 'text-muted-foreground',
         );
