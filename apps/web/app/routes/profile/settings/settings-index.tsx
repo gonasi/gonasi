@@ -1,14 +1,16 @@
-import { useLocation } from 'react-router';
+import { Outlet, useLocation } from 'react-router';
 import { UserRoundPen } from 'lucide-react';
+
+import type { Route } from './+types/settings-index';
 
 import { AppLogo } from '~/components/app-logo';
 import { SideLink } from '~/components/go-sidebar/side-link';
 import { BackArrowNavLink, CloseIconNavLink } from '~/components/ui/button';
 
-export default function SettingsIndex() {
+export default function SettingsIndex({ params }: Route.ComponentProps) {
   const location = useLocation();
-  const params = new URLSearchParams(location.search);
-  const redirectTo = params.get('redirectTo');
+  const routeParams = new URLSearchParams(location.search);
+  const redirectTo = routeParams.get('redirectTo');
 
   let closeLink = '/';
 
@@ -30,14 +32,26 @@ export default function SettingsIndex() {
             </div>
           </div>
         </div>
-        <SideLink to='/go-admin/course-categories' name='Profile' icon={<UserRoundPen />} end />
-        <SideLink to='/go-admin/course-categories' name='Profile' icon={<UserRoundPen />} end />
+        <SideLink
+          to={`/${params.username}/settings/profile`}
+          name='Profile'
+          icon={UserRoundPen}
+          end
+        />
+        <SideLink
+          to={`/${params.username}/settings/payment`}
+          name='Payment'
+          icon={UserRoundPen}
+          end
+        />
       </aside>
       <section className='w-full py-8 pr-4'>
         <div className='flex w-full justify-end pb-4 md:hidden'>
           <CloseIconNavLink to={closeLink} />
         </div>
-        <div>content</div>
+        <div>
+          <Outlet />
+        </div>
       </section>
     </div>
   );

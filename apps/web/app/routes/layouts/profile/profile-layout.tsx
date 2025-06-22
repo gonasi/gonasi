@@ -57,7 +57,7 @@ export default function ProfileLayout({ loaderData, params }: Route.ComponentPro
             <h4 className='font-secondary'>{username}</h4>
             {isMyProfile && (
               <NavLink
-                to={`/${params.username}/settings?${new URLSearchParams({ redirectTo })}`}
+                to={`/${params.username}/settings/profile?${new URLSearchParams({ redirectTo })}`}
                 className='group'
               >
                 <Settings className='transition-transform duration-200 group-hover:scale-105 group-hover:rotate-15' />

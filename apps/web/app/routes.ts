@@ -42,7 +42,9 @@ export default [
   ]),
 
   layout('routes/layouts/profile/course-overview-layout.tsx', [
-    route(':username/settings', 'routes/profile/settings/settings-index.tsx'),
+    route(':username/settings', 'routes/profile/settings/settings-index.tsx', [
+      route('profile', 'routes/profile/settings/profile-settings.tsx'),
+    ]),
 
     ...prefix(':username/course-builder', [
       // /:username/course-builder/:courseId
