@@ -6,6 +6,7 @@ import { fetchCourseOverviewById } from '@gonasi/database/courses';
 
 import type { Route } from './+types/course-id-index';
 
+import { GoThumbnail } from '~/components/cards/go-course-card';
 import { GoTabNav } from '~/components/go-tab-nav/course-tab-nav';
 import { PlainLayout } from '~/components/layouts/plain';
 import { createClient } from '~/lib/supabase/supabase.server';
@@ -47,13 +48,24 @@ export async function loader({ params, request }: Route.LoaderArgs) {
  * Main Course page layout that wraps course detail tabs.
  */
 export default function CourseById({ loaderData, params }: Route.ComponentProps) {
-  const { id: courseId, name: courseName } = loaderData;
+  const { id: courseId, name: courseName, signedUrl, blur_hash } = loaderData;
 
   return (
     <PlainLayout
       border={false}
       backLink={`/${params.username}/course-builder`}
       title={courseName}
+      thumbnail={
+        <div>
+          <GoThumbnail
+            iconUrl={signedUrl}
+            blurHash={blur_hash}
+            name={`${courseName}'s title`}
+            className='h-10 w-10 rounded-full md:h-12 md:w-12'
+            aspectRatio='1/1'
+          />
+        </div>
+      }
       navigation={
         <GoTabNav
           tabs={[

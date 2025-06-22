@@ -10,6 +10,7 @@ interface Props extends PropsWithChildren {
   navigation?: ReactNode;
   border?: boolean;
   rightComponent?: React.ReactNode;
+  thumbnail?: React.ReactNode;
 }
 
 export function PlainLayout({
@@ -19,6 +20,7 @@ export function PlainLayout({
   navigation,
   border = true,
   rightComponent,
+  thumbnail,
 }: Props) {
   return (
     <div className={cn('flex flex-col space-y-4 p-4 md:space-y-8')}>
@@ -31,7 +33,8 @@ export function PlainLayout({
           <div className='flex w-full items-center justify-between'>
             <div className='flex items-center space-x-2 md:space-x-4'>
               <BackArrowNavLink to={backLink} />
-              <h3 className='text-header line-clamp-1 text-xl'>{title}</h3>
+              {thumbnail ? thumbnail : null}
+              <h3 className='text-header mt-1 line-clamp-1 text-lg md:text-xl'>{title}</h3>
             </div>
             {rightComponent ? rightComponent : null}
           </div>
