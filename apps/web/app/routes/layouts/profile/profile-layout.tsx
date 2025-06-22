@@ -30,7 +30,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   return { profileUser };
 }
 
-export default function ProfileLayout({ loaderData }: Route.ComponentProps) {
+export default function ProfileLayout({ loaderData, params }: Route.ComponentProps) {
   const { profileUser } = loaderData;
 
   if (!profileUser) {
@@ -52,7 +52,7 @@ export default function ProfileLayout({ loaderData }: Route.ComponentProps) {
           <div className='flex w-full justify-between'>
             <h4 className='font-secondary'>{username}</h4>
             {isMyProfile && (
-              <NavLink to='' className='group'>
+              <NavLink to={`/${params.username}/settings`} className='group'>
                 <Settings className='transition-transform duration-200 group-hover:scale-105 group-hover:rotate-15' />
               </NavLink>
             )}

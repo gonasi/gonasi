@@ -32,7 +32,7 @@ export function SideLink({ icon, to, name, end, isActive }: Props) {
         )
       }
     >
-      <div className='flex transition-transform duration-200 group-hover:scale-110 md:hidden lg:flex'>
+      <div className='flex transition-transform duration-200 group-hover:scale-110 md:flex'>
         {icon}
       </div>
       <span className='hidden text-sm transition-opacity duration-200 group-hover:opacity-80 md:block md:text-sm lg:text-base'>
