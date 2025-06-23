@@ -1,8 +1,8 @@
-import { Form, useOutletContext } from 'react-router';
+import { Form, redirect, useOutletContext } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { GraduationCap } from 'lucide-react';
 import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
-import { dataWithError, dataWithSuccess } from 'remix-toast';
+import { dataWithError } from 'remix-toast';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
 
 import { initializeTransactionEnroll } from '@gonasi/database/publishedCourses';
@@ -55,8 +55,9 @@ export async function action({ request, params }: Route.ActionArgs) {
     ...data,
   });
 
-  console.log('successdata: ', successData);
-  return success ? dataWithSuccess(null, message) : dataWithError(null, message);
+  return success
+    ? redirect(`${successData?.data.authorization_url}`)
+    : dataWithError(null, message);
 }
 
 export default function EnrollIndex({ params }: Route.ComponentProps) {

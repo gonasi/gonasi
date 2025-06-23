@@ -6,6 +6,10 @@ import { PricingSchema } from '@gonasi/schemas/publish';
 import type { TypedSupabaseClient } from '../../client';
 import { getUserProfile } from '../../profile';
 import type { ApiResponse } from '../../types';
+import {
+  type InitializeEnrollTransactionResponse,
+  InitializeEnrollTransactionResponseSchema,
+} from './types';
 
 /**
  * Initializes a transaction for enrolling in a course.
@@ -14,7 +18,7 @@ import type { ApiResponse } from '../../types';
 export const initializeTransactionEnroll = async (
   supabase: TypedSupabaseClient,
   initData: InitializeEnrollTransactionSchemaTypes,
-): Promise<ApiResponse> => {
+): Promise<ApiResponse<InitializeEnrollTransactionResponse>> => {
   try {
     const { courseId, pricingTierId } = initData;
 
@@ -90,7 +94,7 @@ export const initializeTransactionEnroll = async (
       },
     );
 
-    if (transactionError) {
+    if (transactionError || !transactionData) {
       console.error(
         '[initializeTransactionEnroll] Failed to initialize payment transaction:',
         transactionError,
@@ -101,10 +105,26 @@ export const initializeTransactionEnroll = async (
       };
     }
 
+    // Validate response structure using Zod
+    const parsedTransaction = InitializeEnrollTransactionResponseSchema.safeParse(
+      transactionData.data,
+    );
+
+    if (!parsedTransaction.success) {
+      console.error(
+        '[initializeTransactionEnroll] Transaction response validation failed:',
+        parsedTransaction.error,
+      );
+      return {
+        success: false,
+        message: 'Invalid response from payment service. Please try again.',
+      };
+    }
+
     return {
       success: true,
       message: 'Enrollment transaction started successfully.',
-      data: transactionData,
+      data: parsedTransaction.data,
     };
   } catch (err) {
     console.error(
