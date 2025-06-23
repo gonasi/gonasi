@@ -28,7 +28,7 @@ export function PlainLayout({
         <AppLogo />
       </div>
 
-      <div className='bg-background sticky top-0 z-10 mb-2 py-2'>
+      <div className='bg-background sticky top-0 z-10 mb-2 pt-2'>
         <div className='flex w-full items-center justify-between'>
           <div className='flex w-full items-center justify-between'>
             <div className='flex items-center space-x-2 md:space-x-4'>

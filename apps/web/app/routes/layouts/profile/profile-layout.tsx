@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useLocation } from 'react-router';
-import { BookCopy, BookLock, Settings } from 'lucide-react';
+import { BookCopy, BookLock } from 'lucide-react';
 
 import { getProfileByUsername } from '@gonasi/database/profiles';
 
@@ -8,6 +8,7 @@ import type { Route } from './+types/profile-layout';
 import { PlainAvatar } from '~/components/avatars';
 import { NotFoundCard } from '~/components/cards';
 import { GoTabNav } from '~/components/go-tab-nav';
+import { SettingsNotificationsIcon } from '~/components/icons';
 import { createClient } from '~/lib/supabase/supabase.server';
 
 export type ProfileLoaderReturnType = Exclude<Awaited<ReturnType<typeof loader>>, Response>;
@@ -60,7 +61,7 @@ export default function ProfileLayout({ loaderData, params }: Route.ComponentPro
                 to={`/${params.username}/settings/profile-information?${new URLSearchParams({ redirectTo })}`}
                 className='group'
               >
-                <Settings className='transition-transform duration-200 group-hover:scale-105 group-hover:rotate-15' />
+                <SettingsNotificationsIcon hasNotifications />
               </NavLink>
             )}
           </div>

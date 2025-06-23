@@ -84,7 +84,7 @@ const Header = ({
   settingsPopover?: React.ReactNode;
 }) => {
   return (
-    <div className='bg-background sticky top-0 z-10 flex items-center justify-between p-4'>
+    <div className='bg-background/95 sticky top-0 z-10 flex items-center justify-between p-4'>
       <div className='flex flex-1 items-center gap-2'>
         {leadingIcon ?? null}
         {title ? (
@@ -118,7 +118,7 @@ const Header = ({
 };
 
 const Body = ({ children, className }: { children: ReactNode; className?: string }) => {
-  return <div className={cn('px-4 pt-2 pb-4', className)}>{children}</div>;
+  return <div className={cn('px-4 pb-4', className)}>{children}</div>;
 };
 
 const Footer = ({ children }: { children: ReactNode }) => {
