@@ -755,46 +755,159 @@ export type Database = {
           },
         ]
       }
+      payment_ledger: {
+        Row: {
+          amount: number
+          balance_after: number | null
+          created_at: string
+          currency_code: Database["public"]["Enums"]["currency_code"]
+          description: string | null
+          id: string
+          source_id: string | null
+          source_type: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          balance_after?: number | null
+          created_at?: string
+          currency_code: Database["public"]["Enums"]["currency_code"]
+          description?: string | null
+          id?: string
+          source_id?: string | null
+          source_type: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          balance_after?: number | null
+          created_at?: string
+          currency_code?: Database["public"]["Enums"]["currency_code"]
+          description?: string | null
+          id?: string
+          source_id?: string | null
+          source_type?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_ledger_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_splits: {
+        Row: {
+          amount: number
+          created_at: string
+          currency_code: Database["public"]["Enums"]["currency_code"]
+          id: string
+          payment_id: string
+          recipient_id: string | null
+          role: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency_code: Database["public"]["Enums"]["currency_code"]
+          id?: string
+          payment_id: string
+          recipient_id?: string | null
+          role: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency_code?: Database["public"]["Enums"]["currency_code"]
+          id?: string
+          payment_id?: string
+          recipient_id?: string | null
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_splits_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_splits_recipient_id_fkey"
+            columns: ["recipient_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payments: {
         Row: {
           amount: number
+          channel: string | null
           created_at: string
           created_by: string | null
           currency_code: Database["public"]["Enums"]["currency_code"]
           enrollment_activity_id: string | null
           id: string
+          ip_address: string | null
           paid_at: string
           provider: string
+          provider_fee: number | null
+          provider_fee_currency:
+            | Database["public"]["Enums"]["currency_code"]
+            | null
           provider_reference: string
           published_course_id: string
+          raw_payload: Json
           status: string
           user_id: string | null
         }
         Insert: {
           amount: number
+          channel?: string | null
           created_at?: string
           created_by?: string | null
           currency_code: Database["public"]["Enums"]["currency_code"]
           enrollment_activity_id?: string | null
           id?: string
-          paid_at?: string
+          ip_address?: string | null
+          paid_at: string
           provider?: string
+          provider_fee?: number | null
+          provider_fee_currency?:
+            | Database["public"]["Enums"]["currency_code"]
+            | null
           provider_reference: string
           published_course_id: string
+          raw_payload: Json
           status: string
           user_id?: string | null
         }
         Update: {
           amount?: number
+          channel?: string | null
           created_at?: string
           created_by?: string | null
           currency_code?: Database["public"]["Enums"]["currency_code"]
           enrollment_activity_id?: string | null
           id?: string
+          ip_address?: string | null
           paid_at?: string
           provider?: string
+          provider_fee?: number | null
+          provider_fee_currency?:
+            | Database["public"]["Enums"]["currency_code"]
+            | null
           provider_reference?: string
           published_course_id?: string
+          raw_payload?: Json
           status?: string
           user_id?: string | null
         }
@@ -846,6 +959,7 @@ export type Database = {
           id: string
           instagram_url: string | null
           is_onboarding_complete: boolean
+          is_payout_settings_complete: boolean
           linkedin_url: string | null
           notifications_enabled: boolean
           phone_number: string | null
@@ -874,6 +988,7 @@ export type Database = {
           id: string
           instagram_url?: string | null
           is_onboarding_complete?: boolean
+          is_payout_settings_complete?: boolean
           linkedin_url?: string | null
           notifications_enabled?: boolean
           phone_number?: string | null
@@ -902,6 +1017,7 @@ export type Database = {
           id?: string
           instagram_url?: string | null
           is_onboarding_complete?: boolean
+          is_payout_settings_complete?: boolean
           linkedin_url?: string | null
           notifications_enabled?: boolean
           phone_number?: string | null
@@ -1189,6 +1305,50 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "user_roles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      withdrawals: {
+        Row: {
+          amount: number
+          currency_code: Database["public"]["Enums"]["currency_code"]
+          id: string
+          processed_at: string | null
+          provider: string
+          provider_reference: string | null
+          requested_at: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          currency_code: Database["public"]["Enums"]["currency_code"]
+          id?: string
+          processed_at?: string | null
+          provider?: string
+          provider_reference?: string | null
+          requested_at?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          currency_code?: Database["public"]["Enums"]["currency_code"]
+          id?: string
+          processed_at?: string | null
+          provider?: string
+          provider_reference?: string | null
+          requested_at?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "withdrawals_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"

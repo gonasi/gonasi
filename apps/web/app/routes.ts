@@ -21,7 +21,9 @@ export default [
     ]),
 
     route('c/:publishedCourseId', 'routes/public/published-course-id-index.tsx', [
-      route('enroll/:pricingTierId', 'routes/publishedCourses/enroll-index.tsx'),
+      route('enroll/:pricingTierId', 'routes/publishedCourses/enroll-index.tsx', [
+        route('verify', 'routes/publishedCourses/verify-enroll.tsx'),
+      ]),
     ]),
   ]),
 
@@ -213,6 +215,8 @@ export default [
       ]),
     ]),
   ]),
+
+  route('api/paystack-webhook', 'routes/api/paystack-webhook.ts'),
 
   route('signout', 'routes/auth/signout.tsx'),
 

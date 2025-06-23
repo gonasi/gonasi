@@ -79,7 +79,7 @@ export default function PublishedCourses() {
                         <div
                           className={cn(
                             'group md:bg-card/80 m-0 rounded-none border-none bg-transparent p-0 shadow-none',
-                            isPending && 'bg-primary/5',
+                            isPending && 'bg-primary/5 animate-pulse hover:cursor-not-allowed',
                           )}
                         >
                           <GoThumbnail

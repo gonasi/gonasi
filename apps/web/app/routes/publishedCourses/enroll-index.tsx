@@ -1,4 +1,4 @@
-import { Form, redirect, useOutletContext } from 'react-router';
+import { Form, Outlet, redirect, useOutletContext } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { GraduationCap } from 'lucide-react';
 import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
@@ -91,25 +91,28 @@ export default function EnrollIndex({ params }: Route.ComponentProps) {
   }
 
   return (
-    <Modal open>
-      <Modal.Content size='md'>
-        <Modal.Header title={`Enroll to ${name}`} closeRoute={`/c/${courseId}`} />
-        <Modal.Body className='px-0 md:px-4'>
-          <PricingOptionCard pricingData={filteredPricingData} hideContinueButton />
-          <RemixFormProvider {...methods}>
-            <Form method='POST' onSubmit={methods.handleSubmit}>
-              {/* Bot protection */}
-              <HoneypotInputs />
+    <>
+      <Modal open>
+        <Modal.Content size='md'>
+          <Modal.Header title={`Enroll to ${name}`} closeRoute={`/c/${courseId}`} />
+          <Modal.Body className='px-0 md:px-4'>
+            <PricingOptionCard pricingData={filteredPricingData} hideContinueButton />
+            <RemixFormProvider {...methods}>
+              <Form method='POST' onSubmit={methods.handleSubmit}>
+                {/* Bot protection */}
+                <HoneypotInputs />
 
-              <div className='pt-6 pb-2'>
-                <Button leftIcon={<GraduationCap />} disabled={isDisabled} isLoading={isDisabled}>
-                  Enroll
-                </Button>
-              </div>
-            </Form>
-          </RemixFormProvider>
-        </Modal.Body>
-      </Modal.Content>
-    </Modal>
+                <div className='pt-6 pb-2'>
+                  <Button leftIcon={<GraduationCap />} disabled={isDisabled} isLoading={isDisabled}>
+                    Enroll
+                  </Button>
+                </div>
+              </Form>
+            </RemixFormProvider>
+          </Modal.Body>
+        </Modal.Content>
+      </Modal>
+      <Outlet />
+    </>
   );
 }
