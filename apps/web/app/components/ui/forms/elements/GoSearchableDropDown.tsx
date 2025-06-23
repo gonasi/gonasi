@@ -31,6 +31,8 @@ export interface SearchableDropdownProps {
   selectPlaceholder?: string;
   notFoundPlaceholder?: string;
   className?: string;
+  imageContainerClassName?: string;
+  imageClassName?: string;
 }
 
 interface GoSearchableDropDownProps {
@@ -66,6 +68,8 @@ export function GoSearchableDropDown({
     searchPlaceholder = 'Search for an option...',
     selectPlaceholder = 'Select an option...',
     notFoundPlaceholder = 'No options available',
+    imageContainerClassName = 'border-border h-6 w-6 rounded-full border',
+    imageClassName = 'h-full w-full rounded-full object-cover',
   } = searchDropdownProps;
 
   const [open, setOpen] = useState(false);
@@ -121,11 +125,11 @@ export function GoSearchableDropDown({
                       {field.value && selectedOption ? (
                         <>
                           {selectedOption.imageUrl && (
-                            <div className='border-border h-6 w-6 rounded-full border'>
+                            <div className={imageContainerClassName}>
                               <img
                                 src={selectedOption.imageUrl}
                                 alt=''
-                                className='h-full w-full rounded-full object-cover'
+                                className={imageClassName}
                               />
                             </div>
                           )}
@@ -149,21 +153,9 @@ export function GoSearchableDropDown({
               <PopoverContent
                 className='z-50 p-0'
                 style={{ width: 'var(--radix-popover-trigger-width)' }}
-                onOpenAutoFocus={(e) => {
-                  e.preventDefault();
-                }}
-                onCloseAutoFocus={(e) => {
-                  e.preventDefault();
-                }}
-                onPointerDownOutside={(e) => {
-                  const target = e.target as Element;
-                  if (
-                    target.closest('[role="dialog"]') &&
-                    !target.closest('[data-radix-popover-content]')
-                  ) {
-                    e.preventDefault();
-                    return;
-                  }
+                onOpenAutoFocus={(e) => e.preventDefault()}
+                onCloseAutoFocus={(e) => e.preventDefault()}
+                onPointerDownOutside={() => {
                   setOpen(false);
                 }}
                 onEscapeKeyDown={(e) => {
@@ -186,14 +178,8 @@ export function GoSearchableDropDown({
                   <CommandList
                     id='command-list'
                     className='max-h-[240px] overflow-y-auto'
-                    onWheel={(e) => {
-                      // Allow scrolling within the list, but prevent it from bubbling to parent modal
-                      e.stopPropagation();
-                    }}
-                    onTouchMove={(e) => {
-                      // Allow touch scrolling within the list
-                      e.stopPropagation();
-                    }}
+                    onWheel={(e) => e.stopPropagation()}
+                    onTouchMove={(e) => e.stopPropagation()}
                   >
                     <CommandEmpty>{notFoundPlaceholder}</CommandEmpty>
                     <CommandGroup>
@@ -219,7 +205,7 @@ export function GoSearchableDropDown({
                                   <img
                                     src={option.imageUrl}
                                     alt={option.label}
-                                    className='mr-2 h-5 w-5 rounded-full'
+                                    className={cn('mr-2 h-5 w-5 rounded-full', imageClassName)}
                                   />
                                 )}
                                 {option.label}

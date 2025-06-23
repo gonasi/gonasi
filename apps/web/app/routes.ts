@@ -51,6 +51,7 @@ export default [
       route('payment-methods', 'routes/profile/settings/payment-methods.tsx'),
       route('payout-settings', 'routes/profile/settings/payout-settings.tsx', [
         route('add-payout-details', 'routes/profile/settings/add-payout-details.tsx'),
+        route('loader-banks/:type/:currency', 'routes/profile/settings/loader-banks.tsx'),
       ]),
       route('earnings-summary', 'routes/profile/settings/earnings-summary.tsx'),
     ]),
