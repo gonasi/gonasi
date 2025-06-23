@@ -1,12 +1,44 @@
-import { BannerCard } from '~/components/cards';
+import { Outlet } from 'react-router';
+import { Plus } from 'lucide-react';
 
-export default function PayoutSettings() {
+import type { Route } from './+types/payout-settings';
+
+import { NavLinkButton } from '~/components/ui/button';
+
+export function meta() {
+  return [
+    { title: 'Get Paid for Your Courses | Gonasi' },
+    {
+      name: 'description',
+      content:
+        'Connect your payout account and start earning from your interactive content. It only takes a minute to set up!',
+    },
+  ];
+}
+
+export default function PayoutSettings({ params }: Route.ComponentProps) {
   return (
-    <BannerCard
-      message='💸 Coming soon!'
-      description='Soon you’ll be able to set up how you get paid, manage payout accounts, and track transfer activity. Stay tuned! 🏦'
-      variant='info'
-      className='mb-10'
-    />
+    <>
+      <div>
+        <div>
+          <h2 className='py-2 text-xl'>Payout Settings</h2>
+          <p className='font-secondary text-muted-foreground'>
+            Let’s get you paid! 🎉 We’ll create a Paystack subaccount where your earnings go when
+            people purchase your interactive content on Gonasi. It’s quick, easy, and super
+            important!
+          </p>
+        </div>
+
+        <div className='h-full py-4'>
+          <NavLinkButton
+            to={`/${params.username}/settings/payout-settings/add-payout-details`}
+            leftIcon={<Plus />}
+          >
+            Add Payout Details
+          </NavLinkButton>
+        </div>
+      </div>
+      <Outlet />
+    </>
   );
 }

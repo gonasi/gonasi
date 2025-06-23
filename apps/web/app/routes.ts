@@ -49,7 +49,9 @@ export default [
       route('plan-and-usage', 'routes/profile/settings/plan-and-usage.tsx'),
       route('billing-history', 'routes/profile/settings/billing-history.tsx'),
       route('payment-methods', 'routes/profile/settings/payment-methods.tsx'),
-      route('payout-settings', 'routes/profile/settings/payout-settings.tsx'),
+      route('payout-settings', 'routes/profile/settings/payout-settings.tsx', [
+        route('add-payout-details', 'routes/profile/settings/add-payout-details.tsx'),
+      ]),
       route('earnings-summary', 'routes/profile/settings/earnings-summary.tsx'),
     ]),
 
