@@ -1,19 +1,10 @@
 import { z } from 'zod';
 
-import { FullNameOrCompanySchema, PhoneNumberSchema, UsernameSchema } from '../userValidation';
+import { FullNameSchema, UsernameSchema } from '../userValidation';
 
-export const BasicInformationSchema = z.object({
-  fullName: FullNameOrCompanySchema,
+export const OnboardingSchema = z.object({
+  fullName: FullNameSchema,
   username: UsernameSchema,
 });
 
-export const ContactInformationSchema = z.object({
-  phoneNumber: PhoneNumberSchema,
-});
-
-// Merge schemas
-export const CombinedInformationSchema = BasicInformationSchema.merge(ContactInformationSchema);
-
-export type BasicInformationSchemaTypes = z.infer<typeof BasicInformationSchema>;
-export type ContactInformationSchemaTypes = z.infer<typeof ContactInformationSchema>;
-export type CombinedInformationSchemaTypes = z.infer<typeof CombinedInformationSchema>;
+export type OnboardingSchemaTypes = z.infer<typeof OnboardingSchema>;

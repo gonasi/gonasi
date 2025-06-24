@@ -33,9 +33,9 @@ export const PasswordSchema = z
     message: `<lucide name="Minimize" size="12" /> <span class="warning">Whoa, that’s a long one</span> — keep it under 40 characters`,
   });
 
-export const FullNameOrCompanySchema = z
+export const FullNameSchema = z
   .string({
-    required_error: `<lucide name="User" size="12" /> We’ll need a name or company name`,
+    required_error: `<lucide name="User" size="12" /> We’ll need a name`,
   })
   .min(3, {
     message: `That name's a little <span class="warning">short</span> <lucide name="MoveVertical" size="12" />`,

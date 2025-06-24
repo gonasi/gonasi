@@ -75,18 +75,18 @@ export default function SignUp() {
 
           {/* Full name input field */}
           <GoInputField
-            labelProps={{ children: 'Your name or company', required: true }}
+            labelProps={{ children: 'Your Name', required: true }}
             name='fullName'
             inputProps={{
               autoFocus: true,
               disabled: isDisabled,
             }}
-            description='Let us know who you are, whether it’s just you or your team'
+            description='Let us know who you are'
           />
 
           {/* Email input field */}
           <GoInputField
-            labelProps={{ children: 'Email address', required: true }}
+            labelProps={{ children: 'Email Address', required: true }}
             name='email'
             inputProps={{
               className: 'lowercase',
@@ -98,7 +98,7 @@ export default function SignUp() {
 
           {/* Password input field */}
           <GoInputField
-            labelProps={{ children: 'Choose a password', required: true }}
+            labelProps={{ children: 'Choose a Password', required: true }}
             name='password'
             inputProps={{
               type: 'password',

@@ -34,14 +34,8 @@ export default [
     route('signup', 'routes/auth/signup.tsx'),
   ]),
 
-  layout('routes/layouts/onboarding/onboarding-layout.tsx', [
-    ...prefix('go/onboarding', [
-      // /onboarding/:userId/basic-information
-      route(':userId/basic-information', 'routes/onboarding/basic-information.tsx'),
-      // /onboarding/:userId/contact-information
-      route(':userId/contact-information', 'routes/onboarding/contact-information.tsx'),
-    ]),
-  ]),
+  // onboarding - get user username
+  route('go/onboarding/:userId', 'routes/onboarding/onboarding-index.tsx'),
 
   layout('routes/layouts/profile/course-overview-layout.tsx', [
     route(':username/settings', 'routes/profile/settings/settings-index.tsx', [
