@@ -6,18 +6,10 @@ export default [
     index('routes/public/home.tsx'),
     // /explore
     route('explore', 'routes/public/explore.tsx'),
-    layout('routes/layouts/profile/profile-layout.tsx', [
-      // /:username
-      route(':username', 'routes/profile/published-courses/published-courses-index.tsx'),
-      // /:username/pathways
-      route(':username/pathways', 'routes/profile/pathways/index.tsx'),
-      // /:username/course-builder
-      route(':username/course-builder', 'routes/profile/course-builder/course-builder-index.tsx', [
-        layout('routes/layouts/profile/course-crud-layout.tsx', [
-          // /:username/course-builder/new
-          route('new', 'routes/profile/course-builder/new.tsx'),
-        ]),
-      ]),
+    layout('routes/layouts/myProfile/my-profile-layout.tsx', [
+      // my profile
+      route(':username', 'routes/myProfile/active-index.tsx'),
+      route(':username/history', 'routes/myProfile/history-index.tsx'),
     ]),
 
     route('c/:publishedCourseId', 'routes/public/published-course-id-index.tsx', [

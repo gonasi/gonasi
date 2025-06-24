@@ -2,6 +2,8 @@ create type "public"."app_permission" as enum ('course_categories.insert', 'cour
 
 create type "public"."app_role" as enum ('go_su', 'go_admin', 'go_staff', 'user');
 
+create type "public"."profile_mode" as enum ('personal', 'organization');
+
 create table "public"."course_categories" (
     "id" uuid not null default uuid_generate_v4(),
     "name" text not null,
@@ -30,6 +32,25 @@ create table "public"."course_sub_categories" (
 
 alter table "public"."course_sub_categories" enable row level security;
 
+create table "public"."organizations" (
+    "id" uuid not null default uuid_generate_v4(),
+    "name" text not null,
+    "slug" text,
+    "avatar_url" text,
+    "blur_hash" text,
+    "is_public" boolean not null default false,
+    "phone_number" text,
+    "phone_number_verified" boolean not null default false,
+    "email_verified" boolean not null default false,
+    "created_at" timestamp with time zone not null default timezone('utc'::text, now()),
+    "updated_at" timestamp with time zone not null default timezone('utc'::text, now()),
+    "deleted_at" timestamp with time zone,
+    "created_by" uuid,
+    "updated_by" uuid,
+    "deleted_by" uuid
+);
+
+
 create table "public"."profiles" (
     "id" uuid not null,
     "username" text,
@@ -45,7 +66,9 @@ create table "public"."profiles" (
     "account_verified" boolean not null default false,
     "notifications_enabled" boolean not null default true,
     "created_at" timestamp with time zone not null default timezone('utc'::text, now()),
-    "updated_at" timestamp with time zone not null default timezone('utc'::text, now())
+    "updated_at" timestamp with time zone not null default timezone('utc'::text, now()),
+    "mode" profile_mode not null default 'personal'::profile_mode,
+    "active_organization_id" uuid
 );
 
 
@@ -83,6 +106,20 @@ CREATE INDEX idx_course_sub_categories_created_by ON public.course_sub_categorie
 
 CREATE INDEX idx_course_sub_categories_updated_by ON public.course_sub_categories USING btree (updated_by);
 
+CREATE INDEX idx_organizations_created_at ON public.organizations USING btree (created_at);
+
+CREATE INDEX idx_organizations_created_by ON public.organizations USING btree (created_by);
+
+CREATE INDEX idx_organizations_deleted_at ON public.organizations USING btree (deleted_at);
+
+CREATE INDEX idx_organizations_deleted_by ON public.organizations USING btree (deleted_by);
+
+CREATE UNIQUE INDEX idx_organizations_slug_unique ON public.organizations USING btree (slug) WHERE (deleted_at IS NULL);
+
+CREATE INDEX idx_organizations_updated_by ON public.organizations USING btree (updated_by);
+
+CREATE INDEX idx_profiles_active_organization_id ON public.profiles USING btree (active_organization_id);
+
 CREATE INDEX idx_profiles_country_code ON public.profiles USING btree (country_code);
 
 CREATE INDEX idx_profiles_created_at ON public.profiles USING btree (created_at);
@@ -94,6 +131,8 @@ CREATE INDEX idx_profiles_username ON public.profiles USING btree (username) WHE
 CREATE INDEX idx_profiles_verified_users ON public.profiles USING btree (id) WHERE (account_verified = true);
 
 CREATE INDEX idx_user_roles_user_id ON public.user_roles USING btree (user_id);
+
+CREATE UNIQUE INDEX organizations_pkey ON public.organizations USING btree (id);
 
 CREATE UNIQUE INDEX profiles_email_key ON public.profiles USING btree (email);
 
@@ -112,6 +151,8 @@ CREATE UNIQUE INDEX user_roles_user_id_role_key ON public.user_roles USING btree
 alter table "public"."course_categories" add constraint "course_categories_pkey" PRIMARY KEY using index "course_categories_pkey";
 
 alter table "public"."course_sub_categories" add constraint "course_sub_categories_pkey" PRIMARY KEY using index "course_sub_categories_pkey";
+
+alter table "public"."organizations" add constraint "organizations_pkey" PRIMARY KEY using index "organizations_pkey";
 
 alter table "public"."profiles" add constraint "profiles_pkey" PRIMARY KEY using index "profiles_pkey";
 
@@ -139,9 +180,29 @@ alter table "public"."course_sub_categories" add constraint "course_sub_categori
 
 alter table "public"."course_sub_categories" validate constraint "course_sub_categories_updated_by_fkey";
 
+alter table "public"."organizations" add constraint "organizations_created_by_fkey" FOREIGN KEY (created_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
+
+alter table "public"."organizations" validate constraint "organizations_created_by_fkey";
+
+alter table "public"."organizations" add constraint "organizations_deleted_by_fkey" FOREIGN KEY (deleted_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
+
+alter table "public"."organizations" validate constraint "organizations_deleted_by_fkey";
+
+alter table "public"."organizations" add constraint "organizations_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
+
+alter table "public"."organizations" validate constraint "organizations_updated_by_fkey";
+
 alter table "public"."profiles" add constraint "email_valid" CHECK ((email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'::text)) not valid;
 
 alter table "public"."profiles" validate constraint "email_valid";
+
+alter table "public"."profiles" add constraint "mode_organization_consistency" CHECK ((((mode = 'personal'::profile_mode) AND (active_organization_id IS NULL)) OR ((mode = 'organization'::profile_mode) AND (active_organization_id IS NOT NULL)))) not valid;
+
+alter table "public"."profiles" validate constraint "mode_organization_consistency";
+
+alter table "public"."profiles" add constraint "profiles_active_organization_id_fkey" FOREIGN KEY (active_organization_id) REFERENCES organizations(id) ON DELETE SET NULL not valid;
+
+alter table "public"."profiles" validate constraint "profiles_active_organization_id_fkey";
 
 alter table "public"."profiles" add constraint "profiles_country_code_check" CHECK ((country_code ~* '^[A-Z]{2}$'::text)) not valid;
 
@@ -284,6 +345,40 @@ end;
 $function$
 ;
 
+CREATE OR REPLACE FUNCTION public.normalize_slug(input text)
+ RETURNS text
+ LANGUAGE plpgsql
+ SET search_path TO ''
+AS $function$
+begin
+  return lower(
+    regexp_replace(                               -- Step 3: remove unwanted characters
+      regexp_replace(trim(input), '\s+', '-', 'g'), -- Step 1 & 2: trim + replace spaces
+      '[^a-zA-Z0-9\-]', '', 'g'                   -- Step 3 continued: keep only a-z, 0-9, and -
+    )
+  );
+end;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.set_organization_slug()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO ''
+AS $function$
+begin
+  -- Default to name if slug is not provided
+  if NEW.slug is null or NEW.slug = '' then
+    NEW.slug := NEW.name;
+  end if;
+
+  -- Normalize it using our slug utility
+  NEW.slug := normalize_slug(NEW.slug);
+  return NEW;
+end;
+$function$
+;
+
 CREATE OR REPLACE FUNCTION public.update_updated_at_column()
  RETURNS trigger
  LANGUAGE plpgsql
@@ -379,6 +474,48 @@ grant trigger on table "public"."course_sub_categories" to "service_role";
 grant truncate on table "public"."course_sub_categories" to "service_role";
 
 grant update on table "public"."course_sub_categories" to "service_role";
+
+grant delete on table "public"."organizations" to "anon";
+
+grant insert on table "public"."organizations" to "anon";
+
+grant references on table "public"."organizations" to "anon";
+
+grant select on table "public"."organizations" to "anon";
+
+grant trigger on table "public"."organizations" to "anon";
+
+grant truncate on table "public"."organizations" to "anon";
+
+grant update on table "public"."organizations" to "anon";
+
+grant delete on table "public"."organizations" to "authenticated";
+
+grant insert on table "public"."organizations" to "authenticated";
+
+grant references on table "public"."organizations" to "authenticated";
+
+grant select on table "public"."organizations" to "authenticated";
+
+grant trigger on table "public"."organizations" to "authenticated";
+
+grant truncate on table "public"."organizations" to "authenticated";
+
+grant update on table "public"."organizations" to "authenticated";
+
+grant delete on table "public"."organizations" to "service_role";
+
+grant insert on table "public"."organizations" to "service_role";
+
+grant references on table "public"."organizations" to "service_role";
+
+grant select on table "public"."organizations" to "service_role";
+
+grant trigger on table "public"."organizations" to "service_role";
+
+grant truncate on table "public"."organizations" to "service_role";
+
+grant update on table "public"."organizations" to "service_role";
 
 grant delete on table "public"."profiles" to "anon";
 
@@ -641,6 +778,8 @@ using (true);
 CREATE TRIGGER trg_course_categories_set_updated_at BEFORE UPDATE ON public.course_categories FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER trg_course_sub_categories_set_updated_at BEFORE UPDATE ON public.course_sub_categories FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER trigger_set_organization_slug BEFORE INSERT OR UPDATE ON public.organizations FOR EACH ROW EXECUTE FUNCTION set_organization_slug();
 
 CREATE TRIGGER set_updated_at BEFORE UPDATE ON public.profiles FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 

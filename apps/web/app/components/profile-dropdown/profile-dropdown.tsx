@@ -35,9 +35,15 @@ export function ProfileDropdown({
 
   const isActive = location.pathname === `/${username}`;
 
+  const isOrgMode = user.mode === 'organization';
+
   const menuItems = [
-    { to: `/${username}`, label: 'Profile', icon: LayoutDashboard },
-    { to: '/profile', label: 'Change account', icon: ArrowRightLeft },
+    { to: `/${username}`, label: 'My Profile', icon: LayoutDashboard },
+    {
+      label: isOrgMode ? 'Switch to Personal' : 'Switch to Organization',
+      to: isOrgMode ? `/${username}` : `/orgs`,
+      icon: ArrowRightLeft,
+    },
   ];
 
   return (

@@ -58,10 +58,14 @@ export async function action({ request, params }: Route.ActionArgs) {
 
   // Check for duplicate username
   const usernameExists = await checkUserNameExists(supabase, data.username);
+
+  console.log('username exists: ', usernameExists);
   if (usernameExists) {
     return {
       errors: {
-        username: { message: 'Username already exists' },
+        username: {
+          message: `<span class="go-title">Username</span> already exists. Please choose another. <lucide name="ShieldAlert" size="12" />`,
+        },
       },
       defaultValues,
     };
@@ -103,9 +107,11 @@ export default function PersonalInformation() {
       return;
     }
 
-    reset({
-      fullName: activeUserProfile.full_name ?? '',
-    });
+    if (!methods.formState.isDirty) {
+      reset({
+        fullName: activeUserProfile.full_name ?? '',
+      });
+    }
   }, [
     activeUserProfile,
     isActiveUserProfileLoading,
@@ -113,6 +119,7 @@ export default function PersonalInformation() {
     location.search,
     navigate,
     reset,
+    methods.formState.isDirty,
   ]);
 
   if (isActiveUserProfileLoading || !activeUserProfile || activeUserProfile.username) {

@@ -137,9 +137,86 @@ export type Database = {
           },
         ]
       }
+      organizations: {
+        Row: {
+          avatar_url: string | null
+          blur_hash: string | null
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          deleted_by: string | null
+          email_verified: boolean
+          id: string
+          is_public: boolean
+          name: string
+          phone_number: string | null
+          phone_number_verified: boolean
+          slug: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          blur_hash?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
+          email_verified?: boolean
+          id?: string
+          is_public?: boolean
+          name: string
+          phone_number?: string | null
+          phone_number_verified?: boolean
+          slug?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          blur_hash?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
+          email_verified?: boolean
+          id?: string
+          is_public?: boolean
+          name?: string
+          phone_number?: string | null
+          phone_number_verified?: boolean
+          slug?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organizations_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organizations_deleted_by_fkey"
+            columns: ["deleted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organizations_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           account_verified: boolean
+          active_organization_id: string | null
           avatar_url: string | null
           blur_hash: string | null
           country_code: string | null
@@ -148,6 +225,7 @@ export type Database = {
           email_verified: boolean
           full_name: string | null
           id: string
+          mode: Database["public"]["Enums"]["profile_mode"]
           notifications_enabled: boolean
           phone_number: string | null
           phone_number_verified: boolean
@@ -157,6 +235,7 @@ export type Database = {
         }
         Insert: {
           account_verified?: boolean
+          active_organization_id?: string | null
           avatar_url?: string | null
           blur_hash?: string | null
           country_code?: string | null
@@ -165,6 +244,7 @@ export type Database = {
           email_verified?: boolean
           full_name?: string | null
           id: string
+          mode?: Database["public"]["Enums"]["profile_mode"]
           notifications_enabled?: boolean
           phone_number?: string | null
           phone_number_verified?: boolean
@@ -174,6 +254,7 @@ export type Database = {
         }
         Update: {
           account_verified?: boolean
+          active_organization_id?: string | null
           avatar_url?: string | null
           blur_hash?: string | null
           country_code?: string | null
@@ -182,6 +263,7 @@ export type Database = {
           email_verified?: boolean
           full_name?: string | null
           id?: string
+          mode?: Database["public"]["Enums"]["profile_mode"]
           notifications_enabled?: boolean
           phone_number?: string | null
           phone_number_verified?: boolean
@@ -189,7 +271,15 @@ export type Database = {
           updated_at?: string
           username?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_active_organization_id_fkey"
+            columns: ["active_organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       role_permissions: {
         Row: {
@@ -250,6 +340,10 @@ export type Database = {
         Args: { event: Json }
         Returns: Json
       }
+      normalize_slug: {
+        Args: { input: string }
+        Returns: string
+      }
     }
     Enums: {
       app_permission:
@@ -266,6 +360,7 @@ export type Database = {
         | "lesson_types.update"
         | "lesson_types.delete"
       app_role: "go_su" | "go_admin" | "go_staff" | "user"
+      profile_mode: "personal" | "organization"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -399,6 +494,7 @@ export const Constants = {
         "lesson_types.delete",
       ],
       app_role: ["go_su", "go_admin", "go_staff", "user"],
+      profile_mode: ["personal", "organization"],
     },
   },
 } as const

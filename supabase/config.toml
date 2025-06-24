@@ -74,6 +74,12 @@ schema_paths = [
   # # course categories, sub categories rls etc
   './schemas/course_categories_and_sub_categories.sql',
 
+  # organizations
+  './schemas/organizations_schema_and_indexes.sql',
+
+  # add modes profile migration
+  './schemas/profiles_add_modes_migration.sql',
+
   # # course pathways 
   # './schemas/pathways.sql',
 
