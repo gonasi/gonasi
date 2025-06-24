@@ -1,9 +1,20 @@
--- ====================================================================================
+-- =========================================================================================
 -- Table: published_course_enrollment_activities
--- Description: Logs each access-granting activity (e.g. enrollment, renewal) 
--- tied to a published course enrollment, including pricing snapshot and access period.
--- ====================================================================================
-
+--
+-- PURPOSE:
+-- This table logs **immutable activity events** that grant or extend access to a course
+-- for a user. Each record represents a moment when:
+--   - A user enrolled
+--   - A renewal occurred
+--   - Access was manually granted (e.g. by an admin)
+--
+-- These logs are important for:
+--   - Reconstructing access history (e.g., why a user had access on a specific date)
+--   - Preserving pricing and tier info even if it later changes
+--   - Auditing actions by users or administrators
+--
+-- This table complements `published_course_enrollments` by offering a complete access timeline.
+-- =========================================================================================
 create table public.published_course_enrollment_activities (
   id uuid primary key default uuid_generate_v4(),
 

@@ -1,12 +1,10 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Form, useFetcher } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Landmark, LoaderCircle } from 'lucide-react';
-import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
-import { dataWithError, redirectWithSuccess } from 'remix-toast';
+import { Check, ChevronLeft, ChevronRight, LoaderCircle } from 'lucide-react';
+import { RemixFormProvider, useRemixForm } from 'remix-hook-form';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
 
-import { createNewCourseTitle } from '@gonasi/database/courses';
 import {
   PAYOUT_TYPE,
   SUPPORTED_CURRENCIES,
@@ -24,11 +22,28 @@ import {
   GoSelectInputField,
 } from '~/components/ui/forms/elements';
 import { Modal } from '~/components/ui/modal';
-import { createClient } from '~/lib/supabase/supabase.server';
-import { checkHoneypot } from '~/utils/honeypot.server';
+import { Stepper } from '~/components/ui/stepper';
 import { useIsPending } from '~/utils/misc';
 
-// SEO metadata
+// Constants
+const resolver = zodResolver(UpsertPayoutDetailsSchema);
+
+const STEPS = [
+  {
+    id: 'payout-preferences',
+    title: 'Payout Preferences',
+    path: 'payout-preferences',
+  },
+  {
+    id: 'bank-details',
+    title: 'Bank Details',
+    path: 'bank-details',
+  },
+] as const;
+
+type StepId = (typeof STEPS)[number]['id'];
+
+// Meta function
 export function meta() {
   return [
     { title: 'Set Up How You Get Paid | Gonasi' },
@@ -40,84 +55,207 @@ export function meta() {
   ];
 }
 
-const resolver = zodResolver(UpsertPayoutDetailsSchema);
-
-// 🟡 Server Action
-export async function action({ request, params }: Route.ActionArgs) {
-  const formData = await request.formData();
-  await checkHoneypot(formData);
-
-  const { supabase } = createClient(request);
-
-  const {
-    errors,
-    data,
-    receivedValues: defaultValues,
-  } = await getValidatedFormData<UpsertPayoutDetailsSchemaTypes>(formData, resolver);
-
-  if (errors) return { errors, defaultValues };
-
-  const result = await createNewCourseTitle(supabase, data);
-
-  if (!result.success || !result.data) {
-    return dataWithError(null, result.message);
-  }
-
-  return redirectWithSuccess(
-    `/${params.username}/course-builder/${result.data.id}/overview`,
-    result.message,
-  );
-}
-
-// 🟢 Main Component
+// Main component
 export default function AddPayoutDetails({ params }: Route.ComponentProps) {
+  // Hooks
   const loaderBanksFetcher = useFetcher<typeof loader>();
-  const isSubmitting = useIsPending();
+  const isPending = useIsPending();
+  const [currentStep, setCurrentStep] = useState<StepId>('payout-preferences');
 
   const methods = useRemixForm<UpsertPayoutDetailsSchemaTypes>({
     mode: 'all',
     resolver,
   });
 
-  const watchCurrency = methods.watch('currency');
-  const watchType = methods.watch('type');
+  const { watch, trigger, setValue, clearErrors, resetField } = methods;
+  const watchedValues = watch();
 
-  // Prevent infinite renders when fetcher is unstable
-  const hasLoadedRef = useRef<string | null>(null);
-
-  useEffect(() => {
-    if (!watchCurrency || !watchType) return;
-
-    const key = `${params.username}-${watchType}-${watchCurrency}`;
-
-    if (hasLoadedRef.current === key) return;
-
-    loaderBanksFetcher.load(
-      `/${params.username}/settings/payout-settings/loader-banks/${watchType}/${watchCurrency}`,
-    );
-
-    hasLoadedRef.current = key;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [params.username, watchCurrency, watchType]);
-
-  useEffect(() => {
-    if (watchCurrency === 'USD' && methods.getValues('type') !== 'kepss') {
-      methods.setValue('type', 'kepss');
-      methods.trigger('type');
-    }
-  }, [watchCurrency, methods]);
-
-  const payoutTypeDescription =
-    watchCurrency === 'USD'
-      ? 'For USD, we currently support bank transfers only.'
-      : 'Select how you’d like to receive your payouts — via bank transfer or mobile money.';
+  // Computed values
+  const currentStepIndex = STEPS.findIndex((step) => step.id === currentStep);
+  const isFirstStep = currentStepIndex === 0;
+  const isLastStep = currentStepIndex === STEPS.length - 1;
+  const isDisabled = isPending || methods.formState.isSubmitting;
 
   const bankOptions = (loaderBanksFetcher.data ?? []).map((bank) => ({
     label: bank.label,
     value: String(bank.value),
   }));
 
-  const isDisabled = false;
+  const payoutTypeDescription =
+    watchedValues.currency === 'USD'
+      ? 'For USD, we currently support bank transfers only.'
+      : `Select how you'd like to receive your payouts — via bank transfer or mobile money.`;
+
+  const loadRef = useRef(loaderBanksFetcher.load);
+  loadRef.current = loaderBanksFetcher.load;
+
+  useEffect(() => {
+    if (currentStep === 'bank-details' && watchedValues.type && watchedValues.currency) {
+      resetField('bankCode');
+
+      const bankLoaderUrl = `/${params.username}/settings/payout-settings/loader-banks/${watchedValues.type}/${watchedValues.currency}`;
+      loadRef.current(bankLoaderUrl);
+    }
+  }, [currentStep, params.username, watchedValues.type, watchedValues.currency, resetField]);
+
+  useEffect(() => {
+    if (watchedValues.currency === 'USD') {
+      setValue('type', 'kepss');
+    }
+  }, [setValue, watchedValues.currency]);
+
+  // Step validation
+  const validateCurrentStep = async (): Promise<boolean> => {
+    switch (currentStep) {
+      case 'payout-preferences':
+        clearErrors(['bankCode', 'accountNumber']);
+        return await trigger(['currency', 'type']);
+      case 'bank-details':
+        return await trigger(['bankCode', 'accountNumber']);
+      default:
+        return true;
+    }
+  };
+
+  // Navigation handlers
+  const goToNextStep = async () => {
+    const isValid = await validateCurrentStep();
+    const nextStep = STEPS[currentStepIndex + 1];
+
+    if (isValid && !isLastStep && nextStep) {
+      setCurrentStep(nextStep.id);
+    }
+  };
+
+  const goToPreviousStep = () => {
+    if (!isFirstStep) {
+      const prevStep = STEPS[currentStepIndex - 1];
+      if (prevStep) {
+        setCurrentStep(prevStep.id);
+      }
+    }
+  };
+
+  // Step content renderers
+  const renderPayoutPreferencesStep = () => (
+    <div>
+      <GoSelectInputField
+        name='currency'
+        labelProps={{ children: 'Preferred Currency', required: true }}
+        selectProps={{
+          options: SUPPORTED_CURRENCIES,
+          placeholder: 'Choose a currency',
+          imageContainerClassName: 'rounded-none',
+          imageClassName: 'h-6 w-6 object-contain rounded-none',
+        }}
+        disabled={isDisabled}
+        description='Select the currency you wish to receive your payouts in. Make sure your selected payout method supports this currency.'
+      />
+      <GoSelectInputField
+        name='type'
+        labelProps={{ children: 'Payout Method', required: true }}
+        selectProps={{
+          options: PAYOUT_TYPE,
+          placeholder: 'Choose how to get paid',
+        }}
+        disabled={watchedValues.currency === 'USD' || isDisabled}
+        description={payoutTypeDescription}
+      />
+    </div>
+  );
+
+  const renderBankDetailsStep = () => {
+    const isBankDataLoading = loaderBanksFetcher.state !== 'idle';
+    const isMobileMoney = watchedValues.type === 'mobile_money';
+
+    return (
+      <div>
+        <GoSearchableDropDown
+          name='bankCode'
+          labelProps={{
+            children: isMobileMoney ? 'Mobile Provider' : 'Bank Name',
+            required: true,
+            endAdornment: isBankDataLoading ? (
+              <LoaderCircle size={14} className='animate-spin' />
+            ) : null,
+          }}
+          disabled={isDisabled || isBankDataLoading}
+          searchDropdownProps={{
+            options: bankOptions,
+            selectPlaceholder: isBankDataLoading
+              ? 'Loading...'
+              : isMobileMoney
+                ? 'Select a mobile provider'
+                : 'Select a bank',
+          }}
+          description="We'll show available banks or mobile providers based on your selected payout method and currency."
+        />
+        <GoInputField
+          name='accountNumber'
+          labelProps={{
+            children: isMobileMoney ? 'Mobile Number' : 'Account Number',
+            required: true,
+          }}
+          prefix={isMobileMoney ? '+254' : undefined}
+          description='Enter your bank account or mobile number where payouts will be sent.'
+        />
+      </div>
+    );
+  };
+
+  const renderStepContent = () => {
+    switch (currentStep) {
+      case 'payout-preferences':
+        return renderPayoutPreferencesStep();
+
+      case 'bank-details':
+        return renderBankDetailsStep();
+
+      default:
+        return null;
+    }
+  };
+
+  // Navigation buttons component
+  const renderNavigationButtons = () => (
+    <>
+      {/* Submit button area */}
+      <div className='flex w-full justify-end'>
+        {isLastStep ? (
+          <Button
+            type='submit'
+            className='flex items-center'
+            rightIcon={<Check />}
+            disabled={isDisabled}
+            isLoading={isDisabled}
+          >
+            Create New
+          </Button>
+        ) : (
+          <div className='h-12' />
+        )}
+      </div>
+
+      {/* Previous/Next buttons */}
+      <div className='-mt-12 flex justify-between'>
+        <Button
+          type='button'
+          variant='ghost'
+          onClick={goToPreviousStep}
+          disabled={isFirstStep}
+          leftIcon={<ChevronLeft />}
+        >
+          Previous
+        </Button>
+
+        {!isLastStep && (
+          <Button type='button' variant='ghost' onClick={goToNextStep} rightIcon={<ChevronRight />}>
+            Next
+          </Button>
+        )}
+      </div>
+    </>
+  );
 
   return (
     <Modal open>
@@ -127,79 +265,25 @@ export default function AddPayoutDetails({ params }: Route.ComponentProps) {
           closeRoute={`/${params.username}/settings/payout-settings`}
         />
         <Modal.Body>
-          <RemixFormProvider {...methods}>
-            <Form method='POST' onSubmit={methods.handleSubmit}>
-              <HoneypotInputs />
+          <div className='py-4'>
+            {/* Step indicator */}
+            <div className='pb-6'>
+              <Stepper steps={[...STEPS]} currentStepIndex={currentStepIndex} />
+            </div>
 
-              <GoSelectInputField
-                name='currency'
-                labelProps={{ children: 'Preferred Currency', required: true }}
-                selectProps={{
-                  options: SUPPORTED_CURRENCIES,
-                  placeholder: 'Choose a currency',
-                  imageContainerClassName: 'rounded-none',
-                  imageClassName: 'h-6 w-6 object-contain rounded-none',
-                }}
-                disabled={isDisabled}
-                description='Select the currency you wish to receive your payouts in. Make sure your selected payout method supports this currency.'
-              />
+            {/* Form content */}
+            <RemixFormProvider {...methods}>
+              <Form method='POST' onSubmit={methods.handleSubmit}>
+                <HoneypotInputs />
 
-              <GoSelectInputField
-                name='type'
-                labelProps={{ children: 'Payout Method', required: true }}
-                selectProps={{
-                  options: PAYOUT_TYPE,
-                  placeholder: 'Choose how to get paid',
-                }}
-                disabled={watchCurrency === 'USD' || isDisabled}
-                description={payoutTypeDescription}
-              />
+                {/* Step content */}
+                <div className='mb-6 rounded-lg'>{renderStepContent()}</div>
 
-              <loaderBanksFetcher.Form
-                method='get'
-                action={`/${params.username}/settings/payout-settings/loader-banks`}
-              >
-                <GoSearchableDropDown
-                  name='bankCode'
-                  labelProps={{
-                    children: watchType === 'mobile_money' ? 'Mobile Provider' : 'Bank Name',
-                    required: true,
-                    endAdornment:
-                      loaderBanksFetcher.state === 'idle' ? null : (
-                        <LoaderCircle size={14} className='animate-spin' />
-                      ),
-                  }}
-                  disabled={isDisabled || loaderBanksFetcher.state !== 'idle'}
-                  searchDropdownProps={{
-                    options: bankOptions,
-                    selectPlaceholder:
-                      loaderBanksFetcher.state !== 'idle'
-                        ? 'Loading...'
-                        : watchType === 'mobile_money'
-                          ? 'Select a mobile provider'
-                          : 'Select a bank',
-                  }}
-                  description='We’ll show available banks or mobile providers based on your selected payout method and currency.'
-                />
-              </loaderBanksFetcher.Form>
-
-              <GoInputField
-                name='accountNumber'
-                labelProps={{ children: 'Account or Mobile Number', required: true }}
-                prefix={watchType === 'mobile_money' ? '+254' : undefined}
-                description='Enter your bank account or mobile number where payouts will be sent.'
-              />
-
-              <Button
-                type='submit'
-                disabled={isDisabled}
-                isLoading={isDisabled}
-                leftIcon={<Landmark />}
-              >
-                Save Payout Details
-              </Button>
-            </Form>
-          </RemixFormProvider>
+                {/* Navigation */}
+                {renderNavigationButtons()}
+              </Form>
+            </RemixFormProvider>
+          </div>
         </Modal.Body>
       </Modal.Content>
     </Modal>

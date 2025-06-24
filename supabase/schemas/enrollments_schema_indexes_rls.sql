@@ -1,3 +1,20 @@
+-- =========================================================================================
+-- Table: published_course_enrollments
+-- 
+-- PURPOSE:
+-- This table stores the current **enrollment state** between a user and a published course.
+-- It serves as the top-level representation of access:
+--   - When did the user first enroll?
+--   - When does their access expire?
+--   - Is their enrollment still active?
+--
+-- Each user can only have ONE active enrollment per published course at a time.
+-- If the user renews or receives additional access, the same row is updated (e.g., new `expires_at`),
+-- while the associated activities are logged in the `published_course_enrollment_activities` table.
+--
+-- Soft-deletion is implemented via `is_active = false`, allowing you to preserve history
+-- while removing access without dropping records.
+-- =========================================================================================
 create table public.published_course_enrollments (
   id uuid primary key default uuid_generate_v4(),
 

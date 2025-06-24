@@ -200,13 +200,15 @@ export function GoSearchableDropDown({
                         >
                           <div className='flex w-full items-center justify-between'>
                             <div className='flex flex-col space-y-1'>
-                              <div className='flex items-center space-x-2'>
+                              <div className={cn('flex items-center space-x-2')}>
                                 {option.imageUrl && (
-                                  <img
-                                    src={option.imageUrl}
-                                    alt={option.label}
-                                    className={cn('mr-2 h-5 w-5 rounded-full', imageClassName)}
-                                  />
+                                  <div className={cn('mr-2', imageContainerClassName)}>
+                                    <img
+                                      src={option.imageUrl}
+                                      alt={option.label}
+                                      className={cn('h-5 w-5 rounded-full', imageClassName)}
+                                    />
+                                  </div>
                                 )}
                                 {option.label}
                               </div>

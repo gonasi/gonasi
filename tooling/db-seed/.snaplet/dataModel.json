@@ -5576,6 +5576,20 @@
           "maxLength": null
         },
         {
+          "id": "public.profiles.is_payout_settings_complete",
+          "name": "is_payout_settings_complete",
+          "columnName": "is_payout_settings_complete",
+          "type": "bool",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
           "id": "public.profiles.created_at",
           "name": "created_at",
           "columnName": "created_at",

@@ -1,4 +1,5 @@
 import { Controller } from 'react-hook-form';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useRemixFormContext } from 'remix-hook-form';
 
 import { Input, type InputProps } from '../../input';
@@ -41,11 +42,20 @@ export function GoInputField({
         <div className={className}>
           <Label htmlFor={id} error={hasError} {...labelProps} />
           <div className='flex w-full items-center'>
-            {prefix && (
-              <span className='bg-muted font-secondary mr-2 flex h-12 flex-shrink-0 items-center justify-center rounded-md px-2'>
-                {prefix}
-              </span>
-            )}
+            <AnimatePresence mode='wait' initial={false}>
+              {prefix && (
+                <motion.span
+                  key={prefix}
+                  initial={{ opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -8 }}
+                  transition={{ duration: 0.2, ease: 'easeOut' }}
+                  className='bg-muted font-secondary mr-2 flex h-12 flex-shrink-0 items-center justify-center rounded-md px-2'
+                >
+                  {prefix}
+                </motion.span>
+              )}
+            </AnimatePresence>
             <Input
               id={id}
               wrapperClass='flex-grow min-w-0'
