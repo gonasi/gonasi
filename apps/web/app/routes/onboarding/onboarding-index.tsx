@@ -3,9 +3,10 @@ import { Form, useLocation, useNavigate } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Footprints, LoaderCircle, Rocket } from 'lucide-react';
 import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
+import { dataWithError, redirectWithSuccess } from 'remix-toast';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
 
-import { checkUserNameExists } from '@gonasi/database/onboarding';
+import { checkUserNameExists, completeUserOnboarding } from '@gonasi/database/onboarding';
 import type { OnboardingSchemaTypes } from '@gonasi/schemas/onboarding';
 import { OnboardingSchema } from '@gonasi/schemas/onboarding';
 
@@ -13,7 +14,7 @@ import type { Route } from './+types/onboarding-index';
 
 import { AppLogo } from '~/components/app-logo';
 import { Spinner } from '~/components/loaders';
-import { Button } from '~/components/ui/button';
+import { Button, NavLinkButton } from '~/components/ui/button';
 import { GoInputField } from '~/components/ui/forms/elements';
 import { createClient } from '~/lib/supabase/supabase.server';
 import { useStore } from '~/store';
@@ -43,7 +44,6 @@ export async function action({ request, params }: Route.ActionArgs) {
   await checkHoneypot(formData);
 
   const { supabase } = createClient(request);
-  const session = await getFormStepperSessionData(request);
 
   // Validate the submitted form data
   const {
@@ -67,7 +67,9 @@ export async function action({ request, params }: Route.ActionArgs) {
     };
   }
 
-  return true;
+  const { success, message } = await completeUserOnboarding(supabase, data);
+
+  return success ? redirectWithSuccess(`/`, message) : dataWithError(null, message);
 }
 
 // Client-side onboarding form
@@ -126,12 +128,19 @@ export default function PersonalInformation() {
       <div className='flex w-full items-center justify-center'>
         <AppLogo />
       </div>
-      <div className='font-secondary text-muted-foreground inline-flex items-center'>
-        <span>
-          <Footprints size={12} />
-        </span>
-        <span>One more step</span>
-        <span>...</span>
+      <div className='flex w-full items-center justify-between'>
+        <div className='font-secondary text-muted-foreground inline-flex w-full items-center'>
+          <span>
+            <Footprints size={12} />
+          </span>
+          <span>One more step</span>
+          <span>...</span>
+        </div>
+        <div>
+          <NavLinkButton to='/signout' size='sm' variant='secondary' className='rounded-full'>
+            Sign Out
+          </NavLinkButton>
+        </div>
       </div>
       <RemixFormProvider {...methods}>
         <Form method='POST' onSubmit={methods.handleSubmit}>
