@@ -1,9 +1,9 @@
 import { useEffect } from 'react';
-import { Form, useLocation, useNavigate } from 'react-router';
+import { Form, redirect, useLocation, useNavigate } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Footprints, LoaderCircle, Rocket } from 'lucide-react';
 import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
-import { dataWithError, redirectWithSuccess } from 'remix-toast';
+import { dataWithError } from 'remix-toast';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
 
 import { checkUserNameExists, completeUserOnboarding } from '@gonasi/database/onboarding';
@@ -37,7 +37,7 @@ export function meta() {
 const resolver = zodResolver(OnboardingSchema);
 
 // Server-side action for processing form submissions
-export async function action({ request, params }: Route.ActionArgs) {
+export async function action({ request }: Route.ActionArgs) {
   const formData = await request.formData();
 
   // Spam protection
@@ -59,7 +59,6 @@ export async function action({ request, params }: Route.ActionArgs) {
   // Check for duplicate username
   const usernameExists = await checkUserNameExists(supabase, data.username);
 
-  console.log('username exists: ', usernameExists);
   if (usernameExists) {
     return {
       errors: {
@@ -73,7 +72,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 
   const { success, message } = await completeUserOnboarding(supabase, data);
 
-  return success ? redirectWithSuccess(`/`, message) : dataWithError(null, message);
+  return success ? redirect(`/${data.username}`) : dataWithError(null, message);
 }
 
 // Client-side onboarding form
