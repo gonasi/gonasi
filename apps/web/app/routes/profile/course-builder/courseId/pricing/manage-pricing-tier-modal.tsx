@@ -542,6 +542,7 @@ export default function ManagePricingTierModal({ params, loaderData }: Route.Com
               </div>
             </div>
           )}
+          <div className='mb-20' />
         </Modal.Body>
       </Modal.Content>
     </Modal>

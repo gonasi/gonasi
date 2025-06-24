@@ -87,9 +87,11 @@ export default function SettingsIndex({ params }: Route.ComponentProps) {
         {sections.map(({ heading, links }) => (
           <div key={heading}>
             <h2 className='font-secondary hidden py-2 font-semibold md:flex'>{heading}</h2>
-            {links.map(({ name, to, icon }) => (
-              <SideLink key={to} to={to} name={name} icon={icon} end />
-            ))}
+            <div className='flex flex-col space-y-4 py-4 md:space-y-1 md:py-1'>
+              {links.map(({ name, to, icon }) => (
+                <SideLink key={to} to={to} name={name} icon={icon} end />
+              ))}
+            </div>
           </div>
         ))}
       </aside>

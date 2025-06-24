@@ -95,7 +95,7 @@ export default function EnrollIndex({ params }: Route.ComponentProps) {
       <Modal open>
         <Modal.Content size='md'>
           <Modal.Header title={`Enroll to ${name}`} closeRoute={`/c/${courseId}`} />
-          <Modal.Body className='px-0 md:px-4'>
+          <Modal.Body className='px-4'>
             <PricingOptionCard pricingData={filteredPricingData} hideContinueButton />
             <RemixFormProvider {...methods}>
               <Form method='POST' onSubmit={methods.handleSubmit}>
