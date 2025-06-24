@@ -2,9 +2,11 @@ import { useEffect, useRef, useState } from 'react';
 import { Form, useFetcher } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Check, ChevronLeft, ChevronRight, LoaderCircle } from 'lucide-react';
-import { RemixFormProvider, useRemixForm } from 'remix-hook-form';
+import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
+import { dataWithError, redirectWithSuccess } from 'remix-toast';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
 
+import { upsertPaystackSubaccount } from '@gonasi/database/settings';
 import {
   PAYOUT_TYPE,
   SUPPORTED_CURRENCIES,
@@ -23,6 +25,8 @@ import {
 } from '~/components/ui/forms/elements';
 import { Modal } from '~/components/ui/modal';
 import { Stepper } from '~/components/ui/stepper';
+import { createClient } from '~/lib/supabase/supabase.server';
+import { checkHoneypot } from '~/utils/honeypot.server';
 import { useIsPending } from '~/utils/misc';
 
 // Constants
@@ -53,6 +57,32 @@ export function meta() {
         'Get paid seamlessly. Add your payout details so we can transfer your earnings securely and on time.',
     },
   ];
+}
+
+export async function action({ params, request }: Route.ActionArgs) {
+  const formData = await request.formData();
+  await checkHoneypot(formData);
+
+  const {
+    errors,
+    data,
+    receivedValues: defaultValues,
+  } = await getValidatedFormData<UpsertPayoutDetailsSchemaTypes>(formData, resolver);
+
+  if (errors) {
+    return { errors, defaultValues };
+  }
+
+  const { supabase } = createClient(request);
+
+  const result = await upsertPaystackSubaccount({
+    supabase,
+    data,
+  });
+
+  return result.success
+    ? redirectWithSuccess(`/${params.username}/settings/payout-settings`, result.message)
+    : dataWithError(null, result.message);
 }
 
 // Main component

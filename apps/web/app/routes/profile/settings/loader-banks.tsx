@@ -13,8 +13,6 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     type: params.type ?? 'kepss',
   });
 
-  console.log('data: ', data);
-
   return data;
 }
 
