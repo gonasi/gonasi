@@ -182,14 +182,18 @@ describe('Profile RLS Policies', () => {
       });
 
       it('should prevent anonymous users from creating profiles', async () => {
-        // Ensure no user is signed in
         await TestCleanupManager.signOutAllClients();
+
+        const {
+          data: { session },
+        } = await testSupabase.auth.getSession();
+        expect(session).toBeNull(); // Confirm anonymous
 
         // Try to create a profile as anonymous user
         const { data, error } = await testSupabase
           .from('profiles')
           .insert({
-            id: 'fake-uuid-12345',
+            id: 'b4e3f1d8-7c3b-4b12-9a57-1a5c6a2d2e1f',
             email: 'anonymous@example.com',
             full_name: 'Anonymous User',
             username: 'anonuser123',
