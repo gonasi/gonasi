@@ -1,9 +1,9 @@
 import { useEffect } from 'react';
-import { Form, redirect, useLocation, useNavigate } from 'react-router';
+import { Form, useLocation, useNavigate } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Footprints, LoaderCircle, Rocket } from 'lucide-react';
 import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
-import { dataWithError } from 'remix-toast';
+import { dataWithError, redirectWithSuccess } from 'remix-toast';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
 
 import { checkUserNameExists, completeUserOnboarding } from '@gonasi/database/onboarding';
@@ -72,7 +72,7 @@ export async function action({ request }: Route.ActionArgs) {
 
   const { success, message } = await completeUserOnboarding(supabase, data);
 
-  return success ? redirect(`/${data.username}`) : dataWithError(null, message);
+  return success ? redirectWithSuccess(`/${data.username}`, message) : dataWithError(null, message);
 }
 
 // Client-side onboarding form

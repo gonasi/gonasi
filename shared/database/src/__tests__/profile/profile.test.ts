@@ -4,7 +4,7 @@ import { signInWithEmailAndPassword, signUpWithEmailAndPassword } from '../../au
 import { getUserProfile } from '../../profile';
 import { createLoginPayload, createSignupPayload } from '../auth/helpers';
 import { supabase } from '../lib/supabase';
-import { resetDatabase } from '../utils';
+import { resetDatabase } from '../utils/resetDatabase';
 
 describe('Supabase profile fetching', () => {
   const signupPayload = createSignupPayload();
