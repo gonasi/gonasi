@@ -49,5 +49,7 @@ export const updateUserProfile = async (
     .select('*')
     .single();
 
+  console.log('**************** profile update error: ', error);
+
   return { data, error };
 };

@@ -2,30 +2,48 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from
 
 import { signInWithEmailAndPassword, signUpWithEmailAndPassword } from '../../auth';
 import { getUserProfile, updateUserProfile } from '../../profile';
-import { createLoginPayload, createSignupPayload } from '../auth/helpers';
+import { createSignupPayload } from '../auth/helpers';
 import { supabase } from '../lib/supabase';
+import { generateRandomEmail } from '../utils/generateRandomEmail';
 import { resetDatabase } from '../utils/resetDatabase';
 
+let userPayload: ReturnType<typeof createSignupPayload>;
+let userId: string;
+
 describe('Supabase profile management', () => {
-  const signupPayload = createSignupPayload();
-  let userId: string;
-
   beforeAll(async () => {
-    // Reset database and wait for completion
     const result = await resetDatabase();
-    if (!result.success) {
-      throw new Error('Failed to reset database');
-    }
 
-    // Clear any auth state
+    if (!result.success) throw new Error('Failed to reset database');
+
     await supabase.auth.signOut();
 
-    // Add a small delay to ensure everything is clean
+    // Delay to ensure database and auth state are fully cleared
     await new Promise((resolve) => setTimeout(resolve, 500));
 
-    // Create and sign in user
-    const { data } = await signUpWithEmailAndPassword(supabase, signupPayload);
-    userId = data?.user?.id || '';
+    userPayload = createSignupPayload({
+      email: generateRandomEmail(),
+    });
+
+    const { data: signUpData, error: signUpError } = await signUpWithEmailAndPassword(
+      supabase,
+      userPayload,
+    );
+    if (signUpError) throw new Error(`Sign up failed: ${signUpError.message}`);
+
+    userId = signUpData?.user?.id || '';
+
+    // 🔐 Wait for the session to propagate properly
+    await new Promise((resolve) => setTimeout(resolve, 300));
+
+    // Ensure session is available
+    const sessionCheck = await supabase.auth.getSession();
+    if (!sessionCheck.data.session) {
+      throw new Error('No session available after sign-up');
+    }
+
+    // Sign out to ensure clean state for each test
+    await supabase.auth.signOut();
   });
 
   afterEach(async () => {
@@ -40,15 +58,14 @@ describe('Supabase profile management', () => {
 
   describe('Profile fetching', () => {
     it('should fetch profile with correct credentials', async () => {
-      const loginPayload = createLoginPayload({
-        email: signupPayload.email,
-        password: signupPayload.password,
+      await signInWithEmailAndPassword(supabase, {
+        email: userPayload.email,
+        password: userPayload.password,
       });
-      await signInWithEmailAndPassword(supabase, loginPayload);
 
       const { user } = await getUserProfile(supabase);
 
-      expect(user?.email).toBe(signupPayload.email);
+      expect(user?.email).toBe(userPayload.email);
       expect(user?.id).toBe(userId);
     });
 
@@ -62,11 +79,10 @@ describe('Supabase profile management', () => {
     });
 
     it('should have default values for new profile', async () => {
-      const loginPayload = createLoginPayload({
-        email: signupPayload.email,
-        password: signupPayload.password,
+      await signInWithEmailAndPassword(supabase, {
+        email: userPayload.email,
+        password: userPayload.password,
       });
-      await signInWithEmailAndPassword(supabase, loginPayload);
 
       const { user } = await getUserProfile(supabase);
 
@@ -83,12 +99,21 @@ describe('Supabase profile management', () => {
 
   describe('Profile updates', () => {
     beforeEach(async () => {
-      // Sign in before each update test
-      const loginPayload = createLoginPayload({
-        email: signupPayload.email,
-        password: signupPayload.password,
+      const { error } = await signInWithEmailAndPassword(supabase, {
+        email: userPayload.email,
+        password: userPayload.password,
       });
-      await signInWithEmailAndPassword(supabase, loginPayload);
+
+      expect(error).toBeNull();
+
+      // Wait for Supabase to propagate and cache the session internally
+      await new Promise((res) => setTimeout(res, 500));
+
+      // Double-check a valid session exists
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) {
+        throw new Error('Session not available after sign-in');
+      }
     });
 
     it('should update username successfully', async () => {
@@ -140,7 +165,7 @@ describe('Supabase profile management', () => {
     });
 
     it('should update phone number successfully', async () => {
-      const newPhoneNumber = '+254712345678';
+      const newPhoneNumber = '254712345678';
 
       const { data, error } = await updateUserProfile(supabase, {
         phone_number: newPhoneNumber,
@@ -255,11 +280,10 @@ describe('Supabase profile management', () => {
 
   describe('Profile validation', () => {
     beforeEach(async () => {
-      const loginPayload = createLoginPayload({
-        email: signupPayload.email,
-        password: signupPayload.password,
+      await signInWithEmailAndPassword(supabase, {
+        email: userPayload.email,
+        password: userPayload.password,
       });
-      await signInWithEmailAndPassword(supabase, loginPayload);
     });
 
     it('should reject username shorter than 3 characters', async () => {
@@ -321,8 +345,8 @@ describe('Supabase profile management', () => {
 
       // Sign back in as first user
       await signInWithEmailAndPassword(supabase, {
-        email: signupPayload.email,
-        password: signupPayload.password,
+        email: userPayload.email,
+        password: userPayload.password,
       });
 
       // Try to use the same username
@@ -338,11 +362,10 @@ describe('Supabase profile management', () => {
 
   describe('Profile edge cases', () => {
     beforeEach(async () => {
-      const loginPayload = createLoginPayload({
-        email: signupPayload.email,
-        password: signupPayload.password,
+      await signInWithEmailAndPassword(supabase, {
+        email: userPayload.email,
+        password: userPayload.password,
       });
-      await signInWithEmailAndPassword(supabase, loginPayload);
     });
 
     it('should handle null values for optional fields', async () => {
@@ -396,11 +419,10 @@ describe('Supabase profile management', () => {
 
   describe('Profile queries and filtering', () => {
     beforeEach(async () => {
-      const loginPayload = createLoginPayload({
-        email: signupPayload.email,
-        password: signupPayload.password,
+      await signInWithEmailAndPassword(supabase, {
+        email: userPayload.email,
+        password: userPayload.password,
       });
-      await signInWithEmailAndPassword(supabase, loginPayload);
     });
 
     it('should find profile by username', async () => {
@@ -420,7 +442,7 @@ describe('Supabase profile management', () => {
 
       expect(error).toBeNull();
       expect(data?.username).toBe(testUsername);
-      expect(data?.email).toBe(signupPayload.email);
+      expect(data?.email).toBe(userPayload.email);
     });
 
     it('should find profiles by country code', async () => {
@@ -434,7 +456,7 @@ describe('Supabase profile management', () => {
 
       expect(error).toBeNull();
       expect(data).toBeInstanceOf(Array);
-      expect(data?.some((profile) => profile.email === signupPayload.email)).toBe(true);
+      expect(data?.some((profile) => profile.email === userPayload.email)).toBe(true);
     });
 
     it('should filter verified accounts', async () => {
@@ -451,7 +473,7 @@ describe('Supabase profile management', () => {
 
       expect(error).toBeNull();
       expect(data).toBeInstanceOf(Array);
-      expect(data?.some((profile) => profile.email === signupPayload.email)).toBe(true);
+      expect(data?.some((profile) => profile.email === userPayload.email)).toBe(true);
     });
   });
 });
