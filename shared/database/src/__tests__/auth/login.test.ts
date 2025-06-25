@@ -1,144 +1,134 @@
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 import { getUserRole, signInWithEmailAndPassword, signUpWithEmailAndPassword } from '../../auth';
-import { supabase } from '../lib/supabase';
-import { resetDatabase } from '../utils/resetDatabase';
-import {
-  createLoginPayload,
-  createSignupPayload,
-  createStaffSignupPayload,
-  createSuperUserSignupPayload,
-} from './helpers';
+import { TEST_USERS } from '../fixtures/test-data';
+import { setupTestDatabase, signOutTestUsers, testSupabase } from '../setup/test-helpers';
+import { getTestUser, SU_EMAIL, SU_PASSWORD } from '../utils/getTestUser';
 
-let userPayload: ReturnType<typeof createSignupPayload>;
-let staffPayload: ReturnType<typeof createStaffSignupPayload>;
-let suPayload: ReturnType<typeof createSuperUserSignupPayload>;
+describe('Login', () => {
+  // beforeAll & afterAll
+  setupTestDatabase();
 
-describe('Supabase login', () => {
-  beforeAll(async () => {
-    // Reset database and wait for completion
-    const result = await resetDatabase();
-    if (!result.success) {
-      throw new Error('Failed to reset database');
-    }
+  // sign out all test users
+  signOutTestUsers();
 
-    // Clear any auth state
-    await supabase.auth.signOut();
+  describe('Login Gonasi Users', () => {
+    beforeAll(async () => {
+      for (const user of TEST_USERS) {
+        if (!user.email || !user.password) {
+          console.warn(`[beforeAll] Missing email or password for ${JSON.stringify(user)}`);
+          continue;
+        }
 
-    // Add a small delay to ensure everything is clean
-    await new Promise((resolve) => setTimeout(resolve, 500));
+        const { error } = await signUpWithEmailAndPassword(testSupabase, {
+          email: user.email,
+          password: user.password,
+          fullName: user.fullName,
+        });
 
-    // Create and store a user payload
-    userPayload = createSignupPayload();
-    await signUpWithEmailAndPassword(supabase, userPayload);
-
-    // Create and store a staff payload
-    staffPayload = createStaffSignupPayload({ fullName: 'Staff User' });
-    await signUpWithEmailAndPassword(supabase, staffPayload);
-
-    // Create and store a su payload
-    suPayload = createSuperUserSignupPayload({ fullName: 'Super User' });
-    await signUpWithEmailAndPassword(supabase, suPayload);
-
-    // Sign out after creating test users
-    await supabase.auth.signOut();
-  });
-
-  afterEach(async () => {
-    // Clean auth state between tests
-    await supabase.auth.signOut();
-  });
-
-  afterAll(async () => {
-    await supabase.auth.signOut();
-    await resetDatabase();
-  });
-
-  it('should log in with correct credentials', async () => {
-    const { data, error } = await signInWithEmailAndPassword(supabase, {
-      email: userPayload.email,
-      password: userPayload.password,
+        if (error) {
+          console.warn(`[beforeAll] Failed to sign up user ${user.email}: ${error.message}`);
+        }
+      }
     });
 
-    expect(error).toBeNull();
-    expect(data?.user?.email).toBe(userPayload.email);
-  });
-
-  it('should fail login with wrong password', async () => {
-    const { data, error } = await signInWithEmailAndPassword(supabase, {
-      email: userPayload.email,
-      password: 'WrongPassword!',
+    afterEach(async () => {
+      await testSupabase.auth.signOut();
     });
 
-    expect(data).to.deep.equal({ user: null, session: null });
-    expect(error?.message).toMatch(/invalid/i);
-  });
+    it('should log in with correct credentials', async () => {
+      const user = getTestUser('user', 'user1');
 
-  it('should fail login with non-existent email', async () => {
-    const { data, error } = await signInWithEmailAndPassword(supabase, {
-      email: 'nonexistent@example.com',
-      password: 'TestPassword123!',
+      const { data, error } = await signInWithEmailAndPassword(testSupabase, {
+        email: user.email,
+        password: user.password,
+      });
+
+      expect(error).toBeNull();
+      expect(data?.user?.email).toBe(user.email);
     });
 
-    expect(data).to.deep.equal({ user: null, session: null });
-    expect(error?.message).toMatch(/invalid/i);
-  });
+    it('should fail login with wrong password', async () => {
+      const user = getTestUser('user', 'user1');
 
-  it('should fail login with missing email', async () => {
-    const payload = createLoginPayload({ email: undefined as any });
-    const { data, error } = await signInWithEmailAndPassword(supabase, payload);
+      const { data, error } = await signInWithEmailAndPassword(testSupabase, {
+        email: user.email,
+        password: 'WrongPassword!',
+      });
 
-    expect(data).to.deep.equal({ user: null, session: null });
-    expect(error).not.toBeNull();
-  });
-
-  it('should fail login with missing password', async () => {
-    const payload = createLoginPayload({ password: undefined as any });
-    const { data, error } = await signInWithEmailAndPassword(supabase, payload);
-
-    expect(data).to.deep.equal({ user: null, session: null });
-    expect(error).not.toBeNull();
-  });
-
-  it('should get user role as user', async () => {
-    const { data, error } = await signInWithEmailAndPassword(supabase, {
-      email: userPayload.email,
-      password: userPayload.password,
+      expect(data).to.deep.equal({ user: null, session: null });
+      expect(error?.message).toMatch(/invalid/i);
     });
 
-    expect(error).toBeNull();
-    expect(data?.user?.email).toBe(userPayload.email);
+    it('should fail login with non-existent email', async () => {
+      const { data, error } = await signInWithEmailAndPassword(testSupabase, {
+        email: 'nonexistent@example.com',
+        password: 'TestPassword123!',
+      });
 
-    const userRole = await getUserRole(supabase);
-
-    expect(userRole).toBe('user');
-  });
-
-  it('should get user role as go_staff', async () => {
-    const { data, error } = await signInWithEmailAndPassword(supabase, {
-      email: staffPayload.email,
-      password: staffPayload.password,
+      expect(data).to.deep.equal({ user: null, session: null });
+      expect(error?.message).toMatch(/invalid/i);
     });
 
-    expect(error).toBeNull();
-    expect(data?.user?.email).toBe(staffPayload.email);
+    it('should fail login with missing email', async () => {
+      const payload = { email: undefined as any, password: 'somepass' };
 
-    const userRole = await getUserRole(supabase);
+      const { data, error } = await signInWithEmailAndPassword(testSupabase, payload);
 
-    expect(userRole).toBe('go_staff');
-  });
-
-  it('should get user role as go_su', async () => {
-    const { data, error } = await signInWithEmailAndPassword(supabase, {
-      email: suPayload.email,
-      password: suPayload.password,
+      expect(data).to.deep.equal({ user: null, session: null });
+      expect(error).not.toBeNull();
     });
 
-    expect(error).toBeNull();
-    expect(data?.user?.email).toBe(suPayload.email);
+    it('should fail login with missing password', async () => {
+      const payload = { email: 'some@email.com', password: undefined as any };
 
-    const userRole = await getUserRole(supabase);
+      const { data, error } = await signInWithEmailAndPassword(testSupabase, payload);
 
-    expect(userRole).toBe('go_su');
+      expect(data).to.deep.equal({ user: null, session: null });
+      expect(error).not.toBeNull();
+    });
+
+    it('should get user role as user', async () => {
+      const user = getTestUser('user', 'user1');
+
+      const { data, error } = await signInWithEmailAndPassword(testSupabase, {
+        email: user.email,
+        password: user.password,
+      });
+
+      expect(error).toBeNull();
+      expect(data?.user?.email).toBe(user.email);
+
+      const userRole = await getUserRole(testSupabase);
+      expect(userRole).toBe('user');
+    });
+
+    it('should get user role as go_staff', async () => {
+      const staff = getTestUser('staff', 'staff1');
+
+      const { data, error } = await signInWithEmailAndPassword(testSupabase, {
+        email: staff.email,
+        password: staff.password,
+      });
+
+      expect(data?.user?.email).toBe(staff.email);
+      expect(error).toBeNull();
+
+      const userRole = await getUserRole(testSupabase);
+      expect(userRole).toBe('go_staff');
+    });
+
+    it('should get user role as go_su', async () => {
+      const { data, error } = await signInWithEmailAndPassword(testSupabase, {
+        email: SU_EMAIL,
+        password: SU_PASSWORD,
+      });
+
+      expect(data?.user?.email).toBe(SU_EMAIL);
+      expect(error).toBeNull();
+
+      const userRole = await getUserRole(testSupabase);
+      expect(userRole).toBe('go_su');
+    });
   });
 });
