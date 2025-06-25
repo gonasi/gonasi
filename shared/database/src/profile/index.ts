@@ -17,3 +17,37 @@ export const getUserProfileById = async (supabase: TypedSupabaseClient, companyI
     .single();
   return data;
 };
+
+// TODO: Fix when update
+export const updateUserProfile = async (
+  supabase: TypedSupabaseClient,
+  updates: {
+    username?: string | null;
+    full_name?: string | null;
+    avatar_url?: string | null;
+    blur_hash?: string | null;
+    phone_number?: string | null;
+    phone_number_verified?: boolean;
+    email_verified?: boolean;
+    country_code?: string;
+    preferred_language?: string;
+    account_verified?: boolean;
+    notifications_enabled?: boolean;
+  },
+) => {
+  const id = await getUserId(supabase);
+
+  // Add updated_at timestamp
+  const updateData = {
+    ...updates,
+  };
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .update(updateData)
+    .eq('id', id)
+    .select('*')
+    .single();
+
+  return { data, error };
+};
