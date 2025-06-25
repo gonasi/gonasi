@@ -32,6 +32,21 @@ create table "public"."course_sub_categories" (
 
 alter table "public"."course_sub_categories" enable row level security;
 
+create table "public"."lesson_types" (
+    "id" uuid not null default uuid_generate_v4(),
+    "name" text not null,
+    "description" text not null,
+    "lucide_icon" text not null,
+    "bg_color" text not null,
+    "created_at" timestamp with time zone not null default timezone('utc'::text, now()),
+    "updated_at" timestamp with time zone not null default timezone('utc'::text, now()),
+    "created_by" uuid,
+    "updated_by" uuid
+);
+
+
+alter table "public"."lesson_types" enable row level security;
+
 create table "public"."organizations" (
     "id" uuid not null default uuid_generate_v4(),
     "name" text not null,
@@ -106,6 +121,10 @@ CREATE INDEX idx_course_sub_categories_created_by ON public.course_sub_categorie
 
 CREATE INDEX idx_course_sub_categories_updated_by ON public.course_sub_categories USING btree (updated_by);
 
+CREATE INDEX idx_lesson_types_created_by ON public.lesson_types USING btree (created_by);
+
+CREATE INDEX idx_lesson_types_updated_by ON public.lesson_types USING btree (updated_by);
+
 CREATE INDEX idx_organizations_created_at ON public.organizations USING btree (created_at);
 
 CREATE INDEX idx_organizations_created_by ON public.organizations USING btree (created_by);
@@ -132,6 +151,12 @@ CREATE INDEX idx_profiles_verified_users ON public.profiles USING btree (id) WHE
 
 CREATE INDEX idx_user_roles_user_id ON public.user_roles USING btree (user_id);
 
+CREATE UNIQUE INDEX lesson_types_bg_color_key ON public.lesson_types USING btree (bg_color);
+
+CREATE UNIQUE INDEX lesson_types_name_key ON public.lesson_types USING btree (name);
+
+CREATE UNIQUE INDEX lesson_types_pkey ON public.lesson_types USING btree (id);
+
 CREATE UNIQUE INDEX organizations_pkey ON public.organizations USING btree (id);
 
 CREATE UNIQUE INDEX profiles_email_key ON public.profiles USING btree (email);
@@ -151,6 +176,8 @@ CREATE UNIQUE INDEX user_roles_user_id_role_key ON public.user_roles USING btree
 alter table "public"."course_categories" add constraint "course_categories_pkey" PRIMARY KEY using index "course_categories_pkey";
 
 alter table "public"."course_sub_categories" add constraint "course_sub_categories_pkey" PRIMARY KEY using index "course_sub_categories_pkey";
+
+alter table "public"."lesson_types" add constraint "lesson_types_pkey" PRIMARY KEY using index "lesson_types_pkey";
 
 alter table "public"."organizations" add constraint "organizations_pkey" PRIMARY KEY using index "organizations_pkey";
 
@@ -179,6 +206,18 @@ alter table "public"."course_sub_categories" validate constraint "course_sub_cat
 alter table "public"."course_sub_categories" add constraint "course_sub_categories_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES profiles(id) not valid;
 
 alter table "public"."course_sub_categories" validate constraint "course_sub_categories_updated_by_fkey";
+
+alter table "public"."lesson_types" add constraint "lesson_types_bg_color_key" UNIQUE using index "lesson_types_bg_color_key";
+
+alter table "public"."lesson_types" add constraint "lesson_types_created_by_fkey" FOREIGN KEY (created_by) REFERENCES profiles(id) ON DELETE CASCADE not valid;
+
+alter table "public"."lesson_types" validate constraint "lesson_types_created_by_fkey";
+
+alter table "public"."lesson_types" add constraint "lesson_types_name_key" UNIQUE using index "lesson_types_name_key";
+
+alter table "public"."lesson_types" add constraint "lesson_types_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
+
+alter table "public"."lesson_types" validate constraint "lesson_types_updated_by_fkey";
 
 alter table "public"."organizations" add constraint "organizations_created_by_fkey" FOREIGN KEY (created_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
 
@@ -475,6 +514,48 @@ grant truncate on table "public"."course_sub_categories" to "service_role";
 
 grant update on table "public"."course_sub_categories" to "service_role";
 
+grant delete on table "public"."lesson_types" to "anon";
+
+grant insert on table "public"."lesson_types" to "anon";
+
+grant references on table "public"."lesson_types" to "anon";
+
+grant select on table "public"."lesson_types" to "anon";
+
+grant trigger on table "public"."lesson_types" to "anon";
+
+grant truncate on table "public"."lesson_types" to "anon";
+
+grant update on table "public"."lesson_types" to "anon";
+
+grant delete on table "public"."lesson_types" to "authenticated";
+
+grant insert on table "public"."lesson_types" to "authenticated";
+
+grant references on table "public"."lesson_types" to "authenticated";
+
+grant select on table "public"."lesson_types" to "authenticated";
+
+grant trigger on table "public"."lesson_types" to "authenticated";
+
+grant truncate on table "public"."lesson_types" to "authenticated";
+
+grant update on table "public"."lesson_types" to "authenticated";
+
+grant delete on table "public"."lesson_types" to "service_role";
+
+grant insert on table "public"."lesson_types" to "service_role";
+
+grant references on table "public"."lesson_types" to "service_role";
+
+grant select on table "public"."lesson_types" to "service_role";
+
+grant trigger on table "public"."lesson_types" to "service_role";
+
+grant truncate on table "public"."lesson_types" to "service_role";
+
+grant update on table "public"."lesson_types" to "service_role";
+
 grant delete on table "public"."organizations" to "anon";
 
 grant insert on table "public"."organizations" to "anon";
@@ -693,6 +774,38 @@ to authenticated
 using (authorize('course_sub_categories.update'::app_permission));
 
 
+create policy "Authenticated users can delete lesson types"
+on "public"."lesson_types"
+as permissive
+for delete
+to authenticated
+using (( SELECT authorize('lesson_types.delete'::app_permission) AS authorize));
+
+
+create policy "Authenticated users can insert lesson types"
+on "public"."lesson_types"
+as permissive
+for insert
+to authenticated
+with check (( SELECT authorize('lesson_types.insert'::app_permission) AS authorize));
+
+
+create policy "Authenticated users can update lesson types"
+on "public"."lesson_types"
+as permissive
+for update
+to authenticated
+using (( SELECT authorize('lesson_types.update'::app_permission) AS authorize));
+
+
+create policy "Public can read lesson types"
+on "public"."lesson_types"
+as permissive
+for select
+to authenticated, anon
+using (true);
+
+
 create policy "Allow public read access to profiles"
 on "public"."profiles"
 as permissive
@@ -778,6 +891,8 @@ using (true);
 CREATE TRIGGER trg_course_categories_set_updated_at BEFORE UPDATE ON public.course_categories FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER trg_course_sub_categories_set_updated_at BEFORE UPDATE ON public.course_sub_categories FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER trg_lesson_types_set_updated_at BEFORE UPDATE ON public.lesson_types FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER trigger_set_organization_slug BEFORE INSERT OR UPDATE ON public.organizations FOR EACH ROW EXECUTE FUNCTION set_organization_slug();
 

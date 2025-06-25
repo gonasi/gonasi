@@ -1,16 +1,9 @@
-import {
-  type courseCategoriesScalars,
-  type courseSubCategoriesScalars,
-  createSeedClient,
-  type profilesScalars,
-} from '@snaplet/seed';
+import { createSeedClient, type profilesScalars } from '@snaplet/seed';
 
 import { convertKeysToCamelCase, supabase } from './src/constants';
 import { seedCompleteOnboarding } from './src/seedCompleteOnboarding';
 import { seedCourseCategories } from './src/seedCourseCategories';
-import { seedCreateCourse } from './src/seedCreateCourse';
 import { seedLessonTypes } from './src/seedLessonTypes';
-import { seedPathways } from './src/seedPathways';
 import { signUpUsers } from './src/signUpUsers';
 
 const main = async () => {
@@ -33,24 +26,24 @@ const main = async () => {
   await seedLessonTypes(profiles);
   await seedCourseCategories(profiles);
 
-  await seedPathways(profiles);
+  // await seedPathways(profiles);
 
   // Fetch course categories
-  const { data: databaseCategories } = await supabase.from('course_categories').select();
-  const courseCategories: courseCategoriesScalars[] =
-    databaseCategories?.map((category) =>
-      convertKeysToCamelCase<courseCategoriesScalars>(category),
-    ) ?? [];
+  // const { data: databaseCategories } = await supabase.from('course_categories').select();
+  // const courseCategories: courseCategoriesScalars[] =
+  //   databaseCategories?.map((category) =>
+  //     convertKeysToCamelCase<courseCategoriesScalars>(category),
+  //   ) ?? [];
 
-  // Fetch course subcategories
-  const { data: databaseSubcategories } = await supabase.from('course_sub_categories').select();
-  const courseSubCategories: courseSubCategoriesScalars[] =
-    databaseSubcategories?.map((subcategory) =>
-      convertKeysToCamelCase<courseSubCategoriesScalars>(subcategory),
-    ) ?? [];
+  // // Fetch course subcategories
+  // const { data: databaseSubcategories } = await supabase.from('course_sub_categories').select();
+  // const courseSubCategories: courseSubCategoriesScalars[] =
+  //   databaseSubcategories?.map((subcategory) =>
+  //     convertKeysToCamelCase<courseSubCategoriesScalars>(subcategory),
+  //   ) ?? [];
 
   // create course titles
-  await seedCreateCourse(profiles);
+  //  await seedCreateCourse(profiles);
 
   // Example: You could now seed courses using profiles, categories, and subcategories
   // await seed.courses(x => x(10), { connect: { profiles, courseCategories, courseSubCategories } });

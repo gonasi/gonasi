@@ -1,7 +1,7 @@
 import { Link, useLocation } from 'react-router';
-import { ArrowRightLeft, ChevronsUpDown, LayoutDashboard } from 'lucide-react';
+import { ChevronsUpDown, LayoutDashboard } from 'lucide-react';
 
-import { UserAvatar } from '../avatars';
+import { type AvatarSize, UserAvatar } from '../avatars';
 import { NotFoundCard } from '../cards';
 import { Button } from '../ui/button';
 
@@ -20,12 +20,16 @@ interface Props {
   user: UserProfileLoaderReturnType;
   dropdownPosition?: 'top' | 'bottom' | 'left' | 'right';
   dropdownAlign?: 'start' | 'center' | 'end';
+  showName?: boolean;
+  size?: AvatarSize;
 }
 
 export function ProfileDropdown({
   user,
   dropdownPosition = 'bottom',
   dropdownAlign = 'end',
+  showName = false,
+  size,
 }: Props) {
   const location = useLocation();
 
@@ -35,24 +39,21 @@ export function ProfileDropdown({
 
   const isActive = location.pathname === `/${username}`;
 
-  const isOrgMode = user.mode === 'organization';
-
-  const menuItems = [
-    { to: `/${username}`, label: 'My Profile', icon: LayoutDashboard },
-    {
-      label: isOrgMode ? 'Switch to Personal' : 'Switch to Organization',
-      to: isOrgMode ? `/${username}` : `/orgs`,
-      icon: ArrowRightLeft,
-    },
-  ];
+  const menuItems = [{ to: `/${username}`, label: 'My Profile', icon: LayoutDashboard }];
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button className='bg-background w-full rounded-full p-1 outline-0'>
           <div className='flex items-center'>
-            <UserAvatar username={username} imageUrl={avatar_url} isActive={isActive} />
-            <ChevronsUpDown className='text-muted-foreground mb-0.5' />
+            <UserAvatar
+              username={username}
+              imageUrl={avatar_url}
+              isActive={isActive}
+              showName={showName}
+              size={size}
+            />
+            {showName ? <ChevronsUpDown className='text-muted-foreground mb-0.5' /> : null}
           </div>
         </Button>
       </DropdownMenuTrigger>

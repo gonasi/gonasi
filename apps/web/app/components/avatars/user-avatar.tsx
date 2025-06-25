@@ -1,12 +1,14 @@
 import { PlainAvatar } from './plain-avatar';
 
+export type AvatarSize = 'xs' | 'sm' | 'md' | 'lg';
 interface UserAvatarProps {
   username: string | null;
   fullName?: string | null;
   imageUrl?: string | null;
-  size?: 'xs' | 'sm' | 'md' | 'lg';
+  size?: AvatarSize;
   isActive?: boolean;
   isPending?: boolean;
+  showName?: boolean;
 }
 
 const textSizeClasses = {
@@ -23,6 +25,7 @@ export function UserAvatar({
   size = 'md',
   isActive = false,
   isPending = false,
+  showName = true,
 }: UserAvatarProps) {
   return (
     <div className='text-foreground flex items-center gap-2'>
@@ -31,16 +34,18 @@ export function UserAvatar({
         imageUrl={imageUrl}
         isActive={isActive}
         isPending={isPending}
-        size='md'
+        size={size}
       />
-      <div>
-        {fullName ? (
-          <div className={`${textSizeClasses[size]} line-clamp-2 uppercase`}>{fullName}</div>
-        ) : null}
-        <div className={`${textSizeClasses[size]} text-muted-foreground line-clamp-1`}>
-          {username}
+      {showName ? (
+        <div>
+          {fullName ? (
+            <div className={`${textSizeClasses[size]} line-clamp-2 uppercase`}>{fullName}</div>
+          ) : null}
+          <div className={`${textSizeClasses[size]} text-muted-foreground line-clamp-1`}>
+            {username}
+          </div>
         </div>
-      </div>
+      ) : null}
     </div>
   );
 }

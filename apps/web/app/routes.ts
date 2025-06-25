@@ -6,17 +6,23 @@ export default [
     index('routes/public/home.tsx'),
     // /explore
     route('explore', 'routes/public/explore.tsx'),
-    layout('routes/layouts/myProfile/my-profile-layout.tsx', [
-      // my profile
-      route(':username', 'routes/myProfile/active-index.tsx'),
-      route(':username/history', 'routes/myProfile/history-index.tsx'),
-    ]),
 
     route('c/:publishedCourseId', 'routes/public/published-course-id-index.tsx', [
       route('enroll/:pricingTierId', 'routes/publishedCourses/enroll-index.tsx', [
         route('verify', 'routes/publishedCourses/verify-enroll.tsx'),
       ]),
     ]),
+  ]),
+
+  layout('routes/layouts/myProfile/profile-plain-layout.tsx', [
+    layout('routes/layouts/myProfile/profile-wrapper-layout.tsx', [
+      layout('routes/layouts/myProfile/my-profile-layout.tsx', [
+        // my profile
+        route(':username', 'routes/myProfile/active-index.tsx'),
+        route(':username/history', 'routes/myProfile/history-index.tsx'),
+      ]),
+    ]),
+    route(':username/organizations', 'routes/myProfile/organizations-index.tsx'),
   ]),
 
   layout('routes/layouts/auth/auth-layout.tsx', [

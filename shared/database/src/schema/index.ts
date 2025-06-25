@@ -137,6 +137,57 @@ export type Database = {
           },
         ]
       }
+      lesson_types: {
+        Row: {
+          bg_color: string
+          created_at: string
+          created_by: string | null
+          description: string
+          id: string
+          lucide_icon: string
+          name: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          bg_color: string
+          created_at?: string
+          created_by?: string | null
+          description: string
+          id?: string
+          lucide_icon: string
+          name: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          bg_color?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          id?: string
+          lucide_icon?: string
+          name?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lesson_types_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lesson_types_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organizations: {
         Row: {
           avatar_url: string | null

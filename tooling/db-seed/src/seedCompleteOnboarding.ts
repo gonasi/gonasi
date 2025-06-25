@@ -17,7 +17,6 @@ export async function seedCompleteOnboarding(users: profilesScalars[]) {
     const { success, message } = await completeUserOnboarding(supabase, {
       username: faker.internet.userName().toLowerCase(),
       fullName: faker.person.fullName(),
-      phoneNumber: faker.string.numeric(9),
     });
 
     console.log(
