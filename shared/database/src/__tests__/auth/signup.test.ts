@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { signUpWithEmailAndPassword } from '../../auth';
 import { supabase } from '../lib/supabase';
-import { resetDatabase } from '../utils';
+import { resetDatabase } from '../utils/resetDatabase';
 import { createSignupPayload } from './helpers';
 
 describe('Supabase signup', () => {

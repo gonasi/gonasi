@@ -70,7 +70,7 @@ export default function Login() {
         <Form method='POST' onSubmit={methods.handleSubmit}>
           <HoneypotInputs />
           <GoInputField
-            labelProps={{ children: 'Email address', required: true }}
+            labelProps={{ children: 'Email Address', required: true }}
             name='email'
             inputProps={{
               autoFocus: true,
@@ -82,7 +82,7 @@ export default function Login() {
           />
           <GoInputField
             labelProps={{
-              children: 'Your password',
+              children: 'Your Password',
               required: true,
               endAdornment: <GoLink to='/'>Forgot it?</GoLink>,
             }}

@@ -14,7 +14,7 @@ export const SignupFormSchema = z.object({
   fullName: z
     .string({
       required_error:
-        '<lucide name="User" size="12" /> Please enter your <span class="go-title">full name</span> or <span class="go-title">company name</span>',
+        '<lucide name="User" size="12" /> Please enter your <span class="go-title">full name</span>',
     })
     .trim()
     .min(5, {

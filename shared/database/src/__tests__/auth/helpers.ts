@@ -19,7 +19,6 @@ export const createLoginPayload = (
     redirectTo: string | null;
   }> = {},
 ) => ({
-  intent: 'login' as const,
   email,
   password,
   redirectTo,

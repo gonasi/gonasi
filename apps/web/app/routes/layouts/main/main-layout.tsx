@@ -10,14 +10,17 @@ export default function MainLayout() {
   const navigate = useNavigate();
   const { activeUserProfile, isActiveUserProfileLoading } = useStore();
 
-  const isOnboardingIncomplete = activeUserProfile && !activeUserProfile.is_onboarding_complete;
+  // Determine if onboarding is incomplete (i.e., username hasn't been set)
+  const isOnboardingIncomplete = !!activeUserProfile && !activeUserProfile.username;
 
   useEffect(() => {
-    if (!isActiveUserProfileLoading && activeUserProfile && isOnboardingIncomplete) {
-      navigate(`/go/onboarding/${activeUserProfile.id}/contact-information`);
+    // If loading is done and onboarding is incomplete, redirect to onboarding
+    if (!isActiveUserProfileLoading && isOnboardingIncomplete && activeUserProfile) {
+      navigate(`/go/onboarding/${activeUserProfile.id}`);
     }
   }, [isActiveUserProfileLoading, isOnboardingIncomplete, navigate, activeUserProfile]);
 
+  // Show loading spinner during profile loading or redirect preparation
   if (isActiveUserProfileLoading || isOnboardingIncomplete) {
     return <Spinner />;
   }

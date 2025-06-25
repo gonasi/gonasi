@@ -16,7 +16,7 @@ create table public.profiles (
   -- Personal identity information
   full_name text,               -- Full name of the user
   avatar_url text,              -- URL to user's profile image
-  blur_hash text null,               -- Low-res image placeholder for avatar
+  blur_hash text null,          -- Low-res image placeholder for avatar
 
   -- Contact details and verification flags
   phone_number text,            -- Optional phone number
@@ -30,32 +30,12 @@ create table public.profiles (
   preferred_language char(2) default 'en' 
     check (preferred_language ~* '^[a-z]{2}$'), -- ISO 639-1 language code (e.g., en, sw)
 
-  -- Optional bio and personal links
-  bio text,
-  website_url text check (
-    website_url ~* '^https?://[a-z0-9.-]+\.[a-z]{2,}(/.*)?$'  -- Validates URL format 
-  ),
-
-  -- Onboarding and account status
-  is_onboarding_complete boolean not null default false,  -- Whether user completed onboarding flow
   account_verified boolean not null default false,        -- Manual/auto verification flag
   notifications_enabled boolean not null default true,    -- Whether notifications are enabled
-
-  is_payout_settings_complete boolean not null default false,
 
   -- Record timestamps
   created_at timestamp with time zone not null default timezone('utc', now()), -- Creation time
   updated_at timestamp with time zone not null default timezone('utc', now()), -- Last update
-
-  -- Social media links with strict URL formats
-  twitter_url text check (twitter_url ~* '^https?://(www\.)?twitter\.com/[^/]+/?$'),
-  linkedin_url text check (linkedin_url ~* '^https?://(www\.)?linkedin\.com/in/[^/]+/?$'),
-  github_url text check (github_url ~* '^https?://(www\.)?github\.com/[^/]+/?$'),
-  instagram_url text check (instagram_url ~* '^https?://(www\.)?instagram\.com/[^/]+/?$'),
-  facebook_url text check (facebook_url ~* '^https?://(www\.)?facebook\.com/[^/]+/?$'),
-  tiktok_url text check (tiktok_url ~* '^https?://(www\.)?tiktok\.com/@[^/]+/?$'),
-  youtube_url text check (youtube_url ~* '^https?://(www\.)?youtube\.com/(c|channel|user)/[^/]+/?$'),
-  discord_url text check (discord_url ~* '^https?://(www\.)?discord\.gg/[^/]+/?$'),
 
   -- Additional constraints for data integrity
   constraint username_length check (char_length(username) >= 3),
@@ -76,8 +56,6 @@ create index idx_profiles_username on public.profiles(username) where username i
 create index idx_profiles_email on public.profiles(email);
 create index idx_profiles_country_code on public.profiles(country_code);
 create index idx_profiles_created_at on public.profiles(created_at);
-create index idx_profiles_onboarding_status 
-  on public.profiles(is_onboarding_complete, account_verified);
 
 -- Optimized filtering for verified user lists
 create index idx_profiles_verified_users 

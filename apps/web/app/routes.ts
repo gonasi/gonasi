@@ -6,18 +6,10 @@ export default [
     index('routes/public/home.tsx'),
     // /explore
     route('explore', 'routes/public/explore.tsx'),
-    layout('routes/layouts/profile/profile-layout.tsx', [
-      // /:username
-      route(':username', 'routes/profile/published-courses/published-courses-index.tsx'),
-      // /:username/pathways
-      route(':username/pathways', 'routes/profile/pathways/index.tsx'),
-      // /:username/course-builder
-      route(':username/course-builder', 'routes/profile/course-builder/course-builder-index.tsx', [
-        layout('routes/layouts/profile/course-crud-layout.tsx', [
-          // /:username/course-builder/new
-          route('new', 'routes/profile/course-builder/new.tsx'),
-        ]),
-      ]),
+    layout('routes/layouts/myProfile/my-profile-layout.tsx', [
+      // my profile
+      route(':username', 'routes/myProfile/active-index.tsx'),
+      route(':username/history', 'routes/myProfile/history-index.tsx'),
     ]),
 
     route('c/:publishedCourseId', 'routes/public/published-course-id-index.tsx', [
@@ -34,14 +26,8 @@ export default [
     route('signup', 'routes/auth/signup.tsx'),
   ]),
 
-  layout('routes/layouts/onboarding/onboarding-layout.tsx', [
-    ...prefix('go/onboarding', [
-      // /onboarding/:userId/basic-information
-      route(':userId/basic-information', 'routes/onboarding/basic-information.tsx'),
-      // /onboarding/:userId/contact-information
-      route(':userId/contact-information', 'routes/onboarding/contact-information.tsx'),
-    ]),
-  ]),
+  // onboarding - get user username
+  route('go/onboarding/:userId', 'routes/onboarding/onboarding-index.tsx'),
 
   layout('routes/layouts/profile/course-overview-layout.tsx', [
     route(':username/settings', 'routes/profile/settings/settings-index.tsx', [

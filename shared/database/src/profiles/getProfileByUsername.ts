@@ -15,29 +15,13 @@ export const getProfileByUsername = async ({ supabase, username }: GetProfileByU
   const { data: profile, error } = await supabase
     .from('profiles')
     .select(
-      ` 
-        id,
-        username,
-        full_name,
-        avatar_url,
-        is_onboarding_complete,
-        bio,
-        website_url,
-        twitter_url,
-        linkedin_url,
-        github_url,
-        instagram_url,
-        facebook_url,
-        tiktok_url,
-        youtube_url,
-        discord_url
-      `,
+      'id, username, email, full_name, avatar_url, blur_hash, phone_number, phone_number_verified, email_verified, country_code',
     )
     .eq('username', username)
     .single();
 
   // Return null if query failed or onboarding is incomplete
-  if (error || !profile?.is_onboarding_complete) {
+  if (error || !profile?.username) {
     return null;
   }
 

@@ -1,8 +1,8 @@
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 import { getUserRole, signInWithEmailAndPassword, signUpWithEmailAndPassword } from '../../auth';
 import { supabase } from '../lib/supabase';
-import { resetDatabase } from '../utils';
+import { resetDatabase } from '../utils/resetDatabase';
 import {
   createLoginPayload,
   createSignupPayload,
@@ -16,7 +16,17 @@ let suPayload: ReturnType<typeof createSuperUserSignupPayload>;
 
 describe('Supabase login', () => {
   beforeAll(async () => {
-    await resetDatabase();
+    // Reset database and wait for completion
+    const result = await resetDatabase();
+    if (!result.success) {
+      throw new Error('Failed to reset database');
+    }
+
+    // Clear any auth state
+    await supabase.auth.signOut();
+
+    // Add a small delay to ensure everything is clean
+    await new Promise((resolve) => setTimeout(resolve, 500));
 
     // Create and store a user payload
     userPayload = createSignupPayload();
@@ -29,15 +39,23 @@ describe('Supabase login', () => {
     // Create and store a su payload
     suPayload = createSuperUserSignupPayload({ fullName: 'Super User' });
     await signUpWithEmailAndPassword(supabase, suPayload);
+
+    // Sign out after creating test users
+    await supabase.auth.signOut();
+  });
+
+  afterEach(async () => {
+    // Clean auth state between tests
+    await supabase.auth.signOut();
   });
 
   afterAll(async () => {
+    await supabase.auth.signOut();
     await resetDatabase();
   });
 
   it('should log in with correct credentials', async () => {
     const { data, error } = await signInWithEmailAndPassword(supabase, {
-      intent: 'login',
       email: userPayload.email,
       password: userPayload.password,
     });
@@ -48,7 +66,6 @@ describe('Supabase login', () => {
 
   it('should fail login with wrong password', async () => {
     const { data, error } = await signInWithEmailAndPassword(supabase, {
-      intent: 'login',
       email: userPayload.email,
       password: 'WrongPassword!',
     });
@@ -59,7 +76,6 @@ describe('Supabase login', () => {
 
   it('should fail login with non-existent email', async () => {
     const { data, error } = await signInWithEmailAndPassword(supabase, {
-      intent: 'login',
       email: 'nonexistent@example.com',
       password: 'TestPassword123!',
     });
@@ -86,7 +102,6 @@ describe('Supabase login', () => {
 
   it('should get user role as user', async () => {
     const { data, error } = await signInWithEmailAndPassword(supabase, {
-      intent: 'login',
       email: userPayload.email,
       password: userPayload.password,
     });
@@ -101,7 +116,6 @@ describe('Supabase login', () => {
 
   it('should get user role as go_staff', async () => {
     const { data, error } = await signInWithEmailAndPassword(supabase, {
-      intent: 'login',
       email: staffPayload.email,
       password: staffPayload.password,
     });
@@ -116,7 +130,6 @@ describe('Supabase login', () => {
 
   it('should get user role as go_su', async () => {
     const { data, error } = await signInWithEmailAndPassword(supabase, {
-      intent: 'login',
       email: suPayload.email,
       password: suPayload.password,
     });
