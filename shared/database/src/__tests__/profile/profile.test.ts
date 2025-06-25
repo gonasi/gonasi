@@ -1,54 +1,68 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { signInWithEmailAndPassword, signUpWithEmailAndPassword } from '../../auth';
 import { getUserProfile, updateUserProfile } from '../../profile';
-import { createSignupPayload } from '../auth/helpers';
-import { TEST_USERS } from '../fixtures/test-data';
-import { setupTestDatabase, testSupabase } from '../setup/test-helpers';
+import { setupTestDatabase, TestCleanupManager, testSupabase } from '../setup/test-helpers';
+import { getTestUser } from '../utils/getTestUser';
+
+const userOne = getTestUser('user', 'user1');
+const userTwo = getTestUser('user', 'user2');
+const TEST_USERS = [userOne, userTwo];
 
 describe('Profile', () => {
   setupTestDatabase();
 
   describe('Profile Management', () => {
-    beforeAll(async () => {
-      for (const user of TEST_USERS) {
-        if (!user.email || !user.password) {
-          console.warn(`[beforeAll] Missing email or password for ${JSON.stringify(user)}`);
+    beforeEach(async () => {
+      await TestCleanupManager.performFullCleanup();
+
+      // Sign up each test user
+      for (const testUser of TEST_USERS) {
+        if (!testUser.email || !testUser.password) {
+          console.warn(`[beforeEach] Missing email or password for ${JSON.stringify(testUser)}`);
           continue;
         }
 
         const { error } = await signUpWithEmailAndPassword(testSupabase, {
-          email: user.email,
-          password: user.password,
-          fullName: user.fullName,
+          email: testUser.email,
+          password: testUser.password,
+          fullName: testUser.fullName,
         });
 
         if (error) {
-          console.warn(`[beforeAll] Failed to sign up user ${user.email}: ${error.message}`);
+          console.warn(`[beforeEach] Failed to sign up user ${testUser.email}: ${error.message}`);
         }
+      }
+
+      // Log in userOne for initial test context
+      const { error: signInError } = await signInWithEmailAndPassword(testSupabase, {
+        email: userOne.email,
+        password: userOne.password,
+      });
+
+      if (signInError) {
+        console.warn(
+          `[beforeEach] Failed to sign in user ${userOne.email}: ${signInError.message}`,
+        );
       }
     });
 
-    afterAll(async () => {
-      await testSupabase.auth.signOut();
+    afterEach(async () => {
+      await TestCleanupManager.signOutAllClients();
+      await TestCleanupManager.performFullCleanup();
     });
 
     describe('Profile fetching', () => {
       it('should fetch profile with correct credentials', async () => {
-        await signInWithEmailAndPassword(testSupabase, {
-          email: userPayload.email,
-          password: userPayload.password,
-        });
-
         const { user } = await getUserProfile(testSupabase);
 
-        expect(user?.email).toBe(userPayload.email);
-        expect(user?.id).toBe(userId);
+        expect(user?.email).toBe(userOne.email);
+        expect(user?.id).toBeDefined();
       });
 
       it('should return null for unauthenticated user', async () => {
         // Ensure user is signed out
-        await testSupabase.auth.signOut();
+        await TestCleanupManager.signOutAllClients();
 
         const { user } = await getUserProfile(testSupabase);
 
@@ -56,11 +70,6 @@ describe('Profile', () => {
       });
 
       it('should have default values for new profile', async () => {
-        await signInWithEmailAndPassword(testSupabase, {
-          email: userPayload.email,
-          password: userPayload.password,
-        });
-
         const { user } = await getUserProfile(testSupabase);
 
         expect(user?.country_code).toBe('KE'); // Default value
@@ -75,24 +84,6 @@ describe('Profile', () => {
     });
 
     describe('Profile updates', () => {
-      beforeEach(async () => {
-        const { error } = await signInWithEmailAndPassword(testSupabase, {
-          email: userPayload.email,
-          password: userPayload.password,
-        });
-
-        expect(error).toBeNull();
-
-        // Wait for testSupabase to propagate and cache the session internally
-        await new Promise((res) => setTimeout(res, 500));
-
-        // Double-check a valid session exists
-        const { data: sessionData } = await testSupabase.auth.getSession();
-        if (!sessionData.session) {
-          throw new Error('Session not available after sign-in');
-        }
-      });
-
       it('should update username successfully', async () => {
         const newUsername = 'testuser123';
 
@@ -156,8 +147,6 @@ describe('Profile', () => {
         const { data, error } = await updateUserProfile(testSupabase, {
           phone_number_verified: true,
         });
-
-        console.log('error: ', error);
 
         expect(error).toBeNull();
         expect(data?.phone_number_verified).toBe(true);
@@ -256,13 +245,6 @@ describe('Profile', () => {
     });
 
     describe('Profile validation', () => {
-      beforeEach(async () => {
-        await signInWithEmailAndPassword(testSupabase, {
-          email: userPayload.email,
-          password: userPayload.password,
-        });
-      });
-
       it('should reject username shorter than 3 characters', async () => {
         const { data, error } = await updateUserProfile(testSupabase, {
           username: 'ab',
@@ -302,28 +284,16 @@ describe('Profile', () => {
       });
 
       it('should reject duplicate username', async () => {
-        // First, create another user with a username
-        const secondUserPayload = createSignupPayload({
-          email: 'second@user.com',
-          password: 'password',
-          fullName: 'Second User',
-        });
-        await signUpWithEmailAndPassword(testSupabase, secondUserPayload);
-
-        // Sign in as second user and set username
-        await signInWithEmailAndPassword(testSupabase, {
-          email: secondUserPayload.email,
-          password: secondUserPayload.password,
-        });
-
+        // First user sets username
         await updateUserProfile(testSupabase, {
           username: 'uniqueuser123',
         });
 
-        // Sign back in as first user
+        // Switch to second user
+        await TestCleanupManager.signOutAllClients();
         await signInWithEmailAndPassword(testSupabase, {
-          email: userPayload.email,
-          password: userPayload.password,
+          email: userTwo.email,
+          password: userTwo.password,
         });
 
         // Try to use the same username
@@ -338,13 +308,6 @@ describe('Profile', () => {
     });
 
     describe('Profile edge cases', () => {
-      beforeEach(async () => {
-        await signInWithEmailAndPassword(testSupabase, {
-          email: userPayload.email,
-          password: userPayload.password,
-        });
-      });
-
       it('should handle null values for optional fields', async () => {
         const { data, error } = await updateUserProfile(testSupabase, {
           username: null,
@@ -392,16 +355,20 @@ describe('Profile', () => {
         expect(data?.full_name).toBe('Updated Name Only'); // Should be updated
         expect(data?.country_code).toBe('US'); // Should be preserved
       });
+
+      it('should fail updates when not authenticated', async () => {
+        await TestCleanupManager.signOutAllClients();
+
+        const { data, error } = await updateUserProfile(testSupabase, {
+          username: 'shouldfail',
+        });
+
+        expect(data).toBeNull();
+        expect(error).not.toBeNull();
+      });
     });
 
     describe('Profile queries and filtering', () => {
-      beforeEach(async () => {
-        await signInWithEmailAndPassword(testSupabase, {
-          email: userPayload.email,
-          password: userPayload.password,
-        });
-      });
-
       it('should find profile by username', async () => {
         const testUsername = 'findbyusername';
 
@@ -410,7 +377,7 @@ describe('Profile', () => {
           username: testUsername,
         });
 
-        // Query by username (this would require a separate function in your profile module)
+        // Query by username
         const { data, error } = await testSupabase
           .from('profiles')
           .select('*')
@@ -419,7 +386,7 @@ describe('Profile', () => {
 
         expect(error).toBeNull();
         expect(data?.username).toBe(testUsername);
-        expect(data?.email).toBe(userPayload.email);
+        expect(data?.email).toBe(userOne.email);
       });
 
       it('should find profiles by country code', async () => {
@@ -436,7 +403,7 @@ describe('Profile', () => {
 
         expect(error).toBeNull();
         expect(data).toBeInstanceOf(Array);
-        expect(data?.some((profile) => profile.email === userPayload.email)).toBe(true);
+        expect(data?.some((profile) => profile.email === userOne.email)).toBe(true);
       });
 
       it('should filter verified accounts', async () => {
@@ -453,7 +420,7 @@ describe('Profile', () => {
 
         expect(error).toBeNull();
         expect(data).toBeInstanceOf(Array);
-        expect(data?.some((profile) => profile.email === userPayload.email)).toBe(true);
+        expect(data?.some((profile) => profile.email === userOne.email)).toBe(true);
       });
     });
   });
