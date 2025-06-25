@@ -97,7 +97,7 @@ export class DatabaseManager {
 // Test setup hooks
 export function setupTestDatabase() {
   beforeAll(async () => {
-    await DatabaseManager.resetDatabase();
+    await TestCleanupManager.performFullCleanup();
     await DatabaseManager.seedTestData();
   });
 

@@ -10,6 +10,8 @@ export const SU_PASSWORD = 'SuPass123';
 export function getTestUser(type: EmailType, prefix?: string) {
   return (
     TEST_USERS.find((user) => {
+      if (!user.email) return false;
+
       const domain = type === 'staff' ? 'gonasi.com' : 'test.com';
       const matchesType = user.email.endsWith(`@${domain}`);
       const matchesPrefix = prefix ? user.email.startsWith(prefix) : true;

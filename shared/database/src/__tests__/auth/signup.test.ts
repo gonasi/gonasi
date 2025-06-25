@@ -11,12 +11,14 @@ describe('Sign Up', () => {
     beforeEach(async () => {
       await TestCleanupManager.performFullCleanup();
     });
+
     afterAll(async () => {
       await testSupabase.auth.signOut();
     });
 
-    it('should sign up a user', async () => {
+    it('should sign up a new user with valid credentials', async () => {
       const payload = createSignupPayload();
+
       const { data, error } = await signUpWithEmailAndPassword(testSupabase, payload);
 
       expect(error).toBeNull();
@@ -26,39 +28,43 @@ describe('Sign Up', () => {
 
     it('should fail if email is missing', async () => {
       const payload = createSignupPayload({ email: undefined as any });
+
       const { data, error } = await signUpWithEmailAndPassword(testSupabase, payload);
 
-      expect(data).to.deep.equal({ user: null, session: null });
+      expect(data).toEqual({ user: null, session: null });
       expect(error?.message).toEqual('Anonymous sign-ins are disabled');
     });
 
-    it('should fail if password is short', async () => {
+    it('should fail if password is too short', async () => {
       const payload = createSignupPayload({
         email: 'weakpass@example.com',
-        password: '123',
+        password: '123', // Too short
         fullName: 'Weak Password User',
       });
 
       const { data, error } = await signUpWithEmailAndPassword(testSupabase, payload);
 
-      expect(data).to.deep.equal({ user: null, session: null });
+      expect(data).toEqual({ user: null, session: null });
       expect(error).not.toBeNull();
     });
 
     it('should fail if user already exists', async () => {
-      const payload = createSignupPayload({
+      const duplicatePayload = createSignupPayload({
         email: 'duplicate@example.com',
         fullName: 'Duplicate User',
       });
 
-      await signUpWithEmailAndPassword(testSupabase, payload); // First signup
-      const { data, error } = await signUpWithEmailAndPassword(testSupabase, payload); // Duplicate attempt
+      // First attempt (success)
+      await signUpWithEmailAndPassword(testSupabase, duplicatePayload);
 
-      expect(data).to.deep.equal({ user: null, session: null });
+      // Second attempt (should fail)
+      const { data, error } = await signUpWithEmailAndPassword(testSupabase, duplicatePayload);
+
+      expect(data).toEqual({ user: null, session: null });
       expect(error?.message).toMatch(/already registered/i);
     });
 
-    it('should handle invalid redirectTo URL gracefully', async () => {
+    it('should allow invalid redirectTo URL without error (if not validated)', async () => {
       const payload = createSignupPayload({
         email: 'badredirect@example.com',
         fullName: 'Bad Redirect User',
@@ -67,11 +73,11 @@ describe('Sign Up', () => {
 
       const { data, error } = await signUpWithEmailAndPassword(testSupabase, payload);
 
-      expect(error).toBeNull(); // testSupabase may allow this
+      expect(error).toBeNull(); // Supabase may accept it
       expect(data?.user?.email).toBe(payload.email);
     });
 
-    it('should strip full name with extra whitespace', async () => {
+    it('should trim fullName whitespace before saving', async () => {
       const payload = createSignupPayload({
         email: 'trimmed@example.com',
         fullName: '  Trimmed User  ',
