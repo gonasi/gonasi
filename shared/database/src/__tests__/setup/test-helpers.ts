@@ -11,24 +11,22 @@ const TEST_SUPABASE_SERVICE_KEY =
 export const testSupabase = createClient(TEST_SUPABASE_URL, TEST_SUPABASE_ANON_KEY);
 export const testSupabaseAdmin = createClient(TEST_SUPABASE_URL, TEST_SUPABASE_SERVICE_KEY);
 
-// user_roles, role_permissions, course_categories, course_sub_categories
-// should be populated by migration code
-
 export type ClearableTable = 'profiles' | 'user_roles';
 
 const DEFAULT_TABLES_TO_CLEAR: ClearableTable[] = ['profiles', 'user_roles'];
 
-export class TestUserManager {
-  static async signInUser(email: string, password: string): Promise<SupabaseClient> {
-    const client = createClient(TEST_SUPABASE_URL, TEST_SUPABASE_ANON_KEY);
-    const { error } = await client.auth.signInWithPassword({ email, password });
-    if (error) throw error;
-    return client;
+// Centralized cleanup manager
+export class TestCleanupManager {
+  static async signOutAllClients() {
+    try {
+      await testSupabase.auth.signOut();
+    } catch (error) {
+      console.warn('Failed to sign out test client:', error);
+    }
   }
 
   static async cleanupUsers() {
     try {
-      // Get all users from auth
       const {
         data: { users },
         error,
@@ -39,42 +37,64 @@ export class TestUserManager {
         return;
       }
 
-      // Delete all users
-      for (const user of users) {
+      // Delete all users in parallel for better performance
+      const deletePromises = users.map(async (user) => {
         try {
           await testSupabaseAdmin.auth.admin.deleteUser(user.id);
         } catch (error) {
           console.warn(`Failed to delete user ${user.id}:`, error);
         }
-      }
+      });
+
+      await Promise.allSettled(deletePromises);
     } catch (error) {
-      console.warn('Failed to cleanup all auth users:', error);
+      console.warn('Failed to cleanup auth users:', error);
     }
+  }
+
+  static async clearTables(tables: ClearableTable[] = DEFAULT_TABLES_TO_CLEAR) {
+    // Clear tables in reverse order to handle dependencies
+    for (const table of [...tables].reverse()) {
+      try {
+        await testSupabaseAdmin
+          .from(table)
+          .delete()
+          .neq('id', '00000000-0000-0000-0000-000000000000');
+      } catch (error) {
+        console.warn(`Failed to clear table ${table}:`, error);
+      }
+    }
+  }
+
+  // Main cleanup method that handles the complete reset
+  static async performFullCleanup() {
+    await this.signOutAllClients();
+    await this.cleanupUsers();
+    await this.clearTables();
+  }
+}
+
+// User management utilities
+export class TestUserManager {
+  static async signInUser(email: string, password: string): Promise<SupabaseClient> {
+    const client = createClient(TEST_SUPABASE_URL, TEST_SUPABASE_ANON_KEY);
+    const { error } = await client.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+    return client;
   }
 }
 
 // Database state management
 export class DatabaseManager {
   static async resetDatabase() {
-    // First cleanup all auth users
-    await TestUserManager.cleanupUsers();
-
-    // Then reset sequences and truncate tables in correct order
-    const tables = DEFAULT_TABLES_TO_CLEAR;
-
-    for (const table of tables.reverse()) {
-      await testSupabaseAdmin
-        .from(table)
-        .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000');
-    }
+    await TestCleanupManager.performFullCleanup();
   }
 
   // TODO: Seed data when needed
   static async seedTestData() {}
 }
 
-// Global test setup
+// Test setup hooks
 export function setupTestDatabase() {
   beforeAll(async () => {
     await DatabaseManager.resetDatabase();
@@ -82,15 +102,12 @@ export function setupTestDatabase() {
   });
 
   afterAll(async () => {
-    // Sign out before cleanup to avoid auth conflicts
-    await testSupabase.auth.signOut();
-    await DatabaseManager.resetDatabase();
+    await TestCleanupManager.performFullCleanup();
   });
 }
 
 export function signOutTestUsers() {
   afterEach(async () => {
-    // Sign out all test clients after each test
-    await testSupabase.auth.signOut();
+    await TestCleanupManager.signOutAllClients();
   });
 }

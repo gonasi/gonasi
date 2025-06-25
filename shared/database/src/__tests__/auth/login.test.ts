@@ -1,16 +1,12 @@
-import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { getUserRole, signInWithEmailAndPassword, signUpWithEmailAndPassword } from '../../auth';
 import { TEST_USERS } from '../fixtures/test-data';
-import { setupTestDatabase, signOutTestUsers, testSupabase } from '../setup/test-helpers';
+import { setupTestDatabase, testSupabase } from '../setup/test-helpers';
 import { getTestUser, SU_EMAIL, SU_PASSWORD } from '../utils/getTestUser';
 
 describe('Login', () => {
-  // beforeAll & afterAll
   setupTestDatabase();
-
-  // sign out all test users
-  signOutTestUsers();
 
   describe('Login Gonasi Users', () => {
     beforeAll(async () => {
@@ -32,7 +28,7 @@ describe('Login', () => {
       }
     });
 
-    afterEach(async () => {
+    afterAll(async () => {
       await testSupabase.auth.signOut();
     });
 
