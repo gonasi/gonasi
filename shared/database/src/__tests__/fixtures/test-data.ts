@@ -46,4 +46,40 @@ export const TEST_USERS = [
     fullName: 'User Four',
     username: 'user_four',
   },
+  {
+    email: generateRandomEmail('user', 'user5'),
+    password: DEFAULT_PASSWORD,
+    fullName: 'User Five',
+    username: 'user_five',
+  },
+  {
+    email: generateRandomEmail('user', 'user6'),
+    password: DEFAULT_PASSWORD,
+    fullName: 'User Six',
+    username: 'user_six',
+  },
+  {
+    email: generateRandomEmail('user', 'user7'),
+    password: DEFAULT_PASSWORD,
+    fullName: 'User Seven',
+    username: 'user_seven',
+  },
+  {
+    email: generateRandomEmail('user', 'user8'),
+    password: DEFAULT_PASSWORD,
+    fullName: 'User Eight',
+    username: 'user_eight',
+  },
+  {
+    email: generateRandomEmail('user', 'user9'),
+    password: DEFAULT_PASSWORD,
+    fullName: 'User Nine',
+    username: 'user_nine',
+  },
+  {
+    email: generateRandomEmail('user', 'user10'),
+    password: DEFAULT_PASSWORD,
+    fullName: 'User Ten',
+    username: 'user_ten',
+  },
 ];

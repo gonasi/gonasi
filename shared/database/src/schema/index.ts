@@ -207,6 +207,7 @@ export type Database = {
           is_verified: boolean
           location: string | null
           name: string
+          owned_by: string | null
           phone_number: string | null
           phone_number_verified: boolean
           tier: Database["public"]["Enums"]["subscription_tier"]
@@ -233,6 +234,7 @@ export type Database = {
           is_verified?: boolean
           location?: string | null
           name: string
+          owned_by?: string | null
           phone_number?: string | null
           phone_number_verified?: boolean
           tier?: Database["public"]["Enums"]["subscription_tier"]
@@ -259,6 +261,7 @@ export type Database = {
           is_verified?: boolean
           location?: string | null
           name?: string
+          owned_by?: string | null
           phone_number?: string | null
           phone_number_verified?: boolean
           tier?: Database["public"]["Enums"]["subscription_tier"]
@@ -278,6 +281,13 @@ export type Database = {
           {
             foreignKeyName: "organizations_deleted_by_fkey"
             columns: ["deleted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organizations_owned_by_fkey"
+            columns: ["owned_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]

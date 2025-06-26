@@ -78,6 +78,7 @@ create table "public"."organizations" (
     "updated_at" timestamp with time zone not null default timezone('utc'::text, now()),
     "deleted_at" timestamp with time zone,
     "created_by" uuid,
+    "owned_by" uuid,
     "updated_by" uuid,
     "deleted_by" uuid
 );
@@ -270,6 +271,10 @@ alter table "public"."organizations" validate constraint "organizations_created_
 alter table "public"."organizations" add constraint "organizations_deleted_by_fkey" FOREIGN KEY (deleted_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
 
 alter table "public"."organizations" validate constraint "organizations_deleted_by_fkey";
+
+alter table "public"."organizations" add constraint "organizations_owned_by_fkey" FOREIGN KEY (owned_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
+
+alter table "public"."organizations" validate constraint "organizations_owned_by_fkey";
 
 alter table "public"."organizations" add constraint "organizations_tier_fkey" FOREIGN KEY (tier) REFERENCES tier_limits(tier) not valid;
 

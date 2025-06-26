@@ -2,6 +2,8 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { createClient } from '@supabase/supabase-js';
 import { afterAll, afterEach, beforeAll } from 'vitest';
 
+import type { Database } from '../../schema';
+
 // Test database configuration
 const TEST_SUPABASE_URL = 'http://127.0.0.1:54321';
 const TEST_SUPABASE_ANON_KEY =
@@ -9,17 +11,21 @@ const TEST_SUPABASE_ANON_KEY =
 const TEST_SUPABASE_SERVICE_KEY =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU';
 
-export const testSupabase = createClient(TEST_SUPABASE_URL, TEST_SUPABASE_ANON_KEY);
+export const testSupabase = createClient<Database>(TEST_SUPABASE_URL, TEST_SUPABASE_ANON_KEY);
 
-export function freshAnonClient() {
-  return createClient(TEST_SUPABASE_URL, TEST_SUPABASE_ANON_KEY);
-}
+export const testSupabaseAdmin = createClient<Database>(
+  TEST_SUPABASE_URL,
+  TEST_SUPABASE_SERVICE_KEY,
+);
 
-export const testSupabaseAdmin = createClient(TEST_SUPABASE_URL, TEST_SUPABASE_SERVICE_KEY);
+export type ClearableTable = 'profiles' | 'user_roles' | 'tier_limits' | 'organizations';
 
-export type ClearableTable = 'profiles' | 'user_roles' | 'tier_limits';
-
-const DEFAULT_TABLES_TO_CLEAR: ClearableTable[] = ['profiles', 'user_roles', 'tier_limits'];
+const DEFAULT_TABLES_TO_CLEAR: ClearableTable[] = [
+  'profiles',
+  'user_roles',
+  'tier_limits',
+  'organizations',
+];
 
 // Centralized cleanup manager
 export class TestCleanupManager {
@@ -39,7 +45,7 @@ export class TestCleanupManager {
       } = await testSupabaseAdmin.auth.admin.listUsers();
 
       if (error) {
-        console.warn('Failed to list users for cleanup:', error);
+        console.error('Failed to list users for cleanup:', error);
         return;
       }
 
