@@ -1,8 +1,16 @@
-create type "public"."app_permission" as enum ('course_categories.insert', 'course_categories.update', 'course_categories.delete', 'course_sub_categories.insert', 'course_sub_categories.update', 'course_sub_categories.delete', 'featured_courses_pricing.insert', 'featured_courses_pricing.update', 'featured_courses_pricing.delete', 'lesson_types.insert', 'lesson_types.update', 'lesson_types.delete');
+create type "public"."analytics_level" as enum ('basic', 'intermediate', 'advanced', 'enterprise');
+
+create type "public"."app_permission" as enum ('course_categories.insert', 'course_categories.update', 'course_categories.delete', 'course_sub_categories.insert', 'course_sub_categories.update', 'course_sub_categories.delete', 'featured_courses_pricing.insert', 'featured_courses_pricing.update', 'featured_courses_pricing.delete', 'lesson_types.insert', 'lesson_types.update', 'lesson_types.delete', 'pricing_tier.crud');
 
 create type "public"."app_role" as enum ('go_su', 'go_admin', 'go_staff', 'user');
 
 create type "public"."profile_mode" as enum ('personal', 'organization');
+
+create type "public"."subscription_status" as enum ('active', 'canceled', 'past_due', 'trialing', 'incomplete');
+
+create type "public"."subscription_tier" as enum ('launch', 'scale', 'impact', 'enterprise');
+
+create type "public"."support_level" as enum ('community', 'email', 'priority', 'dedicated');
 
 create table "public"."course_categories" (
     "id" uuid not null default uuid_generate_v4(),
@@ -50,7 +58,7 @@ alter table "public"."lesson_types" enable row level security;
 create table "public"."organizations" (
     "id" uuid not null default uuid_generate_v4(),
     "name" text not null,
-    "slug" text,
+    "handle" text,
     "avatar_url" text,
     "blur_hash" text,
     "is_public" boolean not null default false,
@@ -98,6 +106,27 @@ create table "public"."role_permissions" (
 
 alter table "public"."role_permissions" enable row level security;
 
+create table "public"."tier_limits" (
+    "id" subscription_tier not null,
+    "max_departments_per_org" integer not null,
+    "storage_limit_mb_per_org" integer not null,
+    "max_admins_per_org" integer not null,
+    "max_collaborators_per_course" integer not null,
+    "max_free_courses_per_org" integer not null,
+    "max_students_per_course" integer not null,
+    "ai_tools_enabled" boolean not null default false,
+    "ai_usage_limit_monthly" integer,
+    "custom_domains_enabled" boolean not null default false,
+    "max_custom_domains" integer,
+    "analytics_level" analytics_level not null,
+    "support_level" support_level not null,
+    "platform_fee_percentage" numeric(5,2) not null default 15.00,
+    "white_label_enabled" boolean not null default false
+);
+
+
+alter table "public"."tier_limits" enable row level security;
+
 create table "public"."user_roles" (
     "id" uuid not null default uuid_generate_v4(),
     "user_id" uuid not null,
@@ -133,7 +162,7 @@ CREATE INDEX idx_organizations_deleted_at ON public.organizations USING btree (d
 
 CREATE INDEX idx_organizations_deleted_by ON public.organizations USING btree (deleted_by);
 
-CREATE UNIQUE INDEX idx_organizations_slug_unique ON public.organizations USING btree (slug) WHERE (deleted_at IS NULL);
+CREATE UNIQUE INDEX idx_organizations_handle_unique ON public.organizations USING btree (handle) WHERE (deleted_at IS NULL);
 
 CREATE INDEX idx_organizations_updated_by ON public.organizations USING btree (updated_by);
 
@@ -169,6 +198,8 @@ CREATE UNIQUE INDEX role_permissions_pkey ON public.role_permissions USING btree
 
 CREATE UNIQUE INDEX role_permissions_role_permission_key ON public.role_permissions USING btree (role, permission);
 
+CREATE UNIQUE INDEX tier_limits_pkey ON public.tier_limits USING btree (id);
+
 CREATE UNIQUE INDEX user_roles_pkey ON public.user_roles USING btree (id);
 
 CREATE UNIQUE INDEX user_roles_user_id_role_key ON public.user_roles USING btree (user_id, role);
@@ -184,6 +215,8 @@ alter table "public"."organizations" add constraint "organizations_pkey" PRIMARY
 alter table "public"."profiles" add constraint "profiles_pkey" PRIMARY KEY using index "profiles_pkey";
 
 alter table "public"."role_permissions" add constraint "role_permissions_pkey" PRIMARY KEY using index "role_permissions_pkey";
+
+alter table "public"."tier_limits" add constraint "tier_limits_pkey" PRIMARY KEY using index "tier_limits_pkey";
 
 alter table "public"."user_roles" add constraint "user_roles_pkey" PRIMARY KEY using index "user_roles_pkey";
 
@@ -384,35 +417,30 @@ end;
 $function$
 ;
 
-CREATE OR REPLACE FUNCTION public.normalize_slug(input text)
+CREATE OR REPLACE FUNCTION public.normalize_handle(input text)
  RETURNS text
  LANGUAGE plpgsql
  SET search_path TO ''
 AS $function$
 begin
   return lower(
-    regexp_replace(                               -- Step 3: remove unwanted characters
-      regexp_replace(trim(input), '\s+', '-', 'g'), -- Step 1 & 2: trim + replace spaces
-      '[^a-zA-Z0-9\-]', '', 'g'                   -- Step 3 continued: keep only a-z, 0-9, and -
-    )
+    regexp_replace(trim(input), '[^a-zA-Z0-9_]', '', 'g') -- Remove non-alphanumeric/underscore
   );
 end;
 $function$
 ;
 
-CREATE OR REPLACE FUNCTION public.set_organization_slug()
+CREATE OR REPLACE FUNCTION public.set_organization_handle()
  RETURNS trigger
  LANGUAGE plpgsql
  SET search_path TO ''
 AS $function$
 begin
-  -- Default to name if slug is not provided
-  if NEW.slug is null or NEW.slug = '' then
-    NEW.slug := NEW.name;
+  -- Normalize the handle if it's present
+  if NEW.handle is not null and NEW.handle <> '' then
+    NEW.handle := normalize_handle(NEW.handle);
   end if;
 
-  -- Normalize it using our slug utility
-  NEW.slug := normalize_slug(NEW.slug);
   return NEW;
 end;
 $function$
@@ -682,6 +710,48 @@ grant truncate on table "public"."role_permissions" to "service_role";
 
 grant update on table "public"."role_permissions" to "service_role";
 
+grant delete on table "public"."tier_limits" to "anon";
+
+grant insert on table "public"."tier_limits" to "anon";
+
+grant references on table "public"."tier_limits" to "anon";
+
+grant select on table "public"."tier_limits" to "anon";
+
+grant trigger on table "public"."tier_limits" to "anon";
+
+grant truncate on table "public"."tier_limits" to "anon";
+
+grant update on table "public"."tier_limits" to "anon";
+
+grant delete on table "public"."tier_limits" to "authenticated";
+
+grant insert on table "public"."tier_limits" to "authenticated";
+
+grant references on table "public"."tier_limits" to "authenticated";
+
+grant select on table "public"."tier_limits" to "authenticated";
+
+grant trigger on table "public"."tier_limits" to "authenticated";
+
+grant truncate on table "public"."tier_limits" to "authenticated";
+
+grant update on table "public"."tier_limits" to "authenticated";
+
+grant delete on table "public"."tier_limits" to "service_role";
+
+grant insert on table "public"."tier_limits" to "service_role";
+
+grant references on table "public"."tier_limits" to "service_role";
+
+grant select on table "public"."tier_limits" to "service_role";
+
+grant trigger on table "public"."tier_limits" to "service_role";
+
+grant truncate on table "public"."tier_limits" to "service_role";
+
+grant update on table "public"."tier_limits" to "service_role";
+
 grant delete on table "public"."user_roles" to "service_role";
 
 grant insert on table "public"."user_roles" to "service_role";
@@ -880,6 +950,38 @@ with check ((EXISTS ( SELECT 1
   WHERE ((ur.user_id = ( SELECT auth.uid() AS uid)) AND (ur.role = 'go_su'::app_role)))));
 
 
+create policy "Authorized users can delete tier limits"
+on "public"."tier_limits"
+as permissive
+for delete
+to authenticated
+using (( SELECT authorize('pricing_tier.crud'::app_permission) AS authorize));
+
+
+create policy "Authorized users can insert tier limits"
+on "public"."tier_limits"
+as permissive
+for insert
+to authenticated
+with check (( SELECT authorize('pricing_tier.crud'::app_permission) AS authorize));
+
+
+create policy "Authorized users can update tier limits"
+on "public"."tier_limits"
+as permissive
+for update
+to authenticated
+using (( SELECT authorize('pricing_tier.crud'::app_permission) AS authorize));
+
+
+create policy "Public can read tier limits"
+on "public"."tier_limits"
+as permissive
+for select
+to authenticated, anon
+using (true);
+
+
 create policy "Allow auth admin to read user roles"
 on "public"."user_roles"
 as permissive
@@ -894,7 +996,7 @@ CREATE TRIGGER trg_course_sub_categories_set_updated_at BEFORE UPDATE ON public.
 
 CREATE TRIGGER trg_lesson_types_set_updated_at BEFORE UPDATE ON public.lesson_types FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER trigger_set_organization_slug BEFORE INSERT OR UPDATE ON public.organizations FOR EACH ROW EXECUTE FUNCTION set_organization_slug();
+CREATE TRIGGER trigger_set_organization_handle BEFORE INSERT OR UPDATE ON public.organizations FOR EACH ROW EXECUTE FUNCTION set_organization_handle();
 
 CREATE TRIGGER set_updated_at BEFORE UPDATE ON public.profiles FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 

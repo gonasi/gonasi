@@ -22,7 +22,9 @@ export default [
         route(':username/history', 'routes/myProfile/history-index.tsx'),
       ]),
     ]),
-    route(':username/organizations', 'routes/myProfile/organizations-index.tsx'),
+    route(':username/organizations', 'routes/myProfile/organizations/organizations-index.tsx', [
+      route('new', 'routes/myProfile/organizations/new-organization.tsx'),
+    ]),
   ]),
 
   layout('routes/layouts/auth/auth-layout.tsx', [

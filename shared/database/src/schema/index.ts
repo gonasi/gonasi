@@ -197,12 +197,12 @@ export type Database = {
           deleted_at: string | null
           deleted_by: string | null
           email_verified: boolean
+          handle: string | null
           id: string
           is_public: boolean
           name: string
           phone_number: string | null
           phone_number_verified: boolean
-          slug: string | null
           updated_at: string
           updated_by: string | null
         }
@@ -214,12 +214,12 @@ export type Database = {
           deleted_at?: string | null
           deleted_by?: string | null
           email_verified?: boolean
+          handle?: string | null
           id?: string
           is_public?: boolean
           name: string
           phone_number?: string | null
           phone_number_verified?: boolean
-          slug?: string | null
           updated_at?: string
           updated_by?: string | null
         }
@@ -231,12 +231,12 @@ export type Database = {
           deleted_at?: string | null
           deleted_by?: string | null
           email_verified?: boolean
+          handle?: string | null
           id?: string
           is_public?: boolean
           name?: string
           phone_number?: string | null
           phone_number_verified?: boolean
-          slug?: string | null
           updated_at?: string
           updated_by?: string | null
         }
@@ -350,6 +350,60 @@ export type Database = {
         }
         Relationships: []
       }
+      tier_limits: {
+        Row: {
+          ai_tools_enabled: boolean
+          ai_usage_limit_monthly: number | null
+          analytics_level: Database["public"]["Enums"]["analytics_level"]
+          custom_domains_enabled: boolean
+          id: Database["public"]["Enums"]["subscription_tier"]
+          max_admins_per_org: number
+          max_collaborators_per_course: number
+          max_custom_domains: number | null
+          max_departments_per_org: number
+          max_free_courses_per_org: number
+          max_students_per_course: number
+          platform_fee_percentage: number
+          storage_limit_mb_per_org: number
+          support_level: Database["public"]["Enums"]["support_level"]
+          white_label_enabled: boolean
+        }
+        Insert: {
+          ai_tools_enabled?: boolean
+          ai_usage_limit_monthly?: number | null
+          analytics_level: Database["public"]["Enums"]["analytics_level"]
+          custom_domains_enabled?: boolean
+          id: Database["public"]["Enums"]["subscription_tier"]
+          max_admins_per_org: number
+          max_collaborators_per_course: number
+          max_custom_domains?: number | null
+          max_departments_per_org: number
+          max_free_courses_per_org: number
+          max_students_per_course: number
+          platform_fee_percentage?: number
+          storage_limit_mb_per_org: number
+          support_level: Database["public"]["Enums"]["support_level"]
+          white_label_enabled?: boolean
+        }
+        Update: {
+          ai_tools_enabled?: boolean
+          ai_usage_limit_monthly?: number | null
+          analytics_level?: Database["public"]["Enums"]["analytics_level"]
+          custom_domains_enabled?: boolean
+          id?: Database["public"]["Enums"]["subscription_tier"]
+          max_admins_per_org?: number
+          max_collaborators_per_course?: number
+          max_custom_domains?: number | null
+          max_departments_per_org?: number
+          max_free_courses_per_org?: number
+          max_students_per_course?: number
+          platform_fee_percentage?: number
+          storage_limit_mb_per_org?: number
+          support_level?: Database["public"]["Enums"]["support_level"]
+          white_label_enabled?: boolean
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
@@ -391,12 +445,13 @@ export type Database = {
         Args: { event: Json }
         Returns: Json
       }
-      normalize_slug: {
+      normalize_handle: {
         Args: { input: string }
         Returns: string
       }
     }
     Enums: {
+      analytics_level: "basic" | "intermediate" | "advanced" | "enterprise"
       app_permission:
         | "course_categories.insert"
         | "course_categories.update"
@@ -410,8 +465,17 @@ export type Database = {
         | "lesson_types.insert"
         | "lesson_types.update"
         | "lesson_types.delete"
+        | "pricing_tier.crud"
       app_role: "go_su" | "go_admin" | "go_staff" | "user"
       profile_mode: "personal" | "organization"
+      subscription_status:
+        | "active"
+        | "canceled"
+        | "past_due"
+        | "trialing"
+        | "incomplete"
+      subscription_tier: "launch" | "scale" | "impact" | "enterprise"
+      support_level: "community" | "email" | "priority" | "dedicated"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -530,6 +594,7 @@ export const Constants = {
   },
   public: {
     Enums: {
+      analytics_level: ["basic", "intermediate", "advanced", "enterprise"],
       app_permission: [
         "course_categories.insert",
         "course_categories.update",
@@ -543,9 +608,19 @@ export const Constants = {
         "lesson_types.insert",
         "lesson_types.update",
         "lesson_types.delete",
+        "pricing_tier.crud",
       ],
       app_role: ["go_su", "go_admin", "go_staff", "user"],
       profile_mode: ["personal", "organization"],
+      subscription_status: [
+        "active",
+        "canceled",
+        "past_due",
+        "trialing",
+        "incomplete",
+      ],
+      subscription_tier: ["launch", "scale", "impact", "enterprise"],
+      support_level: ["community", "email", "priority", "dedicated"],
     },
   },
 } as const

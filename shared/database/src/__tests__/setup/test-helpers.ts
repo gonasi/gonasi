@@ -17,9 +17,9 @@ export function freshAnonClient() {
 
 export const testSupabaseAdmin = createClient(TEST_SUPABASE_URL, TEST_SUPABASE_SERVICE_KEY);
 
-export type ClearableTable = 'profiles' | 'user_roles';
+export type ClearableTable = 'profiles' | 'user_roles' | 'tier_limits';
 
-const DEFAULT_TABLES_TO_CLEAR: ClearableTable[] = ['profiles', 'user_roles'];
+const DEFAULT_TABLES_TO_CLEAR: ClearableTable[] = ['profiles', 'user_roles', 'tier_limits'];
 
 // Centralized cleanup manager
 export class TestCleanupManager {
@@ -67,7 +67,7 @@ export class TestCleanupManager {
           .delete()
           .neq('id', '00000000-0000-0000-0000-000000000000');
       } catch (error) {
-        console.warn(`Failed to clear table ${table}:`, error);
+        console.error(`Failed to clear table ${table}:`, error);
       }
     }
   }
@@ -75,8 +75,8 @@ export class TestCleanupManager {
   // Main cleanup method that handles the complete reset
   static async performFullCleanup() {
     await this.signOutAllClients();
-    await this.cleanupUsers();
     await this.clearTables();
+    await this.cleanupUsers();
   }
 }
 

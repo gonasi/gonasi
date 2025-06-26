@@ -16,6 +16,7 @@ values
   ('go_su', 'lesson_types.insert'),  
   ('go_su', 'lesson_types.update'),  
   ('go_su', 'lesson_types.delete'),  
+  ('go_su', 'pricing_tier.crud'),  
 
   -- Admin ('go_admin') has the same permissions as Super User but is intended for high-level management
   ('go_admin', 'course_categories.insert'),  

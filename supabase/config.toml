@@ -56,12 +56,12 @@ schema_paths = [
   './schemas/profiles_triggers.sql',
   './schemas/profiles_schema_rls_policies.sql',
 
-  # # user roles
+  # user roles
   './schemas/app_permission_and_app_role_enums.sql',
   './schemas/user_roles_schema.sql',
   './schemas/user_roles_schema_rls_policies.sql',
 
-  # # permissions
+  # permissions
   './schemas/role_permissions_schema.sql',
   './schemas/role_permissions_rls.sql',
 
@@ -70,6 +70,9 @@ schema_paths = [
 
   # # check if user has permissions
   './schemas/authorize_function.sql',
+
+  # tier limits
+  './schemas/tier_limits_schema_and_indexes.sql',
 
   # # course categories, sub categories rls etc
   './schemas/course_categories_and_sub_categories.sql',
@@ -138,6 +141,7 @@ enabled = true
 sql_paths = [
   './seeds/user_roles_and_permissions.sql',
   './seeds/course_categories_and_sub_categories.sql',
+  './seeds/subscription_tiers.sql',
   # './seeds/lesson_types.sql'
 ]
 

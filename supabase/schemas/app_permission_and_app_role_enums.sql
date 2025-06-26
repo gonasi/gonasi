@@ -11,7 +11,8 @@ create type public.app_permission as enum (
   'featured_courses_pricing.delete',
   'lesson_types.insert',
   'lesson_types.update',
-  'lesson_types.delete'
+  'lesson_types.delete',
+  'pricing_tier.crud'
 );
 
 -- Defines application-level roles.
