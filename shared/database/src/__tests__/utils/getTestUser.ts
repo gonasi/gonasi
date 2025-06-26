@@ -1,8 +1,5 @@
 import { TEST_USERS } from '../fixtures/test-data';
-import type { EmailType } from '../utils/generateRandomEmail';
-
-export const SU_EMAIL = 'gonasiapp@gmail.com';
-export const SU_PASSWORD = 'SuPass123';
+import type { EmailType } from './generateTestEmail';
 
 /**
  * Retrieve a test user by type and optional prefix (like "user1", "staff2")

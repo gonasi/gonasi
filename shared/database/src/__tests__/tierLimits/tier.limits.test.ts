@@ -1,9 +1,14 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { signInWithEmailAndPassword, signUpWithEmailAndPassword } from '../../auth';
+import { SU_EMAIL, SU_PASSWORD } from '../fixtures/test-data';
+import {
+  enterpriseTierLimits,
+  launchTierLimits,
+  scaleTierLimits,
+} from '../setup/seeds/seedOrganizationPricingTiers';
 import { setupTestDatabase, TestCleanupManager, testSupabase } from '../setup/test-helpers';
-import { getTestUser, SU_EMAIL, SU_PASSWORD } from '../utils/getTestUser';
-import { enterpriseTierLimits, launchTierLimits, scaleTierLimits } from './test.data';
+import { getTestUser } from '../utils/getTestUser';
 
 const userOne = getTestUser('user', 'user1');
 const userTwo = getTestUser('user', 'user2');

@@ -1,9 +1,9 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { getUserRole, signInWithEmailAndPassword, signUpWithEmailAndPassword } from '../../auth';
-import { TEST_USERS } from '../fixtures/test-data';
+import { SU_EMAIL, SU_PASSWORD, TEST_USERS } from '../fixtures/test-data';
 import { setupTestDatabase, testSupabase } from '../setup/test-helpers';
-import { getTestUser, SU_EMAIL, SU_PASSWORD } from '../utils/getTestUser';
+import { getTestUser } from '../utils/getTestUser';
 
 describe('Login', () => {
   setupTestDatabase();

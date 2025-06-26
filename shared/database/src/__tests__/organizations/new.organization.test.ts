@@ -1,4 +1,4 @@
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { signInWithEmailAndPassword } from '../../auth';
 import { SeedManager } from '../setup/seed-manager';
@@ -13,16 +13,15 @@ describe('New Organization', () => {
 
   describe('Creation of new', () => {
     beforeAll(async () => {
-      await TestCleanupManager.performFullCleanup();
+      try {
+        await TestCleanupManager.performFullCleanup();
+        console.log('✔️ Cleanup completed');
+      } catch (err) {
+        console.error('❌ Cleanup failed:', err);
+        throw err;
+      }
 
-      await SeedManager.signUpUsers();
-      await SeedManager.completeOnboardingForUsers();
-      await SeedManager.seedPricingTiers();
-    });
-
-    afterAll(async () => {
-      await TestCleanupManager.signOutAllClients();
-      await TestCleanupManager.performFullCleanup();
+      await SeedManager.runSeedPipeline(['users', 'onboarding', 'lessonTypes', 'pricingTiers']);
     });
 
     beforeEach(async () => {

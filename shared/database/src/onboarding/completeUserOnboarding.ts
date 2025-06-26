@@ -12,15 +12,16 @@ export const completeUserOnboarding = async (
 
   const { username, fullName } = onboardingData;
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('profiles')
     .update({
       username,
       full_name: fullName,
     })
-    .eq('id', userId);
+    .eq('id', userId)
+    .select();
 
-  if (error) {
+  if (error || !data) {
     return {
       success: false,
       message: 'Could not update user profile',

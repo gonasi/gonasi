@@ -1,18 +1,23 @@
 import { faker } from '@snaplet/copycat';
 
-import { signUpWithEmailAndPassword } from '../../auth';
+import { seedAllLessonTypes } from './seeds/seedAllLessonTypes';
+import { seedOrganizationPricingTiers } from './seeds/seedOrganizationPricingTiers';
+import { signInWithEmailAndPassword, signUpWithEmailAndPassword } from '../../auth';
 import { completeUserOnboarding } from '../../onboarding';
 import { TEST_USERS } from '../fixtures/test-data';
-import { seedLessonTypes } from '../seeds/seedLessonTypes';
-import { seedOrganizationPricingTiers } from '../seeds/seedOrganizationPricingTiers';
-import { testSupabase } from './test-helpers';
+import { TestCleanupManager, testSupabase } from './test-helpers';
 
+type SeedStep = 'users' | 'onboarding' | 'lessonTypes' | 'pricingTiers';
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 export class SeedManager {
-  // seed data needed
-
   static async signUpUsers() {
     for (const { email, password, fullName } of TEST_USERS) {
-      if (!email || !password) continue;
+      if (!email || !password) {
+        throw new Error(`❌ Missing email or password for user: ${fullName}`);
+      }
 
       const { error } = await signUpWithEmailAndPassword(testSupabase, {
         email,
@@ -23,48 +28,83 @@ export class SeedManager {
       if (error) {
         throw new Error(`❌ Sign-up failed for ${email}: ${error.message}`);
       }
+
+      await sleep(200);
+      await TestCleanupManager.signOutAllClients();
     }
   }
 
   static async completeOnboardingForUsers() {
-    const { data: profiles, error } = await testSupabase.from('profiles').select();
+    await TestCleanupManager.signOutAllClients();
 
-    if (error || !profiles) {
-      throw new Error(`❌ Failed to fetch profiles: ${error?.message ?? 'Unknown error'}`);
-    }
+    for (const { email, password } of TEST_USERS) {
+      if (!email || !password) {
+        throw new Error(`❌ Missing email or password for user: ${email}`);
+      }
 
-    for (const { email } of profiles) {
-      const username = faker.internet.userName().toLowerCase();
-      const fullName = faker.person.fullName();
+      const { error } = await signInWithEmailAndPassword(testSupabase, {
+        email,
+        password,
+      });
+
+      if (error) {
+        throw new Error(`❌ Sign-in failed for ${email}: ${error.message}`);
+      }
 
       const { success, message } = await completeUserOnboarding(testSupabase, {
-        username,
-        fullName,
+        username: faker.internet.userName().toLowerCase(),
+        fullName: faker.person.fullName(),
       });
 
       if (!success) {
         throw new Error(`❌ Onboarding failed for ${email}: ${message}`);
       }
+
+      await TestCleanupManager.signOutAllClients();
     }
   }
 
   static async seedLessonTypes() {
-    const { data: profiles, error } = await testSupabase.from('profiles').select();
-
-    if (error || !profiles) {
-      throw new Error(`❌ Failed to fetch profiles: ${error?.message ?? 'Unknown error'}`);
-    }
-
-    await seedLessonTypes(profiles);
+    await seedAllLessonTypes();
   }
 
   static async seedPricingTiers() {
-    const { data: profiles, error } = await testSupabase.from('profiles').select();
+    await seedOrganizationPricingTiers();
+  }
 
-    if (error || !profiles) {
-      throw new Error(`❌ Failed to fetch profiles: ${error?.message ?? 'Unknown error'}`);
+  static async runSeedPipeline(
+    steps: SeedStep[] = ['users', 'onboarding', 'lessonTypes', 'pricingTiers'],
+  ) {
+    try {
+      await TestCleanupManager.performFullCleanup();
+
+      for (const step of steps) {
+        switch (step) {
+          case 'users':
+            console.log('🚀 Signing up users...');
+            await this.signUpUsers();
+            break;
+          case 'onboarding':
+            console.log('👤 Completing onboarding...');
+            await this.completeOnboardingForUsers();
+            break;
+          case 'lessonTypes':
+            console.log('📚 Seeding lesson types...');
+            await this.seedLessonTypes();
+            break;
+          case 'pricingTiers':
+            console.log('💸 Seeding pricing tiers...');
+            await this.seedPricingTiers();
+            break;
+          default:
+            throw new Error(`❌ Unknown seed step: "${step}"`);
+        }
+      }
+
+      console.log('✅ Seeding pipeline completed.');
+    } catch (err) {
+      console.error('❌ Seeding process failed:', err);
+      throw err;
     }
-
-    await seedOrganizationPricingTiers(profiles);
   }
 }

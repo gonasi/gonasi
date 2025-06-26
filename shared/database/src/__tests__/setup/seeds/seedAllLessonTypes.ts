@@ -1,10 +1,8 @@
-import { faker } from '@snaplet/copycat';
-
 import { createLessonType } from '@gonasi/database/lessonTypes';
 
-import type { Database } from '../../schema';
-import { testSupabase } from '../setup/test-helpers';
-import { SU_EMAIL, SU_PASSWORD } from '../utils/getTestUser';
+import { signInWithEmailAndPassword } from '../../../auth';
+import { SU_EMAIL, SU_PASSWORD } from '../../fixtures/test-data';
+import { TestCleanupManager, testSupabase } from '../test-helpers';
 
 const lessonTypes = [
   {
@@ -99,22 +97,20 @@ const lessonTypes = [
   },
 ];
 
-export async function seedLessonTypes(profiles: Database['public']['Tables']['profiles']['Row'][]) {
-  const admins = profiles.filter((profile) => profile.email === SU_EMAIL);
+export async function seedAllLessonTypes() {
+  await TestCleanupManager.signOutAllClients();
+
+  const { error: signInError } = await signInWithEmailAndPassword(testSupabase, {
+    email: SU_EMAIL,
+    password: SU_PASSWORD,
+  });
+
+  if (signInError) {
+    console.error(`❌ Failed to sign in as ${SU_EMAIL}:`, signInError.message);
+    throw new Error('Stopping seed due to sign-in failure.');
+  }
 
   for (const { name, description, lucideIcon, bgColor } of lessonTypes) {
-    const creator = faker.helpers.arrayElement(admins);
-
-    const { error: signInError } = await testSupabase.auth.signInWithPassword({
-      email: creator.email,
-      password: SU_PASSWORD,
-    });
-
-    if (signInError) {
-      console.error(`❌ Failed to sign in as ${creator.email}:`, signInError.message);
-      throw new Error('Stopping seed due to sign-in failure.');
-    }
-
     const { success, message } = await createLessonType(testSupabase, {
       name,
       description,
@@ -124,10 +120,10 @@ export async function seedLessonTypes(profiles: Database['public']['Tables']['pr
 
     if (!success) {
       console.error(`❌ Failed to create lesson type "${name}" - ${message}`);
-      await testSupabase.auth.signOut(); // Clean up before exiting
+      await TestCleanupManager.signOutAllClients();
       throw new Error('Stopping seed due to lesson type creation failure.');
     }
-
-    await testSupabase.auth.signOut();
   }
+
+  await TestCleanupManager.signOutAllClients();
 }

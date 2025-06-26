@@ -89,7 +89,7 @@ describe('Profile RLS Policies', () => {
         });
 
         const { user } = await getUserProfile(testSupabase);
-        const userId = user?.id;
+        const userId = user?.id ?? '';
 
         // Sign out and try to read specific profile
         await TestCleanupManager.signOutAllClients();
@@ -117,7 +117,7 @@ describe('Profile RLS Policies', () => {
         const {
           data: { user },
         } = await testSupabase.auth.getUser();
-        const userId = user?.id;
+        const userId = user?.id ?? '';
 
         // Try to insert a profile record (this would typically be done via trigger)
         const { data, error } = await testSupabase
@@ -156,7 +156,7 @@ describe('Profile RLS Policies', () => {
         });
 
         const { user: userTwoProfile } = await getUserProfile(testSupabase);
-        const userTwoId = userTwoProfile?.id;
+        const userTwoId = userTwoProfile?.id ?? '';
 
         // Sign back in as userOne
         await TestCleanupManager.signOutAllClients();
@@ -215,7 +215,7 @@ describe('Profile RLS Policies', () => {
         });
 
         const { user } = await getUserProfile(testSupabase);
-        const userId = user?.id;
+        const userId = user?.id ?? '';
 
         // Update own profile
         const { data, error } = await testSupabase
@@ -241,7 +241,7 @@ describe('Profile RLS Policies', () => {
         });
 
         const { user: userOneProfile } = await getUserProfile(testSupabase);
-        const userOneId = userOneProfile?.id;
+        const userOneId = userOneProfile?.id ?? '';
 
         // Sign in as userTwo and get profile
         await TestCleanupManager.signOutAllClients();
@@ -250,7 +250,7 @@ describe('Profile RLS Policies', () => {
           password: userTwo.password,
         });
 
-        const { user: userTwoProfile } = await getUserProfile(testSupabase);
+        await getUserProfile(testSupabase);
 
         // Try to update userOne's profile while signed in as userTwo
         const { data, error } = await testSupabase
@@ -285,7 +285,7 @@ describe('Profile RLS Policies', () => {
         });
 
         const { user } = await getUserProfile(testSupabase);
-        const userId = user?.id;
+        const userId = user?.id ?? '';
 
         // Sign out and try to update as anonymous user
         await TestCleanupManager.signOutAllClients();
@@ -312,7 +312,7 @@ describe('Profile RLS Policies', () => {
         });
 
         const { user } = await getUserProfile(testSupabase);
-        const userId = user?.id;
+        const userId = user?.id ?? '';
 
         // Delete own profile
         const { data, error } = await testSupabase
@@ -339,7 +339,7 @@ describe('Profile RLS Policies', () => {
         });
 
         const { user: userOneProfile } = await getUserProfile(testSupabase);
-        const userOneId = userOneProfile?.id;
+        const userOneId = userOneProfile?.id ?? '';
 
         // Sign in as userTwo
         await TestCleanupManager.signOutAllClients();
@@ -378,7 +378,7 @@ describe('Profile RLS Policies', () => {
         });
 
         const { user } = await getUserProfile(testSupabase);
-        const userId = user?.id;
+        const userId = user?.id ?? '';
 
         // Sign out and try to delete as anonymous user
         await TestCleanupManager.signOutAllClients();
@@ -422,7 +422,7 @@ describe('Profile RLS Policies', () => {
         const { data: readProfile, error: readError } = await testSupabase
           .from('profiles')
           .select('*')
-          .eq('id', userTwoProfile?.id)
+          .eq('id', userTwoProfile?.id ?? '')
           .single();
 
         expect(readError).toBeNull();
@@ -432,7 +432,7 @@ describe('Profile RLS Policies', () => {
         const { data: updateData, error: updateError } = await testSupabase
           .from('profiles')
           .update({ full_name: 'Unauthorized Update' })
-          .eq('id', userTwoProfile?.id)
+          .eq('id', userTwoProfile?.id ?? '')
           .select();
 
         expect(updateData).toEqual([]);
@@ -442,7 +442,7 @@ describe('Profile RLS Policies', () => {
         const { data: deleteData, error: deleteError } = await testSupabase
           .from('profiles')
           .delete()
-          .eq('id', userTwoProfile?.id)
+          .eq('id', userTwoProfile?.id ?? '')
           .select();
 
         expect(deleteData).toEqual([]);
@@ -459,7 +459,7 @@ describe('Profile RLS Policies', () => {
         await testSupabase
           .from('profiles')
           .update({ username: 'userone123', full_name: 'User One' })
-          .eq('id', (await getUserProfile(testSupabase)).user?.id);
+          .eq('id', (await getUserProfile(testSupabase)).user?.id ?? '');
 
         await TestCleanupManager.signOutAllClients();
         await signInWithEmailAndPassword(testSupabase, {
@@ -470,7 +470,7 @@ describe('Profile RLS Policies', () => {
         await testSupabase
           .from('profiles')
           .update({ username: 'usertwo123', full_name: 'User Two' })
-          .eq('id', (await getUserProfile(testSupabase)).user?.id);
+          .eq('id', (await getUserProfile(testSupabase)).user?.id ?? '');
 
         // Verify each user can only see their own data in update operations
         const { data: userTwoUpdates } = await testSupabase
