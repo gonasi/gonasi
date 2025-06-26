@@ -25,7 +25,7 @@ export function TopNav({ user }: Props) {
 
             <div className='flex h-full items-center space-x-4'>
               <TopNavLink icon={<House size={20} />} to='/' name='Home' />
-              <TopNavLink icon={<Telescope size={20} />} to='/explore' name='Explore' />
+              <TopNavLink icon={<Telescope size={20} />} to='/go/explore' name='Explore' />
             </div>
           </div>
           {user ? (

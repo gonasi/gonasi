@@ -38,7 +38,7 @@ export function meta() {
     },
     {
       property: 'og:url',
-      content: 'https://gonasi.com/explore',
+      content: 'https://gonasi.com/go/explore',
     },
     {
       property: 'og:image',

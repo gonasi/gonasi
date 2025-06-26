@@ -4,6 +4,7 @@ import { convertKeysToCamelCase, supabase } from './src/constants';
 import { seedCompleteOnboarding } from './src/seedCompleteOnboarding';
 import { seedCourseCategories } from './src/seedCourseCategories';
 import { seedLessonTypes } from './src/seedLessonTypes';
+import { seedPricingTiers } from './src/seedPricingTiers';
 import { signUpUsers } from './src/signUpUsers';
 
 const main = async () => {
@@ -25,6 +26,7 @@ const main = async () => {
 
   await seedLessonTypes(profiles);
   await seedCourseCategories(profiles);
+  await seedPricingTiers(profiles);
 
   // await seedPathways(profiles);
 

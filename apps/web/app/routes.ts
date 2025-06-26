@@ -5,7 +5,8 @@ export default [
     // /
     index('routes/public/home.tsx'),
     // /explore
-    route('explore', 'routes/public/explore.tsx'),
+    route('go/explore', 'routes/public/explore.tsx'),
+    route('go/pricing', 'routes/public/pricing.tsx'),
 
     route('c/:publishedCourseId', 'routes/public/published-course-id-index.tsx', [
       route('enroll/:pricingTierId', 'routes/publishedCourses/enroll-index.tsx', [

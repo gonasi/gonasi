@@ -16,7 +16,7 @@ export function BottomNav({ user }: Props) {
       <div className='from-secondary/30 to-primary/30 h-0.5 bg-gradient-to-r' />
       <div className='flex h-full w-full items-center justify-between px-4'>
         <BottomNavLink icon={House} to='/' />
-        <BottomNavLink icon={Telescope} to='/explore' />
+        <BottomNavLink icon={Telescope} to='/go/explore' />
         <div className='min-w-12'>
           {user ? (
             <NavLink to={`/${user.username}`} className='w-full'>

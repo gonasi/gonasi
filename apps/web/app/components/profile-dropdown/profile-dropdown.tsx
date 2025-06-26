@@ -28,7 +28,7 @@ export function ProfileDropdown({
   user,
   dropdownPosition = 'bottom',
   dropdownAlign = 'end',
-  showName = false,
+  showName = true,
   size,
 }: Props) {
   const location = useLocation();
