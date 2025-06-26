@@ -356,7 +356,6 @@ export type Database = {
           ai_usage_limit_monthly: number | null
           analytics_level: Database["public"]["Enums"]["analytics_level"]
           custom_domains_enabled: boolean
-          id: Database["public"]["Enums"]["subscription_tier"]
           max_admins_per_org: number
           max_collaborators_per_course: number
           max_custom_domains: number | null
@@ -366,6 +365,7 @@ export type Database = {
           platform_fee_percentage: number
           storage_limit_mb_per_org: number
           support_level: Database["public"]["Enums"]["support_level"]
+          tier: Database["public"]["Enums"]["subscription_tier"]
           white_label_enabled: boolean
         }
         Insert: {
@@ -373,7 +373,6 @@ export type Database = {
           ai_usage_limit_monthly?: number | null
           analytics_level: Database["public"]["Enums"]["analytics_level"]
           custom_domains_enabled?: boolean
-          id: Database["public"]["Enums"]["subscription_tier"]
           max_admins_per_org: number
           max_collaborators_per_course: number
           max_custom_domains?: number | null
@@ -383,6 +382,7 @@ export type Database = {
           platform_fee_percentage?: number
           storage_limit_mb_per_org: number
           support_level: Database["public"]["Enums"]["support_level"]
+          tier: Database["public"]["Enums"]["subscription_tier"]
           white_label_enabled?: boolean
         }
         Update: {
@@ -390,7 +390,6 @@ export type Database = {
           ai_usage_limit_monthly?: number | null
           analytics_level?: Database["public"]["Enums"]["analytics_level"]
           custom_domains_enabled?: boolean
-          id?: Database["public"]["Enums"]["subscription_tier"]
           max_admins_per_org?: number
           max_collaborators_per_course?: number
           max_custom_domains?: number | null
@@ -400,6 +399,7 @@ export type Database = {
           platform_fee_percentage?: number
           storage_limit_mb_per_org?: number
           support_level?: Database["public"]["Enums"]["support_level"]
+          tier?: Database["public"]["Enums"]["subscription_tier"]
           white_label_enabled?: boolean
         }
         Relationships: []

@@ -62,10 +62,68 @@ export class TestCleanupManager {
     // Clear tables in reverse order to handle dependencies
     for (const table of [...tables].reverse()) {
       try {
-        await testSupabaseAdmin
+        // For tier_limits and other tables with enum IDs, we need a different approach
+        if (table === 'tier_limits') {
+          // Delete all rows without any condition (Supabase allows this)
+          const { error } = await testSupabaseAdmin.from(table).delete().not('tier', 'is', null); // This will match all rows since id is not null (it's a primary key)
+
+          if (error) {
+            console.error(`Failed to clear table ${table}:`, error);
+          }
+          continue;
+        }
+
+        // For other tables, try to get table structure to check if 'id' column exists
+        const { data: tableData, error: fetchError } = await testSupabaseAdmin
           .from(table)
-          .delete()
-          .neq('id', '00000000-0000-0000-0000-000000000000');
+          .select('*')
+          .limit(1);
+
+        if (fetchError && fetchError.code !== 'PGRST116') {
+          // PGRST116 = no rows returned
+          console.error(`Failed to check table structure for ${table}:`, fetchError);
+          continue;
+        }
+
+        // Check if table has any data and if it has an 'id' field
+        const hasIdField = tableData && tableData.length > 0 && 'id' in tableData[0];
+
+        if (hasIdField) {
+          // Check if the id looks like a UUID (for tables with UUID primary keys)
+          const firstRow = tableData[0];
+          const isUuidId =
+            typeof firstRow.id === 'string' &&
+            firstRow.id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
+
+          if (isUuidId) {
+            // Use the existing logic for tables with UUID 'id' field
+            await testSupabaseAdmin
+              .from(table)
+              .delete()
+              .neq('id', '00000000-0000-0000-0000-000000000000');
+          } else {
+            // For tables with non-UUID 'id' field, delete all rows
+            await testSupabaseAdmin.from(table).delete().not('id', 'is', null); // This will match all rows since id cannot be null
+          }
+        } else {
+          // For tables without 'id' field, delete all rows
+          // Try multiple approaches since we don't know the table structure
+          try {
+            // Try with created_at first (most common timestamp field)
+            await testSupabaseAdmin.from(table).delete().not('created_at', 'is', null);
+          } catch {
+            try {
+              // Fallback: try with updated_at
+              await testSupabaseAdmin.from(table).delete().not('updated_at', 'is', null);
+            } catch {
+              // Last resort: try to delete everything (this might fail on some Supabase versions)
+              await testSupabaseAdmin
+                .from(table)
+                .delete()
+                .neq('dummy_field_that_does_not_exist', 'dummy_value');
+            }
+          }
+        }
       } catch (error) {
         console.error(`Failed to clear table ${table}:`, error);
       }

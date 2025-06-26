@@ -1,5 +1,5 @@
 insert into public.tier_limits (
-  id,
+  tier,
   max_departments_per_org,
   storage_limit_mb_per_org,
   max_admins_per_org,

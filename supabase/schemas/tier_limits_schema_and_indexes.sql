@@ -65,7 +65,7 @@ create type support_level as enum (
 -- TABLE: public.tier_limits
 -- ===================================================
 create table tier_limits (
-  id subscription_tier primary key,
+  tier subscription_tier primary key,
 
   -- Organizational limits
   max_departments_per_org integer not null,

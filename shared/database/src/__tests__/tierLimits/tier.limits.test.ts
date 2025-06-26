@@ -3,6 +3,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from
 import { signInWithEmailAndPassword, signUpWithEmailAndPassword } from '../../auth';
 import { setupTestDatabase, TestCleanupManager, testSupabase } from '../setup/test-helpers';
 import { getTestUser, SU_EMAIL, SU_PASSWORD } from '../utils/getTestUser';
+import { enterpriseTierLimits, launchTierLimits, scaleTierLimits } from './test.data';
 
 const userOne = getTestUser('user', 'user1');
 const userTwo = getTestUser('user', 'user2');
@@ -14,61 +15,6 @@ const adminUser = {
 };
 
 const TEST_USERS = [userOne, userTwo, adminUser];
-
-// Sample tier limits data for testing
-const launchTierLimits = {
-  tier: 'launch',
-  max_departments_per_org: 3,
-  storage_limit_mb_per_org: 1000,
-  max_admins_per_org: 2,
-  max_collaborators_per_course: 5,
-  max_free_courses_per_org: 3,
-  max_students_per_course: 50,
-  ai_tools_enabled: false,
-  ai_usage_limit_monthly: null,
-  custom_domains_enabled: false,
-  max_custom_domains: null,
-  analytics_level: 'basic',
-  support_level: 'community',
-  platform_fee_percentage: 15.0,
-  white_label_enabled: false,
-};
-
-const scaleTierLimits = {
-  tier: 'scale',
-  max_departments_per_org: 10,
-  storage_limit_mb_per_org: 10000,
-  max_admins_per_org: 5,
-  max_collaborators_per_course: 15,
-  max_free_courses_per_org: 5,
-  max_students_per_course: 200,
-  ai_tools_enabled: true,
-  ai_usage_limit_monthly: 1000,
-  custom_domains_enabled: true,
-  max_custom_domains: 3,
-  analytics_level: 'intermediate',
-  support_level: 'email',
-  platform_fee_percentage: 10.0,
-  white_label_enabled: false,
-};
-
-const enterpriseTierLimits = {
-  tier: 'enterprise',
-  max_departments_per_org: -1, // Unlimited
-  storage_limit_mb_per_org: 100000,
-  max_admins_per_org: 20,
-  max_collaborators_per_course: 50,
-  max_free_courses_per_org: 10,
-  max_students_per_course: 1000,
-  ai_tools_enabled: true,
-  ai_usage_limit_monthly: null, // Unlimited
-  custom_domains_enabled: true,
-  max_custom_domains: 10,
-  analytics_level: 'enterprise',
-  support_level: 'dedicated',
-  platform_fee_percentage: 5.0,
-  white_label_enabled: true,
-};
 
 describe('Tier Limits RLS Policies', () => {
   setupTestDatabase();
@@ -103,6 +49,12 @@ describe('Tier Limits RLS Policies', () => {
 
     beforeEach(async () => {
       await TestCleanupManager.clearTables(['tier_limits']);
+
+      // First, insert some test data as admin
+      await signInWithEmailAndPassword(testSupabase, {
+        email: adminUser.email,
+        password: adminUser.password,
+      });
     });
 
     afterEach(async () => {
@@ -111,18 +63,16 @@ describe('Tier Limits RLS Policies', () => {
     });
 
     describe('Public read access policy', () => {
-      it.only('should allow authenticated users to read tier limits', async () => {
-        // First, insert some test data as admin
-        await signInWithEmailAndPassword(testSupabase, {
-          email: adminUser.email,
-          password: adminUser.password,
-        });
+      it('should allow authenticated users to read tier limits', async () => {
+        const { error: insertTierError } = await testSupabase
+          .from('tier_limits')
+          .insert([launchTierLimits, scaleTierLimits]);
 
-        await testSupabase.from('tier_limits').insert([launchTierLimits, scaleTierLimits]);
-
-        // Sign in as regular user
+        expect(insertTierError).toBeNull();
+        // Sign out
         await TestCleanupManager.signOutAllClients();
 
+        // Sign in as regular user
         await signInWithEmailAndPassword(testSupabase, {
           email: userOne.email,
           password: userOne.password,
@@ -142,12 +92,6 @@ describe('Tier Limits RLS Policies', () => {
       });
 
       it('should allow anonymous users to read tier limits', async () => {
-        // First, insert some test data as admin
-        await signInWithEmailAndPassword(testSupabase, {
-          email: adminUser.email,
-          password: adminUser.password,
-        });
-
         await testSupabase.from('tier_limits').insert([launchTierLimits]);
 
         // Sign out to become anonymous
@@ -167,12 +111,6 @@ describe('Tier Limits RLS Policies', () => {
       });
 
       it('should allow reading specific tier limits by tier', async () => {
-        // First, insert test data as admin
-        await signInWithEmailAndPassword(testSupabase, {
-          email: adminUser.email,
-          password: adminUser.password,
-        });
-
         await testSupabase.from('tier_limits').insert([launchTierLimits, scaleTierLimits]);
 
         // Sign out and try to read specific tier as anonymous
@@ -193,19 +131,13 @@ describe('Tier Limits RLS Policies', () => {
 
     describe('Authorized create policy', () => {
       it('should allow authorized users to insert tier limits', async () => {
-        // Sign in as admin user (has pricing_tier.crud authorization)
-        await signInWithEmailAndPassword(testSupabase, {
-          email: adminUser.email,
-          password: adminUser.password,
-        });
-
         const { data, error } = await testSupabase
           .from('tier_limits')
           .insert(launchTierLimits)
           .select()
           .single();
 
-        expect(error).toBe('hello');
+        expect(error).toBeNull();
         expect(data?.tier).toBe('launch');
         expect(data?.max_departments_per_org).toBe(3);
         expect(data?.ai_tools_enabled).toBe(false);
@@ -297,7 +229,7 @@ describe('Tier Limits RLS Policies', () => {
         expect(data?.tier).toBe('launch');
         expect(data?.max_departments_per_org).toBe(5);
         expect(data?.ai_tools_enabled).toBe(true);
-        expect(data?.platform_fee_percentage).toBe('12.50');
+        expect(data?.platform_fee_percentage).toBeCloseTo(12.5, 2); // 2 = number of decimal places
       });
 
       it('should prevent unauthorized users from updating tier limits', async () => {
@@ -328,7 +260,7 @@ describe('Tier Limits RLS Policies', () => {
           .single();
 
         expect(verifyData?.max_departments_per_org).toBe(3); // Original value
-        expect(verifyData?.platform_fee_percentage).toBe('15.00'); // Original value
+        expect(verifyData?.platform_fee_percentage).toBeCloseTo(15, 2); // Original value
       });
 
       it('should prevent anonymous users from updating tier limits', async () => {
@@ -603,11 +535,6 @@ describe('Tier Limits RLS Policies', () => {
 
     describe('Tier limits data validation', () => {
       it('should preserve all tier limit fields correctly', async () => {
-        await signInWithEmailAndPassword(testSupabase, {
-          email: adminUser.email,
-          password: adminUser.password,
-        });
-
         const { data, error } = await testSupabase
           .from('tier_limits')
           .insert(enterpriseTierLimits)
@@ -628,7 +555,7 @@ describe('Tier Limits RLS Policies', () => {
         expect(data?.max_custom_domains).toBe(10);
         expect(data?.analytics_level).toBe('enterprise');
         expect(data?.support_level).toBe('dedicated');
-        expect(data?.platform_fee_percentage).toBe('5.00');
+        expect(data?.platform_fee_percentage).toBeCloseTo(5, 2);
         expect(data?.white_label_enabled).toBe(true);
       });
 

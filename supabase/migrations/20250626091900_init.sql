@@ -107,7 +107,7 @@ create table "public"."role_permissions" (
 alter table "public"."role_permissions" enable row level security;
 
 create table "public"."tier_limits" (
-    "id" subscription_tier not null,
+    "tier" subscription_tier not null,
     "max_departments_per_org" integer not null,
     "storage_limit_mb_per_org" integer not null,
     "max_admins_per_org" integer not null,
@@ -198,7 +198,7 @@ CREATE UNIQUE INDEX role_permissions_pkey ON public.role_permissions USING btree
 
 CREATE UNIQUE INDEX role_permissions_role_permission_key ON public.role_permissions USING btree (role, permission);
 
-CREATE UNIQUE INDEX tier_limits_pkey ON public.tier_limits USING btree (id);
+CREATE UNIQUE INDEX tier_limits_pkey ON public.tier_limits USING btree (tier);
 
 CREATE UNIQUE INDEX user_roles_pkey ON public.user_roles USING btree (id);
 
