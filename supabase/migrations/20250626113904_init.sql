@@ -58,13 +58,22 @@ alter table "public"."lesson_types" enable row level security;
 create table "public"."organizations" (
     "id" uuid not null default uuid_generate_v4(),
     "name" text not null,
-    "handle" text,
+    "handle" text not null,
+    "description" text,
+    "website_url" text,
     "avatar_url" text,
     "blur_hash" text,
+    "banner_url" text,
+    "banner_blur_hash" text,
     "is_public" boolean not null default false,
+    "is_verified" boolean not null default false,
+    "email" text,
     "phone_number" text,
     "phone_number_verified" boolean not null default false,
     "email_verified" boolean not null default false,
+    "whatsapp_number" text,
+    "location" text,
+    "tier" subscription_tier not null default 'launch'::subscription_tier,
     "created_at" timestamp with time zone not null default timezone('utc'::text, now()),
     "updated_at" timestamp with time zone not null default timezone('utc'::text, now()),
     "deleted_at" timestamp with time zone,
@@ -164,6 +173,8 @@ CREATE INDEX idx_organizations_deleted_by ON public.organizations USING btree (d
 
 CREATE UNIQUE INDEX idx_organizations_handle_unique ON public.organizations USING btree (handle) WHERE (deleted_at IS NULL);
 
+CREATE INDEX idx_organizations_tier ON public.organizations USING btree (tier);
+
 CREATE INDEX idx_organizations_updated_by ON public.organizations USING btree (updated_by);
 
 CREATE INDEX idx_profiles_active_organization_id ON public.profiles USING btree (active_organization_id);
@@ -259,6 +270,10 @@ alter table "public"."organizations" validate constraint "organizations_created_
 alter table "public"."organizations" add constraint "organizations_deleted_by_fkey" FOREIGN KEY (deleted_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
 
 alter table "public"."organizations" validate constraint "organizations_deleted_by_fkey";
+
+alter table "public"."organizations" add constraint "organizations_tier_fkey" FOREIGN KEY (tier) REFERENCES tier_limits(tier) not valid;
+
+alter table "public"."organizations" validate constraint "organizations_tier_fkey";
 
 alter table "public"."organizations" add constraint "organizations_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
 
@@ -436,9 +451,8 @@ CREATE OR REPLACE FUNCTION public.set_organization_handle()
  SET search_path TO ''
 AS $function$
 begin
-  -- Normalize the handle if it's present
   if NEW.handle is not null and NEW.handle <> '' then
-    NEW.handle := normalize_handle(NEW.handle);
+    NEW.handle := public.normalize_handle(NEW.handle); -- Fully qualified
   end if;
 
   return NEW;

@@ -39,3 +39,10 @@ on conflict (id) do nothing;
 insert into storage.buckets (id, name, public)
 values ('published_thumbnails', 'published_thumbnails', true)
 on conflict (id) do nothing;
+
+-- ================================================================
+-- private bucket for organization  
+-- ================================================================
+insert into storage.buckets (id, name)
+values ('organization', 'organization')
+on conflict (id) do nothing; 

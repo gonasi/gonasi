@@ -2843,6 +2843,34 @@
           "name": "handle",
           "columnName": "handle",
           "type": "text",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.organizations.description",
+          "name": "description",
+          "columnName": "description",
+          "type": "text",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.organizations.website_url",
+          "name": "website_url",
+          "columnName": "website_url",
+          "type": "text",
           "isRequired": false,
           "kind": "scalar",
           "isList": false,
@@ -2881,6 +2909,34 @@
           "maxLength": null
         },
         {
+          "id": "public.organizations.banner_url",
+          "name": "banner_url",
+          "columnName": "banner_url",
+          "type": "text",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.organizations.banner_blur_hash",
+          "name": "banner_blur_hash",
+          "columnName": "banner_blur_hash",
+          "type": "text",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
           "id": "public.organizations.is_public",
           "name": "is_public",
           "columnName": "is_public",
@@ -2891,6 +2947,34 @@
           "isGenerated": false,
           "sequence": false,
           "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.organizations.is_verified",
+          "name": "is_verified",
+          "columnName": "is_verified",
+          "type": "bool",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.organizations.email",
+          "name": "email",
+          "columnName": "email",
+          "type": "text",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
           "isId": false,
           "maxLength": null
         },
@@ -2927,6 +3011,48 @@
           "name": "email_verified",
           "columnName": "email_verified",
           "type": "bool",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.organizations.whatsapp_number",
+          "name": "whatsapp_number",
+          "columnName": "whatsapp_number",
+          "type": "text",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.organizations.location",
+          "name": "location",
+          "columnName": "location",
+          "type": "text",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.organizations.tier",
+          "name": "tier",
+          "columnName": "tier",
+          "type": "subscription_tier",
           "isRequired": true,
           "kind": "scalar",
           "isList": false,
@@ -3067,6 +3193,24 @@
           ],
           "relationToFields": [
             "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "tier_limits",
+          "type": "tier_limits",
+          "isRequired": true,
+          "kind": "object",
+          "relationName": "organizationsTotier_limits",
+          "relationFromFields": [
+            "tier"
+          ],
+          "relationToFields": [
+            "tier"
           ],
           "isList": false,
           "isId": false,
@@ -5852,6 +5996,20 @@
           "hasDefaultValue": true,
           "isId": false,
           "maxLength": null
+        },
+        {
+          "name": "organizations",
+          "type": "organizations",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "organizationsTotier_limits",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
         }
       ],
       "uniqueConstraints": [

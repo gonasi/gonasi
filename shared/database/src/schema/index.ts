@@ -191,54 +191,81 @@ export type Database = {
       organizations: {
         Row: {
           avatar_url: string | null
+          banner_blur_hash: string | null
+          banner_url: string | null
           blur_hash: string | null
           created_at: string
           created_by: string | null
           deleted_at: string | null
           deleted_by: string | null
+          description: string | null
+          email: string | null
           email_verified: boolean
-          handle: string | null
+          handle: string
           id: string
           is_public: boolean
+          is_verified: boolean
+          location: string | null
           name: string
           phone_number: string | null
           phone_number_verified: boolean
+          tier: Database["public"]["Enums"]["subscription_tier"]
           updated_at: string
           updated_by: string | null
+          website_url: string | null
+          whatsapp_number: string | null
         }
         Insert: {
           avatar_url?: string | null
+          banner_blur_hash?: string | null
+          banner_url?: string | null
           blur_hash?: string | null
           created_at?: string
           created_by?: string | null
           deleted_at?: string | null
           deleted_by?: string | null
+          description?: string | null
+          email?: string | null
           email_verified?: boolean
-          handle?: string | null
+          handle: string
           id?: string
           is_public?: boolean
+          is_verified?: boolean
+          location?: string | null
           name: string
           phone_number?: string | null
           phone_number_verified?: boolean
+          tier?: Database["public"]["Enums"]["subscription_tier"]
           updated_at?: string
           updated_by?: string | null
+          website_url?: string | null
+          whatsapp_number?: string | null
         }
         Update: {
           avatar_url?: string | null
+          banner_blur_hash?: string | null
+          banner_url?: string | null
           blur_hash?: string | null
           created_at?: string
           created_by?: string | null
           deleted_at?: string | null
           deleted_by?: string | null
+          description?: string | null
+          email?: string | null
           email_verified?: boolean
-          handle?: string | null
+          handle?: string
           id?: string
           is_public?: boolean
+          is_verified?: boolean
+          location?: string | null
           name?: string
           phone_number?: string | null
           phone_number_verified?: boolean
+          tier?: Database["public"]["Enums"]["subscription_tier"]
           updated_at?: string
           updated_by?: string | null
+          website_url?: string | null
+          whatsapp_number?: string | null
         }
         Relationships: [
           {
@@ -254,6 +281,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organizations_tier_fkey"
+            columns: ["tier"]
+            isOneToOne: false
+            referencedRelation: "tier_limits"
+            referencedColumns: ["tier"]
           },
           {
             foreignKeyName: "organizations_updated_by_fkey"
