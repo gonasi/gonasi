@@ -22,13 +22,34 @@ export function headers(_: Route.HeadersArgs) {
 export async function loader({ request, params }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
 
-  // Don't await - return the promise for deferred loading
   const profileUser = await getProfileByUsername({
     supabase,
     username: params.username ?? '',
   });
 
   return { profileUser };
+}
+
+export function meta({ data }: Route.MetaArgs) {
+  const user = (data as ProfileLoaderReturnType | null)?.profileUser?.user;
+
+  if (!user) {
+    return [
+      { title: 'User Not Found • Gonasi' },
+      { name: 'description', content: 'This profile could not be found on Gonasi.' },
+    ];
+  }
+
+  const { username, full_name } = user;
+  const displayName = full_name || username;
+
+  return [
+    { title: `${displayName} • Profile on Gonasi` },
+    {
+      name: 'description',
+      content: `View ${displayName}'s public profile, including learning history and active courses.`,
+    },
+  ];
 }
 
 export default function ProfileLayout({ loaderData, params }: Route.ComponentProps) {
