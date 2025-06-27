@@ -5,6 +5,7 @@ import { getValidatedFormData } from 'remix-hook-form';
 import { dataWithError, redirectWithSuccess } from 'remix-toast';
 import type z from 'zod';
 
+import { updatePersonalInformation } from '@gonasi/database/profile';
 import { getMyOwnProfile } from '@gonasi/database/profiles';
 import { AccountSettingsUpdateSchema } from '@gonasi/schemas/settings';
 
@@ -19,23 +20,23 @@ import { checkHoneypot } from '~/utils/honeypot.server';
 export type ProfileLoaderReturnType = Exclude<Awaited<ReturnType<typeof loader>>, Response>;
 
 export function meta({ data }: Route.MetaArgs) {
-  const user = (data as ProfileLoaderReturnType | null)?.profileUser;
+  const profile = (data as ProfileLoaderReturnType | null)?.profileUser;
 
-  if (!user) {
+  if (!profile) {
     return [
       { title: 'User Not Found • Gonasi' },
-      { name: 'description', content: 'The user profile could not be loaded.' },
+      { name: 'description', content: 'The requested user profile could not be found.' },
     ];
   }
 
-  const { username, full_name } = user;
+  const { username, full_name } = profile;
   const displayName = full_name || username;
 
   return [
-    { title: `${displayName} • Edit Profile Settings • Gonasi` },
+    { title: `${displayName} • Profile Settings • Gonasi` },
     {
       name: 'description',
-      content: `Update ${displayName}'s profile settings including name, avatar, and visibility preferences.`,
+      content: `Manage ${displayName}'s profile settings including name, avatar, and visibility options.`,
     },
   ];
 }
@@ -43,23 +44,18 @@ export function meta({ data }: Route.MetaArgs) {
 type FormData = z.infer<typeof AccountSettingsUpdateSchema>;
 
 export async function action({ request, params }: Route.ActionArgs) {
-  const formData = await request.formData();
+  const rawFormData = await request.formData();
+  await checkHoneypot(rawFormData);
 
-  // Honeypot anti-bot check
-  await checkHoneypot(formData);
-
-  // Validate form data using Zod
   const {
     errors,
     data,
     receivedValues: defaultValues,
-  } = await getValidatedFormData<FormData>(formData, zodResolver(AccountSettingsUpdateSchema));
+  } = await getValidatedFormData<FormData>(rawFormData, zodResolver(AccountSettingsUpdateSchema));
 
   if (errors) return { errors, defaultValues };
 
-  const basePath = `/${params.username}/course-builder/${params.courseId}/content`;
-  const redirectUrl = `${basePath}/${params.chapterId}/${params.lessonId}/lesson-blocks`;
-
+  const returnPath = `/go/${params.username}/settings/profile-information`;
   const { supabase } = createClient(request);
 
   try {
@@ -67,19 +63,18 @@ export async function action({ request, params }: Route.ActionArgs) {
 
     switch (data.updateType) {
       case 'personal-information':
-        result = await upsertRichTextBlock(supabase, { ...data });
+        result = await updatePersonalInformation(supabase, data);
         break;
-
       default:
-        throw new Error(`Unhandled plugin type: ${data.updateType}`);
+        throw new Error(`Unsupported update type: ${data.updateType}`);
     }
 
     return result.success
-      ? redirectWithSuccess(redirectUrl, result.message)
+      ? redirectWithSuccess(returnPath, result.message)
       : dataWithError(null, result.message);
   } catch (error) {
-    console.error('Error creating block:', error);
-    return dataWithError(null, 'Could not create block. Please try again.');
+    console.error('Failed to update profile settings:', error);
+    return dataWithError(null, 'Update failed. Please try again.');
   }
 }
 
@@ -89,42 +84,40 @@ export interface ProfileOutletContext {
   avatarUrl: string;
 }
 
-export async function loader({ request, params }: Route.LoaderArgs) {
+export async function loader({ request }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
-
   const profileUser = await getMyOwnProfile(supabase);
-
   return { profileUser };
 }
 
 export default function ProfileInformationSettings({ params, loaderData }: Route.ComponentProps) {
   if (!loaderData) return <NotFoundCard message='Profile not found' />;
+
+  const { profileUser } = loaderData;
+
   return (
     <>
       <div className='w-full'>
-        <div className='flex w-full flex-col items-center space-y-8 space-x-0 p-0 md:flex-row md:space-y-0 md:space-x-8'>
-          <div className=''>
-            <div className='relative'>
-              <PlainAvatar
-                username={loaderData.profileUser?.username ?? ''}
-                imageUrl={loaderData.profileUser?.avatar_url}
-                size='xl'
-              />
-              <IconNavLink
-                to={`/go/${params.username}/settings/profile-information/profile-photo`}
-                icon={Pencil}
-                className='bg-card border-background absolute -top-2 -right-2 rounded-full border-2 p-2'
-                size={12}
-              />
-            </div>
+        <div className='flex w-full flex-col items-center space-y-8 p-0 md:flex-row md:space-y-0 md:space-x-8'>
+          <div className='relative'>
+            <PlainAvatar
+              username={profileUser?.username ?? ''}
+              imageUrl={profileUser?.avatar_url}
+              size='xl'
+            />
+            <IconNavLink
+              to={`/go/${params.username}/settings/profile-information/profile-photo`}
+              icon={Pencil}
+              className='bg-card border-background absolute -top-2 -right-2 rounded-full border-2 p-2'
+              size={12}
+            />
           </div>
+
           <div className='md:bg-card/50 flex w-full justify-between rounded-lg bg-transparent p-0 md:p-4'>
             <div>
-              <h4>{loaderData.profileUser?.username}</h4>
-              <h5 className='font-secondary text-sm'>{loaderData.profileUser?.full_name}</h5>
-              <p className='text-muted-foreground font-secondary text-xs'>
-                {loaderData.profileUser?.email}
-              </p>
+              <h4>{profileUser?.username}</h4>
+              <h5 className='font-secondary text-sm'>{profileUser?.full_name}</h5>
+              <p className='text-muted-foreground font-secondary text-xs'>{profileUser?.email}</p>
             </div>
             <div>
               <IconNavLink
@@ -137,11 +130,12 @@ export default function ProfileInformationSettings({ params, loaderData }: Route
           </div>
         </div>
       </div>
+
       <Outlet
         context={{
-          username: loaderData.profileUser?.username ?? '',
-          fullName: loaderData.profileUser?.full_name ?? '',
-          avatarUrl: loaderData.profileUser?.avatar_url ?? '',
+          username: profileUser?.username ?? '',
+          fullName: profileUser?.full_name ?? '',
+          avatarUrl: profileUser?.avatar_url ?? '',
         }}
       />
     </>

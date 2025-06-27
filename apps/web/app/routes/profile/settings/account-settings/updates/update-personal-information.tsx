@@ -20,59 +20,54 @@ const resolver = zodResolver(UpdatePersonalInformationSchema);
 
 export default function UpdatePersonalInformation({ params }: Route.ComponentProps) {
   const isPending = useIsPending();
-  const { username, fullName } = useOutletContext<ProfileOutletContext>();
+  const { username: defaultUsername, fullName: defaultFullName } =
+    useOutletContext<ProfileOutletContext>();
 
-  // Initialize form methods with Remix Hook Form
   const methods = useRemixForm<UpdatePersonalInformationSchemaTypes>({
     mode: 'all',
     resolver,
     submitData: { updateType: 'personal-information' },
     defaultValues: {
-      username,
-      fullName,
+      username: defaultUsername,
+      fullName: defaultFullName,
+      updateType: 'personal-information',
     },
   });
 
-  const isDisabled = isPending || methods.formState.isSubmitting;
-
-  const closeRoute = `/go/${params.username}/settings/profile-information`;
+  const isFormDisabled = isPending || methods.formState.isSubmitting;
+  const closeActionRoute = `/go/${params.username}/settings/profile-information`;
 
   return (
     <Modal open>
       <Modal.Content size='md'>
-        <Modal.Header title='Update Personal Information' closeRoute={closeRoute} />
+        <Modal.Header title='Edit Personal Information' closeRoute={closeActionRoute} />
         <Modal.Body>
           <RemixFormProvider {...methods}>
-            <Form method='POST' onSubmit={methods.handleSubmit}>
-              {/* Anti-bot honeypot field */}
+            <Form method='POST' onSubmit={methods.handleSubmit} action={closeActionRoute}>
               <HoneypotInputs />
 
-              {/* Full name input field */}
               <GoInputField
-                labelProps={{ children: 'Your Name', required: true }}
                 name='fullName'
+                labelProps={{ children: 'Full Name', required: true }}
                 inputProps={{
                   autoFocus: true,
-                  disabled: isDisabled,
+                  disabled: isFormDisabled,
                 }}
-                description='Let us know who you are'
+                description='This will be displayed on your profile.'
               />
 
-              {/* Email input field */}
               <GoInputField
-                labelProps={{ children: 'Username', required: true }}
                 name='username'
+                labelProps={{ children: 'Username', required: true }}
                 inputProps={{
                   className: 'lowercase',
-
-                  disabled: isDisabled,
+                  disabled: isFormDisabled,
                 }}
-                description='We’ll use this to keep in touch'
+                description='Used in your public profile URL.'
               />
 
-              {/* Submit button with loading state */}
-              <Button type='submit' disabled={isPending} isLoading={isDisabled} className='w-full'>
-                Save
+              <Button type='submit' disabled={isPending} isLoading={isFormDisabled}>
+                Save Changes
               </Button>
             </Form>
           </RemixFormProvider>
