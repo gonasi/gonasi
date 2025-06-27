@@ -2,7 +2,6 @@ import { NavLink } from 'react-router';
 import { motion } from 'framer-motion';
 import type { LucideIcon } from 'lucide-react';
 
-import { useRouteMatch } from '~/hooks/useRouteMatch';
 import { cn } from '~/lib/utils';
 
 interface Props {
@@ -12,8 +11,6 @@ interface Props {
 }
 
 export function TabLink({ to, name, icon: Icon }: Props) {
-  const isActive = useRouteMatch(to);
-
   return (
     <NavLink
       className={cn(
@@ -23,9 +20,8 @@ export function TabLink({ to, name, icon: Icon }: Props) {
       )}
       to={to}
       end
-      aria-disabled={isActive}
     >
-      {({ isPending }) => {
+      {({ isPending, isActive }) => {
         const containerClass = cn(
           'flex w-full items-center justify-center space-x-0 md:space-x-1',
           isPending ? 'animate-pulse opacity-55 hover:cursor-wait' : '',
