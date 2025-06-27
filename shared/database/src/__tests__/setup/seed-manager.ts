@@ -1,10 +1,10 @@
 import { faker } from '@snaplet/copycat';
 
-import { seedAllLessonTypes } from './seeds/seedAllLessonTypes';
-import { seedOrganizationPricingTiers } from './seeds/seedOrganizationPricingTiers';
 import { signInWithEmailAndPassword, signUpWithEmailAndPassword } from '../../auth';
 import { completeUserOnboarding } from '../../onboarding';
 import { TEST_USERS } from '../fixtures/test-data';
+import { seedAllLessonTypes } from '../seeds/seedAllLessonTypes';
+import { seedOrganizationPricingTiers } from '../seeds/seedOrganizationPricingTiers';
 import { TestCleanupManager, testSupabase } from './test-helpers';
 
 type SeedStep = 'users' | 'onboarding' | 'lessonTypes' | 'pricingTiers';

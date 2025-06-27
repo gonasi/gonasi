@@ -94,6 +94,7 @@ create table "public"."profiles" (
     "phone_number" text,
     "phone_number_verified" boolean not null default false,
     "email_verified" boolean not null default false,
+    "is_public" boolean not null default true,
     "country_code" character(2) default 'KE'::bpchar,
     "preferred_language" character(2) default 'en'::bpchar,
     "account_verified" boolean not null default false,
@@ -173,6 +174,8 @@ CREATE INDEX idx_organizations_deleted_at ON public.organizations USING btree (d
 CREATE INDEX idx_organizations_deleted_by ON public.organizations USING btree (deleted_by);
 
 CREATE UNIQUE INDEX idx_organizations_handle_unique ON public.organizations USING btree (handle) WHERE (deleted_at IS NULL);
+
+CREATE INDEX idx_organizations_owned_by ON public.organizations USING btree (owned_by);
 
 CREATE INDEX idx_organizations_tier ON public.organizations USING btree (tier);
 
@@ -450,6 +453,18 @@ end;
 $function$
 ;
 
+create or replace view "public"."public_profiles" as  SELECT profiles.id,
+    profiles.username,
+    profiles.full_name,
+    profiles.avatar_url,
+    profiles.blur_hash,
+    profiles.is_public,
+    profiles.account_verified,
+    profiles.created_at
+   FROM profiles
+  WHERE (profiles.is_public = true);
+
+
 CREATE OR REPLACE FUNCTION public.set_organization_handle()
  RETURNS trigger
  LANGUAGE plpgsql
@@ -651,8 +666,6 @@ grant insert on table "public"."profiles" to "anon";
 
 grant references on table "public"."profiles" to "anon";
 
-grant select on table "public"."profiles" to "anon";
-
 grant trigger on table "public"."profiles" to "anon";
 
 grant truncate on table "public"."profiles" to "anon";
@@ -664,8 +677,6 @@ grant delete on table "public"."profiles" to "authenticated";
 grant insert on table "public"."profiles" to "authenticated";
 
 grant references on table "public"."profiles" to "authenticated";
-
-grant select on table "public"."profiles" to "authenticated";
 
 grant trigger on table "public"."profiles" to "authenticated";
 
@@ -895,23 +906,7 @@ to authenticated, anon
 using (true);
 
 
-create policy "Allow public read access to profiles"
-on "public"."profiles"
-as permissive
-for select
-to authenticated, anon
-using (true);
-
-
-create policy "Allow user to create own profile"
-on "public"."profiles"
-as permissive
-for insert
-to authenticated
-with check ((( SELECT auth.uid() AS uid) = id));
-
-
-create policy "Allow user to delete own profile"
+create policy "Allow DELETE of own profile by authenticated users"
 on "public"."profiles"
 as permissive
 for delete
@@ -919,13 +914,29 @@ to authenticated
 using ((( SELECT auth.uid() AS uid) = id));
 
 
-create policy "Allow user to update own profile"
+create policy "Allow INSERT of own profile by authenticated users"
+on "public"."profiles"
+as permissive
+for insert
+to authenticated
+with check ((( SELECT auth.uid() AS uid) = id));
+
+
+create policy "Allow UPDATE of own profile by authenticated users"
 on "public"."profiles"
 as permissive
 for update
 to authenticated
 using ((( SELECT auth.uid() AS uid) = id))
 with check ((( SELECT auth.uid() AS uid) = id));
+
+
+create policy "Allow authenticated users to SELECT own profile or public profi"
+on "public"."profiles"
+as permissive
+for select
+to authenticated
+using (((( SELECT auth.uid() AS uid) = id) OR (is_public IS TRUE)));
 
 
 create policy "role_permissions_delete_policy"

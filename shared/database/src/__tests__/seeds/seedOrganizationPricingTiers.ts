@@ -1,6 +1,6 @@
-import { signInWithEmailAndPassword } from '../../../auth';
-import { SU_EMAIL, SU_PASSWORD } from '../../fixtures/test-data';
-import { TestCleanupManager, testSupabase } from '../test-helpers';
+import { signInWithEmailAndPassword } from '../../auth';
+import { SU_EMAIL, SU_PASSWORD } from '../fixtures/test-data';
+import { TestCleanupManager, testSupabase } from '../setup/test-helpers';
 
 type Tier = 'launch' | 'scale' | 'impact' | 'enterprise';
 type AnalyticsLevel = 'basic' | 'intermediate' | 'advanced' | 'enterprise';

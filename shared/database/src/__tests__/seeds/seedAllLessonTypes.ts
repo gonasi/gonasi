@@ -1,8 +1,8 @@
 import { createLessonType } from '@gonasi/database/lessonTypes';
 
-import { signInWithEmailAndPassword } from '../../../auth';
-import { SU_EMAIL, SU_PASSWORD } from '../../fixtures/test-data';
-import { TestCleanupManager, testSupabase } from '../test-helpers';
+import { signInWithEmailAndPassword } from '../../auth';
+import { SU_EMAIL, SU_PASSWORD } from '../fixtures/test-data';
+import { TestCleanupManager, testSupabase } from '../setup/test-helpers';
 
 const lessonTypes = [
   {

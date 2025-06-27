@@ -74,10 +74,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "course_categories_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "course_categories_updated_by_fkey"
             columns: ["updated_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_categories_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -129,10 +143,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "course_sub_categories_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "course_sub_categories_updated_by_fkey"
             columns: ["updated_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_sub_categories_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -180,10 +208,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "lesson_types_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "lesson_types_updated_by_fkey"
             columns: ["updated_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lesson_types_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -279,8 +321,29 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "organizations_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "organizations_deleted_by_fkey"
             columns: ["deleted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organizations_deleted_by_fkey"
+            columns: ["deleted_by"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organizations_owned_by_fkey"
+            columns: ["owned_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -289,7 +352,7 @@ export type Database = {
             foreignKeyName: "organizations_owned_by_fkey"
             columns: ["owned_by"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -306,6 +369,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "organizations_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       profiles: {
@@ -320,6 +390,7 @@ export type Database = {
           email_verified: boolean
           full_name: string | null
           id: string
+          is_public: boolean
           mode: Database["public"]["Enums"]["profile_mode"]
           notifications_enabled: boolean
           phone_number: string | null
@@ -339,6 +410,7 @@ export type Database = {
           email_verified?: boolean
           full_name?: string | null
           id: string
+          is_public?: boolean
           mode?: Database["public"]["Enums"]["profile_mode"]
           notifications_enabled?: boolean
           phone_number?: string | null
@@ -358,6 +430,7 @@ export type Database = {
           email_verified?: boolean
           full_name?: string | null
           id?: string
+          is_public?: boolean
           mode?: Database["public"]["Enums"]["profile_mode"]
           notifications_enabled?: boolean
           phone_number?: string | null
@@ -472,11 +545,50 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "user_roles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
     }
     Views: {
-      [_ in never]: never
+      public_profiles: {
+        Row: {
+          account_verified: boolean | null
+          avatar_url: string | null
+          blur_hash: string | null
+          created_at: string | null
+          full_name: string | null
+          id: string | null
+          is_public: boolean | null
+          username: string | null
+        }
+        Insert: {
+          account_verified?: boolean | null
+          avatar_url?: string | null
+          blur_hash?: string | null
+          created_at?: string | null
+          full_name?: string | null
+          id?: string | null
+          is_public?: boolean | null
+          username?: string | null
+        }
+        Update: {
+          account_verified?: boolean | null
+          avatar_url?: string | null
+          blur_hash?: string | null
+          created_at?: string | null
+          full_name?: string | null
+          id?: string | null
+          is_public?: boolean | null
+          username?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       authorize: {

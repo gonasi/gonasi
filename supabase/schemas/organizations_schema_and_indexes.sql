@@ -111,4 +111,4 @@ create index idx_organizations_created_by on public.organizations(created_by);
 create index idx_organizations_updated_by on public.organizations(updated_by);
 create index idx_organizations_deleted_by on public.organizations(deleted_by);
 create index idx_organizations_tier on public.organizations(tier);
-
+create index idx_organizations_owned_by on public.organizations (owned_by);

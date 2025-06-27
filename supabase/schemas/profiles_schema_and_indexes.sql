@@ -23,6 +23,8 @@ create table public.profiles (
   phone_number_verified boolean not null default false,  -- Whether the phone is verified
   email_verified boolean not null default false,         -- Whether the email is verified
 
+  is_public boolean not null default true,
+
   -- User's location and language preferences
   country_code char(2) default 'KE' 
     check (country_code ~* '^[A-Z]{2}$'),  -- ISO 3166-1 alpha-2 country code (e.g., US, KE)

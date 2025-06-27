@@ -6,7 +6,7 @@ import {
   enterpriseTierLimits,
   launchTierLimits,
   scaleTierLimits,
-} from '../setup/seeds/seedOrganizationPricingTiers';
+} from '../seeds/seedOrganizationPricingTiers';
 import { setupTestDatabase, TestCleanupManager, testSupabase } from '../setup/test-helpers';
 import { getTestUser } from '../utils/getTestUser';
 
