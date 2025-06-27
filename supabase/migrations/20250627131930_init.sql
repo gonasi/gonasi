@@ -936,7 +936,7 @@ on "public"."profiles"
 as permissive
 for select
 to authenticated
-using (((( SELECT auth.uid() AS uid) = id) OR (is_public IS TRUE)));
+using ((( SELECT auth.uid() AS uid) = id));
 
 
 create policy "role_permissions_delete_policy"

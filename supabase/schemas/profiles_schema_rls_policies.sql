@@ -6,9 +6,7 @@ create policy "Allow authenticated users to SELECT own profile or public profile
 on public.profiles
 for select
 to authenticated
-using (
-  (select auth.uid()) = id OR is_public is true
-);
+using ((select auth.uid()) = id);
 
 -- INSERT: Allow authenticated users to create only their own profile
 create policy "Allow INSERT of own profile by authenticated users"

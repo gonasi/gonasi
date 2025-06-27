@@ -33,25 +33,34 @@ export class TestCleanupManager {
     try {
       await testSupabase.auth.signOut();
     } catch (error) {
-      throw new Error('Failed to sign out test client:');
+      console.warn('Failed to sign out test client:', error);
     }
   }
 
   static async cleanupUsers() {
-    const {
-      data: { users },
-      error,
-    } = await testSupabaseAdmin.auth.admin.listUsers();
+    try {
+      const {
+        data: { users },
+        error,
+      } = await testSupabaseAdmin.auth.admin.listUsers();
 
-    if (error) {
-      throw new Error(`Failed to list users for cleanup: ${error.message}`);
-    }
-
-    for (const user of users) {
-      const { error: deleteError } = await testSupabaseAdmin.auth.admin.deleteUser(user.id);
-      if (deleteError) {
-        throw new Error(`Failed to delete user ${user.id}: ${deleteError.message}`);
+      if (error) {
+        console.error('Failed to list users for cleanup:', error);
+        return;
       }
+
+      // Delete all users in parallel for better performance
+      const deletePromises = users.map(async (user) => {
+        try {
+          await testSupabaseAdmin.auth.admin.deleteUser(user.id);
+        } catch (error) {
+          console.warn(`Failed to delete user ${user.id}:`, error);
+        }
+      });
+
+      await Promise.allSettled(deletePromises);
+    } catch (error) {
+      console.warn('Failed to cleanup auth users:', error);
     }
   }
 

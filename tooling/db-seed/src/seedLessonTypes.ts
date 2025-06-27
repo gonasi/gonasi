@@ -1,9 +1,9 @@
 import { faker } from '@snaplet/copycat';
-import { type profilesScalars } from '@snaplet/seed';
 
 import { createLessonType } from '@gonasi/database/lessonTypes';
 
 import { PASSWORD, SU_EMAIL, supabase } from './constants';
+import { SIGNED_UP_EMAILS } from './signUpUsers';
 
 const lessonTypes = [
   {
@@ -98,19 +98,19 @@ const lessonTypes = [
   },
 ];
 
-export async function seedLessonTypes(users: profilesScalars[]) {
-  const admins = users.filter((user) => user.email === SU_EMAIL);
+export async function seedLessonTypes() {
+  const admins = SIGNED_UP_EMAILS.filter((email) => email === SU_EMAIL);
 
   for (const { name, description, lucideIcon, bgColor } of lessonTypes) {
-    const creator = faker.helpers.arrayElement(admins);
+    const adminEmail = faker.helpers.arrayElement(admins);
 
     const { error: signInError } = await supabase.auth.signInWithPassword({
-      email: creator.email,
+      email: adminEmail,
       password: PASSWORD,
     });
 
     if (signInError) {
-      console.log(`❌ Failed to sign in as ${creator.email}`);
+      console.log(`❌ Failed to sign in as ${adminEmail}`);
       continue;
     }
 

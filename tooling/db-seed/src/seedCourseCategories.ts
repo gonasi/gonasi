@@ -1,10 +1,10 @@
 import { faker } from '@snaplet/copycat';
-import { type profilesScalars } from '@snaplet/seed';
 
 import { createCourseCategory } from '@gonasi/database/courseCategories';
 import { createCourseSubCategory } from '@gonasi/database/courseSubCategories';
 
 import { PASSWORD, SU_EMAIL, supabase } from './constants';
+import { SIGNED_UP_EMAILS } from './signUpUsers';
 
 const categories = [
   {
@@ -115,14 +115,14 @@ const categories = [
   },
 ];
 
-export async function seedCourseCategories(users: profilesScalars[]) {
-  const admins = users.filter((user) => user.email === SU_EMAIL);
+export async function seedCourseCategories() {
+  const admins = SIGNED_UP_EMAILS.filter((email) => email === SU_EMAIL);
 
   for (const category of categories) {
-    const creator = faker.helpers.arrayElement(admins);
+    const adminEmail = faker.helpers.arrayElement(admins);
 
     const signInResult = await supabase.auth.signInWithPassword({
-      email: creator.email,
+      email: adminEmail,
       password: PASSWORD,
     });
 
@@ -158,7 +158,7 @@ export async function seedCourseCategories(users: profilesScalars[]) {
 
       await supabase.auth.signOut();
     } else {
-      console.log(`❌ Failed to sign in as ${creator.email}`);
+      console.log(`❌ Failed to sign in as ${adminEmail}`);
     }
   }
 }

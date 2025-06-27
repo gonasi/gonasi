@@ -1,6 +1,5 @@
-import { createSeedClient, type profilesScalars } from '@snaplet/seed';
+import { createSeedClient } from '@snaplet/seed';
 
-import { convertKeysToCamelCase, supabase } from './src/constants';
 import { seedCompleteOnboarding } from './src/seedCompleteOnboarding';
 import { seedCourseCategories } from './src/seedCourseCategories';
 import { seedLessonTypes } from './src/seedLessonTypes';
@@ -16,17 +15,13 @@ const main = async () => {
   // Sign up users (this will also trigger creation of profiles via Supabase triggers)
   await signUpUsers();
 
-  // Fetch profiles created via Supabase auth trigger
-  const { data: databaseProfiles } = await supabase.from('profiles').select();
-  const profiles: profilesScalars[] =
-    databaseProfiles?.map((profile) => convertKeysToCamelCase<profilesScalars>(profile)) ?? [];
-
   // complete onboarding
-  await seedCompleteOnboarding(profiles);
+  await seedCompleteOnboarding();
 
-  await seedLessonTypes(profiles);
-  await seedCourseCategories(profiles);
-  await seedPricingTiers(profiles);
+  // SU Seeds lesson types, categories and pricing tiers
+  await seedLessonTypes();
+  await seedCourseCategories();
+  await seedPricingTiers();
 
   // await seedPathways(profiles);
 

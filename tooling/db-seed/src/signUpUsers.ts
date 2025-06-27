@@ -1,14 +1,14 @@
 import { PASSWORD, SU_EMAIL, supabase } from './constants';
 
-export async function signUpUsers() {
-  const emails = [
-    SU_EMAIL,
-    // 'mcdalinoluoch@gmail.com',
-    // ...Array.from({ length: TOTAL_USERS }, (_, i) => copycat.email(i).toLowerCase()),
-    'mcdalinoluoch@gmail.com',
-  ];
+export const SIGNED_UP_EMAILS = [
+  SU_EMAIL,
+  // 'mcdalinoluoch@gmail.com',
+  // ...Array.from({ length: TOTAL_USERS }, (_, i) => copycat.email(i).toLowerCase()),
+  'mcdalinoluoch@gmail.com',
+];
 
-  for (const email of emails) {
+export async function signUpUsers() {
+  for (const email of SIGNED_UP_EMAILS) {
     const { data } = await supabase.auth.signUp({
       email,
       password: PASSWORD,

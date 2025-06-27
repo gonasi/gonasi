@@ -3119,6 +3119,20 @@
           "maxLength": null
         },
         {
+          "id": "public.organizations.owned_by",
+          "name": "owned_by",
+          "columnName": "owned_by",
+          "type": "uuid",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
           "id": "public.organizations.updated_by",
           "name": "updated_by",
           "columnName": "updated_by",
@@ -3172,6 +3186,24 @@
           "relationName": "organizations_deleted_byToprofiles",
           "relationFromFields": [
             "deleted_by"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "profiles_organizations_owned_byToprofiles",
+          "type": "profiles",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "organizations_owned_byToprofiles",
+          "relationFromFields": [
+            "owned_by"
           ],
           "relationToFields": [
             "id"
@@ -3371,6 +3403,20 @@
           "id": "public.profiles.email_verified",
           "name": "email_verified",
           "columnName": "email_verified",
+          "type": "bool",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.profiles.is_public",
+          "name": "is_public",
+          "columnName": "is_public",
           "type": "bool",
           "isRequired": true,
           "kind": "scalar",
@@ -3633,6 +3679,20 @@
           "isRequired": false,
           "kind": "object",
           "relationName": "organizations_deleted_byToprofiles",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "organizations_organizations_owned_byToprofiles",
+          "type": "organizations",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "organizations_owned_byToprofiles",
           "relationFromFields": [],
           "relationToFields": [],
           "isList": true,

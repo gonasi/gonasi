@@ -112,18 +112,31 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 
     // Render right icon
     const renderRightIcon = () => {
-      if (!rightIcon) return null;
-
-      const iconContent = isLoading ? (
-        <Loader2 className='h-4 w-4 animate-spin' />
-      ) : (
-        <div className='transition-transform duration-200 group-hover:scale-110'>{rightIcon}</div>
-      );
+      const iconContent = <Loader2 className='h-4 w-4 animate-spin' />;
 
       if (rightIconAtEdge) {
-        return <div className='absolute top-1/2 right-3 z-10 -translate-y-1/2'>{iconContent}</div>;
+        return (
+          <div className='absolute top-1/2 right-3 z-10 -translate-y-1/2'>
+            {isLoading
+              ? iconContent
+              : rightIcon && (
+                  <div className='transition-transform duration-200 group-hover:scale-110'>
+                    {rightIcon}
+                  </div>
+                )}
+          </div>
+        );
       }
-      return iconContent;
+
+      if (isLoading) return iconContent;
+
+      if (rightIcon) {
+        return (
+          <div className='transition-transform duration-200 group-hover:scale-110'>{rightIcon}</div>
+        );
+      }
+
+      return null;
     };
 
     return (

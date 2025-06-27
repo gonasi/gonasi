@@ -1,15 +1,15 @@
 import { faker } from '@snaplet/copycat';
-import { type profilesScalars } from '@snaplet/seed';
 
 import { completeUserOnboarding } from '@gonasi/database/onboarding';
 
 import { PASSWORD, supabase } from './constants';
+import { SIGNED_UP_EMAILS } from './signUpUsers';
 
-export async function seedCompleteOnboarding(users: profilesScalars[]) {
-  for (const user of users) {
+export async function seedCompleteOnboarding() {
+  for (const email of SIGNED_UP_EMAILS) {
     // Sign in the user
     await supabase.auth.signInWithPassword({
-      email: user.email,
+      email,
       password: PASSWORD,
     });
 
@@ -21,8 +21,8 @@ export async function seedCompleteOnboarding(users: profilesScalars[]) {
 
     console.log(
       success
-        ? `✅ Onboarding completed for ${user.email}`
-        : `❌ Failed to complete onboarding for ${user.email} - ${message}`,
+        ? `✅ Onboarding completed for ${email}`
+        : `❌ Failed to complete onboarding for ${email} - ${message}`,
     );
 
     // Sign out after onboarding

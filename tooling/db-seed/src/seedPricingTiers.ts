@@ -1,7 +1,7 @@
 import { faker } from '@snaplet/copycat';
-import type { profilesScalars } from '@snaplet/seed';
 
 import { PASSWORD, SU_EMAIL, supabase } from './constants';
+import { SIGNED_UP_EMAILS } from './signUpUsers';
 
 type Tier = 'launch' | 'scale' | 'impact' | 'enterprise';
 type AnalyticsLevel = 'basic' | 'intermediate' | 'advanced' | 'enterprise';
@@ -96,18 +96,18 @@ const tierLimits: TierLimitSeed[] = [
   },
 ];
 
-export async function seedPricingTiers(users: profilesScalars[]) {
-  const admins = users.filter((user) => user.email === SU_EMAIL);
+export async function seedPricingTiers() {
+  const admins = SIGNED_UP_EMAILS.filter((email) => email === SU_EMAIL);
 
-  const creator = faker.helpers.arrayElement(admins);
+  const adminEmail = faker.helpers.arrayElement(admins);
 
   const { error: signInError } = await supabase.auth.signInWithPassword({
-    email: creator.email,
+    email: adminEmail,
     password: PASSWORD,
   });
 
   if (signInError) {
-    console.log(`❌ Failed to sign in as ${creator.email}`);
+    console.log(`❌ Failed to sign in as ${adminEmail}`);
   }
 
   for (const tier of tierLimits) {
