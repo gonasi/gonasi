@@ -109,8 +109,8 @@ export default function ProfileInformationSettings({ params, loaderData }: Route
             <IconNavLink
               to={`/go/${params.username}/settings/profile-information/profile-photo`}
               icon={Pencil}
-              className='bg-card border-background absolute -top-2 -right-2 rounded-full border-2 p-2'
-              size={12}
+              className='bg-card border-background absolute -top-3 -right-3 flex-shrink-0 rounded-full border-2 p-2'
+              size={18}
             />
           </div>
 
@@ -124,8 +124,8 @@ export default function ProfileInformationSettings({ params, loaderData }: Route
               <IconNavLink
                 to={`/go/${params.username}/settings/profile-information/personal-information`}
                 icon={Pencil}
-                className='bg-card rounded-full p-2'
-                size={12}
+                className='bg-card border-background flex-shrink-0 rounded-full border-2 p-2'
+                size={18}
               />
             </div>
           </div>

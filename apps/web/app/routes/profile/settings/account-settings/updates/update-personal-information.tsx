@@ -1,4 +1,4 @@
-import { Form, useOutletContext } from 'react-router';
+import { useOutletContext } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { RemixFormProvider, useRemixForm } from 'remix-hook-form';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
@@ -26,6 +26,8 @@ export default function UpdatePersonalInformation({ params }: Route.ComponentPro
     email,
   } = useOutletContext<ProfileOutletContext>();
 
+  const closeActionRoute = `/go/${params.username}/settings/profile-information`;
+
   const methods = useRemixForm<UpdatePersonalInformationSchemaTypes>({
     mode: 'all',
     resolver,
@@ -35,10 +37,14 @@ export default function UpdatePersonalInformation({ params }: Route.ComponentPro
       fullName: defaultFullName,
       updateType: 'personal-information',
     },
+    submitConfig: {
+      replace: false,
+      method: 'POST',
+      action: closeActionRoute,
+    },
   });
 
   const isFormDisabled = isPending || methods.formState.isSubmitting;
-  const closeActionRoute = `/go/${params.username}/settings/profile-information`;
 
   return (
     <Modal open>
@@ -46,7 +52,7 @@ export default function UpdatePersonalInformation({ params }: Route.ComponentPro
         <Modal.Header title='Edit Personal Information' closeRoute={closeActionRoute} />
         <Modal.Body>
           <RemixFormProvider {...methods}>
-            <Form method='POST' onSubmit={methods.handleSubmit} action={closeActionRoute}>
+            <form onSubmit={methods.handleSubmit}>
               <HoneypotInputs />
 
               <div className='text-muted-foreground border-input bg-input/20 mb-6 rounded-lg border p-3 italic hover:cursor-not-allowed'>
@@ -79,7 +85,7 @@ export default function UpdatePersonalInformation({ params }: Route.ComponentPro
               >
                 Save Changes
               </Button>
-            </Form>
+            </form>
           </RemixFormProvider>
         </Modal.Body>
       </Modal.Content>
