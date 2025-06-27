@@ -19,11 +19,11 @@ export default [
     layout('routes/layouts/myProfile/profile-wrapper-layout.tsx', [
       layout('routes/layouts/myProfile/my-profile-layout.tsx', [
         // my profile
-        route(':username', 'routes/myProfile/active-index.tsx'),
-        route(':username/history', 'routes/myProfile/history-index.tsx'),
+        route('go/:username', 'routes/myProfile/active-index.tsx'),
+        route('go/:username/history', 'routes/myProfile/history-index.tsx'),
       ]),
     ]),
-    route(':username/organizations', 'routes/myProfile/organizations/organizations-index.tsx', [
+    route('go/:username/organizations', 'routes/myProfile/organizations/organizations-index.tsx', [
       route('new', 'routes/myProfile/organizations/new-organization.tsx'),
     ]),
   ]),

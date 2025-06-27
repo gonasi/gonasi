@@ -2,7 +2,6 @@ import { Link, useLocation } from 'react-router';
 import { ChevronsUpDown, LayoutDashboard } from 'lucide-react';
 
 import { type AvatarSize, UserAvatar } from '../avatars';
-import { NotFoundCard } from '../cards';
 import { Button } from '../ui/button';
 
 import {
@@ -33,13 +32,13 @@ export function ProfileDropdown({
 }: Props) {
   const location = useLocation();
 
-  if (!user) return <NotFoundCard message='user not found' />;
+  if (!user) return;
 
   const { username, full_name, avatar_url } = user;
 
-  const isActive = location.pathname === `/${username}`;
+  const isActive = location.pathname === `/go/${username}`;
 
-  const menuItems = [{ to: `/${username}`, label: 'My Profile', icon: LayoutDashboard }];
+  const menuItems = [{ to: `/go/${username}`, label: 'My Profile', icon: LayoutDashboard }];
 
   return (
     <DropdownMenu>

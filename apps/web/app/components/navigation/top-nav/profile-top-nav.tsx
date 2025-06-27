@@ -17,7 +17,7 @@ export function ProfileTopNav({ user, showName = false }: Props) {
         <div className='flex h-full items-center justify-between'>
           <div className='flex h-full items-center space-x-4 md:space-x-8'>
             <BackArrowNavLink to='/' />
-            <OrganizationSelectorButton to={`/${user?.username}/organizations`} />
+            {user ? <OrganizationSelectorButton to={`/${user?.username}/organizations`} /> : null}
           </div>
 
           <div>

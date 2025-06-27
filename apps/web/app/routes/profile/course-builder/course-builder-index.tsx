@@ -78,7 +78,7 @@ function CoursesGrid({
           return (
             <NavLink
               key={id}
-              to={`/${username}/course-builder/${id}/overview`}
+              to={`/go/${username}/course-builder/${id}/overview`}
               className={cn('pb-4 hover:cursor-pointer md:pb-0')}
             >
               {({ isPending }) => (
@@ -130,7 +130,7 @@ export default function ViewAllCourses({ loaderData, params }: Route.ComponentPr
       </Suspense>
 
       <FloatingActionButton
-        to={`/${username}/course-builder/new`}
+        to={`/go/${username}/course-builder/new`}
         tooltip='New course'
         icon={<Plus size={20} strokeWidth={4} />}
       />

@@ -14,6 +14,7 @@ import { GoLink } from '~/components/go-link';
 import { AuthFormLayout } from '~/components/layouts/auth';
 import { Button } from '~/components/ui/button';
 import { GoInputField } from '~/components/ui/forms/elements';
+import { createClient } from '~/lib/supabase/supabase.server';
 import { checkHoneypot } from '~/utils/honeypot.server';
 import { useIsPending } from '~/utils/misc';
 

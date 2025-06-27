@@ -43,7 +43,7 @@ export function StepperFormLayout({
     if (currentStepIndex > 0) {
       const prevStep = steps[currentStepIndex - 1];
       if (prevStep) {
-        navigate(`/dashboard/${username}/courses/${dynamicParam}/${prevStep.path}`);
+        navigate(`/dashboard/go/${username}/courses/${dynamicParam}/${prevStep.path}`);
       }
     }
   };

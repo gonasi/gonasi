@@ -87,7 +87,7 @@ export default function UpdatePricingTypeModal({ params }: Route.ComponentProps)
 
   const isPending = useIsPending();
 
-  const closeRoute = `/${username}/course-builder/${courseId}/pricing`;
+  const closeRoute = `/go/${username}/course-builder/${courseId}/pricing`;
 
   const nextType = isPaid ? 'Free' : 'Paid';
 
