@@ -1,5 +1,8 @@
+import { useEffect, useRef } from 'react';
 import { useFetcher, useOutletContext } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
+import debounce from 'lodash.debounce';
+import { LoaderCircle } from 'lucide-react';
 import { RemixFormProvider, useRemixForm } from 'remix-hook-form';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
 
@@ -20,6 +23,7 @@ const resolver = zodResolver(UpdatePersonalInformationSchema);
 
 export default function UpdatePersonalInformation({ params }: Route.ComponentProps) {
   const fetcher = useFetcher();
+  const usernameCheckFetcher = useFetcher();
   const isPending = useIsPending();
 
   const {
@@ -33,25 +37,58 @@ export default function UpdatePersonalInformation({ params }: Route.ComponentPro
   const methods = useRemixForm<UpdatePersonalInformationSchemaTypes>({
     mode: 'all',
     resolver,
+    fetcher,
     submitData: { updateType: 'personal-information' },
     defaultValues: {
       username: defaultUsername,
       fullName: defaultFullName,
       updateType: 'personal-information',
     },
-    fetcher, // Pass the fetcher to remix-hook-form
     submitConfig: {
-      replace: false,
       method: 'POST',
       action: closeActionRoute,
+      replace: false,
     },
   });
 
-  const isFormDisabled = isPending || methods.formState.isSubmitting || fetcher.state !== 'idle';
+  const username = methods.watch('username');
 
-  // Handle errors from fetcher
-  const actionData = fetcher.data;
-  const hasErrors = actionData?.errors || actionData?.message;
+  const debouncedCheckRef = useRef(
+    debounce((uname: string) => {
+      usernameCheckFetcher.load(`/api/check-username-exists?username=${uname}`);
+    }, 300),
+  );
+
+  // Trigger debounced username check
+  useEffect(() => {
+    if (!username || username.length < 3) return;
+
+    const debouncedFn = debouncedCheckRef.current;
+    debouncedFn(username);
+
+    return () => {
+      debouncedFn.cancel();
+    };
+  }, [username]);
+
+  // Handle username availability response
+  useEffect(() => {
+    if (!usernameCheckFetcher.data) return;
+
+    const isUsernameTaken = usernameCheckFetcher.data.exists;
+    const currentError = methods.formState.errors.username;
+
+    if (isUsernameTaken && !currentError) {
+      methods.setError('username', {
+        type: 'manual',
+        message: 'This username is already taken.',
+      });
+    } else if (!isUsernameTaken && currentError?.type === 'manual') {
+      methods.clearErrors('username');
+    }
+  }, [usernameCheckFetcher.data, methods]);
+
+  const isFormDisabled = isPending || methods.formState.isSubmitting || fetcher.state !== 'idle';
 
   return (
     <Modal open>
@@ -62,14 +99,7 @@ export default function UpdatePersonalInformation({ params }: Route.ComponentPro
             <form onSubmit={methods.handleSubmit}>
               <HoneypotInputs />
 
-              {/* Display action errors */}
-              {actionData?.message && (
-                <div className='mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-red-700'>
-                  {actionData.message}
-                </div>
-              )}
-
-              <div className='text-muted-foreground border-input bg-input/20 mb-6 rounded-lg border p-3 italic hover:cursor-not-allowed'>
+              <div className='border-input bg-input/20 text-muted-foreground mb-6 rounded-lg border p-3 italic hover:cursor-not-allowed'>
                 {email}
               </div>
 
@@ -85,7 +115,14 @@ export default function UpdatePersonalInformation({ params }: Route.ComponentPro
 
               <GoInputField
                 name='username'
-                labelProps={{ children: 'Username', required: true }}
+                labelProps={{
+                  children: 'Username',
+                  required: true,
+                  endAdornment:
+                    usernameCheckFetcher.state !== 'idle' ? (
+                      <LoaderCircle size={12} className='animate-spin' />
+                    ) : null,
+                }}
                 inputProps={{
                   className: 'lowercase',
                   disabled: isFormDisabled,
