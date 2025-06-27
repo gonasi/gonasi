@@ -13,6 +13,8 @@ export default [
         route('verify', 'routes/publishedCourses/verify-enroll.tsx'),
       ]),
     ]),
+
+    route('api/check-username-exists', 'routes/api/check-username-exists.ts'),
   ]),
 
   layout('routes/layouts/myProfile/profile-plain-layout.tsx', [

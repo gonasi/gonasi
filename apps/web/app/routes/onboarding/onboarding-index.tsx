@@ -1,28 +1,26 @@
-import { useEffect } from 'react';
-import { Form, useLocation, useNavigate } from 'react-router';
+import { useEffect, useRef } from 'react';
+import { Form, redirect, useFetcher } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
+import debounce from 'lodash/debounce';
 import { Footprints, LoaderCircle, Rocket } from 'lucide-react';
 import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
 import { dataWithError, redirectWithSuccess } from 'remix-toast';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
 
 import { completeUserOnboarding } from '@gonasi/database/onboarding';
-import { checkUserNameExists } from '@gonasi/database/profile';
+import { getUserProfile } from '@gonasi/database/profile';
 import type { OnboardingSchemaTypes } from '@gonasi/schemas/onboarding';
 import { OnboardingSchema } from '@gonasi/schemas/onboarding';
 
 import type { Route } from './+types/onboarding-index';
 
 import { AppLogo } from '~/components/app-logo';
-import { Spinner } from '~/components/loaders';
 import { Button, NavLinkButton } from '~/components/ui/button';
 import { GoInputField } from '~/components/ui/forms/elements';
 import { createClient } from '~/lib/supabase/supabase.server';
-import { useStore } from '~/store';
 import { checkHoneypot } from '~/utils/honeypot.server';
 import { useIsPending } from '~/utils/misc';
 
-// Meta information for the page
 export function meta() {
   return [
     { title: 'Gonasi | Personal Profile Setup' },
@@ -34,107 +32,108 @@ export function meta() {
   ];
 }
 
-// Setup Zod schema validation for the form
-const resolver = zodResolver(OnboardingSchema);
-
-// Server-side action for processing form submissions
+// Handles form submission (POST)
 export async function action({ request }: Route.ActionArgs) {
   const formData = await request.formData();
 
-  // Spam protection
+  // Bot detection using honeypot technique
   await checkHoneypot(formData);
 
   const { supabase } = createClient(request);
 
-  // Validate the submitted form data
+  // Validate incoming form data using Zod schema
   const {
     errors,
     data,
     receivedValues: defaultValues,
-  } = await getValidatedFormData<OnboardingSchemaTypes>(formData, resolver);
+  } = await getValidatedFormData<OnboardingSchemaTypes>(formData, zodResolver(OnboardingSchema));
 
   if (errors) {
     return { errors, defaultValues };
   }
 
-  // Check for duplicate username
-  const usernameExists = await checkUserNameExists(supabase, data.username);
-
-  if (usernameExists) {
-    return {
-      errors: {
-        username: {
-          message: `<span class="go-title">Username</span> already exists. Please choose another. <lucide name="ShieldAlert" size="12" />`,
-        },
-      },
-      defaultValues,
-    };
-  }
-
+  // Persist data to Supabase and handle response
   const { success, message } = await completeUserOnboarding(supabase, data);
 
-  return success ? redirectWithSuccess(`/${data.username}`, message) : dataWithError(null, message);
+  return success
+    ? redirectWithSuccess(`/go/${data.username}`, message)
+    : dataWithError(null, message);
 }
 
-// Client-side onboarding form
-export default function PersonalInformation() {
-  const isPending = useIsPending();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { activeUserProfile, isActiveUserProfileLoading } = useStore();
+// Loads the current authenticated user profile (GET)
+export async function loader({ request }: Route.LoaderArgs) {
+  const { supabase } = createClient(request);
+  const { user } = await getUserProfile(supabase);
 
+  if (user?.username) return redirect(`/go/${user.username}`);
+
+  return user;
+}
+
+export default function PersonalInformation({ loaderData }: Route.ComponentProps) {
+  const user = loaderData;
+  const fetcher = useFetcher();
+  const isPending = useIsPending();
+
+  // Setup form with default full name and validation schema
   const methods = useRemixForm<OnboardingSchemaTypes>({
     mode: 'all',
-    resolver,
+    resolver: zodResolver(OnboardingSchema),
     defaultValues: {
-      fullName: '', // Initially empty
+      fullName: user?.full_name ?? '',
+      username: user?.username ?? '',
     },
   });
 
-  const { reset } = methods;
+  const username = methods.watch('username');
 
+  // Debounced function to check username availability
+  const debouncedCheckRef = useRef(
+    debounce((uname: string) => {
+      fetcher.load(`/api/check-username-exists?username=${uname}`);
+    }, 300),
+  );
+
+  // Runs debounced username check when input changes
   useEffect(() => {
-    if (isActiveUserProfileLoading || !activeUserProfile) return;
+    if (!username || username.length < 3) return;
 
-    if (!activeUserProfile) {
-      const redirectTo = location.pathname + location.search;
-      navigate(`/login?${new URLSearchParams({ redirectTo })}`, { replace: true });
-      return;
-    }
+    const debouncedFn = debouncedCheckRef.current;
+    debouncedFn(username);
 
-    if (activeUserProfile.username) {
-      navigate(`/${activeUserProfile.username}`, { replace: true });
-      return;
-    }
+    // Cancel debounce on cleanup to prevent race conditions
+    return () => {
+      debouncedFn.cancel();
+    };
+  }, [username]);
 
-    if (!methods.formState.isDirty) {
-      reset({
-        fullName: activeUserProfile.full_name ?? '',
+  // Apply error to form if username is taken
+  useEffect(() => {
+    if (fetcher.data?.exists) {
+      methods.setError('username', {
+        type: 'manual',
+        message: 'This username is already taken.',
       });
+    } else if (
+      fetcher.data?.exists === false &&
+      methods.formState.errors.username?.type === 'manual'
+    ) {
+      // Clear the manual error if username is available
+      methods.clearErrors('username');
     }
-  }, [
-    activeUserProfile,
-    isActiveUserProfileLoading,
-    location.pathname,
-    location.search,
-    navigate,
-    reset,
-    methods.formState.isDirty,
-  ]);
-
-  if (isActiveUserProfileLoading || !activeUserProfile || activeUserProfile.username) {
-    return <Spinner />;
-  }
-
-  console.log('errors: ', methods.formState.errors);
+  }, [fetcher.data, methods]);
 
   const isDisabled = isPending || methods.formState.isSubmitting;
+  const hasUsernameError = !!methods.formState.errors.username;
 
   return (
     <div className='mx-auto flex max-w-md flex-col space-y-4 px-4 py-10'>
+      {/* App logo */}
       <div className='flex w-full items-center justify-center'>
         <AppLogo />
       </div>
+
+      {/* Header and Signout */}
       <div className='flex w-full items-center justify-between'>
         <div className='font-secondary text-muted-foreground inline-flex w-full items-center'>
           <span>
@@ -149,24 +148,29 @@ export default function PersonalInformation() {
           </NavLinkButton>
         </div>
       </div>
+
+      {/* Onboarding form */}
       <RemixFormProvider {...methods}>
         <Form method='POST' onSubmit={methods.handleSubmit}>
           <HoneypotInputs />
 
+          {/* Full Name input */}
           <GoInputField
             labelProps={{ children: 'Your Name', required: true }}
             name='fullName'
-            inputProps={{
-              disabled: isDisabled,
-            }}
-            description='Let us know who you are, whether it’s just you or your team'
+            inputProps={{ disabled: isDisabled }}
+            description={`Let us know who you are, whether it's just you or your team`}
           />
 
+          {/* Username input with loading spinner */}
           <GoInputField
             labelProps={{
               children: 'Username',
               required: true,
-              endAdornment: isDisabled ? <LoaderCircle size={12} className='animate-spin' /> : null,
+              endAdornment:
+                fetcher.state !== 'idle' ? (
+                  <LoaderCircle size={12} className='animate-spin' />
+                ) : null,
             }}
             name='username'
             inputProps={{
@@ -174,13 +178,18 @@ export default function PersonalInformation() {
               autoFocus: true,
               disabled: isDisabled,
             }}
-            description='Pick something short and memorable... like a handle.'
+            description={
+              fetcher.data?.exists
+                ? 'This username is already taken.'
+                : 'Pick something short and memorable... like a handle.'
+            }
           />
 
+          {/* Submit button */}
           <div className='mt-6 flex w-full justify-end'>
             <Button
               type='submit'
-              disabled={isDisabled}
+              disabled={isDisabled || fetcher.state !== 'idle' || hasUsernameError}
               isLoading={isDisabled}
               rightIcon={<Rocket />}
             >
