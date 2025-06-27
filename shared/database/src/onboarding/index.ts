@@ -1,2 +1,2 @@
-export * from './checkUserNameExists';
+export * from '../profile/checkUserNameExists';
 export * from './completeUserOnboarding';

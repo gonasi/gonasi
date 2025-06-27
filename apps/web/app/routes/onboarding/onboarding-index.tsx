@@ -6,7 +6,8 @@ import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hoo
 import { dataWithError, redirectWithSuccess } from 'remix-toast';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
 
-import { checkUserNameExists, completeUserOnboarding } from '@gonasi/database/onboarding';
+import { completeUserOnboarding } from '@gonasi/database/onboarding';
+import { checkUserNameExists } from '@gonasi/database/profile';
 import type { OnboardingSchemaTypes } from '@gonasi/schemas/onboarding';
 import { OnboardingSchema } from '@gonasi/schemas/onboarding';
 
