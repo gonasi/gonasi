@@ -13,25 +13,28 @@ export const updatePersonalInformation = async (
   const id = await getUserId(supabase);
   const { fullName, username } = updates;
 
-  const { error } = await supabase
+  const { error, data } = await supabase
     .from('profiles')
     .update({
       username,
       full_name: fullName,
     })
     .eq('id', id)
-    .select(); // Ensure updated data is returned
+    .select()
+    .single();
 
   if (error) {
     console.error(`[updatePersonalInformation]`, { error });
     return {
       success: false,
       message: 'Hmm... something went wrong while updating your info.',
+      data: null,
     };
   }
 
   return {
     success: true,
     message: 'All set! Your personal info has been updated.',
+    data,
   };
 };

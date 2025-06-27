@@ -43,6 +43,14 @@ export function meta({ data }: Route.MetaArgs) {
 
 type FormData = z.infer<typeof AccountSettingsUpdateSchema>;
 
+interface UpdateResult {
+  success: boolean;
+  message: string;
+  data: {
+    username: string | null;
+  } | null;
+}
+
 export async function action({ request, params }: Route.ActionArgs) {
   const rawFormData = await request.formData();
   await checkHoneypot(rawFormData);
@@ -55,11 +63,10 @@ export async function action({ request, params }: Route.ActionArgs) {
 
   if (errors) return { errors, defaultValues };
 
-  const returnPath = `/go/${params.username}/settings/profile-information`;
   const { supabase } = createClient(request);
 
   try {
-    let result = { success: false, message: '' };
+    let result: UpdateResult = { success: false, message: '', data: null };
 
     switch (data.updateType) {
       case 'personal-information':
@@ -68,6 +75,8 @@ export async function action({ request, params }: Route.ActionArgs) {
       default:
         throw new Error(`Unsupported update type: ${data.updateType}`);
     }
+
+    const returnPath = `/go/${result.data?.username ?? params.username}/settings/profile-information`;
 
     return result.success
       ? redirectWithSuccess(returnPath, result.message)
