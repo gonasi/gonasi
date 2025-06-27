@@ -1,3 +1,4 @@
+import { Outlet } from 'react-router';
 import { Pencil } from 'lucide-react';
 
 import { getMyOwnProfile } from '@gonasi/database/profiles';
@@ -41,39 +42,47 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   return { profileUser };
 }
 
-export default function ProfileInformationSettings({ loaderData }: Route.ComponentProps) {
+export default function ProfileInformationSettings({ params, loaderData }: Route.ComponentProps) {
   if (!loaderData) return <NotFoundCard message='Profile not found' />;
   return (
-    <div className='w-full'>
-      <div className='flex w-full flex-col items-center space-y-8 space-x-0 p-0 md:flex-row md:space-y-0 md:space-x-8'>
-        <div className=''>
-          <div className='relative'>
-            <PlainAvatar
-              username={loaderData.profileUser?.username ?? ''}
-              imageUrl={loaderData.profileUser?.avatar_url}
-              size='xl'
-            />
-            <IconNavLink
-              to='/back'
-              icon={Pencil}
-              className='bg-card border-background absolute -top-2 -right-2 rounded-full border-2 p-2'
-              size={12}
-            />
+    <>
+      <div className='w-full'>
+        <div className='flex w-full flex-col items-center space-y-8 space-x-0 p-0 md:flex-row md:space-y-0 md:space-x-8'>
+          <div className=''>
+            <div className='relative'>
+              <PlainAvatar
+                username={loaderData.profileUser?.username ?? ''}
+                imageUrl={loaderData.profileUser?.avatar_url}
+                size='xl'
+              />
+              <IconNavLink
+                to={`/go/${params.username}/settings/profile-information/profile-photo`}
+                icon={Pencil}
+                className='bg-card border-background absolute -top-2 -right-2 rounded-full border-2 p-2'
+                size={12}
+              />
+            </div>
           </div>
-        </div>
-        <div className='md:bg-card/50 flex w-full justify-between rounded-lg bg-transparent p-0 md:p-4'>
-          <div>
-            <h4>{loaderData.profileUser?.username}</h4>
-            <h5 className='font-secondary text-sm'>{loaderData.profileUser?.full_name}</h5>
-            <p className='text-muted-foreground font-secondary text-xs'>
-              {loaderData.profileUser?.email}
-            </p>
-          </div>
-          <div>
-            <IconNavLink to='/back' icon={Pencil} className='bg-card rounded-full p-2' size={12} />
+          <div className='md:bg-card/50 flex w-full justify-between rounded-lg bg-transparent p-0 md:p-4'>
+            <div>
+              <h4>{loaderData.profileUser?.username}</h4>
+              <h5 className='font-secondary text-sm'>{loaderData.profileUser?.full_name}</h5>
+              <p className='text-muted-foreground font-secondary text-xs'>
+                {loaderData.profileUser?.email}
+              </p>
+            </div>
+            <div>
+              <IconNavLink
+                to={`/go/${params.username}/settings/profile-information/personal-information`}
+                icon={Pencil}
+                className='bg-card rounded-full p-2'
+                size={12}
+              />
+            </div>
           </div>
         </div>
       </div>
-    </div>
+      <Outlet />
+    </>
   );
 }

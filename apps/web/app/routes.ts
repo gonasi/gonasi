@@ -43,6 +43,16 @@ export default [
       route(
         'profile-information',
         'routes/profile/settings/account-settings/profile-information.tsx',
+        [
+          route(
+            'personal-information',
+            'routes/profile/settings/account-settings/updates/update-personal-information.tsx',
+          ),
+          route(
+            'profile-photo',
+            'routes/profile/settings/account-settings/updates/update-profile-photo.tsx',
+          ),
+        ],
       ),
       route(
         'login-and-security',
