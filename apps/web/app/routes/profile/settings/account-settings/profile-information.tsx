@@ -1,7 +1,12 @@
 import { Outlet } from 'react-router';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Pencil } from 'lucide-react';
+import { getValidatedFormData } from 'remix-hook-form';
+import { dataWithError, redirectWithSuccess } from 'remix-toast';
+import type z from 'zod';
 
 import { getMyOwnProfile } from '@gonasi/database/profiles';
+import { AccountSettingsUpdateSchema } from '@gonasi/schemas/settings';
 
 import type { Route } from './+types/profile-information';
 
@@ -9,6 +14,7 @@ import { PlainAvatar } from '~/components/avatars';
 import { NotFoundCard } from '~/components/cards';
 import { IconNavLink } from '~/components/ui/button';
 import { createClient } from '~/lib/supabase/supabase.server';
+import { checkHoneypot } from '~/utils/honeypot.server';
 
 export type ProfileLoaderReturnType = Exclude<Awaited<ReturnType<typeof loader>>, Response>;
 
@@ -32,6 +38,55 @@ export function meta({ data }: Route.MetaArgs) {
       content: `Update ${displayName}'s profile settings including name, avatar, and visibility preferences.`,
     },
   ];
+}
+
+type FormData = z.infer<typeof AccountSettingsUpdateSchema>;
+
+export async function action({ request, params }: Route.ActionArgs) {
+  const formData = await request.formData();
+
+  // Honeypot anti-bot check
+  await checkHoneypot(formData);
+
+  // Validate form data using Zod
+  const {
+    errors,
+    data,
+    receivedValues: defaultValues,
+  } = await getValidatedFormData<FormData>(formData, zodResolver(AccountSettingsUpdateSchema));
+
+  if (errors) return { errors, defaultValues };
+
+  const basePath = `/${params.username}/course-builder/${params.courseId}/content`;
+  const redirectUrl = `${basePath}/${params.chapterId}/${params.lessonId}/lesson-blocks`;
+
+  const { supabase } = createClient(request);
+
+  try {
+    let result = { success: false, message: '' };
+
+    switch (data.updateType) {
+      case 'personal-information':
+        result = await upsertRichTextBlock(supabase, { ...data });
+        break;
+
+      default:
+        throw new Error(`Unhandled plugin type: ${data.updateType}`);
+    }
+
+    return result.success
+      ? redirectWithSuccess(redirectUrl, result.message)
+      : dataWithError(null, result.message);
+  } catch (error) {
+    console.error('Error creating block:', error);
+    return dataWithError(null, 'Could not create block. Please try again.');
+  }
+}
+
+export interface ProfileOutletContext {
+  username: string;
+  fullName: string;
+  avatarUrl: string;
 }
 
 export async function loader({ request, params }: Route.LoaderArgs) {
@@ -82,7 +137,13 @@ export default function ProfileInformationSettings({ params, loaderData }: Route
           </div>
         </div>
       </div>
-      <Outlet />
+      <Outlet
+        context={{
+          username: loaderData.profileUser?.username ?? '',
+          fullName: loaderData.profileUser?.full_name ?? '',
+          avatarUrl: loaderData.profileUser?.avatar_url ?? '',
+        }}
+      />
     </>
   );
 }
