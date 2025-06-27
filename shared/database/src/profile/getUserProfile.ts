@@ -23,6 +23,12 @@ export const getUserProfile = async (supabase: TypedSupabaseClient) => {
       phone_number_verified,
       email_verified,
       is_public,
+      country_code,
+      preferred_language,
+      account_verified,
+      notifications_enabled,
+      created_at,
+      updated_at,
       mode,
       active_organization_id
       `,
