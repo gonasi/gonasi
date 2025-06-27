@@ -20,8 +20,11 @@ const resolver = zodResolver(UpdatePersonalInformationSchema);
 
 export default function UpdatePersonalInformation({ params }: Route.ComponentProps) {
   const isPending = useIsPending();
-  const { username: defaultUsername, fullName: defaultFullName } =
-    useOutletContext<ProfileOutletContext>();
+  const {
+    username: defaultUsername,
+    fullName: defaultFullName,
+    email,
+  } = useOutletContext<ProfileOutletContext>();
 
   const methods = useRemixForm<UpdatePersonalInformationSchemaTypes>({
     mode: 'all',
@@ -46,6 +49,9 @@ export default function UpdatePersonalInformation({ params }: Route.ComponentPro
             <Form method='POST' onSubmit={methods.handleSubmit} action={closeActionRoute}>
               <HoneypotInputs />
 
+              <div className='text-muted-foreground border-input bg-input/20 mb-6 rounded-lg border p-3 italic hover:cursor-not-allowed'>
+                {email}
+              </div>
               <GoInputField
                 name='fullName'
                 labelProps={{ children: 'Full Name', required: true }}
@@ -66,7 +72,11 @@ export default function UpdatePersonalInformation({ params }: Route.ComponentPro
                 description='Used in your public profile URL.'
               />
 
-              <Button type='submit' disabled={isPending} isLoading={isFormDisabled}>
+              <Button
+                type='submit'
+                disabled={isPending || !methods.formState.isDirty}
+                isLoading={isFormDisabled}
+              >
                 Save Changes
               </Button>
             </Form>

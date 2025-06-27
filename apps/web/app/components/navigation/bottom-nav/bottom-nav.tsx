@@ -19,7 +19,7 @@ export function BottomNav({ user }: Props) {
         <BottomNavLink icon={Telescope} to='/go/explore' />
         <div className='min-w-12'>
           {user ? (
-            <NavLink to={`/${user.username}`} className='w-full'>
+            <NavLink to={`/go/${user.username}`} className='w-full'>
               {({ isActive, isPending }) => (
                 <span aria-disabled={isActive}>
                   <PlainAvatar

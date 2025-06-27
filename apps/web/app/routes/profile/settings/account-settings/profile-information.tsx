@@ -79,6 +79,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 }
 
 export interface ProfileOutletContext {
+  email: string;
   username: string;
   fullName: string;
   avatarUrl: string;
@@ -136,6 +137,7 @@ export default function ProfileInformationSettings({ params, loaderData }: Route
           username: profileUser?.username ?? '',
           fullName: profileUser?.full_name ?? '',
           avatarUrl: profileUser?.avatar_url ?? '',
+          email: profileUser?.email ?? '',
         }}
       />
     </>
