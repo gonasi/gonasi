@@ -99,10 +99,10 @@ create table "public"."profiles" (
     "preferred_language" character(2) default 'en'::bpchar,
     "account_verified" boolean not null default false,
     "notifications_enabled" boolean not null default true,
-    "created_at" timestamp with time zone not null default timezone('utc'::text, now()),
-    "updated_at" timestamp with time zone not null default timezone('utc'::text, now()),
     "mode" profile_mode not null default 'personal'::profile_mode,
-    "active_organization_id" uuid
+    "active_organization_id" uuid,
+    "created_at" timestamp with time zone not null default timezone('utc'::text, now()),
+    "updated_at" timestamp with time zone not null default timezone('utc'::text, now())
 );
 
 
@@ -696,8 +696,6 @@ grant trigger on table "public"."profiles" to "authenticated";
 
 grant truncate on table "public"."profiles" to "authenticated";
 
-grant update on table "public"."profiles" to "authenticated";
-
 grant delete on table "public"."profiles" to "service_role";
 
 grant insert on table "public"."profiles" to "service_role";
@@ -945,7 +943,7 @@ using ((( SELECT auth.uid() AS uid) = id))
 with check ((( SELECT auth.uid() AS uid) = id));
 
 
-create policy "Allow authenticated users to SELECT own profile or public profi"
+create policy "Allow authenticated users to SELECT own profile"
 on "public"."profiles"
 as permissive
 for select

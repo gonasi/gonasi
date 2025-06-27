@@ -1,36 +1,35 @@
 -- ============================================
--- Migration: Add `mode` and `active_organization_id` to profiles using ENUM
+-- Migration: Convert `mode` to ENUM and set `active_organization_id` to UUID
 -- ============================================
 
--- Create the ENUM type to replace the text column with check constraint.
--- This makes type inference and validation more robust.
+-- Create the ENUM type for `mode`.
 create type profile_mode as enum ('personal', 'organization');
 
--- Add `mode` column using the new enum type with a default value.
--- ENUM types are stored more efficiently and give us automatic type safety.
+-- Alter `mode` column to use the new ENUM type.
+-- Assumes existing text values are valid ENUM variants.
 alter table public.profiles
-add column mode profile_mode not null default 'personal';
+alter column mode type profile_mode using mode::profile_mode,
+alter column mode set not null,
+alter column mode set default 'personal';
 
--- Add `active_organization_id` column as a nullable UUID foreign key
--- referencing the organizations table.
--- We use `on delete set null` so that if the organization is deleted,
--- the profile is reverted to personal mode (enforced later by a check).
+-- Alter `active_organization_id` to UUID type.
+-- Assumes a prior migration has updated all values to valid UUIDs or NULL.
 alter table public.profiles
-add column active_organization_id uuid
-  references public.organizations(id)
-  on delete set null;
+alter column active_organization_id type uuid using active_organization_id::uuid;
 
--- Add a CHECK constraint to ensure consistency between the `mode`
--- and the presence of an `active_organization_id`.
--- - If mode is 'personal' then active_organization_id must be NULL.
--- - If mode is 'organization' then active_organization_id must NOT be NULL.
+-- Add foreign key constraint with ON DELETE SET NULL.
+alter table public.profiles
+add constraint profiles_active_organization_id_fkey
+foreign key (active_organization_id) references public.organizations(id)
+on delete set null;
+
+-- Add a CHECK constraint to enforce mode/organization consistency.
 alter table public.profiles
 add constraint mode_organization_consistency check (
   (mode = 'personal' and active_organization_id is null) or
   (mode = 'organization' and active_organization_id is not null)
 );
 
--- Add a covering index on the foreign key column.
--- This improves join performance and helps enforce referential integrity.
+-- Create an index on active_organization_id for join performance.
 create index idx_profiles_active_organization_id
 on public.profiles(active_organization_id);

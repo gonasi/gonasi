@@ -35,6 +35,9 @@ create table public.profiles (
   account_verified boolean not null default false,        -- Manual/auto verification flag
   notifications_enabled boolean not null default true,    -- Whether notifications are enabled
 
+  mode text,  -- we run a separate migration to update mode and correct types
+  active_organization_id text, -- we run a separate migration to update active_organization_id and correct types
+
   -- Record timestamps
   created_at timestamp with time zone not null default timezone('utc', now()), -- Creation time
   updated_at timestamp with time zone not null default timezone('utc', now()), -- Last update
