@@ -40,17 +40,15 @@ export default [
 
   layout('routes/layouts/profile/course-overview-layout.tsx', [
     route(':username/settings', 'routes/profile/settings/settings-index.tsx', [
-      route('profile-information', 'routes/profile/settings/profile-information.tsx'),
-      route('login-and-security', 'routes/profile/settings/login-and-security.tsx'),
-      route('notifications', 'routes/profile/settings/notifications.tsx'),
-      route('plan-and-usage', 'routes/profile/settings/plan-and-usage.tsx'),
-      route('billing-history', 'routes/profile/settings/billing-history.tsx'),
-      route('payment-methods', 'routes/profile/settings/payment-methods.tsx'),
-      route('payout-settings', 'routes/profile/settings/payout-settings.tsx', [
-        route('add-payout-details', 'routes/profile/settings/add-payout-details.tsx'),
-        route('loader-banks/:type/:currency', 'routes/profile/settings/loader-banks.tsx'),
-      ]),
-      route('earnings-summary', 'routes/profile/settings/earnings-summary.tsx'),
+      route(
+        'profile-information',
+        'routes/profile/settings/account-settings/profile-information.tsx',
+      ),
+      route(
+        'login-and-security',
+        'routes/profile/settings/account-settings/login-and-security.tsx',
+      ),
+      route('notifications', 'routes/profile/settings/account-settings/notifications.tsx'),
     ]),
 
     ...prefix(':username/course-builder', [

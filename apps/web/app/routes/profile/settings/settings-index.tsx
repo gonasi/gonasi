@@ -1,11 +1,21 @@
 import { Outlet, useLocation } from 'react-router';
-import { Banknote, Bell, CreditCard, Lock, ReceiptText, UserRoundCog, Wallet } from 'lucide-react';
+import { Bell, Lock, UserRoundCog } from 'lucide-react';
 
 import type { Route } from './+types/settings-index';
 
 import { AppLogo } from '~/components/app-logo';
 import { SideLink } from '~/components/go-sidebar/side-link';
 import { BackArrowNavLink, CloseIconNavLink } from '~/components/ui/button';
+
+export function meta() {
+  return [
+    { title: 'Profile Settings • Gonasi' },
+    {
+      name: 'description',
+      content: 'Manage your profile details, visibility, and account preferences on Gonasi.',
+    },
+  ];
+}
 
 export default function SettingsIndex({ params }: Route.ComponentProps) {
   const location = useLocation();
@@ -29,41 +39,6 @@ export default function SettingsIndex({ params }: Route.ComponentProps) {
           name: 'Notifications',
           to: `/${params.username}/settings/notifications`,
           icon: Bell,
-        },
-      ],
-    },
-    {
-      heading: 'Billing & Payments',
-      links: [
-        {
-          name: 'Plan & Usage',
-          to: `/${params.username}/settings/plan-and-usage`,
-          icon: CreditCard,
-        },
-        {
-          name: 'Billing History',
-          to: `/${params.username}/settings/billing-history`,
-          icon: ReceiptText,
-        },
-        {
-          name: 'Payment Methods',
-          to: `/${params.username}/settings/payment-methods`,
-          icon: Banknote,
-        },
-      ],
-    },
-    {
-      heading: 'Earnings',
-      links: [
-        {
-          name: 'Payout Settings',
-          to: `/${params.username}/settings/payout-settings`,
-          icon: Wallet,
-        },
-        {
-          name: 'Summary',
-          to: `/${params.username}/settings/earnings-summary`,
-          icon: ReceiptText,
         },
       ],
     },

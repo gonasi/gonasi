@@ -92,7 +92,7 @@ export default function ProfileLayout({ loaderData, params }: Route.ComponentPro
                 to={`/${params.username}/settings/profile-information?${new URLSearchParams({ redirectTo })}`}
                 className='group'
               >
-                <SettingsNotificationsIcon hasNotifications />
+                <SettingsNotificationsIcon />
               </NavLink>
             )}
           </div>
