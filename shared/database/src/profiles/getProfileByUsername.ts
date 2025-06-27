@@ -13,10 +13,8 @@ export const getProfileByUsername = async ({ supabase, username }: GetProfileByU
   const userId = await getUserId(supabase);
 
   const { data: profile, error } = await supabase
-    .from('profiles')
-    .select(
-      'id, username, email, full_name, avatar_url, blur_hash, phone_number, phone_number_verified, email_verified, country_code',
-    )
+    .from('public_profiles')
+    .select('id, username, full_name, avatar_url, blur_hash')
     .eq('username', username)
     .single();
 

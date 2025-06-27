@@ -46,13 +46,13 @@ export default function ProfileLayout({ loaderData, params }: Route.ComponentPro
 
   const tabs = [
     {
-      to: `/go/go/${username}`,
+      to: `/go/${username}`,
       name: 'Active',
       icon: BookCopy,
       isVisible: true,
     },
     {
-      to: `/go/go/${username}/history`,
+      to: `/go/${username}/history`,
       name: 'History',
       icon: FileStack,
       isVisible: true,

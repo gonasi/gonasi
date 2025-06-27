@@ -215,6 +215,8 @@ CREATE UNIQUE INDEX role_permissions_role_permission_key ON public.role_permissi
 
 CREATE UNIQUE INDEX tier_limits_pkey ON public.tier_limits USING btree (tier);
 
+CREATE UNIQUE INDEX uniq_course_sub_categories_name_per_category ON public.course_sub_categories USING btree (category_id, name);
+
 CREATE UNIQUE INDEX user_roles_pkey ON public.user_roles USING btree (id);
 
 CREATE UNIQUE INDEX user_roles_user_id_role_key ON public.user_roles USING btree (user_id, role);
@@ -235,11 +237,19 @@ alter table "public"."tier_limits" add constraint "tier_limits_pkey" PRIMARY KEY
 
 alter table "public"."user_roles" add constraint "user_roles_pkey" PRIMARY KEY using index "user_roles_pkey";
 
-alter table "public"."course_categories" add constraint "course_categories_created_by_fkey" FOREIGN KEY (created_by) REFERENCES profiles(id) not valid;
+alter table "public"."course_categories" add constraint "course_categories_created_by_fkey" FOREIGN KEY (created_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
 
 alter table "public"."course_categories" validate constraint "course_categories_created_by_fkey";
 
-alter table "public"."course_categories" add constraint "course_categories_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES profiles(id) not valid;
+alter table "public"."course_categories" add constraint "course_categories_description_check" CHECK ((char_length(description) > 0)) not valid;
+
+alter table "public"."course_categories" validate constraint "course_categories_description_check";
+
+alter table "public"."course_categories" add constraint "course_categories_name_check" CHECK ((char_length(name) > 0)) not valid;
+
+alter table "public"."course_categories" validate constraint "course_categories_name_check";
+
+alter table "public"."course_categories" add constraint "course_categories_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
 
 alter table "public"."course_categories" validate constraint "course_categories_updated_by_fkey";
 
@@ -247,11 +257,15 @@ alter table "public"."course_sub_categories" add constraint "course_sub_categori
 
 alter table "public"."course_sub_categories" validate constraint "course_sub_categories_category_id_fkey";
 
-alter table "public"."course_sub_categories" add constraint "course_sub_categories_created_by_fkey" FOREIGN KEY (created_by) REFERENCES profiles(id) not valid;
+alter table "public"."course_sub_categories" add constraint "course_sub_categories_created_by_fkey" FOREIGN KEY (created_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
 
 alter table "public"."course_sub_categories" validate constraint "course_sub_categories_created_by_fkey";
 
-alter table "public"."course_sub_categories" add constraint "course_sub_categories_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES profiles(id) not valid;
+alter table "public"."course_sub_categories" add constraint "course_sub_categories_name_check" CHECK ((char_length(name) > 0)) not valid;
+
+alter table "public"."course_sub_categories" validate constraint "course_sub_categories_name_check";
+
+alter table "public"."course_sub_categories" add constraint "course_sub_categories_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
 
 alter table "public"."course_sub_categories" validate constraint "course_sub_categories_updated_by_fkey";
 
@@ -483,10 +497,9 @@ $function$
 CREATE OR REPLACE FUNCTION public.update_updated_at_column()
  RETURNS trigger
  LANGUAGE plpgsql
- SET search_path TO ''
 AS $function$
 begin
-  new.updated_at = timezone('utc', clock_timestamp());
+  new.updated_at = now();
   return new;
 end;
 $function$

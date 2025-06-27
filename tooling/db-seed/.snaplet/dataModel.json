@@ -768,6 +768,14 @@
             "id"
           ],
           "nullNotDistinct": false
+        },
+        {
+          "name": "uniq_course_sub_categories_name_per_category",
+          "fields": [
+            "category_id",
+            "name"
+          ],
+          "nullNotDistinct": false
         }
       ]
     },
