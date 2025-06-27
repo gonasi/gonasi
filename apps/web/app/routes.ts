@@ -39,7 +39,7 @@ export default [
   route('go/onboarding/:userId', 'routes/onboarding/onboarding-index.tsx'),
 
   layout('routes/layouts/profile/course-overview-layout.tsx', [
-    route(':username/settings', 'routes/profile/settings/settings-index.tsx', [
+    route('go/:username/settings', 'routes/profile/settings/settings-index.tsx', [
       route(
         'profile-information',
         'routes/profile/settings/account-settings/profile-information.tsx',

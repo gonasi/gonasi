@@ -13,23 +13,6 @@ import { createClient } from '~/lib/supabase/supabase.server';
 
 export type ProfileLoaderReturnType = Exclude<Awaited<ReturnType<typeof loader>>, Response>;
 
-export function headers(_: Route.HeadersArgs) {
-  return {
-    'Cache-Control': 's-maxage=1, stale-while-revalidate=59',
-  };
-}
-
-export async function loader({ request, params }: Route.LoaderArgs) {
-  const { supabase } = createClient(request);
-
-  const profileUser = await getProfileByUsername({
-    supabase,
-    username: params.username ?? '',
-  });
-
-  return { profileUser };
-}
-
 export function meta({ data }: Route.MetaArgs) {
   const user = (data as ProfileLoaderReturnType | null)?.profileUser?.user;
 
@@ -50,6 +33,23 @@ export function meta({ data }: Route.MetaArgs) {
       content: `View ${displayName}'s public profile, including learning history and active courses.`,
     },
   ];
+}
+
+export function headers(_: Route.HeadersArgs) {
+  return {
+    'Cache-Control': 's-maxage=1, stale-while-revalidate=59',
+  };
+}
+
+export async function loader({ request, params }: Route.LoaderArgs) {
+  const { supabase } = createClient(request);
+
+  const profileUser = await getProfileByUsername({
+    supabase,
+    username: params.username ?? '',
+  });
+
+  return { profileUser };
 }
 
 export default function ProfileLayout({ loaderData, params }: Route.ComponentProps) {
@@ -89,7 +89,7 @@ export default function ProfileLayout({ loaderData, params }: Route.ComponentPro
             <h4 className='font-secondary'>{username}</h4>
             {isMyProfile && (
               <NavLink
-                to={`/${params.username}/settings/profile-information?${new URLSearchParams({ redirectTo })}`}
+                to={`/go/${params.username}/settings/profile-information?${new URLSearchParams({ redirectTo })}`}
                 className='group'
               >
                 <SettingsNotificationsIcon />

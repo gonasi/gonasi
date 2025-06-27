@@ -27,17 +27,17 @@ export default function SettingsIndex({ params }: Route.ComponentProps) {
       links: [
         {
           name: 'Profile',
-          to: `/${params.username}/settings/profile-information`,
+          to: `/go/${params.username}/settings/profile-information`,
           icon: UserRoundCog,
         },
         {
           name: 'Login & Security',
-          to: `/${params.username}/settings/login-and-security`,
+          to: `/go/${params.username}/settings/login-and-security`,
           icon: Lock,
         },
         {
           name: 'Notifications',
-          to: `/${params.username}/settings/notifications`,
+          to: `/go/${params.username}/settings/notifications`,
           icon: Bell,
         },
       ],

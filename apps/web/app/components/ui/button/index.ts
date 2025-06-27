@@ -14,3 +14,4 @@ export * from './FloatingActionButton';
 export * from './BackArrowNavLink';
 export * from './CloseIconNavLink';
 export * from './NavLinkButton';
+export * from './IconNavLink';
