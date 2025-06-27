@@ -1,5 +1,5 @@
-import { NavLink, Outlet, useLocation } from 'react-router';
-import { BookCopy, FileStack } from 'lucide-react';
+import { Outlet, useLocation } from 'react-router';
+import { BookCopy, FileStack, Settings } from 'lucide-react';
 
 import { getProfileByUsername } from '@gonasi/database/profiles';
 
@@ -8,7 +8,7 @@ import type { Route } from './+types/my-profile-layout';
 import { PlainAvatar } from '~/components/avatars';
 import { NotFoundCard } from '~/components/cards';
 import { GoTabNav } from '~/components/go-tab-nav';
-import { SettingsNotificationsIcon } from '~/components/icons';
+import { IconNavLink } from '~/components/ui/button';
 import { createClient } from '~/lib/supabase/supabase.server';
 
 export type ProfileLoaderReturnType = Exclude<Awaited<ReturnType<typeof loader>>, Response>;
@@ -88,12 +88,10 @@ export default function ProfileLayout({ loaderData, params }: Route.ComponentPro
           <div className='flex w-full justify-between'>
             <h4 className='font-secondary'>{username}</h4>
             {isMyProfile && (
-              <NavLink
+              <IconNavLink
                 to={`/go/${params.username}/settings/profile-information?${new URLSearchParams({ redirectTo })}`}
-                className='group'
-              >
-                <SettingsNotificationsIcon />
-              </NavLink>
+                icon={Settings}
+              />
             )}
           </div>
           <h5 className='py-2 text-sm'>{full_name}</h5>
