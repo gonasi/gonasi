@@ -1147,14 +1147,17 @@ using ((is_public OR (owned_by = ( SELECT auth.uid() AS uid)) OR (EXISTS ( SELEC
   WHERE ((s.organization_id = organizations.id) AND (s.user_id = ( SELECT auth.uid() AS uid)))))));
 
 
-create policy "update: owner or admin"
+create policy "update: owner or admin, transfer to admin only"
 on "public"."organizations"
 as permissive
 for update
 to authenticated
 using (((owned_by = ( SELECT auth.uid() AS uid)) OR (EXISTS ( SELECT 1
    FROM organization_members m
-  WHERE ((m.organization_id = organizations.id) AND (m.user_id = ( SELECT auth.uid() AS uid)) AND (m.role = 'admin'::org_role))))));
+  WHERE ((m.organization_id = organizations.id) AND (m.user_id = ( SELECT auth.uid() AS uid)) AND (m.role = 'admin'::org_role))))))
+with check (((owned_by = ( SELECT auth.uid() AS uid)) OR (EXISTS ( SELECT 1
+   FROM organization_members m
+  WHERE ((m.organization_id = organizations.id) AND (m.user_id = organizations.owned_by) AND (m.role = 'admin'::org_role))))));
 
 
 create policy "Allow DELETE of own profile by authenticated users"

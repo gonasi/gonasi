@@ -1,7 +1,5 @@
 -- ===================================================
--- FUNCTION: add_or_update_owner_in_organization_members
--- Automatically adds the owned_by user as 'owner' to organization_members
--- on organization creation or ownership transfer.
+-- Function: Automatically add owner to organization_members
 -- ===================================================
 create or replace function public.add_or_update_owner_in_organization_members()
 returns trigger
@@ -49,9 +47,8 @@ begin
 end;
 $$;
 
-
 -- ===================================================
--- TRIGGER: Add owner to organization_members on INSERT
+-- Trigger: Add owner to organization_members on INSERT
 -- ===================================================
 create trigger trg_insert_owner_into_organization_members
 after insert on public.organizations
@@ -59,7 +56,7 @@ for each row
 execute function public.add_or_update_owner_in_organization_members();
 
 -- ===================================================
--- TRIGGER: Add new owner to organization_members on ownership transfer
+-- Trigger: Add new owner to organization_members on ownership transfer
 -- ===================================================
 create trigger trg_update_owner_into_organization_members
 after update on public.organizations
