@@ -221,6 +221,8 @@ CREATE UNIQUE INDEX lesson_types_name_key ON public.lesson_types USING btree (na
 
 CREATE UNIQUE INDEX lesson_types_pkey ON public.lesson_types USING btree (id);
 
+CREATE UNIQUE INDEX one_owner_per_organization ON public.organization_members USING btree (organization_id) WHERE (role = 'owner'::org_role);
+
 CREATE INDEX organization_members_invited_by_idx ON public.organization_members USING btree (invited_by);
 
 CREATE INDEX organization_members_organization_id_idx ON public.organization_members USING btree (organization_id);
@@ -430,6 +432,53 @@ alter table "public"."user_roles" validate constraint "user_roles_user_id_fkey";
 alter table "public"."user_roles" add constraint "user_roles_user_id_role_key" UNIQUE using index "user_roles_user_id_role_key";
 
 set check_function_bodies = off;
+
+CREATE OR REPLACE FUNCTION public.add_or_update_owner_in_organization_members()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+begin
+  -- On insert: add initial owner
+  if tg_op = 'INSERT' and new.owned_by is not null then
+    insert into public.organization_members (
+      organization_id,
+      user_id,
+      role,
+      invited_by
+    )
+    values (
+      new.id,
+      new.owned_by,
+      'owner',
+      new.owned_by
+    )
+    on conflict do nothing;
+
+  -- On update: ownership transfer
+  elsif tg_op = 'UPDATE' and new.owned_by is distinct from old.owned_by then
+    if new.owned_by is not null then
+      insert into public.organization_members (
+        organization_id,
+        user_id,
+        role,
+        invited_by
+      )
+      values (
+        new.id,
+        new.owned_by,
+        'owner',
+        new.owned_by
+      )
+      on conflict do nothing;
+    end if;
+  end if;
+
+  return new;
+end;
+$function$
+;
 
 CREATE OR REPLACE FUNCTION public.authorize(requested_permission app_permission)
  RETURNS boolean
@@ -1228,7 +1277,11 @@ CREATE TRIGGER trg_course_sub_categories_set_updated_at BEFORE UPDATE ON public.
 
 CREATE TRIGGER trg_lesson_types_set_updated_at BEFORE UPDATE ON public.lesson_types FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+CREATE TRIGGER trg_insert_owner_into_organization_members AFTER INSERT ON public.organizations FOR EACH ROW EXECUTE FUNCTION add_or_update_owner_in_organization_members();
+
 CREATE TRIGGER trg_organizations_set_updated_at BEFORE UPDATE ON public.organizations FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER trg_update_owner_into_organization_members AFTER UPDATE ON public.organizations FOR EACH ROW WHEN ((old.owned_by IS DISTINCT FROM new.owned_by)) EXECUTE FUNCTION add_or_update_owner_in_organization_members();
 
 CREATE TRIGGER set_updated_at BEFORE UPDATE ON public.profiles FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 

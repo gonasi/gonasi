@@ -18,13 +18,19 @@ export const testSupabaseAdmin = createClient<Database>(
   TEST_SUPABASE_SERVICE_KEY,
 );
 
-export type ClearableTable = 'profiles' | 'user_roles' | 'tier_limits' | 'organizations';
+export type ClearableTable =
+  | 'profiles'
+  | 'user_roles'
+  | 'tier_limits'
+  | 'organizations'
+  | 'organization_members';
 
 const DEFAULT_TABLES_TO_CLEAR: ClearableTable[] = [
   'profiles',
   'user_roles',
   'tier_limits',
   'organizations',
+  'organization_members',
 ];
 
 // Centralized cleanup manager

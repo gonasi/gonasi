@@ -88,6 +88,7 @@ schema_paths = [
   './schemas/organization_students_schema_indexes.sql',
 
   './schemas/organizations_rls.sql',
+  './schemas/organizations_functions_triggers.sql',
 
 
 

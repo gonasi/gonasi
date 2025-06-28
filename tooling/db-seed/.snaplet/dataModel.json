@@ -2986,6 +2986,13 @@
             "id"
           ],
           "nullNotDistinct": false
+        },
+        {
+          "name": "one_owner_per_organization",
+          "fields": [
+            "organization_id"
+          ],
+          "nullNotDistinct": false
         }
       ]
     },
