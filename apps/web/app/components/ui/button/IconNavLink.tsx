@@ -16,7 +16,7 @@ export function IconNavLink({ to, icon: Icon, size = 22, className }: IconNavLin
       {({ isPending }) => (
         <div
           className={cn(
-            'hover:bg-muted relative flex items-center justify-center transition-all duration-200 hover:scale-105 hover:cursor-pointer',
+            'relative flex items-center justify-center transition-all duration-200 hover:scale-105 hover:cursor-pointer',
             className,
           )}
         >

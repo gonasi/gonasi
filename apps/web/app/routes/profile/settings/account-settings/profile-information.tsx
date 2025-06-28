@@ -13,6 +13,7 @@ import type { Route } from './+types/profile-information';
 
 import { PlainAvatar } from '~/components/avatars';
 import { NotFoundCard } from '~/components/cards';
+import { ProfileVisibility } from '~/components/settings/profile/profile-visibility-settings';
 import { IconNavLink } from '~/components/ui/button';
 import { createClient } from '~/lib/supabase/supabase.server';
 import { checkHoneypot } from '~/utils/honeypot.server';
@@ -110,7 +111,7 @@ export default function ProfileInformationSettings({ params, loaderData }: Route
 
   return (
     <>
-      <div className='w-full'>
+      <div className='flex max-w-lg flex-col space-y-10 md:space-y-12'>
         <div className='flex w-full flex-col items-center space-y-8 p-0 md:flex-row md:space-y-0 md:space-x-8'>
           <div className='relative'>
             <PlainAvatar
@@ -142,6 +143,8 @@ export default function ProfileInformationSettings({ params, loaderData }: Route
             </div>
           </div>
         </div>
+
+        <ProfileVisibility />
       </div>
 
       <Outlet

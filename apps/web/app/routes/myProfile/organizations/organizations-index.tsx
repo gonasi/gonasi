@@ -69,7 +69,6 @@ export default function PastIndex({ params, loaderData }: Route.ComponentProps) 
           <NavLinkButton
             to={`/go/${params.username}/organizations/new`}
             variant='ghost'
-            size='sm'
             leftIcon={<Plus />}
             className={cn('border-border/50 w-full border')}
           >
