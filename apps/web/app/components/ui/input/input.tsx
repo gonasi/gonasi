@@ -10,6 +10,7 @@ export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> 
   error?: boolean;
   errorMessage?: string;
   wrapperClass?: string;
+  fileIcon?: React.ReactNode; // 🔹 New prop for custom file input icon
 }
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
@@ -24,6 +25,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
       error,
       errorMessage,
       disabled,
+      fileIcon,
       ...props
     },
     ref,
@@ -55,7 +57,9 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
                 className,
               )}
             >
-              <FolderIcon className={cn('mr-2 h-5 w-5 flex-shrink-0', disabled && 'opacity-50')} />
+              <span className={cn('mr-2 flex-shrink-0', disabled && 'opacity-50')}>
+                {fileIcon ?? <FolderIcon className='h-5 w-5' />}
+              </span>
               {fileName || props.placeholder || 'Choose file'}
             </label>
           ) : (
