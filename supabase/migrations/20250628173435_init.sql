@@ -1292,3 +1292,39 @@ CREATE TRIGGER set_updated_at BEFORE UPDATE ON public.profiles FOR EACH ROW EXEC
 CREATE TRIGGER on_auth_user_created AFTER INSERT ON auth.users FOR EACH ROW EXECUTE FUNCTION handle_new_user();
 
 
+create policy "Allow authenticated uploads to own avatar folder"
+on "storage"."objects"
+as permissive
+for insert
+to authenticated
+with check (((bucket_id = 'profile_photos'::text) AND ((storage.foldername(name))[1] = ( SELECT (auth.uid())::text AS uid))));
+
+
+create policy "Allow public access to public profile profile_photos"
+on "storage"."objects"
+as permissive
+for select
+to authenticated, anon
+using (((bucket_id = 'profile_photos'::text) AND ((owner = ( SELECT auth.uid() AS uid)) OR (EXISTS ( SELECT 1
+   FROM profiles
+  WHERE (((profiles.id)::text = (storage.foldername(objects.name))[1]) AND (profiles.is_public = true)))))));
+
+
+create policy "Allow user to delete own avatar"
+on "storage"."objects"
+as permissive
+for delete
+to authenticated
+using (((owner = ( SELECT auth.uid() AS uid)) AND (bucket_id = 'profile_photos'::text)));
+
+
+create policy "Allow user to update own avatar"
+on "storage"."objects"
+as permissive
+for update
+to authenticated
+using ((owner = ( SELECT auth.uid() AS uid)))
+with check (((bucket_id = 'profile_photos'::text) AND ((storage.foldername(name))[1] = ( SELECT (auth.uid())::text AS uid))));
+
+
+

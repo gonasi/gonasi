@@ -83,6 +83,9 @@ schema_paths = [
   # add modes profile migration
   './schemas/profiles_add_modes_migration.sql',
 
+  # profile picture
+  './schemas/profiles_storage_rls.sql',
+
   # members & students
   './schemas/organization_members_schema_indexes.sql',
   './schemas/organization_students_schema_indexes.sql',
