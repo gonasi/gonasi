@@ -115,7 +115,7 @@ export default function ProfileInformationSettings({ params, loaderData }: Route
           <div className='relative'>
             <PlainAvatar
               username={profileUser?.username ?? ''}
-              imageUrl={profileUser?.avatar_url}
+              imageUrl={profileUser?.signed_url}
               size='xl'
             />
             <IconNavLink
