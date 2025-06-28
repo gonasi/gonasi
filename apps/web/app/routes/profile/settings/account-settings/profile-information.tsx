@@ -5,7 +5,7 @@ import { getValidatedFormData } from 'remix-hook-form';
 import { dataWithError, redirectWithSuccess } from 'remix-toast';
 import type z from 'zod';
 
-import { updatePersonalInformation } from '@gonasi/database/profile';
+import { updatePersonalInformation, updateProfilePicture } from '@gonasi/database/profile';
 import { getMyOwnProfile } from '@gonasi/database/profiles';
 import { AccountSettingsUpdateSchema } from '@gonasi/schemas/settings';
 
@@ -61,7 +61,7 @@ export async function action({ request, params }: Route.ActionArgs) {
     receivedValues: defaultValues,
   } = await getValidatedFormData<FormData>(rawFormData, zodResolver(AccountSettingsUpdateSchema));
 
-  if (errors) return { errors, defaultValues };
+  if (errors || !data) return { errors, defaultValues };
 
   const { supabase } = createClient(request);
 
@@ -72,8 +72,11 @@ export async function action({ request, params }: Route.ActionArgs) {
       case 'personal-information':
         result = await updatePersonalInformation(supabase, data);
         break;
+      case 'profile-picture':
+        result = await updateProfilePicture(supabase, data);
+        break;
       default:
-        throw new Error(`Unsupported update type: ${data.updateType}`);
+        throw new Error(`Unsupported update type: ${data}`);
     }
 
     const returnPath = `/go/${result.data?.username ?? params.username}/settings/profile-information`;

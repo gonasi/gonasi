@@ -53,7 +53,7 @@ export default function PastIndex({ params, loaderData }: Route.ComponentProps) 
                 }) => (
                   <div
                     key={id}
-                    className='bg-input/20 flex items-center justify-between rounded-lg p-2'
+                    className='bg-input/20 flex items-center justify-between rounded-lg p-4'
                   >
                     <UserAvatar username={name} imageUrl={avatar_url} size='sm' />
                   </div>

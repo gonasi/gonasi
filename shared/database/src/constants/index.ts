@@ -5,3 +5,4 @@ export const PATHWAYS_BUCKET = 'pathways';
 export const FILE_LIBRARY_BUCKET = 'files';
 
 export const ASSETS_BUCKET = 'assets';
+export const PROFILE_PHOTOS = 'profile_photos';

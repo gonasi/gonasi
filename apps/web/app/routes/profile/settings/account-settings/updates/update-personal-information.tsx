@@ -38,7 +38,6 @@ export default function UpdatePersonalInformation({ params }: Route.ComponentPro
     mode: 'all',
     resolver,
     fetcher,
-    submitData: { updateType: 'personal-information' },
     defaultValues: {
       username: defaultUsername,
       fullName: defaultFullName,
