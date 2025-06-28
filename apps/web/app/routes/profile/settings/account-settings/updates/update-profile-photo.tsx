@@ -4,7 +4,7 @@ import Cropper from 'react-easy-crop';
 import { Form, useFetcher } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AnimatePresence, motion } from 'framer-motion';
-import { CircleX, Crop, File, Image, LoaderCircle, Upload } from 'lucide-react';
+import { CircleX, Crop, LoaderCircle, Upload } from 'lucide-react';
 import { RemixFormProvider, useRemixForm } from 'remix-hook-form';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
 
@@ -219,11 +219,10 @@ export default function UpdateProfilePhoto({ params }: Route.ComponentProps) {
                     <Input
                       type='file'
                       accept='image/*'
-                      fileIcon={<Image />}
                       onChange={handleImageSelect}
                       disabled={isSubmitting}
                       className='w-full'
-                      placeholder={originalFile?.name || 'Choose Picture'}
+                      placeholder={originalFile?.name || 'Choose picture'}
                     />
                     <FormDescription>
                       Choose a new photo to represent you on Gonasi.
