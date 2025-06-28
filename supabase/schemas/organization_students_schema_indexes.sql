@@ -22,3 +22,8 @@ create table public.organization_students (
   -- Constraints
   unique (organization_id, user_id)                     -- Prevent duplicate student entries per organization
 );
+
+-- ✅ Indexes for foreign keys (covering indexes)
+create index on public.organization_students (organization_id);
+create index on public.organization_students (user_id);
+create index on public.organization_students (invited_by);

@@ -195,8 +195,6 @@ CREATE INDEX idx_organizations_created_by ON public.organizations USING btree (c
 
 CREATE INDEX idx_organizations_deleted_by ON public.organizations USING btree (deleted_by);
 
-CREATE UNIQUE INDEX idx_organizations_handle_unique ON public.organizations USING btree (handle);
-
 CREATE INDEX idx_organizations_owned_by ON public.organizations USING btree (owned_by);
 
 CREATE INDEX idx_organizations_tier ON public.organizations USING btree (tier);
@@ -223,13 +221,25 @@ CREATE UNIQUE INDEX lesson_types_name_key ON public.lesson_types USING btree (na
 
 CREATE UNIQUE INDEX lesson_types_pkey ON public.lesson_types USING btree (id);
 
+CREATE INDEX organization_members_invited_by_idx ON public.organization_members USING btree (invited_by);
+
+CREATE INDEX organization_members_organization_id_idx ON public.organization_members USING btree (organization_id);
+
 CREATE UNIQUE INDEX organization_members_organization_id_user_id_key ON public.organization_members USING btree (organization_id, user_id);
 
 CREATE UNIQUE INDEX organization_members_pkey ON public.organization_members USING btree (id);
 
+CREATE INDEX organization_members_user_id_idx ON public.organization_members USING btree (user_id);
+
+CREATE INDEX organization_students_invited_by_idx ON public.organization_students USING btree (invited_by);
+
+CREATE INDEX organization_students_organization_id_idx ON public.organization_students USING btree (organization_id);
+
 CREATE UNIQUE INDEX organization_students_organization_id_user_id_key ON public.organization_students USING btree (organization_id, user_id);
 
 CREATE UNIQUE INDEX organization_students_pkey ON public.organization_students USING btree (id);
+
+CREATE INDEX organization_students_user_id_idx ON public.organization_students USING btree (user_id);
 
 CREATE UNIQUE INDEX organizations_handle_key ON public.organizations USING btree (handle);
 
