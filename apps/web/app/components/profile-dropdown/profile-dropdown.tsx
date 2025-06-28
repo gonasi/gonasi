@@ -34,7 +34,7 @@ export function ProfileDropdown({
 
   if (!user) return;
 
-  const { username, full_name, avatar_url } = user;
+  const { username, full_name, signed_url } = user;
 
   const isActive = location.pathname === `/go/${username}`;
 
@@ -47,7 +47,7 @@ export function ProfileDropdown({
           <div className='flex items-center'>
             <UserAvatar
               username={username}
-              imageUrl={avatar_url}
+              imageUrl={signed_url}
               isActive={isActive}
               showName={showName}
               size={size}

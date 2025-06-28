@@ -1,15 +1,29 @@
 import { getUserId } from '../auth';
 import type { TypedSupabaseClient } from '../client';
+import { PROFILE_PHOTOS } from '../constants';
+import type { Database } from '../schema';
+
+type Profile = Database['public']['Tables']['profiles']['Row'];
 
 /**
- * Fetches the currently signed-in user's full profile info.
+ * Extends the default `profiles` row with an optional signed avatar URL.
  */
-export const getUserProfile = async (supabase: TypedSupabaseClient) => {
+type ProfileWithSignedUrl = Profile & {
+  signed_url?: string;
+};
+
+/**
+ * Fetches the currently signed-in user's full profile info,
+ * including a signed URL for the profile photo if available.
+ */
+export const getUserProfile = async (
+  supabase: TypedSupabaseClient,
+): Promise<{ user: ProfileWithSignedUrl }> => {
   // Get the current user's ID
   const id = await getUserId(supabase);
 
   // Query the 'profiles' table for relevant user fields
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('profiles')
     .select(
       `
@@ -31,10 +45,27 @@ export const getUserProfile = async (supabase: TypedSupabaseClient) => {
       updated_at,
       mode,
       active_organization_id
-      `,
+    `,
     )
     .eq('id', id)
-    .single(); // Expect exactly one match
+    .single();
 
-  return { user: data };
+  if (error || !data) {
+    throw new Error('Failed to fetch user profile');
+  }
+
+  const profile: ProfileWithSignedUrl = { ...data };
+
+  // If avatar_url exists, generate a signed URL valid for 1 hour
+  if (profile.avatar_url) {
+    const { data: signedUrlData, error: signedUrlError } = await supabase.storage
+      .from(PROFILE_PHOTOS)
+      .createSignedUrl(profile.avatar_url, 3600);
+
+    if (!signedUrlError) {
+      profile.signed_url = signedUrlData?.signedUrl;
+    }
+  }
+
+  return { user: profile };
 };

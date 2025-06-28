@@ -24,7 +24,7 @@ export function BottomNav({ user }: Props) {
                 <span aria-disabled={isActive}>
                   <PlainAvatar
                     username={user.username}
-                    imageUrl={user.avatar_url}
+                    imageUrl={user.signed_url}
                     isActive={isActive}
                     isPending={isPending}
                     size='sm'
