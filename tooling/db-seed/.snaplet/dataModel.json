@@ -3437,20 +3437,6 @@
           "maxLength": null
         },
         {
-          "id": "public.organizations.deleted_at",
-          "name": "deleted_at",
-          "columnName": "deleted_at",
-          "type": "timestamptz",
-          "isRequired": false,
-          "kind": "scalar",
-          "isList": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false,
-          "isId": false,
-          "maxLength": null
-        },
-        {
           "id": "public.organizations.created_by",
           "name": "created_by",
           "columnName": "created_by",
@@ -3641,16 +3627,16 @@
       ],
       "uniqueConstraints": [
         {
-          "name": "organizations_pkey",
+          "name": "organizations_handle_key",
           "fields": [
-            "id"
+            "handle"
           ],
           "nullNotDistinct": false
         },
         {
-          "name": "idx_organizations_handle_unique",
+          "name": "organizations_pkey",
           "fields": [
-            "handle"
+            "id"
           ],
           "nullNotDistinct": false
         }
