@@ -15,7 +15,7 @@ export const getMyOwnProfile = async (supabase: TypedSupabaseClient) => {
   // Fetch profile data from the 'profiles' table
   const { data: profile, error } = await supabase
     .from('profiles')
-    .select('id, username, email, full_name, avatar_url, blur_hash')
+    .select('id, username, email, full_name, avatar_url, blur_hash, is_public')
     .eq('id', userId)
     .single();
 

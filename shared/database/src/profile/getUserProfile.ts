@@ -18,7 +18,7 @@ type ProfileWithSignedUrl = Profile & {
  */
 export const getUserProfile = async (
   supabase: TypedSupabaseClient,
-): Promise<{ user: ProfileWithSignedUrl }> => {
+): Promise<{ user: ProfileWithSignedUrl } | { user: null }> => {
   // Get the current user's ID
   const id = await getUserId(supabase);
 
@@ -51,7 +51,7 @@ export const getUserProfile = async (
     .single();
 
   if (error || !data) {
-    throw new Error('Failed to fetch user profile');
+    return { user: null };
   }
 
   const profile: ProfileWithSignedUrl = { ...data };

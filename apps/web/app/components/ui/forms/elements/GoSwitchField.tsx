@@ -9,7 +9,7 @@ interface GoSwitchFieldProps {
   name: string;
   description?: string;
   className?: string;
-  labelProps: Omit<LabelProps, 'htmlFor' | 'error'>;
+  labelProps?: Omit<LabelProps, 'htmlFor' | 'error'>;
   disabled?: boolean;
 }
 

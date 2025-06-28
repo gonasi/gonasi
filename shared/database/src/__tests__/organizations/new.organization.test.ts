@@ -276,12 +276,12 @@ describe('New Organization', () => {
         expect(shortHandleResult.success).toBe(false);
 
         // Test handle with uppercase (should be rejected by constraint)
-        const uppercaseHandleResult = await createNewOrganization(testSupabase, {
+        const { error } = await testSupabase.from('organizations').insert({
           name: 'Test Organization',
-          handle: 'TestHandle', // Contains uppercase
+          handle: 'TestHandle', // uppercase, should be rejected
         });
 
-        expect(uppercaseHandleResult.success).toBe(false);
+        expect(error).not.toBeNull(); // the insert should fail
       });
 
       it('should create organization with all audit fields populated', async () => {

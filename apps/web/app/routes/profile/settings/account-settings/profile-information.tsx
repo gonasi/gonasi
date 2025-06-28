@@ -5,7 +5,11 @@ import { getValidatedFormData } from 'remix-hook-form';
 import { dataWithError, redirectWithSuccess } from 'remix-toast';
 import type z from 'zod';
 
-import { updatePersonalInformation, updateProfilePicture } from '@gonasi/database/profile';
+import {
+  updatePersonalInformation,
+  updateProfilePicture,
+  updateProfileVisibility,
+} from '@gonasi/database/profile';
 import { getMyOwnProfile } from '@gonasi/database/profiles';
 import { AccountSettingsUpdateSchema } from '@gonasi/schemas/settings';
 
@@ -76,6 +80,9 @@ export async function action({ request, params }: Route.ActionArgs) {
       case 'profile-picture':
         result = await updateProfilePicture(supabase, data);
         break;
+      case 'profile-visibility':
+        result = await updateProfileVisibility(supabase, data);
+        break;
       default:
         throw new Error(`Unsupported update type: ${data}`);
     }
@@ -96,6 +103,7 @@ export interface ProfileOutletContext {
   username: string;
   fullName: string;
   avatarUrl: string;
+  isPublic: boolean;
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
@@ -144,7 +152,7 @@ export default function ProfileInformationSettings({ params, loaderData }: Route
           </div>
         </div>
 
-        <ProfileVisibility />
+        <ProfileVisibility isPublic={profileUser?.is_public ?? true} />
       </div>
 
       <Outlet
@@ -153,6 +161,7 @@ export default function ProfileInformationSettings({ params, loaderData }: Route
           fullName: profileUser?.full_name ?? '',
           avatarUrl: profileUser?.avatar_url ?? '',
           email: profileUser?.email ?? '',
+          isPublic: profileUser?.is_public,
         }}
       />
     </>

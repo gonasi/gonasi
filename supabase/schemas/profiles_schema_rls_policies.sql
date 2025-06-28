@@ -80,7 +80,9 @@ select
   account_verified,
   created_at
 from public.profiles
-where is_public = true;
+where
+  is_public = true
+  or id = (select auth.uid()); -- include own profile even if not public
 
 -- Grant SELECT access on the view to both authenticated and anonymous users
 grant select on public.public_profiles to authenticated, anon;

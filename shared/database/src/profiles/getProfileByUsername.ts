@@ -18,6 +18,9 @@ export const getProfileByUsername = async ({ supabase, username }: GetProfileByU
     .eq('username', username)
     .single();
 
+  console.log('data: ', profile);
+  console.log('error: ', error);
+
   // Return null if query failed or onboarding is incomplete
   if (error || !profile?.username) {
     return null;

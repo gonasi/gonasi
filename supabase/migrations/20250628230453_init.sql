@@ -608,7 +608,7 @@ create or replace view "public"."public_profiles" as  SELECT profiles.id,
     profiles.account_verified,
     profiles.created_at
    FROM profiles
-  WHERE (profiles.is_public = true);
+  WHERE ((profiles.is_public = true) OR (profiles.id = ( SELECT auth.uid() AS uid)));
 
 
 CREATE OR REPLACE FUNCTION public.update_updated_at_column()

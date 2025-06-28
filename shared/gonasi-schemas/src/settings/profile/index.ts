@@ -17,7 +17,14 @@ export const UpdateProfilePictureSchema = z.object({
 });
 export type UpdateProfilePictureSchemaTypes = z.infer<typeof UpdateProfilePictureSchema>;
 
+export const ToggleProfileVisibilitySchema = z.object({
+  updateType: z.literal('profile-visibility'),
+  isPublic: z.boolean(),
+});
+export type ToggleProfileVisibilitySchemaTypes = z.infer<typeof ToggleProfileVisibilitySchema>;
+
 export const AccountSettingsUpdateSchema = z.discriminatedUnion('updateType', [
   UpdatePersonalInformationSchema,
   UpdateProfilePictureSchema,
+  ToggleProfileVisibilitySchema,
 ]);
