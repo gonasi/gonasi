@@ -14,7 +14,7 @@ export default function PastIndex({ params }: Route.ComponentProps) {
       <div className='mx-auto flex max-w-md flex-col space-y-4 px-4 md:py-10'>
         <div className='grid grid-cols-3 items-center py-4'>
           <div className='w-fit'>
-            <BackArrowNavLink to={`/${params.username}`} />
+            <BackArrowNavLink to={`/go/${params.username}`} />
           </div>
           <div className='flex w-full items-center justify-center'>
             <AppLogo />
@@ -33,7 +33,7 @@ export default function PastIndex({ params }: Route.ComponentProps) {
         </div>
         <div>
           <NavLinkButton
-            to={`/${params.username}/organizations/new`}
+            to={`/go/${params.username}/organizations/new`}
             variant='ghost'
             size='sm'
             leftIcon={<Plus />}

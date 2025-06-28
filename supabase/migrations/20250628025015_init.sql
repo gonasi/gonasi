@@ -4,6 +4,8 @@ create type "public"."app_permission" as enum ('course_categories.insert', 'cour
 
 create type "public"."app_role" as enum ('go_su', 'go_admin', 'go_staff', 'user');
 
+create type "public"."org_role" as enum ('owner', 'admin', 'editor', 'instructor', 'analyst', 'support', 'collaborator', 'ai_collaborator');
+
 create type "public"."profile_mode" as enum ('personal', 'organization');
 
 create type "public"."subscription_status" as enum ('active', 'canceled', 'past_due', 'trialing', 'incomplete');
@@ -55,6 +57,27 @@ create table "public"."lesson_types" (
 
 alter table "public"."lesson_types" enable row level security;
 
+create table "public"."organization_members" (
+    "id" uuid not null default gen_random_uuid(),
+    "organization_id" uuid not null,
+    "user_id" uuid not null,
+    "role" org_role not null,
+    "invited_by" uuid,
+    "created_at" timestamp with time zone not null default now(),
+    "updated_at" timestamp with time zone not null default now()
+);
+
+
+create table "public"."organization_students" (
+    "id" uuid not null default gen_random_uuid(),
+    "organization_id" uuid not null,
+    "user_id" uuid not null,
+    "invited_by" uuid,
+    "created_at" timestamp with time zone not null default now(),
+    "updated_at" timestamp with time zone not null default now()
+);
+
+
 create table "public"."organizations" (
     "id" uuid not null default uuid_generate_v4(),
     "name" text not null,
@@ -76,13 +99,14 @@ create table "public"."organizations" (
     "tier" subscription_tier not null default 'launch'::subscription_tier,
     "created_at" timestamp with time zone not null default timezone('utc'::text, now()),
     "updated_at" timestamp with time zone not null default timezone('utc'::text, now()),
-    "deleted_at" timestamp with time zone,
     "created_by" uuid,
     "owned_by" uuid,
     "updated_by" uuid,
     "deleted_by" uuid
 );
 
+
+alter table "public"."organizations" enable row level security;
 
 create table "public"."profiles" (
     "id" uuid not null,
@@ -169,11 +193,9 @@ CREATE INDEX idx_organizations_created_at ON public.organizations USING btree (c
 
 CREATE INDEX idx_organizations_created_by ON public.organizations USING btree (created_by);
 
-CREATE INDEX idx_organizations_deleted_at ON public.organizations USING btree (deleted_at);
-
 CREATE INDEX idx_organizations_deleted_by ON public.organizations USING btree (deleted_by);
 
-CREATE UNIQUE INDEX idx_organizations_handle_unique ON public.organizations USING btree (handle) WHERE (deleted_at IS NULL);
+CREATE UNIQUE INDEX idx_organizations_handle_unique ON public.organizations USING btree (handle);
 
 CREATE INDEX idx_organizations_owned_by ON public.organizations USING btree (owned_by);
 
@@ -201,6 +223,16 @@ CREATE UNIQUE INDEX lesson_types_name_key ON public.lesson_types USING btree (na
 
 CREATE UNIQUE INDEX lesson_types_pkey ON public.lesson_types USING btree (id);
 
+CREATE UNIQUE INDEX organization_members_organization_id_user_id_key ON public.organization_members USING btree (organization_id, user_id);
+
+CREATE UNIQUE INDEX organization_members_pkey ON public.organization_members USING btree (id);
+
+CREATE UNIQUE INDEX organization_students_organization_id_user_id_key ON public.organization_students USING btree (organization_id, user_id);
+
+CREATE UNIQUE INDEX organization_students_pkey ON public.organization_students USING btree (id);
+
+CREATE UNIQUE INDEX organizations_handle_key ON public.organizations USING btree (handle);
+
 CREATE UNIQUE INDEX organizations_pkey ON public.organizations USING btree (id);
 
 CREATE UNIQUE INDEX profiles_email_key ON public.profiles USING btree (email);
@@ -226,6 +258,10 @@ alter table "public"."course_categories" add constraint "course_categories_pkey"
 alter table "public"."course_sub_categories" add constraint "course_sub_categories_pkey" PRIMARY KEY using index "course_sub_categories_pkey";
 
 alter table "public"."lesson_types" add constraint "lesson_types_pkey" PRIMARY KEY using index "lesson_types_pkey";
+
+alter table "public"."organization_members" add constraint "organization_members_pkey" PRIMARY KEY using index "organization_members_pkey";
+
+alter table "public"."organization_students" add constraint "organization_students_pkey" PRIMARY KEY using index "organization_students_pkey";
 
 alter table "public"."organizations" add constraint "organizations_pkey" PRIMARY KEY using index "organizations_pkey";
 
@@ -281,6 +317,42 @@ alter table "public"."lesson_types" add constraint "lesson_types_updated_by_fkey
 
 alter table "public"."lesson_types" validate constraint "lesson_types_updated_by_fkey";
 
+alter table "public"."organization_members" add constraint "organization_members_invited_by_fkey" FOREIGN KEY (invited_by) REFERENCES auth.users(id) not valid;
+
+alter table "public"."organization_members" validate constraint "organization_members_invited_by_fkey";
+
+alter table "public"."organization_members" add constraint "organization_members_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE not valid;
+
+alter table "public"."organization_members" validate constraint "organization_members_organization_id_fkey";
+
+alter table "public"."organization_members" add constraint "organization_members_organization_id_user_id_key" UNIQUE using index "organization_members_organization_id_user_id_key";
+
+alter table "public"."organization_members" add constraint "organization_members_user_id_fkey" FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE not valid;
+
+alter table "public"."organization_members" validate constraint "organization_members_user_id_fkey";
+
+alter table "public"."organization_students" add constraint "organization_students_invited_by_fkey" FOREIGN KEY (invited_by) REFERENCES auth.users(id) not valid;
+
+alter table "public"."organization_students" validate constraint "organization_students_invited_by_fkey";
+
+alter table "public"."organization_students" add constraint "organization_students_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE not valid;
+
+alter table "public"."organization_students" validate constraint "organization_students_organization_id_fkey";
+
+alter table "public"."organization_students" add constraint "organization_students_organization_id_user_id_key" UNIQUE using index "organization_students_organization_id_user_id_key";
+
+alter table "public"."organization_students" add constraint "organization_students_user_id_fkey" FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE not valid;
+
+alter table "public"."organization_students" validate constraint "organization_students_user_id_fkey";
+
+alter table "public"."organizations" add constraint "handle_length" CHECK ((char_length(handle) >= 3)) not valid;
+
+alter table "public"."organizations" validate constraint "handle_length";
+
+alter table "public"."organizations" add constraint "handle_lowercase" CHECK ((handle = lower(handle))) not valid;
+
+alter table "public"."organizations" validate constraint "handle_lowercase";
+
 alter table "public"."organizations" add constraint "organizations_created_by_fkey" FOREIGN KEY (created_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
 
 alter table "public"."organizations" validate constraint "organizations_created_by_fkey";
@@ -288,6 +360,8 @@ alter table "public"."organizations" validate constraint "organizations_created_
 alter table "public"."organizations" add constraint "organizations_deleted_by_fkey" FOREIGN KEY (deleted_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
 
 alter table "public"."organizations" validate constraint "organizations_deleted_by_fkey";
+
+alter table "public"."organizations" add constraint "organizations_handle_key" UNIQUE using index "organizations_handle_key";
 
 alter table "public"."organizations" add constraint "organizations_owned_by_fkey" FOREIGN KEY (owned_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
 
@@ -373,6 +447,18 @@ end;
 $function$
 ;
 
+CREATE OR REPLACE FUNCTION public.can_create_org_under_limit()
+ RETURNS boolean
+ LANGUAGE sql
+ SET search_path TO ''
+AS $function$
+  select count(*) < 2
+  from public.organizations
+  where owned_by = (select auth.uid())
+    and tier = 'launch';
+$function$
+;
+
 CREATE OR REPLACE FUNCTION public.custom_access_token_hook(event jsonb)
  RETURNS jsonb
  LANGUAGE plpgsql
@@ -454,19 +540,6 @@ end;
 $function$
 ;
 
-CREATE OR REPLACE FUNCTION public.normalize_handle(input text)
- RETURNS text
- LANGUAGE plpgsql
- SET search_path TO ''
-AS $function$
-begin
-  return lower(
-    regexp_replace(trim(input), '[^a-zA-Z0-9_]', '', 'g') -- Remove non-alphanumeric/underscore
-  );
-end;
-$function$
-;
-
 create or replace view "public"."public_profiles" as  SELECT profiles.id,
     profiles.username,
     profiles.full_name,
@@ -478,21 +551,6 @@ create or replace view "public"."public_profiles" as  SELECT profiles.id,
    FROM profiles
   WHERE (profiles.is_public = true);
 
-
-CREATE OR REPLACE FUNCTION public.set_organization_handle()
- RETURNS trigger
- LANGUAGE plpgsql
- SET search_path TO ''
-AS $function$
-begin
-  if NEW.handle is not null and NEW.handle <> '' then
-    NEW.handle := public.normalize_handle(NEW.handle); -- Fully qualified
-  end if;
-
-  return NEW;
-end;
-$function$
-;
 
 CREATE OR REPLACE FUNCTION public.update_updated_at_column()
  RETURNS trigger
@@ -631,6 +689,90 @@ grant trigger on table "public"."lesson_types" to "service_role";
 grant truncate on table "public"."lesson_types" to "service_role";
 
 grant update on table "public"."lesson_types" to "service_role";
+
+grant delete on table "public"."organization_members" to "anon";
+
+grant insert on table "public"."organization_members" to "anon";
+
+grant references on table "public"."organization_members" to "anon";
+
+grant select on table "public"."organization_members" to "anon";
+
+grant trigger on table "public"."organization_members" to "anon";
+
+grant truncate on table "public"."organization_members" to "anon";
+
+grant update on table "public"."organization_members" to "anon";
+
+grant delete on table "public"."organization_members" to "authenticated";
+
+grant insert on table "public"."organization_members" to "authenticated";
+
+grant references on table "public"."organization_members" to "authenticated";
+
+grant select on table "public"."organization_members" to "authenticated";
+
+grant trigger on table "public"."organization_members" to "authenticated";
+
+grant truncate on table "public"."organization_members" to "authenticated";
+
+grant update on table "public"."organization_members" to "authenticated";
+
+grant delete on table "public"."organization_members" to "service_role";
+
+grant insert on table "public"."organization_members" to "service_role";
+
+grant references on table "public"."organization_members" to "service_role";
+
+grant select on table "public"."organization_members" to "service_role";
+
+grant trigger on table "public"."organization_members" to "service_role";
+
+grant truncate on table "public"."organization_members" to "service_role";
+
+grant update on table "public"."organization_members" to "service_role";
+
+grant delete on table "public"."organization_students" to "anon";
+
+grant insert on table "public"."organization_students" to "anon";
+
+grant references on table "public"."organization_students" to "anon";
+
+grant select on table "public"."organization_students" to "anon";
+
+grant trigger on table "public"."organization_students" to "anon";
+
+grant truncate on table "public"."organization_students" to "anon";
+
+grant update on table "public"."organization_students" to "anon";
+
+grant delete on table "public"."organization_students" to "authenticated";
+
+grant insert on table "public"."organization_students" to "authenticated";
+
+grant references on table "public"."organization_students" to "authenticated";
+
+grant select on table "public"."organization_students" to "authenticated";
+
+grant trigger on table "public"."organization_students" to "authenticated";
+
+grant truncate on table "public"."organization_students" to "authenticated";
+
+grant update on table "public"."organization_students" to "authenticated";
+
+grant delete on table "public"."organization_students" to "service_role";
+
+grant insert on table "public"."organization_students" to "service_role";
+
+grant references on table "public"."organization_students" to "service_role";
+
+grant select on table "public"."organization_students" to "service_role";
+
+grant trigger on table "public"."organization_students" to "service_role";
+
+grant truncate on table "public"."organization_students" to "service_role";
+
+grant update on table "public"."organization_students" to "service_role";
 
 grant delete on table "public"."organizations" to "anon";
 
@@ -918,6 +1060,44 @@ to authenticated, anon
 using (true);
 
 
+create policy "delete: owner only"
+on "public"."organizations"
+as permissive
+for delete
+to authenticated
+using ((owned_by = ( SELECT auth.uid() AS uid)));
+
+
+create policy "insert: auth user as owner within tier limit"
+on "public"."organizations"
+as permissive
+for insert
+to authenticated
+with check (((owned_by = ( SELECT auth.uid() AS uid)) AND ((tier <> 'launch'::subscription_tier) OR can_create_org_under_limit())));
+
+
+create policy "select: public, owner, member, or student"
+on "public"."organizations"
+as permissive
+for select
+to public
+using ((is_public OR (owned_by = ( SELECT auth.uid() AS uid)) OR (EXISTS ( SELECT 1
+   FROM organization_members m
+  WHERE ((m.organization_id = organizations.id) AND (m.user_id = ( SELECT auth.uid() AS uid))))) OR (EXISTS ( SELECT 1
+   FROM organization_students s
+  WHERE ((s.organization_id = organizations.id) AND (s.user_id = ( SELECT auth.uid() AS uid)))))));
+
+
+create policy "update: owner or admin"
+on "public"."organizations"
+as permissive
+for update
+to authenticated
+using (((owned_by = ( SELECT auth.uid() AS uid)) OR (EXISTS ( SELECT 1
+   FROM organization_members m
+  WHERE ((m.organization_id = organizations.id) AND (m.user_id = ( SELECT auth.uid() AS uid)) AND (m.role = 'admin'::org_role))))));
+
+
 create policy "Allow DELETE of own profile by authenticated users"
 on "public"."profiles"
 as permissive
@@ -1038,7 +1218,7 @@ CREATE TRIGGER trg_course_sub_categories_set_updated_at BEFORE UPDATE ON public.
 
 CREATE TRIGGER trg_lesson_types_set_updated_at BEFORE UPDATE ON public.lesson_types FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER trigger_set_organization_handle BEFORE INSERT OR UPDATE ON public.organizations FOR EACH ROW EXECUTE FUNCTION set_organization_handle();
+CREATE TRIGGER trg_organizations_set_updated_at BEFORE UPDATE ON public.organizations FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER set_updated_at BEFORE UPDATE ON public.profiles FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 

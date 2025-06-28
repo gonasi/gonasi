@@ -57,7 +57,7 @@ export async function action({ request }: Route.ActionArgs) {
   return redirectWithSuccess(`/${result.data}/settings/profile`, result.message);
 }
 
-export default function NewOrganization() {
+export default function NewOrganization({ params }: Route.ComponentProps) {
   const isPending = useIsPending();
 
   // Initialize form methods with Remix Hook Form
@@ -71,7 +71,10 @@ export default function NewOrganization() {
   return (
     <Modal open>
       <Modal.Content size='md'>
-        <Modal.Header title='Create a New Organization' />
+        <Modal.Header
+          title='Create a New Organization'
+          closeRoute={`/go/${params.username}/organizations`}
+        />
         <Modal.Body className='px-4'>
           <RemixFormProvider {...methods}>
             <Form method='POST' onSubmit={methods.handleSubmit}>

@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 const OrganizationNameSchema = z
   .string({
-    required_error: `Missing <span class="go-title">organization name</span> — this field is required <lucide name="AlertCircle" size="12" />`,
+    required_error: `Missing <span class="go-title">organization name</span>, this field is required <lucide name="AlertCircle" size="12" />`,
   })
   .min(3, {
     message: `<span class="go-title">Organization name</span> must be at least 3 characters long.`,
@@ -20,7 +20,7 @@ const OrganizationHandleSchema = z
     message: `<span class="go-title">Handle</span> must be at least 3 characters. <lucide name="TextCursorInput" size="12" />`,
   })
   .max(100, {
-    message: `Your <span class="go-title">handle</span> is too long — max 100 characters allowed.`,
+    message: `Your <span class="go-title">handle</span> is too long, max 100 characters allowed.`,
   })
   .regex(/^[a-zA-Z0-9_-]+$/, {
     message: `Use only letters, numbers, dashes, or underscores in your <span class="go-title">handle</span> <lucide name="Code2" size="12" />`,

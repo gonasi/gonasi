@@ -83,6 +83,14 @@ schema_paths = [
   # add modes profile migration
   './schemas/profiles_add_modes_migration.sql',
 
+  # members & students
+  './schemas/organization_members_schema_indexes.sql',
+  './schemas/organization_students_schema_indexes.sql',
+
+  './schemas/organizations_rls.sql',
+
+
+
   # # course pathways 
   # './schemas/pathways.sql',
 
