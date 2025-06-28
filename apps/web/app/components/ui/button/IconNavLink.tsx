@@ -14,7 +14,12 @@ export function IconNavLink({ to, icon: Icon, size = 22, className }: IconNavLin
   return (
     <NavLink to={to}>
       {({ isPending }) => (
-        <div className={cn('relative hover:cursor-pointer', className)}>
+        <div
+          className={cn(
+            'hover:bg-muted relative flex items-center justify-center transition-all duration-200 hover:scale-105 hover:cursor-pointer',
+            className,
+          )}
+        >
           <Icon size={size} className={cn(isPending && 'animate-pulse')} />
           {isPending ? (
             <span className='bg-primary absolute top-0 right-0 h-0.5 w-0.5 animate-ping rounded-full' />

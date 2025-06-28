@@ -46,7 +46,7 @@ export const createNewOrganization = async (
       .from('organizations')
       .insert({
         name,
-        handle,
+        handle: handle.toLocaleLowerCase(),
         owned_by: userId,
         created_by: userId,
         updated_by: userId,
