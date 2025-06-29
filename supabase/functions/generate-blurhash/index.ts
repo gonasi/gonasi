@@ -23,32 +23,10 @@ const RequestSchema = z.object({
   user_id: z.string().uuid(),
 });
 
-Deno.serve(async (req) => {
-  if (req.method !== 'POST') {
-    return new Response('Method not allowed', { status: 405 });
-  }
-
-  let json: unknown;
+async function generateBlurHashTask(avatar_url: string, user_id: string) {
   try {
-    json = await req.json();
-  } catch (err) {
-    console.error('Failed to parse JSON body:', err);
-    return new Response(JSON.stringify({ error: 'Invalid JSON payload' }), { status: 400 });
-  }
+    console.log(`[generate-blurhash] Starting background task for user ${user_id}`);
 
-  const parsed = RequestSchema.safeParse(json);
-
-  if (!parsed.success) {
-    const errorMessages = parsed.error.flatten().fieldErrors;
-    console.error('Validation failed:', errorMessages);
-    return new Response(JSON.stringify({ error: 'Validation failed', details: errorMessages }), {
-      status: 400,
-    });
-  }
-
-  const { avatar_url, user_id } = parsed.data;
-
-  try {
     // Step 1: Generate signed URL
     const { data: signedUrlData, error: urlError } = await supabase.storage
       .from('profile_photos')
@@ -56,9 +34,7 @@ Deno.serve(async (req) => {
 
     if (urlError || !signedUrlData?.signedUrl) {
       console.error('[generate-blurhash] Failed to generate signed URL:', urlError);
-      return new Response(JSON.stringify({ error: 'Could not generate signed URL' }), {
-        status: 500,
-      });
+      throw new Error('Could not generate signed URL');
     }
 
     // Step 2: Download image
@@ -89,14 +65,68 @@ Deno.serve(async (req) => {
 
     if (updateError) {
       console.error('[generate-blurhash] Failed to update profile:', updateError);
-      return new Response(JSON.stringify({ error: 'Failed to update blur_hash' }), {
-        status: 500,
-      });
+      throw new Error('Failed to update blur_hash');
     }
 
-    return new Response(JSON.stringify({ success: true, blur_hash: blurHash }), {
-      headers: { 'Content-Type': 'application/json' },
+    console.log(
+      `[generate-blurhash] Successfully generated and saved BlurHash for user ${user_id}`,
+    );
+    return blurHash;
+  } catch (error) {
+    console.error('[generate-blurhash] Background task error:', error);
+    throw error;
+  }
+}
+
+// Listen for function shutdown notifications
+addEventListener('beforeunload', (ev) => {
+  console.log('[generate-blurhash] Function will be shutdown due to', ev.detail?.reason);
+});
+
+Deno.serve(async (req) => {
+  if (req.method !== 'POST') {
+    return new Response('Method not allowed', { status: 405 });
+  }
+
+  let json: unknown;
+  try {
+    json = await req.json();
+  } catch (err) {
+    console.error('Failed to parse JSON body:', err);
+    return new Response(JSON.stringify({ error: 'Invalid JSON payload' }), { status: 400 });
+  }
+
+  const parsed = RequestSchema.safeParse(json);
+
+  if (!parsed.success) {
+    const errorMessages = parsed.error.flatten().fieldErrors;
+    console.error('Validation failed:', errorMessages);
+    return new Response(JSON.stringify({ error: 'Validation failed', details: errorMessages }), {
+      status: 400,
     });
+  }
+
+  const { avatar_url, user_id } = parsed.data;
+
+  try {
+    // Start the BlurHash generation as a background task
+    // This ensures it completes even if the HTTP response is sent early
+    EdgeRuntime.waitUntil(
+      generateBlurHashTask(avatar_url, user_id).catch((error) => {
+        console.error('[generate-blurhash] Background task failed:', error);
+      }),
+    );
+
+    // Return immediately - don't wait for BlurHash generation to complete
+    return new Response(
+      JSON.stringify({
+        success: true,
+        message: 'BlurHash generation started in background',
+      }),
+      {
+        headers: { 'Content-Type': 'application/json' },
+      },
+    );
   } catch (error) {
     console.error('[generate-blurhash] Unexpected error:', error);
     return new Response(JSON.stringify({ error: 'Unexpected server error' }), {

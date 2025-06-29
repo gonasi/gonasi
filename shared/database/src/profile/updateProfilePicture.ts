@@ -10,7 +10,7 @@ import { PROFILE_PHOTOS } from '../constants';
  *
  * Ensures compliance with RLS policy:
  *  - Bucket must be 'profile_photos'
- *  - Path must start with the authenticated user’s ID
+ *  - Path must start with the authenticated user's ID
  */
 export const updateProfilePicture = async (
   supabase: TypedSupabaseClient,
@@ -45,7 +45,7 @@ export const updateProfilePicture = async (
       console.error('Upload error:', uploadError);
       return {
         success: false,
-        message: 'Upload didn’t work out. Want to try that again?',
+        message: "Upload didn't work out. Want to try that again?",
         data: null,
       };
     }
@@ -63,17 +63,24 @@ export const updateProfilePicture = async (
 
       return {
         success: false,
-        message: 'Image was uploaded, but saving it to your profile didn’t work out.',
+        message: "Image was uploaded, but saving it to your profile didn't work out.",
         data: null,
       };
     }
 
-    await supabase.functions.invoke('generate-blurhash', {
-      body: {
-        avatar_url: imageUrl,
-        user_id: userId,
-      },
-    });
+    // Start BlurHash generation in the background - don't await it
+    // This allows the function to return immediately while BlurHash processing continues
+    supabase.functions
+      .invoke('generate-blurhash', {
+        body: {
+          avatar_url: imageUrl,
+          user_id: userId,
+        },
+      })
+      .catch((err) => {
+        // Log the error but don't fail the entire operation
+        console.error('Background BlurHash generation failed:', err);
+      });
 
     return {
       success: true,
