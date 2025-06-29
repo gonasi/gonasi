@@ -131,7 +131,7 @@ export default function ProfileInformationSettings({ params, loaderData }: Route
               to={`/go/${params.username}/settings/profile-information/profile-photo`}
               icon={Pencil}
               className='bg-card border-background absolute -top-4 -right-4 flex-shrink-0 rounded-full border-2 p-2'
-              size={24}
+              size={20}
             />
           </div>
 
@@ -146,7 +146,7 @@ export default function ProfileInformationSettings({ params, loaderData }: Route
                 to={`/go/${params.username}/settings/profile-information/personal-information`}
                 icon={Pencil}
                 className='bg-card border-background flex-shrink-0 rounded-full border-2 p-2'
-                size={24}
+                size={20}
               />
             </div>
           </div>

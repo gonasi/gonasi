@@ -1,0 +1,23 @@
+{
+  "version": "5",
+  "specifiers": {
+    "jsr:@unpic/pixels@^1.2.3": "1.2.3",
+    "npm:zod@^3.25.67": "3.25.67"
+  },
+  "jsr": {
+    "@unpic/pixels@1.2.3": {
+      "integrity": "7282e7fe77b6efaf345382f1443ca08f6494103c258ded90f7aade1f221df63c"
+    }
+  },
+  "npm": {
+    "zod@3.25.67": {
+      "integrity": "sha512-idA2YXwpCdqUSKRCACDE6ItZD9TZzy3OZMtpfLoh6oPR47lipysRrJfjzMqFxQ3uJuUPyUeWe1r9vLH33xO/Qw=="
+    }
+  },
+  "workspace": {
+    "dependencies": [
+      "jsr:@unpic/pixels@^1.2.3",
+      "npm:zod@^3.25.67"
+    ]
+  }
+}

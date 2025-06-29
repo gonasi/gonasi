@@ -16,7 +16,6 @@ export const updateProfilePicture = async (
   supabase: TypedSupabaseClient,
   submitData: UpdateProfilePictureSchemaTypes,
 ) => {
-  // Get currently authenticated user ID
   const userId = await getUserId(supabase);
   const { image } = submitData;
 
@@ -29,22 +28,19 @@ export const updateProfilePicture = async (
   }
 
   try {
-    // Construct a consistent and RLS-compliant path: <user_id>/avatar.<ext>
     const fileExtension = image.name.split('.').pop()?.toLowerCase() || 'jpg';
     const fileName = `${userId}/avatar.${fileExtension}`;
 
-    // Upload the file to the user's folder with overwrite and caching
     const { data: uploadResponse, error: uploadError } = await supabase.storage
       .from(PROFILE_PHOTOS)
       .upload(fileName, image, {
-        upsert: true, // overwrite existing file
-        cacheControl: '31536000', // 1 year CDN cache
+        upsert: true,
+        cacheControl: '31536000',
         metadata: {
           user_id: userId,
         },
       });
 
-    // Handle upload failure
     if (uploadError || !uploadResponse?.path) {
       console.error('Upload error:', uploadError);
       return {
@@ -56,13 +52,11 @@ export const updateProfilePicture = async (
 
     const imageUrl = uploadResponse.path;
 
-    // Update user's profile with the new image path
     const { error: updateError } = await supabase
       .from('profiles')
       .update({ avatar_url: imageUrl })
       .eq('id', userId);
 
-    // If DB update fails, clean up uploaded image
     if (updateError) {
       console.error('Profile update error:', updateError);
       await supabase.storage.from(PROFILE_PHOTOS).remove([imageUrl]);
@@ -73,6 +67,13 @@ export const updateProfilePicture = async (
         data: null,
       };
     }
+
+    await supabase.functions.invoke('generate-blurhash', {
+      body: {
+        avatar_url: imageUrl,
+        user_id: userId,
+      },
+    });
 
     return {
       success: true,

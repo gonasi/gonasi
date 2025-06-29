@@ -34,6 +34,7 @@
     "shared/*"
   ],
   "dependencies": {
-    "cmdk": "^1.0.4"
+    "cmdk": "^1.0.4",
+    "zod": "^3.25.67"
   }
 }

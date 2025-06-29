@@ -67,12 +67,7 @@ export function ProfileVisibility({ isPublic }: IProfileVisibilityProps) {
   }, [watchIsPublic]);
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      className='flex-col space-y-4'
-    >
+    <div className='flex-col space-y-4'>
       <div>
         <h2 className='text-xl font-semibold'>Profile Visibility</h2>
         <p className='text-muted-foreground font-secondary text-sm'>
@@ -150,6 +145,6 @@ export function ProfileVisibility({ isPublic }: IProfileVisibilityProps) {
           </div>
         </motion.div>
       </motion.div>
-    </motion.div>
+    </div>
   );
 }
