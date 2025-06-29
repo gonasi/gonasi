@@ -125,23 +125,28 @@ export function ProfileVisibility({ isPublic }: IProfileVisibilityProps) {
         >
           <div className='flex items-start space-x-2'>
             <div className='bg-secondary mt-1.5 h-2 w-2 flex-shrink-0 rounded-full' />
-            <motion.div
-              key={watchIsPublic ? 'public-info' : 'private-info'}
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.2 }}
-            >
-              {watchIsPublic ? (
-                <>
-                  Your profile and activity will be visible to all users and may appear in search
-                  results.
-                </>
-              ) : (
-                <>
-                  Your profile will remain private. Only your username will appear in interactions.
-                </>
-              )}
-            </motion.div>
+            <AnimatePresence mode='wait'>
+              <motion.div
+                key={watchIsPublic ? 'public-info' : 'private-info'}
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                transition={{ duration: 0.2, ease: 'easeInOut' }}
+                className='text-muted-foreground text-sm'
+              >
+                {watchIsPublic ? (
+                  <>
+                    Your profile and activity will be visible to all users and may appear in search
+                    results.
+                  </>
+                ) : (
+                  <>
+                    Your profile will remain private. Only your username will appear in
+                    interactions.
+                  </>
+                )}
+              </motion.div>
+            </AnimatePresence>
           </div>
         </motion.div>
       </motion.div>

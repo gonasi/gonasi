@@ -12,6 +12,17 @@ import { BackArrowNavLink, NavLinkButton } from '~/components/ui/button';
 import { createClient } from '~/lib/supabase/supabase.server';
 import { cn } from '~/lib/utils';
 
+export function meta() {
+  return [
+    { title: 'Select or Create Organization • Gonasi' },
+    {
+      name: 'description',
+      content:
+        'Choose an existing organization or create a new one to manage your courses, collaborate with team members, and grow your learning community on Gonasi.',
+    },
+  ];
+}
+
 export async function loader({ request }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
 
