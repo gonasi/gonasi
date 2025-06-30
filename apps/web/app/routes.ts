@@ -21,7 +21,7 @@ export default [
     layout('routes/layouts/myProfile/profile-wrapper-layout.tsx', [
       layout('routes/layouts/myProfile/my-profile-layout.tsx', [
         // my profile
-        route('go/:username', 'routes/myProfile/active-index.tsx'),
+        route('go/:username', 'routes/myProfile/learning-index.tsx'),
         route('go/:username/history', 'routes/myProfile/history-index.tsx'),
       ]),
     ]),

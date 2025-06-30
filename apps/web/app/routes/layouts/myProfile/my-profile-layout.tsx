@@ -1,5 +1,5 @@
 import { Outlet, useLocation } from 'react-router';
-import { BookCopy, FileStack, Settings } from 'lucide-react';
+import { BookOpenCheck, History, Settings } from 'lucide-react';
 
 import { getProfileByUsername } from '@gonasi/database/profiles';
 
@@ -63,19 +63,19 @@ export default function ProfileLayout({ loaderData, params }: Route.ComponentPro
     return <NotFoundCard message='Profile not found' />;
   }
 
-  const { username, full_name, avatar_url, isMyProfile } = profileUser.user;
+  const { username, full_name, signed_url, isMyProfile } = profileUser.user;
 
   const tabs = [
     {
       to: `/go/${username}`,
-      name: 'Active',
-      icon: BookCopy,
+      name: 'Learning',
+      icon: BookOpenCheck,
       isVisible: true,
     },
     {
       to: `/go/${username}/history`,
       name: 'History',
-      icon: FileStack,
+      icon: History,
       isVisible: true,
     },
   ];
@@ -83,7 +83,7 @@ export default function ProfileLayout({ loaderData, params }: Route.ComponentPro
   return (
     <section className='mx-auto max-w-4xl py-10'>
       <div className='flex w-full space-x-4 px-4'>
-        <PlainAvatar username={username} imageUrl={avatar_url} size='lg' />
+        <PlainAvatar username={username} imageUrl={signed_url} size='lg' />
         <div className='w-full'>
           <div className='flex w-full justify-between'>
             <h4 className='font-secondary'>{username}</h4>

@@ -74,26 +74,23 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ) => {
     const Comp = asChild ? Slot : 'button';
 
-    // Adjust padding when edge icons are present
     const edgeIconStyles = {
       paddingLeft: leftIcon && leftIconAtEdge ? '2.5rem' : undefined,
       paddingRight: rightIcon && rightIconAtEdge ? '2.5rem' : undefined,
     };
 
-    // Get alignment classes for children
     const getChildrenAlignment = () => {
       switch (childrenAlign) {
         case 'left':
-          return 'justify-start';
+          return 'justify-start text-left';
         case 'right':
-          return 'justify-end';
+          return 'justify-end text-right';
         case 'center':
         default:
-          return 'justify-center';
+          return 'justify-center text-center';
       }
     };
 
-    // Render left icon
     const renderLeftIcon = () => {
       if (!leftIcon) return null;
 
@@ -101,7 +98,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         isLoading && !rightIcon ? (
           <Loader2 className='h-4 w-4 animate-spin' />
         ) : !isLoading ? (
-          <div className='transition-transform duration-200 group-hover:scale-110'>{leftIcon}</div>
+          <div className='transition-transform duration-200 group-hover:scale-105'>{leftIcon}</div>
         ) : null;
 
       if (leftIconAtEdge) {
@@ -110,7 +107,6 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       return iconContent;
     };
 
-    // Render right icon
     const renderRightIcon = () => {
       const iconContent = <Loader2 className='h-4 w-4 animate-spin' />;
 
@@ -120,7 +116,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
             {isLoading
               ? iconContent
               : rightIcon && (
-                  <div className='transition-transform duration-200 group-hover:scale-110'>
+                  <div className='transition-transform duration-200 group-hover:scale-105'>
                     {rightIcon}
                   </div>
                 )}
@@ -132,7 +128,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 
       if (rightIcon) {
         return (
-          <div className='transition-transform duration-200 group-hover:scale-110'>{rightIcon}</div>
+          <div className='transition-transform duration-200 group-hover:scale-105'>{rightIcon}</div>
         );
       }
 
@@ -151,7 +147,6 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         disabled={!asChild && (disabled || isLoading)}
         {...props}
       >
-        {/* Left icon when at edge */}
         {leftIconAtEdge && renderLeftIcon()}
 
         <span
@@ -160,14 +155,11 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
             getChildrenAlignment(),
           )}
         >
-          {/* Left icon when not at edge */}
           {!leftIconAtEdge && renderLeftIcon()}
           <div className='mt-0.5'>{children}</div>
-          {/* Right icon when not at edge */}
           {!rightIconAtEdge && renderRightIcon()}
         </span>
 
-        {/* Right icon when at edge */}
         {rightIconAtEdge && renderRightIcon()}
       </Comp>
     );

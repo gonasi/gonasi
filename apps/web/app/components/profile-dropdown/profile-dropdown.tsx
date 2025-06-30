@@ -73,7 +73,7 @@ export function ProfileDropdown({
             return (
               <DropdownMenuItem key={to} asChild className='group cursor-pointer'>
                 <Link to={to} className='flex items-center space-x-2'>
-                  <Icon className='h-4 w-4 transition-transform duration-200 group-hover:scale-110' />
+                  <Icon className='h-4 w-4 transition-transform duration-200 group-hover:scale-105' />
                   <span>{label}</span>
                 </Link>
               </DropdownMenuItem>

@@ -3,12 +3,13 @@ import type { TypedSupabaseClient } from '../client';
 
 /**
  * Fetch all organizations the current user is part of,
- * including basic org details like name, handle, and avatar.
+ * including basic org details and metadata like ownership and limits.
  */
 export const fetchUsersOrganizations = async (supabase: TypedSupabaseClient) => {
   try {
     const userId = await getUserId(supabase);
 
+    // Get all organizations the user is part of
     const { data, error } = await supabase
       .from('organization_members')
       .select(
@@ -21,7 +22,8 @@ export const fetchUsersOrganizations = async (supabase: TypedSupabaseClient) => 
           name,
           handle,
           avatar_url,
-          blur_hash
+          blur_hash,
+          tier
         )
       `,
       )
@@ -31,21 +33,47 @@ export const fetchUsersOrganizations = async (supabase: TypedSupabaseClient) => 
       return {
         success: false,
         message: 'Looks like you’re not part of any organizations yet.',
-        data,
+        data: [],
+        total: 0,
+        owned_count: 0,
+        can_create_more: true,
       };
     }
+
+    // Compute derived fields
+    const total = data.length;
+
+    const withOwnershipFlags = data.map((entry) => ({
+      ...entry,
+      is_owner: entry.role === 'owner',
+    }));
+
+    const ownedOrgs = withOwnershipFlags.filter((entry) => entry.is_owner);
+    const owned_count = ownedOrgs.length;
+
+    const launchOwnedCount = ownedOrgs.filter(
+      (entry) => entry.organization?.tier === 'launch',
+    ).length;
+
+    const can_create_more = launchOwnedCount < 2;
 
     return {
       success: true,
       message: 'Organizations loaded successfully.',
-      data,
+      data: withOwnershipFlags,
+      total,
+      owned_count,
+      can_create_more,
     };
   } catch (err) {
     console.error('fetchUsersOrganizations error:', err);
     return {
       success: false,
       message: 'Something went wrong. Please try again in a bit.',
-      data: null,
+      data: [],
+      total: 0,
+      owned_count: 0,
+      can_create_more: true,
     };
   }
 };

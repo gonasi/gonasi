@@ -78,12 +78,12 @@ const NavLinkButton = React.forwardRef<HTMLAnchorElement, NavLinkButtonProps>(
                 !rightIcon ? (
                   <Loader2 className='h-4 w-4 animate-spin' />
                 ) : leftIcon ? (
-                  <div className='transition-transform duration-200 group-hover:scale-110'>
+                  <div className='transition-transform duration-200 group-hover:scale-105'>
                     {leftIcon}
                   </div>
                 ) : null
               ) : leftIcon ? (
-                <div className='transition-transform duration-200 group-hover:scale-110'>
+                <div className='transition-transform duration-200 group-hover:scale-105'>
                   {leftIcon}
                 </div>
               ) : null}
@@ -95,7 +95,7 @@ const NavLinkButton = React.forwardRef<HTMLAnchorElement, NavLinkButtonProps>(
                   <Loader2 className='h-4 w-4 animate-spin' />
                 ) : null
               ) : rightIcon ? (
-                <div className='transition-transform duration-200 group-hover:scale-110'>
+                <div className='transition-transform duration-200 group-hover:scale-105'>
                   {rightIcon}
                 </div>
               ) : null}

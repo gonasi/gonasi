@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 
 import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar';
+import { cn } from '~/lib/utils';
 
 interface UserAvatarProps {
   username: string | null;
@@ -8,6 +9,7 @@ interface UserAvatarProps {
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
   isActive?: boolean;
   isPending?: boolean;
+  className?: string;
 }
 
 const sizeClasses = {
@@ -32,6 +34,7 @@ export function PlainAvatar({
   size = 'md',
   isActive = false,
   isPending = false,
+  className,
 }: UserAvatarProps) {
   const initials = username
     ? username
@@ -50,7 +53,7 @@ export function PlainAvatar({
   );
 
   return (
-    <div className='text-foreground relative flex items-center justify-center'>
+    <div className={cn('text-foreground relative flex items-center justify-center', className)}>
       {isPending ? (
         <motion.div
           className={`border-primary/20 absolute rounded-full border-2 border-b-transparent ${ringSizeClasses[size]}`}

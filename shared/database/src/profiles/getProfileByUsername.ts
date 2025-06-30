@@ -1,9 +1,7 @@
 import { getUserId } from '../auth';
 import type { TypedSupabaseClient } from '../client';
+import { PROFILE_PHOTOS } from '../constants';
 
-/**
- * Parameters for retrieving a user profile by username.
- */
 interface GetProfileByUsernameParams {
   supabase: TypedSupabaseClient;
   username: string;
@@ -18,17 +16,24 @@ export const getProfileByUsername = async ({ supabase, username }: GetProfileByU
     .eq('username', username)
     .single();
 
-  console.log('data: ', profile);
-  console.log('error: ', error);
-
-  // Return null if query failed or onboarding is incomplete
   if (error || !profile?.username) {
     return null;
+  }
+
+  let signedUrl: string | undefined;
+
+  if (profile.avatar_url) {
+    const { data: signedUrlData } = await supabase.storage
+      .from(PROFILE_PHOTOS)
+      .createSignedUrl(profile.avatar_url, 3600);
+
+    signedUrl = signedUrlData?.signedUrl;
   }
 
   return {
     user: {
       ...profile,
+      signed_url: signedUrl ?? '', // Ensure it's always a string
       isMyProfile: userId === profile.id,
     },
   };

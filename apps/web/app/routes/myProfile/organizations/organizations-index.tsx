@@ -81,7 +81,7 @@ export default function PastIndex({ params, loaderData }: Route.ComponentProps) 
             to={`/go/${params.username}/organizations/new`}
             variant='ghost'
             leftIcon={<Plus />}
-            className={cn('border-border/50 w-full border')}
+            className={cn('w-full')}
           >
             Create Organization
           </NavLinkButton>

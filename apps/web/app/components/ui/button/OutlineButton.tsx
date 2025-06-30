@@ -86,7 +86,7 @@ const OutlineButton = React.forwardRef<HTMLButtonElement, OutlineButtonProps>(
       >
         <span className='relative z-5 flex h-full w-full items-center justify-center gap-2'>
           {!isLoading && leftIcon && (
-            <div className='transition-transform duration-200 group-hover:scale-110'>
+            <div className='transition-transform duration-200 group-hover:scale-105'>
               {leftIcon}
             </div>
           )}
@@ -98,7 +98,7 @@ const OutlineButton = React.forwardRef<HTMLButtonElement, OutlineButtonProps>(
               <Loader2 className='h-4 w-4 animate-spin' />
             )
           ) : rightIcon ? (
-            <div className='transition-transform duration-200 group-hover:scale-110'>
+            <div className='transition-transform duration-200 group-hover:scale-105'>
               {rightIcon}
             </div>
           ) : null}
