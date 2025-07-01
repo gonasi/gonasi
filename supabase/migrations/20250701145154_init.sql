@@ -1093,7 +1093,9 @@ on "public"."profiles"
 as permissive
 for insert
 to authenticated
-with check ((( SELECT auth.uid() AS uid) = id));
+with check (((( SELECT auth.uid() AS uid) = id) AND ((active_organization_id IS NULL) OR (EXISTS ( SELECT 1
+   FROM organization_members m
+  WHERE ((m.user_id = ( SELECT auth.uid() AS uid)) AND (m.organization_id = profiles.active_organization_id)))))));
 
 
 create policy "Allow UPDATE of own profile by authenticated users"

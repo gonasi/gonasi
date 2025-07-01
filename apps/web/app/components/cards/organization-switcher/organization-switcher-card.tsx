@@ -47,6 +47,7 @@ export default function OrganizationSwitcherCard({
           ? 'bg-card border-primary/40'
           : 'hover:bg-muted/50 hover:border-muted-foreground/20',
       )}
+      onClick={() => alert('hello world')}
     >
       <PlainAvatar username={orgName} imageUrl={avatar_url} />
 

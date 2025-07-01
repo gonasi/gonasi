@@ -1,25 +1,50 @@
 import { useEffect } from 'react';
-import { Outlet, useNavigate } from 'react-router';
+import { Outlet, useNavigate, useParams } from 'react-router';
 
 import { Spinner } from '~/components/loaders';
 import { useStore } from '~/store';
 
 export default function ProfileWrapperLayout() {
   const navigate = useNavigate();
+  const params = useParams(); // expecting :username from route
   const { activeUserProfile, isActiveUserProfileLoading } = useStore();
 
-  // Determine if onboarding is incomplete (i.e., username hasn't been set)
-  const isOnboardingIncomplete = !!activeUserProfile && !activeUserProfile.username;
+  const shouldRedirectToCorrectUsername =
+    !!params.username &&
+    !!activeUserProfile?.username &&
+    params.username !== activeUserProfile.username;
+
+  const shouldBlockRender =
+    isActiveUserProfileLoading ||
+    !activeUserProfile ||
+    !activeUserProfile.username ||
+    shouldRedirectToCorrectUsername;
 
   useEffect(() => {
-    // If loading is done and onboarding is incomplete, redirect to onboarding
-    if (!isActiveUserProfileLoading && isOnboardingIncomplete && activeUserProfile) {
-      navigate(`/go/onboarding/${activeUserProfile.id}`);
-    }
-  }, [isActiveUserProfileLoading, isOnboardingIncomplete, navigate, activeUserProfile]);
+    if (isActiveUserProfileLoading) return;
 
-  // Show loading spinner during profile loading or redirect preparation
-  if (isActiveUserProfileLoading || isOnboardingIncomplete) {
+    if (!activeUserProfile) {
+      navigate('/login');
+      return;
+    }
+
+    if (!activeUserProfile.username) {
+      navigate(`/go/onboarding/${activeUserProfile.id}`);
+      return;
+    }
+
+    if (shouldRedirectToCorrectUsername) {
+      navigate(`/go/${activeUserProfile.username}`);
+    }
+  }, [
+    isActiveUserProfileLoading,
+    activeUserProfile,
+    navigate,
+    params.username,
+    shouldRedirectToCorrectUsername,
+  ]);
+
+  if (shouldBlockRender) {
     return <Spinner />;
   }
 

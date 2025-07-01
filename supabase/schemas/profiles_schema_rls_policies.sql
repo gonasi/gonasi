@@ -20,7 +20,18 @@ create policy "Allow INSERT of own profile by authenticated users"
 on public.profiles
 for insert
 to authenticated
-with check ((select auth.uid()) = id);
+with check (
+  (select auth.uid()) = id
+  and (
+    active_organization_id is null
+    or exists (
+      select 1
+      from public.organization_members m
+      where m.user_id = (select auth.uid())
+        and m.organization_id = profiles.active_organization_id
+    )
+  )
+);
 
 -- -------------------------------------
 -- UPDATE POLICY

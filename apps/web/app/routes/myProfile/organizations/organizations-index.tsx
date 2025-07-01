@@ -1,4 +1,4 @@
-import { Outlet } from 'react-router';
+import { Outlet, useFetcher } from 'react-router';
 import { Plus } from 'lucide-react';
 
 import { fetchUsersOrganizations } from '@gonasi/database/organizations';
@@ -47,6 +47,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 
 export default function OrganizationsIndex({ params, loaderData }: Route.ComponentProps) {
   const { organizations, canCreateMore } = loaderData;
+  const fetcher = useFetcher();
   const { activeUserProfile, isActiveUserProfileLoading } = useStore();
 
   if (isActiveUserProfileLoading) return <Spinner />;
@@ -56,9 +57,11 @@ export default function OrganizationsIndex({ params, loaderData }: Route.Compone
       <div className='mx-auto flex max-w-lg flex-col space-y-4 px-4 md:py-10'>
         {!canCreateMore ? (
           <BannerCard
+            showCloseIcon={false}
             variant='warning'
             message='Launch Plan Limit'
             description='You can own up to 2 organizations on the Launch Plan. Upgrade an existing organization to create more.'
+            className='mt-4 md:mt-0'
           />
         ) : null}
         <div className='grid grid-cols-3 items-center py-4'>
