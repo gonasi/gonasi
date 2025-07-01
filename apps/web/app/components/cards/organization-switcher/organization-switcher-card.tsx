@@ -7,8 +7,9 @@ import { cn } from '~/lib/utils';
 import type { UserOrganization } from '~/routes/myProfile/organizations/organizations-index';
 
 interface IOrganizationSwitcherCardProps {
-  data: UserOrganization;
+  organization: UserOrganization;
   activeOrganizationId: string;
+  handleClick: (organizationId: string) => void;
 }
 
 const badgeColorMap: Record<string, string> = {
@@ -27,52 +28,56 @@ const getBadgeColorClass = (key: string) =>
   badgeColorMap[key] ?? 'bg-gray-100 text-gray-800 border-gray-200';
 
 export default function OrganizationSwitcherCard({
-  data,
+  organization,
   activeOrganizationId,
+  handleClick,
 }: IOrganizationSwitcherCardProps) {
   const {
     is_owner,
     role,
     organization: { id: orgId, name: orgName, handle: orgHandle, avatar_url, tier },
-  } = data;
+  } = organization;
 
   const isActive = activeOrganizationId === orgId;
 
   return (
-    <Card
-      className={cn(
-        'bg-card/60',
-        'border-card flex cursor-pointer flex-row items-center gap-4 rounded-lg border p-4 transition-colors duration-200 ease-in-out',
-        isActive
-          ? 'bg-card border-primary/40'
-          : 'hover:bg-muted/50 hover:border-muted-foreground/20',
-      )}
-      onClick={() => alert('hello world')}
-    >
-      <PlainAvatar username={orgName} imageUrl={avatar_url} />
+    <>
+      <p>{orgId}</p>
+      <Card
+        className={cn(
+          'bg-card/60',
+          'border-card flex cursor-pointer flex-row items-center gap-4 rounded-lg border p-4 transition-colors duration-200 ease-in-out',
+          isActive
+            ? 'bg-card border-primary/40'
+            : 'hover:bg-muted/50 hover:border-muted-foreground/20',
+        )}
+        onClick={() => handleClick(orgId)}
+      >
+        <PlainAvatar username={orgName} imageUrl={avatar_url} />
 
-      <div className='min-w-0 flex-1'>
-        <div className='mb-1 flex items-center gap-2'>
-          <h3 className='truncate text-base font-semibold'>{orgName}</h3>
-          {is_owner && <Crown className='text-primary h-4 w-4' />}
+        <div className='min-w-0 flex-1'>
+          <div className='mb-1 flex items-center gap-2'>
+            <h3 className='truncate text-base font-semibold'>{orgName}</h3>
+            {is_owner && <Crown className='text-primary h-4 w-4' />}
+          </div>
+          <p className='text-muted-foreground mb-2 text-sm'>@{orgHandle}</p>
+          <div className='flex items-center gap-2'>
+            <Badge variant='outline' className={cn('text-xs', getBadgeColorClass(role))}>
+              {role}
+            </Badge>
+            <Badge variant='outline' className={cn('text-xs', getBadgeColorClass(tier))}>
+              {tier}
+            </Badge>
+          </div>
         </div>
-        <p className='text-muted-foreground mb-2 text-sm'>@{orgHandle}</p>
-        <div className='flex items-center gap-2'>
-          <Badge variant='outline' className={cn('text-xs', getBadgeColorClass(role))}>
-            {role}
-          </Badge>
-          <Badge variant='outline' className={cn('text-xs', getBadgeColorClass(tier))}>
-            {tier}
-          </Badge>
-        </div>
-      </div>
 
-      {isActive && (
-        <div className='text-primary flex items-center gap-2'>
-          <Check className='h-5 w-5' />
-          <span className='text-sm font-medium'>Current</span>
-        </div>
-      )}
-    </Card>
+        {isActive && (
+          <div className='text-primary flex items-center gap-2'>
+            <Check className='h-5 w-5' />
+            <span className='text-sm font-medium'>Current</span>
+          </div>
+        )}
+      </Card>
+    </>
   );
 }

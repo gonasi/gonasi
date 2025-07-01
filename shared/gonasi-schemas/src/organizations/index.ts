@@ -33,3 +33,14 @@ export const NewOrganizationSchema = z.object({
 });
 
 export type NewOrganizationSchemaTypes = z.infer<typeof NewOrganizationSchema>;
+
+export const SetActiveOrganizationSchema = z.object({
+  organizationId: z
+    .string({
+      required_error: 'Organization ID is required.',
+      invalid_type_error: 'Organization ID must be a string.',
+    })
+    .uuid({ message: 'Invalid organization ID.' }),
+});
+
+export type SetActiveOrganizationSchemaTypes = z.infer<typeof SetActiveOrganizationSchema>;
