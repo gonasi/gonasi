@@ -6,11 +6,13 @@ import { fetchUsersOrganizations } from '@gonasi/database/organizations';
 import type { Route } from './+types/organizations-index';
 
 import { AppLogo } from '~/components/app-logo';
-import { UserAvatar } from '~/components/avatars';
 import { NotFoundCard } from '~/components/cards';
+import OrganizationSwitcherCard from '~/components/cards/organization-switcher/organization-switcher-card';
+import { Spinner } from '~/components/loaders';
 import { BackArrowNavLink, NavLinkButton } from '~/components/ui/button';
 import { createClient } from '~/lib/supabase/supabase.server';
 import { cn } from '~/lib/utils';
+import { useStore } from '~/store';
 
 export function meta() {
   return [
@@ -22,6 +24,12 @@ export function meta() {
     },
   ];
 }
+
+export type LoaderData = Exclude<Awaited<ReturnType<typeof loader>>, Response>;
+
+export type UserOrganizations = LoaderData['organizations'];
+
+export type UserOrganization = UserOrganizations[number];
 
 export async function loader({ request }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
@@ -36,9 +44,14 @@ export async function loader({ request }: Route.LoaderArgs) {
 }
 export default function PastIndex({ params, loaderData }: Route.ComponentProps) {
   const { organizations } = loaderData;
+
+  const { activeUserProfile, isActiveUserProfileLoading } = useStore();
+
+  if (isActiveUserProfileLoading) return <Spinner />;
+
   return (
     <>
-      <div className='mx-auto flex max-w-md flex-col space-y-4 px-4 md:py-10'>
+      <div className='mx-auto flex max-w-lg flex-col space-y-4 px-4 md:py-10'>
         <div className='grid grid-cols-3 items-center py-4'>
           <div className='w-fit'>
             <BackArrowNavLink to={`/go/${params.username}`} />
@@ -56,20 +69,13 @@ export default function PastIndex({ params, loaderData }: Route.ComponentProps) 
         <div className='py-4'>
           <div className='flex flex-col space-y-4'>
             {organizations && organizations.length > 0 ? (
-              organizations.map(
-                ({
-                  id,
-                  role,
-                  organization: { id: orgId, name, handle, avatar_url, blur_hash },
-                }) => (
-                  <div
-                    key={id}
-                    className='bg-input/20 flex items-center justify-between rounded-lg p-4'
-                  >
-                    <UserAvatar username={name} imageUrl={avatar_url} size='sm' />
-                  </div>
-                ),
-              )
+              organizations.map((organization) => (
+                <OrganizationSwitcherCard
+                  key={organization.id}
+                  data={organization}
+                  activeOrganizationId={activeUserProfile?.active_organization_id ?? ''}
+                />
+              ))
             ) : (
               <NotFoundCard message='No orgs found' />
             )}

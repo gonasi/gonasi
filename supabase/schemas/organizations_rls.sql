@@ -34,12 +34,6 @@ using (
     where m.organization_id = organizations.id
       and m.user_id = (select auth.uid())
   )
-  or exists (
-    select 1
-    from public.organization_students s
-    where s.organization_id = organizations.id
-      and s.user_id = (select auth.uid())
-  )
 );
 
 -- ===================================================

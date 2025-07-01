@@ -68,16 +68,6 @@ create table "public"."organization_members" (
 );
 
 
-create table "public"."organization_students" (
-    "id" uuid not null default gen_random_uuid(),
-    "organization_id" uuid not null,
-    "user_id" uuid not null,
-    "invited_by" uuid,
-    "created_at" timestamp with time zone not null default now(),
-    "updated_at" timestamp with time zone not null default now()
-);
-
-
 create table "public"."organizations" (
     "id" uuid not null default uuid_generate_v4(),
     "name" text not null,
@@ -233,16 +223,6 @@ CREATE UNIQUE INDEX organization_members_pkey ON public.organization_members USI
 
 CREATE INDEX organization_members_user_id_idx ON public.organization_members USING btree (user_id);
 
-CREATE INDEX organization_students_invited_by_idx ON public.organization_students USING btree (invited_by);
-
-CREATE INDEX organization_students_organization_id_idx ON public.organization_students USING btree (organization_id);
-
-CREATE UNIQUE INDEX organization_students_organization_id_user_id_key ON public.organization_students USING btree (organization_id, user_id);
-
-CREATE UNIQUE INDEX organization_students_pkey ON public.organization_students USING btree (id);
-
-CREATE INDEX organization_students_user_id_idx ON public.organization_students USING btree (user_id);
-
 CREATE UNIQUE INDEX organizations_handle_key ON public.organizations USING btree (handle);
 
 CREATE UNIQUE INDEX organizations_pkey ON public.organizations USING btree (id);
@@ -272,8 +252,6 @@ alter table "public"."course_sub_categories" add constraint "course_sub_categori
 alter table "public"."lesson_types" add constraint "lesson_types_pkey" PRIMARY KEY using index "lesson_types_pkey";
 
 alter table "public"."organization_members" add constraint "organization_members_pkey" PRIMARY KEY using index "organization_members_pkey";
-
-alter table "public"."organization_students" add constraint "organization_students_pkey" PRIMARY KEY using index "organization_students_pkey";
 
 alter table "public"."organizations" add constraint "organizations_pkey" PRIMARY KEY using index "organizations_pkey";
 
@@ -342,20 +320,6 @@ alter table "public"."organization_members" add constraint "organization_members
 alter table "public"."organization_members" add constraint "organization_members_user_id_fkey" FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE not valid;
 
 alter table "public"."organization_members" validate constraint "organization_members_user_id_fkey";
-
-alter table "public"."organization_students" add constraint "organization_students_invited_by_fkey" FOREIGN KEY (invited_by) REFERENCES auth.users(id) not valid;
-
-alter table "public"."organization_students" validate constraint "organization_students_invited_by_fkey";
-
-alter table "public"."organization_students" add constraint "organization_students_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE not valid;
-
-alter table "public"."organization_students" validate constraint "organization_students_organization_id_fkey";
-
-alter table "public"."organization_students" add constraint "organization_students_organization_id_user_id_key" UNIQUE using index "organization_students_organization_id_user_id_key";
-
-alter table "public"."organization_students" add constraint "organization_students_user_id_fkey" FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE not valid;
-
-alter table "public"."organization_students" validate constraint "organization_students_user_id_fkey";
 
 alter table "public"."organizations" add constraint "handle_length" CHECK ((char_length(handle) >= 3)) not valid;
 
@@ -791,48 +755,6 @@ grant truncate on table "public"."organization_members" to "service_role";
 
 grant update on table "public"."organization_members" to "service_role";
 
-grant delete on table "public"."organization_students" to "anon";
-
-grant insert on table "public"."organization_students" to "anon";
-
-grant references on table "public"."organization_students" to "anon";
-
-grant select on table "public"."organization_students" to "anon";
-
-grant trigger on table "public"."organization_students" to "anon";
-
-grant truncate on table "public"."organization_students" to "anon";
-
-grant update on table "public"."organization_students" to "anon";
-
-grant delete on table "public"."organization_students" to "authenticated";
-
-grant insert on table "public"."organization_students" to "authenticated";
-
-grant references on table "public"."organization_students" to "authenticated";
-
-grant select on table "public"."organization_students" to "authenticated";
-
-grant trigger on table "public"."organization_students" to "authenticated";
-
-grant truncate on table "public"."organization_students" to "authenticated";
-
-grant update on table "public"."organization_students" to "authenticated";
-
-grant delete on table "public"."organization_students" to "service_role";
-
-grant insert on table "public"."organization_students" to "service_role";
-
-grant references on table "public"."organization_students" to "service_role";
-
-grant select on table "public"."organization_students" to "service_role";
-
-grant trigger on table "public"."organization_students" to "service_role";
-
-grant truncate on table "public"."organization_students" to "service_role";
-
-grant update on table "public"."organization_students" to "service_role";
-
 grant delete on table "public"."organizations" to "anon";
 
 grant insert on table "public"."organizations" to "anon";
@@ -1142,9 +1064,7 @@ for select
 to public
 using ((is_public OR (owned_by = ( SELECT auth.uid() AS uid)) OR (EXISTS ( SELECT 1
    FROM organization_members m
-  WHERE ((m.organization_id = organizations.id) AND (m.user_id = ( SELECT auth.uid() AS uid))))) OR (EXISTS ( SELECT 1
-   FROM organization_students s
-  WHERE ((s.organization_id = organizations.id) AND (s.user_id = ( SELECT auth.uid() AS uid)))))));
+  WHERE ((m.organization_id = organizations.id) AND (m.user_id = ( SELECT auth.uid() AS uid)))))));
 
 
 create policy "update: owner or admin, transfer to admin only"

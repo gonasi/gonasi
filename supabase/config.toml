@@ -86,9 +86,8 @@ schema_paths = [
   # profile picture
   './schemas/profiles_storage_rls.sql',
 
-  # members & students
+  # members
   './schemas/organization_members_schema_indexes.sql',
-  './schemas/organization_students_schema_indexes.sql',
 
   './schemas/organizations_rls.sql',
   './schemas/organizations_functions_triggers.sql',
