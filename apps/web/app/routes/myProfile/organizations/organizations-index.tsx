@@ -1,18 +1,24 @@
 import { data, Outlet, useFetcher } from 'react-router';
-import { LoaderCircle, Plus } from 'lucide-react';
+import { Check, Plus } from 'lucide-react';
 import { dataWithError } from 'remix-toast';
 
-import { fetchUsersOrganizations, updateActiveOrganization } from '@gonasi/database/organizations';
+import {
+  fetchUsersOrganizations,
+  switchToPersonalMode,
+  updateActiveOrganization,
+} from '@gonasi/database/organizations';
 import { SetActiveOrganizationSchema } from '@gonasi/schemas/organizations';
 
 import type { Route } from './+types/organizations-index';
 
-import { AppLogo } from '~/components/app-logo';
+import { UserAvatar } from '~/components/avatars';
 import { BannerCard, NotFoundCard } from '~/components/cards';
 import OrganizationSwitcherCard from '~/components/cards/organization-switcher/organization-switcher-card';
 import { Spinner } from '~/components/loaders';
 import { BackArrowNavLink, NavLinkButton } from '~/components/ui/button';
+import { Card } from '~/components/ui/card';
 import { createClient } from '~/lib/supabase/supabase.server';
+import { cn } from '~/lib/utils';
 import { useStore } from '~/store';
 
 const META_TAGS = [
@@ -33,6 +39,12 @@ export async function action({ request }: Route.ActionArgs) {
   const formData = await request.formData();
   const organizationId = formData.get('organizationId');
 
+  // If no organizationId, switch to personal mode
+  if (!organizationId) {
+    const { success, message } = await switchToPersonalMode({ supabase });
+    return success ? data({ success: true }) : dataWithError(null, message);
+  }
+
   const validated = SetActiveOrganizationSchema.safeParse({ organizationId });
   if (!validated.success) {
     console.error(validated.error);
@@ -44,9 +56,7 @@ export async function action({ request }: Route.ActionArgs) {
     organizationId: validated.data.organizationId,
   });
 
-  return success
-    ? data({ success: true })
-    : dataWithError(null, message ?? 'Failed to set active organization.');
+  return success ? data({ success: true }) : dataWithError(null, message);
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
@@ -80,6 +90,13 @@ export default function OrganizationsIndex({ params, loaderData }: Route.Compone
     fetcher.submit(formData, { method: 'post' });
   };
 
+  const submitSwitchToPersonalMode = () => {
+    const formData = new FormData();
+    fetcher.submit(formData, { method: 'post' });
+  };
+
+  const isModePersonal = activeUserProfile?.mode === 'personal';
+
   return (
     <>
       <div className='mx-auto flex max-w-lg flex-col space-y-4 px-4 md:py-10'>
@@ -93,22 +110,52 @@ export default function OrganizationsIndex({ params, loaderData }: Route.Compone
           />
         )}
 
-        <div className='grid grid-cols-3 items-center py-4'>
-          <div className='w-fit'>
+        <div className='w-full items-center pt-4'>
+          <div className='flex w-full items-center space-x-4'>
             <BackArrowNavLink to={`/go/${params.username}`} />
+            <h2 className='mt-1 w-full flex-shrink-0 text-lg'>Switch Organizations</h2>
           </div>
-          <div className='flex w-full items-center justify-center'>
-            <AppLogo />
-          </div>
-          <div />
         </div>
 
-        <div className='flex items-center justify-between'>
-          <h4 className='text-lg font-semibold'>Your Organizations</h4>
-          {isSubmitting && <LoaderCircle size={20} className='animate-spin' />}
+        <h4 className='text-muted-foreground my-2 text-sm'>Personal</h4>
+        <div className={cn('')}>
+          <Card
+            className={cn(
+              'flex flex-row items-center gap-4 rounded-lg border p-4 transition-colors duration-200 ease-in-out',
+              'bg-card/60',
+              fetcher.state !== 'idle' && 'opacity-80',
+              isModePersonal
+                ? 'border-primary/20 bg-card cursor-default hover:cursor-not-allowed'
+                : 'border-card hover:border-muted-foreground/20 hover:bg-muted/50 cursor-pointer',
+            )}
+            onClick={() => {
+              if (!isModePersonal && !isSubmitting) {
+                submitSwitchToPersonalMode();
+              }
+            }}
+          >
+            <div className='flex w-full items-center justify-between'>
+              <UserAvatar
+                username={activeUserProfile?.username ?? ''}
+                fullName={`${activeUserProfile?.full_name} (ME)`}
+                imageUrl={activeUserProfile?.signed_url}
+                size='md'
+                isPending={fetcher.state !== 'idle' && !fetcher.formData?.get('organizationId')}
+              />
+              {isModePersonal ? (
+                <div className='text-primary flex items-center gap-2'>
+                  <Check className='h-5 w-5' />
+                  <span className='hidden text-sm font-medium sm:block'>Current</span>
+                </div>
+              ) : (
+                <div />
+              )}
+            </div>
+          </Card>
         </div>
 
-        <div className='py-4'>
+        <h4 className='text-muted-foreground my-2 text-sm'>Organizations</h4>
+        <div className='pb-8'>
           {organizations.length === 0 ? (
             <NotFoundCard message='You are not part of any organizations yet.' />
           ) : (
@@ -120,6 +167,7 @@ export default function OrganizationsIndex({ params, loaderData }: Route.Compone
                   activeOrganizationId={activeUserProfile?.active_organization_id ?? ''}
                   handleClick={submitActiveOrgUpdate}
                   isLoading={isSubmitting}
+                  pendingOrganizationId={organization.organization.id}
                 />
               ))}
             </div>

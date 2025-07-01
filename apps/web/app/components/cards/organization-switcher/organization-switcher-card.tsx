@@ -11,6 +11,7 @@ interface IOrganizationSwitcherCardProps {
   activeOrganizationId: string;
   handleClick: (organizationId: string) => void;
   isLoading: boolean;
+  pendingOrganizationId: string;
 }
 
 const badgeColorMap: Record<string, string> = {
@@ -33,6 +34,7 @@ export default function OrganizationSwitcherCard({
   activeOrganizationId,
   handleClick,
   isLoading,
+  pendingOrganizationId,
 }: IOrganizationSwitcherCardProps) {
   const {
     is_owner,
@@ -41,22 +43,28 @@ export default function OrganizationSwitcherCard({
   } = organization;
 
   const isActive = activeOrganizationId === orgId;
+  const isPending = isLoading && pendingOrganizationId === orgId;
 
   return (
     <Card
       className={cn(
-        'flex flex-row items-center gap-4 rounded-lg border p-4 transition-colors duration-200 ease-in-out',
+        'flex flex-row items-center gap-2 rounded-lg border p-4 transition-colors duration-200 ease-in-out',
         'bg-card/60',
-        isLoading && 'opacity-80',
+        isPending && 'opacity-80',
         isActive
           ? 'border-primary/20 bg-card cursor-default hover:cursor-not-allowed'
           : 'border-card hover:border-muted-foreground/20 hover:bg-muted/50 cursor-pointer',
       )}
       onClick={() => {
-        if (!isActive || isLoading) handleClick(orgId);
+        if (!isActive && !isPending) handleClick(orgId);
       }}
     >
-      <PlainAvatar username={orgName} imageUrl={avatar_url} />
+      <PlainAvatar
+        username={orgName}
+        imageUrl={avatar_url}
+        isActive={isActive}
+        isPending={isPending}
+      />
 
       <div className='min-w-0 flex-1'>
         <div className='mb-1 flex items-center gap-2'>
@@ -65,10 +73,10 @@ export default function OrganizationSwitcherCard({
         </div>
         <p className='text-muted-foreground mb-2 text-sm'>@{orgHandle}</p>
         <div className='flex items-center gap-2'>
-          <Badge variant='outline' className={cn('text-xs', getBadgeColorClass(role))}>
+          <Badge variant='outline' className={cn('rounded-full text-xs', getBadgeColorClass(role))}>
             {role}
           </Badge>
-          <Badge variant='outline' className={cn('text-xs', getBadgeColorClass(tier))}>
+          <Badge variant='outline' className={cn('rounded-full text-xs', getBadgeColorClass(tier))}>
             {tier}
           </Badge>
         </div>
@@ -77,7 +85,7 @@ export default function OrganizationSwitcherCard({
       {isActive && (
         <div className='text-primary flex items-center gap-2'>
           <Check className='h-5 w-5' />
-          <span className='text-sm font-medium'>Current</span>
+          <span className='hidden text-sm font-medium sm:block'>Current</span>
         </div>
       )}
     </Card>

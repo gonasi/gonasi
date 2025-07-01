@@ -30,6 +30,19 @@ export default [
     ]),
   ]),
 
+  // layout('routes/layouts/organizations/organization-plain-layout.tsx', [
+  //   layout('routes/layouts/myProfile/profile-wrapper-layout.tsx', [
+  //     layout('routes/layouts/myProfile/my-profile-layout.tsx', [
+  //       // my profile
+  //       route('go/:username', 'routes/myProfile/learning-index.tsx'),
+  //       route('go/:username/history', 'routes/myProfile/history-index.tsx'),
+  //     ]),
+  //   ]),
+  //   route('go/:username/organizations', 'routes/myProfile/organizations/organizations-index.tsx', [
+  //     route('new', 'routes/myProfile/organizations/new-organization.tsx'),
+  //   ]),
+  // ]),
+
   layout('routes/layouts/auth/auth-layout.tsx', [
     // /login
     route('login', 'routes/auth/login.tsx'),
