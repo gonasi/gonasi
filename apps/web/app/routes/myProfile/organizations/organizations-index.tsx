@@ -1,5 +1,5 @@
 import { data, Outlet, useFetcher } from 'react-router';
-import { Plus } from 'lucide-react';
+import { LoaderCircle, Plus } from 'lucide-react';
 import { dataWithError } from 'remix-toast';
 
 import { fetchUsersOrganizations, updateActiveOrganization } from '@gonasi/database/organizations';
@@ -13,61 +13,57 @@ import OrganizationSwitcherCard from '~/components/cards/organization-switcher/o
 import { Spinner } from '~/components/loaders';
 import { BackArrowNavLink, NavLinkButton } from '~/components/ui/button';
 import { createClient } from '~/lib/supabase/supabase.server';
-import { cn } from '~/lib/utils';
 import { useStore } from '~/store';
 
+const META_TAGS = [
+  { title: 'Select or Create Organization • Gonasi' },
+  {
+    name: 'description',
+    content:
+      'Choose an existing organization or create a new one to manage your courses, collaborate with your team, and grow your learning community on Gonasi.',
+  },
+];
+
 export function meta() {
-  return [
-    { title: 'Select or Create Organization • Gonasi' },
-    {
-      name: 'description',
-      content:
-        'Choose an existing organization or create a new one to manage your courses, collaborate with your team, and grow your learning community on Gonasi.',
-    },
-  ];
+  return META_TAGS;
 }
 
 export async function action({ request }: Route.ActionArgs) {
-  const formData = await request.formData();
   const { supabase } = createClient(request);
-
+  const formData = await request.formData();
   const organizationId = formData.get('organizationId');
-  if (typeof organizationId !== 'string') {
-    return new Response('Invalid input: expected organizationId string.', { status: 400 });
-  }
 
-  const validatedInput = SetActiveOrganizationSchema.safeParse({ organizationId });
-  if (!validatedInput.success) {
-    console.error(validatedInput.error);
+  const validated = SetActiveOrganizationSchema.safeParse({ organizationId });
+  if (!validated.success) {
+    console.error(validated.error);
     return new Response('Invalid organization ID.', { status: 400 });
   }
 
-  const updateResult = await updateActiveOrganization({ supabase, organizationId });
+  const { success, message } = await updateActiveOrganization({
+    supabase,
+    organizationId: validated.data.organizationId,
+  });
 
-  return updateResult.success
+  return success
     ? data({ success: true })
-    : dataWithError(null, updateResult.message ?? 'Failed to set active organization.');
+    : dataWithError(null, message ?? 'Failed to set active organization.');
+}
+
+export async function loader({ request }: Route.LoaderArgs) {
+  const { supabase } = createClient(request);
+  const result = await fetchUsersOrganizations(supabase);
+
+  return {
+    organizations: result.success ? result.data : [],
+    total: result.total ?? 0,
+    ownedCount: result.owned_count ?? 0,
+    canCreateMore: result.can_create_more ?? false,
+  };
 }
 
 export type OrganizationsLoaderData = Exclude<Awaited<ReturnType<typeof loader>>, Response>;
 export type UserOrganizations = OrganizationsLoaderData['organizations'];
 export type UserOrganization = UserOrganizations[number];
-
-export async function loader({ request }: Route.LoaderArgs) {
-  const { supabase } = createClient(request);
-  const orgFetchResult = await fetchUsersOrganizations(supabase);
-
-  if (!orgFetchResult.success) {
-    return { organizations: [] };
-  }
-
-  return {
-    organizations: orgFetchResult.data,
-    total: orgFetchResult.total,
-    ownedCount: orgFetchResult.owned_count,
-    canCreateMore: orgFetchResult.can_create_more,
-  };
-}
 
 export default function OrganizationsIndex({ params, loaderData }: Route.ComponentProps) {
   const { organizations, canCreateMore } = loaderData;
@@ -76,11 +72,13 @@ export default function OrganizationsIndex({ params, loaderData }: Route.Compone
 
   if (isActiveUserProfileLoading) return <Spinner />;
 
-  function submitActiveOrgUpdate(organizationId: string) {
+  const isSubmitting = fetcher.state !== 'idle';
+
+  const submitActiveOrgUpdate = (organizationId: string) => {
     const formData = new FormData();
     formData.append('organizationId', organizationId);
     fetcher.submit(formData, { method: 'post' });
-  }
+  };
 
   return (
     <>
@@ -107,23 +105,25 @@ export default function OrganizationsIndex({ params, loaderData }: Route.Compone
 
         <div className='flex items-center justify-between'>
           <h4 className='text-lg font-semibold'>Your Organizations</h4>
+          {isSubmitting && <LoaderCircle size={20} className='animate-spin' />}
         </div>
 
         <div className='py-4'>
-          <div className='flex flex-col space-y-4'>
-            {organizations.length > 0 ? (
-              organizations.map((organization) => (
+          {organizations.length === 0 ? (
+            <NotFoundCard message='You are not part of any organizations yet.' />
+          ) : (
+            <div className='flex flex-col space-y-4'>
+              {organizations.map((organization) => (
                 <OrganizationSwitcherCard
                   key={organization.id}
                   organization={organization}
                   activeOrganizationId={activeUserProfile?.active_organization_id ?? ''}
                   handleClick={submitActiveOrgUpdate}
+                  isLoading={isSubmitting}
                 />
-              ))
-            ) : (
-              <NotFoundCard message='You are not part of any organizations yet.' />
-            )}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {canCreateMore && (
@@ -131,7 +131,7 @@ export default function OrganizationsIndex({ params, loaderData }: Route.Compone
             to={`/go/${params.username}/organizations/new`}
             variant='ghost'
             leftIcon={<Plus />}
-            className={cn('w-full')}
+            className='w-full'
           >
             Create New Organization
           </NavLinkButton>
