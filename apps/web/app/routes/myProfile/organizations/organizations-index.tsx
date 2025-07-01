@@ -107,7 +107,7 @@ export default function OrganizationsIndex({ params, loaderData }: Route.Compone
           ) : null}
         </div>
       </div>
-      <Outlet />
+      <Outlet context={{ canCreateMore }} />
     </>
   );
 }

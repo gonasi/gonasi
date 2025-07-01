@@ -1,4 +1,4 @@
-import { Form } from 'react-router';
+import { Form, useOutletContext } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ChevronRight } from 'lucide-react';
 import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
@@ -39,28 +39,25 @@ export async function action({ request }: Route.ActionArgs) {
   // Prevent bot submissions
   await checkHoneypot(formData);
 
-  // Validate form data using schema resolver
   const { errors, data } = await getValidatedFormData(formData, resolver);
   if (errors) {
     return dataWithError(null, 'Something went wrong. Please try again.');
   }
 
   const { supabase } = createClient(request);
-
-  // Attempt to create a new organization
   const result = await createNewOrganization(supabase, data);
+
   if (!result.success) {
     return dataWithError(null, result.message);
   }
 
-  // Redirect to organization settings on success
   return redirectWithSuccess(`/${result.data}/settings/profile`, result.message);
 }
 
 export default function NewOrganization({ params }: Route.ComponentProps) {
   const isPending = useIsPending();
+  const { canCreateMore } = useOutletContext<{ canCreateMore: boolean }>();
 
-  // Initialize form methods with Remix Hook Form
   const methods = useRemixForm<NewOrganizationSchemaTypes>({
     mode: 'all',
     resolver,
@@ -72,48 +69,51 @@ export default function NewOrganization({ params }: Route.ComponentProps) {
     <Modal open>
       <Modal.Content size='md'>
         <Modal.Header
-          title='Create a New Organization'
+          title={canCreateMore ? 'Create a New Organization' : 'Organization Limit Reached'}
           closeRoute={`/go/${params.username}/organizations`}
         />
         <Modal.Body className='px-4'>
-          <RemixFormProvider {...methods}>
-            <Form method='POST' onSubmit={methods.handleSubmit}>
-              {/* Anti-bot honeypot field */}
-              <HoneypotInputs />
+          {canCreateMore ? (
+            <RemixFormProvider {...methods}>
+              <Form method='POST' onSubmit={methods.handleSubmit}>
+                <HoneypotInputs />
 
-              {/* Organization name input field */}
-              <GoInputField
-                labelProps={{ children: 'Organization Name', required: true }}
-                name='name'
-                inputProps={{
-                  autoFocus: true,
-                  disabled: isDisabled,
-                }}
-                description='What is your organization called? This will be visible on your public profile.'
-              />
+                <GoInputField
+                  labelProps={{ children: 'Organization Name', required: true }}
+                  name='name'
+                  inputProps={{ autoFocus: true, disabled: isDisabled }}
+                  description='What is your organization called? This will be visible on your public profile.'
+                />
 
-              {/* Organization handle input field */}
-              <GoInputField
-                labelProps={{ children: 'Organization Handle', required: true }}
-                name='handle'
-                inputProps={{
-                  className: 'lowercase',
-                  disabled: isDisabled,
-                }}
-                description='A short, unique ID for your organization (e.g. `gonasi-academy`). Used in your URL.'
-              />
+                <GoInputField
+                  labelProps={{ children: 'Organization Handle', required: true }}
+                  name='handle'
+                  inputProps={{ className: 'lowercase', disabled: isDisabled }}
+                  description='A short, unique ID for your organization (e.g. `gonasi-academy`). Used in your URL.'
+                />
 
-              {/* Submit button with loading state */}
-              <Button
-                type='submit'
-                disabled={isPending}
-                isLoading={isDisabled}
-                rightIcon={<ChevronRight />}
-              >
-                Save & Continue
-              </Button>
-            </Form>
-          </RemixFormProvider>
+                <Button
+                  type='submit'
+                  disabled={isPending}
+                  isLoading={isDisabled}
+                  rightIcon={<ChevronRight />}
+                >
+                  Save & Continue
+                </Button>
+              </Form>
+            </RemixFormProvider>
+          ) : (
+            <div className='border-muted bg-muted/40 text-muted-foreground rounded-xl border p-4 text-sm'>
+              <p className='text-foreground mb-1 font-medium'>
+                You’ve reached your organization limit.
+              </p>
+              <p className='font-secondary'>
+                On the <strong>Launch Plan</strong>, you can own up to{' '}
+                <strong>2 organizations</strong>. To create more, upgrade one of your existing
+                organizations to the <strong>Grow Plan</strong>.
+              </p>
+            </div>
+          )}
         </Modal.Body>
       </Modal.Content>
     </Modal>
