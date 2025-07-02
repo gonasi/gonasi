@@ -114,7 +114,13 @@ export default function OrganizationsIndex({ params, loaderData }: Route.Compone
 
         <div className='w-full items-center pt-4'>
           <div className='flex w-full items-center space-x-4'>
-            <BackArrowNavLink to={`/go/${params.username}`} />
+            <BackArrowNavLink
+              to={
+                isModePersonal
+                  ? `/go/${params.username}`
+                  : `/${activeUserProfile?.active_organization_id}`
+              }
+            />
             <h2 className='mt-1 w-full flex-shrink-0 text-lg'>Switch Organizations</h2>
           </div>
         </div>

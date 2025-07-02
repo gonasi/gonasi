@@ -600,6 +600,7 @@ export type Database = {
           full_name: string | null
           id: string | null
           is_public: boolean | null
+          mode: Database["public"]["Enums"]["profile_mode"] | null
           username: string | null
         }
         Insert: {
@@ -610,6 +611,7 @@ export type Database = {
           full_name?: string | null
           id?: string | null
           is_public?: boolean | null
+          mode?: Database["public"]["Enums"]["profile_mode"] | null
           username?: string | null
         }
         Update: {
@@ -620,6 +622,7 @@ export type Database = {
           full_name?: string | null
           id?: string | null
           is_public?: boolean | null
+          mode?: Database["public"]["Enums"]["profile_mode"] | null
           username?: string | null
         }
         Relationships: []

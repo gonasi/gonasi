@@ -570,6 +570,7 @@ create or replace view "public"."public_profiles" as  SELECT profiles.id,
     profiles.blur_hash,
     profiles.is_public,
     profiles.account_verified,
+    profiles.mode,
     profiles.created_at
    FROM profiles
   WHERE ((profiles.is_public = true) OR (profiles.id = ( SELECT auth.uid() AS uid)));

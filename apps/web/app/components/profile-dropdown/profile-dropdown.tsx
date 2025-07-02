@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router';
-import { ChevronsUpDown, LayoutDashboard } from 'lucide-react';
+import { ChevronsUpDown, LayoutDashboard, User } from 'lucide-react';
 
 import { type AvatarSize, UserAvatar } from '../avatars';
 import { Button } from '../ui/button';
@@ -34,11 +34,17 @@ export function ProfileDropdown({
 
   if (!user) return;
 
-  const { username, full_name, signed_url } = user;
+  const { username, full_name, signed_url, mode, active_organization_id } = user;
 
   const isActive = location.pathname === `/go/${username}`;
 
-  const menuItems = [{ to: `/go/${username}`, label: 'My Profile', icon: LayoutDashboard }];
+  const menuItems = [
+    {
+      to: mode === 'personal' ? `/go/${username}` : `/${active_organization_id}`,
+      label: mode === 'personal' ? 'Profile' : 'Dashboard',
+      icon: mode === 'personal' ? User : LayoutDashboard,
+    },
+  ];
 
   return (
     <DropdownMenu>
