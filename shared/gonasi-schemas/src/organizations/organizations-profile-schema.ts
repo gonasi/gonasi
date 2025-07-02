@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+const SubscriptionTierEnum = z.enum(['launch', 'scale', 'impact', 'enterprise']);
+
 export const OrganizationSchema = z.object({
   id: z.string().uuid(),
   name: z.string(),
@@ -18,7 +20,7 @@ export const OrganizationSchema = z.object({
   email_verified: z.boolean(),
   whatsapp_number: z.string().nullable(),
   location: z.string().nullable(),
-  tier: z.string(), // Optionally: z.enum(['launch', 'pro', ...])
+  tier: SubscriptionTierEnum,
   created_at: z.string(),
   updated_at: z.string(),
   created_by: z.string().uuid(),
