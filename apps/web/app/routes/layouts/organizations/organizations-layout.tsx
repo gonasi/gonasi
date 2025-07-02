@@ -12,6 +12,16 @@ import { Modal } from '~/components/ui/modal';
 import { createClient } from '~/lib/supabase/supabase.server';
 import { useStore } from '~/store';
 
+export function links() {
+  return [
+    {
+      rel: 'icon',
+      type: 'image/x-icon',
+      href: '/favicon_dash.ico',
+    },
+  ];
+}
+
 export function meta({ data }: Route.MetaArgs) {
   if (!data) {
     return [{ title: 'Organization Dashboard • Gonasi' }];
