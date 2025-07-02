@@ -11,7 +11,7 @@ import { SetActiveOrganizationSchema } from '@gonasi/schemas/organizations';
 
 import type { Route } from './+types/organizations-index';
 
-import { UserAvatar } from '~/components/avatars';
+import { PlainAvatar } from '~/components/avatars';
 import { BannerCard, NotFoundCard } from '~/components/cards';
 import OrganizationSwitcherCard from '~/components/cards/organization-switcher/organization-switcher-card';
 import { Spinner } from '~/components/loaders';
@@ -143,13 +143,15 @@ export default function OrganizationsIndex({ params, loaderData }: Route.Compone
             }}
           >
             <div className='flex w-full items-center justify-between'>
-              <UserAvatar
-                username={activeUserProfile?.username ?? ''}
-                fullName={`${activeUserProfile?.full_name} (ME)`}
-                imageUrl={activeUserProfile?.signed_url}
-                size='md'
-                isPending={fetcher.state !== 'idle' && !fetcher.formData?.get('organizationId')}
-              />
+              <div className='flex items-center space-x-2'>
+                <PlainAvatar
+                  username={activeUserProfile?.username ?? ''}
+                  imageUrl={activeUserProfile?.signed_url}
+                  size='md'
+                  isPending={fetcher.state !== 'idle' && !fetcher.formData?.get('organizationId')}
+                />
+                <p>{activeUserProfile?.full_name}</p>
+              </div>
               {isModePersonal ? (
                 <div className='text-primary flex items-center gap-2'>
                   <Check className='h-5 w-5' />
@@ -175,7 +177,7 @@ export default function OrganizationsIndex({ params, loaderData }: Route.Compone
                   activeOrganizationId={activeUserProfile?.active_organization_id ?? ''}
                   handleClick={submitActiveOrgUpdate}
                   isLoading={isSubmitting}
-                  pendingOrganizationId={organization.organization.id}
+                  pendingOrganizationId={String(fetcher.formData?.get('organizationId') ?? '')}
                 />
               ))}
             </div>

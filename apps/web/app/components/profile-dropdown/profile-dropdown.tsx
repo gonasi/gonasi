@@ -53,7 +53,7 @@ export function ProfileDropdown({
   };
 
   const settingsLink = {
-    to: `/${active_organization_id}/settings`,
+    to: `/${active_organization_id}/settings/organization-profile`,
     label: 'Settings',
     icon: Settings,
   };

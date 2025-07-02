@@ -570,7 +570,6 @@ create or replace view "public"."public_profiles" as  SELECT profiles.id,
     profiles.blur_hash,
     profiles.is_public,
     profiles.account_verified,
-    profiles.mode,
     profiles.created_at
    FROM profiles
   WHERE ((profiles.is_public = true) OR (profiles.id = ( SELECT auth.uid() AS uid)));
@@ -635,9 +634,11 @@ begin
     );
   end if;
 
-  -- Step 4: Update profile to switch active organization
+  -- Step 4: Update profile to switch active organization and mode
   update public.profiles p
-  set active_organization_id = rpc_verify_and_set_active_organization.organization_id_from_url
+  set
+    active_organization_id = rpc_verify_and_set_active_organization.organization_id_from_url,
+    mode = 'organization'
   where p.id = current_user_id;
 
   -- Step 5: Fetch the updated organization

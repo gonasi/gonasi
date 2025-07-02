@@ -26,7 +26,7 @@ export function UserAvatar({
   isPending = false,
 }: UserAvatarProps) {
   return (
-    <div className='text-foreground flex items-center gap-2'>
+    <div className='text-foreground mr-1 flex items-center gap-2 md:mr-0'>
       <PlainAvatar
         username={username}
         imageUrl={imageUrl}
