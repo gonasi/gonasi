@@ -5,11 +5,15 @@ import { OrganizationSelectorButton } from './organization-selector';
 import { PlainAvatar } from '~/components/avatars';
 import { BackArrowNavLink } from '~/components/ui/button';
 import type { UserProfileLoaderReturnType } from '~/root';
-import type { OrganizationLoaderData } from '~/routes/layouts/organizations/organizations-layout';
+import type {
+  MemberLoaderData,
+  OrganizationLoaderData,
+} from '~/routes/layouts/organizations/organizations-layout';
 
 interface ProfileTopNavProps {
   user: UserProfileLoaderReturnType;
   organization?: OrganizationLoaderData;
+  member?: MemberLoaderData;
   showName?: boolean;
   showBackArrow?: boolean;
 }
@@ -19,6 +23,7 @@ export function ProfileTopNav({
   organization,
   showName = false,
   showBackArrow = false,
+  member,
 }: ProfileTopNavProps) {
   const showOrgLabel = organization && user?.mode !== 'personal';
 
@@ -50,7 +55,13 @@ export function ProfileTopNav({
           </div>
 
           <div>
-            <ProfileDropdown user={user} showName={showName} size='sm' />
+            <ProfileDropdown
+              user={user}
+              showName={showName}
+              size='sm'
+              organization={organization}
+              member={member}
+            />
           </div>
         </div>
       </Container>

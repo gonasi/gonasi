@@ -33,8 +33,17 @@ export const OrganizationMemberSchema = z.object({
   id: z.string().uuid(),
   organization_id: z.string().uuid(),
   user_id: z.string().uuid(),
-  role: z.string(), // Optionally: z.enum(['owner', 'admin', 'staff'])
-  invited_by: z.string().uuid(),
+  role: z.enum([
+    'owner',
+    'admin',
+    'editor',
+    'instructor',
+    'analyst',
+    'support',
+    'collaborator',
+    'ai_collaborator',
+  ]),
+  invited_by: z.string().uuid().nullable(),
   created_at: z.string(),
   updated_at: z.string(),
 });

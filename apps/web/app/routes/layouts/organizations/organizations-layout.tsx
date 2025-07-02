@@ -48,6 +48,7 @@ export function meta({ data }: Route.MetaArgs) {
 
 type LoaderData = Awaited<ReturnType<typeof loader>>;
 export type OrganizationLoaderData = LoaderData['organization'];
+export type MemberLoaderData = LoaderData['member'];
 
 export async function loader({ params, request }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
@@ -71,7 +72,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 
 export default function OrganizationsPlainLayout({ loaderData }: Route.ComponentProps) {
   const { activeUserProfile } = useStore();
-  const { organization, message: organizationSwitchMessage } = loaderData;
+  const { organization, member, message: organizationSwitchMessage } = loaderData;
 
   const [showOrganizationSwitchModal, setShowOrganizationSwitchModal] = useState(false);
 
@@ -83,7 +84,7 @@ export default function OrganizationsPlainLayout({ loaderData }: Route.Component
 
   return (
     <div>
-      <ProfileTopNav user={activeUserProfile} organization={organization} />
+      <ProfileTopNav user={activeUserProfile} organization={organization} member={member} />
       <Outlet />
       <Modal open={showOrganizationSwitchModal} onOpenChange={setShowOrganizationSwitchModal}>
         <Modal.Content size='sm'>

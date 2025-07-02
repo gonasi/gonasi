@@ -14,7 +14,7 @@ interface IOrganizationSwitcherCardProps {
   pendingOrganizationId: string;
 }
 
-const badgeColorMap: Record<string, string> = {
+const BADGE_COLOR_MAP: Record<string, string> = {
   owner: 'bg-red-100 text-red-800 border-red-200',
   admin: 'bg-indigo-100 text-indigo-800 border-indigo-200',
   editor: 'bg-emerald-100 text-emerald-800 border-emerald-200',
@@ -26,8 +26,8 @@ const badgeColorMap: Record<string, string> = {
   enterprise: 'bg-purple-100 text-purple-800 border-purple-200',
 };
 
-const getBadgeColorClass = (key: string) =>
-  badgeColorMap[key] ?? 'bg-gray-100 text-gray-800 border-gray-200';
+export const getBadgeColorClass = (key: string) =>
+  BADGE_COLOR_MAP[key] ?? 'bg-gray-100 text-gray-800 border-gray-200';
 
 export default function OrganizationSwitcherCard({
   organization,
