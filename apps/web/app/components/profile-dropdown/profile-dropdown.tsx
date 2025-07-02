@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router';
-import { ChevronsUpDown, LayoutDashboard, User } from 'lucide-react';
+import { ChevronsUpDown, LayoutDashboard, Settings, User } from 'lucide-react';
 
 import { type AvatarSize, UserAvatar } from '../avatars';
 import { getBadgeColorClass } from '../cards/organization-switcher';
@@ -26,7 +26,6 @@ interface Props {
   user: UserProfileLoaderReturnType;
   dropdownPosition?: 'top' | 'bottom' | 'left' | 'right';
   dropdownAlign?: 'start' | 'center' | 'end';
-  showName?: boolean;
   size?: AvatarSize;
   organization?: OrganizationLoaderData;
   member?: MemberLoaderData;
@@ -36,7 +35,6 @@ export function ProfileDropdown({
   user,
   dropdownPosition = 'bottom',
   dropdownAlign = 'end',
-  showName = true,
   size,
   organization,
   member,
@@ -54,6 +52,12 @@ export function ProfileDropdown({
     icon: mode === 'personal' ? User : LayoutDashboard,
   };
 
+  const settingsLink = {
+    to: `/${active_organization_id}/settings`,
+    label: 'Settings',
+    icon: Settings,
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -63,10 +67,9 @@ export function ProfileDropdown({
               username={username}
               imageUrl={signed_url}
               isActive={isViewingPersonal}
-              showName={showName}
               size={size}
             />
-            {showName && <ChevronsUpDown className='text-muted-foreground mb-0.5' />}
+            <ChevronsUpDown className='text-muted-foreground mb-0.5' />
           </div>
         </Button>
       </DropdownMenuTrigger>
@@ -83,7 +86,7 @@ export function ProfileDropdown({
               <p className='text-sm font-medium'>{full_name}</p>
             ) : (
               <div>
-                <p className='truncate text-lg'>{organization?.name}</p>
+                <p className='text-md truncate'>{organization?.name}</p>
                 <div className='flex items-center justify-between'>
                   <p className='font-secondary text-muted-foreground truncate'>{full_name}</p>
                   {member?.role && (
@@ -109,6 +112,15 @@ export function ProfileDropdown({
               <span>{navLink.label}</span>
             </Link>
           </DropdownMenuItem>
+
+          {mode === 'organization' && (member?.role === 'admin' || member?.role === 'owner') && (
+            <DropdownMenuItem asChild className='group cursor-pointer'>
+              <Link to={settingsLink.to} className='flex items-center space-x-2'>
+                <settingsLink.icon className='h-4 w-4 transition-transform duration-200 group-hover:scale-105' />
+                <span>{settingsLink.label}</span>
+              </Link>
+            </DropdownMenuItem>
+          )}
         </DropdownMenuGroup>
 
         <DropdownMenuSeparator />

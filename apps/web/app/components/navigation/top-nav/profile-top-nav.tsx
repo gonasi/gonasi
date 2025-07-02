@@ -14,14 +14,12 @@ interface ProfileTopNavProps {
   user: UserProfileLoaderReturnType;
   organization?: OrganizationLoaderData;
   member?: MemberLoaderData;
-  showName?: boolean;
   showBackArrow?: boolean;
 }
 
 export function ProfileTopNav({
   user,
   organization,
-  showName = false,
   showBackArrow = false,
   member,
 }: ProfileTopNavProps) {
@@ -55,13 +53,7 @@ export function ProfileTopNav({
           </div>
 
           <div>
-            <ProfileDropdown
-              user={user}
-              showName={showName}
-              size='sm'
-              organization={organization}
-              member={member}
-            />
+            <ProfileDropdown user={user} size='sm' organization={organization} member={member} />
           </div>
         </div>
       </Container>

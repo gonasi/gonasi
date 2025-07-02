@@ -8,7 +8,6 @@ interface UserAvatarProps {
   size?: AvatarSize;
   isActive?: boolean;
   isPending?: boolean;
-  showName?: boolean;
 }
 
 const textSizeClasses = {
@@ -25,7 +24,6 @@ export function UserAvatar({
   size = 'md',
   isActive = false,
   isPending = false,
-  showName = true,
 }: UserAvatarProps) {
   return (
     <div className='text-foreground flex items-center gap-2'>
@@ -36,16 +34,14 @@ export function UserAvatar({
         isPending={isPending}
         size={size}
       />
-      {showName ? (
-        <div>
-          {fullName ? (
-            <div className={`${textSizeClasses[size]} line-clamp-2 uppercase`}>{fullName}</div>
-          ) : null}
-          <div className={`${textSizeClasses[size]} text-muted-foreground line-clamp-1`}>
-            {username}
-          </div>
+      <div className='hidden md:flex'>
+        {fullName ? (
+          <div className={`${textSizeClasses[size]} line-clamp-2 uppercase`}>{fullName}</div>
+        ) : null}
+        <div className={`${textSizeClasses[size]} text-muted-foreground line-clamp-1`}>
+          {username}
         </div>
-      ) : null}
+      </div>
     </div>
   );
 }
