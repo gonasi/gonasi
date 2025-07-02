@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+export * from './organizations-profile-schema';
+
 const OrganizationNameSchema = z
   .string({
     required_error: `Missing <span class="go-title">organization name</span>, this field is required <lucide name="AlertCircle" size="12" />`,

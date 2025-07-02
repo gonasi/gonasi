@@ -36,7 +36,7 @@ export const updateActiveOrganization = async ({
 
     return {
       success: true,
-      message: '✅ Active organization updated successfully.',
+      message: 'You have successfully switched your active organization.',
       data: {
         id: data.id,
         active_organization_id: data.active_organization_id,

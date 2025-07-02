@@ -30,7 +30,7 @@ export const switchToPersonalMode = async ({ supabase }: UpdateActiveOrganizatio
 
     return {
       success: true,
-      message: '✅ Switched to personal mode successfully.',
+      message: 'You have successfully switched to personal mode.',
       data: {
         id: data.id,
         active_organization_id: data.active_organization_id,

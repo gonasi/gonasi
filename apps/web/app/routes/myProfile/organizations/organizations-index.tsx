@@ -1,6 +1,6 @@
-import { data, Outlet, useFetcher } from 'react-router';
+import { Outlet, useFetcher } from 'react-router';
 import { Check, Plus } from 'lucide-react';
-import { dataWithError } from 'remix-toast';
+import { dataWithError, redirectWithSuccess } from 'remix-toast';
 
 import {
   fetchUsersOrganizations,
@@ -41,8 +41,8 @@ export async function action({ request }: Route.ActionArgs) {
 
   // If no organizationId, switch to personal mode
   if (!organizationId) {
-    const { success, message } = await switchToPersonalMode({ supabase });
-    return success ? data({ success: true }) : dataWithError(null, message);
+    const { success, message, data } = await switchToPersonalMode({ supabase });
+    return success ? redirectWithSuccess(`/go/${data?.id}`, message) : dataWithError(null, message);
   }
 
   const validated = SetActiveOrganizationSchema.safeParse({ organizationId });
@@ -51,12 +51,14 @@ export async function action({ request }: Route.ActionArgs) {
     return new Response('Invalid organization ID.', { status: 400 });
   }
 
-  const { success, message } = await updateActiveOrganization({
+  const { success, message, data } = await updateActiveOrganization({
     supabase,
     organizationId: validated.data.organizationId,
   });
 
-  return success ? data({ success: true }) : dataWithError(null, message);
+  return success
+    ? redirectWithSuccess(`/${data?.active_organization_id}`, message)
+    : dataWithError(null, message);
 }
 
 export async function loader({ request }: Route.LoaderArgs) {

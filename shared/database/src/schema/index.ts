@@ -640,6 +640,10 @@ export type Database = {
         Args: { event: Json }
         Returns: Json
       }
+      rpc_verify_and_set_active_organization: {
+        Args: { organization_id_from_url: string }
+        Returns: Json
+      }
     }
     Enums: {
       analytics_level: "basic" | "intermediate" | "advanced" | "enterprise"

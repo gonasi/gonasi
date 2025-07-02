@@ -93,6 +93,10 @@ schema_paths = [
   './schemas/organizations_rls.sql',
   './schemas/organizations_functions_triggers.sql',
 
+  # rpc profiles, orgs
+  './schemas/rpc_verify_and_set_active_organization.sql',
+
+
 
 
   # # course pathways 
