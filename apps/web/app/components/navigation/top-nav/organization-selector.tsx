@@ -1,3 +1,4 @@
+import { type ReactNode } from 'react';
 import { NavLink, type NavLinkProps } from 'react-router';
 import { motion } from 'framer-motion';
 import { ChevronsUpDown, Loader2 } from 'lucide-react';
@@ -6,23 +7,22 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '~/comp
 import { cn } from '~/lib/utils';
 
 interface OrgButtonProps {
-  activeOrganizationName?: string | null;
+  organizationLabel?: ReactNode | string;
   to: NavLinkProps['to'];
   className?: string;
 }
 
 export function OrganizationSelectorButton({
-  activeOrganizationName,
+  organizationLabel = 'Create or join an organization',
   to,
   className,
 }: OrgButtonProps) {
-  const label = activeOrganizationName
-    ? `Organization: ${activeOrganizationName}`
-    : 'Create or join an organization';
+  const isStringLabel = typeof organizationLabel === 'string';
+  const label = organizationLabel;
 
-  const tooltipText = activeOrganizationName
-    ? 'Switch organization or manage access'
-    : 'Create or join an organization to manage courses, invite collaborators, and earn';
+  const tooltipText = isStringLabel
+    ? 'Create or join an organization to manage courses, invite collaborators, and earn'
+    : 'Switch organization or manage access';
 
   return (
     <TooltipProvider>
@@ -37,14 +37,16 @@ export function OrganizationSelectorButton({
               {({ isPending }) => (
                 <span
                   className={cn(
-                    'max-w-56 rounded-full border-2 border-dashed bg-transparent px-4 py-2 text-sm font-medium md:max-w-72',
+                    'max-w-56 rounded-full border-2 border-dashed bg-transparent px-2 py-2 text-sm font-medium md:max-w-72',
                     'border-muted-foreground/40 hover:border-primary/20 hover:cursor-pointer',
                     'flex items-center justify-between gap-2 overflow-hidden transition-colors duration-200',
                     !isPending && 'pointer-events-none cursor-not-allowed opacity-60',
                     className,
                   )}
                 >
-                  <span className='flex-1 truncate text-left'>{label}</span>
+                  <span className={cn('flex-1 text-left', isStringLabel && 'truncate')}>
+                    {label}
+                  </span>
                   {isPending ? (
                     <Loader2 className='h-4 w-4 animate-spin opacity-70' />
                   ) : (
