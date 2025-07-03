@@ -16,7 +16,7 @@ export function DesktopNav({ links }: IDesktopNavProps) {
       <div className='mt-8 flex flex-grow flex-col'>
         <nav className='flex-1 space-y-1 pl-2'>
           {links.map((link) => (
-            <SideLink key={link.to} icon={link.icon} to={link.to} name={link.name} />
+            <SideLink key={link.to} icon={link.icon} to={link.to} name={link.name} end />
           ))}
         </nav>
       </div>

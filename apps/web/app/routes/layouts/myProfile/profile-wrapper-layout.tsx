@@ -16,7 +16,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 }
 
 export default function ProfileWrapperLayout({ loaderData }: Route.ComponentProps) {
-  const { activeUserProfile } = useStore();
+  const { activeUserProfile, isActiveUserProfileLoading } = useStore();
 
   return (
     <div>
@@ -25,6 +25,7 @@ export default function ProfileWrapperLayout({ loaderData }: Route.ComponentProp
         organization={loaderData?.organization}
         member={loaderData?.member ?? undefined}
         showBackArrow
+        loading={isActiveUserProfileLoading}
       />
       <section className='container mx-auto min-h-screen'>
         <Outlet />

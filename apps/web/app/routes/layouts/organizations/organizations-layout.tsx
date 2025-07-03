@@ -61,7 +61,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 }
 
 export default function OrganizationsPlainLayout({ params, loaderData }: Route.ComponentProps) {
-  const { activeUserProfile } = useStore();
+  const { activeUserProfile, isActiveUserProfileLoading } = useStore();
   const { organization, member, message: organizationSwitchMessage } = loaderData;
   const [showOrgSwitchModal, setShowOrgSwitchModal] = useState(!!organizationSwitchMessage);
 
@@ -78,7 +78,12 @@ export default function OrganizationsPlainLayout({ params, loaderData }: Route.C
     <div className='min-h-screen'>
       <DesktopNav links={filteredLinks} />
       <div className='md:pl-64'>
-        <ProfileTopNav user={activeUserProfile} organization={organization} member={member} />
+        <ProfileTopNav
+          user={activeUserProfile}
+          organization={organization}
+          member={member}
+          loading={isActiveUserProfileLoading}
+        />
         <Outlet context={{ organization, member }} />
       </div>
 

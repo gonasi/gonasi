@@ -8,6 +8,7 @@ import { OrganizationSelectorButton } from './organization-selector';
 import { PlainAvatar } from '~/components/avatars';
 import { BackArrowNavLink } from '~/components/ui/button';
 import { useDashboardLinks } from '~/hooks/useDashboardLinks';
+import { cn } from '~/lib/utils';
 import type { UserProfileLoaderReturnType } from '~/root';
 import type {
   MemberLoaderData,
@@ -19,6 +20,7 @@ interface ProfileTopNavProps {
   organization?: OrganizationLoaderData;
   member?: MemberLoaderData;
   showBackArrow?: boolean;
+  loading: boolean;
 }
 
 export function ProfileTopNav({
@@ -26,6 +28,7 @@ export function ProfileTopNav({
   organization,
   showBackArrow = true,
   member,
+  loading,
 }: ProfileTopNavProps) {
   const params = useParams();
 
@@ -43,7 +46,7 @@ export function ProfileTopNav({
           <div className='flex h-full items-center justify-between'>
             <div className='flex h-full items-center space-x-4 md:space-x-8'>
               {showBackArrow && user?.mode === 'personal' ? <BackArrowNavLink to='/' /> : null}
-              {user && (
+              {user && !loading && (
                 <OrganizationSelectorButton
                   to={`/go/${user.username}/organizations`}
                   organizationLabel={
@@ -59,6 +62,14 @@ export function ProfileTopNav({
                       </div>
                     ) : undefined
                   }
+                />
+              )}
+              {loading && (
+                <span
+                  className={cn(
+                    'bg-card/80 h-11 w-56 animate-pulse rounded-full border-2 border-dashed px-2 py-2 text-sm font-medium md:w-72',
+                    'border-muted-foreground/40',
+                  )}
                 />
               )}
             </div>

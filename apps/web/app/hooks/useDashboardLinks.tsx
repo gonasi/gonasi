@@ -66,6 +66,12 @@ export function useDashboardLinks({
   const DASHBOARD_LINKS: DashboardLink[] = [
     { name: 'Dashboard', to: `/${organizationId}`, icon: HomeIcon, roles: allRoles },
     {
+      name: 'Members',
+      to: `/${organizationId}/members`,
+      icon: ShieldIcon,
+      roles: adminOnly,
+    },
+    {
       name: 'Courses',
       to: `/${organizationId}/courses`,
       icon: BookOpenIcon,
@@ -94,12 +100,6 @@ export function useDashboardLinks({
       to: `/${organizationId}/library`,
       icon: FolderIcon,
       roles: libraryRoles,
-    },
-    {
-      name: 'Members',
-      to: `/${organizationId}/settings/members`,
-      icon: ShieldIcon,
-      roles: adminOnly,
     },
     {
       name: 'Settings',
