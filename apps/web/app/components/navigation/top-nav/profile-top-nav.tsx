@@ -73,12 +73,22 @@ export function ProfileTopNav({
                 />
               )}
             </div>
-            <div className='md:hidden'>
-              <MobileNav links={filteredLinks} />
-            </div>
-            <div className='hidden md:block'>
-              <ProfileDropdown user={user} size='sm' organization={organization} member={member} />
-            </div>
+            {!loading && user && (
+              <>
+                <div className={cn(user.mode === 'personal' ? 'hidden' : 'md:hidden')}>
+                  <MobileNav links={filteredLinks} />
+                </div>
+                <div className={cn(user.mode === 'personal' ? 'block' : 'hidden md:block')}>
+                  <ProfileDropdown
+                    user={user}
+                    size='sm'
+                    organization={organization}
+                    member={member}
+                  />
+                </div>
+              </>
+            )}
+            {loading && <div className='bg-card/60 h-11 w-11 animate-pulse rounded-lg' />}
           </div>
         </Container>
       </nav>
