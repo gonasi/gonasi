@@ -24,6 +24,7 @@ export default function ProfileWrapperLayout({ loaderData }: Route.ComponentProp
         user={activeUserProfile}
         organization={loaderData?.organization}
         member={loaderData?.member ?? undefined}
+        showBackArrow
       />
       <section className='container mx-auto min-h-screen'>
         <Outlet />

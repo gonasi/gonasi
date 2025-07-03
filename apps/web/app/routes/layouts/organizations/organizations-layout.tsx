@@ -7,6 +7,7 @@ import { verifyAndSetActiveOrganization } from '@gonasi/database/organizations';
 import type { Route } from './+types/organizations-layout';
 
 import { ProfileTopNav } from '~/components/navigation/top-nav/profile-top-nav';
+import { ResponsiveNav } from '~/components/navigation/top-nav/responsive-nav/responsive-nav';
 import { Button } from '~/components/ui/button';
 import { Modal } from '~/components/ui/modal';
 import { createClient } from '~/lib/supabase/supabase.server';
@@ -83,9 +84,13 @@ export default function OrganizationsPlainLayout({ loaderData }: Route.Component
   }, [organizationSwitchMessage]);
 
   return (
-    <div>
-      <ProfileTopNav user={activeUserProfile} organization={organization} member={member} />
-      <Outlet />
+    <div className='min-h-screen'>
+      <ResponsiveNav />
+      <div className='md:pl-64'>
+        <ProfileTopNav user={activeUserProfile} organization={organization} member={member} />
+        <Outlet context={{ organization, member }} />
+      </div>
+
       <Modal open={showOrganizationSwitchModal} onOpenChange={setShowOrganizationSwitchModal}>
         <Modal.Content size='sm'>
           <Modal.Body className='p-6'>

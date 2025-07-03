@@ -1,9 +1,13 @@
-import { Outlet, useLocation } from 'react-router';
+import { Outlet, useOutletContext } from 'react-router';
 import { Building, Lock } from 'lucide-react';
 
 import type { Route } from './+types/organization-settings-index';
 
 import { SideLink } from '~/components/go-sidebar/side-link';
+import type {
+  MemberLoaderData,
+  OrganizationLoaderData,
+} from '~/routes/layouts/organizations/organizations-layout';
 
 export function meta() {
   return [
@@ -16,9 +20,10 @@ export function meta() {
 }
 
 export default function OrganizationSettingsIndex({ params }: Route.ComponentProps) {
-  const location = useLocation();
-  const redirectTo = new URLSearchParams(location.search).get('redirectTo') || '/';
-
+  const { organization, member } = useOutletContext<{
+    organization: OrganizationLoaderData;
+    member: MemberLoaderData;
+  }>();
   // TODO: Only owner and admin can access - fetch from outlet context user role
 
   const sections = [
@@ -57,7 +62,7 @@ export default function OrganizationSettingsIndex({ params }: Route.ComponentPro
 
         <section className='w-full py-8 pr-4 lg:pr-0'>
           <div>
-            <Outlet />
+            <Outlet context={{ organization, member }} />
           </div>
         </section>
       </div>
