@@ -2,6 +2,19 @@ import { z } from 'zod';
 
 const SubscriptionTierEnum = z.enum(['launch', 'scale', 'impact', 'enterprise']);
 
+export const OrganizationRolesEnum = z.enum([
+  'owner',
+  'admin',
+  'editor',
+  'instructor',
+  'analyst',
+  'support',
+  'collaborator',
+  'ai_collaborator',
+]);
+
+export type OrganizationRolesEnumTypes = z.infer<typeof OrganizationRolesEnum>;
+
 export const OrganizationSchema = z.object({
   id: z.string().uuid(),
   name: z.string(),
@@ -33,16 +46,7 @@ export const OrganizationMemberSchema = z.object({
   id: z.string().uuid(),
   organization_id: z.string().uuid(),
   user_id: z.string().uuid(),
-  role: z.enum([
-    'owner',
-    'admin',
-    'editor',
-    'instructor',
-    'analyst',
-    'support',
-    'collaborator',
-    'ai_collaborator',
-  ]),
+  role: OrganizationRolesEnum,
   invited_by: z.string().uuid().nullable(),
   created_at: z.string(),
   updated_at: z.string(),

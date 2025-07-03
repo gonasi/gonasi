@@ -1,5 +1,6 @@
 import * as React from 'react';
-import { Link, Menu } from 'lucide-react';
+import { Link } from 'react-router';
+import { Menu } from 'lucide-react';
 
 import { AppLogo } from '~/components/app-logo';
 import { Button } from '~/components/ui/button';
@@ -36,12 +37,7 @@ export function MobileNav() {
         </SheetHeader>
         <nav className='mt-6 flex flex-col gap-4'>
           {navigation.map((item) => (
-            <Link
-              key={item.name}
-              href={item.href}
-              className='block rounded-md px-3 py-2 text-base font-medium text-gray-900 transition-colors hover:bg-gray-50 hover:text-gray-900'
-              onClick={() => setOpen(false)}
-            >
+            <Link key={item.name} href={item.href} onClick={() => setOpen(false)}>
               {item.name}
             </Link>
           ))}
