@@ -1,3 +1,5 @@
+import { useParams } from 'react-router';
+
 import { MobileNav } from './responsive-nav/mobile-nav';
 import { Container } from '../../layouts/container';
 import { ProfileDropdown } from '../../profile-dropdown';
@@ -5,6 +7,7 @@ import { OrganizationSelectorButton } from './organization-selector';
 
 import { PlainAvatar } from '~/components/avatars';
 import { BackArrowNavLink } from '~/components/ui/button';
+import { useDashboardLinks } from '~/hooks/useDashboardLinks';
 import type { UserProfileLoaderReturnType } from '~/root';
 import type {
   MemberLoaderData,
@@ -24,7 +27,14 @@ export function ProfileTopNav({
   showBackArrow = true,
   member,
 }: ProfileTopNavProps) {
+  const params = useParams();
+
   const showOrgLabel = organization && user?.mode !== 'personal';
+
+  const filteredLinks = useDashboardLinks({
+    organizationId: params.organizationId ?? '',
+    role: member?.role ?? 'collaborator',
+  });
 
   return (
     <>
@@ -53,7 +63,7 @@ export function ProfileTopNav({
               )}
             </div>
             <div className='md:hidden'>
-              <MobileNav />
+              <MobileNav links={filteredLinks} />
             </div>
             <div className='hidden md:block'>
               <ProfileDropdown user={user} size='sm' organization={organization} member={member} />

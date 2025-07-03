@@ -1,22 +1,44 @@
 import * as React from 'react';
-import { Link } from 'react-router';
+import { useNavigation } from 'react-router';
 import { Menu } from 'lucide-react';
 
 import { AppLogo } from '~/components/app-logo';
+import { SideLink } from '~/components/go-sidebar/side-link';
 import { Button } from '~/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '~/components/ui/sheet';
+import type { DashboardLink } from '~/hooks/useDashboardLinks';
 
-const navigation = [
-  { name: 'Dashboard', href: '#' },
-  { name: 'Projects', href: '#' },
-  { name: 'Team', href: '#' },
-  { name: 'Calendar', href: '#' },
-  { name: 'Reports', href: '#' },
-  { name: 'Settings', href: '#' },
-];
+interface IMobileNavProps {
+  links: DashboardLink[];
+}
 
-export function MobileNav() {
+export function MobileNav({ links }: IMobileNavProps) {
   const [open, setOpen] = React.useState(false);
+  const navigation = useNavigation();
+  const [wasNavigating, setWasNavigating] = React.useState(false);
+  const closeTimeout = React.useRef<NodeJS.Timeout | null>(null);
+
+  // Detect start of navigation
+  React.useEffect(() => {
+    if (navigation.state !== 'idle') {
+      setWasNavigating(true);
+    }
+
+    // Once it returns to idle *after* navigating, close the sheet with delay
+    if (navigation.state === 'idle' && wasNavigating) {
+      closeTimeout.current = setTimeout(() => {
+        setOpen(false);
+        setWasNavigating(false); // reset
+      }, 150);
+    }
+
+    return () => {
+      if (closeTimeout.current) {
+        clearTimeout(closeTimeout.current);
+        closeTimeout.current = null;
+      }
+    };
+  }, [navigation.state, wasNavigating]);
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -35,11 +57,9 @@ export function MobileNav() {
             </div>
           </SheetTitle>
         </SheetHeader>
-        <nav className='mt-6 flex flex-col gap-4'>
-          {navigation.map((item) => (
-            <Link key={item.name} href={item.href} onClick={() => setOpen(false)}>
-              {item.name}
-            </Link>
+        <nav className='flex-1 space-y-1 pl-2'>
+          {links.map((link) => (
+            <SideLink key={link.to} icon={link.icon} to={link.to} name={link.name} forceLabel />
           ))}
         </nav>
       </SheetContent>

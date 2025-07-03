@@ -10,9 +10,10 @@ interface Props {
   to: string;
   name: string;
   end?: boolean;
+  forceLabel?: boolean;
 }
 
-export function SideLink({ icon: Icon, to, name, end }: Props) {
+export function SideLink({ icon: Icon, to, name, end, forceLabel = false }: Props) {
   const isActive = useRouteMatch(to);
 
   return (
@@ -34,9 +35,13 @@ export function SideLink({ icon: Icon, to, name, end }: Props) {
           isPending ? 'bg-primary animate-ping' : 'bg-transparent',
         );
 
+        const labelClass = cn(
+          'mt-1 transition-opacity duration-200 group-hover:opacity-80',
+          forceLabel ? 'flex pl-4 text-xl' : 'hidden md:flex',
+        );
+
         return (
           <>
-            {/* Animated right border being drawn top to bottom */}
             <motion.div
               className='from-secondary to-primary absolute right-0 w-1 bg-gradient-to-b'
               initial={false}
@@ -50,15 +55,12 @@ export function SideLink({ icon: Icon, to, name, end }: Props) {
               style={{ top: 0 }}
             />
 
-            {/* Main content */}
             <div className={contentClass}>
               <div className='relative'>
                 <Icon className='h-6 w-6 md:h-4 md:w-4' />
                 <span className={dotClass} />
               </div>
-              <span className='mt-1 hidden transition-opacity duration-200 group-hover:opacity-80 md:flex'>
-                {name}
-              </span>
+              <span className={labelClass}>{name}</span>
             </div>
           </>
         );

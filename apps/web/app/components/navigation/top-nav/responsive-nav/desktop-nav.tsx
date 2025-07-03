@@ -1,6 +1,6 @@
 import { AppLogo } from '~/components/app-logo';
 import { SideLink } from '~/components/go-sidebar/side-link';
-import type { DashboardLink } from '~/routes/layouts/organizations/organizations-layout';
+import type { DashboardLink } from '~/hooks/useDashboardLinks';
 
 interface IDesktopNavProps {
   links: DashboardLink[];
