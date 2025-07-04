@@ -60,7 +60,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   return { ...result.data, message: result.message };
 }
 
-export default function OrganizationsPlainLayout({ params, loaderData }: Route.ComponentProps) {
+export default function OrganizationsPlainLayout({ loaderData }: Route.ComponentProps) {
   const { activeUserProfile, isActiveUserProfileLoading } = useStore();
   const { organization, member, message: organizationSwitchMessage } = loaderData;
   const [showOrgSwitchModal, setShowOrgSwitchModal] = useState(!!organizationSwitchMessage);
@@ -70,7 +70,7 @@ export default function OrganizationsPlainLayout({ params, loaderData }: Route.C
   }, [organizationSwitchMessage]);
 
   const filteredLinks = useDashboardLinks({
-    organizationId: params.organizationId,
+    organizationId: organization.id,
     role: member.role,
   });
 

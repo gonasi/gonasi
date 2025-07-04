@@ -47,7 +47,7 @@ export function ProfileDropdown({
   const isViewingPersonal = location.pathname === `/go/${username}`;
 
   const navLink = {
-    to: mode === 'personal' ? `/go/${username}` : `/${active_organization_id}`,
+    to: mode === 'personal' ? `/go/${username}` : `/${active_organization_id}/dashboard`,
     label: mode === 'personal' ? 'Profile' : 'Dashboard',
     icon: mode === 'personal' ? User : LayoutDashboard,
   };

@@ -1,5 +1,3 @@
-import { useParams } from 'react-router';
-
 import { MobileNav } from './responsive-nav/mobile-nav';
 import { Container } from '../../layouts/container';
 import { ProfileDropdown } from '../../profile-dropdown';
@@ -30,12 +28,10 @@ export function ProfileTopNav({
   member,
   loading,
 }: ProfileTopNavProps) {
-  const params = useParams();
-
   const showOrgLabel = organization && user?.mode !== 'personal';
 
   const filteredLinks = useDashboardLinks({
-    organizationId: params.organizationId ?? '',
+    organizationId: organization?.id ?? '',
     role: member?.role ?? 'collaborator',
   });
 

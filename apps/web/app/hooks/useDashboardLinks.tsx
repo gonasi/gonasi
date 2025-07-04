@@ -64,7 +64,7 @@ export function useDashboardLinks({
   const adminOnly: OrganizationRolesEnumTypes[] = ['owner', 'admin'];
 
   const DASHBOARD_LINKS: DashboardLink[] = [
-    { name: 'Dashboard', to: `/${organizationId}`, icon: HomeIcon, roles: allRoles },
+    { name: 'Dashboard', to: `/${organizationId}/dashboard`, icon: HomeIcon, roles: allRoles },
     {
       name: 'Members',
       to: `/${organizationId}/members`,
@@ -103,7 +103,7 @@ export function useDashboardLinks({
     },
     {
       name: 'Settings',
-      to: `/${organizationId}/settings/organization-profile`,
+      to: `/${organizationId}/settings`,
       icon: SettingsIcon,
       roles: adminOnly,
     },

@@ -57,7 +57,7 @@ export async function action({ request }: Route.ActionArgs) {
   });
 
   return success
-    ? redirectWithSuccess(`/${data?.active_organization_id}`, message)
+    ? redirectWithSuccess(`/${data?.active_organization_id}/dashboard`, message)
     : dataWithError(null, message);
 }
 

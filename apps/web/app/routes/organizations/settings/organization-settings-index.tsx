@@ -1,4 +1,5 @@
-import { Outlet, useOutletContext } from 'react-router';
+import { useEffect } from 'react';
+import { Outlet, useLocation, useNavigate, useOutletContext } from 'react-router';
 import { Building, Lock } from 'lucide-react';
 
 import type { Route } from './+types/organization-settings-index';
@@ -24,7 +25,22 @@ export default function OrganizationSettingsIndex({ params }: Route.ComponentPro
     organization: OrganizationLoaderData;
     member: MemberLoaderData;
   }>();
-  // TODO: Only owner and admin can access - fetch from outlet context user role
+
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    const basePath = `/${params.organizationId}/settings`;
+
+    // Only redirect if we're exactly on the base path
+    if (location.pathname === basePath) {
+      if (member.role === 'admin' || member.role === 'owner') {
+        navigate(`${basePath}/organization-profile`, { replace: true });
+      } else {
+        navigate(`/${params.organizationId}`, { replace: true });
+      }
+    }
+  }, [location.pathname, member.role, params.organizationId, navigate]);
 
   const sections = [
     {
