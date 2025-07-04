@@ -23,7 +23,7 @@ import { useIsPending } from '~/utils/misc';
 // Page meta with a relaxed vibe
 export function meta() {
   return [
-    { title: 'Tweak Your Course Vibe | Gonasi' },
+    { title: 'Tweak Your Course Vibe • Gonasi' },
     {
       name: 'description',
       content: 'Switch up your course category to keep things fresh — it only takes a sec.',

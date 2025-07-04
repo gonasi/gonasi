@@ -2,7 +2,7 @@ insert into public.tier_limits (
   tier,
   max_departments_per_org,
   storage_limit_mb_per_org,
-  max_admins_per_org,
+  max_members_per_org,
   max_collaborators_per_course,
   max_free_courses_per_org,
   max_students_per_course,
@@ -20,7 +20,7 @@ insert into public.tier_limits (
 ('launch',
   3,                      -- max_departments_per_org (allow basic team/org structure)
   1000,                   -- storage_limit_mb_per_org (1 GB - enough for interactive content)
-  3,                      -- max_admins_per_org (small school team)
+  3,                      -- max_members_per_org (small school team)
   10,                     -- max_collaborators_per_course (encourage teamwork)
   3,                      -- max_free_courses_per_org (enough to test and showcase)
   100,                    -- max_students_per_course (enough for initial cohorts)
@@ -38,7 +38,7 @@ insert into public.tier_limits (
 ('scale',
   15,                     -- max_departments_per_org (multi-department schools/orgs)
   5000,                   -- storage_limit_mb_per_org (5 GB)
-  10,                     -- max_admins_per_org (enough for departmental control)
+  10,                     -- max_members_per_org (enough for departmental control)
   25,                     -- max_collaborators_per_course (rich course creation teams)
   10,                     -- max_free_courses_per_org (support generous freemium model)
   1000,                   -- max_students_per_course (supports full school term)
@@ -56,7 +56,7 @@ insert into public.tier_limits (
 ('impact',
   50,                     -- max_departments_per_org
   25000,                  -- storage_limit_mb_per_org (25 GB for videos/media)
-  25,                     -- max_admins_per_org
+  25,                     -- max_members_per_org
   60,                     -- max_collaborators_per_course
   25,                     -- max_free_courses_per_org
   10000,                  -- max_students_per_course
@@ -74,7 +74,7 @@ insert into public.tier_limits (
 ('enterprise',
   9999,                   -- max_departments_per_org (unlimited)
   100000,                 -- storage_limit_mb_per_org (100 GB)
-  999,                    -- max_admins_per_org
+  999,                    -- max_members_per_org
   999,                    -- max_collaborators_per_course
   999,                    -- max_free_courses_per_org
   999999,                 -- max_students_per_course

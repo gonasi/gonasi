@@ -20,7 +20,7 @@ import { useIsPending } from '~/utils/misc';
 // SEO metadata
 export function meta() {
   return [
-    { title: 'Create a New Course | Gonasi' },
+    { title: 'Create a New Course • Gonasi' },
     {
       name: 'description',
       content:

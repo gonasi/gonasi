@@ -11,7 +11,7 @@ interface TierLimitSeed {
   tier: Tier;
   max_departments_per_org: number;
   storage_limit_mb_per_org: number;
-  max_admins_per_org: number;
+  max_members_per_org: number;
   max_collaborators_per_course: number;
   max_free_courses_per_org: number;
   max_students_per_course: number;
@@ -30,7 +30,7 @@ const tierLimits: TierLimitSeed[] = [
     tier: 'launch',
     max_departments_per_org: 3,
     storage_limit_mb_per_org: 1000,
-    max_admins_per_org: 3,
+    max_members_per_org: 3,
     max_collaborators_per_course: 10,
     max_free_courses_per_org: 3,
     max_students_per_course: 100,
@@ -47,7 +47,7 @@ const tierLimits: TierLimitSeed[] = [
     tier: 'scale',
     max_departments_per_org: 15,
     storage_limit_mb_per_org: 5000,
-    max_admins_per_org: 10,
+    max_members_per_org: 10,
     max_collaborators_per_course: 25,
     max_free_courses_per_org: 10,
     max_students_per_course: 1000,
@@ -64,7 +64,7 @@ const tierLimits: TierLimitSeed[] = [
     tier: 'impact',
     max_departments_per_org: 50,
     storage_limit_mb_per_org: 25000,
-    max_admins_per_org: 25,
+    max_members_per_org: 25,
     max_collaborators_per_course: 60,
     max_free_courses_per_org: 25,
     max_students_per_course: 10000,
@@ -81,7 +81,7 @@ const tierLimits: TierLimitSeed[] = [
     tier: 'enterprise',
     max_departments_per_org: 9999,
     storage_limit_mb_per_org: 100000,
-    max_admins_per_org: 999,
+    max_members_per_org: 999,
     max_collaborators_per_course: 999,
     max_free_courses_per_org: 999,
     max_students_per_course: 999999,

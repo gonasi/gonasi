@@ -23,7 +23,7 @@ import { useIsPending } from '~/utils/misc';
 // Meta
 export function meta() {
   return [
-    { title: 'Course Subcategory, Remixed | Gonasi' },
+    { title: 'Course Subcategory, Remixed • Gonasi' },
     {
       name: 'description',
       content:

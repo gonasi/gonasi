@@ -18,7 +18,7 @@ import { useIsPending } from '~/utils/misc';
 
 export function meta({ data }: { data: { title?: string; description?: string } }) {
   return [
-    { title: data?.title ? `${data.title} | Gonasi` : 'Gonasi' },
+    { title: data?.title ? `${data.title} • Gonasi` : 'Gonasi' },
     { name: 'description', content: data?.description || 'Explore learning paths on Gonasi.' },
   ];
 }

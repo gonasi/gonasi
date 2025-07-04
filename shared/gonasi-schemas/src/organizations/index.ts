@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { OrganizationRolesEnum } from './organizations-profile-schema';
+
 export * from './organizations-profile-schema';
 
 const OrganizationNameSchema = z
@@ -46,3 +48,28 @@ export const SetActiveOrganizationSchema = z.object({
 });
 
 export type SetActiveOrganizationSchemaTypes = z.infer<typeof SetActiveOrganizationSchema>;
+
+export const InviteMemberToOrganizationSchema = z.object({
+  organizationId: z
+    .string({
+      required_error: 'Organization ID is required.',
+      invalid_type_error: 'Organization ID must be a string.',
+    })
+    .uuid({ message: 'Invalid organization ID.' }),
+
+  email: z
+    .string({
+      required_error: 'Email is required.',
+      invalid_type_error: 'Email must be a string.',
+    })
+    .email({ message: 'Please provide a valid email address.' }),
+
+  role: OrganizationRolesEnum.default('editor').refine(
+    (val) => val !== 'owner', // Prevent inviting someone as owner
+    { message: 'You cannot invite someone as the owner.' },
+  ),
+});
+
+export type InviteMemberToOrganizationSchemaTypes = z.infer<
+  typeof InviteMemberToOrganizationSchema
+>;

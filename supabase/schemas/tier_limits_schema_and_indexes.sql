@@ -72,7 +72,7 @@ create table tier_limits (
   storage_limit_mb_per_org integer not null,
 
   -- Team size
-  max_admins_per_org integer not null,
+  max_members_per_org integer not null,
   max_collaborators_per_course integer not null,
 
   -- Course-related limits

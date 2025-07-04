@@ -22,7 +22,7 @@ import { useIsPending } from '~/utils/misc';
 // Meta info for the route
 export function meta() {
   return [
-    { title: 'Add a New Course Chapter | Gonasi Course Builder' },
+    { title: 'Add a New Course Chapter • Gonasi Course Builder' },
     {
       name: 'description',
       content:

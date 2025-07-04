@@ -23,7 +23,7 @@ import { useIsPending } from '~/utils/misc';
 
 export function meta() {
   return [
-    { title: 'Shape Your Pathway | Gonasi' },
+    { title: 'Shape Your Pathway • Gonasi' },
     {
       name: 'description',
       content: "Give your pathway a fresh vibe — let's get you set up with Gonasi.",

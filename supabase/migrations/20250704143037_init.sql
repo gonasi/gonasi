@@ -57,6 +57,26 @@ create table "public"."lesson_types" (
 
 alter table "public"."lesson_types" enable row level security;
 
+create table "public"."organization_invites" (
+    "id" uuid not null default gen_random_uuid(),
+    "organization_id" uuid not null,
+    "email" text not null,
+    "role" org_role not null,
+    "invited_by" uuid not null,
+    "token" text not null,
+    "resend_count" integer not null default 0,
+    "last_sent_at" timestamp with time zone not null default now(),
+    "expires_at" timestamp with time zone not null,
+    "accepted_at" timestamp with time zone,
+    "accepted_by" uuid,
+    "revoked_at" timestamp with time zone,
+    "created_at" timestamp with time zone not null default now(),
+    "updated_at" timestamp with time zone not null default now()
+);
+
+
+alter table "public"."organization_invites" enable row level security;
+
 create table "public"."organization_members" (
     "id" uuid not null default gen_random_uuid(),
     "organization_id" uuid not null,
@@ -67,6 +87,8 @@ create table "public"."organization_members" (
     "updated_at" timestamp with time zone not null default now()
 );
 
+
+alter table "public"."organization_members" enable row level security;
 
 create table "public"."organizations" (
     "id" uuid not null default uuid_generate_v4(),
@@ -135,7 +157,7 @@ create table "public"."tier_limits" (
     "tier" subscription_tier not null,
     "max_departments_per_org" integer not null,
     "storage_limit_mb_per_org" integer not null,
-    "max_admins_per_org" integer not null,
+    "max_members_per_org" integer not null,
     "max_collaborators_per_course" integer not null,
     "max_free_courses_per_org" integer not null,
     "max_students_per_course" integer not null,
@@ -179,6 +201,18 @@ CREATE INDEX idx_lesson_types_created_by ON public.lesson_types USING btree (cre
 
 CREATE INDEX idx_lesson_types_updated_by ON public.lesson_types USING btree (updated_by);
 
+CREATE INDEX idx_org_invites__accepted_by ON public.organization_invites USING btree (accepted_by);
+
+CREATE INDEX idx_org_invites__email ON public.organization_invites USING btree (email);
+
+CREATE INDEX idx_org_invites__expires_at ON public.organization_invites USING btree (expires_at);
+
+CREATE INDEX idx_org_invites__invited_by ON public.organization_invites USING btree (invited_by);
+
+CREATE INDEX idx_org_invites__organization_id ON public.organization_invites USING btree (organization_id);
+
+CREATE INDEX idx_org_invites__token ON public.organization_invites USING btree (token);
+
 CREATE INDEX idx_organizations_created_at ON public.organizations USING btree (created_at);
 
 CREATE INDEX idx_organizations_created_by ON public.organizations USING btree (created_by);
@@ -213,6 +247,12 @@ CREATE UNIQUE INDEX lesson_types_pkey ON public.lesson_types USING btree (id);
 
 CREATE UNIQUE INDEX one_owner_per_organization ON public.organization_members USING btree (organization_id) WHERE (role = 'owner'::org_role);
 
+CREATE UNIQUE INDEX organization_invites_organization_id_email_key ON public.organization_invites USING btree (organization_id, email);
+
+CREATE UNIQUE INDEX organization_invites_pkey ON public.organization_invites USING btree (id);
+
+CREATE UNIQUE INDEX organization_invites_token_key ON public.organization_invites USING btree (token);
+
 CREATE INDEX organization_members_invited_by_idx ON public.organization_members USING btree (invited_by);
 
 CREATE INDEX organization_members_organization_id_idx ON public.organization_members USING btree (organization_id);
@@ -241,6 +281,8 @@ CREATE UNIQUE INDEX tier_limits_pkey ON public.tier_limits USING btree (tier);
 
 CREATE UNIQUE INDEX uniq_course_sub_categories_name_per_category ON public.course_sub_categories USING btree (category_id, name);
 
+CREATE UNIQUE INDEX unique_pending_invite_per_user ON public.organization_invites USING btree (organization_id, email) WHERE (accepted_at IS NULL);
+
 CREATE UNIQUE INDEX user_roles_pkey ON public.user_roles USING btree (id);
 
 CREATE UNIQUE INDEX user_roles_user_id_role_key ON public.user_roles USING btree (user_id, role);
@@ -250,6 +292,8 @@ alter table "public"."course_categories" add constraint "course_categories_pkey"
 alter table "public"."course_sub_categories" add constraint "course_sub_categories_pkey" PRIMARY KEY using index "course_sub_categories_pkey";
 
 alter table "public"."lesson_types" add constraint "lesson_types_pkey" PRIMARY KEY using index "lesson_types_pkey";
+
+alter table "public"."organization_invites" add constraint "organization_invites_pkey" PRIMARY KEY using index "organization_invites_pkey";
 
 alter table "public"."organization_members" add constraint "organization_members_pkey" PRIMARY KEY using index "organization_members_pkey";
 
@@ -306,6 +350,22 @@ alter table "public"."lesson_types" add constraint "lesson_types_name_key" UNIQU
 alter table "public"."lesson_types" add constraint "lesson_types_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
 
 alter table "public"."lesson_types" validate constraint "lesson_types_updated_by_fkey";
+
+alter table "public"."organization_invites" add constraint "organization_invites_accepted_by_fkey" FOREIGN KEY (accepted_by) REFERENCES auth.users(id) not valid;
+
+alter table "public"."organization_invites" validate constraint "organization_invites_accepted_by_fkey";
+
+alter table "public"."organization_invites" add constraint "organization_invites_invited_by_fkey" FOREIGN KEY (invited_by) REFERENCES auth.users(id) not valid;
+
+alter table "public"."organization_invites" validate constraint "organization_invites_invited_by_fkey";
+
+alter table "public"."organization_invites" add constraint "organization_invites_organization_id_email_key" UNIQUE using index "organization_invites_organization_id_email_key";
+
+alter table "public"."organization_invites" add constraint "organization_invites_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE not valid;
+
+alter table "public"."organization_invites" validate constraint "organization_invites_organization_id_fkey";
+
+alter table "public"."organization_invites" add constraint "organization_invites_token_key" UNIQUE using index "organization_invites_token_key";
 
 alter table "public"."organization_members" add constraint "organization_members_invited_by_fkey" FOREIGN KEY (invited_by) REFERENCES auth.users(id) not valid;
 
@@ -470,6 +530,36 @@ end;
 $function$
 ;
 
+CREATE OR REPLACE FUNCTION public.can_add_org_member(organization_id uuid)
+ RETURNS boolean
+ LANGUAGE sql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+  with active_members as (
+    select count(*) as count
+    from public.organization_members om
+    where om.organization_id = $1
+  ),
+  pending_invites as (
+    select count(*) as count
+    from public.organization_invites oi
+    where oi.organization_id = $1
+      and oi.accepted_at is null
+      and oi.expires_at > now()
+      and (oi.revoked_at is null)
+  ),
+  limits as (
+    select tl.max_members_per_org
+    from public.organizations o
+    join public.tier_limits tl on o.tier = tl.tier
+    where o.id = $1
+  )
+  select (am.count + pi.count) < limits.max_members_per_org
+  from active_members am, pending_invites pi, limits;
+$function$
+;
+
 CREATE OR REPLACE FUNCTION public.can_create_org_under_limit()
  RETURNS boolean
  LANGUAGE sql
@@ -479,6 +569,29 @@ AS $function$
   from public.organizations
   where owned_by = (select auth.uid())
     and tier = 'launch';
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.can_manage_organization_member(target_org_id uuid, current_user_id uuid, required_role text DEFAULT 'admin'::text)
+ RETURNS boolean
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+declare
+  user_role text;
+begin
+  select role into user_role
+  from public.organization_members
+  where organization_id = target_org_id
+    and user_id = current_user_id;
+  
+  return case
+    when required_role = 'owner' then user_role = 'owner'
+    when required_role = 'admin' then user_role in ('owner', 'admin')
+    else false
+  end;
+end;
 $function$
 ;
 
@@ -511,6 +624,19 @@ begin
   event := jsonb_set(event, '{claims}', claims);
   return event;
 end;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.get_tier_limits_for_org(org_id uuid)
+ RETURNS json
+ LANGUAGE sql
+ STABLE
+ SET search_path TO ''
+AS $function$
+  select row_to_json(tl)
+  from public.organizations o
+  join public.tier_limits tl on tl.tier = o.tier
+  where o.id = org_id
 $function$
 ;
 
@@ -582,15 +708,17 @@ CREATE OR REPLACE FUNCTION public.rpc_verify_and_set_active_organization(organiz
  SET search_path TO ''
 AS $function$
 declare
-  org public.organizations;                  
-  member public.organization_members;        
+  org public.organizations;
+  member public.organization_members;
   profile_active_org_id uuid;
-  current_user_id uuid;                
+  current_user_id uuid;
+  can_add boolean;
+  tier_limits_json json;
 begin
-  -- Get the current authenticated user's ID
+  -- Step 0: Get the current authenticated user's ID
   current_user_id := (select auth.uid());
-  
-  -- Ensure user is authenticated
+
+  -- Step 1: Ensure user is authenticated
   if current_user_id is null then
     return json_build_object(
       'success', false,
@@ -599,10 +727,10 @@ begin
     );
   end if;
 
-  -- Step 1: Ensure user is a member of the organization
+  -- Step 2: Ensure user is a member of the organization
   select * into member
   from public.organization_members om
-  where om.organization_id = rpc_verify_and_set_active_organization.organization_id_from_url
+  where om.organization_id = organization_id_from_url
     and om.user_id = current_user_id;
 
   if not found then
@@ -613,46 +741,63 @@ begin
     );
   end if;
 
-  -- Step 2: Fetch user's current active organization
+  -- Step 3: Fetch user's current active organization
   select p.active_organization_id into profile_active_org_id
   from public.profiles p
   where p.id = current_user_id;
 
-  -- Step 3: If already active, just return data silently
-  if profile_active_org_id = rpc_verify_and_set_active_organization.organization_id_from_url then
+  -- Step 4: If already active, return current context
+  if profile_active_org_id = organization_id_from_url then
+  begin
     select * into org
     from public.organizations o
-    where o.id = rpc_verify_and_set_active_organization.organization_id_from_url;
+    where o.id = organization_id_from_url;
+
+    can_add := public.can_add_org_member(organization_id_from_url);
+    tier_limits_json := public.get_tier_limits_for_org(organization_id_from_url);
 
     return json_build_object(
       'success', true,
       'message', null,
       'data', json_build_object(
         'organization', to_json(org),
-        'member', to_json(member)
+        'member', to_json(member),
+        'permissions', json_build_object(
+          'can_add_org_member', can_add
+        ),
+        'tier_limits', tier_limits_json
       )
     );
+  end;
   end if;
 
-  -- Step 4: Update profile to switch active organization and mode
+  -- Step 5: Update profile to set active organization and mode
   update public.profiles p
   set
-    active_organization_id = rpc_verify_and_set_active_organization.organization_id_from_url,
+    active_organization_id = organization_id_from_url,
     mode = 'organization'
   where p.id = current_user_id;
 
-  -- Step 5: Fetch the updated organization
+  -- Step 6: Fetch updated organization
   select * into org
   from public.organizations o
-  where o.id = rpc_verify_and_set_active_organization.organization_id_from_url;
+  where o.id = organization_id_from_url;
 
-  -- Step 6: Return success with updated state
+  -- Step 7: Get permissions and tier info
+  can_add := public.can_add_org_member(organization_id_from_url);
+  tier_limits_json := public.get_tier_limits_for_org(organization_id_from_url);
+
+  -- Step 8: Return updated org context
   return json_build_object(
     'success', true,
     'message', 'Active organization has been changed',
     'data', json_build_object(
       'organization', to_json(org),
-      'member', to_json(member)
+      'member', to_json(member),
+      'permissions', json_build_object(
+        'can_add_org_member', can_add
+      ),
+      'tier_limits', tier_limits_json
     )
   );
 end;
@@ -796,6 +941,48 @@ grant trigger on table "public"."lesson_types" to "service_role";
 grant truncate on table "public"."lesson_types" to "service_role";
 
 grant update on table "public"."lesson_types" to "service_role";
+
+grant delete on table "public"."organization_invites" to "anon";
+
+grant insert on table "public"."organization_invites" to "anon";
+
+grant references on table "public"."organization_invites" to "anon";
+
+grant select on table "public"."organization_invites" to "anon";
+
+grant trigger on table "public"."organization_invites" to "anon";
+
+grant truncate on table "public"."organization_invites" to "anon";
+
+grant update on table "public"."organization_invites" to "anon";
+
+grant delete on table "public"."organization_invites" to "authenticated";
+
+grant insert on table "public"."organization_invites" to "authenticated";
+
+grant references on table "public"."organization_invites" to "authenticated";
+
+grant select on table "public"."organization_invites" to "authenticated";
+
+grant trigger on table "public"."organization_invites" to "authenticated";
+
+grant truncate on table "public"."organization_invites" to "authenticated";
+
+grant update on table "public"."organization_invites" to "authenticated";
+
+grant delete on table "public"."organization_invites" to "service_role";
+
+grant insert on table "public"."organization_invites" to "service_role";
+
+grant references on table "public"."organization_invites" to "service_role";
+
+grant select on table "public"."organization_invites" to "service_role";
+
+grant trigger on table "public"."organization_invites" to "service_role";
+
+grant truncate on table "public"."organization_invites" to "service_role";
+
+grant update on table "public"."organization_invites" to "service_role";
 
 grant delete on table "public"."organization_members" to "anon";
 
@@ -1123,6 +1310,96 @@ as permissive
 for select
 to authenticated, anon
 using (true);
+
+
+create policy "delete: org admins only"
+on "public"."organization_invites"
+as permissive
+for delete
+to authenticated
+using (can_manage_organization_member(organization_id, ( SELECT auth.uid() AS uid), 'admin'::text));
+
+
+create policy "insert: org admins with member limit"
+on "public"."organization_invites"
+as permissive
+for insert
+to authenticated
+with check ((can_manage_organization_member(organization_id, ( SELECT auth.uid() AS uid), 'admin'::text) AND (invited_by = ( SELECT auth.uid() AS uid)) AND can_add_org_member(organization_id) AND ((role <> 'admin'::org_role) OR can_manage_organization_member(organization_id, ( SELECT auth.uid() AS uid), 'owner'::text))));
+
+
+create policy "select: anonymous by token"
+on "public"."organization_invites"
+as permissive
+for select
+to anon
+using (((expires_at > now()) AND (accepted_at IS NULL)));
+
+
+create policy "select: org admins and accepted invites"
+on "public"."organization_invites"
+as permissive
+for select
+to authenticated
+using ((can_manage_organization_member(organization_id, ( SELECT auth.uid() AS uid), 'admin'::text) OR (accepted_by = ( SELECT auth.uid() AS uid))));
+
+
+create policy "update: org admins and acceptance"
+on "public"."organization_invites"
+as permissive
+for update
+to authenticated
+using ((can_manage_organization_member(organization_id, ( SELECT auth.uid() AS uid), 'admin'::text) OR (accepted_by = ( SELECT auth.uid() AS uid))))
+with check ((
+CASE
+    WHEN (role = 'admin'::org_role) THEN can_manage_organization_member(organization_id, ( SELECT auth.uid() AS uid), 'owner'::text)
+    ELSE true
+END AND
+CASE
+    WHEN (accepted_by IS NOT NULL) THEN (accepted_by = ( SELECT auth.uid() AS uid))
+    ELSE true
+END AND
+CASE
+    WHEN (accepted_at IS NOT NULL) THEN can_add_org_member(organization_id)
+    ELSE true
+END));
+
+
+create policy "delete: authorized removal"
+on "public"."organization_members"
+as permissive
+for delete
+to authenticated
+using (((role <> 'admin'::org_role) AND can_manage_organization_member(organization_id, ( SELECT auth.uid() AS uid), 'admin'::text)));
+
+
+create policy "insert: authorized users"
+on "public"."organization_members"
+as permissive
+for insert
+to authenticated
+with check ((((user_id = ( SELECT auth.uid() AS uid)) AND (role = 'owner'::org_role)) OR can_manage_organization_member(organization_id, ( SELECT auth.uid() AS uid), 'admin'::text)));
+
+
+create policy "select: members of same org"
+on "public"."organization_members"
+as permissive
+for select
+to authenticated
+using ((can_manage_organization_member(organization_id, ( SELECT auth.uid() AS uid), 'admin'::text) OR (user_id = ( SELECT auth.uid() AS uid))));
+
+
+create policy "update: authorized role changes"
+on "public"."organization_members"
+as permissive
+for update
+to authenticated
+using (can_manage_organization_member(organization_id, ( SELECT auth.uid() AS uid), 'admin'::text))
+with check (
+CASE
+    WHEN (role = 'admin'::org_role) THEN can_manage_organization_member(organization_id, ( SELECT auth.uid() AS uid), 'owner'::text)
+    ELSE true
+END);
 
 
 create policy "delete: owner only"

@@ -12,7 +12,7 @@ import { createClient } from '~/lib/supabase/supabase.server';
 
 export function meta() {
   return [
-    { title: 'Learning Pathways | Gonasi' },
+    { title: 'Learning Pathways • Gonasi' },
     {
       name: 'description',
       content:
@@ -22,7 +22,7 @@ export function meta() {
       name: 'keywords',
       content: 'learning pathways, online courses, skill development, education, Gonasi',
     },
-    { property: 'og:title', content: 'Learning Pathways | Gonasi' },
+    { property: 'og:title', content: 'Learning Pathways • Gonasi' },
     {
       property: 'og:description',
       content:

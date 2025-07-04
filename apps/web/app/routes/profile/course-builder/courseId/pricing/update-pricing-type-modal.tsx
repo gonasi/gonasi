@@ -25,7 +25,7 @@ const resolver = zodResolver(UpdateCoursePricingTypeSchema);
 
 export function meta() {
   return [
-    { title: 'Update Course Pricing | Gonasi' },
+    { title: 'Update Course Pricing • Gonasi' },
     {
       name: 'description',
       content:

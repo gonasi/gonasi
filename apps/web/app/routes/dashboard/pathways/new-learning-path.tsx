@@ -18,7 +18,7 @@ import { useIsPending } from '~/utils/misc';
 
 export function meta() {
   return [
-    { title: 'Create a Learning Path | Gonasi' },
+    { title: 'Create a Learning Path • Gonasi' },
     {
       name: 'description',
       content:
@@ -28,7 +28,7 @@ export function meta() {
       name: 'keywords',
       content: 'learning path, course creation, education, online learning, Gonasi',
     },
-    { property: 'og:title', content: 'Create a Learning Path | Gonasi' },
+    { property: 'og:title', content: 'Create a Learning Path • Gonasi' },
     {
       property: 'og:description',
       content:

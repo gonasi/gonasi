@@ -32,7 +32,9 @@ export default [
 
   layout('routes/layouts/organizations/organizations-layout.tsx', [
     route(':organizationId/dashboard', 'routes/organizations/dashboard/dashboard-index.tsx'),
-    route(':organizationId/members', 'routes/organizations/members/members-index.tsx'),
+    route(':organizationId/members', 'routes/organizations/members/members-index.tsx', [
+      route('invite-member', 'routes/organizations/members/invite-member.tsx'),
+    ]),
     route(':organizationId/courses', 'routes/organizations/courses/courses-index.tsx'),
     route(
       ':organizationId/settings',

@@ -21,7 +21,7 @@ import { useIsPending } from '~/utils/misc';
 
 // SEO metadata for the Sign Up page
 export function meta() {
-  return [{ title: 'Sign up | Gonasi' }, { name: 'description', content: 'Welcome to Gonasi' }];
+  return [{ title: 'Sign up • Gonasi' }, { name: 'description', content: 'Welcome to Gonasi' }];
 }
 
 const resolver = zodResolver(SignupFormSchema);

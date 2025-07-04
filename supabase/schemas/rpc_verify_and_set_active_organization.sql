@@ -1,21 +1,27 @@
+-- ===================================================
+-- Function: public.rpc_verify_and_set_active_organization
+-- Description: Sets active org if user is a member and returns org context
+-- ===================================================
 create or replace function public.rpc_verify_and_set_active_organization(
-  organization_id_from_url uuid  -- Org ID from URL
+  organization_id_from_url uuid
 )
 returns json
 language plpgsql
-security definer  -- This ensures the function runs with elevated privileges
+security definer
 set search_path = ''
 as $$
 declare
-  org public.organizations;                  
-  member public.organization_members;        
+  org public.organizations;
+  member public.organization_members;
   profile_active_org_id uuid;
-  current_user_id uuid;                
+  current_user_id uuid;
+  can_add boolean;
+  tier_limits_json json;
 begin
-  -- Get the current authenticated user's ID
+  -- Step 0: Get the current authenticated user's ID
   current_user_id := (select auth.uid());
-  
-  -- Ensure user is authenticated
+
+  -- Step 1: Ensure user is authenticated
   if current_user_id is null then
     return json_build_object(
       'success', false,
@@ -24,10 +30,10 @@ begin
     );
   end if;
 
-  -- Step 1: Ensure user is a member of the organization
+  -- Step 2: Ensure user is a member of the organization
   select * into member
   from public.organization_members om
-  where om.organization_id = rpc_verify_and_set_active_organization.organization_id_from_url
+  where om.organization_id = organization_id_from_url
     and om.user_id = current_user_id;
 
   if not found then
@@ -38,46 +44,63 @@ begin
     );
   end if;
 
-  -- Step 2: Fetch user's current active organization
+  -- Step 3: Fetch user's current active organization
   select p.active_organization_id into profile_active_org_id
   from public.profiles p
   where p.id = current_user_id;
 
-  -- Step 3: If already active, just return data silently
-  if profile_active_org_id = rpc_verify_and_set_active_organization.organization_id_from_url then
+  -- Step 4: If already active, return current context
+  if profile_active_org_id = organization_id_from_url then
+  begin
     select * into org
     from public.organizations o
-    where o.id = rpc_verify_and_set_active_organization.organization_id_from_url;
+    where o.id = organization_id_from_url;
+
+    can_add := public.can_add_org_member(organization_id_from_url);
+    tier_limits_json := public.get_tier_limits_for_org(organization_id_from_url);
 
     return json_build_object(
       'success', true,
       'message', null,
       'data', json_build_object(
         'organization', to_json(org),
-        'member', to_json(member)
+        'member', to_json(member),
+        'permissions', json_build_object(
+          'can_add_org_member', can_add
+        ),
+        'tier_limits', tier_limits_json
       )
     );
+  end;
   end if;
 
-  -- Step 4: Update profile to switch active organization and mode
+  -- Step 5: Update profile to set active organization and mode
   update public.profiles p
   set
-    active_organization_id = rpc_verify_and_set_active_organization.organization_id_from_url,
+    active_organization_id = organization_id_from_url,
     mode = 'organization'
   where p.id = current_user_id;
 
-  -- Step 5: Fetch the updated organization
+  -- Step 6: Fetch updated organization
   select * into org
   from public.organizations o
-  where o.id = rpc_verify_and_set_active_organization.organization_id_from_url;
+  where o.id = organization_id_from_url;
 
-  -- Step 6: Return success with updated state
+  -- Step 7: Get permissions and tier info
+  can_add := public.can_add_org_member(organization_id_from_url);
+  tier_limits_json := public.get_tier_limits_for_org(organization_id_from_url);
+
+  -- Step 8: Return updated org context
   return json_build_object(
     'success', true,
     'message', 'Active organization has been changed',
     'data', json_build_object(
       'organization', to_json(org),
-      'member', to_json(member)
+      'member', to_json(member),
+      'permissions', json_build_object(
+        'can_add_org_member', can_add
+      ),
+      'tier_limits', tier_limits_json
     )
   );
 end;

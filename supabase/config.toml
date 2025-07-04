@@ -81,6 +81,8 @@ schema_paths = [
 
   # members schema
   './schemas/organization_members_schema_indexes.sql',
+  
+  './schemas/organization_invites_schema_and_indexes.sql',
 
   # add modes profile migration
   './schemas/profiles_add_modes_migration.sql',
@@ -92,8 +94,12 @@ schema_paths = [
   # members rls
   './schemas/organizations_rls.sql',
   './schemas/organizations_functions_triggers.sql',
+  './schemas/organization_members_rls.sql',
+  './schemas/organization_invites_rls.sql',
+
 
   # rpc profiles, orgs
+  './schemas/get_tier_limits_for_org_functions.sql',
   './schemas/rpc_verify_and_set_active_organization.sql',
 
 

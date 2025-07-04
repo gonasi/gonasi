@@ -29,7 +29,7 @@ export function meta({ data }: Route.MetaArgs) {
 
   if (!course) {
     return [
-      { title: 'Course Not Found | Gonasi' },
+      { title: 'Course Not Found • Gonasi' },
       {
         name: 'description',
         content: 'This course could not be found. Explore other learning opportunities on Gonasi.',
@@ -42,7 +42,7 @@ export function meta({ data }: Route.MetaArgs) {
 
   return [
     {
-      title: `${title} by ${username} | Gonasi`,
+      title: `${title} by ${username} • Gonasi`,
     },
     {
       name: 'description',

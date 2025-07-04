@@ -2,7 +2,7 @@ import { BannerCard } from '~/components/cards';
 
 export function meta() {
   return [
-    { title: 'Invite Collaborators | Gonasi' },
+    { title: 'Invite Collaborators • Gonasi' },
     {
       name: 'description',
       content:

@@ -38,7 +38,7 @@ import { formatCurrency } from '~/utils/format-currency';
 
 export function meta() {
   return [
-    { title: 'Course Pricing Overview | Gonasi' },
+    { title: 'Course Pricing Overview • Gonasi' },
     {
       name: 'description',
       content:

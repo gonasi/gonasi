@@ -42,36 +42,24 @@ export default function OrganizationSettingsIndex({ params }: Route.ComponentPro
     }
   }, [location.pathname, member.role, params.organizationId, navigate]);
 
-  const sections = [
+  const links = [
     {
-      heading: 'Organization Settings',
-      links: [
-        {
-          name: 'Org Profile',
-          to: `/${params.organizationId}/settings/organization-profile`,
-          icon: Building,
-        },
-        {
-          name: 'Login & Security',
-          to: `/${params.organizationId}/settings/organization-security`,
-          icon: Lock,
-        },
-      ],
+      name: 'Org Profile',
+      to: `/${params.organizationId}/settings/organization-profile`,
+      icon: Building,
+    },
+    {
+      name: 'Login & Security',
+      to: `/${params.organizationId}/settings/organization-security`,
+      icon: Lock,
     },
   ];
 
   return (
     <div className='mx-auto flex'>
       <aside className='border-r-border/50 sticky h-full min-h-screen w-fit flex-none border-r pl-0 md:w-48 md:pl-2 lg:w-56'>
-        {sections.map(({ heading, links }) => (
-          <div key={heading}>
-            <h2 className='font-secondary hidden py-2 font-semibold md:flex'>{heading}</h2>
-            <div className='flex flex-col space-y-4 py-4 md:space-y-1 md:py-1'>
-              {links.map(({ name, to, icon }) => (
-                <SideLink key={to} to={to} name={name} icon={icon} end />
-              ))}
-            </div>
-          </div>
+        {links.map(({ name, to, icon }) => (
+          <SideLink key={to} to={to} name={name} icon={icon} end />
         ))}
       </aside>
 

@@ -479,7 +479,7 @@ describe('Tier Limits RLS Policies', () => {
             tier: 'impact',
             max_departments_per_org: 7,
             storage_limit_mb_per_org: 5000,
-            max_admins_per_org: 3,
+            max_members_per_org: 3,
             max_collaborators_per_course: 10,
             max_free_courses_per_org: 4,
             max_students_per_course: 100,
@@ -550,7 +550,7 @@ describe('Tier Limits RLS Policies', () => {
         expect(data?.tier).toBe('enterprise');
         expect(data?.max_departments_per_org).toBe(-1);
         expect(data?.storage_limit_mb_per_org).toBe(100000);
-        expect(data?.max_admins_per_org).toBe(20);
+        expect(data?.max_members_per_org).toBe(20);
         expect(data?.max_collaborators_per_course).toBe(50);
         expect(data?.max_free_courses_per_org).toBe(10);
         expect(data?.max_students_per_course).toBe(1000);

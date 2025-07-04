@@ -52,7 +52,7 @@ const resolver = zodResolver(CoursePricingSchema);
 
 export function meta() {
   return [
-    { title: 'Manage Pricing Tier | Gonasi' },
+    { title: 'Manage Pricing Tier • Gonasi' },
     {
       name: 'description',
       content:

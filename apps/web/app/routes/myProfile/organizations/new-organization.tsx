@@ -22,7 +22,7 @@ import { useIsPending } from '~/utils/misc';
 
 export function meta() {
   return [
-    { title: 'Create Organization | Gonasi' },
+    { title: 'Create Organization • Gonasi' },
     {
       name: 'description',
       content:

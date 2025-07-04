@@ -230,6 +230,65 @@ export type Database = {
           },
         ]
       }
+      organization_invites: {
+        Row: {
+          accepted_at: string | null
+          accepted_by: string | null
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string
+          last_sent_at: string
+          organization_id: string
+          resend_count: number
+          revoked_at: string | null
+          role: Database["public"]["Enums"]["org_role"]
+          token: string
+          updated_at: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          created_at?: string
+          email: string
+          expires_at: string
+          id?: string
+          invited_by: string
+          last_sent_at?: string
+          organization_id: string
+          resend_count?: number
+          revoked_at?: string | null
+          role: Database["public"]["Enums"]["org_role"]
+          token: string
+          updated_at?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string
+          last_sent_at?: string
+          organization_id?: string
+          resend_count?: number
+          revoked_at?: string | null
+          role?: Database["public"]["Enums"]["org_role"]
+          token?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_invites_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organization_members: {
         Row: {
           created_at: string
@@ -508,11 +567,11 @@ export type Database = {
           ai_usage_limit_monthly: number | null
           analytics_level: Database["public"]["Enums"]["analytics_level"]
           custom_domains_enabled: boolean
-          max_admins_per_org: number
           max_collaborators_per_course: number
           max_custom_domains: number | null
           max_departments_per_org: number
           max_free_courses_per_org: number
+          max_members_per_org: number
           max_students_per_course: number
           platform_fee_percentage: number
           storage_limit_mb_per_org: number
@@ -525,11 +584,11 @@ export type Database = {
           ai_usage_limit_monthly?: number | null
           analytics_level: Database["public"]["Enums"]["analytics_level"]
           custom_domains_enabled?: boolean
-          max_admins_per_org: number
           max_collaborators_per_course: number
           max_custom_domains?: number | null
           max_departments_per_org: number
           max_free_courses_per_org: number
+          max_members_per_org: number
           max_students_per_course: number
           platform_fee_percentage?: number
           storage_limit_mb_per_org: number
@@ -542,11 +601,11 @@ export type Database = {
           ai_usage_limit_monthly?: number | null
           analytics_level?: Database["public"]["Enums"]["analytics_level"]
           custom_domains_enabled?: boolean
-          max_admins_per_org?: number
           max_collaborators_per_course?: number
           max_custom_domains?: number | null
           max_departments_per_org?: number
           max_free_courses_per_org?: number
+          max_members_per_org?: number
           max_students_per_course?: number
           platform_fee_percentage?: number
           storage_limit_mb_per_org?: number
@@ -632,12 +691,28 @@ export type Database = {
         }
         Returns: boolean
       }
+      can_add_org_member: {
+        Args: { organization_id: string }
+        Returns: boolean
+      }
       can_create_org_under_limit: {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      can_manage_organization_member: {
+        Args: {
+          target_org_id: string
+          current_user_id: string
+          required_role?: string
+        }
+        Returns: boolean
+      }
       custom_access_token_hook: {
         Args: { event: Json }
+        Returns: Json
+      }
+      get_tier_limits_for_org: {
+        Args: { org_id: string }
         Returns: Json
       }
       rpc_verify_and_set_active_organization: {

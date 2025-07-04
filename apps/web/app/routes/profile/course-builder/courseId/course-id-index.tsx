@@ -16,7 +16,7 @@ import { createClient } from '~/lib/supabase/supabase.server';
  */
 export function meta() {
   return [
-    { title: 'Course Overview | Gonasi' },
+    { title: 'Course Overview • Gonasi' },
     {
       name: 'description',
       content: 'Access overview and content structure for this course on Gonasi.',

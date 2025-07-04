@@ -42,6 +42,12 @@ export function meta({ data }: Route.MetaArgs) {
 type LoaderData = Awaited<ReturnType<typeof loader>>;
 export type OrganizationLoaderData = LoaderData['organization'];
 export type MemberLoaderData = LoaderData['member'];
+export type PermissionsLoaderData = LoaderData['permissions'];
+export type TierLimitsLoaderData = LoaderData['tier_limits'];
+
+export interface OrganizationsOutletContextType {
+  data: LoaderData;
+}
 
 export async function loader({ params, request }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
@@ -57,6 +63,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     throw redirect('/');
   }
 
+  console.log('result: ', result);
   return { ...result.data, message: result.message };
 }
 
@@ -84,7 +91,7 @@ export default function OrganizationsPlainLayout({ loaderData }: Route.Component
           member={member}
           loading={isActiveUserProfileLoading}
         />
-        <Outlet context={{ organization, member }} />
+        <Outlet context={{ data: loaderData }} />
       </div>
 
       <Modal open={showOrgSwitchModal} onOpenChange={setShowOrgSwitchModal}>

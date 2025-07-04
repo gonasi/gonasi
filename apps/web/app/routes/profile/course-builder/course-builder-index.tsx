@@ -19,7 +19,7 @@ export function meta({ params }: Route.MetaArgs) {
   const username = params.username;
   return [
     {
-      title: `Courses by ${username} | Gonasi`,
+      title: `Courses by ${username} • Gonasi`,
     },
     {
       name: 'description',
