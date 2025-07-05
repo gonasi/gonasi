@@ -23,7 +23,7 @@ export default function AllMembers({ params }: Route.ComponentProps) {
 
   return (
     <>
-      <section className='container mx-auto px-4 py-4 md:px-0'>
+      <section className='container mx-auto px-4 md:px-0'>
         <div className='bg-background/95 sticky -top-10 z-10'>
           <GoTabNav
             tabs={[

@@ -89,7 +89,7 @@ export default function InviteMember({ params }: Route.ComponentProps) {
       <Modal.Content size='md'>
         <Modal.Header
           title={can_add_org_member ? 'Invite New Member' : 'Member Limit Reached'}
-          closeRoute={`/${params.organizationId}/members`}
+          closeRoute={`/${params.organizationId}/members/invites`}
         />
         <Modal.Body className='px-4'>
           {can_add_org_member ? (
