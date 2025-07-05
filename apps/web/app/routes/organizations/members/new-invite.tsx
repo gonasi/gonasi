@@ -2,16 +2,17 @@ import { Form, useOutletContext } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ChevronRight } from 'lucide-react';
 import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
-import { dataWithError } from 'remix-toast';
+import { dataWithError, redirectWithSuccess } from 'remix-toast';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
 
+import { inviteOrganizationMember } from '@gonasi/database/organizations';
 import {
   InviteMemberToOrganizationSchema,
   type InviteMemberToOrganizationSchemaTypes,
   OrganizationRoleOptions,
 } from '@gonasi/schemas/organizations';
 
-import type { Route } from './+types/invite-member';
+import type { Route } from './+types/new-invite';
 
 import { Button } from '~/components/ui/button';
 import { GoInputField, GoSelectInputField } from '~/components/ui/forms/elements';
@@ -47,21 +48,16 @@ export async function action({ request, params }: Route.ActionArgs) {
 
   const { supabase } = createClient(request);
 
-  // const result = await inviteOrganizationMember(supabase, {
-  //   organization_id: params.organizationId,
-  //   email: data.email,
-  //   role: data.role,
-  // });
+  const result = await inviteOrganizationMember(supabase, data);
 
-  // if (!result.success) {
-  //   return dataWithError(null, result.message);
-  // }
+  if (!result.success) {
+    return dataWithError(null, result.message);
+  }
 
-  // return redirectWithSuccess(
-  //   `/${params.organizationId}/members`,
-  //   `Invitation sent to ${data.email}`,
-  // );
-  return true;
+  return redirectWithSuccess(
+    `/${params.organizationId}/members/invites`,
+    `Invitation sent to ${data.email}`,
+  );
 }
 
 export default function InviteMember({ params }: Route.ComponentProps) {

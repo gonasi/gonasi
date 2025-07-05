@@ -4,3 +4,4 @@ export * from './updateActiveOrganization';
 export * from './switchToPersonalMode';
 export * from './verifyAndSetActiveOrganization';
 export * from './fetchActiveOrganizationAndMember';
+export * from './members';
