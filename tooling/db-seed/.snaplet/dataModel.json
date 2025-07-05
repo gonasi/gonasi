@@ -3071,14 +3071,6 @@
       ],
       "uniqueConstraints": [
         {
-          "name": "organization_invites_organization_id_email_key",
-          "fields": [
-            "email",
-            "organization_id"
-          ],
-          "nullNotDistinct": false
-        },
-        {
           "name": "organization_invites_pkey",
           "fields": [
             "id"
@@ -3089,6 +3081,14 @@
           "name": "organization_invites_token_key",
           "fields": [
             "token"
+          ],
+          "nullNotDistinct": false
+        },
+        {
+          "name": "unique_pending_invite_per_user",
+          "fields": [
+            "email",
+            "organization_id"
           ],
           "nullNotDistinct": false
         }

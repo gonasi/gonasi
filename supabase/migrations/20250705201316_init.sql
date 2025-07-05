@@ -247,8 +247,6 @@ CREATE UNIQUE INDEX lesson_types_pkey ON public.lesson_types USING btree (id);
 
 CREATE UNIQUE INDEX one_owner_per_organization ON public.organization_members USING btree (organization_id) WHERE (role = 'owner'::org_role);
 
-CREATE UNIQUE INDEX organization_invites_organization_id_email_key ON public.organization_invites USING btree (organization_id, email);
-
 CREATE UNIQUE INDEX organization_invites_pkey ON public.organization_invites USING btree (id);
 
 CREATE UNIQUE INDEX organization_invites_token_key ON public.organization_invites USING btree (token);
@@ -281,7 +279,7 @@ CREATE UNIQUE INDEX tier_limits_pkey ON public.tier_limits USING btree (tier);
 
 CREATE UNIQUE INDEX uniq_course_sub_categories_name_per_category ON public.course_sub_categories USING btree (category_id, name);
 
-CREATE UNIQUE INDEX unique_pending_invite_per_user ON public.organization_invites USING btree (organization_id, email) WHERE (accepted_at IS NULL);
+CREATE UNIQUE INDEX unique_pending_invite_per_user ON public.organization_invites USING btree (organization_id, email) WHERE ((accepted_at IS NULL) AND (revoked_at IS NULL));
 
 CREATE UNIQUE INDEX user_roles_pkey ON public.user_roles USING btree (id);
 
@@ -358,8 +356,6 @@ alter table "public"."organization_invites" validate constraint "organization_in
 alter table "public"."organization_invites" add constraint "organization_invites_invited_by_fkey" FOREIGN KEY (invited_by) REFERENCES auth.users(id) not valid;
 
 alter table "public"."organization_invites" validate constraint "organization_invites_invited_by_fkey";
-
-alter table "public"."organization_invites" add constraint "organization_invites_organization_id_email_key" UNIQUE using index "organization_invites_organization_id_email_key";
 
 alter table "public"."organization_invites" add constraint "organization_invites_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE not valid;
 
@@ -546,8 +542,8 @@ AS $function$
     from public.organization_invites oi
     where oi.organization_id = $1
       and oi.accepted_at is null
+      and oi.revoked_at is null
       and oi.expires_at > now()
-      and (oi.revoked_at is null)
   ),
   limits as (
     select tl.max_members_per_org
@@ -1325,7 +1321,9 @@ on "public"."organization_invites"
 as permissive
 for insert
 to authenticated
-with check ((can_manage_organization_member(organization_id, ( SELECT auth.uid() AS uid), 'admin'::text) AND (invited_by = ( SELECT auth.uid() AS uid)) AND can_add_org_member(organization_id) AND ((role <> 'admin'::org_role) OR can_manage_organization_member(organization_id, ( SELECT auth.uid() AS uid), 'owner'::text))));
+with check ((can_manage_organization_member(organization_id, ( SELECT auth.uid() AS uid), 'admin'::text) AND (invited_by = ( SELECT auth.uid() AS uid)) AND can_add_org_member(organization_id) AND ((role <> 'admin'::org_role) OR can_manage_organization_member(organization_id, ( SELECT auth.uid() AS uid), 'owner'::text)) AND (email IS DISTINCT FROM ( SELECT profiles.email
+   FROM profiles
+  WHERE (profiles.id = auth.uid())))));
 
 
 create policy "select: anonymous by token"
@@ -1333,7 +1331,7 @@ on "public"."organization_invites"
 as permissive
 for select
 to anon
-using (((expires_at > now()) AND (accepted_at IS NULL)));
+using (((accepted_at IS NULL) AND (revoked_at IS NULL) AND (expires_at > now())));
 
 
 create policy "select: org admins and accepted invites"
@@ -1350,19 +1348,7 @@ as permissive
 for update
 to authenticated
 using ((can_manage_organization_member(organization_id, ( SELECT auth.uid() AS uid), 'admin'::text) OR (accepted_by = ( SELECT auth.uid() AS uid))))
-with check ((
-CASE
-    WHEN (role = 'admin'::org_role) THEN can_manage_organization_member(organization_id, ( SELECT auth.uid() AS uid), 'owner'::text)
-    ELSE true
-END AND
-CASE
-    WHEN (accepted_by IS NOT NULL) THEN (accepted_by = ( SELECT auth.uid() AS uid))
-    ELSE true
-END AND
-CASE
-    WHEN (accepted_at IS NOT NULL) THEN can_add_org_member(organization_id)
-    ELSE true
-END));
+with check ((((role <> 'admin'::org_role) OR can_manage_organization_member(organization_id, ( SELECT auth.uid() AS uid), 'owner'::text)) AND ((accepted_by IS NULL) OR (accepted_by = ( SELECT auth.uid() AS uid))) AND ((accepted_at IS NULL) OR can_add_org_member(organization_id)) AND ((revoked_at IS NULL) OR can_manage_organization_member(organization_id, ( SELECT auth.uid() AS uid), 'admin'::text))));
 
 
 create policy "delete: authorized removal"

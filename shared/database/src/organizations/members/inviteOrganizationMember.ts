@@ -1,17 +1,18 @@
+import { randomUUID } from 'crypto';
+
 import type { InviteMemberToOrganizationSchemaTypes } from '@gonasi/schemas/organizations';
 
-import { getUserId } from '../../auth';
 import type { TypedSupabaseClient } from '../../client';
+import { getUserProfile } from '../../profile';
 
 export const inviteOrganizationMember = async (
   supabase: TypedSupabaseClient,
   formData: InviteMemberToOrganizationSchemaTypes,
 ) => {
   try {
-    const userId = await getUserId(supabase);
+    const { user } = await getUserProfile(supabase);
     const { organizationId, email, role } = formData;
 
-    // Safely cast role to the expected literal union
     const validRoles = [
       'owner',
       'admin',
@@ -31,16 +32,38 @@ export const inviteOrganizationMember = async (
       };
     }
 
+    if (email === user?.email) {
+      return {
+        success: false,
+        message: `You can't invite yourself.`,
+        data: null,
+      };
+    }
+
+    // Generate a secure token
+    const token = randomUUID();
+
     const { data, error } = await supabase.from('organization_invites').insert({
       organization_id: organizationId,
       email,
       role: role as (typeof validRoles)[number],
-      invited_by: userId,
-      token: 'sometoken', // Replace with real token generation
+      invited_by: user?.id ?? '',
+      token,
+      resend_count: 0,
+      last_sent_at: new Date().toISOString(),
       expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days from now
     });
 
     if (error) {
+      if (error.code === '23505') {
+        // Handle unique constraint violation (likely active pending invite)
+        return {
+          success: false,
+          message: 'This user has already been invited and has a pending invite.',
+          data: null,
+        };
+      }
+
       console.error('[inviteOrganizationMember]', error);
 
       return {
