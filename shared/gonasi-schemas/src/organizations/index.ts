@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { EmailSchema } from '../userValidation';
 import { OrganizationRolesEnum } from './organizations-profile-schema';
 
 export * from './organizations-profile-schema';
@@ -57,17 +58,19 @@ export const InviteMemberToOrganizationSchema = z.object({
     })
     .uuid({ message: 'Invalid organization ID.' }),
 
-  email: z
-    .string({
-      required_error: 'Email is required.',
-      invalid_type_error: 'Email must be a string.',
-    })
-    .email({ message: 'Please provide a valid email address.' }),
+  email: EmailSchema,
 
-  role: OrganizationRolesEnum.default('editor').refine(
-    (val) => val !== 'owner', // Prevent inviting someone as owner
-    { message: 'You cannot invite someone as the owner.' },
-  ),
+  role: z
+    .string({
+      required_error: `<lucide name="AlertCircle" size="12" /> <span class="go-title">Role</span> is required.`,
+      invalid_type_error: `<lucide name="Type" size="12" /> <span class="go-title">Role</span> must be a string.`,
+    })
+    .refine((val) => (OrganizationRolesEnum.options as readonly string[]).includes(val), {
+      message: `Invalid value for <span class="go-title">role</span>. <lucide name="ShieldAlert" size="12" /> Please select a valid role from the allowed list.`,
+    })
+    .refine((val) => val !== 'owner', {
+      message: `<lucide name="UserMinus" size="12" /> You cannot invite someone as the <span class="go-title">owner</span>.`,
+    }),
 });
 
 export type InviteMemberToOrganizationSchemaTypes = z.infer<

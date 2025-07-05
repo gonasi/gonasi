@@ -1,31 +1,50 @@
-import { Outlet, useOutletContext } from 'react-router';
-import { Plus } from 'lucide-react';
+import { useEffect } from 'react';
+import { Outlet, useLocation, useNavigate, useOutletContext } from 'react-router';
+import { Library } from 'lucide-react';
 
 import type { Route } from './+types/members-index';
 
-import { IconNavLink } from '~/components/ui/button';
+import { GoTabNav } from '~/components/go-tab-nav';
 import type { OrganizationsOutletContextType } from '~/routes/layouts/organizations/organizations-layout';
 
-export default function MembersIndex({ params }: Route.ComponentProps) {
+export default function AllMembers({ params }: Route.ComponentProps) {
   const { data } = useOutletContext<OrganizationsOutletContextType>();
+
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    const basePath = `/${params.organizationId}/members`;
+
+    if (location.pathname === basePath) {
+      navigate(`${basePath}/active-members`, { replace: true });
+    }
+  }, [location.pathname, params.organizationId, navigate, data.member.role]);
 
   return (
     <>
-      <section className='p-4'>
-        <div className='flex items-center justify-between'>
-          <h2>Team Members</h2>
-          <div>
-            {data.member.role === 'owner' || data.member.role === 'admin' ? (
-              <IconNavLink
-                to={`/${params.organizationId}/members/invite-member`}
-                icon={Plus}
-                className='rounded-lg border p-2'
-              />
-            ) : null}
-          </div>
+      <section className='container mx-auto px-4 py-4 md:px-0'>
+        <div className='bg-background/95 sticky -top-10 z-10'>
+          <GoTabNav
+            tabs={[
+              {
+                to: `/${params.organizationId}/members/active-members`,
+                name: 'Members',
+                icon: Library,
+              },
+              {
+                to: `/${params.organizationId}/members/invites`,
+                name: 'Invites',
+                icon: Library,
+              },
+            ]}
+          />
+        </div>
+        {/* Main content */}
+        <div className='mt-4 md:mt-8'>
+          <Outlet context={{ data }} />
         </div>
       </section>
-      <Outlet context={{ data }} />
     </>
   );
 }

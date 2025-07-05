@@ -63,7 +63,6 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     throw redirect('/');
   }
 
-  console.log('result: ', result);
   return { ...result.data, message: result.message };
 }
 

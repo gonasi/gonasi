@@ -8,12 +8,13 @@ import { HoneypotInputs } from 'remix-utils/honeypot/react';
 import {
   InviteMemberToOrganizationSchema,
   type InviteMemberToOrganizationSchemaTypes,
+  OrganizationRoleOptions,
 } from '@gonasi/schemas/organizations';
 
 import type { Route } from './+types/invite-member';
 
 import { Button } from '~/components/ui/button';
-import { GoInputField } from '~/components/ui/forms/elements';
+import { GoInputField, GoSelectInputField } from '~/components/ui/forms/elements';
 import { Modal } from '~/components/ui/modal';
 import { createClient } from '~/lib/supabase/supabase.server';
 import type { OrganizationsOutletContextType } from '~/routes/layouts/organizations/organizations-layout';
@@ -93,7 +94,7 @@ export default function InviteMember({ params }: Route.ComponentProps) {
         <Modal.Body className='px-4'>
           {can_add_org_member ? (
             <RemixFormProvider {...methods}>
-              <Form method='POST' onSubmit={methods.handleSubmit}>
+              <Form method='POST' onSubmit={methods.handleSubmit} noValidate>
                 <HoneypotInputs />
 
                 <GoInputField
@@ -108,14 +109,14 @@ export default function InviteMember({ params }: Route.ComponentProps) {
                   description='Enter the email address of the person you want to invite.'
                 />
 
-                <GoInputField
-                  labelProps={{ children: 'Role', required: true }}
+                <GoSelectInputField
+                  labelProps={{ children: 'User Role', required: true }}
                   name='role'
-                  inputProps={{
-                    disabled: isDisabled,
-                    placeholder: 'e.g. admin, editor, instructor',
+                  description="Select the user's role in the organization 👤"
+                  selectProps={{
+                    placeholder: 'Select a user role',
+                    options: OrganizationRoleOptions,
                   }}
-                  description='Assign a role for this member in your organization.'
                 />
 
                 <Button

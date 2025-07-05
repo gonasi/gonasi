@@ -16,6 +16,18 @@ export const OrganizationRolesEnum = z.enum([
   'ai_collaborator',
 ]);
 
+// Remove 'owner' from the list
+export const OrganizationRolesArrayWithoutOwner = OrganizationRolesEnum.options.filter(
+  (role) => role !== 'owner',
+);
+
+// Convert to SelectOption[]: { label, value }
+export const OrganizationRoleOptions: { label: string; value: string }[] =
+  OrganizationRolesArrayWithoutOwner.map((role) => ({
+    label: role.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()), // optional formatting
+    value: role,
+  }));
+
 // Core Organization
 export const OrganizationSchema = z.object({
   id: z.string().uuid(),

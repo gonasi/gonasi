@@ -5,10 +5,7 @@ import { Building, Lock } from 'lucide-react';
 import type { Route } from './+types/organization-settings-index';
 
 import { SideLink } from '~/components/go-sidebar/side-link';
-import type {
-  MemberLoaderData,
-  OrganizationLoaderData,
-} from '~/routes/layouts/organizations/organizations-layout';
+import type { OrganizationsOutletContextType } from '~/routes/layouts/organizations/organizations-layout';
 
 export function meta() {
   return [
@@ -21,10 +18,7 @@ export function meta() {
 }
 
 export default function OrganizationSettingsIndex({ params }: Route.ComponentProps) {
-  const { organization, member } = useOutletContext<{
-    organization: OrganizationLoaderData;
-    member: MemberLoaderData;
-  }>();
+  const { data } = useOutletContext<OrganizationsOutletContextType>();
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -34,13 +28,13 @@ export default function OrganizationSettingsIndex({ params }: Route.ComponentPro
 
     // Only redirect if we're exactly on the base path
     if (location.pathname === basePath) {
-      if (member.role === 'admin' || member.role === 'owner') {
+      if (data.member.role === 'admin' || data.member.role === 'owner') {
         navigate(`${basePath}/organization-profile`, { replace: true });
       } else {
         navigate(`/${params.organizationId}`, { replace: true });
       }
     }
-  }, [location.pathname, member.role, params.organizationId, navigate]);
+  }, [location.pathname, params.organizationId, navigate, data.member.role]);
 
   const links = [
     {
@@ -65,7 +59,7 @@ export default function OrganizationSettingsIndex({ params }: Route.ComponentPro
 
       <section className='w-full py-8 pr-4 lg:pr-0'>
         <div>
-          <Outlet context={{ organization, member }} />
+          <Outlet context={{ data }} />
         </div>
       </section>
     </div>
