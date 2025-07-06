@@ -8,6 +8,7 @@ import { fetchOrganizationInvites } from '@gonasi/database/organizations';
 import type { Route } from './+types/members-invites';
 
 import { BannerCard } from '~/components/cards';
+import { Badge } from '~/components/ui/badge';
 import { Button, IconNavLink } from '~/components/ui/button';
 import {
   Table,
@@ -81,9 +82,9 @@ export default function MembersInvites({ params, loaderData }: Route.ComponentPr
           <TableBody className='font-secondary'>
             {loaderData?.map((invite) => {
               const deliveryLabel = {
-                pending: 'not sent',
-                sent: 'sent',
-                failed: 'failed',
+                pending: 'Not Sent',
+                sent: 'Sent',
+                failed: 'Failed',
               }[invite.delivery_status];
 
               const isExpired = new Date(invite.expires_at) < new Date();
@@ -94,11 +95,19 @@ export default function MembersInvites({ params, loaderData }: Route.ComponentPr
                   ? 'Accepted'
                   : isExpired
                     ? 'Expired'
-                    : `Pending (${deliveryLabel})`;
+                    : 'Pending';
 
               const lastSent = formatDistanceToNow(new Date(invite.last_sent_at), {
                 addSuffix: true,
               });
+
+              const statusColor =
+                {
+                  Pending: 'bg-yellow-100 text-yellow-800',
+                  Accepted: 'bg-green-100 text-green-800',
+                  Expired: 'bg-gray-200 text-gray-700',
+                  Revoked: 'bg-red-100 text-red-800',
+                }[status] ?? 'bg-muted text-foreground';
 
               return (
                 <motion.tr
@@ -110,11 +119,19 @@ export default function MembersInvites({ params, loaderData }: Route.ComponentPr
                 >
                   <TableCell>{invite.email}</TableCell>
                   <TableCell className='capitalize'>{invite.role}</TableCell>
-                  <TableCell className='capitalize'>{status}</TableCell>
+                  <TableCell>
+                    <div className='flex flex-col gap-1'>
+                      <Badge className={statusColor}>{status}</Badge>
+                      {status === 'Pending' && (
+                        <span className='text-muted-foreground text-xs'>
+                          Email: {deliveryLabel}
+                        </span>
+                      )}
+                    </div>
+                  </TableCell>
                   <TableCell className='text-muted-foreground text-sm'>{lastSent}</TableCell>
-
                   <TableCell className='flex justify-end gap-2'>
-                    {status.startsWith('Pending') && (
+                    {status === 'Pending' && (
                       <>
                         <Button size='icon' variant='ghost' onClick={() => onResend(invite.id)}>
                           <RotateCcw className='h-4 w-4' />
