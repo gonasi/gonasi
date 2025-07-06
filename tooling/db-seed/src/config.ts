@@ -1,4 +1,5 @@
 export const TOTAL_USERS = 0;
+export const TOTAL_ORGANIZATIONS = 2;
 export const TOTAL_PATHWAYS = 5;
 export const TOTAL_COURSES = 3;
 export const CHAPTER_COUNT = { min: 6, max: 15 };

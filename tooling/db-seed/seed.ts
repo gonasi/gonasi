@@ -3,6 +3,7 @@ import { createSeedClient } from '@snaplet/seed';
 import { seedCompleteOnboarding } from './src/seedCompleteOnboarding';
 import { seedCourseCategories } from './src/seedCourseCategories';
 import { seedLessonTypes } from './src/seedLessonTypes';
+import { seedOwnerOrganizations } from './src/seedOwnerOrganizations';
 import { seedPricingTiers } from './src/seedPricingTiers';
 import { signUpUsers } from './src/signUpUsers';
 
@@ -22,6 +23,8 @@ const main = async () => {
   await seedLessonTypes();
   await seedCourseCategories();
   await seedPricingTiers();
+
+  await seedOwnerOrganizations();
 
   // await seedPathways(profiles);
 
