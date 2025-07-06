@@ -13,7 +13,7 @@ export async function fetchOrganizationInvites({
     const { data, error } = await supabase
       .from('organization_invites')
       .select(
-        'id, email, role, accepted_at, accepted_by, revoked_at, created_at, last_sent_at, expires_at',
+        'id, email, role, delivery_status, accepted_at, accepted_by, revoked_at, created_at, last_sent_at, expires_at',
       )
       .eq('organization_id', organizationId)
       .order('created_at', { ascending: false });

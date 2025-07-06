@@ -1,3 +1,15 @@
+-- ===================================================
+-- ENUM TYPE: invite_delivery_status
+-- ===================================================
+-- Tracks the status of the invitation email for organization members.
+-- Used for monitoring and retry logic.
+
+create type public.invite_delivery_status as enum (
+  'pending',  -- Just queued, not yet sent
+  'sent',     -- Successfully delivered to the recipient
+  'failed'    -- Failed after max retries or due to a fatal error
+);
+
 create table if not exists public.organization_invites (
   id uuid primary key default gen_random_uuid(),
 
@@ -21,6 +33,9 @@ create table if not exists public.organization_invites (
   accepted_by uuid references auth.users(id), -- Who claimed it (if any)
 
   revoked_at timestamptz,
+
+  delivery_status public.invite_delivery_status not null default 'pending', -- Current delivery state of the invite
+  delivery_logs jsonb not null default '[]',       -- JSON array of delivery attempts and results
 
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()

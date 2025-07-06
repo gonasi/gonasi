@@ -37,10 +37,10 @@ as $$
   from active_members am, pending_invites pi, limits;
 $$;
 
-
 -- ===================================================
 -- SELECT Policy: allow org admins to view all invites,
 -- and users to view their accepted invite
+-- Note: delivery_status and delivery_logs are visible to admins
 -- ===================================================
 create policy "select: org admins and accepted invites"
 on public.organization_invites
@@ -54,6 +54,7 @@ using (
 -- ===================================================
 -- SELECT Policy: allow anonymous users to view invite by token
 -- Used in public invite link flows (e.g., `/accept-invite/:token`)
+-- Note: Anonymous users can see delivery_status but not delivery_logs
 -- ===================================================
 create policy "select: anonymous by token"
 on public.organization_invites
@@ -70,9 +71,10 @@ using (
 -- Enforces:
 -- - inviter must be admin
 -- - inviter must be the one inserting
--- - can’t invite self
+-- - can't invite self
 -- - must be under member cap
 -- - only owners can invite admins
+-- - delivery_status defaults to 'pending' (handled by schema)
 -- ===================================================
 create policy "insert: org admins with member limit"
 on public.organization_invites
@@ -97,6 +99,7 @@ with check (
 -- - accepted_by must match current user
 -- - must be under member limit when accepting
 -- - prevents modifying revoked invites unless admin
+-- - prevents direct updates to delivery fields (managed by functions)
 -- ===================================================
 create policy "update: org admins and acceptance"
 on public.organization_invites
@@ -118,15 +121,9 @@ with check (
 
   -- Prevent modifying revoked invites unless admin
   and (revoked_at is null or public.can_manage_organization_member(organization_id, (select auth.uid()), 'admin'))
+
+  -- Prevent direct updates to delivery fields (managed by functions only)
+  and delivery_status = (select delivery_status from public.organization_invites where id = organization_invites.id)
+  and delivery_logs = (select delivery_logs from public.organization_invites where id = organization_invites.id)
 );
 
--- ===================================================
--- DELETE Policy: allow org admins to delete any invite
--- ===================================================
-create policy "delete: org admins only"
-on public.organization_invites
-for delete
-to authenticated
-using (
-  public.can_manage_organization_member(organization_id, (select auth.uid()), 'admin')
-);

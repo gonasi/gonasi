@@ -235,6 +235,8 @@ export type Database = {
           accepted_at: string | null
           accepted_by: string | null
           created_at: string
+          delivery_logs: Json
+          delivery_status: Database["public"]["Enums"]["invite_delivery_status"]
           email: string
           expires_at: string
           id: string
@@ -251,6 +253,8 @@ export type Database = {
           accepted_at?: string | null
           accepted_by?: string | null
           created_at?: string
+          delivery_logs?: Json
+          delivery_status?: Database["public"]["Enums"]["invite_delivery_status"]
           email: string
           expires_at: string
           id?: string
@@ -267,6 +271,8 @@ export type Database = {
           accepted_at?: string | null
           accepted_by?: string | null
           created_at?: string
+          delivery_logs?: Json
+          delivery_status?: Database["public"]["Enums"]["invite_delivery_status"]
           email?: string
           expires_at?: string
           id?: string
@@ -737,6 +743,7 @@ export type Database = {
         | "lesson_types.delete"
         | "pricing_tier.crud"
       app_role: "go_su" | "go_admin" | "go_staff" | "user"
+      invite_delivery_status: "pending" | "sent" | "failed"
       org_role:
         | "owner"
         | "admin"
@@ -890,6 +897,7 @@ export const Constants = {
         "pricing_tier.crud",
       ],
       app_role: ["go_su", "go_admin", "go_staff", "user"],
+      invite_delivery_status: ["pending", "sent", "failed"],
       org_role: [
         "owner",
         "admin",

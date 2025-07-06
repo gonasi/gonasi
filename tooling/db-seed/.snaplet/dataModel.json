@@ -2987,6 +2987,34 @@
           "maxLength": null
         },
         {
+          "id": "public.organization_invites.delivery_status",
+          "name": "delivery_status",
+          "columnName": "delivery_status",
+          "type": "invite_delivery_status",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.organization_invites.delivery_logs",
+          "name": "delivery_logs",
+          "columnName": "delivery_logs",
+          "type": "jsonb",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
           "id": "public.organization_invites.created_at",
           "name": "created_at",
           "columnName": "created_at",
@@ -6304,6 +6332,20 @@
           "maxLength": null
         },
         {
+          "id": "_realtime.tenants.broadcast_adapter",
+          "name": "broadcast_adapter",
+          "columnName": "broadcast_adapter",
+          "type": "varchar",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": 255
+        },
+        {
           "name": "extensions",
           "type": "extensions",
           "isRequired": false,
@@ -7497,6 +7539,20 @@
         },
         {
           "name": "user"
+        }
+      ]
+    },
+    "invite_delivery_status": {
+      "schemaName": "public",
+      "values": [
+        {
+          "name": "failed"
+        },
+        {
+          "name": "pending"
+        },
+        {
+          "name": "sent"
         }
       ]
     },

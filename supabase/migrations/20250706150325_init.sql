@@ -4,6 +4,8 @@ create type "public"."app_permission" as enum ('course_categories.insert', 'cour
 
 create type "public"."app_role" as enum ('go_su', 'go_admin', 'go_staff', 'user');
 
+create type "public"."invite_delivery_status" as enum ('pending', 'sent', 'failed');
+
 create type "public"."org_role" as enum ('owner', 'admin', 'editor', 'instructor', 'analyst', 'support', 'collaborator', 'ai_collaborator');
 
 create type "public"."profile_mode" as enum ('personal', 'organization');
@@ -70,6 +72,8 @@ create table "public"."organization_invites" (
     "accepted_at" timestamp with time zone,
     "accepted_by" uuid,
     "revoked_at" timestamp with time zone,
+    "delivery_status" invite_delivery_status not null default 'pending'::invite_delivery_status,
+    "delivery_logs" jsonb not null default '[]'::jsonb,
     "created_at" timestamp with time zone not null default now(),
     "updated_at" timestamp with time zone not null default now()
 );
@@ -1308,14 +1312,6 @@ to authenticated, anon
 using (true);
 
 
-create policy "delete: org admins only"
-on "public"."organization_invites"
-as permissive
-for delete
-to authenticated
-using (can_manage_organization_member(organization_id, ( SELECT auth.uid() AS uid), 'admin'::text));
-
-
 create policy "insert: org admins with member limit"
 on "public"."organization_invites"
 as permissive
@@ -1348,7 +1344,11 @@ as permissive
 for update
 to authenticated
 using ((can_manage_organization_member(organization_id, ( SELECT auth.uid() AS uid), 'admin'::text) OR (accepted_by = ( SELECT auth.uid() AS uid))))
-with check ((((role <> 'admin'::org_role) OR can_manage_organization_member(organization_id, ( SELECT auth.uid() AS uid), 'owner'::text)) AND ((accepted_by IS NULL) OR (accepted_by = ( SELECT auth.uid() AS uid))) AND ((accepted_at IS NULL) OR can_add_org_member(organization_id)) AND ((revoked_at IS NULL) OR can_manage_organization_member(organization_id, ( SELECT auth.uid() AS uid), 'admin'::text))));
+with check ((((role <> 'admin'::org_role) OR can_manage_organization_member(organization_id, ( SELECT auth.uid() AS uid), 'owner'::text)) AND ((accepted_by IS NULL) OR (accepted_by = ( SELECT auth.uid() AS uid))) AND ((accepted_at IS NULL) OR can_add_org_member(organization_id)) AND ((revoked_at IS NULL) OR can_manage_organization_member(organization_id, ( SELECT auth.uid() AS uid), 'admin'::text)) AND (delivery_status = ( SELECT organization_invites_1.delivery_status
+   FROM organization_invites organization_invites_1
+  WHERE (organization_invites_1.id = organization_invites_1.id))) AND (delivery_logs = ( SELECT organization_invites_1.delivery_logs
+   FROM organization_invites organization_invites_1
+  WHERE (organization_invites_1.id = organization_invites_1.id)))));
 
 
 create policy "delete: authorized removal"

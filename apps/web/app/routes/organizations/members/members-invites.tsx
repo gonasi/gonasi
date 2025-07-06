@@ -80,13 +80,21 @@ export default function MembersInvites({ params, loaderData }: Route.ComponentPr
           </TableHeader>
           <TableBody className='font-secondary'>
             {loaderData?.map((invite) => {
+              const deliveryLabel = {
+                pending: 'not sent',
+                sent: 'sent',
+                failed: 'failed',
+              }[invite.delivery_status];
+
+              const isExpired = new Date(invite.expires_at) < new Date();
+
               const status = invite.revoked_at
                 ? 'Revoked'
                 : invite.accepted_at
                   ? 'Accepted'
-                  : new Date(invite.expires_at) < new Date()
+                  : isExpired
                     ? 'Expired'
-                    : 'Pending';
+                    : `Pending (${deliveryLabel})`;
 
               const lastSent = formatDistanceToNow(new Date(invite.last_sent_at), {
                 addSuffix: true,
@@ -102,11 +110,11 @@ export default function MembersInvites({ params, loaderData }: Route.ComponentPr
                 >
                   <TableCell>{invite.email}</TableCell>
                   <TableCell className='capitalize'>{invite.role}</TableCell>
-                  <TableCell>{status}</TableCell>
+                  <TableCell className='capitalize'>{status}</TableCell>
                   <TableCell className='text-muted-foreground text-sm'>{lastSent}</TableCell>
 
                   <TableCell className='flex justify-end gap-2'>
-                    {status === 'Pending' && (
+                    {status.startsWith('Pending') && (
                       <>
                         <Button size='icon' variant='ghost' onClick={() => onResend(invite.id)}>
                           <RotateCcw className='h-4 w-4' />
