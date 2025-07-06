@@ -39,7 +39,7 @@ async function processInviteEmail(email: string, token: string) {
     const inviteUrl = `${BASE_URL}/i/org-invites/${token}/accept`;
 
     const payload = {
-      from: 'noreply@gonasi.com',
+      from: 'Gonasi <noreply@gonasi.com>',
       to: email,
       subject: `You're invited to join ${organizationName} on Gonasi`,
       html: `

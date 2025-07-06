@@ -13,16 +13,7 @@ export const inviteOrganizationMember = async (
     const { user } = await getUserProfile(supabase);
     const { organizationId, email, role } = formData;
 
-    const validRoles = [
-      'owner',
-      'admin',
-      'editor',
-      'instructor',
-      'analyst',
-      'support',
-      'collaborator',
-      'ai_collaborator',
-    ] as const;
+    const validRoles = ['owner', 'admin', 'editor'] as const;
 
     if (!validRoles.includes(role as any)) {
       return {

@@ -744,15 +744,7 @@ export type Database = {
         | "pricing_tier.crud"
       app_role: "go_su" | "go_admin" | "go_staff" | "user"
       invite_delivery_status: "pending" | "sent" | "failed"
-      org_role:
-        | "owner"
-        | "admin"
-        | "editor"
-        | "instructor"
-        | "analyst"
-        | "support"
-        | "collaborator"
-        | "ai_collaborator"
+      org_role: "owner" | "admin" | "editor"
       profile_mode: "personal" | "organization"
       subscription_status:
         | "active"
@@ -898,16 +890,7 @@ export const Constants = {
       ],
       app_role: ["go_su", "go_admin", "go_staff", "user"],
       invite_delivery_status: ["pending", "sent", "failed"],
-      org_role: [
-        "owner",
-        "admin",
-        "editor",
-        "instructor",
-        "analyst",
-        "support",
-        "collaborator",
-        "ai_collaborator",
-      ],
+      org_role: ["owner", "admin", "editor"],
       profile_mode: ["personal", "organization"],
       subscription_status: [
         "active",

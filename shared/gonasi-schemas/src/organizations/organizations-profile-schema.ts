@@ -5,16 +5,9 @@ const SubscriptionTierEnum = z.enum(['launch', 'scale', 'impact', 'enterprise'])
 const AnalyticsLevelEnum = z.enum(['basic', 'intermediate', 'advanced', 'enterprise']);
 const SupportLevelEnum = z.enum(['community', 'email', 'priority', 'dedicated']);
 
-export const OrganizationRolesEnum = z.enum([
-  'owner',
-  'admin',
-  'editor',
-  'instructor',
-  'analyst',
-  'support',
-  'collaborator',
-  'ai_collaborator',
-]);
+export const OrganizationRolesEnum = z.enum(['owner', 'admin', 'editor']);
+
+export type OrganizationRolesEnumTypes = z.infer<typeof OrganizationRolesEnum>;
 
 // Remove 'owner' from the list
 export const OrganizationRolesArrayWithoutOwner = OrganizationRolesEnum.options.filter(

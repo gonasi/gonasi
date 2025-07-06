@@ -7563,25 +7563,10 @@
           "name": "admin"
         },
         {
-          "name": "ai_collaborator"
-        },
-        {
-          "name": "analyst"
-        },
-        {
-          "name": "collaborator"
-        },
-        {
           "name": "editor"
         },
         {
-          "name": "instructor"
-        },
-        {
           "name": "owner"
-        },
-        {
-          "name": "support"
         }
       ]
     },

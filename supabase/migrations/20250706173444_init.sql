@@ -6,7 +6,7 @@ create type "public"."app_role" as enum ('go_su', 'go_admin', 'go_staff', 'user'
 
 create type "public"."invite_delivery_status" as enum ('pending', 'sent', 'failed');
 
-create type "public"."org_role" as enum ('owner', 'admin', 'editor', 'instructor', 'analyst', 'support', 'collaborator', 'ai_collaborator');
+create type "public"."org_role" as enum ('owner', 'admin', 'editor');
 
 create type "public"."profile_mode" as enum ('personal', 'organization');
 
@@ -1330,12 +1330,14 @@ to anon
 using (((accepted_at IS NULL) AND (revoked_at IS NULL) AND (expires_at > now())));
 
 
-create policy "select: org admins and accepted invites"
+create policy "select: org admins and invite recipients"
 on "public"."organization_invites"
 as permissive
 for select
 to authenticated
-using ((can_manage_organization_member(organization_id, ( SELECT auth.uid() AS uid), 'admin'::text) OR (accepted_by = ( SELECT auth.uid() AS uid))));
+using ((can_manage_organization_member(organization_id, ( SELECT auth.uid() AS uid), 'admin'::text) OR ((email = ( SELECT profiles.email
+   FROM profiles
+  WHERE (profiles.id = auth.uid()))) AND (revoked_at IS NULL) AND (expires_at > now()))));
 
 
 create policy "update: org admins and acceptance"

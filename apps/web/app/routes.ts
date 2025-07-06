@@ -28,6 +28,8 @@ export default [
     route('go/:username/organizations', 'routes/myProfile/organizations/organizations-index.tsx', [
       route('new', 'routes/myProfile/organizations/new-organization.tsx'),
     ]),
+
+    route('i/org-invites/:token/accept', 'routes/invites/accept-org-invite.tsx'),
   ]),
 
   layout('routes/layouts/organizations/organizations-layout.tsx', [

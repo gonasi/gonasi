@@ -26,40 +26,17 @@ export function useDashboardLinks({
   organizationId: string;
   role: OrganizationRolesEnumTypes;
 }) {
-  const allRoles: OrganizationRolesEnumTypes[] = [
-    'owner',
-    'admin',
-    'editor',
-    'instructor',
-    'analyst',
-    'support',
-    'collaborator',
-    'ai_collaborator',
-  ];
+  const allRoles: OrganizationRolesEnumTypes[] = ['owner', 'admin', 'editor'];
 
-  const creatorRoles: OrganizationRolesEnumTypes[] = [
-    'owner',
-    'admin',
-    'editor',
-    'instructor',
-    'analyst',
-    'collaborator',
-    'ai_collaborator',
-  ];
+  const creatorRoles: OrganizationRolesEnumTypes[] = ['owner', 'admin', 'editor'];
 
   const editorRoles: OrganizationRolesEnumTypes[] = ['editor'];
 
-  const learnerRoles: OrganizationRolesEnumTypes[] = ['owner', 'admin', 'instructor', 'support'];
+  const learnerRoles: OrganizationRolesEnumTypes[] = ['owner', 'admin'];
 
-  const analyticsRoles: OrganizationRolesEnumTypes[] = ['owner', 'admin', 'analyst'];
+  const analyticsRoles: OrganizationRolesEnumTypes[] = ['owner', 'admin'];
 
-  const libraryRoles: OrganizationRolesEnumTypes[] = [
-    'owner',
-    'admin',
-    'editor',
-    'collaborator',
-    'ai_collaborator',
-  ];
+  const libraryRoles: OrganizationRolesEnumTypes[] = ['owner', 'admin', 'editor'];
 
   const adminOnly: OrganizationRolesEnumTypes[] = ['owner', 'admin'];
 

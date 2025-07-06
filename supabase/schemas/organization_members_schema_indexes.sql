@@ -5,12 +5,7 @@
 create type public.org_role as enum (
   'owner',           -- Full access, can manage billing and transfer ownership
   'admin',           -- Manage members, courses, and settings (except owner actions)
-  'editor',          -- Create and update courses/lessons
-  'instructor',      -- Deliver content, interact with learners
-  'analyst',         -- View stats, reports, and analytics
-  'support',         -- Handle learner issues and feedback
-  'collaborator',    -- External contributors with scoped permissions
-  'ai_collaborator'  -- AI assistant with scoped permissions
+  'editor'           -- Create and update courses/lessons
 );
 
 -- ===================================================

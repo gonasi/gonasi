@@ -1,12 +1,11 @@
 -- ===================================================
--- Enable Row-Level Security on organization_invites
+-- Enable Row-Level Security
 -- ===================================================
 alter table public.organization_invites enable row level security;
 
 -- ===================================================
 -- Function: can_add_org_member
 -- Checks if the organization can accept another member
--- Considers current active members + pending invites
 -- ===================================================
 create or replace function public.can_add_org_member(organization_id uuid)
 returns boolean
@@ -38,23 +37,26 @@ as $$
 $$;
 
 -- ===================================================
--- SELECT Policy: allow org admins to view all invites,
--- and users to view their accepted invite
--- Note: delivery_status and delivery_logs are visible to admins
+-- SELECT Policy: allow org admins and invite recipients
 -- ===================================================
-create policy "select: org admins and accepted invites"
+create policy "select: org admins and invite recipients"
 on public.organization_invites
 for select
 to authenticated
 using (
+  -- Admins of the org can see all
   public.can_manage_organization_member(organization_id, (select auth.uid()), 'admin')
-  or accepted_by = (select auth.uid())
+
+  -- Invite recipient can see their invite (by email match)
+  or (
+    email = (select email from public.profiles where id = auth.uid())
+    and revoked_at is null
+    and expires_at > now()
+  )
 );
 
 -- ===================================================
--- SELECT Policy: allow anonymous users to view invite by token
--- Used in public invite link flows (e.g., `/accept-invite/:token`)
--- Note: Anonymous users can see delivery_status but not delivery_logs
+-- SELECT Policy: anonymous users via public invite link (by token)
 -- ===================================================
 create policy "select: anonymous by token"
 on public.organization_invites
@@ -67,14 +69,7 @@ using (
 );
 
 -- ===================================================
--- INSERT Policy: allow org admins to invite users
--- Enforces:
--- - inviter must be admin
--- - inviter must be the one inserting
--- - can't invite self
--- - must be under member cap
--- - only owners can invite admins
--- - delivery_status defaults to 'pending' (handled by schema)
+-- INSERT Policy: allow org admins to send invites
 -- ===================================================
 create policy "insert: org admins with member limit"
 on public.organization_invites
@@ -92,14 +87,7 @@ with check (
 );
 
 -- ===================================================
--- UPDATE Policy: allow org admins to manage invites,
--- and allow invited users to accept their own invite.
--- Enforces:
--- - role escalation must be done by owner
--- - accepted_by must match current user
--- - must be under member limit when accepting
--- - prevents modifying revoked invites unless admin
--- - prevents direct updates to delivery fields (managed by functions)
+-- UPDATE Policy: allow admins and invitees to update
 -- ===================================================
 create policy "update: org admins and acceptance"
 on public.organization_invites
@@ -116,14 +104,13 @@ with check (
   -- Self-accept only
   and (accepted_by is null or accepted_by = (select auth.uid()))
 
-  -- Respect capacity limits on acceptance
+  -- Respect member limit
   and (accepted_at is null or public.can_add_org_member(organization_id))
 
-  -- Prevent modifying revoked invites unless admin
+  -- Prevent edits to revoked invites unless admin
   and (revoked_at is null or public.can_manage_organization_member(organization_id, (select auth.uid()), 'admin'))
 
-  -- Prevent direct updates to delivery fields (managed by functions only)
+  -- Delivery fields should not be directly modified
   and delivery_status = (select delivery_status from public.organization_invites where id = organization_invites.id)
   and delivery_logs = (select delivery_logs from public.organization_invites where id = organization_invites.id)
 );
-
