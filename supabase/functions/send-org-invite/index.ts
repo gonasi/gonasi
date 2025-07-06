@@ -35,23 +35,21 @@ async function processInviteEmail(email: string, token: string) {
       return;
     }
 
-    const organizationName = inviteData.organizations.name;
+    const organizationName = inviteData.organizations.name ?? 'Gonasi Organizaiton';
     const inviteUrl = `${BASE_URL}/i/org-invites/${token}/accept`;
 
     const payload = {
-      from: 'Gonasi <noreply@gonasi.com>',
+      from: 'Team at Gonasi <noreply@gonasi.com>',
       to: email,
-      subject: `You're invited to join ${organizationName} on Gonasi`,
+      subject: `${organizationName} has invited you to collaborate`,
       html: `
-        <div style="font-family: sans-serif; line-height: 1.6;">
-          <p>Hello,</p>
-          <p><strong>${organizationName}</strong> has invited you to join their team on <strong>Gonasi</strong>.</p>
-          <p>To get started, click the link below to accept your invite:</p>
-          <p><a href="${inviteUrl}" style="color: #007bff; text-decoration: none;">Accept Invitation</a></p>
-          <p>This link will expire in 7 days.</p>
-          <p>See you inside,</p>
-          <p><strong>The Gonasi Team</strong></p>
-        </div>
+        <p>Hello,</p>
+        <p>${organizationName} has invited you to join their team.</p>
+        <p>Accept your invite here:</p>
+        <p><a href="${inviteUrl}">${inviteUrl}</a></p>
+        <p>This link will expire in 7 days.</p>
+        <p>Thanks,</p>
+        <p>The Gonasi Team</p>
       `,
     };
 

@@ -65,6 +65,7 @@ export default function InviteMember({ params }: Route.ComponentProps) {
     data: {
       tier_limits: { tier, max_members_per_org },
       permissions: { can_add_org_member },
+      member: { role },
     },
   } = useOutletContext<OrganizationsOutletContextType>();
 
@@ -74,6 +75,7 @@ export default function InviteMember({ params }: Route.ComponentProps) {
     mode: 'all',
     defaultValues: {
       organizationId: params.organizationId,
+      role: 'editor',
     },
     resolver,
   });
@@ -102,13 +104,18 @@ export default function InviteMember({ params }: Route.ComponentProps) {
                     disabled: isDisabled,
                     placeholder: 'name@example.com',
                   }}
-                  description='Enter the email address of the person you want to invite.'
+                  description="Who's joining the team? Drop their email here."
                 />
 
                 <GoSelectInputField
                   labelProps={{ children: 'User Role', required: true }}
                   name='role'
-                  description="Select the user's role in the organization 👤"
+                  disabled={role !== 'owner'}
+                  description={
+                    role !== 'owner'
+                      ? 'Only the org owner can invite admins.'
+                      : "What's their role going to be? 👤"
+                  }
                   selectProps={{
                     placeholder: 'Select a user role',
                     options: OrganizationRoleOptions,
@@ -127,11 +134,11 @@ export default function InviteMember({ params }: Route.ComponentProps) {
             </RemixFormProvider>
           ) : (
             <div className='border-muted bg-muted/40 text-muted-foreground rounded-xl border p-4 text-sm'>
-              <p className='text-foreground mb-1 font-medium'>You’ve reached your member limit.</p>
+              <p className='text-foreground mb-1 font-medium'>Looks like your team is full.</p>
               <p className='font-secondary'>
-                On the <strong>{tier}</strong>, you can add up to{' '}
-                <strong>{max_members_per_org} members</strong> to your organization. Upgrade your
-                plan to invite more.
+                Your current <strong>{tier}</strong> plan allows up to{' '}
+                <strong>{max_members_per_org}</strong> members per organization. Need more room?
+                Consider upgrading your plan.
               </p>
             </div>
           )}

@@ -52,14 +52,17 @@ export default function MembersInvites({ params, loaderData }: Route.ComponentPr
 
   return (
     <>
-      <div className='px-4 pb-8'>
-        <BannerCard
-          message='message here'
-          description='hello there'
-          showCloseIcon={false}
-          variant='warning'
-        />
-      </div>
+      {data.permissions.can_add_org_member ? null : (
+        <div className='px-4 pb-8'>
+          <BannerCard
+            message={`You're at the limit for the ${data.tier_limits.tier} plan`}
+            description={`Your current plan allows up to ${data.tier_limits.max_members_per_org} members per organization. Need more room? Consider upgrading your plan.`}
+            showCloseIcon={false}
+            variant='warning'
+          />
+        </div>
+      )}
+
       <div className='flex items-center justify-between px-0 md:px-4'>
         <h2 className='text-lg md:text-2xl'>Member Invites</h2>
         <IconNavLink
