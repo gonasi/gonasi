@@ -40,23 +40,25 @@ export const inviteOrganizationMember = async (
       };
     }
 
-    // Generate a secure token
     const token = randomUUID();
 
-    const { data, error } = await supabase.from('organization_invites').insert({
-      organization_id: organizationId,
-      email,
-      role: role as (typeof validRoles)[number],
-      invited_by: user?.id ?? '',
-      token,
-      resend_count: 0,
-      last_sent_at: new Date().toISOString(),
-      expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days from now
-    });
+    const { data, error } = await supabase
+      .from('organization_invites')
+      .insert({
+        organization_id: organizationId,
+        email,
+        role: role as (typeof validRoles)[number],
+        invited_by: user?.id ?? '',
+        token,
+        resend_count: 0,
+        last_sent_at: new Date().toISOString(),
+        expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days
+      })
+      .select()
+      .single();
 
     if (error) {
       if (error.code === '23505') {
-        // Handle unique constraint violation (likely active pending invite)
         return {
           success: false,
           message: 'This user has already been invited and has a pending invite.',
@@ -64,8 +66,7 @@ export const inviteOrganizationMember = async (
         };
       }
 
-      console.error('[inviteOrganizationMember]', error);
-
+      console.error('[inviteOrganizationMember] DB insert error:', error);
       return {
         success: false,
         message: 'Failed to send invite. You may have reached your plan’s limit.',
@@ -73,9 +74,26 @@ export const inviteOrganizationMember = async (
       };
     }
 
+    // ✅ Invoke edge function via Supabase client
+    const { error: invokeError } = await supabase.functions.invoke('send-org-invite', {
+      body: {
+        email,
+        token,
+      },
+    });
+
+    if (invokeError) {
+      console.error('[inviteOrganizationMember] Email send failed:', invokeError);
+      return {
+        success: false,
+        message: 'Failed to send invite email.',
+        data,
+      };
+    }
+
     return {
       success: true,
-      message: 'Invitation sent successfully.',
+      message: 'Invitation is being sent.',
       data,
     };
   } catch (err) {
