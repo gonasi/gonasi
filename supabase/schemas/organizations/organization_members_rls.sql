@@ -4,6 +4,7 @@ alter table public.organization_members enable row level security;
 -- SELECT Policy:
 -- - Users can view their own membership
 -- - Admins can view any member in the same organization
+-- NOTE: We display users on the frontend from a view so this doesn't apply to that case
 create policy "organization_members_select"                                         
 on public.organization_members                                                      
 for select                                                                          
@@ -75,10 +76,10 @@ using (
 );
 
 -- Trigger Function:
--- After a member is removed, update their profile:
+-- After a member is removed or leaves an organization, update their profile:
 --   - Set mode to 'personal'
 --   - Clear active_organization_id
-create or replace function public.handle_organization_member_delete()
+create or replace function public.handle_member_exit_update_profile()
 returns trigger
 language plpgsql
 set search_path = ''
@@ -95,8 +96,9 @@ end;
 $$;
 
 -- Trigger:
--- Calls handle_organization_member_delete after a member is removed
-create trigger on_member_delete_set_profile_personal
+-- Calls handle_member_exit_update_profile after a member is removed or leaves
+create trigger on_member_exit_update_profile
 after delete on public.organization_members
 for each row
-execute procedure public.handle_organization_member_delete();
+execute procedure public.handle_member_exit_update_profile();
+

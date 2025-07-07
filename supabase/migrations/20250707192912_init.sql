@@ -703,6 +703,23 @@ AS $function$
 $function$
 ;
 
+CREATE OR REPLACE FUNCTION public.handle_member_exit_update_profile()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO ''
+AS $function$
+begin
+  update public.profiles
+  set
+    mode = 'personal',
+    active_organization_id = null
+  where id = old.user_id;
+
+  return old;
+end;
+$function$
+;
+
 CREATE OR REPLACE FUNCTION public.handle_new_user()
  RETURNS trigger
  LANGUAGE plpgsql
@@ -748,23 +765,6 @@ begin
   end;
 
   return null;
-end;
-$function$
-;
-
-CREATE OR REPLACE FUNCTION public.handle_organization_member_delete()
- RETURNS trigger
- LANGUAGE plpgsql
- SET search_path TO ''
-AS $function$
-begin
-  update public.profiles
-  set
-    mode = 'personal',
-    active_organization_id = null
-  where id = old.user_id;
-
-  return old;
 end;
 $function$
 ;
@@ -848,10 +848,10 @@ declare
   can_add boolean;
   tier_limits_json json;
 begin
-  -- Step 0: Get the current authenticated user's ID
+  -- Get the ID of the currently authenticated user
   current_user_id := (select auth.uid());
 
-  -- Step 1: Ensure user is authenticated
+  -- Block unauthenticated users
   if current_user_id is null then
     return json_build_object(
       'success', false,
@@ -860,26 +860,33 @@ begin
     );
   end if;
 
-  -- Step 2: Ensure user is a member of the organization
+  -- Check if the user is a member of the target organization
   select * into member
   from public.organization_members om
   where om.organization_id = organization_id_from_url
     and om.user_id = current_user_id;
 
+  -- If not a member, reset profile to personal mode and return early
   if not found then
+    update public.profiles
+    set
+      mode = 'personal',
+      active_organization_id = null
+    where id = current_user_id;
+
     return json_build_object(
       'success', false,
-      'message', 'You do not have permissions to view this organization',
+      'message', 'You are no longer a member of this organization. Switched to personal mode.',
       'data', null
     );
   end if;
 
-  -- Step 3: Fetch user's current active organization
+  -- Fetch the current active organization from profile
   select p.active_organization_id into profile_active_org_id
   from public.profiles p
   where p.id = current_user_id;
 
-  -- Step 4: If already active, return current context
+  -- If already set to this org, return the current org context
   if profile_active_org_id = organization_id_from_url then
   begin
     select * into org
@@ -904,23 +911,23 @@ begin
   end;
   end if;
 
-  -- Step 5: Update profile to set active organization and mode
+  -- Set the target org as the active org and update mode to "organization"
   update public.profiles p
   set
     active_organization_id = organization_id_from_url,
     mode = 'organization'
   where p.id = current_user_id;
 
-  -- Step 6: Fetch updated organization
+  -- Fetch organization details
   select * into org
   from public.organizations o
   where o.id = organization_id_from_url;
 
-  -- Step 7: Get permissions and tier info
+  -- Fetch permissions and tier config
   can_add := public.can_accept_new_member(organization_id_from_url);
   tier_limits_json := public.get_tier_limits_for_org(organization_id_from_url);
 
-  -- Step 8: Return updated org context
+  -- Return updated organization context
   return json_build_object(
     'success', true,
     'message', 'Active organization has been changed',
@@ -1674,7 +1681,7 @@ CREATE TRIGGER trg_course_sub_categories_set_updated_at BEFORE UPDATE ON public.
 
 CREATE TRIGGER trg_lesson_types_set_updated_at BEFORE UPDATE ON public.lesson_types FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER on_member_delete_set_profile_personal AFTER DELETE ON public.organization_members FOR EACH ROW EXECUTE FUNCTION handle_organization_member_delete();
+CREATE TRIGGER on_member_exit_update_profile AFTER DELETE ON public.organization_members FOR EACH ROW EXECUTE FUNCTION handle_member_exit_update_profile();
 
 CREATE TRIGGER trg_insert_owner_into_organization_members AFTER INSERT ON public.organizations FOR EACH ROW EXECUTE FUNCTION add_or_update_owner_in_organization_members();
 

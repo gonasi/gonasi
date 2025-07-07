@@ -59,7 +59,8 @@ export const leaveOrganization = async ({ supabase, data }: LeaveOrganizationPar
       .from('organization_members')
       .delete()
       .eq('organization_id', organizationId)
-      .eq('user_id', userId);
+      .eq('user_id', userId)
+      .select();
 
     if (deleteError) {
       console.error('[leaveOrganization] Deletion failed:', deleteError);

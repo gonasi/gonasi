@@ -108,3 +108,12 @@ export const UpdateMemberRoleSchema = z.object({
 });
 
 export type UpdateMemberRoleSchemaTypes = z.infer<typeof UpdateMemberRoleSchema>;
+
+export const DeleteMemberFromOrganizationSchema = z.object({
+  organizationId: z.string(),
+  memberId: z.string(),
+});
+
+export type DeleteMemberFromOrganizationSchemaTypes = z.infer<
+  typeof DeleteMemberFromOrganizationSchema
+>;

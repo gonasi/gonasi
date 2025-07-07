@@ -8,3 +8,4 @@ export * from './fetchOrganizationMembers';
 export * from './leaveOrganization';
 export * from './fetchOrganizationMemberById';
 export * from './updateOrganizationMemberRole';
+export * from './deleteOrganizationMember';
