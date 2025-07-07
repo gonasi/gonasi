@@ -159,7 +159,7 @@ alter table "public"."role_permissions" enable row level security;
 
 create table "public"."tier_limits" (
     "tier" subscription_tier not null,
-    "max_departments_per_org" integer not null,
+    "max_organizations_per_user" integer not null,
     "storage_limit_mb_per_org" integer not null,
     "max_members_per_org" integer not null,
     "max_collaborators_per_course" integer not null,
@@ -530,68 +530,55 @@ end;
 $function$
 ;
 
-CREATE OR REPLACE FUNCTION public.can_add_org_member(organization_id uuid)
+CREATE OR REPLACE FUNCTION public.can_accept_new_member(org_id uuid)
  RETURNS boolean
  LANGUAGE sql
- SECURITY DEFINER
+ STABLE SECURITY DEFINER
  SET search_path TO ''
 AS $function$
-  with active_members as (
-    select count(*) as count
-    from public.organization_members om
-    where om.organization_id = $1
-  ),
-  pending_invites as (
-    select count(*) as count
-    from public.organization_invites oi
-    where oi.organization_id = $1
-      and oi.accepted_at is null
-      and oi.revoked_at is null
-      and oi.expires_at > now()
+  with counts as (
+    select 
+      count(distinct om.user_id) as active_members,
+      count(distinct oi.email) filter (
+        where oi.accepted_at is null 
+          and oi.revoked_at is null 
+          and oi.expires_at > now()
+      ) as pending_invites
+    from public.organizations o
+    left join public.organization_members om on o.id = om.organization_id
+    left join public.organization_invites oi on o.id = oi.organization_id
+    where o.id = org_id
   ),
   limits as (
     select tl.max_members_per_org
     from public.organizations o
     join public.tier_limits tl on o.tier = tl.tier
-    where o.id = $1
+    where o.id = org_id
   )
-  select (am.count + pi.count) < limits.max_members_per_org
-  from active_members am, pending_invites pi, limits;
+  select (counts.active_members + counts.pending_invites) < limits.max_members_per_org
+  from counts, limits;
 $function$
 ;
 
-CREATE OR REPLACE FUNCTION public.can_create_org_under_limit()
+CREATE OR REPLACE FUNCTION public.can_create_organization(tier_name text, user_id uuid)
  RETURNS boolean
  LANGUAGE sql
+ STABLE SECURITY DEFINER
  SET search_path TO ''
 AS $function$
-  select count(*) < 2
-  from public.organizations
-  where owned_by = (select auth.uid())
-    and tier = 'launch';
-$function$
-;
-
-CREATE OR REPLACE FUNCTION public.can_manage_organization_member(target_org_id uuid, current_user_id uuid, required_role text DEFAULT 'admin'::text)
- RETURNS boolean
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO ''
-AS $function$
-declare
-  user_role text;
-begin
-  select role into user_role
-  from public.organization_members
-  where organization_id = target_org_id
-    and user_id = current_user_id;
-  
-  return case
-    when required_role = 'owner' then user_role = 'owner'
-    when required_role = 'admin' then user_role in ('owner', 'admin')
-    else false
-  end;
-end;
+  with user_org_count as (
+    select count(*) as count
+    from public.organizations
+    where owned_by = coalesce(user_id, auth.uid())
+      and tier = tier_name::public.subscription_tier  -- 👈 explicit cast
+  ),
+  tier_limit as (
+    select max_organizations_per_user
+    from public.tier_limits
+    where tier = tier_name::public.subscription_tier  -- 👈 explicit cast
+  )
+  select user_org_count.count < tier_limit.max_organizations_per_user
+  from user_org_count, tier_limit;
 $function$
 ;
 
@@ -640,6 +627,19 @@ AS $function$
 $function$
 ;
 
+CREATE OR REPLACE FUNCTION public.get_user_org_role(org_id uuid, user_id uuid)
+ RETURNS text
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+  select role::text
+  from public.organization_members
+  where organization_id = org_id
+    and user_id = coalesce(user_id, auth.uid());  -- Use current auth.uid() if user_id is null
+$function$
+;
+
 CREATE OR REPLACE FUNCTION public.handle_new_user()
  RETURNS trigger
  LANGUAGE plpgsql
@@ -685,6 +685,73 @@ begin
   end;
 
   return null;
+end;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.has_org_role(org_id uuid, required_role text, user_id uuid)
+ RETURNS boolean
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+  select case required_role
+    when 'owner' then public.get_user_org_role(org_id, coalesce(user_id, auth.uid())) = 'owner'
+    when 'admin' then public.get_user_org_role(org_id, coalesce(user_id, auth.uid())) in ('owner', 'admin')
+    when 'editor' then public.get_user_org_role(org_id, coalesce(user_id, auth.uid())) in ('owner', 'admin', 'editor')
+    else false  -- If unknown role is passed
+  end;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.has_pending_invite(org_id uuid, user_email text)
+ RETURNS boolean
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+  select exists (
+    select 1
+    from public.organization_invites oi
+    where oi.organization_id = org_id
+      and lower(oi.email) = lower(user_email)
+      and oi.accepted_at is null
+      and oi.revoked_at is null
+      and oi.expires_at > now()
+  );
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.is_user_already_member(org_id uuid, user_email text)
+ RETURNS boolean
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+  select exists (
+    select 1
+    from public.organization_members om
+    join public.profiles p on om.user_id = p.id
+    where om.organization_id = org_id
+      and lower(p.email) = lower(user_email)
+  )
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.prevent_manual_delivery_field_updates()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+begin
+  -- Allow changes only if made by a system role (e.g., service role or background job)
+  -- You can optionally check current_user or context here if needed
+
+  if new.delivery_status is distinct from old.delivery_status
+    or new.delivery_logs is distinct from old.delivery_logs then
+    raise exception 'Cannot manually modify delivery fields.';
+  end if;
+
+  return new;
 end;
 $function$
 ;
@@ -753,7 +820,7 @@ begin
     from public.organizations o
     where o.id = organization_id_from_url;
 
-    can_add := public.can_add_org_member(organization_id_from_url);
+    can_add := public.can_accept_new_member(organization_id_from_url);
     tier_limits_json := public.get_tier_limits_for_org(organization_id_from_url);
 
     return json_build_object(
@@ -763,7 +830,7 @@ begin
         'organization', to_json(org),
         'member', to_json(member),
         'permissions', json_build_object(
-          'can_add_org_member', can_add
+          'can_accept_new_member', can_add
         ),
         'tier_limits', tier_limits_json
       )
@@ -784,7 +851,7 @@ begin
   where o.id = organization_id_from_url;
 
   -- Step 7: Get permissions and tier info
-  can_add := public.can_add_org_member(organization_id_from_url);
+  can_add := public.can_accept_new_member(organization_id_from_url);
   tier_limits_json := public.get_tier_limits_for_org(organization_id_from_url);
 
   -- Step 8: Return updated org context
@@ -795,7 +862,7 @@ begin
       'organization', to_json(org),
       'member', to_json(member),
       'permissions', json_build_object(
-        'can_add_org_member', can_add
+        'can_accept_new_member', can_add
       ),
       'tier_limits', tier_limits_json
     )
@@ -1312,17 +1379,25 @@ to authenticated, anon
 using (true);
 
 
-create policy "insert: org admins with member limit"
+create policy "organization_invites_delete"
+on "public"."organization_invites"
+as permissive
+for delete
+to authenticated
+using (has_org_role(organization_id, 'owner'::text, ( SELECT auth.uid() AS uid)));
+
+
+create policy "organization_invites_insert"
 on "public"."organization_invites"
 as permissive
 for insert
 to authenticated
-with check ((can_manage_organization_member(organization_id, ( SELECT auth.uid() AS uid), 'admin'::text) AND (invited_by = ( SELECT auth.uid() AS uid)) AND can_add_org_member(organization_id) AND ((role <> 'admin'::org_role) OR can_manage_organization_member(organization_id, ( SELECT auth.uid() AS uid), 'owner'::text)) AND (email IS DISTINCT FROM ( SELECT profiles.email
+with check ((has_org_role(organization_id, 'admin'::text, ( SELECT auth.uid() AS uid)) AND (invited_by = ( SELECT auth.uid() AS uid)) AND can_accept_new_member(organization_id) AND ((role <> 'admin'::org_role) OR has_org_role(organization_id, 'owner'::text, ( SELECT auth.uid() AS uid))) AND (email <> ( SELECT profiles.email
    FROM profiles
-  WHERE (profiles.id = auth.uid())))));
+  WHERE (profiles.id = ( SELECT auth.uid() AS uid)))) AND (NOT is_user_already_member(organization_id, email))));
 
 
-create policy "select: anonymous by token"
+create policy "organization_invites_select_anonymous"
 on "public"."organization_invites"
 as permissive
 for select
@@ -1330,67 +1405,63 @@ to anon
 using (((accepted_at IS NULL) AND (revoked_at IS NULL) AND (expires_at > now())));
 
 
-create policy "select: org admins and invite recipients"
+create policy "organization_invites_select_authenticated"
 on "public"."organization_invites"
 as permissive
 for select
 to authenticated
-using ((can_manage_organization_member(organization_id, ( SELECT auth.uid() AS uid), 'admin'::text) OR ((email = ( SELECT profiles.email
+using ((has_org_role(organization_id, 'admin'::text, ( SELECT auth.uid() AS uid)) OR ((email = ( SELECT profiles.email
    FROM profiles
-  WHERE (profiles.id = auth.uid()))) AND (revoked_at IS NULL) AND (expires_at > now()))));
+  WHERE (profiles.id = ( SELECT auth.uid() AS uid)))) AND (accepted_at IS NULL) AND (revoked_at IS NULL) AND (expires_at > now()))));
 
 
-create policy "update: org admins and acceptance"
+create policy "organization_invites_update"
 on "public"."organization_invites"
 as permissive
 for update
 to authenticated
-using ((can_manage_organization_member(organization_id, ( SELECT auth.uid() AS uid), 'admin'::text) OR (accepted_by = ( SELECT auth.uid() AS uid))))
-with check ((((role <> 'admin'::org_role) OR can_manage_organization_member(organization_id, ( SELECT auth.uid() AS uid), 'owner'::text)) AND ((accepted_by IS NULL) OR (accepted_by = ( SELECT auth.uid() AS uid))) AND ((accepted_at IS NULL) OR can_add_org_member(organization_id)) AND ((revoked_at IS NULL) OR can_manage_organization_member(organization_id, ( SELECT auth.uid() AS uid), 'admin'::text)) AND (delivery_status = ( SELECT organization_invites_1.delivery_status
-   FROM organization_invites organization_invites_1
-  WHERE (organization_invites_1.id = organization_invites_1.id))) AND (delivery_logs = ( SELECT organization_invites_1.delivery_logs
-   FROM organization_invites organization_invites_1
-  WHERE (organization_invites_1.id = organization_invites_1.id)))));
+using ((has_org_role(organization_id, 'admin'::text, ( SELECT auth.uid() AS uid)) OR ((email = ( SELECT profiles.email
+   FROM profiles
+  WHERE (profiles.id = ( SELECT auth.uid() AS uid)))) AND (accepted_at IS NULL) AND (revoked_at IS NULL) AND (expires_at > now()))))
+with check ((((role <> 'admin'::org_role) OR has_org_role(organization_id, 'owner'::text, ( SELECT auth.uid() AS uid))) AND ((accepted_by IS NULL) OR (accepted_by = ( SELECT auth.uid() AS uid))) AND ((accepted_at IS NULL) OR can_accept_new_member(organization_id)) AND ((revoked_at IS NULL) OR has_org_role(organization_id, 'admin'::text, ( SELECT auth.uid() AS uid)))));
 
 
-create policy "delete: authorized removal"
+create policy "organization_members_delete"
 on "public"."organization_members"
 as permissive
 for delete
 to authenticated
-using (((role <> 'admin'::org_role) AND can_manage_organization_member(organization_id, ( SELECT auth.uid() AS uid), 'admin'::text)));
+using ((((role = 'editor'::org_role) AND has_org_role(organization_id, 'admin'::text, ( SELECT auth.uid() AS uid))) OR ((user_id <> ( SELECT auth.uid() AS uid)) AND has_org_role(organization_id, 'owner'::text, ( SELECT auth.uid() AS uid)))));
 
 
-create policy "insert: authorized users"
+create policy "organization_members_insert"
 on "public"."organization_members"
 as permissive
 for insert
 to authenticated
-with check ((((user_id = ( SELECT auth.uid() AS uid)) AND (role = 'owner'::org_role)) OR can_manage_organization_member(organization_id, ( SELECT auth.uid() AS uid), 'admin'::text)));
+with check ((((user_id = ( SELECT auth.uid() AS uid)) AND (role = 'owner'::org_role)) OR (has_org_role(organization_id, 'admin'::text, ( SELECT auth.uid() AS uid)) AND can_accept_new_member(organization_id) AND ((role <> 'admin'::org_role) OR has_org_role(organization_id, 'owner'::text, ( SELECT auth.uid() AS uid))))));
 
 
-create policy "select: members of same org"
+create policy "organization_members_select"
 on "public"."organization_members"
 as permissive
 for select
 to authenticated
-using ((can_manage_organization_member(organization_id, ( SELECT auth.uid() AS uid), 'admin'::text) OR (user_id = ( SELECT auth.uid() AS uid))));
+using (((user_id = ( SELECT auth.uid() AS uid)) OR has_org_role(organization_id, 'admin'::text, ( SELECT auth.uid() AS uid))));
 
 
-create policy "update: authorized role changes"
+create policy "organization_members_update"
 on "public"."organization_members"
 as permissive
 for update
 to authenticated
-using (can_manage_organization_member(organization_id, ( SELECT auth.uid() AS uid), 'admin'::text))
-with check (
-CASE
-    WHEN (role = 'admin'::org_role) THEN can_manage_organization_member(organization_id, ( SELECT auth.uid() AS uid), 'owner'::text)
-    ELSE true
-END);
+using (has_org_role(organization_id, 'admin'::text, ( SELECT auth.uid() AS uid)))
+with check ((((role <> 'admin'::org_role) OR has_org_role(organization_id, 'owner'::text, ( SELECT auth.uid() AS uid))) AND ((role <> 'owner'::org_role) OR (user_id <> ( SELECT auth.uid() AS uid)) OR (EXISTS ( SELECT 1
+   FROM organization_members om
+  WHERE ((om.organization_id = organization_members.organization_id) AND (om.role = 'owner'::org_role) AND (om.user_id <> ( SELECT auth.uid() AS uid))))))));
 
 
-create policy "delete: owner only"
+create policy "organizations_delete"
 on "public"."organizations"
 as permissive
 for delete
@@ -1398,35 +1469,31 @@ to authenticated
 using ((owned_by = ( SELECT auth.uid() AS uid)));
 
 
-create policy "insert: auth user as owner within tier limit"
+create policy "organizations_insert"
 on "public"."organizations"
 as permissive
 for insert
 to authenticated
-with check (((owned_by = ( SELECT auth.uid() AS uid)) AND ((tier <> 'launch'::subscription_tier) OR can_create_org_under_limit())));
+with check (((owned_by = ( SELECT auth.uid() AS uid)) AND can_create_organization((tier)::text, ( SELECT auth.uid() AS uid))));
 
 
-create policy "select: public, owner, member, or student"
+create policy "organizations_select"
 on "public"."organizations"
 as permissive
 for select
 to public
-using ((is_public OR (owned_by = ( SELECT auth.uid() AS uid)) OR (EXISTS ( SELECT 1
-   FROM organization_members m
-  WHERE ((m.organization_id = organizations.id) AND (m.user_id = ( SELECT auth.uid() AS uid)))))));
+using (((is_public = true) OR (owned_by = ( SELECT auth.uid() AS uid)) OR (EXISTS ( SELECT 1
+   FROM organization_members om
+  WHERE ((om.organization_id = organizations.id) AND (om.user_id = ( SELECT auth.uid() AS uid)))))));
 
 
-create policy "update: owner or admin, transfer to admin only"
+create policy "organizations_update"
 on "public"."organizations"
 as permissive
 for update
 to authenticated
-using (((owned_by = ( SELECT auth.uid() AS uid)) OR (EXISTS ( SELECT 1
-   FROM organization_members m
-  WHERE ((m.organization_id = organizations.id) AND (m.user_id = ( SELECT auth.uid() AS uid)) AND (m.role = 'admin'::org_role))))))
-with check (((owned_by = ( SELECT auth.uid() AS uid)) OR (EXISTS ( SELECT 1
-   FROM organization_members m
-  WHERE ((m.organization_id = organizations.id) AND (m.user_id = organizations.owned_by) AND (m.role = 'admin'::org_role))))));
+using (((owned_by = ( SELECT auth.uid() AS uid)) OR has_org_role(id, 'admin'::text, ( SELECT auth.uid() AS uid))))
+with check ((((owned_by = ( SELECT auth.uid() AS uid)) OR has_org_role(id, 'admin'::text, owned_by)) AND ((owned_by = ( SELECT auth.uid() AS uid)) OR has_org_role(id, 'admin'::text, ( SELECT auth.uid() AS uid)))));
 
 
 create policy "Allow DELETE of own profile by authenticated users"
@@ -1550,6 +1617,8 @@ CREATE TRIGGER trg_course_categories_set_updated_at BEFORE UPDATE ON public.cour
 CREATE TRIGGER trg_course_sub_categories_set_updated_at BEFORE UPDATE ON public.course_sub_categories FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER trg_lesson_types_set_updated_at BEFORE UPDATE ON public.lesson_types FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER block_delivery_field_updates BEFORE UPDATE ON public.organization_invites FOR EACH ROW EXECUTE FUNCTION prevent_manual_delivery_field_updates();
 
 CREATE TRIGGER trg_insert_owner_into_organization_members AFTER INSERT ON public.organizations FOR EACH ROW EXECUTE FUNCTION add_or_update_owner_in_organization_members();
 

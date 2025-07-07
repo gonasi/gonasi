@@ -1,6 +1,6 @@
 insert into public.tier_limits (
   tier,
-  max_departments_per_org,
+  max_organizations_per_user,
   storage_limit_mb_per_org,
   max_members_per_org,
   max_collaborators_per_course,
@@ -18,7 +18,7 @@ insert into public.tier_limits (
 
 -- Launch (Free / Freemium) - Pre-launch generous tier for onboarding schools and solo educators
 ('launch',
-  3,                      -- max_departments_per_org (allow basic team/org structure)
+  3,                      -- max_organizations_per_user (allow basic team/org structure)
   1000,                   -- storage_limit_mb_per_org (1 GB - enough for interactive content)
   3,                      -- max_members_per_org (small school team)
   10,                     -- max_collaborators_per_course (encourage teamwork)
@@ -36,7 +36,7 @@ insert into public.tier_limits (
 
 -- Scale (Growth / $49/mo) - Ideal for small to medium institutions
 ('scale',
-  15,                     -- max_departments_per_org (multi-department schools/orgs)
+  15,                     -- max_organizations_per_user (multi-department schools/orgs)
   5000,                   -- storage_limit_mb_per_org (5 GB)
   10,                     -- max_members_per_org (enough for departmental control)
   25,                     -- max_collaborators_per_course (rich course creation teams)
@@ -54,7 +54,7 @@ insert into public.tier_limits (
 
 -- Impact (Pro / $129/mo) - Ideal for private institutions, edtech startups, or creators scaling up
 ('impact',
-  50,                     -- max_departments_per_org
+  50,                     -- max_organizations_per_user
   25000,                  -- storage_limit_mb_per_org (25 GB for videos/media)
   25,                     -- max_members_per_org
   60,                     -- max_collaborators_per_course
@@ -72,7 +72,7 @@ insert into public.tier_limits (
 
 -- Enterprise (Custom / $499+/mo) - Universities, government programs, large publishers
 ('enterprise',
-  9999,                   -- max_departments_per_org (unlimited)
+  9999,                   -- max_organizations_per_user (unlimited)
   100000,                 -- storage_limit_mb_per_org (100 GB)
   999,                    -- max_members_per_org
   999,                    -- max_collaborators_per_course

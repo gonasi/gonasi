@@ -39,6 +39,8 @@ export default [
       route('active-members', 'routes/organizations/members/active-members.tsx'),
       route('invites', 'routes/organizations/members/members-invites.tsx', [
         route('new-invite', 'routes/organizations/members/new-invite.tsx'),
+        route('resend/:orgInviteId/:token', 'routes/organizations/members/resend-invite.tsx'),
+        route('revoke/:orgInviteId/:token', 'routes/organizations/members/revoke-invite.tsx'),
       ]),
     ]),
     route(':organizationId/courses', 'routes/organizations/courses/courses-index.tsx'),

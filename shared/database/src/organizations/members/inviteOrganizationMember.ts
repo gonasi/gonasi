@@ -31,6 +31,101 @@ export const inviteOrganizationMember = async (
       };
     }
 
+    // 1. Check user role in org (must be admin or higher)
+    const { data: orgRoleData, error: orgRoleError } = await supabase.rpc('get_user_org_role', {
+      org_id: organizationId,
+      user_id: user?.id ?? '',
+    });
+
+    if (orgRoleError || !orgRoleData) {
+      console.error('[inviteOrganizationMember] Role fetch failed:', orgRoleError);
+      return {
+        success: false,
+        message: 'Could not verify your role in the organization.',
+        data: null,
+      };
+    }
+
+    const userRole = orgRoleData as 'owner' | 'admin' | 'editor';
+
+    const canInvite = userRole === 'admin' || userRole === 'owner';
+
+    if (!canInvite) {
+      return {
+        success: false,
+        message: 'You must be an admin to invite members.',
+        data: null,
+      };
+    }
+
+    if (role === 'admin' && userRole !== 'owner') {
+      return {
+        success: false,
+        message: 'Only owners can invite other admins.',
+        data: null,
+      };
+    }
+
+    // 2. Check if already a member
+    const { data: isMember, error: isMemberError } = await supabase.rpc('is_user_already_member', {
+      org_id: organizationId,
+      user_email: email,
+    });
+
+    if (isMemberError) {
+      console.error('[inviteOrganizationMember] Membership check failed:', isMemberError);
+      return {
+        success: false,
+        message: 'Could not verify membership status.',
+        data: null,
+      };
+    }
+
+    if (isMember) {
+      return {
+        success: false,
+        message: 'This user is already a member of the organization.',
+        data: null,
+      };
+    }
+
+    // 3. Check for pending invites
+    const { data: hasPending, error: hasPendingError } = await supabase.rpc('has_pending_invite', {
+      org_id: organizationId,
+      user_email: email,
+    });
+
+    if (hasPendingError) {
+      console.error('[inviteOrganizationMember] Invite check failed:', hasPendingError);
+      return {
+        success: false,
+        message: 'Could not verify invite status.',
+        data: null,
+      };
+    }
+
+    if (hasPending) {
+      return {
+        success: false,
+        message: 'This user has already been invited and has a pending invite.',
+        data: null,
+      };
+    }
+
+    // 4. Check tier/member limits
+    const { data: canAccept, error: canAcceptError } = await supabase.rpc('can_accept_new_member', {
+      org_id: organizationId,
+    });
+
+    if (canAcceptError || !canAccept) {
+      return {
+        success: false,
+        message: 'Your plan has reached its member limit. Upgrade to invite more users.',
+        data: null,
+      };
+    }
+
+    // ✅ Passed all checks — insert invite
     const token = randomUUID();
 
     const { data, error } = await supabase
@@ -49,23 +144,14 @@ export const inviteOrganizationMember = async (
       .single();
 
     if (error) {
-      if (error.code === '23505') {
-        return {
-          success: false,
-          message: 'This user has already been invited and has a pending invite.',
-          data: null,
-        };
-      }
-
       console.error('[inviteOrganizationMember] DB insert error:', error);
       return {
         success: false,
-        message: 'Failed to send invite. You may have reached your plan’s limit.',
+        message: 'Failed to send invite. Please try again.',
         data: null,
       };
     }
 
-    // ✅ Invoke edge function via Supabase client
     const { error: invokeError } = await supabase.functions.invoke('send-org-invite', {
       body: {
         email,
@@ -89,7 +175,6 @@ export const inviteOrganizationMember = async (
     };
   } catch (err) {
     console.error('[inviteOrganizationMember] Unexpected error:', err);
-
     return {
       success: false,
       message: 'An unexpected error occurred. Please try again.',

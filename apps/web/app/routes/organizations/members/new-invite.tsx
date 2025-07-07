@@ -64,7 +64,7 @@ export default function InviteMember({ params }: Route.ComponentProps) {
   const {
     data: {
       tier_limits: { tier, max_members_per_org },
-      permissions: { can_add_org_member },
+      permissions: { can_accept_new_member },
       member: { role },
     },
   } = useOutletContext<OrganizationsOutletContextType>();
@@ -86,11 +86,11 @@ export default function InviteMember({ params }: Route.ComponentProps) {
     <Modal open>
       <Modal.Content size='md'>
         <Modal.Header
-          title={can_add_org_member ? 'Invite New Member' : 'Member Limit Reached'}
+          title={can_accept_new_member ? 'Invite New Member' : 'Member Limit Reached'}
           closeRoute={`/${params.organizationId}/members/invites`}
         />
         <Modal.Body className='px-4'>
-          {can_add_org_member ? (
+          {can_accept_new_member ? (
             <RemixFormProvider {...methods}>
               <Form method='POST' onSubmit={methods.handleSubmit} noValidate>
                 <HoneypotInputs />

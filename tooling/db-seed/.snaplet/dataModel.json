@@ -6390,9 +6390,9 @@
           "maxLength": null
         },
         {
-          "id": "public.tier_limits.max_departments_per_org",
-          "name": "max_departments_per_org",
-          "columnName": "max_departments_per_org",
+          "id": "public.tier_limits.max_organizations_per_user",
+          "name": "max_organizations_per_user",
+          "columnName": "max_organizations_per_user",
           "type": "int4",
           "isRequired": true,
           "kind": "scalar",

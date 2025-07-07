@@ -56,7 +56,7 @@ begin
     from public.organizations o
     where o.id = organization_id_from_url;
 
-    can_add := public.can_add_org_member(organization_id_from_url);
+    can_add := public.can_accept_new_member(organization_id_from_url);
     tier_limits_json := public.get_tier_limits_for_org(organization_id_from_url);
 
     return json_build_object(
@@ -66,7 +66,7 @@ begin
         'organization', to_json(org),
         'member', to_json(member),
         'permissions', json_build_object(
-          'can_add_org_member', can_add
+          'can_accept_new_member', can_add
         ),
         'tier_limits', tier_limits_json
       )
@@ -87,7 +87,7 @@ begin
   where o.id = organization_id_from_url;
 
   -- Step 7: Get permissions and tier info
-  can_add := public.can_add_org_member(organization_id_from_url);
+  can_add := public.can_accept_new_member(organization_id_from_url);
   tier_limits_json := public.get_tier_limits_for_org(organization_id_from_url);
 
   -- Step 8: Return updated org context
@@ -98,7 +98,7 @@ begin
       'organization', to_json(org),
       'member', to_json(member),
       'permissions', json_build_object(
-        'can_add_org_member', can_add
+        'can_accept_new_member', can_add
       ),
       'tier_limits', tier_limits_json
     )

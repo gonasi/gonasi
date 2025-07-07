@@ -63,7 +63,7 @@ export const OrganizationMemberSchema = z.object({
 // Tier Limits
 export const TierLimitsSchema = z.object({
   tier: SubscriptionTierEnum,
-  max_departments_per_org: z.number(),
+  max_organizations_per_user: z.number(),
   storage_limit_mb_per_org: z.number(),
   max_members_per_org: z.number(),
   max_collaborators_per_course: z.number(),
@@ -88,7 +88,7 @@ export const VerifyAndSetActiveOrgResponseSchema = z.object({
       organization: OrganizationSchema,
       member: OrganizationMemberSchema,
       permissions: z.object({
-        can_add_org_member: z.boolean(),
+        can_accept_new_member: z.boolean(),
       }),
       tier_limits: TierLimitsSchema,
     })

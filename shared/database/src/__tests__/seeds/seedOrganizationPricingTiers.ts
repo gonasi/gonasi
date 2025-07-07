@@ -8,7 +8,7 @@ type SupportLevel = 'community' | 'email' | 'priority' | 'dedicated';
 
 interface TierLimitSeed {
   tier: Tier;
-  max_departments_per_org: number;
+  max_organizations_per_user: number;
   storage_limit_mb_per_org: number;
   max_members_per_org: number;
   max_collaborators_per_course: number;
@@ -26,7 +26,7 @@ interface TierLimitSeed {
 
 export const launchTierLimits: TierLimitSeed = {
   tier: 'launch',
-  max_departments_per_org: 3,
+  max_organizations_per_user: 3,
   storage_limit_mb_per_org: 1000,
   max_members_per_org: 2,
   max_collaborators_per_course: 5,
@@ -44,7 +44,7 @@ export const launchTierLimits: TierLimitSeed = {
 
 export const scaleTierLimits: TierLimitSeed = {
   tier: 'scale',
-  max_departments_per_org: 10,
+  max_organizations_per_user: 10,
   storage_limit_mb_per_org: 10000,
   max_members_per_org: 5,
   max_collaborators_per_course: 15,
@@ -62,7 +62,7 @@ export const scaleTierLimits: TierLimitSeed = {
 
 export const impactTierLimits: TierLimitSeed = {
   tier: 'impact',
-  max_departments_per_org: 50,
+  max_organizations_per_user: 50,
   storage_limit_mb_per_org: 25000,
   max_members_per_org: 25,
   max_collaborators_per_course: 60,
@@ -80,7 +80,7 @@ export const impactTierLimits: TierLimitSeed = {
 
 export const enterpriseTierLimits: TierLimitSeed = {
   tier: 'enterprise',
-  max_departments_per_org: -1, // Unlimited
+  max_organizations_per_user: -1, // Unlimited
   storage_limit_mb_per_org: 100000,
   max_members_per_org: 20,
   max_collaborators_per_course: 50,

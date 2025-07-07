@@ -575,9 +575,9 @@ export type Database = {
           custom_domains_enabled: boolean
           max_collaborators_per_course: number
           max_custom_domains: number | null
-          max_departments_per_org: number
           max_free_courses_per_org: number
           max_members_per_org: number
+          max_organizations_per_user: number
           max_students_per_course: number
           platform_fee_percentage: number
           storage_limit_mb_per_org: number
@@ -592,9 +592,9 @@ export type Database = {
           custom_domains_enabled?: boolean
           max_collaborators_per_course: number
           max_custom_domains?: number | null
-          max_departments_per_org: number
           max_free_courses_per_org: number
           max_members_per_org: number
+          max_organizations_per_user: number
           max_students_per_course: number
           platform_fee_percentage?: number
           storage_limit_mb_per_org: number
@@ -609,9 +609,9 @@ export type Database = {
           custom_domains_enabled?: boolean
           max_collaborators_per_course?: number
           max_custom_domains?: number | null
-          max_departments_per_org?: number
           max_free_courses_per_org?: number
           max_members_per_org?: number
+          max_organizations_per_user?: number
           max_students_per_course?: number
           platform_fee_percentage?: number
           storage_limit_mb_per_org?: number
@@ -697,20 +697,12 @@ export type Database = {
         }
         Returns: boolean
       }
-      can_add_org_member: {
-        Args: { organization_id: string }
+      can_accept_new_member: {
+        Args: { org_id: string }
         Returns: boolean
       }
-      can_create_org_under_limit: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      can_manage_organization_member: {
-        Args: {
-          target_org_id: string
-          current_user_id: string
-          required_role?: string
-        }
+      can_create_organization: {
+        Args: { tier_name: string; user_id: string }
         Returns: boolean
       }
       custom_access_token_hook: {
@@ -720,6 +712,22 @@ export type Database = {
       get_tier_limits_for_org: {
         Args: { org_id: string }
         Returns: Json
+      }
+      get_user_org_role: {
+        Args: { org_id: string; user_id: string }
+        Returns: string
+      }
+      has_org_role: {
+        Args: { org_id: string; required_role: string; user_id: string }
+        Returns: boolean
+      }
+      has_pending_invite: {
+        Args: { org_id: string; user_email: string }
+        Returns: boolean
+      }
+      is_user_already_member: {
+        Args: { org_id: string; user_email: string }
+        Returns: boolean
       }
       rpc_verify_and_set_active_organization: {
         Args: { organization_id_from_url: string }

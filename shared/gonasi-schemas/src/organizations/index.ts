@@ -76,3 +76,21 @@ export const InviteMemberToOrganizationSchema = z.object({
 export type InviteMemberToOrganizationSchemaTypes = z.infer<
   typeof InviteMemberToOrganizationSchema
 >;
+
+export const ResendInviteToOrganizationEmailSchema = z.object({
+  organizationId: z.string(),
+  token: z.string(),
+});
+
+export type ResendInviteToOrganizationEmailSchemaTypes = z.infer<
+  typeof ResendInviteToOrganizationEmailSchema
+>;
+
+export const RevokeInviteToOrganizationSchema = z.object({
+  organizationId: z.string(),
+  token: z.string(),
+});
+
+export type RevokeInviteToOrganizationSchemaTypes = z.infer<
+  typeof RevokeInviteToOrganizationSchema
+>;

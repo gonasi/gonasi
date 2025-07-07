@@ -68,7 +68,7 @@ create table tier_limits (
   tier subscription_tier primary key,
 
   -- Organizational limits
-  max_departments_per_org integer not null,
+  max_organizations_per_user integer not null,
   storage_limit_mb_per_org integer not null,
 
   -- Team size

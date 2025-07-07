@@ -129,7 +129,7 @@ describe('Tier Limits RLS Policies', () => {
 
         expect(error).toBeNull();
         expect(data?.tier).toBe('launch');
-        expect(data?.max_departments_per_org).toBe(3);
+        expect(data?.max_organizations_per_user).toBe(3);
         expect(data?.analytics_level).toBe('basic');
       });
     });
@@ -144,7 +144,7 @@ describe('Tier Limits RLS Policies', () => {
 
         expect(error).toBeNull();
         expect(data?.tier).toBe('launch');
-        expect(data?.max_departments_per_org).toBe(3);
+        expect(data?.max_organizations_per_user).toBe(3);
         expect(data?.ai_tools_enabled).toBe(false);
       });
 
@@ -222,7 +222,7 @@ describe('Tier Limits RLS Policies', () => {
         const { data, error } = await testSupabase
           .from('tier_limits')
           .update({
-            max_departments_per_org: 5,
+            max_organizations_per_user: 5,
             ai_tools_enabled: true,
             platform_fee_percentage: 12.5,
           })
@@ -232,7 +232,7 @@ describe('Tier Limits RLS Policies', () => {
 
         expect(error).toBeNull();
         expect(data?.tier).toBe('launch');
-        expect(data?.max_departments_per_org).toBe(5);
+        expect(data?.max_organizations_per_user).toBe(5);
         expect(data?.ai_tools_enabled).toBe(true);
         expect(data?.platform_fee_percentage).toBeCloseTo(12.5, 2); // 2 = number of decimal places
       });
@@ -248,7 +248,7 @@ describe('Tier Limits RLS Policies', () => {
         const { data, error } = await testSupabase
           .from('tier_limits')
           .update({
-            max_departments_per_org: 999,
+            max_organizations_per_user: 999,
             platform_fee_percentage: 0.0,
           })
           .eq('tier', 'launch')
@@ -264,7 +264,7 @@ describe('Tier Limits RLS Policies', () => {
           .eq('tier', 'launch')
           .single();
 
-        expect(verifyData?.max_departments_per_org).toBe(3); // Original value
+        expect(verifyData?.max_organizations_per_user).toBe(3); // Original value
         expect(verifyData?.platform_fee_percentage).toBeCloseTo(15, 2); // Original value
       });
 
@@ -274,7 +274,7 @@ describe('Tier Limits RLS Policies', () => {
         const { data, error } = await testSupabase
           .from('tier_limits')
           .update({
-            max_departments_per_org: 999,
+            max_organizations_per_user: 999,
           })
           .eq('tier', 'launch')
           .select();
@@ -455,7 +455,7 @@ describe('Tier Limits RLS Policies', () => {
         // Should NOT be able to update
         const { data: updateData, error: updateError } = await testSupabase
           .from('tier_limits')
-          .update({ max_departments_per_org: 999 })
+          .update({ max_organizations_per_user: 999 })
           .eq('tier', 'launch')
           .select();
 
@@ -477,7 +477,7 @@ describe('Tier Limits RLS Policies', () => {
           .from('tier_limits')
           .insert({
             tier: 'impact',
-            max_departments_per_org: 7,
+            max_organizations_per_user: 7,
             storage_limit_mb_per_org: 5000,
             max_members_per_org: 3,
             max_collaborators_per_course: 10,
@@ -507,7 +507,7 @@ describe('Tier Limits RLS Policies', () => {
 
         await testSupabase
           .from('tier_limits')
-          .update({ max_departments_per_org: 15 })
+          .update({ max_organizations_per_user: 15 })
           .eq('tier', 'scale');
 
         // Regular user should see the updated data
@@ -523,7 +523,7 @@ describe('Tier Limits RLS Policies', () => {
           .eq('tier', 'scale')
           .single();
 
-        expect(data?.max_departments_per_org).toBe(15);
+        expect(data?.max_organizations_per_user).toBe(15);
 
         // Anonymous user should also see the updated data
         await TestCleanupManager.signOutAllClients();
@@ -534,7 +534,7 @@ describe('Tier Limits RLS Policies', () => {
           .eq('tier', 'scale')
           .single();
 
-        expect(anonData?.max_departments_per_org).toBe(15);
+        expect(anonData?.max_organizations_per_user).toBe(15);
       });
     });
 
@@ -548,7 +548,7 @@ describe('Tier Limits RLS Policies', () => {
 
         expect(error).toBeNull();
         expect(data?.tier).toBe('enterprise');
-        expect(data?.max_departments_per_org).toBe(-1);
+        expect(data?.max_organizations_per_user).toBe(-1);
         expect(data?.storage_limit_mb_per_org).toBe(100000);
         expect(data?.max_members_per_org).toBe(20);
         expect(data?.max_collaborators_per_course).toBe(50);

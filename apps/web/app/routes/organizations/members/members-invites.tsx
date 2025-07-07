@@ -1,7 +1,7 @@
 import { Outlet, useOutletContext } from 'react-router';
 import { formatDistanceToNow } from 'date-fns';
 import { motion } from 'framer-motion';
-import { Plus, RotateCcw, Trash, X } from 'lucide-react';
+import { Plus, RotateCcw, X } from 'lucide-react';
 
 import { fetchOrganizationInvites } from '@gonasi/database/organizations';
 
@@ -9,7 +9,7 @@ import type { Route } from './+types/members-invites';
 
 import { BannerCard } from '~/components/cards';
 import { Badge } from '~/components/ui/badge';
-import { Button, IconNavLink } from '~/components/ui/button';
+import { IconNavLink } from '~/components/ui/button';
 import {
   Table,
   TableBody,
@@ -35,24 +35,9 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 export default function MembersInvites({ params, loaderData }: Route.ComponentProps) {
   const { data } = useOutletContext<OrganizationsOutletContextType>();
 
-  const onResend = (id: string) => {
-    console.log('[Resend Invite]', id);
-    // TODO: trigger resend via Supabase function or API route
-  };
-
-  const onRevoke = (id: string) => {
-    console.log('[Revoke Invite]', id);
-    // TODO: update `revoked_at` via Supabase
-  };
-
-  const onDelete = (id: string) => {
-    console.log('[Delete Invite]', id);
-    // TODO: delete row via Supabase
-  };
-
   return (
     <>
-      {data.permissions.can_add_org_member ? null : (
+      {data.permissions.can_accept_new_member ? null : (
         <div className='px-4 pb-8'>
           <BannerCard
             message={`You're at the limit for the ${data.tier_limits.tier} plan`}
@@ -133,21 +118,24 @@ export default function MembersInvites({ params, loaderData }: Route.ComponentPr
                     </div>
                   </TableCell>
                   <TableCell className='text-muted-foreground text-sm'>{lastSent}</TableCell>
-                  <TableCell className='flex justify-end gap-2'>
+                  <TableCell className='flex h-full items-center justify-end gap-4 py-4'>
                     {status === 'Pending' && (
                       <>
-                        <Button size='icon' variant='ghost' onClick={() => onResend(invite.id)}>
-                          <RotateCcw className='h-4 w-4' />
-                        </Button>
-                        <Button size='icon' variant='ghost' onClick={() => onRevoke(invite.id)}>
-                          <X className='h-4 w-4' />
-                        </Button>
+                        <div>
+                          <IconNavLink
+                            to={`/${params.organizationId}/members/invites/resend/${invite.id}/${invite.token}`}
+                            icon={RotateCcw}
+                            size={20}
+                          />
+                        </div>
+                        <div>
+                          <IconNavLink
+                            to={`/${params.organizationId}/members/invites/revoke/${invite.id}/${invite.token}`}
+                            icon={X}
+                            size={20}
+                          />
+                        </div>
                       </>
-                    )}
-                    {status === 'Revoked' && (
-                      <Button size='icon' variant='ghost' onClick={() => onDelete(invite.id)}>
-                        <Trash className='text-destructive h-4 w-4' />
-                      </Button>
                     )}
                   </TableCell>
                 </motion.tr>

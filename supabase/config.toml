@@ -91,11 +91,19 @@ schema_paths = [
   './schemas/profiles_schema_rls_policies.sql',
   './schemas/profiles_storage_rls.sql',
 
+
+
+
+
   # members rls
-  './schemas/organizations_rls.sql',
   './schemas/organizations_functions_triggers.sql',
-  './schemas/organization_members_rls.sql',
-  './schemas/organization_invites_rls.sql',
+
+
+  './schemas/organizations/utils.sql',
+
+  './schemas/organizations/organizations_rls.sql',
+  './schemas/organizations/organization_members_rls.sql',
+  './schemas/organizations/organization_invites_rls.sql',
 
 
   # rpc profiles, orgs
