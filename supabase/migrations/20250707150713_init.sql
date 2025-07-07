@@ -87,8 +87,8 @@ create table "public"."organization_members" (
     "user_id" uuid not null,
     "role" org_role not null,
     "invited_by" uuid,
-    "created_at" timestamp with time zone not null default now(),
-    "updated_at" timestamp with time zone not null default now()
+    "created_at" timestamp with time zone not null default timezone('utc'::text, now()),
+    "updated_at" timestamp with time zone not null default timezone('utc'::text, now())
 );
 
 
@@ -217,6 +217,12 @@ CREATE INDEX idx_org_invites__organization_id ON public.organization_invites USI
 
 CREATE INDEX idx_org_invites__token ON public.organization_invites USING btree (token);
 
+CREATE INDEX idx_organization_members_invited_by ON public.organization_members USING btree (invited_by);
+
+CREATE INDEX idx_organization_members_org_id ON public.organization_members USING btree (organization_id);
+
+CREATE INDEX idx_organization_members_user_id ON public.organization_members USING btree (user_id);
+
 CREATE INDEX idx_organizations_created_at ON public.organizations USING btree (created_at);
 
 CREATE INDEX idx_organizations_created_by ON public.organizations USING btree (created_by);
@@ -255,15 +261,9 @@ CREATE UNIQUE INDEX organization_invites_pkey ON public.organization_invites USI
 
 CREATE UNIQUE INDEX organization_invites_token_key ON public.organization_invites USING btree (token);
 
-CREATE INDEX organization_members_invited_by_idx ON public.organization_members USING btree (invited_by);
-
-CREATE INDEX organization_members_organization_id_idx ON public.organization_members USING btree (organization_id);
-
 CREATE UNIQUE INDEX organization_members_organization_id_user_id_key ON public.organization_members USING btree (organization_id, user_id);
 
 CREATE UNIQUE INDEX organization_members_pkey ON public.organization_members USING btree (id);
-
-CREATE INDEX organization_members_user_id_idx ON public.organization_members USING btree (user_id);
 
 CREATE UNIQUE INDEX organizations_handle_key ON public.organizations USING btree (handle);
 
@@ -380,6 +380,10 @@ alter table "public"."organization_members" add constraint "organization_members
 alter table "public"."organization_members" add constraint "organization_members_user_id_fkey" FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE not valid;
 
 alter table "public"."organization_members" validate constraint "organization_members_user_id_fkey";
+
+alter table "public"."organization_members" add constraint "organization_members_user_id_fkey_profiles" FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE not valid;
+
+alter table "public"."organization_members" validate constraint "organization_members_user_id_fkey_profiles";
 
 alter table "public"."organizations" add constraint "handle_length" CHECK ((char_length(handle) >= 3)) not valid;
 
@@ -610,6 +614,64 @@ begin
   -- Return the modified JWT payload
   event := jsonb_set(event, '{claims}', claims);
   return event;
+end;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.get_active_organization_members(_organization_id uuid, _user_id uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+declare
+  result jsonb;
+begin
+  -- Ensure the calling user is part of the organization
+  if not exists (
+    select 1
+    from public.organization_members
+    where organization_id = _organization_id
+      and user_id = _user_id
+  ) then
+    raise exception 'Access denied: you are not a member of this organization';
+  end if;
+
+  -- Fetch all members in the organization
+  select jsonb_agg(jsonb_build_object(
+    'user', jsonb_build_object(
+      'id', u.id,
+      'username', u.username,
+      'full_name', u.full_name,
+      'avatar_url', u.avatar_url,
+      'blur_hash', u.blur_hash,
+      'phone_number', u.phone_number,
+      'country_code', u.country_code,
+      'active_organization_id', u.active_organization_id
+    ),
+    'invited_by', case
+      when inviter.id is not null then jsonb_build_object(
+        'id', inviter.id,
+        'username', inviter.username,
+        'full_name', inviter.full_name,
+        'avatar_url', inviter.avatar_url,
+        'blur_hash', inviter.blur_hash
+      )
+      else null
+    end,
+    'membership_id', m.id,
+    'organization_id', m.organization_id,
+    'role', m.role,
+    'membership_created_at', m.created_at,
+    'membership_updated_at', m.updated_at
+  ))
+  into result
+  from public.organization_members m
+  join public.profiles u on u.id = m.user_id
+  left join public.profiles inviter on inviter.id = m.invited_by
+  where m.organization_id = _organization_id;
+
+  return coalesce(result, '[]'::jsonb);
 end;
 $function$
 ;

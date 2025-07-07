@@ -2,7 +2,7 @@ import type { LucideIcon } from 'lucide-react';
 
 import { TabLink } from './tab-link';
 
-interface Tab {
+export interface Tab {
   to: string;
   name: string;
   icon: LucideIcon;

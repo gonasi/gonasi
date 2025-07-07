@@ -104,6 +104,7 @@ schema_paths = [
   './schemas/organizations/organizations_rls.sql',
   './schemas/organizations/organization_members_rls.sql',
   './schemas/organizations/organization_invites_rls.sql',
+  './schemas/organizations/function_fetch_active_org_members.sql',
 
 
   # rpc profiles, orgs

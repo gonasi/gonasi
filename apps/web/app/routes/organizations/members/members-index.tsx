@@ -4,7 +4,7 @@ import { Library } from 'lucide-react';
 
 import type { Route } from './+types/members-index';
 
-import { GoTabNav } from '~/components/go-tab-nav';
+import { GoTabNav, type Tab } from '~/components/go-tab-nav';
 import type { OrganizationsOutletContextType } from '~/routes/layouts/organizations/organizations-layout';
 
 export default function AllMembers({ params }: Route.ComponentProps) {
@@ -26,20 +26,22 @@ export default function AllMembers({ params }: Route.ComponentProps) {
       <section className='container mx-auto px-4 md:px-0'>
         <div className='bg-background/95 sticky -top-10 z-10'>
           <GoTabNav
-            tabs={[
-              {
-                to: `/${params.organizationId}/members/active-members`,
-                name: 'Members',
-                icon: Library,
-              },
-              data.member.role !== 'editor'
-                ? {
-                    to: `/${params.organizationId}/members/invites`,
-                    name: 'Invites',
-                    icon: Library,
-                  }
-                : null,
-            ].filter(Boolean)}
+            tabs={
+              [
+                {
+                  to: `/${params.organizationId}/members/active-members`,
+                  name: 'Members',
+                  icon: Library,
+                },
+                data.member.role !== 'editor'
+                  ? {
+                      to: `/${params.organizationId}/members/invites`,
+                      name: 'Invites',
+                      icon: Library,
+                    }
+                  : null,
+              ].filter(Boolean) as Tab[]
+            }
           />
         </div>
         {/* Main content */}

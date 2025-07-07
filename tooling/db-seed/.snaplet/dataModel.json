@@ -3278,6 +3278,24 @@
           "isGenerated": false,
           "sequence": false,
           "hasDefaultValue": false
+        },
+        {
+          "name": "profiles",
+          "type": "profiles",
+          "isRequired": true,
+          "kind": "object",
+          "relationName": "organization_membersToprofiles",
+          "relationFromFields": [
+            "user_id"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
         }
       ],
       "uniqueConstraints": [
@@ -4165,6 +4183,20 @@
           "isRequired": false,
           "kind": "object",
           "relationName": "lesson_types_updated_byToprofiles",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "organization_members",
+          "type": "organization_members",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "organization_membersToprofiles",
           "relationFromFields": [],
           "relationToFields": [],
           "isList": true,

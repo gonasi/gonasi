@@ -331,6 +331,20 @@ export type Database = {
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "organization_members_user_id_fkey_profiles"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organization_members_user_id_fkey_profiles"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       organizations: {
@@ -707,6 +721,10 @@ export type Database = {
       }
       custom_access_token_hook: {
         Args: { event: Json }
+        Returns: Json
+      }
+      get_active_organization_members: {
+        Args: { _organization_id: string; _user_id: string }
         Returns: Json
       }
       get_tier_limits_for_org: {
