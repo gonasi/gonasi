@@ -55,19 +55,29 @@ with check (
 );
 
 
--- delete: admins can remove non-admins; owners can remove anyone except themselves
+-- delete: 
+-- - editors and admins can remove themselves
+-- - admins can remove non-admins (editors)
+-- - owners can remove anyone except themselves
 create policy "organization_members_delete"
 on public.organization_members
 for delete
 to authenticated
 using (
   (
-    role = 'editor'
-    and public.has_org_role(organization_id, 'admin', (select auth.uid()))
+    -- self-deletion for admins and editors
+    user_id = auth.uid()
+    and role != 'owner'
   )
   or (
-    user_id != (select auth.uid())
-    and public.has_org_role(organization_id, 'owner', (select auth.uid()))
+    -- admin removing editor (not themselves)
+    role = 'editor'
+    and user_id != auth.uid()
+    and public.has_org_role(organization_id, 'admin', auth.uid())
+  )
+  or (
+    -- owner removing anyone except themselves
+    user_id != auth.uid()
+    and public.has_org_role(organization_id, 'owner', auth.uid())
   )
 );
-

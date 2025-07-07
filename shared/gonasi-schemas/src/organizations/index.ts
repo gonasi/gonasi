@@ -94,3 +94,9 @@ export const RevokeInviteToOrganizationSchema = z.object({
 export type RevokeInviteToOrganizationSchemaTypes = z.infer<
   typeof RevokeInviteToOrganizationSchema
 >;
+
+export const ExitOrganizationSchema = z.object({
+  organizationId: z.string(),
+});
+
+export type ExitOrganizationSchemaTypes = z.infer<typeof ExitOrganizationSchema>;

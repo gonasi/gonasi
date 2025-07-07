@@ -1472,7 +1472,7 @@ on "public"."organization_members"
 as permissive
 for delete
 to authenticated
-using ((((role = 'editor'::org_role) AND has_org_role(organization_id, 'admin'::text, ( SELECT auth.uid() AS uid))) OR ((user_id <> ( SELECT auth.uid() AS uid)) AND has_org_role(organization_id, 'owner'::text, ( SELECT auth.uid() AS uid)))));
+using ((((user_id = auth.uid()) AND (role <> 'owner'::org_role)) OR ((role = 'editor'::org_role) AND (user_id <> auth.uid()) AND has_org_role(organization_id, 'admin'::text, auth.uid())) OR ((user_id <> auth.uid()) AND has_org_role(organization_id, 'owner'::text, auth.uid()))));
 
 
 create policy "organization_members_insert"
