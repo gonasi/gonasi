@@ -35,6 +35,8 @@ export default function ActiveMembers({ loaderData }: Route.ComponentProps) {
   const { data } = useOutletContext<OrganizationsOutletContextType>();
   const members = loaderData ?? [];
 
+  const isEditor = data.member.role === 'editor';
+
   const canDelete = (
     currentUserRole: 'owner' | 'admin' | 'editor',
     targetRole: 'owner' | 'admin' | 'editor',
@@ -59,8 +61,8 @@ export default function ActiveMembers({ loaderData }: Route.ComponentProps) {
             <TableRow>
               <TableHead className='w-1/3'>Member</TableHead>
               <TableHead>Role</TableHead>
-              <TableHead>Invited By</TableHead>
-              <TableHead>Joined</TableHead>
+              {!isEditor && <TableHead>Invited By</TableHead>}
+              {!isEditor && <TableHead>Joined</TableHead>}
               <TableHead />
             </TableRow>
           </TableHeader>
@@ -115,9 +117,13 @@ export default function ActiveMembers({ loaderData }: Route.ComponentProps) {
                     <Badge className={roleColor}>{member.role}</Badge>
                   </TableCell>
 
-                  <TableCell className='text-muted-foreground text-sm'>{invitedBy}</TableCell>
+                  {!isEditor && (
+                    <TableCell className='text-muted-foreground text-sm'>{invitedBy}</TableCell>
+                  )}
 
-                  <TableCell className='text-muted-foreground text-sm'>{joinedAgo}</TableCell>
+                  {!isEditor && (
+                    <TableCell className='text-muted-foreground text-sm'>{joinedAgo}</TableCell>
+                  )}
 
                   <TableCell className='text-right'>
                     {showDelete && (

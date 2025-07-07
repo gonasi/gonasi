@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Outlet, useLocation, useNavigate, useOutletContext } from 'react-router';
-import { Library } from 'lucide-react';
+import { MailPlus, Users } from 'lucide-react';
 
 import type { Route } from './+types/members-index';
 
@@ -31,13 +31,13 @@ export default function AllMembers({ params }: Route.ComponentProps) {
                 {
                   to: `/${params.organizationId}/members/active-members`,
                   name: 'Members',
-                  icon: Library,
+                  icon: Users,
                 },
                 data.member.role !== 'editor'
                   ? {
                       to: `/${params.organizationId}/members/invites`,
                       name: 'Invites',
-                      icon: Library,
+                      icon: MailPlus,
                     }
                   : null,
               ].filter(Boolean) as Tab[]
