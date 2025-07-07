@@ -201,23 +201,3 @@ as $$
 $$;
 
 grant execute on function public.has_pending_invite(uuid, text) to authenticated;
-
-create or replace function prevent_manual_delivery_field_updates()
-returns trigger as $$
-begin
-  -- Allow changes only if made by a system role (e.g., service role or background job)
-  -- You can optionally check current_user or context here if needed
-
-  if new.delivery_status is distinct from old.delivery_status
-    or new.delivery_logs is distinct from old.delivery_logs then
-    raise exception 'Cannot manually modify delivery fields.';
-  end if;
-
-  return new;
-end;
-$$ language plpgsql;
-
-create trigger block_delivery_field_updates
-before update on public.organization_invites
-for each row
-execute function prevent_manual_delivery_field_updates();

@@ -738,24 +738,6 @@ AS $function$
 $function$
 ;
 
-CREATE OR REPLACE FUNCTION public.prevent_manual_delivery_field_updates()
- RETURNS trigger
- LANGUAGE plpgsql
-AS $function$
-begin
-  -- Allow changes only if made by a system role (e.g., service role or background job)
-  -- You can optionally check current_user or context here if needed
-
-  if new.delivery_status is distinct from old.delivery_status
-    or new.delivery_logs is distinct from old.delivery_logs then
-    raise exception 'Cannot manually modify delivery fields.';
-  end if;
-
-  return new;
-end;
-$function$
-;
-
 create or replace view "public"."public_profiles" as  SELECT profiles.id,
     profiles.username,
     profiles.full_name,
@@ -1617,8 +1599,6 @@ CREATE TRIGGER trg_course_categories_set_updated_at BEFORE UPDATE ON public.cour
 CREATE TRIGGER trg_course_sub_categories_set_updated_at BEFORE UPDATE ON public.course_sub_categories FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER trg_lesson_types_set_updated_at BEFORE UPDATE ON public.lesson_types FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
-CREATE TRIGGER block_delivery_field_updates BEFORE UPDATE ON public.organization_invites FOR EACH ROW EXECUTE FUNCTION prevent_manual_delivery_field_updates();
 
 CREATE TRIGGER trg_insert_owner_into_organization_members AFTER INSERT ON public.organizations FOR EACH ROW EXECUTE FUNCTION add_or_update_owner_in_organization_members();
 
