@@ -6,3 +6,5 @@ export * from './canRevokeOrganizationInvite';
 export * from './revokeOrganizationInvite';
 export * from './fetchOrganizationMembers';
 export * from './leaveOrganization';
+export * from './fetchOrganizationMemberById';
+export * from './updateOrganizationMemberRole';

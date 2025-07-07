@@ -1,7 +1,9 @@
--- enable row-level security
+-- Enable Row-Level Security on the organization_members table
 alter table public.organization_members enable row level security;
 
--- select: members can view their own memberships or others in the same org if admin
+-- SELECT Policy:
+-- - Users can view their own membership
+-- - Admins can view any member in the same organization
 create policy "organization_members_select"                                         
 on public.organization_members                                                      
 for select                                                                          
@@ -11,16 +13,17 @@ using (
   or public.has_org_role(organization_id, 'admin', (select auth.uid()))                                  
 );
 
-
--- insert: allow self-insert as owner, or allow admins to add members (with limits)
+-- INSERT Policy:
+-- - A user can insert themselves as 'owner' (typically during org creation)
+-- - Admins can add members if:
+--     • Organization tier allows it
+--     • They're not assigning 'admin' role (unless they are an owner)
 create policy "organization_members_insert"
 on public.organization_members
 for insert
 to authenticated
 with check (
-  -- self-insert as owner (during org creation)
   (user_id = (select auth.uid()) and role = 'owner')
-  -- or added by admin (and within tier limits)
   or (
     public.has_org_role(organization_id, 'admin', (select auth.uid()))
     and public.can_accept_new_member(organization_id)
@@ -28,74 +31,59 @@ with check (
   )
 );
 
-
--- update: only admins can update members, with role restrictions
+-- UPDATE Policy:
+-- - Only the organization owner can update member roles
+-- - Allowed roles: 'admin' or 'editor'
+-- - Owners cannot update their own membership row
 create policy "organization_members_update"
 on public.organization_members
 for update
 to authenticated
 using (
-  public.has_org_role(organization_id, 'admin', (select auth.uid()))
+  public.has_org_role(organization_id, 'owner', (select auth.uid()))
 )
 with check (
-  -- only owners can promote to admin
-  (role != 'admin' or public.has_org_role(organization_id, 'owner', (select auth.uid())))
-  -- prevent demoting yourself if you're the only owner
-  and (
-    role != 'owner'
-    or user_id != (select auth.uid())
-    or exists (
-      select 1
-      from public.organization_members om
-      where om.organization_id = organization_members.organization_id
-        and om.role = 'owner'
-        and om.user_id != (select auth.uid())
-    )
-  )
+  user_id != (select auth.uid())
+  and role in ('admin', 'editor')
 );
 
-
--- This policy governs who is allowed to delete rows from the `organization_members` table.
--- It supports the following rules:
---   1. Editors and admins can remove themselves.
---   2. Admins can remove non-admins (i.e., editors), but not themselves or owners.
---   3. Owners can remove anyone except themselves.
-
+-- DELETE Policy:
+-- - Editors and admins can remove themselves (owners cannot)
+-- - Admins can remove editors (not other admins or owners)
+-- - Owners can remove anyone except themselves
 create policy "organization_members_delete"
 on public.organization_members
 for delete
 to authenticated
 using (
   (
-    -- Rule 1: editors and admins can delete themselves
-    user_id = (select auth.uid())       -- this is the current user
-    and role != 'owner'        -- owners are not allowed to delete themselves
+    -- Self-removal for editors/admins (not owners)
+    user_id = (select auth.uid())
+    and role != 'owner'
   )
   or (
-    -- Rule 2: an admin can remove an editor (but not themselves or other admins/owners)
-    role = 'editor'                                      -- target is an editor
-    and user_id != (select auth.uid())                            -- cannot remove themselves
-    and public.has_org_role(organization_id, 'admin', (select auth.uid()))  -- current user is an admin
+    -- Admin removes an editor
+    role = 'editor'
+    and user_id != (select auth.uid())
+    and public.has_org_role(organization_id, 'admin', (select auth.uid()))
   )
   or (
-    -- Rule 3: an owner can remove anyone except themselves
-    user_id != (select auth.uid())                                -- cannot remove themselves
-    and public.has_org_role(organization_id, 'owner', (select auth.uid()))  -- current user is an owner
+    -- Owner removes anyone except themselves
+    user_id != (select auth.uid())
+    and public.has_org_role(organization_id, 'owner', (select auth.uid()))
   )
 );
 
-
--- This function is triggered after a row in `organization_members` is deleted.
--- It updates the corresponding user’s profile in `public.profiles`:
---   - Sets their mode to 'personal'
---   - Clears their `active_organization_id`
+-- Trigger Function:
+-- After a member is removed, update their profile:
+--   - Set mode to 'personal'
+--   - Clear active_organization_id
 create or replace function public.handle_organization_member_delete()
 returns trigger
 language plpgsql
 set search_path = ''
 as $$
 begin
-  -- Use fully-qualified table name to avoid relying on search_path
   update public.profiles
   set
     mode = 'personal',
@@ -106,10 +94,8 @@ begin
 end;
 $$;
 
-
--- This trigger runs the above function *after* any row is deleted from `organization_members`.
--- It ensures the user’s profile reflects the change in membership.
-
+-- Trigger:
+-- Calls handle_organization_member_delete after a member is removed
 create trigger on_member_delete_set_profile_personal
 after delete on public.organization_members
 for each row

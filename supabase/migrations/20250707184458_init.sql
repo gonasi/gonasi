@@ -758,7 +758,6 @@ CREATE OR REPLACE FUNCTION public.handle_organization_member_delete()
  SET search_path TO ''
 AS $function$
 begin
-  -- Use fully-qualified table name to avoid relying on search_path
   update public.profiles
   set
     mode = 'personal',
@@ -1514,10 +1513,8 @@ on "public"."organization_members"
 as permissive
 for update
 to authenticated
-using (has_org_role(organization_id, 'admin'::text, ( SELECT auth.uid() AS uid)))
-with check ((((role <> 'admin'::org_role) OR has_org_role(organization_id, 'owner'::text, ( SELECT auth.uid() AS uid))) AND ((role <> 'owner'::org_role) OR (user_id <> ( SELECT auth.uid() AS uid)) OR (EXISTS ( SELECT 1
-   FROM organization_members om
-  WHERE ((om.organization_id = organization_members.organization_id) AND (om.role = 'owner'::org_role) AND (om.user_id <> ( SELECT auth.uid() AS uid))))))));
+using (has_org_role(organization_id, 'owner'::text, ( SELECT auth.uid() AS uid)))
+with check (((user_id <> ( SELECT auth.uid() AS uid)) AND (role = ANY (ARRAY['admin'::org_role, 'editor'::org_role]))));
 
 
 create policy "organizations_delete"

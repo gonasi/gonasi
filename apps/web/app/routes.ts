@@ -36,7 +36,10 @@ export default [
     route(':organizationId/dashboard', 'routes/organizations/dashboard/dashboard-index.tsx'),
 
     route(':organizationId/members', 'routes/organizations/members/members-index.tsx', [
-      route('active-members', 'routes/organizations/members/active-members.tsx'),
+      route('active-members', 'routes/organizations/members/active-members.tsx', [
+        route(':memberId/delete', 'routes/organizations/members/delete-member.tsx'),
+        route(':memberId/edit-role', 'routes/organizations/members/edit-role.tsx'),
+      ]),
       route('invites', 'routes/organizations/members/members-invites.tsx', [
         route('new-invite', 'routes/organizations/members/new-invite.tsx'),
         route('resend/:orgInviteId/:token', 'routes/organizations/members/resend-invite.tsx'),

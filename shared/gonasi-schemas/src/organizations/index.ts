@@ -32,6 +32,18 @@ const OrganizationHandleSchema = z
   })
   .trim();
 
+const RoleSchema = z
+  .string({
+    required_error: `<lucide name="AlertCircle" size="12" /> <span class="go-title">Role</span> is required.`,
+    invalid_type_error: `<lucide name="Type" size="12" /> <span class="go-title">Role</span> must be a string.`,
+  })
+  .refine((val) => (OrganizationRolesEnum.options as readonly string[]).includes(val), {
+    message: `Invalid value for <span class="go-title">role</span>. <lucide name="ShieldAlert" size="12" /> Please select a valid role from the allowed list.`,
+  })
+  .refine((val) => val !== 'owner', {
+    message: `<lucide name="UserMinus" size="12" /> You cannot invite someone as the <span class="go-title">owner</span>.`,
+  });
+
 export const NewOrganizationSchema = z.object({
   name: OrganizationNameSchema,
   handle: OrganizationHandleSchema,
@@ -57,20 +69,8 @@ export const InviteMemberToOrganizationSchema = z.object({
       invalid_type_error: 'Organization ID must be a string.',
     })
     .uuid({ message: 'Invalid organization ID.' }),
-
   email: EmailSchema,
-
-  role: z
-    .string({
-      required_error: `<lucide name="AlertCircle" size="12" /> <span class="go-title">Role</span> is required.`,
-      invalid_type_error: `<lucide name="Type" size="12" /> <span class="go-title">Role</span> must be a string.`,
-    })
-    .refine((val) => (OrganizationRolesEnum.options as readonly string[]).includes(val), {
-      message: `Invalid value for <span class="go-title">role</span>. <lucide name="ShieldAlert" size="12" /> Please select a valid role from the allowed list.`,
-    })
-    .refine((val) => val !== 'owner', {
-      message: `<lucide name="UserMinus" size="12" /> You cannot invite someone as the <span class="go-title">owner</span>.`,
-    }),
+  role: RoleSchema,
 });
 
 export type InviteMemberToOrganizationSchemaTypes = z.infer<
@@ -100,3 +100,11 @@ export const ExitOrganizationSchema = z.object({
 });
 
 export type ExitOrganizationSchemaTypes = z.infer<typeof ExitOrganizationSchema>;
+
+export const UpdateMemberRoleSchema = z.object({
+  organizationId: z.string(),
+  memberId: z.string(),
+  role: OrganizationRolesEnum,
+});
+
+export type UpdateMemberRoleSchemaTypes = z.infer<typeof UpdateMemberRoleSchema>;
