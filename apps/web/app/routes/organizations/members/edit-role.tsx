@@ -42,7 +42,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 
   const role = await getUserOrgRole({ supabase, organizationId });
 
-  if (!role || role !== 'editor') {
+  if (!role || role !== 'owner') {
     return redirectWithError(
       `/${organizationId}/members/active-members`,
       'You are not allowed to view this page.',
