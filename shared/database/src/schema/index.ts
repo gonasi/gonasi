@@ -705,6 +705,10 @@ export type Database = {
       }
     }
     Functions: {
+      accept_organization_invite: {
+        Args: { invite_token: string; user_id: string; user_email: string }
+        Returns: Json
+      }
       authorize: {
         Args: {
           requested_permission: Database["public"]["Enums"]["app_permission"]

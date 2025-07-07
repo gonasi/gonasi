@@ -105,6 +105,7 @@ schema_paths = [
   './schemas/organizations/organization_members_rls.sql',
   './schemas/organizations/organization_invites_rls.sql',
   './schemas/organizations/function_fetch_active_org_members.sql',
+  './schemas/organizations/function_accept_organization_invite.sql',
 
 
   # rpc profiles, orgs
@@ -479,14 +480,3 @@ entrypoint = "./functions/send-org-invite/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/send-org-invite/*.html" ]
-
-[functions.accept-organization-invite]
-enabled = true
-verify_jwt = true
-import_map = "./functions/accept-organization-invite/deno.json"
-# Uncomment to specify a custom file path to the entrypoint.
-# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
-entrypoint = "./functions/accept-organization-invite/index.ts"
-# Specifies static files to be bundled with the function. Supports glob patterns.
-# For example, if you want to serve static HTML pages in your function:
-# static_files = [ "./functions/accept-organization-invite/*.html" ]
