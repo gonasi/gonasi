@@ -7,25 +7,16 @@ on public.organization_invites
 for select
 to authenticated
 using (
+  -- Admins and owners can view all invites
   public.has_org_role(organization_id, 'admin', (select auth.uid()))
+
+  -- Invite recipients can view their own unexpired, pending invites
   or (
     email = (select email from public.profiles where id = (select auth.uid()))
     and accepted_at is null
     and revoked_at is null
     and expires_at > now()
   )
-);
-
-
--- select (anonymous): allow public access via invite token
-create policy "organization_invites_select_anonymous"
-on public.organization_invites
-for select
-to anon
-using (
-  accepted_at is null 
-  and revoked_at is null
-  and expires_at > now()
 );
 
 

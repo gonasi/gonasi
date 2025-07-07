@@ -46,7 +46,7 @@ export function useDashboardLinks({
       name: 'Members',
       to: `/${organizationId}/members`,
       icon: ShieldIcon,
-      roles: adminOnly,
+      roles: allRoles,
     },
     {
       name: 'Courses',

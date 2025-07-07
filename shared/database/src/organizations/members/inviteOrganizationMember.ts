@@ -33,8 +33,8 @@ export const inviteOrganizationMember = async (
 
     // 1. Check user role in org (must be admin or higher)
     const { data: orgRoleData, error: orgRoleError } = await supabase.rpc('get_user_org_role', {
-      org_id: organizationId,
-      user_id: user?.id ?? '',
+      arg_org_id: organizationId,
+      arg_user_id: user?.id ?? '',
     });
 
     if (orgRoleError || !orgRoleData) {
@@ -68,7 +68,7 @@ export const inviteOrganizationMember = async (
 
     // 2. Check if already a member
     const { data: isMember, error: isMemberError } = await supabase.rpc('is_user_already_member', {
-      org_id: organizationId,
+      arg_org_id: organizationId,
       user_email: email,
     });
 
@@ -91,7 +91,7 @@ export const inviteOrganizationMember = async (
 
     // 3. Check for pending invites
     const { data: hasPending, error: hasPendingError } = await supabase.rpc('has_pending_invite', {
-      org_id: organizationId,
+      arg_org_id: organizationId,
       user_email: email,
     });
 
@@ -114,7 +114,7 @@ export const inviteOrganizationMember = async (
 
     // 4. Check tier/member limits
     const { data: canAccept, error: canAcceptError } = await supabase.rpc('can_accept_new_member', {
-      org_id: organizationId,
+      arg_org_id: organizationId,
     });
 
     if (canAcceptError || !canAccept) {

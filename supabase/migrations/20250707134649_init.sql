@@ -530,7 +530,7 @@ end;
 $function$
 ;
 
-CREATE OR REPLACE FUNCTION public.can_accept_new_member(org_id uuid)
+CREATE OR REPLACE FUNCTION public.can_accept_new_member(arg_org_id uuid)
  RETURNS boolean
  LANGUAGE sql
  STABLE SECURITY DEFINER
@@ -547,20 +547,20 @@ AS $function$
     from public.organizations o
     left join public.organization_members om on o.id = om.organization_id
     left join public.organization_invites oi on o.id = oi.organization_id
-    where o.id = org_id
+    where o.id = arg_org_id
   ),
   limits as (
     select tl.max_members_per_org
     from public.organizations o
     join public.tier_limits tl on o.tier = tl.tier
-    where o.id = org_id
+    where o.id = arg_org_id
   )
   select (counts.active_members + counts.pending_invites) < limits.max_members_per_org
   from counts, limits;
 $function$
 ;
 
-CREATE OR REPLACE FUNCTION public.can_create_organization(tier_name text, user_id uuid)
+CREATE OR REPLACE FUNCTION public.can_create_organization(tier_name text, arg_user_id uuid)
  RETURNS boolean
  LANGUAGE sql
  STABLE SECURITY DEFINER
@@ -569,13 +569,13 @@ AS $function$
   with user_org_count as (
     select count(*) as count
     from public.organizations
-    where owned_by = coalesce(user_id, auth.uid())
-      and tier = tier_name::public.subscription_tier  -- 👈 explicit cast
+    where owned_by = coalesce(arg_user_id, auth.uid())
+      and tier = tier_name::public.subscription_tier
   ),
   tier_limit as (
     select max_organizations_per_user
     from public.tier_limits
-    where tier = tier_name::public.subscription_tier  -- 👈 explicit cast
+    where tier = tier_name::public.subscription_tier
   )
   select user_org_count.count < tier_limit.max_organizations_per_user
   from user_org_count, tier_limit;
@@ -627,16 +627,17 @@ AS $function$
 $function$
 ;
 
-CREATE OR REPLACE FUNCTION public.get_user_org_role(org_id uuid, user_id uuid)
+CREATE OR REPLACE FUNCTION public.get_user_org_role(arg_org_id uuid, arg_user_id uuid)
  RETURNS text
  LANGUAGE sql
  STABLE SECURITY DEFINER
  SET search_path TO ''
 AS $function$
-  select role::text
-  from public.organization_members
-  where organization_id = org_id
-    and user_id = coalesce(user_id, auth.uid());  -- Use current auth.uid() if user_id is null
+  select om.role::text
+  from public.organization_members om
+  where om.organization_id = arg_org_id
+    and om.user_id = arg_user_id
+  limit 1;
 $function$
 ;
 
@@ -689,22 +690,26 @@ end;
 $function$
 ;
 
-CREATE OR REPLACE FUNCTION public.has_org_role(org_id uuid, required_role text, user_id uuid)
+CREATE OR REPLACE FUNCTION public.has_org_role(arg_org_id uuid, required_role text, arg_user_id uuid)
  RETURNS boolean
  LANGUAGE sql
  STABLE SECURITY DEFINER
  SET search_path TO ''
 AS $function$
-  select case required_role
-    when 'owner' then public.get_user_org_role(org_id, coalesce(user_id, auth.uid())) = 'owner'
-    when 'admin' then public.get_user_org_role(org_id, coalesce(user_id, auth.uid())) in ('owner', 'admin')
-    when 'editor' then public.get_user_org_role(org_id, coalesce(user_id, auth.uid())) in ('owner', 'admin', 'editor')
-    else false  -- If unknown role is passed
-  end;
+  select 
+    case 
+      when required_role = 'owner' then 
+        coalesce(public.get_user_org_role(arg_org_id, arg_user_id), '') = 'owner'
+      when required_role = 'admin' then 
+        coalesce(public.get_user_org_role(arg_org_id, arg_user_id), '') in ('admin', 'owner')
+      when required_role = 'editor' then 
+        coalesce(public.get_user_org_role(arg_org_id, arg_user_id), '') in ('editor', 'admin', 'owner')
+      else false  -- invalid role name fallback
+    end;
 $function$
 ;
 
-CREATE OR REPLACE FUNCTION public.has_pending_invite(org_id uuid, user_email text)
+CREATE OR REPLACE FUNCTION public.has_pending_invite(arg_org_id uuid, user_email text)
  RETURNS boolean
  LANGUAGE sql
  STABLE SECURITY DEFINER
@@ -713,7 +718,7 @@ AS $function$
   select exists (
     select 1
     from public.organization_invites oi
-    where oi.organization_id = org_id
+    where oi.organization_id = arg_org_id
       and lower(oi.email) = lower(user_email)
       and oi.accepted_at is null
       and oi.revoked_at is null
@@ -722,7 +727,7 @@ AS $function$
 $function$
 ;
 
-CREATE OR REPLACE FUNCTION public.is_user_already_member(org_id uuid, user_email text)
+CREATE OR REPLACE FUNCTION public.is_user_already_member(arg_org_id uuid, user_email text)
  RETURNS boolean
  LANGUAGE sql
  STABLE SECURITY DEFINER
@@ -732,7 +737,7 @@ AS $function$
     select 1
     from public.organization_members om
     join public.profiles p on om.user_id = p.id
-    where om.organization_id = org_id
+    where om.organization_id = arg_org_id
       and lower(p.email) = lower(user_email)
   )
 $function$
@@ -1377,14 +1382,6 @@ to authenticated
 with check ((has_org_role(organization_id, 'admin'::text, ( SELECT auth.uid() AS uid)) AND (invited_by = ( SELECT auth.uid() AS uid)) AND can_accept_new_member(organization_id) AND ((role <> 'admin'::org_role) OR has_org_role(organization_id, 'owner'::text, ( SELECT auth.uid() AS uid))) AND (email <> ( SELECT profiles.email
    FROM profiles
   WHERE (profiles.id = ( SELECT auth.uid() AS uid)))) AND (NOT is_user_already_member(organization_id, email))));
-
-
-create policy "organization_invites_select_anonymous"
-on "public"."organization_invites"
-as permissive
-for select
-to anon
-using (((accepted_at IS NULL) AND (revoked_at IS NULL) AND (expires_at > now())));
 
 
 create policy "organization_invites_select_authenticated"

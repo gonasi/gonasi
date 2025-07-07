@@ -698,11 +698,11 @@ export type Database = {
         Returns: boolean
       }
       can_accept_new_member: {
-        Args: { org_id: string }
+        Args: { arg_org_id: string }
         Returns: boolean
       }
       can_create_organization: {
-        Args: { tier_name: string; user_id: string }
+        Args: { tier_name: string; arg_user_id: string }
         Returns: boolean
       }
       custom_access_token_hook: {
@@ -714,19 +714,19 @@ export type Database = {
         Returns: Json
       }
       get_user_org_role: {
-        Args: { org_id: string; user_id: string }
+        Args: { arg_org_id: string; arg_user_id: string }
         Returns: string
       }
       has_org_role: {
-        Args: { org_id: string; required_role: string; user_id: string }
+        Args: { arg_org_id: string; required_role: string; arg_user_id: string }
         Returns: boolean
       }
       has_pending_invite: {
-        Args: { org_id: string; user_email: string }
+        Args: { arg_org_id: string; user_email: string }
         Returns: boolean
       }
       is_user_already_member: {
-        Args: { org_id: string; user_email: string }
+        Args: { arg_org_id: string; user_email: string }
         Returns: boolean
       }
       rpc_verify_and_set_active_organization: {

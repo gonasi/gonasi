@@ -118,7 +118,7 @@ export default function OrganizationsIndex({ params, loaderData }: Route.Compone
               to={
                 isModePersonal
                   ? `/go/${params.username}`
-                  : `/${activeUserProfile?.active_organization_id}`
+                  : `/${activeUserProfile?.active_organization_id}/dashboard`
               }
             />
             <h2 className='mt-1 w-full flex-shrink-0 text-lg'>Switch Organizations</h2>
