@@ -2,11 +2,12 @@ import { Form, useOutletContext } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ChevronRight, Mail } from 'lucide-react';
 import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
-import { dataWithError, redirectWithSuccess } from 'remix-toast';
+import { dataWithError, redirectWithError, redirectWithSuccess } from 'remix-toast';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
 
 import {
   canRevokeOrganizationInvite,
+  getUserOrgRole,
   revokeOrganizationInvite,
 } from '@gonasi/database/organizations';
 import {
@@ -36,11 +37,22 @@ export function meta() {
 
 export async function loader({ request, params }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
+  const organizationId = params.organizationId!;
+  const token = params.token!;
+
+  const role = await getUserOrgRole({ supabase, organizationId });
+
+  if (!role || role === 'editor') {
+    return redirectWithError(
+      `/${organizationId}/members`,
+      'You are not allowed to view this page.',
+    );
+  }
 
   const { canRevoke, reason, invite } = await canRevokeOrganizationInvite({
     supabase,
-    organizationId: params.organizationId,
-    token: params.token,
+    organizationId,
+    token,
   });
 
   return {

@@ -2,8 +2,9 @@ import { Outlet, useOutletContext } from 'react-router';
 import { formatDistanceToNow } from 'date-fns';
 import { motion } from 'framer-motion';
 import { Plus, RotateCcw, X } from 'lucide-react';
+import { redirectWithError } from 'remix-toast';
 
-import { fetchOrganizationInvites } from '@gonasi/database/organizations';
+import { fetchOrganizationInvites, getUserOrgRole } from '@gonasi/database/organizations';
 
 import type { Route } from './+types/members-invites';
 
@@ -24,9 +25,20 @@ import type { OrganizationsOutletContextType } from '~/routes/layouts/organizati
 export async function loader({ params, request }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
 
+  const { organizationId } = params;
+
+  const role = await getUserOrgRole({ supabase, organizationId });
+
+  if (!role || role === 'editor') {
+    return redirectWithError(
+      `/${organizationId}/members`,
+      'You are not allowed to view this page.',
+    );
+  }
+
   const invites = await fetchOrganizationInvites({
     supabase,
-    organizationId: params.organizationId,
+    organizationId,
   });
 
   return invites;

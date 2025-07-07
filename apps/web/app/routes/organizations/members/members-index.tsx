@@ -32,12 +32,14 @@ export default function AllMembers({ params }: Route.ComponentProps) {
                 name: 'Members',
                 icon: Library,
               },
-              {
-                to: `/${params.organizationId}/members/invites`,
-                name: 'Invites',
-                icon: Library,
-              },
-            ]}
+              data.member.role !== 'editor'
+                ? {
+                    to: `/${params.organizationId}/members/invites`,
+                    name: 'Invites',
+                    icon: Library,
+                  }
+                : null,
+            ].filter(Boolean)}
           />
         </div>
         {/* Main content */}
