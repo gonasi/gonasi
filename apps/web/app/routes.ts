@@ -50,6 +50,9 @@ export default [
       [
         route('organization-profile', 'routes/organizations/settings/organization-profile.tsx'),
         route('organization-security', 'routes/organizations/settings/organization-security.tsx'),
+        route('organization-danger', 'routes/organizations/settings/organization-danger.tsx', [
+          route('leave', 'routes/organizations/settings/leave-organization.tsx'),
+        ]),
       ],
     ),
   ]),

@@ -82,7 +82,7 @@ export function useDashboardLinks({
       name: 'Settings',
       to: `/${organizationId}/settings`,
       icon: SettingsIcon,
-      roles: adminOnly,
+      roles: allRoles,
     },
   ];
 

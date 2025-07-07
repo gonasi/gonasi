@@ -5,3 +5,4 @@ export * from './canResendOrganizationInvite';
 export * from './canRevokeOrganizationInvite';
 export * from './revokeOrganizationInvite';
 export * from './fetchOrganizationMembers';
+export * from './leaveOrganization';

@@ -55,29 +55,62 @@ with check (
 );
 
 
--- delete: 
--- - editors and admins can remove themselves
--- - admins can remove non-admins (editors)
--- - owners can remove anyone except themselves
+-- This policy governs who is allowed to delete rows from the `organization_members` table.
+-- It supports the following rules:
+--   1. Editors and admins can remove themselves.
+--   2. Admins can remove non-admins (i.e., editors), but not themselves or owners.
+--   3. Owners can remove anyone except themselves.
+
 create policy "organization_members_delete"
 on public.organization_members
 for delete
 to authenticated
 using (
   (
-    -- self-deletion for admins and editors
-    user_id = auth.uid()
-    and role != 'owner'
+    -- Rule 1: editors and admins can delete themselves
+    user_id = (select auth.uid())       -- this is the current user
+    and role != 'owner'        -- owners are not allowed to delete themselves
   )
   or (
-    -- admin removing editor (not themselves)
-    role = 'editor'
-    and user_id != auth.uid()
-    and public.has_org_role(organization_id, 'admin', auth.uid())
+    -- Rule 2: an admin can remove an editor (but not themselves or other admins/owners)
+    role = 'editor'                                      -- target is an editor
+    and user_id != (select auth.uid())                            -- cannot remove themselves
+    and public.has_org_role(organization_id, 'admin', (select auth.uid()))  -- current user is an admin
   )
   or (
-    -- owner removing anyone except themselves
-    user_id != auth.uid()
-    and public.has_org_role(organization_id, 'owner', auth.uid())
+    -- Rule 3: an owner can remove anyone except themselves
+    user_id != (select auth.uid())                                -- cannot remove themselves
+    and public.has_org_role(organization_id, 'owner', (select auth.uid()))  -- current user is an owner
   )
 );
+
+
+-- This function is triggered after a row in `organization_members` is deleted.
+-- It updates the corresponding user’s profile in `public.profiles`:
+--   - Sets their mode to 'personal'
+--   - Clears their `active_organization_id`
+create or replace function public.handle_organization_member_delete()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  -- Use fully-qualified table name to avoid relying on search_path
+  update public.profiles
+  set
+    mode = 'personal',
+    active_organization_id = null
+  where id = old.user_id;
+
+  return old;
+end;
+$$;
+
+
+-- This trigger runs the above function *after* any row is deleted from `organization_members`.
+-- It ensures the user’s profile reflects the change in membership.
+
+create trigger on_member_delete_set_profile_personal
+after delete on public.organization_members
+for each row
+execute procedure public.handle_organization_member_delete();

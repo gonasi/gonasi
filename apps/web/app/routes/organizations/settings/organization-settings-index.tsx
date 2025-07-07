@@ -1,6 +1,6 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Outlet, useLocation, useNavigate, useOutletContext } from 'react-router';
-import { Building, Lock } from 'lucide-react';
+import { Building, Lock, ShieldAlert } from 'lucide-react';
 
 import type { Route } from './+types/organization-settings-index';
 
@@ -19,35 +19,41 @@ export function meta() {
 
 export default function OrganizationSettingsIndex({ params }: Route.ComponentProps) {
   const { data } = useOutletContext<OrganizationsOutletContextType>();
+  const { member } = data;
 
   const navigate = useNavigate();
   const location = useLocation();
+  const basePath = `/${params.organizationId}/settings`;
 
   useEffect(() => {
-    const basePath = `/${params.organizationId}/settings`;
-
-    // Only redirect if we're exactly on the base path
     if (location.pathname === basePath) {
-      if (data.member.role === 'admin' || data.member.role === 'owner') {
-        navigate(`${basePath}/organization-profile`, { replace: true });
-      } else {
-        navigate(`/${params.organizationId}`, { replace: true });
-      }
+      const defaultPage = member.role === 'editor' ? 'organization-danger' : 'organization-profile';
+      navigate(`${basePath}/${defaultPage}`, { replace: true });
     }
-  }, [location.pathname, params.organizationId, navigate, data.member.role]);
+  }, [location.pathname, basePath, navigate, member.role]);
 
-  const links = [
-    {
-      name: 'Org Profile',
-      to: `/${params.organizationId}/settings/organization-profile`,
-      icon: Building,
-    },
-    {
-      name: 'Login & Security',
-      to: `/${params.organizationId}/settings/organization-security`,
-      icon: Lock,
-    },
-  ];
+  const links = useMemo(() => {
+    return [
+      {
+        name: 'Org Profile',
+        to: `${basePath}/organization-profile`,
+        icon: Building,
+        roles: ['admin', 'owner'],
+      },
+      {
+        name: 'Login & Security',
+        to: `${basePath}/organization-security`,
+        icon: Lock,
+        roles: ['owner'],
+      },
+      {
+        name: 'Danger',
+        to: `${basePath}/organization-danger`,
+        icon: ShieldAlert,
+        roles: ['editor', 'admin', 'owner'],
+      },
+    ].filter((link) => link.roles.includes(member.role));
+  }, [basePath, member.role]);
 
   return (
     <div className='mx-auto flex'>
@@ -58,9 +64,7 @@ export default function OrganizationSettingsIndex({ params }: Route.ComponentPro
       </aside>
 
       <section className='w-full py-8 pr-4 lg:pr-0'>
-        <div>
-          <Outlet context={{ data }} />
-        </div>
+        <Outlet context={{ data }} />
       </section>
     </div>
   );

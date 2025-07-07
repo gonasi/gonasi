@@ -752,6 +752,24 @@ end;
 $function$
 ;
 
+CREATE OR REPLACE FUNCTION public.handle_organization_member_delete()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO ''
+AS $function$
+begin
+  -- Use fully-qualified table name to avoid relying on search_path
+  update public.profiles
+  set
+    mode = 'personal',
+    active_organization_id = null
+  where id = old.user_id;
+
+  return old;
+end;
+$function$
+;
+
 CREATE OR REPLACE FUNCTION public.has_org_role(arg_org_id uuid, required_role text, arg_user_id uuid)
  RETURNS boolean
  LANGUAGE sql
@@ -1472,7 +1490,7 @@ on "public"."organization_members"
 as permissive
 for delete
 to authenticated
-using ((((user_id = auth.uid()) AND (role <> 'owner'::org_role)) OR ((role = 'editor'::org_role) AND (user_id <> auth.uid()) AND has_org_role(organization_id, 'admin'::text, auth.uid())) OR ((user_id <> auth.uid()) AND has_org_role(organization_id, 'owner'::text, auth.uid()))));
+using ((((user_id = ( SELECT auth.uid() AS uid)) AND (role <> 'owner'::org_role)) OR ((role = 'editor'::org_role) AND (user_id <> ( SELECT auth.uid() AS uid)) AND has_org_role(organization_id, 'admin'::text, ( SELECT auth.uid() AS uid))) OR ((user_id <> ( SELECT auth.uid() AS uid)) AND has_org_role(organization_id, 'owner'::text, ( SELECT auth.uid() AS uid)))));
 
 
 create policy "organization_members_insert"
@@ -1658,6 +1676,8 @@ CREATE TRIGGER trg_course_categories_set_updated_at BEFORE UPDATE ON public.cour
 CREATE TRIGGER trg_course_sub_categories_set_updated_at BEFORE UPDATE ON public.course_sub_categories FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER trg_lesson_types_set_updated_at BEFORE UPDATE ON public.lesson_types FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER on_member_delete_set_profile_personal AFTER DELETE ON public.organization_members FOR EACH ROW EXECUTE FUNCTION handle_organization_member_delete();
 
 CREATE TRIGGER trg_insert_owner_into_organization_members AFTER INSERT ON public.organizations FOR EACH ROW EXECUTE FUNCTION add_or_update_owner_in_organization_members();
 
