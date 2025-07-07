@@ -36,7 +36,7 @@ async function processInviteEmail(email: string, token: string) {
     }
 
     const organizationName = inviteData.organizations.name ?? 'Gonasi Organizaiton';
-    const inviteUrl = `${BASE_URL}/i/org-invites/${token}/accept`;
+    const inviteUrl = `${BASE_URL}/i/org-invites/${token}`;
 
     const payload = {
       from: 'Team at Gonasi <noreply@gonasi.com>',

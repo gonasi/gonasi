@@ -1,6 +1,7 @@
-import { data } from 'react-router';
+import { data, redirect } from 'react-router';
+import { parse } from 'cookie';
 import { motion } from 'framer-motion';
-import { redirectWithSuccess } from 'remix-toast';
+import { redirectWithError, redirectWithSuccess } from 'remix-toast';
 
 import { getUserProfile } from '@gonasi/database/profile';
 
@@ -29,75 +30,74 @@ function isValidUUID(str: string): boolean {
   return uuidRegex.test(str);
 }
 
-export const loader = async ({ params, request }: Route.LoaderArgs) => {
+export const loader = async ({ request }: Route.LoaderArgs) => {
   const { supabase } = createClient(request);
   const { user } = await getUserProfile(supabase);
 
-  const invite_token = params.token;
-  const user_id = user?.id;
-  const user_email = user?.email;
+  const cookieHeader = request.headers.get('cookie') || '';
+  const cookies = parse(cookieHeader);
+  const invite_token = cookies.organizationInviteToken;
 
-  // Validate required parameters
-  if (!invite_token || !user_id || !user_email) {
-    return data({
-      error: {
-        message: 'You must be logged in to accept this invitation.',
-      },
-    });
+  if (!invite_token) return redirect('/');
+
+  if (!user?.id || !user?.email) {
+    return redirectWithError('/login', 'You need to sign up or log in to continue.');
   }
 
-  // Validate UUID format
   if (!isValidUUID(invite_token)) {
-    return data({
-      error: {
-        message: 'Invalid invitation link format.',
-      },
-    });
+    return data(
+      { error: { message: 'Invalid invitation token format.' } },
+      { headers: { 'Set-Cookie': 'organizationInviteToken=; Max-Age=0; Path=/' } },
+    );
   }
 
   try {
     const { data: rawData, error } = await supabase.rpc('accept_organization_invite', {
       invite_token,
-      user_id,
-      user_email,
+      user_id: user.id,
+      user_email: user.email,
     });
 
     const rpcData = rawData as unknown as AcceptOrgInviteResponse;
 
-    console.log('Postgres RPC Response:', { rpcData, error });
+    const headers = new Headers();
+    headers.append('Set-Cookie', 'organizationInviteToken=; Max-Age=0; Path=/'); // Clear the cookie
 
     if (error) {
-      console.error('Supabase RPC Error:', error);
-      return data({
-        error: {
-          message: 'Unable to reach the server. Please try again later.',
-          details: error,
-        },
-      });
+      return data({ error: { message: 'Server error.', details: error } }, { headers });
     }
 
     if (rpcData?.success) {
       return redirectWithSuccess(
-        `/go/${user.username}/organizations`,
+        `/${rpcData?.data?.organization_id}/dashboard`,
         rpcData.message || "You've successfully joined the organization!",
+        { headers },
       );
     }
 
-    // Handle function-level errors
-    return data({
-      error: {
-        message: rpcData?.message || 'This invitation is no longer valid.',
-        details: rpcData,
+    return data(
+      {
+        error: {
+          message: rpcData?.message || 'This invitation is no longer valid.',
+          details: rpcData,
+        },
       },
-    });
+      { headers },
+    );
   } catch (err) {
-    console.error('Unexpected error during invite acceptance:', err);
-    return data({
-      error: {
-        message: 'An unexpected error occurred. Please try again later.',
-        details: err,
+    return data(
+      {
+        error: {
+          message: 'Unexpected error occurred.',
+          details: err,
+        },
       },
-    });
+      {
+        headers: {
+          'Set-Cookie': 'organizationInviteToken=; Max-Age=0; Path=/', // clear even on failure
+        },
+      },
+    );
   }
 };
 
@@ -119,16 +119,6 @@ export default function AcceptOrgInvite({ loaderData }: Route.ComponentProps) {
         <p className='text-danger font-secondary text-lg font-semibold'>
           {error?.message || 'This invitation is no longer valid.'}
         </p>
-
-        {/* Show additional error details in development */}
-        {process.env.NODE_ENV === 'development' && error?.details && (
-          <details className='text-muted-foreground text-left text-sm'>
-            <summary className='cursor-pointer font-medium'>Debug Details</summary>
-            <pre className='bg-muted mt-2 overflow-auto rounded p-2'>
-              {JSON.stringify(error.details, null, 2)}
-            </pre>
-          </details>
-        )}
       </div>
 
       <div>

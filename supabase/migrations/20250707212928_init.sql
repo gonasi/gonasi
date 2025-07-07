@@ -510,10 +510,10 @@ begin
   end if;
 
   -- Step 2: Fetch the invite by token
-  select id, organization_id, email, role, invited_by, accepted_at, revoked_at, expires_at
+  select oi.id, oi.organization_id, oi.email, oi.role, oi.invited_by, oi.accepted_at, oi.revoked_at, oi.expires_at
   into v_invite
-  from public.organization_invites
-  where token = accept_organization_invite.invite_token;
+  from public.organization_invites oi
+  where oi.token = accept_organization_invite.invite_token;
 
   if not found then
     execute format('set row_security = %L', coalesce(v_original_rls_setting, 'on'));
@@ -525,10 +525,10 @@ begin
   end if;
 
   -- Step 3: Get organization details for response
-  select id, name, tier
+  select o.id, o.name, o.tier
   into v_organization
-  from public.organizations
-  where id = v_invite.organization_id;
+  from public.organizations o
+  where o.id = v_invite.organization_id;
 
   if not found then
     execute format('set row_security = %L', coalesce(v_original_rls_setting, 'on'));
@@ -578,11 +578,11 @@ begin
   end if;
 
   -- Step 6: Check if the user is already a member
-  select id
+  select om.id
   into v_existing_member_id
-  from public.organization_members
-  where organization_id = v_invite.organization_id
-    and user_id = accept_organization_invite.user_id;
+  from public.organization_members om
+  where om.organization_id = v_invite.organization_id
+    and om.user_id = accept_organization_invite.user_id;
 
   if found then
     execute format('set row_security = %L', coalesce(v_original_rls_setting, 'on'));
