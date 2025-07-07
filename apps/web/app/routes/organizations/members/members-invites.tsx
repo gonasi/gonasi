@@ -1,7 +1,7 @@
 import { Outlet, useOutletContext } from 'react-router';
 import { formatDistanceToNow } from 'date-fns';
 import { motion } from 'framer-motion';
-import { Plus, RotateCcw, X } from 'lucide-react';
+import { Dot, Plus, RotateCcw, X } from 'lucide-react';
 import { redirectWithError } from 'remix-toast';
 
 import { fetchOrganizationInvites, getUserOrgRole } from '@gonasi/database/organizations';
@@ -131,7 +131,7 @@ export default function MembersInvites({ params, loaderData }: Route.ComponentPr
                   </TableCell>
                   <TableCell className='text-muted-foreground text-sm'>{lastSent}</TableCell>
                   <TableCell className='flex h-full items-center justify-end gap-4 py-4'>
-                    {status === 'Pending' && (
+                    {status === 'Pending' ? (
                       <>
                         <div>
                           <IconNavLink
@@ -148,6 +148,10 @@ export default function MembersInvites({ params, loaderData }: Route.ComponentPr
                           />
                         </div>
                       </>
+                    ) : (
+                      <div>
+                        <Dot size={20} />
+                      </div>
                     )}
                   </TableCell>
                 </motion.tr>

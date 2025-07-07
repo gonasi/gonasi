@@ -48,6 +48,7 @@ export default [
       ]),
     ]),
     route(':organizationId/courses', 'routes/organizations/courses/courses-index.tsx'),
+    route(':organizationId/builder', 'routes/organizations/builder/builder-index.tsx'),
     route(
       ':organizationId/settings',
       'routes/organizations/settings/organization-settings-index.tsx',
