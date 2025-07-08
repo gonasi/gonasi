@@ -68,17 +68,19 @@ export const updateProfilePicture = async (
       };
     }
 
-    // Start BlurHash generation in the background - don't await it
-    // This allows the function to return immediately while BlurHash processing continues
+    // Start generalized BlurHash generation in background
     supabase.functions
       .invoke('generate-blurhash', {
         body: {
-          avatar_url: imageUrl,
-          user_id: userId,
+          bucket: PROFILE_PHOTOS,
+          object_key: imageUrl,
+          table: 'profiles',
+          column: 'blur_hash',
+          row_id_column: 'id',
+          row_id_value: userId,
         },
       })
       .catch((err) => {
-        // Log the error but don't fail the entire operation
         console.error('Background BlurHash generation failed:', err);
       });
 

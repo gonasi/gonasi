@@ -24,7 +24,6 @@ import { Label } from '~/components/ui/label';
 import { Modal } from '~/components/ui/modal';
 import { Slider } from '~/components/ui/slider';
 import { createClient } from '~/lib/supabase/supabase.server';
-import { generateBlurHash } from '~/utils/generate-blur-hash.server';
 import { checkHoneypot } from '~/utils/honeypot.server';
 import { useIsPending } from '~/utils/misc';
 
@@ -104,12 +103,9 @@ export async function action({ request, params }: Route.ActionArgs) {
       return dataWithError(null, "Oops! That doesn't look like a valid image.");
     }
 
-    const blurHash = await generateBlurHash(data.image);
-
     const { success, message } = await editCourseImage(supabase, {
       ...data,
       courseId: params.courseId,
-      blurHash,
     });
 
     return success
@@ -125,7 +121,6 @@ export async function action({ request, params }: Route.ActionArgs) {
     const { success, message } = await editCourseImage(supabase, {
       ...data,
       courseId: params.courseId,
-      blurHash: null,
     });
 
     return success

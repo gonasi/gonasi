@@ -10,9 +10,7 @@ export const editCourseImage = async (
   assetData: EditCourseImageSubmitValues,
 ): Promise<ApiResponse> => {
   const userId = await getUserId(supabase);
-  const { image, courseId, blurHash } = assetData;
-
-  console.log('courseid: ', courseId);
+  const { image, courseId } = assetData;
 
   if (!image) {
     return {
@@ -56,7 +54,6 @@ export const editCourseImage = async (
       .update({
         updated_by: userId,
         image_url: finalImagePath,
-        blur_hash: blurHash,
       })
       .eq('id', courseId);
 
@@ -69,6 +66,22 @@ export const editCourseImage = async (
         message: `Thumbnail was uploaded, but saving it to the course didn't work out.`,
       };
     }
+
+    // Start generalized BlurHash generation in background
+    supabase.functions
+      .invoke('generate-blurhash', {
+        body: {
+          bucket: THUMBNAILS_BUCKET,
+          object_key: finalImagePath,
+          table: 'courses',
+          column: 'blur_hash',
+          row_id_column: 'id',
+          row_id_value: courseId,
+        },
+      })
+      .catch((err) => {
+        console.error('Background BlurHash generation failed:', err);
+      });
 
     return {
       success: true,
