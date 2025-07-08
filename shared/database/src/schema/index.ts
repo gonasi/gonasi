@@ -939,10 +939,6 @@ export type Database = {
         Args: { arg_org_id: string }
         Returns: boolean
       }
-      can_convert_course_pricing: {
-        Args: { p_course_id: string; p_target_model: string }
-        Returns: boolean
-      }
       can_create_organization: {
         Args: { tier_name: string; arg_user_id: string }
         Returns: boolean

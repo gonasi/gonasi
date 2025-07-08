@@ -13,7 +13,7 @@ const MotionNavLink = motion(NavLink);
 export function CourseToggle({ isPaidState }: ICourseToggleProps) {
   const params = useParams();
 
-  const targetPath = `/${params.username}/course-builder/${params.courseId}/pricing/update-pricing-type`;
+  const targetPath = `/${params.organizationId}/builder/${params.courseId}/pricing/update-pricing-type`;
 
   return (
     <div>

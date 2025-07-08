@@ -827,10 +827,8 @@ CREATE OR REPLACE FUNCTION public.add_default_free_pricing_tier()
  LANGUAGE plpgsql
  SET search_path TO ''
 AS $function$
-BEGIN
-  -- Insert a basic free tier for every new course
-  -- Uses course creator as both creator and updater for audit trail
-  INSERT INTO public.course_pricing_tiers (
+begin
+  insert into public.course_pricing_tiers (
     course_id,
     is_free,
     price,
@@ -839,20 +837,18 @@ BEGIN
     updated_by,
     payment_frequency,
     tier_name
-  )
-  VALUES (
-    new.id,              -- The newly created course
-    true,                -- Free tier
-    0,                   -- No cost
-    'USD',               -- Default currency
-    new.created_by,      -- Course creator
-    new.created_by,      -- Course creator
-    'monthly',           -- Default frequency
-    'Free'               -- Descriptive name
+  ) values (
+    new.id,
+    true,
+    0,
+    'USD',
+    new.created_by,
+    new.created_by,
+    'monthly',
+    'free'
   );
-
-  RETURN new;
-END;
+  return new;
+end;
 $function$
 ;
 
@@ -959,35 +955,6 @@ AS $function$
 $function$
 ;
 
-CREATE OR REPLACE FUNCTION public.can_convert_course_pricing(p_course_id uuid, p_target_model text)
- RETURNS boolean
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO ''
-AS $function$
-DECLARE
-    has_active_subscriptions BOOLEAN;
-BEGIN
-    -- Check for active subscriptions (assuming you have a subscriptions table)
-    -- This prevents converting a course that has paying customers
-    SELECT EXISTS (
-        SELECT 1 FROM subscriptions s
-        JOIN course_pricing_tiers cpt ON s.pricing_tier_id = cpt.id
-        WHERE cpt.course_id = p_course_id
-          AND s.status = 'active'
-          AND cpt.is_free = false
-    ) INTO has_active_subscriptions;
-
-    -- Prevent converting paid course to free if there are active paid subscriptions
-    IF p_target_model = 'free' AND has_active_subscriptions THEN
-        RETURN false;
-    END IF;
-
-    RETURN true;
-END;
-$function$
-;
-
 CREATE OR REPLACE FUNCTION public.can_create_organization(tier_name text, arg_user_id uuid)
  RETURNS boolean
  LANGUAGE sql
@@ -1075,29 +1042,29 @@ CREATE OR REPLACE FUNCTION public.delete_pricing_tier(p_tier_id uuid, p_deleted_
 AS $function$
 declare
   v_course_id uuid;
+  v_org_id uuid;
+  v_owned_by uuid;
   v_position int;
 begin
-  -- Retrieve course ID and position
-  select course_id, position
-  into v_course_id, v_position
-  from public.course_pricing_tiers
-  where id = p_tier_id;
+  -- Fetch course, org, owner, and tier position
+  select t.course_id, c.organization_id, c.owned_by, t.position
+  into v_course_id, v_org_id, v_owned_by, v_position
+  from public.course_pricing_tiers t
+  join public.courses c on c.id = t.course_id
+  where t.id = p_tier_id;
 
-  -- Check existence
   if v_course_id is null then
-    raise exception 'Pricing tier does not exist';
+    raise exception 'Pricing tier not found';
   end if;
 
-  -- Permission check
-  if not exists (
-    select 1 
-    from public.courses c
-    where c.id = v_course_id
-      and (
-        public.is_course_admin(c.id, p_deleted_by) or
-        public.is_course_editor(c.id, p_deleted_by) or
-        c.created_by = p_deleted_by
-      )
+  -- Permission check using organization roles
+  if not (
+    public.has_org_role(v_org_id, 'owner', p_deleted_by)
+    or public.has_org_role(v_org_id, 'admin', p_deleted_by)
+    or (
+      public.has_org_role(v_org_id, 'editor', p_deleted_by)
+      and v_owned_by = p_deleted_by
+    )
   ) then
     raise exception 'Insufficient permissions to delete pricing tiers in this course';
   end if;
@@ -1106,7 +1073,7 @@ begin
   delete from public.course_pricing_tiers
   where id = p_tier_id;
 
-  -- Reorder remaining tiers
+  -- Reorder remaining tiers (shift down positions > deleted tier)
   update public.course_pricing_tiers
   set 
     position = position - 1,
@@ -1204,27 +1171,24 @@ CREATE OR REPLACE FUNCTION public.get_available_payment_frequencies(p_course_id 
  LANGUAGE plpgsql
  SET search_path TO ''
 AS $function$
-DECLARE
-  all_frequencies public.payment_frequency[]; -- All possible enum values
-  used_frequencies public.payment_frequency[]; -- Values already used for this course
-BEGIN
-  -- Get all possible enum values
-  SELECT enum_range(null::public.payment_frequency)
-  INTO all_frequencies;
+declare
+  all_frequencies public.payment_frequency[];
+  used_frequencies public.payment_frequency[];
+begin
+  select enum_range(null::public.payment_frequency)
+  into all_frequencies;
 
-  -- Get used frequencies for the course (only active tiers)
-  SELECT array_agg(payment_frequency)
-  INTO used_frequencies
-  FROM public.course_pricing_tiers
-  WHERE course_id = p_course_id;
+  select array_agg(payment_frequency)
+  into used_frequencies
+  from public.course_pricing_tiers
+  where course_id = p_course_id;
 
-  -- Return unused frequencies
-  RETURN (
-    SELECT array_agg(freq)
-    FROM unnest(all_frequencies) AS freq
-    WHERE used_frequencies IS NULL OR freq != ALL(used_frequencies)
+  return (
+    select array_agg(freq)
+    from unnest(all_frequencies) as freq
+    where used_frequencies is null or freq != all(used_frequencies)
   );
-END;
+end;
 $function$
 ;
 
@@ -1400,28 +1364,38 @@ CREATE OR REPLACE FUNCTION public.reorder_pricing_tiers(p_course_id uuid, tier_p
  SET search_path TO ''
 AS $function$
 declare
+  v_org_id uuid;
+  v_owned_by uuid;
   temp_offset int := 1000000;
 begin
-  -- Validate that tier_positions array is not empty or null
+  -- Ensure input is not null or empty
   if tier_positions is null or jsonb_array_length(tier_positions) = 0 then
     raise exception 'tier_positions array cannot be null or empty';
   end if;
 
-  -- Validate permissions (assumes similar role functions as for chapters)
-  if not exists (
-    select 1 
-    from public.courses c
-    where c.id = p_course_id
-      and (
-        public.is_course_admin(c.id, p_updated_by) or
-        public.is_course_editor(c.id, p_updated_by) or
-        c.created_by = p_updated_by
-      )
+  -- Retrieve course organization and creator
+  select organization_id, owned_by
+  into v_org_id, v_owned_by
+  from public.courses
+  where id = p_course_id;
+
+  if v_org_id is null then
+    raise exception 'Course not found';
+  end if;
+
+  -- Enforce permission check using organization roles
+  if not (
+    public.has_org_role(v_org_id, 'owner', p_updated_by)
+    or public.has_org_role(v_org_id, 'admin', p_updated_by)
+    or (
+      public.has_org_role(v_org_id, 'editor', p_updated_by)
+      and v_owned_by = p_updated_by
+    )
   ) then
     raise exception 'Insufficient permissions to reorder pricing tiers in this course';
   end if;
 
-  -- Validate that all tier IDs exist and belong to the course
+  -- Ensure all provided tier IDs are valid and belong to the course
   if exists (
     select 1 
     from jsonb_array_elements(tier_positions) as tp
@@ -1431,16 +1405,15 @@ begin
     raise exception 'One or more pricing tier IDs do not exist or do not belong to the specified course';
   end if;
 
-  -- Validate that position values are positive integers
+  -- Validate that all positions are positive integers
   if exists (
-    select 1
-    from jsonb_array_elements(tier_positions) as tp
+    select 1 from jsonb_array_elements(tier_positions) as tp
     where (tp->>'position')::int <= 0
   ) then
     raise exception 'All position values must be positive integers';
   end if;
 
-  -- Ensure all tiers are included
+  -- Ensure every tier for this course is included exactly once
   if (
     select count(*) from public.course_pricing_tiers
     where course_id = p_course_id
@@ -1448,7 +1421,7 @@ begin
     raise exception 'All tiers for the course must be included in the reorder operation';
   end if;
 
-  -- Check for duplicate positions
+  -- Ensure there are no duplicate positions
   if (
     select count(distinct (tp->>'position')::int)
     from jsonb_array_elements(tier_positions) as tp
@@ -1456,12 +1429,12 @@ begin
     raise exception 'Duplicate position values are not allowed';
   end if;
 
-  -- Temporarily shift all active tier positions
+  -- Temporarily shift all positions to prevent conflicts
   update public.course_pricing_tiers
   set position = position + temp_offset
   where course_id = p_course_id;
 
-  -- Apply new positions and audit
+  -- Apply new positions in the desired order
   update public.course_pricing_tiers
   set 
     position = new_positions.position,
@@ -1594,79 +1567,48 @@ CREATE OR REPLACE FUNCTION public.set_course_free(p_course_id uuid, p_user_id uu
  LANGUAGE plpgsql
  SECURITY DEFINER
  SET search_path TO ''
-AS $function$ 
+AS $function$
 declare
-  has_access boolean;
+  v_org_id uuid;
+  v_owned_by uuid;
   has_paid_tiers boolean;
 begin
-  -- verify user has permission to modify course pricing
-  -- only course admins, editors, and creators can change pricing models
-  select exists (
-    select 1 from public.courses c
-    where c.id = p_course_id
-      and (
-        public.is_course_admin(c.id, p_user_id)
-        or public.is_course_editor(c.id, p_user_id)
-        or c.created_by = p_user_id
-      )
-  ) into has_access;
+  select organization_id, owned_by
+  into v_org_id, v_owned_by
+  from public.courses
+  where id = p_course_id;
 
-  if not has_access then
-    raise exception 'permission denied: you do not have access to modify this course (course_id=%)', p_course_id
-      using errcode = '42501'; -- insufficient_privilege
+  if not (
+    public.has_org_role(v_org_id, 'owner', p_user_id) or
+    public.has_org_role(v_org_id, 'admin', p_user_id) or
+    (public.has_org_role(v_org_id, 'editor', p_user_id) and v_owned_by = p_user_id)
+  ) then
+    raise exception 'permission denied: insufficient privileges for course %', p_course_id;
   end if;
 
-  -- check if course actually has paid tiers to convert
-  -- prevents unnecessary operations on already-free courses
   select exists (
     select 1 from public.course_pricing_tiers
-    where course_id = p_course_id
-      and is_free = false
+    where course_id = p_course_id and is_free = false
   ) into has_paid_tiers;
 
   if not has_paid_tiers then
-    raise exception 'course (id=%) is already free.', p_course_id
-      using errcode = 'P0001';
+    raise exception 'course (id=%) is already free.', p_course_id;
   end if;
 
-  -- temporarily bypass business rule triggers during conversion
-  -- this allows deletion of all tiers without triggering "last paid tier" protection
   perform set_config('app.converting_course_pricing', 'true', true);
 
-  -- remove all existing pricing tiers (both free and paid)
   delete from public.course_pricing_tiers
   where course_id = p_course_id;
 
-  -- re-enable business rule triggers
   perform set_config('app.converting_course_pricing', 'false', true);
 
-  -- insert a new standard free tier
   insert into public.course_pricing_tiers (
-    course_id, 
-    is_free, 
-    price, 
-    currency_code, 
-    created_by, 
-    updated_by,
-    payment_frequency, 
-    tier_name,
-    is_active
+    course_id, is_free, price, currency_code, created_by, updated_by,
+    payment_frequency, tier_name, is_active
   ) values (
-    p_course_id, 
-    true,           -- free tier
-    0,              -- no cost
-    'KES',          -- local currency default
-    p_user_id,      -- conversion performer
-    p_user_id,      -- conversion performer
-    'monthly',      -- default frequency
-    'Free',         -- standard name
-    true            -- active tier
+    p_course_id, true, 0, 'KES', p_user_id, p_user_id,
+    'monthly', 'free', true
   );
-
-  -- mark all chapters in the course as not requiring payment
-  update public.chapters
-  set requires_payment = false
-  where course_id = p_course_id;
 end;
 $function$
 ;
@@ -1678,76 +1620,46 @@ CREATE OR REPLACE FUNCTION public.set_course_paid(p_course_id uuid, p_user_id uu
  SET search_path TO ''
 AS $function$
 declare
-  has_access boolean;
-  paid_tiers_count integer;
+  v_org_id uuid;
+  v_owned_by uuid;
+  paid_tiers_count int;
 begin
-  -- verify user permissions for course pricing changes
-  select exists (
-    select 1 from public.courses c
-    where c.id = p_course_id
-      and (
-        public.is_course_admin(c.id, p_user_id)
-        or public.is_course_editor(c.id, p_user_id)
-        or c.created_by = p_user_id
-      )
-  ) into has_access;
+  select organization_id, owned_by
+  into v_org_id, v_owned_by
+  from public.courses
+  where id = p_course_id;
 
-  if not has_access then
-    raise exception 'permission denied: you do not have access to modify this course (course_id=%)', p_course_id
-      using errcode = '42501'; -- insufficient_privilege
+  if not (
+    public.has_org_role(v_org_id, 'owner', p_user_id) or
+    public.has_org_role(v_org_id, 'admin', p_user_id) or
+    (public.has_org_role(v_org_id, 'editor', p_user_id) and v_owned_by = p_user_id)
+  ) then
+    raise exception 'permission denied: insufficient privileges for course %', p_course_id;
   end if;
 
-  -- check if course already has paid tiers
-  -- prevents accidental re-conversion of already-paid courses
-  select count(*) into paid_tiers_count
+  select count(*)
+  into paid_tiers_count
   from public.course_pricing_tiers
-  where course_id = p_course_id
-    and is_free = false;
+  where course_id = p_course_id and is_free = false;
 
   if paid_tiers_count > 0 then
-    raise exception 'course (id=%) already has a paid tier and is considered paid.', p_course_id
-      using errcode = 'P0001';
+    raise exception 'course (id=%) already has a paid tier.', p_course_id;
   end if;
 
-  -- temporarily bypass business rule triggers for clean conversion
   perform set_config('app.converting_course_pricing', 'true', true);
 
-  -- remove all existing tiers to avoid constraint conflicts
   delete from public.course_pricing_tiers
   where course_id = p_course_id;
 
-  -- re-enable business rule enforcement
   perform set_config('app.converting_course_pricing', 'false', true);
 
-  -- create default paid tier with starter pricing
   insert into public.course_pricing_tiers (
-    course_id,
-    is_free,
-    price,
-    currency_code,
-    created_by,
-    updated_by,
-    payment_frequency,
-    tier_name,
-    tier_description,
-    is_active
+    course_id, is_free, price, currency_code, created_by, updated_by,
+    payment_frequency, tier_name, tier_description, is_active
   ) values (
-    p_course_id,
-    false,                                                      -- paid tier
-    100.00,                                                     -- starter price
-    'KES',                                                      -- local currency
-    p_user_id,
-    p_user_id,
-    'monthly',
-    'Basic Plan',
-    'automatically added paid tier. you can update this.',
-    true
+    p_course_id, false, 100.00, 'KES', p_user_id, p_user_id,
+    'monthly', 'basic plan', 'automatically added paid tier. you can update this.', true
   );
-
-  -- mark all chapters in the course as requiring payment
-  update public.chapters
-  set requires_payment = true
-  where course_id = p_course_id;
 end;
 $function$
 ;
@@ -1777,53 +1689,48 @@ CREATE OR REPLACE FUNCTION public.switch_course_pricing_model(p_course_id uuid, 
  SECURITY DEFINER
  SET search_path TO ''
 AS $function$
-DECLARE
-    has_access BOOLEAN;
-    current_model TEXT;
-BEGIN
-    -- Verify user permissions
-    SELECT EXISTS (
-        SELECT 1 FROM public.courses c
-        WHERE c.id = p_course_id
-          AND (
-            public.is_course_admin(c.id, p_user_id)
-            OR public.is_course_editor(c.id, p_user_id)
-            OR c.created_by = p_user_id
-          )
-    ) INTO has_access;
+declare
+  v_org_id uuid;
+  v_owned_by uuid;
+  current_model text;
+begin
+  select organization_id, owned_by
+  into v_org_id, v_owned_by
+  from public.courses
+  where id = p_course_id;
 
-    IF NOT has_access THEN
-        RAISE EXCEPTION 'Permission denied: you do not have access to modify this course'
-            USING errcode = '42501';
-    END IF;
+  if not (
+    public.has_org_role(v_org_id, 'owner', p_user_id) or
+    public.has_org_role(v_org_id, 'admin', p_user_id) or
+    (public.has_org_role(v_org_id, 'editor', p_user_id) and v_owned_by = p_user_id)
+  ) then
+    raise exception 'permission denied: cannot switch course pricing model';
+  end if;
 
-    -- Validate target model
-    IF p_target_model NOT IN ('free', 'paid') THEN
-        RAISE EXCEPTION 'Invalid target model: must be ''free'' or ''paid''';
-    END IF;
+  if p_target_model not in ('free', 'paid') then
+    raise exception 'invalid pricing model: must be ''free'' or ''paid''';
+  end if;
 
-    -- Determine current model
-    SELECT CASE 
-        WHEN EXISTS (
-            SELECT 1 FROM public.course_pricing_tiers 
-            WHERE course_id = p_course_id AND is_free = false
-        ) THEN 'paid'
-        ELSE 'free'
-    END INTO current_model;
+  select case
+    when exists (
+      select 1 from public.course_pricing_tiers
+      where course_id = p_course_id and is_free = false
+    ) then 'paid'
+    else 'free'
+  end
+  into current_model;
 
-    -- Skip if already in target model
-    IF current_model = p_target_model THEN
-        RAISE NOTICE 'Course is already in % model', p_target_model;
-        RETURN;
-    END IF;
+  if current_model = p_target_model then
+    raise notice 'course already in % model', p_target_model;
+    return;
+  end if;
 
-    -- Perform the switch
-    IF p_target_model = 'free' THEN
-        PERFORM public.set_course_free(p_course_id, p_user_id);
-    ELSE
-        PERFORM public.set_course_paid(p_course_id, p_user_id);
-    END IF;
-END;
+  if p_target_model = 'free' then
+    perform public.set_course_free(p_course_id, p_user_id);
+  else
+    perform public.set_course_paid(p_course_id, p_user_id);
+  end if;
+end;
 $function$
 ;
 
@@ -1851,63 +1758,6 @@ BEGIN
       AND id != new.id;
   END IF;
   RETURN new;
-END;
-$function$
-;
-
-CREATE OR REPLACE FUNCTION public.trg_ensure_active_tier_exists()
- RETURNS trigger
- LANGUAGE plpgsql
- SET search_path TO ''
-AS $function$
-DECLARE
-  active_tier_count INTEGER;
-  bypass_check BOOLEAN;
-BEGIN
-  -- Check if we're in a course conversion context
-  SELECT COALESCE(current_setting('app.converting_course_pricing', true)::boolean, false) 
-  INTO bypass_check;
-  
-  -- Skip trigger during course conversion to prevent conflicts
-  IF bypass_check THEN
-    RETURN COALESCE(NEW, OLD);
-  END IF;
-
-  -- Handle DELETE operations
-  IF TG_OP = 'DELETE' THEN
-    -- Count remaining active tiers for this course after deletion
-    SELECT COUNT(*)
-    INTO active_tier_count
-    FROM public.course_pricing_tiers
-    WHERE course_id = OLD.course_id
-      AND is_active = true
-      AND id != OLD.id; -- Exclude the row being deleted
-    
-    -- Prevent deletion if it would leave no active tiers
-    IF active_tier_count = 0 THEN
-      RAISE EXCEPTION 'Cannot delete tier: Course must have at least one active pricing tier (course_id: %)', OLD.course_id;
-    END IF;
-    
-    RETURN OLD;
-  END IF;
-
-  -- Handle UPDATE operations (deactivating a tier)
-  IF TG_OP = 'UPDATE' AND OLD.is_active = true AND NEW.is_active = false THEN
-    -- Count remaining active tiers for this course after deactivation
-    SELECT COUNT(*)
-    INTO active_tier_count
-    FROM public.course_pricing_tiers
-    WHERE course_id = NEW.course_id
-      AND is_active = true
-      AND id != NEW.id; -- Exclude the row being updated
-    
-    -- Prevent deactivation if it would leave no active tiers
-    IF active_tier_count = 0 THEN
-      RAISE EXCEPTION 'Cannot deactivate tier: Course must have at least one active pricing tier (course_id: %)', NEW.course_id;
-    END IF;
-  END IF;
-
-  RETURN NEW;
 END;
 $function$
 ;
@@ -2963,8 +2813,6 @@ using (true);
 
 
 CREATE TRIGGER trg_course_categories_set_updated_at BEFORE UPDATE ON public.course_categories FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
-CREATE TRIGGER trg_ensure_active_tier BEFORE DELETE OR UPDATE ON public.course_pricing_tiers FOR EACH ROW EXECUTE FUNCTION trg_ensure_active_tier_exists();
 
 CREATE TRIGGER trg_handle_free_tier AFTER INSERT OR UPDATE ON public.course_pricing_tiers FOR EACH ROW EXECUTE FUNCTION trg_delete_other_tiers_if_free();
 

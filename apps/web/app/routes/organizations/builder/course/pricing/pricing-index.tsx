@@ -201,7 +201,7 @@ export default function CoursePricing({ loaderData, params }: Route.ComponentPro
   );
 
   return (
-    <div className='mx-auto max-w-3xl'>
+    <div>
       {hasInactiveTier ? (
         <BannerCard
           message='Some tiers are inactive'
@@ -217,7 +217,7 @@ export default function CoursePricing({ loaderData, params }: Route.ComponentPro
           {isPaid ? (
             <NavLinkButton
               variant='secondary'
-              to={`/${params.username}/course-builder/${params.courseId}/pricing/manage-pricing-tier/add-new-tier`}
+              to={`/${params.organizationId}/builder/${params.courseId}/pricing/manage-pricing-tier/add-new-tier`}
               leftIcon={<Plus />}
               disabled={!isPaid || !availableFrequencies || availableFrequencies?.length === 0}
             >
@@ -302,7 +302,7 @@ export default function CoursePricing({ loaderData, params }: Route.ComponentPro
                     <DropdownMenuContent align='end'>
                       <DropdownMenuItem className='w-full'>
                         <NavLink
-                          to={`/${params.username}/course-builder/${params.courseId}/pricing/manage-pricing-tier/${priceTier.id}`}
+                          to={`/${params.organizationId}/builder/${params.courseId}/pricing/manage-pricing-tier/${priceTier.id}`}
                           className={cn('flex h-full w-full items-center space-x-4')}
                         >
                           <Edit className='mr-2 h-4 w-4' />
@@ -311,7 +311,7 @@ export default function CoursePricing({ loaderData, params }: Route.ComponentPro
                       </DropdownMenuItem>
                       <DropdownMenuItem className='w-full'>
                         <NavLink
-                          to={`/${params.username}/course-builder/${params.courseId}/pricing/manage-pricing-tier/${priceTier.id}/delete`}
+                          to={`/${params.organizationId}/builder/${params.courseId}/pricing/manage-pricing-tier/${priceTier.id}/delete`}
                           className={cn('flex w-full items-center space-x-4')}
                         >
                           <Trash2 className='mr-2 h-4 w-4' />

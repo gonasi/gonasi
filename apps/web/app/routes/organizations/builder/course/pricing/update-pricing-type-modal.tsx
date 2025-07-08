@@ -59,7 +59,7 @@ export async function action({ params, request }: Route.ActionArgs) {
   // If validation errors exist, return them along with default values
   if (errors) return { errors, defaultValues };
 
-  const redirectTo = `/${params.username}/course-builder/${params.courseId}/pricing`;
+  const redirectTo = `/${params.organizationId}/builder/${params.courseId}/pricing`;
 
   // Define handlers for different pricing types
   const pricingHandlers = {
@@ -81,13 +81,13 @@ export async function action({ params, request }: Route.ActionArgs) {
 }
 
 export default function UpdatePricingTypeModal({ params }: Route.ComponentProps) {
-  const { username, courseId } = params;
+  const { organizationId, courseId } = params;
 
   const { isPaid } = useOutletContext<{ isPaid: boolean }>() ?? {};
 
   const isPending = useIsPending();
 
-  const closeRoute = `/go/${username}/course-builder/${courseId}/pricing`;
+  const closeRoute = `/${organizationId}/builder/${courseId}/pricing`;
 
   const nextType = isPaid ? 'Free' : 'Paid';
 
