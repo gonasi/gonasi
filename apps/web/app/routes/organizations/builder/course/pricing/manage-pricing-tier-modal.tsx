@@ -63,10 +63,10 @@ export function meta() {
 
 export async function loader({ params, request }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
-  const { coursePricingId, courseId, username } = params;
+  const { coursePricingId, courseId, organizationId } = params;
 
   const redirectToPricingPage = (message: string) =>
-    redirectWithError(`/go/${username}/course-builder/${courseId}/pricing`, message);
+    redirectWithError(`/${organizationId}/builder/${courseId}/pricing`, message);
 
   const pricingTier = await fetchCoursePricingTierById({ supabase, coursePricingId });
 
@@ -102,7 +102,7 @@ export async function action({ params, request }: Route.ActionArgs) {
 
   return result.success
     ? redirectWithSuccess(
-        `/${params.username}/course-builder/${params.courseId}/pricing`,
+        `/${params.organizationId}/builder/${params.courseId}/pricing`,
         result.message,
       )
     : dataWithError(null, result.message);
@@ -129,7 +129,7 @@ const STEPS = [
 type StepId = (typeof STEPS)[number]['id'];
 
 export default function ManagePricingTierModal({ params, loaderData }: Route.ComponentProps) {
-  const { username, courseId, coursePricingId } = params;
+  const { organizationId, courseId, coursePricingId } = params;
 
   const { pricingTier } = loaderData;
 
@@ -153,7 +153,7 @@ export default function ManagePricingTierModal({ params, loaderData }: Route.Com
     exit: { opacity: 0, rotate: 15, scale: 0.8, transition: { duration: 0.15 } },
   };
 
-  const closeRoute = `/go/${username}/course-builder/${courseId}/pricing`;
+  const closeRoute = `/${organizationId}/builder/${courseId}/pricing`;
 
   const [currentStep, setCurrentStep] = useState<StepId>('basic-config');
 
@@ -542,7 +542,6 @@ export default function ManagePricingTierModal({ params, loaderData }: Route.Com
               </div>
             </div>
           )}
-          <div className='mb-20' />
         </Modal.Body>
       </Modal.Content>
     </Modal>
