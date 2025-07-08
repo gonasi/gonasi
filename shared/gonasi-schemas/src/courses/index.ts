@@ -21,8 +21,6 @@ const CourseSubcategorySchema = z
   .min(3, { message: 'Course subcategory is required' })
   .trim();
 
-const CoursePathwaySchema = z.string({ required_error: 'Course pathway is required' }).trim();
-
 // NewCourseTitleSchema definition
 export const NewCourseTitleSchema = z.object({
   name: CourseTitleSchema,
@@ -57,85 +55,10 @@ export const SubmitEditCourseImageSchema = EditCourseImageSchema.merge(
 export type EditCourseImageSubmitValues = z.infer<typeof SubmitEditCourseImageSchema>;
 // EditCourseImageSchema definition
 
-// EditCourseCategorySchema definition
-export const EditCourseCategorySchema = z.object({
+// EditCourseGroupingSchema definition
+export const EditCourseGroupingSchema = z.object({
+  courseId: z.string(),
   category: CourseCategorySchema,
-});
-export type EditCourseCategorySchemaTypes = z.infer<typeof EditCourseCategorySchema>;
-export const SubmitEditCourseCategorySchema = EditCourseCategorySchema.merge(
-  z.object({
-    courseId: z.string(),
-  }),
-);
-export type EditCourseCategorySubmitValues = z.infer<typeof SubmitEditCourseCategorySchema>;
-// EditCourseCategorySchema definition
-
-// EditCourseSubcategorySchema definition
-export const EditCourseSubcategorySchema = z.object({
   subcategory: CourseSubcategorySchema,
 });
-export type EditCourseSubcategorySchemaTypes = z.infer<typeof EditCourseSubcategorySchema>;
-export const SubmitEditCourseSubcategorySchema = EditCourseSubcategorySchema.merge(
-  z.object({
-    courseId: z.string(),
-  }),
-);
-export type EditCourseSubcategorySubmitValues = z.infer<typeof SubmitEditCourseSubcategorySchema>;
-// EditCourseSubcategorySchema definition
-
-// EditCoursePathwaySchema definition
-export const EditCoursePathwaySchema = z.object({
-  pathway: CoursePathwaySchema,
-});
-export type EditCoursePathwaySchemaTypes = z.infer<typeof EditCoursePathwaySchema>;
-export const SubmitEditCoursePathwaySchema = EditCoursePathwaySchema.merge(
-  z.object({
-    courseId: z.string(),
-  }),
-);
-export type EditCoursePathwaySubmitValues = z.infer<typeof SubmitEditCoursePathwaySchema>;
-// EditCoursePathwaySchema definition
-
-export const DeleteLearningPathSchema = z.object({
-  imageUrl: z.string(),
-  name: z.string(),
-});
-export type DeleteLearningPathTypes = z.infer<typeof DeleteLearningPathSchema>;
-
-export const SubmitLearningPathDeleteSchema = DeleteLearningPathSchema.merge(
-  z.object({
-    learningPathId: z.string(),
-    userId: z.string(), // The ID of the user making the submission
-  }),
-);
-export type DeleteLearningPathSubmitValues = z.infer<typeof SubmitLearningPathDeleteSchema>;
-
-// EditLearningPathImageSchema definition
-export const EditLearningPathImageSchema = z.object({
-  image: NewImageSchema,
-  imageUrl: z.string(),
-});
-export type EditLearningPathImageTypes = z.infer<typeof EditLearningPathImageSchema>;
-
-export const SubmitLearningPathImageSchema = EditLearningPathImageSchema.merge(
-  z.object({
-    learningPathId: z.string(),
-    userId: z.string(), // The ID of the user making the submission
-  }),
-);
-export type EditLearningPathImageSubmitValues = z.infer<typeof SubmitLearningPathImageSchema>;
-
-// EditLearningPathDetailsSchema definition
-export const EditLearningPathDetailsSchema = z.object({
-  name: CourseTitleSchema,
-  description: CourseDescriptionSchema,
-});
-export type EditLearningPathDetailsTypes = z.infer<typeof EditLearningPathDetailsSchema>;
-
-export const SubmitLearningPathDetailsSchema = EditLearningPathDetailsSchema.merge(
-  z.object({
-    learningPathId: z.string(),
-    userId: z.string(), // The ID of the user making the submission
-  }),
-);
-export type EditLearningPathDetailsSubmitValues = z.infer<typeof SubmitLearningPathDetailsSchema>;
+export type EditCourseGroupingSchemaTypes = z.infer<typeof EditCourseGroupingSchema>;

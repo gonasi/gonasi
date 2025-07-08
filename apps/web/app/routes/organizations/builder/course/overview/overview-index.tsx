@@ -31,16 +31,21 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 
   const courseOverview = await fetchOrganizationCourseOverviewById({ supabase, courseId });
 
-  const { data } = await supabase.rpc('can_user_edit_course', { arg_course_id: params.courseId });
+  const { data: canEdit } = await supabase.rpc('can_user_edit_course', {
+    arg_course_id: courseId,
+  });
 
-  if (!courseOverview || data === null) {
-    return redirectWithError(
+  if (!courseOverview || canEdit === null) {
+    throw redirectWithError(
       `/${params.organizationId}/builder`,
       'Course not found or no permissions',
     );
   }
 
-  return { courseOverview, canEditCourse: data };
+  return {
+    courseOverview,
+    canEditCourse: canEdit,
+  };
 }
 
 const fadeInUp = {
@@ -122,7 +127,7 @@ export default function CourseOverview({ loaderData, params }: Route.ComponentPr
                 subCategory={course_sub_categories?.name}
                 editLink={
                   canEditCourse
-                    ? `/${params.organizationId}/builder/${courseId}/overview/grouping/edit-category`
+                    ? `/${params.organizationId}/builder/${courseId}/overview/edit-grouping`
                     : undefined
                 }
               />

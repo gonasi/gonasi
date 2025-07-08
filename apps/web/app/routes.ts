@@ -60,6 +60,8 @@ export default [
             'edit-thumbnail',
             'routes/organizations/builder/course/overview/edit-thumbnail.tsx',
           ),
+          route('edit-details', 'routes/profile/course-builder/courseId/overview/edit-details.tsx'),
+          route('edit-grouping', 'routes/organizations/builder/course/overview/edit-grouping.tsx'),
         ]),
       ],
     ),
@@ -271,6 +273,7 @@ export default [
   ]),
 
   route('api/paystack-webhook', 'routes/api/paystack-webhook.ts'),
+  route('api/course-sub-categories', 'routes/api/course-sub-categories.ts'),
 
   route('signout', 'routes/auth/signout.tsx'),
 
