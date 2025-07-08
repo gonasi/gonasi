@@ -1,4 +1,5 @@
 import { NavLink, Outlet } from 'react-router';
+import { motion } from 'framer-motion';
 import { Plus } from 'lucide-react';
 
 import { fetchOrganizationCourses } from '@gonasi/database/courses';
@@ -46,6 +47,11 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 export default function BuilderIndex({ params, loaderData }: Route.ComponentProps) {
   const { data } = loaderData;
 
+  const fadeInUp = {
+    hidden: { opacity: 0, y: 2 },
+    visible: { opacity: 1, y: 0 },
+  };
+
   return (
     <>
       <div className='container mx-auto pt-4'>
@@ -60,31 +66,38 @@ export default function BuilderIndex({ params, loaderData }: Route.ComponentProp
         <section className='px-0 py-4 md:px-4'>
           {data && data.length ? (
             <div className='grid grid-cols-1 gap-0 md:grid-cols-2 md:gap-2 lg:grid-cols-3'>
-              {data.map(({ id, name, signed_url, blur_hash }) => (
-                <NavLink
+              {data.map(({ id, name, signed_url, blur_hash }, index) => (
+                <motion.div
                   key={id}
-                  to={`/${params.organizationId}/builder/${id}`}
-                  className={cn('pb-4 hover:cursor-pointer md:pb-0')}
+                  variants={fadeInUp}
+                  initial='hidden'
+                  animate='visible'
+                  transition={{ duration: 0.3, delay: index * 0.05 }}
                 >
-                  {({ isPending }) => (
-                    <div
-                      className={cn(
-                        'group md:bg-card/80 m-0 rounded-none border-none bg-transparent p-0 shadow-none',
-                        isPending && 'bg-primary/5',
-                      )}
-                    >
-                      <GoThumbnail
-                        iconUrl={signed_url}
-                        blurHash={blur_hash}
-                        name={name}
-                        className='rounded-t-none'
-                      />
-                      <GoCardContent>
-                        <GoCourseHeader className='line-clamp-1 text-sm' name={name} />
-                      </GoCardContent>
-                    </div>
-                  )}
-                </NavLink>
+                  <NavLink
+                    to={`/${params.organizationId}/builder/${id}`}
+                    className={cn('pb-4 hover:cursor-pointer md:pb-0')}
+                  >
+                    {({ isPending }) => (
+                      <div
+                        className={cn(
+                          'group md:bg-card/80 m-0 rounded-none border-none bg-transparent p-0 shadow-none',
+                          isPending && 'bg-primary/5',
+                        )}
+                      >
+                        <GoThumbnail
+                          iconUrl={signed_url}
+                          blurHash={blur_hash}
+                          name={name}
+                          className='rounded-t-none'
+                        />
+                        <GoCardContent>
+                          <GoCourseHeader className='line-clamp-1 text-sm' name={name} />
+                        </GoCardContent>
+                      </div>
+                    )}
+                  </NavLink>
+                </motion.div>
               ))}
             </div>
           ) : (
