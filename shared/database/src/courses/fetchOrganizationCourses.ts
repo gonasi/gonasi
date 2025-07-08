@@ -6,13 +6,6 @@ interface FetchOrgCoursesParams extends FetchAssetsParams {
   organizationId: string;
 }
 
-/**
- * Fetches paginated courses for a given organization.
- * Includes signed URLs for course thumbnails (if present).
- *
- * @param {FetchOrgCoursesParams} params - Options for pagination, search, and organization context.
- * @returns {Promise<{ count: number; data: any[] }>} Paginated list of courses with signed image URLs.
- */
 export async function fetchOrganizationCourses({
   supabase,
   searchQuery = '',
