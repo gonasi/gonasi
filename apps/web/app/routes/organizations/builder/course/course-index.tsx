@@ -48,11 +48,11 @@ export default function CoursesIndex({ params }: Route.ComponentProps) {
   }, [location.pathname, basePath, navigate]);
 
   return (
-    <section className='container mx-auto px-4 md:px-0'>
+    <section className='container mx-auto px-0'>
       <div className='bg-background/95 sticky -top-10 z-10'>
         <GoTabNav previousLink={`/${params.organizationId}/builder`} tabs={tabs} />
       </div>
-      <div className='mt-4 md:mt-8'>
+      <div className='mt-4 px-4 md:mt-8'>
         <Outlet />
       </div>
     </section>

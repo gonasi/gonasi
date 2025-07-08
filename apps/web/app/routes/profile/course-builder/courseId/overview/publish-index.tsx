@@ -7,7 +7,7 @@ import { dataWithError, redirectWithError, redirectWithSuccess } from 'remix-toa
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
 
 import { fetchCourseChaptersByCourseId } from '@gonasi/database/courseChapters';
-import { fetchCourseOverviewById, fetchCoursePricing } from '@gonasi/database/courses';
+import { fetchOrganizationCourseOverviewById, fetchCoursePricing } from '@gonasi/database/courses';
 import { fetchLessonBlocksByLessonId } from '@gonasi/database/lessons';
 import { upsertPublishCourse } from '@gonasi/database/publishedCourses';
 import { PublishCourseSchema, type PublishCourseSchemaTypes } from '@gonasi/schemas/publish';
@@ -97,7 +97,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   const courseId = params.courseId ?? '';
 
   const [courseOverview, pricingData, courseChapters] = await Promise.all([
-    fetchCourseOverviewById(supabase, courseId),
+    fetchOrganizationCourseOverviewById(supabase, courseId),
     fetchCoursePricing({ supabase, courseId }),
     fetchCourseChaptersByCourseId(supabase, courseId),
   ]);

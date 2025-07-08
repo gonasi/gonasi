@@ -1,5 +1,5 @@
 export * from './createNewCourseTitle';
-export * from './fetchCourseOverviewById';
+export * from './fetchOrganizationCourseOverviewById';
 export * from './editCourseImage';
 export * from './editCourseDetails';
 export * from './fetchOrganizationCourses';

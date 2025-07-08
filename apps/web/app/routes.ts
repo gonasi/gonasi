@@ -54,8 +54,38 @@ export default [
     route(
       ':organizationId/builder/:courseId',
       'routes/organizations/builder/course/course-index.tsx',
-      [route('overview', 'routes/organizations/builder/course/overview.tsx')],
+      [route('overview', 'routes/organizations/builder/course/overview/overview-index.tsx')],
     ),
+
+    // route('overview', 'routes/profile/course-builder/courseId/overview/overview-index.tsx', [
+    //   route('publish', 'routes/profile/course-builder/courseId/overview/publish-index.tsx'),
+    //   // /:username/course-builder/:courseId/overview/edit-thumbnail
+    //   route(
+    //     'edit-thumbnail',
+    //     'routes/profile/course-builder/courseId/overview/edit-thumbnail.tsx',
+    //   ),
+    //   // /:username/course-builder/:courseId/overview/edit-details
+    //   route('edit-details', 'routes/profile/course-builder/courseId/overview/edit-details.tsx'),
+    //   ...prefix('grouping', [
+    //     layout('routes/layouts/profile/course-grouping.tsx', [
+    //       // /:username/course-builder/:courseId/overview/grouping/edit-category
+    //       route(
+    //         'edit-category',
+    //         'routes/profile/course-builder/courseId/overview/grouping/edit-course-category.tsx',
+    //       ),
+    //       // /:username/course-builder/:courseId/overview/grouping/edit-subcategory
+    //       route(
+    //         'edit-subcategory',
+    //         'routes/profile/course-builder/courseId/overview/grouping/edit-course-subcategory.tsx',
+    //       ),
+    //       // /:username/course-builder/:courseId/overview/grouping/edit-pathway
+    //       route(
+    //         'edit-pathway',
+    //         'routes/profile/course-builder/courseId/overview/grouping/edit-course-pathway.tsx',
+    //       ),
+    //     ]),
+    //   ]),
+    // ]),
 
     route(
       ':organizationId/settings',
@@ -107,35 +137,7 @@ export default [
       // /:username/course-builder/:courseId
       route(':courseId', 'routes/profile/course-builder/courseId/course-id-index.tsx', [
         // /:username/course-builder/:courseId/overview
-        route('overview', 'routes/profile/course-builder/courseId/overview/overview-index.tsx', [
-          route('publish', 'routes/profile/course-builder/courseId/overview/publish-index.tsx'),
-          // /:username/course-builder/:courseId/overview/edit-thumbnail
-          route(
-            'edit-thumbnail',
-            'routes/profile/course-builder/courseId/overview/edit-thumbnail.tsx',
-          ),
-          // /:username/course-builder/:courseId/overview/edit-details
-          route('edit-details', 'routes/profile/course-builder/courseId/overview/edit-details.tsx'),
-          ...prefix('grouping', [
-            layout('routes/layouts/profile/course-grouping.tsx', [
-              // /:username/course-builder/:courseId/overview/grouping/edit-category
-              route(
-                'edit-category',
-                'routes/profile/course-builder/courseId/overview/grouping/edit-course-category.tsx',
-              ),
-              // /:username/course-builder/:courseId/overview/grouping/edit-subcategory
-              route(
-                'edit-subcategory',
-                'routes/profile/course-builder/courseId/overview/grouping/edit-course-subcategory.tsx',
-              ),
-              // /:username/course-builder/:courseId/overview/grouping/edit-pathway
-              route(
-                'edit-pathway',
-                'routes/profile/course-builder/courseId/overview/grouping/edit-course-pathway.tsx',
-              ),
-            ]),
-          ]),
-        ]),
+
         route('pricing', 'routes/profile/course-builder/courseId/pricing/pricing-index.tsx', [
           route(
             'update-pricing-type',

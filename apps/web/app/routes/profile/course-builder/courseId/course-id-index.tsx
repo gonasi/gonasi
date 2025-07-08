@@ -2,7 +2,7 @@ import { data, Outlet } from 'react-router';
 import { BanknoteIcon, ChartNoAxesGantt, Files, TableOfContents, UsersRound } from 'lucide-react';
 import { redirectWithError } from 'remix-toast';
 
-import { fetchCourseOverviewById } from '@gonasi/database/courses';
+import { fetchOrganizationCourseOverviewById } from '@gonasi/database/courses';
 
 import type { Route } from './+types/course-id-index';
 
@@ -35,7 +35,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
   const courseId = params.courseId ?? '';
 
-  const courseOverview = await fetchCourseOverviewById(supabase, courseId);
+  const courseOverview = await fetchOrganizationCourseOverviewById(supabase, courseId);
 
   if (!courseOverview) {
     return redirectWithError(`/${params.username}/course-builder`, 'Course not found');
