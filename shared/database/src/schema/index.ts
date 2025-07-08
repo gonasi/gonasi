@@ -587,13 +587,13 @@ export type Database = {
           ai_usage_limit_monthly: number | null
           analytics_level: Database["public"]["Enums"]["analytics_level"]
           custom_domains_enabled: boolean
-          max_collaborators_per_course: number
           max_custom_domains: number | null
           max_free_courses_per_org: number
           max_members_per_org: number
           max_organizations_per_user: number
-          max_students_per_course: number
           platform_fee_percentage: number
+          price_monthly_usd: number
+          price_yearly_usd: number
           storage_limit_mb_per_org: number
           support_level: Database["public"]["Enums"]["support_level"]
           tier: Database["public"]["Enums"]["subscription_tier"]
@@ -604,13 +604,13 @@ export type Database = {
           ai_usage_limit_monthly?: number | null
           analytics_level: Database["public"]["Enums"]["analytics_level"]
           custom_domains_enabled?: boolean
-          max_collaborators_per_course: number
           max_custom_domains?: number | null
           max_free_courses_per_org: number
           max_members_per_org: number
           max_organizations_per_user: number
-          max_students_per_course: number
           platform_fee_percentage?: number
+          price_monthly_usd?: number
+          price_yearly_usd?: number
           storage_limit_mb_per_org: number
           support_level: Database["public"]["Enums"]["support_level"]
           tier: Database["public"]["Enums"]["subscription_tier"]
@@ -621,13 +621,13 @@ export type Database = {
           ai_usage_limit_monthly?: number | null
           analytics_level?: Database["public"]["Enums"]["analytics_level"]
           custom_domains_enabled?: boolean
-          max_collaborators_per_course?: number
           max_custom_domains?: number | null
           max_free_courses_per_org?: number
           max_members_per_org?: number
           max_organizations_per_user?: number
-          max_students_per_course?: number
           platform_fee_percentage?: number
+          price_monthly_usd?: number
+          price_yearly_usd?: number
           storage_limit_mb_per_org?: number
           support_level?: Database["public"]["Enums"]["support_level"]
           tier?: Database["public"]["Enums"]["subscription_tier"]

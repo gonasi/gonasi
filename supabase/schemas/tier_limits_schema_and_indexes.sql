@@ -1,18 +1,5 @@
 -- ===================================================
--- TABLE: public.tier_limits
--- ===================================================
--- Stores pricing tier configuration limits.
--- Each row represents the configuration for a specific subscription tier
--- on the Gonasi platform. This includes resource limits (e.g., orgs, storage),
--- feature availability (e.g., AI tools, custom domains), analytics depth,
--- and platform monetization settings such as platform fee percentage.
--- ===================================================
-
--- ===================================================
 -- TYPE: public.subscription_tier
--- ===================================================
--- Defines available pricing tiers in ascending value.
--- Used as the primary key in tier_limits and for assigning plans to orgs.
 -- ===================================================
 create type subscription_tier as enum (
   'launch',
@@ -73,11 +60,9 @@ create table tier_limits (
 
   -- Team size
   max_members_per_org integer not null,
-  max_collaborators_per_course integer not null,
 
   -- Course-related limits
   max_free_courses_per_org integer not null,  -- Paid courses are unlimited
-  max_students_per_course integer not null,
 
   -- AI tooling
   ai_tools_enabled boolean not null default false,
@@ -95,8 +80,13 @@ create table tier_limits (
   platform_fee_percentage decimal(5,2) not null default 15.00,
 
   -- Branding
-  white_label_enabled boolean not null default false
+  white_label_enabled boolean not null default false,
+
+  -- Pricing
+  price_monthly_usd numeric(10, 2) not null default 0.00,
+  price_yearly_usd numeric(10, 2) not null default 0.00
 );
+
 
 -- ====================================================================================
 -- RLS POLICIES FOR: public.tier_limits

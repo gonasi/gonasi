@@ -1,11 +1,13 @@
-insert into public.tier_limits (
+-- ===================================================
+-- Sample tier configurations (optimized for early growth and profitability)
+-- Includes pricing: price_monthly_usd and price_yearly_usd
+-- ===================================================
+insert into tier_limits (
   tier,
   max_organizations_per_user,
   storage_limit_mb_per_org,
   max_members_per_org,
-  max_collaborators_per_course,
   max_free_courses_per_org,
-  max_students_per_course,
   ai_tools_enabled,
   ai_usage_limit_monthly,
   custom_domains_enabled,
@@ -13,77 +15,79 @@ insert into public.tier_limits (
   analytics_level,
   support_level,
   platform_fee_percentage,
-  white_label_enabled
+  white_label_enabled,
+  price_monthly_usd,
+  price_yearly_usd
 ) values
 
--- Launch (Free / Freemium) - Pre-launch generous tier for onboarding schools and solo educators
+-- Launch (Free) - Generous onboarding to build user base and showcase platform
 ('launch',
-  3,                      -- max_organizations_per_user (allow basic team/org structure)
-  1000,                   -- storage_limit_mb_per_org (1 GB - enough for interactive content)
-  3,                      -- max_members_per_org (small school team)
-  10,                     -- max_collaborators_per_course (encourage teamwork)
-  3,                      -- max_free_courses_per_org (enough to test and showcase)
-  100,                    -- max_students_per_course (enough for initial cohorts)
-  true,                   -- ai_tools_enabled (test engagement tools)
-  100,                    -- ai_usage_limit_monthly (limited but useful)
-  false,                  -- custom_domains_enabled
-  null,                   -- max_custom_domains
-  'basic',                -- analytics_level
-  'community',            -- support_level
-  15.00,                  -- platform_fee_percentage (15% platform cut)
-  false                   -- white_label_enabled
+  2,
+  500,
+  3,
+  2,
+  true,
+  200,
+  false,
+  null,
+  'basic',
+  'community',
+  15.00,
+  false,
+  0.00,     -- Monthly price
+  0.00      -- Yearly price
 ),
 
--- Scale (Growth / $49/mo) - Ideal for small to medium institutions
+-- Scale ($39/mo or $390/yr with 2 months free)
 ('scale',
-  15,                     -- max_organizations_per_user (multi-department schools/orgs)
-  5000,                   -- storage_limit_mb_per_org (5 GB)
-  10,                     -- max_members_per_org (enough for departmental control)
-  25,                     -- max_collaborators_per_course (rich course creation teams)
-  10,                     -- max_free_courses_per_org (support generous freemium model)
-  1000,                   -- max_students_per_course (supports full school term)
-  true,                   -- ai_tools_enabled
-  1000,                   -- ai_usage_limit_monthly
-  true,                   -- custom_domains_enabled
-  2,                      -- max_custom_domains
-  'intermediate',         -- analytics_level
-  'email',                -- support_level
-  12.00,                  -- platform_fee_percentage (3% reduction incentive)
-  false                   -- white_label_enabled
+  10,
+  10000,
+  15,
+  15,
+  true,
+  2000,
+  true,
+  3,
+  'intermediate',
+  'email',
+  12.00,
+  false,
+  39.00,     -- Monthly price
+  390.00     -- Yearly price (equivalent to $32.50/mo)
 ),
 
--- Impact (Pro / $129/mo) - Ideal for private institutions, edtech startups, or creators scaling up
+-- Impact ($99/mo or $990/yr with 2 months free)
 ('impact',
-  50,                     -- max_organizations_per_user
-  25000,                  -- storage_limit_mb_per_org (25 GB for videos/media)
-  25,                     -- max_members_per_org
-  60,                     -- max_collaborators_per_course
-  25,                     -- max_free_courses_per_org
-  10000,                  -- max_students_per_course
-  true,                   -- ai_tools_enabled
-  5000,                   -- ai_usage_limit_monthly
-  true,                   -- custom_domains_enabled
-  10,                     -- max_custom_domains
-  'advanced',             -- analytics_level
-  'priority',             -- support_level
-  10.00,                  -- platform_fee_percentage (lower cut to support scale)
-  true                    -- white_label_enabled
+  25,
+  50000,
+  50,
+  50,
+  true,
+  10000,
+  true,
+  10,
+  'advanced',
+  'priority',
+  9.00,
+  true,
+  99.00,     -- Monthly price
+  990.00     -- Yearly price (equivalent to $82.50/mo)
 ),
 
--- Enterprise (Custom / $499+/mo) - Universities, government programs, large publishers
+-- Enterprise ($299/mo or $2990/yr with 2 months free)
 ('enterprise',
-  9999,                   -- max_organizations_per_user (unlimited)
-  100000,                 -- storage_limit_mb_per_org (100 GB)
-  999,                    -- max_members_per_org
-  999,                    -- max_collaborators_per_course
-  999,                    -- max_free_courses_per_org
-  999999,                 -- max_students_per_course
-  true,                   -- ai_tools_enabled
-  null,                   -- ai_usage_limit_monthly (unlimited)
-  true,                   -- custom_domains_enabled
-  999,                    -- max_custom_domains (unlimited)
-  'enterprise',           -- analytics_level
-  'dedicated',            -- support_level
-  8.00,                   -- platform_fee_percentage (lowest cut to incentivize large clients)
-  true                    -- white_label_enabled
+  100,
+  200000,
+  200,
+  200,
+  true,
+  null,
+  true,
+  50,
+  'enterprise',
+  'dedicated',
+  7.00,
+  true,
+  299.00,    -- Monthly price
+  2990.00    -- Yearly price (equivalent to ~$249.17/mo)
 );

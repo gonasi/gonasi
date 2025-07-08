@@ -12,9 +12,7 @@ interface TierLimitSeed {
   max_organizations_per_user: number;
   storage_limit_mb_per_org: number;
   max_members_per_org: number;
-  max_collaborators_per_course: number;
   max_free_courses_per_org: number;
-  max_students_per_course: number;
   ai_tools_enabled: boolean;
   ai_usage_limit_monthly: number | null;
   custom_domains_enabled: boolean;
@@ -28,14 +26,12 @@ interface TierLimitSeed {
 const tierLimits: TierLimitSeed[] = [
   {
     tier: 'launch',
-    max_organizations_per_user: 3,
-    storage_limit_mb_per_org: 1000,
+    max_organizations_per_user: 2,
+    storage_limit_mb_per_org: 500,
     max_members_per_org: 3,
-    max_collaborators_per_course: 10,
     max_free_courses_per_org: 3,
-    max_students_per_course: 100,
     ai_tools_enabled: true,
-    ai_usage_limit_monthly: 100,
+    ai_usage_limit_monthly: 200,
     custom_domains_enabled: false,
     max_custom_domains: null,
     analytics_level: 'basic',
@@ -45,16 +41,14 @@ const tierLimits: TierLimitSeed[] = [
   },
   {
     tier: 'scale',
-    max_organizations_per_user: 15,
+    max_organizations_per_user: 10,
     storage_limit_mb_per_org: 5000,
-    max_members_per_org: 10,
-    max_collaborators_per_course: 25,
-    max_free_courses_per_org: 10,
-    max_students_per_course: 1000,
+    max_members_per_org: 15,
+    max_free_courses_per_org: 15,
     ai_tools_enabled: true,
-    ai_usage_limit_monthly: 1000,
+    ai_usage_limit_monthly: 2000,
     custom_domains_enabled: true,
-    max_custom_domains: 2,
+    max_custom_domains: 3,
     analytics_level: 'intermediate',
     support_level: 'email',
     platform_fee_percentage: 12.0,
@@ -62,36 +56,32 @@ const tierLimits: TierLimitSeed[] = [
   },
   {
     tier: 'impact',
-    max_organizations_per_user: 50,
-    storage_limit_mb_per_org: 25000,
-    max_members_per_org: 25,
-    max_collaborators_per_course: 60,
-    max_free_courses_per_org: 25,
-    max_students_per_course: 10000,
+    max_organizations_per_user: 25,
+    storage_limit_mb_per_org: 50000,
+    max_members_per_org: 50,
+    max_free_courses_per_org: 50,
     ai_tools_enabled: true,
-    ai_usage_limit_monthly: 5000,
+    ai_usage_limit_monthly: 10000,
     custom_domains_enabled: true,
     max_custom_domains: 10,
     analytics_level: 'advanced',
     support_level: 'priority',
-    platform_fee_percentage: 10.0,
+    platform_fee_percentage: 9.0,
     white_label_enabled: true,
   },
   {
     tier: 'enterprise',
-    max_organizations_per_user: 9999,
-    storage_limit_mb_per_org: 100000,
-    max_members_per_org: 999,
-    max_collaborators_per_course: 999,
-    max_free_courses_per_org: 999,
-    max_students_per_course: 999999,
+    max_organizations_per_user: 100,
+    storage_limit_mb_per_org: 200000,
+    max_members_per_org: 200,
+    max_free_courses_per_org: 200,
     ai_tools_enabled: true,
     ai_usage_limit_monthly: null,
     custom_domains_enabled: true,
-    max_custom_domains: 999,
+    max_custom_domains: 50,
     analytics_level: 'enterprise',
     support_level: 'dedicated',
-    platform_fee_percentage: 8.0,
+    platform_fee_percentage: 7.0,
     white_label_enabled: true,
   },
 ];

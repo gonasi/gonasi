@@ -162,9 +162,7 @@ create table "public"."tier_limits" (
     "max_organizations_per_user" integer not null,
     "storage_limit_mb_per_org" integer not null,
     "max_members_per_org" integer not null,
-    "max_collaborators_per_course" integer not null,
     "max_free_courses_per_org" integer not null,
-    "max_students_per_course" integer not null,
     "ai_tools_enabled" boolean not null default false,
     "ai_usage_limit_monthly" integer,
     "custom_domains_enabled" boolean not null default false,
@@ -172,7 +170,9 @@ create table "public"."tier_limits" (
     "analytics_level" analytics_level not null,
     "support_level" support_level not null,
     "platform_fee_percentage" numeric(5,2) not null default 15.00,
-    "white_label_enabled" boolean not null default false
+    "white_label_enabled" boolean not null default false,
+    "price_monthly_usd" numeric(10,2) not null default 0.00,
+    "price_yearly_usd" numeric(10,2) not null default 0.00
 );
 
 
@@ -465,7 +465,7 @@ CREATE OR REPLACE FUNCTION public.accept_organization_invite(invite_token text, 
  RETURNS json
  LANGUAGE plpgsql
  SECURITY DEFINER
- SET search_path TO 'public'
+ SET search_path TO ''
 AS $function$
 declare
   v_invite record;

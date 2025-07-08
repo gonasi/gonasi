@@ -47,8 +47,14 @@ export default [
         route('revoke/:orgInviteId/:token', 'routes/organizations/members/revoke-invite.tsx'),
       ]),
     ]),
-    route(':organizationId/courses', 'routes/organizations/courses/courses-index.tsx'),
-    route(':organizationId/builder', 'routes/organizations/builder/builder-index.tsx'),
+    route(':organizationId/builder', 'routes/organizations/builder/builder-index.tsx', [
+      route('new-course-title', 'routes/organizations/builder/new-course-title.tsx'),
+    ]),
+
+    layout('routes/layouts/builder/builder-layout.tsx', [
+      route(':organizationId/builder/:courseId', 'routes/organizations/courses/courses-index.tsx'),
+    ]),
+
     route(
       ':organizationId/settings',
       'routes/organizations/settings/organization-settings-index.tsx',

@@ -19,7 +19,7 @@ create or replace function public.accept_organization_invite(
 returns json
 language plpgsql
 security definer
-set search_path = public
+set search_path = ''
 as $$
 declare
   v_invite record;
