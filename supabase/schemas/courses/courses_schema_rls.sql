@@ -55,9 +55,14 @@ using (
 
 
 -- ============================================================================
--- STORAGE BUCKET: THUMBNAILS
+-- STORAGE BUCKET: THUMBNAILS (Updated to use path-based approach)
 -- ============================================================================
-alter table storage.objects enable row level security;
+
+-- Drop existing policies first
+drop policy if exists "Read: Org members can view course thumbnails" on storage.objects;
+drop policy if exists "Insert: Org members can upload thumbnails" on storage.objects;
+drop policy if exists "Update: Admins or owning editors can update thumbnails" on storage.objects;
+drop policy if exists "Delete: Admins or owning editors can delete thumbnails" on storage.objects;
 
 -- ============================================================================
 -- SELECT: Allow any member of the organization that owns the course
@@ -71,7 +76,7 @@ using (
   and exists (
     select 1
     from public.courses c
-    where c.id = (storage.objects.metadata ->> 'course_id')::uuid
+    where c.id = (split_part(storage.objects.name, '/', 1))::uuid
       and public.get_user_org_role(c.organization_id, (select auth.uid())) is not null
   )
 );
@@ -88,7 +93,7 @@ with check (
   and exists (
     select 1
     from public.courses c
-    where c.id = (storage.objects.metadata ->> 'course_id')::uuid
+    where c.id = (split_part(storage.objects.name, '/', 1))::uuid
       and public.get_user_org_role(c.organization_id, (select auth.uid())) in ('owner', 'admin', 'editor')
   )
 );
@@ -107,7 +112,7 @@ using (
   and exists (
     select 1
     from public.courses c
-    where c.id = (storage.objects.metadata ->> 'course_id')::uuid
+    where c.id = (split_part(storage.objects.name, '/', 1))::uuid
       and (
         public.get_user_org_role(c.organization_id, (select auth.uid())) in ('owner', 'admin')
         or (
@@ -122,7 +127,7 @@ with check (
   and exists (
     select 1
     from public.courses c
-    where c.id = (storage.objects.metadata ->> 'course_id')::uuid
+    where c.id = (split_part(storage.objects.name, '/', 1))::uuid
       and (
         public.get_user_org_role(c.organization_id, (select auth.uid())) in ('owner', 'admin')
         or (
@@ -132,7 +137,6 @@ with check (
       )
   )
 );
-
 
 -- ============================================================================
 -- DELETE: Same as UPDATE — admins or owning editors
@@ -146,7 +150,7 @@ using (
   and exists (
     select 1
     from public.courses c
-    where c.id = (storage.objects.metadata ->> 'course_id')::uuid
+    where c.id = (split_part(storage.objects.name, '/', 1))::uuid
       and (
         public.get_user_org_role(c.organization_id, (select auth.uid())) in ('owner', 'admin')
         or (
@@ -156,4 +160,3 @@ using (
       )
   )
 );
-

@@ -2136,7 +2136,7 @@ for delete
 to authenticated
 using (((bucket_id = 'thumbnails'::text) AND (EXISTS ( SELECT 1
    FROM courses c
-  WHERE ((c.id = ((objects.metadata ->> 'course_id'::text))::uuid) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.owned_by = ( SELECT auth.uid() AS uid)))))))));
+  WHERE ((c.id = (split_part(objects.name, '/'::text, 1))::uuid) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.owned_by = ( SELECT auth.uid() AS uid)))))))));
 
 
 create policy "Insert: Org members can upload thumbnails"
@@ -2146,7 +2146,7 @@ for insert
 to authenticated
 with check (((bucket_id = 'thumbnails'::text) AND (EXISTS ( SELECT 1
    FROM courses c
-  WHERE ((c.id = ((objects.metadata ->> 'course_id'::text))::uuid) AND (get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text, 'editor'::text])))))));
+  WHERE ((c.id = (split_part(objects.name, '/'::text, 1))::uuid) AND (get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text, 'editor'::text])))))));
 
 
 create policy "Read: Org members can view course thumbnails"
@@ -2156,7 +2156,7 @@ for select
 to authenticated
 using (((bucket_id = 'thumbnails'::text) AND (EXISTS ( SELECT 1
    FROM courses c
-  WHERE ((c.id = ((objects.metadata ->> 'course_id'::text))::uuid) AND (get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) IS NOT NULL))))));
+  WHERE ((c.id = (split_part(objects.name, '/'::text, 1))::uuid) AND (get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) IS NOT NULL))))));
 
 
 create policy "Update: Admins or owning editors can update thumbnails"
@@ -2166,10 +2166,10 @@ for update
 to authenticated
 using (((bucket_id = 'thumbnails'::text) AND (EXISTS ( SELECT 1
    FROM courses c
-  WHERE ((c.id = ((objects.metadata ->> 'course_id'::text))::uuid) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.owned_by = ( SELECT auth.uid() AS uid)))))))))
+  WHERE ((c.id = (split_part(objects.name, '/'::text, 1))::uuid) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.owned_by = ( SELECT auth.uid() AS uid)))))))))
 with check (((bucket_id = 'thumbnails'::text) AND (EXISTS ( SELECT 1
    FROM courses c
-  WHERE ((c.id = ((objects.metadata ->> 'course_id'::text))::uuid) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.owned_by = ( SELECT auth.uid() AS uid)))))))));
+  WHERE ((c.id = (split_part(objects.name, '/'::text, 1))::uuid) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.owned_by = ( SELECT auth.uid() AS uid)))))))));
 
 
 

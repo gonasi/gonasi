@@ -22,7 +22,8 @@ export const editCourseImage = async (
   }
 
   try {
-    const stableFileName = `${courseId}/thumbnail.webp`; // Use .webp consistently
+    // Use courseId directly in the path structure instead of metadata
+    const stableFileName = `${courseId}/thumbnail.webp`;
 
     // Check if file already exists
     const { data: existingFiles } = await supabase.storage
@@ -37,16 +38,14 @@ export const editCourseImage = async (
       .upload(stableFileName, image, {
         upsert: fileAlreadyExists,
         cacheControl: '3600',
-        metadata: {
-          course_id: courseId, // ✅ Required for RLS policy
-        },
+        // Remove metadata approach, use path-based approach instead
       });
 
     if (uploadError || !uploadResponse?.path) {
       console.error('Upload error:', uploadError);
       return {
         success: false,
-        message: 'Upload didn’t work out. Want to try that again?',
+        message: `Upload didn't work out. Want to try that again?`,
       };
     }
 
@@ -67,7 +66,7 @@ export const editCourseImage = async (
 
       return {
         success: false,
-        message: 'Thumbnail was uploaded, but saving it to the course didn’t work out.',
+        message: `Thumbnail was uploaded, but saving it to the course didn't work out.`,
       };
     }
 
