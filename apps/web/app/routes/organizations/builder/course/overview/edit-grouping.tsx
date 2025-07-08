@@ -65,7 +65,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     supabase.rpc('can_user_edit_course', { arg_course_id: courseId }),
   ]);
 
-  if (!courseOverview || canEditRes.data === null) {
+  if (!courseOverview || !canEditRes.data) {
     throw redirectWithError(
       `/${orgId}/builder/${courseId}/overview`,
       'Course not found or no permissions',
@@ -99,11 +99,18 @@ export default function EditCourseGrouping({ params, loaderData }: Route.Compone
   const lastCategory = useRef<string | null>(null);
 
   useEffect(() => {
-    if (selectedCategory && selectedCategory !== lastCategory.current && fetcher.state === 'idle') {
+    const shouldFetch =
+      selectedCategory &&
+      (selectedCategory !== lastCategory.current || !fetcher.data?.options?.length) &&
+      fetcher.state === 'idle';
+
+    if (shouldFetch) {
       lastCategory.current = selectedCategory;
 
-      // Clear subcategory when category changes
-      form.setValue('subcategory', '');
+      // Do NOT clear the subcategory here if it's already set on initial load
+      if (!form.getValues('subcategory')) {
+        form.setValue('subcategory', '');
+      }
 
       fetcher.submit(
         { q: selectedCategory },
