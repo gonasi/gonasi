@@ -114,7 +114,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 
     return success
       ? redirectWithSuccess(
-          `/${params.username}/course-builder/${params.courseId}/overview`,
+          `/${params.organizationId}/builder/${params.courseId}/overview`,
           message,
         )
       : dataWithError(null, message);
@@ -130,7 +130,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 
     return success
       ? redirectWithSuccess(
-          `/${params.username}/course-builder/${params.courseId}/overview`,
+          `/${params.organizationId}/builder/${params.courseId}/overview`,
           message,
         )
       : dataWithError(null, 'Image saved but preview failed to generate.');
@@ -232,7 +232,7 @@ export default function EditCourseImage() {
       <Modal.Content size={showCropper ? 'lg' : 'sm'}>
         <Modal.Header
           title={showCropper ? '✂️ Crop your thumbnail' : '🖼️ Update Course Thumbnail'}
-          closeRoute={`/${params.username}/course-builder/${params.courseId}/overview`}
+          closeRoute={`/${params.organizationId}/builder/${params.courseId}/overview`}
         />
         <Modal.Body>
           {showCropper && selectedImage ? (

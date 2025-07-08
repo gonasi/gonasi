@@ -1,4 +1,5 @@
 import { Outlet, useFetcher } from 'react-router';
+import { motion } from 'framer-motion';
 import { Check, Plus } from 'lucide-react';
 import { dataWithError, redirectWithSuccess } from 'remix-toast';
 
@@ -39,7 +40,6 @@ export async function action({ request }: Route.ActionArgs) {
   const formData = await request.formData();
   const organizationId = formData.get('organizationId');
 
-  // If no organizationId, switch to personal mode
   if (!organizationId) {
     const { success, message, data } = await switchToPersonalMode({ supabase });
     return success ? redirectWithSuccess(`/go/${data?.id}`, message) : dataWithError(null, message);
@@ -77,6 +77,15 @@ export type OrganizationsLoaderData = Exclude<Awaited<ReturnType<typeof loader>>
 export type UserOrganizations = OrganizationsLoaderData['organizations'];
 export type UserOrganization = UserOrganizations[number];
 
+const fadeInUp = {
+  hidden: { opacity: 0, y: 5 },
+  visible: (i: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: { delay: i * 0.05 },
+  }),
+};
+
 export default function OrganizationsIndex({ params, loaderData }: Route.ComponentProps) {
   const { organizations, canCreateMore } = loaderData;
   const fetcher = useFetcher();
@@ -101,7 +110,13 @@ export default function OrganizationsIndex({ params, loaderData }: Route.Compone
 
   return (
     <>
-      <div className='mx-auto flex max-w-lg flex-col space-y-4 px-4 md:py-10'>
+      <motion.div
+        className='mx-auto flex max-w-lg flex-col space-y-4 px-4 md:py-10'
+        initial='hidden'
+        animate='visible'
+        variants={fadeInUp}
+        custom={0}
+      >
         {!canCreateMore && (
           <BannerCard
             showCloseIcon={false}
@@ -126,7 +141,7 @@ export default function OrganizationsIndex({ params, loaderData }: Route.Compone
         </div>
 
         <h4 className='text-muted-foreground my-2 text-sm'>Personal</h4>
-        <div className={cn('')}>
+        <motion.div variants={fadeInUp} custom={1} initial='hidden' animate='visible'>
           <Card
             className={cn(
               'flex flex-row items-center gap-4 rounded-lg border p-4 transition-colors duration-200 ease-in-out',
@@ -162,39 +177,58 @@ export default function OrganizationsIndex({ params, loaderData }: Route.Compone
               )}
             </div>
           </Card>
-        </div>
+        </motion.div>
 
         <h4 className='text-muted-foreground my-2 text-sm'>Organizations</h4>
         <div className='pb-8'>
           {organizations.length === 0 ? (
             <NotFoundCard message='You are not part of any organizations yet.' />
           ) : (
-            <div className='flex flex-col space-y-4'>
-              {organizations.map((organization) => (
-                <OrganizationSwitcherCard
+            <motion.div
+              className='flex flex-col space-y-4'
+              initial='hidden'
+              animate='visible'
+              variants={{}}
+            >
+              {organizations.map((organization, index) => (
+                <motion.div
                   key={organization.id}
-                  organization={organization}
-                  activeOrganizationId={activeUserProfile?.active_organization_id ?? ''}
-                  handleClick={submitActiveOrgUpdate}
-                  isLoading={isSubmitting}
-                  pendingOrganizationId={String(fetcher.formData?.get('organizationId') ?? '')}
-                />
+                  custom={index + 2}
+                  variants={fadeInUp}
+                  initial='hidden'
+                  animate='visible'
+                >
+                  <OrganizationSwitcherCard
+                    organization={organization}
+                    activeOrganizationId={activeUserProfile?.active_organization_id ?? ''}
+                    handleClick={submitActiveOrgUpdate}
+                    isLoading={isSubmitting}
+                    pendingOrganizationId={String(fetcher.formData?.get('organizationId') ?? '')}
+                  />
+                </motion.div>
               ))}
-            </div>
+            </motion.div>
           )}
         </div>
 
         {canCreateMore && (
-          <NavLinkButton
-            to={`/go/${params.username}/organizations/new`}
-            variant='ghost'
-            leftIcon={<Plus />}
-            className='w-full'
+          <motion.div
+            initial='hidden'
+            animate='visible'
+            variants={fadeInUp}
+            custom={organizations.length + 3}
           >
-            Create New Organization
-          </NavLinkButton>
+            <NavLinkButton
+              to={`/go/${params.username}/organizations/new`}
+              variant='ghost'
+              leftIcon={<Plus />}
+              className='w-full'
+            >
+              Create New Organization
+            </NavLinkButton>
+          </motion.div>
         )}
-      </div>
+      </motion.div>
 
       <Outlet context={{ canCreateMore }} />
     </>

@@ -2167,7 +2167,9 @@ to public
 using (((bucket_id = 'thumbnails'::text) AND (EXISTS ( SELECT 1
    FROM courses c
   WHERE ((c.id = ((objects.metadata ->> 'course_id'::text))::uuid) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.owned_by = auth.uid()))))))))
-with check ((bucket_id = 'thumbnails'::text));
+with check (((bucket_id = 'thumbnails'::text) AND (EXISTS ( SELECT 1
+   FROM courses c
+  WHERE ((c.id = ((objects.metadata ->> 'course_id'::text))::uuid) AND (get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text, 'editor'::text])))))));
 
 
 

@@ -115,7 +115,20 @@ using (
 )
 with check (
   bucket_id = 'thumbnails'
+  and exists (
+    select 1
+    from public.courses c
+    where c.id = (storage.objects.metadata ->> 'course_id')::uuid
+      and (
+        public.get_user_org_role(c.organization_id, (select auth.uid())) in ('owner', 'admin')
+        or (
+          public.get_user_org_role(c.organization_id, (select auth.uid())) = 'editor'
+          and c.owned_by = auth.uid()
+        )
+      )
+  )
 );
+
 
 -- ============================================================================
 -- DELETE: Same as UPDATE — admins or owning editors

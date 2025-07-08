@@ -54,7 +54,14 @@ export default [
     route(
       ':organizationId/builder/:courseId',
       'routes/organizations/builder/course/course-index.tsx',
-      [route('overview', 'routes/organizations/builder/course/overview/overview-index.tsx')],
+      [
+        route('overview', 'routes/organizations/builder/course/overview/overview-index.tsx', [
+          route(
+            'edit-thumbnail',
+            'routes/organizations/builder/course/overview/edit-thumbnail.tsx',
+          ),
+        ]),
+      ],
     ),
 
     // route('overview', 'routes/profile/course-builder/courseId/overview/overview-index.tsx', [
