@@ -5,7 +5,8 @@ create type public.course_access as enum ('public', 'private');
 
 -- ====================================================================================
 -- TABLE: courses
--- Stores course metadata, category structure, access level, ownership, and audit trail
+-- Stores course metadata, category structure, ownership (org/user), access control,
+-- audit trail, and organizational constraints.
 -- ====================================================================================
 create table public.courses (
   id uuid primary key default uuid_generate_v4(), -- Unique ID for each course
@@ -16,11 +17,13 @@ create table public.courses (
   category_id uuid references public.course_categories(id) on delete set null,
   subcategory_id uuid references public.course_sub_categories(id) on delete set null,
 
-  -- Ownership (organization and/or user)
+  -- =========================
+  -- Ownership
+  -- =========================
   organization_id uuid references public.organizations(id) on delete cascade, -- Owning organization (if applicable)
-  owned_by uuid references public.profiles(id) on delete set null,             -- Owning user (if not owned by org)
+  owned_by uuid null references public.profiles(id) on delete set null,        -- Owning user (can be null if removed)
 
-  -- Required to prevent ownerless courses (can be org, user, or both)
+  -- Must have at least one owner (organization or user)
   constraint chk_course_owner check (
     organization_id is not null or owned_by is not null
   ),
@@ -49,7 +52,12 @@ create table public.courses (
   -- Audit trail
   -- =========================
   created_by uuid not null references public.profiles(id) on delete cascade, -- Who created this course
-  updated_by uuid not null references public.profiles(id) on delete cascade  -- Who last updated this course
+  updated_by uuid not null references public.profiles(id) on delete cascade, -- Who last updated this course
+
+  -- =========================
+  -- Constraints
+  -- =========================
+  unique (organization_id, name) -- Optional: enforce unique course name within org
 );
 
 -- ====================================================================================
@@ -84,6 +92,38 @@ for each row
 execute function public.validate_subcategory_belongs_to_category();
 
 -- ====================================================================================
+-- TRIGGER FUNCTION: Validates that owned_by user is part of organization (if both set)
+-- ====================================================================================
+create or replace function public.validate_course_owner_in_org()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  if NEW.organization_id is not null and NEW.owned_by is not null then
+    if not exists (
+      select 1
+      from public.organization_members
+      where organization_id = NEW.organization_id
+        and user_id = NEW.owned_by
+    ) then
+      raise exception 'User % must be a member of organization %', NEW.owned_by, NEW.organization_id;
+    end if;
+  end if;
+  return NEW;
+end;
+$$;
+
+
+-- ====================================================================================
+-- TRIGGER: Enforces owned_by ∈ organization_id if both are present
+-- ====================================================================================
+create trigger trg_validate_course_owner
+before insert or update on public.courses
+for each row
+execute function public.validate_course_owner_in_org();
+
+-- ====================================================================================
 -- INDEXES: For performance optimization
 -- ====================================================================================
 create index idx_courses_created_by on public.courses (created_by);
@@ -99,7 +139,7 @@ create index idx_courses_owned_by on public.courses (owned_by);
 -- ====================================================================================
 comment on table public.courses is 'Stores metadata, ownership, visibility, and structure details for each course.';
 comment on column public.courses.organization_id is 'The organization this course belongs to, if any.';
-comment on column public.courses.owned_by is 'The profile (user) who owns this course, if any.';
+comment on column public.courses.owned_by is 'The profile (user) who owns this course, if any. Must belong to org if organization_id is set.';
 comment on column public.courses.visibility is 'Controls whether a course is publicly visible or private.';
 comment on column public.courses.blur_hash is 'Low-res image hash used for placeholder rendering.';
 comment on column public.courses.last_published is 'Timestamp of the last time this course was published.';

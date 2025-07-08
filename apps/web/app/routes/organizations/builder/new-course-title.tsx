@@ -53,17 +53,13 @@ export async function action({ request, params }: Route.ActionArgs) {
   }
 
   // Create course title in DB
-  const result = await createNewCourseTitle(supabase, data);
+  const result = await createNewCourseTitle({ supabase, data });
 
   if (!result.success || !result.data) {
     return dataWithError(null, result.message);
   }
 
-  // Redirect to course overview
-  return redirectWithSuccess(
-    `/${params.organizationId}/builder/${result.data.id}/overview`,
-    result.message,
-  );
+  return redirectWithSuccess(`/${params.organizationId}/builder/${result.data.id}`, result.message);
 }
 
 // Component: New Course Title Modal
@@ -73,6 +69,9 @@ export default function NewCourseTitle({ params }: Route.ComponentProps) {
   const methods = useRemixForm<NewCourseTitleSchemaTypes>({
     mode: 'all',
     resolver,
+    defaultValues: {
+      organizationId: params.organizationId,
+    },
   });
 
   return (

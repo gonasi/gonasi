@@ -75,30 +75,31 @@ using (
   )
 );
 
--- Trigger Function:
--- After a member is removed or leaves an organization, update their profile:
---   - Set mode to 'personal'
---   - Clear active_organization_id
+-- ====================================================================================
+-- TRIGGER FUNCTION: Handles user exit from organization
+-- - Sets profile.mode to 'personal'
+-- - Clears active_organization_id
+-- - Clears course ownership for courses in the exited organization
+-- ====================================================================================
 create or replace function public.handle_member_exit_update_profile()
 returns trigger
 language plpgsql
 set search_path = ''
 as $$
 begin
+  -- Step 1: Update profile
   update public.profiles
   set
     mode = 'personal',
     active_organization_id = null
   where id = old.user_id;
 
+  -- Step 2: Nullify course ownership in this organization (if any)
+  update public.courses
+  set owned_by = null
+  where organization_id = old.organization_id
+    and owned_by = old.user_id;
+
   return old;
 end;
 $$;
-
--- Trigger:
--- Calls handle_member_exit_update_profile after a member is removed or leaves
-create trigger on_member_exit_update_profile
-after delete on public.organization_members
-for each row
-execute procedure public.handle_member_exit_update_profile();
-

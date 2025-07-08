@@ -214,6 +214,8 @@ CREATE UNIQUE INDEX course_categories_pkey ON public.course_categories USING btr
 
 CREATE UNIQUE INDEX course_sub_categories_pkey ON public.course_sub_categories USING btree (id);
 
+CREATE UNIQUE INDEX courses_organization_id_name_key ON public.courses USING btree (organization_id, name);
+
 CREATE UNIQUE INDEX courses_pkey ON public.courses USING btree (id);
 
 CREATE INDEX idx_course_categories_created_by ON public.course_categories USING btree (created_by);
@@ -397,6 +399,8 @@ alter table "public"."courses" validate constraint "courses_created_by_fkey";
 alter table "public"."courses" add constraint "courses_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE not valid;
 
 alter table "public"."courses" validate constraint "courses_organization_id_fkey";
+
+alter table "public"."courses" add constraint "courses_organization_id_name_key" UNIQUE using index "courses_organization_id_name_key";
 
 alter table "public"."courses" add constraint "courses_owned_by_fkey" FOREIGN KEY (owned_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
 
@@ -979,11 +983,18 @@ CREATE OR REPLACE FUNCTION public.handle_member_exit_update_profile()
  SET search_path TO ''
 AS $function$
 begin
+  -- Step 1: Update profile
   update public.profiles
   set
     mode = 'personal',
     active_organization_id = null
   where id = old.user_id;
+
+  -- Step 2: Nullify course ownership in this organization (if any)
+  update public.courses
+  set owned_by = null
+  where organization_id = old.organization_id
+    and owned_by = old.user_id;
 
   return old;
 end;
@@ -1222,6 +1233,27 @@ AS $function$
 begin
   new.updated_at = timezone('utc', clock_timestamp());
   return new;
+end;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.validate_course_owner_in_org()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO ''
+AS $function$
+begin
+  if NEW.organization_id is not null and NEW.owned_by is not null then
+    if not exists (
+      select 1
+      from public.organization_members
+      where organization_id = NEW.organization_id
+        and user_id = NEW.owned_by
+    ) then
+      raise exception 'User % must be a member of organization %', NEW.owned_by, NEW.organization_id;
+    end if;
+  end if;
+  return NEW;
 end;
 $function$
 ;
@@ -2044,11 +2076,11 @@ CREATE TRIGGER trg_course_categories_set_updated_at BEFORE UPDATE ON public.cour
 
 CREATE TRIGGER trg_course_sub_categories_set_updated_at BEFORE UPDATE ON public.course_sub_categories FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+CREATE TRIGGER trg_validate_course_owner BEFORE INSERT OR UPDATE ON public.courses FOR EACH ROW EXECUTE FUNCTION validate_course_owner_in_org();
+
 CREATE TRIGGER trg_validate_subcategory BEFORE INSERT OR UPDATE ON public.courses FOR EACH ROW EXECUTE FUNCTION validate_subcategory_belongs_to_category();
 
 CREATE TRIGGER trg_lesson_types_set_updated_at BEFORE UPDATE ON public.lesson_types FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
-CREATE TRIGGER on_member_exit_update_profile AFTER DELETE ON public.organization_members FOR EACH ROW EXECUTE FUNCTION handle_member_exit_update_profile();
 
 CREATE TRIGGER trg_insert_owner_into_organization_members AFTER INSERT ON public.organizations FOR EACH ROW EXECUTE FUNCTION add_or_update_owner_in_organization_members();
 

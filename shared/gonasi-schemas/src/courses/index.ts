@@ -26,6 +26,7 @@ const CoursePathwaySchema = z.string({ required_error: 'Course pathway is requir
 // NewCourseTitleSchema definition
 export const NewCourseTitleSchema = z.object({
   name: CourseTitleSchema,
+  organizationId: z.string(),
 });
 export type NewCourseTitleSchemaTypes = z.infer<typeof NewCourseTitleSchema>;
 

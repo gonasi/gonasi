@@ -51,9 +51,11 @@ export default [
       route('new-course-title', 'routes/organizations/builder/new-course-title.tsx'),
     ]),
 
-    layout('routes/layouts/builder/builder-layout.tsx', [
-      route(':organizationId/builder/:courseId', 'routes/organizations/courses/courses-index.tsx'),
-    ]),
+    route(
+      ':organizationId/builder/:courseId',
+      'routes/organizations/builder/course/course-index.tsx',
+      [route('overview', 'routes/organizations/builder/course/overview.tsx')],
+    ),
 
     route(
       ':organizationId/settings',
