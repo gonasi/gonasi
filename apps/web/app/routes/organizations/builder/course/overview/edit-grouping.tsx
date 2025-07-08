@@ -2,12 +2,12 @@ import { useEffect, useRef } from 'react';
 import { Form, useFetcher } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { LoaderCircle } from 'lucide-react';
-import { RemixFormProvider, useRemixForm } from 'remix-hook-form';
-import { redirectWithError } from 'remix-toast';
+import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
+import { dataWithError, redirectWithError, redirectWithSuccess } from 'remix-toast';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
 
 import { fetchCourseCategoriesAsSelectOptions } from '@gonasi/database/courseCategories';
-import { fetchOrganizationCourseOverviewById } from '@gonasi/database/courses';
+import { editCourseGrouping, fetchOrganizationCourseOverviewById } from '@gonasi/database/courses';
 import {
   EditCourseGroupingSchema,
   type EditCourseGroupingSchemaTypes,
@@ -20,6 +20,7 @@ import { Button } from '~/components/ui/button';
 import { GoSearchableDropDown } from '~/components/ui/forms/elements';
 import { Modal } from '~/components/ui/modal';
 import { createClient } from '~/lib/supabase/supabase.server';
+import { checkHoneypot } from '~/utils/honeypot.server';
 import { useIsPending } from '~/utils/misc';
 
 export function meta() {
@@ -30,6 +31,27 @@ export function meta() {
       content: 'Organize your course by updating its categories and subcategories.',
     },
   ];
+}
+
+export async function action({ params, request }: Route.ActionArgs) {
+  const formData = await request.formData();
+  await checkHoneypot(formData);
+
+  const { errors, data } = await getValidatedFormData(
+    formData,
+    zodResolver(EditCourseGroupingSchema),
+  );
+  if (errors) return dataWithError(null, 'Something went wrong. Please try again.');
+
+  const { supabase } = createClient(request);
+  const { success, message } = await editCourseGrouping({ supabase, data });
+
+  if (!success) return dataWithError(null, message);
+
+  return redirectWithSuccess(
+    `/${params.organizationId}/builder/${params.courseId}/overview`,
+    message,
+  );
 }
 
 export async function loader({ params, request }: Route.LoaderArgs) {
@@ -64,6 +86,7 @@ export default function EditCourseGrouping({ params, loaderData }: Route.Compone
     mode: 'all',
     resolver: zodResolver(EditCourseGroupingSchema),
     defaultValues: {
+      courseId: params.courseId,
       category: courseOverview.course_categories?.id,
       subcategory: courseOverview.course_sub_categories?.id,
     },
