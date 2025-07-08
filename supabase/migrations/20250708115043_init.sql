@@ -4,6 +4,8 @@ create type "public"."app_permission" as enum ('course_categories.insert', 'cour
 
 create type "public"."app_role" as enum ('go_su', 'go_admin', 'go_staff', 'user');
 
+create type "public"."course_access" as enum ('public', 'private');
+
 create type "public"."invite_delivery_status" as enum ('pending', 'sent', 'failed');
 
 create type "public"."org_role" as enum ('owner', 'admin', 'editor');
@@ -43,6 +45,27 @@ create table "public"."course_sub_categories" (
 
 
 alter table "public"."course_sub_categories" enable row level security;
+
+create table "public"."courses" (
+    "id" uuid not null default uuid_generate_v4(),
+    "category_id" uuid,
+    "subcategory_id" uuid,
+    "organization_id" uuid,
+    "owned_by" uuid,
+    "name" text not null,
+    "description" text,
+    "image_url" text,
+    "blur_hash" text,
+    "visibility" course_access not null default 'public'::course_access,
+    "created_at" timestamp with time zone not null default timezone('utc'::text, now()),
+    "updated_at" timestamp with time zone not null default timezone('utc'::text, now()),
+    "last_published" timestamp with time zone,
+    "created_by" uuid not null,
+    "updated_by" uuid not null
+);
+
+
+alter table "public"."courses" enable row level security;
 
 create table "public"."lesson_types" (
     "id" uuid not null default uuid_generate_v4(),
@@ -191,6 +214,8 @@ CREATE UNIQUE INDEX course_categories_pkey ON public.course_categories USING btr
 
 CREATE UNIQUE INDEX course_sub_categories_pkey ON public.course_sub_categories USING btree (id);
 
+CREATE UNIQUE INDEX courses_pkey ON public.courses USING btree (id);
+
 CREATE INDEX idx_course_categories_created_by ON public.course_categories USING btree (created_by);
 
 CREATE INDEX idx_course_categories_updated_by ON public.course_categories USING btree (updated_by);
@@ -200,6 +225,20 @@ CREATE INDEX idx_course_sub_categories_category_id ON public.course_sub_categori
 CREATE INDEX idx_course_sub_categories_created_by ON public.course_sub_categories USING btree (created_by);
 
 CREATE INDEX idx_course_sub_categories_updated_by ON public.course_sub_categories USING btree (updated_by);
+
+CREATE INDEX idx_courses_category_id ON public.courses USING btree (category_id);
+
+CREATE INDEX idx_courses_created_by ON public.courses USING btree (created_by);
+
+CREATE INDEX idx_courses_organization_id ON public.courses USING btree (organization_id);
+
+CREATE INDEX idx_courses_owned_by ON public.courses USING btree (owned_by);
+
+CREATE INDEX idx_courses_subcategory_id ON public.courses USING btree (subcategory_id);
+
+CREATE INDEX idx_courses_updated_by ON public.courses USING btree (updated_by);
+
+CREATE INDEX idx_courses_visibility ON public.courses USING btree (visibility);
 
 CREATE INDEX idx_lesson_types_created_by ON public.lesson_types USING btree (created_by);
 
@@ -293,6 +332,8 @@ alter table "public"."course_categories" add constraint "course_categories_pkey"
 
 alter table "public"."course_sub_categories" add constraint "course_sub_categories_pkey" PRIMARY KEY using index "course_sub_categories_pkey";
 
+alter table "public"."courses" add constraint "courses_pkey" PRIMARY KEY using index "courses_pkey";
+
 alter table "public"."lesson_types" add constraint "lesson_types_pkey" PRIMARY KEY using index "lesson_types_pkey";
 
 alter table "public"."organization_invites" add constraint "organization_invites_pkey" PRIMARY KEY using index "organization_invites_pkey";
@@ -340,6 +381,34 @@ alter table "public"."course_sub_categories" validate constraint "course_sub_cat
 alter table "public"."course_sub_categories" add constraint "course_sub_categories_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
 
 alter table "public"."course_sub_categories" validate constraint "course_sub_categories_updated_by_fkey";
+
+alter table "public"."courses" add constraint "chk_course_owner" CHECK (((organization_id IS NOT NULL) OR (owned_by IS NOT NULL))) not valid;
+
+alter table "public"."courses" validate constraint "chk_course_owner";
+
+alter table "public"."courses" add constraint "courses_category_id_fkey" FOREIGN KEY (category_id) REFERENCES course_categories(id) ON DELETE SET NULL not valid;
+
+alter table "public"."courses" validate constraint "courses_category_id_fkey";
+
+alter table "public"."courses" add constraint "courses_created_by_fkey" FOREIGN KEY (created_by) REFERENCES profiles(id) ON DELETE CASCADE not valid;
+
+alter table "public"."courses" validate constraint "courses_created_by_fkey";
+
+alter table "public"."courses" add constraint "courses_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE not valid;
+
+alter table "public"."courses" validate constraint "courses_organization_id_fkey";
+
+alter table "public"."courses" add constraint "courses_owned_by_fkey" FOREIGN KEY (owned_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
+
+alter table "public"."courses" validate constraint "courses_owned_by_fkey";
+
+alter table "public"."courses" add constraint "courses_subcategory_id_fkey" FOREIGN KEY (subcategory_id) REFERENCES course_sub_categories(id) ON DELETE SET NULL not valid;
+
+alter table "public"."courses" validate constraint "courses_subcategory_id_fkey";
+
+alter table "public"."courses" add constraint "courses_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES profiles(id) ON DELETE CASCADE not valid;
+
+alter table "public"."courses" validate constraint "courses_updated_by_fkey";
 
 alter table "public"."lesson_types" add constraint "lesson_types_bg_color_key" UNIQUE using index "lesson_types_bg_color_key";
 
@@ -1157,6 +1226,27 @@ end;
 $function$
 ;
 
+CREATE OR REPLACE FUNCTION public.validate_subcategory_belongs_to_category()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO ''
+AS $function$
+begin
+  if NEW.category_id is not null and NEW.subcategory_id is not null then
+    if not exists (
+      select 1
+      from public.course_sub_categories
+      where id = NEW.subcategory_id
+        and category_id = NEW.category_id
+    ) then
+      raise exception 'Subcategory % does not belong to category %', NEW.subcategory_id, NEW.category_id;
+    end if;
+  end if;
+  return NEW;
+end;
+$function$
+;
+
 grant delete on table "public"."course_categories" to "anon";
 
 grant insert on table "public"."course_categories" to "anon";
@@ -1240,6 +1330,48 @@ grant trigger on table "public"."course_sub_categories" to "service_role";
 grant truncate on table "public"."course_sub_categories" to "service_role";
 
 grant update on table "public"."course_sub_categories" to "service_role";
+
+grant delete on table "public"."courses" to "anon";
+
+grant insert on table "public"."courses" to "anon";
+
+grant references on table "public"."courses" to "anon";
+
+grant select on table "public"."courses" to "anon";
+
+grant trigger on table "public"."courses" to "anon";
+
+grant truncate on table "public"."courses" to "anon";
+
+grant update on table "public"."courses" to "anon";
+
+grant delete on table "public"."courses" to "authenticated";
+
+grant insert on table "public"."courses" to "authenticated";
+
+grant references on table "public"."courses" to "authenticated";
+
+grant select on table "public"."courses" to "authenticated";
+
+grant trigger on table "public"."courses" to "authenticated";
+
+grant truncate on table "public"."courses" to "authenticated";
+
+grant update on table "public"."courses" to "authenticated";
+
+grant delete on table "public"."courses" to "service_role";
+
+grant insert on table "public"."courses" to "service_role";
+
+grant references on table "public"."courses" to "service_role";
+
+grant select on table "public"."courses" to "service_role";
+
+grant trigger on table "public"."courses" to "service_role";
+
+grant truncate on table "public"."courses" to "service_role";
+
+grant update on table "public"."courses" to "service_role";
 
 grant delete on table "public"."lesson_types" to "anon";
 
@@ -1621,6 +1753,38 @@ to authenticated
 using (authorize('course_sub_categories.update'::app_permission));
 
 
+create policy "Delete: Admins or owning editors can delete courses"
+on "public"."courses"
+as permissive
+for delete
+to public
+using (((get_user_org_role(organization_id, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(organization_id, auth.uid()) = 'editor'::text) AND (owned_by = auth.uid()))));
+
+
+create policy "Insert: Org members can create courses"
+on "public"."courses"
+as permissive
+for insert
+to public
+with check ((get_user_org_role(organization_id, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text, 'editor'::text])));
+
+
+create policy "Read: Org members can view courses"
+on "public"."courses"
+as permissive
+for select
+to public
+using ((get_user_org_role(organization_id, auth.uid()) IS NOT NULL));
+
+
+create policy "Update: Admins or owning editors can update courses"
+on "public"."courses"
+as permissive
+for update
+to public
+using (((get_user_org_role(organization_id, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(organization_id, auth.uid()) = 'editor'::text) AND (owned_by = auth.uid()))));
+
+
 create policy "Authenticated users can delete lesson types"
 on "public"."lesson_types"
 as permissive
@@ -1880,6 +2044,8 @@ CREATE TRIGGER trg_course_categories_set_updated_at BEFORE UPDATE ON public.cour
 
 CREATE TRIGGER trg_course_sub_categories_set_updated_at BEFORE UPDATE ON public.course_sub_categories FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+CREATE TRIGGER trg_validate_subcategory BEFORE INSERT OR UPDATE ON public.courses FOR EACH ROW EXECUTE FUNCTION validate_subcategory_belongs_to_category();
+
 CREATE TRIGGER trg_lesson_types_set_updated_at BEFORE UPDATE ON public.lesson_types FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER on_member_exit_update_profile AFTER DELETE ON public.organization_members FOR EACH ROW EXECUTE FUNCTION handle_member_exit_update_profile();
@@ -1929,6 +2095,47 @@ for update
 to authenticated
 using ((owner = ( SELECT auth.uid() AS uid)))
 with check (((bucket_id = 'profile_photos'::text) AND ((storage.foldername(name))[1] = ( SELECT (auth.uid())::text AS uid))));
+
+
+create policy "Delete: Admins or owning editors can delete thumbnails"
+on "storage"."objects"
+as permissive
+for delete
+to public
+using (((bucket_id = 'thumbnails'::text) AND (EXISTS ( SELECT 1
+   FROM courses c
+  WHERE ((c.id = ((objects.metadata ->> 'course_id'::text))::uuid) AND ((get_user_org_role(c.organization_id, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, auth.uid()) = 'editor'::text) AND (c.owned_by = auth.uid()))))))));
+
+
+create policy "Insert: Org members can upload thumbnails"
+on "storage"."objects"
+as permissive
+for insert
+to public
+with check (((bucket_id = 'thumbnails'::text) AND (EXISTS ( SELECT 1
+   FROM courses c
+  WHERE ((c.id = ((objects.metadata ->> 'course_id'::text))::uuid) AND (get_user_org_role(c.organization_id, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text, 'editor'::text])))))));
+
+
+create policy "Read: Org members can view course thumbnails"
+on "storage"."objects"
+as permissive
+for select
+to public
+using (((bucket_id = 'thumbnails'::text) AND (EXISTS ( SELECT 1
+   FROM courses c
+  WHERE ((c.id = ((objects.metadata ->> 'course_id'::text))::uuid) AND (get_user_org_role(c.organization_id, auth.uid()) IS NOT NULL))))));
+
+
+create policy "Update: Admins or owning editors can update thumbnails"
+on "storage"."objects"
+as permissive
+for update
+to public
+using (((bucket_id = 'thumbnails'::text) AND (EXISTS ( SELECT 1
+   FROM courses c
+  WHERE ((c.id = ((objects.metadata ->> 'course_id'::text))::uuid) AND ((get_user_org_role(c.organization_id, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, auth.uid()) = 'editor'::text) AND (c.owned_by = auth.uid()))))))))
+with check ((bucket_id = 'thumbnails'::text));
 
 
 

@@ -165,6 +165,124 @@ export type Database = {
           },
         ]
       }
+      courses: {
+        Row: {
+          blur_hash: string | null
+          category_id: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          image_url: string | null
+          last_published: string | null
+          name: string
+          organization_id: string | null
+          owned_by: string | null
+          subcategory_id: string | null
+          updated_at: string
+          updated_by: string
+          visibility: Database["public"]["Enums"]["course_access"]
+        }
+        Insert: {
+          blur_hash?: string | null
+          category_id?: string | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          last_published?: string | null
+          name: string
+          organization_id?: string | null
+          owned_by?: string | null
+          subcategory_id?: string | null
+          updated_at?: string
+          updated_by: string
+          visibility?: Database["public"]["Enums"]["course_access"]
+        }
+        Update: {
+          blur_hash?: string | null
+          category_id?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          last_published?: string | null
+          name?: string
+          organization_id?: string | null
+          owned_by?: string | null
+          subcategory_id?: string | null
+          updated_at?: string
+          updated_by?: string
+          visibility?: Database["public"]["Enums"]["course_access"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "courses_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "course_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "courses_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "courses_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "courses_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "courses_owned_by_fkey"
+            columns: ["owned_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "courses_owned_by_fkey"
+            columns: ["owned_by"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "courses_subcategory_id_fkey"
+            columns: ["subcategory_id"]
+            isOneToOne: false
+            referencedRelation: "course_sub_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "courses_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "courses_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lesson_types: {
         Row: {
           bg_color: string
@@ -773,6 +891,7 @@ export type Database = {
         | "lesson_types.delete"
         | "pricing_tier.crud"
       app_role: "go_su" | "go_admin" | "go_staff" | "user"
+      course_access: "public" | "private"
       invite_delivery_status: "pending" | "sent" | "failed"
       org_role: "owner" | "admin" | "editor"
       profile_mode: "personal" | "organization"
@@ -919,6 +1038,7 @@ export const Constants = {
         "pricing_tier.crud",
       ],
       app_role: ["go_su", "go_admin", "go_staff", "user"],
+      course_access: ["public", "private"],
       invite_delivery_status: ["pending", "sent", "failed"],
       org_role: ["owner", "admin", "editor"],
       profile_mode: ["personal", "organization"],
