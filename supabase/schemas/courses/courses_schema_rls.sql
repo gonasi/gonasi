@@ -57,6 +57,7 @@ using (
 -- ============================================================================
 -- STORAGE BUCKET: THUMBNAILS
 -- ============================================================================
+alter table storage.objects enable row level security;
 
 -- ============================================================================
 -- SELECT: Allow any member of the organization that owns the course
@@ -64,6 +65,7 @@ using (
 create policy "Read: Org members can view course thumbnails"
 on storage.objects
 for select
+to authenticated
 using (
   bucket_id = 'thumbnails'
   and exists (
@@ -80,6 +82,7 @@ using (
 create policy "Insert: Org members can upload thumbnails"
 on storage.objects
 for insert
+to authenticated
 with check (
   bucket_id = 'thumbnails'
   and exists (
@@ -98,6 +101,7 @@ with check (
 create policy "Update: Admins or owning editors can update thumbnails"
 on storage.objects
 for update
+to authenticated
 using (
   bucket_id = 'thumbnails'
   and exists (
@@ -108,7 +112,7 @@ using (
         public.get_user_org_role(c.organization_id, (select auth.uid())) in ('owner', 'admin')
         or (
           public.get_user_org_role(c.organization_id, (select auth.uid())) = 'editor'
-          and c.owned_by = auth.uid()
+          and c.owned_by = (select auth.uid())
         )
       )
   )
@@ -123,7 +127,7 @@ with check (
         public.get_user_org_role(c.organization_id, (select auth.uid())) in ('owner', 'admin')
         or (
           public.get_user_org_role(c.organization_id, (select auth.uid())) = 'editor'
-          and c.owned_by = auth.uid()
+          and c.owned_by = (select auth.uid())
         )
       )
   )
@@ -136,6 +140,7 @@ with check (
 create policy "Delete: Admins or owning editors can delete thumbnails"
 on storage.objects
 for delete
+to authenticated
 using (
   bucket_id = 'thumbnails'
   and exists (
@@ -146,8 +151,9 @@ using (
         public.get_user_org_role(c.organization_id, (select auth.uid())) in ('owner', 'admin')
         or (
           public.get_user_org_role(c.organization_id, (select auth.uid())) = 'editor'
-          and c.owned_by = auth.uid()
+          and c.owned_by = (select auth.uid())
         )
       )
   )
 );
+

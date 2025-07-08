@@ -5,20 +5,14 @@ import type { TypedSupabaseClient } from '../client';
 import { THUMBNAILS_BUCKET } from '../constants';
 import type { ApiResponse } from '../types';
 
-/**
- * Updates a course's image in Supabase Storage and updates the course record in the database.
- * Always uploads to a new unique path to avoid stale caching, and deletes the old image afterward.
- *
- * @param supabase - The Supabase client
- * @param assetData - Object containing the courseId, image, current imageUrl, and blurHash
- * @returns A success or error response
- */
 export const editCourseImage = async (
   supabase: TypedSupabaseClient,
   assetData: EditCourseImageSubmitValues,
 ): Promise<ApiResponse> => {
   const userId = await getUserId(supabase);
   const { image, courseId, blurHash } = assetData;
+
+  console.log('courseid: ', courseId);
 
   if (!image) {
     return {
@@ -28,18 +22,23 @@ export const editCourseImage = async (
   }
 
   try {
-    // Use a consistent file name to avoid duplicates and stale caching
-    const fileExtension = image.name.split('.').pop()?.toLowerCase();
-    const stableFileName = `${courseId}/thumbnail.${fileExtension}`;
+    const stableFileName = `${courseId}/thumbnail.webp`; // Use .webp consistently
 
-    // Upload the new image and allow overwrite
+    // Check if file already exists
+    const { data: existingFiles } = await supabase.storage
+      .from(THUMBNAILS_BUCKET)
+      .list(courseId, { search: 'thumbnail.webp' });
+
+    const fileAlreadyExists = existingFiles?.some((f) => f.name === 'thumbnail.webp');
+
+    // Upload the new image (conditionally upsert)
     const { data: uploadResponse, error: uploadError } = await supabase.storage
       .from(THUMBNAILS_BUCKET)
       .upload(stableFileName, image, {
-        upsert: true, // allows overwriting existing file
-        cacheControl: '31536000', // still apply long cache; update with CDN strategy if needed
+        upsert: fileAlreadyExists,
+        cacheControl: '3600',
         metadata: {
-          id: courseId,
+          course_id: courseId, // ✅ Required for RLS policy
         },
       });
 
@@ -64,7 +63,6 @@ export const editCourseImage = async (
 
     if (updateError) {
       console.error('Upload course thumbnail error: ', updateError);
-      // Revert by deleting the uploaded image
       await supabase.storage.from(THUMBNAILS_BUCKET).remove([finalImagePath]);
 
       return {
