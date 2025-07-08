@@ -10,7 +10,7 @@ create policy "Read: Org members can view courses"
 on public.courses
 for select
 using (
-  public.get_user_org_role(organization_id, auth.uid()) is not null
+  public.get_user_org_role(organization_id, (select auth.uid())) is not null
 );
 
 -- ============================================================================
@@ -20,7 +20,7 @@ create policy "Insert: Org members can create courses"
 on public.courses
 for insert
 with check (
-  public.get_user_org_role(organization_id, auth.uid()) in ('owner', 'admin', 'editor')
+  public.get_user_org_role(organization_id, (select auth.uid())) in ('owner', 'admin', 'editor')
 );
 
 -- ============================================================================
@@ -32,9 +32,9 @@ create policy "Update: Admins or owning editors can update courses"
 on public.courses
 for update
 using (
-  public.get_user_org_role(organization_id, auth.uid()) in ('owner', 'admin')
+  public.get_user_org_role(organization_id, (select auth.uid())) in ('owner', 'admin')
   or (
-    public.get_user_org_role(organization_id, auth.uid()) = 'editor'
+    public.get_user_org_role(organization_id, (select auth.uid())) = 'editor'
     and owned_by = auth.uid()
   )
 );
@@ -46,9 +46,9 @@ create policy "Delete: Admins or owning editors can delete courses"
 on public.courses
 for delete
 using (
-  public.get_user_org_role(organization_id, auth.uid()) in ('owner', 'admin')
+  public.get_user_org_role(organization_id, (select auth.uid())) in ('owner', 'admin')
   or (
-    public.get_user_org_role(organization_id, auth.uid()) = 'editor'
+    public.get_user_org_role(organization_id, (select auth.uid())) = 'editor'
     and owned_by = auth.uid()
   )
 );
@@ -70,7 +70,7 @@ using (
     select 1
     from public.courses c
     where c.id = (storage.objects.metadata ->> 'course_id')::uuid
-      and public.get_user_org_role(c.organization_id, auth.uid()) is not null
+      and public.get_user_org_role(c.organization_id, (select auth.uid())) is not null
   )
 );
 
@@ -86,7 +86,7 @@ with check (
     select 1
     from public.courses c
     where c.id = (storage.objects.metadata ->> 'course_id')::uuid
-      and public.get_user_org_role(c.organization_id, auth.uid()) in ('owner', 'admin', 'editor')
+      and public.get_user_org_role(c.organization_id, (select auth.uid())) in ('owner', 'admin', 'editor')
   )
 );
 
@@ -105,9 +105,9 @@ using (
     from public.courses c
     where c.id = (storage.objects.metadata ->> 'course_id')::uuid
       and (
-        public.get_user_org_role(c.organization_id, auth.uid()) in ('owner', 'admin')
+        public.get_user_org_role(c.organization_id, (select auth.uid())) in ('owner', 'admin')
         or (
-          public.get_user_org_role(c.organization_id, auth.uid()) = 'editor'
+          public.get_user_org_role(c.organization_id, (select auth.uid())) = 'editor'
           and c.owned_by = auth.uid()
         )
       )
@@ -130,9 +130,9 @@ using (
     from public.courses c
     where c.id = (storage.objects.metadata ->> 'course_id')::uuid
       and (
-        public.get_user_org_role(c.organization_id, auth.uid()) in ('owner', 'admin')
+        public.get_user_org_role(c.organization_id, (select auth.uid())) in ('owner', 'admin')
         or (
-          public.get_user_org_role(c.organization_id, auth.uid()) = 'editor'
+          public.get_user_org_role(c.organization_id, (select auth.uid())) = 'editor'
           and c.owned_by = auth.uid()
         )
       )

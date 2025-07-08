@@ -3,10 +3,7 @@ import { type profilesScalars } from '@snaplet/seed';
 
 import { getUserId } from '@gonasi/database/auth';
 import { createCourseChapter } from '@gonasi/database/courseChapters';
-import {
-  createNewCourseTitle,
-  fetchCoursesForOwnerOrCollaborators,
-} from '@gonasi/database/courses';
+import { createNewCourseTitle, fetchOrganizationCourses } from '@gonasi/database/courses';
 import { createLessonDetails, upsertRichTextBlock } from '@gonasi/database/lessons';
 import { fetchAllLessonTypes } from '@gonasi/database/lessonTypes';
 import { getUserProfile } from '@gonasi/database/profile';
@@ -95,7 +92,7 @@ export async function seedCreateCourse(users: profilesScalars[]) {
     }
 
     // Fetch user's courses with signed URLs
-    const { data: courseData } = await fetchCoursesForOwnerOrCollaborators({
+    const { data: courseData } = await fetchOrganizationCourses({
       supabase,
       limit: 100,
       username: userProfile?.username ?? '',

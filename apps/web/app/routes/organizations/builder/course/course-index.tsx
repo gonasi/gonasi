@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router';
-import { MailPlus, Users } from 'lucide-react';
+import { BadgeDollarSign, BookType, ClipboardList, FileStack } from 'lucide-react';
 
 import type { Route } from './+types/course-index';
 
@@ -17,8 +17,26 @@ export default function CoursesIndex({ params }: Route.ComponentProps) {
 
   const tabs = useMemo(
     () => [
-      { to: `${basePath}/overview`, name: 'Overview', icon: Users },
-      { to: `${basePath}/invites`, name: 'Invites', icon: MailPlus },
+      {
+        to: `${basePath}/overview`,
+        name: 'Overview',
+        icon: ClipboardList,
+      },
+      {
+        to: `${basePath}/pricing`,
+        name: 'Pricing',
+        icon: BadgeDollarSign,
+      },
+      {
+        to: `${basePath}/chapters-lessons`,
+        name: 'Content',
+        icon: BookType,
+      },
+      {
+        to: `${basePath}/files`,
+        name: 'Files',
+        icon: FileStack,
+      },
     ],
     [basePath],
   );

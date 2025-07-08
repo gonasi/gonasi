@@ -1790,7 +1790,7 @@ on "public"."courses"
 as permissive
 for delete
 to public
-using (((get_user_org_role(organization_id, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(organization_id, auth.uid()) = 'editor'::text) AND (owned_by = auth.uid()))));
+using (((get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (owned_by = auth.uid()))));
 
 
 create policy "Insert: Org members can create courses"
@@ -1798,7 +1798,7 @@ on "public"."courses"
 as permissive
 for insert
 to public
-with check ((get_user_org_role(organization_id, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text, 'editor'::text])));
+with check ((get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text, 'editor'::text])));
 
 
 create policy "Read: Org members can view courses"
@@ -1806,7 +1806,7 @@ on "public"."courses"
 as permissive
 for select
 to public
-using ((get_user_org_role(organization_id, auth.uid()) IS NOT NULL));
+using ((get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) IS NOT NULL));
 
 
 create policy "Update: Admins or owning editors can update courses"
@@ -1814,7 +1814,7 @@ on "public"."courses"
 as permissive
 for update
 to public
-using (((get_user_org_role(organization_id, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(organization_id, auth.uid()) = 'editor'::text) AND (owned_by = auth.uid()))));
+using (((get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (owned_by = auth.uid()))));
 
 
 create policy "Authenticated users can delete lesson types"
@@ -2136,7 +2136,7 @@ for delete
 to public
 using (((bucket_id = 'thumbnails'::text) AND (EXISTS ( SELECT 1
    FROM courses c
-  WHERE ((c.id = ((objects.metadata ->> 'course_id'::text))::uuid) AND ((get_user_org_role(c.organization_id, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, auth.uid()) = 'editor'::text) AND (c.owned_by = auth.uid()))))))));
+  WHERE ((c.id = ((objects.metadata ->> 'course_id'::text))::uuid) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.owned_by = auth.uid()))))))));
 
 
 create policy "Insert: Org members can upload thumbnails"
@@ -2146,7 +2146,7 @@ for insert
 to public
 with check (((bucket_id = 'thumbnails'::text) AND (EXISTS ( SELECT 1
    FROM courses c
-  WHERE ((c.id = ((objects.metadata ->> 'course_id'::text))::uuid) AND (get_user_org_role(c.organization_id, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text, 'editor'::text])))))));
+  WHERE ((c.id = ((objects.metadata ->> 'course_id'::text))::uuid) AND (get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text, 'editor'::text])))))));
 
 
 create policy "Read: Org members can view course thumbnails"
@@ -2156,7 +2156,7 @@ for select
 to public
 using (((bucket_id = 'thumbnails'::text) AND (EXISTS ( SELECT 1
    FROM courses c
-  WHERE ((c.id = ((objects.metadata ->> 'course_id'::text))::uuid) AND (get_user_org_role(c.organization_id, auth.uid()) IS NOT NULL))))));
+  WHERE ((c.id = ((objects.metadata ->> 'course_id'::text))::uuid) AND (get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) IS NOT NULL))))));
 
 
 create policy "Update: Admins or owning editors can update thumbnails"
@@ -2166,7 +2166,7 @@ for update
 to public
 using (((bucket_id = 'thumbnails'::text) AND (EXISTS ( SELECT 1
    FROM courses c
-  WHERE ((c.id = ((objects.metadata ->> 'course_id'::text))::uuid) AND ((get_user_org_role(c.organization_id, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, auth.uid()) = 'editor'::text) AND (c.owned_by = auth.uid()))))))))
+  WHERE ((c.id = ((objects.metadata ->> 'course_id'::text))::uuid) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.owned_by = auth.uid()))))))))
 with check ((bucket_id = 'thumbnails'::text));
 
 

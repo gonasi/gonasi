@@ -17,15 +17,20 @@ interface GoTabNavProps {
 
 export function GoTabNav({ tabs, previousLink }: GoTabNavProps) {
   return (
-    <div className='border-b-border/20 grid grid-cols-3 items-center border-b px-0 pt-4 md:px-4'>
-      <div>{previousLink ? <BackArrowNavLink to={previousLink} /> : null}</div>
-      <div className='mx-auto flex w-full max-w-md items-center justify-center gap-2 md:gap-10'>
+    <div className='border-b-border/20 grid grid-cols-[1fr_4fr_1fr] items-center border-b px-0 pt-4 md:grid-cols-[1fr_8fr_1fr] md:px-4'>
+      <div className='w-fit justify-self-start'>
+        {previousLink ? <BackArrowNavLink to={previousLink} /> : null}
+      </div>
+
+      <div className='flex w-full items-center justify-center gap-4 md:gap-10'>
         {tabs
           .filter((tab) => tab.isVisible !== false)
           .map((tab) => (
             <TabLink key={tab.to + tab.name} to={tab.to} name={tab.name} icon={tab.icon} />
           ))}
       </div>
+
+      <div className='w-fit justify-self-end'>{/* Optional: something for the right side */}</div>
     </div>
   );
 }
