@@ -21,6 +21,8 @@ interface TierLimitSeed {
   support_level: SupportLevel;
   platform_fee_percentage: number;
   white_label_enabled: boolean;
+  price_monthly_usd: number;
+  price_yearly_usd: number;
 }
 
 const tierLimits: TierLimitSeed[] = [
@@ -29,7 +31,7 @@ const tierLimits: TierLimitSeed[] = [
     max_organizations_per_user: 2,
     storage_limit_mb_per_org: 500,
     max_members_per_org: 3,
-    max_free_courses_per_org: 3,
+    max_free_courses_per_org: 2,
     ai_tools_enabled: true,
     ai_usage_limit_monthly: 200,
     custom_domains_enabled: false,
@@ -38,11 +40,13 @@ const tierLimits: TierLimitSeed[] = [
     support_level: 'community',
     platform_fee_percentage: 15.0,
     white_label_enabled: false,
+    price_monthly_usd: 0.0,
+    price_yearly_usd: 0.0,
   },
   {
     tier: 'scale',
     max_organizations_per_user: 10,
-    storage_limit_mb_per_org: 5000,
+    storage_limit_mb_per_org: 10000,
     max_members_per_org: 15,
     max_free_courses_per_org: 15,
     ai_tools_enabled: true,
@@ -53,6 +57,8 @@ const tierLimits: TierLimitSeed[] = [
     support_level: 'email',
     platform_fee_percentage: 12.0,
     white_label_enabled: false,
+    price_monthly_usd: 39.0,
+    price_yearly_usd: 390.0,
   },
   {
     tier: 'impact',
@@ -68,6 +74,8 @@ const tierLimits: TierLimitSeed[] = [
     support_level: 'priority',
     platform_fee_percentage: 9.0,
     white_label_enabled: true,
+    price_monthly_usd: 99.0,
+    price_yearly_usd: 990.0,
   },
   {
     tier: 'enterprise',
@@ -83,6 +91,8 @@ const tierLimits: TierLimitSeed[] = [
     support_level: 'dedicated',
     platform_fee_percentage: 7.0,
     white_label_enabled: true,
+    price_monthly_usd: 299.0,
+    price_yearly_usd: 2990.0,
   },
 ];
 
