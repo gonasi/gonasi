@@ -9,9 +9,10 @@ import { buttonVariants, NavLinkButton } from '../ui/button';
 interface Props {
   name: string;
   description: string | null;
-  editLink: string;
+  editLink?: string;
   errorMessage?: string[];
   updatedAt: string;
+  canEditCourse: boolean;
 }
 
 const AnimatedRocket = () => (
@@ -32,18 +33,20 @@ const AnimatedRocket = () => (
   </motion.div>
 );
 
-export function CourseOverview({ name, description, editLink, updatedAt }: Props) {
+export function CourseOverview({ name, description, canEditCourse, editLink, updatedAt }: Props) {
   const params = useParams();
 
-  const canPublish = true;
+  const canPublish = canEditCourse;
   return (
     <div className='flex h-full flex-col justify-between space-y-4'>
       <div>
         <div className='flex items-center justify-between'>
           <h2 className='text-lg md:text-2xl'>{name}</h2>
-          <Link to={editLink} className={buttonVariants({ variant: 'secondary', size: 'sm' })}>
-            <Pencil />
-          </Link>
+          {editLink ? (
+            <Link to={editLink} className={buttonVariants({ variant: 'secondary', size: 'sm' })}>
+              <Pencil />
+            </Link>
+          ) : null}
         </div>
         <div className='font-secondary text-muted-foreground py-2 text-sm'>
           <p>{description ? description : 'No description provided...'}</p>
@@ -63,17 +66,19 @@ export function CourseOverview({ name, description, editLink, updatedAt }: Props
           </div>
         </div>
       </div>
-      <div className='w-full'>
+      {canPublish ? (
         <div className='w-full'>
-          <NavLinkButton
-            to={`/${params.username}/course-builder/${params.courseId}/overview/publish`}
-            rightIcon={<AnimatedRocket />}
-            className='w-full md:w-48'
-          >
-            Publish
-          </NavLinkButton>
+          <div className='w-full'>
+            <NavLinkButton
+              to={`/${params.username}/course-builder/${params.courseId}/overview/publish`}
+              rightIcon={<AnimatedRocket />}
+              className='w-full md:w-48'
+            >
+              Publish
+            </NavLinkButton>
+          </div>
         </div>
-      </div>
+      ) : null}
     </div>
   );
 }

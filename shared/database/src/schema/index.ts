@@ -842,7 +842,7 @@ export type Database = {
         Returns: boolean
       }
       can_user_edit_course: {
-        Args: { course_id: string }
+        Args: { arg_course_id: string }
         Returns: boolean
       }
       custom_access_token_hook: {

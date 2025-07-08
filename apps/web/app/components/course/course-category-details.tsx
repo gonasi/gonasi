@@ -6,7 +6,7 @@ import { buttonVariants } from '../ui/button';
 interface Props {
   category?: string | null;
   subCategory?: string | null;
-  editLink: string;
+  editLink?: string;
 }
 
 export function CourseCategoryOverview({ category, subCategory, editLink }: Props) {
@@ -14,13 +14,15 @@ export function CourseCategoryOverview({ category, subCategory, editLink }: Prop
     <div className='border-card rounded-md border-0 px-0 py-4 md:border md:px-4'>
       <div className='flex items-center justify-between pb-4'>
         <h2 className='text-xl'>How it’s grouped</h2>
-        <Link
-          to={editLink}
-          className={buttonVariants({ variant: 'secondary', size: 'sm' })}
-          aria-label='Edit category details'
-        >
-          <EditIcon />
-        </Link>
+        {editLink ? (
+          <Link
+            to={editLink}
+            className={buttonVariants({ variant: 'secondary', size: 'sm' })}
+            aria-label='Edit category details'
+          >
+            <EditIcon />
+          </Link>
+        ) : null}
       </div>
       <div className='space-y-3'>
         {[

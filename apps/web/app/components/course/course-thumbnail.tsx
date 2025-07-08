@@ -7,7 +7,7 @@ interface CourseThumbnailProps {
   thumbnail: string | null;
   blurHash: string | null;
   name: string;
-  editLink: string;
+  editLink?: string;
 }
 
 export function CourseThumbnail({ thumbnail, name, editLink, blurHash }: CourseThumbnailProps) {
@@ -15,14 +15,15 @@ export function CourseThumbnail({ thumbnail, name, editLink, blurHash }: CourseT
 
   return (
     <div className='relative aspect-[16/9] min-h-[200px] overflow-hidden'>
-      <Link
-        to={editLink}
-        className='bg-secondary hover:bg-secondary/80 absolute top-2 right-2 z-5 rounded-full p-2 transition-colors'
-        aria-label={`Edit ${name}`}
-      >
-        <EditIcon className='text-secondary-foreground h-5 w-5' />
-      </Link>
-
+      {editLink ? (
+        <Link
+          to={editLink}
+          className='bg-secondary hover:bg-secondary/80 absolute top-2 right-2 z-5 rounded-full p-2 transition-colors'
+          aria-label={`Edit ${name}`}
+        >
+          <EditIcon className='text-secondary-foreground h-5 w-5' />
+        </Link>
+      ) : null}
       {thumbnail ? (
         <Image
           src={thumbnail}

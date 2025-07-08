@@ -1,4 +1,4 @@
-import { Outlet, useOutletContext } from 'react-router';
+import { Outlet } from 'react-router';
 import { motion } from 'framer-motion';
 import { redirectWithError } from 'remix-toast';
 
@@ -14,7 +14,6 @@ import {
 } from '~/components/course';
 import { Separator } from '~/components/ui/separator';
 import { createClient } from '~/lib/supabase/supabase.server';
-import type { OrganizationsOutletContextType } from '~/routes/layouts/organizations/organizations-layout';
 
 export function meta() {
   return [
@@ -32,11 +31,16 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 
   const courseOverview = await fetchOrganizationCourseOverviewById({ supabase, courseId });
 
-  if (!courseOverview) {
-    return redirectWithError(`/${params.organizationId}/builder`, 'Course not found');
+  const { data } = await supabase.rpc('can_user_edit_course', { arg_course_id: params.courseId });
+
+  if (!courseOverview || data === null) {
+    return redirectWithError(
+      `/${params.organizationId}/builder`,
+      'Course not found or no permissions',
+    );
   }
 
-  return courseOverview;
+  return { courseOverview, canEditCourse: data };
 }
 
 const fadeInUp = {
@@ -46,17 +50,18 @@ const fadeInUp = {
 
 export default function CourseOverview({ loaderData, params }: Route.ComponentProps) {
   const {
-    signedUrl,
-    blur_hash,
-    name,
-    id: courseId,
-    description,
-    course_categories,
-    course_sub_categories,
-    updated_at,
+    courseOverview: {
+      signedUrl,
+      blur_hash,
+      name,
+      id: courseId,
+      description,
+      course_categories,
+      course_sub_categories,
+      updated_at,
+    },
+    canEditCourse,
   } = loaderData;
-
-  const { data } = useOutletContext<OrganizationsOutletContextType>();
 
   return (
     <>
@@ -78,7 +83,11 @@ export default function CourseOverview({ loaderData, params }: Route.ComponentPr
                 thumbnail={signedUrl}
                 blurHash={blur_hash}
                 name={name}
-                editLink={`/${params.organizationId}/builder/${courseId}/overview/edit-thumbnail`}
+                editLink={
+                  canEditCourse
+                    ? `/${params.organizationId}/builder/${courseId}/overview/edit-thumbnail`
+                    : undefined
+                }
               />
             </div>
             <div className='flex-1'>
@@ -86,7 +95,12 @@ export default function CourseOverview({ loaderData, params }: Route.ComponentPr
                 name={name}
                 description={description}
                 updatedAt={updated_at}
-                editLink={`/${params.organizationId}/builder/${courseId}/overview/edit-details`}
+                canEditCourse={canEditCourse}
+                editLink={
+                  canEditCourse
+                    ? `/${params.organizationId}/builder/${courseId}/overview/edit-details`
+                    : undefined
+                }
               />
             </div>
           </motion.div>
@@ -106,7 +120,11 @@ export default function CourseOverview({ loaderData, params }: Route.ComponentPr
               <CourseCategoryOverview
                 category={course_categories?.name}
                 subCategory={course_sub_categories?.name}
-                editLink={`/${params.organizationId}/builder/${courseId}/overview/grouping/edit-category`}
+                editLink={
+                  canEditCourse
+                    ? `/${params.organizationId}/builder/${courseId}/overview/grouping/edit-category`
+                    : undefined
+                }
               />
             </div>
           </motion.div>

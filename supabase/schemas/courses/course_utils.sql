@@ -16,27 +16,26 @@
 --   This function is SECURITY DEFINER and sets `search_path` to ''
 --   to prevent privilege escalation via malicious objects in the path.
 -- ============================================================================
-
-create or replace function public.can_user_edit_course(course_id uuid)
+create or replace function public.can_user_edit_course(arg_course_id uuid)
 returns boolean
 language sql
 security definer
 set search_path = ''
 as $$
-  -- Select whether the current user is allowed to edit the course
+  -- Determine if the current user has permission to edit the specified course
   select coalesce(
-    -- Check if the user has one of the allowed roles on the course's organization
     (
+      -- User is an owner or admin in the course's organization
       public.get_user_org_role(c.organization_id, auth.uid()) in ('owner', 'admin')
-      -- OR if the user is an 'editor' AND owns the course
+
+      -- OR user is an editor and also owns the course
       or (
         public.get_user_org_role(c.organization_id, auth.uid()) = 'editor'
         and c.owned_by = auth.uid()
       )
     ),
-    -- If no course is found or conditions not met, default to false
-    false
+    false  -- Default to false if no course or permission
   )
   from public.courses c
-  where c.id = course_id
+  where c.id = arg_course_id
 $$;
