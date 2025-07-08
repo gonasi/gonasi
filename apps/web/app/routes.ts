@@ -63,6 +63,7 @@ export default [
           route('edit-details', 'routes/profile/course-builder/courseId/overview/edit-details.tsx'),
           route('edit-grouping', 'routes/organizations/builder/course/overview/edit-grouping.tsx'),
         ]),
+        route('pricing', 'routes/organizations/builder/course/pricing/pricing-index.tsx'),
       ],
     ),
 

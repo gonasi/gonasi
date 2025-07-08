@@ -124,11 +124,11 @@ schema_paths = [
   # './schemas/chapters_triggers.sql', # chapter
   # './schemas/chapters_schema_rls.sql', # chapter
   
-  # './schemas/course_pricing_schema_and_indexes.sql', # pricing
-  # './schemas/course_pricing_triggers.sql', # pricing
-  # './schemas/course_pricing_schema_rls.sql', # pricing
-  # './schemas/course_pricing_automated_triggers_and_functions.sql', # pricing
-  # './schemas/course_pricing_rpc_reorder_delete.sql',
+  './schemas/pricing/course_pricing_schema_and_indexes.sql', # pricing
+  './schemas/pricing/course_pricing_triggers.sql', # pricing
+  './schemas/pricing/course_pricing_schema_rls.sql', # pricing
+  './schemas/pricing/course_pricing_automated_triggers_and_functions.sql', # pricing
+  './schemas/pricing/course_pricing_rpc_reorder_delete.sql',
 
   # # lesson types
   './schemas/lesson_types_schema_and_rls.sql',
