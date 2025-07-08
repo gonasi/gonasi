@@ -1,12 +1,15 @@
 import { useEffect, useMemo } from 'react';
-import { Outlet, useLocation, useNavigate } from 'react-router';
+import { Outlet, useLocation, useNavigate, useOutletContext } from 'react-router';
 import { BadgeDollarSign, BookType, ClipboardList, FileStack } from 'lucide-react';
 
 import type { Route } from './+types/course-index';
 
 import { GoTabNav } from '~/components/go-tab-nav';
+import type { OrganizationsOutletContextType } from '~/routes/layouts/organizations/organizations-layout';
 
 export default function CoursesIndex({ params }: Route.ComponentProps) {
+  const { data } = useOutletContext<OrganizationsOutletContextType>();
+
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -53,7 +56,7 @@ export default function CoursesIndex({ params }: Route.ComponentProps) {
         <GoTabNav previousLink={`/${params.organizationId}/builder`} tabs={tabs} />
       </div>
       <div className='mt-4 px-4 md:mt-8'>
-        <Outlet />
+        <Outlet context={{ data }} />
       </div>
     </section>
   );

@@ -18,7 +18,7 @@ export async function fetchOrganizationCourses({
   // Base query to fetch courses for the given organization
   let query = supabase
     .from('courses')
-    .select('id, name, image_url, blur_hash', { count: 'exact' })
+    .select('id, name, image_url, blur_hash, owned_by', { count: 'exact' })
     .eq('organization_id', organizationId)
     .order('created_at', { ascending: false })
     .range(startIndex, endIndex);

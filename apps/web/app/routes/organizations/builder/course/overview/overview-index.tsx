@@ -1,4 +1,4 @@
-import { Outlet } from 'react-router';
+import { Outlet, useOutletContext } from 'react-router';
 import { motion } from 'framer-motion';
 import { redirectWithError } from 'remix-toast';
 
@@ -14,6 +14,7 @@ import {
 } from '~/components/course';
 import { Separator } from '~/components/ui/separator';
 import { createClient } from '~/lib/supabase/supabase.server';
+import type { OrganizationsOutletContextType } from '~/routes/layouts/organizations/organizations-layout';
 
 export function meta() {
   return [
@@ -54,6 +55,8 @@ export default function CourseOverview({ loaderData, params }: Route.ComponentPr
     course_sub_categories,
     updated_at,
   } = loaderData;
+
+  const { data } = useOutletContext<OrganizationsOutletContextType>();
 
   return (
     <>

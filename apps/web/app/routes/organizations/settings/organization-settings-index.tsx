@@ -58,9 +58,11 @@ export default function OrganizationSettingsIndex({ params }: Route.ComponentPro
   return (
     <div className='mx-auto flex'>
       <aside className='border-r-border/50 sticky h-full min-h-screen w-fit flex-none border-r pl-0 md:w-48 md:pl-2 lg:w-56'>
-        {links.map(({ name, to, icon }) => (
-          <SideLink key={to} to={to} name={name} icon={icon} end />
-        ))}
+        <div className='flex flex-col space-y-4 md:space-y-1 md:py-0'>
+          {links.map(({ name, to, icon }) => (
+            <SideLink key={to} to={to} name={name} icon={icon} end />
+          ))}
+        </div>
       </aside>
 
       <section className='w-full py-8 pr-4 lg:pr-0'>

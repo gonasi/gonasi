@@ -1,16 +1,19 @@
-import { NavLink, Outlet } from 'react-router';
+import { NavLink, Outlet, useOutletContext } from 'react-router';
 import { motion } from 'framer-motion';
-import { Plus } from 'lucide-react';
+import { Pencil, PenOff, Plus } from 'lucide-react';
 
+import { getUserId } from '@gonasi/database/auth';
 import { fetchOrganizationCourses } from '@gonasi/database/courses';
 
 import type { Route } from './+types/builder-index';
 
 import { NotFoundCard } from '~/components/cards';
 import { GoCardContent, GoCourseHeader, GoThumbnail } from '~/components/cards/go-course-card';
+import { Badge } from '~/components/ui/badge';
 import { IconNavLink } from '~/components/ui/button';
 import { createClient } from '~/lib/supabase/supabase.server';
 import { cn } from '~/lib/utils';
+import type { OrganizationsOutletContextType } from '~/routes/layouts/organizations/organizations-layout';
 
 // Metadata for SEO
 export function meta() {
@@ -41,11 +44,17 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     organizationId: params.organizationId ?? '',
   });
 
-  return courses;
+  const userId = await getUserId(supabase);
+
+  return { courses, userId };
 }
 
 export default function BuilderIndex({ params, loaderData }: Route.ComponentProps) {
-  const { data } = loaderData;
+  const {
+    courses: { data },
+    userId,
+  } = loaderData;
+  const { data: outletData } = useOutletContext<OrganizationsOutletContextType>();
 
   const fadeInUp = {
     hidden: { opacity: 0, y: 2 },
@@ -66,39 +75,54 @@ export default function BuilderIndex({ params, loaderData }: Route.ComponentProp
         <section className='px-0 py-4 md:px-4'>
           {data && data.length ? (
             <div className='grid grid-cols-1 gap-0 md:grid-cols-2 md:gap-2 lg:grid-cols-3'>
-              {data.map(({ id, name, signed_url, blur_hash }, index) => (
-                <motion.div
-                  key={id}
-                  variants={fadeInUp}
-                  initial='hidden'
-                  animate='visible'
-                  transition={{ duration: 0.3, delay: index * 0.05 }}
-                >
-                  <NavLink
-                    to={`/${params.organizationId}/builder/${id}`}
-                    className={cn('pb-4 hover:cursor-pointer md:pb-0')}
+              {data.map(({ id, name, signed_url, blur_hash, owned_by }, index) => {
+                const canEdit =
+                  ['owner', 'admin'].includes(outletData.member.role) || owned_by === userId;
+
+                const dispBadges = canEdit ? (
+                  <Badge variant='default' className='p-1'>
+                    <Pencil />
+                  </Badge>
+                ) : (
+                  <Badge variant='secondary' className='p-1'>
+                    <PenOff />
+                  </Badge>
+                );
+                return (
+                  <motion.div
+                    key={id}
+                    variants={fadeInUp}
+                    initial='hidden'
+                    animate='visible'
+                    transition={{ duration: 0.3, delay: index * 0.05 }}
                   >
-                    {({ isPending }) => (
-                      <div
-                        className={cn(
-                          'group md:bg-card/80 m-0 rounded-none border-none bg-transparent p-0 shadow-none',
-                          isPending && 'bg-primary/5',
-                        )}
-                      >
-                        <GoThumbnail
-                          iconUrl={signed_url}
-                          blurHash={blur_hash}
-                          name={name}
-                          className='rounded-t-none'
-                        />
-                        <GoCardContent>
-                          <GoCourseHeader className='line-clamp-1 text-sm' name={name} />
-                        </GoCardContent>
-                      </div>
-                    )}
-                  </NavLink>
-                </motion.div>
-              ))}
+                    <NavLink
+                      to={`/${params.organizationId}/builder/${id}`}
+                      className={cn('pb-4 hover:cursor-pointer md:pb-0')}
+                    >
+                      {({ isPending }) => (
+                        <div
+                          className={cn(
+                            'group md:bg-card/80 m-0 rounded-none border-none bg-transparent p-0 shadow-none',
+                            isPending && 'bg-primary/5',
+                          )}
+                        >
+                          <GoThumbnail
+                            iconUrl={signed_url}
+                            blurHash={blur_hash}
+                            name={name}
+                            className='rounded-t-none'
+                            badges={[dispBadges]}
+                          />
+                          <GoCardContent>
+                            <GoCourseHeader className='line-clamp-1 text-sm' name={name} />
+                          </GoCardContent>
+                        </div>
+                      )}
+                    </NavLink>
+                  </motion.div>
+                );
+              })}
             </div>
           ) : (
             <div className='max-w-md'>

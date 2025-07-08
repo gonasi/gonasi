@@ -3,7 +3,6 @@ import { Image } from '@unpic/react';
 import { motion } from 'framer-motion';
 import { ImageIcon } from 'lucide-react';
 
-import { Badge } from '~/components/ui/badge';
 import { CardTitle } from '~/components/ui/card';
 import { cn } from '~/lib/utils';
 
@@ -24,7 +23,7 @@ interface GoThumbnailProps {
   iconUrl: string | null;
   blurHash: string | null;
   name: string;
-  badges?: string[];
+  badges?: React.ReactNode[];
   className?: string;
   objectFit?: 'contain' | 'cover' | 'fill' | 'none' | 'scale-down' | 'inherit' | 'initial';
   aspectRatio?: AspectRatioOption;
@@ -50,7 +49,7 @@ function GoThumbnail({
       {badges.length > 0 && (
         <div className='absolute top-2 left-2 z-5 flex space-x-1'>
           {badges.map((badge, index) => (
-            <Badge key={index}>{badge}</Badge>
+            <span key={index}>{badge}</span>
           ))}
         </div>
       )}

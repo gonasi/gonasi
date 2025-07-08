@@ -841,6 +841,10 @@ export type Database = {
         Args: { tier_name: string; arg_user_id: string }
         Returns: boolean
       }
+      can_user_edit_course: {
+        Args: { course_id: string }
+        Returns: boolean
+      }
       custom_access_token_hook: {
         Args: { event: Json }
         Returns: Json

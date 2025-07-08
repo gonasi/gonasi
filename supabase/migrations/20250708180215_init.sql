@@ -860,6 +860,31 @@ AS $function$
 $function$
 ;
 
+CREATE OR REPLACE FUNCTION public.can_user_edit_course(course_id uuid)
+ RETURNS boolean
+ LANGUAGE sql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+  -- Select whether the current user is allowed to edit the course
+  select coalesce(
+    -- Check if the user has one of the allowed roles on the course's organization
+    (
+      public.get_user_org_role(c.organization_id, auth.uid()) in ('owner', 'admin')
+      -- OR if the user is an 'editor' AND owns the course
+      or (
+        public.get_user_org_role(c.organization_id, auth.uid()) = 'editor'
+        and c.owned_by = auth.uid()
+      )
+    ),
+    -- If no course is found or conditions not met, default to false
+    false
+  )
+  from public.courses c
+  where c.id = course_id
+$function$
+;
+
 CREATE OR REPLACE FUNCTION public.custom_access_token_hook(event jsonb)
  RETURNS jsonb
  LANGUAGE plpgsql

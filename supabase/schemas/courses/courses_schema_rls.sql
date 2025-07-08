@@ -58,12 +58,6 @@ using (
 -- STORAGE BUCKET: THUMBNAILS (Updated to use path-based approach)
 -- ============================================================================
 
--- Drop existing policies first
-drop policy if exists "Read: Org members can view course thumbnails" on storage.objects;
-drop policy if exists "Insert: Org members can upload thumbnails" on storage.objects;
-drop policy if exists "Update: Admins or owning editors can update thumbnails" on storage.objects;
-drop policy if exists "Delete: Admins or owning editors can delete thumbnails" on storage.objects;
-
 -- ============================================================================
 -- SELECT: Allow any member of the organization that owns the course
 -- ============================================================================
