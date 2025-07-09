@@ -1,4 +1,4 @@
-import { data, Form } from 'react-router';
+import { Form } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
 import { dataWithError, redirectWithError, redirectWithSuccess } from 'remix-toast';
@@ -21,15 +21,28 @@ const resolver = zodResolver(EditFileSchema);
 export async function loader({ params, request }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
 
-  const file = await fetchFileById(supabase, params.fileId);
+  const [file, canEdit] = await Promise.all([
+    fetchFileById(supabase, params.fileId),
+    supabase.rpc('can_user_edit_course', {
+      arg_course_id: params.courseId,
+    }),
+  ]);
 
-  if (file === null)
+  if (!canEdit.data) {
+    return redirectWithError(
+      `/${params.organizationId}/builder/${params.courseId}/file-library`,
+      'You are not authorized to edit this file',
+    );
+  }
+
+  if (file === null) {
     return redirectWithError(
       `/${params.organizationId}/builder/${params.courseId}/file-library`,
       'File does not exist',
     );
+  }
 
-  return data(file);
+  return file;
 }
 
 export async function action({ request, params }: Route.ActionArgs) {
@@ -66,6 +79,7 @@ export default function EditFileImage({ loaderData, params }: Route.ComponentPro
     defaultValues: {
       path: loaderData.path,
       fileId: loaderData.id,
+      organizationId: loaderData.organization_id,
     },
   });
 

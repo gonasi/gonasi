@@ -1,4 +1,5 @@
 import { Outlet } from 'react-router';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Plus } from 'lucide-react';
 
 import { fetchFilesWithSignedUrls } from '@gonasi/database/files';
@@ -13,7 +14,6 @@ import { FloatingActionButton } from '~/components/ui/button';
 import { createClient } from '~/lib/supabase/supabase.server';
 
 export type FileLoaderReturnType = Exclude<Awaited<ReturnType<typeof loader>>, Response>['data'];
-
 export type FileLoaderItemType = FileLoaderReturnType['data'][number];
 
 export async function loader({ request, params }: Route.LoaderArgs) {
@@ -48,23 +48,64 @@ export default function AllFiles({ loaderData, params }: Route.ComponentProps) {
 
   return (
     <div>
-      {/* <StorageIndicator /> */}
-      <div className='pb-4'>
+      {/* Search Input fade-in */}
+      <motion.div
+        className='pb-4'
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+      >
         <SearchInput placeholder='Search for course files...' />
-      </div>
+      </motion.div>
 
       {data && data.length > 0 ? (
         <div className='flex flex-col space-y-4'>
-          <div className='grid grid-cols-2 gap-1 lg:grid-cols-4'>
-            {data.map((file) => (
-              <FileRenderer key={file.id} file={file} />
-            ))}
-          </div>
-          <PaginationBar totalItems={count ?? 0} itemsPerPage={12} />
+          <motion.div
+            className='grid grid-cols-2 gap-1 lg:grid-cols-4'
+            initial='hidden'
+            animate='visible'
+            variants={{
+              visible: {
+                transition: {
+                  staggerChildren: 0.05,
+                },
+              },
+            }}
+          >
+            <AnimatePresence>
+              {data.map((file) => (
+                <motion.div
+                  key={file.id}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <FileRenderer file={file} />
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </motion.div>
+
+          {/* Pagination bar fade-in */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2, duration: 0.3 }}
+          >
+            <PaginationBar totalItems={count ?? 0} itemsPerPage={12} />
+          </motion.div>
         </div>
       ) : (
-        <NotFoundCard message='No files found' />
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          <NotFoundCard message='No files found' />
+        </motion.div>
       )}
+
       {canEdit && (
         <FloatingActionButton
           to={`/${params.organizationId}/builder/${params.courseId}/file-library/new`}
@@ -72,6 +113,7 @@ export default function AllFiles({ loaderData, params }: Route.ComponentProps) {
           icon={<Plus size={20} strokeWidth={4} />}
         />
       )}
+
       <Outlet />
     </div>
   );

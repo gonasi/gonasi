@@ -1,7 +1,7 @@
-import { Form } from 'react-router';
+import { data, Form } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
-import { dataWithError, redirectWithSuccess } from 'remix-toast';
+import { dataWithError, redirectWithError, redirectWithSuccess } from 'remix-toast';
 
 import { createFile } from '@gonasi/database/files';
 import { NewFileLibrarySchema, type NewFileSchemaTypes } from '@gonasi/schemas/file';
@@ -16,6 +16,23 @@ import { checkHoneypot } from '~/utils/honeypot.server';
 import { useIsPending } from '~/utils/misc';
 
 const resolver = zodResolver(NewFileLibrarySchema);
+
+export async function loader({ params, request }: Route.LoaderArgs) {
+  const { supabase } = createClient(request);
+
+  const canEdit = await supabase.rpc('can_user_edit_course', {
+    arg_course_id: params.courseId,
+  });
+
+  if (!canEdit.data) {
+    return redirectWithError(
+      `/${params.organizationId}/builder/${params.courseId}/file-library`,
+      'You are not authorized to create a new file',
+    );
+  }
+
+  return data(true);
+}
 
 export async function action({ request, params }: Route.ActionArgs) {
   const formData = await request.formData();

@@ -23,7 +23,19 @@ const resolver = zodResolver(DeleteFileSchema);
 export async function loader({ params, request }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
 
-  const file = await fetchFileById(supabase, params.fileId);
+  const [file, canEdit] = await Promise.all([
+    fetchFileById(supabase, params.fileId),
+    supabase.rpc('can_user_edit_course', {
+      arg_course_id: params.courseId,
+    }),
+  ]);
+
+  if (!canEdit.data) {
+    return redirectWithError(
+      `/${params.organizationId}/builder/${params.courseId}/file-library`,
+      'You are not authorized to delete this file',
+    );
+  }
 
   if (file === null)
     return redirectWithError(

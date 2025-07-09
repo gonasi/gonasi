@@ -192,6 +192,7 @@ export const EditFileSchema = z.object({
   file: NewFileTypeSchema,
   fileId: z.string(),
   path: z.string(),
+  organizationId: z.string(),
 });
 
 export type EditFileSchemaTypes = z.infer<typeof EditFileSchema>;
