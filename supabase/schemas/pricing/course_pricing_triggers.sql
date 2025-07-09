@@ -1,229 +1,298 @@
+-- ============================================================================
+-- BUSINESS RULES & AUTOMATED LOGIC FOR COURSE PRICING TIERS
+-- ============================================================================
 
 -- ============================================================================
--- TRIGGER FUNCTIONS AND BUSINESS LOGIC AUTOMATION
+-- FUNCTION: set_course_pricing_tier_position
+-- ----------------------------------------------------------------------------
+-- Automatically assigns a position to newly inserted pricing tiers.
+-- Ensures proper ordering without requiring manual input.
 -- ============================================================================
 
-CREATE OR REPLACE FUNCTION public.enforce_at_least_one_active_tier()
-RETURNS TRIGGER
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = ''
-AS $$
-BEGIN
-  IF new.is_active = false THEN
-    -- Check if this is the last active tier for this course
-    IF NOT EXISTS (
-      SELECT 1
-      FROM course_pricing_tiers
-      WHERE course_id = new.course_id
-        AND id != new.id
-        AND is_active = true
-    ) THEN
-      RAISE EXCEPTION 'Each course must have at least one active pricing tier.';
-    END IF;
-  END IF;
-  RETURN new;
-END;
+create or replace function public.set_course_pricing_tier_position()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  if new.position is null or new.position = 0 then
+    select coalesce(max(position), 0) + 1
+    into new.position
+    from public.course_pricing_tiers
+    where course_id = new.course_id;
+  end if;
+  return new;
+end;
 $$;
 
--- Automatically sets position for new pricing tiers
--- When a tier is created without specifying position, it gets the next available number
--- This ensures consistent ordering without manual position management
-CREATE OR REPLACE FUNCTION public.set_course_pricing_tier_position()
-RETURNS TRIGGER
-AS $$
-BEGIN
-  -- Only set position if it's not provided or is zero
-  IF new.position IS NULL OR new.position = 0 THEN
-    -- Find the highest existing position for this course and add 1
-    SELECT COALESCE(MAX(position), 0) + 1
-    INTO new.position
-    FROM public.course_pricing_tiers
-    WHERE course_id = new.course_id;
-  END IF;
-  RETURN new;
-END;
-$$
-LANGUAGE plpgsql
-SET search_path = '';
+drop trigger if exists trg_set_course_pricing_tier_position on public.course_pricing_tiers;
 
--- Trigger to automatically set position on insert
-CREATE TRIGGER trg_set_course_pricing_tier_position
-BEFORE INSERT ON public.course_pricing_tiers
-FOR EACH ROW
-EXECUTE FUNCTION public.set_course_pricing_tier_position();
+create trigger trg_set_course_pricing_tier_position
+before insert on public.course_pricing_tiers
+for each row
+execute function public.set_course_pricing_tier_position();
 
--- FIXED: Enforces the "free tier exclusivity" business rule with conversion bypass
--- When a course is marked as free, all other pricing tiers are automatically removed
--- This prevents mixed free/paid models which could confuse users
-CREATE OR REPLACE FUNCTION public.trg_delete_other_tiers_if_free()
-RETURNS TRIGGER AS $$
-DECLARE
-  bypass_check BOOLEAN;
-BEGIN
-  -- Check if we're in a course conversion context
-  SELECT COALESCE(current_setting('app.converting_course_pricing', true)::boolean, false) 
-  INTO bypass_check;
-  
-  -- Skip trigger during course conversion to prevent conflicts
-  IF bypass_check THEN
-    RETURN new;
-  END IF;
+-- ============================================================================
+-- FUNCTION: trg_delete_other_tiers_if_free
+-- ----------------------------------------------------------------------------
+-- Ensures free tier exclusivity: when a free tier is inserted/updated,
+-- all other tiers for the same course are deleted (unless bypassed).
+-- ============================================================================
 
-  IF new.is_free = true THEN
-    -- Delete all other tiers for this course when adding a free tier
-    DELETE FROM public.course_pricing_tiers
-    WHERE course_id = new.course_id
-      AND id != new.id;
-  END IF;
-  RETURN new;
-END;
-$$ 
-LANGUAGE plpgsql
-SET search_path = '';
+create or replace function public.trg_delete_other_tiers_if_free()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+declare
+  bypass_check boolean;
+begin
+  begin
+    select coalesce(nullif(current_setting('app.converting_course_pricing', true), '')::boolean, false)
+    into bypass_check;
+  exception
+    when others then
+      bypass_check := false;
+  end;
 
--- Trigger to enforce free tier exclusivity
-CREATE TRIGGER trg_handle_free_tier
-AFTER INSERT OR UPDATE ON public.course_pricing_tiers
-FOR EACH ROW
-EXECUTE FUNCTION public.trg_delete_other_tiers_if_free();
+  if bypass_check then
+    return new;
+  end if;
 
--- FIXED: Prevents deletion of the last paid tier for paid courses with conversion bypass
--- This maintains data integrity by ensuring paid courses always have at least one paid option
--- Includes bypass mechanism for bulk operations (course conversion scenarios)
-CREATE OR REPLACE FUNCTION public.trg_prevent_deleting_last_paid_tier()
-RETURNS TRIGGER AS $$
-DECLARE
-  remaining_paid_tiers INT;
-  bypass_check BOOLEAN;
-BEGIN
-  -- Check if we're in a course conversion context (bulk operations)
-  -- This allows controlled deletion during course type changes
-  SELECT COALESCE(current_setting('app.converting_course_pricing', true)::boolean, false) 
-  INTO bypass_check;
-  
-  IF bypass_check THEN
-    RETURN old; -- Skip the check during course conversion
-  END IF;
+  if new.is_free = true then
+    delete from public.course_pricing_tiers
+    where course_id = new.course_id
+      and id != new.id;
+  end if;
 
-  -- Only check if we're deleting a paid tier
-  IF old.is_free = false THEN
-    -- Count remaining paid tiers after this deletion
-    SELECT count(*) INTO remaining_paid_tiers
-    FROM public.course_pricing_tiers
-    WHERE course_id = old.course_id
-      AND id != old.id
-      AND is_free = false;
-
-    -- Prevent deletion if this would leave zero paid tiers
-    IF remaining_paid_tiers = 0 THEN
-      RAISE EXCEPTION 'Cannot delete the last paid tier for a paid course (course_id=%)', old.course_id;
-    END IF;
-  END IF;
-  
-  RETURN old;
-END;
-$$ 
-LANGUAGE plpgsql
-SET search_path = '';
-
--- Trigger to prevent deletion of last paid tier
-CREATE TRIGGER trg_prevent_last_paid_tier_deletion
-BEFORE DELETE ON public.course_pricing_tiers
-FOR EACH ROW
-EXECUTE FUNCTION public.trg_prevent_deleting_last_paid_tier();
-
--- FIXED: This function runs before deleting a pricing tier with conversion bypass
--- It checks if the tier being deleted is free, and if it's the only free tier for the course
--- If it is, the deletion is blocked with an error
-CREATE OR REPLACE FUNCTION public.trg_prevent_deleting_last_free_tier()
-RETURNS TRIGGER
-LANGUAGE plpgsql
-SET search_path = ''
-AS $$
-DECLARE
-    remaining_free_count INT;
-    bypass_check BOOLEAN;
-BEGIN
-    -- Check if we're in a course conversion context
-    SELECT COALESCE(current_setting('app.converting_course_pricing', true)::boolean, false) 
-    INTO bypass_check;
-    
-    -- Skip check during course conversion
-    IF bypass_check THEN
-        RETURN old;
-    END IF;
-
-    -- Only run check if the deleted tier is free
-    IF old.is_free THEN
-        -- Count remaining active free tiers for the same course, excluding the one being deleted
-        SELECT count(*) INTO remaining_free_count
-        FROM public.course_pricing_tiers
-        WHERE course_id = old.course_id
-          AND id <> old.id
-          AND is_free = true
-          AND is_active = true;
-
-        -- If none remain, raise an error
-        IF remaining_free_count = 0 THEN
-            RAISE EXCEPTION 'Cannot delete the only free pricing tier for course %', old.course_id;
-        END IF;
-    END IF;
-
-    -- Allow deletion
-    RETURN old;
-END;
+  return new;
+end;
 $$;
 
--- Attach the trigger to the course_pricing_tiers table
--- It fires before any row is deleted
-CREATE TRIGGER trg_prevent_deleting_last_free_tier
-BEFORE DELETE ON public.course_pricing_tiers
-FOR EACH ROW
-EXECUTE FUNCTION public.trg_prevent_deleting_last_free_tier();
+drop trigger if exists trg_handle_free_tier on public.course_pricing_tiers;
 
--- FIXED: Prevent deactivating last free tier with conversion bypass
-CREATE OR REPLACE FUNCTION public.trg_prevent_deactivating_last_free_tier()
-RETURNS TRIGGER
-LANGUAGE plpgsql
-SET search_path = ''
-AS $$
-DECLARE
-    bypass_check BOOLEAN;
-BEGIN
-    -- Check if we're in a course conversion context
-    SELECT COALESCE(current_setting('app.converting_course_pricing', true)::boolean, false) 
-    INTO bypass_check;
-    
-    -- Skip check during course conversion
-    IF bypass_check THEN
-        RETURN new;
-    END IF;
+create trigger trg_handle_free_tier
+after insert or update on public.course_pricing_tiers
+for each row
+execute function public.trg_delete_other_tiers_if_free();
 
-    -- Only run check if the tier is free and is being deactivated
-    IF old.is_free
-       AND old.is_active
-       AND new.is_active = false THEN
+-- ============================================================================
+-- FUNCTION: trg_prevent_deleting_last_paid_tier
+-- ----------------------------------------------------------------------------
+-- Prevents deletion of the last paid tier for a course.
+-- ============================================================================
 
-        -- Check if other active free tiers exist for the same course
-        IF NOT EXISTS (
-            SELECT 1 FROM public.course_pricing_tiers
-            WHERE course_id = old.course_id
-              AND id <> old.id
-              AND is_free = true
-              AND is_active = true
-        ) THEN
-            RAISE EXCEPTION 'Cannot deactivate the only free pricing tier for course %', old.course_id;
-        END IF;
-    END IF;
+create or replace function public.trg_prevent_deleting_last_paid_tier()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+declare
+  remaining_paid_tiers int;
+  bypass_check boolean;
+begin
+  begin
+    select coalesce(nullif(current_setting('app.converting_course_pricing', true), '')::boolean, false)
+    into bypass_check;
+  exception
+    when others then
+      bypass_check := false;
+  end;
 
-    -- Allow update
-    RETURN new;
-END;
+  if bypass_check then
+    return old;
+  end if;
+
+  if old.is_free = false then
+    select count(*) into remaining_paid_tiers
+    from public.course_pricing_tiers
+    where course_id = old.course_id
+      and id != old.id
+      and is_free = false;
+
+    if remaining_paid_tiers = 0 then
+      raise exception
+        'Every course must have at least one paid tier. Please create another paid tier before deleting this one.';
+    end if;
+  end if;
+
+  return old;
+end;
 $$;
 
-CREATE TRIGGER trg_prevent_deactivating_last_free_tier
-BEFORE UPDATE ON public.course_pricing_tiers
-FOR EACH ROW
-WHEN (old.is_active = true AND new.is_active = false)
-EXECUTE FUNCTION public.trg_prevent_deactivating_last_free_tier();
+drop trigger if exists trg_prevent_last_paid_tier_deletion on public.course_pricing_tiers;
+
+create trigger trg_prevent_last_paid_tier_deletion
+before delete on public.course_pricing_tiers
+for each row
+execute function public.trg_prevent_deleting_last_paid_tier();
+
+-- ============================================================================
+-- FUNCTION: trg_prevent_deleting_last_free_tier
+-- ----------------------------------------------------------------------------
+-- Prevents deletion of the last active free tier for a course.
+-- ============================================================================
+
+create or replace function public.trg_prevent_deleting_last_free_tier()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+declare
+  remaining_free_count int;
+  remaining_active_count int;
+  bypass_check boolean;
+begin
+  begin
+    select coalesce(nullif(current_setting('app.converting_course_pricing', true), '')::boolean, false)
+    into bypass_check;
+  exception
+    when others then
+      bypass_check := false;
+  end;
+
+  if bypass_check then
+    return old;
+  end if;
+
+  select count(*) into remaining_active_count
+  from public.course_pricing_tiers
+  where course_id = old.course_id
+    and id != old.id
+    and is_active = true;
+
+  if remaining_active_count = 0 then
+    raise exception
+      'Each course must have at least one active pricing tier. Please activate or add another tier before removing this one.';
+  end if;
+
+  if old.is_free = true then
+    select count(*) into remaining_free_count
+    from public.course_pricing_tiers
+    where course_id = old.course_id
+      and id != old.id
+      and is_free = true
+      and is_active = true;
+
+    if remaining_free_count = 0 then
+      raise exception
+        'Each course must have at least one free tier. Please create another free tier before deleting this one.';
+    end if;
+  end if;
+
+  return old;
+end;
+$$;
+
+drop trigger if exists trg_prevent_deleting_last_free_tier on public.course_pricing_tiers;
+
+create trigger trg_prevent_deleting_last_free_tier
+before delete on public.course_pricing_tiers
+for each row
+execute function public.trg_prevent_deleting_last_free_tier();
+
+-- ============================================================================
+-- FUNCTION: trg_prevent_deactivating_last_free_tier
+-- ----------------------------------------------------------------------------
+-- Prevents deactivating the only remaining active free tier.
+-- ============================================================================
+
+create or replace function public.trg_prevent_deactivating_last_free_tier()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+declare
+  bypass_check boolean;
+begin
+  begin
+    select coalesce(nullif(current_setting('app.converting_course_pricing', true), '')::boolean, false)
+    into bypass_check;
+  exception
+    when others then
+      bypass_check := false;
+  end;
+
+  if bypass_check then
+    return new;
+  end if;
+
+  if old.is_free = true
+    and old.is_active = true
+    and new.is_active = false then
+
+    if not exists (
+      select 1 from public.course_pricing_tiers
+      where course_id = old.course_id
+        and id != old.id
+        and is_free = true
+        and is_active = true
+    ) then
+      raise exception
+        'Every course must have at least one active free tier. Please activate or add another free tier before deactivating this one.';
+    end if;
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_prevent_deactivating_last_free_tier on public.course_pricing_tiers;
+
+create trigger trg_prevent_deactivating_last_free_tier
+before update on public.course_pricing_tiers
+for each row
+when (old.is_active = true and new.is_active = false)
+execute function public.trg_prevent_deactivating_last_free_tier();
+
+-- ============================================================================
+-- FUNCTION: enforce_at_least_one_active_pricing_tier
+-- ----------------------------------------------------------------------------
+-- Prevents deactivating tiers when it would leave no active tiers.
+-- ============================================================================
+
+create or replace function public.enforce_at_least_one_active_pricing_tier()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  bypass_check boolean;
+  remaining_active_count integer;
+begin
+  begin
+    select coalesce(nullif(current_setting('app.converting_course_pricing', true), '')::boolean, false)
+    into bypass_check;
+  exception
+    when others then
+      bypass_check := false;
+  end;
+
+  if bypass_check then
+    return coalesce(new, old);
+  end if;
+
+  if tg_op = 'update' and old.is_active = true and new.is_active = false then
+    select count(*) into remaining_active_count
+    from public.course_pricing_tiers
+    where course_id = old.course_id
+      and id != old.id
+      and is_active = true;
+
+    if remaining_active_count = 0 then
+      raise exception
+        'Each course must have at least one active pricing tier. Please ensure at least one remains active.';
+    end if;
+  end if;
+
+  return coalesce(new, old);
+end;
+$$;
+
+drop trigger if exists trg_enforce_at_least_one_active_tier on public.course_pricing_tiers;
+
+create trigger trg_enforce_at_least_one_active_tier
+before update on public.course_pricing_tiers
+for each row
+execute function public.enforce_at_least_one_active_pricing_tier();

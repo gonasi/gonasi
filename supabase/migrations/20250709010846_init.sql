@@ -1084,27 +1084,43 @@ end;
 $function$
 ;
 
-CREATE OR REPLACE FUNCTION public.enforce_at_least_one_active_tier()
+CREATE OR REPLACE FUNCTION public.enforce_at_least_one_active_pricing_tier()
  RETURNS trigger
  LANGUAGE plpgsql
  SECURITY DEFINER
  SET search_path TO ''
 AS $function$
-BEGIN
-  IF new.is_active = false THEN
-    -- Check if this is the last active tier for this course
-    IF NOT EXISTS (
-      SELECT 1
-      FROM course_pricing_tiers
-      WHERE course_id = new.course_id
-        AND id != new.id
-        AND is_active = true
-    ) THEN
-      RAISE EXCEPTION 'Each course must have at least one active pricing tier.';
-    END IF;
-  END IF;
-  RETURN new;
-END;
+declare
+  bypass_check boolean;
+  remaining_active_count integer;
+begin
+  begin
+    select coalesce(nullif(current_setting('app.converting_course_pricing', true), '')::boolean, false)
+    into bypass_check;
+  exception
+    when others then
+      bypass_check := false;
+  end;
+
+  if bypass_check then
+    return coalesce(new, old);
+  end if;
+
+  if tg_op = 'update' and old.is_active = true and new.is_active = false then
+    select count(*) into remaining_active_count
+    from public.course_pricing_tiers
+    where course_id = old.course_id
+      and id != old.id
+      and is_active = true;
+
+    if remaining_active_count = 0 then
+      raise exception
+        'Each course must have at least one active pricing tier. Please ensure at least one remains active.';
+    end if;
+  end if;
+
+  return coalesce(new, old);
+end;
 $function$
 ;
 
@@ -1669,17 +1685,15 @@ CREATE OR REPLACE FUNCTION public.set_course_pricing_tier_position()
  LANGUAGE plpgsql
  SET search_path TO ''
 AS $function$
-BEGIN
-  -- Only set position if it's not provided or is zero
-  IF new.position IS NULL OR new.position = 0 THEN
-    -- Find the highest existing position for this course and add 1
-    SELECT COALESCE(MAX(position), 0) + 1
-    INTO new.position
-    FROM public.course_pricing_tiers
-    WHERE course_id = new.course_id;
-  END IF;
-  RETURN new;
-END;
+begin
+  if new.position is null or new.position = 0 then
+    select coalesce(max(position), 0) + 1
+    into new.position
+    from public.course_pricing_tiers
+    where course_id = new.course_id;
+  end if;
+  return new;
+end;
 $function$
 ;
 
@@ -1739,26 +1753,29 @@ CREATE OR REPLACE FUNCTION public.trg_delete_other_tiers_if_free()
  LANGUAGE plpgsql
  SET search_path TO ''
 AS $function$
-DECLARE
-  bypass_check BOOLEAN;
-BEGIN
-  -- Check if we're in a course conversion context
-  SELECT COALESCE(current_setting('app.converting_course_pricing', true)::boolean, false) 
-  INTO bypass_check;
-  
-  -- Skip trigger during course conversion to prevent conflicts
-  IF bypass_check THEN
-    RETURN new;
-  END IF;
+declare
+  bypass_check boolean;
+begin
+  begin
+    select coalesce(nullif(current_setting('app.converting_course_pricing', true), '')::boolean, false)
+    into bypass_check;
+  exception
+    when others then
+      bypass_check := false;
+  end;
 
-  IF new.is_free = true THEN
-    -- Delete all other tiers for this course when adding a free tier
-    DELETE FROM public.course_pricing_tiers
-    WHERE course_id = new.course_id
-      AND id != new.id;
-  END IF;
-  RETURN new;
-END;
+  if bypass_check then
+    return new;
+  end if;
+
+  if new.is_free = true then
+    delete from public.course_pricing_tiers
+    where course_id = new.course_id
+      and id != new.id;
+  end if;
+
+  return new;
+end;
 $function$
 ;
 
@@ -1767,38 +1784,39 @@ CREATE OR REPLACE FUNCTION public.trg_prevent_deactivating_last_free_tier()
  LANGUAGE plpgsql
  SET search_path TO ''
 AS $function$
-DECLARE
-    bypass_check BOOLEAN;
-BEGIN
-    -- Check if we're in a course conversion context
-    SELECT COALESCE(current_setting('app.converting_course_pricing', true)::boolean, false) 
-    INTO bypass_check;
-    
-    -- Skip check during course conversion
-    IF bypass_check THEN
-        RETURN new;
-    END IF;
+declare
+  bypass_check boolean;
+begin
+  begin
+    select coalesce(nullif(current_setting('app.converting_course_pricing', true), '')::boolean, false)
+    into bypass_check;
+  exception
+    when others then
+      bypass_check := false;
+  end;
 
-    -- Only run check if the tier is free and is being deactivated
-    IF old.is_free
-       AND old.is_active
-       AND new.is_active = false THEN
+  if bypass_check then
+    return new;
+  end if;
 
-        -- Check if other active free tiers exist for the same course
-        IF NOT EXISTS (
-            SELECT 1 FROM public.course_pricing_tiers
-            WHERE course_id = old.course_id
-              AND id <> old.id
-              AND is_free = true
-              AND is_active = true
-        ) THEN
-            RAISE EXCEPTION 'Cannot deactivate the only free pricing tier for course %', old.course_id;
-        END IF;
-    END IF;
+  if old.is_free = true
+    and old.is_active = true
+    and new.is_active = false then
 
-    -- Allow update
-    RETURN new;
-END;
+    if not exists (
+      select 1 from public.course_pricing_tiers
+      where course_id = old.course_id
+        and id != old.id
+        and is_free = true
+        and is_active = true
+    ) then
+      raise exception
+        'Every course must have at least one active free tier. Please activate or add another free tier before deactivating this one.';
+    end if;
+  end if;
+
+  return new;
+end;
 $function$
 ;
 
@@ -1807,38 +1825,50 @@ CREATE OR REPLACE FUNCTION public.trg_prevent_deleting_last_free_tier()
  LANGUAGE plpgsql
  SET search_path TO ''
 AS $function$
-DECLARE
-    remaining_free_count INT;
-    bypass_check BOOLEAN;
-BEGIN
-    -- Check if we're in a course conversion context
-    SELECT COALESCE(current_setting('app.converting_course_pricing', true)::boolean, false) 
-    INTO bypass_check;
-    
-    -- Skip check during course conversion
-    IF bypass_check THEN
-        RETURN old;
-    END IF;
+declare
+  remaining_free_count int;
+  remaining_active_count int;
+  bypass_check boolean;
+begin
+  begin
+    select coalesce(nullif(current_setting('app.converting_course_pricing', true), '')::boolean, false)
+    into bypass_check;
+  exception
+    when others then
+      bypass_check := false;
+  end;
 
-    -- Only run check if the deleted tier is free
-    IF old.is_free THEN
-        -- Count remaining active free tiers for the same course, excluding the one being deleted
-        SELECT count(*) INTO remaining_free_count
-        FROM public.course_pricing_tiers
-        WHERE course_id = old.course_id
-          AND id <> old.id
-          AND is_free = true
-          AND is_active = true;
+  if bypass_check then
+    return old;
+  end if;
 
-        -- If none remain, raise an error
-        IF remaining_free_count = 0 THEN
-            RAISE EXCEPTION 'Cannot delete the only free pricing tier for course %', old.course_id;
-        END IF;
-    END IF;
+  select count(*) into remaining_active_count
+  from public.course_pricing_tiers
+  where course_id = old.course_id
+    and id != old.id
+    and is_active = true;
 
-    -- Allow deletion
-    RETURN old;
-END;
+  if remaining_active_count = 0 then
+    raise exception
+      'Each course must have at least one active pricing tier. Please activate or add another tier before removing this one.';
+  end if;
+
+  if old.is_free = true then
+    select count(*) into remaining_free_count
+    from public.course_pricing_tiers
+    where course_id = old.course_id
+      and id != old.id
+      and is_free = true
+      and is_active = true;
+
+    if remaining_free_count = 0 then
+      raise exception
+        'Each course must have at least one free tier. Please create another free tier before deleting this one.';
+    end if;
+  end if;
+
+  return old;
+end;
 $function$
 ;
 
@@ -1847,36 +1877,37 @@ CREATE OR REPLACE FUNCTION public.trg_prevent_deleting_last_paid_tier()
  LANGUAGE plpgsql
  SET search_path TO ''
 AS $function$
-DECLARE
-  remaining_paid_tiers INT;
-  bypass_check BOOLEAN;
-BEGIN
-  -- Check if we're in a course conversion context (bulk operations)
-  -- This allows controlled deletion during course type changes
-  SELECT COALESCE(current_setting('app.converting_course_pricing', true)::boolean, false) 
-  INTO bypass_check;
-  
-  IF bypass_check THEN
-    RETURN old; -- Skip the check during course conversion
-  END IF;
+declare
+  remaining_paid_tiers int;
+  bypass_check boolean;
+begin
+  begin
+    select coalesce(nullif(current_setting('app.converting_course_pricing', true), '')::boolean, false)
+    into bypass_check;
+  exception
+    when others then
+      bypass_check := false;
+  end;
 
-  -- Only check if we're deleting a paid tier
-  IF old.is_free = false THEN
-    -- Count remaining paid tiers after this deletion
-    SELECT count(*) INTO remaining_paid_tiers
-    FROM public.course_pricing_tiers
-    WHERE course_id = old.course_id
-      AND id != old.id
-      AND is_free = false;
+  if bypass_check then
+    return old;
+  end if;
 
-    -- Prevent deletion if this would leave zero paid tiers
-    IF remaining_paid_tiers = 0 THEN
-      RAISE EXCEPTION 'Cannot delete the last paid tier for a paid course (course_id=%)', old.course_id;
-    END IF;
-  END IF;
-  
-  RETURN old;
-END;
+  if old.is_free = false then
+    select count(*) into remaining_paid_tiers
+    from public.course_pricing_tiers
+    where course_id = old.course_id
+      and id != old.id
+      and is_free = false;
+
+    if remaining_paid_tiers = 0 then
+      raise exception
+        'Every course must have at least one paid tier. Please create another paid tier before deleting this one.';
+    end if;
+  end if;
+
+  return old;
+end;
 $function$
 ;
 
@@ -2813,6 +2844,8 @@ using (true);
 
 
 CREATE TRIGGER trg_course_categories_set_updated_at BEFORE UPDATE ON public.course_categories FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER trg_enforce_at_least_one_active_tier BEFORE UPDATE ON public.course_pricing_tiers FOR EACH ROW EXECUTE FUNCTION enforce_at_least_one_active_pricing_tier();
 
 CREATE TRIGGER trg_handle_free_tier AFTER INSERT OR UPDATE ON public.course_pricing_tiers FOR EACH ROW EXECUTE FUNCTION trg_delete_other_tiers_if_free();
 
