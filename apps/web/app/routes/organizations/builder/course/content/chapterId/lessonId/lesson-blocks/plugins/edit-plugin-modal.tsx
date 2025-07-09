@@ -28,7 +28,20 @@ const getBasePath = (params: Params) =>
  */
 export async function loader({ params, request }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
-  const lessonBlock = await fetchSingleBlockByBlockId(supabase, params.blockId);
+
+  const [lessonBlock, canEdit] = await Promise.all([
+    fetchSingleBlockByBlockId(supabase, params.blockId),
+    supabase.rpc('can_user_edit_course', {
+      arg_course_id: params.courseId,
+    }),
+  ]);
+
+  if (!canEdit.data) {
+    return redirectWithError(
+      `/${params.organizationId}/builder/${params.courseId}/content/${params.chapterId}/${params.lessonId}/lesson-blocks`,
+      'You don’t have permission to edit blocks.',
+    );
+  }
 
   if (!lessonBlock.data) {
     const redirectUrl = `${getBasePath(params)}/${params.chapterId}/${params.lessonId}/lesson-blocks`;
