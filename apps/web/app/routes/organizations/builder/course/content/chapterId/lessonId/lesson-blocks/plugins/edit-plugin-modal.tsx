@@ -19,7 +19,7 @@ const LazyEditPluginTypesRenderer = lazy(
 
 // Utility function to construct base URL path for redirects and navigation
 const getBasePath = (params: Params) =>
-  `/${params.username}/course-builder/${params.courseId}/content`;
+  `/${params.organizationId}/builder/${params.courseId}/content`;
 
 // --- Loader ---
 /**

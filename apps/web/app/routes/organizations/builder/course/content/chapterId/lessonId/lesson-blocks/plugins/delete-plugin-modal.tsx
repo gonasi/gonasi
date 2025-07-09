@@ -9,7 +9,7 @@ import { createClient } from '~/lib/supabase/supabase.server';
 type Params = Route.LoaderArgs['params'];
 
 const getBasePath = (params: Params) =>
-  `/${params.username}/course-builder/${params.courseId}/content`;
+  `/${params.organizationId}/builder/${params.courseId}/content`;
 
 // Use loader instead of action for automatic invocation on route visit
 export async function loader({ request, params }: Route.LoaderArgs) {

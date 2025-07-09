@@ -26,7 +26,7 @@ export default function GoPluginsMenuDialog() {
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const categories = usePluginOptions(debouncedQuery);
 
-  const basePath = `/${params.username}/course-builder/${params.courseId}/content`;
+  const basePath = `/${params.organizationId}/builder/${params.courseId}/content`;
   const pluginBasePath = `${basePath}/${params.chapterId}/${params.lessonId}/lesson-blocks/plugins`;
 
   const debouncedSetQuery = useMemo(

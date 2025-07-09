@@ -19,9 +19,8 @@ import { BackArrowNavLink, Button } from '~/components/ui/button';
 import { GoRichTextInputField } from '~/components/ui/forms/elements';
 import { Modal } from '~/components/ui/modal';
 import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover';
-import type { LessonBlockLoaderReturnType } from '~/routes/profile/course-builder/courseId/content/chapterId/lessonId/lesson-blocks/plugins/edit-plugin-modal';
+import type { LessonBlockLoaderReturnType } from '~/routes/organizations/builder/course/content/chapterId/lessonId/lesson-blocks/plugins/edit-plugin-modal';
 import { getActionUrl } from '~/utils/get-action-url';
-import { getLessonPath } from '~/utils/get-lesson-path';
 import { useIsPending } from '~/utils/misc';
 
 const resolver = zodResolver(RichTextSchema);
@@ -34,9 +33,9 @@ export function BuilderRichTextPlugin({ block }: BuilderRichTextPluginProps) {
   const params = useParams();
   const isPending = useIsPending();
 
-  const { username, courseId, chapterId, lessonId, pluginGroupId } = params;
+  const { organizationId, courseId, chapterId, lessonId, pluginGroupId } = params;
 
-  const lessonPath = getLessonPath({ username, courseId, chapterId, lessonId });
+  const lessonPath = `/${organizationId}/builder/${courseId}/content/${chapterId}/${lessonId}/lesson-blocks`;
   const backRoute = `${lessonPath}/plugins/${pluginGroupId}`;
 
   const methods = useRemixForm<RichTextSchemaTypes>({
@@ -45,6 +44,7 @@ export function BuilderRichTextPlugin({ block }: BuilderRichTextPluginProps) {
     defaultValues: block
       ? {
           blockId: block.id,
+          organizationId: params.organizationId!,
           courseId: params.courseId!,
           lessonId: params.lessonId!,
           pluginType: 'rich_text_editor',
@@ -56,6 +56,7 @@ export function BuilderRichTextPlugin({ block }: BuilderRichTextPluginProps) {
             : { playbackMode: 'inline', weight: 1 },
         }
       : {
+          organizationId: params.organizationId!,
           courseId: params.courseId!,
           lessonId: params.lessonId!,
           pluginType: 'rich_text_editor',
@@ -66,7 +67,7 @@ export function BuilderRichTextPlugin({ block }: BuilderRichTextPluginProps) {
 
   const actionUrl = getActionUrl(
     {
-      username: params.username,
+      organizationId: params.organizationId,
       courseId: params.courseId,
       chapterId: params.chapterId,
       lessonId: params.lessonId,

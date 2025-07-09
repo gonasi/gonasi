@@ -354,7 +354,7 @@ export type Database = {
           blur_hash: string | null
           category_id: string | null
           created_at: string
-          created_by: string
+          created_by: string | null
           description: string | null
           id: string
           image_url: string | null
@@ -364,14 +364,14 @@ export type Database = {
           owned_by: string | null
           subcategory_id: string | null
           updated_at: string
-          updated_by: string
+          updated_by: string | null
           visibility: Database["public"]["Enums"]["course_access"]
         }
         Insert: {
           blur_hash?: string | null
           category_id?: string | null
           created_at?: string
-          created_by: string
+          created_by?: string | null
           description?: string | null
           id?: string
           image_url?: string | null
@@ -381,14 +381,14 @@ export type Database = {
           owned_by?: string | null
           subcategory_id?: string | null
           updated_at?: string
-          updated_by: string
+          updated_by?: string | null
           visibility?: Database["public"]["Enums"]["course_access"]
         }
         Update: {
           blur_hash?: string | null
           category_id?: string | null
           created_at?: string
-          created_by?: string
+          created_by?: string | null
           description?: string | null
           id?: string
           image_url?: string | null
@@ -398,7 +398,7 @@ export type Database = {
           owned_by?: string | null
           subcategory_id?: string | null
           updated_at?: string
-          updated_by?: string
+          updated_by?: string | null
           visibility?: Database["public"]["Enums"]["course_access"]
         }
         Relationships: [
@@ -1230,10 +1230,6 @@ export type Database = {
         Args: { event: Json }
         Returns: Json
       }
-      delete_chapter: {
-        Args: { p_chapter_id: string; p_deleted_by: string }
-        Returns: undefined
-      }
       delete_lesson: {
         Args: { p_lesson_id: string; p_deleted_by: string }
         Returns: undefined
@@ -1273,14 +1269,6 @@ export type Database = {
       is_user_already_member: {
         Args: { arg_org_id: string; user_email: string }
         Returns: boolean
-      }
-      reorder_chapters: {
-        Args: {
-          p_course_id: string
-          chapter_positions: Json
-          p_updated_by: string
-        }
-        Returns: undefined
       }
       reorder_lesson_blocks: {
         Args:

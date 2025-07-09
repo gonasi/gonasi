@@ -30,7 +30,7 @@ export default function GoPluginsMenuDialog({ pluginTypes }: GonasiPluginGroupPr
     return Icon ?? LucideIcons.Square;
   };
 
-  const basePath = `/${params.username}/course-builder/${params.courseId}/content`;
+  const basePath = `/${params.organizationId}/builder/${params.courseId}/content`;
   const pluginGroupBasePath = `${basePath}/${params.chapterId}/${params.lessonId}/lesson-blocks/plugins/${params.pluginGroupId}`;
 
   return (

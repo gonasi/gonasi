@@ -20,7 +20,7 @@ export const upsertRichTextBlock = async (
 ): Promise<ApiResponse> => {
   const userId = await getUserId(supabase);
 
-  const { blockId, content, lessonId, courseId, pluginType, settings } = blockData;
+  const { blockId, content, organizationId, lessonId, courseId, pluginType, settings } = blockData;
 
   // If the blockId is `'create-new'`, we omit it to allow Supabase to generate a new UUID.
   // This is used during the creation flow when the block hasn't been persisted yet.
@@ -32,6 +32,7 @@ export const upsertRichTextBlock = async (
       id,
       lesson_id: lessonId,
       course_id: courseId,
+      organization_id: organizationId,
       plugin_type: pluginType,
       content,
       settings,

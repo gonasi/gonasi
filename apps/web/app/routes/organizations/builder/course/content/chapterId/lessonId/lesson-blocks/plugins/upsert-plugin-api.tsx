@@ -28,7 +28,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 
   if (errors) return { errors, defaultValues };
 
-  const basePath = `/${params.username}/course-builder/${params.courseId}/content`;
+  const basePath = `/${params.organizationId}/builder/${params.courseId}/content`;
   const redirectUrl = `${basePath}/${params.chapterId}/${params.lessonId}/lesson-blocks`;
 
   const { supabase } = createClient(request);

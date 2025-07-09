@@ -1,5 +1,5 @@
 interface Params {
-  username?: string;
+  organizationId?: string;
   courseId?: string;
   chapterId?: string;
   lessonId?: string;
@@ -10,12 +10,12 @@ interface Block {
 }
 
 export function getActionUrl(params: Params, block?: Block): string {
-  const username = params.username ?? 'unknown-user';
+  const organizationId = params.organizationId ?? 'unknown-user';
   const courseId = params.courseId ?? 'unknown-course';
   const chapterId = params.chapterId ?? 'unknown-chapter';
   const lessonId = params.lessonId ?? 'unknown-lesson';
   const blockId = block?.id ?? 'create-new';
 
-  const basePath = `/go/${username}/course-builder/${courseId}/content`;
+  const basePath = `/${organizationId}/builder/${courseId}/content`;
   return `${basePath}/${chapterId}/${lessonId}/lesson-blocks/${blockId}/upsert`;
 }

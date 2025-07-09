@@ -105,8 +105,8 @@ create table "public"."courses" (
     "created_at" timestamp with time zone not null default timezone('utc'::text, now()),
     "updated_at" timestamp with time zone not null default timezone('utc'::text, now()),
     "last_published" timestamp with time zone,
-    "created_by" uuid not null,
-    "updated_by" uuid not null
+    "created_by" uuid,
+    "updated_by" uuid
 );
 
 
@@ -601,7 +601,7 @@ alter table "public"."courses" add constraint "courses_category_id_fkey" FOREIGN
 
 alter table "public"."courses" validate constraint "courses_category_id_fkey";
 
-alter table "public"."courses" add constraint "courses_created_by_fkey" FOREIGN KEY (created_by) REFERENCES profiles(id) ON DELETE CASCADE not valid;
+alter table "public"."courses" add constraint "courses_created_by_fkey" FOREIGN KEY (created_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
 
 alter table "public"."courses" validate constraint "courses_created_by_fkey";
 
@@ -619,7 +619,7 @@ alter table "public"."courses" add constraint "courses_subcategory_id_fkey" FORE
 
 alter table "public"."courses" validate constraint "courses_subcategory_id_fkey";
 
-alter table "public"."courses" add constraint "courses_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES profiles(id) ON DELETE CASCADE not valid;
+alter table "public"."courses" add constraint "courses_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
 
 alter table "public"."courses" validate constraint "courses_updated_by_fkey";
 
@@ -1200,63 +1200,6 @@ end;
 $function$
 ;
 
-CREATE OR REPLACE FUNCTION public.delete_chapter(p_chapter_id uuid, p_deleted_by uuid)
- RETURNS void
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO ''
-AS $function$
-declare
-  v_course_id uuid;
-  v_org_id uuid;
-  v_course_creator uuid;
-  v_chapter_position int;
-begin
-  -- Step 1: Fetch chapter's course/org context and its position
-  select c.course_id, cr.organization_id, cr.created_by, c.position
-  into v_course_id, v_org_id, v_course_creator, v_chapter_position
-  from public.chapters c
-  join public.courses cr on c.course_id = cr.id
-  where c.id = p_chapter_id;
-
-  if v_course_id is null then
-    raise exception 'Chapter does not exist';
-  end if;
-
-  -- Step 2: Permission check
-  if not (
-    public.has_org_role(v_org_id, 'admin', p_deleted_by) or
-    v_course_creator = p_deleted_by
-  ) then
-    raise exception 'You do not have permission to delete this chapter';
-  end if;
-
-  -- Step 3: Delete the chapter
-  delete from public.chapters
-  where id = p_chapter_id;
-
-  if not found then
-    raise exception 'Failed to delete chapter';
-  end if;
-
-  -- Step 4: Shift positions to close gap
-  update public.chapters
-  set position = position - 1000000
-  where course_id = v_course_id
-    and position > v_chapter_position;
-
-  update public.chapters
-  set 
-    position = position + 999999,
-    updated_at = timezone('utc', now()),
-    updated_by = p_deleted_by
-  where course_id = v_course_id
-    and position < 0;
-
-end;
-$function$
-;
-
 CREATE OR REPLACE FUNCTION public.delete_lesson(p_lesson_id uuid, p_deleted_by uuid)
  RETURNS void
  LANGUAGE plpgsql
@@ -1335,69 +1278,63 @@ CREATE OR REPLACE FUNCTION public.delete_lesson_block(p_block_id uuid, p_deleted
  SET search_path TO ''
 AS $function$
 declare
-  v_lesson_id uuid;        -- to store the lesson_id for the block
-  v_course_id uuid;        -- to store the course_id for permission checking
-  v_block_position int;    -- position of the block being deleted
+  v_lesson_id uuid;
+  v_course_id uuid;
+  v_org_id uuid;
+  v_course_creator uuid;
+  v_block_position int;
 begin
-  -- Get the lesson_id and current position of the block to be deleted
+  -- Step 1: Fetch lesson ID and current block position
   select lb.lesson_id, lb.position
   into v_lesson_id, v_block_position
   from public.lesson_blocks lb
   where lb.id = p_block_id;
 
-  -- Check if block exists
   if v_lesson_id is null then
     raise exception 'Lesson block does not exist';
   end if;
 
-  -- Get the course_id for the lesson to check permissions
-  select l.course_id into v_course_id
+  -- Step 2: Fetch course/org context and creator
+  select c.id, c.organization_id, c.created_by
+  into v_course_id, v_org_id, v_course_creator
   from public.lessons l
+  join public.courses c on l.course_id = c.id
   where l.id = v_lesson_id;
 
-  -- Check if lesson exists (should not happen if block exists, but safety check)
   if v_course_id is null then
-    raise exception 'Associated lesson does not exist';
+    raise exception 'Associated course does not exist';
   end if;
 
-  -- Verify user has permission to modify blocks in this lesson
-  if not exists (
-    select 1 
-    from public.courses c
-    where c.id = v_course_id
-      and (
-        public.is_course_admin(c.id, p_deleted_by) or
-        public.is_course_editor(c.id, p_deleted_by) or
-        c.created_by = p_deleted_by
-      )
+  -- Step 3: Permission check
+  if not (
+    public.has_org_role(v_org_id, 'admin', p_deleted_by) or
+    v_course_creator = p_deleted_by
   ) then
-    raise exception 'Insufficient permissions to delete blocks in this lesson';
+    raise exception 'You do not have permission to delete this block';
   end if;
 
-  -- Delete the specified block
+  -- Step 4: Delete the block
   delete from public.lesson_blocks
   where id = p_block_id;
 
-  -- Check if the delete was successful
   if not found then
     raise exception 'Failed to delete lesson block';
   end if;
 
-  -- Reorder remaining blocks: shift down all blocks that were positioned after the deleted block
-  update  public.lesson_blocks
+  -- Step 5: Shift down remaining block positions
+  update public.lesson_blocks
   set position = position - 1000000
-  where chapter_id = v_chapter_id
-    and position > v_lesson_position;
+  where lesson_id = v_lesson_id
+    and position > v_block_position;
 
-  -- Step 2: Apply the final position update with metadata
-  update  public.lesson_blocks
+  -- Step 6: Normalize final positions and set audit metadata
+  update public.lesson_blocks
   set 
     position = position + 999999,
     updated_at = timezone('utc', now()),
     updated_by = p_deleted_by
-  where chapter_id = v_chapter_id
+  where lesson_id = v_lesson_id
     and position < 0;
-
 end;
 $function$
 ;
@@ -1741,98 +1678,6 @@ create or replace view "public"."public_profiles" as  SELECT profiles.id,
   WHERE ((profiles.is_public = true) OR (profiles.id = ( SELECT auth.uid() AS uid)));
 
 
-CREATE OR REPLACE FUNCTION public.reorder_chapters(p_course_id uuid, chapter_positions jsonb, p_updated_by uuid)
- RETURNS void
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO ''
-AS $function$
-declare
-  temp_offset int := 1000000;
-  v_org_id uuid;
-  v_created_by uuid;
-begin
-  -- Step 1: Ensure input is present
-  if chapter_positions is null or jsonb_array_length(chapter_positions) = 0 then
-    raise exception 'chapter_positions array cannot be null or empty';
-  end if;
-
-  -- Step 2: Get org ID and course creator
-  select organization_id, created_by
-  into v_org_id, v_created_by
-  from public.courses
-  where id = p_course_id;
-
-  if v_org_id is null then
-    raise exception 'Course does not exist';
-  end if;
-
-  -- Step 3: Permission check
-  if not (
-    public.has_org_role(v_org_id, 'admin', p_updated_by) or
-    v_created_by = p_updated_by
-  ) then
-    raise exception 'You do not have permission to reorder chapters in this course';
-  end if;
-
-  -- Step 4: Validate that all chapter IDs exist and belong to the given course
-  if exists (
-    select 1 
-    from jsonb_array_elements(chapter_positions) as cp
-    left join public.chapters ch on ch.id = (cp->>'id')::uuid
-    where ch.id is null or ch.course_id != p_course_id
-  ) then
-    raise exception 'One or more chapter IDs do not exist or do not belong to the specified course';
-  end if;
-
-  -- Step 5: Ensure all position values are positive integers
-  if exists (
-    select 1
-    from jsonb_array_elements(chapter_positions) as cp
-    where (cp->>'position')::int <= 0
-  ) then
-    raise exception 'All position values must be positive integers';
-  end if;
-
-  -- Step 6: Validate that all chapters in the course are included
-  if (
-    select count(*) from public.chapters where course_id = p_course_id
-  ) != jsonb_array_length(chapter_positions) then
-    raise exception 'All chapters in the course must be included in the reorder operation';
-  end if;
-
-  -- Step 7: Check for duplicate position values
-  if (
-    select count(distinct (cp->>'position')::int)
-    from jsonb_array_elements(chapter_positions) as cp
-  ) != jsonb_array_length(chapter_positions) then
-    raise exception 'Duplicate position values are not allowed';
-  end if;
-
-  -- Step 8: Shift positions to avoid conflict
-  update public.chapters
-  set position = position + temp_offset
-  where course_id = p_course_id;
-
-  -- Step 9: Apply new positions
-  update public.chapters
-  set 
-    position = new_positions.position,
-    updated_at = timezone('utc', now()),
-    updated_by = p_updated_by
-  from (
-    select 
-      (cp->>'id')::uuid as id,
-      row_number() over (order by (cp->>'position')::int) as position
-    from jsonb_array_elements(chapter_positions) as cp
-  ) as new_positions
-  where public.chapters.id = new_positions.id
-    and public.chapters.course_id = p_course_id;
-
-end;
-$function$
-;
-
 CREATE OR REPLACE FUNCTION public.reorder_lesson_blocks(blocks jsonb)
  RETURNS void
  LANGUAGE plpgsql
@@ -1884,49 +1729,46 @@ CREATE OR REPLACE FUNCTION public.reorder_lesson_blocks(p_lesson_id uuid, block_
  SET search_path TO ''
 AS $function$
 declare
-  temp_offset int := 1000000;  -- large offset to avoid unique position conflicts during update
-  v_course_id uuid;            -- to store the course_id for permission checking
+  temp_offset int := 1000000;
+  v_course_id uuid;
+  v_org_id uuid;
+  v_course_creator uuid;
 begin
-  -- Validate that block_positions array is not empty or null
+  -- Step 1: Validate input presence
   if block_positions is null or jsonb_array_length(block_positions) = 0 then
     raise exception 'block_positions array cannot be null or empty';
   end if;
 
-  -- Get the course_id for the lesson to check permissions
-  select l.course_id into v_course_id
+  -- Step 2: Fetch course/org context and creator
+  select l.course_id, c.organization_id, c.created_by
+  into v_course_id, v_org_id, v_course_creator
   from public.lessons l
+  join public.courses c on l.course_id = c.id
   where l.id = p_lesson_id;
 
-  -- Check if lesson exists
   if v_course_id is null then
     raise exception 'Lesson does not exist';
   end if;
 
-  -- Verify user has permission to modify blocks in this lesson
-  if not exists (
-    select 1 
-    from public.courses c
-    where c.id = v_course_id
-      and (
-        public.is_course_admin(c.id, p_updated_by) or
-        public.is_course_editor(c.id, p_updated_by) or
-        c.created_by = p_updated_by
-      )
+  -- Step 3: Permission check
+  if not (
+    public.has_org_role(v_org_id, 'admin', p_updated_by) or
+    v_course_creator = p_updated_by
   ) then
-    raise exception 'Insufficient permissions to reorder blocks in this lesson';
+    raise exception 'You do not have permission to reorder blocks in this lesson';
   end if;
 
-  -- Validate that all block IDs exist and belong to the specified lesson
+  -- Step 4: Validate block ownership and existence
   if exists (
     select 1 
     from jsonb_array_elements(block_positions) as bp
     left join public.lesson_blocks lb on lb.id = (bp->>'id')::uuid
     where lb.id is null or lb.lesson_id != p_lesson_id
   ) then
-    raise exception 'One or more block IDs do not exist or do not belong to the specified lesson';
+    raise exception 'One or more block IDs do not exist or do not belong to this lesson';
   end if;
 
-  -- Validate that position values are positive integers
+  -- Step 5: Validate position values
   if exists (
     select 1
     from jsonb_array_elements(block_positions) as bp
@@ -1935,16 +1777,14 @@ begin
     raise exception 'All position values must be positive integers';
   end if;
 
-  -- Validate that we're not missing any blocks from the lesson
+  -- Step 6: Ensure all blocks are included
   if (
-    select count(*)
-    from public.lesson_blocks
-    where lesson_id = p_lesson_id
+    select count(*) from public.lesson_blocks where lesson_id = p_lesson_id
   ) != jsonb_array_length(block_positions) then
     raise exception 'All blocks in the lesson must be included in the reorder operation';
   end if;
 
-  -- Check for duplicate positions in the input
+  -- Step 7: Ensure unique position values
   if (
     select count(distinct (bp->>'position')::int)
     from jsonb_array_elements(block_positions) as bp
@@ -1952,12 +1792,12 @@ begin
     raise exception 'Duplicate position values are not allowed';
   end if;
 
-  -- Temporarily shift all block positions to avoid unique constraint conflicts
+  -- Step 8: Temporarily offset all current positions
   update public.lesson_blocks
   set position = position + temp_offset
   where lesson_id = p_lesson_id;
 
-  -- Apply new positions and update audit fields
+  -- Step 9: Apply new positions with audit metadata
   update public.lesson_blocks
   set 
     position = new_positions.position,
@@ -1971,7 +1811,6 @@ begin
   ) as new_positions
   where public.lesson_blocks.id = new_positions.id
     and public.lesson_blocks.lesson_id = p_lesson_id;
-
 end;
 $function$
 ;

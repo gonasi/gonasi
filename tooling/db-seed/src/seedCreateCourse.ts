@@ -1,5 +1,4 @@
 import { faker } from '@faker-js/faker';
-import { type profilesScalars } from '@snaplet/seed';
 
 import { getUserId } from '@gonasi/database/auth';
 import { createCourseChapter } from '@gonasi/database/courseChapters';
@@ -44,7 +43,7 @@ function generateFakeChapter(): {
 }
 
 // Seeds the database with course titles, chapters, and lessons for random users
-export async function seedCreateCourse(users: profilesScalars[]) {
+export async function seedCreateCourse() {
   const total = TOTAL_COURSES; // Total number of courses to create
 
   for (let i = 0; i < total; i++) {

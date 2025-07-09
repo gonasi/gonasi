@@ -12,7 +12,7 @@ import { Modal } from '~/components/ui/modal';
 const LazyGonasiPluginGroup = lazy(() => import('~/components/plugins/GonasiPluginGroup'));
 
 export default function PluginsModal({ params }: Route.ComponentProps) {
-  const basePath = `/${params.username}/course-builder/${params.courseId}/content`;
+  const basePath = `/${params.organizationId}/builder/${params.courseId}/content`;
   const lessonBasePath = `${basePath}/${params.chapterId}/${params.lessonId}/lesson-blocks`;
 
   // Use useMemo to prevent unnecessary recalculations

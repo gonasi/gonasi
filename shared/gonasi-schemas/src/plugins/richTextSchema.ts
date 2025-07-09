@@ -11,6 +11,7 @@ export const RichTextSettingsSchema = BasePluginSettingsSchema.extend({});
 
 export const RichTextSchema = z.object({
   blockId: z.string().optional(),
+  organizationId: z.string({ required_error: 'Organization Id is required.' }),
   courseId: z.string({ required_error: 'Course Id is required.' }),
   lessonId: z.string({ required_error: 'Lesson Id is required.' }),
   pluginType: z.literal('rich_text_editor'),
