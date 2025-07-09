@@ -1320,6 +1320,14 @@ export type Database = {
         Args: { arg_course_id: string }
         Returns: boolean
       }
+      check_storage_limit: {
+        Args: {
+          p_organization_id: string
+          p_new_file_size: number
+          p_exclude_file_path?: string
+        }
+        Returns: boolean
+      }
       custom_access_token_hook: {
         Args: { event: Json }
         Returns: Json

@@ -107,7 +107,7 @@ using (
 );
 
 -- INSERT: Parse the path to extract organizationId and courseId, then check permissions
-create policy "insert: org owner/admin or course creator"
+create policy "insert: org owner/admin or course creator with storage limit"
 on storage.objects
 for insert
 to authenticated
@@ -124,6 +124,11 @@ with check (
           and c.created_by = (select auth.uid())
         )
       )
+      -- Check storage limit using the helper function
+      and public.check_storage_limit(
+        c.organization_id,
+        coalesce((storage.objects.metadata->>'size')::bigint, 0)
+      ) = true
   )
 );
 

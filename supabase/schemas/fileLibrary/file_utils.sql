@@ -65,3 +65,47 @@ begin
   return new;
 end;
 $$;
+
+
+-- =======================================
+-- Function to check storage limits (updated to handle file updates)
+-- =======================================
+create or replace function public.check_storage_limit(
+  p_organization_id uuid,
+  p_new_file_size bigint,
+  p_exclude_file_path text default null -- For updates, exclude the current file
+) returns boolean
+language plpgsql
+security definer
+as $$
+declare
+  v_current_usage bigint;
+  v_storage_limit_mb integer;
+  v_storage_limit_bytes bigint;
+begin
+  -- Get current storage usage for the organization (excluding the file being updated)
+  select coalesce(sum(size), 0)
+  into v_current_usage
+  from public.file_library
+  where organization_id = p_organization_id
+    and (p_exclude_file_path is null or path != p_exclude_file_path);
+  
+  -- Get storage limit for the organization's tier
+  select tl.storage_limit_mb_per_org
+  into v_storage_limit_mb
+  from public.organizations o
+  join public.tier_limits tl on tl.tier = o.tier
+  where o.id = p_organization_id;
+  
+  -- If no tier found, deny upload
+  if v_storage_limit_mb is null then
+    return false;
+  end if;
+  
+  -- Convert MB to bytes
+  v_storage_limit_bytes := v_storage_limit_mb * 1024 * 1024;
+  
+  -- Check if adding the new file would exceed the limit
+  return (v_current_usage + p_new_file_size) <= v_storage_limit_bytes;
+end;
+$$;

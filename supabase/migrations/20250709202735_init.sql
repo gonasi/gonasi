@@ -1232,6 +1232,44 @@ AS $function$
 $function$
 ;
 
+CREATE OR REPLACE FUNCTION public.check_storage_limit(p_organization_id uuid, p_new_file_size bigint, p_exclude_file_path text DEFAULT NULL::text)
+ RETURNS boolean
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+declare
+  v_current_usage bigint;
+  v_storage_limit_mb integer;
+  v_storage_limit_bytes bigint;
+begin
+  -- Get current storage usage for the organization (excluding the file being updated)
+  select coalesce(sum(size), 0)
+  into v_current_usage
+  from public.file_library
+  where organization_id = p_organization_id
+    and (p_exclude_file_path is null or path != p_exclude_file_path);
+  
+  -- Get storage limit for the organization's tier
+  select tl.storage_limit_mb_per_org
+  into v_storage_limit_mb
+  from public.organizations o
+  join public.tier_limits tl on tl.tier = o.tier
+  where o.id = p_organization_id;
+  
+  -- If no tier found, deny upload
+  if v_storage_limit_mb is null then
+    return false;
+  end if;
+  
+  -- Convert MB to bytes
+  v_storage_limit_bytes := v_storage_limit_mb * 1024 * 1024;
+  
+  -- Check if adding the new file would exceed the limit
+  return (v_current_usage + p_new_file_size) <= v_storage_limit_bytes;
+end;
+$function$
+;
+
 CREATE OR REPLACE FUNCTION public.custom_access_token_hook(event jsonb)
  RETURNS jsonb
  LANGUAGE plpgsql
@@ -4124,14 +4162,14 @@ using (((bucket_id = 'files'::text) AND (EXISTS ( SELECT 1
   WHERE ((fl.path = objects.name) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.created_by = ( SELECT auth.uid() AS uid)))))))));
 
 
-create policy "insert: org owner/admin or course creator"
+create policy "insert: org owner/admin or course creator with storage limit"
 on "storage"."objects"
 as permissive
 for insert
 to authenticated
 with check (((bucket_id = 'files'::text) AND (EXISTS ( SELECT 1
    FROM courses c
-  WHERE ((c.id = (split_part(objects.name, '/'::text, 2))::uuid) AND (c.organization_id = (split_part(objects.name, '/'::text, 1))::uuid) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.created_by = ( SELECT auth.uid() AS uid)))))))));
+  WHERE ((c.id = (split_part(objects.name, '/'::text, 2))::uuid) AND (c.organization_id = (split_part(objects.name, '/'::text, 1))::uuid) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.created_by = ( SELECT auth.uid() AS uid)))) AND (check_storage_limit(c.organization_id, COALESCE(((objects.metadata ->> 'size'::text))::bigint, (0)::bigint)) = true))))));
 
 
 create policy "select: org members can view files"
