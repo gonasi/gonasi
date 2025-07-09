@@ -74,8 +74,6 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     return redirectToPricingPage('Pricing tier does not exist or you lack permissions');
   }
 
-  console.log(pricingTier);
-
   return { pricingTier };
 }
 
@@ -87,7 +85,7 @@ export async function action({ params, request }: Route.ActionArgs) {
     errors,
     data,
     receivedValues: defaultValues,
-  } = await getValidatedFormData<CoursePricingSchemaTypes>(formData, resolver); // ← Pass formData here
+  } = await getValidatedFormData<CoursePricingSchemaTypes>(formData, resolver);
 
   if (errors) {
     return { errors, defaultValues };
@@ -108,29 +106,32 @@ export async function action({ params, request }: Route.ActionArgs) {
     : dataWithError(null, result.message);
 }
 
-const STEPS = [
-  {
-    id: 'basic-config',
-    title: 'Basic Configuration',
-    path: 'basic-config',
-  },
-  {
-    id: 'promotional-pricing',
-    title: 'Promotional Pricing',
-    path: 'promotional-pricing',
-  },
-  {
-    id: 'display-and-marketing',
-    title: 'Display & Marketing',
-    path: 'display-and-marketing',
-  },
-] as const;
-
-type StepId = (typeof STEPS)[number]['id'];
+// Step generator (removes promotional-pricing if isPaid is false)
+const getSteps = (isPaid: boolean) =>
+  [
+    {
+      id: 'basic-config',
+      title: 'Basic Configuration',
+      path: 'basic-config',
+    },
+    ...(isPaid
+      ? [
+          {
+            id: 'promotional-pricing',
+            title: 'Promotional Pricing',
+            path: 'promotional-pricing',
+          },
+        ]
+      : []),
+    {
+      id: 'display-and-marketing',
+      title: 'Display & Marketing',
+      path: 'display-and-marketing',
+    },
+  ] as const;
 
 export default function ManagePricingTierModal({ params, loaderData }: Route.ComponentProps) {
   const { organizationId, courseId, coursePricingId } = params;
-
   const { pricingTier } = loaderData;
 
   const { isPaid, availableFrequencies } =
@@ -139,23 +140,13 @@ export default function ManagePricingTierModal({ params, loaderData }: Route.Com
       availableFrequencies: AvailableFrequenciesLoaderReturnType;
     }>() ?? {};
 
-  const isPending = useIsPending();
+  const steps = [...getSteps(isPaid)];
 
-  const badgeVariants = {
-    initial: { opacity: 0, scale: 0.9 },
-    animate: { opacity: 1, scale: 1, transition: { duration: 0.2 } },
-    exit: { opacity: 0, scale: 0.9, transition: { duration: 0.15 } },
-  };
-
-  const iconVariants = {
-    initial: { opacity: 0, rotate: -15, scale: 0.8 },
-    animate: { opacity: 1, rotate: 0, scale: 1, transition: { duration: 0.2 } },
-    exit: { opacity: 0, rotate: 15, scale: 0.8, transition: { duration: 0.15 } },
-  };
-
-  const closeRoute = `/${organizationId}/builder/${courseId}/pricing`;
+  type StepId = (typeof steps)[number]['id'];
 
   const [currentStep, setCurrentStep] = useState<StepId>('basic-config');
+
+  const isPending = useIsPending();
 
   const methods = useRemixForm<CoursePricingSchemaTypes>({
     mode: 'all',
@@ -193,15 +184,13 @@ export default function ManagePricingTierModal({ params, loaderData }: Route.Com
   const { watch, trigger } = methods;
   const watchedValues = watch();
 
-  // Step navigation
-  const currentStepIndex = STEPS.findIndex((step) => step.id === currentStep);
+  const currentStepIndex = steps.findIndex((step) => step.id === currentStep);
   const isFirstStep = currentStepIndex === 0;
-  const isLastStep = currentStepIndex === STEPS.length - 1;
+  const isLastStep = currentStepIndex === steps.length - 1;
 
   const goToNextStep = async () => {
     const isValid = await validateCurrentStep();
-    const nextStep = STEPS[currentStepIndex + 1];
-
+    const nextStep = steps[currentStepIndex + 1];
     if (isValid && !isLastStep && nextStep) {
       setCurrentStep(nextStep.id);
     }
@@ -209,7 +198,7 @@ export default function ManagePricingTierModal({ params, loaderData }: Route.Com
 
   const goToPreviousStep = () => {
     if (!isFirstStep) {
-      const prevStep = STEPS[currentStepIndex - 1];
+      const prevStep = steps[currentStepIndex - 1];
       if (prevStep) {
         setCurrentStep(prevStep.id);
       }
@@ -242,14 +231,26 @@ export default function ManagePricingTierModal({ params, loaderData }: Route.Com
 
   const isDisabled = isPending || methods.formState.isSubmitting;
 
-  //
   useEffect(() => {
     if (watchedValues.currencyCode) {
       trigger(['price', 'promotionalPrice']);
     }
   }, [trigger, watchedValues.currencyCode]);
 
-  // Render step content
+  const badgeVariants = {
+    initial: { opacity: 0, scale: 0.9 },
+    animate: { opacity: 1, scale: 1, transition: { duration: 0.2 } },
+    exit: { opacity: 0, scale: 0.9, transition: { duration: 0.15 } },
+  };
+
+  const iconVariants = {
+    initial: { opacity: 0, rotate: -15, scale: 0.8 },
+    animate: { opacity: 1, rotate: 0, scale: 1, transition: { duration: 0.2 } },
+    exit: { opacity: 0, rotate: 15, scale: 0.8, transition: { duration: 0.15 } },
+  };
+
+  const closeRoute = `/${organizationId}/builder/${courseId}/pricing`;
+
   const renderStepContent = () => {
     switch (currentStep) {
       case 'basic-config':
@@ -258,13 +259,18 @@ export default function ManagePricingTierModal({ params, loaderData }: Route.Com
             <GoSelectInputField
               labelProps={{ children: 'Payment Frequency', required: true }}
               name='paymentFrequency'
-              description="User's subscription and repayment frequency 📚"
+              description={
+                isPaid
+                  ? 'Choose how often users will be billed for this paid tier 💳'
+                  : 'Even though this is a free tier, you can still indicate how often access renews 🔄'
+              }
               selectProps={{
                 placeholder: 'Select a payment frequency',
                 options: frequencyOptions,
               }}
             />
-            <div>
+
+            {isPaid && (
               <div className='flex items-start justify-start space-x-4'>
                 <GoSelectInputField
                   className='max-w-30'
@@ -273,31 +279,20 @@ export default function ManagePricingTierModal({ params, loaderData }: Route.Com
                   selectProps={{
                     placeholder: 'Currency',
                     options: [
-                      {
-                        label: 'KES',
-                        value: 'KES',
-                      },
-                      {
-                        label: 'USD',
-                        value: 'USD',
-                      },
+                      { label: 'KES', value: 'KES' },
+                      { label: 'USD', value: 'USD' },
                     ],
-
                     disabled: isDisabled,
                   }}
                 />
                 <GoInputField
                   className='flex-1'
                   name='price'
-                  inputProps={{
-                    type: 'number',
-                    disabled: isDisabled,
-                    autoFocus: false,
-                  }}
-                  labelProps={{ children: 'Pirce', required: true }}
+                  inputProps={{ type: 'number', disabled: isDisabled }}
+                  labelProps={{ children: 'Price', required: true }}
                 />
               </div>
-            </div>
+            )}
           </div>
         );
 
@@ -309,7 +304,6 @@ export default function ManagePricingTierModal({ params, loaderData }: Route.Com
               labelProps={{ children: 'Enable promotional price', required: true }}
               description='Allow promotional pricing for this tier'
             />
-
             <AnimatePresence>
               {watchedValues.enablePromotionalPricing && (
                 <motion.div
@@ -325,7 +319,6 @@ export default function ManagePricingTierModal({ params, loaderData }: Route.Com
                     inputProps={{
                       type: 'number',
                       disabled: isDisabled,
-                      autoFocus: false,
                       leftIcon: <div className='mt-1 text-xs'>{watchedValues.currencyCode}</div>,
                     }}
                     labelProps={{ children: 'Promotional price', required: true }}
@@ -422,36 +415,37 @@ export default function ManagePricingTierModal({ params, loaderData }: Route.Com
                   }}
                   description='Highlight this tier as your top pick'
                 />
-                <GoSwitchField
-                  name='isActive'
-                  labelProps={{
-                    children: (
-                      <div className='flex items-center space-x-1'>
-                        <span>Active</span>
-                        <span
-                          className={cn(
-                            watchedValues.isActive ? 'text-foreground' : 'text-muted-foreground',
-                          )}
-                        >
-                          (Visible to customers)
-                        </span>
-
-                        <AnimatePresence mode='wait' initial={false}>
-                          <motion.span
-                            key={watchedValues.isActive ? 'eye' : 'eye-off'}
-                            variants={iconVariants}
-                            initial='initial'
-                            animate='animate'
-                            exit='exit'
+                {isPaid ? (
+                  <GoSwitchField
+                    name='isActive'
+                    labelProps={{
+                      children: (
+                        <div className='flex items-center space-x-1'>
+                          <span>Active</span>
+                          <span
+                            className={cn(
+                              watchedValues.isActive ? 'text-foreground' : 'text-muted-foreground',
+                            )}
                           >
-                            {watchedValues.isActive ? <Eye size={16} /> : <EyeOff size={16} />}
-                          </motion.span>
-                        </AnimatePresence>
-                      </div>
-                    ),
-                  }}
-                  description='Turn this on to make the tier publicly available'
-                />
+                            (Visible to customers)
+                          </span>
+                          <AnimatePresence mode='wait' initial={false}>
+                            <motion.span
+                              key={watchedValues.isActive ? 'eye' : 'eye-off'}
+                              variants={iconVariants}
+                              initial='initial'
+                              animate='animate'
+                              exit='exit'
+                            >
+                              {watchedValues.isActive ? <Eye size={16} /> : <EyeOff size={16} />}
+                            </motion.span>
+                          </AnimatePresence>
+                        </div>
+                      ),
+                    }}
+                    description='Turn this on to make the tier publicly available'
+                  />
+                ) : null}
               </div>
             </div>
           </div>
@@ -470,35 +464,24 @@ export default function ManagePricingTierModal({ params, loaderData }: Route.Com
           closeRoute={closeRoute}
         />
         <Modal.Body>
-          {!isPaid ? (
-            <BannerCard
-              variant='error'
-              message='Pricing tiers are only available for paid courses'
-              description='To enable tiered pricing, switch this course to paid.'
-              showCloseIcon={false}
-            />
-          ) : coursePricingId === 'add-new-tier' &&
-            (!availableFrequencies || !availableFrequencies.length) ? (
+          {coursePricingId === 'add-new-tier' &&
+          (!availableFrequencies || !availableFrequencies.length) ? (
             <BannerCard
               variant='error'
               message='All pricing options are in use'
-              description='Please delete or update a tier, as all available frequencies. Monthly, bi-monthly, quarterly, semi-annual, and annual have already been used.'
+              description='Please delete or update a tier, as all available frequencies have already been used.'
               showCloseIcon={false}
             />
           ) : (
             <div className='py-4'>
               <div className='pb-6'>
-                {/* Step indicator */}
-                {STEPS.length > 0 && (
-                  <Stepper steps={[...STEPS]} currentStepIndex={currentStepIndex} />
-                )}
+                {steps.length > 0 && <Stepper steps={steps} currentStepIndex={currentStepIndex} />}
               </div>
 
               <RemixFormProvider {...methods}>
                 <Form method='POST' onSubmit={methods.handleSubmit}>
                   <HoneypotInputs />
                   <div className='rounded-lg'>{renderStepContent()}</div>
-                  {/* Navigation buttons */}
                   <div className='flex w-full justify-end'>
                     {isLastStep ? (
                       <Button
@@ -518,6 +501,7 @@ export default function ManagePricingTierModal({ params, loaderData }: Route.Com
                   </div>
                 </Form>
               </RemixFormProvider>
+
               <div className='-mt-12 flex justify-between'>
                 <Button
                   type='button'
@@ -529,7 +513,7 @@ export default function ManagePricingTierModal({ params, loaderData }: Route.Com
                   Previous
                 </Button>
 
-                {!isLastStep ? (
+                {!isLastStep && (
                   <Button
                     type='button'
                     variant='ghost'
@@ -538,7 +522,7 @@ export default function ManagePricingTierModal({ params, loaderData }: Route.Com
                   >
                     Next
                   </Button>
-                ) : null}
+                )}
               </div>
             </div>
           )}

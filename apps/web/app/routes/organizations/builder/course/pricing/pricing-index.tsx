@@ -63,10 +63,15 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
   const courseId = params.courseId ?? '';
 
-  const [pricingData, availableFrequencies] = await Promise.all([
+  const [canEditResult, pricingData, availableFrequencies] = await Promise.all([
+    supabase.rpc('can_user_edit_course', {
+      arg_course_id: courseId,
+    }),
     fetchCoursePricing({ supabase, courseId }),
     fetchAvailablePaymentFrequencies({ supabase, courseId }),
   ]);
+
+  const canEdit = canEditResult.data;
 
   const isPaid = Array.isArray(pricingData)
     ? pricingData.some((item) => item.is_free === false)
@@ -76,7 +81,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     ? pricingData.some((item) => item.is_active === false)
     : false;
 
-  return { pricingData, isPaid, availableFrequencies, hasInactiveTier };
+  return { pricingData, isPaid, availableFrequencies, hasInactiveTier, canEdit };
 }
 
 export async function action({ request, params }: Route.ActionArgs) {
@@ -110,7 +115,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 }
 
 export default function CoursePricing({ loaderData, params }: Route.ComponentProps) {
-  const { pricingData, isPaid, availableFrequencies, hasInactiveTier } = loaderData;
+  const { pricingData, isPaid, availableFrequencies, hasInactiveTier, canEdit } = loaderData;
   const fetcher = useFetcher();
 
   const [reorderedPricingTiers, setReorderedPricingTiers] = useState<CoursePricingType[]>(
@@ -212,9 +217,9 @@ export default function CoursePricing({ loaderData, params }: Route.ComponentPro
       ) : null}
 
       <div className='flex w-full items-end justify-between py-4'>
-        <CourseToggle isPaidState={isPaid} />
+        {canEdit && <CourseToggle isPaidState={isPaid} />}
         <div>
-          {isPaid ? (
+          {isPaid && canEdit ? (
             <NavLinkButton
               variant='secondary'
               to={`/${params.organizationId}/builder/${params.courseId}/pricing/manage-pricing-tier/add-new-tier`}
@@ -230,13 +235,13 @@ export default function CoursePricing({ loaderData, params }: Route.ComponentPro
         <TableCaption>A list of pricing options for this course</TableCaption>
         <TableHeader>
           <TableRow className='border-border/60'>
-            <TableHead />
+            {canEdit ? <TableHead /> : null}
             <TableHead>Status</TableHead>
             <TableHead>Tier Details</TableHead>
             <TableHead>Base Price</TableHead>
             <TableHead>Promotions</TableHead>
             <TableHead>Highlights</TableHead>
-            {isPaid ? <TableHead className='w-[70px] text-right'>Actions</TableHead> : null}
+            {canEdit ? <TableHead className='w-[70px] text-right'>Actions</TableHead> : null}
           </TableRow>
         </TableHeader>
 
@@ -258,15 +263,17 @@ export default function CoursePricing({ loaderData, params }: Route.ComponentPro
                 isSubmitting && 'animate-pulse hover:cursor-wait',
               )}
             >
-              <TableCell className='px-0'>
-                <ReorderIconTooltip
-                  title='Drag and drop to pricing tiers'
-                  icon={GripVerticalIcon}
-                  disabled={isSubmitting}
-                  dragControls={coursePricingTierDragControls}
-                  className='border-border/60 border bg-transparent'
-                />
-              </TableCell>
+              {canEdit ? (
+                <TableCell className='px-0'>
+                  <ReorderIconTooltip
+                    title='Drag and drop to pricing tiers'
+                    icon={GripVerticalIcon}
+                    disabled={isSubmitting}
+                    dragControls={coursePricingTierDragControls}
+                    className='border-border/60 border bg-transparent'
+                  />
+                </TableCell>
+              ) : null}
               <TableCell className='font-medium'>
                 <StatusBadge isActive={priceTier.is_active} />
               </TableCell>
@@ -290,7 +297,7 @@ export default function CoursePricing({ loaderData, params }: Route.ComponentPro
               <TableCell>
                 <FeatureFlags price={priceTier} />
               </TableCell>
-              {isPaid ? (
+              {canEdit ? (
                 <TableCell className='text-right'>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -309,15 +316,17 @@ export default function CoursePricing({ loaderData, params }: Route.ComponentPro
                           Edit
                         </NavLink>
                       </DropdownMenuItem>
-                      <DropdownMenuItem className='w-full'>
-                        <NavLink
-                          to={`/${params.organizationId}/builder/${params.courseId}/pricing/manage-pricing-tier/${priceTier.id}/delete`}
-                          className={cn('flex w-full items-center space-x-4')}
-                        >
-                          <Trash2 className='mr-2 h-4 w-4' />
-                          Delete
-                        </NavLink>
-                      </DropdownMenuItem>
+                      {isPaid ? (
+                        <DropdownMenuItem className='w-full'>
+                          <NavLink
+                            to={`/${params.organizationId}/builder/${params.courseId}/pricing/manage-pricing-tier/${priceTier.id}/delete`}
+                            className={cn('flex w-full items-center space-x-4')}
+                          >
+                            <Trash2 className='mr-2 h-4 w-4' />
+                            Delete
+                          </NavLink>
+                        </DropdownMenuItem>
+                      ) : null}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </TableCell>

@@ -129,28 +129,40 @@ export const CoursePricingSchema = z
     const now = new Date();
     now.setHours(0, 0, 0, 0);
 
-    if (data.price <= 0) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: `<lucide name="Ban" size="12" /> Paid tiers need to cost something, bump up that price.`,
-        path: ['price'],
-      });
-    }
+    const isPaid = !data.isFree;
 
-    if (data.currencyCode === 'KES') {
-      if (data.price < 100 || data.price > 50000) {
+    if (isPaid) {
+      if (data.price <= 0) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: `<lucide name="AlertOctagon" size="12" /> Price in KES must be between KES 100 and KES 50,000.`,
+          message: `<lucide name="Ban" size="12" /> Paid tiers need to cost something, bump up that price.`,
           path: ['price'],
         });
       }
-    } else if (data.currencyCode === 'USD') {
-      if (data.price < 1 || data.price > 1000) {
+
+      if (data.currencyCode === 'KES') {
+        if (data.price < 100 || data.price > 50000) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `<lucide name="AlertOctagon" size="12" /> Price in KES must be between KES 100 and KES 50,000.`,
+            path: ['price'],
+          });
+        }
+      } else if (data.currencyCode === 'USD') {
+        if (data.price < 1 || data.price > 1000) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `<lucide name="AlertOctagon" size="12" /> Price in USD must be between $1 and $1,000.`,
+            path: ['price'],
+          });
+        }
+      }
+
+      if (typeof data.promotionalPrice === 'number' && data.promotionalPrice >= data.price) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: `<lucide name="AlertOctagon" size="12" /> Price in USD must be between $1 and $1,000.`,
-          path: ['price'],
+          message: `<lucide name="ArrowDown" size="12" /> Promo price should be less than the regular price (${data.currencyCode} ${data.price})`,
+          path: ['promotionalPrice'],
         });
       }
     }
@@ -187,14 +199,6 @@ export const CoursePricingSchema = z
           path: ['promotionStartDate'],
         });
       }
-    }
-
-    if (typeof data.promotionalPrice === 'number' && data.promotionalPrice >= data.price) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: `<lucide name="ArrowDown" size="12" /> Promo price should be less than the regular price (${data.currencyCode} ${data.price})`,
-        path: ['promotionalPrice'],
-      });
     }
 
     if (

@@ -45,7 +45,7 @@ export async function action({ params, request }: Route.ActionArgs) {
   }
 
   // Redirect on success
-  const redirectPath = `/${params.username}/course-builder/${params.courseId}/pricing`;
+  const redirectPath = `/${params.organizationId}/builder/${params.courseId}/pricing`;
   return redirectWithSuccess(redirectPath, message);
 }
 
@@ -53,7 +53,7 @@ export default function DeletePricingTier({ params }: Route.ComponentProps) {
   const navigate = useNavigate();
   const isPending = useIsPending();
 
-  const redirectPath = `/${params.username}/course-builder/${params.courseId}/pricing`;
+  const redirectPath = `/${params.organizationId}/builder/${params.courseId}/pricing`;
 
   // Form setup with Remix Hook Form and Zod schema
   const methods = useRemixForm<DeleteCoursePricingTierSchemaTypes>({
