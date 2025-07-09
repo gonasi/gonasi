@@ -206,7 +206,7 @@ export default function CoursePricing({ loaderData, params }: Route.ComponentPro
   );
 
   return (
-    <div>
+    <div className='pb-10'>
       {hasInactiveTier ? (
         <BannerCard
           message='Some tiers are inactive'
