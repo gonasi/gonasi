@@ -47,6 +47,8 @@ create index idx_lessons_lesson_type_id  on public.lessons(lesson_type_id);
 create index idx_lessons_created_by      on public.lessons(created_by);
 create index idx_lessons_updated_by      on public.lessons(updated_by);
 create index idx_lessons_position        on public.lessons(position);
+create index idx_lessons_organization_id
+  on public.lessons(organization_id);
 
 -- ====================================================================================
 -- Table Comment
@@ -80,17 +82,15 @@ before insert on public.lessons
 for each row
 execute function set_lesson_position();
 
+
 -- ====================================================================================
--- Row-Level Security (RLS)
--- ====================================================================================
--- ============================================================================
 -- Enable Row-Level Security on lessons table
--- ============================================================================
+-- ====================================================================================
 alter table public.lessons enable row level security;
 
--- ============================================================================
+-- ====================================================================================
 -- SELECT: Allow org members with any role in the course's org to view lessons
--- ============================================================================
+-- ====================================================================================
 create policy "select: org members can view lessons"
 on public.lessons
 for select
@@ -103,72 +103,38 @@ using (
   )
 );
 
--- ============================================================================
--- INSERT: Allow org members (owner, admin, editor) to insert lessons
--- ============================================================================
-create policy "insert: org members (owner, admin, editor) can add lessons"
+-- ====================================================================================
+-- INSERT: Allow owner/admin to insert into any course; editors only if they own it
+-- ====================================================================================
+create policy "insert: can_user_edit_course allows adding lessons"
 on public.lessons
 for insert
 to authenticated
 with check (
-  exists (
-    select 1 from public.courses c
-    where c.id = lessons.course_id
-      and public.get_user_org_role(c.organization_id, (select auth.uid())) in ('owner', 'admin', 'editor')
-  )
+  public.can_user_edit_course(lessons.course_id)
 );
 
--- ============================================================================
--- UPDATE: Allow only admins or owning editors to update lessons
--- ============================================================================
-create policy "update: admins or owning editors can modify lessons"
+-- ====================================================================================
+-- UPDATE: Same rule as insert — use can_user_edit_course
+-- ====================================================================================
+create policy "update: can_user_edit_course allows updating lessons"
 on public.lessons
 for update
 to authenticated
 using (
-  exists (
-    select 1 from public.courses c
-    where c.id = lessons.course_id
-      and (
-        public.get_user_org_role(c.organization_id, (select auth.uid())) in ('owner', 'admin')
-        or (
-          public.get_user_org_role(c.organization_id, (select auth.uid())) = 'editor'
-          and c.owned_by = auth.uid()
-        )
-      )
-  )
+  public.can_user_edit_course(lessons.course_id)
 )
 with check (
-  exists (
-    select 1 from public.courses c
-    where c.id = lessons.course_id
-      and (
-        public.get_user_org_role(c.organization_id, (select auth.uid())) in ('owner', 'admin')
-        or (
-          public.get_user_org_role(c.organization_id, (select auth.uid())) = 'editor'
-          and c.owned_by = auth.uid()
-        )
-      )
-  )
+  public.can_user_edit_course(lessons.course_id)
 );
 
--- ============================================================================
--- DELETE: Same as update — allow admins or owning editors
--- ============================================================================
-create policy "delete: admins or owning editors can delete lessons"
+-- ====================================================================================
+-- DELETE: Same rule — use can_user_edit_course
+-- ====================================================================================
+create policy "delete: can_user_edit_course allows deleting lessons"
 on public.lessons
 for delete
 to authenticated
 using (
-  exists (
-    select 1 from public.courses c
-    where c.id = lessons.course_id
-      and (
-        public.get_user_org_role(c.organization_id, (select auth.uid())) in ('owner', 'admin')
-        or (
-          public.get_user_org_role(c.organization_id, (select auth.uid())) = 'editor'
-          and c.owned_by = auth.uid()
-        )
-      )
-  )
+  public.can_user_edit_course(lessons.course_id)
 );

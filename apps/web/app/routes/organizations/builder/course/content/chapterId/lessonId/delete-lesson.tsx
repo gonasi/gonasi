@@ -28,8 +28,8 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   ]);
 
   if (!canDelete) {
-    throw redirectWithError(
-      `/${params.organizationId}/builder/${params.courseId}/content/chapter`,
+    return redirectWithError(
+      `/${params.organizationId}/builder/${params.courseId}/content/${params.chapterId}/${params.lessonId}/lesson-blocks`,
       'You don’t have permission to delete this lesson.',
     );
   }

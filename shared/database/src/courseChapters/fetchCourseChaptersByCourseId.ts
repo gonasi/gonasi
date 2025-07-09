@@ -1,4 +1,3 @@
-import { getUserId } from '../auth';
 import type { TypedSupabaseClient } from '../client';
 
 /**
@@ -12,8 +11,6 @@ export async function fetchCourseChaptersByCourseId(
   supabase: TypedSupabaseClient,
   courseId: string,
 ) {
-  const userId = await getUserId(supabase);
-
   const { data, error } = await supabase
     .from('chapters')
     .select(
@@ -49,7 +46,7 @@ export async function fetchCourseChaptersByCourseId(
       `,
       { count: 'exact' },
     )
-    .match({ course_id: courseId, created_by: userId })
+    .match({ course_id: courseId })
     .order('position', { ascending: true }) // ✅ Order chapters by position
     .order('position', { ascending: true, referencedTable: 'lessons' }); // ✅ Order lessons by position
 

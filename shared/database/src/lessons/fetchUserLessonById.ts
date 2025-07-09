@@ -1,4 +1,3 @@
-import { getUserId } from '../auth';
 import type { TypedSupabaseClient } from '../client';
 
 /**
@@ -9,12 +8,10 @@ import type { TypedSupabaseClient } from '../client';
  * @returns {Promise<{ id: string; name: string, lesson_type_id: string } | null>} The lesson data if found, otherwise `null`.
  */
 export async function fetchUserLessonById(supabase: TypedSupabaseClient, lessonId: string) {
-  const userId = await getUserId(supabase);
-
   const { data, error } = await supabase
     .from('lessons')
     .select('id, name, lesson_type_id, lesson_types(name, description)')
-    .match({ id: lessonId, created_by: userId })
+    .match({ id: lessonId })
     .single();
 
   if (error || !data) {

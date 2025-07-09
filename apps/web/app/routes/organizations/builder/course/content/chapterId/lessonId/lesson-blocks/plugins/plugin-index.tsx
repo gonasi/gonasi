@@ -1,11 +1,13 @@
 import { lazy, Suspense } from 'react';
 import { Outlet } from 'react-router';
+import { redirectWithError } from 'remix-toast';
 
 import type { Route } from './+types/plugin-index';
 
 import { AppLogo } from '~/components/app-logo';
 import { Spinner } from '~/components/loaders';
 import { Modal } from '~/components/ui/modal';
+import { createClient } from '~/lib/supabase/supabase.server';
 
 // Lazy load the dialog component
 const AllGonasiPlugins = lazy(() => import('~/components/plugins/AllGonasiPlugins'));
@@ -14,6 +16,23 @@ export function headers(_: Route.HeadersArgs) {
   return {
     'Cache-Control': 's-maxage=3600, stale-while-revalidate=3600',
   };
+}
+
+export async function loader({ params, request }: Route.LoaderArgs) {
+  const { supabase } = createClient(request);
+
+  const canEdit = await supabase.rpc('can_user_edit_course', {
+    arg_course_id: params.courseId,
+  });
+
+  if (!canEdit.data) {
+    return redirectWithError(
+      `/${params.organizationId}/builder/${params.courseId}/content/${params.chapterId}/${params.lessonId}/lesson-blocks`,
+      'You don’t have permission to add blocks.',
+    );
+  }
+
+  return true;
 }
 
 export default function PluginsModal({ params }: Route.ComponentProps) {

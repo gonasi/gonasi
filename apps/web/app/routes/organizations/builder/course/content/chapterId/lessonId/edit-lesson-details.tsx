@@ -36,8 +36,8 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   ]);
 
   if (!canEdit) {
-    throw redirectWithError(
-      `/${params.organizationId}/builder/${params.courseId}/content/chapter`,
+    return redirectWithError(
+      `/${params.organizationId}/builder/${params.courseId}/content/${params.chapterId}/${params.lessonId}/lesson-blocks`,
       'You don’t have permission to edit this lesson.',
     );
   }

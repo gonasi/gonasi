@@ -40,11 +40,12 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   });
 
   if (error || !canEdit) {
-    throw redirectWithError(
-      `/${orgId}/builder/${courseId}/content/chapter`,
+    return redirectWithError(
+      `/${orgId}/builder/${courseId}/content`,
       'You don’t have permission to edit this course.',
     );
   }
+  return true;
 }
 
 // Zod resolver setup

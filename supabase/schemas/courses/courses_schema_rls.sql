@@ -6,9 +6,10 @@ alter table public.courses enable row level security;
 -- ============================================================================
 -- SELECT: Allow all org members to read courses
 -- ============================================================================
-create policy "Read: Org members can view courses"
+create policy "Select: Org members can view courses"
 on public.courses
 for select
+to authenticated
 using (
   public.get_user_org_role(organization_id, (select auth.uid())) is not null
 );
@@ -35,7 +36,7 @@ using (
   public.get_user_org_role(organization_id, (select auth.uid())) in ('owner', 'admin')
   or (
     public.get_user_org_role(organization_id, (select auth.uid())) = 'editor'
-    and owned_by = auth.uid()
+    and owned_by = (select auth.uid())
   )
 );
 
@@ -49,7 +50,7 @@ using (
   public.get_user_org_role(organization_id, (select auth.uid())) in ('owner', 'admin')
   or (
     public.get_user_org_role(organization_id, (select auth.uid())) = 'editor'
-    and owned_by = auth.uid()
+    and owned_by = (select auth.uid())
   )
 );
 

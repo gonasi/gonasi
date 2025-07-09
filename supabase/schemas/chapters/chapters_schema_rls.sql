@@ -4,7 +4,7 @@
 alter table public.chapters enable row level security;
 
 -- ============================================================================
--- SELECT: Allow org members with access to course to view chapters
+-- SELECT: Allow org members with any course role to view chapters
 -- ============================================================================
 create policy "select: org members can view chapters"
 on public.chapters
@@ -18,72 +18,39 @@ using (
   )
 );
 
+
 -- ============================================================================
--- INSERT: Allow owner, admin, or editor in org to add chapters
+-- INSERT: Allow owner/admin to insert into any course; editors only if they own it
 -- ============================================================================
-create policy "insert: org members (owner, admin, editor) can add chapters"
+create policy "insert: can_user_edit_course allows inserting chapters"
 on public.chapters
 for insert
 to authenticated
 with check (
-  exists (
-    select 1 from public.courses c
-    where c.id = chapters.course_id
-      and public.get_user_org_role(c.organization_id, (select auth.uid())) in ('owner', 'admin', 'editor')
-  )
+  public.can_user_edit_course(chapters.course_id)
 );
 
 -- ============================================================================
--- UPDATE: Allow owner/admin, or owning editor of the course to update chapters
+-- UPDATE: Same rule as insert — allow if can_user_edit_course returns true
 -- ============================================================================
-create policy "update: admins or owning editors can update chapters"
+create policy "update: can_user_edit_course allows updating chapters"
 on public.chapters
 for update
 to authenticated
 using (
-  exists (
-    select 1 from public.courses c
-    where c.id = chapters.course_id
-      and (
-        public.get_user_org_role(c.organization_id, (select auth.uid())) in ('owner', 'admin')
-        or (
-          public.get_user_org_role(c.organization_id, (select auth.uid())) = 'editor'
-          and c.owned_by = auth.uid()
-        )
-      )
-  )
+  public.can_user_edit_course(chapters.course_id)
 )
 with check (
-  exists (
-    select 1 from public.courses c
-    where c.id = chapters.course_id
-      and (
-        public.get_user_org_role(c.organization_id, (select auth.uid())) in ('owner', 'admin')
-        or (
-          public.get_user_org_role(c.organization_id, (select auth.uid())) = 'editor'
-          and c.owned_by = auth.uid()
-        )
-      )
-  )
+  public.can_user_edit_course(chapters.course_id)
 );
 
 -- ============================================================================
--- DELETE: Same as UPDATE — allow admins or owning editors to delete chapters
+-- DELETE: Same rule — allow if can_user_edit_course returns true
 -- ============================================================================
-create policy "delete: admins or owning editors can delete chapters"
+create policy "delete: can_user_edit_course allows deleting chapters"
 on public.chapters
 for delete
 to authenticated
 using (
-  exists (
-    select 1 from public.courses c
-    where c.id = chapters.course_id
-      and (
-        public.get_user_org_role(c.organization_id, (select auth.uid())) in ('owner', 'admin')
-        or (
-          public.get_user_org_role(c.organization_id, (select auth.uid())) = 'editor'
-          and c.owned_by = auth.uid()
-        )
-      )
-  )
+  public.can_user_edit_course(chapters.course_id)
 );

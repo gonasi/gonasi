@@ -31,7 +31,10 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   ]);
 
   if (!canEdit.data) {
-    throw redirectWithError(`/${params.organizationId}/builder/content`, 'Not allowed to do shit');
+    return redirectWithError(
+      `/${params.organizationId}/builder/${params.courseId}/content`,
+      'You don’t have permission to edit this course.',
+    );
   }
 
   return data(lessonTypes);

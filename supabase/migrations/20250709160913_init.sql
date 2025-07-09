@@ -3150,24 +3150,20 @@ grant truncate on table "public"."user_roles" to "supabase_auth_admin";
 
 grant update on table "public"."user_roles" to "supabase_auth_admin";
 
-create policy "delete: admins or owning editors can delete chapters"
+create policy "delete: can_user_edit_course allows deleting chapters"
 on "public"."chapters"
 as permissive
 for delete
 to authenticated
-using ((EXISTS ( SELECT 1
-   FROM courses c
-  WHERE ((c.id = chapters.course_id) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.owned_by = auth.uid())))))));
+using (can_user_edit_course(course_id));
 
 
-create policy "insert: org members (owner, admin, editor) can add chapters"
+create policy "insert: can_user_edit_course allows inserting chapters"
 on "public"."chapters"
 as permissive
 for insert
 to authenticated
-with check ((EXISTS ( SELECT 1
-   FROM courses c
-  WHERE ((c.id = chapters.course_id) AND (get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text, 'editor'::text]))))));
+with check (can_user_edit_course(course_id));
 
 
 create policy "select: org members can view chapters"
@@ -3180,17 +3176,13 @@ using ((EXISTS ( SELECT 1
   WHERE ((c.id = chapters.course_id) AND (get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) IS NOT NULL)))));
 
 
-create policy "update: admins or owning editors can update chapters"
+create policy "update: can_user_edit_course allows updating chapters"
 on "public"."chapters"
 as permissive
 for update
 to authenticated
-using ((EXISTS ( SELECT 1
-   FROM courses c
-  WHERE ((c.id = chapters.course_id) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.owned_by = auth.uid())))))))
-with check ((EXISTS ( SELECT 1
-   FROM courses c
-  WHERE ((c.id = chapters.course_id) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.owned_by = auth.uid())))))));
+using (can_user_edit_course(course_id))
+with check (can_user_edit_course(course_id));
 
 
 create policy "course_categories_delete_authenticated"
@@ -3225,24 +3217,20 @@ to authenticated
 using (authorize('course_categories.update'::app_permission));
 
 
-create policy "delete: admins or owning editors can delete pricing tiers"
+create policy "delete: can_user_edit_course allows deleting pricing tiers"
 on "public"."course_pricing_tiers"
 as permissive
 for delete
 to authenticated
-using ((EXISTS ( SELECT 1
-   FROM courses c
-  WHERE ((c.id = course_pricing_tiers.course_id) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.owned_by = auth.uid())))))));
+using (can_user_edit_course(course_id));
 
 
-create policy "insert: admins or owning editors can add pricing tiers"
+create policy "insert: can_user_edit_course allows adding pricing tiers"
 on "public"."course_pricing_tiers"
 as permissive
 for insert
 to authenticated
-with check ((EXISTS ( SELECT 1
-   FROM courses c
-  WHERE ((c.id = course_pricing_tiers.course_id) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.owned_by = auth.uid())))))));
+with check (can_user_edit_course(course_id));
 
 
 create policy "select: org members can view pricing tiers"
@@ -3255,17 +3243,13 @@ using ((EXISTS ( SELECT 1
   WHERE ((c.id = course_pricing_tiers.course_id) AND (get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) IS NOT NULL)))));
 
 
-create policy "update: admins or owning editors can update pricing tiers"
+create policy "update: can_user_edit_course allows updating pricing tiers"
 on "public"."course_pricing_tiers"
 as permissive
 for update
 to authenticated
-using ((EXISTS ( SELECT 1
-   FROM courses c
-  WHERE ((c.id = course_pricing_tiers.course_id) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.owned_by = auth.uid())))))))
-with check ((EXISTS ( SELECT 1
-   FROM courses c
-  WHERE ((c.id = course_pricing_tiers.course_id) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.owned_by = auth.uid())))))));
+using (can_user_edit_course(course_id))
+with check (can_user_edit_course(course_id));
 
 
 create policy "course_sub_categories_delete_authenticated"
@@ -3305,7 +3289,7 @@ on "public"."courses"
 as permissive
 for delete
 to public
-using (((get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (owned_by = auth.uid()))));
+using (((get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (owned_by = ( SELECT auth.uid() AS uid)))));
 
 
 create policy "Insert: Org members can create courses"
@@ -3316,11 +3300,11 @@ to public
 with check ((get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text, 'editor'::text])));
 
 
-create policy "Read: Org members can view courses"
+create policy "Select: Org members can view courses"
 on "public"."courses"
 as permissive
 for select
-to public
+to authenticated
 using ((get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) IS NOT NULL));
 
 
@@ -3329,29 +3313,27 @@ on "public"."courses"
 as permissive
 for update
 to public
-using (((get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (owned_by = auth.uid()))));
+using (((get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (owned_by = ( SELECT auth.uid() AS uid)))));
 
 
-create policy "delete: admins or owning editors can delete lesson blocks"
+create policy "delete: can_user_edit_course allows deleting lesson blocks"
 on "public"."lesson_blocks"
 as permissive
 for delete
 to authenticated
 using ((EXISTS ( SELECT 1
-   FROM (courses c
-     JOIN lessons l ON ((l.course_id = c.id)))
-  WHERE ((l.id = lesson_blocks.lesson_id) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.owned_by = auth.uid())))))));
+   FROM lessons l
+  WHERE ((l.id = lesson_blocks.lesson_id) AND can_user_edit_course(l.course_id)))));
 
 
-create policy "insert: org members (owner, admin, editor) can add lesson block"
+create policy "insert: can_user_edit_course allows adding lesson blocks"
 on "public"."lesson_blocks"
 as permissive
 for insert
 to authenticated
 with check ((EXISTS ( SELECT 1
-   FROM (courses c
-     JOIN lessons l ON ((l.course_id = c.id)))
-  WHERE ((l.id = lesson_blocks.lesson_id) AND (get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text, 'editor'::text]))))));
+   FROM lessons l
+  WHERE ((l.id = lesson_blocks.lesson_id) AND can_user_edit_course(l.course_id)))));
 
 
 create policy "select: org members can view lesson blocks"
@@ -3365,19 +3347,17 @@ using ((EXISTS ( SELECT 1
   WHERE ((l.id = lesson_blocks.lesson_id) AND (get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) IS NOT NULL)))));
 
 
-create policy "update: admins or owning editors can modify lesson blocks"
+create policy "update: can_user_edit_course allows modifying lesson blocks"
 on "public"."lesson_blocks"
 as permissive
 for update
 to authenticated
 using ((EXISTS ( SELECT 1
-   FROM (courses c
-     JOIN lessons l ON ((l.course_id = c.id)))
-  WHERE ((l.id = lesson_blocks.lesson_id) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.owned_by = auth.uid())))))))
+   FROM lessons l
+  WHERE ((l.id = lesson_blocks.lesson_id) AND can_user_edit_course(l.course_id)))))
 with check ((EXISTS ( SELECT 1
-   FROM (courses c
-     JOIN lessons l ON ((l.course_id = c.id)))
-  WHERE ((l.id = lesson_blocks.lesson_id) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.owned_by = auth.uid())))))));
+   FROM lessons l
+  WHERE ((l.id = lesson_blocks.lesson_id) AND can_user_edit_course(l.course_id)))));
 
 
 create policy "Authenticated users can delete lesson types"
@@ -3412,24 +3392,20 @@ to authenticated, anon
 using (true);
 
 
-create policy "delete: admins or owning editors can delete lessons"
+create policy "delete: can_user_edit_course allows deleting lessons"
 on "public"."lessons"
 as permissive
 for delete
 to authenticated
-using ((EXISTS ( SELECT 1
-   FROM courses c
-  WHERE ((c.id = lessons.course_id) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.owned_by = auth.uid())))))));
+using (can_user_edit_course(course_id));
 
 
-create policy "insert: org members (owner, admin, editor) can add lessons"
+create policy "insert: can_user_edit_course allows adding lessons"
 on "public"."lessons"
 as permissive
 for insert
 to authenticated
-with check ((EXISTS ( SELECT 1
-   FROM courses c
-  WHERE ((c.id = lessons.course_id) AND (get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text, 'editor'::text]))))));
+with check (can_user_edit_course(course_id));
 
 
 create policy "select: org members can view lessons"
@@ -3442,17 +3418,13 @@ using ((EXISTS ( SELECT 1
   WHERE ((c.id = lessons.course_id) AND (get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) IS NOT NULL)))));
 
 
-create policy "update: admins or owning editors can modify lessons"
+create policy "update: can_user_edit_course allows updating lessons"
 on "public"."lessons"
 as permissive
 for update
 to authenticated
-using ((EXISTS ( SELECT 1
-   FROM courses c
-  WHERE ((c.id = lessons.course_id) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.owned_by = auth.uid())))))))
-with check ((EXISTS ( SELECT 1
-   FROM courses c
-  WHERE ((c.id = lessons.course_id) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.owned_by = auth.uid())))))));
+using (can_user_edit_course(course_id))
+with check (can_user_edit_course(course_id));
 
 
 create policy "organization_invites_delete"
