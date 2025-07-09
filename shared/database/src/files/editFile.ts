@@ -5,7 +5,6 @@ import { getUserId } from '../auth';
 import type { TypedSupabaseClient } from '../client';
 import { FILE_LIBRARY_BUCKET } from '../constants';
 import type { ApiResponse } from '../types';
-import { checkStorageLimit } from './checkStorageLimit';
 
 /**
  * Replaces a file in Supabase storage and updates image-related metadata in the `file_library` table.
@@ -20,19 +19,13 @@ export const editFile = async (
   fileData: EditFileSchemaTypes,
 ): Promise<ApiResponse> => {
   const userId = await getUserId(supabase);
-  const { fileId, path, file, organizationId } = fileData;
+  const { fileId, path, file } = fileData;
 
   if (!file) {
     return { success: false, message: 'A file must be provided.' };
   }
 
   const { size, mime_type, extension, file_type } = getFileMetadata(file);
-
-  // Check storage limits before attempting upload
-  const storageCheck = await checkStorageLimit(supabase, organizationId, size);
-  if (!storageCheck.success) {
-    return { success: false, message: storageCheck.message || 'Storage limit exceeded.' };
-  }
 
   try {
     // Replace file in storage bucket
@@ -74,7 +67,7 @@ export const editFile = async (
 
     return {
       success: true,
-      message: `File updated successfully. Storage used: ${storageCheck.currentUsage}MB / ${storageCheck.limit}MB`,
+      message: `File updated successfully.`,
     };
   } catch (error) {
     console.error('Unexpected error during file edit:', error);

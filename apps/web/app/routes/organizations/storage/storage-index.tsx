@@ -61,7 +61,7 @@ export default function StorageIndex({ loaderData, params }: Route.ComponentProp
 
   return (
     <section className='p-4'>
-      <div className='flex flex-col items-center justify-between pb-4 md:flex-row'>
+      <div className='flex flex-col items-start justify-between space-y-4 pb-4 md:flex-row md:items-center md:space-y-0'>
         <div className='flex flex-col gap-1'>
           <h1 className='text-2xl font-bold'>Storage Usage</h1>
           <p className='text-muted-foreground font-secondary text-sm'>

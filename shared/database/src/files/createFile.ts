@@ -5,7 +5,6 @@ import { getUserId } from '../auth';
 import type { TypedSupabaseClient } from '../client';
 import { FILE_LIBRARY_BUCKET } from '../constants';
 import type { ApiResponse } from '../types';
-import { checkStorageLimit } from './checkStorageLimit';
 
 /**
  * Uploads a file to Supabase storage and creates a corresponding record in the `file_library` table.
@@ -27,12 +26,6 @@ export const createFile = async (
   }
 
   const { name: fileName, size, mime_type, extension, file_type } = getFileMetadata(file);
-
-  // Check storage limits before attempting upload
-  const storageCheck = await checkStorageLimit(supabase, organizationId, size);
-  if (!storageCheck.success) {
-    return { success: false, message: storageCheck.message || 'Storage limit exceeded' };
-  }
 
   try {
     // Upload file to Supabase storage with metadata
@@ -77,7 +70,7 @@ export const createFile = async (
 
     return {
       success: true,
-      message: `File uploaded successfully. Storage used: ${storageCheck.currentUsage}MB / ${storageCheck.limit}MB`,
+      message: `File uploaded successfully.`,
     };
   } catch (error) {
     console.error('Unexpected error during file creation:', error);
