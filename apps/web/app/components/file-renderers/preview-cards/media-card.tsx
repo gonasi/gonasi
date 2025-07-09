@@ -10,9 +10,10 @@ import type { FileLoaderItemType } from '~/routes/dashboard/file-library/all-fil
 interface MediaCardProps {
   file: FileLoaderItemType;
   media?: React.ReactNode;
+  canEdit: boolean;
 }
 
-export const MediaCard: React.FC<MediaCardProps> = ({ file, media }) => {
+export const MediaCard: React.FC<MediaCardProps> = ({ file, media, canEdit }) => {
   const { organizationId, courseId } = useParams();
   const basePath = `/${organizationId}/builder/${courseId}/file-library/${file.id}`;
 
@@ -37,9 +38,7 @@ export const MediaCard: React.FC<MediaCardProps> = ({ file, media }) => {
             <span className='pt-1'>{new Date(file.created_at).toLocaleDateString()}</span>
           </div>
         </div>
-        <div className=''>
-          <ActionDropdown items={options} />
-        </div>
+        <div className=''>{canEdit && <ActionDropdown items={options} />}</div>
       </div>
     </div>
   );

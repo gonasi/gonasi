@@ -12,13 +12,16 @@ import { ModelPreviewCard } from './preview-cards/model-preview-card';
 import type { FileLoaderItemType } from '~/routes/dashboard/file-library/all-files';
 
 // Advanced File Renderer her
-export const FileRenderer: React.FC<{ file: FileLoaderItemType }> = ({ file }) => {
+export const FileRenderer: React.FC<{ file: FileLoaderItemType; canEdit: boolean }> = ({
+  file,
+  canEdit,
+}) => {
   switch (file.file_type) {
     case FileType.IMAGE:
-      return <MediaCard file={file} media={<ImagePreviewCard file={file} />} />;
+      return <MediaCard file={file} media={<ImagePreviewCard file={file} />} canEdit={canEdit} />;
     case FileType.VIDEO:
     case FileType.AUDIO:
-      return <MediaCard file={file} media={<MediaPreviewCard file={file} />} />;
+      return <MediaCard file={file} media={<MediaPreviewCard file={file} />} canEdit={canEdit} />;
     case FileType.DOCUMENT:
       return <MediaCard file={file} media={<DocumentPreviewCard file={file} />} />;
     case FileType.MODEL_3D:

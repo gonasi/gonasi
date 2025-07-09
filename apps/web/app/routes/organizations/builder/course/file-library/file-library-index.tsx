@@ -81,7 +81,7 @@ export default function AllFiles({ loaderData, params }: Route.ComponentProps) {
                   exit={{ opacity: 0, scale: 0.95 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <FileRenderer file={file} />
+                  <FileRenderer file={file} canEdit={canEdit} />
                 </motion.div>
               ))}
             </AnimatePresence>
