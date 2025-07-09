@@ -1,5 +1,4 @@
-// External imports
-import { Form, useNavigate, useParams } from 'react-router';
+import { Form, useNavigate } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
 import { dataWithError, redirectWithError, redirectWithSuccess } from 'remix-toast';
@@ -21,29 +20,41 @@ import { useIsPending } from '~/utils/misc';
 
 const resolver = zodResolver(DeleteChapterSchema);
 
-/**
- * Loader: Fetch chapter data for deletion view
- */
+// Loader: Fetch chapter and permission for deletion
 export async function loader({ params, request }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
-  const chapter = await fetchUserCourseChapterById(supabase, params.chapterId);
+
+  const [chapter, canDelete] = await Promise.all([
+    fetchUserCourseChapterById(supabase, params.chapterId),
+    supabase.rpc('can_user_edit_course', {
+      arg_course_id: params.courseId,
+    }),
+  ]);
+
+  if (!canDelete) {
+    throw redirectWithError(
+      `/${params.organizationId}/builder/${params.courseId}/content/chapter`,
+      'You don’t have permission to edit this course.',
+    );
+  }
 
   if (!chapter) {
-    const redirectTo = `/${params.username}/course-builder/${params.courseId}/content`;
-    return redirectWithError(redirectTo, 'Chapter path not exist');
+    return redirectWithError(
+      `/${params.organizationId}/builder/${params.courseId}/content`,
+      'The chapter you’re trying to delete no longer exists.',
+    );
   }
 
   return { chapter };
 }
 
-/**
- * Action: Handle form submission to delete chapter
- */
+// Action: Handle chapter deletion
 export async function action({ params, request }: Route.ActionArgs) {
   const formData = await request.formData();
   await checkHoneypot(formData);
 
   const { supabase } = createClient(request);
+
   const {
     errors,
     data,
@@ -53,26 +64,23 @@ export async function action({ params, request }: Route.ActionArgs) {
   if (errors) return { errors, defaultValues };
 
   const result = await deleteUserChapterById(supabase, data);
-
-  const redirectTo = `/${params.username}/course-builder/${params.courseId}/content`;
+  const redirectTo = `/${params.organizationId}/builder/${params.courseId}/content`;
 
   return result.success
     ? redirectWithSuccess(redirectTo, result.message)
     : dataWithError(null, result.message);
 }
 
-/**
- * Component: DeleteCourseChapter modal form
- */
-export default function DeleteCourseChapter({ loaderData }: Route.ComponentProps) {
+// UI: Delete confirmation modal
+export default function DeleteCourseChapter({ loaderData, params }: Route.ComponentProps) {
   const {
     chapter: { id, name },
   } = loaderData;
+
   const navigate = useNavigate();
-  const params = useParams();
   const isPending = useIsPending();
 
-  const closeRoute = `/${params.username}/course-builder/${params.courseId}/content`;
+  const closeRoute = `/${params.organizationId}/builder/${params.courseId}/content`;
 
   const methods = useRemixForm<DeleteChapterSchemaTypes>({
     mode: 'all',
@@ -85,14 +93,14 @@ export default function DeleteCourseChapter({ loaderData }: Route.ComponentProps
   return (
     <Modal open>
       <Modal.Content size='sm'>
-        <Modal.Header closeRoute={closeRoute} />
+        <Modal.Header title='Delete Chapter' closeRoute={closeRoute} />
         <Modal.Body>
           <RemixFormProvider {...methods}>
             <Form method='POST' onSubmit={methods.handleSubmit}>
               <HoneypotInputs />
 
               <DeleteConfirmationLayout
-                titlePrefix='course chapter: '
+                titlePrefix='Are you sure you want to delete the chapter:'
                 title={name}
                 isLoading={isPending}
                 handleClose={() => navigate(closeRoute)}

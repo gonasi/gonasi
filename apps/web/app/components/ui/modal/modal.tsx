@@ -46,7 +46,7 @@ const Content = ({ children, title = '', size = 'md', className }: ContentProps)
             'border-card bg-background font-mont max-h-screen w-full overflow-hidden overflow-y-auto rounded-lg border shadow-sm duration-200',
             sizeClasses[size],
             'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
-            'max-h-[96%]',
+            'max-h-[90%]',
             className,
           )}
           aria-describedby={undefined}

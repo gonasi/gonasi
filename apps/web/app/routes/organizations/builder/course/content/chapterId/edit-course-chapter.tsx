@@ -10,35 +10,51 @@ import { EditChapterSchema, type EditChapterSchemaTypes } from '@gonasi/schemas/
 
 import type { Route } from './+types/edit-course-chapter';
 
-import { LockToggleIcon } from '~/components/icons';
 import { Button } from '~/components/ui/button';
-import { GoInputField, GoSwitchField, GoTextAreaField } from '~/components/ui/forms/elements';
+import { GoInputField, GoTextAreaField } from '~/components/ui/forms/elements';
 import { Modal } from '~/components/ui/modal';
 import { createClient } from '~/lib/supabase/supabase.server';
 import { checkHoneypot } from '~/utils/honeypot.server';
 import { useIsPending } from '~/utils/misc';
 
-// Metadata for the page
+// Page metadata
 export function meta() {
-  return [{ title: 'Gonasi' }, { name: 'description', content: 'Welcome to Gonasi' }];
+  return [
+    { title: 'Edit Chapter • Gonasi Course Builder' },
+    {
+      name: 'description',
+      content:
+        'Update the title and description of your course chapter on Gonasi. Keep your content fresh and helpful for learners.',
+    },
+  ];
 }
 
 // Zod schema resolver
 const resolver = zodResolver(EditChapterSchema);
 
-// Loader: fetch chapter data
+// Loader: fetch chapter, pricing info, and permission
 export async function loader({ params, request }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
 
-  const [chapter, pricingData] = await Promise.all([
+  const [chapter, pricingData, canEdit] = await Promise.all([
     fetchUserCourseChapterById(supabase, params.chapterId),
     fetchCoursePricing({ supabase, courseId: params.courseId }),
+    supabase.rpc('can_user_edit_course', {
+      arg_course_id: params.courseId,
+    }),
   ]);
+
+  if (!canEdit) {
+    throw redirectWithError(
+      `/${params.organizationId}/builder/${params.courseId}/content/chapter`,
+      'You don’t have permission to edit this course.',
+    );
+  }
 
   if (!chapter) {
     return redirectWithError(
-      `/${params.username}/course-builder/${params.courseId}/content`,
-      'Chapter path not exist',
+      `/${params.organizationId}/builder/${params.courseId}/content`,
+      'The chapter you’re looking for doesn’t exist.',
     );
   }
 
@@ -49,12 +65,13 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   return { chapter, isPaid };
 }
 
-// Action: handle form submission
+// Action: handle form submission and chapter update
 export async function action({ request, params }: Route.ActionArgs) {
   const formData = await request.formData();
   await checkHoneypot(formData);
 
   const { supabase } = createClient(request);
+
   const {
     errors,
     data,
@@ -66,21 +83,21 @@ export async function action({ request, params }: Route.ActionArgs) {
   const { success, message } = await editCourseChapterById(supabase, {
     ...data,
     chapterId: params.chapterId,
+    organizationId: params.organizationId,
   });
 
   return success
-    ? redirectWithSuccess(`/${params.username}/course-builder/${params.courseId}/content`, message)
+    ? redirectWithSuccess(`/${params.organizationId}/builder/${params.courseId}/content`, message)
     : dataWithError(null, message);
 }
 
-// Component: Edit course chapter form
+// UI: Edit chapter form in modal
 export default function EditCourseChapter({ loaderData }: Route.ComponentProps) {
   const params = useParams();
   const isPending = useIsPending();
 
   const {
-    chapter: { name, description, requires_payment },
-    isPaid,
+    chapter: { name, description },
   } = loaderData;
 
   const methods = useRemixForm<EditChapterSchemaTypes>({
@@ -89,19 +106,16 @@ export default function EditCourseChapter({ loaderData }: Route.ComponentProps) 
     defaultValues: {
       name,
       description: description ?? '',
-      requiresPayment: requires_payment,
     },
   });
 
   const isDisabled = isPending || methods.formState.isSubmitting;
 
-  const watchRequiresPayment = methods.watch('requiresPayment');
-
   return (
     <Modal open>
       <Modal.Content size='sm'>
         <Modal.Header
-          title='Edit course chapter'
+          title='Edit Chapter'
           closeRoute={`/${params.username}/course-builder/${params.courseId}/content`}
         />
         <Modal.Body>
@@ -109,48 +123,29 @@ export default function EditCourseChapter({ loaderData }: Route.ComponentProps) 
             <Form method='POST' onSubmit={methods.handleSubmit}>
               <HoneypotInputs />
 
-              {/* Chapter title input */}
+              {/* Chapter title field */}
               <GoInputField
-                labelProps={{ children: 'Chapter title', required: true }}
                 name='name'
+                labelProps={{ children: 'Chapter Title', required: true }}
                 inputProps={{ autoFocus: true, disabled: isDisabled }}
-                description='Give your chapter a short, clear name.'
+                description='Give your chapter a concise, clear title learners will recognize.'
               />
 
-              {/* Chapter description textarea */}
+              {/* Chapter description field */}
               <GoTextAreaField
                 name='description'
-                labelProps={{ children: 'What’s this chapter about?', required: true }}
+                labelProps={{ children: 'What’s This Chapter About?', required: true }}
                 textareaProps={{ disabled: isDisabled }}
-                description='Just a quick overview to help learners know what to expect.'
+                description='Provide a quick summary to help learners understand what this chapter covers.'
               />
 
-              <GoSwitchField
-                name='requiresPayment'
-                disabled={!isPaid}
-                labelProps={{
-                  children: (
-                    <p className='flex items-center space-x-1'>
-                      <span>Paid chapter</span>
-                      <LockToggleIcon lock={watchRequiresPayment} />
-                    </p>
-                  ),
-                  required: false,
-                }}
-                description={
-                  isPaid
-                    ? 'Enable this to make the chapter available only to paying users.'
-                    : 'This course is free, so all chapters are accessible. Set the course to paid to restrict chapter access.'
-                }
-              />
-
-              {/* Submit button */}
+              {/* Save button */}
               <Button
                 type='submit'
                 disabled={isDisabled || !methods.formState.isDirty}
                 isLoading={isDisabled}
               >
-                Save
+                Save Changes
               </Button>
             </Form>
           </RemixFormProvider>

@@ -2,7 +2,7 @@ import { data, Form, useParams } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ChevronRight } from 'lucide-react';
 import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
-import { dataWithError, redirectWithSuccess } from 'remix-toast';
+import { dataWithError, redirectWithError, redirectWithSuccess } from 'remix-toast';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
 
 import { createLessonDetails } from '@gonasi/database/lessons';
@@ -20,9 +20,19 @@ import { useIsPending } from '~/utils/misc';
 
 const resolver = zodResolver(NewLessonDetailsSchema);
 
-export async function loader({ request }: Route.LoaderArgs) {
+export async function loader({ request, params }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
-  const lessonTypes = await fetchLessonTypesAsSelectOptions(supabase);
+
+  const [lessonTypes, canEdit] = await Promise.all([
+    fetchLessonTypesAsSelectOptions(supabase),
+    supabase.rpc('can_user_edit_course', {
+      arg_course_id: params.courseId,
+    }),
+  ]);
+
+  if (!canEdit.data) {
+    throw redirectWithError(`/${params.organizationId}/builder/content`, 'Not allowed to do shit');
+  }
 
   return data(lessonTypes);
 }
@@ -56,6 +66,7 @@ export async function action({ params, request }: Route.ActionArgs) {
     ...data,
     courseId: params.courseId,
     chapterId: params.chapterId,
+    organizationId: params.organizationId,
   });
 
   if (!success || !lessonData) {
@@ -64,7 +75,7 @@ export async function action({ params, request }: Route.ActionArgs) {
 
   // Return success response
   return redirectWithSuccess(
-    `/${params.username}/course-builder/${params.courseId}/content/${params.chapterId}/${lessonData.id}/lesson-blocks`,
+    `/${params.organizationId}/builder/${params.courseId}/content/${params.chapterId}/${lessonData.id}/lesson-blocks`,
     message,
   );
 }

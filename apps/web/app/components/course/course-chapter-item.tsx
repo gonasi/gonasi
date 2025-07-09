@@ -7,30 +7,25 @@ import { BookOpen, GripVerticalIcon, Pencil, Plus, Trash } from 'lucide-react';
 import { ActionDropdown } from '../action-dropdown';
 import { NotFoundCard } from '../cards';
 import { LessonCard } from '../cards/lesson-card';
-import { LockToggleIcon } from '../icons';
 import { Badge } from '../ui/badge';
 import { NavLinkButton } from '../ui/button';
 import { ReorderIconTooltip } from '../ui/tooltip/ReorderIconToolTip';
 
 import { useRaisedShadow } from '~/hooks/useRaisedShadow';
 import { cn } from '~/lib/utils';
-import type { CourseChapter } from '~/routes/profile/course-builder/courseId/content/content-index';
+import type { CourseChapter } from '~/routes/organizations/builder/course/content/content-index';
 
 interface ChapterBadgesProps {
   lessonCount: number;
-  requiresPayment: boolean;
 }
 
 // Renders badges for lesson count and payment requirement
-function ChapterBadges({ lessonCount, requiresPayment }: ChapterBadgesProps) {
+function ChapterBadges({ lessonCount }: ChapterBadgesProps) {
   return (
     <div className='flex space-x-2'>
       <Badge variant='outline'>
         <BookOpen />
         {`${lessonCount} ${lessonCount === 1 ? 'lesson' : 'lessons'}`}
-      </Badge>
-      <Badge variant={requiresPayment ? 'tip' : 'outline'}>
-        {requiresPayment ? 'Paid Chapter' : 'Free Chapter'}
       </Badge>
     </div>
   );
@@ -118,10 +113,7 @@ export default function CourseChapterItem({ chapter, loading }: Props) {
             <div className='flex w-full items-center justify-between'>
               {/* Chapter title and reorder icon */}
               <div className='flex items-center space-x-1'>
-                <div className='ml-2'>
-                  <LockToggleIcon lock={chapter.requires_payment} size={14} />
-                </div>
-                <h3 className='mt-1 line-clamp-1 text-left text-base md:text-lg'>{chapter.name}</h3>
+                <h3 className='ml-4 line-clamp-1 text-left text-base md:text-lg'>{chapter.name}</h3>
               </div>
 
               {/* Chapter action controls */}
@@ -137,10 +129,7 @@ export default function CourseChapterItem({ chapter, loading }: Props) {
 
             {/* Badges for metadata */}
             <div className='flex w-full items-start'>
-              <ChapterBadges
-                lessonCount={chapter.lesson_count}
-                requiresPayment={chapter.requires_payment}
-              />
+              <ChapterBadges lessonCount={chapter.lesson_count} />
             </div>
           </AccordionTrigger>
 
@@ -177,7 +166,7 @@ export default function CourseChapterItem({ chapter, loading }: Props) {
                   values={reorderedLessons}
                   onReorder={handleLessonReorder}
                   layoutScroll
-                  className='overflow-y-scroll pl-4 select-none'
+                  className='overflow-y-scroll select-none'
                   as='div'
                 >
                   <div className='flex flex-col space-y-4'>

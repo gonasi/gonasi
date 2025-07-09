@@ -24,6 +24,7 @@ export const SubmitNewLessonDetailsSchema = NewLessonDetailsSchema.merge(
   z.object({
     chapterId: z.string(),
     courseId: z.string(),
+    organizationId: z.string(),
   }),
 );
 export type NewLessonSubmitValues = z.infer<typeof SubmitNewLessonDetailsSchema>;

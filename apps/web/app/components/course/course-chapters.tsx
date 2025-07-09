@@ -21,17 +21,16 @@ export function CourseChapters({ chapters }: Props) {
   const [reorderedChapters, setReorderedChapters] = useState<Chapter[]>(chapters ?? []);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Update local state when `chapters` prop changes
+  // Sync when chapters prop changes
   useEffect(() => {
     setReorderedChapters(chapters ?? []);
   }, [chapters]);
 
-  // Track fetcher state to show loading status
+  // Track fetcher submission state
   useEffect(() => {
     setIsSubmitting(fetcher.state === 'submitting');
   }, [fetcher.state]);
 
-  // Handle chapter reordering and submit new order
   const handleReorder = (updated: Chapter[]) => {
     setReorderedChapters(updated);
 
@@ -50,7 +49,6 @@ export function CourseChapters({ chapters }: Props) {
     });
   };
 
-  // Show fallback UI when no chapters exist
   if (reorderedChapters.length === 0) {
     return <NotFoundCard message='No course chapters found' />;
   }
@@ -66,7 +64,18 @@ export function CourseChapters({ chapters }: Props) {
       >
         <Accordion type='single' collapsible className='flex w-full flex-col space-y-4'>
           {reorderedChapters.map((chapter) => (
-            <CourseChapterItem key={chapter.id} chapter={chapter} loading={isSubmitting} />
+            <Reorder.Item
+              key={chapter.id}
+              value={chapter}
+              layout
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+              className='will-change-transform'
+            >
+              <CourseChapterItem chapter={chapter} loading={isSubmitting} />
+            </Reorder.Item>
           ))}
         </Accordion>
       </Reorder.Group>

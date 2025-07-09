@@ -49,6 +49,7 @@ export type EditChapterSchemaTypes = z.infer<typeof EditChapterSchema>;
 export const SubmitEditChapterSchema = EditChapterSchema.merge(
   z.object({
     chapterId: z.string(),
+    organizationId: z.string(),
   }),
 );
 export type EditChapterSubmitValues = z.infer<typeof SubmitEditChapterSchema>;

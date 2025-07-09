@@ -1,8 +1,8 @@
-import { Form, useParams } from 'react-router';
+import { Form } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Plus } from 'lucide-react';
 import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
-import { dataWithError, redirectWithSuccess } from 'remix-toast';
+import { dataWithError, redirectWithError, redirectWithSuccess } from 'remix-toast';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
 
 import { createCourseChapter } from '@gonasi/database/courseChapters';
@@ -17,58 +17,71 @@ import { createClient } from '~/lib/supabase/supabase.server';
 import { checkHoneypot } from '~/utils/honeypot.server';
 import { useIsPending } from '~/utils/misc';
 
-// Meta info for the route
+// Page metadata
 export function meta() {
   return [
-    { title: 'Add a New Course Chapter • Gonasi Course Builder' },
+    { title: 'Create a New Chapter • Gonasi Course Builder' },
     {
       name: 'description',
       content:
-        'Create a new chapter for your course on Gonasi. Add a title, description, and configure whether the chapter requires payment. Enhance your course structure and guide learners effectively.',
+        'Add a new chapter to your course on Gonasi. Provide a name and description to guide your learners and keep your content well-organized.',
     },
   ];
 }
 
+// Authorization check: only allow users with edit access to continue
+export async function loader({ params, request }: Route.LoaderArgs) {
+  const { supabase } = createClient(request);
+  const courseId = params.courseId ?? '';
+  const orgId = params.organizationId ?? '';
+
+  const { data: canEdit, error } = await supabase.rpc('can_user_edit_course', {
+    arg_course_id: courseId,
+  });
+
+  if (error || !canEdit) {
+    throw redirectWithError(
+      `/${orgId}/builder/${courseId}/content/chapter`,
+      'You don’t have permission to edit this course.',
+    );
+  }
+}
+
+// Zod resolver setup
 const resolver = zodResolver(NewChapterSchema);
 
-// Handles form submission
+// Handle form submission
 export async function action({ request, params }: Route.ActionArgs) {
   const formData = await request.formData();
 
-  // Anti-bot honeypot check
+  // Honeypot check to prevent bot submissions
   await checkHoneypot(formData);
 
   const { supabase } = createClient(request);
 
-  // Validate form data with Zod schema
   const {
     errors,
     data,
     receivedValues: defaultValues,
   } = await getValidatedFormData<NewChapterSchemaTypes>(formData, resolver);
 
-  // If validation fails, return errors and user-entered values
   if (errors) {
     return { errors, defaultValues };
   }
 
-  // Create the chapter in the DB
   const { success, message } = await createCourseChapter(supabase, {
     ...data,
     courseId: params.courseId,
     organizationId: params.organizationId,
   });
 
-  // Return success or error response
   return success
     ? redirectWithSuccess(`/${params.organizationId}/builder/${params.courseId}/content`, message)
     : dataWithError(null, message);
 }
 
-// UI component for creating a new course chapter
-export default function NewCourseChapter() {
-  const params = useParams();
-
+// UI: Chapter creation form in modal
+export default function NewCourseChapter({ params }: Route.ActionArgs) {
   const isPending = useIsPending();
 
   const methods = useRemixForm<NewChapterSchemaTypes>({
@@ -78,40 +91,39 @@ export default function NewCourseChapter() {
 
   const isDisabled = isPending || methods.formState.isSubmitting;
 
-  console.log('errors: ', methods.formState.errors);
-
   return (
     <Modal open>
       <Modal.Content size='sm'>
         <Modal.Header
-          title='Add a new chapter'
-          closeRoute={`/${params.username}/course-builder/${params.courseId}/content`}
+          title='Add a New Chapter'
+          closeRoute={`/${params.organizationId}/builder/${params.courseId}/content`}
         />
         <Modal.Body>
           <RemixFormProvider {...methods}>
             <Form method='POST' onSubmit={methods.handleSubmit}>
-              {/* Bot trap field */}
               <HoneypotInputs />
 
-              {/* Chapter title */}
               <GoInputField
-                labelProps={{ children: 'Chapter title', required: true }}
                 name='name'
+                labelProps={{ children: 'Chapter Title', required: true }}
                 inputProps={{ autoFocus: true, disabled: isDisabled }}
-                description='Give your chapter a short, clear name.'
+                description='Give your chapter a short, meaningful name learners can easily recognize.'
               />
 
-              {/* Chapter description */}
               <GoTextAreaField
                 name='description'
-                labelProps={{ children: 'What’s this chapter about?', required: true }}
+                labelProps={{ children: 'What’s This Chapter About?', required: true }}
                 textareaProps={{ disabled: isDisabled }}
-                description='Just a quick overview to help learners know what to expect.'
+                description='Write a quick summary to help learners understand what they’ll learn here.'
               />
 
-              {/* Submit button */}
-              <Button type='submit' disabled={isPending} isLoading={isPending} rightIcon={<Plus />}>
-                Add
+              <Button
+                type='submit'
+                disabled={isDisabled}
+                isLoading={isDisabled}
+                rightIcon={<Plus />}
+              >
+                Add Chapter
               </Button>
             </Form>
           </RemixFormProvider>

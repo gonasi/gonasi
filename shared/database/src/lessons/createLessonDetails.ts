@@ -20,7 +20,7 @@ export const createLessonDetails = async (
     const userId = await getUserId(supabase);
 
     // Pull relevant values from the form data
-    const { name, courseId, chapterId, lessonType } = lessonData;
+    const { name, courseId, organizationId, chapterId, lessonType } = lessonData;
 
     // Insert the new lesson into the database
     const { data, error } = await supabase
@@ -28,6 +28,7 @@ export const createLessonDetails = async (
       .insert({
         name,
         lesson_type_id: lessonType,
+        organization_id: organizationId,
         course_id: courseId,
         chapter_id: chapterId,
         created_by: userId,
