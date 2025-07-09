@@ -37,11 +37,12 @@ export async function action({ request, params }: Route.ActionArgs) {
   const { success, message } = await createFile(supabase, {
     ...data,
     courseId: params.courseId,
+    organizationId: params.organizationId,
   });
 
   return success
     ? redirectWithSuccess(
-        `/${params.username}/course-builder/${params.courseId}/file-library`,
+        `/${params.organizationId}/builder/${params.courseId}/file-library`,
         message,
       )
     : dataWithError(null, message);
@@ -55,6 +56,7 @@ export default function NewFile({ params }: Route.ComponentProps) {
     resolver,
     defaultValues: {
       courseId: params.courseId,
+      organizationId: params.organizationId,
     },
   });
 
@@ -65,7 +67,7 @@ export default function NewFile({ params }: Route.ComponentProps) {
       <Modal.Content size='sm'>
         <Modal.Header
           title='Course File Upload'
-          closeRoute={`/${params.username}/course-builder/${params.courseId}/file-library`}
+          closeRoute={`/${params.organizationId}/builder/${params.courseId}/file-library`}
         />
         <Modal.Body>
           <RemixFormProvider {...methods}>

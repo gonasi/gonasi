@@ -17,7 +17,7 @@ interface GoTabNavProps {
 
 export function GoTabNav({ tabs, previousLink }: GoTabNavProps) {
   return (
-    <div className='border-b-border/20 border-b'>
+    <div className='border-b-border/40 border-b'>
       <div className='grid grid-cols-[1fr_4fr_1fr] items-center px-4 pt-4 md:grid-cols-[1fr_8fr_1fr]'>
         <div className='w-fit justify-self-start'>
           {previousLink ? <BackArrowNavLink to={previousLink} /> : null}

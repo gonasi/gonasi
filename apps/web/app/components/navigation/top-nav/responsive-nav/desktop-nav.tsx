@@ -8,7 +8,7 @@ interface IDesktopNavProps {
 
 export function DesktopNav({ links }: IDesktopNavProps) {
   return (
-    <nav className='md:border-border/20 md:bg-border/20 hidden md:fixed md:inset-y-0 md:flex md:w-64 md:flex-col md:border-r md:pt-5 md:pb-4'>
+    <nav className='md:border-border/40 md:bg-border/20 hidden md:fixed md:inset-y-0 md:flex md:w-64 md:flex-col md:border-r md:pt-5 md:pb-4'>
       <div className='flex flex-shrink-0 px-4 py-2'>
         <AppLogo sizeClass='h-6' />
         <p className='mt-1'>onasi</p>

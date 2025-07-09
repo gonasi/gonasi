@@ -60,7 +60,7 @@ export default [
             'edit-thumbnail',
             'routes/organizations/builder/course/overview/edit-thumbnail.tsx',
           ),
-          route('edit-details', 'routes/profile/course-builder/courseId/overview/edit-details.tsx'),
+          // route('edit-details', 'routes/profile/course-builder/courseId/overview/edit-details.tsx'),
           route('edit-grouping', 'routes/organizations/builder/course/overview/edit-grouping.tsx'),
         ]),
 
@@ -156,6 +156,24 @@ export default [
             'routes/organizations/builder/course/pricing/delete-pricing-tier-modal.tsx',
           ),
         ]),
+
+        route(
+          'file-library',
+          'routes/organizations/builder/course/file-library/file-library-index.tsx',
+          [
+            route('new', 'routes/organizations/builder/course/file-library/new-file.tsx'),
+            ...prefix(':fileId', [
+              route('edit', 'routes/organizations/builder/course/file-library/edit-file-name.tsx'),
+
+              route(
+                'edit/image',
+                'routes/organizations/builder/course/file-library/edit-file-image.tsx',
+              ),
+
+              route('delete', 'routes/organizations/builder/course/file-library/delete-file.tsx'),
+            ]),
+          ],
+        ),
       ],
     ),
 
@@ -203,45 +221,6 @@ export default [
         'routes/profile/settings/account-settings/login-and-security.tsx',
       ),
       route('notifications', 'routes/profile/settings/account-settings/notifications.tsx'),
-    ]),
-
-    ...prefix(':username/course-builder', [
-      // /:username/course-builder/:courseId
-      route(':courseId', 'routes/profile/course-builder/courseId/course-id-index.tsx', [
-        // /:username/course-builder/:courseId/overview
-
-        // /:username/course-builder/:courseId/content
-
-        route(
-          'file-library',
-          'routes/profile/course-builder/courseId/file-library/file-library-index.tsx',
-          [
-            route('new', 'routes/profile/course-builder/courseId/file-library/new-file.tsx'),
-            ...prefix(':fileId', [
-              route(
-                'edit',
-                'routes/profile/course-builder/courseId/file-library/edit-file-name.tsx',
-              ),
-
-              route(
-                'edit/image',
-                'routes/profile/course-builder/courseId/file-library/edit-file-image.tsx',
-              ),
-
-              route(
-                'delete',
-                'routes/profile/course-builder/courseId/file-library/delete-file.tsx',
-              ),
-            ]),
-          ],
-        ),
-
-        // /:username/course-builder/:courseId/collaborators
-        route(
-          'collaborators',
-          'routes/profile/course-builder/courseId/collaborators/view-all-course-collaborators.tsx',
-        ),
-      ]),
     ]),
   ]),
 

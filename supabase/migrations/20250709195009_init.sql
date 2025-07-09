@@ -8,6 +8,8 @@ create type "public"."course_access" as enum ('public', 'private');
 
 create type "public"."currency_code" as enum ('KES', 'USD');
 
+create type "public"."file_type" as enum ('image', 'audio', 'video', 'model3d', 'document', 'other');
+
 create type "public"."invite_delivery_status" as enum ('pending', 'sent', 'failed');
 
 create type "public"."org_role" as enum ('owner', 'admin', 'editor');
@@ -111,6 +113,26 @@ create table "public"."courses" (
 
 
 alter table "public"."courses" enable row level security;
+
+create table "public"."file_library" (
+    "id" uuid not null default uuid_generate_v4(),
+    "course_id" uuid not null,
+    "organization_id" uuid not null,
+    "created_by" uuid,
+    "updated_by" uuid,
+    "name" text not null,
+    "path" text not null,
+    "size" bigint not null,
+    "mime_type" text not null,
+    "extension" text not null,
+    "file_type" file_type not null default 'other'::file_type,
+    "blur_preview" text,
+    "created_at" timestamp with time zone not null default timezone('utc'::text, now()),
+    "updated_at" timestamp with time zone not null default timezone('utc'::text, now())
+);
+
+
+alter table "public"."file_library" enable row level security;
 
 create table "public"."lesson_blocks" (
     "id" uuid not null default uuid_generate_v4(),
@@ -303,6 +325,8 @@ CREATE UNIQUE INDEX courses_organization_id_name_key ON public.courses USING btr
 
 CREATE UNIQUE INDEX courses_pkey ON public.courses USING btree (id);
 
+CREATE UNIQUE INDEX file_library_pkey ON public.file_library USING btree (id);
+
 CREATE INDEX idx_chapters_course_id ON public.chapters USING btree (course_id);
 
 CREATE INDEX idx_chapters_created_by ON public.chapters USING btree (created_by);
@@ -350,6 +374,18 @@ CREATE INDEX idx_courses_subcategory_id ON public.courses USING btree (subcatego
 CREATE INDEX idx_courses_updated_by ON public.courses USING btree (updated_by);
 
 CREATE INDEX idx_courses_visibility ON public.courses USING btree (visibility);
+
+CREATE INDEX idx_file_library_org_course ON public.file_library USING btree (organization_id, course_id);
+
+CREATE INDEX idx_file_library_org_created_at_desc ON public.file_library USING btree (organization_id, created_at DESC);
+
+CREATE INDEX idx_file_library_org_created_by ON public.file_library USING btree (organization_id, created_by);
+
+CREATE INDEX idx_file_library_org_extension ON public.file_library USING btree (organization_id, extension);
+
+CREATE INDEX idx_file_library_org_file_type ON public.file_library USING btree (organization_id, file_type);
+
+CREATE INDEX idx_file_library_org_updated_by ON public.file_library USING btree (organization_id, updated_by);
 
 CREATE INDEX idx_lesson_blocks_course_id ON public.lesson_blocks USING btree (course_id);
 
@@ -465,6 +501,8 @@ CREATE UNIQUE INDEX uniq_course_sub_categories_name_per_category ON public.cours
 
 CREATE UNIQUE INDEX unique_chapter_position_per_course ON public.chapters USING btree (course_id, "position");
 
+CREATE UNIQUE INDEX unique_file_path_per_course ON public.file_library USING btree (course_id, path);
+
 CREATE UNIQUE INDEX unique_lesson_block_position_per_lesson ON public.lesson_blocks USING btree (lesson_id, "position");
 
 CREATE UNIQUE INDEX unique_lesson_position_per_chapter ON public.lessons USING btree (chapter_id, "position");
@@ -486,6 +524,8 @@ alter table "public"."course_pricing_tiers" add constraint "course_pricing_tiers
 alter table "public"."course_sub_categories" add constraint "course_sub_categories_pkey" PRIMARY KEY using index "course_sub_categories_pkey";
 
 alter table "public"."courses" add constraint "courses_pkey" PRIMARY KEY using index "courses_pkey";
+
+alter table "public"."file_library" add constraint "file_library_pkey" PRIMARY KEY using index "file_library_pkey";
 
 alter table "public"."lesson_blocks" add constraint "lesson_blocks_pkey" PRIMARY KEY using index "lesson_blocks_pkey";
 
@@ -624,6 +664,28 @@ alter table "public"."courses" validate constraint "courses_subcategory_id_fkey"
 alter table "public"."courses" add constraint "courses_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
 
 alter table "public"."courses" validate constraint "courses_updated_by_fkey";
+
+alter table "public"."file_library" add constraint "file_library_course_id_fkey" FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE not valid;
+
+alter table "public"."file_library" validate constraint "file_library_course_id_fkey";
+
+alter table "public"."file_library" add constraint "file_library_created_by_fkey" FOREIGN KEY (created_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
+
+alter table "public"."file_library" validate constraint "file_library_created_by_fkey";
+
+alter table "public"."file_library" add constraint "file_library_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE not valid;
+
+alter table "public"."file_library" validate constraint "file_library_organization_id_fkey";
+
+alter table "public"."file_library" add constraint "file_library_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
+
+alter table "public"."file_library" validate constraint "file_library_updated_by_fkey";
+
+alter table "public"."file_library" add constraint "unique_file_path_per_course" UNIQUE using index "unique_file_path_per_course";
+
+alter table "public"."file_library" add constraint "valid_file_extension" CHECK ((((file_type = 'image'::file_type) AND (lower(extension) = ANY (ARRAY['jpg'::text, 'jpeg'::text, 'png'::text, 'gif'::text, 'webp'::text, 'svg'::text, 'bmp'::text, 'tif'::text, 'tiff'::text, 'heic'::text]))) OR ((file_type = 'audio'::file_type) AND (lower(extension) = ANY (ARRAY['mp3'::text, 'wav'::text, 'aac'::text, 'flac'::text, 'ogg'::text, 'm4a'::text, 'aiff'::text, 'aif'::text]))) OR ((file_type = 'video'::file_type) AND (lower(extension) = ANY (ARRAY['mp4'::text, 'webm'::text, 'mov'::text, 'avi'::text, 'mkv'::text, 'flv'::text, 'wmv'::text]))) OR ((file_type = 'model3d'::file_type) AND (lower(extension) = ANY (ARRAY['gltf'::text, 'glb'::text, 'obj'::text, 'fbx'::text, 'stl'::text, 'dae'::text, '3ds'::text, 'usdz'::text]))) OR ((file_type = 'document'::file_type) AND (lower(extension) = ANY (ARRAY['pdf'::text, 'doc'::text, 'docx'::text, 'xls'::text, 'xlsx'::text, 'ppt'::text, 'pptx'::text, 'txt'::text]))) OR (file_type = 'other'::file_type))) not valid;
+
+alter table "public"."file_library" validate constraint "valid_file_extension";
 
 alter table "public"."lesson_blocks" add constraint "lesson_blocks_course_id_fkey" FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE not valid;
 
@@ -1444,6 +1506,25 @@ begin
     updated_at = timezone('utc', now()),
     updated_by = p_deleted_by
   where course_id = v_course_id and position > v_position;
+end;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.determine_file_type(extension text)
+ RETURNS file_type
+ LANGUAGE plpgsql
+ IMMUTABLE SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+begin
+  return case
+    when extension in ('jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'tif', 'tiff', 'heic') then 'image'::public.file_type
+    when extension in ('mp3', 'wav', 'aac', 'flac', 'ogg', 'm4a', 'aiff', 'aif') then 'audio'::public.file_type
+    when extension in ('mp4', 'webm', 'mov', 'avi', 'mkv', 'flv', 'wmv') then 'video'::public.file_type
+    when extension in ('gltf', 'glb', 'obj', 'fbx', 'stl', 'dae', '3ds', 'usdz') then 'model3d'::public.file_type
+    when extension in ('pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt') then 'document'::public.file_type
+    else 'other'::public.file_type
+  end;
 end;
 $function$
 ;
@@ -2388,6 +2469,31 @@ end;
 $function$
 ;
 
+CREATE OR REPLACE FUNCTION public.set_file_type_from_extension()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+begin
+  -- auto-extract extension if not provided
+  if new.extension is null or new.extension = '' then
+    new.extension := lower(substring(new.name from '\.([^\.]+)$'));
+    if new.extension is null then
+      new.extension := '';
+    end if;
+  end if;
+
+  new.extension := lower(new.extension);
+
+  -- set file type using schema-qualified function
+  new.file_type := public.determine_file_type(new.extension);
+
+  return new;
+end;
+$function$
+;
+
 CREATE OR REPLACE FUNCTION public.set_lesson_block_position()
  RETURNS trigger
  LANGUAGE plpgsql
@@ -2899,6 +3005,48 @@ grant trigger on table "public"."courses" to "service_role";
 grant truncate on table "public"."courses" to "service_role";
 
 grant update on table "public"."courses" to "service_role";
+
+grant delete on table "public"."file_library" to "anon";
+
+grant insert on table "public"."file_library" to "anon";
+
+grant references on table "public"."file_library" to "anon";
+
+grant select on table "public"."file_library" to "anon";
+
+grant trigger on table "public"."file_library" to "anon";
+
+grant truncate on table "public"."file_library" to "anon";
+
+grant update on table "public"."file_library" to "anon";
+
+grant delete on table "public"."file_library" to "authenticated";
+
+grant insert on table "public"."file_library" to "authenticated";
+
+grant references on table "public"."file_library" to "authenticated";
+
+grant select on table "public"."file_library" to "authenticated";
+
+grant trigger on table "public"."file_library" to "authenticated";
+
+grant truncate on table "public"."file_library" to "authenticated";
+
+grant update on table "public"."file_library" to "authenticated";
+
+grant delete on table "public"."file_library" to "service_role";
+
+grant insert on table "public"."file_library" to "service_role";
+
+grant references on table "public"."file_library" to "service_role";
+
+grant select on table "public"."file_library" to "service_role";
+
+grant trigger on table "public"."file_library" to "service_role";
+
+grant truncate on table "public"."file_library" to "service_role";
+
+grant update on table "public"."file_library" to "service_role";
 
 grant delete on table "public"."lesson_blocks" to "anon";
 
@@ -3466,6 +3614,47 @@ to public
 using (((get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (owned_by = ( SELECT auth.uid() AS uid)))));
 
 
+create policy "delete: org owner/admin or course creator"
+on "public"."file_library"
+as permissive
+for delete
+to authenticated
+using ((EXISTS ( SELECT 1
+   FROM courses c
+  WHERE ((c.id = file_library.course_id) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.created_by = ( SELECT auth.uid() AS uid))))))));
+
+
+create policy "insert: org owner/admin or course creator"
+on "public"."file_library"
+as permissive
+for insert
+to authenticated
+with check ((EXISTS ( SELECT 1
+   FROM courses c
+  WHERE ((c.id = file_library.course_id) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.created_by = ( SELECT auth.uid() AS uid))))))));
+
+
+create policy "select: org members can view file_library"
+on "public"."file_library"
+as permissive
+for select
+to authenticated
+using ((get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) IS NOT NULL));
+
+
+create policy "update: org owner/admin or course creator"
+on "public"."file_library"
+as permissive
+for update
+to authenticated
+using ((EXISTS ( SELECT 1
+   FROM courses c
+  WHERE ((c.id = file_library.course_id) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.created_by = ( SELECT auth.uid() AS uid))))))))
+with check ((EXISTS ( SELECT 1
+   FROM courses c
+  WHERE ((c.id = file_library.course_id) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.created_by = ( SELECT auth.uid() AS uid))))))));
+
+
 create policy "delete: can_user_edit_course allows deleting lesson blocks"
 on "public"."lesson_blocks"
 as permissive
@@ -3824,6 +4013,10 @@ CREATE TRIGGER trg_validate_course_owner BEFORE INSERT OR UPDATE ON public.cours
 
 CREATE TRIGGER trg_validate_subcategory BEFORE INSERT OR UPDATE ON public.courses FOR EACH ROW EXECUTE FUNCTION validate_subcategory_belongs_to_category();
 
+CREATE TRIGGER trg_set_file_type BEFORE INSERT OR UPDATE ON public.file_library FOR EACH ROW EXECUTE FUNCTION set_file_type_from_extension();
+
+CREATE TRIGGER trg_update_timestamp BEFORE UPDATE ON public.file_library FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
 CREATE TRIGGER trg_set_lesson_block_position BEFORE INSERT ON public.lesson_blocks FOR EACH ROW EXECUTE FUNCTION set_lesson_block_position();
 
 CREATE TRIGGER trg_lesson_types_set_updated_at BEFORE UPDATE ON public.lesson_types FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
@@ -3918,6 +4111,52 @@ using (((bucket_id = 'thumbnails'::text) AND (EXISTS ( SELECT 1
 with check (((bucket_id = 'thumbnails'::text) AND (EXISTS ( SELECT 1
    FROM courses c
   WHERE ((c.id = (split_part(objects.name, '/'::text, 1))::uuid) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.owned_by = ( SELECT auth.uid() AS uid)))))))));
+
+
+create policy "delete: org owner/admin or course creator"
+on "storage"."objects"
+as permissive
+for delete
+to authenticated
+using (((bucket_id = 'files'::text) AND (EXISTS ( SELECT 1
+   FROM (file_library fl
+     JOIN courses c ON ((c.id = fl.course_id)))
+  WHERE ((fl.path = objects.name) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.created_by = ( SELECT auth.uid() AS uid)))))))));
+
+
+create policy "insert: org owner/admin or course creator"
+on "storage"."objects"
+as permissive
+for insert
+to authenticated
+with check (((bucket_id = 'files'::text) AND (EXISTS ( SELECT 1
+   FROM courses c
+  WHERE ((c.id = (split_part(objects.name, '/'::text, 2))::uuid) AND (c.organization_id = (split_part(objects.name, '/'::text, 1))::uuid) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.created_by = ( SELECT auth.uid() AS uid)))))))));
+
+
+create policy "select: org members can view files"
+on "storage"."objects"
+as permissive
+for select
+to authenticated
+using (((bucket_id = 'files'::text) AND (EXISTS ( SELECT 1
+   FROM file_library fl
+  WHERE ((fl.path = objects.name) AND (get_user_org_role(fl.organization_id, ( SELECT auth.uid() AS uid)) IS NOT NULL))))));
+
+
+create policy "update: org owner/admin or course creator"
+on "storage"."objects"
+as permissive
+for update
+to authenticated
+using (((bucket_id = 'files'::text) AND (EXISTS ( SELECT 1
+   FROM (file_library fl
+     JOIN courses c ON ((c.id = fl.course_id)))
+  WHERE ((fl.path = objects.name) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.created_by = ( SELECT auth.uid() AS uid)))))))))
+with check (((bucket_id = 'files'::text) AND (EXISTS ( SELECT 1
+   FROM (file_library fl
+     JOIN courses c ON ((c.id = fl.course_id)))
+  WHERE ((fl.path = objects.name) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.created_by = ( SELECT auth.uid() AS uid)))))))));
 
 
 

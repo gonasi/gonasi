@@ -147,7 +147,9 @@ schema_paths = [
   './schemas/lessons/lessons_rpc_reorder_delete.sql',
   './schemas/blocks/lesson_blocks_rpc_reorder_delete.sql',
 
-  # './schemas/file_library_schema_indexes_rls_bucket.sql',
+  './schemas/fileLibrary/file_utils.sql',
+  './schemas/fileLibrary/file_library_schema_indexes.sql',
+  './schemas/fileLibrary/file_library_rls.sql',
 
   # # published
   # './schemas/published_courses_schema_and_indexes.sql',

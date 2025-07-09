@@ -36,7 +36,7 @@ export default function CoursesIndex({ params }: Route.ComponentProps) {
         icon: BookType,
       },
       {
-        to: `${basePath}/files`,
+        to: `${basePath}/file-library`,
         name: 'Files',
         icon: FileStack,
       },
@@ -52,7 +52,7 @@ export default function CoursesIndex({ params }: Route.ComponentProps) {
 
   return (
     <section className='container mx-auto px-0'>
-      <div className='bg-background/95 sticky top-0 z-20 border-b'>
+      <div className='bg-background/95 sticky top-0 z-20'>
         <GoTabNav previousLink={`/${params.organizationId}/builder`} tabs={tabs} />
       </div>
       <div className='mt-4 min-h-screen px-4 md:mt-8'>

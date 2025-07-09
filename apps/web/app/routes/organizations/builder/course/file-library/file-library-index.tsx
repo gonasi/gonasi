@@ -41,7 +41,7 @@ export default function AllFiles({ loaderData, params }: Route.ComponentProps) {
   } = loaderData;
 
   return (
-    <div className='mx-auto max-w-3xl pb-20'>
+    <div>
       {/* <StorageIndicator /> */}
       <div className='pb-4'>
         <SearchInput placeholder='Search for course files...' />
@@ -61,7 +61,7 @@ export default function AllFiles({ loaderData, params }: Route.ComponentProps) {
       )}
       {/* Floating button to add a new chapter */}
       <FloatingActionButton
-        to={`/${params.username}/course-builder/${params.courseId}/file-library/new`}
+        to={`/${params.organizationId}/builder/${params.courseId}/file-library/new`}
         tooltip='Add new file'
         icon={<Plus size={20} strokeWidth={4} />}
       />

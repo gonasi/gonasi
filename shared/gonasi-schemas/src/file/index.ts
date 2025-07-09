@@ -177,6 +177,7 @@ export const NewFileLibrarySchema = z.object({
   file: NewFileTypeSchema,
   name: FileNameSchema,
   courseId: z.string(),
+  organizationId: z.string(),
 });
 export type NewFileSchemaTypes = z.infer<typeof NewFileLibrarySchema>;
 

@@ -19,7 +19,7 @@ export const createFile = async (
 ): Promise<ApiResponse> => {
   const userId = await getUserId(supabase);
 
-  const { file, name, courseId } = newFileData;
+  const { file, name, courseId, organizationId } = newFileData;
 
   if (!file) {
     return { success: false, message: 'A file must be provided.' };
@@ -31,17 +31,19 @@ export const createFile = async (
     // Upload file to Supabase storage
     const { data: uploadResponse, error: uploadError } = await supabase.storage
       .from(FILE_LIBRARY_BUCKET)
-      .upload(`${userId}/${courseId}/${fileName}`, file, {
+      .upload(`${organizationId}/${courseId}/${fileName}`, file, {
         contentType: mime_type,
       });
 
     if (uploadError) {
+      console.error('File upload failed:', uploadError);
       return { success: false, message: `File upload failed: ${uploadError.message}` };
     }
 
     // Create file metadata entry in the database
     const { error: insertError } = await supabase.from('file_library').insert({
       course_id: courseId,
+      organization_id: organizationId,
       name,
       path: uploadResponse.path,
       size,

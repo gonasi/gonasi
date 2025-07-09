@@ -37,7 +37,7 @@ export function ProfileTopNav({
 
   return (
     <>
-      <nav className='border-b-border/20 flex h-14 w-full items-center border-b md:h-20 md:px-4'>
+      <nav className='border-b-border/40 flex h-14 w-full items-center border-b md:h-20 md:px-4'>
         <Container className='h-full'>
           <div className='flex h-full items-center justify-between'>
             <div className='flex h-full items-center space-x-4 md:space-x-8'>
