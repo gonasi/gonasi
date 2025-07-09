@@ -31,8 +31,8 @@ create table "public"."chapters" (
     "position" integer default 0,
     "created_at" timestamp with time zone not null default timezone('utc'::text, now()),
     "updated_at" timestamp with time zone not null default timezone('utc'::text, now()),
-    "created_by" uuid not null,
-    "updated_by" uuid not null
+    "created_by" uuid,
+    "updated_by" uuid
 );
 
 
@@ -111,6 +111,24 @@ create table "public"."courses" (
 
 
 alter table "public"."courses" enable row level security;
+
+create table "public"."lesson_blocks" (
+    "id" uuid not null default uuid_generate_v4(),
+    "organization_id" uuid not null,
+    "course_id" uuid not null,
+    "lesson_id" uuid not null,
+    "plugin_type" text not null,
+    "position" integer not null default 0,
+    "content" jsonb not null default '{}'::jsonb,
+    "settings" jsonb not null default '{}'::jsonb,
+    "created_at" timestamp with time zone not null default timezone('utc'::text, now()),
+    "updated_at" timestamp with time zone not null default timezone('utc'::text, now()),
+    "created_by" uuid,
+    "updated_by" uuid
+);
+
+
+alter table "public"."lesson_blocks" enable row level security;
 
 create table "public"."lesson_types" (
     "id" uuid not null default uuid_generate_v4(),
@@ -333,6 +351,18 @@ CREATE INDEX idx_courses_updated_by ON public.courses USING btree (updated_by);
 
 CREATE INDEX idx_courses_visibility ON public.courses USING btree (visibility);
 
+CREATE INDEX idx_lesson_blocks_course_id ON public.lesson_blocks USING btree (course_id);
+
+CREATE INDEX idx_lesson_blocks_created_by ON public.lesson_blocks USING btree (created_by);
+
+CREATE INDEX idx_lesson_blocks_lesson_id ON public.lesson_blocks USING btree (lesson_id);
+
+CREATE INDEX idx_lesson_blocks_organization_id ON public.lesson_blocks USING btree (organization_id);
+
+CREATE INDEX idx_lesson_blocks_position ON public.lesson_blocks USING btree ("position");
+
+CREATE INDEX idx_lesson_blocks_updated_by ON public.lesson_blocks USING btree (updated_by);
+
 CREATE INDEX idx_lesson_types_created_by ON public.lesson_types USING btree (created_by);
 
 CREATE INDEX idx_lesson_types_updated_by ON public.lesson_types USING btree (updated_by);
@@ -393,6 +423,8 @@ CREATE INDEX idx_profiles_verified_users ON public.profiles USING btree (id) WHE
 
 CREATE INDEX idx_user_roles_user_id ON public.user_roles USING btree (user_id);
 
+CREATE UNIQUE INDEX lesson_blocks_pkey ON public.lesson_blocks USING btree (id);
+
 CREATE UNIQUE INDEX lesson_types_bg_color_key ON public.lesson_types USING btree (bg_color);
 
 CREATE UNIQUE INDEX lesson_types_name_key ON public.lesson_types USING btree (name);
@@ -431,6 +463,8 @@ CREATE UNIQUE INDEX uniq_course_sub_categories_name_per_category ON public.cours
 
 CREATE UNIQUE INDEX unique_chapter_position_per_course ON public.chapters USING btree (course_id, "position");
 
+CREATE UNIQUE INDEX unique_lesson_block_position_per_lesson ON public.lesson_blocks USING btree (lesson_id, "position");
+
 CREATE UNIQUE INDEX unique_lesson_position_per_chapter ON public.lessons USING btree (chapter_id, "position");
 
 CREATE UNIQUE INDEX unique_pending_invite_per_user ON public.organization_invites USING btree (organization_id, email) WHERE ((accepted_at IS NULL) AND (revoked_at IS NULL));
@@ -450,6 +484,8 @@ alter table "public"."course_pricing_tiers" add constraint "course_pricing_tiers
 alter table "public"."course_sub_categories" add constraint "course_sub_categories_pkey" PRIMARY KEY using index "course_sub_categories_pkey";
 
 alter table "public"."courses" add constraint "courses_pkey" PRIMARY KEY using index "courses_pkey";
+
+alter table "public"."lesson_blocks" add constraint "lesson_blocks_pkey" PRIMARY KEY using index "lesson_blocks_pkey";
 
 alter table "public"."lesson_types" add constraint "lesson_types_pkey" PRIMARY KEY using index "lesson_types_pkey";
 
@@ -473,7 +509,7 @@ alter table "public"."chapters" add constraint "chapters_course_id_fkey" FOREIGN
 
 alter table "public"."chapters" validate constraint "chapters_course_id_fkey";
 
-alter table "public"."chapters" add constraint "chapters_created_by_fkey" FOREIGN KEY (created_by) REFERENCES profiles(id) ON DELETE CASCADE not valid;
+alter table "public"."chapters" add constraint "chapters_created_by_fkey" FOREIGN KEY (created_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
 
 alter table "public"."chapters" validate constraint "chapters_created_by_fkey";
 
@@ -481,7 +517,7 @@ alter table "public"."chapters" add constraint "chapters_organization_id_fkey" F
 
 alter table "public"."chapters" validate constraint "chapters_organization_id_fkey";
 
-alter table "public"."chapters" add constraint "chapters_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES profiles(id) ON DELETE CASCADE not valid;
+alter table "public"."chapters" add constraint "chapters_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
 
 alter table "public"."chapters" validate constraint "chapters_updated_by_fkey";
 
@@ -586,6 +622,26 @@ alter table "public"."courses" validate constraint "courses_subcategory_id_fkey"
 alter table "public"."courses" add constraint "courses_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES profiles(id) ON DELETE CASCADE not valid;
 
 alter table "public"."courses" validate constraint "courses_updated_by_fkey";
+
+alter table "public"."lesson_blocks" add constraint "lesson_blocks_course_id_fkey" FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE not valid;
+
+alter table "public"."lesson_blocks" validate constraint "lesson_blocks_course_id_fkey";
+
+alter table "public"."lesson_blocks" add constraint "lesson_blocks_created_by_fkey" FOREIGN KEY (created_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
+
+alter table "public"."lesson_blocks" validate constraint "lesson_blocks_created_by_fkey";
+
+alter table "public"."lesson_blocks" add constraint "lesson_blocks_lesson_id_fkey" FOREIGN KEY (lesson_id) REFERENCES lessons(id) ON DELETE CASCADE not valid;
+
+alter table "public"."lesson_blocks" validate constraint "lesson_blocks_lesson_id_fkey";
+
+alter table "public"."lesson_blocks" add constraint "lesson_blocks_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE not valid;
+
+alter table "public"."lesson_blocks" validate constraint "lesson_blocks_organization_id_fkey";
+
+alter table "public"."lesson_blocks" add constraint "lesson_blocks_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
+
+alter table "public"."lesson_blocks" validate constraint "lesson_blocks_updated_by_fkey";
 
 alter table "public"."lesson_types" add constraint "lesson_types_bg_color_key" UNIQUE using index "lesson_types_bg_color_key";
 
@@ -1272,6 +1328,80 @@ end;
 $function$
 ;
 
+CREATE OR REPLACE FUNCTION public.delete_lesson_block(p_block_id uuid, p_deleted_by uuid)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+declare
+  v_lesson_id uuid;        -- to store the lesson_id for the block
+  v_course_id uuid;        -- to store the course_id for permission checking
+  v_block_position int;    -- position of the block being deleted
+begin
+  -- Get the lesson_id and current position of the block to be deleted
+  select lb.lesson_id, lb.position
+  into v_lesson_id, v_block_position
+  from public.lesson_blocks lb
+  where lb.id = p_block_id;
+
+  -- Check if block exists
+  if v_lesson_id is null then
+    raise exception 'Lesson block does not exist';
+  end if;
+
+  -- Get the course_id for the lesson to check permissions
+  select l.course_id into v_course_id
+  from public.lessons l
+  where l.id = v_lesson_id;
+
+  -- Check if lesson exists (should not happen if block exists, but safety check)
+  if v_course_id is null then
+    raise exception 'Associated lesson does not exist';
+  end if;
+
+  -- Verify user has permission to modify blocks in this lesson
+  if not exists (
+    select 1 
+    from public.courses c
+    where c.id = v_course_id
+      and (
+        public.is_course_admin(c.id, p_deleted_by) or
+        public.is_course_editor(c.id, p_deleted_by) or
+        c.created_by = p_deleted_by
+      )
+  ) then
+    raise exception 'Insufficient permissions to delete blocks in this lesson';
+  end if;
+
+  -- Delete the specified block
+  delete from public.lesson_blocks
+  where id = p_block_id;
+
+  -- Check if the delete was successful
+  if not found then
+    raise exception 'Failed to delete lesson block';
+  end if;
+
+  -- Reorder remaining blocks: shift down all blocks that were positioned after the deleted block
+  update  public.lesson_blocks
+  set position = position - 1000000
+  where chapter_id = v_chapter_id
+    and position > v_lesson_position;
+
+  -- Step 2: Apply the final position update with metadata
+  update  public.lesson_blocks
+  set 
+    position = position + 999999,
+    updated_at = timezone('utc', now()),
+    updated_by = p_deleted_by
+  where chapter_id = v_chapter_id
+    and position < 0;
+
+end;
+$function$
+;
+
 CREATE OR REPLACE FUNCTION public.delete_pricing_tier(p_tier_id uuid, p_deleted_by uuid)
  RETURNS void
  LANGUAGE plpgsql
@@ -1703,6 +1833,149 @@ end;
 $function$
 ;
 
+CREATE OR REPLACE FUNCTION public.reorder_lesson_blocks(blocks jsonb)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+declare
+  target_course_id uuid;
+  target_lesson_id uuid;
+begin
+  -- extract course_id and lesson_id from first block in the jsonb array
+  target_course_id := (blocks->0->>'course_id')::uuid;
+  target_lesson_id := (blocks->0->>'lesson_id')::uuid;
+
+  -- temporarily shift all existing positions for this course and lesson to avoid conflicts
+  update public.lesson_blocks
+  set position = position + 1000000
+  where course_id = target_course_id
+    and lesson_id = target_lesson_id;
+
+  -- upsert new block positions from provided jsonb array
+  insert into public.lesson_blocks (
+    id, course_id, lesson_id, plugin_type, position, content, settings, created_by, updated_by
+  )
+  select
+    (b->>'id')::uuid,
+    (b->>'course_id')::uuid,
+    (b->>'lesson_id')::uuid,
+    b->>'plugin_type',
+    (b->>'position')::int,
+    coalesce(b->'content', '{}'::jsonb),
+    coalesce(b->'settings', '{}'::jsonb),
+    (b->>'created_by')::uuid,
+    (b->>'updated_by')::uuid
+  from jsonb_array_elements(blocks) as b
+  on conflict (id) do update
+  set
+    position = excluded.position,
+    updated_by = excluded.updated_by,
+    updated_at = timezone('utc', now());
+end;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.reorder_lesson_blocks(p_lesson_id uuid, block_positions jsonb, p_updated_by uuid)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+declare
+  temp_offset int := 1000000;  -- large offset to avoid unique position conflicts during update
+  v_course_id uuid;            -- to store the course_id for permission checking
+begin
+  -- Validate that block_positions array is not empty or null
+  if block_positions is null or jsonb_array_length(block_positions) = 0 then
+    raise exception 'block_positions array cannot be null or empty';
+  end if;
+
+  -- Get the course_id for the lesson to check permissions
+  select l.course_id into v_course_id
+  from public.lessons l
+  where l.id = p_lesson_id;
+
+  -- Check if lesson exists
+  if v_course_id is null then
+    raise exception 'Lesson does not exist';
+  end if;
+
+  -- Verify user has permission to modify blocks in this lesson
+  if not exists (
+    select 1 
+    from public.courses c
+    where c.id = v_course_id
+      and (
+        public.is_course_admin(c.id, p_updated_by) or
+        public.is_course_editor(c.id, p_updated_by) or
+        c.created_by = p_updated_by
+      )
+  ) then
+    raise exception 'Insufficient permissions to reorder blocks in this lesson';
+  end if;
+
+  -- Validate that all block IDs exist and belong to the specified lesson
+  if exists (
+    select 1 
+    from jsonb_array_elements(block_positions) as bp
+    left join public.lesson_blocks lb on lb.id = (bp->>'id')::uuid
+    where lb.id is null or lb.lesson_id != p_lesson_id
+  ) then
+    raise exception 'One or more block IDs do not exist or do not belong to the specified lesson';
+  end if;
+
+  -- Validate that position values are positive integers
+  if exists (
+    select 1
+    from jsonb_array_elements(block_positions) as bp
+    where (bp->>'position')::int <= 0
+  ) then
+    raise exception 'All position values must be positive integers';
+  end if;
+
+  -- Validate that we're not missing any blocks from the lesson
+  if (
+    select count(*)
+    from public.lesson_blocks
+    where lesson_id = p_lesson_id
+  ) != jsonb_array_length(block_positions) then
+    raise exception 'All blocks in the lesson must be included in the reorder operation';
+  end if;
+
+  -- Check for duplicate positions in the input
+  if (
+    select count(distinct (bp->>'position')::int)
+    from jsonb_array_elements(block_positions) as bp
+  ) != jsonb_array_length(block_positions) then
+    raise exception 'Duplicate position values are not allowed';
+  end if;
+
+  -- Temporarily shift all block positions to avoid unique constraint conflicts
+  update public.lesson_blocks
+  set position = position + temp_offset
+  where lesson_id = p_lesson_id;
+
+  -- Apply new positions and update audit fields
+  update public.lesson_blocks
+  set 
+    position = new_positions.position,
+    updated_at = timezone('utc', now()),
+    updated_by = p_updated_by
+  from (
+    select 
+      (bp->>'id')::uuid as id,
+      row_number() over (order by (bp->>'position')::int) as position
+    from jsonb_array_elements(block_positions) as bp
+  ) as new_positions
+  where public.lesson_blocks.id = new_positions.id
+    and public.lesson_blocks.lesson_id = p_lesson_id;
+
+end;
+$function$
+;
+
 CREATE OR REPLACE FUNCTION public.reorder_lessons(p_chapter_id uuid, lesson_positions jsonb, p_updated_by uuid)
  RETURNS void
  LANGUAGE plpgsql
@@ -2120,6 +2393,23 @@ begin
     into new.position
     from public.course_pricing_tiers
     where course_id = new.course_id;
+  end if;
+  return new;
+end;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.set_lesson_block_position()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO ''
+AS $function$
+begin
+  if new.position is null or new.position = 0 then
+    select coalesce(max(position), 0) + 1
+    into new.position
+    from public.lesson_blocks
+    where lesson_id = new.lesson_id;
   end if;
   return new;
 end;
@@ -2620,6 +2910,48 @@ grant trigger on table "public"."courses" to "service_role";
 grant truncate on table "public"."courses" to "service_role";
 
 grant update on table "public"."courses" to "service_role";
+
+grant delete on table "public"."lesson_blocks" to "anon";
+
+grant insert on table "public"."lesson_blocks" to "anon";
+
+grant references on table "public"."lesson_blocks" to "anon";
+
+grant select on table "public"."lesson_blocks" to "anon";
+
+grant trigger on table "public"."lesson_blocks" to "anon";
+
+grant truncate on table "public"."lesson_blocks" to "anon";
+
+grant update on table "public"."lesson_blocks" to "anon";
+
+grant delete on table "public"."lesson_blocks" to "authenticated";
+
+grant insert on table "public"."lesson_blocks" to "authenticated";
+
+grant references on table "public"."lesson_blocks" to "authenticated";
+
+grant select on table "public"."lesson_blocks" to "authenticated";
+
+grant trigger on table "public"."lesson_blocks" to "authenticated";
+
+grant truncate on table "public"."lesson_blocks" to "authenticated";
+
+grant update on table "public"."lesson_blocks" to "authenticated";
+
+grant delete on table "public"."lesson_blocks" to "service_role";
+
+grant insert on table "public"."lesson_blocks" to "service_role";
+
+grant references on table "public"."lesson_blocks" to "service_role";
+
+grant select on table "public"."lesson_blocks" to "service_role";
+
+grant trigger on table "public"."lesson_blocks" to "service_role";
+
+grant truncate on table "public"."lesson_blocks" to "service_role";
+
+grant update on table "public"."lesson_blocks" to "service_role";
 
 grant delete on table "public"."lesson_types" to "anon";
 
@@ -3161,6 +3493,54 @@ to public
 using (((get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (owned_by = auth.uid()))));
 
 
+create policy "delete: admins or owning editors can delete lesson blocks"
+on "public"."lesson_blocks"
+as permissive
+for delete
+to authenticated
+using ((EXISTS ( SELECT 1
+   FROM (courses c
+     JOIN lessons l ON ((l.course_id = c.id)))
+  WHERE ((l.id = lesson_blocks.lesson_id) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.owned_by = auth.uid())))))));
+
+
+create policy "insert: org members (owner, admin, editor) can add lesson block"
+on "public"."lesson_blocks"
+as permissive
+for insert
+to authenticated
+with check ((EXISTS ( SELECT 1
+   FROM (courses c
+     JOIN lessons l ON ((l.course_id = c.id)))
+  WHERE ((l.id = lesson_blocks.lesson_id) AND (get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text, 'editor'::text]))))));
+
+
+create policy "select: org members can view lesson blocks"
+on "public"."lesson_blocks"
+as permissive
+for select
+to authenticated
+using ((EXISTS ( SELECT 1
+   FROM (courses c
+     JOIN lessons l ON ((l.course_id = c.id)))
+  WHERE ((l.id = lesson_blocks.lesson_id) AND (get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) IS NOT NULL)))));
+
+
+create policy "update: admins or owning editors can modify lesson blocks"
+on "public"."lesson_blocks"
+as permissive
+for update
+to authenticated
+using ((EXISTS ( SELECT 1
+   FROM (courses c
+     JOIN lessons l ON ((l.course_id = c.id)))
+  WHERE ((l.id = lesson_blocks.lesson_id) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.owned_by = auth.uid())))))))
+with check ((EXISTS ( SELECT 1
+   FROM (courses c
+     JOIN lessons l ON ((l.course_id = c.id)))
+  WHERE ((l.id = lesson_blocks.lesson_id) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.owned_by = auth.uid())))))));
+
+
 create policy "Authenticated users can delete lesson types"
 on "public"."lesson_types"
 as permissive
@@ -3482,6 +3862,8 @@ CREATE TRIGGER trg_add_default_free_pricing_tier AFTER INSERT ON public.courses 
 CREATE TRIGGER trg_validate_course_owner BEFORE INSERT OR UPDATE ON public.courses FOR EACH ROW EXECUTE FUNCTION validate_course_owner_in_org();
 
 CREATE TRIGGER trg_validate_subcategory BEFORE INSERT OR UPDATE ON public.courses FOR EACH ROW EXECUTE FUNCTION validate_subcategory_belongs_to_category();
+
+CREATE TRIGGER trg_set_lesson_block_position BEFORE INSERT ON public.lesson_blocks FOR EACH ROW EXECUTE FUNCTION set_lesson_block_position();
 
 CREATE TRIGGER trg_lesson_types_set_updated_at BEFORE UPDATE ON public.lesson_types FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 

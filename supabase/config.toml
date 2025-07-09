@@ -136,16 +136,16 @@ schema_paths = [
   # # lessons
   './schemas/lessons/lessons_schema_rls_and_triggers.sql',
 
-  # './schemas/lesson_blocks_schema_and_indexes.sql',
-  # './schemas/lesson_blocks_schema_rls.sql',
-  # './schemas/lesson_blocks_triggers_and_functions.sql',
+  './schemas/blocks/lesson_blocks_schema_and_indexes.sql',
+  './schemas/blocks/lesson_blocks_schema_rls.sql',
+  './schemas/blocks/lesson_blocks_triggers_and_functions.sql',
 
   # './schemas/trigger_touch_course_updated_at_on_related_table_change.sql',
 
   './schemas/chapters/chapters_rpc_reorder_delete.sql',
   
   './schemas/lessons/lessons_rpc_reorder_delete.sql',
-  # './schemas/lesson_blocks_rpc_reorder_delete.sql',
+  './schemas/blocks/lesson_blocks_rpc_reorder_delete.sql',
 
   # './schemas/file_library_schema_indexes_rls_bucket.sql',
 

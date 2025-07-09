@@ -11,14 +11,14 @@ create table public.chapters (
   position integer default 0,                                        -- chapter order in course
   created_at timestamptz not null default timezone('utc', now()),    -- timestamp of creation
   updated_at timestamptz not null default timezone('utc', now()),    -- timestamp of last update
-  created_by uuid not null,                                          -- fk: user who created the chapter
-  updated_by uuid not null,                                          -- fk: user who last updated the chapter
+  created_by uuid,                                          -- fk: user who created the chapter
+  updated_by uuid,                                          -- fk: user who last updated the chapter
 
   -- foreign key constraints
   foreign key (organization_id) references public.organizations(id) on delete cascade,
   foreign key (course_id) references public.courses(id) on delete cascade,
-  foreign key (created_by) references public.profiles(id) on delete cascade,
-  foreign key (updated_by) references public.profiles(id) on delete cascade,
+  foreign key (created_by) references public.profiles(id) on delete set null,
+  foreign key (updated_by) references public.profiles(id) on delete set null,
 
   -- unique constraint to prevent duplicate position within a course
   constraint unique_chapter_position_per_course unique (course_id, position)

@@ -51,8 +51,8 @@ create table public.courses (
   -- =========================
   -- Audit trail
   -- =========================
-  created_by uuid not null references public.profiles(id) on delete cascade, -- Who created this course
-  updated_by uuid not null references public.profiles(id) on delete cascade, -- Who last updated this course
+  created_by uuid references public.profiles(id) on delete set null, -- Who created this course
+  updated_by uuid references public.profiles(id) on delete set null, -- Who last updated this course
 
   -- =========================
   -- Constraints

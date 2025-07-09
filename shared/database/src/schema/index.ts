@@ -38,38 +38,38 @@ export type Database = {
         Row: {
           course_id: string
           created_at: string
-          created_by: string
+          created_by: string | null
           description: string | null
           id: string
           name: string
           organization_id: string
           position: number | null
           updated_at: string
-          updated_by: string
+          updated_by: string | null
         }
         Insert: {
           course_id: string
           created_at?: string
-          created_by: string
+          created_by?: string | null
           description?: string | null
           id?: string
           name: string
           organization_id: string
           position?: number | null
           updated_at?: string
-          updated_by: string
+          updated_by?: string | null
         }
         Update: {
           course_id?: string
           created_at?: string
-          created_by?: string
+          created_by?: string | null
           description?: string | null
           id?: string
           name?: string
           organization_id?: string
           position?: number | null
           updated_at?: string
-          updated_by?: string
+          updated_by?: string | null
         }
         Relationships: [
           {
@@ -460,6 +460,101 @@ export type Database = {
           },
           {
             foreignKeyName: "courses_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lesson_blocks: {
+        Row: {
+          content: Json
+          course_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          lesson_id: string
+          organization_id: string
+          plugin_type: string
+          position: number
+          settings: Json
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          content?: Json
+          course_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          lesson_id: string
+          organization_id: string
+          plugin_type: string
+          position?: number
+          settings?: Json
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          content?: Json
+          course_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          lesson_id?: string
+          organization_id?: string
+          plugin_type?: string
+          position?: number
+          settings?: Json
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lesson_blocks_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lesson_blocks_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lesson_blocks_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lesson_blocks_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lesson_blocks_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lesson_blocks_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lesson_blocks_updated_by_fkey"
             columns: ["updated_by"]
             isOneToOne: false
             referencedRelation: "public_profiles"
@@ -1143,6 +1238,10 @@ export type Database = {
         Args: { p_lesson_id: string; p_deleted_by: string }
         Returns: undefined
       }
+      delete_lesson_block: {
+        Args: { p_block_id: string; p_deleted_by: string }
+        Returns: undefined
+      }
       delete_pricing_tier: {
         Args: { p_tier_id: string; p_deleted_by: string }
         Returns: undefined
@@ -1181,6 +1280,12 @@ export type Database = {
           chapter_positions: Json
           p_updated_by: string
         }
+        Returns: undefined
+      }
+      reorder_lesson_blocks: {
+        Args:
+          | { blocks: Json }
+          | { p_lesson_id: string; block_positions: Json; p_updated_by: string }
         Returns: undefined
       }
       reorder_lessons: {

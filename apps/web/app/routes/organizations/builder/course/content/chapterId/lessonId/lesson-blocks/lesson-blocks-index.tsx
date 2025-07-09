@@ -42,7 +42,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   if (!lesson || !lessonBlocks.data) {
     // Redirect with error if data is missing
     return redirectWithError(
-      `/${params.username}/course-builder/${params.courseId}/content`,
+      `/${params.organizationId}/builder/${params.courseId}/content`,
       'Lesson not found',
     );
   }
@@ -91,7 +91,7 @@ export default function EditLessonContent({ loaderData, params }: Route.Componen
   const fetcher = useFetcher();
   const navigate = useNavigate();
 
-  const basePath = `/${params.username}/course-builder/${params.courseId}/content`;
+  const basePath = `/${params.organizationId}/builder/${params.courseId}/content`;
   const lessonBasePath = `${basePath}/${params.chapterId}/${params.lessonId}/lesson-blocks`;
 
   const navigateTo = (path: string) => () => navigate(path);
