@@ -1,10 +1,12 @@
 import type { TypedSupabaseClient } from '../client';
+import { THUMBNAILS_BUCKET } from '../constants';
 
 export interface CourseStorageUsage {
   courseId: string;
   courseName: string;
   courseImageUrl: string;
   courseBlurHash: string;
+  signedUrl?: string | null; // Add signed URL field
   usageMB: number;
   usageBytes: number;
   fileCount: number;
@@ -131,6 +133,31 @@ export const getStorageUsageAnalytics = async (
       (a, b) => b.usageBytes - a.usageBytes,
     );
 
+    // Add signed URLs for course images
+    const courseBreakdownWithSignedUrls = await Promise.all(
+      courseBreakdown.map(async (course) => {
+        if (!course.courseImageUrl) {
+          return { ...course, signedUrl: null };
+        }
+
+        const { data: signedUrlData, error: signedUrlError } = await supabase.storage
+          .from(THUMBNAILS_BUCKET)
+          .createSignedUrl(course.courseImageUrl, 3600); // Expires in 1 hour
+
+        if (signedUrlError) {
+          console.error(
+            `Failed to create signed URL for ${course.courseImageUrl}:`,
+            signedUrlError.message,
+          );
+        }
+
+        return {
+          ...course,
+          signedUrl: signedUrlData?.signedUrl || null,
+        };
+      }),
+    );
+
     // Calculate remaining storage
     const remainingBytes = storageLimitBytes - totalUsageBytes;
     const remainingMB = Math.round((remainingBytes / (1024 * 1024)) * 100) / 100;
@@ -148,7 +175,7 @@ export const getStorageUsageAnalytics = async (
         remainingBytes,
         usagePercentage,
         totalFiles,
-        courseBreakdown,
+        courseBreakdown: courseBreakdownWithSignedUrls,
       },
     };
   } catch (error) {
