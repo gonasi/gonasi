@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useFetcher, useParams } from 'react-router';
-import { Reorder } from 'framer-motion';
+import { motion, Reorder } from 'framer-motion';
 
 import { NotFoundCard } from '../cards';
 import { Accordion } from '../ui/accordion';
@@ -21,16 +21,17 @@ export function CourseChapters({ chapters }: Props) {
   const [reorderedChapters, setReorderedChapters] = useState<Chapter[]>(chapters ?? []);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Sync when chapters prop changes
+  // Update local state when `chapters` prop changes
   useEffect(() => {
     setReorderedChapters(chapters ?? []);
   }, [chapters]);
 
-  // Track fetcher submission state
+  // Track fetcher state to show loading status
   useEffect(() => {
     setIsSubmitting(fetcher.state === 'submitting');
   }, [fetcher.state]);
 
+  // Handle chapter reordering and submit new order
   const handleReorder = (updated: Chapter[]) => {
     setReorderedChapters(updated);
 
@@ -49,6 +50,7 @@ export function CourseChapters({ chapters }: Props) {
     });
   };
 
+  // Show fallback UI when no chapters exist
   if (reorderedChapters.length === 0) {
     return <NotFoundCard message='No course chapters found' />;
   }
@@ -63,16 +65,15 @@ export function CourseChapters({ chapters }: Props) {
         className='select-none'
       >
         <Accordion type='single' collapsible className='flex w-full flex-col space-y-4'>
-          {reorderedChapters.map((chapter) => (
-            <Reorder.Item
+          {reorderedChapters.map((chapter, index) => (
+            <motion.div
               key={chapter.id}
-              value={chapter}
-              layout
-              transition={{ duration: 0.2, ease: 'easeOut' }}
-              className='will-change-transform'
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: index * 0.05 }}
             >
               <CourseChapterItem chapter={chapter} loading={isSubmitting} />
-            </Reorder.Item>
+            </motion.div>
           ))}
         </Accordion>
       </Reorder.Group>
