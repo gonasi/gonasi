@@ -2,7 +2,6 @@ import { faker } from '@faker-js/faker';
 
 import { getUserId } from '@gonasi/database/auth';
 import { createCourseChapter } from '@gonasi/database/courseChapters';
-import { createNewCourseTitle, fetchOrganizationCourses } from '@gonasi/database/courses';
 import { createLessonDetails, upsertRichTextBlock } from '@gonasi/database/lessons';
 import { fetchAllLessonTypes } from '@gonasi/database/lessonTypes';
 import { getUserProfile } from '@gonasi/database/profile';
@@ -15,6 +14,7 @@ import {
 } from './config';
 import { PASSWORD, supabase } from './constants';
 import { FAKE_LEXICAL_STATE } from './fakeLexicalData';
+import { SIGNED_UP_EMAILS } from './signUpUsers';
 
 // Generate a realistic fake course title using random subject + prefix
 function generateFakeCourseTitle(): string {
@@ -25,9 +25,32 @@ function generateFakeCourseTitle(): string {
     'Advanced',
     'Getting Started with',
     'Practical',
+    'Complete Guide to',
+    "Beginner's",
+    'Professional',
+    'Essential',
   ];
-  const subject = faker.word.words({ count: { min: 1, max: 3 } });
+
+  const subjects = [
+    'Web Development',
+    'Data Science',
+    'Digital Marketing',
+    'Project Management',
+    'Mobile App Development',
+    'Machine Learning',
+    'UI/UX Design',
+    'Cloud Computing',
+    'Cybersecurity',
+    'Business Analytics',
+    'Entrepreneurship',
+    'Photography',
+    'Content Writing',
+    'Financial Planning',
+    'Leadership Skills',
+  ];
+
   const prefix = faker.helpers.arrayElement(prefixes);
+  const subject = faker.helpers.arrayElement(subjects);
   return `${prefix} ${subject}`;
 }
 
@@ -36,31 +59,101 @@ function generateFakeChapter(): {
   name: string;
   description: string;
 } {
+  const chapterTypes = [
+    'Getting Started',
+    'Core Concepts',
+    'Advanced Techniques',
+    'Best Practices',
+    'Real-world Applications',
+    'Case Studies',
+    'Hands-on Practice',
+    'Project Work',
+    'Assessment',
+    'Wrap-up',
+  ];
+
   return {
-    name: faker.company.catchPhrase(),
+    name: faker.helpers.arrayElement(chapterTypes),
     description: faker.lorem.paragraph(),
   };
 }
 
-// Seeds the database with course titles, chapters, and lessons for random users
+// Get all organizations for a user
+async function getUserOrganizations(userId: string) {
+  const { data: organizations, error } = await supabase
+    .from('organizations')
+    .select('id, name, handle')
+    .eq('owned_by', userId);
+
+  if (error) {
+    console.error('Error fetching user organizations:', error);
+    return [];
+  }
+
+  return organizations || [];
+}
+
+// Get course categories for selection
+async function getCourseCategories() {
+  const { data: categories, error } = await supabase.from('course_categories').select(`
+      id,
+      name,
+      course_sub_categories (
+        id,
+        name
+      )
+    `);
+
+  if (error) {
+    console.error('Error fetching course categories:', error);
+    return [];
+  }
+
+  return categories || [];
+}
+
+// Seeds the database with course titles, chapters, and lessons for organizations
 export async function seedCreateCourse() {
-  const total = TOTAL_COURSES; // Total number of courses to create
+  console.log(`🌱 Starting to seed ${TOTAL_COURSES} courses...`);
 
-  for (let i = 0; i < total; i++) {
-    const user = faker.helpers.arrayElement(users); // Pick a random user
+  // Get course categories first
+  const categories = await getCourseCategories();
+  if (categories.length === 0) {
+    console.error('❌ No course categories found. Please seed categories first.');
+    return;
+  }
 
-    // Sign in as the selected user
+  for (const email of SIGNED_UP_EMAILS) {
+    console.log(`\n👤 Processing courses for user: ${email}`);
+
+    // Sign in as the user
     const signInResult = await supabase.auth.signInWithPassword({
-      email: user.email,
+      email,
       password: PASSWORD,
     });
 
     if (signInResult.error) {
-      console.error(`❌ Failed to sign in as ${user.email}: ${signInResult.error.message}`);
-      break;
+      console.error(`❌ Failed to sign in as ${email}: ${signInResult.error.message}`);
+      continue;
     }
 
+    const userId = await getUserId(supabase);
     const { user: userProfile } = await getUserProfile(supabase);
+
+    if (!userId || !userProfile) {
+      console.error(`❌ Could not get user profile for ${email}`);
+      await supabase.auth.signOut();
+      continue;
+    }
+
+    // Get user's organizations
+    const organizations = await getUserOrganizations(userId);
+
+    if (organizations.length === 0) {
+      console.log(`⚠️  No organizations found for ${email}, skipping...`);
+      await supabase.auth.signOut();
+      continue;
+    }
 
     // Fetch lesson types
     const { data: lessonTypesData } = await fetchAllLessonTypes({
@@ -68,90 +161,102 @@ export async function seedCreateCourse() {
       limit: 50,
     });
 
-    if (!lessonTypesData.length) {
+    if (!lessonTypesData || lessonTypesData.length === 0) {
       console.error(`❌ No lesson types found`);
-      break;
+      await supabase.auth.signOut();
+      continue;
     }
 
-    const userId = await getUserId(supabase);
+    // Create courses for each organization
+    for (const org of organizations) {
+      console.log(`\n🏢 Creating courses for organization: ${org.name}`);
 
-    // Create a new fake course title
-    const courseTitle = generateFakeCourseTitle();
+      const coursesPerOrg = Math.ceil(TOTAL_COURSES / organizations.length);
 
-    const { success, message } = await createNewCourseTitle(supabase, {
-      name: courseTitle,
-    });
+      for (let i = 0; i < coursesPerOrg; i++) {
+        const courseTitle = generateFakeCourseTitle();
 
-    // Log success for course creation
-    console.log(success ? `✅ Created course title "${courseTitle}" for ${user.email}` : null);
+        // Select random category and subcategory
+        const selectedCategory = faker.helpers.arrayElement(categories);
+        const selectedSubcategory =
+          selectedCategory.course_sub_categories.length > 0
+            ? faker.helpers.arrayElement(selectedCategory.course_sub_categories)
+            : null;
 
-    if (!success) {
-      console.log(`❌ Failed to create course title for ${user.email} - ${message}`);
-      break;
-    }
+        // Create course with organization context
+        const courseData = {
+          name: courseTitle,
+          description: faker.lorem.paragraph(),
+          organization_id: org.id,
+          owned_by: userId,
+          category_id: selectedCategory.id,
+          subcategory_id: selectedSubcategory?.id || null,
+          visibility: faker.helpers.arrayElement(['public', 'private'] as const),
+          created_by: userId,
+        };
 
-    // Fetch user's courses with signed URLs
-    const { data: courseData } = await fetchOrganizationCourses({
-      supabase,
-      limit: 100,
-      username: userProfile?.username ?? '',
-    });
+        const { data: insertedCourse, error: courseError } = await supabase
+          .from('courses')
+          .insert(courseData)
+          .select()
+          .single();
 
-    // Proceed only if there are courses
-    if (courseData?.length) {
-      for (const course of courseData) {
-        if (!course.id) {
-          console.log(`❌ Course id not found `);
-          break;
+        if (courseError || !insertedCourse) {
+          console.error(`❌ Failed to create course "${courseTitle}": ${courseError?.message}`);
+          continue;
         }
 
-        const chapterCount = faker.number.int(CHAPTER_COUNT); // Random number of chapters per course
+        console.log(`✅ Created course: "${courseTitle}" in org "${org.name}"`);
+
+        // Create chapters for the course
+        const chapterCount = faker.number.int(CHAPTER_COUNT);
 
         for (let j = 0; j < chapterCount; j++) {
           const chapter = generateFakeChapter();
 
-          // Create a new chapter for the course
           const {
             success: chapterSuccess,
             message: chapterMessage,
             data: chapterData,
           } = await createCourseChapter(supabase, {
-            courseId: course.id,
-            name: chapter.name,
+            courseId: insertedCourse.id,
+            name: `${chapter.name} ${j + 1}`,
             description: chapter.description,
-            requiresPayment: false,
+            organizationId: org.id,
           });
 
           if (!chapterSuccess || !chapterData) {
-            console.error(`❌ Failed to create chapter for "${course.name}": ${chapterMessage}`);
-            break;
+            console.error(`❌ Failed to create chapter: ${chapterMessage}`);
+            continue;
           }
 
-          console.log(`📘 Created chapter "${chapter.name}" for course "${course.name}"`);
+          console.log(`  📘 Created chapter: "${chapter.name} ${j + 1}"`);
 
           // Create lessons for the chapter
           const lessonCount = faker.number.int(LESSONS_FOR_CHAPTER_COUNT);
+
           for (let k = 0; k < lessonCount; k++) {
-            const name = faker.hacker.phrase(); // Generate a fake lesson title
-            const lessonType = faker.helpers.arrayElement(lessonTypesData); // Pick a random lesson type
+            const lessonName = `${faker.hacker.phrase()} - Lesson ${k + 1}`;
+            const lessonType = faker.helpers.arrayElement(lessonTypesData);
 
             const {
               success: lessonSuccess,
               message: lessonMessage,
               data: lessonData,
             } = await createLessonDetails(supabase, {
-              chapterId: chapterData.id ?? '',
-              courseId: course.id,
+              organizationId: org.id,
+              chapterId: chapterData.id,
+              courseId: insertedCourse.id,
               lessonType: lessonType.id,
-              name,
+              name: lessonName,
             });
 
             if (!lessonSuccess || !lessonData) {
-              console.error(`❌ Failed to create lesson for "${name}": ${lessonMessage}`);
-              break;
+              console.error(`❌ Failed to create lesson: ${lessonMessage}`);
+              continue;
             }
 
-            console.log(`🎥 Created lesson "${name}" in chapter "${chapter.name}"`);
+            console.log(`    🎥 Created lesson: "${lessonName}"`);
 
             // Create blocks for the lesson
             const blockCount = faker.number.int(BLOCKS_FOR_LESSON_COUNT);
@@ -159,7 +264,7 @@ export async function seedCreateCourse() {
 
             for (let l = 0; l < blockCount; l++) {
               const richTextSchema = {
-                courseId: course.id,
+                courseId: insertedCourse.id,
                 lessonId: lessonData.id,
                 pluginType: 'rich_text_editor' as const,
                 content: {
@@ -169,6 +274,7 @@ export async function seedCreateCourse() {
                   playbackMode,
                   weight: faker.number.int({ min: 1, max: 10 }),
                 },
+                organizationId: org.id,
               };
 
               const { success: blockSuccess, message: blockMessage } = await upsertRichTextBlock(
@@ -178,9 +284,8 @@ export async function seedCreateCourse() {
 
               if (!blockSuccess) {
                 console.error(`❌ Failed to create block: ${blockMessage}`);
-                break;
               } else {
-                console.log(`Lesson block added: ${blockMessage}"`);
+                console.log(`📝 Created block for lesson`);
               }
             }
           }
@@ -188,7 +293,9 @@ export async function seedCreateCourse() {
       }
     }
 
-    // Sign out the user after operations are complete
+    // Sign out after processing user
     await supabase.auth.signOut();
   }
+
+  console.log('\n🎉 Course seeding completed!');
 }
