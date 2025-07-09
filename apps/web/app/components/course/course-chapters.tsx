@@ -46,7 +46,7 @@ export function CourseChapters({ chapters }: Props) {
 
     fetcher.submit(formData, {
       method: 'post',
-      action: `/${params.username}/course-builder/${params.courseId}/content`,
+      action: `/${params.organizationId}/builder/${params.courseId}/content`,
     });
   };
 
@@ -56,7 +56,7 @@ export function CourseChapters({ chapters }: Props) {
   }
 
   return (
-    <div>
+    <div className='pl-4'>
       <Reorder.Group
         axis='y'
         values={reorderedChapters}

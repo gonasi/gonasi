@@ -120,9 +120,9 @@ schema_paths = [
   './schemas/courses/course_utils.sql',
   # './schemas/courses_course_collaborators_schema_indexes_triggers.sql',
   './schemas/courses/courses_schema_rls.sql',
-  # './schemas/chapters_schema_and_indexes.sql', # chapter
-  # './schemas/chapters_triggers.sql', # chapter
-  # './schemas/chapters_schema_rls.sql', # chapter
+  './schemas/chapters/chapters_schema_and_indexes.sql', # chapter
+  './schemas/chapters/chapters_triggers.sql', # chapter
+  './schemas/chapters/chapters_schema_rls.sql', # chapter
   
   './schemas/pricing/course_pricing_schema_and_indexes.sql', # pricing
   './schemas/pricing/course_pricing_triggers.sql', # pricing
@@ -134,7 +134,7 @@ schema_paths = [
   './schemas/lesson_types_schema_and_rls.sql',
 
   # # lessons
-  # './schemas/lessons_schema_rls_and_triggers.sql',
+  './schemas/lessons/lessons_schema_rls_and_triggers.sql',
 
   # './schemas/lesson_blocks_schema_and_indexes.sql',
   # './schemas/lesson_blocks_schema_rls.sql',
@@ -143,7 +143,7 @@ schema_paths = [
   # './schemas/trigger_touch_course_updated_at_on_related_table_change.sql',
 
   # './schemas/chapters_rpc_reorder_delete.sql',
-  # './schemas/lessons_rpc_reorder_delete.sql',
+  './schemas/lessons/lessons_rpc_reorder_delete.sql',
   # './schemas/lesson_blocks_rpc_reorder_delete.sql',
 
   # './schemas/file_library_schema_indexes_rls_bucket.sql',

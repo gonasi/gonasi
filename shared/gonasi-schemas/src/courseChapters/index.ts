@@ -28,13 +28,13 @@ const ChapterDescriptionSchema = z
 export const NewChapterSchema = z.object({
   name: ChapterNameSchema,
   description: ChapterDescriptionSchema,
-  requiresPayment: z.boolean(),
 });
 export type NewChapterSchemaTypes = z.infer<typeof NewChapterSchema>;
 
 export const SubmitNewChapterSchema = NewChapterSchema.merge(
   z.object({
     courseId: z.string(),
+    organizationId: z.string(),
   }),
 );
 export type NewChapterSubmitValues = z.infer<typeof SubmitNewChapterSchema>;
@@ -44,7 +44,6 @@ export type NewChapterSubmitValues = z.infer<typeof SubmitNewChapterSchema>;
 export const EditChapterSchema = z.object({
   name: ChapterNameSchema,
   description: ChapterDescriptionSchema,
-  requiresPayment: z.boolean(),
 });
 export type EditChapterSchemaTypes = z.infer<typeof EditChapterSchema>;
 export const SubmitEditChapterSchema = EditChapterSchema.merge(

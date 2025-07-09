@@ -22,6 +22,22 @@ create type "public"."subscription_tier" as enum ('launch', 'scale', 'impact', '
 
 create type "public"."support_level" as enum ('community', 'email', 'priority', 'dedicated');
 
+create table "public"."chapters" (
+    "id" uuid not null default uuid_generate_v4(),
+    "organization_id" uuid not null,
+    "course_id" uuid not null,
+    "name" text not null,
+    "description" text,
+    "position" integer default 0,
+    "created_at" timestamp with time zone not null default timezone('utc'::text, now()),
+    "updated_at" timestamp with time zone not null default timezone('utc'::text, now()),
+    "created_by" uuid not null,
+    "updated_by" uuid not null
+);
+
+
+alter table "public"."chapters" enable row level security;
+
 create table "public"."course_categories" (
     "id" uuid not null default uuid_generate_v4(),
     "name" text not null,
@@ -110,6 +126,24 @@ create table "public"."lesson_types" (
 
 
 alter table "public"."lesson_types" enable row level security;
+
+create table "public"."lessons" (
+    "id" uuid not null default uuid_generate_v4(),
+    "course_id" uuid not null,
+    "organization_id" uuid not null,
+    "chapter_id" uuid not null,
+    "lesson_type_id" uuid not null,
+    "name" text not null,
+    "position" integer default 0,
+    "created_at" timestamp with time zone not null default timezone('utc'::text, now()),
+    "updated_at" timestamp with time zone not null default timezone('utc'::text, now()),
+    "created_by" uuid,
+    "updated_by" uuid,
+    "settings" jsonb not null default '{}'::jsonb
+);
+
+
+alter table "public"."lessons" enable row level security;
 
 create table "public"."organization_invites" (
     "id" uuid not null default gen_random_uuid(),
@@ -239,6 +273,8 @@ create table "public"."user_roles" (
 
 alter table "public"."user_roles" enable row level security;
 
+CREATE UNIQUE INDEX chapters_pkey ON public.chapters USING btree (id);
+
 CREATE UNIQUE INDEX course_categories_pkey ON public.course_categories USING btree (id);
 
 CREATE UNIQUE INDEX course_pricing_tiers_pkey ON public.course_pricing_tiers USING btree (id);
@@ -248,6 +284,16 @@ CREATE UNIQUE INDEX course_sub_categories_pkey ON public.course_sub_categories U
 CREATE UNIQUE INDEX courses_organization_id_name_key ON public.courses USING btree (organization_id, name);
 
 CREATE UNIQUE INDEX courses_pkey ON public.courses USING btree (id);
+
+CREATE INDEX idx_chapters_course_id ON public.chapters USING btree (course_id);
+
+CREATE INDEX idx_chapters_created_by ON public.chapters USING btree (created_by);
+
+CREATE INDEX idx_chapters_organization_id ON public.chapters USING btree (organization_id);
+
+CREATE INDEX idx_chapters_position ON public.chapters USING btree (course_id, "position");
+
+CREATE INDEX idx_chapters_updated_by ON public.chapters USING btree (updated_by);
 
 CREATE INDEX idx_course_categories_created_by ON public.course_categories USING btree (created_by);
 
@@ -290,6 +336,18 @@ CREATE INDEX idx_courses_visibility ON public.courses USING btree (visibility);
 CREATE INDEX idx_lesson_types_created_by ON public.lesson_types USING btree (created_by);
 
 CREATE INDEX idx_lesson_types_updated_by ON public.lesson_types USING btree (updated_by);
+
+CREATE INDEX idx_lessons_chapter_id ON public.lessons USING btree (chapter_id);
+
+CREATE INDEX idx_lessons_course_id ON public.lessons USING btree (course_id);
+
+CREATE INDEX idx_lessons_created_by ON public.lessons USING btree (created_by);
+
+CREATE INDEX idx_lessons_lesson_type_id ON public.lessons USING btree (lesson_type_id);
+
+CREATE INDEX idx_lessons_position ON public.lessons USING btree ("position");
+
+CREATE INDEX idx_lessons_updated_by ON public.lessons USING btree (updated_by);
 
 CREATE INDEX idx_org_invites__accepted_by ON public.organization_invites USING btree (accepted_by);
 
@@ -341,6 +399,8 @@ CREATE UNIQUE INDEX lesson_types_name_key ON public.lesson_types USING btree (na
 
 CREATE UNIQUE INDEX lesson_types_pkey ON public.lesson_types USING btree (id);
 
+CREATE UNIQUE INDEX lessons_pkey ON public.lessons USING btree (id);
+
 CREATE UNIQUE INDEX one_owner_per_organization ON public.organization_members USING btree (organization_id) WHERE (role = 'owner'::org_role);
 
 CREATE UNIQUE INDEX organization_invites_pkey ON public.organization_invites USING btree (id);
@@ -369,6 +429,10 @@ CREATE UNIQUE INDEX tier_limits_pkey ON public.tier_limits USING btree (tier);
 
 CREATE UNIQUE INDEX uniq_course_sub_categories_name_per_category ON public.course_sub_categories USING btree (category_id, name);
 
+CREATE UNIQUE INDEX unique_chapter_position_per_course ON public.chapters USING btree (course_id, "position");
+
+CREATE UNIQUE INDEX unique_lesson_position_per_chapter ON public.lessons USING btree (chapter_id, "position");
+
 CREATE UNIQUE INDEX unique_pending_invite_per_user ON public.organization_invites USING btree (organization_id, email) WHERE ((accepted_at IS NULL) AND (revoked_at IS NULL));
 
 CREATE UNIQUE INDEX uq_one_active_tier_per_frequency ON public.course_pricing_tiers USING btree (course_id, payment_frequency, is_active);
@@ -376,6 +440,8 @@ CREATE UNIQUE INDEX uq_one_active_tier_per_frequency ON public.course_pricing_ti
 CREATE UNIQUE INDEX user_roles_pkey ON public.user_roles USING btree (id);
 
 CREATE UNIQUE INDEX user_roles_user_id_role_key ON public.user_roles USING btree (user_id, role);
+
+alter table "public"."chapters" add constraint "chapters_pkey" PRIMARY KEY using index "chapters_pkey";
 
 alter table "public"."course_categories" add constraint "course_categories_pkey" PRIMARY KEY using index "course_categories_pkey";
 
@@ -386,6 +452,8 @@ alter table "public"."course_sub_categories" add constraint "course_sub_categori
 alter table "public"."courses" add constraint "courses_pkey" PRIMARY KEY using index "courses_pkey";
 
 alter table "public"."lesson_types" add constraint "lesson_types_pkey" PRIMARY KEY using index "lesson_types_pkey";
+
+alter table "public"."lessons" add constraint "lessons_pkey" PRIMARY KEY using index "lessons_pkey";
 
 alter table "public"."organization_invites" add constraint "organization_invites_pkey" PRIMARY KEY using index "organization_invites_pkey";
 
@@ -400,6 +468,24 @@ alter table "public"."role_permissions" add constraint "role_permissions_pkey" P
 alter table "public"."tier_limits" add constraint "tier_limits_pkey" PRIMARY KEY using index "tier_limits_pkey";
 
 alter table "public"."user_roles" add constraint "user_roles_pkey" PRIMARY KEY using index "user_roles_pkey";
+
+alter table "public"."chapters" add constraint "chapters_course_id_fkey" FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE not valid;
+
+alter table "public"."chapters" validate constraint "chapters_course_id_fkey";
+
+alter table "public"."chapters" add constraint "chapters_created_by_fkey" FOREIGN KEY (created_by) REFERENCES profiles(id) ON DELETE CASCADE not valid;
+
+alter table "public"."chapters" validate constraint "chapters_created_by_fkey";
+
+alter table "public"."chapters" add constraint "chapters_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE not valid;
+
+alter table "public"."chapters" validate constraint "chapters_organization_id_fkey";
+
+alter table "public"."chapters" add constraint "chapters_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES profiles(id) ON DELETE CASCADE not valid;
+
+alter table "public"."chapters" validate constraint "chapters_updated_by_fkey";
+
+alter table "public"."chapters" add constraint "unique_chapter_position_per_course" UNIQUE using index "unique_chapter_position_per_course";
 
 alter table "public"."course_categories" add constraint "course_categories_created_by_fkey" FOREIGN KEY (created_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
 
@@ -512,6 +598,30 @@ alter table "public"."lesson_types" add constraint "lesson_types_name_key" UNIQU
 alter table "public"."lesson_types" add constraint "lesson_types_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
 
 alter table "public"."lesson_types" validate constraint "lesson_types_updated_by_fkey";
+
+alter table "public"."lessons" add constraint "lessons_chapter_id_fkey" FOREIGN KEY (chapter_id) REFERENCES chapters(id) ON DELETE CASCADE not valid;
+
+alter table "public"."lessons" validate constraint "lessons_chapter_id_fkey";
+
+alter table "public"."lessons" add constraint "lessons_course_id_fkey" FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE not valid;
+
+alter table "public"."lessons" validate constraint "lessons_course_id_fkey";
+
+alter table "public"."lessons" add constraint "lessons_created_by_fkey" FOREIGN KEY (created_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
+
+alter table "public"."lessons" validate constraint "lessons_created_by_fkey";
+
+alter table "public"."lessons" add constraint "lessons_lesson_type_id_fkey" FOREIGN KEY (lesson_type_id) REFERENCES lesson_types(id) ON DELETE SET NULL not valid;
+
+alter table "public"."lessons" validate constraint "lessons_lesson_type_id_fkey";
+
+alter table "public"."lessons" add constraint "lessons_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE not valid;
+
+alter table "public"."lessons" validate constraint "lessons_organization_id_fkey";
+
+alter table "public"."lessons" add constraint "lessons_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
+
+alter table "public"."lessons" validate constraint "lessons_updated_by_fkey";
 
 alter table "public"."organization_invites" add constraint "organization_invites_accepted_by_fkey" FOREIGN KEY (accepted_by) REFERENCES auth.users(id) not valid;
 
@@ -1373,6 +1483,88 @@ create or replace view "public"."public_profiles" as  SELECT profiles.id,
   WHERE ((profiles.is_public = true) OR (profiles.id = ( SELECT auth.uid() AS uid)));
 
 
+CREATE OR REPLACE FUNCTION public.reorder_lessons(p_chapter_id uuid, lesson_positions jsonb, p_updated_by uuid)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+declare
+  temp_offset int := 1000000;
+  v_course_id uuid;
+  v_org_id uuid;
+begin
+  if lesson_positions is null or jsonb_array_length(lesson_positions) = 0 then
+    raise exception 'lesson_positions array cannot be null or empty';
+  end if;
+
+  select c.course_id, c.organization_id
+  into v_course_id, v_org_id
+  from public.chapters c
+  where c.id = p_chapter_id;
+
+  if v_course_id is null then
+    raise exception 'Chapter does not exist';
+  end if;
+
+  if not public.has_org_role(v_org_id, 'editor', p_updated_by) then
+    raise exception 'Insufficient permissions to reorder lessons in this chapter';
+  end if;
+
+  if exists (
+    select 1 
+    from jsonb_array_elements(lesson_positions) as lp
+    left join public.lessons l on l.id = (lp->>'id')::uuid
+    where l.id is null or l.chapter_id != p_chapter_id
+  ) then
+    raise exception 'One or more lesson IDs do not exist or do not belong to the specified chapter';
+  end if;
+
+  if exists (
+    select 1
+    from jsonb_array_elements(lesson_positions) as lp
+    where (lp->>'position')::int <= 0
+  ) then
+    raise exception 'All position values must be positive integers';
+  end if;
+
+  if (
+    select count(*)
+    from public.lessons
+    where chapter_id = p_chapter_id
+  ) != jsonb_array_length(lesson_positions) then
+    raise exception 'All lessons in the chapter must be included in the reorder operation';
+  end if;
+
+  if (
+    select count(distinct (lp->>'position')::int)
+    from jsonb_array_elements(lesson_positions) as lp
+  ) != jsonb_array_length(lesson_positions) then
+    raise exception 'Duplicate position values are not allowed';
+  end if;
+
+  update public.lessons
+  set position = position + temp_offset
+  where chapter_id = p_chapter_id;
+
+  update public.lessons
+  set 
+    position = new_positions.position,
+    updated_at = timezone('utc', now()),
+    updated_by = p_updated_by
+  from (
+    select 
+      (lp->>'id')::uuid as id,
+      row_number() over (order by (lp->>'position')::int) as position
+    from jsonb_array_elements(lesson_positions) as lp
+  ) as new_positions
+  where public.lessons.id = new_positions.id
+    and public.lessons.chapter_id = p_chapter_id;
+
+end;
+$function$
+;
+
 CREATE OR REPLACE FUNCTION public.reorder_pricing_tiers(p_course_id uuid, tier_positions jsonb, p_updated_by uuid)
  RETURNS void
  LANGUAGE plpgsql
@@ -1578,6 +1770,23 @@ end;
 $function$
 ;
 
+CREATE OR REPLACE FUNCTION public.set_chapter_position()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO ''
+AS $function$
+begin
+  if new.position is null or new.position = 0 then
+    select coalesce(max(position), 0) + 1
+    into new.position
+    from public.chapters
+    where course_id = new.course_id;
+  end if;
+  return new;
+end;
+$function$
+;
+
 CREATE OR REPLACE FUNCTION public.set_course_free(p_course_id uuid, p_user_id uuid)
  RETURNS void
  LANGUAGE plpgsql
@@ -1691,6 +1900,23 @@ begin
     into new.position
     from public.course_pricing_tiers
     where course_id = new.course_id;
+  end if;
+  return new;
+end;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.set_lesson_position()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO ''
+AS $function$
+begin
+  if new.position is null or new.position = 0 then
+    select coalesce(max(position), 0) + 1
+    into new.position
+    from public.lessons
+    where chapter_id = new.chapter_id;  -- Fixed: changed from course_id to chapter_id
   end if;
   return new;
 end;
@@ -1965,6 +2191,48 @@ end;
 $function$
 ;
 
+grant delete on table "public"."chapters" to "anon";
+
+grant insert on table "public"."chapters" to "anon";
+
+grant references on table "public"."chapters" to "anon";
+
+grant select on table "public"."chapters" to "anon";
+
+grant trigger on table "public"."chapters" to "anon";
+
+grant truncate on table "public"."chapters" to "anon";
+
+grant update on table "public"."chapters" to "anon";
+
+grant delete on table "public"."chapters" to "authenticated";
+
+grant insert on table "public"."chapters" to "authenticated";
+
+grant references on table "public"."chapters" to "authenticated";
+
+grant select on table "public"."chapters" to "authenticated";
+
+grant trigger on table "public"."chapters" to "authenticated";
+
+grant truncate on table "public"."chapters" to "authenticated";
+
+grant update on table "public"."chapters" to "authenticated";
+
+grant delete on table "public"."chapters" to "service_role";
+
+grant insert on table "public"."chapters" to "service_role";
+
+grant references on table "public"."chapters" to "service_role";
+
+grant select on table "public"."chapters" to "service_role";
+
+grant trigger on table "public"."chapters" to "service_role";
+
+grant truncate on table "public"."chapters" to "service_role";
+
+grant update on table "public"."chapters" to "service_role";
+
 grant delete on table "public"."course_categories" to "anon";
 
 grant insert on table "public"."course_categories" to "anon";
@@ -2174,6 +2442,48 @@ grant trigger on table "public"."lesson_types" to "service_role";
 grant truncate on table "public"."lesson_types" to "service_role";
 
 grant update on table "public"."lesson_types" to "service_role";
+
+grant delete on table "public"."lessons" to "anon";
+
+grant insert on table "public"."lessons" to "anon";
+
+grant references on table "public"."lessons" to "anon";
+
+grant select on table "public"."lessons" to "anon";
+
+grant trigger on table "public"."lessons" to "anon";
+
+grant truncate on table "public"."lessons" to "anon";
+
+grant update on table "public"."lessons" to "anon";
+
+grant delete on table "public"."lessons" to "authenticated";
+
+grant insert on table "public"."lessons" to "authenticated";
+
+grant references on table "public"."lessons" to "authenticated";
+
+grant select on table "public"."lessons" to "authenticated";
+
+grant trigger on table "public"."lessons" to "authenticated";
+
+grant truncate on table "public"."lessons" to "authenticated";
+
+grant update on table "public"."lessons" to "authenticated";
+
+grant delete on table "public"."lessons" to "service_role";
+
+grant insert on table "public"."lessons" to "service_role";
+
+grant references on table "public"."lessons" to "service_role";
+
+grant select on table "public"."lessons" to "service_role";
+
+grant trigger on table "public"."lessons" to "service_role";
+
+grant truncate on table "public"."lessons" to "service_role";
+
+grant update on table "public"."lessons" to "service_role";
 
 grant delete on table "public"."organization_invites" to "anon";
 
@@ -2449,6 +2759,49 @@ grant truncate on table "public"."user_roles" to "supabase_auth_admin";
 
 grant update on table "public"."user_roles" to "supabase_auth_admin";
 
+create policy "delete: admins or owning editors can delete chapters"
+on "public"."chapters"
+as permissive
+for delete
+to authenticated
+using ((EXISTS ( SELECT 1
+   FROM courses c
+  WHERE ((c.id = chapters.course_id) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.owned_by = auth.uid())))))));
+
+
+create policy "insert: org members (owner, admin, editor) can add chapters"
+on "public"."chapters"
+as permissive
+for insert
+to authenticated
+with check ((EXISTS ( SELECT 1
+   FROM courses c
+  WHERE ((c.id = chapters.course_id) AND (get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text, 'editor'::text]))))));
+
+
+create policy "select: org members can view chapters"
+on "public"."chapters"
+as permissive
+for select
+to authenticated
+using ((EXISTS ( SELECT 1
+   FROM courses c
+  WHERE ((c.id = chapters.course_id) AND (get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) IS NOT NULL)))));
+
+
+create policy "update: admins or owning editors can update chapters"
+on "public"."chapters"
+as permissive
+for update
+to authenticated
+using ((EXISTS ( SELECT 1
+   FROM courses c
+  WHERE ((c.id = chapters.course_id) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.owned_by = auth.uid())))))))
+with check ((EXISTS ( SELECT 1
+   FROM courses c
+  WHERE ((c.id = chapters.course_id) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.owned_by = auth.uid())))))));
+
+
 create policy "course_categories_delete_authenticated"
 on "public"."course_categories"
 as permissive
@@ -2618,6 +2971,49 @@ as permissive
 for select
 to authenticated, anon
 using (true);
+
+
+create policy "delete: admins or owning editors can delete lessons"
+on "public"."lessons"
+as permissive
+for delete
+to authenticated
+using ((EXISTS ( SELECT 1
+   FROM courses c
+  WHERE ((c.id = lessons.course_id) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.owned_by = auth.uid())))))));
+
+
+create policy "insert: org members (owner, admin, editor) can add lessons"
+on "public"."lessons"
+as permissive
+for insert
+to authenticated
+with check ((EXISTS ( SELECT 1
+   FROM courses c
+  WHERE ((c.id = lessons.course_id) AND (get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text, 'editor'::text]))))));
+
+
+create policy "select: org members can view lessons"
+on "public"."lessons"
+as permissive
+for select
+to authenticated
+using ((EXISTS ( SELECT 1
+   FROM courses c
+  WHERE ((c.id = lessons.course_id) AND (get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) IS NOT NULL)))));
+
+
+create policy "update: admins or owning editors can modify lessons"
+on "public"."lessons"
+as permissive
+for update
+to authenticated
+using ((EXISTS ( SELECT 1
+   FROM courses c
+  WHERE ((c.id = lessons.course_id) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.owned_by = auth.uid())))))))
+with check ((EXISTS ( SELECT 1
+   FROM courses c
+  WHERE ((c.id = lessons.course_id) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.owned_by = auth.uid())))))));
 
 
 create policy "organization_invites_delete"
@@ -2843,6 +3239,8 @@ to supabase_auth_admin
 using (true);
 
 
+CREATE TRIGGER trg_set_chapter_position BEFORE INSERT ON public.chapters FOR EACH ROW EXECUTE FUNCTION set_chapter_position();
+
 CREATE TRIGGER trg_course_categories_set_updated_at BEFORE UPDATE ON public.course_categories FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER trg_enforce_at_least_one_active_tier BEFORE UPDATE ON public.course_pricing_tiers FOR EACH ROW EXECUTE FUNCTION enforce_at_least_one_active_pricing_tier();
@@ -2866,6 +3264,8 @@ CREATE TRIGGER trg_validate_course_owner BEFORE INSERT OR UPDATE ON public.cours
 CREATE TRIGGER trg_validate_subcategory BEFORE INSERT OR UPDATE ON public.courses FOR EACH ROW EXECUTE FUNCTION validate_subcategory_belongs_to_category();
 
 CREATE TRIGGER trg_lesson_types_set_updated_at BEFORE UPDATE ON public.lesson_types FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER trg_set_lesson_position BEFORE INSERT ON public.lessons FOR EACH ROW EXECUTE FUNCTION set_lesson_position();
 
 CREATE TRIGGER trg_insert_owner_into_organization_members AFTER INSERT ON public.organizations FOR EACH ROW EXECUTE FUNCTION add_or_update_owner_in_organization_members();
 

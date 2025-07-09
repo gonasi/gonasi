@@ -10,24 +10,28 @@
 --   - Lesson-specific settings stored as JSONB
 create table public.lessons (
   id uuid primary key default uuid_generate_v4(),                -- Unique lesson identifier
-  course_id uuid not null,                                        -- Foreign key: associated course
-  chapter_id uuid not null,                                       -- Foreign key: associated chapter
-  lesson_type_id uuid not null,                                    -- Foreign key: lesson type
-  name text not null,                                             -- Lesson title
-  position integer default 0,                                     -- Position/order within the chapter
+  course_id uuid not null,                                       -- Foreign key: associated course
+  organization_id uuid not null,                                 -- Foreign key: associated organization
+  chapter_id uuid not null,                                      -- Foreign key: associated chapter
+  lesson_type_id uuid not null,                                  -- Foreign key: lesson type
+  name text not null,                                            -- Lesson title
+  position integer default 0,                                    -- Position/order within the chapter
   created_at timestamptz not null default timezone('utc', now()),-- Timestamp when lesson was created (UTC)
   updated_at timestamptz not null default timezone('utc', now()),-- Timestamp of last update (UTC)
-  created_by uuid not null,                                       -- Foreign key: user who created the lesson
-  updated_by uuid not null,                                       -- Foreign key: user who last updated the lesson
+  created_by uuid,                                               -- FK: user who created (nullable on delete)
+  updated_by uuid,                                               -- FK: user who last updated (nullable on delete)
   settings jsonb default '{}'::jsonb not null,                   -- JSONB field for lesson-specific settings
 
   -- Foreign key constraints enforcing relational integrity
+  foreign key (organization_id) references public.organizations(id) on delete cascade,
   foreign key (course_id) references public.courses(id) on delete cascade,
   foreign key (chapter_id) references public.chapters(id) on delete cascade,
   foreign key (lesson_type_id) references public.lesson_types(id) on delete set null,
-  foreign key (created_by) references public.profiles(id) on delete restrict,
-  foreign key (updated_by) references public.profiles(id) on delete restrict
+  foreign key (created_by) references public.profiles(id) on delete set null,
+  foreign key (updated_by) references public.profiles(id) on delete set null
 );
+
+
 
 -- ====================================================================================
 -- Indexes
@@ -79,17 +83,15 @@ execute function set_lesson_position();
 -- ====================================================================================
 -- Row-Level Security (RLS)
 -- ====================================================================================
+-- ============================================================================
+-- Enable Row-Level Security on lessons table
+-- ============================================================================
 alter table public.lessons enable row level security;
 
--- ====================================================================================
--- RLS Policies for public.lessons
--- ====================================================================================
--- Define access controls based on user roles within the related course.
--- Roles considered: admin, editor, viewer
--- Owners of the course also have relevant permissions.
-
--- SELECT: Allow viewing lessons for users with any course role or course owner
-create policy "select: users with course roles or owners can view lessons"
+-- ============================================================================
+-- SELECT: Allow org members with any role in the course's org to view lessons
+-- ============================================================================
+create policy "select: org members can view lessons"
 on public.lessons
 for select
 to authenticated
@@ -97,17 +99,14 @@ using (
   exists (
     select 1 from public.courses c
     where c.id = lessons.course_id
-      and (
-        is_course_admin(c.id, (select auth.uid())) or
-        is_course_editor(c.id, (select auth.uid())) or
-        is_course_viewer(c.id, (select auth.uid())) or
-        c.created_by = (select auth.uid())
-      )
+      and public.get_user_org_role(c.organization_id, (select auth.uid())) is not null
   )
 );
 
--- INSERT: Allow adding lessons for admins, editors, or course owners
-create policy "insert: admins, editors, or owners can add lessons"
+-- ============================================================================
+-- INSERT: Allow org members (owner, admin, editor) to insert lessons
+-- ============================================================================
+create policy "insert: org members (owner, admin, editor) can add lessons"
 on public.lessons
 for insert
 to authenticated
@@ -115,16 +114,14 @@ with check (
   exists (
     select 1 from public.courses c
     where c.id = lessons.course_id
-      and (
-        is_course_admin(c.id, (select auth.uid())) or
-        is_course_editor(c.id, (select auth.uid())) or
-        c.created_by = (select auth.uid())
-      )
+      and public.get_user_org_role(c.organization_id, (select auth.uid())) in ('owner', 'admin', 'editor')
   )
 );
 
--- UPDATE: Allow modifying lessons for admins, editors, or owners
-create policy "update: admins, editors, or owners can modify lessons"
+-- ============================================================================
+-- UPDATE: Allow only admins or owning editors to update lessons
+-- ============================================================================
+create policy "update: admins or owning editors can modify lessons"
 on public.lessons
 for update
 to authenticated
@@ -133,9 +130,11 @@ using (
     select 1 from public.courses c
     where c.id = lessons.course_id
       and (
-        is_course_admin(c.id, (select auth.uid())) or
-        is_course_editor(c.id, (select auth.uid())) or
-        c.created_by = (select auth.uid())
+        public.get_user_org_role(c.organization_id, (select auth.uid())) in ('owner', 'admin')
+        or (
+          public.get_user_org_role(c.organization_id, (select auth.uid())) = 'editor'
+          and c.owned_by = auth.uid()
+        )
       )
   )
 )
@@ -144,15 +143,19 @@ with check (
     select 1 from public.courses c
     where c.id = lessons.course_id
       and (
-        is_course_admin(c.id, (select auth.uid())) or
-        is_course_editor(c.id, (select auth.uid())) or
-        c.created_by = (select auth.uid())
+        public.get_user_org_role(c.organization_id, (select auth.uid())) in ('owner', 'admin')
+        or (
+          public.get_user_org_role(c.organization_id, (select auth.uid())) = 'editor'
+          and c.owned_by = auth.uid()
+        )
       )
   )
 );
 
--- DELETE: Allow removal of lessons by admins, editors, or owners
-create policy "delete: admins, editors, or owners can remove lessons"
+-- ============================================================================
+-- DELETE: Same as update — allow admins or owning editors
+-- ============================================================================
+create policy "delete: admins or owning editors can delete lessons"
 on public.lessons
 for delete
 to authenticated
@@ -161,10 +164,11 @@ using (
     select 1 from public.courses c
     where c.id = lessons.course_id
       and (
-        is_course_admin(c.id, (select auth.uid())) or
-        is_course_editor(c.id, (select auth.uid())) or
-        c.created_by = (select auth.uid())
+        public.get_user_org_role(c.organization_id, (select auth.uid())) in ('owner', 'admin')
+        or (
+          public.get_user_org_role(c.organization_id, (select auth.uid())) = 'editor'
+          and c.owned_by = auth.uid()
+        )
       )
   )
 );
- 

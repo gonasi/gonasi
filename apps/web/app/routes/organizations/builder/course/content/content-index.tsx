@@ -116,14 +116,12 @@ export default function CourseOverview({ loaderData, params }: Route.ComponentPr
           className='mb-10'
         />
 
-        <div className='ml-4'>
-          <CourseChapters chapters={loaderData} />
-        </div>
+        <CourseChapters chapters={loaderData} />
       </div>
 
       {/* Floating button to add a new chapter */}
       <FloatingActionButton
-        to={`/${params.username}/course-builder/${params.courseId}/content/chapter/new`}
+        to={`/${params.organizationId}/builder/${params.courseId}/content/chapter/new`}
         tooltip='Add new chapter'
         icon={<Plus size={20} strokeWidth={4} />}
       />

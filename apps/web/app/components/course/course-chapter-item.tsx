@@ -54,7 +54,7 @@ export default function CourseChapterItem({ chapter, loading }: Props) {
   const courseBoxShadow = useRaisedShadow(courseY);
   const courseDragControls = useDragControls();
 
-  const basePath = `/${params.username}/course-builder/${params.courseId}/content/${chapter.id}`;
+  const basePath = `/${params.organizationId}/builder/${params.courseId}/content/${chapter.id}`;
 
   // Sync internal reordered list with external chapter lessons
   useEffect(() => {
@@ -84,7 +84,7 @@ export default function CourseChapterItem({ chapter, loading }: Props) {
 
     fetcher.submit(formData, {
       method: 'post',
-      action: `/${params.username}/course-builder/${params.courseId}/content`,
+      action: `/${params.organizationId}/builder/${params.courseId}/content`,
     });
   };
 
@@ -177,7 +177,7 @@ export default function CourseChapterItem({ chapter, loading }: Props) {
                   values={reorderedLessons}
                   onReorder={handleLessonReorder}
                   layoutScroll
-                  className='overflow-y-scroll select-none'
+                  className='overflow-y-scroll pl-4 select-none'
                   as='div'
                 >
                   <div className='flex flex-col space-y-4'>

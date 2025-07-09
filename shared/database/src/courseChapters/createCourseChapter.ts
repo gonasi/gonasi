@@ -16,13 +16,14 @@ export const createCourseChapter = async (
   chapterData: NewChapterSubmitValues,
 ): Promise<ApiResponse<{ id: string }>> => {
   const userId = await getUserId(supabase);
-  const { courseId, name, description } = chapterData;
+  const { courseId, name, description, organizationId } = chapterData;
 
   try {
     const { data, error: insertError } = await supabase
       .from('chapters')
       .insert({
         course_id: courseId,
+        organization_id: organizationId,
         name,
         description,
         created_by: userId,

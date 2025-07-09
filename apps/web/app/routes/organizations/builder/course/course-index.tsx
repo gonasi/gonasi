@@ -31,7 +31,7 @@ export default function CoursesIndex({ params }: Route.ComponentProps) {
         icon: BadgeDollarSign,
       },
       {
-        to: `${basePath}/chapters-lessons`,
+        to: `${basePath}/content`,
         name: 'Content',
         icon: BookType,
       },

@@ -92,10 +92,10 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     };
 
     const renderLeftIcon = () => {
-      if (!leftIcon) return null;
+      if (!leftIcon && !isLoading) return null;
 
       const iconContent =
-        isLoading && !rightIcon ? (
+        isLoading && leftIcon ? (
           <Loader2 className='h-4 w-4 animate-spin' />
         ) : !isLoading ? (
           <div className='transition-transform duration-200 group-hover:scale-105'>{leftIcon}</div>
@@ -104,16 +104,19 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       if (leftIconAtEdge) {
         return <div className='absolute top-1/2 left-3 z-10 -translate-y-1/2'>{iconContent}</div>;
       }
+
       return iconContent;
     };
 
     const renderRightIcon = () => {
+      const shouldShowRightSpinner = isLoading && !leftIcon;
+
       const iconContent = <Loader2 className='h-4 w-4 animate-spin' />;
 
       if (rightIconAtEdge) {
         return (
           <div className='absolute top-1/2 right-3 z-10 -translate-y-1/2'>
-            {isLoading
+            {shouldShowRightSpinner
               ? iconContent
               : rightIcon && (
                   <div className='transition-transform duration-200 group-hover:scale-105'>
@@ -124,7 +127,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         );
       }
 
-      if (isLoading) return iconContent;
+      if (shouldShowRightSpinner) return iconContent;
 
       if (rightIcon) {
         return (

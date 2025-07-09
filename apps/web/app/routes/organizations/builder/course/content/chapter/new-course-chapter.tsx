@@ -6,14 +6,12 @@ import { dataWithError, redirectWithSuccess } from 'remix-toast';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
 
 import { createCourseChapter } from '@gonasi/database/courseChapters';
-import { fetchCoursePricing } from '@gonasi/database/courses';
 import { NewChapterSchema, type NewChapterSchemaTypes } from '@gonasi/schemas/courseChapters';
 
 import type { Route } from './+types/new-course-chapter';
 
-import { LockToggleIcon } from '~/components/icons';
 import { Button } from '~/components/ui/button';
-import { GoInputField, GoSwitchField, GoTextAreaField } from '~/components/ui/forms/elements';
+import { GoInputField, GoTextAreaField } from '~/components/ui/forms/elements';
 import { Modal } from '~/components/ui/modal';
 import { createClient } from '~/lib/supabase/supabase.server';
 import { checkHoneypot } from '~/utils/honeypot.server';
@@ -37,8 +35,6 @@ const resolver = zodResolver(NewChapterSchema);
 export async function action({ request, params }: Route.ActionArgs) {
   const formData = await request.formData();
 
-  console.log('***** got here');
-
   // Anti-bot honeypot check
   await checkHoneypot(formData);
 
@@ -60,46 +56,29 @@ export async function action({ request, params }: Route.ActionArgs) {
   const { success, message } = await createCourseChapter(supabase, {
     ...data,
     courseId: params.courseId,
+    organizationId: params.organizationId,
   });
 
   // Return success or error response
   return success
-    ? redirectWithSuccess(`/${params.username}/course-builder/${params.courseId}/content`, message)
+    ? redirectWithSuccess(`/${params.organizationId}/builder/${params.courseId}/content`, message)
     : dataWithError(null, message);
 }
 
-// Loader: fetch chapter data
-export async function loader({ params, request }: Route.LoaderArgs) {
-  const { supabase } = createClient(request);
-
-  const pricingData = await fetchCoursePricing({ supabase, courseId: params.courseId });
-
-  const isPaid = Array.isArray(pricingData)
-    ? pricingData.some((item) => item.is_free === false)
-    : false;
-
-  return { isPaid };
-}
-
 // UI component for creating a new course chapter
-export default function NewCourseChapter({ loaderData }: Route.ComponentProps) {
+export default function NewCourseChapter() {
   const params = useParams();
 
   const isPending = useIsPending();
 
-  const { isPaid } = loaderData;
-
   const methods = useRemixForm<NewChapterSchemaTypes>({
     mode: 'all',
     resolver,
-    defaultValues: {
-      requiresPayment: isPaid,
-    },
   });
 
   const isDisabled = isPending || methods.formState.isSubmitting;
 
-  const watchRequiresPayment = methods.watch('requiresPayment');
+  console.log('errors: ', methods.formState.errors);
 
   return (
     <Modal open>
@@ -128,25 +107,6 @@ export default function NewCourseChapter({ loaderData }: Route.ComponentProps) {
                 labelProps={{ children: 'What’s this chapter about?', required: true }}
                 textareaProps={{ disabled: isDisabled }}
                 description='Just a quick overview to help learners know what to expect.'
-              />
-
-              <GoSwitchField
-                name='requiresPayment'
-                disabled={!isPaid}
-                labelProps={{
-                  children: (
-                    <p className='flex items-center space-x-1'>
-                      <span>Paid chapter</span>
-                      <LockToggleIcon lock={watchRequiresPayment} />
-                    </p>
-                  ),
-                  required: false,
-                }}
-                description={
-                  isPaid
-                    ? 'Enable this to make the chapter available only to paying users.'
-                    : 'This course is free, so all chapters are accessible. Set the course to paid to restrict chapter access.'
-                }
               />
 
               {/* Submit button */}
