@@ -142,7 +142,8 @@ schema_paths = [
 
   # './schemas/trigger_touch_course_updated_at_on_related_table_change.sql',
 
-  # './schemas/chapters_rpc_reorder_delete.sql',
+  './schemas/chapters/chapters_rpc_reorder_delete.sql',
+  
   './schemas/lessons/lessons_rpc_reorder_delete.sql',
   # './schemas/lesson_blocks_rpc_reorder_delete.sql',
 
