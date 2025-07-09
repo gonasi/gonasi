@@ -80,11 +80,11 @@ export default function BuilderIndex({ params, loaderData }: Route.ComponentProp
                   ['owner', 'admin'].includes(outletData.member.role) || owned_by === userId;
 
                 const dispBadges = canEdit ? (
-                  <Badge variant='default' className='p-1'>
+                  <Badge variant='default' className='p-1 opacity-50'>
                     <Pencil />
                   </Badge>
                 ) : (
-                  <Badge variant='secondary' className='p-1'>
+                  <Badge variant='secondary' className='p-1 opacity-50'>
                     <PenOff />
                   </Badge>
                 );

@@ -52,10 +52,10 @@ export default function CoursesIndex({ params }: Route.ComponentProps) {
 
   return (
     <section className='container mx-auto px-0'>
-      <div className='bg-background/95 sticky -top-10 z-10'>
+      <div className='bg-background/95 sticky top-0 z-20 border-b'>
         <GoTabNav previousLink={`/${params.organizationId}/builder`} tabs={tabs} />
       </div>
-      <div className='mt-4 px-4 md:mt-8'>
+      <div className='mt-4 min-h-screen px-4 md:mt-8'>
         <Outlet context={{ data }} />
       </div>
     </section>
