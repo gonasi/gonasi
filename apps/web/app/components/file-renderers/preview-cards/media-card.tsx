@@ -13,8 +13,8 @@ interface MediaCardProps {
 }
 
 export const MediaCard: React.FC<MediaCardProps> = ({ file, media }) => {
-  const { username, courseId } = useParams();
-  const basePath = `/go/${username}/course-builder/${courseId}/file-library/${file.id}`;
+  const { organizationId, courseId } = useParams();
+  const basePath = `/${organizationId}/builder/${courseId}/file-library/${file.id}`;
 
   const options = [
     { title: 'Edit', icon: Pencil, to: `${basePath}/edit` },

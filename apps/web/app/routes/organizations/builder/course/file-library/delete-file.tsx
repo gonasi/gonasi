@@ -27,7 +27,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 
   if (file === null)
     return redirectWithError(
-      `/${params.username}/course-builder/${params.courseId}/file-library`,
+      `/${params.organizationId}/builder/${params.courseId}/file-library`,
       'File does not exist',
     );
 
@@ -61,7 +61,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 
   return success
     ? redirectWithSuccess(
-        `/${params.username}/course-builder/${params.courseId}/file-library`,
+        `/${params.organizationId}/builder/${params.courseId}/file-library`,
         message,
       )
     : dataWithError(null, message);
@@ -84,7 +84,7 @@ export default function DeleteFile({ loaderData, params }: Route.ComponentProps)
 
   const isDisabled = isPending || methods.formState.isSubmitting;
 
-  const closeRoute = `/${params.username}/course-builder/${params.courseId}/file-library`;
+  const closeRoute = `/${params.organizationId}/builder/${params.courseId}/file-library`;
 
   const handleClose = () => navigate(closeRoute);
 

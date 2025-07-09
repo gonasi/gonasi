@@ -25,7 +25,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 
   if (file === null)
     return redirectWithError(
-      `/${params.username}/course-builder/${params.courseId}/file-library`,
+      `/${params.organizationId}/builder/${params.courseId}/file-library`,
       'File does not exist',
     );
 
@@ -53,7 +53,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 
   return success
     ? redirectWithSuccess(
-        `/${params.username}/course-builder/${params.courseId}/file-library/${params.fileId}/edit`,
+        `/${params.organizationId}/builder/${params.courseId}/file-library/${params.fileId}/edit`,
         message,
       )
     : dataWithError(null, message);
@@ -78,7 +78,7 @@ export default function EditFileImage({ loaderData, params }: Route.ComponentPro
       <Modal.Content size='sm'>
         <Modal.Header
           title='Update File'
-          closeRoute={`/${params.username}/course-builder/${params.courseId}/file-library/${params.fileId}/edit`}
+          closeRoute={`/${params.organizationId}/builder/${params.courseId}/file-library/${params.fileId}/edit`}
         />
         <Modal.Body>
           <RemixFormProvider {...methods}>

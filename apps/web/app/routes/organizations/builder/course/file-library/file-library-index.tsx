@@ -20,24 +20,30 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
   const url = new URL(request.url);
 
-  const searchQuery = url.searchParams.get('name') || '';
-  const page = Number(url.searchParams.get('page')) || 1;
+  const searchQuery = url.searchParams.get('name') ?? '';
+  const page = parseInt(url.searchParams.get('page') ?? '1', 10);
   const limit = 12;
 
-  const data = await fetchFilesWithSignedUrls({
-    supabase,
-    courseId: params.courseId,
-    searchQuery,
-    limit,
-    page,
-  });
+  const [data, canEditResult] = await Promise.all([
+    fetchFilesWithSignedUrls({
+      supabase,
+      courseId: params.courseId,
+      searchQuery,
+      limit,
+      page,
+    }),
+    supabase.rpc('can_user_edit_course', {
+      arg_course_id: params.courseId,
+    }),
+  ]);
 
-  return { data };
+  return { data, canEdit: Boolean(canEditResult.data) };
 }
 
 export default function AllFiles({ loaderData, params }: Route.ComponentProps) {
   const {
     data: { data, count },
+    canEdit,
   } = loaderData;
 
   return (
@@ -49,7 +55,7 @@ export default function AllFiles({ loaderData, params }: Route.ComponentProps) {
 
       {data && data.length > 0 ? (
         <div className='flex flex-col space-y-4'>
-          <div className='grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3'>
+          <div className='grid grid-cols-2 gap-1 lg:grid-cols-4'>
             {data.map((file) => (
               <FileRenderer key={file.id} file={file} />
             ))}
@@ -59,12 +65,13 @@ export default function AllFiles({ loaderData, params }: Route.ComponentProps) {
       ) : (
         <NotFoundCard message='No files found' />
       )}
-      {/* Floating button to add a new chapter */}
-      <FloatingActionButton
-        to={`/${params.organizationId}/builder/${params.courseId}/file-library/new`}
-        tooltip='Add new file'
-        icon={<Plus size={20} strokeWidth={4} />}
-      />
+      {canEdit && (
+        <FloatingActionButton
+          to={`/${params.organizationId}/builder/${params.courseId}/file-library/new`}
+          tooltip='Add new file'
+          icon={<Plus size={20} strokeWidth={4} />}
+        />
+      )}
       <Outlet />
     </div>
   );

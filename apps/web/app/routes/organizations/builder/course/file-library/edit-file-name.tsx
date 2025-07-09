@@ -42,7 +42,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 
   return success
     ? redirectWithSuccess(
-        `/${params.username}/course-builder/${params.courseId}/file-library`,
+        `/${params.organizationId}/builder/${params.courseId}/file-library`,
         message,
       )
     : dataWithError(null, message);
@@ -55,7 +55,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 
   if (file === null)
     return redirectWithError(
-      `/${params.username}/course-builder/${params.courseId}/file-library`,
+      `/${params.organizationId}/builder/${params.courseId}/file-library`,
       'File does not exist',
     );
 
@@ -83,7 +83,7 @@ export default function EditFileName({ loaderData, params }: Route.ComponentProp
       <Modal.Content size='sm'>
         <Modal.Header
           title='Edit File'
-          closeRoute={`/${params.username}/course-builder/${params.courseId}/file-library`}
+          closeRoute={`/${params.organizationId}/builder/${params.courseId}/file-library`}
         />
         <Modal.Body>
           <div className='relative flex justify-center pt-10 pb-2'>
@@ -97,7 +97,7 @@ export default function EditFileName({ loaderData, params }: Route.ComponentProp
               type='button'
               onClick={() =>
                 navigate(
-                  `/${params.username}/course-builder/${params.courseId}/file-library/${params.fileId}/edit/image`,
+                  `/${params.organizationId}/builder/${params.courseId}/file-library/${params.fileId}/edit/image`,
                 )
               }
             >
