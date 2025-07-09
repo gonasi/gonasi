@@ -1,10 +1,11 @@
 import { useEffect, useMemo } from 'react';
 import { data, Outlet, useLocation, useNavigate, useOutletContext } from 'react-router';
-import { BadgeDollarSign, BookType, ClipboardList, FileStack } from 'lucide-react';
+import { BadgeDollarSign, BookType, ClipboardList, FileStack, Pen, PencilOff } from 'lucide-react';
 
 import type { Route } from './+types/course-index';
 
 import { GoTabNav } from '~/components/go-tab-nav';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '~/components/ui/tooltip';
 import { createClient } from '~/lib/supabase/supabase.server';
 import type { OrganizationsOutletContextType } from '~/routes/layouts/organizations/organizations-layout';
 
@@ -68,7 +69,24 @@ export default function CoursesIndex({ params, loaderData }: Route.ComponentProp
         <GoTabNav
           previousLink={`/${params.organizationId}/builder`}
           tabs={tabs}
-          canEdit={Boolean(loaderData.canEdit)}
+          endComponent={
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  {loaderData.canEdit ? (
+                    <Pen size={16} className='text-muted-foreground' />
+                  ) : (
+                    <PencilOff size={16} className='text-muted-foreground' />
+                  )}
+                </TooltipTrigger>
+                <TooltipContent side='top'>
+                  {loaderData.canEdit
+                    ? 'You can make edits to this course'
+                    : 'You cannot make edits to this course'}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          }
         />
       </div>
       <div className='mt-4 min-h-screen px-4 md:mt-8'>

@@ -177,6 +177,8 @@ export default [
       ],
     ),
 
+    route(':organizationId/storage', 'routes/organizations/storage/storage-index.tsx'),
+
     route(
       ':organizationId/settings',
       'routes/organizations/settings/organization-settings-index.tsx',

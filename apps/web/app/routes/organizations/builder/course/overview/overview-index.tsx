@@ -118,7 +118,8 @@ export default function CourseOverview({ loaderData, params }: Route.ComponentPr
             transition={{ duration: 0.3, delay: 0.2 }}
           >
             <BannerCard
-              message='Provide additional context about your course by editing its category, sub-category, and learning pathway.'
+              message='Improve your course’s visibility'
+              description='Adding a category and sub-category helps others discover your course more easily when it’s public.'
               variant='info'
             />
             <div className='max-w-sm'>

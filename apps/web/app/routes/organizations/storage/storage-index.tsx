@@ -1,0 +1,105 @@
+import { HardDrive, UploadCloud } from 'lucide-react';
+
+import { getStorageUsageAnalytics } from '@gonasi/database/files';
+
+import type { Route } from './+types/storage-index';
+
+import { NavLinkButton } from '~/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
+import { Progress } from '~/components/ui/progress';
+import { createClient } from '~/lib/supabase/supabase.server';
+
+// Metadata for SEO
+export function meta() {
+  return [
+    {
+      title: 'Storage Usage • Gonasi',
+    },
+    {
+      name: 'description',
+      content:
+        'Monitor your organization’s storage usage across all courses on Gonasi. View how much space is used, available, and manage your files effectively.',
+    },
+  ];
+}
+
+export async function loader({ request, params }: Route.LoaderArgs) {
+  const { supabase } = createClient(request);
+
+  const storageUsage = await getStorageUsageAnalytics(supabase, params.organizationId);
+
+  return { storageUsage };
+}
+
+export default function StorageIndex({ loaderData }: Route.ComponentProps) {
+  const { storageUsage } = loaderData;
+
+  if (!storageUsage.success) {
+    return <div>Error: {storageUsage.message}</div>;
+  }
+
+  const formatStorage = (bytes: number) => {
+    const kb = bytes / 1024;
+    const mb = bytes / 1024 ** 2;
+    const gb = bytes / 1024 ** 3;
+    const tb = bytes / 1024 ** 4;
+
+    if (tb >= 1) return `${tb.toFixed(1)} TB`;
+    if (gb >= 1) return `${gb.toFixed(1)} GB`;
+    if (mb >= 1) return `${mb.toFixed(1)} MB`;
+    return `${kb.toFixed(1)} KB`;
+  };
+
+  const totalBytes = storageUsage.data?.limitBytes ?? 1;
+  const usedBytes = storageUsage.data?.totalUsageBytes ?? 0;
+  const remainingBytes = totalBytes - usedBytes;
+  const usagePercentage = (usedBytes / totalBytes) * 100;
+
+  return (
+    <section className='p-4'>
+      <div className='flex flex-col items-center justify-between pb-4 md:flex-row'>
+        <div className='flex flex-col gap-1'>
+          <h1 className='text-2xl font-bold'>Storage Usage</h1>
+          <p className='text-muted-foreground font-secondary text-sm'>
+            {`View your organization's storage usage and manage your files.`}
+          </p>
+        </div>
+        <div>
+          <NavLinkButton variant='secondary' to=''>
+            <UploadCloud className='h-4 w-4' />
+            Upgrade Storage
+          </NavLinkButton>
+        </div>
+      </div>
+
+      <Card className='mt-4 max-w-lg rounded-none border-none shadow-none'>
+        <CardHeader className='flex flex-row items-center space-y-0 pb-2'>
+          <CardTitle className='flex items-center gap-2 text-sm font-medium'>
+            <HardDrive className='h-4 w-4' />
+            <span className='mt-1'>Total Storage Usage</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className='space-y-4'>
+          <div className='space-y-2'>
+            <Progress value={usagePercentage} className='h-2' />
+            <div className='text-muted-foreground font-secondary flex justify-between text-sm'>
+              <span>{usagePercentage.toFixed(1)}% used</span>
+              <span>{formatStorage(remainingBytes)} available</span>
+            </div>
+          </div>
+
+          <div className='flex items-center justify-between'>
+            <div className='space-y-1'>
+              <p className='text-muted-foreground font-secondary text-sm font-bold'>Used</p>
+              <p className='text-2xl font-bold'>{formatStorage(usedBytes)}</p>
+            </div>
+            <div className='space-y-1'>
+              <p className='text-muted-foreground font-secondary text-sm font-bold'>Total</p>
+              <p className='text-2xl font-bold'>{formatStorage(totalBytes)}</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </section>
+  );
+}

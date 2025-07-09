@@ -23,11 +23,13 @@ export const FileRenderer: React.FC<{ file: FileLoaderItemType; canEdit: boolean
     case FileType.AUDIO:
       return <MediaCard file={file} media={<MediaPreviewCard file={file} />} canEdit={canEdit} />;
     case FileType.DOCUMENT:
-      return <MediaCard file={file} media={<DocumentPreviewCard file={file} />} />;
+      return (
+        <MediaCard file={file} media={<DocumentPreviewCard file={file} />} canEdit={canEdit} />
+      );
     case FileType.MODEL_3D:
-      return <MediaCard file={file} media={<ModelPreviewCard file={file} />} />;
+      return <MediaCard file={file} media={<ModelPreviewCard file={file} />} canEdit={canEdit} />;
     default:
-      return <MediaCard file={file} media={<FileCard file={file} />} />;
+      return <MediaCard file={file} media={<FileCard file={file} />} canEdit={canEdit} />;
   }
 };
 

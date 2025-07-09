@@ -1,4 +1,4 @@
-import { type LucideIcon, Pen, PencilOff } from 'lucide-react';
+import { type LucideIcon } from 'lucide-react';
 
 import { BackArrowNavLink } from '../ui/button';
 import { TabLink } from './tab-link';
@@ -13,10 +13,10 @@ export interface Tab {
 interface GoTabNavProps {
   tabs: Tab[];
   previousLink?: string;
-  canEdit: boolean;
+  endComponent?: React.ReactNode;
 }
 
-export function GoTabNav({ tabs, previousLink, canEdit }: GoTabNavProps) {
+export function GoTabNav({ tabs, previousLink, endComponent }: GoTabNavProps) {
   return (
     <div className='border-b-border/40 border-b'>
       <div className='grid grid-cols-[1fr_4fr_1fr] items-center px-4 pt-4 md:grid-cols-[1fr_8fr_1fr]'>
@@ -32,13 +32,7 @@ export function GoTabNav({ tabs, previousLink, canEdit }: GoTabNavProps) {
             ))}
         </div>
 
-        <div className='w-fit justify-self-end'>
-          {canEdit ? (
-            <Pen size={16} className='text-muted-foreground' />
-          ) : (
-            <PencilOff size={16} className='text-muted-foreground' />
-          )}
-        </div>
+        <div className='w-fit justify-self-end'>{endComponent}</div>
       </div>
     </div>
   );

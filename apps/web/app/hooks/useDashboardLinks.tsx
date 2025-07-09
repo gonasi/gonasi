@@ -1,5 +1,6 @@
 import {
   BarChart2Icon,
+  HardDrive,
   HomeIcon,
   LayoutTemplateIcon,
   LibraryIcon,
@@ -53,6 +54,12 @@ export function useDashboardLinks({
       to: `/${organizationId}/analytics`,
       icon: BarChart2Icon,
       roles: analyticsRoles,
+    },
+    {
+      name: 'Storage',
+      to: `/${organizationId}/storage`,
+      icon: HardDrive,
+      roles: allRoles,
     },
     {
       name: 'Settings',
