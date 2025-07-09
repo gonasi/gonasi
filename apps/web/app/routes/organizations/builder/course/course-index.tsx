@@ -1,13 +1,25 @@
 import { useEffect, useMemo } from 'react';
-import { Outlet, useLocation, useNavigate, useOutletContext } from 'react-router';
+import { data, Outlet, useLocation, useNavigate, useOutletContext } from 'react-router';
 import { BadgeDollarSign, BookType, ClipboardList, FileStack } from 'lucide-react';
 
 import type { Route } from './+types/course-index';
 
 import { GoTabNav } from '~/components/go-tab-nav';
+import { createClient } from '~/lib/supabase/supabase.server';
 import type { OrganizationsOutletContextType } from '~/routes/layouts/organizations/organizations-layout';
 
-export default function CoursesIndex({ params }: Route.ComponentProps) {
+export async function loader({ params, request }: Route.LoaderArgs) {
+  const { supabase } = createClient(request);
+  const courseId = params.courseId ?? '';
+
+  const canEdit = await supabase.rpc('can_user_edit_course', {
+    arg_course_id: courseId,
+  });
+
+  return data({ canEdit: canEdit.data });
+}
+
+export default function CoursesIndex({ params, loaderData }: Route.ComponentProps) {
   const { data } = useOutletContext<OrganizationsOutletContextType>();
 
   const navigate = useNavigate();
@@ -53,7 +65,11 @@ export default function CoursesIndex({ params }: Route.ComponentProps) {
   return (
     <section className='container mx-auto px-0'>
       <div className='bg-background/95 sticky top-0 z-20'>
-        <GoTabNav previousLink={`/${params.organizationId}/builder`} tabs={tabs} />
+        <GoTabNav
+          previousLink={`/${params.organizationId}/builder`}
+          tabs={tabs}
+          canEdit={Boolean(loaderData.canEdit)}
+        />
       </div>
       <div className='mt-4 min-h-screen px-4 md:mt-8'>
         <Outlet context={{ data }} />
