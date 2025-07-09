@@ -158,7 +158,11 @@ export default function EditCourseGrouping({ params, loaderData }: Route.Compone
                 description='Let’s narrow it down a bit. Choose something more specific.'
               />
 
-              <Button type='submit' disabled={isDisabled} isLoading={isDisabled}>
+              <Button
+                type='submit'
+                disabled={isDisabled || fetcher.state !== 'idle' || !form.formState.isDirty}
+                isLoading={isDisabled}
+              >
                 Save
               </Button>
             </Form>

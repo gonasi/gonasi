@@ -18,7 +18,7 @@ const CourseCategorySchema = z.string({ required_error: 'Course category is requ
 
 const CourseSubcategorySchema = z
   .string({ required_error: 'Course subcategory is required' })
-  .min(3, { message: 'Course subcategory is required' })
+  .min(4, { message: 'Course subcategory is required' })
   .trim();
 
 // NewCourseTitleSchema definition
