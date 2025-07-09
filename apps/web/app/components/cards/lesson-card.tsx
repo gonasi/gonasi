@@ -13,9 +13,10 @@ import type { CourseLessonType } from '~/routes/dashboard/courses/course-content
 interface Props {
   lesson: CourseLessonType;
   loading: boolean;
+  canEdit: boolean;
 }
 
-export function LessonCard({ lesson, loading }: Props) {
+export function LessonCard({ lesson, loading, canEdit }: Props) {
   const params = useParams();
 
   // Extract lesson type fields for reuse
@@ -50,7 +51,7 @@ export function LessonCard({ lesson, loading }: Props) {
           <ReorderIconTooltip
             title='Drag and drop to rearrange lessons'
             icon={GripVerticalIcon}
-            disabled={loading}
+            disabled={loading || !canEdit}
             dragControls={lessonDragControls}
           />
         </div>
@@ -74,9 +75,11 @@ export function LessonCard({ lesson, loading }: Props) {
             </div>
 
             {/* Right: drag handle + actions */}
-            <div className='flex shrink-0 items-center gap-2'>
-              <ActionDropdown items={options} />
-            </div>
+            {canEdit ? (
+              <div className='flex shrink-0 items-center gap-2'>
+                <ActionDropdown items={options} />
+              </div>
+            ) : null}
           </div>
 
           {/* Lesson type badge and description */}

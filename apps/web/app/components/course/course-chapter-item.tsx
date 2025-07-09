@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useFetcher, useParams } from 'react-router';
 import { AccordionContent, AccordionItem, AccordionTrigger } from '@radix-ui/react-accordion';
 import { Reorder, useDragControls, useMotionValue } from 'framer-motion';
-import { BookOpen, GripVerticalIcon, Pencil, Plus, Trash } from 'lucide-react';
+import { BookOpen, ChevronsUpDown, GripVerticalIcon, Pencil, Plus, Trash } from 'lucide-react';
 
 import { ActionDropdown } from '../action-dropdown';
 import { NotFoundCard } from '../cards';
@@ -34,11 +34,12 @@ function ChapterBadges({ lessonCount }: ChapterBadgesProps) {
 interface Props {
   chapter: CourseChapter;
   loading: boolean;
+  canEdit: boolean;
 }
 
 type Lesson = CourseChapter['lessons'][number];
 
-export default function CourseChapterItem({ chapter, loading }: Props) {
+export default function CourseChapterItem({ chapter, loading, canEdit }: Props) {
   const fetcher = useFetcher();
   const params = useParams();
 
@@ -63,6 +64,8 @@ export default function CourseChapterItem({ chapter, loading }: Props) {
 
   // Reorder lessons handler
   const handleLessonReorder = (updated: Lesson[]) => {
+    if (!canEdit) return;
+
     setReorderedLessons(updated);
 
     const orderedData = updated.map((lesson, index) => ({
@@ -98,7 +101,7 @@ export default function CourseChapterItem({ chapter, loading }: Props) {
           <ReorderIconTooltip
             title='Drag and drop to rearrange chapters'
             icon={GripVerticalIcon}
-            disabled={loading}
+            disabled={loading || !canEdit}
             dragControls={courseDragControls}
           />
         </div>
@@ -118,12 +121,18 @@ export default function CourseChapterItem({ chapter, loading }: Props) {
 
               {/* Chapter action controls */}
               <div className='flex items-center space-x-2'>
-                <ActionDropdown
-                  items={[
-                    { title: 'Edit chapter', icon: Pencil, to: `${basePath}/edit` },
-                    { title: 'Delete chapter', icon: Trash, to: `${basePath}/delete` },
-                  ]}
-                />
+                {canEdit ? (
+                  <ActionDropdown
+                    items={[
+                      { title: 'Edit chapter', icon: Pencil, to: `${basePath}/edit` },
+                      { title: 'Delete chapter', icon: Trash, to: `${basePath}/delete` },
+                    ]}
+                  />
+                ) : (
+                  <span>
+                    <ChevronsUpDown size={14} className='text-muted-foreground' />
+                  </span>
+                )}
               </div>
             </div>
 
@@ -143,18 +152,20 @@ export default function CourseChapterItem({ chapter, loading }: Props) {
 
             {/* Add lesson button */}
 
-            <div className='flex w-full items-center justify-end'>
-              <div className='w-fit'>
-                <NavLinkButton
-                  to={`${basePath}/new-lesson-details`}
-                  leftIcon={<Plus />}
-                  size='sm'
-                  variant='secondary'
-                >
-                  Add Lesson
-                </NavLinkButton>
+            {canEdit ? (
+              <div className='flex w-full items-center justify-end'>
+                <div className='w-fit'>
+                  <NavLinkButton
+                    to={`${basePath}/new-lesson-details`}
+                    leftIcon={<Plus />}
+                    size='sm'
+                    variant='secondary'
+                  >
+                    Add Lesson
+                  </NavLinkButton>
+                </div>
               </div>
-            </div>
+            ) : null}
 
             {/* Lessons list */}
             <div className='py-4'>
@@ -171,7 +182,12 @@ export default function CourseChapterItem({ chapter, loading }: Props) {
                 >
                   <div className='flex flex-col space-y-4'>
                     {reorderedLessons.map((lesson) => (
-                      <LessonCard key={lesson.id} lesson={lesson} loading={isSubmitting} />
+                      <LessonCard
+                        key={lesson.id}
+                        lesson={lesson}
+                        loading={isSubmitting}
+                        canEdit={canEdit}
+                      />
                     ))}
                   </div>
                 </Reorder.Group>

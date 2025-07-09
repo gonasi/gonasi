@@ -23,10 +23,11 @@ interface LessonBlockWrapperProps {
   onDelete?: () => void;
   loading?: boolean;
   block: Block;
+  canEdit: boolean;
 }
 
 export default function LessonBlockWrapper(props: LessonBlockWrapperProps) {
-  const { children, onEdit, onDelete, loading, block } = props;
+  const { children, onEdit, onDelete, loading, block, canEdit } = props;
 
   const title = toTitleCaseFromUnderscore(block.plugin_type ?? 'Edit');
 
@@ -49,18 +50,20 @@ export default function LessonBlockWrapper(props: LessonBlockWrapperProps) {
             <ReorderIconTooltip
               title='Drag and drop to rearrange blocks'
               icon={GripVerticalIcon}
-              disabled={loading}
+              disabled={loading || !canEdit}
               dragControls={blockDragControls}
             />
           </div>
           <div className='flex w-full items-center justify-between'>
             <div className='text-muted-foreground ml-4 text-sm'>{title}</div>
-            <ActionDropdown
-              items={[
-                { title: 'Edit', icon: Pencil, onClick: onEdit },
-                { title: 'Delete', icon: Trash, onClick: onDelete },
-              ]}
-            />
+            {canEdit ? (
+              <ActionDropdown
+                items={[
+                  { title: 'Edit', icon: Pencil, onClick: onEdit },
+                  { title: 'Delete', icon: Trash, onClick: onDelete },
+                ]}
+              />
+            ) : null}
           </div>
         </>
         <div className='mt-4'>{children}</div>

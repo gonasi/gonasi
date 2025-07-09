@@ -36,7 +36,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   });
 
   if (!courseOverview || canEdit === null) {
-    throw redirectWithError(
+    return redirectWithError(
       `/${params.organizationId}/builder`,
       'Course not found or no permissions',
     );

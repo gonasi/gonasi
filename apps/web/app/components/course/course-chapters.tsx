@@ -10,11 +10,12 @@ import type { CourseChaptersType } from '~/routes/dashboard/courses/course-conte
 
 interface Props {
   chapters: CourseChaptersType;
+  canEdit: boolean;
 }
 
 type Chapter = NonNullable<CourseChaptersType>[number];
 
-export function CourseChapters({ chapters }: Props) {
+export function CourseChapters({ chapters, canEdit }: Props) {
   const fetcher = useFetcher();
   const params = useParams();
 
@@ -33,6 +34,8 @@ export function CourseChapters({ chapters }: Props) {
 
   // Handle chapter reordering and submit new order
   const handleReorder = (updated: Chapter[]) => {
+    if (!canEdit) return;
+
     setReorderedChapters(updated);
 
     const orderedData = updated.map((chapter, index) => ({
@@ -72,7 +75,7 @@ export function CourseChapters({ chapters }: Props) {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: index * 0.05 }}
             >
-              <CourseChapterItem chapter={chapter} loading={isSubmitting} />
+              <CourseChapterItem chapter={chapter} loading={isSubmitting} canEdit={canEdit} />
             </motion.div>
           ))}
         </Accordion>

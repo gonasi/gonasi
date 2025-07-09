@@ -1230,6 +1230,10 @@ export type Database = {
         Args: { event: Json }
         Returns: Json
       }
+      delete_chapter: {
+        Args: { p_chapter_id: string; p_deleted_by: string }
+        Returns: undefined
+      }
       delete_lesson: {
         Args: { p_lesson_id: string; p_deleted_by: string }
         Returns: undefined
@@ -1269,6 +1273,14 @@ export type Database = {
       is_user_already_member: {
         Args: { arg_org_id: string; user_email: string }
         Returns: boolean
+      }
+      reorder_chapters: {
+        Args: {
+          p_course_id: string
+          chapter_positions: Json
+          p_updated_by: string
+        }
+        Returns: undefined
       }
       reorder_lesson_blocks: {
         Args:

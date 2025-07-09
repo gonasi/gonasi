@@ -29,16 +29,26 @@ export function meta() {
 }
 
 // Types for chapter and lesson data, inferred from the loader
-export type CourseChaptersType = Exclude<Awaited<ReturnType<typeof loader>>, Response>['data'];
-export type CourseChapter = NonNullable<CourseChaptersType>[number];
+export type CourseContentLoaderData = Exclude<Awaited<ReturnType<typeof loader>>, Response>['data'];
 
-export type CourseLessonType = NonNullable<CourseChaptersType>[number]['lessons'][number];
+export type CourseChapter = NonNullable<CourseContentLoaderData>['chapters'][number];
+export type CourseLessonType = NonNullable<CourseChapter>['lessons'][number];
 
 // Loads all chapters (with their lessons) for a given course
 export async function loader({ params, request }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
-  const courseChapters = await fetchCourseChaptersByCourseId(supabase, params.courseId);
-  return data(courseChapters);
+
+  const [courseChaptersResult, canEditResult] = await Promise.all([
+    fetchCourseChaptersByCourseId(supabase, params.courseId),
+    supabase.rpc('can_user_edit_course', {
+      arg_course_id: params.courseId,
+    }),
+  ]);
+
+  return data({
+    chapters: courseChaptersResult ?? [],
+    canEdit: canEditResult.data ?? false,
+  });
 }
 
 // Handles form submissions for reordering chapters or lessons
@@ -105,28 +115,31 @@ export async function action({ request, params }: Route.ActionArgs) {
   throw new Response('Unknown intent', { status: 400 });
 }
 
-// UI for the Course Overview page
 export default function CourseOverview({ loaderData, params }: Route.ComponentProps) {
+  const { chapters, canEdit } = loaderData;
+
   return (
     <>
       <div className='max-w-2xl pb-20'>
-        <BannerCard
-          message='Want to reorder your chapters and lessons? Just drag and drop.'
-          variant='tip'
-          className='mb-10'
-        />
+        {canEdit ? (
+          <BannerCard
+            message='Want to reorder your chapters and lessons? Just drag and drop.'
+            variant='tip'
+            className='mb-10'
+          />
+        ) : null}
 
-        <CourseChapters chapters={loaderData} />
+        <CourseChapters chapters={chapters} canEdit={canEdit} />
       </div>
 
-      {/* Floating button to add a new chapter */}
-      <FloatingActionButton
-        to={`/${params.organizationId}/builder/${params.courseId}/content/chapter/new`}
-        tooltip='Add new chapter'
-        icon={<Plus size={20} strokeWidth={4} />}
-      />
+      {canEdit ? (
+        <FloatingActionButton
+          to={`/${params.organizationId}/builder/${params.courseId}/content/chapter/new`}
+          tooltip='Add new chapter'
+          icon={<Plus size={20} strokeWidth={4} />}
+        />
+      ) : null}
 
-      {/* Render nested routes if any */}
       <Outlet />
     </>
   );

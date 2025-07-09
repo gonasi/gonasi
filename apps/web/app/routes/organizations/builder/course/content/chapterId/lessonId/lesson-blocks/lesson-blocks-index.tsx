@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { data, Outlet, useFetcher, useNavigate } from 'react-router';
 import { Reorder } from 'framer-motion';
-import { NotebookPen } from 'lucide-react';
+import { PenOff, SquarePen } from 'lucide-react';
 import { dataWithError, redirectWithError } from 'remix-toast';
 import { ClientOnly } from 'remix-utils/client-only';
 
@@ -34,9 +34,12 @@ export type BlockType = Exclude<Awaited<ReturnType<typeof loader>>, Response>['l
 export async function loader({ params, request }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
 
-  const [lesson, lessonBlocks] = await Promise.all([
+  const [lesson, lessonBlocks, canEdit] = await Promise.all([
     fetchUserLessonById(supabase, params.lessonId),
     fetchLessonBlocksByLessonId(supabase, params.lessonId),
+    supabase.rpc('can_user_edit_course', {
+      arg_course_id: params.courseId,
+    }),
   ]);
 
   if (!lesson || !lessonBlocks.data) {
@@ -47,7 +50,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     );
   }
 
-  return { lesson, lessonBlocks: lessonBlocks.data };
+  return { lesson, lessonBlocks: lessonBlocks.data, canEdit: Boolean(canEdit.data) };
 }
 
 // --- Action ---
@@ -87,7 +90,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 }
 
 export default function EditLessonContent({ loaderData, params }: Route.ComponentProps) {
-  const { lesson, lessonBlocks } = loaderData;
+  const { lesson, lessonBlocks, canEdit } = loaderData;
   const fetcher = useFetcher();
   const navigate = useNavigate();
 
@@ -108,6 +111,8 @@ export default function EditLessonContent({ loaderData, params }: Route.Componen
   }, [fetcher.state]);
 
   function handleReorder(updated: Block[]) {
+    if (!canEdit) return;
+
     setReorderedBlocks(updated);
 
     const orderedData = updated.map((chapter, index) => ({
@@ -127,7 +132,7 @@ export default function EditLessonContent({ loaderData, params }: Route.Componen
       <Modal open>
         <Modal.Content size='full'>
           <Modal.Header
-            leadingIcon={<NotebookPen />}
+            leadingIcon={canEdit ? <SquarePen /> : <PenOff />}
             title={lesson.name}
             subTitle={lesson.lesson_types?.name}
             closeRoute={basePath}
@@ -149,6 +154,7 @@ export default function EditLessonContent({ loaderData, params }: Route.Componen
                       loading={isSubmitting}
                       onEdit={navigateTo(`${blockIdPath}/edit`)}
                       onDelete={navigateTo(`${blockIdPath}/delete`)}
+                      canEdit={canEdit}
                     >
                       <ClientOnly fallback={<Spinner />}>
                         {() => (
@@ -166,7 +172,7 @@ export default function EditLessonContent({ loaderData, params }: Route.Componen
             )}
           </div>
 
-          <PluginButton onClick={navigateTo(`${lessonBasePath}/plugins`)} />
+          {canEdit ? <PluginButton onClick={navigateTo(`${lessonBasePath}/plugins`)} /> : null}
         </Modal.Content>
       </Modal>
       <Outlet />
