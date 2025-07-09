@@ -1139,6 +1139,10 @@ export type Database = {
         Args: { p_chapter_id: string; p_deleted_by: string }
         Returns: undefined
       }
+      delete_lesson: {
+        Args: { p_lesson_id: string; p_deleted_by: string }
+        Returns: undefined
+      }
       delete_pricing_tier: {
         Args: { p_tier_id: string; p_deleted_by: string }
         Returns: undefined

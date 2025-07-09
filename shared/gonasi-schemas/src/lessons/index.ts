@@ -40,6 +40,7 @@ export type EditLessonDetailsSchemaTypes = z.infer<typeof EditLessonDetailsSchem
 export const SubmitEditLessonDetailsSchema = EditLessonDetailsSchema.merge(
   z.object({
     lessonId: z.string(),
+    organizationId: z.string(),
   }),
 );
 export type EditLessonSubmitValues = z.infer<typeof SubmitEditLessonDetailsSchema>;

@@ -17,13 +17,13 @@ export const editLessonDetails = async (
 ): Promise<ApiResponse> => {
   const userId = await getUserId(supabase);
 
-  const { name, lessonId, lessonType } = lessonData;
+  const { name, lessonId, lessonType, organizationId } = lessonData;
 
   try {
     const { error: updateError } = await supabase
       .from('lessons')
       .update({ name, lesson_type_id: lessonType, updated_by: userId })
-      .match({ id: lessonId, created_by: userId });
+      .match({ id: lessonId, organization_id: organizationId });
 
     if (updateError) {
       return { success: false, message: `Unable to update lesson title: ${updateError.message}` };

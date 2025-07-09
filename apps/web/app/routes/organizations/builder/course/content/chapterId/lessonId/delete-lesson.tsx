@@ -20,11 +20,23 @@ const resolver = zodResolver(DeleteLessonSchema);
 export async function loader({ params, request }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
 
-  const lesson = await fetchUserLessonById(supabase, params.lessonId);
+  const [lesson, canDelete] = await Promise.all([
+    fetchUserLessonById(supabase, params.lessonId),
+    supabase.rpc('can_user_edit_course', {
+      arg_course_id: params.courseId,
+    }),
+  ]);
+
+  if (!canDelete) {
+    throw redirectWithError(
+      `/${params.organizationId}/builder/${params.courseId}/content/chapter`,
+      'You don’t have permission to delete this lesson.',
+    );
+  }
 
   if (lesson === null)
     return redirectWithError(
-      `/${params.username}/course-builder/${params.courseId}/content`,
+      `/${params.organizationId}/builder/${params.courseId}/content`,
       'Learning path not exist',
     );
 
@@ -54,7 +66,7 @@ export async function action({ params, request }: Route.ActionArgs) {
   }
 
   return redirectWithSuccess(
-    `/${params.username}/course-builder/${params.courseId}/content`,
+    `/${params.organizationId}/builder/${params.courseId}/content`,
     message,
   );
 }

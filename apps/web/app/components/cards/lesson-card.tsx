@@ -21,7 +21,7 @@ export function LessonCard({ lesson, loading }: Props) {
   // Extract lesson type fields for reuse
   const { lucide_icon, bg_color, name: typeName, description } = lesson.lesson_types;
 
-  const basePath = `/${params.username}/course-builder/${params.courseId}/content/${lesson.chapter_id}/${lesson.id}`;
+  const basePath = `/${params.organizationId}/builder/${params.courseId}/content/${lesson.chapter_id}/${lesson.id}`;
 
   const lessonY = useMotionValue(0);
   const lessonBoxShadow = useRaisedShadow(lessonY, {

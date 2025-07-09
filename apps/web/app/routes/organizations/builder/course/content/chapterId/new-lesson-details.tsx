@@ -1,4 +1,4 @@
-import { data, Form, useParams } from 'react-router';
+import { data, Form } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ChevronRight } from 'lucide-react';
 import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
@@ -80,9 +80,7 @@ export async function action({ params, request }: Route.ActionArgs) {
   );
 }
 
-export default function NewLessonDetails({ loaderData }: Route.ComponentProps) {
-  const params = useParams();
-
+export default function NewLessonDetails({ params, loaderData }: Route.ComponentProps) {
   const isPending = useIsPending();
 
   const methods = useRemixForm<NewLessonDetailsSchemaTypes>({
@@ -97,7 +95,7 @@ export default function NewLessonDetails({ loaderData }: Route.ComponentProps) {
       <Modal.Content size='sm'>
         <Modal.Header
           title='New lesson'
-          closeRoute={`/${params.username}/course-builder/${params.courseId}/content`}
+          closeRoute={`/${params.organizationId}/builder/${params.courseId}/content`}
         />
         <Modal.Body>
           <RemixFormProvider {...methods}>

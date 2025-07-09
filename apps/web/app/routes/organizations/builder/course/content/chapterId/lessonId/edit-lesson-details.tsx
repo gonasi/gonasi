@@ -20,20 +20,32 @@ import { createClient } from '~/lib/supabase/supabase.server';
 import { checkHoneypot } from '~/utils/honeypot.server';
 import { useIsPending } from '~/utils/misc';
 
+// Zod resolver
 const resolver = zodResolver(EditLessonDetailsSchema);
 
+// Loader: fetch lesson and type options
 export async function loader({ params, request }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
 
-  const [lesson, lessonTypes] = await Promise.all([
+  const [lesson, lessonTypes, canEdit] = await Promise.all([
     fetchUserLessonById(supabase, params.lessonId),
     fetchLessonTypesAsSelectOptions(supabase),
+    supabase.rpc('can_user_edit_course', {
+      arg_course_id: params.courseId,
+    }),
   ]);
+
+  if (!canEdit) {
+    throw redirectWithError(
+      `/${params.organizationId}/builder/${params.courseId}/content/chapter`,
+      'You don’t have permission to edit this lesson.',
+    );
+  }
 
   if (!lesson) {
     return redirectWithError(
-      `/${params.username}/course-builder/${params.courseId}/content`,
-      'Looks like this lesson’s missing or locked for you.',
+      `/${params.organizationId}/builder/${params.courseId}/content`,
+      'This lesson couldn’t be found or is currently locked.',
     );
   }
 
@@ -47,6 +59,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   });
 }
 
+// Action: handle update form submission
 export async function action({ params, request }: Route.ActionArgs) {
   const formData = await request.formData();
   await checkHoneypot(formData);
@@ -64,6 +77,7 @@ export async function action({ params, request }: Route.ActionArgs) {
   const result = await editLessonDetails(supabase, {
     ...data,
     lessonId: params.lessonId,
+    organizationId: params.organizationId,
   });
 
   if (!result.success) {
@@ -71,14 +85,14 @@ export async function action({ params, request }: Route.ActionArgs) {
   }
 
   return redirectWithSuccess(
-    `/${params.username}/course-builder/${params.courseId}/content`,
+    `/${params.organizationId}/builder/${params.courseId}/content`,
     result.message,
   );
 }
 
+// Component: UI for editing lesson name and type
 export default function EditLessonDetails({ loaderData, params }: Route.ComponentProps) {
   const { lesson, lessonTypes } = loaderData;
-
   const isPending = useIsPending();
 
   const methods = useRemixForm<EditLessonDetailsSchemaTypes>({
@@ -96,35 +110,38 @@ export default function EditLessonDetails({ loaderData, params }: Route.Componen
     <Modal open>
       <Modal.Content size='sm'>
         <Modal.Header
-          title='Edit lesson title & type'
-          closeRoute={`/${params.username}/course-builder/${params.courseId}/content`}
+          title='Edit Lesson Details'
+          closeRoute={`/${params.organizationId}/builder/${params.courseId}/content`}
         />
         <Modal.Body>
           <RemixFormProvider {...methods}>
             <Form method='POST' onSubmit={methods.handleSubmit}>
               <HoneypotInputs />
+
               <GoInputField
                 name='name'
-                labelProps={{ children: 'Lesson title', required: true }}
+                labelProps={{ children: 'Lesson Title', required: true }}
                 inputProps={{ autoFocus: true, disabled: isDisabled }}
-                description='Enter the lesson title.'
+                description='Give this lesson a clear, helpful title learners will recognize.'
               />
+
               <GoSearchableDropDown
                 name='lessonType'
-                labelProps={{ children: 'Lesson type', required: true }}
+                labelProps={{ children: 'Lesson Type', required: true }}
                 searchDropdownProps={{
                   disabled: isDisabled,
                   options: lessonTypes,
                 }}
-                description="Pick what best fits the lesson you're making."
+                description='Choose the type that best describes this lesson.'
               />
+
               <div className='pt-4'>
                 <Button
                   type='submit'
                   disabled={isDisabled || !methods.formState.isDirty}
                   isLoading={isDisabled}
                 >
-                  Save
+                  Save Changes
                 </Button>
               </div>
             </Form>
