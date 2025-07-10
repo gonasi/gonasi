@@ -1,12 +1,7 @@
-
--- ============================================================================
--- STORAGE BUCKET: published_thumbnails (Updated to use path-based approach)
--- ============================================================================
-
 -- ============================================================================
 -- SELECT: Allow any member of the organization that owns the course
 -- ============================================================================
-create policy "Read: Org members can view course published_thumbnails"
+create policy "Select: Org members can view published_thumbnails"
 on storage.objects
 for select
 to authenticated
@@ -21,10 +16,8 @@ using (
 );
 
 -- ============================================================================
--- insert: allow any org member (owner, admin, editor) to upload published_thumbnails
+-- INSERT: Allow any org member (owner, admin, editor) to upload published_thumbnails
 -- ============================================================================
-drop policy if exists "Insert: Org members can upload published_thumbnails" on storage.objects;
-
 create policy "Insert: Org members can upload published_thumbnails"
 on storage.objects
 for insert
@@ -38,7 +31,6 @@ with check (
       and public.get_user_org_role(c.organization_id, (select auth.uid())) in ('owner', 'admin', 'editor')
   )
 );
-
 
 -- ============================================================================
 -- UPDATE: Allow only:

@@ -1685,6 +1685,58 @@ end;
 $function$
 ;
 
+CREATE OR REPLACE FUNCTION public.ensure_incremented_course_version()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO ''
+AS $function$
+declare
+  latest_version int;
+  content_changed boolean := false;
+begin
+  -- Get the latest version for this course
+  select coalesce(max(version), 0)
+  into latest_version
+  from public.published_courses
+  where id = NEW.id;
+
+  if TG_OP = 'INSERT' then
+    -- For INSERT, always increment version if not explicitly set higher
+    if NEW.version is null or NEW.version <= latest_version then
+      NEW.version := latest_version + 1;
+    end if;
+    
+    -- Set published_at for new publications
+    NEW.published_at := timezone('utc', now());
+
+  elsif TG_OP = 'UPDATE' then
+    -- Check if content-related fields have changed
+    content_changed := (
+      NEW.name IS DISTINCT FROM OLD.name OR
+      NEW.description IS DISTINCT FROM OLD.description OR
+      NEW.image_url IS DISTINCT FROM OLD.image_url OR
+      NEW.blur_hash IS DISTINCT FROM OLD.blur_hash OR
+      NEW.visibility IS DISTINCT FROM OLD.visibility OR
+      NEW.course_structure IS DISTINCT FROM OLD.course_structure OR
+      NEW.pricing_tiers IS DISTINCT FROM OLD.pricing_tiers
+    );
+    
+    -- Only increment version if content changed
+    if content_changed then
+      NEW.version := greatest(OLD.version + 1, latest_version + 1);
+      NEW.published_at := timezone('utc', now());
+    else
+      -- Keep existing version and published_at for stats-only updates
+      NEW.version := OLD.version;
+      NEW.published_at := OLD.published_at;
+    end if;
+  end if;
+
+  return NEW;
+end;
+$function$
+;
+
 CREATE OR REPLACE FUNCTION public.get_active_organization_members(_organization_id uuid, _user_id uuid)
  RETURNS jsonb
  LANGUAGE plpgsql
@@ -2644,23 +2696,6 @@ end;
 $function$
 ;
 
-CREATE OR REPLACE FUNCTION public.set_published_course_version()
- RETURNS trigger
- LANGUAGE plpgsql
- SET search_path TO ''
-AS $function$
-begin
-  if NEW.version is null or NEW.version = 0 then
-    select coalesce(max(version), 0) + 1
-    into NEW.version
-    from public.published_courses
-    where course_id = NEW.course_id;
-  end if;
-  return NEW;
-end;
-$function$
-;
-
 CREATE OR REPLACE FUNCTION public.switch_course_pricing_model(p_course_id uuid, p_user_id uuid, p_target_model text)
  RETURNS void
  LANGUAGE plpgsql
@@ -2878,11 +2913,10 @@ $function$
 CREATE OR REPLACE FUNCTION public.update_updated_at_column()
  RETURNS trigger
  LANGUAGE plpgsql
- SET search_path TO ''
 AS $function$
 begin
-  new.updated_at = timezone('utc', clock_timestamp());
-  return new;
+  NEW.updated_at := timezone('utc', now());
+  return NEW;
 end;
 $function$
 ;
@@ -4208,7 +4242,9 @@ CREATE TRIGGER set_updated_at BEFORE UPDATE ON public.profiles FOR EACH ROW EXEC
 
 CREATE TRIGGER trg_published_courses_set_updated_at BEFORE UPDATE ON public.published_courses FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER trg_set_published_course_version BEFORE INSERT ON public.published_courses FOR EACH ROW EXECUTE FUNCTION set_published_course_version();
+CREATE TRIGGER trg_set_published_course_version BEFORE INSERT ON public.published_courses FOR EACH ROW EXECUTE FUNCTION ensure_incremented_course_version();
+
+CREATE TRIGGER trg_update_published_course_version BEFORE UPDATE ON public.published_courses FOR EACH ROW EXECUTE FUNCTION ensure_incremented_course_version();
 
 
 CREATE TRIGGER on_auth_user_created AFTER INSERT ON auth.users FOR EACH ROW EXECUTE FUNCTION handle_new_user();
@@ -4249,6 +4285,16 @@ using ((owner = ( SELECT auth.uid() AS uid)))
 with check (((bucket_id = 'profile_photos'::text) AND ((storage.foldername(name))[1] = ( SELECT (auth.uid())::text AS uid))));
 
 
+create policy "Delete: Admins or owning editors can delete published_thumbnail"
+on "storage"."objects"
+as permissive
+for delete
+to authenticated
+using (((bucket_id = 'published_thumbnails'::text) AND (EXISTS ( SELECT 1
+   FROM courses c
+  WHERE ((c.id = (split_part(objects.name, '/'::text, 1))::uuid) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.owned_by = ( SELECT auth.uid() AS uid)))))))));
+
+
 create policy "Delete: Admins or owning editors can delete thumbnails"
 on "storage"."objects"
 as permissive
@@ -4257,6 +4303,16 @@ to authenticated
 using (((bucket_id = 'thumbnails'::text) AND (EXISTS ( SELECT 1
    FROM courses c
   WHERE ((c.id = (split_part(objects.name, '/'::text, 1))::uuid) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.owned_by = ( SELECT auth.uid() AS uid)))))))));
+
+
+create policy "Insert: Org members can upload published_thumbnails"
+on "storage"."objects"
+as permissive
+for insert
+to authenticated
+with check (((bucket_id = 'published_thumbnails'::text) AND (EXISTS ( SELECT 1
+   FROM courses c
+  WHERE ((c.id = (split_part(objects.name, '/'::text, 1))::uuid) AND (get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text, 'editor'::text])))))));
 
 
 create policy "Insert: Org members can upload thumbnails"
@@ -4269,6 +4325,16 @@ with check (((bucket_id = 'thumbnails'::text) AND (EXISTS ( SELECT 1
   WHERE ((c.id = (split_part(objects.name, '/'::text, 1))::uuid) AND (get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text, 'editor'::text])))))));
 
 
+create policy "Select: Org members can view published_thumbnails"
+on "storage"."objects"
+as permissive
+for select
+to authenticated
+using (((bucket_id = 'published_thumbnails'::text) AND (EXISTS ( SELECT 1
+   FROM courses c
+  WHERE ((c.id = (split_part(objects.name, '/'::text, 1))::uuid) AND (get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) IS NOT NULL))))));
+
+
 create policy "Select: Org members can view thumbnails"
 on "storage"."objects"
 as permissive
@@ -4277,6 +4343,19 @@ to authenticated
 using (((bucket_id = 'thumbnails'::text) AND (EXISTS ( SELECT 1
    FROM courses c
   WHERE ((c.id = (split_part(objects.name, '/'::text, 1))::uuid) AND (get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) IS NOT NULL))))));
+
+
+create policy "Update: Admins or owning editors can update published_thumbnail"
+on "storage"."objects"
+as permissive
+for update
+to authenticated
+using (((bucket_id = 'published_thumbnails'::text) AND (EXISTS ( SELECT 1
+   FROM courses c
+  WHERE ((c.id = (split_part(objects.name, '/'::text, 1))::uuid) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.owned_by = ( SELECT auth.uid() AS uid)))))))))
+with check (((bucket_id = 'published_thumbnails'::text) AND (EXISTS ( SELECT 1
+   FROM courses c
+  WHERE ((c.id = (split_part(objects.name, '/'::text, 1))::uuid) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.owned_by = ( SELECT auth.uid() AS uid)))))))));
 
 
 create policy "Update: Admins or owning editors can update thumbnails"

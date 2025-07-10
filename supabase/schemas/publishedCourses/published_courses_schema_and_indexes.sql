@@ -2,15 +2,16 @@
 -- TABLE: published_courses
 -- Description:
 --   Stores immutable snapshots of courses at the moment of publication.
---   Each row represents a specific published version of a course. This allows:
+--   Each course can have multiple versions, but only one active version at a time.
+--   This allows:
 --     - learners to interact with stable course versions
---     - course editors to make changes to drafts without affecting live content
+--     - course editors to make changes that increment versions only when content changes
 -- ====================================================================================
 
 create table public.published_courses (
-  -- Primary key also serves as the original course ID
-  id uuid primary key references public.courses(id) on delete cascade, -- Matches course.id (shared ID)
-
+  -- Primary key is the course ID
+  id uuid primary key references public.courses(id) on delete cascade, -- Course ID
+  
   organization_id uuid not null references public.organizations(id) on delete cascade, -- Owning org
 
   -- Versioning
@@ -79,31 +80,78 @@ create index idx_published_courses_chapters on public.published_courses using gi
 create index idx_published_courses_lessons on public.published_courses using gin((course_structure->'lessons'));
 
 
--- Function to auto-increment version number
-create or replace function public.set_published_course_version()
+-- ====================================================================================
+-- Trigger Function: Auto-increment version on insert or update with content changes
+-- ====================================================================================
+
+create or replace function public.ensure_incremented_course_version()
 returns trigger
 language plpgsql
 set search_path = ''
 as $$
+declare
+  latest_version int;
+  content_changed boolean := false;
 begin
-  if NEW.version is null or NEW.version = 0 then
-    select coalesce(max(version), 0) + 1
-    into NEW.version
-    from public.published_courses
-    where course_id = NEW.course_id;
+  -- Get the latest version for this course
+  select coalesce(max(version), 0)
+  into latest_version
+  from public.published_courses
+  where id = NEW.id;
+
+  if TG_OP = 'INSERT' then
+    -- For INSERT, always increment version if not explicitly set higher
+    if NEW.version is null or NEW.version <= latest_version then
+      NEW.version := latest_version + 1;
+    end if;
+    
+    -- Set published_at for new publications
+    NEW.published_at := timezone('utc', now());
+
+  elsif TG_OP = 'UPDATE' then
+    -- Check if content-related fields have changed
+    content_changed := (
+      NEW.name IS DISTINCT FROM OLD.name OR
+      NEW.description IS DISTINCT FROM OLD.description OR
+      NEW.image_url IS DISTINCT FROM OLD.image_url OR
+      NEW.blur_hash IS DISTINCT FROM OLD.blur_hash OR
+      NEW.visibility IS DISTINCT FROM OLD.visibility OR
+      NEW.course_structure IS DISTINCT FROM OLD.course_structure OR
+      NEW.pricing_tiers IS DISTINCT FROM OLD.pricing_tiers
+    );
+    
+    -- Only increment version if content changed
+    if content_changed then
+      NEW.version := greatest(OLD.version + 1, latest_version + 1);
+      NEW.published_at := timezone('utc', now());
+    else
+      -- Keep existing version and published_at for stats-only updates
+      NEW.version := OLD.version;
+      NEW.published_at := OLD.published_at;
+    end if;
   end if;
+
   return NEW;
 end;
 $$;
 
--- Trigger to set version number
+-- Trigger: On INSERT
 create trigger trg_set_published_course_version
   before insert on public.published_courses
   for each row
-  execute function public.set_published_course_version();
+  execute function public.ensure_incremented_course_version();
 
--- Auto-update updated_at timestamp
-create or replace trigger trg_published_courses_set_updated_at
+-- Trigger: On UPDATE
+create trigger trg_update_published_course_version
   before update on public.published_courses
   for each row
-  execute function update_updated_at_column();
+  execute function public.ensure_incremented_course_version();
+
+-- ====================================================================================
+-- Trigger Function: Auto-update updated_at timestamp
+-- ====================================================================================
+
+create trigger trg_published_courses_set_updated_at
+  before update on public.published_courses
+  for each row
+  execute function public.update_updated_at_column();
