@@ -143,7 +143,9 @@ export default function PublishCourse({ loaderData, params }: Route.ComponentPro
     () => ({
       courseOverview: {
         id: courseOverview.id,
+        organizationId: courseOverview.organization_id ?? '',
         name: courseOverview.name,
+        visibility: courseOverview.visibility,
         description: courseOverview.description ?? '',
         image_url: courseOverview.image_url ?? '',
         blur_hash: courseOverview.blur_hash ?? null,
@@ -208,7 +210,7 @@ export default function PublishCourse({ loaderData, params }: Route.ComponentPro
               settings: block.settings,
               position: block.position,
               lesson_id: block.lesson_id,
-              updated_by: block.updated_by,
+              updated_by: block.updated_by ?? undefined,
             })) ?? null,
         })) ?? [],
     }),

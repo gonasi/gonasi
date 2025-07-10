@@ -274,6 +274,30 @@ create table "public"."profiles" (
 
 alter table "public"."profiles" enable row level security;
 
+create table "public"."published_courses" (
+    "id" uuid not null,
+    "organization_id" uuid not null,
+    "version" integer not null default 1,
+    "is_active" boolean not null default true,
+    "name" text not null,
+    "description" text,
+    "image_url" text,
+    "blur_hash" text,
+    "visibility" course_access not null default 'public'::course_access,
+    "course_structure" jsonb not null,
+    "pricing_tiers" jsonb not null default '[]'::jsonb,
+    "published_at" timestamp with time zone not null default timezone('utc'::text, now()),
+    "published_by" uuid not null,
+    "total_enrollments" integer not null default 0,
+    "active_enrollments" integer not null default 0,
+    "completion_rate" numeric(5,2) default 0.00,
+    "average_rating" numeric(3,2),
+    "total_reviews" integer not null default 0,
+    "created_at" timestamp with time zone not null default timezone('utc'::text, now()),
+    "updated_at" timestamp with time zone not null default timezone('utc'::text, now())
+);
+
+
 create table "public"."role_permissions" (
     "id" uuid not null default uuid_generate_v4(),
     "role" app_role not null,
@@ -459,6 +483,32 @@ CREATE INDEX idx_profiles_username ON public.profiles USING btree (username) WHE
 
 CREATE INDEX idx_profiles_verified_users ON public.profiles USING btree (id) WHERE (account_verified = true);
 
+CREATE INDEX idx_published_courses_chapters ON public.published_courses USING gin (((course_structure -> 'chapters'::text)));
+
+CREATE INDEX idx_published_courses_enrollments ON public.published_courses USING btree (total_enrollments);
+
+CREATE INDEX idx_published_courses_id_version ON public.published_courses USING btree (id, version DESC);
+
+CREATE INDEX idx_published_courses_is_active ON public.published_courses USING btree (is_active) WHERE (is_active = true);
+
+CREATE INDEX idx_published_courses_lessons ON public.published_courses USING gin (((course_structure -> 'lessons'::text)));
+
+CREATE INDEX idx_published_courses_org_active ON public.published_courses USING btree (organization_id, is_active);
+
+CREATE INDEX idx_published_courses_org_id ON public.published_courses USING btree (organization_id);
+
+CREATE INDEX idx_published_courses_published_at ON public.published_courses USING btree (published_at);
+
+CREATE INDEX idx_published_courses_published_by ON public.published_courses USING btree (published_by);
+
+CREATE INDEX idx_published_courses_rating ON public.published_courses USING btree (average_rating) WHERE (average_rating IS NOT NULL);
+
+CREATE INDEX idx_published_courses_structure_gin ON public.published_courses USING gin (course_structure);
+
+CREATE INDEX idx_published_courses_version ON public.published_courses USING btree (id, version);
+
+CREATE INDEX idx_published_courses_visibility ON public.published_courses USING btree (visibility);
+
 CREATE INDEX idx_user_roles_user_id ON public.user_roles USING btree (user_id);
 
 CREATE UNIQUE INDEX lesson_blocks_pkey ON public.lesson_blocks USING btree (id);
@@ -491,6 +541,8 @@ CREATE UNIQUE INDEX profiles_pkey ON public.profiles USING btree (id);
 
 CREATE UNIQUE INDEX profiles_username_key ON public.profiles USING btree (username);
 
+CREATE UNIQUE INDEX published_courses_pkey ON public.published_courses USING btree (id);
+
 CREATE UNIQUE INDEX role_permissions_pkey ON public.role_permissions USING btree (id);
 
 CREATE UNIQUE INDEX role_permissions_role_permission_key ON public.role_permissions USING btree (role, permission);
@@ -508,6 +560,8 @@ CREATE UNIQUE INDEX unique_lesson_block_position_per_lesson ON public.lesson_blo
 CREATE UNIQUE INDEX unique_lesson_position_per_chapter ON public.lessons USING btree (chapter_id, "position");
 
 CREATE UNIQUE INDEX unique_pending_invite_per_user ON public.organization_invites USING btree (organization_id, email) WHERE ((accepted_at IS NULL) AND (revoked_at IS NULL));
+
+CREATE UNIQUE INDEX uq_one_active_published_course ON public.published_courses USING btree (id, is_active);
 
 CREATE UNIQUE INDEX uq_one_active_tier_per_frequency ON public.course_pricing_tiers USING btree (course_id, payment_frequency, is_active);
 
@@ -540,6 +594,8 @@ alter table "public"."organization_members" add constraint "organization_members
 alter table "public"."organizations" add constraint "organizations_pkey" PRIMARY KEY using index "organizations_pkey";
 
 alter table "public"."profiles" add constraint "profiles_pkey" PRIMARY KEY using index "profiles_pkey";
+
+alter table "public"."published_courses" add constraint "published_courses_pkey" PRIMARY KEY using index "published_courses_pkey";
 
 alter table "public"."role_permissions" add constraint "role_permissions_pkey" PRIMARY KEY using index "role_permissions_pkey";
 
@@ -840,6 +896,32 @@ alter table "public"."profiles" validate constraint "username_length";
 alter table "public"."profiles" add constraint "username_lowercase" CHECK ((username = lower(username))) not valid;
 
 alter table "public"."profiles" validate constraint "username_lowercase";
+
+alter table "public"."published_courses" add constraint "chk_average_rating" CHECK (((average_rating >= (1)::numeric) AND (average_rating <= (5)::numeric))) not valid;
+
+alter table "public"."published_courses" validate constraint "chk_average_rating";
+
+alter table "public"."published_courses" add constraint "chk_completion_rate" CHECK (((completion_rate >= (0)::numeric) AND (completion_rate <= (100)::numeric))) not valid;
+
+alter table "public"."published_courses" validate constraint "chk_completion_rate";
+
+alter table "public"."published_courses" add constraint "chk_version_positive" CHECK ((version > 0)) not valid;
+
+alter table "public"."published_courses" validate constraint "chk_version_positive";
+
+alter table "public"."published_courses" add constraint "published_courses_id_fkey" FOREIGN KEY (id) REFERENCES courses(id) ON DELETE CASCADE not valid;
+
+alter table "public"."published_courses" validate constraint "published_courses_id_fkey";
+
+alter table "public"."published_courses" add constraint "published_courses_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE not valid;
+
+alter table "public"."published_courses" validate constraint "published_courses_organization_id_fkey";
+
+alter table "public"."published_courses" add constraint "published_courses_published_by_fkey" FOREIGN KEY (published_by) REFERENCES profiles(id) ON DELETE CASCADE not valid;
+
+alter table "public"."published_courses" validate constraint "published_courses_published_by_fkey";
+
+alter table "public"."published_courses" add constraint "uq_one_active_published_course" UNIQUE using index "uq_one_active_published_course" DEFERRABLE INITIALLY DEFERRED;
 
 alter table "public"."role_permissions" add constraint "role_permissions_role_permission_key" UNIQUE using index "role_permissions_role_permission_key";
 
@@ -2562,6 +2644,23 @@ end;
 $function$
 ;
 
+CREATE OR REPLACE FUNCTION public.set_published_course_version()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO ''
+AS $function$
+begin
+  if NEW.version is null or NEW.version = 0 then
+    select coalesce(max(version), 0) + 1
+    into NEW.version
+    from public.published_courses
+    where course_id = NEW.course_id;
+  end if;
+  return NEW;
+end;
+$function$
+;
+
 CREATE OR REPLACE FUNCTION public.switch_course_pricing_model(p_course_id uuid, p_user_id uuid, p_target_model text)
  RETURNS void
  LANGUAGE plpgsql
@@ -3370,6 +3469,48 @@ grant truncate on table "public"."profiles" to "service_role";
 
 grant update on table "public"."profiles" to "service_role";
 
+grant delete on table "public"."published_courses" to "anon";
+
+grant insert on table "public"."published_courses" to "anon";
+
+grant references on table "public"."published_courses" to "anon";
+
+grant select on table "public"."published_courses" to "anon";
+
+grant trigger on table "public"."published_courses" to "anon";
+
+grant truncate on table "public"."published_courses" to "anon";
+
+grant update on table "public"."published_courses" to "anon";
+
+grant delete on table "public"."published_courses" to "authenticated";
+
+grant insert on table "public"."published_courses" to "authenticated";
+
+grant references on table "public"."published_courses" to "authenticated";
+
+grant select on table "public"."published_courses" to "authenticated";
+
+grant trigger on table "public"."published_courses" to "authenticated";
+
+grant truncate on table "public"."published_courses" to "authenticated";
+
+grant update on table "public"."published_courses" to "authenticated";
+
+grant delete on table "public"."published_courses" to "service_role";
+
+grant insert on table "public"."published_courses" to "service_role";
+
+grant references on table "public"."published_courses" to "service_role";
+
+grant select on table "public"."published_courses" to "service_role";
+
+grant trigger on table "public"."published_courses" to "service_role";
+
+grant truncate on table "public"."published_courses" to "service_role";
+
+grant update on table "public"."published_courses" to "service_role";
+
 grant delete on table "public"."role_permissions" to "anon";
 
 grant insert on table "public"."role_permissions" to "anon";
@@ -4065,6 +4206,10 @@ CREATE TRIGGER trg_update_owner_into_organization_members AFTER UPDATE ON public
 
 CREATE TRIGGER set_updated_at BEFORE UPDATE ON public.profiles FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+CREATE TRIGGER trg_published_courses_set_updated_at BEFORE UPDATE ON public.published_courses FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER trg_set_published_course_version BEFORE INSERT ON public.published_courses FOR EACH ROW EXECUTE FUNCTION set_published_course_version();
+
 
 CREATE TRIGGER on_auth_user_created AFTER INSERT ON auth.users FOR EACH ROW EXECUTE FUNCTION handle_new_user();
 
@@ -4124,7 +4269,7 @@ with check (((bucket_id = 'thumbnails'::text) AND (EXISTS ( SELECT 1
   WHERE ((c.id = (split_part(objects.name, '/'::text, 1))::uuid) AND (get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text, 'editor'::text])))))));
 
 
-create policy "Read: Org members can view course thumbnails"
+create policy "Select: Org members can view thumbnails"
 on "storage"."objects"
 as permissive
 for select

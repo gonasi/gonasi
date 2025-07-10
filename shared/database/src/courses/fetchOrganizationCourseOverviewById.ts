@@ -27,7 +27,9 @@ export async function fetchOrganizationCourseOverviewById({
     .select(
       `
       id,
+      organization_id,
       name,
+      visibility,
       description,
       image_url,
       blur_hash,

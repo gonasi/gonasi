@@ -1156,6 +1156,104 @@ export type Database = {
           },
         ]
       }
+      published_courses: {
+        Row: {
+          active_enrollments: number
+          average_rating: number | null
+          blur_hash: string | null
+          completion_rate: number | null
+          course_structure: Json
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          name: string
+          organization_id: string
+          pricing_tiers: Json
+          published_at: string
+          published_by: string
+          total_enrollments: number
+          total_reviews: number
+          updated_at: string
+          version: number
+          visibility: Database["public"]["Enums"]["course_access"]
+        }
+        Insert: {
+          active_enrollments?: number
+          average_rating?: number | null
+          blur_hash?: string | null
+          completion_rate?: number | null
+          course_structure: Json
+          created_at?: string
+          description?: string | null
+          id: string
+          image_url?: string | null
+          is_active?: boolean
+          name: string
+          organization_id: string
+          pricing_tiers?: Json
+          published_at?: string
+          published_by: string
+          total_enrollments?: number
+          total_reviews?: number
+          updated_at?: string
+          version?: number
+          visibility?: Database["public"]["Enums"]["course_access"]
+        }
+        Update: {
+          active_enrollments?: number
+          average_rating?: number | null
+          blur_hash?: string | null
+          completion_rate?: number | null
+          course_structure?: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name?: string
+          organization_id?: string
+          pricing_tiers?: Json
+          published_at?: string
+          published_by?: string
+          total_enrollments?: number
+          total_reviews?: number
+          updated_at?: string
+          version?: number
+          visibility?: Database["public"]["Enums"]["course_access"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "published_courses_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "published_courses_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "published_courses_published_by_fkey"
+            columns: ["published_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "published_courses_published_by_fkey"
+            columns: ["published_by"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       role_permissions: {
         Row: {
           id: string

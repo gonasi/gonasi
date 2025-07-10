@@ -152,8 +152,8 @@ schema_paths = [
   './schemas/fileLibrary/file_library_rls.sql',
 
   # # published
-  # './schemas/publishedCourses/published_courses_utils.sql',
-  # './schemas/publishedCourses/published_courses_schema_and_indexes.sql',
+  './schemas/publishedCourses/published_courses_utils.sql',
+  './schemas/publishedCourses/published_courses_schema_and_indexes.sql',
   # './schemas/published_courses_thumbnails_bucket_rls.sql',
 
   # './schemas/enrollments_schema_indexes_rls.sql',

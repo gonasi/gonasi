@@ -87,7 +87,7 @@ const LessonSchema = z.object({
   lesson_types: LessonTypeSchema,
 });
 
-const LessonWithBlocksSchema = z
+export const LessonWithBlocksSchema = z
   .object({
     blocks: z
       .array(BlockSchema, {
@@ -123,8 +123,7 @@ const LessonWithBlocksSchema = z
     lesson_types: LessonTypeSchema,
   })
   .superRefine((data, ctx) => {
-    // Check if blocks array is null or undefined
-    if (!data.blocks || data.blocks.length === 0) {
+    if (!data.blocks || !Array.isArray(data.blocks)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['blocks'],
@@ -133,7 +132,6 @@ const LessonWithBlocksSchema = z
       return;
     }
 
-    // Check if lesson has at least 2 blocks
     if (data.blocks.length < 2) {
       ctx.addIssue({
         code: z.ZodIssueCode.too_small,
@@ -193,6 +191,13 @@ export const CourseOverviewSchema = z
   .object({
     id: z.string({
       required_error: `<lucide name="KeyRound" size="12" /> Your course needs a unique <span class="go-title">ID</span>.`,
+    }),
+    organizationId: z.string({
+      required_error: `<lucide name="KeyRound" size="12" /> Your course needs an organization <span class="go-title">ID</span>.`,
+    }),
+    visibility: z.enum(['public', 'private'], {
+      required_error: 'Please choose a visibility setting.',
+      invalid_type_error: 'Visibility must be either "public" or "private".',
     }),
     name: z
       .string({
@@ -371,8 +376,8 @@ export type ValidateChaptersSchemaTypes = z.infer<typeof ValidateChaptersSchema>
 
 export const PublishCourseSchema = z
   .object({
-    pricingData: PricingSchema,
     courseOverview: CourseOverviewSchema,
+    pricingData: PricingSchema,
     courseChapters: ValidateChaptersSchema,
     lessonsWithBlocks: LessonsWithBlocksSchema,
   })

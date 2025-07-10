@@ -24,7 +24,6 @@ export const upsertPublishCourse = async (
 
   const categoryId = data.courseOverview.course_categories?.id;
   const subCategoryId = data.courseOverview.course_sub_categories?.id;
-  const pathwayId = data.courseOverview.pathways?.id;
 
   // Validate required foreign keys
   if (!isValidId(categoryId)) {
@@ -33,13 +32,9 @@ export const upsertPublishCourse = async (
   if (!isValidId(subCategoryId)) {
     return { success: false, message: 'Invalid course sub-category selected.' };
   }
-  if (!isValidId(pathwayId)) {
-    return { success: false, message: 'Invalid course pathway selected.' };
-  }
 
   try {
-    // get files
-    // thumbnail
+    // Handle thumbnail copying
     // First, attempt to delete the file in the destination bucket (if it exists)
     await supabase.storage.from(PUBLISHED_THUMBNAILS).remove([data.courseOverview.image_url]);
 
@@ -61,38 +56,31 @@ export const upsertPublishCourse = async (
     // Filter only active pricing options
     const activePricingData = data.pricingData.filter((item) => item.is_active);
 
+    // Build the course structure object
+    const courseStructure = {
+      chapters: data.courseChapters,
+      lessons: data.lessonsWithBlocks,
+      chapters_count: data.courseChapters.length,
+      lessons_count: data.lessonsWithBlocks.length,
+    };
+
+    // Simple upsert operation
     const { error } = await supabase.from('published_courses').upsert({
       id: data.courseOverview.id,
+      organization_id: data.courseOverview.organizationId,
+      is_active: true,
       name: data.courseOverview.name,
       description: data.courseOverview.description,
       image_url: data.courseOverview.image_url,
       blur_hash: data.courseOverview.blur_hash,
-
-      // Foreign keys
-      course_category_id: categoryId,
-      course_sub_category_id: subCategoryId,
-      pathway_id: pathwayId,
-
-      // Optional denormalized metadata for fast querying
-      course_categories: data.courseOverview.course_categories,
-      course_sub_categories: data.courseOverview.course_sub_categories,
-      pathways: data.courseOverview.pathways,
-
-      // Structured content
-      pricing_data: activePricingData, // ✅ only active pricing
-      course_chapters: data.courseChapters,
-      lessons_with_blocks: data.lessonsWithBlocks,
-
-      chapters_count: data.courseChapters.length,
-      lessons_count: data.lessonsWithBlocks.length,
-
-      // Audit
-      created_by: userId,
-      updated_by: userId,
+      visibility: data.courseOverview.visibility,
+      course_structure: courseStructure,
+      pricing_tiers: activePricingData,
+      published_by: userId,
     });
 
     if (error) {
-      console.error('[upsertPublishCourse] Supabase error:', error);
+      console.error('[upsertPublishCourse] Supabase upsert error:', error);
       return {
         success: false,
         message: 'Failed to publish the course. Please try again.',
