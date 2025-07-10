@@ -30,6 +30,8 @@ export type NewCourseTitleSchemaTypes = z.infer<typeof NewCourseTitleSchema>;
 
 // EditCourseDetailsSchema definition
 export const EditCourseDetailsSchema = z.object({
+  courseId: z.string(),
+  organizationId: z.string(),
   name: CourseTitleSchema,
   description: CourseDescriptionSchema,
 });

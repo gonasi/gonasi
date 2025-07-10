@@ -4,20 +4,24 @@ import { getUserId } from '../auth';
 import type { TypedSupabaseClient } from '../client';
 import type { ApiResponse } from '../types';
 
+interface EditCourseDetailsArgs {
+  supabase: TypedSupabaseClient;
+  data: EditCourseDetailsSubmitValues;
+}
+
 /**
  * Updates course details, including the name, description, and subscription price.
  *
- * @param supabase - The typed Supabase client instance.
- * @param assetData - Object containing course details such as userId, courseId, name, description, and monthly subscription price.
+ * @param args - Object containing the Supabase client and input data.
  * @returns A promise resolving to an ApiResponse indicating success or failure.
  */
-export const editCourseDetails = async (
-  supabase: TypedSupabaseClient,
-  assetData: EditCourseDetailsSubmitValues,
-): Promise<ApiResponse> => {
+export const editCourseDetails = async ({
+  supabase,
+  data,
+}: EditCourseDetailsArgs): Promise<ApiResponse> => {
   const userId = await getUserId(supabase);
 
-  const { courseId, name, description } = assetData;
+  const { courseId, name, description } = data;
 
   try {
     const { error: updateError } = await supabase

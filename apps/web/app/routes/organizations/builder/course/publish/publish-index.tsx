@@ -25,7 +25,7 @@ import { useIsPending } from '~/utils/misc';
 
 export function meta() {
   return [
-    { title: 'Edit Course Grouping • Gonasii' },
+    { title: 'Edit Course Grouping • Gonasi' },
     {
       name: 'description',
       content: 'Organize your course by updating its categories and subcategories.',

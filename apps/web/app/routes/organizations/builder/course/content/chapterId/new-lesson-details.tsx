@@ -98,7 +98,7 @@ export default function NewLessonDetails({ params, loaderData }: Route.Component
       <Modal.Content size='sm'>
         <Modal.Header
           title='New lesson'
-          closeRoute={`/${params.organizationId}/builder/${params.courseId}/content`}
+          closeRoute={`/${params.organizationId}/builder/${params.courseId}/content/${params.chapterId}/lessons`}
         />
         <Modal.Body>
           <RemixFormProvider {...methods}>
