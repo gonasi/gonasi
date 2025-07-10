@@ -24,7 +24,23 @@ export async function fetchCourseChaptersByCourseId(
         created_by,
         position,
         lessons (
-          id
+          id,
+          course_id,
+          organization_id,
+          chapter_id,
+          lesson_type_id,
+          name,
+          position,
+          created_at,
+          updated_at,
+          settings,
+          lesson_types (
+            id,
+            name,
+            description,
+            lucide_icon,
+            bg_color
+          )
         )
       `,
     )

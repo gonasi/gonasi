@@ -184,9 +184,6 @@ const ChapterSchema = z.object({
     .nonnegative({
       message: `Chapter position should be <span class="success">zero or higher</span>.`,
     }),
-  requires_payment: z.boolean({
-    invalid_type_error: `Please let us know if this chapter <span class="go-title">requires payment</span>.`,
-  }),
   lessons: z.array(LessonSchema, {
     invalid_type_error: `<span class="go-title">Lessons</span> should be a list of lesson objects.`,
   }),
@@ -239,14 +236,6 @@ export const CourseOverviewSchema = z
       })
       .optional()
       .nullable(),
-
-    pathways: z
-      .object({
-        id: z.string(),
-        name: z.string(),
-      })
-      .optional()
-      .nullable(),
   })
   .superRefine((data, ctx) => {
     const objectFields = [
@@ -261,12 +250,6 @@ export const CourseOverviewSchema = z
         label: 'subcategory',
         icon: 'ListCollapse',
         message: `Choose a <span class="go-title">subcategory</span> to help students find your course.`,
-      },
-      {
-        key: 'pathways',
-        label: 'pathway',
-        icon: 'Route',
-        message: `Add your course to a <span class="go-title">learning pathway</span> so students can discover related content.`,
       },
     ];
 
@@ -394,9 +377,7 @@ export const PublishCourseSchema = z
     lessonsWithBlocks: LessonsWithBlocksSchema,
   })
   .superRefine((data, ctx) => {
-    const { pricingData, courseChapters, lessonsWithBlocks } = data;
-    const isFree = pricingData.every((p) => p.is_free);
-    const hasFreeChapter = courseChapters.some((chapter) => chapter.requires_payment === false);
+    const { courseChapters, lessonsWithBlocks } = data;
 
     if (courseChapters.length < 2) {
       ctx.addIssue({
@@ -431,14 +412,6 @@ export const PublishCourseSchema = z
             message: `Found lessons referencing non-existent chapter <span class="error">${chapterId}</span>.`,
           });
         }
-      });
-    }
-
-    if (!isFree && !hasFreeChapter) {
-      ctx.addIssue({
-        path: ['courseChapters', 'pricing'],
-        code: z.ZodIssueCode.custom,
-        message: `Since your course has paid content, you'll need at least <span class="warning">one free chapter</span> so students can preview what they're getting.`,
       });
     }
   });

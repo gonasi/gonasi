@@ -274,6 +274,8 @@ export default function PublishCourse({ loaderData, params }: Route.ComponentPro
 
   const isDisabled = isPending || methods.formState.isSubmitting || isAnyLoading();
 
+  console.log('*******errors: ', methods.formState.errors);
+
   return (
     <Modal open>
       <Modal.Content size='md'>
