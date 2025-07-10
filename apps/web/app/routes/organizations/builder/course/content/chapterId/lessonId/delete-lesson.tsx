@@ -29,7 +29,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 
   if (!canDelete) {
     return redirectWithError(
-      `/${params.organizationId}/builder/${params.courseId}/content/${params.chapterId}/${params.lessonId}/lesson-blocks`,
+      `/${params.organizationId}/builder/${params.courseId}/content/${params.chapterId}/lessons`,
       'You don’t have permission to delete this lesson.',
     );
   }
@@ -66,7 +66,7 @@ export async function action({ params, request }: Route.ActionArgs) {
   }
 
   return redirectWithSuccess(
-    `/${params.organizationId}/builder/${params.courseId}/content`,
+    `/${params.organizationId}/builder/${params.courseId}/content/${params.chapterId}/lessons`,
     message,
   );
 }
@@ -76,7 +76,9 @@ export default function DeleteLesson({ loaderData }: Route.ComponentProps) {
   const params = useParams();
 
   const handleClose = () =>
-    navigate(`/${params.username}/course-builder/${params.courseId}/content`);
+    navigate(
+      `/${params.organizationId}/builder/${params.courseId}/content/${params.chapterId}/lessons`,
+    );
 
   const isPending = useIsPending();
 
@@ -94,7 +96,7 @@ export default function DeleteLesson({ loaderData }: Route.ComponentProps) {
     <Modal open>
       <Modal.Content size='sm'>
         <Modal.Header
-          closeRoute={`/${params.username}/course-builder/${params.courseId}/content`}
+          closeRoute={`/${params.organizationId}/builder/${params.courseId}/content/${params.chapterId}/lessons`}
         />
         <Modal.Body>
           <RemixFormProvider {...methods}>

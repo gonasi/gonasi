@@ -45,7 +45,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   if (!lesson || !lessonBlocks.data) {
     // Redirect with error if data is missing
     return redirectWithError(
-      `/${params.organizationId}/builder/${params.courseId}/content`,
+      `/${params.organizationId}/builder/${params.courseId}/content/${params.chapterId}/lessons`,
       'Lesson not found',
     );
   }
@@ -135,7 +135,7 @@ export default function EditLessonContent({ loaderData, params }: Route.Componen
             leadingIcon={canEdit ? <SquarePen /> : <PenOff />}
             title={lesson.name}
             subTitle={lesson.lesson_types?.name}
-            closeRoute={basePath}
+            closeRoute={`/${params.organizationId}/builder/${params.courseId}/content/${params.chapterId}/lessons`}
           />
           <div className='mx-auto flex max-w-xl pr-4 pl-8 md:px-0'>
             {reorderedBlocks.length > 0 ? (

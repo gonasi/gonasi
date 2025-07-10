@@ -85,7 +85,7 @@ export async function action({ params, request }: Route.ActionArgs) {
   }
 
   return redirectWithSuccess(
-    `/${params.organizationId}/builder/${params.courseId}/content`,
+    `/${params.organizationId}/builder/${params.courseId}/content/${params.chapterId}/lessons`,
     result.message,
   );
 }
@@ -111,7 +111,7 @@ export default function EditLessonDetails({ loaderData, params }: Route.Componen
       <Modal.Content size='sm'>
         <Modal.Header
           title='Edit Lesson Details'
-          closeRoute={`/${params.organizationId}/builder/${params.courseId}/content`}
+          closeRoute={`/${params.organizationId}/builder/${params.courseId}/content/${params.chapterId}/lessons`}
         />
         <Modal.Body>
           <RemixFormProvider {...methods}>

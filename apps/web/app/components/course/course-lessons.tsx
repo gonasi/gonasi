@@ -18,40 +18,46 @@ export function CourseLessons({ lessons, canEdit }: Props) {
 
   const [reorderedLessons, setReorderedLessons] = useState<LoaderLessonType[]>(lessons ?? []);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [dragging, setDragging] = useState(false);
+  const [pendingReorder, setPendingReorder] = useState<LoaderLessonType[] | null>(null);
 
-  // Sync local state with latest lessons from props
   useEffect(() => {
     setReorderedLessons(lessons ?? []);
   }, [lessons]);
 
-  // Update local loading state based on fetcher
   useEffect(() => {
     setIsSubmitting(fetcher.state === 'submitting');
   }, [fetcher.state]);
 
-  // Handle lesson reordering and submit the updated order
+  // Watch for drag end and pendingReorder to submit
+  useEffect(() => {
+    if (!dragging && pendingReorder && canEdit) {
+      const orderedData = pendingReorder.map((lesson, index) => ({
+        id: lesson.id,
+        position: index + 1,
+      }));
+
+      const formData = new FormData();
+      formData.append('intent', 'reorder-lessons');
+      formData.append('lessons', JSON.stringify(orderedData));
+      formData.append('chapterId', params.chapterId ?? '');
+
+      fetcher.submit(formData, {
+        method: 'post',
+        action: `/${params.organizationId}/builder/${params.courseId}/content`,
+      });
+
+      setPendingReorder(null); // Reset
+    }
+  }, [dragging, pendingReorder, canEdit, fetcher, params]);
+
   const handleReorder = (updated: LoaderLessonType[]) => {
     if (!canEdit) return;
 
     setReorderedLessons(updated);
-
-    const orderedData = updated.map((lesson, index) => ({
-      id: lesson.id,
-      position: index + 1,
-    }));
-
-    const formData = new FormData();
-    formData.append('intent', 'reorder-lessons');
-    formData.append('lessons', JSON.stringify(orderedData));
-    formData.append('chapterId', params.chapterId ?? '');
-
-    fetcher.submit(formData, {
-      method: 'post',
-      action: `/${params.organizationId}/builder/${params.courseId}/content`,
-    });
+    setPendingReorder(updated); // Store to submit later
   };
 
-  // Show fallback UI when no lessons exist
   if (reorderedLessons.length === 0) {
     return <NotFoundCard message='No course lessons found' />;
   }
@@ -73,7 +79,12 @@ export function CourseLessons({ lessons, canEdit }: Props) {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: index * 0.05 }}
             >
-              <LessonCard key={lesson.id} lesson={lesson} loading={isSubmitting} canEdit />
+              <LessonCard
+                lesson={lesson}
+                loading={isSubmitting}
+                canEdit={canEdit}
+                setDragging={setDragging}
+              />
             </motion.div>
           ))}
         </div>

@@ -1,3 +1,4 @@
+import type { Dispatch, SetStateAction } from 'react';
 import { NavLink, useParams } from 'react-router';
 import { Reorder, useDragControls, useMotionValue } from 'framer-motion';
 import { GripVerticalIcon, Info, Pencil, Text, Trash } from 'lucide-react';
@@ -15,14 +16,14 @@ interface Props {
   lesson: LoaderLessonType;
   loading: boolean;
   canEdit: boolean;
+  setDragging: Dispatch<SetStateAction<boolean>>;
 }
 
-export function LessonCard({ lesson, loading, canEdit }: Props) {
+export function LessonCard({ lesson, loading, canEdit, setDragging }: Props) {
   const params = useParams();
 
   const { lucide_icon, bg_color, name: typeName, description } = lesson.lesson_types;
   const basePath = `/${params.organizationId}/builder/${params.courseId}/content/${lesson.chapter_id}/${lesson.id}`;
-
   const lessonY = useMotionValue(0);
   const lessonBoxShadow = useRaisedShadow(lessonY, {
     borderRadius: '12px',
@@ -30,9 +31,21 @@ export function LessonCard({ lesson, loading, canEdit }: Props) {
   const lessonDragControls = useDragControls();
 
   const options = [
-    { title: 'Edit details', icon: Pencil, to: `${basePath}/edit-lesson-details` },
-    { title: 'Edit blocks', icon: Text, to: `${basePath}/lesson-blocks` },
-    { title: 'Delete lesson', icon: Trash, to: `${basePath}/delete` },
+    {
+      title: 'Edit details',
+      icon: Pencil,
+      to: `/${params.organizationId}/builder/${params.courseId}/content/${params.chapterId}/lessons/${lesson.id}/edit-lesson-details`,
+    },
+    {
+      title: 'Edit blocks',
+      icon: Text,
+      to: `${basePath}/lesson-blocks`,
+    },
+    {
+      title: 'Delete lesson',
+      icon: Trash,
+      to: `/${params.organizationId}/builder/${params.courseId}/content/${params.chapterId}/lessons/${lesson.id}/delete`,
+    },
   ];
 
   return (
@@ -44,6 +57,8 @@ export function LessonCard({ lesson, loading, canEdit }: Props) {
       dragControls={lessonDragControls}
       layoutScroll
       className='select-none'
+      onDragStart={() => setDragging(true)}
+      onDragEnd={() => setDragging(false)}
     >
       <div className='relative'>
         <div className='absolute top-4 -left-0 z-5'>

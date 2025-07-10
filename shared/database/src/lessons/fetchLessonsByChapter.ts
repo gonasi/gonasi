@@ -29,13 +29,13 @@ export async function fetchLessonsByChapter({
     return null;
   }
 
-  // fetch lessons
   const { data: lessonsData, error: lessonsError } = await supabase
     .from('lessons')
     .select(
       'id, name, lesson_type_id, lesson_types(name, description, lucide_icon, bg_color), position, chapter_id',
     )
-    .match({ chapter_id: chapterId, organization_id: organizationId });
+    .match({ chapter_id: chapterId, organization_id: organizationId })
+    .order('position', { ascending: true }); // ✅ Order from 0 → n
 
   if (lessonsError || !lessonsData) {
     console.error('Failed to fetch lessons:', lessonsError?.message || 'Lessons not found');

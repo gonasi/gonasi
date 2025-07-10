@@ -94,19 +94,19 @@ export default [
                   'new-lesson-details',
                   'routes/organizations/builder/course/content/chapterId/new-lesson-details.tsx',
                 ),
+                // /:username/course-builder/:courseId/content/:chapterId/:lessonId/edit-lesson-details
+                route(
+                  ':lessonId/edit-lesson-details',
+                  'routes/organizations/builder/course/content/chapterId/lessonId/edit-lesson-details.tsx',
+                ),
+                // /:username/course-builder/:courseId/content/:chapterId/:lessonId/delete
+                route(
+                  ':lessonId/delete',
+                  'routes/organizations/builder/course/content/chapterId/lessonId/delete-lesson.tsx',
+                ),
               ],
             ),
 
-            // /:username/course-builder/:courseId/content/:chapterId/:lessonId/edit-lesson-details
-            route(
-              ':lessonId/edit-lesson-details',
-              'routes/organizations/builder/course/content/chapterId/lessonId/edit-lesson-details.tsx',
-            ),
-            // /:username/course-builder/:courseId/content/:chapterId/:lessonId/delete
-            route(
-              ':lessonId/delete',
-              'routes/organizations/builder/course/content/chapterId/lessonId/delete-lesson.tsx',
-            ),
             // /:username/course-builder/:courseId/content/:chapterId/:lessonId
             route(
               ':lessonId/lesson-blocks',
