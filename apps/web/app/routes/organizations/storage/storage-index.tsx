@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router';
+import { motion, useReducedMotion } from 'framer-motion';
 import { BookOpen, HardDrive, UploadCloud } from 'lucide-react';
 
 import { getStorageUsageAnalytics } from '@gonasi/database/files';
@@ -12,12 +13,9 @@ import { Progress } from '~/components/ui/progress';
 import { createClient } from '~/lib/supabase/supabase.server';
 import { cn } from '~/lib/utils';
 
-// Metadata for SEO
 export function meta() {
   return [
-    {
-      title: 'Storage Usage • Gonasi',
-    },
+    { title: 'Storage Usage • Gonasi' },
     {
       name: 'description',
       content: `Monitor your organization's storage usage across all courses on Gonasi. View how much space is used, available, and manage your files effectively.`,
@@ -27,14 +25,13 @@ export function meta() {
 
 export async function loader({ request, params }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
-
   const storageUsage = await getStorageUsageAnalytics(supabase, params.organizationId);
-
   return { storageUsage };
 }
 
 export default function StorageIndex({ loaderData, params }: Route.ComponentProps) {
   const { storageUsage } = loaderData;
+  const shouldReduceMotion = useReducedMotion();
 
   if (!storageUsage.success) {
     return <div>Error: {storageUsage.message}</div>;
@@ -45,14 +42,12 @@ export default function StorageIndex({ loaderData, params }: Route.ComponentProp
     const mb = bytes / 1024 ** 2;
     const gb = bytes / 1024 ** 3;
     const tb = bytes / 1024 ** 4;
-
     if (tb >= 1) return `${tb.toFixed(1)} TB`;
     if (gb >= 1) return `${gb.toFixed(1)} GB`;
     if (mb >= 1) return `${mb.toFixed(1)} MB`;
     return `${kb.toFixed(1)} KB`;
   };
 
-  // Use the data directly from the backend calculation
   const data = storageUsage.data!;
   const usagePercentage = data.usagePercentage;
   const totalBytes = data.totalUsageBytes;
@@ -60,7 +55,12 @@ export default function StorageIndex({ loaderData, params }: Route.ComponentProp
   const remainingBytes = data.remainingBytes;
 
   return (
-    <section className='p-4'>
+    <motion.section
+      className='p-4'
+      initial={shouldReduceMotion ? false : { opacity: 0, y: 8 }}
+      animate={shouldReduceMotion ? false : { opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: 'easeOut' }}
+    >
       <div className='flex flex-col items-start justify-between space-y-4 pb-4 md:flex-row md:items-center md:space-y-0'>
         <div className='flex flex-col gap-1'>
           <h1 className='text-2xl font-bold'>Storage Usage</h1>
@@ -91,7 +91,6 @@ export default function StorageIndex({ loaderData, params }: Route.ComponentProp
               <span>{formatStorage(remainingBytes)} available</span>
             </div>
           </div>
-
           <div className='flex items-center justify-between'>
             <div className='space-y-1'>
               <p className='text-muted-foreground font-secondary text-sm font-bold'>Used</p>
@@ -105,7 +104,6 @@ export default function StorageIndex({ loaderData, params }: Route.ComponentProp
         </CardContent>
       </Card>
 
-      {/* Course Breakdown */}
       <Card className='my-8 max-w-lg rounded-none shadow-none'>
         <CardHeader>
           <CardTitle className='flex items-center gap-2 text-sm font-medium'>
@@ -115,8 +113,7 @@ export default function StorageIndex({ loaderData, params }: Route.ComponentProp
         </CardHeader>
         <CardContent>
           <div className='space-y-3'>
-            {data.courseBreakdown.map((course) => {
-              // Calculate course percentage based on total limit, not used storage
+            {data.courseBreakdown.map((course, index) => {
               const coursePercentage = (course.usageBytes / limitBytes) * 100;
 
               return (
@@ -125,7 +122,10 @@ export default function StorageIndex({ loaderData, params }: Route.ComponentProp
                   to={`/${params.organizationId}/builder/${course.courseId}/file-library`}
                 >
                   {({ isPending }) => (
-                    <div
+                    <motion.div
+                      initial={shouldReduceMotion ? false : { opacity: 0, y: 8 }}
+                      animate={shouldReduceMotion ? false : { opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05, duration: 0.3 }}
                       className={cn(
                         'space-y-2 rounded-md p-2 transition-colors',
                         'hover:bg-muted/50',
@@ -169,7 +169,7 @@ export default function StorageIndex({ loaderData, params }: Route.ComponentProp
                           </span>
                         )}
                       </div>
-                    </div>
+                    </motion.div>
                   )}
                 </NavLink>
               );
@@ -179,12 +179,15 @@ export default function StorageIndex({ loaderData, params }: Route.ComponentProp
           <div className='mt-4 border-t pt-4'>
             <div className='flex items-center justify-between text-sm'>
               <span className='text-muted-foreground'>
-                Total from {data.courseBreakdown.length} courses
+                Total from {data.courseBreakdown.length}{' '}
+                {data.courseBreakdown.length === 1 ? 'course' : 'courses'}
               </span>
               <span className='font-medium'>{formatStorage(totalBytes)}</span>
             </div>
             <div className='text-muted-foreground mt-1 flex items-center justify-between text-xs'>
-              <span>{data.totalFiles} total files</span>
+              <span>
+                {data.totalFiles} total {data.totalFiles === 1 ? 'file' : 'files'}
+              </span>
               <span>
                 {usagePercentage.toFixed(1)}% of {formatStorage(limitBytes)} limit
               </span>
@@ -192,6 +195,6 @@ export default function StorageIndex({ loaderData, params }: Route.ComponentProp
           </div>
         </CardContent>
       </Card>
-    </section>
+    </motion.section>
   );
 }

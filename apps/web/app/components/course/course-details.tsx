@@ -70,7 +70,7 @@ export function CourseOverview({ name, description, canEditCourse, editLink, upd
         <div className='w-full'>
           <div className='w-full'>
             <NavLinkButton
-              to={`/${params.username}/course-builder/${params.courseId}/overview/publish`}
+              to={`/${params.organizationId}/builder/${params.courseId}/overview/publish`}
               rightIcon={<AnimatedRocket />}
               className='w-full md:w-48'
             >
