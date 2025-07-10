@@ -1,0 +1,64 @@
+{
+  "chapters": [
+    {
+      "id": "uuid",
+      "name": "Introduction to React",
+      "description": "Getting started with React fundamentals",
+      "position": 1,
+      "lessons": [
+        {
+          "id": "uuid",
+          "name": "What is React?",
+          "position": 1,
+          "lesson_type": "video",
+          "settings": {
+            "duration_minutes": 15,
+            "is_preview": true
+          },
+          "blocks": [
+            {
+              "id": "uuid",
+              "plugin_type": "rich_text",
+              "position": 1,
+              "content": {
+                "html": "<h2>Welcome to React</h2><p>React is a JavaScript library...</p>"
+              },
+              "settings": {}
+            },
+            {
+              "id": "uuid",
+              "plugin_type": "video",
+              "position": 2,
+              "content": {
+                "video_url": "https://example.com/video.mp4",
+                "thumbnail_url": "https://example.com/thumb.jpg",
+                "duration": 900
+              },
+              "settings": {
+                "autoplay": false,
+                "controls": true
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "files": [
+    {
+      "id": "uuid",
+      "name": "course-resources.pdf",
+      "path": "courses/uuid/files/course-resources.pdf",
+      "size": 1024000,
+      "mime_type": "application/pdf",
+      "file_type": "document"
+    }
+  ],
+  "metadata": {
+    "total_chapters": 5,
+    "total_lessons": 25,
+    "total_blocks": 150,
+    "total_files": 10,
+    "last_updated": "2025-01-15T10:30:00Z"
+  }
+}

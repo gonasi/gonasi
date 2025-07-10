@@ -1352,6 +1352,10 @@ export type Database = {
         Args: { extension: string }
         Returns: Database["public"]["Enums"]["file_type"]
       }
+      extract_course_content_text: {
+        Args: { course_data: Json }
+        Returns: string
+      }
       get_active_organization_members: {
         Args: { _organization_id: string; _user_id: string }
         Returns: Json

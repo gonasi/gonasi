@@ -18,6 +18,8 @@ create type "public"."payment_frequency" as enum ('monthly', 'bi_monthly', 'quar
 
 create type "public"."profile_mode" as enum ('personal', 'organization');
 
+create type "public"."published_course_status" as enum ('active', 'archived', 'maintenance');
+
 create type "public"."subscription_status" as enum ('active', 'canceled', 'past_due', 'trialing', 'incomplete');
 
 create type "public"."subscription_tier" as enum ('launch', 'scale', 'impact', 'enterprise');
@@ -274,6 +276,41 @@ create table "public"."profiles" (
 
 alter table "public"."profiles" enable row level security;
 
+create table "public"."published_courses" (
+    "id" uuid not null default uuid_generate_v4(),
+    "original_course_id" uuid not null,
+    "organization_id" uuid not null,
+    "name" text not null,
+    "description" text,
+    "image_url" text,
+    "blur_hash" text,
+    "category_id" uuid,
+    "category_name" text,
+    "subcategory_id" uuid,
+    "subcategory_name" text,
+    "tags" text[],
+    "difficulty_level" text,
+    "estimated_duration_minutes" integer,
+    "language" text default 'en'::text,
+    "is_free" boolean not null default false,
+    "price_tiers" jsonb not null default '[]'::jsonb,
+    "course_data" jsonb not null default '{}'::jsonb,
+    "version" integer not null default 1,
+    "status" published_course_status not null default 'active'::published_course_status,
+    "view_count" integer not null default 0,
+    "enrollment_count" integer not null default 0,
+    "rating_average" numeric(3,2),
+    "rating_count" integer not null default 0,
+    "published_at" timestamp with time zone not null default timezone('utc'::text, now()),
+    "expires_at" timestamp with time zone,
+    "created_at" timestamp with time zone not null default timezone('utc'::text, now()),
+    "updated_at" timestamp with time zone not null default timezone('utc'::text, now()),
+    "published_by" uuid,
+    "created_by" uuid,
+    "updated_by" uuid
+);
+
+
 create table "public"."role_permissions" (
     "id" uuid not null default uuid_generate_v4(),
     "role" app_role not null,
@@ -459,6 +496,40 @@ CREATE INDEX idx_profiles_username ON public.profiles USING btree (username) WHE
 
 CREATE INDEX idx_profiles_verified_users ON public.profiles USING btree (id) WHERE (account_verified = true);
 
+CREATE INDEX idx_published_courses_category ON public.published_courses USING btree (category_id) WHERE (status = 'active'::published_course_status);
+
+CREATE INDEX idx_published_courses_chapters ON public.published_courses USING gin (((course_data -> 'chapters'::text))) WHERE (status = 'active'::published_course_status);
+
+CREATE INDEX idx_published_courses_content_search ON public.published_courses USING gin (to_tsvector('english'::regconfig, extract_course_content_text(course_data))) WHERE (status = 'active'::published_course_status);
+
+CREATE INDEX idx_published_courses_difficulty ON public.published_courses USING btree (difficulty_level) WHERE (status = 'active'::published_course_status);
+
+CREATE INDEX idx_published_courses_duration ON public.published_courses USING btree (estimated_duration_minutes) WHERE (status = 'active'::published_course_status);
+
+CREATE INDEX idx_published_courses_enrollment ON public.published_courses USING btree (enrollment_count DESC) WHERE (status = 'active'::published_course_status);
+
+CREATE INDEX idx_published_courses_free ON public.published_courses USING btree (is_free) WHERE (status = 'active'::published_course_status);
+
+CREATE INDEX idx_published_courses_language ON public.published_courses USING btree (language) WHERE (status = 'active'::published_course_status);
+
+CREATE INDEX idx_published_courses_org_id ON public.published_courses USING btree (organization_id);
+
+CREATE INDEX idx_published_courses_original_id ON public.published_courses USING btree (original_course_id);
+
+CREATE INDEX idx_published_courses_published_at ON public.published_courses USING btree (published_at DESC) WHERE (status = 'active'::published_course_status);
+
+CREATE INDEX idx_published_courses_rating ON public.published_courses USING btree (rating_average DESC, rating_count DESC) WHERE (status = 'active'::published_course_status);
+
+CREATE INDEX idx_published_courses_search ON public.published_courses USING gin (to_tsvector('english'::regconfig, ((((((COALESCE(name, ''::text) || ' '::text) || COALESCE(description, ''::text)) || ' '::text) || COALESCE(category_name, ''::text)) || ' '::text) || COALESCE(subcategory_name, ''::text)))) WHERE (status = 'active'::published_course_status);
+
+CREATE INDEX idx_published_courses_status ON public.published_courses USING btree (status);
+
+CREATE INDEX idx_published_courses_subcategory ON public.published_courses USING btree (subcategory_id) WHERE (status = 'active'::published_course_status);
+
+CREATE INDEX idx_published_courses_tags ON public.published_courses USING gin (tags) WHERE (status = 'active'::published_course_status);
+
+CREATE UNIQUE INDEX idx_published_courses_unique_active ON public.published_courses USING btree (original_course_id) WHERE (status = 'active'::published_course_status);
+
 CREATE INDEX idx_user_roles_user_id ON public.user_roles USING btree (user_id);
 
 CREATE UNIQUE INDEX lesson_blocks_pkey ON public.lesson_blocks USING btree (id);
@@ -490,6 +561,8 @@ CREATE UNIQUE INDEX profiles_email_key ON public.profiles USING btree (email);
 CREATE UNIQUE INDEX profiles_pkey ON public.profiles USING btree (id);
 
 CREATE UNIQUE INDEX profiles_username_key ON public.profiles USING btree (username);
+
+CREATE UNIQUE INDEX published_courses_pkey ON public.published_courses USING btree (id);
 
 CREATE UNIQUE INDEX role_permissions_pkey ON public.role_permissions USING btree (id);
 
@@ -540,6 +613,8 @@ alter table "public"."organization_members" add constraint "organization_members
 alter table "public"."organizations" add constraint "organizations_pkey" PRIMARY KEY using index "organizations_pkey";
 
 alter table "public"."profiles" add constraint "profiles_pkey" PRIMARY KEY using index "profiles_pkey";
+
+alter table "public"."published_courses" add constraint "published_courses_pkey" PRIMARY KEY using index "published_courses_pkey";
 
 alter table "public"."role_permissions" add constraint "role_permissions_pkey" PRIMARY KEY using index "role_permissions_pkey";
 
@@ -840,6 +915,26 @@ alter table "public"."profiles" validate constraint "username_length";
 alter table "public"."profiles" add constraint "username_lowercase" CHECK ((username = lower(username))) not valid;
 
 alter table "public"."profiles" validate constraint "username_lowercase";
+
+alter table "public"."published_courses" add constraint "published_courses_created_by_fkey" FOREIGN KEY (created_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
+
+alter table "public"."published_courses" validate constraint "published_courses_created_by_fkey";
+
+alter table "public"."published_courses" add constraint "published_courses_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE not valid;
+
+alter table "public"."published_courses" validate constraint "published_courses_organization_id_fkey";
+
+alter table "public"."published_courses" add constraint "published_courses_original_course_id_fkey" FOREIGN KEY (original_course_id) REFERENCES courses(id) ON DELETE CASCADE not valid;
+
+alter table "public"."published_courses" validate constraint "published_courses_original_course_id_fkey";
+
+alter table "public"."published_courses" add constraint "published_courses_published_by_fkey" FOREIGN KEY (published_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
+
+alter table "public"."published_courses" validate constraint "published_courses_published_by_fkey";
+
+alter table "public"."published_courses" add constraint "published_courses_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
+
+alter table "public"."published_courses" validate constraint "published_courses_updated_by_fkey";
 
 alter table "public"."role_permissions" add constraint "role_permissions_role_permission_key" UNIQUE using index "role_permissions_role_permission_key";
 
@@ -1236,35 +1331,31 @@ CREATE OR REPLACE FUNCTION public.check_storage_limit(p_organization_id uuid, p_
  RETURNS boolean
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path TO ''
 AS $function$
 declare
   v_current_usage bigint;
   v_storage_limit_mb integer;
   v_storage_limit_bytes bigint;
 begin
-  -- Get current storage usage for the organization (excluding the file being updated)
   select coalesce(sum(size), 0)
   into v_current_usage
   from public.file_library
   where organization_id = p_organization_id
     and (p_exclude_file_path is null or path != p_exclude_file_path);
   
-  -- Get storage limit for the organization's tier
   select tl.storage_limit_mb_per_org
   into v_storage_limit_mb
   from public.organizations o
   join public.tier_limits tl on tl.tier = o.tier
   where o.id = p_organization_id;
   
-  -- If no tier found, deny upload
   if v_storage_limit_mb is null then
     return false;
   end if;
   
-  -- Convert MB to bytes
   v_storage_limit_bytes := v_storage_limit_mb * 1024 * 1024;
   
-  -- Check if adding the new file would exceed the limit
   return (v_current_usage + p_new_file_size) <= v_storage_limit_bytes;
 end;
 $function$
@@ -1607,6 +1698,40 @@ end;
 $function$
 ;
 
+CREATE OR REPLACE FUNCTION public.extract_course_content_text(course_data jsonb)
+ RETURNS text
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO ''
+AS $function$
+declare
+  result text := '';
+  chapter jsonb;
+  lesson jsonb;
+  block jsonb;
+begin
+  for chapter in select jsonb_array_elements(course_data->'chapters')
+  loop
+    result := result || ' ' || coalesce(chapter->>'name', '') || ' ' || coalesce(chapter->>'description', '');
+    
+    for lesson in select jsonb_array_elements(chapter->'lessons')
+    loop
+      result := result || ' ' || coalesce(lesson->>'name', '');
+      
+      for block in select jsonb_array_elements(lesson->'blocks')
+      loop
+        if block->>'plugin_type' = 'rich_text' then
+          result := result || ' ' || coalesce(block->'content'->>'text', '');
+        end if;
+      end loop;
+    end loop;
+  end loop;
+  
+  return result;
+end;
+$function$
+;
+
 CREATE OR REPLACE FUNCTION public.get_active_organization_members(_organization_id uuid, _user_id uuid)
  RETURNS jsonb
  LANGUAGE plpgsql
@@ -1825,6 +1950,23 @@ AS $function$
       and oi.revoked_at is null
       and oi.expires_at > now()
   );
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.increment_published_course_version()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+begin
+  if TG_OP = 'INSERT' then
+    -- Set version based on existing publications of the same course
+    select coalesce(max(version), 0) + 1
+    into new.version
+    from public.published_courses
+    where original_course_id = new.original_course_id;
+  end if;
+  return new;
+end;
 $function$
 ;
 
@@ -3374,6 +3516,48 @@ grant truncate on table "public"."profiles" to "service_role";
 
 grant update on table "public"."profiles" to "service_role";
 
+grant delete on table "public"."published_courses" to "anon";
+
+grant insert on table "public"."published_courses" to "anon";
+
+grant references on table "public"."published_courses" to "anon";
+
+grant select on table "public"."published_courses" to "anon";
+
+grant trigger on table "public"."published_courses" to "anon";
+
+grant truncate on table "public"."published_courses" to "anon";
+
+grant update on table "public"."published_courses" to "anon";
+
+grant delete on table "public"."published_courses" to "authenticated";
+
+grant insert on table "public"."published_courses" to "authenticated";
+
+grant references on table "public"."published_courses" to "authenticated";
+
+grant select on table "public"."published_courses" to "authenticated";
+
+grant trigger on table "public"."published_courses" to "authenticated";
+
+grant truncate on table "public"."published_courses" to "authenticated";
+
+grant update on table "public"."published_courses" to "authenticated";
+
+grant delete on table "public"."published_courses" to "service_role";
+
+grant insert on table "public"."published_courses" to "service_role";
+
+grant references on table "public"."published_courses" to "service_role";
+
+grant select on table "public"."published_courses" to "service_role";
+
+grant trigger on table "public"."published_courses" to "service_role";
+
+grant truncate on table "public"."published_courses" to "service_role";
+
+grant update on table "public"."published_courses" to "service_role";
+
 grant delete on table "public"."role_permissions" to "anon";
 
 grant insert on table "public"."role_permissions" to "anon";
@@ -4068,6 +4252,10 @@ CREATE TRIGGER trg_organizations_set_updated_at BEFORE UPDATE ON public.organiza
 CREATE TRIGGER trg_update_owner_into_organization_members AFTER UPDATE ON public.organizations FOR EACH ROW WHEN ((old.owned_by IS DISTINCT FROM new.owned_by)) EXECUTE FUNCTION add_or_update_owner_in_organization_members();
 
 CREATE TRIGGER set_updated_at BEFORE UPDATE ON public.profiles FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER trg_published_courses_updated_at BEFORE UPDATE ON public.published_courses FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER trg_published_courses_version BEFORE INSERT ON public.published_courses FOR EACH ROW EXECUTE FUNCTION increment_published_course_version();
 
 
 CREATE TRIGGER on_auth_user_created AFTER INSERT ON auth.users FOR EACH ROW EXECUTE FUNCTION handle_new_user();

@@ -13,7 +13,7 @@ import {
   type EditCourseGroupingSchemaTypes,
 } from '@gonasi/schemas/courses';
 
-import type { Route } from './+types/edit-grouping';
+import type { Route } from './+types/publish-index';
 import type { loader as subCategoryLoader } from '../../../../api/course-sub-categories';
 
 import { Button } from '~/components/ui/button';
