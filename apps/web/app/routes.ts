@@ -84,11 +84,19 @@ export default [
               'delete',
               'routes/organizations/builder/course/content/chapterId/delete-course-chapter.tsx',
             ),
-            // /:username/course-builder/:courseId/content/:chapterId/new-lesson-details
+
             route(
-              'new-lesson-details',
-              'routes/organizations/builder/course/content/chapterId/new-lesson-details.tsx',
+              'lessons',
+              'routes/organizations/builder/course/content/chapterId/lessonId/lessons-index.tsx',
+              [
+                // /:username/course-builder/:courseId/content/:chapterId/new-lesson-details
+                route(
+                  'new-lesson-details',
+                  'routes/organizations/builder/course/content/chapterId/new-lesson-details.tsx',
+                ),
+              ],
             ),
+
             // /:username/course-builder/:courseId/content/:chapterId/:lessonId/edit-lesson-details
             route(
               ':lessonId/edit-lesson-details',

@@ -3,7 +3,6 @@ import { useFetcher, useParams } from 'react-router';
 import { motion, Reorder } from 'framer-motion';
 
 import { NotFoundCard } from '../cards';
-import { Accordion } from '../ui/accordion';
 import CourseChapterItem from './course-chapter-item';
 
 import type { CourseChaptersType } from '~/routes/dashboard/courses/course-content';
@@ -67,7 +66,7 @@ export function CourseChapters({ chapters, canEdit }: Props) {
         layoutScroll
         className='select-none'
       >
-        <Accordion type='single' collapsible className='flex w-full flex-col space-y-4'>
+        <div className='flex w-full flex-col space-y-4'>
           {reorderedChapters.map((chapter, index) => (
             <motion.div
               key={chapter.id}
@@ -78,7 +77,7 @@ export function CourseChapters({ chapters, canEdit }: Props) {
               <CourseChapterItem chapter={chapter} loading={isSubmitting} canEdit={canEdit} />
             </motion.div>
           ))}
-        </Accordion>
+        </div>
       </Reorder.Group>
     </div>
   );

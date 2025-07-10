@@ -1,7 +1,7 @@
 import type { TypedSupabaseClient } from '../client';
 
 /**
- * Fetches the course chapters by course ID and user ID, ordering chapters by position and lessons by created_at.
+ * Fetches the course chapters by course ID, including number of lessons in each chapter.
  *
  * @param {TypedSupabaseClient} supabase - The Supabase client instance.
  * @param {string} courseId - The ID of the course.
@@ -23,44 +23,22 @@ export async function fetchCourseChaptersByCourseId(
         updated_at,
         created_by,
         position,
-        lessons(
-          id,
-          course_id, 
-          chapter_id, 
-          lesson_type_id,
-          name,
-          position,
-          created_at, 
-          updated_at,
-          created_by, 
-          updated_by, 
-          settings, 
-          lesson_types(
-            id,
-            name,
-            description,
-            lucide_icon,
-            bg_color
-          )
+        lessons (
+          id
         )
       `,
-      { count: 'exact' },
     )
     .match({ course_id: courseId })
-    .order('position', { ascending: true }) // ✅ Order chapters by position
-    .order('position', { ascending: true, referencedTable: 'lessons' }); // ✅ Order lessons by position
+    .order('position', { ascending: true })
+    .order('position', { ascending: true, referencedTable: 'lessons' });
 
-  console.log('error: ', error);
   if (error || !data) {
     console.error('Error fetching course chapters:', error?.message ?? 'Chapters not found');
     return null;
   }
 
-  // Add lesson count to each chapter
-  const formattedData = data.map((chapter) => ({
+  return data.map((chapter) => ({
     ...chapter,
     lesson_count: chapter.lessons?.length || 0,
   }));
-
-  return formattedData;
 }
