@@ -81,6 +81,8 @@ export default function NewPublishIndex({ params }: Route.ComponentProps) {
               {(data) => {
                 return (
                   <div>
+                    {/* <pre>{JSON.stringify(data, null, 2)}</pre> */}
+
                     <ValidationMessages
                       errors={data.errors ?? []}
                       title='Chapters'

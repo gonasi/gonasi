@@ -54,6 +54,7 @@ create type currency_code as enum (
 create table public.course_pricing_tiers (
   -- unique tier ID and foreign key to owning course
   id uuid default uuid_generate_v4() primary key,
+  organization_id uuid not null references public.organizations(id) on delete cascade,
   course_id uuid not null references courses(id) on delete cascade,
 
   -- frequency and pricing configuration
@@ -150,10 +151,23 @@ create index idx_course_pricing_tiers_promotion_dates
 create index idx_course_pricing_tiers_popular_recommended 
   on public.course_pricing_tiers (is_popular, is_recommended);
 
+  -- organization-level filtering and joins
+create index idx_course_pricing_tiers_organization_id
+  on public.course_pricing_tiers (organization_id);
+
+-- common pattern: organization + active filter
+create index idx_course_pricing_tiers_org_active
+  on public.course_pricing_tiers (organization_id, is_active);
+
+-- optional: if you frequently query by org + course
+create index idx_course_pricing_tiers_org_course
+  on public.course_pricing_tiers (organization_id, course_id);
+
+
 -- ============================================================================
 -- documentation
 -- ============================================================================
 -- High-level description of this table for Postgres-native introspection tools
 
 comment on table public.course_pricing_tiers is 
-  'Defines pricing tiers for courses, supporting free and paid options, multiple billing frequencies, promotional discounts, and customizable display metadata. Includes audit fields and business logic enforcement for pricing integrity.';
+  'Defines pricing tiers for courses, scoped by organization, supporting free and paid options, multiple billing frequencies, promotional discounts, and customizable display metadata. Includes audit fields and business logic enforcement for pricing integrity.';

@@ -134,9 +134,8 @@ function calculateCompletionStatus(data: any[]): {
     isMet: data.length >= 2,
   };
 
-  // Calculate total possible points
-  // For minimum viable course: 2 chapters × 4 requirements each + 1 course requirement
-  const totalPoints = 2 * chapterRequirements.length + courseRequirement.weight;
+  // Calculate total possible points based on ACTUAL chapters, not minimum
+  const totalPoints = data.length * chapterRequirements.length + courseRequirement.weight;
 
   // Calculate completed points
   let completedPoints = 0;
@@ -146,7 +145,7 @@ function calculateCompletionStatus(data: any[]): {
     completedPoints += courseRequirement.weight;
   }
 
-  // Chapter-level completion (only count actual chapters, not theoretical minimums)
+  // Chapter-level completion (count all actual chapters)
   data.forEach((chapter) => {
     chapterRequirements.forEach((req) => {
       const value = chapter[req.field];
@@ -215,9 +214,10 @@ export async function fetchAndValidateChapters({
   })) as ChaptersData;
 
   const validation = ChaptersArraySchema.safeParse(chaptersWithLessonCount);
-  const completionStatus = calculateCompletionStatus(data);
 
   if (!validation.success) {
+    const completionStatus = calculateCompletionStatus(data);
+
     const chapterValidationErrors: ChapterValidationError[] = validation.error.issues.map(
       (issue) => {
         const pathSegments = issue.path;
@@ -249,6 +249,9 @@ export async function fetchAndValidateChapters({
       completionStatus,
     };
   }
+
+  // When validation succeeds, calculate completion status based on the validated data
+  const completionStatus = calculateCompletionStatus(validation.data);
 
   return {
     success: true,

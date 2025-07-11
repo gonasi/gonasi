@@ -56,6 +56,7 @@ alter table "public"."course_categories" enable row level security;
 
 create table "public"."course_pricing_tiers" (
     "id" uuid not null default uuid_generate_v4(),
+    "organization_id" uuid not null,
     "course_id" uuid not null,
     "payment_frequency" payment_frequency not null,
     "is_free" boolean not null default true,
@@ -371,6 +372,12 @@ CREATE INDEX idx_course_pricing_tiers_course_id_active ON public.course_pricing_
 
 CREATE INDEX idx_course_pricing_tiers_created_by ON public.course_pricing_tiers USING btree (created_by);
 
+CREATE INDEX idx_course_pricing_tiers_org_active ON public.course_pricing_tiers USING btree (organization_id, is_active);
+
+CREATE INDEX idx_course_pricing_tiers_org_course ON public.course_pricing_tiers USING btree (organization_id, course_id);
+
+CREATE INDEX idx_course_pricing_tiers_organization_id ON public.course_pricing_tiers USING btree (organization_id);
+
 CREATE INDEX idx_course_pricing_tiers_popular_recommended ON public.course_pricing_tiers USING btree (is_popular, is_recommended);
 
 CREATE INDEX idx_course_pricing_tiers_position ON public.course_pricing_tiers USING btree (course_id, "position");
@@ -660,6 +667,10 @@ alter table "public"."course_pricing_tiers" validate constraint "course_pricing_
 alter table "public"."course_pricing_tiers" add constraint "course_pricing_tiers_created_by_fkey" FOREIGN KEY (created_by) REFERENCES profiles(id) ON DELETE CASCADE not valid;
 
 alter table "public"."course_pricing_tiers" validate constraint "course_pricing_tiers_created_by_fkey";
+
+alter table "public"."course_pricing_tiers" add constraint "course_pricing_tiers_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE not valid;
+
+alter table "public"."course_pricing_tiers" validate constraint "course_pricing_tiers_organization_id_fkey";
 
 alter table "public"."course_pricing_tiers" add constraint "course_pricing_tiers_price_check" CHECK ((price >= (0)::numeric)) not valid;
 
@@ -1142,6 +1153,7 @@ AS $function$
 begin
   insert into public.course_pricing_tiers (
     course_id,
+    organization_id,
     is_free,
     price,
     currency_code,
@@ -1151,6 +1163,7 @@ begin
     tier_name
   ) values (
     new.id,
+    new.organization_id,
     true,
     0,
     'USD',
@@ -1658,9 +1671,8 @@ begin
   begin
     select coalesce(nullif(current_setting('app.converting_course_pricing', true), '')::boolean, false)
     into bypass_check;
-  exception
-    when others then
-      bypass_check := false;
+  exception when others then
+    bypass_check := false;
   end;
 
   if bypass_check then
@@ -1671,6 +1683,7 @@ begin
     select count(*) into remaining_active_count
     from public.course_pricing_tiers
     where course_id = old.course_id
+      and organization_id = old.organization_id
       and id != old.id
       and is_active = true;
 
@@ -1803,14 +1816,19 @@ AS $function$
 declare
   all_frequencies public.payment_frequency[];
   used_frequencies public.payment_frequency[];
+  v_org_id uuid;
 begin
+  select organization_id into v_org_id
+  from public.courses
+  where id = p_course_id;
+
   select enum_range(null::public.payment_frequency)
   into all_frequencies;
 
   select array_agg(payment_frequency)
   into used_frequencies
   from public.course_pricing_tiers
-  where course_id = p_course_id;
+  where course_id = p_course_id and organization_id = v_org_id;
 
   return (
     select array_agg(freq)
@@ -2544,7 +2562,7 @@ begin
 
   select exists (
     select 1 from public.course_pricing_tiers
-    where course_id = p_course_id and is_free = false
+    where course_id = p_course_id and organization_id = v_org_id and is_free = false
   ) into has_paid_tiers;
 
   if not has_paid_tiers then
@@ -2554,15 +2572,15 @@ begin
   perform set_config('app.converting_course_pricing', 'true', true);
 
   delete from public.course_pricing_tiers
-  where course_id = p_course_id;
+  where course_id = p_course_id and organization_id = v_org_id;
 
   perform set_config('app.converting_course_pricing', 'false', true);
 
   insert into public.course_pricing_tiers (
-    course_id, is_free, price, currency_code, created_by, updated_by,
+    course_id, organization_id, is_free, price, currency_code, created_by, updated_by,
     payment_frequency, tier_name, is_active
   ) values (
-    p_course_id, true, 0, 'KES', p_user_id, p_user_id,
+    p_course_id, v_org_id, true, 0, 'KES', p_user_id, p_user_id,
     'monthly', 'free', true
   );
 end;
@@ -2596,7 +2614,7 @@ begin
   select count(*)
   into paid_tiers_count
   from public.course_pricing_tiers
-  where course_id = p_course_id and is_free = false;
+  where course_id = p_course_id and organization_id = v_org_id and is_free = false;
 
   if paid_tiers_count > 0 then
     raise exception 'course (id=%) already has a paid tier.', p_course_id;
@@ -2605,15 +2623,15 @@ begin
   perform set_config('app.converting_course_pricing', 'true', true);
 
   delete from public.course_pricing_tiers
-  where course_id = p_course_id;
+  where course_id = p_course_id and organization_id = v_org_id;
 
   perform set_config('app.converting_course_pricing', 'false', true);
 
   insert into public.course_pricing_tiers (
-    course_id, is_free, price, currency_code, created_by, updated_by,
+    course_id, organization_id, is_free, price, currency_code, created_by, updated_by,
     payment_frequency, tier_name, tier_description, is_active
   ) values (
-    p_course_id, false, 100.00, 'KES', p_user_id, p_user_id,
+    p_course_id, v_org_id, false, 100.00, 'KES', p_user_id, p_user_id,
     'monthly', 'basic plan', 'automatically added paid tier. you can update this.', true
   );
 end;
@@ -2630,7 +2648,8 @@ begin
     select coalesce(max(position), 0) + 1
     into new.position
     from public.course_pricing_tiers
-    where course_id = new.course_id;
+    where course_id = new.course_id
+      and organization_id = new.organization_id;
   end if;
   return new;
 end;
@@ -2727,7 +2746,7 @@ begin
   select case
     when exists (
       select 1 from public.course_pricing_tiers
-      where course_id = p_course_id and is_free = false
+      where course_id = p_course_id and organization_id = v_org_id and is_free = false
     ) then 'paid'
     else 'free'
   end
@@ -2758,9 +2777,8 @@ begin
   begin
     select coalesce(nullif(current_setting('app.converting_course_pricing', true), '')::boolean, false)
     into bypass_check;
-  exception
-    when others then
-      bypass_check := false;
+  exception when others then
+    bypass_check := false;
   end;
 
   if bypass_check then
@@ -2770,6 +2788,7 @@ begin
   if new.is_free = true then
     delete from public.course_pricing_tiers
     where course_id = new.course_id
+      and organization_id = new.organization_id
       and id != new.id;
   end if;
 
@@ -2789,9 +2808,8 @@ begin
   begin
     select coalesce(nullif(current_setting('app.converting_course_pricing', true), '')::boolean, false)
     into bypass_check;
-  exception
-    when others then
-      bypass_check := false;
+  exception when others then
+    bypass_check := false;
   end;
 
   if bypass_check then
@@ -2799,12 +2817,13 @@ begin
   end if;
 
   if old.is_free = true
-    and old.is_active = true
-    and new.is_active = false then
+     and old.is_active = true
+     and new.is_active = false then
 
     if not exists (
       select 1 from public.course_pricing_tiers
       where course_id = old.course_id
+        and organization_id = old.organization_id
         and id != old.id
         and is_free = true
         and is_active = true
@@ -2832,9 +2851,8 @@ begin
   begin
     select coalesce(nullif(current_setting('app.converting_course_pricing', true), '')::boolean, false)
     into bypass_check;
-  exception
-    when others then
-      bypass_check := false;
+  exception when others then
+    bypass_check := false;
   end;
 
   if bypass_check then
@@ -2844,6 +2862,7 @@ begin
   select count(*) into remaining_active_count
   from public.course_pricing_tiers
   where course_id = old.course_id
+    and organization_id = old.organization_id
     and id != old.id
     and is_active = true;
 
@@ -2856,6 +2875,7 @@ begin
     select count(*) into remaining_free_count
     from public.course_pricing_tiers
     where course_id = old.course_id
+      and organization_id = old.organization_id
       and id != old.id
       and is_free = true
       and is_active = true;
@@ -2883,9 +2903,8 @@ begin
   begin
     select coalesce(nullif(current_setting('app.converting_course_pricing', true), '')::boolean, false)
     into bypass_check;
-  exception
-    when others then
-      bypass_check := false;
+  exception when others then
+    bypass_check := false;
   end;
 
   if bypass_check then
@@ -2896,6 +2915,7 @@ begin
     select count(*) into remaining_paid_tiers
     from public.course_pricing_tiers
     where course_id = old.course_id
+      and organization_id = old.organization_id
       and id != old.id
       and is_free = false;
 

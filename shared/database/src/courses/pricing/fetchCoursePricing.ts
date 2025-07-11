@@ -31,7 +31,7 @@ export async function fetchCoursePricing({ supabase, courseId }: FetchCoursePric
       position,
       is_popular,
       is_recommended,
-      created_at,
+      created_at, 
       updated_at,
       created_by,
       updated_by

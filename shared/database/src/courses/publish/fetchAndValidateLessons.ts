@@ -128,7 +128,7 @@ function calculateCompletionStatus(data: any[]): {
     },
     {
       field: 'blocks',
-      weight: 2,
+      weight: 1,
       isValid: (value) => Array.isArray(value) && value.length >= 2,
     },
   ];
@@ -234,9 +234,10 @@ export async function fetchAndValidateLessons({
   })) as LessonsData;
 
   const validation = LessonsArraySchema.safeParse(lessonsWithBlocks);
-  const completionStatus = calculateCompletionStatus(data);
 
   if (!validation.success) {
+    const completionStatus = calculateCompletionStatus(data);
+
     const lessonValidationErrors: LessonValidationError[] = validation.error.issues.map((issue) => {
       const pathSegments = issue.path;
       const lessonIndex = typeof pathSegments[0] === 'number' ? pathSegments[0] : undefined;
@@ -267,6 +268,9 @@ export async function fetchAndValidateLessons({
       completionStatus,
     };
   }
+
+  // When validation succeeds, calculate completion status based on the validated data
+  const completionStatus = calculateCompletionStatus(validation.data);
 
   return {
     success: true,

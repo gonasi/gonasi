@@ -189,6 +189,7 @@ export type Database = {
           is_free: boolean
           is_popular: boolean
           is_recommended: boolean
+          organization_id: string
           payment_frequency: Database["public"]["Enums"]["payment_frequency"]
           position: number
           price: number
@@ -210,6 +211,7 @@ export type Database = {
           is_free?: boolean
           is_popular?: boolean
           is_recommended?: boolean
+          organization_id: string
           payment_frequency: Database["public"]["Enums"]["payment_frequency"]
           position?: number
           price: number
@@ -231,6 +233,7 @@ export type Database = {
           is_free?: boolean
           is_popular?: boolean
           is_recommended?: boolean
+          organization_id?: string
           payment_frequency?: Database["public"]["Enums"]["payment_frequency"]
           position?: number
           price?: number
@@ -262,6 +265,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_pricing_tiers_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
           {
