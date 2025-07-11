@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { CourseOverviewSchema } from './course-overview';
+import { PricingSchema } from './course-pricing';
 
 const JsonSchema = z.any();
 
@@ -146,99 +147,9 @@ export const LessonWithBlocksSchema = z
     }
   });
 
-export const PricingSchema = z.array(
-  z.object({
-    id: z
-      .string({ required_error: `This pricing option needs an <span class="go-title">ID</span>.` })
-      .nonempty(`<span class="go-title">Pricing ID</span> can't be empty.`),
-    course_id: z
-      .string({ required_error: `Link this pricing to a <span class="go-title">course</span>.` })
-      .nonempty(`<span class="go-title">Course ID</span> can't be empty.`),
-    payment_frequency: z.enum(['monthly', 'bi_monthly', 'quarterly', 'semi_annual', 'annual'], {
-      invalid_type_error: `Choose how often students will pay with a <span class="go-title">payment frequency</span>.`,
-    }),
-    is_free: z.boolean({
-      invalid_type_error: `Let us know if this course is <span class="go-title">free</span> or paid.`,
-    }),
-    price: z
-      .number({ invalid_type_error: `<span class="go-title">Price</span> should be a number.` })
-      .min(0, `<span class="go-title">Price</span> can't be negative.`),
-    currency_code: z
-      .string({ required_error: `What <span class="go-title">currency</span> are you using?` })
-      .length(
-        3,
-        `<span class="go-title">Currency code</span> should be 3 letters (like USD, EUR, GBP).`,
-      ),
-    promotional_price: z
-      .number({
-        invalid_type_error: `<span class="go-title">Promotional price</span> should be a number.`,
-      })
-      .min(0, `<span class="go-title">Promotional price</span> can't be negative.`)
-      .nullable(),
-    promotion_start_date: z.string().nullable(),
-    promotion_end_date: z.string().nullable(),
-    tier_name: z.string().nullable(),
-    tier_description: z.string().nullable(),
-    is_active: z.boolean({
-      invalid_type_error: `Is this <span class="go-title">pricing option</span> currently available to students?`,
-    }),
-    position: z
-      .number({ invalid_type_error: `<span class="go-title">Position</span> should be a number.` })
-      .min(0, `<span class="go-title">Position</span> should be zero or higher.`),
-    is_popular: z.boolean({
-      invalid_type_error: `Is this your <span class="success">most popular</span> pricing option?`,
-    }),
-    is_recommended: z.boolean({
-      invalid_type_error: `Do you <span class="success">recommend</span> this pricing tier to most students?`,
-    }),
-  }),
-);
-
-export type PricingSchemaTypes = z.infer<typeof PricingSchema>;
-
-// Updated schema to use flattened array structure instead of nested arrays
-const LessonsWithBlocksSchema = z.array(LessonWithBlocksSchema).superRefine((data, ctx) => {
-  // Check if the array is empty or all lessons are empty
-  if (!data || data.length === 0) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      path: ['noLessonsInCourse'],
-      message: `<span class="error">No lessons</span> found in this course. Add some lessons to get started!`,
-    });
-    return;
-  }
-
-  // Group lessons by chapter for validation
-  const lessonsByChapter = data.reduce(
-    (acc, lesson) => {
-      const chapterId = lesson.chapter_id;
-
-      if (!acc[chapterId]) {
-        acc[chapterId] = [];
-      }
-
-      acc[chapterId].push(lesson);
-      return acc;
-    },
-    {} as Record<string, typeof data>,
-  );
-
-  // Validate each chapter has at least one lesson
-  Object.entries(lessonsByChapter).forEach(([chapterId, lessons]) => {
-    if (lessons.length === 0) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['chapters', chapterId, 'noLessons'],
-        message: `Chapter <span class="warning">${chapterId}</span> needs at least one lesson.`,
-      });
-    }
-  });
-});
-
 export const PublishCourseSchema = z.object({
   courseOverview: CourseOverviewSchema,
   pricingData: PricingSchema,
-  lessonsWithBlocks: LessonsWithBlocksSchema,
 });
 
 export type PublishCourseSchemaTypes = z.infer<typeof PublishCourseSchema>;
