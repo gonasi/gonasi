@@ -66,10 +66,6 @@ export default [
           route('edit-details', 'routes/organizations/builder/course/overview/edit-details.tsx'),
           route('edit-grouping', 'routes/organizations/builder/course/overview/edit-grouping.tsx'),
           route('publish', 'routes/organizations/builder/course/overview/publish-index.tsx'),
-          route(
-            'new-publish',
-            'routes/organizations/builder/course/overview/new-publish-index.tsx',
-          ),
         ]),
 
         route('content', 'routes/organizations/builder/course/content/content-index.tsx', [

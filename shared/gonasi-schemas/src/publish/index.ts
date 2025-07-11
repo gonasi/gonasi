@@ -58,7 +58,7 @@ export const PublishCourseSchema = z.object({
   is_active: z.boolean(),
   name: z.string().nonempty(),
   description: z.string().nonempty(),
-  image_url: z.string().url(),
+  image_url: z.string(),
   blur_hash: z.string().nullable(),
   visibility: z.enum(['public', 'private']),
 
@@ -71,3 +71,5 @@ export const PublishCourseSchema = z.object({
 
   pricing_tiers: PricingSchema,
 });
+
+export type PublishCourseSchemaTypes = z.infer<typeof PublishCourseSchema>;

@@ -137,9 +137,9 @@ alter table "public"."file_library" enable row level security;
 
 create table "public"."lesson_blocks" (
     "id" uuid not null default uuid_generate_v4(),
-    "organization_id" uuid not null,
-    "course_id" uuid not null,
     "lesson_id" uuid not null,
+    "course_id" uuid not null,
+    "organization_id" uuid not null,
     "plugin_type" text not null,
     "position" integer not null default 0,
     "content" jsonb not null default '{}'::jsonb,
@@ -176,11 +176,11 @@ create table "public"."lessons" (
     "lesson_type_id" uuid not null,
     "name" text not null,
     "position" integer default 0,
+    "settings" jsonb not null default '{}'::jsonb,
     "created_at" timestamp with time zone not null default timezone('utc'::text, now()),
     "updated_at" timestamp with time zone not null default timezone('utc'::text, now()),
     "created_by" uuid,
-    "updated_by" uuid,
-    "settings" jsonb not null default '{}'::jsonb
+    "updated_by" uuid
 );
 
 

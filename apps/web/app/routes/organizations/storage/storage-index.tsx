@@ -108,7 +108,7 @@ export default function StorageIndex({ loaderData, params }: Route.ComponentProp
         <CardHeader>
           <CardTitle className='flex items-center gap-2 text-sm font-medium'>
             <BookOpen className='h-4 w-4' />
-            Storage by Course
+            Storage by Builder & Published Courses
           </CardTitle>
         </CardHeader>
         <CardContent>

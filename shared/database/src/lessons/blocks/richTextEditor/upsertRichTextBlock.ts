@@ -49,7 +49,10 @@ export const upsertRichTextBlock = async (
 
     return {
       success: true,
-      message: 'Rich text block created successfully.',
+      message:
+        blockId === 'create-new'
+          ? 'Rich text block created successfully.'
+          : 'Rich text block successfully updated',
     };
   } catch (err) {
     console.error('Unexpected error in upsertRichTextBlock:', err);

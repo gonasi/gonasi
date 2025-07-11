@@ -1,47 +1,37 @@
-import type { PublishCourseSchemaTypes } from '@gonasi/schemas/publish';
-
 import { getUserId } from '../auth';
 import type { TypedSupabaseClient } from '../client';
 import { PUBLISHED_THUMBNAILS, THUMBNAILS_BUCKET } from '../constants';
 import type { ApiResponse } from '../types';
+import { getTransformedDataToPublish } from './getTransformedDataToPublish';
 
 /**
  * Validates that a given value is a non-empty string (for ID checks).
  */
-const isValidId = (id: unknown): id is string => typeof id === 'string' && id.trim().length > 0;
 
-/**
- * Upserts (inserts or updates) a published course with associated metadata.
- * @param supabase - Typed Supabase client
- * @param data - Course data to publish
- * @returns API response indicating success or failure
- */
-export const upsertPublishCourse = async (
-  supabase: TypedSupabaseClient,
-  data: PublishCourseSchemaTypes,
-): Promise<ApiResponse> => {
+interface UpsertPublishCourseArgs {
+  supabase: TypedSupabaseClient;
+  organizationId: string;
+  courseId: string;
+}
+
+export const upsertPublishCourse = async ({
+  supabase,
+  organizationId,
+  courseId,
+}: UpsertPublishCourseArgs): Promise<ApiResponse> => {
   const userId = await getUserId(supabase);
 
-  const categoryId = data.courseOverview.course_categories?.id;
-  const subCategoryId = data.courseOverview.course_sub_categories?.id;
-
-  // Validate required foreign keys
-  if (!isValidId(categoryId)) {
-    return { success: false, message: 'Invalid course category selected.' };
-  }
-  if (!isValidId(subCategoryId)) {
-    return { success: false, message: 'Invalid course sub-category selected.' };
-  }
+  const data = await getTransformedDataToPublish({ supabase, organizationId, courseId });
 
   try {
     // Handle thumbnail copying
     // First, attempt to delete the file in the destination bucket (if it exists)
-    await supabase.storage.from(PUBLISHED_THUMBNAILS).remove([data.courseOverview.image_url]);
+    await supabase.storage.from(PUBLISHED_THUMBNAILS).remove([data.image_url]);
 
     // Then, copy the thumbnail to the published bucket
     const { error: copyError } = await supabase.storage
       .from(THUMBNAILS_BUCKET)
-      .copy(data.courseOverview.image_url, data.courseOverview.image_url, {
+      .copy(data.image_url, data.image_url, {
         destinationBucket: PUBLISHED_THUMBNAILS,
       });
 
@@ -53,31 +43,25 @@ export const upsertPublishCourse = async (
       };
     }
 
-    // Filter only active pricing options
-    const activePricingData = data.pricingData.filter((item) => item.is_active);
+    const payload = {
+      ...data,
 
-    // Build the course structure object
-    const courseStructure = {
-      chapters: data.courseChapters,
-      lessons: data.lessonsWithBlocks,
-      chapters_count: data.courseChapters.length,
-      lessons_count: data.lessonsWithBlocks.length,
+      // Required fields by the DB schema that are NOT in the Zod schema
+      published_by: userId,
+      published_at: new Date().toISOString(),
+
+      // Flatten totals from `course_structure` (duplicated for filtering/sorting)
+      total_chapters: data.course_structure.total_chapters,
+      total_lessons: data.course_structure.total_lessons,
+      total_blocks: data.course_structure.total_blocks,
+
+      // Serialize nested structures to match JSON column types
+      course_structure: JSON.stringify(data.course_structure),
+      pricing_tiers: JSON.stringify(data.pricing_tiers),
     };
 
     // Simple upsert operation
-    const { error } = await supabase.from('published_courses').upsert({
-      id: data.courseOverview.id,
-      organization_id: data.courseOverview.organizationId,
-      is_active: true,
-      name: data.courseOverview.name,
-      description: data.courseOverview.description,
-      image_url: data.courseOverview.image_url,
-      blur_hash: data.courseOverview.blur_hash,
-      visibility: data.courseOverview.visibility,
-      course_structure: courseStructure,
-      pricing_tiers: activePricingData,
-      published_by: userId,
-    });
+    const { error } = await supabase.from('published_courses').upsert(payload);
 
     if (error) {
       console.error('[upsertPublishCourse] Supabase upsert error:', error);

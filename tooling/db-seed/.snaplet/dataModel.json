@@ -2957,9 +2957,9 @@
           "maxLength": null
         },
         {
-          "id": "public.lesson_blocks.organization_id",
-          "name": "organization_id",
-          "columnName": "organization_id",
+          "id": "public.lesson_blocks.lesson_id",
+          "name": "lesson_id",
+          "columnName": "lesson_id",
           "type": "uuid",
           "isRequired": true,
           "kind": "scalar",
@@ -2985,9 +2985,9 @@
           "maxLength": null
         },
         {
-          "id": "public.lesson_blocks.lesson_id",
-          "name": "lesson_id",
-          "columnName": "lesson_id",
+          "id": "public.lesson_blocks.organization_id",
+          "name": "organization_id",
+          "columnName": "organization_id",
           "type": "uuid",
           "isRequired": true,
           "kind": "scalar",
@@ -3529,6 +3529,20 @@
           "maxLength": null
         },
         {
+          "id": "public.lessons.settings",
+          "name": "settings",
+          "columnName": "settings",
+          "type": "jsonb",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
           "id": "public.lessons.created_at",
           "name": "created_at",
           "columnName": "created_at",
@@ -3581,20 +3595,6 @@
           "isGenerated": false,
           "sequence": false,
           "hasDefaultValue": false,
-          "isId": false,
-          "maxLength": null
-        },
-        {
-          "id": "public.lessons.settings",
-          "name": "settings",
-          "columnName": "settings",
-          "type": "jsonb",
-          "isRequired": true,
-          "kind": "scalar",
-          "isList": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": true,
           "isId": false,
           "maxLength": null
         },

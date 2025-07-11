@@ -3,23 +3,23 @@
 -- description: blocks within lessons supporting various plugin types, ordered by position
 -- ====================================================================================
 create table public.lesson_blocks (
-  id uuid primary key default uuid_generate_v4(),                 -- unique block identifier
-  organization_id uuid not null,                                  -- owning organization
-  course_id uuid not null,                                        -- associated course
-  lesson_id uuid not null,                                        -- associated lesson
-  plugin_type text not null,                                      -- plugin type (e.g. rich_text, match, reveal)
-  position integer not null default 0,                            -- order within the lesson
-  content jsonb not null default '{}'::jsonb,                     -- plugin-specific configuration
-  settings jsonb not null default '{}'::jsonb,                    -- additional plugin settings
-  created_at timestamptz not null default timezone('utc', now()),-- creation timestamp (utc)
-  updated_at timestamptz not null default timezone('utc', now()),-- last update timestamp (utc)
-  created_by uuid,                                                -- user who created this block (nullable)
-  updated_by uuid,                                                -- user who last updated this block (nullable)
+  id uuid primary key default uuid_generate_v4(),                 -- Unique block identifier
+  lesson_id uuid not null,                                       -- FK: associated lesson
+  course_id uuid not null,                                       -- Redundant but useful for filtering
+  organization_id uuid not null,                                 -- Redundant but useful for RLS
+  plugin_type text not null,                                     -- Plugin type (e.g. rich_text, match, reveal)
+  position integer not null default 0,                           -- Order within the lesson
+  content jsonb not null default '{}'::jsonb,                    -- Plugin-specific content config
+  settings jsonb not null default '{}'::jsonb,                   -- Additional plugin settings
+  created_at timestamptz not null default timezone('utc', now()),-- Creation timestamp (UTC)
+  updated_at timestamptz not null default timezone('utc', now()),-- Last update timestamp (UTC)
+  created_by uuid,                                               -- FK: user who created (nullable on delete)
+  updated_by uuid,                                               -- FK: user who last updated (nullable on delete)
 
-  -- foreign key constraints
-  foreign key (organization_id) references public.organizations(id) on delete cascade,
-  foreign key (course_id) references public.courses(id) on delete cascade,
+  -- Foreign key constraints
   foreign key (lesson_id) references public.lessons(id) on delete cascade,
+  foreign key (course_id) references public.courses(id) on delete cascade,
+  foreign key (organization_id) references public.organizations(id) on delete cascade,
   foreign key (created_by) references public.profiles(id) on delete set null,
   foreign key (updated_by) references public.profiles(id) on delete set null
 );

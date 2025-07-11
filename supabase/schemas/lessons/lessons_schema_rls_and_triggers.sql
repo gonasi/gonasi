@@ -10,19 +10,19 @@
 --   - Lesson-specific settings stored as JSONB
 create table public.lessons (
   id uuid primary key default uuid_generate_v4(),                -- Unique lesson identifier
-  course_id uuid not null,                                       -- Foreign key: associated course
-  organization_id uuid not null,                                 -- Foreign key: associated organization
-  chapter_id uuid not null,                                      -- Foreign key: associated chapter
-  lesson_type_id uuid not null,                                  -- Foreign key: lesson type
+  course_id uuid not null,                                       -- FK: associated course
+  organization_id uuid not null,                                 -- FK: associated organization
+  chapter_id uuid not null,                                      -- FK: associated chapter
+  lesson_type_id uuid not null,                                  -- FK: lesson type
   name text not null,                                            -- Lesson title
   position integer default 0,                                    -- Position/order within the chapter
+  settings jsonb default '{}'::jsonb not null,                   -- JSONB field for lesson-specific settings
   created_at timestamptz not null default timezone('utc', now()),-- Timestamp when lesson was created (UTC)
   updated_at timestamptz not null default timezone('utc', now()),-- Timestamp of last update (UTC)
   created_by uuid,                                               -- FK: user who created (nullable on delete)
   updated_by uuid,                                               -- FK: user who last updated (nullable on delete)
-  settings jsonb default '{}'::jsonb not null,                   -- JSONB field for lesson-specific settings
 
-  -- Foreign key constraints enforcing relational integrity
+  -- Foreign key constraints
   foreign key (organization_id) references public.organizations(id) on delete cascade,
   foreign key (course_id) references public.courses(id) on delete cascade,
   foreign key (chapter_id) references public.chapters(id) on delete cascade,
@@ -30,7 +30,6 @@ create table public.lessons (
   foreign key (created_by) references public.profiles(id) on delete set null,
   foreign key (updated_by) references public.profiles(id) on delete set null
 );
-
 
 
 -- ====================================================================================
