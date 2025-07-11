@@ -9,3 +9,4 @@ export * from './fetchCourseByPathwayId';
 
 export * from './go';
 export * from './pricing';
+export * from './publish';

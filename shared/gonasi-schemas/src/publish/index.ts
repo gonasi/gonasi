@@ -192,7 +192,8 @@ export const CourseOverviewSchema = z
     id: z.string({
       required_error: `<lucide name="KeyRound" size="12" /> Your course needs a unique <span class="go-title">ID</span>.`,
     }),
-    organizationId: z.string({
+    organization_id: z.string({
+      // Changed from organizationId to match DB
       required_error: `<lucide name="KeyRound" size="12" /> Your course needs an organization <span class="go-title">ID</span>.`,
     }),
     visibility: z.enum(['public', 'private'], {
@@ -205,24 +206,24 @@ export const CourseOverviewSchema = z
       })
       .min(
         1,
-        `<lucide name="AlertCircle" size="12" /> Course <span class="go-title">name</span> can’t be empty.`,
+        `<lucide name="AlertCircle" size="12" /> Course <span class="go-title">name</span> can't be empty.`,
       ),
     description: z
       .string({
         required_error: `<lucide name="AlignLeft" size="12" /> Tell students what your course is about with a <span class="go-title">description</span>.`,
       })
-      .min(
-        10,
-        `<lucide name="FileText" size="12" /> Course <span class="go-title">description</span> should be a bit longer to help students understand what they'll learn.`,
-      ),
+      .nullable()
+      .refine((val) => val !== null && val.length >= 10, {
+        message: `<lucide name="FileText" size="12" /> Course <span class="go-title">description</span> should be at least 10 characters long to help students understand what they'll learn.`,
+      }),
     image_url: z
       .string({
         required_error: `<lucide name="Image" size="12" /> Add an eye-catching <span class="go-title">thumbnail image</span> for your course.`,
       })
-      .min(
-        1,
-        `<lucide name="ImageOff" size="12" /> Your course needs a <span class="go-title">thumbnail image</span> to look professional.`,
-      ),
+      .nullable()
+      .refine((val) => val !== null && val.length > 0, {
+        message: `<lucide name="ImageOff" size="12" /> Your course needs a <span class="go-title">thumbnail image</span> to look professional.`,
+      }),
     blur_hash: z.string().nullable(),
 
     // Allow these to be nullable/optional so custom errors run in superRefine

@@ -66,6 +66,10 @@ export default [
           route('edit-details', 'routes/organizations/builder/course/overview/edit-details.tsx'),
           route('edit-grouping', 'routes/organizations/builder/course/overview/edit-grouping.tsx'),
           route('publish', 'routes/organizations/builder/course/overview/publish-index.tsx'),
+          route(
+            'new-publish',
+            'routes/organizations/builder/course/overview/new-publish-index.tsx',
+          ),
         ]),
 
         route('content', 'routes/organizations/builder/course/content/content-index.tsx', [
@@ -213,30 +217,6 @@ export default [
 
   // onboarding - get user username
   route('go/onboarding/:userId', 'routes/onboarding/onboarding-index.tsx'),
-
-  layout('routes/layouts/profile/course-overview-layout.tsx', [
-    route('go/:username/settings', 'routes/profile/settings/settings-index.tsx', [
-      route(
-        'profile-information',
-        'routes/profile/settings/account-settings/profile-information.tsx',
-        [
-          route(
-            'personal-information',
-            'routes/profile/settings/account-settings/updates/update-personal-information.tsx',
-          ),
-          route(
-            'profile-photo',
-            'routes/profile/settings/account-settings/updates/update-profile-photo.tsx',
-          ),
-        ],
-      ),
-      route(
-        'login-and-security',
-        'routes/profile/settings/account-settings/login-and-security.tsx',
-      ),
-      route('notifications', 'routes/profile/settings/account-settings/notifications.tsx'),
-    ]),
-  ]),
 
   route('api/paystack-webhook', 'routes/api/paystack-webhook.ts'),
   route('api/course-sub-categories', 'routes/api/course-sub-categories.ts'),
