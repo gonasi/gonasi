@@ -78,11 +78,6 @@ export const COURSE_ERROR_NAVIGATION: Record<
   }),
 };
 
-// Simulate artificial delay (for loading UX)
-function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 // Utility: Convert `null` fields to `undefined` where Zod requires it
 function sanitizeDataForValidationFailure(data: any): Partial<CourseOverviewData> {
   const sanitized: any = { ...data };
@@ -105,9 +100,6 @@ export async function fetchAndValidateCourseOverview({
   organizationId,
   chapterId,
 }: FetchCourseOverviewArgs): Promise<CourseValidationResult> {
-  const delay = Math.floor(Math.random() * 2000) + 1000;
-  await sleep(delay);
-
   const { data, error } = await supabase
     .from('courses')
     .select(

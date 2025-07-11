@@ -8,6 +8,7 @@ import {
   fetchAndValidateChapters,
   fetchAndValidateCourseOverview,
   fetchAndValidateLessons,
+  fetchAndValidatePricing,
   type LessonsValidationResult,
 } from '@gonasi/database/courses';
 
@@ -26,8 +27,10 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   const courseOverview = fetchAndValidateCourseOverview({ supabase, courseId, organizationId });
   const chapterOverview = fetchAndValidateChapters({ supabase, courseId, organizationId });
   const lessonOverview = fetchAndValidateLessons({ supabase, courseId, organizationId });
+  const pricingOverview = fetchAndValidatePricing({ supabase, courseId, organizationId });
 
   return {
+    pricingOverview,
     courseOverview,
     chapterOverview,
     lessonOverview,
@@ -35,6 +38,9 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 }
 
 export default function NewPublishIndex({ params }: Route.ComponentProps) {
+  const { pricingOverview } = useLoaderData() as {
+    pricingOverview: Promise<CourseValidationResult>;
+  };
   const { courseOverview } = useLoaderData() as { courseOverview: Promise<CourseValidationResult> };
   const { chapterOverview } = useLoaderData() as {
     chapterOverview: Promise<ChaptersValidationResult>;
@@ -59,6 +65,21 @@ export default function NewPublishIndex({ params }: Route.ComponentProps) {
           closeRoute={closeRoute}
         />
         <Modal.Body className='flex flex-col space-y-2'>
+          <Suspense fallback={<ValidationPending title='Pricing' success={false} isLoading />}>
+            <Await resolve={pricingOverview}>
+              {(data) => {
+                return (
+                  <div>
+                    <ValidationMessages
+                      errors={data.errors ?? []}
+                      title='Pricing'
+                      completionStatus={data.completionStatus}
+                    />
+                  </div>
+                );
+              }}
+            </Await>
+          </Suspense>
           <Suspense
             fallback={<ValidationPending title='Course Overview' success={false} isLoading />}
           >

@@ -73,10 +73,6 @@ export const CHAPTER_ERROR_NAVIGATION: Record<
   }),
 };
 
-function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 // Accept inferred type from Supabase + inject lesson_count safely
 function sanitizeChapterDataForValidation(data: any[]): Partial<ChaptersData> {
   return data.map((chapter) => {
@@ -169,9 +165,6 @@ export async function fetchAndValidateChapters({
   courseId,
   organizationId,
 }: FetchChaptersArgs): Promise<ChaptersValidationResult> {
-  const delay = Math.floor(Math.random() * 2000) + 1000;
-  await sleep(delay);
-
   const { data, error } = await supabase
     .from('chapters')
     .select(

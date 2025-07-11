@@ -78,10 +78,6 @@ export const LESSON_ERROR_NAVIGATION: Record<LessonKeys, (args: RouteParams) => 
     }),
   };
 
-function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 function sanitizeLessonDataForValidation(data: any[]): Partial<LessonsData> {
   return data.map((lesson) => {
     const sanitized = {
@@ -187,9 +183,6 @@ export async function fetchAndValidateLessons({
   courseId,
   organizationId,
 }: FetchLessonsArgs): Promise<LessonsValidationResult> {
-  const delay = Math.floor(Math.random() * 2000) + 1000;
-  await sleep(delay);
-
   const { data, error } = await supabase
     .from('lessons')
     .select(
