@@ -71,7 +71,7 @@ export const LESSON_ERROR_NAVIGATION: Record<LessonKeys, (args: RouteParams) => 
       route: `/${organizationId}/builder/${courseId}/content/${chapterId}/lessons/${lessonId}/edit-details`,
     }),
     blocks: ({ organizationId, courseId, chapterId, lessonId }) => ({
-      route: `/${organizationId}/builder/${courseId}/content/${chapterId}/lessons/${lessonId}/content`,
+      route: `/${organizationId}/builder/${courseId}/content/${chapterId}/${lessonId}/lesson-blocks/plugins`,
     }),
     lesson_types: ({ organizationId, courseId, chapterId, lessonId }) => ({
       route: `/${organizationId}/builder/${courseId}/content/${chapterId}/lessons/${lessonId}/edit-details`,
@@ -128,7 +128,7 @@ function calculateCompletionStatus(data: any[]): {
     },
     {
       field: 'blocks',
-      weight: 1,
+      weight: 2,
       isValid: (value) => Array.isArray(value) && value.length >= 2,
     },
   ];

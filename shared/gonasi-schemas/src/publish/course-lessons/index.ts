@@ -63,21 +63,7 @@ export const LessonSchema = z
   });
 
 // Schema for an array of lessons
-export const LessonsArraySchema = z
-  .array(LessonSchema, {
-    required_error: `Your <span class="go-title">chapter</span> must have <span class="error">at least two lessons</span>.`,
-    invalid_type_error: `Expected a list of lessons.`,
-  })
-  .superRefine((lessons, ctx) => {
-    if (lessons.length < 2) {
-      const count = lessons.length;
-      const lessonText =
-        count === 0 ? 'no lessons yet' : count === 1 ? 'only one lesson' : `${count} lessons`; // fallback
-
-      ctx.addIssue({
-        path: [],
-        code: z.ZodIssueCode.custom,
-        message: `This <span class="go-title">chapter</span> needs at least <span class="error">two lessons</span>. Right now, it has <span class="go-title">${lessonText}</span>.`,
-      });
-    }
-  });
+export const LessonsArraySchema = z.array(LessonSchema, {
+  required_error: `Your <span class="go-title">chapter</span> must have <span class="error">at least two lessons</span>.`,
+  invalid_type_error: `Expected a list of lessons.`,
+});
