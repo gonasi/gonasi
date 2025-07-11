@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { CourseOverviewSchema } from './course-overview';
+
 const JsonSchema = z.any();
 
 export const ObjectSchema = z.object({
@@ -57,7 +59,7 @@ const LessonTypeSchema = z.object({
   }),
 });
 
-const LessonSchema = z.object({
+export const LessonSchema = z.object({
   id: z.string({
     required_error: `Each lesson needs its own unique <span class="go-title">ID</span>.`,
     invalid_type_error: `<span class="go-title">Lesson ID</span> should be text.`,
@@ -143,145 +145,6 @@ export const LessonWithBlocksSchema = z
       });
     }
   });
-
-const ChapterSchema = z.object({
-  lesson_count: z
-    .number({
-      invalid_type_error: `Lesson count should be a <span class="go-title">number</span>.`,
-    })
-    .nonnegative({
-      message: `Lesson count should be <span class="success">zero or more</span>.`,
-    }),
-  id: z
-    .string({ required_error: `This chapter needs an <span class="go-title">ID</span>.` })
-    .nonempty(`Chapter <span class="go-title">ID</span> can't be empty.`),
-  course_id: z
-    .string({
-      required_error: `Which <span class="go-title">course</span> does this chapter belong to?`,
-    })
-    .nonempty(`<span class="go-title">Course ID</span> can't be empty.`),
-  name: z
-    .string({ required_error: `Your chapter needs a <span class="go-title">name</span>.` })
-    .min(3, {
-      message: `Chapter name should be at least <span class="error">3 characters</span> long.`,
-    })
-    .max(100, {
-      message: `Keep the chapter name under <span class="warning">100 characters</span>.`,
-    }),
-  description: z
-    .string({
-      required_error: `Add a <span class="go-title">description</span> to help students know what to expect.`,
-    })
-    .min(10, {
-      message: `Chapter description should be at least <span class="error">10 characters</span> long.`,
-    }),
-  position: z
-    .number({
-      invalid_type_error: `Chapter <span class="go-title">position</span> should be a <span class="go-title">number</span>.`,
-    })
-    .nonnegative({
-      message: `Chapter position should be <span class="success">zero or higher</span>.`,
-    }),
-  lessons: z.array(LessonSchema, {
-    invalid_type_error: `<span class="go-title">Lessons</span> should be a list of lesson objects.`,
-  }),
-});
-
-export const CourseOverviewSchema = z
-  .object({
-    id: z.string({
-      required_error: `<lucide name="KeyRound" size="12" /> Your course needs a unique <span class="go-title">ID</span>.`,
-    }),
-    organization_id: z.string({
-      // Changed from organizationId to match DB
-      required_error: `<lucide name="KeyRound" size="12" /> Your course needs an organization <span class="go-title">ID</span>.`,
-    }),
-    visibility: z.enum(['public', 'private'], {
-      required_error: 'Please choose a visibility setting.',
-      invalid_type_error: 'Visibility must be either "public" or "private".',
-    }),
-    name: z
-      .string({
-        required_error: `<lucide name="Type" size="12" /> What's your course called? Add a <span class="go-title">name</span> here.`,
-      })
-      .min(
-        1,
-        `<lucide name="AlertCircle" size="12" /> Course <span class="go-title">name</span> can't be empty.`,
-      ),
-    description: z
-      .string({
-        required_error: `<lucide name="AlignLeft" size="12" /> Tell students what your course is about with a <span class="go-title">description</span>.`,
-      })
-      .nullable()
-      .refine((val) => val !== null && val.length >= 10, {
-        message: `<lucide name="FileText" size="12" /> Course <span class="go-title">description</span> should be at least 10 characters long to help students understand what they'll learn.`,
-      }),
-    image_url: z
-      .string({
-        required_error: `<lucide name="Image" size="12" /> Add an eye-catching <span class="go-title">thumbnail image</span> for your course.`,
-      })
-      .nullable()
-      .refine((val) => val !== null && val.length > 0, {
-        message: `<lucide name="ImageOff" size="12" /> Your course needs a <span class="go-title">thumbnail image</span> to look professional.`,
-      }),
-    blur_hash: z.string().nullable(),
-
-    // Allow these to be nullable/optional so custom errors run in superRefine
-    course_categories: z
-      .object({
-        id: z.string(),
-        name: z.string(),
-      })
-      .optional()
-      .nullable(),
-
-    course_sub_categories: z
-      .object({
-        id: z.string(),
-        name: z.string(),
-      })
-      .optional()
-      .nullable(),
-  })
-  .superRefine((data, ctx) => {
-    const objectFields = [
-      {
-        key: 'course_categories',
-        label: 'category',
-        icon: 'ListTree',
-        message: `Pick a <span class="go-title">category</span> that fits your course best.`,
-      },
-      {
-        key: 'course_sub_categories',
-        label: 'subcategory',
-        icon: 'ListCollapse',
-        message: `Choose a <span class="go-title">subcategory</span> to help students find your course.`,
-      },
-    ];
-
-    for (const { key, message, icon } of objectFields) {
-      const value = data[key as keyof typeof data];
-
-      const isMissingOrInvalid =
-        value === null ||
-        typeof value !== 'object' ||
-        Array.isArray(value) ||
-        !('id' in value) ||
-        !('name' in value) ||
-        typeof value.id !== 'string' ||
-        typeof value.name !== 'string';
-
-      if (isMissingOrInvalid) {
-        ctx.addIssue({
-          path: [key],
-          code: z.ZodIssueCode.custom,
-          message: `<lucide name="${icon}" size="12" /> ${message}`,
-        });
-      }
-    }
-  });
-
-export type CourseOverviewSchemaTypes = z.infer<typeof CourseOverviewSchema>;
 
 export const PricingSchema = z.array(
   z.object({
@@ -372,54 +235,10 @@ const LessonsWithBlocksSchema = z.array(LessonWithBlocksSchema).superRefine((dat
   });
 });
 
-export const ValidateChaptersSchema = z.array(ChapterSchema);
-export type ValidateChaptersSchemaTypes = z.infer<typeof ValidateChaptersSchema>;
-
-export const PublishCourseSchema = z
-  .object({
-    courseOverview: CourseOverviewSchema,
-    pricingData: PricingSchema,
-    courseChapters: ValidateChaptersSchema,
-    lessonsWithBlocks: LessonsWithBlocksSchema,
-  })
-  .superRefine((data, ctx) => {
-    const { courseChapters, lessonsWithBlocks } = data;
-
-    if (courseChapters.length < 2) {
-      ctx.addIssue({
-        path: ['courseChapters', 'chapterCount'],
-        code: z.ZodIssueCode.custom,
-        message: `Your course needs at least <span class="error">2 chapters</span> to provide a complete learning journey.`,
-      });
-    }
-
-    if (courseChapters.length) {
-      courseChapters.forEach((chapter) => {
-        if (chapter.lessons.length < 2) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            path: ['courseChapters', chapter.id, 'insufficientLessons'],
-            message: `Each chapter must include at least 2 lessons. <span class="warning">${chapter.name}</span> currently has only <span class="error">${chapter.lessons.length}</span>.`,
-          });
-        }
-      });
-    }
-
-    // Validate that chapters referenced in lessonsWithBlocks actually exist
-    if (lessonsWithBlocks.length > 0) {
-      const chapterIds = new Set(courseChapters.map((c) => c.id));
-      const lessonChapterIds = new Set(lessonsWithBlocks.map((l) => l.chapter_id));
-
-      lessonChapterIds.forEach((chapterId) => {
-        if (!chapterIds.has(chapterId)) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            path: ['lessonsWithBlocks', 'orphanedLessons'],
-            message: `Found lessons referencing non-existent chapter <span class="error">${chapterId}</span>.`,
-          });
-        }
-      });
-    }
-  });
+export const PublishCourseSchema = z.object({
+  courseOverview: CourseOverviewSchema,
+  pricingData: PricingSchema,
+  lessonsWithBlocks: LessonsWithBlocksSchema,
+});
 
 export type PublishCourseSchemaTypes = z.infer<typeof PublishCourseSchema>;

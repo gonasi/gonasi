@@ -39,7 +39,7 @@ export async function fetchCourseChaptersByCourseId(
             name,
             description,
             lucide_icon,
-            bg_color
+            bg_color 
           )
         )
       `,

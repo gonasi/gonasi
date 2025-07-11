@@ -1,8 +1,9 @@
 import type z from 'zod';
 
-import { CourseOverviewSchema } from '@gonasi/schemas/publish';
+import { CourseOverviewSchema } from '@gonasi/schemas/publish/course-overview';
 
 import type { TypedSupabaseClient } from '../../client';
+import type { PublishValidationError } from './types';
 
 interface FetchCourseOverviewArgs {
   supabase: TypedSupabaseClient;
@@ -12,15 +13,7 @@ interface FetchCourseOverviewArgs {
 }
 
 type CourseOverviewData = z.infer<typeof CourseOverviewSchema>;
-type CourseOverviewKeys = keyof CourseOverviewData;
-
-export interface PublishValidationError {
-  field: CourseOverviewKeys;
-  message: string;
-  navigation: {
-    route: string;
-  };
-}
+export type CourseOverviewKeys = keyof CourseOverviewData;
 
 interface CourseValidationSuccess {
   success: true;

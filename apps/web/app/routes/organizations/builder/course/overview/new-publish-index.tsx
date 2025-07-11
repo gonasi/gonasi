@@ -3,7 +3,9 @@ import { Await, Link, useLoaderData } from 'react-router';
 import { RefreshCw } from 'lucide-react';
 
 import {
+  type ChaptersValidationResult,
   type CourseValidationResult,
+  fetchAndValidateChapters,
   fetchAndValidateCourseOverview,
 } from '@gonasi/database/courses';
 
@@ -20,14 +22,19 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   const organizationId = params.organizationId ?? '';
 
   const courseOverview = fetchAndValidateCourseOverview({ supabase, courseId, organizationId });
+  const chapterOverview = fetchAndValidateChapters({ supabase, courseId, organizationId });
 
   return {
     courseOverview,
+    chapterOverview,
   };
 }
 
 export default function NewPublishIndex({ params }: Route.ComponentProps) {
   const { courseOverview } = useLoaderData() as { courseOverview: Promise<CourseValidationResult> };
+  const { chapterOverview } = useLoaderData() as {
+    chapterOverview: Promise<ChaptersValidationResult>;
+  };
   const rootRoute = `/${params.organizationId}/builder/${params.courseId}`;
   const closeRoute = `${rootRoute}/overview`;
 
@@ -51,7 +58,21 @@ export default function NewPublishIndex({ params }: Route.ComponentProps) {
               {(data) => {
                 return (
                   <div>
-                    {/* <pre>{JSON.stringify(data, null, 2)}</pre> */}
+                    <ValidationMessages
+                      errors={data.errors ?? []}
+                      title='Course Overview'
+                      completionStatus={data.completionStatus}
+                    />
+                  </div>
+                );
+              }}
+            </Await>
+          </Suspense>
+          <Suspense fallback={<ValidationPending title='Chapters' success={false} isLoading />}>
+            <Await resolve={chapterOverview}>
+              {(data) => {
+                return (
+                  <div>
                     <ValidationMessages
                       errors={data.errors ?? []}
                       title='Course Overview'

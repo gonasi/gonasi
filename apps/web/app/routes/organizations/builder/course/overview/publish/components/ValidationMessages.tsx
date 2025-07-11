@@ -2,7 +2,7 @@ import { Virtuoso } from 'react-virtuoso';
 import { motion } from 'framer-motion';
 import { Ban, CheckCircle2 } from 'lucide-react';
 
-import type { PublishValidationError } from '@gonasi/database/courses';
+import type { ValidationError } from '@gonasi/database/courses/publish';
 
 import { GoValidationStatusMessage } from './GoValidationStatusMessage';
 import { ValidationProgress } from './ValidationProgress';
@@ -10,7 +10,7 @@ import { ValidationProgress } from './ValidationProgress';
 import { Badge } from '~/components/ui/badge';
 
 interface IValidationMessagesProps {
-  errors: PublishValidationError[];
+  errors: ValidationError[];
   title: string;
   completionStatus: {
     total: number;
@@ -76,9 +76,11 @@ export function ValidationMessages({ errors, title, completionStatus }: IValidat
         )}
       </div>
 
-      <div className='py-2'>
-        <ValidationProgress completionStatus={completionStatus} />
-      </div>
+      {completionStatus?.total > 0 && (
+        <div className='py-2'>
+          <ValidationProgress completionStatus={completionStatus} />
+        </div>
+      )}
 
       {hasErrors && (
         <motion.div
