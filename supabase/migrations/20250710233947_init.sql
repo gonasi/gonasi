@@ -2913,10 +2913,11 @@ $function$
 CREATE OR REPLACE FUNCTION public.update_updated_at_column()
  RETURNS trigger
  LANGUAGE plpgsql
+ SET search_path TO ''
 AS $function$
 begin
-  NEW.updated_at := timezone('utc', now());
-  return NEW;
+  new.updated_at = timezone('utc', clock_timestamp());
+  return new;
 end;
 $function$
 ;
