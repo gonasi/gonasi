@@ -7,6 +7,8 @@ import {
   type CourseValidationResult,
   fetchAndValidateChapters,
   fetchAndValidateCourseOverview,
+  fetchAndValidateLessons,
+  type LessonsValidationResult,
 } from '@gonasi/database/courses';
 
 import type { Route } from './+types/new-publish-index';
@@ -23,10 +25,12 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 
   const courseOverview = fetchAndValidateCourseOverview({ supabase, courseId, organizationId });
   const chapterOverview = fetchAndValidateChapters({ supabase, courseId, organizationId });
+  const lessonOverview = fetchAndValidateLessons({ supabase, courseId, organizationId });
 
   return {
     courseOverview,
     chapterOverview,
+    lessonOverview,
   };
 }
 
@@ -35,6 +39,10 @@ export default function NewPublishIndex({ params }: Route.ComponentProps) {
   const { chapterOverview } = useLoaderData() as {
     chapterOverview: Promise<ChaptersValidationResult>;
   };
+  const { lessonOverview } = useLoaderData() as {
+    lessonOverview: Promise<LessonsValidationResult>;
+  };
+
   const rootRoute = `/${params.organizationId}/builder/${params.courseId}`;
   const closeRoute = `${rootRoute}/overview`;
 
@@ -50,7 +58,7 @@ export default function NewPublishIndex({ params }: Route.ComponentProps) {
           }
           closeRoute={closeRoute}
         />
-        <Modal.Body>
+        <Modal.Body className='flex flex-col space-y-2'>
           <Suspense
             fallback={<ValidationPending title='Course Overview' success={false} isLoading />}
           >
@@ -75,7 +83,23 @@ export default function NewPublishIndex({ params }: Route.ComponentProps) {
                   <div>
                     <ValidationMessages
                       errors={data.errors ?? []}
-                      title='Course Overview'
+                      title='Chapters'
+                      completionStatus={data.completionStatus}
+                    />
+                  </div>
+                );
+              }}
+            </Await>
+          </Suspense>
+          <Suspense fallback={<ValidationPending title='Lessons' success={false} isLoading />}>
+            <Await resolve={lessonOverview}>
+              {(data) => {
+                return (
+                  <div>
+                    {/* <pre>{JSON.stringify(data, null, 2)}</pre> */}
+                    <ValidationMessages
+                      errors={data.errors ?? []}
+                      title='Lessons'
                       completionStatus={data.completionStatus}
                     />
                   </div>

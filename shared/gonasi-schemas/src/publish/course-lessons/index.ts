@@ -1,0 +1,83 @@
+import z from 'zod';
+
+import { LessonTypeSchema } from '..';
+
+export const LessonSchema = z
+  .object({
+    blocks: z.array(z.any(), {
+      required_error: `<span class="go-title">Lessons</span> are required.`,
+      invalid_type_error: `<span class="go-title">Lessons</span> should be a list of lesson objects.`,
+    }),
+    id: z.string({
+      required_error: `This lesson is missing an <span class="go-title">ID</span> - let's add one!`,
+      invalid_type_error: `<span class="go-title">Lesson ID</span> should be text.`,
+    }),
+    course_id: z.string({
+      required_error: `Which <span class="go-title">course</span> does this lesson belong to?`,
+      invalid_type_error: `<span class="go-title">Course ID</span> should be text.`,
+    }),
+    chapter_id: z.string({
+      required_error: `Which <span class="go-title">chapter</span> should this lesson go in?`,
+      invalid_type_error: `<span class="go-title">Chapter ID</span> should be text.`,
+    }),
+    lesson_type_id: z.string({
+      required_error: `Let's pick a <span class="go-title">lesson type</span> for this one.`,
+      invalid_type_error: `<span class="go-title">Lesson type ID</span> should be text.`,
+    }),
+    name: z.string({
+      required_error: `Give your lesson a great <span class="go-title">name</span> that students will love.`,
+      invalid_type_error: `<span class="go-title">Lesson name</span> should be text.`,
+    }),
+    position: z
+      .number({
+        invalid_type_error: `<span class="go-title">Lesson position</span> should be a number.`,
+      })
+      .nullable(),
+    settings: z.any(),
+    lesson_types: LessonTypeSchema,
+  })
+  .superRefine((data, ctx) => {
+    if (!data.blocks || !Array.isArray(data.blocks)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['blocks'],
+        message: `Lesson <span class="warning">${data.name}</span> is looking a bit empty — let's add some <span class="go-title">content blocks</span> to make it shine!`,
+      });
+      return;
+    }
+
+    if (data.blocks.length < 2) {
+      const count = data.blocks.length;
+      const blockText =
+        count === 0 ? 'no content blocks yet' : count === 1 ? 'just one block' : `${count} blocks`; // fallback
+
+      ctx.addIssue({
+        code: z.ZodIssueCode.too_small,
+        minimum: 2,
+        type: 'array',
+        inclusive: true,
+        path: ['blocks'],
+        message: `Lesson <span class="warning">${data.name}</span> needs at least <span class="error">two content blocks</span>. Right now, it has <span class="go-title">${blockText}</span>.`,
+      });
+    }
+  });
+
+// Schema for an array of lessons
+export const LessonsArraySchema = z
+  .array(LessonSchema, {
+    required_error: `Your <span class="go-title">chapter</span> must have <span class="error">at least two lessons</span>.`,
+    invalid_type_error: `Expected a list of lessons.`,
+  })
+  .superRefine((lessons, ctx) => {
+    if (lessons.length < 2) {
+      const count = lessons.length;
+      const lessonText =
+        count === 0 ? 'no lessons yet' : count === 1 ? 'only one lesson' : `${count} lessons`; // fallback
+
+      ctx.addIssue({
+        path: [],
+        code: z.ZodIssueCode.custom,
+        message: `This <span class="go-title">chapter</span> needs at least <span class="error">two lessons</span>. Right now, it has <span class="go-title">${lessonText}</span>.`,
+      });
+    }
+  });

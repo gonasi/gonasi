@@ -1,5 +1,6 @@
 import type { ChapterKeys } from './fetchAndValidateChapters';
 import type { CourseOverviewKeys } from './fetchAndValidateCourseOverview';
+import type { LessonKeys } from './fetchAndValidateLessons';
 
 export interface BaseValidationError {
   field: string;
@@ -19,5 +20,14 @@ export interface ChapterValidationError extends BaseValidationError {
   chapterId?: string;
 }
 
+export interface LessonValidationError extends BaseValidationError {
+  field: LessonKeys;
+  chapterIndex?: number;
+  chapterId?: string;
+}
+
 // Union type
-export type ValidationError = PublishValidationError | ChapterValidationError;
+export type ValidationError =
+  | PublishValidationError
+  | ChapterValidationError
+  | LessonValidationError;

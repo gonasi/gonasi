@@ -36,7 +36,7 @@ const BlockSchema = z.object({
   }),
 });
 
-const LessonTypeSchema = z.object({
+export const LessonTypeSchema = z.object({
   id: z.string({
     required_error: `This lesson type needs an <span class="go-title">ID</span> to identify it.`,
     invalid_type_error: `<span class="go-title">Lesson type ID</span> should be text.`,
