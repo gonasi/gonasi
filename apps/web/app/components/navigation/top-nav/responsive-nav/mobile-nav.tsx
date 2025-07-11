@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useNavigation } from 'react-router';
+import { NavLink, useNavigation } from 'react-router';
 import { Menu } from 'lucide-react';
 
 import { AppLogo } from '~/components/app-logo';
@@ -51,10 +51,10 @@ export function MobileNav({ links }: IMobileNavProps) {
       <SheetContent side='left' className='w-[300px] sm:w-[400px]'>
         <SheetHeader>
           <SheetTitle>
-            <div className='flex'>
+            <NavLink className='flex' to='/'>
               <AppLogo sizeClass='h-6' />
               <span className='mt-0.5 text-lg font-bold'>onasi</span>
-            </div>
+            </NavLink>
           </SheetTitle>
         </SheetHeader>
         <nav className='flex-1 space-y-1 pl-2'>
