@@ -1,7 +1,7 @@
--- =======================================
--- Table: public.file_library
+-- =====================================================================
+-- TABLE: public.file_library
 -- Description: Stores uploaded files linked to a course within an organization.
--- =======================================
+-- =====================================================================
 
 create table public.file_library (
   id uuid primary key default uuid_generate_v4(),  -- Unique file ID
@@ -37,20 +37,34 @@ create table public.file_library (
   )
 );
 
--- =======================================
--- Indexes (include organization_id for multitenancy)
--- =======================================
+-- =====================================================================
+-- INDEXES
+-- =====================================================================
 
+-- Covering indexes for all foreign key constraints
+create index idx_file_library_course_id on public.file_library(course_id);
+create index idx_file_library_organization_id on public.file_library(organization_id);
+create index idx_file_library_created_by on public.file_library(created_by);
+create index idx_file_library_updated_by on public.file_library(updated_by);
+
+-- Multitenancy-aware filtered indexes (optimized cleanup)
+-- Drop specific org+user indexes if they exist (in case of re-running migration)
+drop index if exists idx_file_library_org_created_by;
+drop index if exists idx_file_library_org_updated_by;
+
+-- Replace with more general multitenant-aware indexes
+create index idx_file_library_created_by_org on public.file_library(created_by, organization_id);
+create index idx_file_library_updated_by_org on public.file_library(updated_by, organization_id);
+
+-- Other useful indexes
 create index idx_file_library_org_course on public.file_library (organization_id, course_id);
-create index idx_file_library_org_created_by on public.file_library (organization_id, created_by);
-create index idx_file_library_org_updated_by on public.file_library (organization_id, updated_by);
 create index idx_file_library_org_created_at_desc on public.file_library (organization_id, created_at desc);
 create index idx_file_library_org_extension on public.file_library (organization_id, extension);
 create index idx_file_library_org_file_type on public.file_library (organization_id, file_type);
 
--- =======================================
--- Triggers
--- =======================================
+-- =====================================================================
+-- TRIGGERS
+-- =====================================================================
 
 -- Automatically infer file_type and normalize extension before insert/update
 create trigger trg_set_file_type

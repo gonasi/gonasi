@@ -44,21 +44,9 @@
       ]
     }
   ],
-  "files": [
-    {
-      "id": "uuid",
-      "name": "course-resources.pdf",
-      "path": "courses/uuid/files/course-resources.pdf",
-      "size": 1024000,
-      "mime_type": "application/pdf",
-      "file_type": "document"
-    }
-  ],
   "metadata": {
     "total_chapters": 5,
     "total_lessons": 25,
-    "total_blocks": 150,
-    "total_files": 10,
-    "last_updated": "2025-01-15T10:30:00Z"
+    "total_blocks": 150
   }
 }

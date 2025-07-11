@@ -1171,19 +1171,26 @@ export type Database = {
           active_enrollments: number
           average_rating: number | null
           blur_hash: string | null
+          category_id: string | null
           completion_rate: number | null
           course_structure: Json
           created_at: string
-          description: string | null
+          description: string
+          has_free_tier: boolean | null
           id: string
-          image_url: string | null
+          image_url: string
           is_active: boolean
+          min_price: number | null
           name: string
           organization_id: string
           pricing_tiers: Json
           published_at: string
           published_by: string
+          subcategory_id: string | null
+          total_blocks: number
+          total_chapters: number
           total_enrollments: number
+          total_lessons: number
           total_reviews: number
           updated_at: string
           version: number
@@ -1193,19 +1200,26 @@ export type Database = {
           active_enrollments?: number
           average_rating?: number | null
           blur_hash?: string | null
+          category_id?: string | null
           completion_rate?: number | null
           course_structure: Json
           created_at?: string
-          description?: string | null
+          description: string
+          has_free_tier?: boolean | null
           id: string
-          image_url?: string | null
+          image_url: string
           is_active?: boolean
+          min_price?: number | null
           name: string
           organization_id: string
           pricing_tiers?: Json
           published_at?: string
           published_by: string
+          subcategory_id?: string | null
+          total_blocks: number
+          total_chapters: number
           total_enrollments?: number
+          total_lessons: number
           total_reviews?: number
           updated_at?: string
           version?: number
@@ -1215,25 +1229,39 @@ export type Database = {
           active_enrollments?: number
           average_rating?: number | null
           blur_hash?: string | null
+          category_id?: string | null
           completion_rate?: number | null
           course_structure?: Json
           created_at?: string
-          description?: string | null
+          description?: string
+          has_free_tier?: boolean | null
           id?: string
-          image_url?: string | null
+          image_url?: string
           is_active?: boolean
+          min_price?: number | null
           name?: string
           organization_id?: string
           pricing_tiers?: Json
           published_at?: string
           published_by?: string
+          subcategory_id?: string | null
+          total_blocks?: number
+          total_chapters?: number
           total_enrollments?: number
+          total_lessons?: number
           total_reviews?: number
           updated_at?: string
           version?: number
           visibility?: Database["public"]["Enums"]["course_access"]
         }
         Relationships: [
+          {
+            foreignKeyName: "published_courses_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "course_categories"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "published_courses_id_fkey"
             columns: ["id"]
@@ -1260,6 +1288,13 @@ export type Database = {
             columns: ["published_by"]
             isOneToOne: false
             referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "published_courses_subcategory_id_fkey"
+            columns: ["subcategory_id"]
+            isOneToOne: false
+            referencedRelation: "course_sub_categories"
             referencedColumns: ["id"]
           },
         ]

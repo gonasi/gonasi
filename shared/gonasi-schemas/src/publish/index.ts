@@ -1,155 +1,73 @@
 import { z } from 'zod';
 
-import { CourseOverviewSchema } from './course-overview';
 import { PricingSchema } from './course-pricing';
 
 const JsonSchema = z.any();
 
-export const ObjectSchema = z.object({
+export const LessonTypeSchema = z.object({
   id: z.string(),
   name: z.string(),
+  description: z.string(),
+  lucide_icon: z.string(),
+  bg_color: z.string(),
 });
-
-export type ObjectSchemaTypes = z.infer<typeof ObjectSchema>;
 
 const BlockSchema = z.object({
-  plugin_type: z.string({
-    required_error: `Just need to pick a <span class="go-title">plugin type</span> and we're good to go!`,
-    invalid_type_error: `The <span class="go-title">plugin type</span> should be text.`,
-  }),
-  id: z.string({
-    required_error: `Every block needs a unique <span class="go-title">ID</span> - no worries, this is usually automatic!`,
-    invalid_type_error: `<span class="go-title">Block ID</span> should be text.`,
-  }),
+  id: z.string(),
+  lesson_id: z.string(),
+  plugin_type: z.string(),
   content: JsonSchema,
   settings: JsonSchema,
-  position: z.number({
-    required_error: `Let's add a <span class="go-title">position</span> for this block so everything stays organized.`,
-    invalid_type_error: `The <span class="go-title">position</span> should be a number like 1, 2, or 3.`,
-  }),
-  lesson_id: z.string({
-    required_error: `This block needs to be connected to a <span class="go-title">lesson</span>.`,
-    invalid_type_error: `<span class="go-title">Lesson ID</span> should be text.`,
-  }),
-  updated_by: z.string({
-    required_error: `We just need to know who <span class="go-title">last updated</span> this block.`,
-    invalid_type_error: `<span class="go-title">Updated by</span> should be a user ID.`,
-  }),
+  position: z.number().int().nonnegative(),
 });
 
-export const LessonTypeSchema = z.object({
-  id: z.string({
-    required_error: `This lesson type needs an <span class="go-title">ID</span> to identify it.`,
-    invalid_type_error: `<span class="go-title">Lesson type ID</span> should be text.`,
-  }),
-  name: z.string({
-    required_error: `What would you like to call this <span class="go-title">lesson type</span>?`,
-    invalid_type_error: `<span class="go-title">Name</span> should be text.`,
-  }),
-  description: z.string({
-    required_error: `A quick <span class="go-title">description</span> would help users understand this lesson type.`,
-    invalid_type_error: `<span class="go-title">Description</span> should be text.`,
-  }),
-  lucide_icon: z.string({
-    required_error: `Pick an <span class="go-title">icon</span> that represents this lesson type nicely.`,
-    invalid_type_error: `<span class="go-title">Icon</span> should be text.`,
-  }),
-  bg_color: z.string({
-    required_error: `Choose a <span class="go-title">background color</span> that looks good for this type.`,
-    invalid_type_error: `<span class="go-title">Background color</span> should be text.`,
-  }),
-});
-
-export const LessonSchema = z.object({
-  id: z.string({
-    required_error: `Each lesson needs its own unique <span class="go-title">ID</span>.`,
-    invalid_type_error: `<span class="go-title">Lesson ID</span> should be text.`,
-  }),
-  course_id: z.string({
-    required_error: `This lesson needs to be linked to a <span class="go-title">course</span>.`,
-    invalid_type_error: `<span class="go-title">Course ID</span> should be text.`,
-  }),
-  chapter_id: z.string({
-    required_error: `Every lesson belongs in a <span class="go-title">chapter</span>.`,
-    invalid_type_error: `<span class="go-title">Chapter ID</span> should be text.`,
-  }),
-  lesson_type_id: z.string({
-    required_error: `Please choose what <span class="go-title">type of lesson</span> this is.`,
-    invalid_type_error: `<span class="go-title">Lesson type ID</span> should be text.`,
-  }),
-  name: z.string({
-    required_error: `Your lesson needs a catchy <span class="go-title">name</span> so students know what to expect.`,
-    invalid_type_error: `<span class="go-title">Lesson name</span> should be text.`,
-  }),
-  position: z
-    .number({
-      invalid_type_error: `<span class="go-title">Lesson position</span> should be a number to keep things in order.`,
-    })
-    .nullable(),
-  settings: JsonSchema,
+const LessonSchema = z.object({
+  id: z.string(),
+  course_id: z.string(),
+  chapter_id: z.string(),
+  lesson_type_id: z.string(),
+  name: z.string().nonempty(),
+  position: z.number().int().nonnegative(),
+  settings: z.any(),
   lesson_types: LessonTypeSchema,
+
+  total_blocks: z.number().int().positive(),
+  blocks: z.array(BlockSchema),
 });
 
-export const LessonWithBlocksSchema = z
-  .object({
-    blocks: z
-      .array(BlockSchema, {
-        invalid_type_error: `<span class="go-title">Blocks</span> should be a list of content blocks.`,
-      })
-      .nullable(),
-    id: z.string({
-      required_error: `This lesson is missing an <span class="go-title">ID</span> - let's add one!`,
-      invalid_type_error: `<span class="go-title">Lesson ID</span> should be text.`,
-    }),
-    course_id: z.string({
-      required_error: `Which <span class="go-title">course</span> does this lesson belong to?`,
-      invalid_type_error: `<span class="go-title">Course ID</span> should be text.`,
-    }),
-    chapter_id: z.string({
-      required_error: `Which <span class="go-title">chapter</span> should this lesson go in?`,
-      invalid_type_error: `<span class="go-title">Chapter ID</span> should be text.`,
-    }),
-    lesson_type_id: z.string({
-      required_error: `Let's pick a <span class="go-title">lesson type</span> for this one.`,
-      invalid_type_error: `<span class="go-title">Lesson type ID</span> should be text.`,
-    }),
-    name: z.string({
-      required_error: `Give your lesson a great <span class="go-title">name</span> that students will love.`,
-      invalid_type_error: `<span class="go-title">Lesson name</span> should be text.`,
-    }),
-    position: z
-      .number({
-        invalid_type_error: `<span class="go-title">Lesson position</span> should be a number.`,
-      })
-      .nullable(),
-    settings: JsonSchema,
-    lesson_types: LessonTypeSchema,
-  })
-  .superRefine((data, ctx) => {
-    if (!data.blocks || !Array.isArray(data.blocks)) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['blocks'],
-        message: `Lesson <span class="warning">${data.name}</span> is looking a bit empty, let's add some <span class="go-title">content blocks</span> to make it shine!`,
-      });
-      return;
-    }
+const ChapterSchema = z.object({
+  id: z.string(),
+  course_id: z.string(),
+  lesson_count: z.number().int().nonnegative(),
+  name: z.string().nonempty(),
+  description: z.string().nonempty(),
+  position: z.number().int().nonnegative(),
 
-    if (data.blocks.length < 2) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.too_small,
-        minimum: 2,
-        type: 'array',
-        inclusive: true,
-        path: ['blocks'],
-        message: `Lesson <span class="warning">${data.name}</span> needs at least <span class="error">2 content blocks</span> to be ready for students.`,
-      });
-    }
-  });
+  total_lessons: z.number().int().positive(),
+  total_blocks: z.number().int().positive(),
+  lessons: z.array(LessonSchema),
+});
 
 export const PublishCourseSchema = z.object({
-  courseOverview: CourseOverviewSchema,
-  pricingData: PricingSchema,
-});
+  id: z.string(),
+  organization_id: z.string(),
 
-export type PublishCourseSchemaTypes = z.infer<typeof PublishCourseSchema>;
+  category_id: z.string(),
+  subcategory_id: z.string(),
+
+  is_active: z.boolean(),
+  name: z.string().nonempty(),
+  description: z.string().nonempty(),
+  image_url: z.string().url(),
+  blur_hash: z.string().nullable(),
+  visibility: z.enum(['public', 'private']),
+
+  course_structure: z.object({
+    total_chapters: z.number().int().positive(),
+    total_lessons: z.number().int().positive(),
+    total_blocks: z.number().int().positive(),
+    chapters: z.array(ChapterSchema),
+  }),
+
+  pricing_tiers: PricingSchema,
+});

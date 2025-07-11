@@ -1,48 +1,56 @@
 -- ====================================================================================
 -- TABLE: published_courses
--- Description:
---   Stores immutable snapshots of courses at the moment of publication.
---   Each course can have multiple versions, but only one active version at a time.
---   This allows:
---     - learners to interact with stable course versions
---     - course editors to make changes that increment versions only when content changes
+-- Purpose:
+--   Stores immutable snapshots of a course at the time of publication.
+--   Useful for versioning, pricing history, and performance stats.
 -- ====================================================================================
-
 create table public.published_courses (
-  -- Primary key is the course ID
-  id uuid primary key references public.courses(id) on delete cascade, -- Course ID
-  
-  organization_id uuid not null references public.organizations(id) on delete cascade, -- Owning org
+  -- Primary key (matches original course ID)
+  id uuid primary key references public.courses(id) on delete cascade,
+
+  -- Ownership and categorization
+  organization_id uuid not null references public.organizations(id) on delete cascade,
+  category_id uuid references public.course_categories(id) on delete set null,
+  subcategory_id uuid references public.course_sub_categories(id) on delete set null,
 
   -- Versioning
-  version integer not null default 1,                   -- Incrementing publication version
-  is_active boolean not null default true,              -- Whether this is the active version
+  version integer not null default 1,
+  is_active boolean not null default true,
 
-  -- Course metadata snapshot (from the original course)
-  name text not null,                                   -- Name at time of publication
-  description text,                                     -- Description at time of publication
-  image_url text,                                       -- Image URL at publication
-  blur_hash text,                                       -- Blurhash of image
-  visibility course_access not null default 'public',   -- Visibility at publication
+  -- Snapshot of course metadata
+  name text not null,
+  description text not null,
+  image_url text not null,
+  blur_hash text,
+  visibility course_access not null default 'public',
 
-  -- Immutable course structure snapshot
-  course_structure jsonb not null,                      -- Full JSON course hierarchy (chapters, lessons, blocks)
+  -- Snapshot of full course structure (chapters, lessons, blocks)
+  course_structure jsonb not null,
 
-  -- Pricing tiers snapshot
-  pricing_tiers jsonb not null default '[]'::jsonb,     -- Immutable snapshot of pricing tiers
+  -- Derived structure metrics
+  total_chapters integer not null check (total_chapters > 0),
+  total_lessons integer not null check (total_lessons > 0),
+  total_blocks integer not null check (total_blocks > 0),
+
+  -- Snapshot of pricing tiers at publication
+  pricing_tiers jsonb not null default '[]'::jsonb,
+
+  -- Derived pricing data (denormalized externally)
+  has_free_tier boolean,
+  min_price numeric,
 
   -- Publication metadata
-  published_at timestamptz not null default timezone('utc', now()), -- Time of publication
-  published_by uuid not null references public.profiles(id) on delete cascade, -- Publisher
+  published_at timestamptz not null default timezone('utc', now()),
+  published_by uuid not null references public.profiles(id) on delete cascade,
 
-  -- Interaction stats (may be updated)
+  -- Public interaction stats (mutable)
   total_enrollments integer not null default 0,
   active_enrollments integer not null default 0,
-  completion_rate numeric(5,2) default 0.00,            -- Percent (0.00 - 100.00)
-  average_rating numeric(3,2),                          -- Average user rating (1.00 - 5.00)
+  completion_rate numeric(5,2) default 0.00,
+  average_rating numeric(3,2),
   total_reviews integer not null default 0,
 
-  -- Audit
+  -- Audit timestamps
   created_at timestamptz not null default timezone('utc', now()),
   updated_at timestamptz not null default timezone('utc', now()),
 
@@ -51,7 +59,7 @@ create table public.published_courses (
   constraint chk_average_rating check (average_rating >= 1 and average_rating <= 5),
   constraint chk_version_positive check (version > 0),
 
-  -- Ensure only one active published version per course
+  -- Enforce only one active version per course
   constraint uq_one_active_published_course unique (id, is_active) deferrable initially deferred
 );
 
@@ -59,31 +67,39 @@ create table public.published_courses (
 -- Foreign key indexes
 create index idx_published_courses_org_id on public.published_courses(organization_id);
 create index idx_published_courses_published_by on public.published_courses(published_by);
+create index idx_published_courses_category_id on public.published_courses(category_id);
+create index idx_published_courses_subcategory_id on public.published_courses(subcategory_id);
 
--- Query optimization
+-- Common query filters
 create index idx_published_courses_is_active on public.published_courses(is_active) where is_active = true;
 create index idx_published_courses_visibility on public.published_courses(visibility);
 create index idx_published_courses_published_at on public.published_courses(published_at);
+
+-- Versioning and lookup
 create index idx_published_courses_version on public.published_courses(id, version);
-
--- Statistics and analytics
-create index idx_published_courses_enrollments on public.published_courses(total_enrollments);
-create index idx_published_courses_rating on public.published_courses(average_rating) where average_rating is not null;
-
--- Composite access patterns
-create index idx_published_courses_org_active on public.published_courses(organization_id, is_active);
 create index idx_published_courses_id_version on public.published_courses(id, version desc);
+create index idx_published_courses_org_active on public.published_courses(organization_id, is_active);
 
--- JSONB indexes for course_structure
+-- Pricing-related
+create index idx_published_courses_has_free on public.published_courses(has_free_tier);
+create index idx_published_courses_min_price on public.published_courses(min_price);
+
+-- Structure and search
 create index idx_published_courses_structure_gin on public.published_courses using gin(course_structure);
 create index idx_published_courses_chapters on public.published_courses using gin((course_structure->'chapters'));
 create index idx_published_courses_lessons on public.published_courses using gin((course_structure->'lessons'));
 
+-- Stats filtering/sorting
+create index idx_published_courses_enrollments on public.published_courses(total_enrollments);
+create index idx_published_courses_rating on public.published_courses(average_rating) where average_rating is not null;
+
 
 -- ====================================================================================
--- Trigger Function: Auto-increment version on insert or update with content changes
+-- FUNCTION: ensure_incremented_course_version
+-- Purpose:
+--   Automatically increments the version when a new publication is made
+--   or if course content changes on update.
 -- ====================================================================================
-
 create or replace function public.ensure_incremented_course_version()
 returns trigger
 language plpgsql
@@ -93,23 +109,21 @@ declare
   latest_version int;
   content_changed boolean := false;
 begin
-  -- Get the latest version for this course
+  -- Get the current max version for this course
   select coalesce(max(version), 0)
   into latest_version
   from public.published_courses
   where id = NEW.id;
 
   if TG_OP = 'INSERT' then
-    -- For INSERT, always increment version if not explicitly set higher
+    -- On insert, bump version if not explicitly set higher
     if NEW.version is null or NEW.version <= latest_version then
       NEW.version := latest_version + 1;
     end if;
-    
-    -- Set published_at for new publications
     NEW.published_at := timezone('utc', now());
 
   elsif TG_OP = 'UPDATE' then
-    -- Check if content-related fields have changed
+    -- Detect meaningful content changes
     content_changed := (
       NEW.name IS DISTINCT FROM OLD.name OR
       NEW.description IS DISTINCT FROM OLD.description OR
@@ -119,13 +133,13 @@ begin
       NEW.course_structure IS DISTINCT FROM OLD.course_structure OR
       NEW.pricing_tiers IS DISTINCT FROM OLD.pricing_tiers
     );
-    
-    -- Only increment version if content changed
+
+    -- If changed, bump version and update published_at
     if content_changed then
       NEW.version := greatest(OLD.version + 1, latest_version + 1);
       NEW.published_at := timezone('utc', now());
     else
-      -- Keep existing version and published_at for stats-only updates
+      -- Otherwise, keep old version & published_at (only stats were updated)
       NEW.version := OLD.version;
       NEW.published_at := OLD.published_at;
     end if;
@@ -135,22 +149,20 @@ begin
 end;
 $$;
 
--- Trigger: On INSERT
+
+-- Trigger: Set course version before INSERT
 create trigger trg_set_published_course_version
   before insert on public.published_courses
   for each row
   execute function public.ensure_incremented_course_version();
 
--- Trigger: On UPDATE
+-- Trigger: Conditionally bump version on UPDATE
 create trigger trg_update_published_course_version
   before update on public.published_courses
   for each row
   execute function public.ensure_incremented_course_version();
 
--- ====================================================================================
--- Trigger Function: Auto-update updated_at timestamp
--- ====================================================================================
-
+-- Trigger: Auto-update updated_at timestamp
 create trigger trg_published_courses_set_updated_at
   before update on public.published_courses
   for each row

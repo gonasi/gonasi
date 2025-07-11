@@ -278,15 +278,22 @@ alter table "public"."profiles" enable row level security;
 create table "public"."published_courses" (
     "id" uuid not null,
     "organization_id" uuid not null,
+    "category_id" uuid,
+    "subcategory_id" uuid,
     "version" integer not null default 1,
     "is_active" boolean not null default true,
     "name" text not null,
-    "description" text,
-    "image_url" text,
+    "description" text not null,
+    "image_url" text not null,
     "blur_hash" text,
     "visibility" course_access not null default 'public'::course_access,
     "course_structure" jsonb not null,
+    "total_chapters" integer not null,
+    "total_lessons" integer not null,
+    "total_blocks" integer not null,
     "pricing_tiers" jsonb not null default '[]'::jsonb,
+    "has_free_tier" boolean,
+    "min_price" numeric,
     "published_at" timestamp with time zone not null default timezone('utc'::text, now()),
     "published_by" uuid not null,
     "total_enrollments" integer not null default 0,
@@ -406,17 +413,25 @@ CREATE INDEX idx_courses_updated_by ON public.courses USING btree (updated_by);
 
 CREATE INDEX idx_courses_visibility ON public.courses USING btree (visibility);
 
+CREATE INDEX idx_file_library_course_id ON public.file_library USING btree (course_id);
+
+CREATE INDEX idx_file_library_created_by ON public.file_library USING btree (created_by);
+
+CREATE INDEX idx_file_library_created_by_org ON public.file_library USING btree (created_by, organization_id);
+
 CREATE INDEX idx_file_library_org_course ON public.file_library USING btree (organization_id, course_id);
 
 CREATE INDEX idx_file_library_org_created_at_desc ON public.file_library USING btree (organization_id, created_at DESC);
-
-CREATE INDEX idx_file_library_org_created_by ON public.file_library USING btree (organization_id, created_by);
 
 CREATE INDEX idx_file_library_org_extension ON public.file_library USING btree (organization_id, extension);
 
 CREATE INDEX idx_file_library_org_file_type ON public.file_library USING btree (organization_id, file_type);
 
-CREATE INDEX idx_file_library_org_updated_by ON public.file_library USING btree (organization_id, updated_by);
+CREATE INDEX idx_file_library_organization_id ON public.file_library USING btree (organization_id);
+
+CREATE INDEX idx_file_library_updated_by ON public.file_library USING btree (updated_by);
+
+CREATE INDEX idx_file_library_updated_by_org ON public.file_library USING btree (updated_by, organization_id);
 
 CREATE INDEX idx_lesson_blocks_course_id ON public.lesson_blocks USING btree (course_id);
 
@@ -490,15 +505,21 @@ CREATE INDEX idx_profiles_username ON public.profiles USING btree (username) WHE
 
 CREATE INDEX idx_profiles_verified_users ON public.profiles USING btree (id) WHERE (account_verified = true);
 
+CREATE INDEX idx_published_courses_category_id ON public.published_courses USING btree (category_id);
+
 CREATE INDEX idx_published_courses_chapters ON public.published_courses USING gin (((course_structure -> 'chapters'::text)));
 
 CREATE INDEX idx_published_courses_enrollments ON public.published_courses USING btree (total_enrollments);
+
+CREATE INDEX idx_published_courses_has_free ON public.published_courses USING btree (has_free_tier);
 
 CREATE INDEX idx_published_courses_id_version ON public.published_courses USING btree (id, version DESC);
 
 CREATE INDEX idx_published_courses_is_active ON public.published_courses USING btree (is_active) WHERE (is_active = true);
 
 CREATE INDEX idx_published_courses_lessons ON public.published_courses USING gin (((course_structure -> 'lessons'::text)));
+
+CREATE INDEX idx_published_courses_min_price ON public.published_courses USING btree (min_price);
 
 CREATE INDEX idx_published_courses_org_active ON public.published_courses USING btree (organization_id, is_active);
 
@@ -511,6 +532,8 @@ CREATE INDEX idx_published_courses_published_by ON public.published_courses USIN
 CREATE INDEX idx_published_courses_rating ON public.published_courses USING btree (average_rating) WHERE (average_rating IS NOT NULL);
 
 CREATE INDEX idx_published_courses_structure_gin ON public.published_courses USING gin (course_structure);
+
+CREATE INDEX idx_published_courses_subcategory_id ON public.published_courses USING btree (subcategory_id);
 
 CREATE INDEX idx_published_courses_version ON public.published_courses USING btree (id, version);
 
@@ -920,6 +943,10 @@ alter table "public"."published_courses" add constraint "chk_version_positive" C
 
 alter table "public"."published_courses" validate constraint "chk_version_positive";
 
+alter table "public"."published_courses" add constraint "published_courses_category_id_fkey" FOREIGN KEY (category_id) REFERENCES course_categories(id) ON DELETE SET NULL not valid;
+
+alter table "public"."published_courses" validate constraint "published_courses_category_id_fkey";
+
 alter table "public"."published_courses" add constraint "published_courses_id_fkey" FOREIGN KEY (id) REFERENCES courses(id) ON DELETE CASCADE not valid;
 
 alter table "public"."published_courses" validate constraint "published_courses_id_fkey";
@@ -931,6 +958,22 @@ alter table "public"."published_courses" validate constraint "published_courses_
 alter table "public"."published_courses" add constraint "published_courses_published_by_fkey" FOREIGN KEY (published_by) REFERENCES profiles(id) ON DELETE CASCADE not valid;
 
 alter table "public"."published_courses" validate constraint "published_courses_published_by_fkey";
+
+alter table "public"."published_courses" add constraint "published_courses_subcategory_id_fkey" FOREIGN KEY (subcategory_id) REFERENCES course_sub_categories(id) ON DELETE SET NULL not valid;
+
+alter table "public"."published_courses" validate constraint "published_courses_subcategory_id_fkey";
+
+alter table "public"."published_courses" add constraint "published_courses_total_blocks_check" CHECK ((total_blocks > 0)) not valid;
+
+alter table "public"."published_courses" validate constraint "published_courses_total_blocks_check";
+
+alter table "public"."published_courses" add constraint "published_courses_total_chapters_check" CHECK ((total_chapters > 0)) not valid;
+
+alter table "public"."published_courses" validate constraint "published_courses_total_chapters_check";
+
+alter table "public"."published_courses" add constraint "published_courses_total_lessons_check" CHECK ((total_lessons > 0)) not valid;
+
+alter table "public"."published_courses" validate constraint "published_courses_total_lessons_check";
 
 alter table "public"."published_courses" add constraint "uq_one_active_published_course" UNIQUE using index "uq_one_active_published_course" DEFERRABLE INITIALLY DEFERRED;
 
@@ -1707,23 +1750,21 @@ declare
   latest_version int;
   content_changed boolean := false;
 begin
-  -- Get the latest version for this course
+  -- Get the current max version for this course
   select coalesce(max(version), 0)
   into latest_version
   from public.published_courses
   where id = NEW.id;
 
   if TG_OP = 'INSERT' then
-    -- For INSERT, always increment version if not explicitly set higher
+    -- On insert, bump version if not explicitly set higher
     if NEW.version is null or NEW.version <= latest_version then
       NEW.version := latest_version + 1;
     end if;
-    
-    -- Set published_at for new publications
     NEW.published_at := timezone('utc', now());
 
   elsif TG_OP = 'UPDATE' then
-    -- Check if content-related fields have changed
+    -- Detect meaningful content changes
     content_changed := (
       NEW.name IS DISTINCT FROM OLD.name OR
       NEW.description IS DISTINCT FROM OLD.description OR
@@ -1733,13 +1774,13 @@ begin
       NEW.course_structure IS DISTINCT FROM OLD.course_structure OR
       NEW.pricing_tiers IS DISTINCT FROM OLD.pricing_tiers
     );
-    
-    -- Only increment version if content changed
+
+    -- If changed, bump version and update published_at
     if content_changed then
       NEW.version := greatest(OLD.version + 1, latest_version + 1);
       NEW.published_at := timezone('utc', now());
     else
-      -- Keep existing version and published_at for stats-only updates
+      -- Otherwise, keep old version & published_at (only stats were updated)
       NEW.version := OLD.version;
       NEW.published_at := OLD.published_at;
     end if;
