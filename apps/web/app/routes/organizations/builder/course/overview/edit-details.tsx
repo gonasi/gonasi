@@ -1,5 +1,6 @@
 import { Form, useFetcher } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { MailPlus, Store } from 'lucide-react';
 import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
 import { dataWithError, redirectWithError, redirectWithSuccess } from 'remix-toast';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
@@ -14,7 +15,7 @@ import type { Route } from './+types/edit-details';
 import type { loader as subCategoryLoader } from '../../../../api/course-sub-categories';
 
 import { Button } from '~/components/ui/button';
-import { GoInputField, GoTextAreaField } from '~/components/ui/forms/elements';
+import { GoInputField, GoRadioGroupField, GoTextAreaField } from '~/components/ui/forms/elements';
 import { Modal } from '~/components/ui/modal';
 import { createClient } from '~/lib/supabase/supabase.server';
 import { checkHoneypot } from '~/utils/honeypot.server';
@@ -83,7 +84,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 
 export default function EditCourseGrouping({ params, loaderData }: Route.ComponentProps) {
   const {
-    courseOverview: { name, description },
+    courseOverview: { name, description, visibility },
   } = loaderData;
   const fetcher = useFetcher<typeof subCategoryLoader>();
 
@@ -95,15 +96,18 @@ export default function EditCourseGrouping({ params, loaderData }: Route.Compone
       courseId: params.courseId,
       name,
       description: description ?? '',
+      visibility,
     },
   });
 
   const isPending = useIsPending();
   const isDisabled = isPending || form.formState.isSubmitting;
 
+  const watchValue = form.watch('visibility');
+
   return (
     <Modal open>
-      <Modal.Content size='sm'>
+      <Modal.Content size='md'>
         <Modal.Header
           title='Edit Course Details'
           closeRoute={`/${params.organizationId}/builder/${params.courseId}/overview`}
@@ -129,6 +133,26 @@ export default function EditCourseGrouping({ params, loaderData }: Route.Compone
                   disabled: isDisabled,
                 }}
                 description='Provide a brief course description.'
+              />
+              <GoRadioGroupField
+                labelProps={{
+                  children: 'Visibility',
+                  endAdornment:
+                    watchValue === 'public' ? <Store size={14} /> : <MailPlus size={14} />,
+                  endAdornmentKey: watchValue,
+                }}
+                name='visibility'
+                description='Who can discover and access this course.'
+                options={[
+                  {
+                    value: 'public',
+                    label: 'Public – appears in the marketplace and open to all 🌍',
+                  },
+                  {
+                    value: 'private',
+                    label: 'Private – invite-only access ✉️',
+                  },
+                ]}
               />
               <Button
                 type='submit'

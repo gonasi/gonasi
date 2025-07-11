@@ -34,6 +34,7 @@ export const EditCourseDetailsSchema = z.object({
   organizationId: z.string(),
   name: CourseTitleSchema,
   description: CourseDescriptionSchema,
+  visibility: z.enum(['public', 'private']),
 });
 export type EditCourseDetailsSchemaTypes = z.infer<typeof EditCourseDetailsSchema>;
 export const SubmitCourseDetailsSchema = EditCourseDetailsSchema.merge(

@@ -214,6 +214,30 @@ export default [
   // onboarding - get user username
   route('go/onboarding/:userId', 'routes/onboarding/onboarding-index.tsx'),
 
+  layout('routes/layouts/profile/course-overview-layout.tsx', [
+    route('go/:username/settings', 'routes/myProfile/settings/settings-index.tsx', [
+      route(
+        'profile-information',
+        'routes/myProfile/settings/account-settings/profile-information.tsx',
+        [
+          route(
+            'personal-information',
+            'routes/myProfile/settings/account-settings/updates/update-personal-information.tsx',
+          ),
+          route(
+            'profile-photo',
+            'routes/myProfile/settings/account-settings/updates/update-profile-photo.tsx',
+          ),
+        ],
+      ),
+      route(
+        'login-and-security',
+        'routes/myProfile/settings/account-settings/login-and-security.tsx',
+      ),
+      route('notifications', 'routes/myProfile/settings/account-settings/notifications.tsx'),
+    ]),
+  ]),
+
   route('api/paystack-webhook', 'routes/api/paystack-webhook.ts'),
   route('api/course-sub-categories', 'routes/api/course-sub-categories.ts'),
 

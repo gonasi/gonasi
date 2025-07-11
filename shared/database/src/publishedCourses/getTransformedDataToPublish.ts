@@ -86,10 +86,7 @@ export async function getTransformedDataToPublish({
       .order('position', { referencedTable: 'course_pricing_tiers', ascending: true })
       .single();
 
-    console.log(data);
-
     if (error) {
-      console.log('********** error: ', error);
       throw error;
     }
 

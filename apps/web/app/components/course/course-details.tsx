@@ -1,6 +1,6 @@
 import { Link, useParams } from 'react-router';
 import { motion } from 'framer-motion';
-import { BookOpen, History, Pencil, Rocket, Users } from 'lucide-react';
+import { BookOpen, History, MailPlus, Pencil, Rocket, Users } from 'lucide-react';
 
 import { timeAgo } from '@gonasi/utils/timeAgo';
 
@@ -13,6 +13,7 @@ interface Props {
   errorMessage?: string[];
   updatedAt: string;
   canEditCourse: boolean;
+  visibility: 'public' | 'private';
 }
 
 const AnimatedRocket = () => (
@@ -33,7 +34,14 @@ const AnimatedRocket = () => (
   </motion.div>
 );
 
-export function CourseOverview({ name, description, canEditCourse, editLink, updatedAt }: Props) {
+export function CourseOverview({
+  name,
+  description,
+  canEditCourse,
+  editLink,
+  updatedAt,
+  visibility,
+}: Props) {
   const params = useParams();
 
   const canPublish = canEditCourse;
@@ -63,6 +71,19 @@ export function CourseOverview({ name, description, canEditCourse, editLink, upd
           <div className='flex items-center gap-1'>
             <History size={14} />
             <span>{timeAgo(updatedAt)}</span>
+          </div>
+          <div className='flex items-center gap-1'>
+            {visibility === 'public' ? (
+              <>
+                <Rocket size={14} />
+                <span className='text-green-600'>Public</span>
+              </>
+            ) : (
+              <>
+                <MailPlus size={14} />
+                <span className='text-yellow-600'>Private</span>
+              </>
+            )}
           </div>
         </div>
       </div>

@@ -59,6 +59,7 @@ export default function CourseOverview({ loaderData, params }: Route.ComponentPr
       signedUrl,
       blur_hash,
       name,
+      visibility,
       id: courseId,
       description,
       course_categories,
@@ -99,6 +100,7 @@ export default function CourseOverview({ loaderData, params }: Route.ComponentPr
               <CourseInfoOverview
                 name={name}
                 description={description}
+                visibility={visibility}
                 updatedAt={updated_at}
                 canEditCourse={canEditCourse}
                 editLink={
