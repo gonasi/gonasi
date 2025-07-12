@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { MoveLeft, MoveRight } from 'lucide-react';
 
-import type { PricingSchemaTypes } from '@gonasi/schemas/publish';
+import type { PricingSchemaTypes } from '@gonasi/schemas/publish/course-pricing';
 
 import { PricingDisplay } from './PricingDisplay';
 import { PricingOptionCard } from './PricingOptionCard';

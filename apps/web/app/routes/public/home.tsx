@@ -19,6 +19,11 @@ export function headers(_: Route.HeadersArgs) {
   };
 }
 
-export default function Home() {
-  return <h2>home page</h2>;
+// ✅ Home page component
+export default function Home({ loaderData }: Route.ComponentProps) {
+  return (
+    <div>
+      <h2 className='mb-4 text-xl font-bold'> Home</h2>
+    </div>
+  );
 }
