@@ -153,6 +153,7 @@ export default function ManagePricingTierModal({ params, loaderData }: Route.Com
     resolver,
     defaultValues: {
       pricingId: params.coursePricingId,
+      organizationId: params.organizationId,
       courseId: courseId ?? '',
       paymentFrequency: pricingTier?.payment_frequency,
       isFree: !isPaid,

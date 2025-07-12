@@ -23,6 +23,7 @@ export const managePricingTier = async ({
   const {
     pricingId,
     courseId,
+    organizationId,
     paymentFrequency,
     isFree,
     price,
@@ -42,6 +43,7 @@ export const managePricingTier = async ({
     // Prepare the data object for upsert with proper formatting
     const upsertData = {
       course_id: courseId,
+      organization_id: organizationId,
       payment_frequency: paymentFrequency,
       is_free: isFree,
       price,

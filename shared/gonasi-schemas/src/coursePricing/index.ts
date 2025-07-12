@@ -36,7 +36,7 @@ const TierPrice = z.coerce
 export const CoursePricingSchema = z
   .object({
     pricingId: z.string().optional(),
-
+    organizationId: z.string(),
     courseId: z
       .string({
         required_error: `<lucide name="Book" size="12" /> Course ID is required.`,
