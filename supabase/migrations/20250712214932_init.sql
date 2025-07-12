@@ -2858,8 +2858,8 @@ begin
   end if;
 
   if old.is_free = true
-     and old.is_active = true
-     and new.is_active = false then
+    and old.is_active = true
+    and new.is_active = false then
 
     if not exists (
       select 1 from public.course_pricing_tiers
@@ -4387,16 +4387,6 @@ with check (((bucket_id = 'thumbnails'::text) AND (EXISTS ( SELECT 1
   WHERE ((c.id = (split_part(objects.name, '/'::text, 1))::uuid) AND (get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text, 'editor'::text])))))));
 
 
-create policy "Select: Org members can view published_thumbnails"
-on "storage"."objects"
-as permissive
-for select
-to authenticated
-using (((bucket_id = 'published_thumbnails'::text) AND (EXISTS ( SELECT 1
-   FROM courses c
-  WHERE ((c.id = (split_part(objects.name, '/'::text, 1))::uuid) AND (get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) IS NOT NULL))))));
-
-
 create policy "Select: Org members can view thumbnails"
 on "storage"."objects"
 as permissive
@@ -4405,6 +4395,18 @@ to authenticated
 using (((bucket_id = 'thumbnails'::text) AND (EXISTS ( SELECT 1
    FROM courses c
   WHERE ((c.id = (split_part(objects.name, '/'::text, 1))::uuid) AND (get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) IS NOT NULL))))));
+
+
+create policy "Select: Org members or public can view published_thumbnails"
+on "storage"."objects"
+as permissive
+for select
+to authenticated
+using (((bucket_id = 'published_thumbnails'::text) AND ((EXISTS ( SELECT 1
+   FROM courses c
+  WHERE ((c.id = (split_part(objects.name, '/'::text, 1))::uuid) AND (get_user_org_role(c.organization_id, auth.uid()) IS NOT NULL)))) OR (EXISTS ( SELECT 1
+   FROM published_courses pc
+  WHERE ((pc.id = (split_part(objects.name, '/'::text, 1))::uuid) AND pc.is_active AND (pc.visibility = 'public'::course_access)))))));
 
 
 create policy "Update: Admins or owning editors can update published_thumbnail"

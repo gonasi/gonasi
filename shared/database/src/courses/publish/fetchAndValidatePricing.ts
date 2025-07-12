@@ -163,6 +163,7 @@ export async function fetchAndValidatePricing({
       `
         id,
         course_id,
+        organization_id,
         payment_frequency,
         is_free,
         price,
@@ -182,7 +183,7 @@ export async function fetchAndValidatePricing({
         updated_by
       `,
     )
-    .eq('course_id', courseId);
+    .match({ course_id: courseId, organization_id: organizationId });
 
   if (error || !data) {
     return {

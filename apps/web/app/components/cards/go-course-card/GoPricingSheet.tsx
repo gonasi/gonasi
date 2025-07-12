@@ -56,11 +56,18 @@ export function GoPricingSheet({
   const showOriginalPrice = defaultPricing.promotional_price != null;
 
   return (
-    <button
-      type='button'
+    <div
+      role='presentation'
       onClick={(e) => {
         e.preventDefault();
         e.stopPropagation();
+      }}
+      onKeyDown={(e) => {
+        // Prevent default for common keys like Enter or Space
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          e.stopPropagation();
+        }
       }}
       className={cn('flex w-full items-start border-none bg-transparent p-0')}
     >
@@ -102,6 +109,7 @@ export function GoPricingSheet({
         <SheetContent
           side={side}
           className='max-h-screen w-full overflow-y-auto pb-10 sm:w-[28rem]'
+          title='Pricing Tiers'
         >
           <div className='p-4'>
             <div className='space-y-2'>
@@ -113,6 +121,6 @@ export function GoPricingSheet({
           </div>
         </SheetContent>
       </Sheet>
-    </button>
+    </div>
   );
 }

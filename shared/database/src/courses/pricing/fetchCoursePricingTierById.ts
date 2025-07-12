@@ -22,6 +22,7 @@ export async function fetchCoursePricingTierById({
       `
       id,
       course_id,
+      organization_id,
       payment_frequency,
       is_free,
       price,

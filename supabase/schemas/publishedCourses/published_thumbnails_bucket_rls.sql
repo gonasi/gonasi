@@ -1,17 +1,30 @@
 -- ============================================================================
 -- SELECT: Allow any member of the organization that owns the course
 -- ============================================================================
-create policy "Select: Org members can view published_thumbnails"
+
+-- TODO: Enrolled users view
+create policy "Select: Org members or public can view published_thumbnails"
 on storage.objects
 for select
 to authenticated
 using (
   bucket_id = 'published_thumbnails'
-  and exists (
-    select 1
-    from public.courses c
-    where c.id = (split_part(storage.objects.name, '/', 1))::uuid
-      and public.get_user_org_role(c.organization_id, (select auth.uid())) is not null
+  and (
+    -- Org members can view
+    exists (
+      select 1
+      from public.courses c
+      where c.id = (split_part(storage.objects.name, '/', 1))::uuid
+        and public.get_user_org_role(c.organization_id, auth.uid()) is not null
+    )
+    -- OR public course viewers can view
+    or exists (
+      select 1
+      from public.published_courses pc
+      where pc.id = (split_part(storage.objects.name, '/', 1))::uuid
+        and pc.is_active
+        and pc.visibility = 'public'
+    )
   )
 );
 

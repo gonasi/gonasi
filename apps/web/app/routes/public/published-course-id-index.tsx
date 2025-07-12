@@ -187,7 +187,9 @@ export default function PublishedCourseIdIndex({ loaderData }: Route.ComponentPr
                         />
                       </div>
                       <div className='flex w-full items-center justify-center space-x-1 pb-4 text-xs'>
-                        <span className='text-muted-foreground'>Starting at</span>
+                        {pricing_tiers[0]?.is_free ? null : (
+                          <span className='text-muted-foreground'>Starting at</span>
+                        )}
                         <span className='text-foreground text-sm font-semibold'>
                           {getLowestPricingSummary(pricing_tiers)}
                         </span>

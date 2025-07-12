@@ -8,6 +8,9 @@ export const PricingSchema = z.array(
     course_id: z
       .string({ required_error: `Link this pricing to a <span class="go-title">course</span>.` })
       .nonempty(`<span class="go-title">Course ID</span> can't be empty.`),
+    organization_id: z
+      .string({ required_error: `Organization id is required` })
+      .nonempty(`Organization id can't be empty.`),
     payment_frequency: z.enum(['monthly', 'bi_monthly', 'quarterly', 'semi_annual', 'annual'], {
       invalid_type_error: `Choose how often students will pay with a <span class="go-title">payment frequency</span>.`,
     }),

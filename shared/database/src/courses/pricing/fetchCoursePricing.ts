@@ -18,6 +18,7 @@ export async function fetchCoursePricing({ supabase, courseId }: FetchCoursePric
       `
       id,
       course_id,
+      organization_id,
       payment_frequency,
       is_free,
       price,

@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 
 import type { InitializeEnrollTransactionSchemaTypes } from '@gonasi/schemas/payments';
-import { PricingSchema } from '@gonasi/schemas/publish';
+import { PricingSchema } from '@gonasi/schemas/publish/course-pricing';
 
 import type { TypedSupabaseClient } from '../../client';
 import { getUserProfile } from '../../profile';
@@ -12,30 +12,37 @@ import {
 } from './types';
 
 /**
- * Initializes a transaction for enrolling in a course.
- * Validates user, course, and pricing tier before triggering the payment flow.
+ * Starts the enrollment process for a course by:
+ * - Verifying the user is logged in
+ * - Validating the course and selected pricing tier
+ * - Calculating the correct amount (factoring in promotions)
+ * - Initializing a payment transaction if needed
  */
-export const initializeTransactionEnroll = async (
-  supabase: TypedSupabaseClient,
-  initData: InitializeEnrollTransactionSchemaTypes,
-): Promise<ApiResponse<InitializeEnrollTransactionResponse>> => {
+export const initializeTransactionEnroll = async ({
+  supabase,
+  data,
+}: {
+  supabase: TypedSupabaseClient;
+  data: InitializeEnrollTransactionSchemaTypes;
+}): Promise<ApiResponse<InitializeEnrollTransactionResponse>> => {
   try {
-    const { courseId, pricingTierId } = initData;
+    const { courseId, pricingTierId, organizationId } = data;
 
     const userProfile = await getUserProfile(supabase);
+
     if (!userProfile?.user) {
       console.error('[initializeTransactionEnroll] No authenticated user found.');
       return {
         success: false,
-        message: 'User not authenticated. Please log in and try again.',
+        message: 'You need to be logged in to enroll in this course.',
       };
     }
 
-    // Fetch course with pricing data
+    // Fetch the published course and its pricing info
     const { data: course, error: courseFetchError } = await supabase
       .from('published_courses')
-      .select('id, pricing_data')
-      .eq('id', courseId)
+      .select('id, pricing_tiers')
+      .match({ id: courseId, organization_id: organizationId })
       .single();
 
     if (courseFetchError || !course) {
@@ -45,12 +52,18 @@ export const initializeTransactionEnroll = async (
       );
       return {
         success: false,
-        message: 'Course not found or is currently unavailable.',
+        message: 'Sorry, we couldn’t find the course or it’s no longer available.',
       };
     }
 
-    // Validate pricing data format
-    const pricingValidation = PricingSchema.safeParse(course.pricing_data);
+    // Ensure pricing data is valid
+    const rawTiers =
+      typeof course.pricing_tiers === 'string'
+        ? JSON.parse(course.pricing_tiers)
+        : course.pricing_tiers;
+
+    const pricingValidation = PricingSchema.safeParse(rawTiers);
+
     if (!pricingValidation.success) {
       console.error(
         '[initializeTransactionEnroll] Pricing data validation failed:',
@@ -58,21 +71,22 @@ export const initializeTransactionEnroll = async (
       );
       return {
         success: false,
-        message: 'Invalid course pricing data. Please contact support.',
+        message: 'There’s an issue with this course’s pricing. Please contact support.',
       };
     }
 
-    // Locate the selected pricing tier
+    // Locate the selected tier
     const selectedTier = pricingValidation.data.find((tier) => tier.id === pricingTierId);
+
     if (!selectedTier) {
       console.error('[initializeTransactionEnroll] Pricing tier not found:', pricingTierId);
       return {
         success: false,
-        message: 'Selected pricing option is not available.',
+        message: 'That pricing option is no longer available. Please try another one.',
       };
     }
 
-    // Determine final amount, using promotional price if still valid
+    // Check if there's a valid promotion
     const hasValidPromotion =
       selectedTier.promotional_price != null &&
       (!selectedTier.promotion_end_date || new Date(selectedTier.promotion_end_date) > new Date());
@@ -80,7 +94,25 @@ export const initializeTransactionEnroll = async (
     const finalAmount =
       (hasValidPromotion ? selectedTier.promotional_price! : selectedTier.price) * 100;
 
-    // Invoke payment transaction function
+    // Skip payment flow if it's a free tier
+    if (finalAmount === 0) {
+      // TODO: Go ahead and enroll user
+      return {
+        success: true,
+        message: 'You’ve successfully enrolled in the course!',
+        data: {
+          status: true,
+          message: 'You’ve successfully enrolled in the course!',
+          data: {
+            authorization_url: '',
+            access_code: '',
+            reference: '',
+          },
+        },
+      };
+    }
+
+    // Create payment transaction via Supabase Function
     const { data: transactionData, error: transactionError } = await supabase.functions.invoke(
       'initialize-paystack-transaction',
       {
@@ -101,11 +133,11 @@ export const initializeTransactionEnroll = async (
       );
       return {
         success: false,
-        message: 'Unable to start payment transaction. Please try again later.',
+        message: 'We couldn’t start the payment process. Please try again shortly.',
       };
     }
 
-    // Validate response structure using Zod
+    // Validate transaction response format
     const parsedTransaction = InitializeEnrollTransactionResponseSchema.safeParse(
       transactionData.data,
     );
@@ -117,13 +149,13 @@ export const initializeTransactionEnroll = async (
       );
       return {
         success: false,
-        message: 'Invalid response from payment service. Please try again.',
+        message: 'Unexpected response from payment provider. Please try again.',
       };
     }
 
     return {
       success: true,
-      message: 'Enrollment transaction started successfully.',
+      message: 'Payment initialized successfully.',
       data: parsedTransaction.data,
     };
   } catch (err) {
@@ -133,7 +165,7 @@ export const initializeTransactionEnroll = async (
     );
     return {
       success: false,
-      message: 'Something went wrong. Please try again later.',
+      message: 'Oops! Something went wrong. Please try again later.',
     };
   }
 };

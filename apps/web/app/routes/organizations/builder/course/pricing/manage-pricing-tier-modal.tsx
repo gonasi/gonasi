@@ -258,15 +258,15 @@ export default function ManagePricingTierModal({ params, loaderData }: Route.Com
         return (
           <div>
             <GoSelectInputField
-              labelProps={{ children: 'Payment Frequency', required: true }}
+              labelProps={{ children: 'Access Renewal Frequency', required: true }}
               name='paymentFrequency'
               description={
                 isPaid
-                  ? 'Choose how often users will be billed for this paid tier 💳'
-                  : 'Even though this is a free tier, you can still indicate how often access renews 🔄'
+                  ? 'Choose how often users are billed to continue accessing this tier 💳'
+                  : 'Specify how often users must re-enroll to keep accessing this free tier 🔄'
               }
               selectProps={{
-                placeholder: 'Select a payment frequency',
+                placeholder: 'Select a renewal frequency',
                 options: frequencyOptions,
               }}
             />
@@ -346,15 +346,29 @@ export default function ManagePricingTierModal({ params, loaderData }: Route.Com
           <div>
             <GoInputField
               name='tierName'
-              labelProps={{ children: 'Tier name' }}
-              description='What should we call this tier?'
+              labelProps={{
+                children: isPaid ? 'Tier Name' : 'Access Level Name',
+              }}
+              description={
+                isPaid
+                  ? 'What should we call this pricing tier?'
+                  : 'What should we call this access level?'
+              }
             />
+
             <GoTextAreaField
-              labelProps={{ children: 'Tier description' }}
+              labelProps={{
+                children: isPaid ? 'Tier Description' : 'Access Level Description',
+              }}
               name='tierDescription'
               textareaProps={{ placeholder: 'Give us the details' }}
-              description='Tell us a bit more about what this tier offers'
+              description={
+                isPaid
+                  ? 'Tell us a bit more about what this tier offers'
+                  : 'Tell us what users get at this free access level'
+              }
             />
+
             <div>
               <div className='flex items-center space-x-1.5 py-4'>
                 <Sparkle />
@@ -461,9 +475,18 @@ export default function ManagePricingTierModal({ params, loaderData }: Route.Com
     <Modal open>
       <Modal.Content size='md'>
         <Modal.Header
-          title={coursePricingId === 'add-new-tier' ? 'Add New Pricing Tier' : 'Edit Pricing Tier'}
+          title={
+            coursePricingId === 'add-new-tier'
+              ? isPaid
+                ? 'Add New Pricing Tier'
+                : 'Add New Free Access Tier'
+              : isPaid
+                ? 'Edit Pricing Tier'
+                : 'Edit Free Access Tier'
+          }
           closeRoute={closeRoute}
         />
+
         <Modal.Body>
           {coursePricingId === 'add-new-tier' &&
           (!availableFrequencies || !availableFrequencies.length) ? (
@@ -489,12 +512,16 @@ export default function ManagePricingTierModal({ params, loaderData }: Route.Com
                         type='submit'
                         className='flex items-center'
                         rightIcon={<Check />}
-                        disabled={isDisabled}
+                        disabled={isDisabled || !methods.formState.isDirty}
                         isLoading={isDisabled}
                       >
                         {params.coursePricingId === 'add-new-tier'
-                          ? 'Create Pricing Tier'
-                          : 'Edit Pricing Tier'}
+                          ? isPaid
+                            ? 'Create Pricing Tier'
+                            : 'Create Access Tier'
+                          : isPaid
+                            ? 'Update Pricing Tier'
+                            : 'Update Access Tier'}
                       </Button>
                     ) : (
                       <div className='h-12' />

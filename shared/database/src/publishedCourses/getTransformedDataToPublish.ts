@@ -64,6 +64,7 @@ export async function getTransformedDataToPublish({
       course_pricing_tiers (
         id,
         course_id,
+        organization_id,
         payment_frequency,
         is_free,
         price,
@@ -188,6 +189,7 @@ export async function getTransformedDataToPublish({
       pricing_tiers:
         data.course_pricing_tiers?.map((tier) => ({
           id: tier.id,
+          organization_id: tier.organization_id,
           course_id: tier.course_id,
           payment_frequency: tier.payment_frequency,
           is_free: tier.is_free,

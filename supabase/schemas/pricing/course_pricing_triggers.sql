@@ -205,8 +205,8 @@ begin
   end if;
 
   if old.is_free = true
-     and old.is_active = true
-     and new.is_active = false then
+    and old.is_active = true
+    and new.is_active = false then
 
     if not exists (
       select 1 from public.course_pricing_tiers

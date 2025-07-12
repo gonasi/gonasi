@@ -1,8 +1,8 @@
-import { Form, Outlet, redirect, useOutletContext } from 'react-router';
+import { Form, Outlet, useOutletContext } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { GraduationCap } from 'lucide-react';
 import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
-import { dataWithError } from 'remix-toast';
+import { dataWithError, redirectWithSuccess } from 'remix-toast';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
 
 import { initializeTransactionEnroll } from '@gonasi/database/publishedCourses';
@@ -51,12 +51,13 @@ export async function action({ request, params }: Route.ActionArgs) {
     success,
     message,
     data: successData,
-  } = await initializeTransactionEnroll(supabase, {
-    ...data,
+  } = await initializeTransactionEnroll({
+    supabase,
+    data,
   });
 
   return success
-    ? redirect(`${successData?.data.authorization_url}`)
+    ? redirectWithSuccess(`${successData?.data.authorization_url}`, message)
     : dataWithError(null, message);
 }
 
@@ -72,6 +73,7 @@ export default function EnrollIndex({ params }: Route.ComponentProps) {
     defaultValues: {
       courseId,
       pricingTierId: filteredPricingData?.id ?? '',
+      organizationId: filteredPricingData?.organization_id ?? '',
     },
   });
 
@@ -103,7 +105,12 @@ export default function EnrollIndex({ params }: Route.ComponentProps) {
                 <HoneypotInputs />
 
                 <div className='pt-6 pb-2'>
-                  <Button leftIcon={<GraduationCap />} disabled={isDisabled} isLoading={isDisabled}>
+                  <Button
+                    type='submit'
+                    leftIcon={<GraduationCap />}
+                    disabled={isDisabled}
+                    isLoading={isDisabled}
+                  >
                     Enroll
                   </Button>
                 </div>
