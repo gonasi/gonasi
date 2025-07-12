@@ -10,6 +10,7 @@ import type { Route } from './+types/published-course-id-index';
 import { UserAvatar } from '~/components/avatars';
 import { GoThumbnail } from '~/components/cards/go-course-card';
 import { GoPricingSheet } from '~/components/cards/go-course-card/GoPricingSheet';
+import { ChapterLessonTree } from '~/components/course';
 import { Badge } from '~/components/ui/badge';
 import { Modal } from '~/components/ui/modal';
 import { createClient } from '~/lib/supabase/supabase.server';
@@ -56,15 +57,9 @@ export type CourseOverviewLoaderReturn = Exclude<Awaited<ReturnType<typeof loade
 export type CourseOverviewType = CourseOverviewLoaderReturn['courseOverview'];
 
 // Further specific inferences if needed:
-export type CoursePricingDataType = CourseOverviewType['pricing_data'][number];
+export type CoursePricingDataType = CourseOverviewType['pricing_tiers'][number];
 
-export type CourseCategoryType = CourseOverviewType['course_categories'];
-
-export type CourseSubCategoryType = CourseOverviewType['course_sub_categories'];
-
-export type CoursePathwayType = CourseOverviewType['pathways'];
-
-export type CourseChaptersType = CourseOverviewType['course_chapters'];
+export type CourseChaptersType = CourseOverviewType['course_structure']['chapters'];
 
 // Example: Lessons inside chapters
 export type CourseLessonType = CourseChaptersType[number]['lessons'][number];
@@ -204,7 +199,7 @@ export default function PublishedCourseIdIndex({ loaderData }: Route.ComponentPr
 
               {/* Chapter Tree */}
               <div className='max-w-md px-4 md:max-w-xl md:px-0'>
-                {/* <ChapterLessonTree publishedCourseId={id} chapters={course_structure.chapters} /> */}
+                <ChapterLessonTree publishedCourseId={id} chapters={course_structure.chapters} />
               </div>
             </div>
           </Modal.Body>
