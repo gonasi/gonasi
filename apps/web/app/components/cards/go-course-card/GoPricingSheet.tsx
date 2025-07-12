@@ -62,7 +62,7 @@ export function GoPricingSheet({
         e.preventDefault();
         e.stopPropagation();
       }}
-      className={cn('border-none bg-transparent p-0')}
+      className={cn('flex w-full items-start border-none bg-transparent p-0')}
     >
       <Sheet
         open={open}

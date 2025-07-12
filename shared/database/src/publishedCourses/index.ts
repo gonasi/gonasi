@@ -1,4 +1,4 @@
 export * from './upsertPublishCourse';
-export * from './fetchPublishedCourseById';
+export * from './fetchPublishedPublicCourseById';
 export * from './payments';
 export * from './fetchPublishedPublicCourses';

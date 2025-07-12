@@ -94,7 +94,7 @@ export default function Explore() {
           >
             {(resolvedCourses) =>
               resolvedCourses.data.length ? (
-                <div className='grid grid-cols-1 gap-0 md:grid-cols-2 md:gap-2 lg:grid-cols-3'>
+                <div className='grid grid-cols-1 gap-0 md:grid-cols-2 md:gap-3 lg:grid-cols-4'>
                   {resolvedCourses.data.map(
                     ({ id, name, description, signed_url, blur_hash, pricing_tiers }) => (
                       <NavLink
