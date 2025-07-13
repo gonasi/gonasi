@@ -8,14 +8,15 @@ export const LessonSchema = z
       required_error: `<span class="go-title">Lessons</span> are required.`,
       invalid_type_error: `<span class="go-title">Lessons</span> should be a list of lesson objects.`,
     }),
-    id: z.string({
-      required_error: `This lesson is missing an <span class="go-title">ID</span> - let's add one!`,
-      invalid_type_error: `<span class="go-title">Lesson ID</span> should be text.`,
-    }),
-    course_id: z.string({
-      required_error: `Which <span class="go-title">course</span> does this lesson belong to?`,
-      invalid_type_error: `<span class="go-title">Course ID</span> should be text.`,
-    }),
+    id: z
+      .string({ required_error: `This pricing option needs an <span class="go-title">ID</span>.` })
+      .uuid(`<span class="go-title">Pricing ID</span> must be a valid UUID.`),
+    course_id: z
+      .string({ required_error: `Link this pricing to a <span class="go-title">course</span>.` })
+      .uuid(`<span class="go-title">Course ID</span> must be a valid UUID.`),
+    organization_id: z
+      .string({ required_error: `Organization id is required` })
+      .uuid(`Organization id must be a valid UUID.`),
     chapter_id: z.string({
       required_error: `Which <span class="go-title">chapter</span> should this lesson go in?`,
       invalid_type_error: `<span class="go-title">Chapter ID</span> should be text.`,

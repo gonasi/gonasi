@@ -1105,6 +1105,137 @@ alter table "public"."published_courses" add constraint "chk_completion_rate" CH
 
 alter table "public"."published_courses" validate constraint "chk_completion_rate";
 
+alter table "public"."published_courses" add constraint "chk_course_structure_valid" CHECK (jsonb_matches_schema('{
+      "type": "object",
+      "required": ["total_chapters", "total_lessons", "total_blocks", "chapters"],
+      "properties": {
+        "total_chapters": { "type": "number", "minimum": 1 },
+        "total_lessons": { "type": "number", "minimum": 1 },
+        "total_blocks": { "type": "number", "minimum": 1 },
+        "chapters": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "id", "course_id", "lesson_count", "name", "description",
+              "position", "total_lessons", "total_blocks", "lessons"
+            ],
+            "properties": {
+              "id": { "type": "string", "format": "uuid" },
+              "course_id": { "type": "string", "format": "uuid" },
+              "lesson_count": { "type": "number", "minimum": 0 },
+              "name": { "type": "string", "minLength": 1 },
+              "description": { "type": "string", "minLength": 1 },
+              "position": { "type": "number", "minimum": 0 },
+              "total_lessons": { "type": "number", "minimum": 1 },
+              "total_blocks": { "type": "number", "minimum": 1 },
+              "lessons": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "id", "course_id", "chapter_id", "lesson_type_id", "name",
+                    "position", "settings", "lesson_types", "total_blocks", "blocks"
+                  ],
+                  "properties": {
+                    "id": { "type": "string", "format": "uuid" },
+                    "course_id": { "type": "string", "format": "uuid" },
+                    "chapter_id": { "type": "string", "format": "uuid" },
+                    "lesson_type_id": { "type": "string", "format": "uuid" },
+                    "name": { "type": "string", "minLength": 1 },
+                    "position": { "type": "number", "minimum": 0 },
+                    "settings": {},
+                    "lesson_types": {
+                      "type": "object",
+                      "required": ["id", "name", "description", "lucide_icon", "bg_color"],
+                      "properties": {
+                        "id": { "type": "string", "format": "uuid" },
+                        "name": { "type": "string" },
+                        "description": { "type": "string" },
+                        "lucide_icon": { "type": "string" },
+                        "bg_color": { "type": "string" }
+                      }
+                    },
+                    "total_blocks": { "type": "number", "minimum": 1 },
+                    "blocks": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": ["id", "lesson_id", "plugin_type", "content", "settings", "position"],
+                        "properties": {
+                          "id": { "type": "string", "format": "uuid" },
+                          "lesson_id": { "type": "string", "format": "uuid" },
+                          "plugin_type": { "type": "string" },
+                          "content": {},
+                          "settings": {},
+                          "position": { "type": "number", "minimum": 0 }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }'::json, course_structure)) not valid;
+
+alter table "public"."published_courses" validate constraint "chk_course_structure_valid";
+
+alter table "public"."published_courses" add constraint "chk_pricing_tiers_valid" CHECK (jsonb_matches_schema('{
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "course_id",
+          "organization_id",
+          "payment_frequency",
+          "is_free",
+          "price",
+          "currency_code",
+          "is_active",
+          "position",
+          "is_popular",
+          "is_recommended"
+        ],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "course_id": { "type": "string", "format": "uuid" },
+          "organization_id": { "type": "string", "format": "uuid" },
+          "payment_frequency": {
+            "type": "string",
+            "enum": ["monthly", "bi_monthly", "quarterly", "semi_annual", "annual"]
+          },
+          "is_free": { "type": "boolean" },
+          "price": { "type": "number", "minimum": 0 },
+          "currency_code": { "type": "string", "minLength": 3, "maxLength": 3 },
+          "promotional_price": { "type": ["number", "null"], "minimum": 0 },
+          "promotion_start_date": {
+            "oneOf": [
+              { "type": "string", "format": "date-time" },
+              { "type": "null" }
+            ]
+          },
+          "promotion_end_date": {
+            "oneOf": [
+              { "type": "string", "format": "date-time" },
+              { "type": "null" }
+            ]
+          },
+          "tier_name": { "type": ["string", "null"] },
+          "tier_description": { "type": ["string", "null"] },
+          "is_active": { "type": "boolean" },
+          "position": { "type": "number", "minimum": 0 },
+          "is_popular": { "type": "boolean" },
+          "is_recommended": { "type": "boolean" }
+        }
+      }
+    }'::json, pricing_tiers)) not valid;
+
+alter table "public"."published_courses" validate constraint "chk_pricing_tiers_valid";
+
 alter table "public"."published_courses" add constraint "chk_version_positive" CHECK ((version > 0)) not valid;
 
 alter table "public"."published_courses" validate constraint "chk_version_positive";
@@ -1926,7 +2057,7 @@ end;
 $function$
 ;
 
-CREATE OR REPLACE FUNCTION public.enroll_user_in_published_course(p_user_id uuid, p_published_course_id uuid, p_tier_id text, p_payment_processor_id text DEFAULT NULL::text, p_payment_amount numeric DEFAULT NULL::numeric, p_payment_method text DEFAULT NULL::text, p_created_by uuid DEFAULT NULL::uuid)
+CREATE OR REPLACE FUNCTION public.enroll_user_in_published_course(p_user_id uuid, p_published_course_id uuid, p_tier_id uuid, p_payment_processor_id text DEFAULT NULL::text, p_payment_amount numeric DEFAULT NULL::numeric, p_payment_method text DEFAULT NULL::text, p_created_by uuid DEFAULT NULL::uuid)
  RETURNS jsonb
  LANGUAGE plpgsql
  SET search_path TO ''
@@ -2026,7 +2157,8 @@ begin
     created_by
   ) values (
     enrollment_id,
-    p_tier_id::uuid,
+    -- Now we can use the UUID directly without casting
+    tier_record.tier_id,
     tier_record.tier_name,
     tier_record.tier_description,
     tier_record.payment_frequency,
@@ -2251,7 +2383,7 @@ end;
 $function$
 ;
 
-CREATE OR REPLACE FUNCTION public.get_effective_pricing_for_published_tier(p_published_course_id uuid, p_tier_id text)
+CREATE OR REPLACE FUNCTION public.get_effective_pricing_for_published_tier(p_published_course_id uuid, p_tier_id uuid)
  RETURNS TABLE(effective_price numeric, is_promotional boolean, promotional_price numeric)
  LANGUAGE plpgsql
  SET search_path TO ''
@@ -2264,7 +2396,6 @@ begin
   select * into tier_record
   from public.get_published_course_pricing_tier(p_published_course_id, p_tier_id)
   limit 1;
-
 
   -- Determine if a promotion is currently active
   if tier_record.promotional_price is not null
@@ -2289,31 +2420,50 @@ end;
 $function$
 ;
 
-CREATE OR REPLACE FUNCTION public.get_published_course_pricing_tier(p_published_course_id uuid, p_tier_id text)
- RETURNS TABLE(tier_id text, payment_frequency payment_frequency, is_free boolean, price numeric, currency_code text, promotional_price numeric, promotion_start_date timestamp with time zone, promotion_end_date timestamp with time zone, tier_name text, tier_description text, is_active boolean, "position" integer, is_popular boolean, is_recommended boolean)
+CREATE OR REPLACE FUNCTION public.get_published_course_pricing_tier(p_published_course_id uuid, p_tier_id uuid)
+ RETURNS TABLE(tier_id uuid, payment_frequency payment_frequency, is_free boolean, price numeric, currency_code text, promotional_price numeric, promotion_start_date timestamp with time zone, promotion_end_date timestamp with time zone, tier_name text, tier_description text, is_active boolean, "position" integer, is_popular boolean, is_recommended boolean)
  LANGUAGE plpgsql
  SET search_path TO ''
 AS $function$
 declare
   tier_data jsonb;
+  course_pricing_tiers jsonb;
 begin
+  -- First, get the course and validate it exists
+  select pc.pricing_tiers into course_pricing_tiers
+  from public.published_courses pc
+  where pc.id = p_published_course_id
+    and pc.is_active = true;
+
+  -- Check if course exists
+  if not found then
+    raise exception 'Published course not found or inactive: %', p_published_course_id;
+  end if;
+
+  -- Check if pricing_tiers is null or not an array
+  if course_pricing_tiers is null then
+    raise exception 'Course has no pricing tiers configured: %', p_published_course_id;
+  end if;
+
+  -- Check if pricing_tiers is actually a JSONB array
+  if jsonb_typeof(course_pricing_tiers) != 'array' then
+    raise exception 'Course pricing_tiers is not a valid array for course: %', p_published_course_id;
+  end if;
+
   -- Extract the pricing tier JSON object matching the tier ID
   select tier into tier_data
-  from public.published_courses pc,
-    jsonb_array_elements(pc.pricing_tiers) as tier
-  where pc.id = p_published_course_id
-    and pc.is_active = true                               -- Only consider active courses
-    and tier->>'id' = p_tier_id                           -- Match tier by ID
+  from jsonb_array_elements(course_pricing_tiers) as tier
+  where (tier->>'id')::uuid = p_tier_id                  -- Convert JSON string to UUID for comparison
     and (tier->>'is_active')::boolean = true;             -- Only include active tiers
 
   -- Raise error if no such tier is found
   if tier_data is null then
-    raise exception 'Pricing tier not found or inactive: %', p_tier_id;
+    raise exception 'Pricing tier not found or inactive: % for course: %', p_tier_id, p_published_course_id;
   end if;
 
   -- Return the parsed tier fields, casting from JSONB to proper types
   return query select
-    tier_data->>'id',
+    (tier_data->>'id')::uuid,    -- Cast to UUID
     (tier_data->>'payment_frequency')::payment_frequency,
     (tier_data->>'is_free')::boolean,
     (tier_data->>'price')::numeric(19,4),
@@ -2321,19 +2471,19 @@ begin
 
     -- Handle nullable promotional price
     case 
-      when tier_data->>'promotional_price' = 'null' then null
+      when tier_data->>'promotional_price' = 'null' or tier_data->>'promotional_price' is null then null
       else (tier_data->>'promotional_price')::numeric(19,4)
     end,
 
     -- Handle nullable promotion start date
     case 
-      when tier_data->>'promotion_start_date' = 'null' then null
+      when tier_data->>'promotion_start_date' = 'null' or tier_data->>'promotion_start_date' is null then null
       else (tier_data->>'promotion_start_date')::timestamptz
     end,
 
     -- Handle nullable promotion end date
     case 
-      when tier_data->>'promotion_end_date' = 'null' then null
+      when tier_data->>'promotion_end_date' = 'null' or tier_data->>'promotion_end_date' is null then null
       else (tier_data->>'promotion_end_date')::timestamptz
     end,
 

@@ -56,8 +56,8 @@ export const upsertPublishCourse = async ({
       total_blocks: data.course_structure.total_blocks,
 
       // Serialize nested structures to match JSON column types
-      course_structure: JSON.stringify(data.course_structure),
-      pricing_tiers: JSON.stringify(data.pricing_tiers),
+      course_structure: data.course_structure,
+      pricing_tiers: data.pricing_tiers,
     };
 
     // Simple upsert operation

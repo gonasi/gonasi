@@ -2,12 +2,12 @@ import z from 'zod';
 
 export const CourseOverviewSchema = z
   .object({
-    id: z.string({
-      required_error: `<lucide name="KeyRound" size="12" /> Your course needs a unique <span class="go-title">ID</span>.`,
-    }),
-    organization_id: z.string({
-      required_error: `<lucide name="KeyRound" size="12" /> Your course needs an organization <span class="go-title">ID</span>.`,
-    }),
+    id: z
+      .string({ required_error: `This pricing option needs an <span class="go-title">ID</span>.` })
+      .uuid(`<span class="go-title">Pricing ID</span> must be a valid UUID.`),
+    organization_id: z
+      .string({ required_error: `Organization id is required` })
+      .uuid(`Organization id must be a valid UUID.`),
     visibility: z.enum(['public', 'private'], {
       required_error: 'Please choose a visibility setting.',
       invalid_type_error: 'Visibility must be either "public" or "private".',

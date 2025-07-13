@@ -5,7 +5,7 @@ import { PricingSchema } from './course-pricing';
 const JsonSchema = z.any();
 
 export const LessonTypeSchema = z.object({
-  id: z.string(),
+  id: z.string().uuid(),
   name: z.string(),
   description: z.string(),
   lucide_icon: z.string(),
@@ -13,8 +13,8 @@ export const LessonTypeSchema = z.object({
 });
 
 const BlockSchema = z.object({
-  id: z.string(),
-  lesson_id: z.string(),
+  id: z.string().uuid(),
+  lesson_id: z.string().uuid(),
   plugin_type: z.string(),
   content: JsonSchema,
   settings: JsonSchema,
@@ -22,10 +22,10 @@ const BlockSchema = z.object({
 });
 
 const LessonSchema = z.object({
-  id: z.string(),
-  course_id: z.string(),
-  chapter_id: z.string(),
-  lesson_type_id: z.string(),
+  id: z.string().uuid(),
+  course_id: z.string().uuid(),
+  chapter_id: z.string().uuid(),
+  lesson_type_id: z.string().uuid(),
   name: z.string().nonempty(),
   position: z.number().int().nonnegative(),
   settings: z.any(),
@@ -36,8 +36,8 @@ const LessonSchema = z.object({
 });
 
 const ChapterSchema = z.object({
-  id: z.string(),
-  course_id: z.string(),
+  id: z.string().uuid(),
+  course_id: z.string().uuid(),
   lesson_count: z.number().int().nonnegative(),
   name: z.string().nonempty(),
   description: z.string().nonempty(),
@@ -49,11 +49,11 @@ const ChapterSchema = z.object({
 });
 
 export const PublishCourseSchema = z.object({
-  id: z.string(),
-  organization_id: z.string(),
+  id: z.string().uuid(),
+  organization_id: z.string().uuid(),
 
-  category_id: z.string(),
-  subcategory_id: z.string(),
+  category_id: z.string().uuid(),
+  subcategory_id: z.string().uuid(),
 
   is_active: z.boolean(),
   name: z.string().nonempty(),

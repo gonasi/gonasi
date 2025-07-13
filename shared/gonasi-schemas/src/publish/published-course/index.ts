@@ -3,11 +3,11 @@ import z from 'zod';
 import { PricingSchema } from '../course-pricing';
 
 export const PublishedCourseSchema = z.object({
-  id: z.string(),
-  organization_id: z.string(),
+  id: z.string().uuid(),
+  organization_id: z.string().uuid(),
 
-  category_id: z.string(),
-  subcategory_id: z.string(),
+  category_id: z.string().uuid(),
+  subcategory_id: z.string().uuid(),
 
   name: z.string(),
   description: z.string(),
@@ -19,7 +19,7 @@ export const PublishedCourseSchema = z.object({
 
   pricing_tiers: PricingSchema,
   published_at: z.string().datetime(),
-  published_by: z.string(),
+  published_by: z.string().uuid(),
 
   total_chapters: z.number().int().nonnegative(),
   total_lessons: z.number().int().nonnegative(),

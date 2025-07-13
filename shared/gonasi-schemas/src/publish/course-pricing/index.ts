@@ -4,13 +4,13 @@ export const PricingSchema = z.array(
   z.object({
     id: z
       .string({ required_error: `This pricing option needs an <span class="go-title">ID</span>.` })
-      .nonempty(`<span class="go-title">Pricing ID</span> can't be empty.`),
+      .uuid(`<span class="go-title">Pricing ID</span> must be a valid UUID.`),
     course_id: z
       .string({ required_error: `Link this pricing to a <span class="go-title">course</span>.` })
-      .nonempty(`<span class="go-title">Course ID</span> can't be empty.`),
+      .uuid(`<span class="go-title">Course ID</span> must be a valid UUID.`),
     organization_id: z
       .string({ required_error: `Organization id is required` })
-      .nonempty(`Organization id can't be empty.`),
+      .uuid(`Organization id must be a valid UUID.`),
     payment_frequency: z.enum(['monthly', 'bi_monthly', 'quarterly', 'semi_annual', 'annual'], {
       invalid_type_error: `Choose how often students will pay with a <span class="go-title">payment frequency</span>.`,
     }),

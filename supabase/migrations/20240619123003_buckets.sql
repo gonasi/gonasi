@@ -1,3 +1,7 @@
+-- Enable the "pg_jsonschema" extension
+create extension pg_jsonschema with schema extensions;
+
+
 -- ===============================================
 -- set up public storage bucket for user profile_photos
 -- ===============================================

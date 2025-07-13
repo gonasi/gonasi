@@ -11,16 +11,14 @@ export const ChapterSchema = z
       }),
 
     id: z
-      .string({
-        required_error: `This chapter needs an <span class="go-title">ID</span>.`,
-      })
-      .nonempty(`Chapter <span class="go-title">ID</span> can't be empty.`),
-
+      .string({ required_error: `This pricing option needs an <span class="go-title">ID</span>.` })
+      .uuid(`<span class="go-title">Pricing ID</span> must be a valid UUID.`),
     course_id: z
-      .string({
-        required_error: `Which <span class="go-title">course</span> does this chapter belong to?`,
-      })
-      .nonempty(`<span class="go-title">Course ID</span> can't be empty.`),
+      .string({ required_error: `Link this pricing to a <span class="go-title">course</span>.` })
+      .uuid(`<span class="go-title">Course ID</span> must be a valid UUID.`),
+    organization_id: z
+      .string({ required_error: `Organization id is required` })
+      .uuid(`Organization id must be a valid UUID.`),
 
     name: z
       .string({

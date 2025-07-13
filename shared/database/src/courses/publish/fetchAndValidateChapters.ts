@@ -56,6 +56,9 @@ export const CHAPTER_ERROR_NAVIGATION: Record<
   course_id: ({ organizationId, courseId }) => ({
     route: `/${organizationId}/builder/${courseId}/chapters`,
   }),
+  organization_id: ({ organizationId, courseId }) => ({
+    route: `/${organizationId}/builder/${courseId}/chapters`,
+  }),
   name: ({ organizationId, courseId, chapterId }) => ({
     route: `/${organizationId}/builder/${courseId}/chapters/${chapterId}/edit-details`,
   }),
@@ -171,6 +174,7 @@ export async function fetchAndValidateChapters({
       `
       id,
       course_id,
+      organization_id,
       name,
       description,
       created_at,

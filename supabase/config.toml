@@ -154,16 +154,23 @@ schema_paths = [
   # # published
   './schemas/publishedCourses/published_courses_utils.sql',
   './schemas/publishedCourses/published_courses_schema_and_indexes.sql',
+
+
   './schemas/publishedCourses/published_thumbnails_bucket_rls.sql',
 
+  './schemas/publishedCourses/utils/chk_pricing_tiers_valid_constraint.sql',
+  './schemas/publishedCourses/utils/chk_course_structure_valid_constraint.sql',
 
+  # enrollment related tables
   './schemas/enrollments/enrollments_schema_and_indexes.sql',
   './schemas/enrollments/enrollment_activities_schema_and_indexes.sql',
-
   './schemas/enrollments/course_payments_schema_and_indexes.sql',
 
-  './schemas/enrollments/enrollment_utils.sql',
-  './schemas/enrollments/user_enrollment_functions.sql',
+  # enrollments functions utils
+  './schemas/enrollments/utils/calculate_access_end_date.sql',
+  './schemas/enrollments/utils/get_effective_pricing_for_published_tier.sql',
+  './schemas/enrollments/utils/get_published_course_pricing_tier.sql',
+  './schemas/enrollments/utils/enroll_user_in_published_course.sql',
 
   # './schemas/enrollment_activities_schema_indexes_rls.sql',
 

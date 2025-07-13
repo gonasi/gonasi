@@ -31,11 +31,10 @@
 --     - is_free (true/false)
 --     - access_granted (always true if successful)
 -- ============================================================================
-
 create or replace function public.enroll_user_in_published_course(
   p_user_id uuid,
   p_published_course_id uuid,
-  p_tier_id text,
+  p_tier_id uuid,               -- Changed from text to uuid
   p_payment_processor_id text default null,
   p_payment_amount numeric(19,4) default null,
   p_payment_method text default null,
@@ -137,7 +136,8 @@ begin
     created_by
   ) values (
     enrollment_id,
-    p_tier_id::uuid,
+    -- Now we can use the UUID directly without casting
+    tier_record.tier_id,
     tier_record.tier_name,
     tier_record.tier_description,
     tier_record.payment_frequency,
