@@ -16,8 +16,7 @@ declare
 begin
   -- Retrieve the tier's pricing and promotional details
   select * into tier_record
-  from public.get_published_course_pricing_tier(p_published_course_id, p_tier_id)
-  limit 1;
+  from public.get_published_course_pricing_tier(p_published_course_id, p_tier_id);
 
   -- Determine if a promotion is currently active
   if tier_record.promotional_price is not null

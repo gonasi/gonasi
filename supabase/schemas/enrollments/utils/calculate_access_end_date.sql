@@ -4,7 +4,7 @@
 
 create or replace function calculate_access_end_date(
   start_date timestamptz,                  -- The start date of the access period
-  frequency payment_frequency              -- Enum: 'monthly', 'bi_monthly', 'quarterly', etc.
+  frequency public.payment_frequency              -- Enum: 'monthly', 'bi_monthly', 'quarterly', etc.
 ) 
 returns timestamptz
 language plpgsql

@@ -2,111 +2,89 @@
 -- course_pricing_tiers schema
 -- ============================================================================
 -- This schema implements a flexible and scalable pricing model for online courses.
--- It enables support for:
---   - Multiple billing cycles (e.g., monthly, quarterly, annually)
+-- It supports:
+--   - Multiple billing frequencies (e.g., monthly, annually)
 --   - Free and paid subscription tiers
 --   - Time-limited promotional pricing (discount campaigns)
---   - Tier display metadata (e.g., names, badges, positioning)
---   - Fine-grained business rules via constraints
---   - Audit trail for pricing changes
---   - Indexed queries optimized for performance in UI and admin views
+--   - Custom tier metadata for UI (e.g., labels, badges, sort order)
+--   - Business logic enforcement via constraints
+--   - Audit tracking for pricing changes
+--   - Indexes optimized for UI/admin querying patterns
 --
--- Each course can define multiple pricing tiers based on frequency and features.
+-- Each course may define multiple pricing tiers.
 -- A tier can be:
---   - Free: accessible to all without payment
---   - Paid: with standard and optional promotional pricing
+--   - Free: accessible without payment
+--   - Paid: includes standard and optional promotional pricing
 --
--- Business rules are enforced using CHECK constraints and a unique index to ensure:
+-- Business rules enforced include:
 --   - Only one active tier per frequency per course
---   - No promotional pricing on free tiers
---   - Promotional prices are always lower than the base price
---   - Time windows for promotions are logically ordered
+--   - No promo pricing on free tiers
+--   - Promo price must be lower than base price
+--   - Valid promotion date windows
 --
--- All time values are stored in UTC using timestamptz for consistency.
--- All prices are stored in `NUMERIC(19,4)` to handle large and fractional values.
+-- Notes:
+--   - All time values are stored as UTC (timestamptz)
+--   - Prices use NUMERIC(19,4) for precision and large amounts
 -- ============================================================================
 
--- ============================================================================
--- enum: payment_frequency
--- ============================================================================
--- Defines valid billing cycles for recurring course subscriptions.
--- Used to normalize tier frequency and restrict to known values.
-
-create type payment_frequency as enum (
-  'monthly',        -- every month (standard)
-  'bi_monthly',     -- every 2 months
-  'quarterly',      -- every 3 months (business-friendly)
-  'semi_annual',    -- every 6 months
-  'annual'          -- every 12 months (typically discounted)
-);
-
-create type currency_code as enum (
-  'KES',
-  'USD'
-);
 
 -- ============================================================================
 -- table: course_pricing_tiers
 -- ============================================================================
--- Defines one or more pricing tiers for each course.
--- Tiers may differ in billing frequency, price, promotional campaigns, and UI visibility.
+-- Stores pricing tiers per course, including metadata for billing, UI, and promotions.
 
 create table public.course_pricing_tiers (
-  -- unique tier ID and foreign key to owning course
+  -- Primary key and foreign keys
   id uuid default uuid_generate_v4() primary key,
   organization_id uuid not null references public.organizations(id) on delete cascade,
-  course_id uuid not null references courses(id) on delete cascade,
+  course_id uuid not null references public.courses(id) on delete cascade,
 
-  -- frequency and pricing configuration
+  -- Pricing configuration
   payment_frequency payment_frequency not null,
-  is_free boolean not null default true, -- free vs paid tier
-  price numeric(19,4) not null check (price >= 0), -- base price if paid
+  is_free boolean not null default true,
+  price numeric(19,4) not null check (price >= 0),
   currency_code currency_code not null default 'KES',
 
-  -- optional promotional pricing window
+  -- Optional promotional campaign
   promotional_price numeric(19,4) null check (promotional_price >= 0),
   promotion_start_date timestamptz null,
   promotion_end_date timestamptz null,
 
-  -- display-related metadata (for UI representation)
-  tier_name text null,         -- user-facing label, e.g. "Annual Premium"
-  tier_description text null,  -- marketing or feature-based description
+  -- UI/UX display metadata
+  tier_name text null,
+  tier_description text null,
+  is_active boolean not null default true,
+  position integer not null default 0,
+  is_popular boolean not null default false,
+  is_recommended boolean not null default false,
 
-  -- visibility and ordering in UI
-  is_active boolean not null default true, -- soft delete support
-  position integer not null default 0,     -- sort order among tiers
-
-  -- UI badges and marketing flags
-  is_popular boolean not null default false,      -- show "Most Popular" tag
-  is_recommended boolean not null default false,  -- show "Recommended" tag
-
-  -- audit trail
+  -- Audit metadata
   created_at timestamptz not null default timezone('utc', now()),
   updated_at timestamptz not null default timezone('utc', now()),
-  created_by uuid not null references profiles(id) on delete cascade,
-  updated_by uuid not null references profiles(id) on delete cascade,
+  created_by uuid not null references public.profiles(id) on delete cascade,
+  updated_by uuid not null references public.profiles(id) on delete cascade,
 
   -- ==========================================================================
-  -- business logic constraints
+  -- Business logic constraints
   -- ==========================================================================
 
-  -- promotion dates must be in valid chronological order
+  -- Promotion dates must be in proper order if both exist
   constraint chk_promotion_dates check (
     promotion_start_date is null or promotion_end_date is null or 
     promotion_start_date < promotion_end_date
   ),
 
-  -- promotional price must be less than the regular price
+  -- Promo price must be lower than the base price
   constraint chk_promotional_price check (
     is_free = true or promotional_price is null or promotional_price < price
   ),
 
-  -- paid tiers must have a price greater than zero
+  -- Paid tiers must have a price > 0
   constraint chk_price_nonfree check (
     is_free = true or price > 0
   ),
 
-  -- free tiers cannot have promotional pricing
+  -- Free tiers must not have any promotional pricing
   constraint chk_free_has_no_promo check (
     is_free = false or (
       promotional_price is null and 
@@ -115,18 +93,19 @@ create table public.course_pricing_tiers (
     )
   ),
 
-  -- only one active tier per frequency per course
+  -- Enforce a single active tier per frequency per course
   constraint uq_one_active_tier_per_frequency
     unique (course_id, payment_frequency, is_active)
     deferrable initially deferred
 );
 
+
 -- ============================================================================
 -- indexes
 -- ============================================================================
--- Improves query performance for filtering, sorting, and joins
+-- Optimize frequent filtering, sorting, and joins
 
--- foreign key join indexes
+-- Foreign key join indexes
 create index idx_course_pricing_tiers_course_id 
   on public.course_pricing_tiers (course_id);
 
@@ -136,30 +115,31 @@ create index idx_course_pricing_tiers_created_by
 create index idx_course_pricing_tiers_updated_by 
   on public.course_pricing_tiers (updated_by);
 
--- active tier filtering and UI ordering
+-- Filter by course + is_active
 create index idx_course_pricing_tiers_course_id_active 
   on public.course_pricing_tiers (course_id, is_active);
 
+-- Order tiers in UI
 create index idx_course_pricing_tiers_position 
   on public.course_pricing_tiers (course_id, position);
 
--- promotional pricing lookups
+-- Search for active promotions
 create index idx_course_pricing_tiers_promotion_dates 
   on public.course_pricing_tiers (promotion_start_date, promotion_end_date);
 
--- ui enhancements (e.g., showing badges)
+-- UI badge rendering (e.g. "Popular", "Recommended")
 create index idx_course_pricing_tiers_popular_recommended 
   on public.course_pricing_tiers (is_popular, is_recommended);
 
-  -- organization-level filtering and joins
+-- Organization-level filters
 create index idx_course_pricing_tiers_organization_id
   on public.course_pricing_tiers (organization_id);
 
--- common pattern: organization + active filter
+-- Filter by organization + is_active
 create index idx_course_pricing_tiers_org_active
   on public.course_pricing_tiers (organization_id, is_active);
 
--- optional: if you frequently query by org + course
+-- Optional: For org + course filtering
 create index idx_course_pricing_tiers_org_course
   on public.course_pricing_tiers (organization_id, course_id);
 
@@ -167,7 +147,6 @@ create index idx_course_pricing_tiers_org_course
 -- ============================================================================
 -- documentation
 -- ============================================================================
--- High-level description of this table for Postgres-native introspection tools
 
 comment on table public.course_pricing_tiers is 
   'Defines pricing tiers for courses, scoped by organization, supporting free and paid options, multiple billing frequencies, promotional discounts, and customizable display metadata. Includes audit fields and business logic enforcement for pricing integrity.';

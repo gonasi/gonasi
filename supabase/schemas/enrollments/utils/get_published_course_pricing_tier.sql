@@ -4,7 +4,7 @@ create or replace function get_published_course_pricing_tier(
 ) 
 returns table (
   tier_id uuid,                 -- Changed from text to uuid
-  payment_frequency payment_frequency,
+  payment_frequency public.payment_frequency,
   is_free boolean,
   price numeric(19,4),
   currency_code text,

@@ -74,15 +74,13 @@ begin
   -- STEP 2: Fetch the tier record (price, frequency, name, etc)
   -- =========================================================================
   select * into tier_record
-  from public.get_published_course_pricing_tier(p_published_course_id, p_tier_id)
-  limit 1;
+  from public.get_published_course_pricing_tier(p_published_course_id, p_tier_id);
 
   -- =========================================================================
   -- STEP 3: Determine the effective pricing (promotion-aware)
   -- =========================================================================
   select * into pricing_info
-  from public.get_effective_pricing_for_published_tier(p_published_course_id, p_tier_id)
-  limit 1;
+  from public.get_effective_pricing_for_published_tier(p_published_course_id, p_tier_id);
 
   -- =========================================================================
   -- STEP 4: Compute the access expiration date based on frequency

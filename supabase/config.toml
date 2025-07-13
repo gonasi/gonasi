@@ -123,6 +123,9 @@ schema_paths = [
   './schemas/chapters/chapters_schema_and_indexes.sql', # chapter
   './schemas/chapters/chapters_triggers.sql', # chapter
   './schemas/chapters/chapters_schema_rls.sql', # chapter
+
+  './schemas/pricing/utils/payment_frequency.sql',
+  './schemas/pricing/utils/currency_code.sql',
   
   './schemas/pricing/course_pricing_schema_and_indexes.sql', # pricing
   './schemas/pricing/course_pricing_triggers.sql', # pricing

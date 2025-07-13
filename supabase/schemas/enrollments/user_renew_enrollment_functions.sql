@@ -23,14 +23,12 @@ begin
   
   -- Get pricing tier from published course
   select * into tier_record
-  from public.get_published_course_pricing_tier(p_published_course_id, p_tier_id)
-  limit 1;
+  from public.get_published_course_pricing_tier(p_published_course_id, p_tier_id);
 
   
   -- Get effective pricing
   select * into pricing_info 
-  from public.get_effective_pricing_for_published_tier(enrollment_record.published_course_id, p_tier_id)
-  limit 1;
+  from public.get_effective_pricing_for_published_tier(enrollment_record.published_course_id, p_tier_id);
   
   -- Calculate new access dates (extend from current expiry or now, whichever is later)
   new_access_start := greatest(enrollment_record.expires_at, timezone('utc', now()));
