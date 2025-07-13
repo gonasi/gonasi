@@ -326,6 +326,111 @@ export type Database = {
           },
         ]
       }
+      course_payments: {
+        Row: {
+          amount_paid: number
+          created_at: string
+          created_by: string
+          currency_code: Database["public"]["Enums"]["currency_code"]
+          enrollment_activity_id: string
+          enrollment_id: string
+          id: string
+          net_amount: number
+          organization_id: string
+          payment_intent_id: string | null
+          payment_metadata: Json | null
+          payment_method: string
+          payment_processor_fee: number | null
+          payment_processor_id: string | null
+          payment_status: string
+          payout_processed_at: string | null
+          payout_status: string
+          refund_amount: number | null
+          refund_reason: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount_paid: number
+          created_at?: string
+          created_by: string
+          currency_code: Database["public"]["Enums"]["currency_code"]
+          enrollment_activity_id: string
+          enrollment_id: string
+          id?: string
+          net_amount: number
+          organization_id: string
+          payment_intent_id?: string | null
+          payment_metadata?: Json | null
+          payment_method: string
+          payment_processor_fee?: number | null
+          payment_processor_id?: string | null
+          payment_status?: string
+          payout_processed_at?: string | null
+          payout_status?: string
+          refund_amount?: number | null
+          refund_reason?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount_paid?: number
+          created_at?: string
+          created_by?: string
+          currency_code?: Database["public"]["Enums"]["currency_code"]
+          enrollment_activity_id?: string
+          enrollment_id?: string
+          id?: string
+          net_amount?: number
+          organization_id?: string
+          payment_intent_id?: string | null
+          payment_metadata?: Json | null
+          payment_method?: string
+          payment_processor_fee?: number | null
+          payment_processor_id?: string | null
+          payment_status?: string
+          payout_processed_at?: string | null
+          payout_status?: string
+          refund_amount?: number | null
+          refund_reason?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_payments_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_payments_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_payments_enrollment_activity_id_fkey"
+            columns: ["enrollment_activity_id"]
+            isOneToOne: false
+            referencedRelation: "course_enrollment_activities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_payments_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "course_enrollments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_payments_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       course_pricing_tiers: {
         Row: {
           course_id: string
@@ -1655,9 +1760,12 @@ export type Database = {
           p_user_id: string
           p_published_course_id: string
           p_tier_id: string
+          p_payment_processor_id?: string
+          p_payment_amount?: number
+          p_payment_method?: string
           p_created_by?: string
         }
-        Returns: string
+        Returns: Json
       }
       get_active_organization_members: {
         Args: { _organization_id: string; _user_id: string }

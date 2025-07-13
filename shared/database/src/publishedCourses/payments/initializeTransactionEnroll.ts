@@ -96,7 +96,26 @@ export const initializeTransactionEnroll = async ({
 
     // Skip payment flow if it's a free tier
     if (finalAmount === 0) {
-      // TODO: Go ahead and enroll user
+      const { data: enrollData, error: enrollError } = await supabase.rpc(
+        'enroll_user_in_published_course',
+        {
+          p_user_id: userProfile.user.id,
+          p_published_course_id: courseId,
+          p_tier_id: selectedTier.id,
+        },
+      );
+
+      if (enrollError) {
+        console.error('[Enrollment] failed:', enrollError);
+        return {
+          success: false,
+          message: 'Failed to enroll, please try again later.',
+        };
+      }
+
+      // ✅ At this point: enrollData IS your jsonb response
+      // e.g. { enrollment_id, activity_id, is_free, ... }
+
       return {
         success: true,
         message: 'You’ve successfully enrolled in the course!',

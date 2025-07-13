@@ -57,7 +57,7 @@ declare
 begin
   -- Extract the pricing tier JSON object matching the tier ID
   select tier into tier_data
-  from published_courses pc,
+  from public.published_courses pc,
     jsonb_array_elements(pc.pricing_tiers) as tier
   where pc.id = p_published_course_id
     and pc.is_active = true                               -- Only consider active courses
@@ -131,7 +131,9 @@ declare
 begin
   -- Retrieve the tier's pricing and promotional details
   select * into tier_record
-  from get_published_course_pricing_tier(p_published_course_id, p_tier_id);
+  from public.get_published_course_pricing_tier(p_published_course_id, p_tier_id)
+  limit 1;
+
 
   -- Determine if a promotion is currently active
   if tier_record.promotional_price is not null

@@ -107,7 +107,7 @@ declare
 begin
   for tier_data in
     select tier
-    from published_courses pc,
+    from public.published_courses pc,
          jsonb_array_elements(pc.pricing_tiers) as tier
     where pc.id = p_published_course_id
       and pc.is_active = true
@@ -116,7 +116,8 @@ begin
   loop
     -- Get effective pricing for this tier
     select * into pricing_info 
-    from get_effective_pricing_for_published_tier(p_published_course_id, tier_data->>'id');
+    from public.get_effective_pricing_for_published_tier(p_published_course_id, tier_data->>'id')
+    limit 1;
     
     return query select
       tier_data->>'id',

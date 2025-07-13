@@ -1135,6 +1135,20 @@
           "isGenerated": false,
           "sequence": false,
           "hasDefaultValue": false
+        },
+        {
+          "name": "course_payments",
+          "type": "course_payments",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "course_paymentsTocourse_enrollment_activities",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
         }
       ],
       "uniqueConstraints": [
@@ -1345,6 +1359,20 @@
           "isGenerated": false,
           "sequence": false,
           "hasDefaultValue": false
+        },
+        {
+          "name": "course_payments",
+          "type": "course_payments",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "course_paymentsTocourse_enrollments",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
         }
       ],
       "uniqueConstraints": [
@@ -1360,6 +1388,374 @@
           "fields": [
             "published_course_id",
             "user_id"
+          ],
+          "nullNotDistinct": false
+        }
+      ]
+    },
+    "course_payments": {
+      "id": "public.course_payments",
+      "schemaName": "public",
+      "tableName": "course_payments",
+      "fields": [
+        {
+          "id": "public.course_payments.id",
+          "name": "id",
+          "columnName": "id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": true,
+          "maxLength": null
+        },
+        {
+          "id": "public.course_payments.enrollment_id",
+          "name": "enrollment_id",
+          "columnName": "enrollment_id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.course_payments.enrollment_activity_id",
+          "name": "enrollment_activity_id",
+          "columnName": "enrollment_activity_id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.course_payments.amount_paid",
+          "name": "amount_paid",
+          "columnName": "amount_paid",
+          "type": "numeric",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.course_payments.currency_code",
+          "name": "currency_code",
+          "columnName": "currency_code",
+          "type": "currency_code",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.course_payments.payment_method",
+          "name": "payment_method",
+          "columnName": "payment_method",
+          "type": "text",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.course_payments.payment_processor_id",
+          "name": "payment_processor_id",
+          "columnName": "payment_processor_id",
+          "type": "text",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.course_payments.payment_processor_fee",
+          "name": "payment_processor_fee",
+          "columnName": "payment_processor_fee",
+          "type": "numeric",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.course_payments.net_amount",
+          "name": "net_amount",
+          "columnName": "net_amount",
+          "type": "numeric",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.course_payments.payment_status",
+          "name": "payment_status",
+          "columnName": "payment_status",
+          "type": "text",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.course_payments.payment_intent_id",
+          "name": "payment_intent_id",
+          "columnName": "payment_intent_id",
+          "type": "text",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.course_payments.organization_id",
+          "name": "organization_id",
+          "columnName": "organization_id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.course_payments.payout_status",
+          "name": "payout_status",
+          "columnName": "payout_status",
+          "type": "text",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.course_payments.payout_processed_at",
+          "name": "payout_processed_at",
+          "columnName": "payout_processed_at",
+          "type": "timestamptz",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.course_payments.payment_metadata",
+          "name": "payment_metadata",
+          "columnName": "payment_metadata",
+          "type": "jsonb",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.course_payments.refund_amount",
+          "name": "refund_amount",
+          "columnName": "refund_amount",
+          "type": "numeric",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.course_payments.refund_reason",
+          "name": "refund_reason",
+          "columnName": "refund_reason",
+          "type": "text",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.course_payments.created_at",
+          "name": "created_at",
+          "columnName": "created_at",
+          "type": "timestamptz",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.course_payments.updated_at",
+          "name": "updated_at",
+          "columnName": "updated_at",
+          "type": "timestamptz",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.course_payments.created_by",
+          "name": "created_by",
+          "columnName": "created_by",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "name": "course_enrollment_activities",
+          "type": "course_enrollment_activities",
+          "isRequired": true,
+          "kind": "object",
+          "relationName": "course_paymentsTocourse_enrollment_activities",
+          "relationFromFields": [
+            "enrollment_activity_id"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "course_enrollments",
+          "type": "course_enrollments",
+          "isRequired": true,
+          "kind": "object",
+          "relationName": "course_paymentsTocourse_enrollments",
+          "relationFromFields": [
+            "enrollment_id"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "organizations",
+          "type": "organizations",
+          "isRequired": true,
+          "kind": "object",
+          "relationName": "course_paymentsToorganizations",
+          "relationFromFields": [
+            "organization_id"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "profiles",
+          "type": "profiles",
+          "isRequired": true,
+          "kind": "object",
+          "relationName": "course_paymentsToprofiles",
+          "relationFromFields": [
+            "created_by"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        }
+      ],
+      "uniqueConstraints": [
+        {
+          "name": "course_payments_pkey",
+          "fields": [
+            "id"
           ],
           "nullNotDistinct": false
         }
@@ -6306,6 +6702,20 @@
           "hasDefaultValue": false
         },
         {
+          "name": "course_payments",
+          "type": "course_payments",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "course_paymentsToorganizations",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
           "name": "course_pricing_tiers",
           "type": "course_pricing_tiers",
           "isRequired": false,
@@ -6818,6 +7228,20 @@
           "isRequired": false,
           "kind": "object",
           "relationName": "course_enrollmentsToprofiles",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "course_payments",
+          "type": "course_payments",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "course_paymentsToprofiles",
           "relationFromFields": [],
           "relationToFields": [],
           "isList": true,

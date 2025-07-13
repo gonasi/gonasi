@@ -86,6 +86,30 @@ create table "public"."course_enrollments" (
 );
 
 
+create table "public"."course_payments" (
+    "id" uuid not null default uuid_generate_v4(),
+    "enrollment_id" uuid not null,
+    "enrollment_activity_id" uuid not null,
+    "amount_paid" numeric(19,4) not null,
+    "currency_code" currency_code not null,
+    "payment_method" text not null,
+    "payment_processor_id" text,
+    "payment_processor_fee" numeric(19,4),
+    "net_amount" numeric(19,4) not null,
+    "payment_status" text not null default 'pending'::text,
+    "payment_intent_id" text,
+    "organization_id" uuid not null,
+    "payout_status" text not null default 'pending'::text,
+    "payout_processed_at" timestamp with time zone,
+    "payment_metadata" jsonb,
+    "refund_amount" numeric(19,4) default 0,
+    "refund_reason" text,
+    "created_at" timestamp with time zone not null default timezone('utc'::text, now()),
+    "updated_at" timestamp with time zone not null default timezone('utc'::text, now()),
+    "created_by" uuid not null
+);
+
+
 create table "public"."course_pricing_tiers" (
     "id" uuid not null default uuid_generate_v4(),
     "organization_id" uuid not null,
@@ -385,6 +409,8 @@ CREATE UNIQUE INDEX course_enrollment_activities_pkey ON public.course_enrollmen
 
 CREATE UNIQUE INDEX course_enrollments_pkey ON public.course_enrollments USING btree (id);
 
+CREATE UNIQUE INDEX course_payments_pkey ON public.course_payments USING btree (id);
+
 CREATE UNIQUE INDEX course_pricing_tiers_pkey ON public.course_pricing_tiers USING btree (id);
 
 CREATE UNIQUE INDEX course_sub_categories_pkey ON public.course_sub_categories USING btree (id);
@@ -422,6 +448,20 @@ CREATE INDEX idx_course_enrollments_organization_id ON public.course_enrollments
 CREATE INDEX idx_course_enrollments_published_course_id ON public.course_enrollments USING btree (published_course_id);
 
 CREATE INDEX idx_course_enrollments_user_id ON public.course_enrollments USING btree (user_id);
+
+CREATE INDEX idx_course_payments_created_at ON public.course_payments USING btree (created_at);
+
+CREATE INDEX idx_course_payments_enrollment_activity_id ON public.course_payments USING btree (enrollment_activity_id);
+
+CREATE INDEX idx_course_payments_enrollment_id ON public.course_payments USING btree (enrollment_id);
+
+CREATE INDEX idx_course_payments_organization_id ON public.course_payments USING btree (organization_id);
+
+CREATE INDEX idx_course_payments_payment_status ON public.course_payments USING btree (payment_status);
+
+CREATE INDEX idx_course_payments_payout_status ON public.course_payments USING btree (payout_status);
+
+CREATE INDEX idx_course_payments_processor_id ON public.course_payments USING btree (payment_processor_id);
 
 CREATE INDEX idx_course_pricing_tiers_course_id ON public.course_pricing_tiers USING btree (course_id);
 
@@ -669,6 +709,8 @@ alter table "public"."course_enrollment_activities" add constraint "course_enrol
 
 alter table "public"."course_enrollments" add constraint "course_enrollments_pkey" PRIMARY KEY using index "course_enrollments_pkey";
 
+alter table "public"."course_payments" add constraint "course_payments_pkey" PRIMARY KEY using index "course_payments_pkey";
+
 alter table "public"."course_pricing_tiers" add constraint "course_pricing_tiers_pkey" PRIMARY KEY using index "course_pricing_tiers_pkey";
 
 alter table "public"."course_sub_categories" add constraint "course_sub_categories_pkey" PRIMARY KEY using index "course_sub_categories_pkey";
@@ -758,6 +800,38 @@ alter table "public"."course_enrollments" add constraint "course_enrollments_use
 alter table "public"."course_enrollments" validate constraint "course_enrollments_user_id_fkey";
 
 alter table "public"."course_enrollments" add constraint "uq_user_course" UNIQUE using index "uq_user_course";
+
+alter table "public"."course_payments" add constraint "chk_payment_amounts" CHECK (((amount_paid >= (0)::numeric) AND (net_amount >= (0)::numeric))) not valid;
+
+alter table "public"."course_payments" validate constraint "chk_payment_amounts";
+
+alter table "public"."course_payments" add constraint "chk_payment_status" CHECK ((payment_status = ANY (ARRAY['pending'::text, 'completed'::text, 'failed'::text, 'refunded'::text]))) not valid;
+
+alter table "public"."course_payments" validate constraint "chk_payment_status";
+
+alter table "public"."course_payments" add constraint "chk_payout_status" CHECK ((payout_status = ANY (ARRAY['pending'::text, 'processed'::text, 'failed'::text]))) not valid;
+
+alter table "public"."course_payments" validate constraint "chk_payout_status";
+
+alter table "public"."course_payments" add constraint "chk_refund_amount" CHECK (((refund_amount >= (0)::numeric) AND (refund_amount <= amount_paid))) not valid;
+
+alter table "public"."course_payments" validate constraint "chk_refund_amount";
+
+alter table "public"."course_payments" add constraint "course_payments_created_by_fkey" FOREIGN KEY (created_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
+
+alter table "public"."course_payments" validate constraint "course_payments_created_by_fkey";
+
+alter table "public"."course_payments" add constraint "course_payments_enrollment_activity_id_fkey" FOREIGN KEY (enrollment_activity_id) REFERENCES course_enrollment_activities(id) ON DELETE CASCADE not valid;
+
+alter table "public"."course_payments" validate constraint "course_payments_enrollment_activity_id_fkey";
+
+alter table "public"."course_payments" add constraint "course_payments_enrollment_id_fkey" FOREIGN KEY (enrollment_id) REFERENCES course_enrollments(id) ON DELETE CASCADE not valid;
+
+alter table "public"."course_payments" validate constraint "course_payments_enrollment_id_fkey";
+
+alter table "public"."course_payments" add constraint "course_payments_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE not valid;
+
+alter table "public"."course_payments" validate constraint "course_payments_organization_id_fkey";
 
 alter table "public"."course_pricing_tiers" add constraint "chk_free_has_no_promo" CHECK (((is_free = false) OR ((promotional_price IS NULL) AND (promotion_start_date IS NULL) AND (promotion_end_date IS NULL)))) not valid;
 
@@ -1852,21 +1926,32 @@ end;
 $function$
 ;
 
-CREATE OR REPLACE FUNCTION public.enroll_user_in_published_course(p_user_id uuid, p_published_course_id uuid, p_tier_id text, p_created_by uuid DEFAULT NULL::uuid)
- RETURNS uuid
+CREATE OR REPLACE FUNCTION public.enroll_user_in_published_course(p_user_id uuid, p_published_course_id uuid, p_tier_id text, p_payment_processor_id text DEFAULT NULL::text, p_payment_amount numeric DEFAULT NULL::numeric, p_payment_method text DEFAULT NULL::text, p_created_by uuid DEFAULT NULL::uuid)
+ RETURNS jsonb
  LANGUAGE plpgsql
  SET search_path TO ''
 AS $function$
 declare
-  enrollment_id uuid;                 -- ID of the enrollment (to be returned)
-  published_course_record record;    -- Holds the course data
-  tier_record record;                -- Holds pricing tier info
-  pricing_info record;               -- Effective pricing data (price or promo)
-  access_start timestamptz := timezone('utc', now()); -- When access begins
-  access_end timestamptz;            -- When access ends (based on frequency)
-  activity_id uuid;                  -- ID of the associated activity log
+  -- IDs to be returned
+  enrollment_id uuid;
+  activity_id uuid;
+  payment_id uuid;
+
+  -- Data holders
+  published_course_record record;
+  tier_record record;
+  pricing_info record;
+
+  -- Access window
+  access_start timestamptz := timezone('utc', now()); -- Start now in UTC
+  access_end timestamptz;
+
+  -- Final output
+  result jsonb;
 begin
-  -- 1. Fetch the published course details, ensuring it's active
+  -- =========================================================================
+  -- STEP 1: Validate that the published course exists and is active
+  -- =========================================================================
   select * into published_course_record
   from public.published_courses 
   where id = p_published_course_id and is_active = true;
@@ -1875,18 +1960,28 @@ begin
     raise exception 'Published course not found or inactive';
   end if;
 
-  -- 2. Fetch the pricing tier details for this published course
+  -- =========================================================================
+  -- STEP 2: Fetch the tier record (price, frequency, name, etc)
+  -- =========================================================================
   select * into tier_record
-  from public.get_published_course_pricing_tier(p_published_course_id, p_tier_id);
+  from public.get_published_course_pricing_tier(p_published_course_id, p_tier_id)
+  limit 1;
 
-  -- 3. Fetch the effective pricing (accounts for promotions)
-  select * into pricing_info 
-  from public.get_effective_pricing_for_published_tier(p_published_course_id, p_tier_id);
+  -- =========================================================================
+  -- STEP 3: Determine the effective pricing (promotion-aware)
+  -- =========================================================================
+  select * into pricing_info
+  from public.get_effective_pricing_for_published_tier(p_published_course_id, p_tier_id)
+  limit 1;
 
-  -- 4. Determine access end date using the tier's payment frequency
+  -- =========================================================================
+  -- STEP 4: Compute the access expiration date based on frequency
+  -- =========================================================================
   access_end := public.calculate_access_end_date(access_start, tier_record.payment_frequency);
 
-  -- 5. Insert or update the enrollment record
+  -- =========================================================================
+  -- STEP 5: Create or update the course enrollment
+  -- =========================================================================
   insert into public.course_enrollments (
     user_id,
     published_course_id,
@@ -1902,7 +1997,7 @@ begin
     access_end,
     true
   )
-  on conflict (user_id, published_course_id) 
+  on conflict (user_id, published_course_id)
   do update set
     expires_at = excluded.expires_at,
     is_active = true,
@@ -1912,7 +2007,9 @@ begin
     end
   returning id into enrollment_id;
 
-  -- 6. Log the enrollment activity
+  -- =========================================================================
+  -- STEP 6: Log the enrollment activity
+  -- =========================================================================
   insert into public.course_enrollment_activities (
     enrollment_id,
     pricing_tier_id,
@@ -1943,7 +2040,49 @@ begin
     coalesce(p_created_by, p_user_id)
   ) returning id into activity_id;
 
-  -- 7. Update enrollment stats on the published course
+  -- =========================================================================
+  -- STEP 7: If paid tier, validate payment and record transaction
+  -- =========================================================================
+  if not tier_record.is_free then
+    -- Ensure payment metadata is present
+    if p_payment_processor_id is null or p_payment_amount is null then
+      raise exception 'Payment information required for paid enrollment';
+    end if;
+
+    -- Validate that payment matches expected price
+    if p_payment_amount != pricing_info.effective_price then
+      raise exception 'Payment amount does not match tier price';
+    end if;
+
+    -- Log payment
+    insert into public.course_payments (
+      enrollment_id,
+      enrollment_activity_id,
+      amount_paid,
+      currency_code,
+      payment_method,
+      payment_processor_id,
+      net_amount,
+      payment_status,
+      organization_id,
+      created_by
+    ) values (
+      enrollment_id,
+      activity_id,
+      p_payment_amount,
+      tier_record.currency_code::currency_code,
+      p_payment_method,
+      p_payment_processor_id,
+      p_payment_amount, -- TODO: apply payment processor fee subtraction
+      'completed',
+      published_course_record.organization_id,
+      coalesce(p_created_by, p_user_id)
+    ) returning id into payment_id;
+  end if;
+
+  -- =========================================================================
+  -- STEP 8: Update overall stats on the published course
+  -- =========================================================================
   update public.published_courses 
   set 
     total_enrollments = total_enrollments + 1,
@@ -1957,7 +2096,18 @@ begin
     updated_at = timezone('utc', now())
   where id = p_published_course_id;
 
-  return enrollment_id;
+  -- =========================================================================
+  -- STEP 9: Return a structured result
+  -- =========================================================================
+  result := jsonb_build_object(
+    'enrollment_id', enrollment_id,
+    'activity_id', activity_id,
+    'payment_id', case when tier_record.is_free then null else payment_id end,
+    'is_free', tier_record.is_free,
+    'access_granted', true
+  );
+
+  return result;
 end;
 $function$
 ;
@@ -2112,7 +2262,9 @@ declare
 begin
   -- Retrieve the tier's pricing and promotional details
   select * into tier_record
-  from get_published_course_pricing_tier(p_published_course_id, p_tier_id);
+  from public.get_published_course_pricing_tier(p_published_course_id, p_tier_id)
+  limit 1;
+
 
   -- Determine if a promotion is currently active
   if tier_record.promotional_price is not null
@@ -2147,7 +2299,7 @@ declare
 begin
   -- Extract the pricing tier JSON object matching the tier ID
   select tier into tier_data
-  from published_courses pc,
+  from public.published_courses pc,
     jsonb_array_elements(pc.pricing_tiers) as tier
   where pc.id = p_published_course_id
     and pc.is_active = true                               -- Only consider active courses
@@ -3507,6 +3659,48 @@ grant trigger on table "public"."course_enrollments" to "service_role";
 grant truncate on table "public"."course_enrollments" to "service_role";
 
 grant update on table "public"."course_enrollments" to "service_role";
+
+grant delete on table "public"."course_payments" to "anon";
+
+grant insert on table "public"."course_payments" to "anon";
+
+grant references on table "public"."course_payments" to "anon";
+
+grant select on table "public"."course_payments" to "anon";
+
+grant trigger on table "public"."course_payments" to "anon";
+
+grant truncate on table "public"."course_payments" to "anon";
+
+grant update on table "public"."course_payments" to "anon";
+
+grant delete on table "public"."course_payments" to "authenticated";
+
+grant insert on table "public"."course_payments" to "authenticated";
+
+grant references on table "public"."course_payments" to "authenticated";
+
+grant select on table "public"."course_payments" to "authenticated";
+
+grant trigger on table "public"."course_payments" to "authenticated";
+
+grant truncate on table "public"."course_payments" to "authenticated";
+
+grant update on table "public"."course_payments" to "authenticated";
+
+grant delete on table "public"."course_payments" to "service_role";
+
+grant insert on table "public"."course_payments" to "service_role";
+
+grant references on table "public"."course_payments" to "service_role";
+
+grant select on table "public"."course_payments" to "service_role";
+
+grant trigger on table "public"."course_payments" to "service_role";
+
+grant truncate on table "public"."course_payments" to "service_role";
+
+grant update on table "public"."course_payments" to "service_role";
 
 grant delete on table "public"."course_pricing_tiers" to "anon";
 
