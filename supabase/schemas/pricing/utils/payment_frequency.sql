@@ -1,4 +1,4 @@
-create type payment_frequency as enum (
+create type public.payment_frequency as enum (
   'monthly',        -- every month (standard)
   'bi_monthly',     -- every 2 months
   'quarterly',      -- every 3 months (business-friendly)

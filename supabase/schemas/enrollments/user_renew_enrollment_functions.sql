@@ -60,7 +60,7 @@ begin
     tier_record.tier_name,
     tier_record.tier_description,
     tier_record.payment_frequency,
-    tier_record.currency_code::currency_code,
+    tier_record.currency_code::public.currency_code,
     tier_record.is_free,
     pricing_info.effective_price,
     pricing_info.promotional_price,

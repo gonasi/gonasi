@@ -113,12 +113,20 @@ export const initializeTransactionEnroll = async ({
         };
       }
 
+      console.log('Enroll data *********: ', enrollData);
+
       // ✅ At this point: enrollData IS your jsonb response
       // e.g. { enrollment_id, activity_id, is_free, ... }
 
       return {
         success: true,
-        message: 'You’ve successfully enrolled in the course!',
+        message:
+          typeof enrollData === 'object' &&
+          enrollData !== null &&
+          'message' in enrollData &&
+          typeof enrollData.message === 'string'
+            ? enrollData.message
+            : 'You’ve successfully enrolled in the course!',
         data: {
           status: true,
           message: 'You’ve successfully enrolled in the course!',

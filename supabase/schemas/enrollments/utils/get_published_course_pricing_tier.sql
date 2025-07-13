@@ -60,7 +60,7 @@ begin
   -- Return the parsed tier fields, casting from JSONB to proper types
   return query select
     (tier_data->>'id')::uuid,    -- Cast to UUID
-    (tier_data->>'payment_frequency')::payment_frequency,
+    (tier_data->>'payment_frequency')::public.payment_frequency,
     (tier_data->>'is_free')::boolean,
     (tier_data->>'price')::numeric(19,4),
     tier_data->>'currency_code',
