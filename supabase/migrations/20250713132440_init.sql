@@ -54,6 +54,38 @@ create table "public"."course_categories" (
 
 alter table "public"."course_categories" enable row level security;
 
+create table "public"."course_enrollment_activities" (
+    "id" uuid not null default uuid_generate_v4(),
+    "enrollment_id" uuid not null,
+    "pricing_tier_id" uuid,
+    "tier_name" text,
+    "tier_description" text,
+    "payment_frequency" payment_frequency not null,
+    "currency_code" currency_code not null,
+    "is_free" boolean not null,
+    "price_paid" numeric(19,4) not null default 0,
+    "promotional_price" numeric(19,4),
+    "was_promotional" boolean not null default false,
+    "access_start" timestamp with time zone not null,
+    "access_end" timestamp with time zone not null,
+    "created_at" timestamp with time zone not null default timezone('utc'::text, now()),
+    "created_by" uuid not null
+);
+
+
+create table "public"."course_enrollments" (
+    "id" uuid not null default gen_random_uuid(),
+    "user_id" uuid not null,
+    "published_course_id" uuid not null,
+    "organization_id" uuid not null,
+    "enrolled_at" timestamp with time zone not null default timezone('utc'::text, now()),
+    "expires_at" timestamp with time zone,
+    "completed_at" timestamp with time zone,
+    "is_active" boolean not null default true,
+    "created_at" timestamp with time zone not null default timezone('utc'::text, now())
+);
+
+
 create table "public"."course_pricing_tiers" (
     "id" uuid not null default uuid_generate_v4(),
     "organization_id" uuid not null,
@@ -349,6 +381,10 @@ CREATE UNIQUE INDEX chapters_pkey ON public.chapters USING btree (id);
 
 CREATE UNIQUE INDEX course_categories_pkey ON public.course_categories USING btree (id);
 
+CREATE UNIQUE INDEX course_enrollment_activities_pkey ON public.course_enrollment_activities USING btree (id);
+
+CREATE UNIQUE INDEX course_enrollments_pkey ON public.course_enrollments USING btree (id);
+
 CREATE UNIQUE INDEX course_pricing_tiers_pkey ON public.course_pricing_tiers USING btree (id);
 
 CREATE UNIQUE INDEX course_sub_categories_pkey ON public.course_sub_categories USING btree (id);
@@ -372,6 +408,20 @@ CREATE INDEX idx_chapters_updated_by ON public.chapters USING btree (updated_by)
 CREATE INDEX idx_course_categories_created_by ON public.course_categories USING btree (created_by);
 
 CREATE INDEX idx_course_categories_updated_by ON public.course_categories USING btree (updated_by);
+
+CREATE INDEX idx_course_enrollments_completed_at ON public.course_enrollments USING btree (completed_at);
+
+CREATE INDEX idx_course_enrollments_enrolled_at ON public.course_enrollments USING btree (enrolled_at);
+
+CREATE INDEX idx_course_enrollments_expires_at ON public.course_enrollments USING btree (expires_at);
+
+CREATE INDEX idx_course_enrollments_is_active ON public.course_enrollments USING btree (is_active);
+
+CREATE INDEX idx_course_enrollments_organization_id ON public.course_enrollments USING btree (organization_id);
+
+CREATE INDEX idx_course_enrollments_published_course_id ON public.course_enrollments USING btree (published_course_id);
+
+CREATE INDEX idx_course_enrollments_user_id ON public.course_enrollments USING btree (user_id);
 
 CREATE INDEX idx_course_pricing_tiers_course_id ON public.course_pricing_tiers USING btree (course_id);
 
@@ -412,6 +462,16 @@ CREATE INDEX idx_courses_subcategory_id ON public.courses USING btree (subcatego
 CREATE INDEX idx_courses_updated_by ON public.courses USING btree (updated_by);
 
 CREATE INDEX idx_courses_visibility ON public.courses USING btree (visibility);
+
+CREATE INDEX idx_enrollment_activities_access_window ON public.course_enrollment_activities USING btree (access_start, access_end);
+
+CREATE INDEX idx_enrollment_activities_created_at ON public.course_enrollment_activities USING btree (created_at);
+
+CREATE INDEX idx_enrollment_activities_created_by ON public.course_enrollment_activities USING btree (created_by);
+
+CREATE INDEX idx_enrollment_activities_enrollment_id ON public.course_enrollment_activities USING btree (enrollment_id);
+
+CREATE INDEX idx_enrollment_activities_pricing_tier_id ON public.course_enrollment_activities USING btree (pricing_tier_id);
 
 CREATE INDEX idx_file_library_course_id ON public.file_library USING btree (course_id);
 
@@ -595,6 +655,8 @@ CREATE UNIQUE INDEX uq_one_active_published_course ON public.published_courses U
 
 CREATE UNIQUE INDEX uq_one_active_tier_per_frequency ON public.course_pricing_tiers USING btree (course_id, payment_frequency, is_active);
 
+CREATE UNIQUE INDEX uq_user_course ON public.course_enrollments USING btree (user_id, published_course_id);
+
 CREATE UNIQUE INDEX user_roles_pkey ON public.user_roles USING btree (id);
 
 CREATE UNIQUE INDEX user_roles_user_id_role_key ON public.user_roles USING btree (user_id, role);
@@ -602,6 +664,10 @@ CREATE UNIQUE INDEX user_roles_user_id_role_key ON public.user_roles USING btree
 alter table "public"."chapters" add constraint "chapters_pkey" PRIMARY KEY using index "chapters_pkey";
 
 alter table "public"."course_categories" add constraint "course_categories_pkey" PRIMARY KEY using index "course_categories_pkey";
+
+alter table "public"."course_enrollment_activities" add constraint "course_enrollment_activities_pkey" PRIMARY KEY using index "course_enrollment_activities_pkey";
+
+alter table "public"."course_enrollments" add constraint "course_enrollments_pkey" PRIMARY KEY using index "course_enrollments_pkey";
 
 alter table "public"."course_pricing_tiers" add constraint "course_pricing_tiers_pkey" PRIMARY KEY using index "course_pricing_tiers_pkey";
 
@@ -666,6 +732,32 @@ alter table "public"."course_categories" validate constraint "course_categories_
 alter table "public"."course_categories" add constraint "course_categories_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
 
 alter table "public"."course_categories" validate constraint "course_categories_updated_by_fkey";
+
+alter table "public"."course_enrollment_activities" add constraint "course_enrollment_activities_created_by_fkey" FOREIGN KEY (created_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
+
+alter table "public"."course_enrollment_activities" validate constraint "course_enrollment_activities_created_by_fkey";
+
+alter table "public"."course_enrollment_activities" add constraint "course_enrollment_activities_enrollment_id_fkey" FOREIGN KEY (enrollment_id) REFERENCES course_enrollments(id) ON DELETE CASCADE not valid;
+
+alter table "public"."course_enrollment_activities" validate constraint "course_enrollment_activities_enrollment_id_fkey";
+
+alter table "public"."course_enrollment_activities" add constraint "course_enrollment_activities_pricing_tier_id_fkey" FOREIGN KEY (pricing_tier_id) REFERENCES course_pricing_tiers(id) not valid;
+
+alter table "public"."course_enrollment_activities" validate constraint "course_enrollment_activities_pricing_tier_id_fkey";
+
+alter table "public"."course_enrollments" add constraint "course_enrollments_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE not valid;
+
+alter table "public"."course_enrollments" validate constraint "course_enrollments_organization_id_fkey";
+
+alter table "public"."course_enrollments" add constraint "course_enrollments_published_course_id_fkey" FOREIGN KEY (published_course_id) REFERENCES published_courses(id) ON DELETE CASCADE not valid;
+
+alter table "public"."course_enrollments" validate constraint "course_enrollments_published_course_id_fkey";
+
+alter table "public"."course_enrollments" add constraint "course_enrollments_user_id_fkey" FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE not valid;
+
+alter table "public"."course_enrollments" validate constraint "course_enrollments_user_id_fkey";
+
+alter table "public"."course_enrollments" add constraint "uq_user_course" UNIQUE using index "uq_user_course";
 
 alter table "public"."course_pricing_tiers" add constraint "chk_free_has_no_promo" CHECK (((is_free = false) OR ((promotional_price IS NULL) AND (promotion_start_date IS NULL) AND (promotion_end_date IS NULL)))) not valid;
 
@@ -1293,6 +1385,25 @@ end;
 $function$
 ;
 
+CREATE OR REPLACE FUNCTION public.calculate_access_end_date(start_date timestamp with time zone, frequency payment_frequency)
+ RETURNS timestamp with time zone
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO ''
+AS $function$
+begin
+  -- Return the corresponding interval added to the start_date
+  return case frequency
+    when 'monthly' then       start_date + interval '1 month'
+    when 'bi_monthly' then    start_date + interval '2 months'
+    when 'quarterly' then     start_date + interval '3 months'
+    when 'semi_annual' then   start_date + interval '6 months'
+    when 'annual' then        start_date + interval '12 months'
+  end;
+end;
+$function$
+;
+
 CREATE OR REPLACE FUNCTION public.can_accept_new_member(arg_org_id uuid)
  RETURNS boolean
  LANGUAGE sql
@@ -1741,6 +1852,116 @@ end;
 $function$
 ;
 
+CREATE OR REPLACE FUNCTION public.enroll_user_in_published_course(p_user_id uuid, p_published_course_id uuid, p_tier_id text, p_created_by uuid DEFAULT NULL::uuid)
+ RETURNS uuid
+ LANGUAGE plpgsql
+ SET search_path TO ''
+AS $function$
+declare
+  enrollment_id uuid;                 -- ID of the enrollment (to be returned)
+  published_course_record record;    -- Holds the course data
+  tier_record record;                -- Holds pricing tier info
+  pricing_info record;               -- Effective pricing data (price or promo)
+  access_start timestamptz := timezone('utc', now()); -- When access begins
+  access_end timestamptz;            -- When access ends (based on frequency)
+  activity_id uuid;                  -- ID of the associated activity log
+begin
+  -- 1. Fetch the published course details, ensuring it's active
+  select * into published_course_record
+  from public.published_courses 
+  where id = p_published_course_id and is_active = true;
+
+  if not found then
+    raise exception 'Published course not found or inactive';
+  end if;
+
+  -- 2. Fetch the pricing tier details for this published course
+  select * into tier_record
+  from public.get_published_course_pricing_tier(p_published_course_id, p_tier_id);
+
+  -- 3. Fetch the effective pricing (accounts for promotions)
+  select * into pricing_info 
+  from public.get_effective_pricing_for_published_tier(p_published_course_id, p_tier_id);
+
+  -- 4. Determine access end date using the tier's payment frequency
+  access_end := public.calculate_access_end_date(access_start, tier_record.payment_frequency);
+
+  -- 5. Insert or update the enrollment record
+  insert into public.course_enrollments (
+    user_id,
+    published_course_id,
+    organization_id,
+    enrolled_at,
+    expires_at,
+    is_active
+  ) values (
+    p_user_id,
+    p_published_course_id,
+    published_course_record.organization_id,
+    access_start,
+    access_end,
+    true
+  )
+  on conflict (user_id, published_course_id) 
+  do update set
+    expires_at = excluded.expires_at,
+    is_active = true,
+    enrolled_at = case 
+      when public.course_enrollments.is_active = false then excluded.enrolled_at
+      else public.course_enrollments.enrolled_at
+    end
+  returning id into enrollment_id;
+
+  -- 6. Log the enrollment activity
+  insert into public.course_enrollment_activities (
+    enrollment_id,
+    pricing_tier_id,
+    tier_name,
+    tier_description,
+    payment_frequency,
+    currency_code,
+    is_free,
+    price_paid,
+    promotional_price,
+    was_promotional,
+    access_start,
+    access_end,
+    created_by
+  ) values (
+    enrollment_id,
+    p_tier_id::uuid,
+    tier_record.tier_name,
+    tier_record.tier_description,
+    tier_record.payment_frequency,
+    tier_record.currency_code::public.currency_code,
+    tier_record.is_free,
+    pricing_info.effective_price,
+    pricing_info.promotional_price,
+    pricing_info.is_promotional,
+    access_start,
+    access_end,
+    coalesce(p_created_by, p_user_id)
+  ) returning id into activity_id;
+
+  -- 7. Update enrollment stats on the published course
+  update public.published_courses 
+  set 
+    total_enrollments = total_enrollments + 1,
+    active_enrollments = (
+      select count(*)
+      from public.course_enrollments ce
+      where ce.published_course_id = p_published_course_id
+        and ce.is_active = true
+        and (ce.expires_at is null or ce.expires_at > timezone('utc', now()))
+    ),
+    updated_at = timezone('utc', now())
+  where id = p_published_course_id;
+
+  return enrollment_id;
+end;
+$function$
+;
+
 CREATE OR REPLACE FUNCTION public.ensure_incremented_course_version()
  RETURNS trigger
  LANGUAGE plpgsql
@@ -1876,6 +2097,100 @@ begin
     from unnest(all_frequencies) as freq
     where used_frequencies is null or freq != all(used_frequencies)
   );
+end;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.get_effective_pricing_for_published_tier(p_published_course_id uuid, p_tier_id text)
+ RETURNS TABLE(effective_price numeric, is_promotional boolean, promotional_price numeric)
+ LANGUAGE plpgsql
+ SET search_path TO ''
+AS $function$
+declare
+  tier_record record;
+  now_utc timestamptz := timezone('utc', now());  -- Use UTC for reliable comparisons
+begin
+  -- Retrieve the tier's pricing and promotional details
+  select * into tier_record
+  from get_published_course_pricing_tier(p_published_course_id, p_tier_id);
+
+  -- Determine if a promotion is currently active
+  if tier_record.promotional_price is not null
+    and tier_record.promotion_start_date is not null
+    and tier_record.promotion_end_date is not null
+    and tier_record.promotion_start_date <= now_utc
+    and tier_record.promotion_end_date >= now_utc then
+
+    -- Use promotional price if promotion is active
+    return query select 
+      tier_record.promotional_price,
+      true,
+      tier_record.promotional_price;
+  else
+    -- Use regular price if no active promotion
+    return query select 
+      tier_record.price,
+      false,
+      tier_record.promotional_price;
+  end if;
+end;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.get_published_course_pricing_tier(p_published_course_id uuid, p_tier_id text)
+ RETURNS TABLE(tier_id text, payment_frequency payment_frequency, is_free boolean, price numeric, currency_code text, promotional_price numeric, promotion_start_date timestamp with time zone, promotion_end_date timestamp with time zone, tier_name text, tier_description text, is_active boolean, "position" integer, is_popular boolean, is_recommended boolean)
+ LANGUAGE plpgsql
+ SET search_path TO ''
+AS $function$
+declare
+  tier_data jsonb;
+begin
+  -- Extract the pricing tier JSON object matching the tier ID
+  select tier into tier_data
+  from published_courses pc,
+    jsonb_array_elements(pc.pricing_tiers) as tier
+  where pc.id = p_published_course_id
+    and pc.is_active = true                               -- Only consider active courses
+    and tier->>'id' = p_tier_id                           -- Match tier by ID
+    and (tier->>'is_active')::boolean = true;             -- Only include active tiers
+
+  -- Raise error if no such tier is found
+  if tier_data is null then
+    raise exception 'Pricing tier not found or inactive: %', p_tier_id;
+  end if;
+
+  -- Return the parsed tier fields, casting from JSONB to proper types
+  return query select
+    tier_data->>'id',
+    (tier_data->>'payment_frequency')::payment_frequency,
+    (tier_data->>'is_free')::boolean,
+    (tier_data->>'price')::numeric(19,4),
+    tier_data->>'currency_code',
+
+    -- Handle nullable promotional price
+    case 
+      when tier_data->>'promotional_price' = 'null' then null
+      else (tier_data->>'promotional_price')::numeric(19,4)
+    end,
+
+    -- Handle nullable promotion start date
+    case 
+      when tier_data->>'promotion_start_date' = 'null' then null
+      else (tier_data->>'promotion_start_date')::timestamptz
+    end,
+
+    -- Handle nullable promotion end date
+    case 
+      when tier_data->>'promotion_end_date' = 'null' then null
+      else (tier_data->>'promotion_end_date')::timestamptz
+    end,
+
+    tier_data->>'tier_name',
+    tier_data->>'tier_description',
+    (tier_data->>'is_active')::boolean,
+    (tier_data->>'position')::integer,
+    (tier_data->>'is_popular')::boolean,
+    (tier_data->>'is_recommended')::boolean;
 end;
 $function$
 ;
@@ -3108,6 +3423,90 @@ grant trigger on table "public"."course_categories" to "service_role";
 grant truncate on table "public"."course_categories" to "service_role";
 
 grant update on table "public"."course_categories" to "service_role";
+
+grant delete on table "public"."course_enrollment_activities" to "anon";
+
+grant insert on table "public"."course_enrollment_activities" to "anon";
+
+grant references on table "public"."course_enrollment_activities" to "anon";
+
+grant select on table "public"."course_enrollment_activities" to "anon";
+
+grant trigger on table "public"."course_enrollment_activities" to "anon";
+
+grant truncate on table "public"."course_enrollment_activities" to "anon";
+
+grant update on table "public"."course_enrollment_activities" to "anon";
+
+grant delete on table "public"."course_enrollment_activities" to "authenticated";
+
+grant insert on table "public"."course_enrollment_activities" to "authenticated";
+
+grant references on table "public"."course_enrollment_activities" to "authenticated";
+
+grant select on table "public"."course_enrollment_activities" to "authenticated";
+
+grant trigger on table "public"."course_enrollment_activities" to "authenticated";
+
+grant truncate on table "public"."course_enrollment_activities" to "authenticated";
+
+grant update on table "public"."course_enrollment_activities" to "authenticated";
+
+grant delete on table "public"."course_enrollment_activities" to "service_role";
+
+grant insert on table "public"."course_enrollment_activities" to "service_role";
+
+grant references on table "public"."course_enrollment_activities" to "service_role";
+
+grant select on table "public"."course_enrollment_activities" to "service_role";
+
+grant trigger on table "public"."course_enrollment_activities" to "service_role";
+
+grant truncate on table "public"."course_enrollment_activities" to "service_role";
+
+grant update on table "public"."course_enrollment_activities" to "service_role";
+
+grant delete on table "public"."course_enrollments" to "anon";
+
+grant insert on table "public"."course_enrollments" to "anon";
+
+grant references on table "public"."course_enrollments" to "anon";
+
+grant select on table "public"."course_enrollments" to "anon";
+
+grant trigger on table "public"."course_enrollments" to "anon";
+
+grant truncate on table "public"."course_enrollments" to "anon";
+
+grant update on table "public"."course_enrollments" to "anon";
+
+grant delete on table "public"."course_enrollments" to "authenticated";
+
+grant insert on table "public"."course_enrollments" to "authenticated";
+
+grant references on table "public"."course_enrollments" to "authenticated";
+
+grant select on table "public"."course_enrollments" to "authenticated";
+
+grant trigger on table "public"."course_enrollments" to "authenticated";
+
+grant truncate on table "public"."course_enrollments" to "authenticated";
+
+grant update on table "public"."course_enrollments" to "authenticated";
+
+grant delete on table "public"."course_enrollments" to "service_role";
+
+grant insert on table "public"."course_enrollments" to "service_role";
+
+grant references on table "public"."course_enrollments" to "service_role";
+
+grant select on table "public"."course_enrollments" to "service_role";
+
+grant trigger on table "public"."course_enrollments" to "service_role";
+
+grant truncate on table "public"."course_enrollments" to "service_role";
+
+grant update on table "public"."course_enrollments" to "service_role";
 
 grant delete on table "public"."course_pricing_tiers" to "anon";
 
@@ -4401,7 +4800,7 @@ create policy "Select: Org members or public can view published_thumbnails"
 on "storage"."objects"
 as permissive
 for select
-to authenticated
+to public
 using (((bucket_id = 'published_thumbnails'::text) AND ((EXISTS ( SELECT 1
    FROM courses c
   WHERE ((c.id = (split_part(objects.name, '/'::text, 1))::uuid) AND (get_user_org_role(c.organization_id, auth.uid()) IS NOT NULL)))) OR (EXISTS ( SELECT 1

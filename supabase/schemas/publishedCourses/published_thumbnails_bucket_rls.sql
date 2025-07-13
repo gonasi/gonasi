@@ -6,7 +6,7 @@
 create policy "Select: Org members or public can view published_thumbnails"
 on storage.objects
 for select
-to authenticated
+to public
 using (
   bucket_id = 'published_thumbnails'
   and (
@@ -27,6 +27,7 @@ using (
     )
   )
 );
+
 
 -- ============================================================================
 -- INSERT: Allow any org member (owner, admin, editor) to upload published_thumbnails

@@ -29,8 +29,8 @@ create table public.course_enrollment_activities (
 -- Indexes
 -- ====================================================================================
 
-create index idx_enrollment_activities_enrollment_id on public.published_course_enrollment_activities (enrollment_id);
-create index idx_enrollment_activities_access_window on public.published_course_enrollment_activities (access_start, access_end);
-create index idx_enrollment_activities_created_by on public.published_course_enrollment_activities (created_by);
-create index idx_enrollment_activities_pricing_tier_id on public.published_course_enrollment_activities (pricing_tier_id);
-create index idx_enrollment_activities_created_at on public.published_course_enrollment_activities (created_at);
+create index idx_enrollment_activities_enrollment_id on public.course_enrollment_activities (enrollment_id);
+create index idx_enrollment_activities_access_window on public.course_enrollment_activities (access_start, access_end);
+create index idx_enrollment_activities_created_by on public.course_enrollment_activities (created_by);
+create index idx_enrollment_activities_pricing_tier_id on public.course_enrollment_activities (pricing_tier_id);
+create index idx_enrollment_activities_created_at on public.course_enrollment_activities (created_at);

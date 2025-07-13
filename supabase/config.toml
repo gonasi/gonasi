@@ -156,7 +156,11 @@ schema_paths = [
   './schemas/publishedCourses/published_courses_schema_and_indexes.sql',
   './schemas/publishedCourses/published_thumbnails_bucket_rls.sql',
 
-  # './schemas/enrollments_schema_indexes_rls.sql',
+  './schemas/enrollments/enrollments_schema_and_indexes.sql',
+  './schemas/enrollments/enrollment_activities_schema_and_indexes.sql',
+
+  './schemas/enrollments/enrollment_utils.sql',
+  './schemas/enrollments/user_enrollment_functions.sql',
 
   # './schemas/enrollment_activities_schema_indexes_rls.sql',
 
