@@ -12,6 +12,7 @@ import { createClient } from '~/lib/supabase/supabase.server';
 
 export async function loader({ request, params }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
+
   const organizationProfile = await getOrganizationProfile({
     supabase,
     organizationId: params.organizationId,
