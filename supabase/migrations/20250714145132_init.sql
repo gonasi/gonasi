@@ -5377,7 +5377,11 @@ on "storage"."objects"
 as permissive
 for delete
 to authenticated
-using (((bucket_id = 'organization_banner_photos'::text) AND (get_user_org_role(((storage.foldername(name))[1])::uuid, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text]))));
+using (((bucket_id = 'organization_banner_photos'::text) AND
+CASE
+    WHEN (POSITION(('/'::text) IN (name)) > 0) THEN (get_user_org_role((split_part(name, '/'::text, 1))::uuid, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text]))
+    ELSE false
+END));
 
 
 create policy "delete_profile: only org owner/admin"
@@ -5385,7 +5389,11 @@ on "storage"."objects"
 as permissive
 for delete
 to authenticated
-using (((bucket_id = 'organization_profile_photos'::text) AND (get_user_org_role(((storage.foldername(name))[1])::uuid, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text]))));
+using (((bucket_id = 'organization_profile_photos'::text) AND
+CASE
+    WHEN (POSITION(('/'::text) IN (name)) > 0) THEN (get_user_org_role((split_part(name, '/'::text, 1))::uuid, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text]))
+    ELSE false
+END));
 
 
 create policy "insert: org owner/admin or course creator with storage limit"
@@ -5403,7 +5411,11 @@ on "storage"."objects"
 as permissive
 for insert
 to authenticated
-with check (((bucket_id = 'organization_banner_photos'::text) AND (get_user_org_role(((storage.foldername(name))[1])::uuid, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text]))));
+with check (((bucket_id = 'organization_banner_photos'::text) AND
+CASE
+    WHEN (POSITION(('/'::text) IN (name)) > 0) THEN (get_user_org_role((split_part(name, '/'::text, 1))::uuid, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text]))
+    ELSE false
+END));
 
 
 create policy "insert_profile: only org owner/admin can upload"
@@ -5411,7 +5423,11 @@ on "storage"."objects"
 as permissive
 for insert
 to authenticated
-with check (((bucket_id = 'organization_profile_photos'::text) AND (get_user_org_role(((storage.foldername(name))[1])::uuid, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text]))));
+with check (((bucket_id = 'organization_profile_photos'::text) AND
+CASE
+    WHEN (POSITION(('/'::text) IN (name)) > 0) THEN (get_user_org_role((split_part(name, '/'::text, 1))::uuid, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text]))
+    ELSE false
+END));
 
 
 create policy "select: org members can view files"
@@ -5429,9 +5445,13 @@ on "storage"."objects"
 as permissive
 for select
 to authenticated, anon
-using (((bucket_id = 'organization_banner_photos'::text) AND (EXISTS ( SELECT 1
-   FROM organizations o
-  WHERE (((o.id)::text = (storage.foldername(o.name))[1]) AND (o.is_public = true))))));
+using (((bucket_id = 'organization_banner_photos'::text) AND
+CASE
+    WHEN (POSITION(('/'::text) IN (name)) > 0) THEN (EXISTS ( SELECT 1
+       FROM organizations o
+      WHERE (((o.id)::text = split_part(o.name, '/'::text, 1)) AND (o.is_public = true))))
+    ELSE false
+END));
 
 
 create policy "select_profile: public if org is public"
@@ -5439,9 +5459,13 @@ on "storage"."objects"
 as permissive
 for select
 to authenticated, anon
-using (((bucket_id = 'organization_profile_photos'::text) AND (EXISTS ( SELECT 1
-   FROM organizations o
-  WHERE (((o.id)::text = (storage.foldername(o.name))[1]) AND (o.is_public = true))))));
+using (((bucket_id = 'organization_profile_photos'::text) AND
+CASE
+    WHEN (POSITION(('/'::text) IN (name)) > 0) THEN (EXISTS ( SELECT 1
+       FROM organizations o
+      WHERE (((o.id)::text = split_part(o.name, '/'::text, 1)) AND (o.is_public = true))))
+    ELSE false
+END));
 
 
 create policy "update: org owner/admin or course creator"
@@ -5464,8 +5488,16 @@ on "storage"."objects"
 as permissive
 for update
 to authenticated
-using (((bucket_id = 'organization_banner_photos'::text) AND (get_user_org_role(((storage.foldername(name))[1])::uuid, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text]))))
-with check (((bucket_id = 'organization_banner_photos'::text) AND (get_user_org_role(((storage.foldername(name))[1])::uuid, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text]))));
+using (((bucket_id = 'organization_banner_photos'::text) AND
+CASE
+    WHEN (POSITION(('/'::text) IN (name)) > 0) THEN (get_user_org_role((split_part(name, '/'::text, 1))::uuid, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text]))
+    ELSE false
+END))
+with check (((bucket_id = 'organization_banner_photos'::text) AND
+CASE
+    WHEN (POSITION(('/'::text) IN (name)) > 0) THEN (get_user_org_role((split_part(name, '/'::text, 1))::uuid, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text]))
+    ELSE false
+END));
 
 
 create policy "update_profile: only org owner/admin"
@@ -5473,8 +5505,16 @@ on "storage"."objects"
 as permissive
 for update
 to authenticated
-using (((bucket_id = 'organization_profile_photos'::text) AND (get_user_org_role(((storage.foldername(name))[1])::uuid, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text]))))
-with check (((bucket_id = 'organization_profile_photos'::text) AND (get_user_org_role(((storage.foldername(name))[1])::uuid, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text]))));
+using (((bucket_id = 'organization_profile_photos'::text) AND
+CASE
+    WHEN (POSITION(('/'::text) IN (name)) > 0) THEN (get_user_org_role((split_part(name, '/'::text, 1))::uuid, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text]))
+    ELSE false
+END))
+with check (((bucket_id = 'organization_profile_photos'::text) AND
+CASE
+    WHEN (POSITION(('/'::text) IN (name)) > 0) THEN (get_user_org_role((split_part(name, '/'::text, 1))::uuid, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text]))
+    ELSE false
+END));
 
 
 

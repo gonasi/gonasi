@@ -108,7 +108,8 @@ schema_paths = [
   './schemas/organizations/function_fetch_active_org_members.sql',
   './schemas/organizations/function_accept_organization_invite.sql',
 
-  './schemas/organizations/organizations_profile_banner_buckets_rls.sql',
+  './schemas/organizations/organization_profile_photos_bucket_rls.sql',
+  './schemas/organizations/organization_profile_banner_bucket_rls.sql',
 
 
 
