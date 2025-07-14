@@ -901,20 +901,6 @@
           "maxLength": null
         },
         {
-          "id": "public.course_enrollment_activities.pricing_tier_id",
-          "name": "pricing_tier_id",
-          "columnName": "pricing_tier_id",
-          "type": "uuid",
-          "isRequired": false,
-          "kind": "scalar",
-          "isList": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false,
-          "isId": false,
-          "maxLength": null
-        },
-        {
           "id": "public.course_enrollment_activities.tier_name",
           "name": "tier_name",
           "columnName": "tier_name",
@@ -1090,24 +1076,6 @@
           "relationName": "course_enrollment_activitiesTocourse_enrollments",
           "relationFromFields": [
             "enrollment_id"
-          ],
-          "relationToFields": [
-            "id"
-          ],
-          "isList": false,
-          "isId": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false
-        },
-        {
-          "name": "course_pricing_tiers",
-          "type": "course_pricing_tiers",
-          "isRequired": false,
-          "kind": "object",
-          "relationName": "course_enrollment_activitiesTocourse_pricing_tiers",
-          "relationFromFields": [
-            "pricing_tier_id"
           ],
           "relationToFields": [
             "id"
@@ -2113,20 +2081,6 @@
             "id"
           ],
           "isList": false,
-          "isId": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false
-        },
-        {
-          "name": "course_enrollment_activities",
-          "type": "course_enrollment_activities",
-          "isRequired": false,
-          "kind": "object",
-          "relationName": "course_enrollment_activitiesTocourse_pricing_tiers",
-          "relationFromFields": [],
-          "relationToFields": [],
-          "isList": true,
           "isId": false,
           "isGenerated": false,
           "sequence": false,

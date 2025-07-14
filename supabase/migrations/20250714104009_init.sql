@@ -57,7 +57,6 @@ alter table "public"."course_categories" enable row level security;
 create table "public"."course_enrollment_activities" (
     "id" uuid not null default uuid_generate_v4(),
     "enrollment_id" uuid not null,
-    "pricing_tier_id" uuid,
     "tier_name" text,
     "tier_description" text,
     "payment_frequency" payment_frequency not null,
@@ -511,8 +510,6 @@ CREATE INDEX idx_enrollment_activities_created_by ON public.course_enrollment_ac
 
 CREATE INDEX idx_enrollment_activities_enrollment_id ON public.course_enrollment_activities USING btree (enrollment_id);
 
-CREATE INDEX idx_enrollment_activities_pricing_tier_id ON public.course_enrollment_activities USING btree (pricing_tier_id);
-
 CREATE INDEX idx_file_library_course_id ON public.file_library USING btree (course_id);
 
 CREATE INDEX idx_file_library_created_by ON public.file_library USING btree (created_by);
@@ -782,10 +779,6 @@ alter table "public"."course_enrollment_activities" validate constraint "course_
 alter table "public"."course_enrollment_activities" add constraint "course_enrollment_activities_enrollment_id_fkey" FOREIGN KEY (enrollment_id) REFERENCES course_enrollments(id) ON DELETE CASCADE not valid;
 
 alter table "public"."course_enrollment_activities" validate constraint "course_enrollment_activities_enrollment_id_fkey";
-
-alter table "public"."course_enrollment_activities" add constraint "course_enrollment_activities_pricing_tier_id_fkey" FOREIGN KEY (pricing_tier_id) REFERENCES course_pricing_tiers(id) not valid;
-
-alter table "public"."course_enrollment_activities" validate constraint "course_enrollment_activities_pricing_tier_id_fkey";
 
 alter table "public"."course_enrollments" add constraint "course_enrollments_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE not valid;
 
@@ -2235,7 +2228,6 @@ begin
   
   insert into public.course_enrollment_activities (
     enrollment_id,              -- Links to the enrollment record
-    pricing_tier_id,            -- Which tier was purchased
     tier_name,                  -- Name of the tier (stored for historical purposes)
     tier_description,           -- Description of the tier
     payment_frequency,          -- How often payment is required
@@ -2249,7 +2241,6 @@ begin
     created_by                  -- Who performed the enrollment
   ) values (
     enrollment_id,
-    tier_record.tier_id,
     tier_record.tier_name,
     tier_record.tier_description,
     tier_record.payment_frequency,
@@ -2527,6 +2518,61 @@ begin
       false,
       tier_record.promotional_price;
   end if;
+end;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.get_enrollment_status(p_user_id uuid, p_published_course_id uuid)
+ RETURNS TABLE(enrollment_id uuid, is_enrolled boolean, is_active boolean, expires_at timestamp with time zone, days_remaining integer, latest_activity_id uuid)
+ LANGUAGE plpgsql
+ STABLE
+AS $function$
+declare
+  enrollment_expires_at timestamptz;
+  enrollment_id_val uuid;
+  latest_activity_id_val uuid;
+  now_utc timestamptz := timezone('utc', now());
+begin
+  -- Find active enrollment
+  select id, expires_at
+    into enrollment_id_val, enrollment_expires_at
+  from public.course_enrollments
+  where user_id = p_user_id
+    and published_course_id = p_published_course_id
+    and is_active = true
+  limit 1;
+
+  -- Not enrolled
+  if not found then
+    return query select
+      null::uuid,  -- enrollment_id
+      false,       -- is_enrolled
+      false,       -- is_active
+      null::timestamptz,
+      null::integer,
+      null::uuid;  -- latest_activity_id
+    return;
+  end if;
+
+  -- Get latest activity
+  select id
+    into latest_activity_id_val
+  from public.course_enrollment_activities
+  where enrollment_id = enrollment_id_val
+  order by created_at desc
+  limit 1;
+
+  -- Return detailed enrollment status
+  return query select
+    enrollment_id_val,
+    true,
+    enrollment_expires_at is null or enrollment_expires_at > now_utc,
+    enrollment_expires_at,
+    case
+      when enrollment_expires_at is null then null
+      else extract(day from enrollment_expires_at - now_utc)::int
+    end,
+    latest_activity_id_val;
 end;
 $function$
 ;
@@ -3707,6 +3753,32 @@ AS $function$
 begin
   new.updated_at = timezone('utc', clock_timestamp());
   return new;
+end;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.user_has_active_access(p_user_id uuid, p_published_course_id uuid)
+ RETURNS boolean
+ LANGUAGE plpgsql
+ STABLE
+AS $function$
+declare
+  enrollment_expires_at timestamptz;
+  now_utc timestamptz := timezone('utc', now());
+begin
+  select expires_at
+    into enrollment_expires_at
+  from public.course_enrollments
+  where user_id = p_user_id
+    and published_course_id = p_published_course_id
+    and is_active = true
+  limit 1;
+
+  if not found then
+    return false;
+  end if;
+
+  return enrollment_expires_at is null or enrollment_expires_at > now_utc;
 end;
 $function$
 ;

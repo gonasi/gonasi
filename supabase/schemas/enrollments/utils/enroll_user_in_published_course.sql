@@ -233,7 +233,6 @@ begin
   
   insert into public.course_enrollment_activities (
     enrollment_id,              -- Links to the enrollment record
-    pricing_tier_id,            -- Which tier was purchased
     tier_name,                  -- Name of the tier (stored for historical purposes)
     tier_description,           -- Description of the tier
     payment_frequency,          -- How often payment is required
@@ -247,7 +246,6 @@ begin
     created_by                  -- Who performed the enrollment
   ) values (
     enrollment_id,
-    tier_record.tier_id,
     tier_record.tier_name,
     tier_record.tier_description,
     tier_record.payment_frequency,

@@ -190,7 +190,6 @@ export type Database = {
           is_free: boolean
           payment_frequency: Database["public"]["Enums"]["payment_frequency"]
           price_paid: number
-          pricing_tier_id: string | null
           promotional_price: number | null
           tier_description: string | null
           tier_name: string | null
@@ -207,7 +206,6 @@ export type Database = {
           is_free: boolean
           payment_frequency: Database["public"]["Enums"]["payment_frequency"]
           price_paid?: number
-          pricing_tier_id?: string | null
           promotional_price?: number | null
           tier_description?: string | null
           tier_name?: string | null
@@ -224,7 +222,6 @@ export type Database = {
           is_free?: boolean
           payment_frequency?: Database["public"]["Enums"]["payment_frequency"]
           price_paid?: number
-          pricing_tier_id?: string | null
           promotional_price?: number | null
           tier_description?: string | null
           tier_name?: string | null
@@ -250,13 +247,6 @@ export type Database = {
             columns: ["enrollment_id"]
             isOneToOne: false
             referencedRelation: "course_enrollments"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "course_enrollment_activities_pricing_tier_id_fkey"
-            columns: ["pricing_tier_id"]
-            isOneToOne: false
-            referencedRelation: "course_pricing_tiers"
             referencedColumns: ["id"]
           },
         ]
@@ -1783,6 +1773,17 @@ export type Database = {
           promotional_price: number
         }[]
       }
+      get_enrollment_status: {
+        Args: { p_user_id: string; p_published_course_id: string }
+        Returns: {
+          enrollment_id: string
+          is_enrolled: boolean
+          is_active: boolean
+          expires_at: string
+          days_remaining: number
+          latest_activity_id: string
+        }[]
+      }
       get_published_course_pricing_tier: {
         Args: { p_published_course_id: string; p_tier_id: string }
         Returns: {
@@ -1867,6 +1868,10 @@ export type Database = {
       switch_course_pricing_model: {
         Args: { p_course_id: string; p_user_id: string; p_target_model: string }
         Returns: undefined
+      }
+      user_has_active_access: {
+        Args: { p_user_id: string; p_published_course_id: string }
+        Returns: boolean
       }
     }
     Enums: {
