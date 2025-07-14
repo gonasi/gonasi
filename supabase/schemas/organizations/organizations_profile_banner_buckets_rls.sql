@@ -11,8 +11,8 @@
 -- ================================================================
 -- 🛡️ Policies for organization_profile_photos
 -- ================================================================
-
 -- ✅ INSERT
+-- 📤 INSERT
 create policy "insert_profile: only org owner/admin can upload"
 on storage.objects
 for insert
@@ -60,8 +60,6 @@ using (
   bucket_id = 'organization_profile_photos'
   and public.get_user_org_role((storage.foldername(name))[1]::uuid, (select auth.uid())) in ('owner', 'admin')
 );
-
-
 
 -- ================================================================
 -- 🛡️ Policies for organization_banner_photos

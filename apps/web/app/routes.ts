@@ -195,7 +195,21 @@ export default [
       ':organizationId/settings',
       'routes/organizations/settings/organization-settings-index.tsx',
       [
-        route('organization-profile', 'routes/organizations/settings/organization-profile.tsx'),
+        route(
+          'organization-profile',
+          'routes/organizations/settings/organization-profile/organization-profile-index.tsx',
+          [
+            // route(
+            //   'personal-information',
+            //   'routes/myProfile/settings/account-settings/updates/update-personal-information.tsx',
+            // ),
+            route(
+              'update-profile-photo',
+              'routes/organizations/settings/organization-profile/update-organization-profile-photo.tsx',
+            ),
+          ],
+        ),
+
         route('organization-security', 'routes/organizations/settings/organization-security.tsx'),
         route('organization-danger', 'routes/organizations/settings/organization-danger.tsx', [
           route('leave', 'routes/organizations/settings/leave-organization.tsx'),
