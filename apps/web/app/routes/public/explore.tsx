@@ -1,5 +1,6 @@
 import { Suspense } from 'react';
 import { Await, NavLink, useLoaderData, useLocation } from 'react-router';
+import { Play } from 'lucide-react';
 
 import { fetchPublishedPublicCourses } from '@gonasi/database/publishedCourses';
 
@@ -10,6 +11,8 @@ import { NotFoundCard } from '~/components/cards';
 import { GoCardContent, GoCourseHeader, GoThumbnail } from '~/components/cards/go-course-card';
 import { GoPricingSheet } from '~/components/cards/go-course-card/GoPricingSheet';
 import { Spinner } from '~/components/loaders';
+import { Badge } from '~/components/ui/badge';
+import { NavLinkButton } from '~/components/ui/button';
 import { createClient } from '~/lib/supabase/supabase.server';
 import { cn } from '~/lib/utils';
 
@@ -101,10 +104,11 @@ export default function Explore() {
                       id,
                       name,
                       description,
-                      signed_url,
+                      image_url,
                       blur_hash,
                       pricing_tiers,
-                      organizations: { handle, name: orgName, signed_avatar_url },
+                      course_enrollments,
+                      organizations: { handle, name: orgName, avatar_url },
                     }) => (
                       <NavLink
                         key={id}
@@ -119,11 +123,15 @@ export default function Explore() {
                             )}
                           >
                             <GoThumbnail
-                              iconUrl={signed_url}
+                              iconUrl={image_url}
                               blurHash={blur_hash}
                               name={name}
                               className='rounded-t-none'
-                              // badges={['ugali', 'mboga']}
+                              badges={[
+                                course_enrollments[0]?.is_active && (
+                                  <Badge variant='success'>Active</Badge>
+                                ),
+                              ]}
                             />
                             <GoCardContent>
                               <GoCourseHeader
@@ -138,7 +146,7 @@ export default function Explore() {
                                   {({ isPending }) => (
                                     <UserAvatar
                                       username={orgName}
-                                      imageUrl={signed_avatar_url}
+                                      imageUrl={avatar_url}
                                       size='xs'
                                       isPending={isPending}
                                       alwaysShowUsername
@@ -148,8 +156,20 @@ export default function Explore() {
                               </div>
                               <div className='flex w-full items-center justify-between'>
                                 <div />
-                                <div>
-                                  <GoPricingSheet pricingData={pricing_tiers} />
+                                <div className='py-2'>
+                                  {course_enrollments[0]?.is_active ? (
+                                    <div className='py-1'>
+                                      <NavLinkButton
+                                        to={`/c/${id}?${new URLSearchParams({ redirectTo })}`}
+                                        rightIcon={<Play />}
+                                        variant='secondary'
+                                      >
+                                        Resume Course
+                                      </NavLinkButton>
+                                    </div>
+                                  ) : (
+                                    <GoPricingSheet pricingData={pricing_tiers} />
+                                  )}
                                 </div>
                               </div>
                             </GoCardContent>
