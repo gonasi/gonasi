@@ -15,6 +15,7 @@ export default [
     ]),
 
     route('api/check-username-exists', 'routes/api/check-username-exists.ts'),
+    route('api/check-handle-exists/:organizationId', 'routes/api/check-handle-exists.ts'),
   ]),
 
   layout('routes/layouts/myProfile/profile-plain-layout.tsx', [
@@ -199,10 +200,10 @@ export default [
           'organization-profile',
           'routes/organizations/settings/organization-profile/organization-profile-index.tsx',
           [
-            // route(
-            //   'personal-information',
-            //   'routes/myProfile/settings/account-settings/updates/update-personal-information.tsx',
-            // ),
+            route(
+              'organization-information',
+              'routes/organizations/settings/organization-profile/update-organization-information.tsx',
+            ),
             route(
               'update-profile-photo',
               'routes/organizations/settings/organization-profile/update-organization-profile-photo.tsx',

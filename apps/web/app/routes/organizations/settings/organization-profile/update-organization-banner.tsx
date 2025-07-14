@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { Area, Point } from 'react-easy-crop';
 import Cropper from 'react-easy-crop';
-import { Form, useFetcher, useOutletContext } from 'react-router';
+import { Form, useFetcher } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { CircleX, Crop, Upload } from 'lucide-react';
 import { RemixFormProvider, useRemixForm } from 'remix-hook-form';
@@ -13,7 +13,6 @@ import {
 } from '@gonasi/schemas/organizations/settings/profile';
 
 import type { Route } from './+types/update-organization-banner';
-import type { loader as organizationLoader } from './organization-profile-index';
 
 import { Button } from '~/components/ui/button';
 import { FormDescription } from '~/components/ui/forms/elements/Common';
@@ -78,10 +77,6 @@ const createCroppedImage = (
 };
 
 export default function UpdateOrganizationBanner({ params }: Route.ComponentProps) {
-  const { data } = useOutletContext<{
-    data: Awaited<ReturnType<typeof organizationLoader>>;
-  }>();
-
   const fetcher = useFetcher();
   const isPending = useIsPending();
 

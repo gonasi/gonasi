@@ -1,6 +1,6 @@
 import { Outlet } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Pencil } from 'lucide-react';
+import { Link as LucideLink, Pencil } from 'lucide-react';
 import { getValidatedFormData } from 'remix-hook-form';
 import { dataWithError, redirectWithSuccess } from 'remix-toast';
 import type z from 'zod';
@@ -8,6 +8,7 @@ import type z from 'zod';
 import {
   getOrganizationProfile,
   updateOrganizationBanner,
+  updateOrganizationProfileInformation,
   updateOrganizationProfilePicture,
 } from '@gonasi/database/organizations';
 import { OrganizationSettingsUpdateSchema } from '@gonasi/schemas/organizations/settings/profile';
@@ -61,9 +62,9 @@ export async function action({ request, params }: Route.ActionArgs) {
       case 'organization-banner':
         result = await updateOrganizationBanner({ supabase, data });
         break;
-      // case 'profile-visibility':
-      //   result = await updateProfileVisibility(supabase, data);
-      //   break;
+      case 'organization-information':
+        result = await updateOrganizationProfileInformation({ supabase, updates: data });
+        break;
       default:
         throw new Error(`Unsupported update type: ${data}`);
     }
@@ -132,11 +133,24 @@ export default function OrganizationProfile({ params, loaderData }: Route.Compon
           <div>
             <h3 className='text-lg'>{loaderData.name}</h3>
             <h4 className='font-secondary text-muted-foreground text-sm'>{loaderData.handle}</h4>
-            <p className='text-muted-foreground font-secondary text-xs'>{loaderData.website_url}</p>
+
+            {loaderData.description ? (
+              <p className='font-secondary text-muted-foreground pt-4 text-sm'>
+                {loaderData.description}
+              </p>
+            ) : null}
+            {loaderData.website_url ? (
+              <div className='mt-4 flex items-center space-x-1 text-xs'>
+                <LucideLink size={12} />
+                <a href={loaderData.website_url} target='_blank' rel='noreferrer'>
+                  {loaderData.website_url}
+                </a>
+              </div>
+            ) : null}
           </div>
           <div>
             <IconNavLink
-              to={`/${params.organizationId}/settings/profile-information/personal-information`}
+              to={`/${params.organizationId}/settings/organization-profile/organization-information`}
               icon={Pencil}
               className='bg-card border-background flex-shrink-0 rounded-full border-2 p-2'
               size={20}
