@@ -104,7 +104,7 @@ export default function Explore() {
                       signed_url,
                       blur_hash,
                       pricing_tiers,
-                      organizations: { name: orgName },
+                      organizations: { name: orgName, signed_avatar_url },
                     }) => (
                       <NavLink
                         key={id}
@@ -134,7 +134,11 @@ export default function Explore() {
                                 {description}
                               </p>
                               <div className='pt-2'>
-                                <UserAvatar username={orgName} imageUrl={null} size='sm' />
+                                <UserAvatar
+                                  username={orgName}
+                                  imageUrl={signed_avatar_url}
+                                  size='xs'
+                                />
                               </div>
                               <div className='flex w-full items-center justify-between'>
                                 <div />

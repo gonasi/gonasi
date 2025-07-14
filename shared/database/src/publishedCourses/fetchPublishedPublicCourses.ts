@@ -10,9 +10,9 @@ import {
 import type { TypedSupabaseClient } from '../client';
 import { PUBLISHED_THUMBNAILS } from '../constants';
 import { getPaginationRange } from '../constants/utils';
+import { createOrganizationAvatarSignedUrl } from '../organizations/createOrganizationAvatarSignedUrl';
 import type { FetchDataParams } from '../types';
 
-// Create a helper function to infer the exact query result type
 const createQueryTypeHelper = (supabase: TypedSupabaseClient) =>
   supabase.from('published_courses').select(
     `
@@ -39,7 +39,7 @@ const createQueryTypeHelper = (supabase: TypedSupabaseClient) =>
       completion_rate,
       average_rating,
       total_reviews,
-        organizations (
+      organizations (
         id,
         name,
         handle,
@@ -50,8 +50,18 @@ const createQueryTypeHelper = (supabase: TypedSupabaseClient) =>
     { count: 'exact' },
   );
 
-// Infer the database row type from the actual query
 type DatabaseCourseRow = NonNullable<Awaited<ReturnType<typeof createQueryTypeHelper>>['data']>[0];
+
+function parseJsonField<T>(field: T | string): T | null {
+  if (typeof field === 'string') {
+    try {
+      return JSON.parse(field);
+    } catch {
+      return null;
+    }
+  }
+  return field;
+}
 
 async function createPublishedThumbnailSignedUrl(
   supabase: TypedSupabaseClient,
@@ -77,25 +87,12 @@ async function createPublishedThumbnailSignedUrl(
   }
 }
 
-function parseJsonField<T>(field: T | string): T | null {
-  if (typeof field === 'string') {
-    try {
-      return JSON.parse(field);
-    } catch {
-      return null;
-    }
-  }
-  return field;
-}
-
 async function processCourse(
   course: DatabaseCourseRow,
   supabase: TypedSupabaseClient,
 ): Promise<z.infer<typeof PublishedCourseSchema> | null> {
   try {
-    // Parse and validate pricing_tiers JSON field
     const rawPricingTiers = parseJsonField(course.pricing_tiers);
-
     const pricingValidation = PricingSchema.safeParse(rawPricingTiers);
     if (!pricingValidation.success) {
       console.error(
@@ -105,25 +102,25 @@ async function processCourse(
       return null;
     }
 
-    // Create signed URL - required by schema
     const signed_url = await createPublishedThumbnailSignedUrl(supabase, course.image_url);
     if (!signed_url) {
       console.error(`[processCourse] Failed to create signed URL for course ${course.id}`);
       return null;
     }
 
-    // Construct the course object with proper date formatting
+    const signedOrgAvatarUrl = await createOrganizationAvatarSignedUrl(
+      supabase,
+      course.organizations?.avatar_url ?? null,
+    );
+
     const processedCourse = {
       ...course,
       pricing_tiers: pricingValidation.data,
       signed_url,
-      // Ensure published_at is in proper ISO datetime format
       published_at: (() => {
         try {
           const date = new Date(course.published_at);
-          if (isNaN(date.getTime())) {
-            throw new Error('Invalid date');
-          }
+          if (isNaN(date.getTime())) throw new Error('Invalid date');
           return date.toISOString();
         } catch (err) {
           console.error(
@@ -133,9 +130,12 @@ async function processCourse(
           throw err;
         }
       })(),
+      organizations: {
+        ...course.organizations,
+        signed_avatar_url: signedOrgAvatarUrl ?? null,
+      },
     };
 
-    // Validate the entire object against the schema
     const validation = PublishedCourseSchema.safeParse(processedCourse);
     if (!validation.success) {
       console.error(
@@ -219,22 +219,18 @@ export async function fetchPublishedPublicCourses({
     return PaginatedPublishedCoursesSchema.parse(result);
   }
 
-  // Process courses with proper typing
   const processedCourses = await Promise.all(
     courses.map((course) => processCourse(course as DatabaseCourseRow, supabase)),
   );
 
-  // Filter out null values - these are courses that failed processing/validation
   const validCourses = processedCourses.filter(
     (course): course is NonNullable<typeof course> => course !== null,
   );
 
-  // Construct and validate the final result
   const result = {
     count: count || 0,
     data: validCourses,
   };
 
-  // Final validation to ensure type safety
   return PaginatedPublishedCoursesSchema.parse(result);
 }
