@@ -104,7 +104,7 @@ export default function Explore() {
                       signed_url,
                       blur_hash,
                       pricing_tiers,
-                      organizations: { handle },
+                      organizations: { name: orgName },
                     }) => (
                       <NavLink
                         key={id}
@@ -121,7 +121,7 @@ export default function Explore() {
                             <GoThumbnail
                               iconUrl={signed_url}
                               blurHash={blur_hash}
-                              name={handle}
+                              name={name}
                               className='rounded-t-none'
                               // badges={['ugali', 'mboga']}
                             />
@@ -133,8 +133,11 @@ export default function Explore() {
                               <p className='font-secondary text-muted-foreground line-clamp-1 text-sm'>
                                 {description}
                               </p>
+                              <div className='pt-2'>
+                                <UserAvatar username={orgName} imageUrl={null} size='sm' />
+                              </div>
                               <div className='flex w-full items-center justify-between'>
-                                <UserAvatar username={handle} imageUrl={null} size='sm' />
+                                <div />
                                 <div>
                                   <GoPricingSheet pricingData={pricing_tiers} />
                                 </div>
