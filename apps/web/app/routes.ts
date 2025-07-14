@@ -207,6 +207,10 @@ export default [
               'update-profile-photo',
               'routes/organizations/settings/organization-profile/update-organization-profile-photo.tsx',
             ),
+            route(
+              'update-organization-banner',
+              'routes/organizations/settings/organization-profile/update-organization-banner.tsx',
+            ),
           ],
         ),
 

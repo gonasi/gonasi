@@ -24,6 +24,7 @@ export type UpdateOrganizationProfilePictureSchemaTypes = z.infer<
 >;
 
 export const UpdateOrganizationBannerSchema = z.object({
+  organizationId: z.string(),
   updateType: z.literal('organization-banner'),
   image: NewImageSchema,
 });
@@ -33,4 +34,5 @@ export type UpdateOrganizationBannerSchemaTypes = z.infer<typeof UpdateOrganizat
 export const OrganizationSettingsUpdateSchema = z.discriminatedUnion('updateType', [
   UpdateOrganizationInformationSchema,
   UpdateOrganizationProfilePictureSchema,
+  UpdateOrganizationBannerSchema,
 ]);

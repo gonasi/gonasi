@@ -7,6 +7,7 @@ import type z from 'zod';
 
 import {
   getOrganizationProfile,
+  updateOrganizationBanner,
   updateOrganizationProfilePicture,
 } from '@gonasi/database/organizations';
 import { OrganizationSettingsUpdateSchema } from '@gonasi/schemas/organizations/settings/profile';
@@ -57,9 +58,9 @@ export async function action({ request, params }: Route.ActionArgs) {
       case 'organization-profile-picture':
         result = await updateOrganizationProfilePicture({ supabase, data });
         break;
-      // case 'profile-picture':
-      //   result = await updateProfilePicture(supabase, data);
-      //   break;
+      case 'organization-banner':
+        result = await updateOrganizationBanner({ supabase, data });
+        break;
       // case 'profile-visibility':
       //   result = await updateProfileVisibility(supabase, data);
       //   break;
@@ -94,14 +95,14 @@ export default function OrganizationProfile({ params, loaderData }: Route.Compon
           <div className='w-full rounded-lg bg-blue-400'>
             <div className='relative'>
               <GoThumbnail
-                iconUrl={null}
-                blurHash={null}
-                name=''
+                iconUrl={loaderData.signed_banner_url ?? ''}
+                blurHash={loaderData.banner_blur_hash}
+                name={`${loaderData.name}'s banner image`}
                 aspectRatio='263/100'
                 noThumbnailText='No banner available'
               />
               <IconNavLink
-                to={`/${params.organizationId}/settings/organization-profile/update-profile-photo`}
+                to={`/${params.organizationId}/settings/organization-profile/update-organization-banner`}
                 icon={Pencil}
                 className='bg-card border-background absolute -top-4 -right-4 flex-shrink-0 rounded-full border-2 p-2'
                 size={20}
