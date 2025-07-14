@@ -28,7 +28,7 @@ interface CoursePricingContextType {
 
 const resolver = zodResolver(InitializeEnrollTransactionSchema);
 
-export async function action({ request, params }: Route.ActionArgs) {
+export async function action({ request }: Route.ActionArgs) {
   const formData = await request.formData();
   await checkHoneypot(formData);
 
@@ -83,7 +83,7 @@ export default function EnrollIndex({ params }: Route.ComponentProps) {
     return (
       <Modal open>
         <Modal.Content size='md'>
-          <Modal.Header title='Pricing Tier Not Found' />
+          <Modal.Header title='Pricing Tier Not Found' closeRoute={`/c/${courseId}`} />
           <Modal.Body>
             <p>No pricing tier matches the given ID.</p>
           </Modal.Body>

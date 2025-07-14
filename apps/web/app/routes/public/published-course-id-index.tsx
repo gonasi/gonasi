@@ -5,7 +5,10 @@ import { redirectWithError } from 'remix-toast';
 
 import { getCategoryName } from '@gonasi/database/courseCategories';
 import { getSubCategoryName } from '@gonasi/database/courseSubCategories';
-import { fetchPublishedPublicCourseById } from '@gonasi/database/publishedCourses';
+import {
+  fetchPublishedPublicCourseById,
+  getEnrollmentStatus,
+} from '@gonasi/database/publishedCourses';
 import { timeAgo } from '@gonasi/utils/timeAgo';
 
 import type { Route } from './+types/published-course-id-index';
@@ -17,6 +20,7 @@ import { ChapterLessonTree } from '~/components/course';
 import { Badge } from '~/components/ui/badge';
 import { Modal } from '~/components/ui/modal';
 import { createClient } from '~/lib/supabase/supabase.server';
+import { cn } from '~/lib/utils';
 import { getLowestPricingSummary } from '~/utils/get-lowest-pricing-summary';
 
 export function headers(_: Route.HeadersArgs) {
@@ -72,10 +76,16 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
   const publishedCourseId = params.publishedCourseId;
 
-  const courseOverview = await fetchPublishedPublicCourseById({
-    supabase,
-    courseId: publishedCourseId,
-  });
+  const [courseOverview, enrollmentStatus] = await Promise.all([
+    fetchPublishedPublicCourseById({
+      supabase,
+      courseId: publishedCourseId,
+    }),
+    getEnrollmentStatus({
+      supabase,
+      publishedCourseId: params.publishedCourseId,
+    }),
+  ]);
 
   if (!courseOverview) {
     return redirectWithError(`/go/explore`, 'Course not found');
@@ -84,7 +94,9 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   const categoryName = getCategoryName({ supabase, id: courseOverview.category_id });
   const subCategoryName = getSubCategoryName({ supabase, id: courseOverview.subcategory_id });
 
-  return { courseOverview, categoryName, subCategoryName };
+  console.log('enrollment: ', enrollmentStatus);
+
+  return { courseOverview, categoryName, subCategoryName, enrollmentStatus };
 }
 
 function MetaInfoItem({ label, timestamp }: { label: string; timestamp: string }) {
@@ -100,7 +112,7 @@ function MetaInfoItem({ label, timestamp }: { label: string; timestamp: string }
 }
 
 export default function PublishedCourseIdIndex({ loaderData }: Route.ComponentProps) {
-  const { categoryName, subCategoryName } = loaderData;
+  const { categoryName, subCategoryName, enrollmentStatus } = loaderData;
   const {
     id,
     name,
@@ -111,6 +123,8 @@ export default function PublishedCourseIdIndex({ loaderData }: Route.ComponentPr
     pricing_tiers,
     organizations: { handle, name: orgName, signed_avatar_url },
   } = loaderData.courseOverview;
+
+  const daysRemaining = enrollmentStatus?.days_remaining ?? 0;
 
   const params = new URLSearchParams(location.search);
   const redirectTo = params.get('redirectTo');
@@ -212,24 +226,59 @@ export default function PublishedCourseIdIndex({ loaderData }: Route.ComponentPr
                 {/* Right Content */}
                 <div className='mb-4 w-full md:w-80 lg:w-sm'>
                   <div className='flex flex-col'>
-                    <GoThumbnail iconUrl={signed_url} name={name} blurHash={blur_hash} />
+                    <GoThumbnail
+                      iconUrl={signed_url}
+                      name={name}
+                      blurHash={blur_hash}
+                      badges={[
+                        enrollmentStatus?.is_active ? (
+                          <div className='bg-card/85 flex items-center justify-between rounded-sm p-2'>
+                            <div className='flex flex-col items-center text-center'>
+                              <div className='flex items-center space-x-1' />
+                              <div
+                                className={cn(
+                                  'flex items-center justify-center rounded-sm px-2 py-1 text-lg font-semibold',
+                                  daysRemaining <= 1
+                                    ? 'bg-red-100 text-red-600'
+                                    : daysRemaining <= 3
+                                      ? 'bg-yellow-100 text-yellow-700'
+                                      : 'bg-green-100 text-green-700',
+                                )}
+                              >
+                                {daysRemaining}
+                              </div>
+                              <div className='font-secondary mt-1 flex items-center space-x-1 text-xs'>
+                                <Clock className='h-3 w-3' />{' '}
+                                <div> {daysRemaining === 1 ? 'day' : 'days'}</div>
+                              </div>
+                            </div>
+                          </div>
+                        ) : null,
+                      ]}
+                    />
                     <div className='bg-card px-4'>
-                      <div className='flex w-full items-center justify-between py-4'>
-                        <GoPricingSheet
-                          pricingData={pricing_tiers}
-                          side='left'
-                          variant='primary'
-                          className='w-full'
-                        />
-                      </div>
-                      <div className='flex w-full items-center justify-center space-x-1 pb-4 text-xs'>
-                        {pricing_tiers[0]?.is_free ? null : (
-                          <span className='text-muted-foreground'>Starting at</span>
-                        )}
-                        <span className='text-foreground text-sm font-semibold'>
-                          {getLowestPricingSummary(pricing_tiers)}
-                        </span>
-                      </div>
+                      {enrollmentStatus?.is_active ? (
+                        <div className='py-4'>hey</div>
+                      ) : (
+                        <div>
+                          <div className='flex w-full items-center justify-between py-4'>
+                            <GoPricingSheet
+                              pricingData={pricing_tiers}
+                              side='left'
+                              variant='primary'
+                              className='w-full'
+                            />
+                          </div>
+                          <div className='flex w-full items-center justify-center space-x-1 pb-4 text-xs'>
+                            {pricing_tiers[0]?.is_free ? null : (
+                              <span className='text-muted-foreground'>Starting at</span>
+                            )}
+                            <span className='text-foreground text-sm font-semibold'>
+                              {getLowestPricingSummary(pricing_tiers)}
+                            </span>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
