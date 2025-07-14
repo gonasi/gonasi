@@ -8,3 +8,4 @@ export * from './members';
 export * from './getUserOrgRole';
 export * from './getOrganizationProfile';
 export * from './settings';
+export * from './fetchPublicOrganizationProfile';

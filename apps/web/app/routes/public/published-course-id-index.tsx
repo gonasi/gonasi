@@ -1,5 +1,5 @@
 import React from 'react';
-import { Await, Link, Outlet } from 'react-router';
+import { Await, NavLink, Outlet } from 'react-router';
 import { BookOpen, ChevronRight, Clock, StarOff, TableOfContents } from 'lucide-react';
 import { redirectWithError } from 'remix-toast';
 
@@ -109,9 +109,7 @@ export default function PublishedCourseIdIndex({ loaderData }: Route.ComponentPr
     signed_url,
     course_structure,
     pricing_tiers,
-    category_id,
-    subcategory_id,
-    organizations: { name: orgName, signed_avatar_url },
+    organizations: { handle, name: orgName, signed_avatar_url },
   } = loaderData.courseOverview;
 
   const params = new URLSearchParams(location.search);
@@ -176,9 +174,16 @@ export default function PublishedCourseIdIndex({ loaderData }: Route.ComponentPr
                     <StarOff size={14} className='text-gold' />
                   </div>
 
-                  <Link to='/'>
-                    <UserAvatar username={orgName} imageUrl={signed_avatar_url} size='xs' />
-                  </Link>
+                  <NavLink to={`/${handle}`}>
+                    {({ isPending }) => (
+                      <UserAvatar
+                        username={orgName}
+                        imageUrl={signed_avatar_url}
+                        size='xs'
+                        isPending={isPending}
+                      />
+                    )}
+                  </NavLink>
 
                   <div className='flex flex-col space-y-2 lg:flex-row lg:space-y-0 lg:space-x-4'>
                     <MetaInfoItem label='Published' timestamp='created_at' />

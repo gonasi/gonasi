@@ -14,6 +14,11 @@ export default [
       ]),
     ]),
 
+    route(
+      ':organizationHandle',
+      'routes/publicOrganizations/public-organization-profile-index.tsx',
+    ),
+
     route('api/check-username-exists', 'routes/api/check-username-exists.ts'),
     route('api/check-handle-exists/:organizationId', 'routes/api/check-handle-exists.ts'),
   ]),
