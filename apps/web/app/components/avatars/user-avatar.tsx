@@ -1,6 +1,7 @@
 import { PlainAvatar } from './plain-avatar';
 
 export type AvatarSize = 'xs' | 'sm' | 'md' | 'lg';
+
 interface UserAvatarProps {
   username: string | null;
   fullName?: string | null;
@@ -8,6 +9,7 @@ interface UserAvatarProps {
   size?: AvatarSize;
   isActive?: boolean;
   isPending?: boolean;
+  alwaysShowUsername?: boolean;
 }
 
 const textSizeClasses = {
@@ -24,6 +26,7 @@ export function UserAvatar({
   size = 'md',
   isActive = false,
   isPending = false,
+  alwaysShowUsername = false,
 }: UserAvatarProps) {
   return (
     <div className='text-foreground mr-1 flex items-center gap-2 md:mr-0'>
@@ -34,7 +37,7 @@ export function UserAvatar({
         isPending={isPending}
         size={size}
       />
-      <div className='hidden md:flex'>
+      <div className={alwaysShowUsername ? 'flex flex-col' : 'hidden md:flex'}>
         {fullName ? (
           <div className={`${textSizeClasses[size]} line-clamp-2 uppercase`}>{fullName}</div>
         ) : null}

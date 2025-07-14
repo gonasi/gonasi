@@ -86,7 +86,7 @@ export default function Explore() {
   const redirectTo = location.pathname + location.search;
 
   return (
-    <div className='container mx-auto min-h-screen space-y-4 px-4 pb-10'>
+    <div className='container mx-auto min-h-screen space-y-4 px-0 pb-10 md:px-4'>
       <div className='py-4'>
         <Suspense fallback={<Spinner />}>
           <Await
@@ -104,7 +104,7 @@ export default function Explore() {
                       signed_url,
                       blur_hash,
                       pricing_tiers,
-                      organizations: { name: orgName, signed_avatar_url },
+                      organizations: { handle, name: orgName, signed_avatar_url },
                     }) => (
                       <NavLink
                         key={id}
@@ -134,11 +134,17 @@ export default function Explore() {
                                 {description}
                               </p>
                               <div className='pt-2'>
-                                <UserAvatar
-                                  username={orgName}
-                                  imageUrl={signed_avatar_url}
-                                  size='xs'
-                                />
+                                <NavLink to={`/${handle}`}>
+                                  {({ isPending }) => (
+                                    <UserAvatar
+                                      username={orgName}
+                                      imageUrl={signed_avatar_url}
+                                      size='xs'
+                                      isPending={isPending}
+                                      alwaysShowUsername
+                                    />
+                                  )}
+                                </NavLink>
                               </div>
                               <div className='flex w-full items-center justify-between'>
                                 <div />

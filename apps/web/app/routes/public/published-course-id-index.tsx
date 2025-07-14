@@ -181,6 +181,7 @@ export default function PublishedCourseIdIndex({ loaderData }: Route.ComponentPr
                         imageUrl={signed_avatar_url}
                         size='xs'
                         isPending={isPending}
+                        alwaysShowUsername
                       />
                     )}
                   </NavLink>

@@ -14,14 +14,11 @@ export default [
       ]),
     ]),
 
-    route(
-      ':organizationHandle',
-      'routes/publicOrganizations/public-organization-profile-index.tsx',
-    ),
-
     route('api/check-username-exists', 'routes/api/check-username-exists.ts'),
     route('api/check-handle-exists/:organizationId', 'routes/api/check-handle-exists.ts'),
   ]),
+
+  route(':organizationHandle', 'routes/publicOrganizations/public-organization-profile-index.tsx'),
 
   layout('routes/layouts/myProfile/profile-plain-layout.tsx', [
     layout('routes/layouts/myProfile/profile-wrapper-layout.tsx', [

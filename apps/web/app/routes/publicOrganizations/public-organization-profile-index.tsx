@@ -1,3 +1,5 @@
+import { useCallback } from 'react';
+import { useNavigate } from 'react-router';
 import { redirectWithError } from 'remix-toast';
 
 import { fetchPublicOrganizationProfile } from '@gonasi/database/organizations';
@@ -6,6 +8,7 @@ import type { Route } from './+types/public-organization-profile-index';
 
 import { PlainAvatar } from '~/components/avatars';
 import { GoThumbnail } from '~/components/cards/go-course-card';
+import { Modal } from '~/components/ui/modal';
 import { createClient } from '~/lib/supabase/supabase.server';
 
 export async function loader({ request, params }: Route.LoaderArgs) {
@@ -66,41 +69,59 @@ export function meta({ data }: Route.MetaArgs) {
 }
 
 export default function PublicOrganizationProfileIndex({ loaderData }: Route.ComponentProps) {
+  const navigate = useNavigate();
+
+  const onClose = useCallback(() => {
+    // Navigate to previous page if possible, otherwise to fallback
+    if (window.history.length > 2) {
+      navigate(-1);
+    } else {
+      navigate('/', { replace: true });
+    }
+  }, [navigate]);
+
   return (
-    <div className='mx-auto max-w-3xl'>
-      <div className='relative w-full'>
-        {/* Banner background */}
-        <div className='w-full rounded-lg'>
-          <div className='relative'>
-            <GoThumbnail
-              iconUrl={loaderData.signed_banner_url ?? ''}
-              blurHash={loaderData.banner_blur_hash}
-              name={`${loaderData.name}'s banner image`}
-              aspectRatio='263/100'
-              noThumbnailText='No banner available'
-            />
-          </div>
-        </div>
+    <Modal open onOpenChange={(open) => open || onClose()}>
+      <Modal.Content size='full'>
+        <Modal.Header title='' />
+        <Modal.Body className='px-0 md:px-4'>
+          <div className='mx-auto -mt-0 max-w-3xl md:-mt-14'>
+            <div className='relative w-full'>
+              {/* Banner background */}
+              <div className='w-full rounded-lg'>
+                <div className='relative'>
+                  <GoThumbnail
+                    iconUrl={loaderData.signed_banner_url ?? ''}
+                    blurHash={loaderData.banner_blur_hash}
+                    name={`${loaderData.name}'s banner image`}
+                    aspectRatio='263/100'
+                    noThumbnailText='No banner available'
+                  />
+                </div>
+              </div>
 
-        {/* Avatar at the bottom of the banner */}
-        <div className='absolute bottom-0 left-4 z-10 translate-y-1/2'>
-          <div className='relative'>
-            <PlainAvatar
-              username={loaderData.name}
-              imageUrl={loaderData.signed_avatar_url}
-              size='xl'
-            />
-          </div>
-        </div>
-      </div>
+              {/* Avatar at the bottom of the banner */}
+              <div className='absolute bottom-0 left-4 z-10 translate-y-1/2'>
+                <div className='relative'>
+                  <PlainAvatar
+                    username={loaderData.name}
+                    imageUrl={loaderData.signed_avatar_url}
+                    size='xl'
+                  />
+                </div>
+              </div>
+            </div>
 
-      <div className='px-4 pt-12'>
-        <h1 className='text-xl font-bold'>{loaderData.name}</h1>
-        <p className='text-muted-foreground'>@{loaderData.handle}</p>
-        {loaderData.description && (
-          <p className='font-secondary mt-4 text-sm'>{loaderData.description}</p>
-        )}
-      </div>
-    </div>
+            <div className='px-4 pt-12'>
+              <h1 className='text-xl font-bold'>{loaderData.name}</h1>
+              <p className='text-muted-foreground'>@{loaderData.handle}</p>
+              {loaderData.description && (
+                <p className='font-secondary mt-4 text-sm'>{loaderData.description}</p>
+              )}
+            </div>
+          </div>
+        </Modal.Body>
+      </Modal.Content>
+    </Modal>
   );
 }
