@@ -5,7 +5,6 @@
 --   Returns true if the user has an active, non-expired enrollment in a 
 --   given published course. Assumes only one active enrollment per user.
 -- ============================================================================
-
 create or replace function public.user_has_active_access(
   p_user_id uuid,
   p_published_course_id uuid
@@ -28,7 +27,7 @@ begin
 
   return enrollment_expires_at is null or enrollment_expires_at > now_utc;
 end;
-$$ language plpgsql stable;
+$$ language plpgsql stable set search_path = '';
 
 -- Set secure schema context
 set search_path to '';

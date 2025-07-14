@@ -5,6 +5,7 @@ import { fetchPublishedPublicCourses } from '@gonasi/database/publishedCourses';
 
 import type { Route } from './+types/home';
 
+import { UserAvatar } from '~/components/avatars';
 import { NotFoundCard } from '~/components/cards';
 import { GoCardContent, GoCourseHeader, GoThumbnail } from '~/components/cards/go-course-card';
 import { GoPricingSheet } from '~/components/cards/go-course-card/GoPricingSheet';
@@ -96,7 +97,15 @@ export default function Explore() {
               resolvedCourses.data.length ? (
                 <div className='grid grid-cols-1 gap-0 md:grid-cols-2 md:gap-3 lg:grid-cols-4'>
                   {resolvedCourses.data.map(
-                    ({ id, name, description, signed_url, blur_hash, pricing_tiers }) => (
+                    ({
+                      id,
+                      name,
+                      description,
+                      signed_url,
+                      blur_hash,
+                      pricing_tiers,
+                      organizations: { handle },
+                    }) => (
                       <NavLink
                         key={id}
                         to={`/c/${id}?${new URLSearchParams({ redirectTo })}`}
@@ -112,7 +121,7 @@ export default function Explore() {
                             <GoThumbnail
                               iconUrl={signed_url}
                               blurHash={blur_hash}
-                              name={name}
+                              name={handle}
                               className='rounded-t-none'
                               // badges={['ugali', 'mboga']}
                             />
@@ -124,8 +133,11 @@ export default function Explore() {
                               <p className='font-secondary text-muted-foreground line-clamp-1 text-sm'>
                                 {description}
                               </p>
-                              <div className='flex w-full justify-end'>
-                                <GoPricingSheet pricingData={pricing_tiers} />
+                              <div className='flex w-full items-center justify-between'>
+                                <UserAvatar username={handle} imageUrl={null} size='sm' />
+                                <div>
+                                  <GoPricingSheet pricingData={pricing_tiers} />
+                                </div>
                               </div>
                             </GoCardContent>
                           </div>

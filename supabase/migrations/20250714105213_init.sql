@@ -2526,6 +2526,7 @@ CREATE OR REPLACE FUNCTION public.get_enrollment_status(p_user_id uuid, p_publis
  RETURNS TABLE(enrollment_id uuid, is_enrolled boolean, is_active boolean, expires_at timestamp with time zone, days_remaining integer, latest_activity_id uuid)
  LANGUAGE plpgsql
  STABLE
+ SET search_path TO ''
 AS $function$
 declare
   enrollment_expires_at timestamptz;
@@ -2542,16 +2543,14 @@ begin
     and is_active = true
   limit 1;
 
-  -- Not enrolled
   if not found then
     return query select
-      null::uuid,  -- enrollment_id
-      false,       -- is_enrolled
-      false,       -- is_active
+      null::uuid,
+      false,
+      false,
       null::timestamptz,
       null::integer,
-      null::uuid;  -- latest_activity_id
-    return;
+      null::uuid;
   end if;
 
   -- Get latest activity
@@ -3761,6 +3760,7 @@ CREATE OR REPLACE FUNCTION public.user_has_active_access(p_user_id uuid, p_publi
  RETURNS boolean
  LANGUAGE plpgsql
  STABLE
+ SET search_path TO ''
 AS $function$
 declare
   enrollment_expires_at timestamptz;

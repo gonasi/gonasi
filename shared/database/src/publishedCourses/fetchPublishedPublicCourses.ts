@@ -38,7 +38,14 @@ const createQueryTypeHelper = (supabase: TypedSupabaseClient) =>
       active_enrollments,
       completion_rate,
       average_rating,
-      total_reviews
+      total_reviews,
+        organizations (
+        id,
+        name,
+        handle,
+        avatar_url,
+        blur_hash
+      )
     `,
     { count: 'exact' },
   );
@@ -179,7 +186,14 @@ export async function fetchPublishedPublicCourses({
       active_enrollments,
       completion_rate,
       average_rating,
-      total_reviews
+      total_reviews,
+      organizations (
+        id,
+        name,
+        handle,
+        avatar_url,
+        blur_hash
+      )
     `,
       { count: 'exact' },
     )

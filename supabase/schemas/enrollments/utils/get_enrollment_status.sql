@@ -7,7 +7,6 @@
 --     - Expiry timestamp and days remaining (if applicable)
 --     - Latest activity ID for engagement tracking
 -- ============================================================================
-
 create or replace function public.get_enrollment_status(
   p_user_id uuid,
   p_published_course_id uuid
@@ -18,7 +17,8 @@ create or replace function public.get_enrollment_status(
   expires_at timestamptz,
   days_remaining integer,
   latest_activity_id uuid
-) as $$
+)
+as $$
 declare
   enrollment_expires_at timestamptz;
   enrollment_id_val uuid;
@@ -34,16 +34,14 @@ begin
     and is_active = true
   limit 1;
 
-  -- Not enrolled
   if not found then
     return query select
-      null::uuid,  -- enrollment_id
-      false,       -- is_enrolled
-      false,       -- is_active
+      null::uuid,
+      false,
+      false,
       null::timestamptz,
       null::integer,
-      null::uuid;  -- latest_activity_id
-    return;
+      null::uuid;
   end if;
 
   -- Get latest activity
@@ -66,7 +64,5 @@ begin
     end,
     latest_activity_id_val;
 end;
-$$ language plpgsql stable;
-
--- Set secure schema context
-set search_path to '';
+$$ language plpgsql stable
+set search_path = '';

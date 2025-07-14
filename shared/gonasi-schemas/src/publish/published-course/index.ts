@@ -2,6 +2,15 @@ import z from 'zod';
 
 import { PricingSchema } from '../course-pricing';
 
+// Add a schema for the nested organization object
+const OrganizationSummarySchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  handle: z.string(),
+  avatar_url: z.string().nullable(),
+  blur_hash: z.string().nullable(),
+});
+
 export const PublishedCourseSchema = z.object({
   id: z.string().uuid(),
   organization_id: z.string().uuid(),
@@ -35,6 +44,9 @@ export const PublishedCourseSchema = z.object({
   total_reviews: z.number().int().nonnegative(),
 
   signed_url: z.string().url(),
+
+  // ✅ Add the nested organizations object
+  organizations: OrganizationSummarySchema,
 });
 
 export const PaginatedPublishedCoursesSchema = z.object({
