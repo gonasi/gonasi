@@ -17,7 +17,7 @@ const sizeClasses = {
   sm: 'h-8 w-8',
   md: 'h-10 w-10',
   lg: 'h-14 w-14 md:h-18 md:w-18',
-  xl: 'h-16 w-16',
+  xl: 'h-18 w-19',
 };
 
 const ringSizeClasses = {
@@ -25,7 +25,7 @@ const ringSizeClasses = {
   sm: 'h-9 w-9',
   md: 'h-11 w-11',
   lg: 'h-15 w-15 md:h-20 md:w-20',
-  xl: 'h-18 w-18',
+  xl: 'h-20 w-20',
 };
 
 export function PlainAvatar({

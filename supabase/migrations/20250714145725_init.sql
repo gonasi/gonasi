@@ -5389,11 +5389,9 @@ on "storage"."objects"
 as permissive
 for delete
 to authenticated
-using (((bucket_id = 'organization_profile_photos'::text) AND
-CASE
-    WHEN (POSITION(('/'::text) IN (name)) > 0) THEN (get_user_org_role((split_part(name, '/'::text, 1))::uuid, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text]))
-    ELSE false
-END));
+using (((bucket_id = 'organization_profile_photos'::text) AND (EXISTS ( SELECT 1
+   FROM organizations o
+  WHERE ((o.id = (split_part(objects.name, '/'::text, 1))::uuid) AND (get_user_org_role(o.id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])))))));
 
 
 create policy "insert: org owner/admin or course creator with storage limit"
@@ -5423,11 +5421,9 @@ on "storage"."objects"
 as permissive
 for insert
 to authenticated
-with check (((bucket_id = 'organization_profile_photos'::text) AND
-CASE
-    WHEN (POSITION(('/'::text) IN (name)) > 0) THEN (get_user_org_role((split_part(name, '/'::text, 1))::uuid, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text]))
-    ELSE false
-END));
+with check (((bucket_id = 'organization_profile_photos'::text) AND (EXISTS ( SELECT 1
+   FROM organizations o
+  WHERE ((o.id = (split_part(objects.name, '/'::text, 1))::uuid) AND (get_user_org_role(o.id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])))))));
 
 
 create policy "select: org members can view files"
@@ -5459,13 +5455,9 @@ on "storage"."objects"
 as permissive
 for select
 to authenticated, anon
-using (((bucket_id = 'organization_profile_photos'::text) AND
-CASE
-    WHEN (POSITION(('/'::text) IN (name)) > 0) THEN (EXISTS ( SELECT 1
-       FROM organizations o
-      WHERE (((o.id)::text = split_part(o.name, '/'::text, 1)) AND (o.is_public = true))))
-    ELSE false
-END));
+using (((bucket_id = 'organization_profile_photos'::text) AND (EXISTS ( SELECT 1
+   FROM organizations o
+  WHERE ((o.id = (split_part(objects.name, '/'::text, 1))::uuid) AND (o.is_public = true))))));
 
 
 create policy "update: org owner/admin or course creator"
@@ -5505,16 +5497,12 @@ on "storage"."objects"
 as permissive
 for update
 to authenticated
-using (((bucket_id = 'organization_profile_photos'::text) AND
-CASE
-    WHEN (POSITION(('/'::text) IN (name)) > 0) THEN (get_user_org_role((split_part(name, '/'::text, 1))::uuid, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text]))
-    ELSE false
-END))
-with check (((bucket_id = 'organization_profile_photos'::text) AND
-CASE
-    WHEN (POSITION(('/'::text) IN (name)) > 0) THEN (get_user_org_role((split_part(name, '/'::text, 1))::uuid, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text]))
-    ELSE false
-END));
+using (((bucket_id = 'organization_profile_photos'::text) AND (EXISTS ( SELECT 1
+   FROM organizations o
+  WHERE ((o.id = (split_part(objects.name, '/'::text, 1))::uuid) AND (get_user_org_role(o.id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])))))))
+with check (((bucket_id = 'organization_profile_photos'::text) AND (EXISTS ( SELECT 1
+   FROM organizations o
+  WHERE ((o.id = (split_part(objects.name, '/'::text, 1))::uuid) AND (get_user_org_role(o.id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])))))));
 
 
 

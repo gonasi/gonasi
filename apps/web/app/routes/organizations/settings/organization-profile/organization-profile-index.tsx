@@ -51,7 +51,7 @@ export async function action({ request, params }: Route.ActionArgs) {
   const { supabase } = createClient(request);
 
   try {
-    let result = { success: false, message: '', data: null };
+    let result = { success: false, message: '' };
 
     switch (data.updateType) {
       case 'organization-profile-picture':
@@ -67,7 +67,7 @@ export async function action({ request, params }: Route.ActionArgs) {
         throw new Error(`Unsupported update type: ${data}`);
     }
 
-    const returnPath = `/${params.organizationId}/settings/profile-information`;
+    const returnPath = `/${params.organizationId}/settings/organization-profile`;
 
     return result.success
       ? redirectWithSuccess(returnPath, result.message)
