@@ -16,6 +16,7 @@ interface Props {
   publishedCourseId: string;
   chapters: CourseChaptersType;
   activeChapterAndLesson?: UserActiveChapterAndLessonLoaderReturnType;
+  userHasAccess: boolean;
 }
 export interface ColorClass {
   bg: string;
@@ -44,7 +45,12 @@ const itemVariants = {
   },
 };
 
-export function ChapterLessonTree({ publishedCourseId, chapters, activeChapterAndLesson }: Props) {
+export function ChapterLessonTree({
+  publishedCourseId,
+  chapters,
+  activeChapterAndLesson,
+  userHasAccess,
+}: Props) {
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
   const lessonRefs = useRef<Record<string, HTMLElement | null>>({});
 
@@ -132,6 +138,7 @@ export function ChapterLessonTree({ publishedCourseId, chapters, activeChapterAn
                             // isCompleted={lesson.isCompleted}
                             isCompleted={false}
                             isActiveLesson={lesson.id === activeChapterAndLesson?.lessonId}
+                            userHasAccess={userHasAccess}
                           />
                         ) : (
                           <LessonViewCard
@@ -142,6 +149,7 @@ export function ChapterLessonTree({ publishedCourseId, chapters, activeChapterAn
 
                             isCompleted={false}
                             isActiveLesson={lesson.id === activeChapterAndLesson?.lessonId}
+                            userHasAccess={userHasAccess}
                           />
                         )}
                       </motion.div>

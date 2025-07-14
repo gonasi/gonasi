@@ -239,10 +239,10 @@ export default function PublishedCourseIdIndex({ loaderData }: Route.ComponentPr
                                 className={cn(
                                   'flex items-center justify-center rounded-sm px-2 py-1 text-lg font-semibold',
                                   daysRemaining <= 1
-                                    ? 'bg-red-100 text-red-600'
+                                    ? 'bg-danger/90 text-danger-foreground'
                                     : daysRemaining <= 3
-                                      ? 'bg-yellow-100 text-yellow-700'
-                                      : 'bg-green-100 text-green-700',
+                                      ? 'bg-warning/90 text-warning-foreground'
+                                      : 'bg-success/90 text-success-foreground',
                                 )}
                               >
                                 {daysRemaining}
@@ -286,7 +286,11 @@ export default function PublishedCourseIdIndex({ loaderData }: Route.ComponentPr
 
               {/* Chapter Tree */}
               <div className='max-w-md px-4 md:max-w-xl md:px-0'>
-                <ChapterLessonTree publishedCourseId={id} chapters={course_structure.chapters} />
+                <ChapterLessonTree
+                  publishedCourseId={id}
+                  chapters={course_structure.chapters}
+                  userHasAccess={enrollmentStatus?.is_active}
+                />
               </div>
             </div>
           </Modal.Body>

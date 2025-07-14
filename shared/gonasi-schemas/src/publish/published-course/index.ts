@@ -2,13 +2,14 @@ import z from 'zod';
 
 import { PricingSchema } from '../course-pricing';
 
+// ✅ Updated: Include signed_avatar_url in organization schema
 const OrganizationSummarySchema = z.object({
   id: z.string().uuid(),
   name: z.string(),
   handle: z.string(),
   avatar_url: z.string().nullable(),
   blur_hash: z.string().nullable(),
-  signed_avatar_url: z.string().url().nullable(),
+  signed_avatar_url: z.string().url().nullable(), // ✅ New field
 });
 
 export const PublishedCourseSchema = z.object({

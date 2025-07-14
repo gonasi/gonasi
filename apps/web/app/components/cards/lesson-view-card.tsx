@@ -14,6 +14,7 @@ interface Props {
   name: string;
   lessonTypes: LessonTypes | null;
   isActiveLesson: boolean;
+  userHasAccess: boolean;
 }
 
 const nudgeAnimation = {
@@ -27,9 +28,24 @@ const nudgeAnimation = {
   },
 };
 
-export function LessonViewCard({ isCompleted, to, name, lessonTypes, isActiveLesson }: Props) {
+export function LessonViewCard({
+  isCompleted,
+  to,
+  name,
+  lessonTypes,
+  isActiveLesson,
+  userHasAccess,
+}: Props) {
   const borderTopColor = hslToHsla(lessonTypes?.bg_color ?? 'hsl(40 90% 56%)', 20);
   const iconColor = lessonTypes?.bg_color ?? 'hsl(40 90% 56%)';
+
+  const statusText = !userHasAccess
+    ? '🔒 Locked'
+    : isCompleted
+      ? '🎓 Completed'
+      : isActiveLesson
+        ? '📘 Next Lesson'
+        : '🕓 Not Started';
 
   return (
     <Link
@@ -76,7 +92,13 @@ export function LessonViewCard({ isCompleted, to, name, lessonTypes, isActiveLes
         )}
       </div>
 
-      <div className='flex justify-end pt-3'>
+      <div className='flex justify-end space-x-2 pt-3'>
+        <Badge
+          variant='outline'
+          className='group-hover:border-primary/30 group-hover:text-primary transition-colors duration-300'
+        >
+          {statusText}
+        </Badge>
         <Badge
           variant='outline'
           className='group-hover:border-primary/30 group-hover:text-primary transition-colors duration-300'

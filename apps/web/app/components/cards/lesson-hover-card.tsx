@@ -17,6 +17,7 @@ interface Props {
   name: string;
   lessonTypes: LessonTypes | null;
   isActiveLesson: boolean;
+  userHasAccess: boolean;
 }
 
 const nudgeAnimation = {
@@ -30,12 +31,21 @@ const nudgeAnimation = {
   },
 };
 
-export function LessonHoverCard({ isCompleted, to, name, lessonTypes, isActiveLesson }: Props) {
-  const statusText = isCompleted
-    ? '🎓 Completed'
-    : isActiveLesson
-      ? '📘 Next Lesson'
-      : '🕓 Not Started';
+export function LessonHoverCard({
+  isCompleted,
+  to,
+  name,
+  lessonTypes,
+  isActiveLesson,
+  userHasAccess,
+}: Props) {
+  const statusText = !userHasAccess
+    ? '🔒 Locked'
+    : isCompleted
+      ? '🎓 Completed'
+      : isActiveLesson
+        ? '📘 Next Lesson'
+        : '🕓 Not Started';
 
   return (
     <HoverCard>
