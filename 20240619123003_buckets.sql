@@ -45,8 +45,15 @@ values ('published_thumbnails', 'published_thumbnails')
 on conflict (id) do nothing;
 
 -- ================================================================
--- private bucket for organization  
+-- private bucket for organization_profile_photos  
 -- ================================================================
 insert into storage.buckets (id, name)
-values ('organization', 'organization')
+values ('organization_profile_photos', 'organization_profile_photos')
+on conflict (id) do nothing; 
+
+-- ================================================================
+-- private bucket for organization_banner_photos  
+-- ================================================================
+insert into storage.buckets (id, name)
+values ('organization_banner_photos', 'organization_banner_photos')
 on conflict (id) do nothing; 

@@ -84,6 +84,7 @@ schema_paths = [
   
   './schemas/organizations/organization_invites_schema_and_indexes.sql',
 
+
   # add modes profile migration
   './schemas/profiles_add_modes_migration.sql',
 
@@ -106,6 +107,9 @@ schema_paths = [
   './schemas/organizations/organization_invites_rls.sql',
   './schemas/organizations/function_fetch_active_org_members.sql',
   './schemas/organizations/function_accept_organization_invite.sql',
+
+  './schemas/organizations/organizations_profile_banner_buckets_rls.sql',
+
 
 
   # rpc profiles, orgs

@@ -286,7 +286,7 @@ create table "public"."organizations" (
     "blur_hash" text,
     "banner_url" text,
     "banner_blur_hash" text,
-    "is_public" boolean not null default false,
+    "is_public" boolean not null default true,
     "is_verified" boolean not null default false,
     "email" text,
     "phone_number" text,
@@ -5372,6 +5372,22 @@ using (((bucket_id = 'files'::text) AND (EXISTS ( SELECT 1
   WHERE ((fl.path = objects.name) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.created_by = ( SELECT auth.uid() AS uid)))))))));
 
 
+create policy "delete_banner: only org owner/admin"
+on "storage"."objects"
+as permissive
+for delete
+to authenticated
+using (((bucket_id = 'organization_banner_photos'::text) AND (get_user_org_role(((storage.foldername(name))[1])::uuid, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text]))));
+
+
+create policy "delete_profile: only org owner/admin"
+on "storage"."objects"
+as permissive
+for delete
+to authenticated
+using (((bucket_id = 'organization_profile_photos'::text) AND (get_user_org_role(((storage.foldername(name))[1])::uuid, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text]))));
+
+
 create policy "insert: org owner/admin or course creator with storage limit"
 on "storage"."objects"
 as permissive
@@ -5382,6 +5398,22 @@ with check (((bucket_id = 'files'::text) AND (EXISTS ( SELECT 1
   WHERE ((c.id = (split_part(objects.name, '/'::text, 2))::uuid) AND (c.organization_id = (split_part(objects.name, '/'::text, 1))::uuid) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.created_by = ( SELECT auth.uid() AS uid)))) AND (check_storage_limit(c.organization_id, COALESCE(((objects.metadata ->> 'size'::text))::bigint, (0)::bigint)) = true))))));
 
 
+create policy "insert_banner: only org owner/admin can upload"
+on "storage"."objects"
+as permissive
+for insert
+to authenticated
+with check (((bucket_id = 'organization_banner_photos'::text) AND (get_user_org_role(((storage.foldername(name))[1])::uuid, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text]))));
+
+
+create policy "insert_profile: only org owner/admin can upload"
+on "storage"."objects"
+as permissive
+for insert
+to authenticated
+with check (((bucket_id = 'organization_profile_photos'::text) AND (get_user_org_role(((storage.foldername(name))[1])::uuid, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text]))));
+
+
 create policy "select: org members can view files"
 on "storage"."objects"
 as permissive
@@ -5390,6 +5422,26 @@ to authenticated
 using (((bucket_id = 'files'::text) AND (EXISTS ( SELECT 1
    FROM file_library fl
   WHERE ((fl.path = objects.name) AND (get_user_org_role(fl.organization_id, ( SELECT auth.uid() AS uid)) IS NOT NULL))))));
+
+
+create policy "select_banner: public if org is public"
+on "storage"."objects"
+as permissive
+for select
+to authenticated, anon
+using (((bucket_id = 'organization_banner_photos'::text) AND (EXISTS ( SELECT 1
+   FROM organizations o
+  WHERE (((o.id)::text = (storage.foldername(o.name))[1]) AND (o.is_public = true))))));
+
+
+create policy "select_profile: public if org is public"
+on "storage"."objects"
+as permissive
+for select
+to authenticated, anon
+using (((bucket_id = 'organization_profile_photos'::text) AND (EXISTS ( SELECT 1
+   FROM organizations o
+  WHERE (((o.id)::text = (storage.foldername(o.name))[1]) AND (o.is_public = true))))));
 
 
 create policy "update: org owner/admin or course creator"
@@ -5405,6 +5457,24 @@ with check (((bucket_id = 'files'::text) AND (EXISTS ( SELECT 1
    FROM (file_library fl
      JOIN courses c ON ((c.id = fl.course_id)))
   WHERE ((fl.path = objects.name) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.created_by = ( SELECT auth.uid() AS uid)))))))));
+
+
+create policy "update_banner: only org owner/admin"
+on "storage"."objects"
+as permissive
+for update
+to authenticated
+using (((bucket_id = 'organization_banner_photos'::text) AND (get_user_org_role(((storage.foldername(name))[1])::uuid, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text]))))
+with check (((bucket_id = 'organization_banner_photos'::text) AND (get_user_org_role(((storage.foldername(name))[1])::uuid, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text]))));
+
+
+create policy "update_profile: only org owner/admin"
+on "storage"."objects"
+as permissive
+for update
+to authenticated
+using (((bucket_id = 'organization_profile_photos'::text) AND (get_user_org_role(((storage.foldername(name))[1])::uuid, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text]))))
+with check (((bucket_id = 'organization_profile_photos'::text) AND (get_user_org_role(((storage.foldername(name))[1])::uuid, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text]))));
 
 
 

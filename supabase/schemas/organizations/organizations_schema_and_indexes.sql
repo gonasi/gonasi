@@ -19,7 +19,7 @@ create table public.organizations (
   banner_blur_hash text,                          -- Optional blur hash for banner
 
   -- Visibility
-  is_public boolean not null default false,       -- Controls public discoverability
+  is_public boolean not null default true,       -- Controls public discoverability
   is_verified boolean not null default false,     -- Verified badge or label
 
   -- Contact & communication
