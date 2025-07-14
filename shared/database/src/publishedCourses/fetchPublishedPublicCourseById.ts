@@ -8,6 +8,7 @@ import {
 
 import type { TypedSupabaseClient } from '../client';
 import { PUBLISHED_THUMBNAILS } from '../constants';
+import { createOrganizationAvatarSignedUrl } from '../organizations/createOrganizationAvatarSignedUrl';
 
 /**
  * Helper to define query structure for fetching published course details.
@@ -37,7 +38,14 @@ const defineCourseQuery = (supabase: TypedSupabaseClient) =>
     completion_rate,
     average_rating,
     total_reviews,
-    course_structure
+    course_structure,
+    organizations (
+      id,
+      name,
+      handle,
+      avatar_url,
+      blur_hash
+    )
   `);
 
 // Infer type from query
@@ -112,6 +120,11 @@ async function transformAndValidateCourse(
       return null;
     }
 
+    const signedOrgAvatarUrl = await createOrganizationAvatarSignedUrl(
+      supabase,
+      rawCourse.organizations?.avatar_url ?? null,
+    );
+
     // Construct transformed object
     const validatedCourse = {
       ...rawCourse,
@@ -131,6 +144,10 @@ async function transformAndValidateCourse(
           throw error;
         }
       })(),
+      organizations: {
+        ...rawCourse.organizations,
+        signed_avatar_url: signedOrgAvatarUrl ?? null,
+      },
     };
 
     // Validate final object against schema
@@ -190,7 +207,14 @@ export async function fetchPublishedPublicCourseById({
         completion_rate,
         average_rating,
         total_reviews,
-        course_structure
+        course_structure,
+        organizations (
+          id,
+          name,
+          handle,
+          avatar_url,
+          blur_hash
+        )
       `,
       )
       .eq('id', courseId)

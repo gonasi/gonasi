@@ -1,7 +1,10 @@
-import { Link, Outlet } from 'react-router';
+import React from 'react';
+import { Await, Link, Outlet } from 'react-router';
 import { BookOpen, ChevronRight, Clock, StarOff, TableOfContents } from 'lucide-react';
 import { redirectWithError } from 'remix-toast';
 
+import { getCategoryName } from '@gonasi/database/courseCategories';
+import { getSubCategoryName } from '@gonasi/database/courseSubCategories';
 import { fetchPublishedPublicCourseById } from '@gonasi/database/publishedCourses';
 import { timeAgo } from '@gonasi/utils/timeAgo';
 
@@ -78,7 +81,10 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     return redirectWithError(`/go/explore`, 'Course not found');
   }
 
-  return { courseOverview };
+  const categoryName = getCategoryName({ supabase, id: courseOverview.category_id });
+  const subCategoryName = getSubCategoryName({ supabase, id: courseOverview.subcategory_id });
+
+  return { courseOverview, categoryName, subCategoryName };
 }
 
 function MetaInfoItem({ label, timestamp }: { label: string; timestamp: string }) {
@@ -94,6 +100,7 @@ function MetaInfoItem({ label, timestamp }: { label: string; timestamp: string }
 }
 
 export default function PublishedCourseIdIndex({ loaderData }: Route.ComponentProps) {
+  const { categoryName, subCategoryName } = loaderData;
   const {
     id,
     name,
@@ -104,6 +111,7 @@ export default function PublishedCourseIdIndex({ loaderData }: Route.ComponentPr
     pricing_tiers,
     category_id,
     subcategory_id,
+    organizations: { name: orgName, signed_avatar_url },
   } = loaderData.courseOverview;
 
   const params = new URLSearchParams(location.search);
@@ -134,9 +142,31 @@ export default function PublishedCourseIdIndex({ loaderData }: Route.ComponentPr
                 {/* Left Content */}
                 <div className='md:bg-card/50 flex w-full flex-1 flex-col space-y-4 bg-transparent p-4'>
                   <div className='flex items-center space-x-2 overflow-auto'>
-                    <Badge variant='outline'>categoryName</Badge>
+                    <React.Suspense
+                      fallback={
+                        <Badge variant='outline' className='text-muted-foreground'>
+                          Loading Category...
+                        </Badge>
+                      }
+                    >
+                      <Await resolve={categoryName}>
+                        {(value) => <Badge variant='outline'>{value}</Badge>}
+                      </Await>
+                    </React.Suspense>
+
                     <ChevronRight size={12} />
-                    <Badge variant='outline'>subcategoryName</Badge>
+
+                    <React.Suspense
+                      fallback={
+                        <Badge variant='outline' className='text-muted-foreground'>
+                          Loading Subcategory...
+                        </Badge>
+                      }
+                    >
+                      <Await resolve={subCategoryName}>
+                        {(value) => <Badge variant='outline'>{value}</Badge>}
+                      </Await>
+                    </React.Suspense>
                   </div>
 
                   <h2 className='line-clamp-3 text-xl'>{name}</h2>
@@ -147,7 +177,7 @@ export default function PublishedCourseIdIndex({ loaderData }: Route.ComponentPr
                   </div>
 
                   <Link to='/'>
-                    <UserAvatar username='username' imageUrl='' size='xs' />
+                    <UserAvatar username={orgName} imageUrl={signed_avatar_url} size='xs' />
                   </Link>
 
                   <div className='flex flex-col space-y-2 lg:flex-row lg:space-y-0 lg:space-x-4'>

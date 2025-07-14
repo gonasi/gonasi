@@ -5,3 +5,4 @@ export * from './fetchCourseSubCategoryById';
 export * from './deleteCourseSubCategoryById';
 export * from './fetchCourseSubCategoryByCategoryId';
 export * from './fetchCourseSubCategoriesAsSelectOptions';
+export * from './getSubCategoryName';
