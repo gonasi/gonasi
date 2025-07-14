@@ -10,15 +10,18 @@ function GoCardContent({ className, ...props }: React.ComponentProps<'div'>) {
   return <div data-slot='go-card-content' className={cn('px-4 py-2', className)} {...props} />;
 }
 
-type AspectRatioOption = '16/9' | '4/3' | '1/1' | '3/2' | '9/16';
+type AspectRatioOption = '16/9' | '4/3' | '1/1' | '3/2' | '9/16' | '4/1' | '263/100';
 
 const aspectRatioClasses: Record<AspectRatioOption, string> = {
-  '16/9': 'aspect-[16/9]',
-  '4/3': 'aspect-[4/3]',
-  '1/1': 'aspect-square',
-  '3/2': 'aspect-[3/2]',
-  '9/16': 'aspect-[9/16]',
+  '16/9': 'aspect-[16/9]', // standard video & responsive banner
+  '4/3': 'aspect-[4/3]', // classic photo/video
+  '1/1': 'aspect-square', // square (e.g., avatars)
+  '3/2': 'aspect-[3/2]', // slightly taller than 16/9
+  '9/16': 'aspect-[9/16]', // vertical reels/stories
+  '4/1': 'aspect-[4/1]', // LinkedIn-style cover photo
+  '263/100': 'aspect-[263/100]', // Facebook-style cover photo (~2.63:1)
 };
+
 interface GoThumbnailProps {
   iconUrl: string | null;
   blurHash: string | null;
@@ -27,6 +30,7 @@ interface GoThumbnailProps {
   className?: string;
   objectFit?: 'contain' | 'cover' | 'fill' | 'none' | 'scale-down' | 'inherit' | 'initial';
   aspectRatio?: AspectRatioOption;
+  noThumbnailText?: string;
 }
 
 function GoThumbnail({
@@ -37,6 +41,7 @@ function GoThumbnail({
   className,
   objectFit = 'cover',
   aspectRatio = '16/9',
+  noThumbnailText = 'No thumbnail available',
 }: GoThumbnailProps) {
   const placeholder = blurHash ? blurhashToCssGradientString(blurHash) : 'auto';
   const aspectClass = aspectRatioClasses[aspectRatio];
@@ -68,7 +73,7 @@ function GoThumbnail({
         ) : (
           <div className='text-muted-foreground bg-muted flex h-full w-full flex-col items-center justify-center'>
             <ImageIcon className='h-12 w-12' />
-            <span className='font-secondary text-sm md:text-base'>No thumbnail available</span>
+            <span className='font-secondary text-sm md:text-base'>{noThumbnailText}</span>
           </div>
         )}
       </motion.div>
