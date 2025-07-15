@@ -1,5 +1,6 @@
+-- Add check constraint for course_structure_overview
 alter table public.published_courses
-add constraint chk_course_structure_valid
+add constraint chk_course_structure_overview_valid
 check (
   jsonb_matches_schema(
     '{
@@ -13,10 +14,7 @@ check (
           "type": "array",
           "items": {
             "type": "object",
-            "required": [
-              "id", "course_id", "lesson_count", "name", "description",
-              "position", "total_lessons", "total_blocks", "lessons"
-            ],
+            "required": ["id", "course_id", "lesson_count", "name", "description", "position", "total_lessons", "total_blocks", "lessons"],
             "properties": {
               "id": { "type": "string", "format": "uuid" },
               "course_id": { "type": "string", "format": "uuid" },
@@ -30,10 +28,7 @@ check (
                 "type": "array",
                 "items": {
                   "type": "object",
-                  "required": [
-                    "id", "course_id", "chapter_id", "lesson_type_id", "name",
-                    "position", "settings", "lesson_types", "total_blocks", "blocks"
-                  ],
+                  "required": ["id", "course_id", "chapter_id", "lesson_type_id", "name", "position", "total_blocks", "lesson_types"],
                   "properties": {
                     "id": { "type": "string", "format": "uuid" },
                     "course_id": { "type": "string", "format": "uuid" },
@@ -41,7 +36,7 @@ check (
                     "lesson_type_id": { "type": "string", "format": "uuid" },
                     "name": { "type": "string", "minLength": 1 },
                     "position": { "type": "number", "minimum": 0 },
-                    "settings": {},
+                    "total_blocks": { "type": "number", "minimum": 1 },
                     "lesson_types": {
                       "type": "object",
                       "required": ["id", "name", "description", "lucide_icon", "bg_color"],
@@ -52,22 +47,6 @@ check (
                         "lucide_icon": { "type": "string" },
                         "bg_color": { "type": "string" }
                       }
-                    },
-                    "total_blocks": { "type": "number", "minimum": 1 },
-                    "blocks": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "required": ["id", "lesson_id", "plugin_type", "content", "settings", "position"],
-                        "properties": {
-                          "id": { "type": "string", "format": "uuid" },
-                          "lesson_id": { "type": "string", "format": "uuid" },
-                          "plugin_type": { "type": "string" },
-                          "content": {},
-                          "settings": {},
-                          "position": { "type": "number", "minimum": 0 }
-                        }
-                      }
                     }
                   }
                 }
@@ -77,6 +56,6 @@ check (
         }
       }
     }'::json,
-    course_structure
+    course_structure_overview
   )
 );

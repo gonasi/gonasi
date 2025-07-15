@@ -25,8 +25,8 @@ create table public.published_courses (
   visibility course_access not null default 'public',
 
   -- Snapshot of full course structure (chapters, lessons, blocks)
-  course_structure jsonb not null,
-
+  course_structure_overview jsonb not null,
+  course_structure_content jsonb not null, 
   -- Derived structure metrics
   total_chapters integer not null check (total_chapters > 0),
   total_lessons integer not null check (total_lessons > 0),
@@ -63,33 +63,53 @@ create table public.published_courses (
   constraint uq_one_active_published_course unique (id, is_active) deferrable initially deferred
 );
 
+-- ====================================================================================
+-- INDEXES: published_courses
+-- Purpose:
+--   Optimize lookup, filtering, sorting, and deep structure querying.
+-- ====================================================================================
 
--- Foreign key indexes
+-- ----------------------------------------
+-- 🔑 Foreign key indexes (join performance)
+-- ----------------------------------------
 create index idx_published_courses_org_id on public.published_courses(organization_id);
 create index idx_published_courses_published_by on public.published_courses(published_by);
 create index idx_published_courses_category_id on public.published_courses(category_id);
 create index idx_published_courses_subcategory_id on public.published_courses(subcategory_id);
 
--- Common query filters
+-- ----------------------------------------------------
+-- 🔍 Common filters (used in dashboards and listings)
+-- ----------------------------------------------------
 create index idx_published_courses_is_active on public.published_courses(is_active) where is_active = true;
 create index idx_published_courses_visibility on public.published_courses(visibility);
 create index idx_published_courses_published_at on public.published_courses(published_at);
 
--- Versioning and lookup
-create index idx_published_courses_version on public.published_courses(id, version);
-create index idx_published_courses_id_version on public.published_courses(id, version desc);
+-- --------------------------------------------------------------------
+-- 📦 Versioning and access (for latest version lookups, visibility)
+-- --------------------------------------------------------------------
+create index idx_published_courses_id_version on public.published_courses(id, version desc); -- latest version per course
 create index idx_published_courses_org_active on public.published_courses(organization_id, is_active);
 
--- Pricing-related
+-- -------------------------------------------
+-- 💵 Pricing-related (filtering/sorting tiers)
+-- -------------------------------------------
 create index idx_published_courses_has_free on public.published_courses(has_free_tier);
 create index idx_published_courses_min_price on public.published_courses(min_price);
 
--- Structure and search
-create index idx_published_courses_structure_gin on public.published_courses using gin(course_structure);
-create index idx_published_courses_chapters on public.published_courses using gin((course_structure->'chapters'));
-create index idx_published_courses_lessons on public.published_courses using gin((course_structure->'lessons'));
+-- ---------------------------------------------------------------------
+-- 🧱 Structure JSONB (efficient querying inside course_structure blobs)
+-- ---------------------------------------------------------------------
+create index idx_published_courses_structure_content_gin
+  on public.published_courses
+  using gin (course_structure_content jsonb_path_ops);
 
--- Stats filtering/sorting
+create index idx_published_courses_structure_overview_gin
+  on public.published_courses
+  using gin (course_structure_overview jsonb_path_ops);
+
+-- ------------------------------------------------
+-- 📈 Stats sorting (e.g. trending, top rated, etc.)
+-- ------------------------------------------------
 create index idx_published_courses_enrollments on public.published_courses(total_enrollments);
 create index idx_published_courses_rating on public.published_courses(average_rating) where average_rating is not null;
 

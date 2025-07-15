@@ -1416,7 +1416,8 @@ export type Database = {
           blur_hash: string | null
           category_id: string | null
           completion_rate: number | null
-          course_structure: Json
+          course_structure_content: Json
+          course_structure_overview: Json
           created_at: string
           description: string
           has_free_tier: boolean | null
@@ -1445,7 +1446,8 @@ export type Database = {
           blur_hash?: string | null
           category_id?: string | null
           completion_rate?: number | null
-          course_structure: Json
+          course_structure_content: Json
+          course_structure_overview: Json
           created_at?: string
           description: string
           has_free_tier?: boolean | null
@@ -1474,7 +1476,8 @@ export type Database = {
           blur_hash?: string | null
           category_id?: string | null
           completion_rate?: number | null
-          course_structure?: Json
+          course_structure_content?: Json
+          course_structure_overview?: Json
           created_at?: string
           description?: string
           has_free_tier?: boolean | null

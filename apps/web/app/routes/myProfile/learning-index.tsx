@@ -18,7 +18,7 @@ export function headers(_: Route.HeadersArgs) {
   };
 }
 
-export async function loader({ request }: Route.LoaderArgs) {
+export async function loader({ request, params }: Route.LoaderArgs) {
   try {
     const { supabase } = createClient(request);
     const url = new URL(request.url);
@@ -32,6 +32,7 @@ export async function loader({ request }: Route.LoaderArgs) {
       searchQuery: courseNameFilter,
       limit: resultsPerPage,
       page: currentPage,
+      username: params.username,
     });
 
     return { activeLearning };
@@ -47,7 +48,6 @@ export default function LearningIndex() {
   };
 
   const location = useLocation();
-
   const redirectTo = location.pathname + location.search;
 
   return (
@@ -56,18 +56,22 @@ export default function LearningIndex() {
         resolve={activeLearning}
         errorElement={<NotFoundCard message='Failed to load active learning.' />}
       >
-        {(resolvedCourses) =>
+        {(resolvedCourses: Awaited<ReturnType<typeof fetchUsersActivelyEnrolledCourses>>) =>
           resolvedCourses.data.length ? (
             <div className='grid grid-cols-1 gap-0 md:grid-cols-2 md:gap-3 lg:grid-cols-3'>
-              {resolvedCourses.data.map(
-                ({
+              {resolvedCourses.data.map((course) => {
+                if (!course) return null; // Safe guard (shouldn't happen, but keeps TS happy)
+
+                const {
                   id,
                   name,
                   description,
                   image_url,
                   blur_hash,
                   organizations: { handle, name: orgName, avatar_url },
-                }) => (
+                } = course;
+
+                return (
                   <NavLink
                     key={id}
                     to={`/c/${id}?${new URLSearchParams({ redirectTo })}`}
@@ -111,8 +115,8 @@ export default function LearningIndex() {
                       </div>
                     )}
                   </NavLink>
-                ),
-              )}
+                );
+              })}
             </div>
           ) : (
             <NotFoundCard message='No published courses found' />

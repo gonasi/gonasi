@@ -9,16 +9,15 @@ export default function ProfileWrapperLayout() {
   const params = useParams(); // expecting :username from route
   const { activeUserProfile, isActiveUserProfileLoading } = useStore();
 
-  const shouldRedirectToCorrectUsername =
+  const isViewingOwnProfile =
     !!params.username &&
     !!activeUserProfile?.username &&
-    params.username !== activeUserProfile.username;
+    params.username === activeUserProfile.username;
 
-  const shouldBlockRender =
-    isActiveUserProfileLoading ||
-    !activeUserProfile ||
-    !activeUserProfile.username ||
-    shouldRedirectToCorrectUsername;
+  const shouldRedirectToCanonicalUsername =
+    isViewingOwnProfile && params.username !== activeUserProfile?.username;
+
+  const shouldBlockRender = isActiveUserProfileLoading || !activeUserProfile?.id;
 
   useEffect(() => {
     if (isActiveUserProfileLoading) return;
@@ -33,7 +32,7 @@ export default function ProfileWrapperLayout() {
       return;
     }
 
-    if (shouldRedirectToCorrectUsername) {
+    if (shouldRedirectToCanonicalUsername) {
       navigate(`/go/${activeUserProfile.username}`);
     }
   }, [
@@ -41,7 +40,7 @@ export default function ProfileWrapperLayout() {
     activeUserProfile,
     navigate,
     params.username,
-    shouldRedirectToCorrectUsername,
+    shouldRedirectToCanonicalUsername,
   ]);
 
   if (shouldBlockRender) {

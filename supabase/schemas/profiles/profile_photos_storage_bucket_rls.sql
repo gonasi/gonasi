@@ -13,13 +13,13 @@ for insert
 to authenticated
 with check (
   bucket_id = 'profile_photos'
-  and (storage.foldername(name))[1] = (select auth.uid()::text)
+  and split_part(name, '/', 1) = auth.uid()::text
 );
 
 -- ==================================================
 -- 🔍 SELECT: Allow public or self access to profile_photos
 --     - Users can view their own avatar
---     - Anyone can view profile_photos for public profiles
+--     - Anyone (anon or authed) can view avatars if the profile is public
 -- ==================================================
 create policy "Allow public access to public profile profile_photos"
 on storage.objects
@@ -28,12 +28,12 @@ to authenticated, anon
 using (
   bucket_id = 'profile_photos'
   and (
-    owner = (select auth.uid()) -- Own file
+    owner = auth.uid()
     or exists (
       select 1
       from public.profiles
-      where profiles.id::text = (storage.foldername(name))[1]
-      and is_public = true
+      where profiles.id::text = split_part(name, '/', 1)
+        and is_public = true
     )
   )
 );
@@ -46,11 +46,11 @@ on storage.objects
 for update
 to authenticated
 using (
-  owner = (select auth.uid())
+  owner = auth.uid()
 )
 with check (
   bucket_id = 'profile_photos'
-  and (storage.foldername(name))[1] = (select auth.uid()::text)
+  and split_part(name, '/', 1) = auth.uid()::text
 );
 
 -- ==================================================
@@ -61,6 +61,6 @@ on storage.objects
 for delete
 to authenticated
 using (
-  owner = (select auth.uid())
+  owner = auth.uid()
   and bucket_id = 'profile_photos'
 );

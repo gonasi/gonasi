@@ -342,7 +342,8 @@ create table "public"."published_courses" (
     "image_url" text not null,
     "blur_hash" text,
     "visibility" course_access not null default 'public'::course_access,
-    "course_structure" jsonb not null,
+    "course_structure_overview" jsonb not null,
+    "course_structure_content" jsonb not null,
     "total_chapters" integer not null,
     "total_lessons" integer not null,
     "total_blocks" integer not null,
@@ -604,8 +605,6 @@ CREATE INDEX idx_profiles_verified_users ON public.profiles USING btree (id) WHE
 
 CREATE INDEX idx_published_courses_category_id ON public.published_courses USING btree (category_id);
 
-CREATE INDEX idx_published_courses_chapters ON public.published_courses USING gin (((course_structure -> 'chapters'::text)));
-
 CREATE INDEX idx_published_courses_enrollments ON public.published_courses USING btree (total_enrollments);
 
 CREATE INDEX idx_published_courses_has_free ON public.published_courses USING btree (has_free_tier);
@@ -613,8 +612,6 @@ CREATE INDEX idx_published_courses_has_free ON public.published_courses USING bt
 CREATE INDEX idx_published_courses_id_version ON public.published_courses USING btree (id, version DESC);
 
 CREATE INDEX idx_published_courses_is_active ON public.published_courses USING btree (is_active) WHERE (is_active = true);
-
-CREATE INDEX idx_published_courses_lessons ON public.published_courses USING gin (((course_structure -> 'lessons'::text)));
 
 CREATE INDEX idx_published_courses_min_price ON public.published_courses USING btree (min_price);
 
@@ -628,11 +625,11 @@ CREATE INDEX idx_published_courses_published_by ON public.published_courses USIN
 
 CREATE INDEX idx_published_courses_rating ON public.published_courses USING btree (average_rating) WHERE (average_rating IS NOT NULL);
 
-CREATE INDEX idx_published_courses_structure_gin ON public.published_courses USING gin (course_structure);
+CREATE INDEX idx_published_courses_structure_content_gin ON public.published_courses USING gin (course_structure_content jsonb_path_ops);
+
+CREATE INDEX idx_published_courses_structure_overview_gin ON public.published_courses USING gin (course_structure_overview jsonb_path_ops);
 
 CREATE INDEX idx_published_courses_subcategory_id ON public.published_courses USING btree (subcategory_id);
-
-CREATE INDEX idx_published_courses_version ON public.published_courses USING btree (id, version);
 
 CREATE INDEX idx_published_courses_visibility ON public.published_courses USING btree (visibility);
 
@@ -1098,7 +1095,7 @@ alter table "public"."published_courses" add constraint "chk_completion_rate" CH
 
 alter table "public"."published_courses" validate constraint "chk_completion_rate";
 
-alter table "public"."published_courses" add constraint "chk_course_structure_valid" CHECK (jsonb_matches_schema('{
+alter table "public"."published_courses" add constraint "chk_course_structure_content_valid" CHECK (jsonb_matches_schema('{
       "type": "object",
       "required": ["total_chapters", "total_lessons", "total_blocks", "chapters"],
       "properties": {
@@ -1109,10 +1106,7 @@ alter table "public"."published_courses" add constraint "chk_course_structure_va
           "type": "array",
           "items": {
             "type": "object",
-            "required": [
-              "id", "course_id", "lesson_count", "name", "description",
-              "position", "total_lessons", "total_blocks", "lessons"
-            ],
+            "required": ["id", "course_id", "lesson_count", "name", "description", "position", "total_lessons", "total_blocks", "lessons"],
             "properties": {
               "id": { "type": "string", "format": "uuid" },
               "course_id": { "type": "string", "format": "uuid" },
@@ -1126,10 +1120,7 @@ alter table "public"."published_courses" add constraint "chk_course_structure_va
                 "type": "array",
                 "items": {
                   "type": "object",
-                  "required": [
-                    "id", "course_id", "chapter_id", "lesson_type_id", "name",
-                    "position", "settings", "lesson_types", "total_blocks", "blocks"
-                  ],
+                  "required": ["id", "course_id", "chapter_id", "lesson_type_id", "name", "position", "settings", "lesson_types", "total_blocks", "blocks"],
                   "properties": {
                     "id": { "type": "string", "format": "uuid" },
                     "course_id": { "type": "string", "format": "uuid" },
@@ -1172,9 +1163,65 @@ alter table "public"."published_courses" add constraint "chk_course_structure_va
           }
         }
       }
-    }'::json, course_structure)) not valid;
+    }'::json, course_structure_content)) not valid;
 
-alter table "public"."published_courses" validate constraint "chk_course_structure_valid";
+alter table "public"."published_courses" validate constraint "chk_course_structure_content_valid";
+
+alter table "public"."published_courses" add constraint "chk_course_structure_overview_valid" CHECK (jsonb_matches_schema('{
+      "type": "object",
+      "required": ["total_chapters", "total_lessons", "total_blocks", "chapters"],
+      "properties": {
+        "total_chapters": { "type": "number", "minimum": 1 },
+        "total_lessons": { "type": "number", "minimum": 1 },
+        "total_blocks": { "type": "number", "minimum": 1 },
+        "chapters": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "course_id", "lesson_count", "name", "description", "position", "total_lessons", "total_blocks", "lessons"],
+            "properties": {
+              "id": { "type": "string", "format": "uuid" },
+              "course_id": { "type": "string", "format": "uuid" },
+              "lesson_count": { "type": "number", "minimum": 0 },
+              "name": { "type": "string", "minLength": 1 },
+              "description": { "type": "string", "minLength": 1 },
+              "position": { "type": "number", "minimum": 0 },
+              "total_lessons": { "type": "number", "minimum": 1 },
+              "total_blocks": { "type": "number", "minimum": 1 },
+              "lessons": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["id", "course_id", "chapter_id", "lesson_type_id", "name", "position", "total_blocks", "lesson_types"],
+                  "properties": {
+                    "id": { "type": "string", "format": "uuid" },
+                    "course_id": { "type": "string", "format": "uuid" },
+                    "chapter_id": { "type": "string", "format": "uuid" },
+                    "lesson_type_id": { "type": "string", "format": "uuid" },
+                    "name": { "type": "string", "minLength": 1 },
+                    "position": { "type": "number", "minimum": 0 },
+                    "total_blocks": { "type": "number", "minimum": 1 },
+                    "lesson_types": {
+                      "type": "object",
+                      "required": ["id", "name", "description", "lucide_icon", "bg_color"],
+                      "properties": {
+                        "id": { "type": "string", "format": "uuid" },
+                        "name": { "type": "string" },
+                        "description": { "type": "string" },
+                        "lucide_icon": { "type": "string" },
+                        "bg_color": { "type": "string" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }'::json, course_structure_overview)) not valid;
+
+alter table "public"."published_courses" validate constraint "chk_course_structure_overview_valid";
 
 alter table "public"."published_courses" add constraint "chk_pricing_tiers_valid" CHECK (jsonb_matches_schema('{
       "type": "array",
@@ -5245,7 +5292,7 @@ on "storage"."objects"
 as permissive
 for insert
 to authenticated
-with check (((bucket_id = 'profile_photos'::text) AND ((storage.foldername(name))[1] = ( SELECT (auth.uid())::text AS uid))));
+with check (((bucket_id = 'profile_photos'::text) AND (split_part(name, '/'::text, 1) = (auth.uid())::text)));
 
 
 create policy "Allow public access to public profile profile_photos"
@@ -5253,9 +5300,9 @@ on "storage"."objects"
 as permissive
 for select
 to authenticated, anon
-using (((bucket_id = 'profile_photos'::text) AND ((owner = ( SELECT auth.uid() AS uid)) OR (EXISTS ( SELECT 1
+using (((bucket_id = 'profile_photos'::text) AND ((owner = auth.uid()) OR (EXISTS ( SELECT 1
    FROM profiles
-  WHERE (((profiles.id)::text = (storage.foldername(objects.name))[1]) AND (profiles.is_public = true)))))));
+  WHERE (((profiles.id)::text = split_part(objects.name, '/'::text, 1)) AND (profiles.is_public = true)))))));
 
 
 create policy "Allow user to delete own avatar"
@@ -5263,7 +5310,7 @@ on "storage"."objects"
 as permissive
 for delete
 to authenticated
-using (((owner = ( SELECT auth.uid() AS uid)) AND (bucket_id = 'profile_photos'::text)));
+using (((owner = auth.uid()) AND (bucket_id = 'profile_photos'::text)));
 
 
 create policy "Allow user to update own avatar"
@@ -5271,8 +5318,8 @@ on "storage"."objects"
 as permissive
 for update
 to authenticated
-using ((owner = ( SELECT auth.uid() AS uid)))
-with check (((bucket_id = 'profile_photos'::text) AND ((storage.foldername(name))[1] = ( SELECT (auth.uid())::text AS uid))));
+using ((owner = auth.uid()))
+with check (((bucket_id = 'profile_photos'::text) AND (split_part(name, '/'::text, 1) = (auth.uid())::text)));
 
 
 create policy "Delete: Admins or owning editors can delete published_thumbnail"

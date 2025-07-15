@@ -16,6 +16,8 @@ export const getProfileByUsername = async ({ supabase, username }: GetProfileByU
     .eq('username', username)
     .single();
 
+  console.log('******** profile is: ', profile);
+
   if (error || !profile?.username) {
     return null;
   }
@@ -23,9 +25,11 @@ export const getProfileByUsername = async ({ supabase, username }: GetProfileByU
   let signedUrl: string | undefined;
 
   if (profile.avatar_url) {
-    const { data: signedUrlData } = await supabase.storage
+    const { data: signedUrlData, error } = await supabase.storage
       .from(PROFILE_PHOTOS)
       .createSignedUrl(profile.avatar_url, 3600);
+
+    console.log('signed error: ', error);
 
     signedUrl = signedUrlData?.signedUrl;
   }

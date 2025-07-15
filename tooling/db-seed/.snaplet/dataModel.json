@@ -7697,9 +7697,23 @@
           "maxLength": null
         },
         {
-          "id": "public.published_courses.course_structure",
-          "name": "course_structure",
-          "columnName": "course_structure",
+          "id": "public.published_courses.course_structure_overview",
+          "name": "course_structure_overview",
+          "columnName": "course_structure_overview",
+          "type": "jsonb",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.published_courses.course_structure_content",
+          "name": "course_structure_content",
+          "columnName": "course_structure_content",
           "type": "jsonb",
           "isRequired": true,
           "kind": "scalar",
