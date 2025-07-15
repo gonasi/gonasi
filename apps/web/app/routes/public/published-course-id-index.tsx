@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from 'react-router';
-import { BookOpen, ChevronRight, Clock, StarOff, TableOfContents } from 'lucide-react';
+import { ArrowDown, BookOpen, ChevronRight, Clock, StarOff, TableOfContents } from 'lucide-react';
 
 import {
   fetchPublishedPublicCourseById,
@@ -15,6 +15,7 @@ import { GoThumbnail } from '~/components/cards/go-course-card';
 import { GoPricingSheet } from '~/components/cards/go-course-card/GoPricingSheet';
 import { ChapterLessonTree } from '~/components/course';
 import { Badge } from '~/components/ui/badge';
+import { Button } from '~/components/ui/button';
 import { Modal } from '~/components/ui/modal';
 import { createClient } from '~/lib/supabase/supabase.server';
 import { cn } from '~/lib/utils';
@@ -160,8 +161,10 @@ export default function PublishedCourseIdIndex({ loaderData }: Route.ComponentPr
                     {loaderData.courseOverview.description}
                   </p>
 
-                  <div className='pb-2'>
-                    <StarOff size={14} className='text-gold' />
+                  <div className='flex gap-2 pb-2'>
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <StarOff key={i} size={14} className='text-muted-foreground' />
+                    ))}
                   </div>
 
                   <NavLink to={`/${loaderData.courseOverview.organizations.handle}`}>
@@ -234,7 +237,16 @@ export default function PublishedCourseIdIndex({ loaderData }: Route.ComponentPr
                     />
                     <div className='bg-card px-4'>
                       {loaderData.enrollmentStatus?.is_active ? (
-                        <div className='py-4'>hey</div>
+                        <div className='py-4'>
+                          <Button
+                            className='w-full'
+                            rightIconAtEdge
+                            rightIcon={<ArrowDown />}
+                            variant='secondary'
+                          >
+                            Continue
+                          </Button>
+                        </div>
                       ) : (
                         <div>
                           <div className='flex w-full items-center justify-between py-4'>
