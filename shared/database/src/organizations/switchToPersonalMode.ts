@@ -16,7 +16,7 @@ export const switchToPersonalMode = async ({ supabase }: UpdateActiveOrganizatio
       .from('profiles')
       .update({ active_organization_id: null, mode: 'personal' })
       .eq('id', userId)
-      .select()
+      .select('id, active_organization_id, username')
       .single();
 
     if (error) {
@@ -34,6 +34,7 @@ export const switchToPersonalMode = async ({ supabase }: UpdateActiveOrganizatio
       data: {
         id: data.id,
         active_organization_id: data.active_organization_id,
+        username: data.username,
       },
     };
   } catch (err) {

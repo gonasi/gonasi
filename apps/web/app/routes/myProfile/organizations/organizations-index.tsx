@@ -42,7 +42,9 @@ export async function action({ request }: Route.ActionArgs) {
 
   if (!organizationId) {
     const { success, message, data } = await switchToPersonalMode({ supabase });
-    return success ? redirectWithSuccess(`/go/${data?.id}`, message) : dataWithError(null, message);
+    return success
+      ? redirectWithSuccess(`/go/${data?.username}`, message)
+      : dataWithError(null, message);
   }
 
   const validated = SetActiveOrganizationSchema.safeParse({ organizationId });
