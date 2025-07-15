@@ -64,7 +64,7 @@ export type CourseOverviewType = NonNullable<CourseOverviewLoaderReturn['courseO
 export type CoursePricingDataType = CourseOverviewType['pricing_tiers'][number];
 
 // Chapters array
-export type CourseChaptersType = CourseOverviewType['course_structure']['chapters'];
+export type CourseChaptersType = CourseOverviewType['course_structure_overview']['chapters'];
 
 // Single lesson inside a chapter
 export type CourseLessonType = CourseChaptersType[number]['lessons'][number];
@@ -276,7 +276,7 @@ export default function PublishedCourseIdIndex({ loaderData }: Route.ComponentPr
               <div className='max-w-md px-4 md:max-w-xl md:px-0'>
                 <ChapterLessonTree
                   publishedCourseId={loaderData.courseOverview.id}
-                  chapters={loaderData.courseOverview.course_structure.chapters}
+                  chapters={loaderData.courseOverview.course_structure_overview.chapters}
                   userHasAccess={loaderData.enrollmentStatus?.is_active ?? false}
                 />
               </div>

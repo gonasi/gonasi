@@ -117,7 +117,7 @@ export async function fetchPublishedPublicCourseById({
     ...courseRow,
     image_url: signedImageUrl,
     pricing_tiers: pricingParse.data,
-    course_structure: structureParse.data,
+    course_structure_overview: structureParse.data,
     organizations: {
       ...courseRow.organizations,
       avatar_url: signedAvatarUrl,

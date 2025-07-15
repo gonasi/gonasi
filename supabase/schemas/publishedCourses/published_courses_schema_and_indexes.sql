@@ -150,7 +150,8 @@ begin
       NEW.image_url IS DISTINCT FROM OLD.image_url OR
       NEW.blur_hash IS DISTINCT FROM OLD.blur_hash OR
       NEW.visibility IS DISTINCT FROM OLD.visibility OR
-      NEW.course_structure IS DISTINCT FROM OLD.course_structure OR
+      NEW.course_structure_overview IS DISTINCT FROM OLD.course_structure_overview OR
+      NEW.course_structure_content IS DISTINCT FROM OLD.course_structure_content OR
       NEW.pricing_tiers IS DISTINCT FROM OLD.pricing_tiers
     );
 
