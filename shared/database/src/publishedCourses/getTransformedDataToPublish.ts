@@ -1,5 +1,3 @@
-import { PublishCourseSchema } from '@gonasi/schemas/publish';
-
 import type { TypedSupabaseClient } from '../client';
 
 export async function getTransformedDataToPublish({
@@ -112,6 +110,135 @@ export async function getTransformedDataToPublish({
       });
     }
 
+    // Calculate totals
+    const totalChapters = data.chapters?.length || 0;
+    const totalLessons =
+      data.chapters?.reduce((acc, chapter) => acc + (chapter.lessons?.length || 0), 0) || 0;
+    const totalBlocks =
+      data.chapters?.reduce(
+        (acc, chapter) =>
+          acc +
+          (chapter.lessons?.reduce(
+            (lessonAcc, lesson) => lessonAcc + (lesson.lesson_blocks?.length || 0),
+            0,
+          ) || 0),
+        0,
+      ) || 0;
+
+    // Build course structure content (full structure with blocks)
+    const courseStructureContent = {
+      total_chapters: totalChapters,
+      total_lessons: totalLessons,
+      total_blocks: totalBlocks,
+      chapters:
+        data.chapters?.map((chapter) => ({
+          id: chapter.id,
+          course_id: chapter.course_id,
+          name: chapter.name,
+          description: chapter.description,
+          position: chapter.position,
+          lesson_count: chapter.lessons?.length || 0,
+          total_lessons: chapter.lessons?.length || 0,
+          total_blocks:
+            chapter.lessons?.reduce(
+              (acc, lesson) => acc + (lesson.lesson_blocks?.length || 0),
+              0,
+            ) || 0,
+          lessons:
+            chapter.lessons?.map((lesson) => ({
+              id: lesson.id,
+              course_id: lesson.course_id,
+              chapter_id: lesson.chapter_id,
+              lesson_type_id: lesson.lesson_type_id,
+              name: lesson.name,
+              position: lesson.position,
+              settings: lesson.settings || {},
+              total_blocks: lesson.lesson_blocks?.length || 0,
+              lesson_types: {
+                id: lesson.lesson_types.id,
+                name: lesson.lesson_types.name,
+                description: lesson.lesson_types.description,
+                lucide_icon: lesson.lesson_types.lucide_icon,
+                bg_color: lesson.lesson_types.bg_color,
+              },
+              blocks:
+                lesson.lesson_blocks?.map((block) => ({
+                  id: block.id,
+                  lesson_id: block.lesson_id,
+                  plugin_type: block.plugin_type,
+                  content: block.content || {},
+                  settings: block.settings || {},
+                  position: block.position,
+                })) || [],
+            })) || [],
+        })) || [],
+    };
+
+    // Build course structure overview (structure without block content)
+    const courseStructureOverview = {
+      total_chapters: totalChapters,
+      total_lessons: totalLessons,
+      total_blocks: totalBlocks,
+      chapters:
+        data.chapters?.map((chapter) => ({
+          id: chapter.id,
+          course_id: chapter.course_id,
+          name: chapter.name,
+          description: chapter.description,
+          position: chapter.position,
+          lesson_count: chapter.lessons?.length || 0,
+          total_lessons: chapter.lessons?.length || 0,
+          total_blocks:
+            chapter.lessons?.reduce(
+              (acc, lesson) => acc + (lesson.lesson_blocks?.length || 0),
+              0,
+            ) || 0,
+          lessons:
+            chapter.lessons?.map((lesson) => ({
+              id: lesson.id,
+              course_id: lesson.course_id,
+              chapter_id: lesson.chapter_id,
+              lesson_type_id: lesson.lesson_type_id,
+              name: lesson.name,
+              position: lesson.position,
+              total_blocks: lesson.lesson_blocks?.length || 0,
+              lesson_types: {
+                id: lesson.lesson_types.id,
+                name: lesson.lesson_types.name,
+                description: lesson.lesson_types.description,
+                lucide_icon: lesson.lesson_types.lucide_icon,
+                bg_color: lesson.lesson_types.bg_color,
+              },
+            })) || [],
+        })) || [],
+    };
+
+    // Transform pricing tiers
+    const pricingTiers =
+      data.course_pricing_tiers?.map((tier) => ({
+        id: tier.id,
+        course_id: tier.course_id,
+        organization_id: tier.organization_id,
+        payment_frequency: tier.payment_frequency,
+        is_free: tier.is_free,
+        price: tier.price,
+        currency_code: tier.currency_code,
+        promotional_price: tier.promotional_price,
+        promotion_start_date: tier.promotion_start_date,
+        promotion_end_date: tier.promotion_end_date,
+        tier_name: tier.tier_name,
+        tier_description: tier.tier_description,
+        is_active: tier.is_active,
+        position: tier.position,
+        is_popular: tier.is_popular,
+        is_recommended: tier.is_recommended,
+      })) || [];
+
+    // Calculate derived pricing data
+    const hasFreeTier = pricingTiers.some((tier) => tier.is_free);
+    const paidTiers = pricingTiers.filter((tier) => !tier.is_free);
+    const minPrice = paidTiers.length > 0 ? Math.min(...paidTiers.map((tier) => tier.price)) : null;
+
     const transformedData = {
       id: data.id,
       organization_id: data.organization_id,
@@ -119,95 +246,32 @@ export async function getTransformedDataToPublish({
       subcategory_id: data.subcategory_id,
       is_active: true,
       name: data.name,
-      description: data.description,
-      image_url: data.image_url,
+      description: data.description || '', // Ensure non-null for published_courses
+      image_url: data.image_url || '', // Ensure non-null for published_courses
       blur_hash: data.blur_hash,
       visibility: data.visibility,
 
-      course_structure: {
-        total_chapters: data.chapters?.length || 0,
-        total_lessons:
-          data.chapters?.reduce((acc, chapter) => acc + (chapter.lessons?.length || 0), 0) || 0,
-        total_blocks:
-          data.chapters?.reduce(
-            (acc, chapter) =>
-              acc +
-              (chapter.lessons?.reduce(
-                (lessonAcc, lesson) => lessonAcc + (lesson.lesson_blocks?.length || 0),
-                0,
-              ) || 0),
-            0,
-          ) || 0,
+      // Structure fields for published_courses
+      course_structure_overview: courseStructureOverview,
+      course_structure_content: courseStructureContent,
+      total_chapters: totalChapters,
+      total_lessons: totalLessons,
+      total_blocks: totalBlocks,
 
-        chapters:
-          data.chapters?.map((chapter) => ({
-            id: chapter.id,
-            course_id: chapter.course_id,
-            name: chapter.name,
-            description: chapter.description,
-            position: chapter.position,
-            lesson_count: chapter.lessons?.length || 0,
-            total_lessons: chapter.lessons?.length || 0,
-            total_blocks:
-              chapter.lessons?.reduce(
-                (acc, lesson) => acc + (lesson.lesson_blocks?.length || 0),
-                0,
-              ) || 0,
+      // Pricing data
+      pricing_tiers: pricingTiers,
+      has_free_tier: hasFreeTier,
+      min_price: minPrice,
 
-            lessons:
-              chapter.lessons?.map((lesson) => ({
-                id: lesson.id,
-                course_id: lesson.course_id,
-                chapter_id: lesson.chapter_id,
-                lesson_type_id: lesson.lesson_type_id,
-                name: lesson.name,
-                position: lesson.position,
-                settings: lesson.settings,
-                total_blocks: lesson.lesson_blocks?.length || 0,
-
-                lesson_types: {
-                  id: lesson.lesson_types.id,
-                  name: lesson.lesson_types.name,
-                  description: lesson.lesson_types.description,
-                  lucide_icon: lesson.lesson_types.lucide_icon,
-                  bg_color: lesson.lesson_types.bg_color,
-                },
-
-                blocks:
-                  lesson.lesson_blocks?.map((block) => ({
-                    id: block.id,
-                    lesson_id: block.lesson_id,
-                    plugin_type: block.plugin_type,
-                    content: block.content,
-                    settings: block.settings,
-                    position: block.position,
-                  })) || [],
-              })) || [],
-          })) || [],
-      },
-
-      pricing_tiers:
-        data.course_pricing_tiers?.map((tier) => ({
-          id: tier.id,
-          organization_id: tier.organization_id,
-          course_id: tier.course_id,
-          payment_frequency: tier.payment_frequency,
-          is_free: tier.is_free,
-          price: tier.price,
-          currency_code: tier.currency_code,
-          promotional_price: tier.promotional_price,
-          promotion_start_date: tier.promotion_start_date,
-          promotion_end_date: tier.promotion_end_date,
-          tier_name: tier.tier_name,
-          tier_description: tier.tier_description,
-          is_active: tier.is_active,
-          position: tier.position,
-          is_popular: tier.is_popular,
-          is_recommended: tier.is_recommended,
-        })) || [],
+      // Default stats (will be updated by separate processes)
+      total_enrollments: 0,
+      active_enrollments: 0,
+      completion_rate: 0.0,
+      average_rating: null,
+      total_reviews: 0,
     };
 
-    return PublishCourseSchema.parse(transformedData);
+    return transformedData;
   } catch (error) {
     console.error('Error fetching course data:', error);
     throw error;
