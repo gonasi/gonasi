@@ -1,6 +1,5 @@
 import { Suspense } from 'react';
 import { Await, NavLink, useLoaderData, useLocation } from 'react-router';
-import { Play } from 'lucide-react';
 
 import { fetchUsersActivelyEnrolledCourses } from '@gonasi/database/publishedCourses';
 
@@ -10,7 +9,6 @@ import { UserAvatar } from '~/components/avatars';
 import { NotFoundCard } from '~/components/cards';
 import { GoCardContent, GoCourseHeader, GoThumbnail } from '~/components/cards/go-course-card';
 import { Spinner } from '~/components/loaders';
-import { NavLinkButton } from '~/components/ui/button';
 import { createClient } from '~/lib/supabase/supabase.server';
 import { cn } from '~/lib/utils';
 
@@ -96,7 +94,7 @@ export default function LearningIndex() {
                           <p className='font-secondary text-muted-foreground line-clamp-1 text-sm'>
                             {description}
                           </p>
-                          <div className='pt-2'>
+                          <div className='py-2'>
                             <NavLink to={`/${handle}`}>
                               {({ isPending }) => (
                                 <UserAvatar
@@ -108,20 +106,6 @@ export default function LearningIndex() {
                                 />
                               )}
                             </NavLink>
-                          </div>
-                          <div className='flex w-full items-center justify-between'>
-                            <div />
-                            <div className='py-2'>
-                              <div className='py-1'>
-                                <NavLinkButton
-                                  to={`/c/${id}?${new URLSearchParams({ redirectTo })}`}
-                                  rightIcon={<Play />}
-                                  variant='secondary'
-                                >
-                                  Resume Course
-                                </NavLinkButton>
-                              </div>
-                            </div>
                           </div>
                         </GoCardContent>
                       </div>
