@@ -91,7 +91,7 @@ export async function loader({ params, request }: Route.LoaderArgs): Promise<{
 
     return { courseOverview, enrollmentStatus };
   } catch (error) {
-    console.error('Loader error: ', error);
+    // console.error('Loader error: ', error);
     throw error;
   }
 }

@@ -1,4 +1,4 @@
-import { CourseStructureSchema } from '@gonasi/schemas/publish';
+import { CourseStructureOverviewSchema } from '@gonasi/schemas/publish';
 import { PricingSchema } from '@gonasi/schemas/publish/course-pricing';
 
 import { getUserId } from '../auth';
@@ -12,7 +12,8 @@ interface FetchPublishedPublicCourseByIdArgs {
 
 /**
  * Fetches and transforms a publicly published course by ID.
- * Removes lesson.blocks from course_structure (for non-paid users).
+ * Uses course_structure_overview (no blocks, just structure).
+ * Works for both authenticated and anonymous users.
  */
 export async function fetchPublishedPublicCourseById({
   supabase,
@@ -20,54 +21,58 @@ export async function fetchPublishedPublicCourseById({
 }: FetchPublishedPublicCourseByIdArgs) {
   const userId = await getUserId(supabase);
 
-  const { data: courseRow, error } = await supabase
+  let query = supabase
     .from('published_courses')
     .select(
       `
-    id,
-    organization_id,
-    course_categories ( name ),
-    course_sub_categories ( name ),
-    name,
-    description,
-    image_url,
-    blur_hash,
-    visibility,
-    is_active,
-    pricing_tiers,
-    published_at,
-    published_by,
-    total_chapters,
-    total_lessons,
-    total_blocks,
-    has_free_tier,
-    min_price,
-    total_enrollments,
-    active_enrollments,
-    completion_rate,
-    average_rating,
-    total_reviews,
-    course_structure,
-    organizations (
       id,
+      organization_id,
+      course_categories ( name ),
+      course_sub_categories ( name ),
       name,
-      handle,
-      avatar_url,
-      blur_hash
-    ),
-    course_enrollments (
-      id,
-      user_id,
-      expires_at,
-      is_active
-    )
+      description,
+      image_url,
+      blur_hash,
+      visibility,
+      is_active,
+      pricing_tiers,
+      published_at,
+      published_by,
+      total_chapters,
+      total_lessons,
+      total_blocks,
+      has_free_tier,
+      min_price,
+      total_enrollments,
+      active_enrollments,
+      completion_rate,
+      average_rating,
+      total_reviews,
+      course_structure_overview,
+      organizations (
+        id,
+        name,
+        handle,
+        avatar_url,
+        blur_hash
+      ),
+      course_enrollments (
+        id,
+        user_id,
+        expires_at,
+        is_active
+      )
     `,
     )
     .eq('id', courseId)
     .eq('visibility', 'public')
-    .eq('is_active', true)
-    .filter('course_enrollments.user_id', 'eq', userId)
-    .maybeSingle();
+    .eq('is_active', true);
+
+  if (userId) {
+    query = query.filter('course_enrollments.user_id', 'eq', userId);
+  }
+
+  const { data: courseRow, error } = await query.maybeSingle();
 
   if (error) {
     console.error('[fetchPublishedPublicCourseById] Supabase error:', error.message);
@@ -78,8 +83,6 @@ export async function fetchPublishedPublicCourseById({
     console.warn(`[fetchPublishedPublicCourseById] Course ${courseId} not found`);
     return null;
   }
-
-  console.log('[fetchPublishedPublicCourseById] Found course:', courseRow.name);
 
   const signedImageUrl = await generateSignedThumbnailUrl({
     supabase,
@@ -97,7 +100,11 @@ export async function fetchPublishedPublicCourseById({
     return null;
   }
 
-  const structureParse = CourseStructureSchema.safeParse(courseRow.course_structure);
+  // Use CourseStructureOverviewSchema instead of CourseStructureContentSchema
+  const structureParse = CourseStructureOverviewSchema.safeParse(
+    courseRow.course_structure_overview,
+  );
+
   if (!structureParse.success) {
     console.error(
       '[fetchPublishedPublicCourseById] Invalid course structure schema:',
@@ -106,27 +113,11 @@ export async function fetchPublishedPublicCourseById({
     return null;
   }
 
-  const validatedPricingTiers = pricingParse.data;
-  const validatedCourseStructure = structureParse.data;
-
-  const courseStructureWithoutBlocks = {
-    ...validatedCourseStructure,
-    chapters: validatedCourseStructure.chapters.map((chapter) => ({
-      ...chapter,
-      lessons: chapter.lessons.map((lesson) => {
-        const { blocks: _blocks, ...rest } = lesson;
-        return rest;
-      }),
-    })),
-  };
-
-  console.log('[fetchPublishedPublicCourseById] Returning processed course data');
-
   return {
     ...courseRow,
     image_url: signedImageUrl,
-    pricing_tiers: validatedPricingTiers,
-    course_structure: courseStructureWithoutBlocks,
+    pricing_tiers: pricingParse.data,
+    course_structure: structureParse.data,
     organizations: {
       ...courseRow.organizations,
       avatar_url: signedAvatarUrl,

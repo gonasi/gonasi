@@ -46,9 +46,41 @@ const ChapterSchema = z.object({
   lessons: z.array(LessonSchema),
 });
 
-export const CourseStructureSchema = z.object({
+// New schema for course_structure_content (includes all fields)
+export const CourseStructureContentSchema = z.object({
   total_chapters: z.number().int().positive(),
   total_lessons: z.number().int().positive(),
   total_blocks: z.number().int().positive(),
   chapters: z.array(ChapterSchema),
+});
+
+// New schema for course_structure_overview (excludes settings and blocks from lessons)
+const LessonOverviewSchema = z.object({
+  id: z.string().uuid(),
+  course_id: z.string().uuid(),
+  chapter_id: z.string().uuid(),
+  lesson_type_id: z.string().uuid(),
+  name: z.string().nonempty(),
+  position: z.number().int().nonnegative(),
+  total_blocks: z.number().int().positive(),
+  lesson_types: LessonTypeSchema,
+});
+
+const ChapterOverviewSchema = z.object({
+  id: z.string().uuid(),
+  course_id: z.string().uuid(),
+  lesson_count: z.number().int().nonnegative(),
+  name: z.string().nonempty(),
+  description: z.string().nonempty(),
+  position: z.number().int().nonnegative(),
+  total_lessons: z.number().int().positive(),
+  total_blocks: z.number().int().positive(),
+  lessons: z.array(LessonOverviewSchema),
+});
+
+export const CourseStructureOverviewSchema = z.object({
+  total_chapters: z.number().int().positive(),
+  total_lessons: z.number().int().positive(),
+  total_blocks: z.number().int().positive(),
+  chapters: z.array(ChapterOverviewSchema),
 });

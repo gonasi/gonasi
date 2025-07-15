@@ -63,9 +63,13 @@ export async function fetchPublishedPublicCourses({
     )
     .eq('visibility', 'public') // Only public courses
     .eq('is_active', true) // Only active courses
-    .eq('course_enrollments.user_id', userId) // Only enrolled courses for current user
     .order('published_at', { ascending: false })
     .range(startIndex, endIndex);
+
+  // Conditionally add enrollment filter if user is logged in
+  if (userId) {
+    query = query.eq('course_enrollments.user_id', userId);
+  }
 
   // Optional full-text search
   if (searchQuery) {
