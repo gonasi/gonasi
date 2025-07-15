@@ -1,24 +1,33 @@
-import type z from 'zod';
-
+import { CourseStructureSchema } from '@gonasi/schemas/publish';
 import { PricingSchema } from '@gonasi/schemas/publish/course-pricing';
-import {
-  type PublishedCourseDetails,
-  PublishedCourseDetailsSchema,
-} from '@gonasi/schemas/publish/published-course-details';
 
+import { getUserId } from '../auth';
 import type { TypedSupabaseClient } from '../client';
-import { PUBLISHED_THUMBNAILS } from '../constants';
-import { createOrganizationAvatarSignedUrl } from '../organizations/createOrganizationAvatarSignedUrl';
+import { generateSignedOrgProfileUrl, generateSignedThumbnailUrl } from '../utils';
+
+interface FetchPublishedPublicCourseByIdArgs {
+  supabase: TypedSupabaseClient;
+  courseId: string;
+}
 
 /**
- * Helper to define query structure for fetching published course details.
+ * Fetches and transforms a publicly published course by ID.
+ * Removes lesson.blocks from course_structure (for non-paid users).
  */
-const defineCourseQuery = (supabase: TypedSupabaseClient) =>
-  supabase.from('published_courses').select(`
+export async function fetchPublishedPublicCourseById({
+  supabase,
+  courseId,
+}: FetchPublishedPublicCourseByIdArgs) {
+  const userId = await getUserId(supabase);
+
+  const { data: courseRow, error } = await supabase
+    .from('published_courses')
+    .select(
+      `
     id,
     organization_id,
-    category_id,
-    subcategory_id,
+    course_categories ( name ),
+    course_sub_categories ( name ),
     name,
     description,
     image_url,
@@ -45,196 +54,82 @@ const defineCourseQuery = (supabase: TypedSupabaseClient) =>
       handle,
       avatar_url,
       blur_hash
+    ),
+    course_enrollments (
+      id,
+      user_id,
+      expires_at,
+      is_active
     )
-  `);
+    `,
+    )
+    .eq('id', courseId)
+    .eq('visibility', 'public')
+    .eq('is_active', true)
+    .filter('course_enrollments.user_id', 'eq', userId)
+    .maybeSingle();
 
-// Infer type from query
-type RawCourseRow = NonNullable<Awaited<ReturnType<typeof defineCourseQuery>>['data']>[0];
-
-/**
- * Creates a signed URL for a published course thumbnail.
- */
-async function generateSignedThumbnailUrl(
-  supabase: TypedSupabaseClient,
-  imagePath: string,
-): Promise<string | null> {
-  try {
-    const { data, error } = await supabase.storage
-      .from(PUBLISHED_THUMBNAILS)
-      .createSignedUrl(imagePath, 3600);
-
-    if (error) {
-      console.error(`[generateSignedThumbnailUrl] Failed for ${imagePath}:`, error.message);
-      return null;
-    }
-
-    return data?.signedUrl || null;
-  } catch (error) {
-    console.error(`[generateSignedThumbnailUrl] Unexpected error for ${imagePath}:`, error);
+  if (error) {
+    console.error('[fetchPublishedPublicCourseById] Supabase error:', error.message);
     return null;
   }
-}
 
-/**
- * Safely parses a stringified JSON field into a usable object.
- */
-function parseJsonField<T>(field: T | string): T | null {
-  if (typeof field === 'string') {
-    try {
-      return JSON.parse(field);
-    } catch {
-      return null;
-    }
+  if (!courseRow) {
+    console.warn(`[fetchPublishedPublicCourseById] Course ${courseId} not found`);
+    return null;
   }
-  return field;
-}
 
-/**
- * Transforms and validates a raw course DB row into a typed `PublishedCourseDetails` object.
- */
-async function transformAndValidateCourse(
-  rawCourse: RawCourseRow,
-  supabase: TypedSupabaseClient,
-): Promise<z.infer<typeof PublishedCourseDetailsSchema> | null> {
-  try {
-    const parsedPricingTiers = parseJsonField(rawCourse.pricing_tiers);
-    const pricingResult = PricingSchema.safeParse(parsedPricingTiers);
+  console.log('[fetchPublishedPublicCourseById] Found course:', courseRow.name);
 
-    if (!pricingResult.success) {
-      console.error(
-        `[transformCourse] Invalid pricing_tiers for course ${rawCourse.id}:`,
-        pricingResult.error.message,
-      );
-      return null;
-    }
+  const signedImageUrl = await generateSignedThumbnailUrl({
+    supabase,
+    imagePath: courseRow.image_url,
+  });
 
-    const parsedStructure = parseJsonField(rawCourse.course_structure);
-    if (!parsedStructure) {
-      console.error(`[transformCourse] Invalid course_structure for course ${rawCourse.id}`);
-      return null;
-    }
+  const signedAvatarUrl = await generateSignedOrgProfileUrl({
+    supabase,
+    imagePath: courseRow.organizations?.avatar_url ?? '',
+  });
 
-    const thumbnailUrl = await generateSignedThumbnailUrl(supabase, rawCourse.image_url);
-    if (!thumbnailUrl) {
-      console.error(`[transformCourse] Failed to generate thumbnail URL for ${rawCourse.id}`);
-      return null;
-    }
+  const pricingParse = PricingSchema.safeParse(courseRow.pricing_tiers);
+  if (!pricingParse.success) {
+    console.error('[fetchPublishedPublicCourseById] Invalid pricing schema:', pricingParse.error);
+    return null;
+  }
 
-    const signedOrgAvatarUrl = await createOrganizationAvatarSignedUrl(
-      supabase,
-      rawCourse.organizations?.avatar_url ?? null,
+  const structureParse = CourseStructureSchema.safeParse(courseRow.course_structure);
+  if (!structureParse.success) {
+    console.error(
+      '[fetchPublishedPublicCourseById] Invalid course structure schema:',
+      structureParse.error,
     );
-
-    // Construct transformed object
-    const validatedCourse = {
-      ...rawCourse,
-      pricing_tiers: pricingResult.data,
-      course_structure: parsedStructure,
-      signed_url: thumbnailUrl,
-      published_at: (() => {
-        try {
-          const date = new Date(rawCourse.published_at);
-          if (isNaN(date.getTime())) throw new Error('Invalid date');
-          return date.toISOString();
-        } catch (error) {
-          console.error(
-            `[transformCourse] Invalid published_at for ${rawCourse.id}:`,
-            rawCourse.published_at,
-          );
-          throw error;
-        }
-      })(),
-      organizations: {
-        ...rawCourse.organizations,
-        signed_avatar_url: signedOrgAvatarUrl ?? null,
-      },
-    };
-
-    // Validate final object against schema
-    const finalValidation = PublishedCourseDetailsSchema.safeParse(validatedCourse);
-    if (!finalValidation.success) {
-      console.error(
-        `[transformCourse] Course ${rawCourse.id} failed schema validation:`,
-        finalValidation.error.errors,
-      );
-      return null;
-    }
-
-    return finalValidation.data;
-  } catch (error) {
-    console.error(`[transformCourse] Unexpected error processing course ${rawCourse.id}:`, error);
     return null;
   }
-}
 
-interface FetchPublishedPublicCourseByIdArgs {
-  supabase: TypedSupabaseClient;
-  courseId: string;
-}
+  const validatedPricingTiers = pricingParse.data;
+  const validatedCourseStructure = structureParse.data;
 
-/**
- * Fetches and transforms a publicly published course by ID.
- */
-export async function fetchPublishedPublicCourseById({
-  supabase,
-  courseId,
-}: FetchPublishedPublicCourseByIdArgs): Promise<PublishedCourseDetails | null> {
-  try {
-    const { data: courseRow, error } = await supabase
-      .from('published_courses')
-      .select(
-        `
-        id,
-        organization_id,
-        category_id,
-        subcategory_id,
-        name,
-        description,
-        image_url,
-        blur_hash,
-        visibility,
-        is_active,
-        pricing_tiers,
-        published_at,
-        published_by,
-        total_chapters,
-        total_lessons,
-        total_blocks,
-        has_free_tier,
-        min_price,
-        total_enrollments,
-        active_enrollments,
-        completion_rate,
-        average_rating,
-        total_reviews,
-        course_structure,
-        organizations (
-          id,
-          name,
-          handle,
-          avatar_url,
-          blur_hash
-        )
-      `,
-      )
-      .eq('id', courseId)
-      .eq('visibility', 'public')
-      .eq('is_active', true)
-      .single();
+  const courseStructureWithoutBlocks = {
+    ...validatedCourseStructure,
+    chapters: validatedCourseStructure.chapters.map((chapter) => ({
+      ...chapter,
+      lessons: chapter.lessons.map((lesson) => {
+        const { blocks: _blocks, ...rest } = lesson;
+        return rest;
+      }),
+    })),
+  };
 
-    if (error) {
-      console.error('[fetchPublishedCourseById] Error fetching course:', error.message);
-      return null;
-    }
+  console.log('[fetchPublishedPublicCourseById] Returning processed course data');
 
-    if (!courseRow) {
-      console.warn(`[fetchPublishedCourseById] Course ${courseId} not found`);
-      return null;
-    }
-
-    return await transformAndValidateCourse(courseRow as RawCourseRow, supabase);
-  } catch (error) {
-    console.error(`[fetchPublishedCourseById] Unexpected error for ${courseId}:`, error);
-    return null;
-  }
+  return {
+    ...courseRow,
+    image_url: signedImageUrl,
+    pricing_tiers: validatedPricingTiers,
+    course_structure: courseStructureWithoutBlocks,
+    organizations: {
+      ...courseRow.organizations,
+      avatar_url: signedAvatarUrl,
+    },
+  };
 }

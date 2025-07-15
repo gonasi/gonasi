@@ -18,9 +18,6 @@ export async function fetchPublishedPublicCourses({
   const { startIndex, endIndex } = getPaginationRange(page, limit);
   const userId = await getUserId(supabase);
 
-  console.log('[fetchPublishedPublicCourses] userId:', userId);
-  console.log('[fetchPublishedPublicCourses] pagination:', { page, limit, startIndex, endIndex });
-
   // Base query to fetch published courses with related org, category, and enrollment info
   let query = supabase
     .from('published_courses')
