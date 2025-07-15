@@ -90,10 +90,10 @@ export default function OrganizationProfile({ params, loaderData }: Route.Compon
   }
   return (
     <>
-      <div className='flex max-w-xl flex-col space-y-10 pl-4 md:space-y-12'>
+      <div className='-my-8 -mr-4 flex max-w-xl flex-col space-y-10 md:mx-4 md:my-8 md:space-y-12'>
         <div className='relative w-full'>
           {/* Banner background */}
-          <div className='w-full rounded-lg bg-blue-400'>
+          <div className='w-full rounded-lg'>
             <div className='relative'>
               <GoThumbnail
                 iconUrl={loaderData.signed_banner_url ?? ''}
@@ -105,7 +105,7 @@ export default function OrganizationProfile({ params, loaderData }: Route.Compon
               <IconNavLink
                 to={`/${params.organizationId}/settings/organization-profile/update-organization-banner`}
                 icon={Pencil}
-                className='bg-card border-background absolute -top-4 -right-4 flex-shrink-0 rounded-full border-2 p-2'
+                className='bg-card border-background absolute top-4 right-4 flex-shrink-0 rounded-full border-2 p-2 md:-top-4 md:-right-4'
                 size={20}
               />
             </div>
@@ -129,7 +129,7 @@ export default function OrganizationProfile({ params, loaderData }: Route.Compon
           </div>
         </div>
 
-        <div className='md:bg-card/50 flex w-full justify-between rounded-lg bg-transparent p-0 md:p-4'>
+        <div className='md:bg-card/50 flex w-full justify-between rounded-lg bg-transparent p-4'>
           <div>
             <h3 className='text-lg'>{loaderData.name}</h3>
             <h4 className='font-secondary text-muted-foreground text-sm'>{loaderData.handle}</h4>
