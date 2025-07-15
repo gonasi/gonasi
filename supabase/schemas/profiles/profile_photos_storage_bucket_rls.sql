@@ -1,13 +1,15 @@
--- ============================
--- 📦 Storage: Avatar policies
+-- ================================================================
+-- 📦 STORAGE SECURITY POLICIES
 -- Bucket: profile_photos
--- ============================
+--
+-- Folder Structure:
+--   - profile_photos/{user_id}/avatar.jpg
+-- ================================================================
 
--- ==================================================
--- ✅ INSERT: Allow users to upload to their own folder
---     - Files must be uploaded to profile_photos/{user_id}/
--- ==================================================
-create policy "Allow authenticated uploads to own avatar folder"
+-- ================================================================
+-- ✅ insert_avatar: Allow only user to upload to their own folder
+-- ================================================================
+create policy "insert_avatar: only user can upload"
 on storage.objects
 for insert
 to authenticated
@@ -16,51 +18,50 @@ with check (
   and split_part(name, '/', 1) = auth.uid()::text
 );
 
--- ==================================================
--- 🔍 SELECT: Allow public or self access to profile_photos
---     - Users can view their own avatar
---     - Anyone (anon or authed) can view avatars if the profile is public
--- ==================================================
-create policy "Allow public access to public profile profile_photos"
+-- ================================================================
+-- 🔍 select_avatar: Allow public access if profile is public,
+--                  otherwise only the user themselves
+-- ================================================================
+create policy "select_avatar: public if profile is public"
 on storage.objects
 for select
 to authenticated, anon
 using (
   bucket_id = 'profile_photos'
   and (
-    owner = auth.uid()
+    split_part(name, '/', 1) = auth.uid()::text
     or exists (
       select 1
-      from public.profiles
-      where profiles.id::text = split_part(name, '/', 1)
-        and is_public = true
+      from public.profiles p
+      where p.id::text = split_part(storage.objects.name, '/', 1)
     )
   )
 );
 
--- ==================================================
--- ✏️ UPDATE: Allow users to update their own avatar
--- ==================================================
-create policy "Allow user to update own avatar"
+-- ================================================================
+-- ✏️ update_avatar: Allow only user to update their own avatar
+-- ================================================================
+create policy "update_avatar: only user can update"
 on storage.objects
 for update
 to authenticated
 using (
-  owner = auth.uid()
+  bucket_id = 'profile_photos'
+  and split_part(name, '/', 1) = auth.uid()::text
 )
 with check (
   bucket_id = 'profile_photos'
   and split_part(name, '/', 1) = auth.uid()::text
 );
 
--- ==================================================
--- 🗑️ DELETE: Allow users to delete their own avatar
--- ==================================================
-create policy "Allow user to delete own avatar"
+-- ================================================================
+-- 🗑️ delete_avatar: Allow only user to delete their own avatar
+-- ================================================================
+create policy "delete_avatar: only user can delete"
 on storage.objects
 for delete
 to authenticated
 using (
-  owner = auth.uid()
-  and bucket_id = 'profile_photos'
+  bucket_id = 'profile_photos'
+  and split_part(name, '/', 1) = auth.uid()::text
 );

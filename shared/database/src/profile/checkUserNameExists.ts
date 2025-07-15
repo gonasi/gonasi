@@ -19,7 +19,7 @@ export const checkUserNameExists = async (
     }
 
     const { data, error } = await supabase
-      .from('public_profiles')
+      .from('profiles')
       .select('id')
       .eq('username', username)
       .single();

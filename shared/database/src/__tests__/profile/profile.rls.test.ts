@@ -87,7 +87,7 @@ describe('Profile RLS Policies — Column-Level Access Control', () => {
       expect(error).toBeNull(); // not an error, just no access
     });
 
-    it('should allow user to read limited columns of public profiles via public_profiles view', async () => {
+    it('should allow user to read limited columns of public profiles via profiles view', async () => {
       // First make userTwo's profile public
       await signInWithEmailAndPassword(testSupabase, {
         email: userTwo.email,
@@ -121,7 +121,7 @@ describe('Profile RLS Policies — Column-Level Access Control', () => {
         password: userOne.password,
       });
 
-      const { data, error } = await testSupabase.from('public_profiles').select('*');
+      const { data, error } = await testSupabase.from('profiles').select('*');
 
       expect(error).toBeNull();
       expect(data).toMatchObject(
@@ -160,7 +160,7 @@ describe('Profile RLS Policies — Column-Level Access Control', () => {
 
       await TestCleanupManager.signOutAllClients();
 
-      const { data, error } = await testSupabase.from('public_profiles').select('*');
+      const { data, error } = await testSupabase.from('profiles').select('*');
 
       expect(error).toBeNull();
       expect(data).toHaveLength(1);
@@ -342,7 +342,7 @@ describe('Profile RLS Policies — Column-Level Access Control', () => {
   });
 
   describe('Public profile visibility', () => {
-    it('should show public profiles in public_profiles view but not private ones', async () => {
+    it('should show public profiles in profiles view but not private ones', async () => {
       // Make userOne public, userTwo private
       await signInWithEmailAndPassword(testSupabase, {
         email: userOne.email,
@@ -367,10 +367,7 @@ describe('Profile RLS Policies — Column-Level Access Control', () => {
 
       await TestCleanupManager.signOutAllClients();
 
-      const { data, error } = await testSupabase
-        .from('public_profiles')
-        .select('*')
-        .order('username');
+      const { data, error } = await testSupabase.from('profiles').select('*').order('username');
 
       expect(error).toBeNull();
       expect(data).toHaveLength(1);

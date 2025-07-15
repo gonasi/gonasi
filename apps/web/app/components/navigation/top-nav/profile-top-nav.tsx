@@ -32,7 +32,7 @@ export function ProfileTopNav({
 
   const filteredLinks = useDashboardLinks({
     organizationId: organization?.id ?? '',
-    role: member?.role ?? 'collaborator',
+    role: member?.role ?? 'editor',
   });
 
   return (

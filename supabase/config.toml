@@ -89,7 +89,7 @@ schema_paths = [
   './schemas/profiles_add_modes_migration.sql',
 
   # profiles rls
-  './schemas/profiles_schema_rls_policies.sql',
+  './schemas/profiles/profiles_schema_rls.sql',
   './schemas/profiles/profile_photos_storage_bucket_rls.sql',
 
 

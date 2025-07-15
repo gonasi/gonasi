@@ -2855,18 +2855,6 @@ AS $function$
 $function$
 ;
 
-create or replace view "public"."public_profiles" as  SELECT profiles.id,
-    profiles.username,
-    profiles.full_name,
-    profiles.avatar_url,
-    profiles.blur_hash,
-    profiles.is_public,
-    profiles.account_verified,
-    profiles.created_at
-   FROM profiles
-  WHERE ((profiles.is_public = true) OR (profiles.id = ( SELECT auth.uid() AS uid)));
-
-
 CREATE OR REPLACE FUNCTION public.reorder_chapters(p_course_id uuid, chapter_positions jsonb, p_updated_by uuid)
  RETURNS void
  LANGUAGE plpgsql
@@ -4510,6 +4498,8 @@ grant insert on table "public"."profiles" to "anon";
 
 grant references on table "public"."profiles" to "anon";
 
+grant select on table "public"."profiles" to "anon";
+
 grant trigger on table "public"."profiles" to "anon";
 
 grant truncate on table "public"."profiles" to "anon";
@@ -4521,6 +4511,8 @@ grant delete on table "public"."profiles" to "authenticated";
 grant insert on table "public"."profiles" to "authenticated";
 
 grant references on table "public"."profiles" to "authenticated";
+
+grant select on table "public"."profiles" to "authenticated";
 
 grant trigger on table "public"."profiles" to "authenticated";
 
@@ -5137,6 +5129,14 @@ with check (((( SELECT auth.uid() AS uid) = id) AND ((active_organization_id IS 
   WHERE ((m.user_id = ( SELECT auth.uid() AS uid)) AND (m.organization_id = profiles.active_organization_id)))))));
 
 
+create policy "Allow SELECT on own or public profiles"
+on "public"."profiles"
+as permissive
+for select
+to public
+using (((is_public = true) OR (( SELECT auth.uid() AS uid) = id)));
+
+
 create policy "Allow UPDATE of own profile by authenticated users"
 on "public"."profiles"
 as permissive
@@ -5144,14 +5144,6 @@ for update
 to authenticated
 using ((( SELECT auth.uid() AS uid) = id))
 with check ((( SELECT auth.uid() AS uid) = id));
-
-
-create policy "Allow authenticated users to SELECT own profile"
-on "public"."profiles"
-as permissive
-for select
-to authenticated
-using ((( SELECT auth.uid() AS uid) = id));
 
 
 create policy "role_permissions_delete_policy"
@@ -5287,41 +5279,6 @@ CREATE TRIGGER trg_update_published_course_version BEFORE UPDATE ON public.publi
 CREATE TRIGGER on_auth_user_created AFTER INSERT ON auth.users FOR EACH ROW EXECUTE FUNCTION handle_new_user();
 
 
-create policy "Allow authenticated uploads to own avatar folder"
-on "storage"."objects"
-as permissive
-for insert
-to authenticated
-with check (((bucket_id = 'profile_photos'::text) AND (split_part(name, '/'::text, 1) = (auth.uid())::text)));
-
-
-create policy "Allow public access to public profile profile_photos"
-on "storage"."objects"
-as permissive
-for select
-to authenticated, anon
-using (((bucket_id = 'profile_photos'::text) AND ((owner = auth.uid()) OR (EXISTS ( SELECT 1
-   FROM profiles
-  WHERE (((profiles.id)::text = split_part(objects.name, '/'::text, 1)) AND (profiles.is_public = true)))))));
-
-
-create policy "Allow user to delete own avatar"
-on "storage"."objects"
-as permissive
-for delete
-to authenticated
-using (((owner = auth.uid()) AND (bucket_id = 'profile_photos'::text)));
-
-
-create policy "Allow user to update own avatar"
-on "storage"."objects"
-as permissive
-for update
-to authenticated
-using ((owner = auth.uid()))
-with check (((bucket_id = 'profile_photos'::text) AND (split_part(name, '/'::text, 1) = (auth.uid())::text)));
-
-
 create policy "Delete: Admins or owning editors can delete published_thumbnail"
 on "storage"."objects"
 as permissive
@@ -5421,6 +5378,14 @@ using (((bucket_id = 'files'::text) AND (EXISTS ( SELECT 1
   WHERE ((fl.path = objects.name) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.created_by = ( SELECT auth.uid() AS uid)))))))));
 
 
+create policy "delete_avatar: only user can delete"
+on "storage"."objects"
+as permissive
+for delete
+to authenticated
+using (((bucket_id = 'profile_photos'::text) AND (split_part(name, '/'::text, 1) = (auth.uid())::text)));
+
+
 create policy "delete_banner: only org owner/admin"
 on "storage"."objects"
 as permissive
@@ -5451,6 +5416,14 @@ with check (((bucket_id = 'files'::text) AND (EXISTS ( SELECT 1
   WHERE ((c.id = (split_part(objects.name, '/'::text, 2))::uuid) AND (c.organization_id = (split_part(objects.name, '/'::text, 1))::uuid) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.created_by = ( SELECT auth.uid() AS uid)))) AND (check_storage_limit(c.organization_id, COALESCE(((objects.metadata ->> 'size'::text))::bigint, (0)::bigint)) = true))))));
 
 
+create policy "insert_avatar: only user can upload"
+on "storage"."objects"
+as permissive
+for insert
+to authenticated
+with check (((bucket_id = 'profile_photos'::text) AND (split_part(name, '/'::text, 1) = (auth.uid())::text)));
+
+
 create policy "insert_banner: only org owner/admin can upload"
 on "storage"."objects"
 as permissive
@@ -5479,6 +5452,16 @@ to authenticated
 using (((bucket_id = 'files'::text) AND (EXISTS ( SELECT 1
    FROM file_library fl
   WHERE ((fl.path = objects.name) AND (get_user_org_role(fl.organization_id, ( SELECT auth.uid() AS uid)) IS NOT NULL))))));
+
+
+create policy "select_avatar: public if profile is public"
+on "storage"."objects"
+as permissive
+for select
+to authenticated, anon
+using (((bucket_id = 'profile_photos'::text) AND ((split_part(name, '/'::text, 1) = (auth.uid())::text) OR (EXISTS ( SELECT 1
+   FROM profiles p
+  WHERE ((p.id)::text = split_part(objects.name, '/'::text, 1)))))));
 
 
 create policy "select_banner: public if org is public"
@@ -5514,6 +5497,15 @@ with check (((bucket_id = 'files'::text) AND (EXISTS ( SELECT 1
    FROM (file_library fl
      JOIN courses c ON ((c.id = fl.course_id)))
   WHERE ((fl.path = objects.name) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.created_by = ( SELECT auth.uid() AS uid)))))))));
+
+
+create policy "update_avatar: only user can update"
+on "storage"."objects"
+as permissive
+for update
+to authenticated
+using (((bucket_id = 'profile_photos'::text) AND (split_part(name, '/'::text, 1) = (auth.uid())::text)))
+with check (((bucket_id = 'profile_photos'::text) AND (split_part(name, '/'::text, 1) = (auth.uid())::text)));
 
 
 create policy "update_banner: only org owner/admin"
