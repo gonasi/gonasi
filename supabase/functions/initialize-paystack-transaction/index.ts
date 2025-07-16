@@ -17,6 +17,7 @@ const InitializeTransactionSchema = z.object({
   amount: z.number().positive({ message: 'Amount must be a positive number' }),
   currencyCode: z.enum(['KES', 'USD'], { required_error: 'Currency code is required' }),
   reference: z.string().uuid({ message: 'Reference must be a valid UUID' }),
+  metadata: z.any(),
 });
 
 Deno.serve(async (req) => {
@@ -53,7 +54,7 @@ Deno.serve(async (req) => {
     });
   }
 
-  const { email, name, amount, currencyCode, reference } = parsed.data;
+  const { email, name, amount, currencyCode, reference, metadata } = parsed.data;
 
   try {
     const paystackRes = await fetch('https://api.paystack.co/transaction/initialize', {
@@ -71,6 +72,8 @@ Deno.serve(async (req) => {
         callback_url: `${BASE_URL}${CALLBACK_PATH}`,
         metadata: {
           cancel_action: `${BASE_URL}${CALLBACK_PATH}`,
+          transaction_type: 'COURSE_ENROLLMENT',
+          ...metadata,
         },
       }),
     });

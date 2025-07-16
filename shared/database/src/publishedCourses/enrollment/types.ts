@@ -15,8 +15,19 @@ export type InitializeEnrollTransactionResponse = z.infer<
   typeof InitializeEnrollTransactionResponseSchema
 >;
 
+export interface PaystackCustomField {
+  display_name: string;
+  variable_name: string;
+  value: string;
+}
+
+export type PaystackMetadata = InitializeEnrollMetadata & {
+  custom_fields: PaystackCustomField[];
+};
+
+// Any change made, make sure to change zod schema in initialize-paystack-transaction
 export const InitializeEnrollMetadataSchema = z.object({
-  courseId: z.string().uuid(),
+  publishedCourseId: z.string().uuid(),
   pricingTierId: z.string().uuid(),
   organizationId: z.string().uuid(),
 
@@ -33,4 +44,5 @@ export const InitializeEnrollMetadataSchema = z.object({
   promotionalPrice: z.number().nullable(),
   effectivePrice: z.number().nonnegative(),
 });
+
 export type InitializeEnrollMetadata = z.infer<typeof InitializeEnrollMetadataSchema>;

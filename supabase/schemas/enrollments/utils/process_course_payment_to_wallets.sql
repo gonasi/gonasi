@@ -25,8 +25,12 @@ create or replace function public.process_course_payment_to_wallets(
   p_org_payout numeric(19,4),
   p_platform_fee_percent numeric(5,2),
   p_created_by uuid default null
-) returns jsonb
-as $$
+) 
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $function$
 declare
   org_wallet_id uuid;
   gonasi_wallet_id uuid;
@@ -54,7 +58,7 @@ begin
   from public.organization_wallets
   where organization_id = p_organization_id 
     and currency_code = p_currency_code::public.currency_code;
-  
+
   if found then
     org_wallet_existed := true;
   end if;
@@ -63,7 +67,7 @@ begin
   select id into gonasi_wallet_id
   from public.gonasi_wallets
   where currency_code = p_currency_code::public.currency_code;
-  
+
   if found then
     gonasi_wallet_existed := true;
   end if;
@@ -80,7 +84,7 @@ begin
   )
   on conflict (organization_id, currency_code)
   do update set
-    available_balance = organization_wallets.available_balance + excluded.available_balance,
+    available_balance = public.organization_wallets.available_balance + excluded.available_balance,
     updated_at = timezone('utc', now())
   returning id into org_wallet_id;
 
@@ -94,7 +98,7 @@ begin
   )
   on conflict (currency_code)
   do update set
-    available_balance = gonasi_wallets.available_balance + excluded.available_balance,
+    available_balance = public.gonasi_wallets.available_balance + excluded.available_balance,
     updated_at = timezone('utc', now())
   returning id into gonasi_wallet_id;
 
@@ -184,10 +188,7 @@ begin
 
 exception
   when others then
-    -- Log the error and re-raise with context
     raise exception 'Failed to process payment to wallets for payment_id %: %', 
       p_payment_id, SQLERRM;
 end;
-$$ language plpgsql
-set search_path = '';
-
+$function$;

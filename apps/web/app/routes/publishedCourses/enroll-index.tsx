@@ -66,7 +66,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 
 export default function EnrollIndex({ params }: Route.ComponentProps) {
   const { name, pricingData } = useOutletContext<CoursePricingContextType>();
-  const courseId = params.publishedCourseId;
+  const publishedCourseId = params.publishedCourseId;
   const isPending = useIsPending();
   const filteredPricingData = pricingData.find((item) => item.id === params.pricingTierId);
 
@@ -74,7 +74,7 @@ export default function EnrollIndex({ params }: Route.ComponentProps) {
     mode: 'all',
     resolver,
     defaultValues: {
-      courseId,
+      publishedCourseId,
       pricingTierId: filteredPricingData?.id ?? '',
       organizationId: filteredPricingData?.organization_id ?? '',
     },
@@ -86,7 +86,7 @@ export default function EnrollIndex({ params }: Route.ComponentProps) {
     return (
       <Modal open>
         <Modal.Content size='md'>
-          <Modal.Header title='Pricing Tier Not Found' closeRoute={`/c/${courseId}`} />
+          <Modal.Header title='Pricing Tier Not Found' closeRoute={`/c/${publishedCourseId}`} />
           <Modal.Body>
             <p>No pricing tier matches the given ID.</p>
           </Modal.Body>
@@ -99,7 +99,7 @@ export default function EnrollIndex({ params }: Route.ComponentProps) {
     <>
       <Modal open>
         <Modal.Content size='md'>
-          <Modal.Header title={`Enroll to ${name}`} closeRoute={`/c/${courseId}`} />
+          <Modal.Header title={`Enroll to ${name}`} closeRoute={`/c/${publishedCourseId}`} />
           <Modal.Body className='px-4'>
             <PricingOptionCard pricingData={filteredPricingData} hideContinueButton />
             <RemixFormProvider {...methods}>

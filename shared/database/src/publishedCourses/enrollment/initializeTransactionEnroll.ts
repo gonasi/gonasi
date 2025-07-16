@@ -6,25 +6,29 @@ import { PricingSchema } from '@gonasi/schemas/publish/course-pricing';
 import type { TypedSupabaseClient } from '../../client';
 import { getUserProfile } from '../../profile';
 import type { ApiResponse } from '../../types';
+import { toPaystackMetadata } from './toPaystackMetadata';
 import {
-  type InitializeEnrollMetadata,
   type InitializeEnrollTransactionResponse,
   InitializeEnrollTransactionResponseSchema,
 } from './types';
 
 /**
- * Initializes the enrollment process for a course.
+ * Initializes the enrollment process for a course — handles both free and paid flows.
  *
- * Steps:
- * 1. Ensure the user is authenticated.
- * 2. Fetch the published course and validate pricing tiers.
- * 3. Determine pricing logic (including promotional discounts).
- * 4. Attempt enrollment via Supabase RPC (RLS-secured).
- * 5. If it's a paid course, initialize a payment transaction (e.g., via Paystack).
+ * Workflow:
+ *  1. Verify authenticated user
+ *  2. Fetch course + pricing tiers and validate pricing
+ *  3. Determine effective price (check promotions)
+ *  4. If free:
+ *     - Call enrollment RPC directly
+ *     - Return success/failure
+ *  5. If paid:
+ *     - Generate metadata
+ *     - Call serverless function to initialize Paystack transaction
+ *     - Return success/failure
  *
  * @param supabase - Supabase client instance
- * @param data - Course and pricing tier identifiers, and organization context
- * @returns API response with success status and next steps (e.g., payment URL)
+ * @param data - Course and pricing tier identifiers, and org context
  */
 export const initializeTransactionEnroll = async ({
   supabase,
@@ -34,9 +38,9 @@ export const initializeTransactionEnroll = async ({
   data: InitializeEnrollTransactionSchemaTypes;
 }): Promise<ApiResponse<InitializeEnrollTransactionResponse>> => {
   try {
-    const { courseId, pricingTierId, organizationId } = data;
+    const { publishedCourseId, pricingTierId, organizationId } = data;
 
-    // Step 1: Authenticate the user
+    // Step 1: Ensure the user is authenticated
     const userProfile = await getUserProfile(supabase);
     if (!userProfile?.user) {
       console.error('[initializeTransactionEnroll] No authenticated user found.');
@@ -46,11 +50,11 @@ export const initializeTransactionEnroll = async ({
       };
     }
 
-    // Step 2: Fetch course and its pricing tiers
+    // Step 2: Fetch published course and its pricing tiers
     const { data: course, error: courseFetchError } = await supabase
       .from('published_courses')
       .select('id, pricing_tiers')
-      .match({ id: courseId, organization_id: organizationId })
+      .match({ id: publishedCourseId, organization_id: organizationId })
       .single();
 
     if (courseFetchError || !course) {
@@ -64,7 +68,7 @@ export const initializeTransactionEnroll = async ({
       };
     }
 
-    // Step 3: Parse and validate pricing tiers
+    // Step 3: Validate pricing tiers
     const rawTiers =
       typeof course.pricing_tiers === 'string'
         ? JSON.parse(course.pricing_tiers)
@@ -94,63 +98,57 @@ export const initializeTransactionEnroll = async ({
       };
     }
 
-    // Determine promotional pricing
+    // Step 4: Determine final pricing (check for valid promotion)
     const hasValidPromotion =
       selectedTier.promotional_price != null &&
       (!selectedTier.promotion_end_date || new Date(selectedTier.promotion_end_date) > new Date());
 
     const effectivePrice = hasValidPromotion ? selectedTier.promotional_price! : selectedTier.price;
     const isFree = effectivePrice === 0;
-    const finalAmount = effectivePrice * 100; // Convert to smallest currency unit (e.g., kobo)
+    const finalAmount = effectivePrice * 100; // Convert to kobo or cents
 
-    // Step 4: Enroll user via RPC
-    const { data: enrollData, error: enrollError } = await supabase.rpc(
-      'enroll_user_in_published_course',
-      {
-        p_user_id: userProfile.user.id,
-        p_published_course_id: courseId,
-        p_tier_id: selectedTier.id,
-        p_tier_name: selectedTier.tier_name ?? '',
-        p_tier_description: selectedTier.tier_description || '',
-        p_payment_frequency: selectedTier.payment_frequency || 'one_time',
-        p_currency_code: selectedTier.currency_code,
-        p_is_free: isFree,
-        p_effective_price: effectivePrice ?? 0,
-        p_organization_id: organizationId,
-        p_promotional_price: hasValidPromotion ? (selectedTier.promotional_price ?? 0) : 0,
-        p_is_promotional: hasValidPromotion,
-        p_created_by: userProfile.user.id,
-        ...(isFree
-          ? {}
-          : {
-              p_payment_processor_id: undefined,
-              p_payment_amount: effectivePrice,
-              p_payment_method: undefined,
-            }),
-      },
-    );
+    // ─────────────────────────────────────────────────────
+    // FREE ENROLLMENT FLOW
+    // ─────────────────────────────────────────────────────
+    if (isFree) {
+      const { data: enrollData, error: enrollError } = await supabase.rpc(
+        'enroll_user_in_published_course',
+        {
+          p_user_id: userProfile.user.id,
+          p_published_course_id: publishedCourseId,
+          p_tier_id: selectedTier.id,
+          p_tier_name: selectedTier.tier_name ?? '',
+          p_tier_description: selectedTier.tier_description || '',
+          p_payment_frequency: selectedTier.payment_frequency || 'one_time',
+          p_currency_code: selectedTier.currency_code,
+          p_is_free: true,
+          p_effective_price: 0,
+          p_organization_id: organizationId,
+          p_promotional_price: hasValidPromotion ? (selectedTier.promotional_price ?? 0) : 0,
+          p_is_promotional: hasValidPromotion,
+          p_created_by: userProfile.user.id,
+        },
+      );
 
-    if (enrollError) {
-      console.error('[initializeTransactionEnroll] Enrollment RPC failed:', enrollError);
-      return {
-        success: false,
-        message: 'Enrollment failed. Please try again later.',
-      };
-    }
-
-    // Step 5: Handle successful enrollment (free or paid)
-    if (enrollData && typeof enrollData === 'object' && 'success' in enrollData) {
-      if (!enrollData.success) {
+      if (enrollError) {
+        console.error('[initializeTransactionEnroll] Free enrollment RPC failed:', enrollError);
         return {
           success: false,
-          message:
-            typeof enrollData.message === 'string'
-              ? enrollData.message
-              : 'Enrollment was not successful.',
+          message: 'Enrollment failed. Please try again later.',
         };
       }
 
-      if (isFree) {
+      if (enrollData && typeof enrollData === 'object' && 'success' in enrollData) {
+        if (!enrollData.success) {
+          return {
+            success: false,
+            message:
+              typeof enrollData.message === 'string'
+                ? enrollData.message
+                : 'Enrollment was not successful.',
+          };
+        }
+
         return {
           success: true,
           message: 'You’ve successfully enrolled in the course!',
@@ -158,11 +156,14 @@ export const initializeTransactionEnroll = async ({
       }
     }
 
-    // Step 6: Paid course — initialize payment transaction
+    // ─────────────────────────────────────────────────────
+    // PAID ENROLLMENT FLOW
+    // ─────────────────────────────────────────────────────
+
     const reference = uuidv4();
 
-    const metadata: InitializeEnrollMetadata = {
-      courseId,
+    const metadata = toPaystackMetadata({
+      publishedCourseId,
       pricingTierId,
       organizationId,
       userId: userProfile.user.id,
@@ -174,7 +175,7 @@ export const initializeTransactionEnroll = async ({
       isPromotional: hasValidPromotion,
       promotionalPrice: selectedTier.promotional_price ?? null,
       effectivePrice,
-    };
+    });
 
     const { data: transactionData, error: transactionError } = await supabase.functions.invoke(
       'initialize-paystack-transaction',

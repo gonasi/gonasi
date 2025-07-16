@@ -1,7 +1,7 @@
 import z from 'zod';
 
 export const InitializeEnrollTransactionSchema = z.object({
-  courseId: z.string(),
+  publishedCourseId: z.string(),
   pricingTierId: z.string(),
   organizationId: z.string(),
 });
