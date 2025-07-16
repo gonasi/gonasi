@@ -1,11 +1,35 @@
 import type { Route } from './+types/paystack-webhook';
 
+const PAYSTACK_IPS = new Set(['52.31.139.75', '52.49.173.169', '52.214.14.220']);
+
+/**
+ * Extract the client IP address from the request headers or request object.
+ * Falls back to `null` if not found.
+ */
+function getClientIp(request: Request): string | null {
+  const forwardedFor = request.headers.get('x-forwarded-for');
+  if (forwardedFor) {
+    const ips = forwardedFor.split(',').map((ip) => ip.trim());
+    return ips[0] ?? null;
+  }
+
+  // Fallback: This may be undefined depending on the platform
+  const rawIp = (request as any).ip as string | undefined;
+  return rawIp ?? null;
+}
+
 export async function action({ request }: Route.ActionArgs) {
   try {
+    const clientIp: string | null = getClientIp(request);
+
+    if (!clientIp || !PAYSTACK_IPS.has(clientIp)) {
+      console.warn('Blocked webhook request from unauthorized IP:', clientIp);
+      return new Response('Forbidden', { status: 403 });
+    }
+
     // Parse the webhook payload
     const payload = await request.json();
 
-    // Log the entire webhook event
     console.log('Paystack Webhook Received:', {
       event: payload.event,
       data: payload.data,
@@ -13,13 +37,14 @@ export async function action({ request }: Route.ActionArgs) {
       headers: {
         'x-paystack-signature': request.headers.get('x-paystack-signature'),
         'user-agent': request.headers.get('user-agent'),
+        'x-forwarded-for': request.headers.get('x-forwarded-for'),
       },
+      clientIp,
     });
 
-    // Handle specific events
     switch (payload.event) {
       case 'charge.success':
-        console.log('Payment Successful:', {
+        console.log('✅ Payment Successful:', {
           reference: payload.data.reference,
           amount: payload.data.amount,
           currency: payload.data.currency,
@@ -28,13 +53,11 @@ export async function action({ request }: Route.ActionArgs) {
           paid_at: payload.data.paid_at,
         });
 
-        // Add your payment success logic here
-        // e.g., update database, send confirmation email, etc.
-
+        // TODO: Update database, send confirmation email, etc.
         break;
 
       case 'charge.failed':
-        console.log('Payment Failed:', {
+        console.log('❌ Payment Failed:', {
           reference: payload.data.reference,
           amount: payload.data.amount,
           currency: payload.data.currency,
@@ -45,7 +68,7 @@ export async function action({ request }: Route.ActionArgs) {
         break;
 
       case 'transfer.success':
-        console.log('Transfer Successful:', {
+        console.log('💸 Transfer Successful:', {
           reference: payload.data.reference,
           amount: payload.data.amount,
           recipient: payload.data.recipient,
@@ -54,7 +77,7 @@ export async function action({ request }: Route.ActionArgs) {
         break;
 
       case 'transfer.failed':
-        console.log('Transfer Failed:', {
+        console.log('⚠️ Transfer Failed:', {
           reference: payload.data.reference,
           amount: payload.data.amount,
           recipient: payload.data.recipient,

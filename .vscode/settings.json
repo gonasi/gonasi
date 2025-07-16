@@ -13,6 +13,7 @@
   },
 
   // ✅ ESLint language support
-  "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"]
+  "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"],
+  "cSpell.words": ["uuidv"]
   // "deno.enable": true
 }
