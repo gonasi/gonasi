@@ -1780,6 +1780,22 @@ export type Database = {
         Args: { arg_org_id: string; user_email: string }
         Returns: boolean
       }
+      process_course_payment_to_wallets: {
+        Args: {
+          p_payment_id: string
+          p_organization_id: string
+          p_published_course_id: string
+          p_user_id: string
+          p_tier_name: string
+          p_currency_code: string
+          p_gross_amount: number
+          p_platform_fee: number
+          p_org_payout: number
+          p_platform_fee_percent: number
+          p_created_by?: string
+        }
+        Returns: Json
+      }
       reorder_chapters: {
         Args: {
           p_course_id: string
