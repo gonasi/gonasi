@@ -49,8 +49,6 @@ export default [
       ]),
     ]),
 
-    route(':organizationId/published', 'routes/organizations/published/published-index.tsx'),
-
     route(':organizationId/builder', 'routes/organizations/builder/builder-index.tsx', [
       route('new-course-title', 'routes/organizations/builder/new-course-title.tsx'),
     ]),
@@ -59,6 +57,10 @@ export default [
       ':organizationId/builder/:courseId',
       'routes/organizations/builder/course/course-index.tsx',
       [
+        route(
+          'published',
+          'routes/organizations/builder/course/published/published-overview-index.tsx',
+        ),
         route('overview', 'routes/organizations/builder/course/overview/overview-index.tsx', [
           route(
             'edit-thumbnail',

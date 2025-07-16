@@ -43,10 +43,7 @@ export async function action({ request, params }: Route.ActionArgs) {
   });
 
   return success
-    ? redirectWithSuccess(
-        `/${params.organizationId}/published/${params.courseId}/overview`,
-        message,
-      )
+    ? redirectWithSuccess(`/${params.organizationId}/builder/${params.courseId}/published`, message)
     : dataWithError(null, message);
 }
 

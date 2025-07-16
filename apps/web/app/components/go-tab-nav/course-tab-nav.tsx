@@ -24,7 +24,7 @@ export function GoTabNav({ tabs, previousLink, endComponent }: GoTabNavProps) {
           {previousLink ? <BackArrowNavLink to={previousLink} /> : null}
         </div>
 
-        <div className='flex w-full items-center justify-center gap-4 md:gap-10'>
+        <div className='flex w-full items-center justify-center gap-1.5 md:gap-10'>
           {tabs
             .filter((tab) => tab.isVisible !== false)
             .map((tab) => (

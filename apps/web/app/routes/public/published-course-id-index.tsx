@@ -1,4 +1,5 @@
 import { NavLink, Outlet } from 'react-router';
+import { motion } from 'framer-motion';
 import { ArrowDown, BookOpen, ChevronRight, Clock, StarOff, TableOfContents } from 'lucide-react';
 
 import {
@@ -27,7 +28,6 @@ export function headers(_: Route.HeadersArgs) {
   };
 }
 
-// Meta
 export function meta({ data }: Route.MetaArgs) {
   const course = data?.courseOverview;
 
@@ -56,20 +56,11 @@ export function meta({ data }: Route.MetaArgs) {
 }
 
 export type CourseOverviewLoaderReturn = Exclude<Awaited<ReturnType<typeof loader>>, Response>;
-
-// Non-null courseOverview
 export type CourseOverviewType = NonNullable<CourseOverviewLoaderReturn['courseOverview']>;
-
-// Pricing tier type
 export type CoursePricingDataType = CourseOverviewType['pricing_tiers'][number];
-
-// Chapters array
 export type CourseChaptersType = CourseOverviewType['course_structure_overview']['chapters'];
-
-// Single lesson inside a chapter
 export type CourseLessonType = CourseChaptersType[number]['lessons'][number];
 
-// Loader
 export async function loader({ params, request }: Route.LoaderArgs): Promise<{
   courseOverview: Awaited<ReturnType<typeof fetchPublishedPublicCourseById>>;
   enrollmentStatus: Awaited<ReturnType<typeof getEnrollmentStatus>>;
@@ -79,22 +70,25 @@ export async function loader({ params, request }: Route.LoaderArgs): Promise<{
     const publishedCourseId = params.publishedCourseId;
 
     const [courseOverview, enrollmentStatus] = await Promise.all([
-      fetchPublishedPublicCourseById({
-        supabase,
-        courseId: publishedCourseId,
-      }),
-      getEnrollmentStatus({
-        supabase,
-        publishedCourseId,
-      }),
+      fetchPublishedPublicCourseById({ supabase, courseId: publishedCourseId }),
+      getEnrollmentStatus({ supabase, publishedCourseId }),
     ]);
 
     return { courseOverview, enrollmentStatus };
   } catch (error) {
-    // console.error('Loader error: ', error);
     throw error;
   }
 }
+
+const fadeInUp = {
+  hidden: { opacity: 0, y: 10 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.3 } },
+};
+
+const fadeIn = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { duration: 0.4 } },
+};
 
 function MetaInfoItem({ label, timestamp }: { label: string; timestamp: string }) {
   return (
@@ -142,10 +136,19 @@ export default function PublishedCourseIdIndex({ loaderData }: Route.ComponentPr
             closeRoute={closeLink}
           />
           <Modal.Body className='px-0 md:px-4'>
-            <div className='min-h-screen'>
+            <motion.div
+              className='min-h-screen'
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+            >
               <div className='flex flex-col-reverse space-x-0 py-2 md:flex-row md:space-x-10 md:py-10'>
-                {/* Left Content */}
-                <div className='md:bg-card/50 flex w-full flex-1 flex-col space-y-4 bg-transparent p-4'>
+                <motion.div
+                  className='md:bg-card/50 flex w-full flex-1 flex-col space-y-4 bg-transparent p-4'
+                  variants={fadeInUp}
+                  initial='hidden'
+                  animate='show'
+                >
                   <div className='flex items-center space-x-2 overflow-auto'>
                     <Badge variant='outline'>
                       {loaderData.courseOverview.course_categories?.name}
@@ -161,11 +164,13 @@ export default function PublishedCourseIdIndex({ loaderData }: Route.ComponentPr
                     {loaderData.courseOverview.description}
                   </p>
 
-                  <div className='flex gap-2 pb-2'>
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <StarOff key={i} size={14} className='text-muted-foreground' />
-                    ))}
-                  </div>
+                  <motion.div variants={fadeIn} initial='hidden' animate='show'>
+                    <div className='flex gap-2 pb-2'>
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <StarOff key={i} size={14} className='text-muted-foreground' />
+                      ))}
+                    </div>
+                  </motion.div>
 
                   <NavLink to={`/${loaderData.courseOverview.organizations.handle}`}>
                     {({ isPending }) => (
@@ -179,10 +184,12 @@ export default function PublishedCourseIdIndex({ loaderData }: Route.ComponentPr
                     )}
                   </NavLink>
 
-                  <div className='flex flex-col space-y-2 lg:flex-row lg:space-y-0 lg:space-x-4'>
-                    <MetaInfoItem label='Published' timestamp='created_at' />
-                    <MetaInfoItem label='Updated' timestamp='updated_at' />
-                  </div>
+                  <motion.div variants={fadeIn} initial='hidden' animate='show'>
+                    <div className='flex flex-col space-y-2 lg:flex-row lg:space-y-0 lg:space-x-4'>
+                      <MetaInfoItem label='Published' timestamp='created_at' />
+                      <MetaInfoItem label='Updated' timestamp='updated_at' />
+                    </div>
+                  </motion.div>
 
                   <div className='flex items-center space-x-8 pt-2'>
                     <div className='flex items-center space-x-1'>
@@ -200,10 +207,14 @@ export default function PublishedCourseIdIndex({ loaderData }: Route.ComponentPr
                       </span>
                     </div>
                   </div>
-                </div>
+                </motion.div>
 
-                {/* Right Content */}
-                <div className='mb-4 w-full md:w-80 lg:w-sm'>
+                <motion.div
+                  className='mb-4 w-full md:w-80 lg:w-sm'
+                  variants={fadeInUp}
+                  initial='hidden'
+                  animate='show'
+                >
                   <div className='flex flex-col'>
                     <GoThumbnail
                       iconUrl={loaderData.courseOverview.image_url}
@@ -227,8 +238,8 @@ export default function PublishedCourseIdIndex({ loaderData }: Route.ComponentPr
                                 {daysRemaining}
                               </div>
                               <div className='font-secondary mt-1 flex items-center space-x-1 text-xs'>
-                                <Clock className='h-3 w-3' />{' '}
-                                <div> {daysRemaining === 1 ? 'day' : 'days'}</div>
+                                <Clock className='h-3 w-3' />
+                                <div>{daysRemaining === 1 ? 'day' : 'days'}</div>
                               </div>
                             </div>
                           </div>
@@ -269,18 +280,22 @@ export default function PublishedCourseIdIndex({ loaderData }: Route.ComponentPr
                       )}
                     </div>
                   </div>
-                </div>
+                </motion.div>
               </div>
 
-              {/* Chapter Tree */}
-              <div className='max-w-md px-4 md:max-w-xl md:px-0'>
+              <motion.div
+                className='max-w-md px-4 md:max-w-xl md:px-0'
+                variants={fadeInUp}
+                initial='hidden'
+                animate='show'
+              >
                 <ChapterLessonTree
                   publishedCourseId={loaderData.courseOverview.id}
                   chapters={loaderData.courseOverview.course_structure_overview.chapters}
                   userHasAccess={loaderData.enrollmentStatus?.is_active ?? false}
                 />
-              </div>
-            </div>
+              </motion.div>
+            </motion.div>
           </Modal.Body>
         </Modal.Content>
       </Modal>

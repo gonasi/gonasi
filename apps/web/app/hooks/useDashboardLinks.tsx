@@ -3,7 +3,6 @@ import {
   HardDrive,
   HomeIcon,
   LayoutTemplateIcon,
-  LibraryIcon,
   type LucideIcon,
   SettingsIcon,
   ShieldIcon,
@@ -35,12 +34,6 @@ export function useDashboardLinks({
       name: 'Members',
       to: `/${organizationId}/members`,
       icon: ShieldIcon,
-      roles: allRoles,
-    },
-    {
-      name: 'Published',
-      to: `/${organizationId}/published`,
-      icon: LibraryIcon,
       roles: allRoles,
     },
     {

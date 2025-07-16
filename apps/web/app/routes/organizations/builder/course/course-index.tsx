@@ -1,6 +1,14 @@
 import { useEffect, useMemo } from 'react';
 import { data, Outlet, useLocation, useNavigate, useOutletContext } from 'react-router';
-import { BadgeDollarSign, BookType, ClipboardList, FileStack, Pen, PencilOff } from 'lucide-react';
+import {
+  BadgeDollarSign,
+  BookType,
+  CheckCircle,
+  ClipboardList,
+  FileStack,
+  Pen,
+  PencilOff,
+} from 'lucide-react';
 
 import type { Route } from './+types/course-index';
 
@@ -34,6 +42,11 @@ export default function CoursesIndex({ params, loaderData }: Route.ComponentProp
   const tabs = useMemo(
     () => [
       {
+        to: `${basePath}/published`,
+        name: 'Published',
+        icon: CheckCircle,
+      },
+      {
         to: `${basePath}/overview`,
         name: 'Overview',
         icon: ClipboardList,
@@ -59,7 +72,7 @@ export default function CoursesIndex({ params, loaderData }: Route.ComponentProp
 
   useEffect(() => {
     if (location.pathname === basePath) {
-      navigate(`${basePath}/overview`, { replace: true });
+      navigate(`${basePath}/published`, { replace: true });
     }
   }, [location.pathname, basePath, navigate]);
 
@@ -74,9 +87,9 @@ export default function CoursesIndex({ params, loaderData }: Route.ComponentProp
               <Tooltip>
                 <TooltipTrigger asChild>
                   {loaderData.canEdit ? (
-                    <Pen size={16} className='text-muted-foreground' />
+                    <Pen size={16} className='text-muted-foreground hidden md:flex' />
                   ) : (
-                    <PencilOff size={16} className='text-muted-foreground' />
+                    <PencilOff size={16} className='text-muted-foreground hidden md:flex' />
                   )}
                 </TooltipTrigger>
                 <TooltipContent side='top'>
