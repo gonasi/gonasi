@@ -1791,7 +1791,7 @@ export type Database = {
           p_currency_code: string
           p_gross_amount: number
           p_payment_processor_fee: number
-          p_platform_fee_from_net_amount: number
+          p_platform_fee_from_gross: number
           p_org_payout: number
           p_platform_fee_percent: number
           p_created_by?: string

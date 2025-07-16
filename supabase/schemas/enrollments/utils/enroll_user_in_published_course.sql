@@ -7,14 +7,14 @@
 --     - Tier renewals and upgrades
 --     - Access window calculations
 --     - Payment logging and validation
---     - Platform fee and payout calculations (with transaction fees deducted from platform fee)
+--     - Platform fee calculation: org gets (user_payment - platform_fee%), gonasi absorbs transaction fees
 --     - Wallet distribution for organizations
 --     - Course enrollment statistics updates
 --     - Returns a structured JSON summary of the operation
 --
 --   - Prevents abuse by restricting re-enrollment in free tiers before expiration
 --   - Paid enrollments can be upgraded or renewed anytime
---   - Transaction fees (Paystack, etc.) are deducted from Gonasi's platform fee, not org payout
+--   - Transaction fees are absorbed by Gonasi's platform fee, org gets clean percentage
 --
 -- PARAMETERS:
 --   p_user_id               UUID - ID of the user enrolling
@@ -80,12 +80,12 @@ declare
   access_end timestamptz;
 
   -- Payment calculations
-  platform_fee_percent numeric(5,2);                   -- % Gonasi takes from net payment
+  platform_fee_percent numeric(5,2);                   -- % Gonasi takes from user payment
   processor_fee numeric(19,4) := 0;                    -- Payment processor fee (e.g. Paystack)
   net_payment numeric(19,4);                           -- Payment amount after processor fee
-  platform_fee_from_net_amount numeric(19,4);          -- Gonasi’s fee from net payment
-  org_payout numeric(19,4);                            -- Final amount org receives
-  platform_actual_income numeric(19,4);                -- Gonasi’s actual revenue = platform fee - processor fee
+  platform_fee_from_gross numeric(19,4);               -- Gonasi's fee from gross payment (before processor fee)
+  org_payout numeric(19,4);                            -- Amount org receives (user_payment - platform_fee%)
+  gonasi_actual_income numeric(19,4);                   -- Gonasi's actual revenue = platform_fee - processor_fee
 
   -- Final response
   result jsonb;
@@ -192,12 +192,12 @@ begin
     processor_fee := coalesce(p_payment_processor_fee, 0);
     net_payment := p_payment_amount - processor_fee;
 
-    -- Calculate platform and org revenue shares
-    platform_fee_from_net_amount := net_payment * (platform_fee_percent / 100);
-    org_payout := net_payment - platform_fee_from_net_amount;
-    platform_actual_income := platform_fee_from_net_amount;
+    -- NEW CALCULATION: Platform fee from gross payment, org gets remainder
+    platform_fee_from_gross := p_payment_amount * (platform_fee_percent / 100);
+    org_payout := p_payment_amount - platform_fee_from_gross;
+    gonasi_actual_income := platform_fee_from_gross - processor_fee;
 
-    -- Log payment
+    -- Log payment with updated calculation
     insert into public.course_payments (
       enrollment_id, enrollment_activity_id, amount_paid, currency_code,
       payment_method, payment_processor_id, payment_processor_fee,
@@ -206,7 +206,7 @@ begin
     ) values (
       enrollment_id, activity_id, p_payment_amount, p_currency_code::public.currency_code,
       p_payment_method, p_payment_processor_id, processor_fee,
-      net_payment, platform_fee_from_net_amount, platform_fee_percent,
+      net_payment, platform_fee_from_gross, platform_fee_percent,
       org_payout, p_organization_id, coalesce(p_created_by, p_user_id)
     ) returning id into payment_id;
 
@@ -216,7 +216,7 @@ begin
       wallet_result := public.process_course_payment_to_wallets(
         payment_id, p_organization_id, p_published_course_id,
         p_user_id, p_tier_name, p_currency_code,
-        p_payment_amount, processor_fee, platform_fee_from_net_amount, 
+        p_payment_amount, processor_fee, platform_fee_from_gross, 
         org_payout, platform_fee_percent, p_created_by
       );
       result := result || jsonb_build_object('wallet_processing', wallet_result);
@@ -260,8 +260,8 @@ begin
         'processor_fee', processor_fee,
         'net_amount', net_payment,
         'platform_fee_percent', platform_fee_percent,
-        'platform_fee_from_net', platform_fee_from_net_amount,
-        'platform_actual_income', platform_actual_income,
+        'platform_fee_from_gross', platform_fee_from_gross,
+        'gonasi_actual_income', gonasi_actual_income,
         'org_payout', org_payout
       )
     end
