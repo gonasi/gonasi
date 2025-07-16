@@ -5,9 +5,18 @@ import { getPaginationRange } from '../constants/utils';
 import type { FetchDataParams } from '../types';
 import { generateSignedOrgProfileUrl, generateSignedThumbnailUrl } from '../utils';
 
+// Type for course enrollment data
+interface CourseEnrollment {
+  id: string;
+  published_course_id: string;
+  user_id: string;
+  expires_at: string | null;
+  is_active: boolean;
+}
+
 /**
  * Fetches paginated list of publicly visible, active published courses
- * that the current user is enrolled in.
+ * with enrollment status for the current user.
  */
 export async function fetchPublishedPublicCourses({
   supabase,
@@ -18,7 +27,7 @@ export async function fetchPublishedPublicCourses({
   const { startIndex, endIndex } = getPaginationRange(page, limit);
   const userId = await getUserId(supabase);
 
-  // Base query to fetch published courses with related org, category, and enrollment info
+  // Base query to fetch published courses with related org, category info
   let query = supabase
     .from('published_courses')
     .select(
@@ -51,12 +60,6 @@ export async function fetchPublishedPublicCourses({
         handle,
         avatar_url,
         blur_hash
-      ),
-      course_enrollments (
-        id,
-        user_id,
-        expires_at,
-        is_active
       )
     `,
       { count: 'exact' },
@@ -65,11 +68,6 @@ export async function fetchPublishedPublicCourses({
     .eq('is_active', true) // Only active courses
     .order('published_at', { ascending: false })
     .range(startIndex, endIndex);
-
-  // Conditionally add enrollment filter if user is logged in
-  if (userId) {
-    query = query.eq('course_enrollments.user_id', userId);
-  }
 
   // Optional full-text search
   if (searchQuery) {
@@ -85,6 +83,26 @@ export async function fetchPublishedPublicCourses({
   }
 
   console.log('[fetchPublishedPublicCourses] Fetched courses:', data?.length ?? 0);
+
+  // If user is logged in, fetch their enrollment data separately
+  let enrollmentMap = new Map<string, CourseEnrollment>();
+  if (userId && data?.length) {
+    const courseIds = data.map((course) => course.id);
+    const { data: enrollments } = await supabase
+      .from('course_enrollments')
+      .select('id, published_course_id, user_id, expires_at, is_active')
+      .eq('user_id', userId)
+      .in('published_course_id', courseIds);
+
+    if (enrollments) {
+      enrollmentMap = new Map(
+        enrollments.map((enrollment) => [
+          enrollment.published_course_id,
+          enrollment as CourseEnrollment,
+        ]),
+      );
+    }
+  }
 
   // Process results: sign image URLs and validate pricing tiers
   const processedCourses = await Promise.all(
@@ -115,6 +133,8 @@ export async function fetchPublishedPublicCourses({
           ...course.organizations,
           avatar_url: signedAvatarUrl,
         },
+        // Add enrollment data if user is logged in
+        enrollment: userId ? enrollmentMap.get(course.id) || null : null,
       };
     }),
   );

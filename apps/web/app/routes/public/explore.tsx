@@ -107,76 +107,79 @@ export default function Explore() {
                       image_url,
                       blur_hash,
                       pricing_tiers,
-                      course_enrollments,
+                      enrollment,
                       organizations: { handle, name: orgName, avatar_url },
-                    }) => (
-                      <NavLink
-                        key={id}
-                        to={`/c/${id}?${new URLSearchParams({ redirectTo })}`}
-                        className={cn('pb-4 hover:cursor-pointer md:pb-0')}
-                      >
-                        {({ isPending }) => (
-                          <div
-                            className={cn(
-                              'group md:bg-card/80 m-0 rounded-none border-none bg-transparent p-0 shadow-none',
-                              isPending && 'bg-primary/5 animate-pulse hover:cursor-not-allowed',
-                            )}
-                          >
-                            <GoThumbnail
-                              iconUrl={image_url}
-                              blurHash={blur_hash}
-                              name={name}
-                              className='rounded-t-none'
-                              badges={[
-                                course_enrollments[0]?.is_active && (
-                                  <Badge variant='success'>Active</Badge>
-                                ),
-                              ]}
-                            />
-                            <GoCardContent>
-                              <GoCourseHeader
-                                className='text-md line-clamp-2 h-fit md:h-12'
+                    }) => {
+                      console.log('course enroll: ', enrollment);
+                      return (
+                        <NavLink
+                          key={id}
+                          to={`/c/${id}?${new URLSearchParams({ redirectTo })}`}
+                          className={cn('pb-4 hover:cursor-pointer md:pb-0')}
+                        >
+                          {({ isPending }) => (
+                            <div
+                              className={cn(
+                                'group md:bg-card/80 m-0 rounded-none border-none bg-transparent p-0 shadow-none',
+                                isPending && 'bg-primary/5 animate-pulse hover:cursor-not-allowed',
+                              )}
+                            >
+                              <GoThumbnail
+                                iconUrl={image_url}
+                                blurHash={blur_hash}
                                 name={name}
+                                className='rounded-t-none'
+                                badges={[
+                                  enrollment && enrollment.is_active && (
+                                    <Badge variant='success'>Active</Badge>
+                                  ),
+                                ]}
                               />
-                              <p className='font-secondary text-muted-foreground line-clamp-1 text-sm'>
-                                {description}
-                              </p>
-                              <div className='pt-2'>
-                                <NavLink to={`/${handle}`}>
-                                  {({ isPending }) => (
-                                    <UserAvatar
-                                      username={orgName}
-                                      imageUrl={avatar_url}
-                                      size='xs'
-                                      isPending={isPending}
-                                      alwaysShowUsername
-                                    />
-                                  )}
-                                </NavLink>
-                              </div>
-                              <div className='flex w-full items-center justify-between'>
-                                <div />
-                                <div className='py-2'>
-                                  {course_enrollments[0]?.is_active ? (
-                                    <div className='py-1'>
-                                      <NavLinkButton
-                                        to={`/c/${id}?${new URLSearchParams({ redirectTo })}`}
-                                        rightIcon={<Play />}
-                                        variant='secondary'
-                                      >
-                                        Resume Course
-                                      </NavLinkButton>
-                                    </div>
-                                  ) : (
-                                    <GoPricingSheet pricingData={pricing_tiers} />
-                                  )}
+                              <GoCardContent>
+                                <GoCourseHeader
+                                  className='text-md line-clamp-2 h-fit md:h-12'
+                                  name={name}
+                                />
+                                <p className='font-secondary text-muted-foreground line-clamp-1 text-sm'>
+                                  {description}
+                                </p>
+                                <div className='pt-2'>
+                                  <NavLink to={`/${handle}`}>
+                                    {({ isPending }) => (
+                                      <UserAvatar
+                                        username={orgName}
+                                        imageUrl={avatar_url}
+                                        size='xs'
+                                        isPending={isPending}
+                                        alwaysShowUsername
+                                      />
+                                    )}
+                                  </NavLink>
                                 </div>
-                              </div>
-                            </GoCardContent>
-                          </div>
-                        )}
-                      </NavLink>
-                    ),
+                                <div className='flex w-full items-center justify-between'>
+                                  <div />
+                                  <div className='py-2'>
+                                    {enrollment && enrollment.is_active ? (
+                                      <div className='py-1'>
+                                        <NavLinkButton
+                                          to={`/c/${id}?${new URLSearchParams({ redirectTo })}`}
+                                          rightIcon={<Play />}
+                                          variant='secondary'
+                                        >
+                                          Resume Course
+                                        </NavLinkButton>
+                                      </div>
+                                    ) : (
+                                      <GoPricingSheet pricingData={pricing_tiers} />
+                                    )}
+                                  </div>
+                                </div>
+                              </GoCardContent>
+                            </div>
+                          )}
+                        </NavLink>
+                      );
+                    },
                   )}
                 </div>
               ) : (

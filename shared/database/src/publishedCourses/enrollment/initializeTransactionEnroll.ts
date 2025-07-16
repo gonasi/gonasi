@@ -7,12 +7,24 @@ import type { TypedSupabaseClient } from '../../client';
 import { getUserProfile } from '../../profile';
 import type { ApiResponse } from '../../types';
 import {
+  type InitializeEnrollMetadata,
   type InitializeEnrollTransactionResponse,
   InitializeEnrollTransactionResponseSchema,
 } from './types';
 
 /**
  * Initializes the enrollment process for a course.
+ *
+ * Steps:
+ * 1. Ensure the user is authenticated.
+ * 2. Fetch the published course and validate pricing tiers.
+ * 3. Determine pricing logic (including promotional discounts).
+ * 4. Attempt enrollment via Supabase RPC (RLS-secured).
+ * 5. If it's a paid course, initialize a payment transaction (e.g., via Paystack).
+ *
+ * @param supabase - Supabase client instance
+ * @param data - Course and pricing tier identifiers, and organization context
+ * @returns API response with success status and next steps (e.g., payment URL)
  */
 export const initializeTransactionEnroll = async ({
   supabase,
@@ -24,8 +36,8 @@ export const initializeTransactionEnroll = async ({
   try {
     const { courseId, pricingTierId, organizationId } = data;
 
+    // Step 1: Authenticate the user
     const userProfile = await getUserProfile(supabase);
-
     if (!userProfile?.user) {
       console.error('[initializeTransactionEnroll] No authenticated user found.');
       return {
@@ -34,7 +46,7 @@ export const initializeTransactionEnroll = async ({
       };
     }
 
-    // Fetch published course with pricing tiers
+    // Step 2: Fetch course and its pricing tiers
     const { data: course, error: courseFetchError } = await supabase
       .from('published_courses')
       .select('id, pricing_tiers')
@@ -52,14 +64,13 @@ export const initializeTransactionEnroll = async ({
       };
     }
 
-    // Parse pricing tiers
+    // Step 3: Parse and validate pricing tiers
     const rawTiers =
       typeof course.pricing_tiers === 'string'
         ? JSON.parse(course.pricing_tiers)
         : course.pricing_tiers;
 
     const pricingValidation = PricingSchema.safeParse(rawTiers);
-
     if (!pricingValidation.success) {
       console.error(
         '[initializeTransactionEnroll] Pricing validation failed:',
@@ -71,7 +82,6 @@ export const initializeTransactionEnroll = async ({
       };
     }
 
-    // Find selected tier
     const selectedTier = pricingValidation.data.find((tier) => tier.id === pricingTierId);
     if (!selectedTier) {
       console.error(
@@ -84,17 +94,16 @@ export const initializeTransactionEnroll = async ({
       };
     }
 
-    // Determine promotional status and price
+    // Determine promotional pricing
     const hasValidPromotion =
       selectedTier.promotional_price != null &&
       (!selectedTier.promotion_end_date || new Date(selectedTier.promotion_end_date) > new Date());
 
     const effectivePrice = hasValidPromotion ? selectedTier.promotional_price! : selectedTier.price;
-
     const isFree = effectivePrice === 0;
-    const finalAmount = effectivePrice * 100; // in smallest currency unit
+    const finalAmount = effectivePrice * 100; // Convert to smallest currency unit (e.g., kobo)
 
-    // Call RPC to enroll user
+    // Step 4: Enroll user via RPC
     const { data: enrollData, error: enrollError } = await supabase.rpc(
       'enroll_user_in_published_course',
       {
@@ -114,7 +123,6 @@ export const initializeTransactionEnroll = async ({
         ...(isFree
           ? {}
           : {
-              // Fix: pass undefined instead of null for optional string fields
               p_payment_processor_id: undefined,
               p_payment_amount: effectivePrice,
               p_payment_method: undefined,
@@ -130,6 +138,7 @@ export const initializeTransactionEnroll = async ({
       };
     }
 
+    // Step 5: Handle successful enrollment (free or paid)
     if (enrollData && typeof enrollData === 'object' && 'success' in enrollData) {
       if (!enrollData.success) {
         return {
@@ -141,31 +150,32 @@ export const initializeTransactionEnroll = async ({
         };
       }
 
-      // Free enrollment: return immediately
       if (isFree) {
         return {
           success: true,
-          message:
-            typeof enrollData.message === 'string'
-              ? enrollData.message
-              : 'You’ve successfully enrolled in the course!',
-          data: {
-            status: true,
-            message:
-              typeof enrollData.message === 'string'
-                ? enrollData.message
-                : 'You’ve successfully enrolled in the course!',
-            data: {
-              authorization_url: '',
-              access_code: '',
-              reference: '',
-            },
-          },
+          message: 'You’ve successfully enrolled in the course!',
         };
       }
     }
 
-    // Paid enrollment: initialize payment
+    // Step 6: Paid course — initialize payment transaction
+    const reference = uuidv4();
+
+    const metadata: InitializeEnrollMetadata = {
+      courseId,
+      pricingTierId,
+      organizationId,
+      userId: userProfile.user.id,
+      userEmail: userProfile.user.email,
+      userName: userProfile.user.full_name ?? '',
+      tierName: selectedTier.tier_name ?? '',
+      tierDescription: selectedTier.tier_description ?? '',
+      paymentFrequency: selectedTier.payment_frequency,
+      isPromotional: hasValidPromotion,
+      promotionalPrice: selectedTier.promotional_price ?? null,
+      effectivePrice,
+    };
+
     const { data: transactionData, error: transactionError } = await supabase.functions.invoke(
       'initialize-paystack-transaction',
       {
@@ -174,7 +184,8 @@ export const initializeTransactionEnroll = async ({
           name: userProfile.user.full_name,
           amount: finalAmount,
           currencyCode: selectedTier.currency_code,
-          reference: uuidv4(),
+          reference,
+          metadata,
         },
       },
     );
@@ -193,7 +204,6 @@ export const initializeTransactionEnroll = async ({
     const parsedTransaction = InitializeEnrollTransactionResponseSchema.safeParse(
       transactionData.data,
     );
-
     if (!parsedTransaction.success) {
       console.error(
         '[initializeTransactionEnroll] Payment response validation failed:',

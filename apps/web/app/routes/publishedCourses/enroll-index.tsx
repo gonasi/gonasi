@@ -28,7 +28,7 @@ interface CoursePricingContextType {
 
 const resolver = zodResolver(InitializeEnrollTransactionSchema);
 
-export async function action({ request }: Route.ActionArgs) {
+export async function action({ request, params }: Route.ActionArgs) {
   const formData = await request.formData();
   await checkHoneypot(formData);
 
@@ -57,7 +57,10 @@ export async function action({ request }: Route.ActionArgs) {
   });
 
   return success
-    ? redirectWithSuccess(`${successData?.data.authorization_url}`, message)
+    ? redirectWithSuccess(
+        successData ? `${successData?.data.authorization_url}` : `/c/${params.publishedCourseId}`,
+        message,
+      )
     : dataWithError(null, message);
 }
 
