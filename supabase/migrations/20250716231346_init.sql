@@ -2276,13 +2276,13 @@ end;
 $function$
 ;
 
-CREATE OR REPLACE FUNCTION public.enroll_user_in_published_course(p_user_id uuid, p_published_course_id uuid, p_tier_id uuid, p_tier_name text, p_tier_description text, p_payment_frequency text, p_currency_code text, p_is_free boolean, p_effective_price numeric, p_organization_id uuid, p_promotional_price numeric DEFAULT NULL::numeric, p_is_promotional boolean DEFAULT false, p_payment_processor_id text DEFAULT NULL::text, p_payment_amount numeric DEFAULT NULL::numeric, p_payment_method text DEFAULT NULL::text, p_created_by uuid DEFAULT NULL::uuid)
+CREATE OR REPLACE FUNCTION public.enroll_user_in_published_course(p_user_id uuid, p_published_course_id uuid, p_tier_id uuid, p_tier_name text, p_tier_description text, p_payment_frequency text, p_currency_code text, p_is_free boolean, p_effective_price numeric, p_organization_id uuid, p_promotional_price numeric DEFAULT NULL::numeric, p_is_promotional boolean DEFAULT false, p_payment_processor_id text DEFAULT NULL::text, p_payment_amount numeric DEFAULT NULL::numeric, p_payment_method text DEFAULT NULL::text, p_payment_processor_fee numeric DEFAULT NULL::numeric, p_created_by uuid DEFAULT NULL::uuid)
  RETURNS jsonb
  LANGUAGE plpgsql
  SET search_path TO ''
 AS $function$
 declare
-  -- Outputs
+  -- Output IDs
   enrollment_id uuid;
   activity_id uuid;
   payment_id uuid;
@@ -2296,18 +2296,17 @@ declare
   access_end timestamptz;
 
   -- Payment calculations
-  platform_fee_percent numeric(5,2);         -- from org's tier
-  payment_processor_fee numeric(19,4) := 0;  -- TODO: real fee logic later
-  net_amount numeric(19,4);                  -- amount after processor fee
-  platform_fee numeric(19,4);                -- our cut
-  org_payout_amount numeric(19,4);           -- what org gets
+  platform_fee_percent numeric(5,2);                   -- % Gonasi takes from net payment
+  processor_fee numeric(19,4) := 0;                    -- Payment processor fee (e.g. Paystack)
+  net_payment numeric(19,4);                           -- Payment amount after processor fee
+  platform_fee_from_net_amount numeric(19,4);          -- Gonasi’s fee from net payment
+  org_payout numeric(19,4);                            -- Final amount org receives
+  platform_actual_income numeric(19,4);                -- Gonasi’s actual revenue = platform fee - processor fee
 
-  -- Final result
+  -- Final response
   result jsonb;
 begin
-  -- =========================================================================
-  -- STEP 1: Check if the user is already actively enrolled in the course
-  -- =========================================================================
+  -- STEP 1: Check for active enrollment
   select * into existing_enrollment_record
   from public.course_enrollments
   where user_id = p_user_id 
@@ -2315,12 +2314,8 @@ begin
     and is_active = true
     and (expires_at is null or expires_at > timezone('utc', now()));
 
-  -- =========================================================================
-  -- STEP 2: Get the organization’s tier info and platform fee %
-  -- =========================================================================
-  select 
-    o.tier,
-    tl.platform_fee_percentage
+  -- STEP 2: Get org's platform fee percentage
+  select o.tier, tl.platform_fee_percentage
   into organization_tier_record
   from public.organizations o
   join public.tier_limits tl on tl.tier = o.tier
@@ -2332,9 +2327,7 @@ begin
 
   platform_fee_percent := organization_tier_record.platform_fee_percentage;
 
-  -- =========================================================================
-  -- STEP 3: Prevent users from re-enrolling into a free tier if already active
-  -- =========================================================================
+  -- STEP 3: Prevent repeated free enrollments if already active
   if found and p_is_free then
     if exists (
       select 1 
@@ -2344,7 +2337,6 @@ begin
       order by cea.created_at desc
       limit 1
     ) then
-      -- Abort with message
       result := jsonb_build_object(
         'success', false,
         'message', 'You already have free access to this course. You can re-enroll when your current access expires.',
@@ -2359,26 +2351,20 @@ begin
     end if;
   end if;
 
-  -- =========================================================================
-  -- STEP 4: Calculate the end of access period based on frequency
-  -- =========================================================================
+  -- STEP 4: Calculate access window
   if found and not p_is_free then
-    -- Extend from current expiry if valid
     access_end := public.calculate_access_end_date(
       greatest(existing_enrollment_record.expires_at, timezone('utc', now())), 
       p_payment_frequency::public.payment_frequency
     );
   else
-    -- New user or free enrollment
     access_end := public.calculate_access_end_date(
       access_start, 
       p_payment_frequency::public.payment_frequency
     );
   end if;
 
-  -- =========================================================================
-  -- STEP 5: Create or update course enrollment record
-  -- =========================================================================
+  -- STEP 5: Create or update enrollment
   insert into public.course_enrollments (
     user_id, published_course_id, organization_id,
     enrolled_at, expires_at, is_active
@@ -2396,9 +2382,7 @@ begin
     end
   returning id into enrollment_id;
 
-  -- =========================================================================
-  -- STEP 6: Log activity (pricing tier, frequency, promo metadata, etc.)
-  -- =========================================================================
+  -- STEP 6: Log enrollment activity
   insert into public.course_enrollment_activities (
     enrollment_id, tier_name, tier_description,
     payment_frequency, currency_code, is_free,
@@ -2411,9 +2395,7 @@ begin
     access_start, access_end, coalesce(p_created_by, p_user_id)
   ) returning id into activity_id;
 
-  -- =========================================================================
-  -- STEP 7: Handle payments for paid tiers (validate, insert, calculate fees)
-  -- =========================================================================
+  -- STEP 7: Handle payment for paid enrollments
   if not p_is_free then
     if p_payment_processor_id is null or p_payment_amount is null then
       raise exception 'Payment information required for paid enrollment';
@@ -2423,10 +2405,13 @@ begin
       raise exception 'Payment amount does not match tier price';
     end if;
 
-    -- Calculate fees and payouts
-    net_amount := p_payment_amount - payment_processor_fee;
-    platform_fee := net_amount * (platform_fee_percent / 100);
-    org_payout_amount := net_amount - platform_fee;
+    processor_fee := coalesce(p_payment_processor_fee, 0);
+    net_payment := p_payment_amount - processor_fee;
+
+    -- Calculate platform and org revenue shares
+    platform_fee_from_net_amount := net_payment * (platform_fee_percent / 100);
+    org_payout := net_payment - platform_fee_from_net_amount;
+    platform_actual_income := platform_fee_from_net_amount;
 
     -- Log payment
     insert into public.course_payments (
@@ -2436,21 +2421,19 @@ begin
       org_payout_amount, organization_id, created_by
     ) values (
       enrollment_id, activity_id, p_payment_amount, p_currency_code::public.currency_code,
-      p_payment_method, p_payment_processor_id, payment_processor_fee,
-      net_amount, platform_fee, platform_fee_percent,
-      org_payout_amount, p_organization_id, coalesce(p_created_by, p_user_id)
+      p_payment_method, p_payment_processor_id, processor_fee,
+      net_payment, platform_fee_from_net_amount, platform_fee_percent,
+      org_payout, p_organization_id, coalesce(p_created_by, p_user_id)
     ) returning id into payment_id;
 
-    -- =========================================================================
-    -- STEP 7b: Process wallet disbursement for org and platform
-    -- =========================================================================
+    -- STEP 7b: Process wallets
     declare wallet_result jsonb;
     begin
       wallet_result := public.process_course_payment_to_wallets(
         payment_id, p_organization_id, p_published_course_id,
         p_user_id, p_tier_name, p_currency_code,
-        p_payment_amount, platform_fee, org_payout_amount,
-        platform_fee_percent, p_created_by
+        p_payment_amount, processor_fee, platform_fee_from_net_amount, 
+        org_payout, platform_fee_percent, p_created_by
       );
       result := result || jsonb_build_object('wallet_processing', wallet_result);
     exception
@@ -2459,9 +2442,7 @@ begin
     end;
   end if;
 
-  -- =========================================================================
-  -- STEP 8: Update published course enrollment stats
-  -- =========================================================================
+  -- STEP 8: Update course stats
   update public.published_courses 
   set 
     total_enrollments = total_enrollments + 1,
@@ -2475,9 +2456,7 @@ begin
     updated_at = timezone('utc', now())
   where id = p_published_course_id;
 
-  -- =========================================================================
-  -- STEP 9: Return final result
-  -- =========================================================================
+  -- STEP 9: Return result
   result := jsonb_build_object(
     'success', true,
     'message', case 
@@ -2494,11 +2473,12 @@ begin
       when p_is_free then null
       else jsonb_build_object(
         'gross_amount', p_payment_amount,
-        'processor_fee', payment_processor_fee,
-        'net_amount', net_amount,
-        'platform_fee', platform_fee,
+        'processor_fee', processor_fee,
+        'net_amount', net_payment,
         'platform_fee_percent', platform_fee_percent,
-        'org_payout', org_payout_amount
+        'platform_fee_from_net', platform_fee_from_net_amount,
+        'platform_actual_income', platform_actual_income,
+        'org_payout', org_payout
       )
     end
   );
@@ -2970,7 +2950,7 @@ AS $function$
 $function$
 ;
 
-CREATE OR REPLACE FUNCTION public.process_course_payment_to_wallets(p_payment_id uuid, p_organization_id uuid, p_published_course_id uuid, p_user_id uuid, p_tier_name text, p_currency_code text, p_gross_amount numeric, p_platform_fee numeric, p_org_payout numeric, p_platform_fee_percent numeric, p_created_by uuid DEFAULT NULL::uuid)
+CREATE OR REPLACE FUNCTION public.process_course_payment_to_wallets(p_payment_id uuid, p_organization_id uuid, p_published_course_id uuid, p_user_id uuid, p_tier_name text, p_currency_code text, p_gross_amount numeric, p_payment_processor_fee numeric, p_platform_fee_from_net_amount numeric, p_org_payout numeric, p_platform_fee_percent numeric, p_created_by uuid DEFAULT NULL::uuid)
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
@@ -2983,8 +2963,10 @@ declare
   gonasi_transaction_id uuid;
   org_wallet_existed boolean := false;
   gonasi_wallet_existed boolean := false;
+  net_payment numeric(19,4);
+  platform_fee_calculated numeric(19,4);
 begin
-  -- Validate that the payment exists
+  -- STEP 0: Validate that the payment exists
   if not exists (
     select 1 from public.course_payments 
     where id = p_payment_id
@@ -2992,13 +2974,22 @@ begin
     raise exception 'Payment ID % not found', p_payment_id;
   end if;
 
-  -- Validate amounts
-  if p_gross_amount != (p_platform_fee + p_org_payout) then
-    raise exception 'Amount validation failed: gross (%) != platform_fee (%) + org_payout (%)', 
-      p_gross_amount, p_platform_fee, p_org_payout;
+  -- STEP 1: Derive key amounts
+  net_payment := p_gross_amount - p_payment_processor_fee;
+  platform_fee_calculated := net_payment * (p_platform_fee_percent / 100);
+
+  -- STEP 2: Validate internal consistency
+  if abs((p_platform_fee_from_net_amount + p_org_payout) - net_payment) > 0.01 then
+    raise exception 'Amount validation failed: net_payment (%) != platform_fee_from_net_amount (%) + org_payout (%)', 
+      net_payment, p_platform_fee_from_net_amount, p_org_payout;
   end if;
 
-  -- Check if organization wallet already exists
+  if p_platform_fee_from_net_amount > platform_fee_calculated then
+    raise exception 'Platform fee validation failed: declared platform fee (%) cannot exceed calculated fee (%)',
+      p_platform_fee_from_net_amount, platform_fee_calculated;
+  end if;
+
+  -- STEP 3: Fetch or create wallets
   select id into org_wallet_id
   from public.organization_wallets
   where organization_id = p_organization_id 
@@ -3008,7 +2999,6 @@ begin
     org_wallet_existed := true;
   end if;
 
-  -- Check if Gonasi wallet already exists
   select id into gonasi_wallet_id
   from public.gonasi_wallets
   where currency_code = p_currency_code::public.currency_code;
@@ -3017,7 +3007,7 @@ begin
     gonasi_wallet_existed := true;
   end if;
 
-  -- STEP 1: Create/Update Organization Wallet
+  -- STEP 4: Update Organization Wallet
   insert into public.organization_wallets (
     organization_id,
     currency_code,
@@ -3033,13 +3023,13 @@ begin
     updated_at = timezone('utc', now())
   returning id into org_wallet_id;
 
-  -- STEP 2: Create/Update Gonasi Wallet
+  -- STEP 5: Update Gonasi Wallet
   insert into public.gonasi_wallets (
     currency_code,
     available_balance
   ) values (
     p_currency_code::public.currency_code,
-    p_platform_fee
+    p_platform_fee_from_net_amount
   )
   on conflict (currency_code)
   do update set
@@ -3047,7 +3037,7 @@ begin
     updated_at = timezone('utc', now())
   returning id into gonasi_wallet_id;
 
-  -- STEP 3: Record Organization Wallet Transaction
+  -- STEP 6: Log Organization Wallet Transaction
   insert into public.wallet_transactions (
     wallet_id,
     type,
@@ -3067,14 +3057,18 @@ begin
       'user_id', p_user_id,
       'tier_name', p_tier_name,
       'gross_payment', p_gross_amount,
-      'platform_fee_deducted', p_platform_fee,
+      'processor_fee', p_payment_processor_fee,
+      'net_payment', net_payment,
+      'platform_fee_calculated', platform_fee_calculated,
+      'platform_fee_from_net', p_platform_fee_from_net_amount,
       'fee_percentage', p_platform_fee_percent,
-      'wallet_existed_before', org_wallet_existed
+      'wallet_existed_before', org_wallet_existed,
+      'note', 'Organization payout - transaction fees absorbed by platform'
     ),
     coalesce(p_created_by, p_user_id)
   ) returning id into org_transaction_id;
 
-  -- STEP 4: Record Gonasi Wallet Transaction
+  -- STEP 7: Log Gonasi Wallet Transaction
   insert into public.gonasi_wallet_transactions (
     wallet_id,
     type,
@@ -3086,7 +3080,7 @@ begin
     gonasi_wallet_id,
     'platform_fee',
     'credit',
-    p_platform_fee,
+    p_platform_fee_from_net_amount,
     p_payment_id,
     jsonb_build_object(
       'organization_id', p_organization_id,
@@ -3095,39 +3089,50 @@ begin
       'tier_name', p_tier_name,
       'fee_percentage', p_platform_fee_percent,
       'gross_payment', p_gross_amount,
+      'processor_fee', p_payment_processor_fee,
+      'net_payment', net_payment,
+      'platform_fee_calculated', platform_fee_calculated,
+      'platform_fee_from_net', p_platform_fee_from_net_amount,
       'org_payout', p_org_payout,
-      'wallet_existed_before', gonasi_wallet_existed
+      'wallet_existed_before', gonasi_wallet_existed,
+      'note', 'Platform fee after absorbing transaction fees'
     )
   ) returning id into gonasi_transaction_id;
 
-  -- STEP 5: Return detailed operation summary
+  -- STEP 8: Return summary
   return jsonb_build_object(
     'success', true,
-    'message', 'Wallet balances updated successfully',
+    'message', 'Wallet balances updated successfully with transaction fees absorbed by platform',
     'payment_id', p_payment_id,
     'wallets_updated', jsonb_build_object(
       'organization', jsonb_build_object(
         'wallet_id', org_wallet_id,
         'amount_added', p_org_payout,
         'currency', p_currency_code,
-        'existed_before', org_wallet_existed
+        'existed_before', org_wallet_existed,
+        'note', 'Full payout - no transaction fees deducted'
       ),
       'gonasi', jsonb_build_object(
         'wallet_id', gonasi_wallet_id,
-        'amount_added', p_platform_fee,
+        'amount_added', p_platform_fee_from_net_amount,
         'currency', p_currency_code,
-        'existed_before', gonasi_wallet_existed
+        'existed_before', gonasi_wallet_existed,
+        'note', 'Platform fee after absorbing transaction fees'
       )
     ),
     'transactions_created', jsonb_build_object(
       'organization_transaction_id', org_transaction_id,
       'gonasi_transaction_id', gonasi_transaction_id
     ),
-    'breakdown', jsonb_build_object(
+    'fee_breakdown', jsonb_build_object(
       'gross_amount', p_gross_amount,
-      'platform_fee', p_platform_fee,
+      'processor_fee', p_payment_processor_fee,
+      'net_payment', net_payment,
+      'platform_fee_calculated', platform_fee_calculated,
+      'platform_fee_from_net', p_platform_fee_from_net_amount,
       'platform_fee_percent', p_platform_fee_percent,
-      'org_payout', p_org_payout
+      'org_payout', p_org_payout,
+      'transaction_fees_absorbed_by', 'gonasi_platform_fee'
     )
   );
 

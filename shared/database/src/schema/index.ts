@@ -1710,6 +1710,7 @@ export type Database = {
           p_payment_processor_id?: string
           p_payment_amount?: number
           p_payment_method?: string
+          p_payment_processor_fee?: number
           p_created_by?: string
         }
         Returns: Json
@@ -1789,7 +1790,8 @@ export type Database = {
           p_tier_name: string
           p_currency_code: string
           p_gross_amount: number
-          p_platform_fee: number
+          p_payment_processor_fee: number
+          p_platform_fee_from_net_amount: number
           p_org_payout: number
           p_platform_fee_percent: number
           p_created_by?: string

@@ -79,6 +79,7 @@ export async function action({ request }: Route.ActionArgs) {
             p_is_promotional: metadata.isPromotional === 'true',
             p_payment_processor_id: String(tx.id),
             p_payment_amount: tx.amount / 100,
+            p_payment_processor_fee: tx.fees / 100,
             p_payment_method: tx.channel ?? null,
             p_created_by: metadata.userId,
           },

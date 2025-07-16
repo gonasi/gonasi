@@ -7,13 +7,14 @@
 --     - Tier renewals and upgrades
 --     - Access window calculations
 --     - Payment logging and validation
---     - Platform fee and payout calculations
+--     - Platform fee and payout calculations (with transaction fees deducted from platform fee)
 --     - Wallet distribution for organizations
 --     - Course enrollment statistics updates
 --     - Returns a structured JSON summary of the operation
 --
 --   - Prevents abuse by restricting re-enrollment in free tiers before expiration
 --   - Paid enrollments can be upgraded or renewed anytime
+--   - Transaction fees (Paystack, etc.) are deducted from Gonasi's platform fee, not org payout
 --
 -- PARAMETERS:
 --   p_user_id               UUID - ID of the user enrolling
@@ -31,6 +32,7 @@
 --   p_payment_processor_id  TEXT (optional) - e.g., Paystack transaction ID
 --   p_payment_amount        NUMERIC (optional) - Actual payment amount received
 --   p_payment_method        TEXT (optional) - Payment method ("card", "mpesa", etc.)
+--   p_payment_processor_fee NUMERIC (optional) - Actual fee charged by payment processor
 --   p_created_by            UUID (optional) - Who initiated the enrollment (for admin use)
 --
 -- RETURNS:
@@ -40,10 +42,9 @@
 --     - enrollment_id, activity_id, payment_id (UUIDs)
 --     - access_granted (bool), is_free (bool)
 --     - access window (expires_at)
---     - breakdown of payment if applicable
+--     - breakdown of payment including transaction fees
 --     - any wallet processing response
 -- ============================================================================
-
 create or replace function public.enroll_user_in_published_course(
   p_user_id uuid,
   p_published_course_id uuid,
@@ -60,11 +61,12 @@ create or replace function public.enroll_user_in_published_course(
   p_payment_processor_id text default null,
   p_payment_amount numeric(19,4) default null,
   p_payment_method text default null,
+  p_payment_processor_fee numeric(19,4) default null,
   p_created_by uuid default null
 ) returns jsonb
 as $$
 declare
-  -- Outputs
+  -- Output IDs
   enrollment_id uuid;
   activity_id uuid;
   payment_id uuid;
@@ -78,18 +80,17 @@ declare
   access_end timestamptz;
 
   -- Payment calculations
-  platform_fee_percent numeric(5,2);         -- from org's tier
-  payment_processor_fee numeric(19,4) := 0;  -- TODO: real fee logic later
-  net_amount numeric(19,4);                  -- amount after processor fee
-  platform_fee numeric(19,4);                -- our cut
-  org_payout_amount numeric(19,4);           -- what org gets
+  platform_fee_percent numeric(5,2);                   -- % Gonasi takes from net payment
+  processor_fee numeric(19,4) := 0;                    -- Payment processor fee (e.g. Paystack)
+  net_payment numeric(19,4);                           -- Payment amount after processor fee
+  platform_fee_from_net_amount numeric(19,4);          -- Gonasi’s fee from net payment
+  org_payout numeric(19,4);                            -- Final amount org receives
+  platform_actual_income numeric(19,4);                -- Gonasi’s actual revenue = platform fee - processor fee
 
-  -- Final result
+  -- Final response
   result jsonb;
 begin
-  -- =========================================================================
-  -- STEP 1: Check if the user is already actively enrolled in the course
-  -- =========================================================================
+  -- STEP 1: Check for active enrollment
   select * into existing_enrollment_record
   from public.course_enrollments
   where user_id = p_user_id 
@@ -97,12 +98,8 @@ begin
     and is_active = true
     and (expires_at is null or expires_at > timezone('utc', now()));
 
-  -- =========================================================================
-  -- STEP 2: Get the organization’s tier info and platform fee %
-  -- =========================================================================
-  select 
-    o.tier,
-    tl.platform_fee_percentage
+  -- STEP 2: Get org's platform fee percentage
+  select o.tier, tl.platform_fee_percentage
   into organization_tier_record
   from public.organizations o
   join public.tier_limits tl on tl.tier = o.tier
@@ -114,9 +111,7 @@ begin
 
   platform_fee_percent := organization_tier_record.platform_fee_percentage;
 
-  -- =========================================================================
-  -- STEP 3: Prevent users from re-enrolling into a free tier if already active
-  -- =========================================================================
+  -- STEP 3: Prevent repeated free enrollments if already active
   if found and p_is_free then
     if exists (
       select 1 
@@ -126,7 +121,6 @@ begin
       order by cea.created_at desc
       limit 1
     ) then
-      -- Abort with message
       result := jsonb_build_object(
         'success', false,
         'message', 'You already have free access to this course. You can re-enroll when your current access expires.',
@@ -141,26 +135,20 @@ begin
     end if;
   end if;
 
-  -- =========================================================================
-  -- STEP 4: Calculate the end of access period based on frequency
-  -- =========================================================================
+  -- STEP 4: Calculate access window
   if found and not p_is_free then
-    -- Extend from current expiry if valid
     access_end := public.calculate_access_end_date(
       greatest(existing_enrollment_record.expires_at, timezone('utc', now())), 
       p_payment_frequency::public.payment_frequency
     );
   else
-    -- New user or free enrollment
     access_end := public.calculate_access_end_date(
       access_start, 
       p_payment_frequency::public.payment_frequency
     );
   end if;
 
-  -- =========================================================================
-  -- STEP 5: Create or update course enrollment record
-  -- =========================================================================
+  -- STEP 5: Create or update enrollment
   insert into public.course_enrollments (
     user_id, published_course_id, organization_id,
     enrolled_at, expires_at, is_active
@@ -178,9 +166,7 @@ begin
     end
   returning id into enrollment_id;
 
-  -- =========================================================================
-  -- STEP 6: Log activity (pricing tier, frequency, promo metadata, etc.)
-  -- =========================================================================
+  -- STEP 6: Log enrollment activity
   insert into public.course_enrollment_activities (
     enrollment_id, tier_name, tier_description,
     payment_frequency, currency_code, is_free,
@@ -193,9 +179,7 @@ begin
     access_start, access_end, coalesce(p_created_by, p_user_id)
   ) returning id into activity_id;
 
-  -- =========================================================================
-  -- STEP 7: Handle payments for paid tiers (validate, insert, calculate fees)
-  -- =========================================================================
+  -- STEP 7: Handle payment for paid enrollments
   if not p_is_free then
     if p_payment_processor_id is null or p_payment_amount is null then
       raise exception 'Payment information required for paid enrollment';
@@ -205,10 +189,13 @@ begin
       raise exception 'Payment amount does not match tier price';
     end if;
 
-    -- Calculate fees and payouts
-    net_amount := p_payment_amount - payment_processor_fee;
-    platform_fee := net_amount * (platform_fee_percent / 100);
-    org_payout_amount := net_amount - platform_fee;
+    processor_fee := coalesce(p_payment_processor_fee, 0);
+    net_payment := p_payment_amount - processor_fee;
+
+    -- Calculate platform and org revenue shares
+    platform_fee_from_net_amount := net_payment * (platform_fee_percent / 100);
+    org_payout := net_payment - platform_fee_from_net_amount;
+    platform_actual_income := platform_fee_from_net_amount;
 
     -- Log payment
     insert into public.course_payments (
@@ -218,21 +205,19 @@ begin
       org_payout_amount, organization_id, created_by
     ) values (
       enrollment_id, activity_id, p_payment_amount, p_currency_code::public.currency_code,
-      p_payment_method, p_payment_processor_id, payment_processor_fee,
-      net_amount, platform_fee, platform_fee_percent,
-      org_payout_amount, p_organization_id, coalesce(p_created_by, p_user_id)
+      p_payment_method, p_payment_processor_id, processor_fee,
+      net_payment, platform_fee_from_net_amount, platform_fee_percent,
+      org_payout, p_organization_id, coalesce(p_created_by, p_user_id)
     ) returning id into payment_id;
 
-    -- =========================================================================
-    -- STEP 7b: Process wallet disbursement for org and platform
-    -- =========================================================================
+    -- STEP 7b: Process wallets
     declare wallet_result jsonb;
     begin
       wallet_result := public.process_course_payment_to_wallets(
         payment_id, p_organization_id, p_published_course_id,
         p_user_id, p_tier_name, p_currency_code,
-        p_payment_amount, platform_fee, org_payout_amount,
-        platform_fee_percent, p_created_by
+        p_payment_amount, processor_fee, platform_fee_from_net_amount, 
+        org_payout, platform_fee_percent, p_created_by
       );
       result := result || jsonb_build_object('wallet_processing', wallet_result);
     exception
@@ -241,9 +226,7 @@ begin
     end;
   end if;
 
-  -- =========================================================================
-  -- STEP 8: Update published course enrollment stats
-  -- =========================================================================
+  -- STEP 8: Update course stats
   update public.published_courses 
   set 
     total_enrollments = total_enrollments + 1,
@@ -257,9 +240,7 @@ begin
     updated_at = timezone('utc', now())
   where id = p_published_course_id;
 
-  -- =========================================================================
-  -- STEP 9: Return final result
-  -- =========================================================================
+  -- STEP 9: Return result
   result := jsonb_build_object(
     'success', true,
     'message', case 
@@ -276,11 +257,12 @@ begin
       when p_is_free then null
       else jsonb_build_object(
         'gross_amount', p_payment_amount,
-        'processor_fee', payment_processor_fee,
-        'net_amount', net_amount,
-        'platform_fee', platform_fee,
+        'processor_fee', processor_fee,
+        'net_amount', net_payment,
         'platform_fee_percent', platform_fee_percent,
-        'org_payout', org_payout_amount
+        'platform_fee_from_net', platform_fee_from_net_amount,
+        'platform_actual_income', platform_actual_income,
+        'org_payout', org_payout
       )
     end
   );
