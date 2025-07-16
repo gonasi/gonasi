@@ -12,7 +12,9 @@ create type public.app_permission as enum (
   'lesson_types.insert',
   'lesson_types.update',
   'lesson_types.delete',
-  'pricing_tier.crud'
+  'pricing_tier.crud',
+  'go_wallet.view',
+  'go_wallet.withdraw'
 );
 
 -- Defines application-level roles.

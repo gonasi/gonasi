@@ -12,11 +12,7 @@ import {
 } from './types';
 
 /**
- * Starts the enrollment process for a course by:
- * - Verifying the user is logged in
- * - Validating the course and selected pricing tier
- * - Calculating the correct amount (factoring in promotions)
- * - Initializing a payment transaction if needed
+ * Initializes the enrollment process for a course.
  */
 export const initializeTransactionEnroll = async ({
   supabase,
@@ -38,7 +34,7 @@ export const initializeTransactionEnroll = async ({
       };
     }
 
-    // Fetch the published course and its pricing info
+    // Fetch published course with pricing tiers
     const { data: course, error: courseFetchError } = await supabase
       .from('published_courses')
       .select('id, pricing_tiers')
@@ -48,15 +44,15 @@ export const initializeTransactionEnroll = async ({
     if (courseFetchError || !course) {
       console.error(
         '[initializeTransactionEnroll] Failed to fetch course:',
-        courseFetchError?.message ?? 'Course not found.',
+        courseFetchError?.message,
       );
       return {
         success: false,
-        message: 'Sorry, we couldn’t find the course or it’s no longer available.',
+        message: "Sorry, we couldn't find the course or it's no longer available.",
       };
     }
 
-    // Ensure pricing data is valid
+    // Parse pricing tiers
     const rawTiers =
       typeof course.pricing_tiers === 'string'
         ? JSON.parse(course.pricing_tiers)
@@ -66,80 +62,110 @@ export const initializeTransactionEnroll = async ({
 
     if (!pricingValidation.success) {
       console.error(
-        '[initializeTransactionEnroll] Pricing data validation failed:',
+        '[initializeTransactionEnroll] Pricing validation failed:',
         pricingValidation.error,
       );
       return {
         success: false,
-        message: 'There’s an issue with this course’s pricing. Please contact support.',
+        message: 'There is a problem with the course pricing. Please contact support.',
       };
     }
 
-    // Locate the selected tier
+    // Find selected tier
     const selectedTier = pricingValidation.data.find((tier) => tier.id === pricingTierId);
-
     if (!selectedTier) {
-      console.error('[initializeTransactionEnroll] Pricing tier not found:', pricingTierId);
+      console.error(
+        '[initializeTransactionEnroll] Selected pricing tier not found:',
+        pricingTierId,
+      );
       return {
         success: false,
-        message: 'That pricing option is no longer available. Please try another one.',
+        message: 'That pricing option is no longer available.',
       };
     }
 
-    // Check if there's a valid promotion
+    // Determine promotional status and price
     const hasValidPromotion =
       selectedTier.promotional_price != null &&
       (!selectedTier.promotion_end_date || new Date(selectedTier.promotion_end_date) > new Date());
 
-    const finalAmount =
-      (hasValidPromotion ? selectedTier.promotional_price! : selectedTier.price) * 100;
+    const effectivePrice = hasValidPromotion ? selectedTier.promotional_price! : selectedTier.price;
 
-    // Skip payment flow if it's a free tier
-    if (finalAmount === 0) {
-      const { data: enrollData, error: enrollError } = await supabase.rpc(
-        'enroll_user_in_published_course',
-        {
-          p_user_id: userProfile.user.id,
-          p_published_course_id: courseId,
-          p_tier_id: selectedTier.id,
-        },
-      );
+    const isFree = effectivePrice === 0;
+    const finalAmount = effectivePrice * 100; // in smallest currency unit
 
-      if (enrollError) {
-        console.error('[Enrollment] failed:', enrollError);
-        return {
-          success: false,
-          message: 'Failed to enroll, please try again later.',
-        };
-      }
+    // Call RPC to enroll user
+    const { data: enrollData, error: enrollError } = await supabase.rpc(
+      'enroll_user_in_published_course',
+      {
+        p_user_id: userProfile.user.id,
+        p_published_course_id: courseId,
+        p_tier_id: selectedTier.id,
+        p_tier_name: selectedTier.tier_name ?? '',
+        p_tier_description: selectedTier.tier_description || '',
+        p_payment_frequency: selectedTier.payment_frequency || 'one_time',
+        p_currency_code: selectedTier.currency_code,
+        p_is_free: isFree,
+        p_effective_price: effectivePrice ?? 0,
+        p_organization_id: organizationId,
+        p_promotional_price: hasValidPromotion ? (selectedTier.promotional_price ?? 0) : 0,
+        p_is_promotional: hasValidPromotion,
+        p_created_by: userProfile.user.id,
+        ...(isFree
+          ? {}
+          : {
+              // Fix: pass undefined instead of null for optional string fields
+              p_payment_processor_id: undefined,
+              p_payment_amount: effectivePrice,
+              p_payment_method: undefined,
+            }),
+      },
+    );
 
-      console.log('Enroll data *********: ', enrollData);
-
-      // ✅ At this point: enrollData IS your jsonb response
-      // e.g. { enrollment_id, activity_id, is_free, ... }
-
+    if (enrollError) {
+      console.error('[initializeTransactionEnroll] Enrollment RPC failed:', enrollError);
       return {
-        success: true,
-        message:
-          typeof enrollData === 'object' &&
-          enrollData !== null &&
-          'message' in enrollData &&
-          typeof enrollData.message === 'string'
-            ? enrollData.message
-            : 'You’ve successfully enrolled in the course!',
-        data: {
-          status: true,
-          message: 'You’ve successfully enrolled in the course!',
-          data: {
-            authorization_url: '',
-            access_code: '',
-            reference: '',
-          },
-        },
+        success: false,
+        message: 'Enrollment failed. Please try again later.',
       };
     }
 
-    // Create payment transaction via Supabase Function
+    if (enrollData && typeof enrollData === 'object' && 'success' in enrollData) {
+      if (!enrollData.success) {
+        return {
+          success: false,
+          message:
+            typeof enrollData.message === 'string'
+              ? enrollData.message
+              : 'Enrollment was not successful.',
+        };
+      }
+
+      // Free enrollment: return immediately
+      if (isFree) {
+        return {
+          success: true,
+          message:
+            typeof enrollData.message === 'string'
+              ? enrollData.message
+              : 'You’ve successfully enrolled in the course!',
+          data: {
+            status: true,
+            message:
+              typeof enrollData.message === 'string'
+                ? enrollData.message
+                : 'You’ve successfully enrolled in the course!',
+            data: {
+              authorization_url: '',
+              access_code: '',
+              reference: '',
+            },
+          },
+        };
+      }
+    }
+
+    // Paid enrollment: initialize payment
     const { data: transactionData, error: transactionError } = await supabase.functions.invoke(
       'initialize-paystack-transaction',
       {
@@ -155,23 +181,22 @@ export const initializeTransactionEnroll = async ({
 
     if (transactionError || !transactionData) {
       console.error(
-        '[initializeTransactionEnroll] Failed to initialize payment transaction:',
+        '[initializeTransactionEnroll] Payment initialization failed:',
         transactionError,
       );
       return {
         success: false,
-        message: 'We couldn’t start the payment process. Please try again shortly.',
+        message: 'We couldn’t start the payment process. Please try again.',
       };
     }
 
-    // Validate transaction response format
     const parsedTransaction = InitializeEnrollTransactionResponseSchema.safeParse(
       transactionData.data,
     );
 
     if (!parsedTransaction.success) {
       console.error(
-        '[initializeTransactionEnroll] Transaction response validation failed:',
+        '[initializeTransactionEnroll] Payment response validation failed:',
         parsedTransaction.error,
       );
       return {
@@ -186,10 +211,7 @@ export const initializeTransactionEnroll = async ({
       data: parsedTransaction.data,
     };
   } catch (err) {
-    console.error(
-      '[initializeTransactionEnroll] Unexpected error during transaction initialization:',
-      err,
-    );
+    console.error('[initializeTransactionEnroll] Unexpected error:', err);
     return {
       success: false,
       message: 'Oops! Something went wrong. Please try again later.',

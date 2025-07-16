@@ -76,3 +76,8 @@ create or replace trigger trg_organizations_set_updated_at
 before update on public.organizations
 for each row
 execute function update_updated_at_column();
+
+create trigger create_wallets_on_org_creation
+after insert on public.organizations
+for each row
+execute function public.create_organization_wallets();

@@ -1,6 +1,6 @@
 create type "public"."analytics_level" as enum ('basic', 'intermediate', 'advanced', 'enterprise');
 
-create type "public"."app_permission" as enum ('course_categories.insert', 'course_categories.update', 'course_categories.delete', 'course_sub_categories.insert', 'course_sub_categories.update', 'course_sub_categories.delete', 'featured_courses_pricing.insert', 'featured_courses_pricing.update', 'featured_courses_pricing.delete', 'lesson_types.insert', 'lesson_types.update', 'lesson_types.delete', 'pricing_tier.crud');
+create type "public"."app_permission" as enum ('course_categories.insert', 'course_categories.update', 'course_categories.delete', 'course_sub_categories.insert', 'course_sub_categories.update', 'course_sub_categories.delete', 'featured_courses_pricing.insert', 'featured_courses_pricing.update', 'featured_courses_pricing.delete', 'lesson_types.insert', 'lesson_types.update', 'lesson_types.delete', 'pricing_tier.crud', 'go_wallet.view', 'go_wallet.withdraw');
 
 create type "public"."app_role" as enum ('go_su', 'go_admin', 'go_staff', 'user');
 
@@ -95,10 +95,11 @@ create table "public"."course_payments" (
     "payment_processor_id" text,
     "payment_processor_fee" numeric(19,4),
     "net_amount" numeric(19,4) not null,
-    "payment_status" text not null default 'pending'::text,
+    "platform_fee" numeric(19,4) not null,
+    "platform_fee_percent" numeric(5,2) not null,
+    "org_payout_amount" numeric(19,4) not null,
     "payment_intent_id" text,
     "organization_id" uuid not null,
-    "payout_status" text not null default 'pending'::text,
     "payout_processed_at" timestamp with time zone,
     "payment_metadata" jsonb,
     "refund_amount" numeric(19,4) default 0,
@@ -190,6 +191,33 @@ create table "public"."file_library" (
 
 alter table "public"."file_library" enable row level security;
 
+create table "public"."gonasi_wallet_transactions" (
+    "id" uuid not null default uuid_generate_v4(),
+    "wallet_id" uuid not null,
+    "type" text not null,
+    "direction" text not null,
+    "amount" numeric(19,4) not null,
+    "course_payment_id" uuid,
+    "metadata" jsonb,
+    "created_at" timestamp with time zone not null default timezone('utc'::text, now()),
+    "updated_at" timestamp with time zone not null default timezone('utc'::text, now())
+);
+
+
+alter table "public"."gonasi_wallet_transactions" enable row level security;
+
+create table "public"."gonasi_wallets" (
+    "id" uuid not null default uuid_generate_v4(),
+    "currency_code" currency_code not null,
+    "available_balance" numeric(19,4) not null default 0,
+    "pending_balance" numeric(19,4) not null default 0,
+    "created_at" timestamp with time zone not null default timezone('utc'::text, now()),
+    "updated_at" timestamp with time zone not null default timezone('utc'::text, now())
+);
+
+
+alter table "public"."gonasi_wallets" enable row level security;
+
 create table "public"."lesson_blocks" (
     "id" uuid not null default uuid_generate_v4(),
     "lesson_id" uuid not null,
@@ -275,6 +303,19 @@ create table "public"."organization_members" (
 
 
 alter table "public"."organization_members" enable row level security;
+
+create table "public"."organization_wallets" (
+    "id" uuid not null default uuid_generate_v4(),
+    "organization_id" uuid not null,
+    "currency_code" currency_code not null,
+    "available_balance" numeric(19,4) not null default 0,
+    "pending_balance" numeric(19,4) not null default 0,
+    "created_at" timestamp with time zone not null default timezone('utc'::text, now()),
+    "updated_at" timestamp with time zone not null default timezone('utc'::text, now())
+);
+
+
+alter table "public"."organization_wallets" enable row level security;
 
 create table "public"."organizations" (
     "id" uuid not null default uuid_generate_v4(),
@@ -401,6 +442,22 @@ create table "public"."user_roles" (
 
 alter table "public"."user_roles" enable row level security;
 
+create table "public"."wallet_transactions" (
+    "id" uuid not null default uuid_generate_v4(),
+    "wallet_id" uuid not null,
+    "type" text not null,
+    "amount" numeric(19,4) not null,
+    "direction" text not null,
+    "course_payment_id" uuid,
+    "withdrawal_request_id" uuid,
+    "metadata" jsonb,
+    "created_at" timestamp with time zone not null default timezone('utc'::text, now()),
+    "created_by" uuid
+);
+
+
+alter table "public"."wallet_transactions" enable row level security;
+
 CREATE UNIQUE INDEX chapters_pkey ON public.chapters USING btree (id);
 
 CREATE UNIQUE INDEX course_categories_pkey ON public.course_categories USING btree (id);
@@ -420,6 +477,12 @@ CREATE UNIQUE INDEX courses_organization_id_name_key ON public.courses USING btr
 CREATE UNIQUE INDEX courses_pkey ON public.courses USING btree (id);
 
 CREATE UNIQUE INDEX file_library_pkey ON public.file_library USING btree (id);
+
+CREATE UNIQUE INDEX gonasi_wallet_transactions_pkey ON public.gonasi_wallet_transactions USING btree (id);
+
+CREATE UNIQUE INDEX gonasi_wallets_currency_code_key ON public.gonasi_wallets USING btree (currency_code);
+
+CREATE UNIQUE INDEX gonasi_wallets_pkey ON public.gonasi_wallets USING btree (id);
 
 CREATE INDEX idx_chapters_course_id ON public.chapters USING btree (course_id);
 
@@ -456,10 +519,6 @@ CREATE INDEX idx_course_payments_enrollment_activity_id ON public.course_payment
 CREATE INDEX idx_course_payments_enrollment_id ON public.course_payments USING btree (enrollment_id);
 
 CREATE INDEX idx_course_payments_organization_id ON public.course_payments USING btree (organization_id);
-
-CREATE INDEX idx_course_payments_payment_status ON public.course_payments USING btree (payment_status);
-
-CREATE INDEX idx_course_payments_payout_status ON public.course_payments USING btree (payout_status);
 
 CREATE INDEX idx_course_payments_processor_id ON public.course_payments USING btree (payment_processor_id);
 
@@ -531,6 +590,16 @@ CREATE INDEX idx_file_library_updated_by ON public.file_library USING btree (upd
 
 CREATE INDEX idx_file_library_updated_by_org ON public.file_library USING btree (updated_by, organization_id);
 
+CREATE INDEX idx_gonasi_wallet_transactions_course_payment_id ON public.gonasi_wallet_transactions USING btree (course_payment_id);
+
+CREATE INDEX idx_gonasi_wallet_transactions_created_at ON public.gonasi_wallet_transactions USING btree (created_at DESC);
+
+CREATE INDEX idx_gonasi_wallet_transactions_direction ON public.gonasi_wallet_transactions USING btree (direction);
+
+CREATE INDEX idx_gonasi_wallet_transactions_type ON public.gonasi_wallet_transactions USING btree (type);
+
+CREATE INDEX idx_gonasi_wallet_transactions_wallet_id ON public.gonasi_wallet_transactions USING btree (wallet_id);
+
 CREATE INDEX idx_lesson_blocks_course_id ON public.lesson_blocks USING btree (course_id);
 
 CREATE INDEX idx_lesson_blocks_created_by ON public.lesson_blocks USING btree (created_by);
@@ -578,6 +647,12 @@ CREATE INDEX idx_organization_members_invited_by ON public.organization_members 
 CREATE INDEX idx_organization_members_org_id ON public.organization_members USING btree (organization_id);
 
 CREATE INDEX idx_organization_members_user_id ON public.organization_members USING btree (user_id);
+
+CREATE INDEX idx_organization_wallets_currency_code ON public.organization_wallets USING btree (currency_code);
+
+CREATE INDEX idx_organization_wallets_organization_id ON public.organization_wallets USING btree (organization_id);
+
+CREATE INDEX idx_organization_wallets_updated_at ON public.organization_wallets USING btree (updated_at);
 
 CREATE INDEX idx_organizations_created_at ON public.organizations USING btree (created_at);
 
@@ -635,6 +710,18 @@ CREATE INDEX idx_published_courses_visibility ON public.published_courses USING 
 
 CREATE INDEX idx_user_roles_user_id ON public.user_roles USING btree (user_id);
 
+CREATE INDEX idx_wallet_transactions_course_payment_id ON public.wallet_transactions USING btree (course_payment_id);
+
+CREATE INDEX idx_wallet_transactions_created_by ON public.wallet_transactions USING btree (created_by);
+
+CREATE INDEX idx_wallet_transactions_direction ON public.wallet_transactions USING btree (direction);
+
+CREATE INDEX idx_wallet_transactions_type ON public.wallet_transactions USING btree (type);
+
+CREATE INDEX idx_wallet_transactions_wallet_id ON public.wallet_transactions USING btree (wallet_id);
+
+CREATE INDEX idx_wallet_transactions_withdrawal_request_id ON public.wallet_transactions USING btree (withdrawal_request_id);
+
 CREATE UNIQUE INDEX lesson_blocks_pkey ON public.lesson_blocks USING btree (id);
 
 CREATE UNIQUE INDEX lesson_types_bg_color_key ON public.lesson_types USING btree (bg_color);
@@ -654,6 +741,10 @@ CREATE UNIQUE INDEX organization_invites_token_key ON public.organization_invite
 CREATE UNIQUE INDEX organization_members_organization_id_user_id_key ON public.organization_members USING btree (organization_id, user_id);
 
 CREATE UNIQUE INDEX organization_members_pkey ON public.organization_members USING btree (id);
+
+CREATE UNIQUE INDEX organization_wallets_organization_id_currency_code_key ON public.organization_wallets USING btree (organization_id, currency_code);
+
+CREATE UNIQUE INDEX organization_wallets_pkey ON public.organization_wallets USING btree (id);
 
 CREATE UNIQUE INDEX organizations_handle_key ON public.organizations USING btree (handle);
 
@@ -695,6 +786,8 @@ CREATE UNIQUE INDEX user_roles_pkey ON public.user_roles USING btree (id);
 
 CREATE UNIQUE INDEX user_roles_user_id_role_key ON public.user_roles USING btree (user_id, role);
 
+CREATE UNIQUE INDEX wallet_transactions_pkey ON public.wallet_transactions USING btree (id);
+
 alter table "public"."chapters" add constraint "chapters_pkey" PRIMARY KEY using index "chapters_pkey";
 
 alter table "public"."course_categories" add constraint "course_categories_pkey" PRIMARY KEY using index "course_categories_pkey";
@@ -713,6 +806,10 @@ alter table "public"."courses" add constraint "courses_pkey" PRIMARY KEY using i
 
 alter table "public"."file_library" add constraint "file_library_pkey" PRIMARY KEY using index "file_library_pkey";
 
+alter table "public"."gonasi_wallet_transactions" add constraint "gonasi_wallet_transactions_pkey" PRIMARY KEY using index "gonasi_wallet_transactions_pkey";
+
+alter table "public"."gonasi_wallets" add constraint "gonasi_wallets_pkey" PRIMARY KEY using index "gonasi_wallets_pkey";
+
 alter table "public"."lesson_blocks" add constraint "lesson_blocks_pkey" PRIMARY KEY using index "lesson_blocks_pkey";
 
 alter table "public"."lesson_types" add constraint "lesson_types_pkey" PRIMARY KEY using index "lesson_types_pkey";
@@ -722,6 +819,8 @@ alter table "public"."lessons" add constraint "lessons_pkey" PRIMARY KEY using i
 alter table "public"."organization_invites" add constraint "organization_invites_pkey" PRIMARY KEY using index "organization_invites_pkey";
 
 alter table "public"."organization_members" add constraint "organization_members_pkey" PRIMARY KEY using index "organization_members_pkey";
+
+alter table "public"."organization_wallets" add constraint "organization_wallets_pkey" PRIMARY KEY using index "organization_wallets_pkey";
 
 alter table "public"."organizations" add constraint "organizations_pkey" PRIMARY KEY using index "organizations_pkey";
 
@@ -734,6 +833,8 @@ alter table "public"."role_permissions" add constraint "role_permissions_pkey" P
 alter table "public"."tier_limits" add constraint "tier_limits_pkey" PRIMARY KEY using index "tier_limits_pkey";
 
 alter table "public"."user_roles" add constraint "user_roles_pkey" PRIMARY KEY using index "user_roles_pkey";
+
+alter table "public"."wallet_transactions" add constraint "wallet_transactions_pkey" PRIMARY KEY using index "wallet_transactions_pkey";
 
 alter table "public"."chapters" add constraint "chapters_course_id_fkey" FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE not valid;
 
@@ -791,17 +892,13 @@ alter table "public"."course_enrollments" validate constraint "course_enrollment
 
 alter table "public"."course_enrollments" add constraint "uq_user_course" UNIQUE using index "uq_user_course";
 
-alter table "public"."course_payments" add constraint "chk_payment_amounts" CHECK (((amount_paid >= (0)::numeric) AND (net_amount >= (0)::numeric))) not valid;
+alter table "public"."course_payments" add constraint "chk_payment_amounts" CHECK (((amount_paid >= (0)::numeric) AND (net_amount >= (0)::numeric) AND (platform_fee >= (0)::numeric) AND (org_payout_amount >= (0)::numeric))) not valid;
 
 alter table "public"."course_payments" validate constraint "chk_payment_amounts";
 
-alter table "public"."course_payments" add constraint "chk_payment_status" CHECK ((payment_status = ANY (ARRAY['pending'::text, 'completed'::text, 'failed'::text, 'refunded'::text]))) not valid;
+alter table "public"."course_payments" add constraint "chk_platform_fee_percent" CHECK (((platform_fee_percent >= (0)::numeric) AND (platform_fee_percent <= (100)::numeric))) not valid;
 
-alter table "public"."course_payments" validate constraint "chk_payment_status";
-
-alter table "public"."course_payments" add constraint "chk_payout_status" CHECK ((payout_status = ANY (ARRAY['pending'::text, 'processed'::text, 'failed'::text]))) not valid;
-
-alter table "public"."course_payments" validate constraint "chk_payout_status";
+alter table "public"."course_payments" validate constraint "chk_platform_fee_percent";
 
 alter table "public"."course_payments" add constraint "chk_refund_amount" CHECK (((refund_amount >= (0)::numeric) AND (refund_amount <= amount_paid))) not valid;
 
@@ -933,6 +1030,28 @@ alter table "public"."file_library" add constraint "valid_file_extension" CHECK 
 
 alter table "public"."file_library" validate constraint "valid_file_extension";
 
+alter table "public"."gonasi_wallet_transactions" add constraint "gonasi_wallet_transactions_amount_check" CHECK ((amount >= (0)::numeric)) not valid;
+
+alter table "public"."gonasi_wallet_transactions" validate constraint "gonasi_wallet_transactions_amount_check";
+
+alter table "public"."gonasi_wallet_transactions" add constraint "gonasi_wallet_transactions_course_payment_id_fkey" FOREIGN KEY (course_payment_id) REFERENCES course_payments(id) ON DELETE SET NULL not valid;
+
+alter table "public"."gonasi_wallet_transactions" validate constraint "gonasi_wallet_transactions_course_payment_id_fkey";
+
+alter table "public"."gonasi_wallet_transactions" add constraint "gonasi_wallet_transactions_direction_check" CHECK ((direction = ANY (ARRAY['credit'::text, 'debit'::text]))) not valid;
+
+alter table "public"."gonasi_wallet_transactions" validate constraint "gonasi_wallet_transactions_direction_check";
+
+alter table "public"."gonasi_wallet_transactions" add constraint "gonasi_wallet_transactions_type_check" CHECK ((type = ANY (ARRAY['platform_fee'::text, 'withdrawal'::text, 'adjustment'::text]))) not valid;
+
+alter table "public"."gonasi_wallet_transactions" validate constraint "gonasi_wallet_transactions_type_check";
+
+alter table "public"."gonasi_wallet_transactions" add constraint "gonasi_wallet_transactions_wallet_id_fkey" FOREIGN KEY (wallet_id) REFERENCES gonasi_wallets(id) ON DELETE RESTRICT not valid;
+
+alter table "public"."gonasi_wallet_transactions" validate constraint "gonasi_wallet_transactions_wallet_id_fkey";
+
+alter table "public"."gonasi_wallets" add constraint "gonasi_wallets_currency_code_key" UNIQUE using index "gonasi_wallets_currency_code_key";
+
 alter table "public"."lesson_blocks" add constraint "lesson_blocks_course_id_fkey" FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE not valid;
 
 alter table "public"."lesson_blocks" validate constraint "lesson_blocks_course_id_fkey";
@@ -1020,6 +1139,12 @@ alter table "public"."organization_members" validate constraint "organization_me
 alter table "public"."organization_members" add constraint "organization_members_user_id_fkey_profiles" FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE not valid;
 
 alter table "public"."organization_members" validate constraint "organization_members_user_id_fkey_profiles";
+
+alter table "public"."organization_wallets" add constraint "organization_wallets_organization_id_currency_code_key" UNIQUE using index "organization_wallets_organization_id_currency_code_key";
+
+alter table "public"."organization_wallets" add constraint "organization_wallets_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE not valid;
+
+alter table "public"."organization_wallets" validate constraint "organization_wallets_organization_id_fkey";
 
 alter table "public"."organizations" add constraint "handle_length" CHECK ((char_length(handle) >= 3)) not valid;
 
@@ -1321,6 +1446,30 @@ alter table "public"."user_roles" add constraint "user_roles_user_id_fkey" FOREI
 alter table "public"."user_roles" validate constraint "user_roles_user_id_fkey";
 
 alter table "public"."user_roles" add constraint "user_roles_user_id_role_key" UNIQUE using index "user_roles_user_id_role_key";
+
+alter table "public"."wallet_transactions" add constraint "wallet_transactions_amount_check" CHECK ((amount >= (0)::numeric)) not valid;
+
+alter table "public"."wallet_transactions" validate constraint "wallet_transactions_amount_check";
+
+alter table "public"."wallet_transactions" add constraint "wallet_transactions_course_payment_id_fkey" FOREIGN KEY (course_payment_id) REFERENCES course_payments(id) ON DELETE SET NULL not valid;
+
+alter table "public"."wallet_transactions" validate constraint "wallet_transactions_course_payment_id_fkey";
+
+alter table "public"."wallet_transactions" add constraint "wallet_transactions_created_by_fkey" FOREIGN KEY (created_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
+
+alter table "public"."wallet_transactions" validate constraint "wallet_transactions_created_by_fkey";
+
+alter table "public"."wallet_transactions" add constraint "wallet_transactions_direction_check" CHECK ((direction = ANY (ARRAY['credit'::text, 'debit'::text]))) not valid;
+
+alter table "public"."wallet_transactions" validate constraint "wallet_transactions_direction_check";
+
+alter table "public"."wallet_transactions" add constraint "wallet_transactions_type_check" CHECK ((type = ANY (ARRAY['payout'::text, 'withdrawal'::text, 'refund'::text, 'adjustment'::text]))) not valid;
+
+alter table "public"."wallet_transactions" validate constraint "wallet_transactions_type_check";
+
+alter table "public"."wallet_transactions" add constraint "wallet_transactions_wallet_id_fkey" FOREIGN KEY (wallet_id) REFERENCES organization_wallets(id) ON DELETE CASCADE not valid;
+
+alter table "public"."wallet_transactions" validate constraint "wallet_transactions_wallet_id_fkey";
 
 set check_function_bodies = off;
 
@@ -1760,6 +1909,31 @@ end;
 $function$
 ;
 
+CREATE OR REPLACE FUNCTION public.create_organization_wallets()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO ''
+AS $function$
+declare
+  currency public.currency_code;
+begin
+  -- Loop through all currency codes defined in the enum
+  for currency in select unnest(enum_range(null::public.currency_code))
+  loop
+    insert into public.organization_wallets (
+      organization_id,
+      currency_code
+    ) values (
+      new.id,
+      currency
+    );
+  end loop;
+
+  return new;
+end;
+$function$
+;
+
 CREATE OR REPLACE FUNCTION public.custom_access_token_hook(event jsonb)
  RETURNS jsonb
  LANGUAGE plpgsql
@@ -2097,74 +2271,27 @@ end;
 $function$
 ;
 
-CREATE OR REPLACE FUNCTION public.enroll_user_in_published_course(p_user_id uuid, p_published_course_id uuid, p_tier_id uuid, p_payment_processor_id text DEFAULT NULL::text, p_payment_amount numeric DEFAULT NULL::numeric, p_payment_method text DEFAULT NULL::text, p_created_by uuid DEFAULT NULL::uuid)
+CREATE OR REPLACE FUNCTION public.enroll_user_in_published_course(p_user_id uuid, p_published_course_id uuid, p_tier_id uuid, p_tier_name text, p_tier_description text, p_payment_frequency text, p_currency_code text, p_is_free boolean, p_effective_price numeric, p_organization_id uuid, p_promotional_price numeric DEFAULT NULL::numeric, p_is_promotional boolean DEFAULT false, p_payment_processor_id text DEFAULT NULL::text, p_payment_amount numeric DEFAULT NULL::numeric, p_payment_method text DEFAULT NULL::text, p_created_by uuid DEFAULT NULL::uuid)
  RETURNS jsonb
  LANGUAGE plpgsql
  SET search_path TO ''
 AS $function$
 declare
-  -- =======================================================================
-  -- VARIABLE DECLARATIONS
-  -- =======================================================================
-  
-  -- Primary keys that will be returned to the caller
-  enrollment_id uuid;           -- ID of the enrollment record
-  activity_id uuid;             -- ID of the enrollment activity log
-  payment_id uuid;              -- ID of the payment record (null for free)
-
-  -- Records to hold data from related tables
-  published_course_record record;    -- Course details from published_courses
-  tier_record record;               -- Pricing tier details
-  pricing_info record;              -- Effective pricing (with promotions)
-  existing_enrollment_record record; -- User's current enrollment (if any)
-
-  -- Access period calculation
-  access_start timestamptz := timezone('utc', now()); -- When access begins (now in UTC)
-  access_end timestamptz;                             -- When access expires
-
-  -- Final JSON result to return
+  enrollment_id uuid;
+  activity_id uuid;
+  payment_id uuid;
+  existing_enrollment_record record;
+  organization_tier_record record;
+  access_start timestamptz := timezone('utc', now());
+  access_end timestamptz;
+  platform_fee_percent numeric(5,2);
+  payment_processor_fee numeric(19,4) := 0;
+  net_amount numeric(19,4);
+  platform_fee numeric(19,4);
+  org_payout_amount numeric(19,4);
   result jsonb;
 begin
-  -- =======================================================================
-  -- STEP 1: VALIDATE PUBLISHED COURSE
-  -- =======================================================================
-  -- First, we need to ensure the course exists and is currently active.
-  -- Inactive courses cannot be enrolled in.
-  
-  select * into published_course_record
-  from public.published_courses 
-  where id = p_published_course_id 
-    and is_active = true;
-
-  -- If no record found, the course either doesn't exist or is inactive
-  if not found then
-    raise exception 'Published course not found or inactive';
-  end if;
-
-  -- =======================================================================
-  -- STEP 2: FETCH PRICING TIER DETAILS
-  -- =======================================================================
-  -- Get the pricing tier information including price, frequency, and metadata.
-  -- This function should return details like tier_name, price, currency, etc.
-  
-  select * into tier_record
-  from public.get_published_course_pricing_tier(p_published_course_id, p_tier_id);
-
-  -- =======================================================================
-  -- STEP 3: CALCULATE EFFECTIVE PRICING
-  -- =======================================================================
-  -- This accounts for any active promotions or discounts.
-  -- The effective price might be different from the base tier price.
-  
-  select * into pricing_info
-  from public.get_effective_pricing_for_published_tier(p_published_course_id, p_tier_id);
-
-  -- =======================================================================
-  -- STEP 4: CHECK FOR EXISTING ACTIVE ENROLLMENT
-  -- =======================================================================
-  -- We need to know if the user already has access to this course.
-  -- This affects our business logic for re-enrollment.
-  
+  -- STEP 1: Check for existing active enrollment
   select * into existing_enrollment_record
   from public.course_enrollments
   where user_id = p_user_id 
@@ -2172,17 +2299,23 @@ begin
     and is_active = true
     and (expires_at is null or expires_at > timezone('utc', now()));
 
-  -- =======================================================================
-  -- STEP 5: APPLY RE-ENROLLMENT BUSINESS RULES
-  -- =======================================================================
-  -- Different rules apply based on whether the user is enrolling in a free
-  -- or paid tier, and whether they already have access.
-  
-  if found and tier_record.is_free then
-    -- BUSINESS RULE: Users cannot re-enroll in free tiers until access expires
-    -- This prevents abuse where users repeatedly enroll in free tiers
-    
-    -- Check if their last enrollment activity was also free
+  -- STEP 2: Get org tier info
+  select 
+    o.tier,
+    tl.platform_fee_percentage
+  into organization_tier_record
+  from public.organizations o
+  join public.tier_limits tl on tl.tier = o.tier
+  where o.id = p_organization_id;
+
+  if not found then
+    raise exception 'Organization not found or tier limits not configured';
+  end if;
+
+  platform_fee_percent := organization_tier_record.platform_fee_percentage;
+
+  -- STEP 3: Free tier re-enrollment rules
+  if found and p_is_free then
     if exists (
       select 1 
       from public.course_enrollment_activities cea
@@ -2191,8 +2324,6 @@ begin
       order by cea.created_at desc
       limit 1
     ) then
-      -- Instead of throwing an exception, return a user-friendly message
-      -- This provides a better user experience on the frontend
       result := jsonb_build_object(
         'success', false,
         'message', 'You already have free access to this course. You can re-enroll when your current access expires.',
@@ -2203,160 +2334,128 @@ begin
         'access_granted', false,
         'expires_at', existing_enrollment_record.expires_at
       );
-      
       return result;
     end if;
   end if;
 
-  -- NOTE: For paid tiers, we allow re-enrollment at any time (upgrades/renewals)
-
-  -- =======================================================================
-  -- STEP 6: CALCULATE ACCESS EXPIRATION DATE
-  -- =======================================================================
-  -- The expiration date depends on whether this is a new enrollment or
-  -- an extension of existing access.
-  
-  if found and not tier_record.is_free then
-    -- PAID TIER RE-ENROLLMENT: Extend from current expiration date
-    -- This gives users the full value of their purchase by adding days
-    -- rather than replacing their current access period.
-    
-    -- Use the later of: current expiration date OR now (in case access expired)
+  -- STEP 4: Calculate expiration
+  if found and not p_is_free then
     access_end := public.calculate_access_end_date(
       greatest(existing_enrollment_record.expires_at, timezone('utc', now())), 
-      tier_record.payment_frequency
+      p_payment_frequency::public.payment_frequency
     );
   else
-    -- NEW ENROLLMENT OR FREE TIER: Start access period from now
-    access_end := public.calculate_access_end_date(access_start, tier_record.payment_frequency);
+    access_end := public.calculate_access_end_date(
+      access_start, 
+      p_payment_frequency::public.payment_frequency
+    );
   end if;
 
-  -- =======================================================================
-  -- STEP 7: CREATE OR UPDATE ENROLLMENT RECORD
-  -- =======================================================================
-  -- This is the main enrollment record that tracks the user's access to the course.
-  -- We use INSERT...ON CONFLICT to handle both new enrollments and updates.
-  
+  -- STEP 5: Insert or update enrollment
   insert into public.course_enrollments (
-    user_id,                    -- Who is enrolled
-    published_course_id,        -- Which course
-    organization_id,            -- Which organization owns the course
-    enrolled_at,                -- When enrollment started
-    expires_at,                 -- When access expires
-    is_active                   -- Whether enrollment is currently active
+    user_id,
+    published_course_id,
+    organization_id,
+    enrolled_at,
+    expires_at,
+    is_active
   ) values (
     p_user_id,
     p_published_course_id,
-    published_course_record.organization_id,
+    p_organization_id,
     access_start,
     access_end,
     true
   )
   on conflict (user_id, published_course_id)
   do update set
-    -- Update expiration date to the new calculated date
     expires_at = excluded.expires_at,
-    -- Ensure enrollment is marked as active
     is_active = true,
-    -- Only update enrolled_at if the enrollment was previously inactive
-    -- (this preserves the original enrollment date for active enrollments)
     enrolled_at = case 
       when public.course_enrollments.is_active = false then excluded.enrolled_at
       else public.course_enrollments.enrolled_at
     end
   returning id into enrollment_id;
 
-  -- =======================================================================
-  -- STEP 8: LOG ENROLLMENT ACTIVITY
-  -- =======================================================================
-  -- Create a detailed log entry for this enrollment action.
-  -- This provides an audit trail and stores pricing information at the time
-  -- of enrollment (important for historical reporting).
-  
+  -- STEP 6: Log enrollment activity
   insert into public.course_enrollment_activities (
-    enrollment_id,              -- Links to the enrollment record
-    tier_name,                  -- Name of the tier (stored for historical purposes)
-    tier_description,           -- Description of the tier
-    payment_frequency,          -- How often payment is required
-    currency_code,              -- Currency of the payment
-    is_free,                    -- Whether this was a free enrollment
-    price_paid,                 -- Actual price paid (after promotions)
-    promotional_price,          -- Promotional price if applicable
-    was_promotional,            -- Whether a promotion was applied
-    access_start,               -- When access begins
-    access_end,                 -- When access expires
-    created_by                  -- Who performed the enrollment
-  ) values (
     enrollment_id,
-    tier_record.tier_name,
-    tier_record.tier_description,
-    tier_record.payment_frequency,
-    tier_record.currency_code::public.currency_code,
-    tier_record.is_free,
-    pricing_info.effective_price,
-    pricing_info.promotional_price,
-    pricing_info.is_promotional,
+    tier_name,
+    tier_description,
+    payment_frequency,
+    currency_code,
+    is_free,
+    price_paid,
+    promotional_price,
+    was_promotional,
     access_start,
     access_end,
-    coalesce(p_created_by, p_user_id)  -- Default to the user if no creator specified
+    created_by
+  ) values (
+    enrollment_id,
+    p_tier_name,
+    p_tier_description,
+    p_payment_frequency::public.payment_frequency,
+    p_currency_code::public.currency_code,
+    p_is_free,
+    p_effective_price,
+    p_promotional_price,
+    p_is_promotional,
+    access_start,
+    access_end,
+    coalesce(p_created_by, p_user_id)
   ) returning id into activity_id;
 
-  -- =======================================================================
-  -- STEP 9: HANDLE PAYMENT PROCESSING (PAID TIERS ONLY)
-  -- =======================================================================
-  -- For paid enrollments, we need to validate payment information and
-  -- record the transaction details.
-  
-  if not tier_record.is_free then
-    -- VALIDATION: Ensure all required payment information is provided
+  -- STEP 7: Payment handling for paid tiers
+  if not p_is_free then
     if p_payment_processor_id is null or p_payment_amount is null then
       raise exception 'Payment information required for paid enrollment';
     end if;
 
-    -- VALIDATION: Ensure the payment amount matches the expected price
-    -- This prevents price manipulation attacks
-    if p_payment_amount != pricing_info.effective_price then
+    if p_payment_amount != p_effective_price then
       raise exception 'Payment amount does not match tier price';
     end if;
 
-    -- RECORD PAYMENT: Create a payment record for accounting and auditing
+    payment_processor_fee := 0;
+    net_amount := p_payment_amount - payment_processor_fee;
+    platform_fee := net_amount * (platform_fee_percent / 100);
+    org_payout_amount := net_amount - platform_fee;
+
     insert into public.course_payments (
-      enrollment_id,              -- Links to enrollment
-      enrollment_activity_id,     -- Links to this specific enrollment activity
-      amount_paid,                -- Amount paid by user
-      currency_code,              -- Currency of payment
-      payment_method,             -- How they paid (card, mobile money, etc.)
-      payment_processor_id,       -- Reference ID from payment processor
-      net_amount,                 -- Amount after fees (TODO: implement fee calculation)
-      payment_status,             -- Status of the payment
-      organization_id,            -- Organization receiving the payment
-      created_by                  -- Who processed the payment
+      enrollment_id,
+      enrollment_activity_id,
+      amount_paid,
+      currency_code,
+      payment_method,
+      payment_processor_id,
+      payment_processor_fee,
+      net_amount,
+      platform_fee,
+      platform_fee_percent,
+      org_payout_amount,
+      organization_id,
+      created_by
     ) values (
       enrollment_id,
       activity_id,
       p_payment_amount,
-      tier_record.currency_code::public.currency_code,
+      p_currency_code::public.currency_code,
       p_payment_method,
       p_payment_processor_id,
-      p_payment_amount,           -- TODO: Subtract payment processor fees
-      'completed',                -- Assuming payment is already completed
-      published_course_record.organization_id,
+      payment_processor_fee,
+      net_amount,
+      platform_fee,
+      platform_fee_percent,
+      org_payout_amount,
+      p_organization_id,
       coalesce(p_created_by, p_user_id)
     ) returning id into payment_id;
   end if;
 
-  -- =======================================================================
-  -- STEP 10: UPDATE COURSE ENROLLMENT STATISTICS
-  -- =======================================================================
-  -- Update the published course record with current enrollment counts.
-  -- This provides quick access to enrollment metrics without complex queries.
-  
+  -- STEP 8: Update course stats
   update public.published_courses 
   set 
-    -- Increment total enrollment count
     total_enrollments = total_enrollments + 1,
-    
-    -- Recalculate active enrollments by counting current active enrollments
     active_enrollments = (
       select count(*)
       from public.course_enrollments ce
@@ -2364,29 +2463,33 @@ begin
         and ce.is_active = true
         and (ce.expires_at is null or ce.expires_at > timezone('utc', now()))
     ),
-    
-    -- Update the last modified timestamp
     updated_at = timezone('utc', now())
   where id = p_published_course_id;
 
-  -- =======================================================================
-  -- STEP 11: RETURN STRUCTURED RESULT FOR SUCCESSFUL ENROLLMENT
-  -- =======================================================================
-  -- Create a JSON response with all the important information about the
-  -- enrollment that was just created.
-  
+  -- STEP 9: Return result
   result := jsonb_build_object(
     'success', true,
     'message', case 
-      when tier_record.is_free then 'Successfully enrolled in free course access.'
+      when p_is_free then 'Successfully enrolled in free course access.'
       else 'Successfully enrolled with paid access. Payment processed.'
     end,
     'enrollment_id', enrollment_id,
     'activity_id', activity_id,
-    'payment_id', case when tier_record.is_free then null else payment_id end,
-    'is_free', tier_record.is_free,
+    'payment_id', case when p_is_free then null else payment_id end,
+    'is_free', p_is_free,
     'access_granted', true,
-    'expires_at', access_end
+    'expires_at', access_end,
+    'payment_breakdown', case 
+      when p_is_free then null
+      else jsonb_build_object(
+        'gross_amount', p_payment_amount,
+        'processor_fee', payment_processor_fee,
+        'net_amount', net_amount,
+        'platform_fee', platform_fee,
+        'platform_fee_percent', platform_fee_percent,
+        'org_payout', org_payout_amount
+      )
+    end
   );
 
   return result;
@@ -4241,6 +4344,90 @@ grant truncate on table "public"."file_library" to "service_role";
 
 grant update on table "public"."file_library" to "service_role";
 
+grant delete on table "public"."gonasi_wallet_transactions" to "anon";
+
+grant insert on table "public"."gonasi_wallet_transactions" to "anon";
+
+grant references on table "public"."gonasi_wallet_transactions" to "anon";
+
+grant select on table "public"."gonasi_wallet_transactions" to "anon";
+
+grant trigger on table "public"."gonasi_wallet_transactions" to "anon";
+
+grant truncate on table "public"."gonasi_wallet_transactions" to "anon";
+
+grant update on table "public"."gonasi_wallet_transactions" to "anon";
+
+grant delete on table "public"."gonasi_wallet_transactions" to "authenticated";
+
+grant insert on table "public"."gonasi_wallet_transactions" to "authenticated";
+
+grant references on table "public"."gonasi_wallet_transactions" to "authenticated";
+
+grant select on table "public"."gonasi_wallet_transactions" to "authenticated";
+
+grant trigger on table "public"."gonasi_wallet_transactions" to "authenticated";
+
+grant truncate on table "public"."gonasi_wallet_transactions" to "authenticated";
+
+grant update on table "public"."gonasi_wallet_transactions" to "authenticated";
+
+grant delete on table "public"."gonasi_wallet_transactions" to "service_role";
+
+grant insert on table "public"."gonasi_wallet_transactions" to "service_role";
+
+grant references on table "public"."gonasi_wallet_transactions" to "service_role";
+
+grant select on table "public"."gonasi_wallet_transactions" to "service_role";
+
+grant trigger on table "public"."gonasi_wallet_transactions" to "service_role";
+
+grant truncate on table "public"."gonasi_wallet_transactions" to "service_role";
+
+grant update on table "public"."gonasi_wallet_transactions" to "service_role";
+
+grant delete on table "public"."gonasi_wallets" to "anon";
+
+grant insert on table "public"."gonasi_wallets" to "anon";
+
+grant references on table "public"."gonasi_wallets" to "anon";
+
+grant select on table "public"."gonasi_wallets" to "anon";
+
+grant trigger on table "public"."gonasi_wallets" to "anon";
+
+grant truncate on table "public"."gonasi_wallets" to "anon";
+
+grant update on table "public"."gonasi_wallets" to "anon";
+
+grant delete on table "public"."gonasi_wallets" to "authenticated";
+
+grant insert on table "public"."gonasi_wallets" to "authenticated";
+
+grant references on table "public"."gonasi_wallets" to "authenticated";
+
+grant select on table "public"."gonasi_wallets" to "authenticated";
+
+grant trigger on table "public"."gonasi_wallets" to "authenticated";
+
+grant truncate on table "public"."gonasi_wallets" to "authenticated";
+
+grant update on table "public"."gonasi_wallets" to "authenticated";
+
+grant delete on table "public"."gonasi_wallets" to "service_role";
+
+grant insert on table "public"."gonasi_wallets" to "service_role";
+
+grant references on table "public"."gonasi_wallets" to "service_role";
+
+grant select on table "public"."gonasi_wallets" to "service_role";
+
+grant trigger on table "public"."gonasi_wallets" to "service_role";
+
+grant truncate on table "public"."gonasi_wallets" to "service_role";
+
+grant update on table "public"."gonasi_wallets" to "service_role";
+
 grant delete on table "public"."lesson_blocks" to "anon";
 
 grant insert on table "public"."lesson_blocks" to "anon";
@@ -4450,6 +4637,48 @@ grant trigger on table "public"."organization_members" to "service_role";
 grant truncate on table "public"."organization_members" to "service_role";
 
 grant update on table "public"."organization_members" to "service_role";
+
+grant delete on table "public"."organization_wallets" to "anon";
+
+grant insert on table "public"."organization_wallets" to "anon";
+
+grant references on table "public"."organization_wallets" to "anon";
+
+grant select on table "public"."organization_wallets" to "anon";
+
+grant trigger on table "public"."organization_wallets" to "anon";
+
+grant truncate on table "public"."organization_wallets" to "anon";
+
+grant update on table "public"."organization_wallets" to "anon";
+
+grant delete on table "public"."organization_wallets" to "authenticated";
+
+grant insert on table "public"."organization_wallets" to "authenticated";
+
+grant references on table "public"."organization_wallets" to "authenticated";
+
+grant select on table "public"."organization_wallets" to "authenticated";
+
+grant trigger on table "public"."organization_wallets" to "authenticated";
+
+grant truncate on table "public"."organization_wallets" to "authenticated";
+
+grant update on table "public"."organization_wallets" to "authenticated";
+
+grant delete on table "public"."organization_wallets" to "service_role";
+
+grant insert on table "public"."organization_wallets" to "service_role";
+
+grant references on table "public"."organization_wallets" to "service_role";
+
+grant select on table "public"."organization_wallets" to "service_role";
+
+grant trigger on table "public"."organization_wallets" to "service_role";
+
+grant truncate on table "public"."organization_wallets" to "service_role";
+
+grant update on table "public"."organization_wallets" to "service_role";
 
 grant delete on table "public"."organizations" to "anon";
 
@@ -4687,6 +4916,48 @@ grant truncate on table "public"."user_roles" to "supabase_auth_admin";
 
 grant update on table "public"."user_roles" to "supabase_auth_admin";
 
+grant delete on table "public"."wallet_transactions" to "anon";
+
+grant insert on table "public"."wallet_transactions" to "anon";
+
+grant references on table "public"."wallet_transactions" to "anon";
+
+grant select on table "public"."wallet_transactions" to "anon";
+
+grant trigger on table "public"."wallet_transactions" to "anon";
+
+grant truncate on table "public"."wallet_transactions" to "anon";
+
+grant update on table "public"."wallet_transactions" to "anon";
+
+grant delete on table "public"."wallet_transactions" to "authenticated";
+
+grant insert on table "public"."wallet_transactions" to "authenticated";
+
+grant references on table "public"."wallet_transactions" to "authenticated";
+
+grant select on table "public"."wallet_transactions" to "authenticated";
+
+grant trigger on table "public"."wallet_transactions" to "authenticated";
+
+grant truncate on table "public"."wallet_transactions" to "authenticated";
+
+grant update on table "public"."wallet_transactions" to "authenticated";
+
+grant delete on table "public"."wallet_transactions" to "service_role";
+
+grant insert on table "public"."wallet_transactions" to "service_role";
+
+grant references on table "public"."wallet_transactions" to "service_role";
+
+grant select on table "public"."wallet_transactions" to "service_role";
+
+grant trigger on table "public"."wallet_transactions" to "service_role";
+
+grant truncate on table "public"."wallet_transactions" to "service_role";
+
+grant update on table "public"."wallet_transactions" to "service_role";
+
 create policy "delete: can_user_edit_course allows deleting chapters"
 on "public"."chapters"
 as permissive
@@ -4894,6 +5165,31 @@ with check ((EXISTS ( SELECT 1
   WHERE ((c.id = file_library.course_id) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.created_by = ( SELECT auth.uid() AS uid))))))));
 
 
+create policy "gonasi_wallet_transactions_select_with_permission"
+on "public"."gonasi_wallet_transactions"
+as permissive
+for select
+to authenticated
+using (( SELECT authorize('go_wallet.view'::app_permission) AS authorize));
+
+
+create policy "gonasi_wallet_transactions_update_with_permission"
+on "public"."gonasi_wallet_transactions"
+as permissive
+for update
+to authenticated
+using (( SELECT authorize('go_wallet.withdraw'::app_permission) AS authorize))
+with check (( SELECT authorize('go_wallet.withdraw'::app_permission) AS authorize));
+
+
+create policy "gonasi_wallets_select_with_permission"
+on "public"."gonasi_wallets"
+as permissive
+for select
+to authenticated
+using (( SELECT authorize('go_wallet.view'::app_permission) AS authorize));
+
+
 create policy "delete: can_user_edit_course allows deleting lesson blocks"
 on "public"."lesson_blocks"
 as permissive
@@ -5077,6 +5373,14 @@ using (has_org_role(organization_id, 'owner'::text, ( SELECT auth.uid() AS uid))
 with check (((user_id <> ( SELECT auth.uid() AS uid)) AND (role = ANY (ARRAY['admin'::org_role, 'editor'::org_role]))));
 
 
+create policy "Select: Only admins and owners can view wallets"
+on "public"."organization_wallets"
+as permissive
+for select
+to authenticated
+using ((get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])));
+
+
 create policy "organizations_delete"
 on "public"."organizations"
 as permissive
@@ -5228,6 +5532,26 @@ to supabase_auth_admin
 using (true);
 
 
+create policy "Insert: Only org owners/admins can insert transactions"
+on "public"."wallet_transactions"
+as permissive
+for insert
+to authenticated
+with check ((EXISTS ( SELECT 1
+   FROM organization_wallets w
+  WHERE ((w.id = wallet_transactions.wallet_id) AND (get_user_org_role(w.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text]))))));
+
+
+create policy "Select: Only org owners/admins can view transactions"
+on "public"."wallet_transactions"
+as permissive
+for select
+to authenticated
+using ((EXISTS ( SELECT 1
+   FROM organization_wallets w
+  WHERE ((w.id = wallet_transactions.wallet_id) AND (get_user_org_role(w.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text]))))));
+
+
 CREATE TRIGGER trg_set_chapter_position BEFORE INSERT ON public.chapters FOR EACH ROW EXECUTE FUNCTION set_chapter_position();
 
 CREATE TRIGGER trg_course_categories_set_updated_at BEFORE UPDATE ON public.course_categories FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
@@ -5256,11 +5580,17 @@ CREATE TRIGGER trg_set_file_type BEFORE INSERT OR UPDATE ON public.file_library 
 
 CREATE TRIGGER trg_update_timestamp BEFORE UPDATE ON public.file_library FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+CREATE TRIGGER set_updated_at_gonasi_wallet_transactions BEFORE UPDATE ON public.gonasi_wallet_transactions FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER set_updated_at_gonasi_wallets BEFORE UPDATE ON public.gonasi_wallets FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
 CREATE TRIGGER trg_set_lesson_block_position BEFORE INSERT ON public.lesson_blocks FOR EACH ROW EXECUTE FUNCTION set_lesson_block_position();
 
 CREATE TRIGGER trg_lesson_types_set_updated_at BEFORE UPDATE ON public.lesson_types FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER trg_set_lesson_position BEFORE INSERT ON public.lessons FOR EACH ROW EXECUTE FUNCTION set_lesson_position();
+
+CREATE TRIGGER create_wallets_on_org_creation AFTER INSERT ON public.organizations FOR EACH ROW EXECUTE FUNCTION create_organization_wallets();
 
 CREATE TRIGGER trg_insert_owner_into_organization_members AFTER INSERT ON public.organizations FOR EACH ROW EXECUTE FUNCTION add_or_update_owner_in_organization_members();
 

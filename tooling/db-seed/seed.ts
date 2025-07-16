@@ -3,6 +3,7 @@ import { createSeedClient } from '@snaplet/seed';
 import { seedCompleteOnboarding } from './src/seedCompleteOnboarding';
 import { seedCourseCategories } from './src/seedCourseCategories';
 import { seedCreateCourse } from './src/seedCreateCourse';
+import { seedGonasiOrgWallets } from './src/seedGonasiOrgWallets';
 import { seedLessonTypes } from './src/seedLessonTypes';
 import { seedOwnerOrganizations } from './src/seedOwnerOrganizations';
 import { seedPricingTiers } from './src/seedPricingTiers';
@@ -13,6 +14,8 @@ const main = async () => {
 
   // Truncate all tables in the database
   await seed.$resetDatabase();
+
+  await seedGonasiOrgWallets();
 
   // Sign up users (this will also trigger creation of profiles via Supabase triggers)
   await signUpUsers();

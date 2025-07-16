@@ -2,9 +2,9 @@
 -- Purpose: Calculates when access should end based on a start date and payment frequency.
 -- Returns: A timestamp with time zone representing the end date.
 
-create or replace function calculate_access_end_date(
+create or replace function public.calculate_access_end_date(
   start_date timestamptz,                  -- The start date of the access period
-  frequency public.payment_frequency              -- Enum: 'monthly', 'bi_monthly', 'quarterly', etc.
+  frequency public.payment_frequency       -- Enum: 'monthly', 'bi_monthly', 'quarterly', etc.
 ) 
 returns timestamptz
 language plpgsql

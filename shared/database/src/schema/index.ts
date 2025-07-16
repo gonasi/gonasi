@@ -284,15 +284,16 @@ export type Database = {
           enrollment_id: string
           id: string
           net_amount: number
+          org_payout_amount: number
           organization_id: string
           payment_intent_id: string | null
           payment_metadata: Json | null
           payment_method: string
           payment_processor_fee: number | null
           payment_processor_id: string | null
-          payment_status: string
           payout_processed_at: string | null
-          payout_status: string
+          platform_fee: number
+          platform_fee_percent: number
           refund_amount: number | null
           refund_reason: string | null
           updated_at: string
@@ -306,15 +307,16 @@ export type Database = {
           enrollment_id: string
           id?: string
           net_amount: number
+          org_payout_amount: number
           organization_id: string
           payment_intent_id?: string | null
           payment_metadata?: Json | null
           payment_method: string
           payment_processor_fee?: number | null
           payment_processor_id?: string | null
-          payment_status?: string
           payout_processed_at?: string | null
-          payout_status?: string
+          platform_fee: number
+          platform_fee_percent: number
           refund_amount?: number | null
           refund_reason?: string | null
           updated_at?: string
@@ -328,15 +330,16 @@ export type Database = {
           enrollment_id?: string
           id?: string
           net_amount?: number
+          org_payout_amount?: number
           organization_id?: string
           payment_intent_id?: string | null
           payment_metadata?: Json | null
           payment_method?: string
           payment_processor_fee?: number | null
           payment_processor_id?: string | null
-          payment_status?: string
           payout_processed_at?: string | null
-          payout_status?: string
+          platform_fee?: number
+          platform_fee_percent?: number
           refund_amount?: number | null
           refund_reason?: string | null
           updated_at?: string
@@ -702,6 +705,84 @@ export type Database = {
           },
         ]
       }
+      gonasi_wallet_transactions: {
+        Row: {
+          amount: number
+          course_payment_id: string | null
+          created_at: string
+          direction: string
+          id: string
+          metadata: Json | null
+          type: string
+          updated_at: string
+          wallet_id: string
+        }
+        Insert: {
+          amount: number
+          course_payment_id?: string | null
+          created_at?: string
+          direction: string
+          id?: string
+          metadata?: Json | null
+          type: string
+          updated_at?: string
+          wallet_id: string
+        }
+        Update: {
+          amount?: number
+          course_payment_id?: string | null
+          created_at?: string
+          direction?: string
+          id?: string
+          metadata?: Json | null
+          type?: string
+          updated_at?: string
+          wallet_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gonasi_wallet_transactions_course_payment_id_fkey"
+            columns: ["course_payment_id"]
+            isOneToOne: false
+            referencedRelation: "course_payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gonasi_wallet_transactions_wallet_id_fkey"
+            columns: ["wallet_id"]
+            isOneToOne: false
+            referencedRelation: "gonasi_wallets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gonasi_wallets: {
+        Row: {
+          available_balance: number
+          created_at: string
+          currency_code: Database["public"]["Enums"]["currency_code"]
+          id: string
+          pending_balance: number
+          updated_at: string
+        }
+        Insert: {
+          available_balance?: number
+          created_at?: string
+          currency_code: Database["public"]["Enums"]["currency_code"]
+          id?: string
+          pending_balance?: number
+          updated_at?: string
+        }
+        Update: {
+          available_balance?: number
+          created_at?: string
+          currency_code?: Database["public"]["Enums"]["currency_code"]
+          id?: string
+          pending_balance?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       lesson_blocks: {
         Row: {
           content: Json
@@ -1028,6 +1109,44 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organization_wallets: {
+        Row: {
+          available_balance: number
+          created_at: string
+          currency_code: Database["public"]["Enums"]["currency_code"]
+          id: string
+          organization_id: string
+          pending_balance: number
+          updated_at: string
+        }
+        Insert: {
+          available_balance?: number
+          created_at?: string
+          currency_code: Database["public"]["Enums"]["currency_code"]
+          id?: string
+          organization_id: string
+          pending_balance?: number
+          updated_at?: string
+        }
+        Update: {
+          available_balance?: number
+          created_at?: string
+          currency_code?: Database["public"]["Enums"]["currency_code"]
+          id?: string
+          organization_id?: string
+          pending_balance?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_wallets_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -1447,6 +1566,67 @@ export type Database = {
           },
         ]
       }
+      wallet_transactions: {
+        Row: {
+          amount: number
+          course_payment_id: string | null
+          created_at: string
+          created_by: string | null
+          direction: string
+          id: string
+          metadata: Json | null
+          type: string
+          wallet_id: string
+          withdrawal_request_id: string | null
+        }
+        Insert: {
+          amount: number
+          course_payment_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          direction: string
+          id?: string
+          metadata?: Json | null
+          type: string
+          wallet_id: string
+          withdrawal_request_id?: string | null
+        }
+        Update: {
+          amount?: number
+          course_payment_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          direction?: string
+          id?: string
+          metadata?: Json | null
+          type?: string
+          wallet_id?: string
+          withdrawal_request_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wallet_transactions_course_payment_id_fkey"
+            columns: ["course_payment_id"]
+            isOneToOne: false
+            referencedRelation: "course_payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wallet_transactions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wallet_transactions_wallet_id_fkey"
+            columns: ["wallet_id"]
+            isOneToOne: false
+            referencedRelation: "organization_wallets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -1518,6 +1698,15 @@ export type Database = {
           p_user_id: string
           p_published_course_id: string
           p_tier_id: string
+          p_tier_name: string
+          p_tier_description: string
+          p_payment_frequency: string
+          p_currency_code: string
+          p_is_free: boolean
+          p_effective_price: number
+          p_organization_id: string
+          p_promotional_price?: number
+          p_is_promotional?: boolean
           p_payment_processor_id?: string
           p_payment_amount?: number
           p_payment_method?: string
@@ -1658,6 +1847,8 @@ export type Database = {
         | "lesson_types.update"
         | "lesson_types.delete"
         | "pricing_tier.crud"
+        | "go_wallet.view"
+        | "go_wallet.withdraw"
       app_role: "go_su" | "go_admin" | "go_staff" | "user"
       course_access: "public" | "private"
       currency_code: "KES" | "USD"
@@ -1812,6 +2003,8 @@ export const Constants = {
         "lesson_types.update",
         "lesson_types.delete",
         "pricing_tier.crud",
+        "go_wallet.view",
+        "go_wallet.withdraw",
       ],
       app_role: ["go_su", "go_admin", "go_staff", "user"],
       course_access: ["public", "private"],

@@ -76,8 +76,18 @@ schema_paths = [
   # # course categories, sub categories rls etc
   './schemas/course_categories_and_sub_categories.sql',
 
+  './schemas/pricing/utils/payment_frequency.sql',
+  './schemas/pricing/utils/currency_code.sql',
+
   # organizations
+
+  './schemas/organizations/utils/create_organization_wallets.sql',
+
   './schemas/organizations/organizations_schema_and_indexes.sql',
+
+  # gonasi wallets
+  './schemas/gonasiWallets/gonasi_wallets_schema_indexes.sql',
+  './schemas/gonasiWallets/gonasi_wallets_rls.sql',
 
   # members schema
   './schemas/organizations/organization_members_schema_indexes.sql',
@@ -128,9 +138,6 @@ schema_paths = [
   './schemas/chapters/chapters_schema_and_indexes.sql', # chapter
   './schemas/chapters/chapters_triggers.sql', # chapter
   './schemas/chapters/chapters_schema_rls.sql', # chapter
-
-  './schemas/pricing/utils/payment_frequency.sql',
-  './schemas/pricing/utils/currency_code.sql',
   
   './schemas/pricing/course_pricing_schema_and_indexes.sql', # pricing
   './schemas/pricing/course_pricing_triggers.sql', # pricing
@@ -175,6 +182,16 @@ schema_paths = [
   './schemas/enrollments/enrollment_activities_schema_and_indexes.sql',
   './schemas/enrollments/course_payments_schema_and_indexes.sql',
 
+  # gonasi wallet
+  './schemas/gonasiWallets/gonasi_wallet_transactions_schema_indexes.sql',
+  './schemas/gonasiWallets/gonasi_wallet_transactions_rls.sql',
+
+      # org wallet
+  './schemas/organizationWallets/organization_wallets_schema_indexes.sql',
+  './schemas/organizationWallets/organization_wallets_rls.sql',
+  './schemas/organizationWallets/wallet_transactions_schema_indexes.sql',
+  './schemas/organizationWallets/wallet_transactions_rls.sql',
+
   # enrollments functions utils
   './schemas/enrollments/utils/calculate_access_end_date.sql',
   './schemas/enrollments/utils/get_published_course_pricing_tier.sql',
@@ -182,6 +199,9 @@ schema_paths = [
   './schemas/enrollments/utils/enroll_user_in_published_course.sql',
   './schemas/enrollments/utils/user_has_active_access.sql',
   './schemas/enrollments/utils/get_enrollment_status.sql',
+
+
+
 
   # './schemas/enrollment_activities_schema_indexes_rls.sql',
 
