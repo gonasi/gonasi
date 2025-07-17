@@ -35,7 +35,9 @@ export default function LessonPlay({ params, loaderData }: Route.ComponentProps)
         progress={50}
         loading={false}
       >
-        <h2>hey</h2>
+        <pre className='overflow-x-auto rounded p-4 text-sm whitespace-pre-wrap'>
+          {JSON.stringify(loaderData, null, 2)}
+        </pre>
       </CoursePlayLayout>
       <Outlet />
     </>
