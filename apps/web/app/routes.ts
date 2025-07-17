@@ -12,6 +12,7 @@ export default [
       route('enroll/:pricingTierId', 'routes/publishedCourses/enroll-index.tsx', [
         route('cancel', 'routes/publishedCourses/cancel-enroll.tsx'),
       ]),
+      route('enroll/status', 'routes/publishedCourses/enroll-status.tsx'),
     ]),
 
     route('api/check-username-exists', 'routes/api/check-username-exists.ts'),

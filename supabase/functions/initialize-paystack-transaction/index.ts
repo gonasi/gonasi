@@ -8,8 +8,6 @@ console.log('[initialize-paystack-transaction]');
 // Load required environment variables
 const BASE_URL = Deno.env.get('BASE_URL');
 const PAYSTACK_SECRET_KEY = Deno.env.get('PAYSTACK_SECRET_KEY');
-const CANCEL_PATH = '';
-const CALLBACK_PATH = '/payments/callback'; // Update if needed
 
 // Zod schema for request body validation
 const InitializeTransactionSchema = z.object({
@@ -70,7 +68,7 @@ Deno.serve(async (req) => {
         amount,
         currency: currencyCode.toUpperCase(),
         reference,
-        callback_url: `${BASE_URL}${CALLBACK_PATH}`,
+        callback_url: `${BASE_URL}/c/${metadata.publishedCourseId}/enroll/status`,
         metadata: {
           cancel_action: `${BASE_URL}/c/${metadata.publishedCourseId}/enroll/${metadata.pricingTierId}/cancel`,
           transaction_type: 'COURSE_ENROLLMENT',
