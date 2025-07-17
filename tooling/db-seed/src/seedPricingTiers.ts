@@ -38,7 +38,7 @@ const tierLimits: TierLimitSeed[] = [
     max_custom_domains: null,
     analytics_level: 'basic',
     support_level: 'community',
-    platform_fee_percentage: 15.0,
+    platform_fee_percentage: 20.0,
     white_label_enabled: false,
     price_monthly_usd: 0.0,
     price_yearly_usd: 0.0,

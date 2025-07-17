@@ -1,8 +1,8 @@
-import { Form, Outlet, useOutletContext } from 'react-router';
+import { Form, Outlet, redirect, useOutletContext } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { GraduationCap } from 'lucide-react';
 import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
-import { dataWithError, redirectWithSuccess } from 'remix-toast';
+import { dataWithError } from 'remix-toast';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
 
 import { initializeTransactionEnroll } from '@gonasi/database/publishedCourses';
@@ -21,7 +21,7 @@ import { createClient } from '~/lib/supabase/supabase.server';
 import { checkHoneypot } from '~/utils/honeypot.server';
 import { useIsPending } from '~/utils/misc';
 
-interface CoursePricingContextType {
+export interface CoursePricingContextType {
   name: string;
   pricingData: CoursePricingDataType[];
 }
@@ -57,9 +57,8 @@ export async function action({ request, params }: Route.ActionArgs) {
   });
 
   return success
-    ? redirectWithSuccess(
+    ? redirect(
         successData ? `${successData?.data.authorization_url}` : `/c/${params.publishedCourseId}`,
-        message,
       )
     : dataWithError(null, message);
 }
@@ -122,7 +121,7 @@ export default function EnrollIndex({ params }: Route.ComponentProps) {
           </Modal.Body>
         </Modal.Content>
       </Modal>
-      <Outlet />
+      <Outlet context={{ name, pricingData }} />
     </>
   );
 }

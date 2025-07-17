@@ -10,7 +10,7 @@ export default [
 
     route('c/:publishedCourseId', 'routes/public/published-course-id-index.tsx', [
       route('enroll/:pricingTierId', 'routes/publishedCourses/enroll-index.tsx', [
-        route('verify', 'routes/publishedCourses/verify-enroll.tsx'),
+        route('cancel', 'routes/publishedCourses/cancel-enroll.tsx'),
       ]),
     ]),
 
