@@ -63,7 +63,11 @@ create or replace function public.enroll_user_in_published_course(
   p_payment_method text default null,
   p_payment_processor_fee numeric(19,4) default null,
   p_created_by uuid default null
-) returns jsonb
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
 as $$
 declare
   -- Output IDs
@@ -80,16 +84,31 @@ declare
   access_end timestamptz;
 
   -- Payment calculations
-  platform_fee_percent numeric(5,2);                   -- % Gonasi takes from user payment
-  processor_fee numeric(19,4) := 0;                    -- Payment processor fee (e.g. Paystack)
-  net_payment numeric(19,4);                           -- Payment amount after processor fee
-  platform_fee_from_gross numeric(19,4);               -- Gonasi's fee from gross payment (before processor fee)
-  org_payout numeric(19,4);                            -- Amount org receives (user_payment - platform_fee%)
-  gonasi_actual_income numeric(19,4);                   -- Gonasi's actual revenue = platform_fee - processor_fee
+  platform_fee_percent numeric(5,2);
+  processor_fee numeric(19,4) := 0;
+  net_payment numeric(19,4);
+  platform_fee_from_gross numeric(19,4);
+  org_payout numeric(19,4);
+  gonasi_actual_income numeric(19,4);
 
   -- Final response
   result jsonb;
 begin
+  -- Sanity check: created_by must match user (or be null)
+  if p_created_by is not null and p_created_by != p_user_id then
+    raise exception 'Invalid created_by: must be null or match p_user_id';
+  end if;
+
+  -- Validate published course belongs to org and is published
+  if not exists (
+    select 1
+    from public.published_courses pc
+    where pc.id = p_published_course_id
+      and pc.organization_id = p_organization_id
+  ) then
+    raise exception 'Invalid course or course does not belong to organization';
+  end if;
+
   -- STEP 1: Check for active enrollment
   select * into existing_enrollment_record
   from public.course_enrollments
@@ -118,7 +137,6 @@ begin
       from public.course_enrollment_activities cea
       where cea.enrollment_id = existing_enrollment_record.id
         and cea.is_free = true
-      order by cea.created_at desc
       limit 1
     ) then
       result := jsonb_build_object(
@@ -179,7 +197,7 @@ begin
     access_start, access_end, coalesce(p_created_by, p_user_id)
   ) returning id into activity_id;
 
-  -- STEP 7: Handle payment for paid enrollments
+  -- STEP 7: Handle payment
   if not p_is_free then
     if p_payment_processor_id is null or p_payment_amount is null then
       raise exception 'Payment information required for paid enrollment';
@@ -191,13 +209,10 @@ begin
 
     processor_fee := coalesce(p_payment_processor_fee, 0);
     net_payment := p_payment_amount - processor_fee;
-
-    -- NEW CALCULATION: Platform fee from gross payment, org gets remainder
     platform_fee_from_gross := p_payment_amount * (platform_fee_percent / 100);
     org_payout := p_payment_amount - platform_fee_from_gross;
     gonasi_actual_income := platform_fee_from_gross - processor_fee;
 
-    -- Log payment with updated calculation
     insert into public.course_payments (
       enrollment_id, enrollment_activity_id, amount_paid, currency_code,
       payment_method, payment_processor_id, payment_processor_fee,
@@ -210,7 +225,6 @@ begin
       org_payout, p_organization_id, coalesce(p_created_by, p_user_id)
     ) returning id into payment_id;
 
-    -- STEP 7b: Process wallets
     declare wallet_result jsonb;
     begin
       wallet_result := public.process_course_payment_to_wallets(
@@ -269,5 +283,4 @@ begin
 
   return result;
 end;
-$$ language plpgsql
-set search_path = '';
+$$;

@@ -72,6 +72,8 @@ create table "public"."course_enrollment_activities" (
 );
 
 
+alter table "public"."course_enrollment_activities" enable row level security;
+
 create table "public"."course_enrollments" (
     "id" uuid not null default gen_random_uuid(),
     "user_id" uuid not null,
@@ -109,6 +111,8 @@ create table "public"."course_payments" (
     "created_by" uuid not null
 );
 
+
+alter table "public"."course_payments" enable row level security;
 
 create table "public"."course_pricing_tiers" (
     "id" uuid not null default uuid_generate_v4(),
@@ -2279,6 +2283,7 @@ $function$
 CREATE OR REPLACE FUNCTION public.enroll_user_in_published_course(p_user_id uuid, p_published_course_id uuid, p_tier_id uuid, p_tier_name text, p_tier_description text, p_payment_frequency text, p_currency_code text, p_is_free boolean, p_effective_price numeric, p_organization_id uuid, p_promotional_price numeric DEFAULT NULL::numeric, p_is_promotional boolean DEFAULT false, p_payment_processor_id text DEFAULT NULL::text, p_payment_amount numeric DEFAULT NULL::numeric, p_payment_method text DEFAULT NULL::text, p_payment_processor_fee numeric DEFAULT NULL::numeric, p_created_by uuid DEFAULT NULL::uuid)
  RETURNS jsonb
  LANGUAGE plpgsql
+ SECURITY DEFINER
  SET search_path TO ''
 AS $function$
 declare
@@ -2296,16 +2301,31 @@ declare
   access_end timestamptz;
 
   -- Payment calculations
-  platform_fee_percent numeric(5,2);                   -- % Gonasi takes from user payment
-  processor_fee numeric(19,4) := 0;                    -- Payment processor fee (e.g. Paystack)
-  net_payment numeric(19,4);                           -- Payment amount after processor fee
-  platform_fee_from_gross numeric(19,4);               -- Gonasi's fee from gross payment (before processor fee)
-  org_payout numeric(19,4);                            -- Amount org receives (user_payment - platform_fee%)
-  gonasi_actual_income numeric(19,4);                   -- Gonasi's actual revenue = platform_fee - processor_fee
+  platform_fee_percent numeric(5,2);
+  processor_fee numeric(19,4) := 0;
+  net_payment numeric(19,4);
+  platform_fee_from_gross numeric(19,4);
+  org_payout numeric(19,4);
+  gonasi_actual_income numeric(19,4);
 
   -- Final response
   result jsonb;
 begin
+  -- Sanity check: created_by must match user (or be null)
+  if p_created_by is not null and p_created_by != p_user_id then
+    raise exception 'Invalid created_by: must be null or match p_user_id';
+  end if;
+
+  -- Validate published course belongs to org and is published
+  if not exists (
+    select 1
+    from public.published_courses pc
+    where pc.id = p_published_course_id
+      and pc.organization_id = p_organization_id
+  ) then
+    raise exception 'Invalid course or course does not belong to organization';
+  end if;
+
   -- STEP 1: Check for active enrollment
   select * into existing_enrollment_record
   from public.course_enrollments
@@ -2334,7 +2354,6 @@ begin
       from public.course_enrollment_activities cea
       where cea.enrollment_id = existing_enrollment_record.id
         and cea.is_free = true
-      order by cea.created_at desc
       limit 1
     ) then
       result := jsonb_build_object(
@@ -2395,7 +2414,7 @@ begin
     access_start, access_end, coalesce(p_created_by, p_user_id)
   ) returning id into activity_id;
 
-  -- STEP 7: Handle payment for paid enrollments
+  -- STEP 7: Handle payment
   if not p_is_free then
     if p_payment_processor_id is null or p_payment_amount is null then
       raise exception 'Payment information required for paid enrollment';
@@ -2407,13 +2426,10 @@ begin
 
     processor_fee := coalesce(p_payment_processor_fee, 0);
     net_payment := p_payment_amount - processor_fee;
-
-    -- NEW CALCULATION: Platform fee from gross payment, org gets remainder
     platform_fee_from_gross := p_payment_amount * (platform_fee_percent / 100);
     org_payout := p_payment_amount - platform_fee_from_gross;
     gonasi_actual_income := platform_fee_from_gross - processor_fee;
 
-    -- Log payment with updated calculation
     insert into public.course_payments (
       enrollment_id, enrollment_activity_id, amount_paid, currency_code,
       payment_method, payment_processor_id, payment_processor_fee,
@@ -2426,7 +2442,6 @@ begin
       org_payout, p_organization_id, coalesce(p_created_by, p_user_id)
     ) returning id into payment_id;
 
-    -- STEP 7b: Process wallets
     declare wallet_result jsonb;
     begin
       wallet_result := public.process_course_payment_to_wallets(
@@ -5214,6 +5229,25 @@ as permissive
 for update
 to authenticated
 using (authorize('course_categories.update'::app_permission));
+
+
+create policy "select: allowed org roles or enrollment owner"
+on "public"."course_enrollment_activities"
+as permissive
+for select
+to authenticated
+using ((EXISTS ( SELECT 1
+   FROM (course_enrollments ce
+     JOIN courses pc ON ((pc.id = ce.published_course_id)))
+  WHERE ((ce.id = course_enrollment_activities.enrollment_id) AND ((get_user_org_role(pc.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(pc.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (pc.owned_by = ( SELECT auth.uid() AS uid))) OR (ce.user_id = ( SELECT auth.uid() AS uid)))))));
+
+
+create policy "select: only owners and admins can view course payments"
+on "public"."course_payments"
+as permissive
+for select
+to authenticated
+using ((get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])));
 
 
 create policy "delete: can_user_edit_course allows deleting pricing tiers"

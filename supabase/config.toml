@@ -179,8 +179,10 @@ schema_paths = [
 
   # enrollment related tables
   './schemas/enrollments/course_enrollments_schema_and_indexes.sql',
-  './schemas/enrollments/enrollment_activities_schema_and_indexes.sql',
+  './schemas/enrollments/course_enrollment_activities_schema_indexes.sql',
   './schemas/enrollments/course_payments_schema_and_indexes.sql',
+  './schemas/enrollments/course_payments_rls.sql',
+  './schemas/enrollments/course_enrollment_activities_rls.sql',
 
   # gonasi wallet
   './schemas/gonasiWallets/gonasi_wallet_transactions_schema_indexes.sql',
