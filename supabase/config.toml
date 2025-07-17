@@ -207,6 +207,9 @@ schema_paths = [
   './schemas/enrollments/utils/user_has_active_access.sql',
   './schemas/enrollments/utils/get_enrollment_status.sql',
 
+  # progress
+  './schemas/courseProgress/course_progress_schema_indexes.sql',
+  './schemas/courseProgress/course_progress_rls.sql'
 
 
 

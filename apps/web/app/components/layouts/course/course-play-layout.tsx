@@ -1,10 +1,10 @@
 import { type PropsWithChildren } from 'react';
-import { Link } from 'react-router';
-import { ArrowLeft, Ban, LoaderCircle, RotateCcw, Vibrate, Volume2, VolumeX } from 'lucide-react';
+import { Ban, LoaderCircle, RotateCcw, Vibrate, Volume2, VolumeX } from 'lucide-react';
 
 import { Container } from '../container';
 
 import { ActionDropdown } from '~/components/action-dropdown';
+import { BackArrowNavLink } from '~/components/ui/button';
 import { Progress } from '~/components/ui/progress';
 import { cn } from '~/lib/utils';
 import { useStore } from '~/store';
@@ -42,9 +42,7 @@ export function CoursePlayLayout({ children, to, basePath, progress, loading }: 
     <div className={cn('bg-background/80', progress === 100 ? 'pb-20' : 'pb-[80vh]')}>
       <div className='bg-background/80 sticky top-0 z-50 shadow-sm backdrop-blur'>
         <Container className='flex items-center justify-between space-x-4 py-4 md:space-x-8 md:py-6'>
-          <Link to={to}>
-            <ArrowLeft />
-          </Link>
+          <BackArrowNavLink to={to} />
           <Progress value={progress} />
           <div>
             {loading ? (
