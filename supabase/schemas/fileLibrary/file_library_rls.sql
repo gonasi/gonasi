@@ -82,14 +82,6 @@ using (
   )
 );
 
--- =======================================
--- STORAGE POLICIES (FIXED FOR PATH-BASED MATCHING)
--- =======================================
-
--- Ensure bucket exists
-insert into storage.buckets (id, name)
-values ('files', 'files')
-on conflict (id) do nothing;
 
 
 -- SELECT: Check if user has access to the file via file_library using path

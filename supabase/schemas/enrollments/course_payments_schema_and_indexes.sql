@@ -67,3 +67,6 @@ create index idx_course_payments_processor_id on course_payments(payment_process
 
 -- Optimize time-based queries
 create index idx_course_payments_created_at on course_payments(created_at);
+
+-- Optimize lookup by creator (resolves missing FK index warning)
+create index idx_course_payments_created_by on course_payments(created_by);

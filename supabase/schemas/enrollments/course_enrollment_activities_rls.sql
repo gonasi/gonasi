@@ -14,7 +14,7 @@ alter table public.course_enrollment_activities enable row level security;
 -- ====================================================================================
 -- select policy: allow org owners/admins, owning editors, or the enrolled user
 -- ====================================================================================
-create policy "select: allowed org roles or enrollment owner"
+create policy "select: allowed org roles or course enrollment owner"
 on public.course_enrollment_activities
 for select
 to authenticated

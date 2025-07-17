@@ -134,7 +134,7 @@ export function ChapterLessonTree({
                           <LessonHoverCard
                             lessonTypes={lesson.lesson_types}
                             name={lesson.name}
-                            to={`/go/course/${publishedCourseId}/${chapter.id}/${lesson.id}/play`}
+                            to={`/c/${publishedCourseId}/${chapter.id}/${lesson.id}/play`}
                             // isCompleted={lesson.isCompleted}
                             isCompleted={false}
                             isActiveLesson={lesson.id === activeChapterAndLesson?.lessonId}
@@ -144,7 +144,7 @@ export function ChapterLessonTree({
                           <LessonViewCard
                             lessonTypes={lesson.lesson_types}
                             name={lesson.name}
-                            to={`/go/course/${publishedCourseId}/${chapter.id}/${lesson.id}/play`}
+                            to={`/c/${publishedCourseId}/${chapter.id}/${lesson.id}/play`}
                             // isCompleted={lesson.isCompleted}
 
                             isCompleted={false}

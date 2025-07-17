@@ -176,13 +176,17 @@ schema_paths = [
   './schemas/publishedCourses/utils/chk_pricing_tiers_valid_constraint.sql',
   './schemas/publishedCourses/utils/chk_course_structure_overview_valid_constraint.sql',
   './schemas/publishedCourses/utils/chk_course_structure_content_valid_constraint.sql',
+  './schemas/publishedCourses/utils/get_published_lesson_blocks.sql',
 
   # enrollment related tables
   './schemas/enrollments/course_enrollments_schema_and_indexes.sql',
+  './schemas/enrollments/course_enrollments_rls.sql',
   './schemas/enrollments/course_enrollment_activities_schema_indexes.sql',
   './schemas/enrollments/course_payments_schema_and_indexes.sql',
   './schemas/enrollments/course_payments_rls.sql',
   './schemas/enrollments/course_enrollment_activities_rls.sql',
+
+  './schemas/publishedCourses/published_courses_rls.sql',
 
   # gonasi wallet
   './schemas/gonasiWallets/gonasi_wallet_transactions_schema_indexes.sql',

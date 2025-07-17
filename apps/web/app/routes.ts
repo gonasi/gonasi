@@ -19,6 +19,11 @@ export default [
     route('api/check-handle-exists/:organizationId', 'routes/api/check-handle-exists.ts'),
   ]),
 
+  route(
+    'c/:publishedCourseId/:publishedChapterId/:publishedLessonId/play',
+    'routes/publishedCourses/lesson-play.tsx',
+  ),
+
   route(':organizationHandle', 'routes/publicOrganizations/public-organization-profile-index.tsx'),
 
   layout('routes/layouts/myProfile/profile-wrapper-layout.tsx', [
