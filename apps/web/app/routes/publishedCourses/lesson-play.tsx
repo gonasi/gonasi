@@ -5,6 +5,7 @@ import { fetchPublishedLessonBlocks } from '@gonasi/database/publishedCourses';
 
 import type { Route } from './+types/lesson-play';
 
+import CourseAccessCard from '~/components/cards/course-access-card';
 import { CoursePlayLayout } from '~/components/layouts/course/course-play-layout';
 import { createClient } from '~/lib/supabase/supabase.server';
 
@@ -25,20 +26,37 @@ export async function loader({ params, request }: Route.LoaderArgs) {
       );
     }
 
-    const lessonAndBlocks = await fetchPublishedLessonBlocks({
-      supabase,
-      courseId: params.publishedCourseId,
-      chapterId: params.publishedChapterId,
-      lessonId: params.publishedLessonId,
-    });
+    // Run both requests in parallel
+    const [lessonAndBlocks, accessResult] = await Promise.all([
+      fetchPublishedLessonBlocks({
+        supabase,
+        courseId: params.publishedCourseId,
+        chapterId: params.publishedChapterId,
+        lessonId: params.publishedLessonId,
+      }),
+      supabase.rpc('user_has_active_access', {
+        p_user_id: user.id,
+        p_published_course_id: params.publishedCourseId,
+      }),
+    ]);
 
-    return { lessonAndBlocks };
+    if (accessResult.error) {
+      console.error('Error checking course access:', accessResult.error);
+    }
+
+    return {
+      hasAccess: Boolean(accessResult.data),
+      lessonAndBlocks,
+    };
   } catch (error) {
     throw error;
   }
 }
 
 export default function LessonPlay({ params, loaderData }: Route.ComponentProps) {
+  if (!loaderData.hasAccess) {
+    return <CourseAccessCard enrollPath={`/c/${params.publishedCourseId}`} />;
+  }
   return (
     <>
       <CoursePlayLayout
