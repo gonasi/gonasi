@@ -1,55 +1,160 @@
 -- ====================================================================================
--- FUNCTION: public.get_published_lesson_blocks
--- DESCRIPTION:
---   Returns structured lesson data (with blocks) for a specific lesson in a published course.
---   Pulls data from the new published_course_structure_content table.
---   Enforces column-level access to course_structure_content.
+-- TABLE: published_courses
+-- Purpose:
+--   Stores immutable snapshots of a course at the time of publication.
+--   Useful for versioning, pricing history, and performance stats.
 -- ====================================================================================
+create table public.published_courses (
+  -- Primary key (matches original course ID)
+  id uuid primary key references public.courses(id) on delete cascade,
 
-create or replace function public.get_published_lesson_blocks(
-  p_course_id uuid,
-  p_chapter_id uuid,
-  p_lesson_id uuid
-)
-returns jsonb
+  -- Ownership and categorization
+  organization_id uuid not null references public.organizations(id) on delete cascade,
+  category_id uuid references public.course_categories(id) on delete set null,
+  subcategory_id uuid references public.course_sub_categories(id) on delete set null,
+
+  -- Versioning
+  version integer not null default 1,
+  is_active boolean not null default true,
+
+  -- Snapshot of course metadata
+  name text not null,
+  description text not null,
+  image_url text not null,
+  blur_hash text,
+  visibility course_access not null default 'public',
+
+  -- Snapshot of structure overview only (no deep content)
+  course_structure_overview jsonb not null,
+  
+  -- Derived structure metrics
+  total_chapters integer not null check (total_chapters > 0),
+  total_lessons integer not null check (total_lessons > 0),
+  total_blocks integer not null check (total_blocks > 0),
+
+  -- Snapshot of pricing tiers at publication
+  pricing_tiers jsonb not null default '[]'::jsonb,
+
+  -- Derived pricing data (denormalized externally)
+  has_free_tier boolean,
+  min_price numeric,
+
+  -- Publication metadata
+  published_at timestamptz not null default timezone('utc', now()),
+  published_by uuid not null references public.profiles(id) on delete cascade,
+
+  -- Public interaction stats (mutable)
+  total_enrollments integer not null default 0,
+  active_enrollments integer not null default 0,
+  completion_rate numeric(5,2) default 0.00,
+  average_rating numeric(3,2),
+  total_reviews integer not null default 0,
+
+  -- Audit timestamps
+  created_at timestamptz not null default timezone('utc', now()),
+  updated_at timestamptz not null default timezone('utc', now()),
+
+  -- Constraints
+  constraint chk_completion_rate check (completion_rate >= 0 and completion_rate <= 100),
+  constraint chk_average_rating check (average_rating >= 1 and average_rating <= 5),
+  constraint chk_version_positive check (version > 0),
+
+  -- Enforce only one active version per course
+  constraint uq_one_active_published_course unique (id, is_active) deferrable initially deferred
+);
+
+-- ----------------------------------------
+-- 🔑 Foreign key indexes (join performance)
+-- ----------------------------------------
+create index idx_published_courses_org_id on public.published_courses(organization_id);
+create index idx_published_courses_published_by on public.published_courses(published_by);
+create index idx_published_courses_category_id on public.published_courses(category_id);
+create index idx_published_courses_subcategory_id on public.published_courses(subcategory_id);
+
+-- ----------------------------------------------------
+-- 🔍 Common filters (used in dashboards and listings)
+-- ----------------------------------------------------
+create index idx_published_courses_is_active on public.published_courses(is_active) where is_active = true;
+create index idx_published_courses_visibility on public.published_courses(visibility);
+create index idx_published_courses_published_at on public.published_courses(published_at);
+
+-- --------------------------------------------------------------------
+-- 📦 Versioning and access (for latest version lookups, visibility)
+-- --------------------------------------------------------------------
+create index idx_published_courses_id_version on public.published_courses(id, version desc); 
+create index idx_published_courses_org_active on public.published_courses(organization_id, is_active);
+
+-- -------------------------------------------
+-- 💵 Pricing-related (filtering/sorting tiers)
+-- -------------------------------------------
+create index idx_published_courses_has_free on public.published_courses(has_free_tier);
+create index idx_published_courses_min_price on public.published_courses(min_price);
+
+-- ------------------------------------------------
+-- 📈 Stats sorting (e.g. trending, top rated, etc.)
+-- ------------------------------------------------
+create index idx_published_courses_enrollments on public.published_courses(total_enrollments);
+create index idx_published_courses_rating on public.published_courses(average_rating) where average_rating is not null;
+
+-- ====================================================================================
+-- FUNCTION: ensure_incremented_course_version
+-- ====================================================================================
+create or replace function public.ensure_incremented_course_version()
+returns trigger
 language plpgsql
-security invoker
 set search_path = ''
 as $$
 declare
-  result jsonb;
+  latest_version int;
+  content_changed boolean := false;
 begin
-  -- Enforce column-level access
-  if not has_column_privilege('public.published_course_structure_content', 'course_structure_content', 'SELECT') then
-    raise exception 'Access denied to course content';
+  select coalesce(max(version), 0)
+  into latest_version
+  from public.published_courses
+  where id = NEW.id;
+
+  if TG_OP = 'INSERT' then
+    if NEW.version is null or NEW.version <= latest_version then
+      NEW.version := latest_version + 1;
+    end if;
+    NEW.published_at := timezone('utc', now());
+
+  elsif TG_OP = 'UPDATE' then
+    content_changed := (
+      NEW.name IS DISTINCT FROM OLD.name OR
+      NEW.description IS DISTINCT FROM OLD.description OR
+      NEW.image_url IS DISTINCT FROM OLD.image_url OR
+      NEW.blur_hash IS DISTINCT FROM OLD.blur_hash OR
+      NEW.visibility IS DISTINCT FROM OLD.visibility OR
+      NEW.course_structure_overview IS DISTINCT FROM OLD.course_structure_overview OR
+      NEW.pricing_tiers IS DISTINCT FROM OLD.pricing_tiers
+    );
+
+    if content_changed then
+      NEW.version := greatest(OLD.version + 1, latest_version + 1);
+      NEW.published_at := timezone('utc', now());
+    else
+      NEW.version := OLD.version;
+      NEW.published_at := OLD.published_at;
+    end if;
   end if;
 
-  -- Fetch lesson from the nested JSONB structure
-  select jsonb_build_object(
-    'id', l->>'id',
-    'name', l->>'name',
-    'position', (l->>'position')::int,
-    'course_id', l->>'course_id',
-    'chapter_id', l->>'chapter_id',
-    'lesson_type_id', l->>'lesson_type_id',
-    'settings', l->'settings',
-    'lesson_types', l->'lesson_types',
-    'total_blocks', (l->>'total_blocks')::int,
-    'blocks', l->'blocks'
-  )
-  into result
-  from public.published_course_structure_content pcs,
-  lateral (
-    select l
-    from
-      jsonb_array_elements(pcs.course_structure_content->'chapters') as c
-      join lateral jsonb_array_elements(c->'lessons') as l
-        on (c->>'id')::uuid = p_chapter_id
-    where
-      (l->>'id')::uuid = p_lesson_id
-  ) as result
-  where pcs.id = p_course_id;
-
-  return result;
+  return NEW;
 end;
 $$;
+
+-- Triggers
+create trigger trg_set_published_course_version
+  before insert on public.published_courses
+  for each row
+  execute function public.ensure_incremented_course_version();
+
+create trigger trg_update_published_course_version
+  before update on public.published_courses
+  for each row
+  execute function public.ensure_incremented_course_version();
+
+create trigger trg_published_courses_set_updated_at
+  before update on public.published_courses
+  for each row
+  execute function public.update_updated_at_column();

@@ -1,4 +1,5 @@
 import { Outlet } from 'react-router';
+import { redirectWithError } from 'remix-toast';
 
 import { fetchPublishedLessonBlocks } from '@gonasi/database/publishedCourses';
 
@@ -18,7 +19,12 @@ export async function loader({ params, request }: Route.LoaderArgs) {
       lessonId: params.publishedLessonId,
     });
 
-    console.log('LESSON: ', lessonAndBlocks);
+    if (!lessonAndBlocks) {
+      return redirectWithError(
+        `/c/${params.publishedCourseId}`,
+        'Lesson not found or you are currently not enrolled to this course',
+      );
+    }
 
     return { lessonAndBlocks };
   } catch (error) {

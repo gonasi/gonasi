@@ -1,3 +1,5 @@
+import { type PublishedLessonSchemaTypes } from '@gonasi/schemas/publish';
+
 import type { TypedSupabaseClient } from '../client';
 
 interface FetchPublishedLessonBlocksArgs {
@@ -12,7 +14,7 @@ export async function fetchPublishedLessonBlocks({
   courseId,
   chapterId,
   lessonId,
-}: FetchPublishedLessonBlocksArgs) {
+}: FetchPublishedLessonBlocksArgs): Promise<PublishedLessonSchemaTypes | null> {
   const { data, error } = await supabase.rpc('get_published_lesson_blocks', {
     p_course_id: courseId,
     p_chapter_id: chapterId,

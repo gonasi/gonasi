@@ -30,7 +30,6 @@ create table "public"."block_progress" (
     "published_course_id" uuid not null,
     "lesson_id" uuid not null,
     "block_id" uuid not null,
-    "weight" numeric(5,2) not null,
     "is_completed" boolean not null default true,
     "completed_at" timestamp with time zone not null default timezone('utc'::text, now()),
     "created_at" timestamp with time zone not null default timezone('utc'::text, now()),
@@ -2959,11 +2958,11 @@ declare
   result jsonb;
 begin
   -- Deny if caller lacks explicit column-level access
-  if not has_column_privilege('public.published_courses', 'course_structure_content', 'SELECT') then
+  if not has_column_privilege('public.published_course_structure_content', 'course_structure_content', 'SELECT') then
     raise exception 'Access denied to course content';
   end if;
 
-  -- Fetch and return the lesson + blocks
+  -- Fetch and return the lesson + blocks from the correct table
   select jsonb_build_object(
     'id', l->>'id',
     'name', l->>'name',
@@ -2977,17 +2976,17 @@ begin
     'blocks', l->'blocks'
   )
   into result
-  from public.published_courses,
+  from public.published_course_structure_content pcs,
   lateral (
     select l
     from
-      jsonb_array_elements(course_structure_content->'chapters') as c
+      jsonb_array_elements(pcs.course_structure_content->'chapters') as c
       join lateral jsonb_array_elements(c->'lessons') as l
         on (c->>'id')::uuid = p_chapter_id
     where
       (l->>'id')::uuid = p_lesson_id
   ) as result
-  where id = p_course_id;
+  where pcs.id = p_course_id;
 
   return result;
 end;

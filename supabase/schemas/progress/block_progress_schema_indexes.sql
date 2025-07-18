@@ -11,8 +11,6 @@ create table public.block_progress (
   lesson_id uuid not null, -- snapshot-based lesson reference
   block_id uuid not null,  -- snapshot-based block reference
 
-  weight numeric(5,2) not null, -- denormalized for analytics/rollups
-
   is_completed boolean not null default true,
   completed_at timestamptz not null default timezone('utc', now()),
 

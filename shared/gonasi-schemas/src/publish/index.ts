@@ -19,7 +19,7 @@ const BlockSchema = z.object({
   position: z.number().int().nonnegative(),
 });
 
-const LessonSchema = z.object({
+export const PublishedLessonSchema = z.object({
   id: z.string().uuid(),
   course_id: z.string().uuid(),
   chapter_id: z.string().uuid(),
@@ -32,6 +32,7 @@ const LessonSchema = z.object({
   total_blocks: z.number().int().positive(),
   blocks: z.array(BlockSchema),
 });
+export type PublishedLessonSchemaTypes = z.infer<typeof PublishedLessonSchema>;
 
 const ChapterSchema = z.object({
   id: z.string().uuid(),
@@ -43,7 +44,7 @@ const ChapterSchema = z.object({
 
   total_lessons: z.number().int().positive(),
   total_blocks: z.number().int().positive(),
-  lessons: z.array(LessonSchema),
+  lessons: z.array(PublishedLessonSchema),
 });
 
 // New schema for course_structure_content (includes all fields)

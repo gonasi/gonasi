@@ -282,20 +282,6 @@
           "maxLength": null
         },
         {
-          "id": "public.block_progress.weight",
-          "name": "weight",
-          "columnName": "weight",
-          "type": "numeric",
-          "isRequired": true,
-          "kind": "scalar",
-          "isList": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false,
-          "isId": false,
-          "maxLength": null
-        },
-        {
           "id": "public.block_progress.is_completed",
           "name": "is_completed",
           "columnName": "is_completed",

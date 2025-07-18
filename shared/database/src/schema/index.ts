@@ -45,7 +45,6 @@ export type Database = {
           published_course_id: string
           updated_at: string
           user_id: string
-          weight: number
         }
         Insert: {
           block_id: string
@@ -57,7 +56,6 @@ export type Database = {
           published_course_id: string
           updated_at?: string
           user_id: string
-          weight: number
         }
         Update: {
           block_id?: string
@@ -69,7 +67,6 @@ export type Database = {
           published_course_id?: string
           updated_at?: string
           user_id?: string
-          weight?: number
         }
         Relationships: [
           {
