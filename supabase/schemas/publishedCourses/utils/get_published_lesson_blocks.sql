@@ -13,49 +13,57 @@
 -- RETURNS:
 --   A JSONB object representing the matched lesson with its blocks.
 -- ====================================================================================
+-- ====================================================================================
+-- FUNCTION: public.get_published_lesson_blocks
+-- DESCRIPTION: Returns structured lesson data from a published course.
+--              Includes blocks only if the caller has access to course_structure_content.
+--              Prevents anon or unauthorized users from reading deep course content.
+-- ====================================================================================
+
 create or replace function public.get_published_lesson_blocks(
   p_course_id uuid,
   p_chapter_id uuid,
   p_lesson_id uuid
 )
 returns jsonb
-language sql
-security definer
+language plpgsql
+security invoker
 set search_path = ''
 as $$
+declare
+  result jsonb;
+begin
+  -- Deny if caller lacks explicit column-level access
+  if not has_column_privilege('public.published_courses', 'course_structure_content', 'SELECT') then
+    raise exception 'Access denied to course content';
+  end if;
+
+  -- Fetch and return the lesson + blocks
   select jsonb_build_object(
-    -- Basic lesson metadata
     'id', l->>'id',
     'name', l->>'name',
     'position', (l->>'position')::int,
     'course_id', l->>'course_id',
     'chapter_id', l->>'chapter_id',
     'lesson_type_id', l->>'lesson_type_id',
-
-    -- Additional lesson settings and type metadata
     'settings', l->'settings',
     'lesson_types', l->'lesson_types',
     'total_blocks', (l->>'total_blocks')::int,
-
-    -- The full list of content blocks within the lesson
     'blocks', l->'blocks'
   )
+  into result
   from public.published_courses,
-
-  -- LATERAL join: extract the matching lesson from course_structure_content
   lateral (
     select l
     from
-      -- Unnest chapters from the course content structure
       jsonb_array_elements(course_structure_content->'chapters') as c
-
-      -- Unnest lessons from within each chapter
       join lateral jsonb_array_elements(c->'lessons') as l
-        on (c->>'id')::uuid = p_chapter_id  -- Filter to the requested chapter
+        on (c->>'id')::uuid = p_chapter_id
     where
-      (l->>'id')::uuid = p_lesson_id        -- Filter to the requested lesson
+      (l->>'id')::uuid = p_lesson_id
   ) as result
+  where id = p_course_id;
 
-  -- Restrict to the specified published course
-  where id = p_course_id
+  return result;
+end;
 $$;

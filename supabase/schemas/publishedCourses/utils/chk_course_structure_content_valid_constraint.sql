@@ -1,5 +1,5 @@
 -- Add check constraint for course_structure_content
-alter table public.published_courses
+alter table public.published_course_structure_content
 add constraint chk_course_structure_content_valid
 check (
   jsonb_matches_schema(

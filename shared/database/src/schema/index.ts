@@ -34,6 +34,60 @@ export type Database = {
   }
   public: {
     Tables: {
+      block_progress: {
+        Row: {
+          block_id: string
+          completed_at: string
+          created_at: string
+          id: string
+          is_completed: boolean
+          lesson_id: string
+          published_course_id: string
+          updated_at: string
+          user_id: string
+          weight: number
+        }
+        Insert: {
+          block_id: string
+          completed_at?: string
+          created_at?: string
+          id?: string
+          is_completed?: boolean
+          lesson_id: string
+          published_course_id: string
+          updated_at?: string
+          user_id: string
+          weight: number
+        }
+        Update: {
+          block_id?: string
+          completed_at?: string
+          created_at?: string
+          id?: string
+          is_completed?: boolean
+          lesson_id?: string
+          published_course_id?: string
+          updated_at?: string
+          user_id?: string
+          weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "block_progress_published_course_id_fkey"
+            columns: ["published_course_id"]
+            isOneToOne: false
+            referencedRelation: "published_courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "block_progress_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chapters: {
         Row: {
           course_id: string
@@ -473,6 +527,66 @@ export type Database = {
           },
         ]
       }
+      course_progress: {
+        Row: {
+          completed_at: string | null
+          completed_blocks: number
+          completed_chapters: number
+          completed_lessons: number
+          created_at: string
+          id: string
+          published_course_id: string
+          total_blocks: number
+          total_chapters: number
+          total_lessons: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          completed_blocks?: number
+          completed_chapters?: number
+          completed_lessons?: number
+          created_at?: string
+          id?: string
+          published_course_id: string
+          total_blocks: number
+          total_chapters: number
+          total_lessons: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          completed_blocks?: number
+          completed_chapters?: number
+          completed_lessons?: number
+          created_at?: string
+          id?: string
+          published_course_id?: string
+          total_blocks?: number
+          total_chapters?: number
+          total_lessons?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_progress_published_course_id_fkey"
+            columns: ["published_course_id"]
+            isOneToOne: false
+            referencedRelation: "published_courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_progress_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       course_sub_categories: {
         Row: {
           category_id: string
@@ -858,6 +972,57 @@ export type Database = {
           {
             foreignKeyName: "lesson_blocks_updated_by_fkey"
             columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lesson_progress: {
+        Row: {
+          completed_at: string | null
+          completed_blocks: number
+          created_at: string
+          id: string
+          lesson_id: string
+          published_course_id: string
+          total_blocks: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          completed_blocks?: number
+          created_at?: string
+          id?: string
+          lesson_id: string
+          published_course_id: string
+          total_blocks: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          completed_blocks?: number
+          created_at?: string
+          id?: string
+          lesson_id?: string
+          published_course_id?: string
+          total_blocks?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lesson_progress_published_course_id_fkey"
+            columns: ["published_course_id"]
+            isOneToOne: false
+            referencedRelation: "published_courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lesson_progress_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -1339,6 +1504,35 @@ export type Database = {
           },
         ]
       }
+      published_course_structure_content: {
+        Row: {
+          course_structure_content: Json
+          created_at: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          course_structure_content: Json
+          created_at?: string
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          course_structure_content?: Json
+          created_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "published_course_structure_content_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "published_courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       published_courses: {
         Row: {
           active_enrollments: number
@@ -1346,7 +1540,6 @@ export type Database = {
           blur_hash: string | null
           category_id: string | null
           completion_rate: number | null
-          course_structure_content: Json
           course_structure_overview: Json
           created_at: string
           description: string
@@ -1376,7 +1569,6 @@ export type Database = {
           blur_hash?: string | null
           category_id?: string | null
           completion_rate?: number | null
-          course_structure_content: Json
           course_structure_overview: Json
           created_at?: string
           description: string
@@ -1406,7 +1598,6 @@ export type Database = {
           blur_hash?: string | null
           category_id?: string | null
           completion_rate?: number | null
-          course_structure_content?: Json
           course_structure_overview?: Json
           created_at?: string
           description?: string

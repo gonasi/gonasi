@@ -1,3 +1,8 @@
+-- ====================================================================================
+-- TABLE: course_progress
+-- DESCRIPTION: Tracks per-user progress in published courses.
+--              Includes completion counters and timestamps.
+-- ====================================================================================
 create table public.course_progress (
   id uuid primary key default uuid_generate_v4(),
 
@@ -20,18 +25,19 @@ create table public.course_progress (
   unique (user_id, published_course_id)
 );
 
--- Ensure fast lookups for a user's progress in a course
-create unique index idx_course_progress_user_course
-  on public.course_progress(user_id, published_course_id);
+-- Indexes for performance
 
--- Fast lookup by course (e.g. analytics per course)
 create index idx_course_progress_course
   on public.course_progress(published_course_id);
 
--- Fast lookup by user (e.g. dashboard, filtering by user)
 create index idx_course_progress_user
   on public.course_progress(user_id);
 
--- Queries that filter by completion status (optional, only if you filter on it)
 create index idx_course_progress_completed_at
   on public.course_progress(completed_at);
+
+-- Automatically update `updated_at` timestamp
+create trigger trg_course_progress_set_updated_at
+before update on public.course_progress
+for each row
+execute function public.update_updated_at_column();

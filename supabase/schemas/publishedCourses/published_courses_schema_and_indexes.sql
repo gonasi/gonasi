@@ -24,9 +24,9 @@ create table public.published_courses (
   blur_hash text,
   visibility course_access not null default 'public',
 
-  -- Snapshot of full course structure (chapters, lessons, blocks)
+  -- Snapshot of structure overview only (no deep content)
   course_structure_overview jsonb not null,
-  course_structure_content jsonb not null, 
+  
   -- Derived structure metrics
   total_chapters integer not null check (total_chapters > 0),
   total_lessons integer not null check (total_lessons > 0),
@@ -63,12 +63,6 @@ create table public.published_courses (
   constraint uq_one_active_published_course unique (id, is_active) deferrable initially deferred
 );
 
--- ====================================================================================
--- INDEXES: published_courses
--- Purpose:
---   Optimize lookup, filtering, sorting, and deep structure querying.
--- ====================================================================================
-
 -- ----------------------------------------
 -- 🔑 Foreign key indexes (join performance)
 -- ----------------------------------------
@@ -87,7 +81,7 @@ create index idx_published_courses_published_at on public.published_courses(publ
 -- --------------------------------------------------------------------
 -- 📦 Versioning and access (for latest version lookups, visibility)
 -- --------------------------------------------------------------------
-create index idx_published_courses_id_version on public.published_courses(id, version desc); -- latest version per course
+create index idx_published_courses_id_version on public.published_courses(id, version desc); 
 create index idx_published_courses_org_active on public.published_courses(organization_id, is_active);
 
 -- -------------------------------------------
@@ -96,29 +90,14 @@ create index idx_published_courses_org_active on public.published_courses(organi
 create index idx_published_courses_has_free on public.published_courses(has_free_tier);
 create index idx_published_courses_min_price on public.published_courses(min_price);
 
--- ---------------------------------------------------------------------
--- 🧱 Structure JSONB (efficient querying inside course_structure blobs)
--- ---------------------------------------------------------------------
-create index idx_published_courses_structure_content_gin
-  on public.published_courses
-  using gin (course_structure_content jsonb_path_ops);
-
-create index idx_published_courses_structure_overview_gin
-  on public.published_courses
-  using gin (course_structure_overview jsonb_path_ops);
-
 -- ------------------------------------------------
 -- 📈 Stats sorting (e.g. trending, top rated, etc.)
 -- ------------------------------------------------
 create index idx_published_courses_enrollments on public.published_courses(total_enrollments);
 create index idx_published_courses_rating on public.published_courses(average_rating) where average_rating is not null;
 
-
 -- ====================================================================================
 -- FUNCTION: ensure_incremented_course_version
--- Purpose:
---   Automatically increments the version when a new publication is made
---   or if course content changes on update.
 -- ====================================================================================
 create or replace function public.ensure_incremented_course_version()
 returns trigger
@@ -129,21 +108,18 @@ declare
   latest_version int;
   content_changed boolean := false;
 begin
-  -- Get the current max version for this course
   select coalesce(max(version), 0)
   into latest_version
   from public.published_courses
   where id = NEW.id;
 
   if TG_OP = 'INSERT' then
-    -- On insert, bump version if not explicitly set higher
     if NEW.version is null or NEW.version <= latest_version then
       NEW.version := latest_version + 1;
     end if;
     NEW.published_at := timezone('utc', now());
 
   elsif TG_OP = 'UPDATE' then
-    -- Detect meaningful content changes
     content_changed := (
       NEW.name IS DISTINCT FROM OLD.name OR
       NEW.description IS DISTINCT FROM OLD.description OR
@@ -151,16 +127,13 @@ begin
       NEW.blur_hash IS DISTINCT FROM OLD.blur_hash OR
       NEW.visibility IS DISTINCT FROM OLD.visibility OR
       NEW.course_structure_overview IS DISTINCT FROM OLD.course_structure_overview OR
-      NEW.course_structure_content IS DISTINCT FROM OLD.course_structure_content OR
       NEW.pricing_tiers IS DISTINCT FROM OLD.pricing_tiers
     );
 
-    -- If changed, bump version and update published_at
     if content_changed then
       NEW.version := greatest(OLD.version + 1, latest_version + 1);
       NEW.published_at := timezone('utc', now());
     else
-      -- Otherwise, keep old version & published_at (only stats were updated)
       NEW.version := OLD.version;
       NEW.published_at := OLD.published_at;
     end if;
@@ -170,20 +143,17 @@ begin
 end;
 $$;
 
-
--- Trigger: Set course version before INSERT
+-- Triggers
 create trigger trg_set_published_course_version
   before insert on public.published_courses
   for each row
   execute function public.ensure_incremented_course_version();
 
--- Trigger: Conditionally bump version on UPDATE
 create trigger trg_update_published_course_version
   before update on public.published_courses
   for each row
   execute function public.ensure_incremented_course_version();
 
--- Trigger: Auto-update updated_at timestamp
 create trigger trg_published_courses_set_updated_at
   before update on public.published_courses
   for each row

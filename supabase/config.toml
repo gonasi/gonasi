@@ -167,8 +167,8 @@ schema_paths = [
   './schemas/fileLibrary/file_library_rls.sql',
 
   # # published
-  './schemas/publishedCourses/published_courses_utils.sql',
   './schemas/publishedCourses/published_courses_schema_and_indexes.sql',
+  './schemas/publishedCourses/published_course_structure_content_schema_and_indexes.sql',
 
 
   './schemas/publishedCourses/published_thumbnails_bucket_rls.sql',
@@ -187,6 +187,7 @@ schema_paths = [
   './schemas/enrollments/course_enrollment_activities_rls.sql',
 
   './schemas/publishedCourses/published_courses_rls.sql',
+  './schemas/publishedCourses/published_course_structure_content_rls.sql',
 
   # gonasi wallet
   './schemas/gonasiWallets/gonasi_wallet_transactions_schema_indexes.sql',
@@ -208,9 +209,14 @@ schema_paths = [
   './schemas/enrollments/utils/get_enrollment_status.sql',
 
   # progress
-  './schemas/courseProgress/course_progress_schema_indexes.sql',
-  './schemas/courseProgress/course_progress_rls.sql'
+  './schemas/progress/course_progress_schema_indexes.sql',
+  './schemas/progress/course_progress_rls.sql',
 
+  './schemas/progress/lesson_progress_schema_indexes.sql',
+  './schemas/progress/lesson_progress_rls.sql',
+
+  './schemas/progress/block_progress_schema_indexes.sql',
+  './schemas/progress/block_progress_rls.sql'
 
 
   # './schemas/enrollment_activities_schema_indexes_rls.sql',
