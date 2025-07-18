@@ -19,11 +19,11 @@ begin
   -- Fetch and return the lesson + blocks from the correct table
   select jsonb_build_object(
     'id', l->>'id',
-    'name', l->>'name',
-    'position', (l->>'position')::int,
     'course_id', l->>'course_id',
     'chapter_id', l->>'chapter_id',
     'lesson_type_id', l->>'lesson_type_id',
+    'name', l->>'name',
+    'position', (l->>'position')::int,
     'settings', l->'settings',
     'lesson_types', l->'lesson_types',
     'total_blocks', (l->>'total_blocks')::int,

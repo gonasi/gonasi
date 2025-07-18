@@ -1,3 +1,6 @@
+import type { PublishedLessonSchemaTypes } from '@gonasi/schemas/publish';
+import { PublishedLessonSchema } from '@gonasi/schemas/publish';
+
 import type { TypedSupabaseClient } from '../client';
 
 interface FetchPublishedLessonBlocksArgs {
@@ -12,7 +15,7 @@ export async function fetchPublishedLessonBlocks({
   courseId,
   chapterId,
   lessonId,
-}: FetchPublishedLessonBlocksArgs) {
+}: FetchPublishedLessonBlocksArgs): Promise<PublishedLessonSchemaTypes | null> {
   const { data, error } = await supabase.rpc('get_published_lesson_blocks', {
     p_course_id: courseId,
     p_chapter_id: chapterId,
@@ -24,5 +27,12 @@ export async function fetchPublishedLessonBlocks({
     return null;
   }
 
-  return data;
+  const result = PublishedLessonSchema.safeParse(data);
+
+  if (!result.success) {
+    console.error('Lesson data validation failed:', result.error.format());
+    return null;
+  }
+
+  return result.data;
 }

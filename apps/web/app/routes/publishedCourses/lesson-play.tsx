@@ -12,19 +12,25 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   try {
     const { supabase } = createClient(request);
 
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    const redirectTo = `/c/${params.publishedCourseId}/${params.publishedChapterId}/${params.publishedLessonId}/play`;
+
+    if (!user) {
+      return redirectWithError(
+        `/login?redirectTo=${encodeURIComponent(redirectTo)}`,
+        'Please log in to access this lesson.',
+      );
+    }
+
     const lessonAndBlocks = await fetchPublishedLessonBlocks({
       supabase,
       courseId: params.publishedCourseId,
       chapterId: params.publishedChapterId,
       lessonId: params.publishedLessonId,
     });
-
-    if (!lessonAndBlocks) {
-      return redirectWithError(
-        `/c/${params.publishedCourseId}`,
-        'Lesson not found or you are currently not enrolled to this course',
-      );
-    }
 
     return { lessonAndBlocks };
   } catch (error) {

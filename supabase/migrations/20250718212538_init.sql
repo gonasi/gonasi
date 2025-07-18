@@ -2965,11 +2965,11 @@ begin
   -- Fetch and return the lesson + blocks from the correct table
   select jsonb_build_object(
     'id', l->>'id',
-    'name', l->>'name',
-    'position', (l->>'position')::int,
     'course_id', l->>'course_id',
     'chapter_id', l->>'chapter_id',
     'lesson_type_id', l->>'lesson_type_id',
+    'name', l->>'name',
+    'position', (l->>'position')::int,
     'settings', l->'settings',
     'lesson_types', l->'lesson_types',
     'total_blocks', (l->>'total_blocks')::int,
@@ -5760,11 +5760,11 @@ on "public"."course_enrollments"
 as permissive
 for select
 to authenticated
-using (((user_id = auth.uid()) OR (EXISTS ( SELECT 1
+using (((user_id = ( SELECT auth.uid() AS uid)) OR (EXISTS ( SELECT 1
    FROM courses pc
-  WHERE ((pc.id = course_enrollments.published_course_id) AND (get_user_org_role(pc.organization_id, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text]))))) OR (EXISTS ( SELECT 1
+  WHERE ((pc.id = course_enrollments.published_course_id) AND (get_user_org_role(pc.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text]))))) OR (EXISTS ( SELECT 1
    FROM courses pc
-  WHERE ((pc.id = course_enrollments.published_course_id) AND (get_user_org_role(pc.organization_id, auth.uid()) = 'editor'::text) AND (pc.owned_by = auth.uid()))))));
+  WHERE ((pc.id = course_enrollments.published_course_id) AND (get_user_org_role(pc.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (pc.owned_by = ( SELECT auth.uid() AS uid)))))));
 
 
 create policy "select: only owners and admins can view course payments"
