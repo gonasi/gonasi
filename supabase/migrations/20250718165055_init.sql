@@ -4285,6 +4285,108 @@ end;
 $function$
 ;
 
+CREATE OR REPLACE FUNCTION public.upsert_published_course_with_content(course_data jsonb, structure_content jsonb)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+begin
+  -- upsert into published_courses
+  insert into public.published_courses (
+    id,
+    organization_id,
+    category_id,
+    subcategory_id,
+    is_active,
+    name,
+    description,
+    image_url,
+    blur_hash,
+    visibility,
+    course_structure_overview,
+    total_chapters,
+    total_lessons,
+    total_blocks,
+    pricing_tiers,
+    has_free_tier,
+    min_price,
+    total_enrollments,
+    active_enrollments,
+    completion_rate,
+    average_rating,
+    total_reviews,
+    published_by,
+    published_at
+  )
+  values (
+    (course_data->>'id')::uuid,
+    (course_data->>'organization_id')::uuid,
+    (course_data->>'category_id')::uuid,
+    (course_data->>'subcategory_id')::uuid,
+    (course_data->>'is_active')::boolean,
+    course_data->>'name',
+    course_data->>'description',
+    course_data->>'image_url',
+    course_data->>'blur_hash',
+    (course_data->>'visibility')::public.course_access,
+    course_data->'course_structure_overview',
+    (course_data->>'total_chapters')::integer,
+    (course_data->>'total_lessons')::integer,
+    (course_data->>'total_blocks')::integer,
+    course_data->'pricing_tiers',
+    (course_data->>'has_free_tier')::boolean,
+    (course_data->>'min_price')::numeric,
+    (course_data->>'total_enrollments')::integer,
+    (course_data->>'active_enrollments')::integer,
+    (course_data->>'completion_rate')::numeric,
+    (course_data->>'average_rating')::numeric,
+    (course_data->>'total_reviews')::integer,
+    (course_data->>'published_by')::uuid,
+    (course_data->>'published_at')::timestamptz
+  )
+  on conflict (id) do update set
+    organization_id = excluded.organization_id,
+    category_id = excluded.category_id,
+    subcategory_id = excluded.subcategory_id,
+    is_active = excluded.is_active,
+    name = excluded.name,
+    description = excluded.description,
+    image_url = excluded.image_url,
+    blur_hash = excluded.blur_hash,
+    visibility = excluded.visibility,
+    course_structure_overview = excluded.course_structure_overview,
+    total_chapters = excluded.total_chapters,
+    total_lessons = excluded.total_lessons,
+    total_blocks = excluded.total_blocks,
+    pricing_tiers = excluded.pricing_tiers,
+    has_free_tier = excluded.has_free_tier,
+    min_price = excluded.min_price,
+    total_enrollments = excluded.total_enrollments,
+    active_enrollments = excluded.active_enrollments,
+    completion_rate = excluded.completion_rate,
+    average_rating = excluded.average_rating,
+    total_reviews = excluded.total_reviews,
+    published_by = excluded.published_by,
+    published_at = excluded.published_at,
+    updated_at = timezone('utc', now());
+
+  -- upsert into published_course_structure_content
+  insert into public.published_course_structure_content (
+    id,
+    course_structure_content
+  )
+  values (
+    (course_data->>'id')::uuid,
+    structure_content
+  )
+  on conflict (id) do update set
+    course_structure_content = excluded.course_structure_content,
+    updated_at = timezone('utc', now());
+end;
+$function$
+;
+
 CREATE OR REPLACE FUNCTION public.user_has_active_access(p_user_id uuid, p_published_course_id uuid)
  RETURNS boolean
  LANGUAGE plpgsql
@@ -5654,14 +5756,16 @@ using ((EXISTS ( SELECT 1
   WHERE ((ce.id = course_enrollment_activities.enrollment_id) AND ((get_user_org_role(pc.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(pc.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (pc.owned_by = ( SELECT auth.uid() AS uid))) OR (ce.user_id = ( SELECT auth.uid() AS uid)))))));
 
 
-create policy "select: allowed org roles or enrollment owner"
+create policy "select: org roles or own enrollment"
 on "public"."course_enrollments"
 as permissive
 for select
 to authenticated
-using ((EXISTS ( SELECT 1
+using (((user_id = auth.uid()) OR (EXISTS ( SELECT 1
    FROM courses pc
-  WHERE ((pc.id = course_enrollments.published_course_id) AND ((get_user_org_role(pc.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(pc.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (pc.owned_by = ( SELECT auth.uid() AS uid))) OR (course_enrollments.user_id = ( SELECT auth.uid() AS uid)))))));
+  WHERE ((pc.id = course_enrollments.published_course_id) AND (get_user_org_role(pc.organization_id, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text]))))) OR (EXISTS ( SELECT 1
+   FROM courses pc
+  WHERE ((pc.id = course_enrollments.published_course_id) AND (get_user_org_role(pc.organization_id, auth.uid()) = 'editor'::text) AND (pc.owned_by = auth.uid()))))));
 
 
 create policy "select: only owners and admins can view course payments"

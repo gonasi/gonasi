@@ -2039,6 +2039,10 @@ export type Database = {
         Args: { p_course_id: string; p_user_id: string; p_target_model: string }
         Returns: undefined
       }
+      upsert_published_course_with_content: {
+        Args: { course_data: Json; structure_content: Json }
+        Returns: undefined
+      }
       user_has_active_access: {
         Args: { p_user_id: string; p_published_course_id: string }
         Returns: boolean

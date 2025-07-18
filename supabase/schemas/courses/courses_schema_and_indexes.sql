@@ -1,9 +1,4 @@
 -- ====================================================================================
--- TYPE: course_access (defines course visibility options)
--- ====================================================================================
-create type public.course_access as enum ('public', 'private');
-
--- ====================================================================================
 -- TABLE: courses
 -- Stores course metadata, category structure, ownership (org/user), access control,
 -- audit trail, and organizational constraints.
