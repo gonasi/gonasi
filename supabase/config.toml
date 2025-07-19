@@ -219,7 +219,9 @@ schema_paths = [
   './schemas/progress/lesson_progress_rls.sql',
 
   './schemas/progress/block_progress_schema_indexes.sql',
-  './schemas/progress/block_progress_rls.sql'
+  './schemas/progress/block_progress_rls.sql',
+
+  './schemas/progress/utils/get_published_lesson_blocks_with_progress.sql'
 
 
   # './schemas/enrollment_activities_schema_indexes_rls.sql',

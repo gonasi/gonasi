@@ -1,5 +1,5 @@
-import type { PublishedLessonSchemaTypes } from '@gonasi/schemas/publish';
-import { PublishedLessonSchema } from '@gonasi/schemas/publish';
+import type { PublishedLessonWithProgressSchemaTypes } from '@gonasi/schemas/publish';
+import { PublishedLessonWithProgressSchema } from '@gonasi/schemas/publish';
 
 import type { TypedSupabaseClient } from '../client';
 
@@ -10,13 +10,13 @@ interface FetchPublishedLessonBlocksArgs {
   lessonId: string;
 }
 
-export async function fetchPublishedLessonBlocks({
+export async function fetchPublishedLessonBlocksWithProgress({
   supabase,
   courseId,
   chapterId,
   lessonId,
-}: FetchPublishedLessonBlocksArgs): Promise<PublishedLessonSchemaTypes | null> {
-  const { data, error } = await supabase.rpc('get_published_lesson_blocks', {
+}: FetchPublishedLessonBlocksArgs): Promise<PublishedLessonWithProgressSchemaTypes | null> {
+  const { data, error } = await supabase.rpc('get_published_lesson_blocks_with_progress', {
     p_course_id: courseId,
     p_chapter_id: chapterId,
     p_lesson_id: lessonId,
@@ -27,7 +27,9 @@ export async function fetchPublishedLessonBlocks({
     return null;
   }
 
-  const result = PublishedLessonSchema.safeParse(data);
+  console.log(data);
+
+  const result = PublishedLessonWithProgressSchema.safeParse(data);
 
   if (!result.success) {
     console.error('Lesson data validation failed:', result.error.format());

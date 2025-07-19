@@ -1990,6 +1990,10 @@ export type Database = {
         Args: { p_course_id: string; p_chapter_id: string; p_lesson_id: string }
         Returns: Json
       }
+      get_published_lesson_blocks_with_progress: {
+        Args: { p_course_id: string; p_chapter_id: string; p_lesson_id: string }
+        Returns: Json
+      }
       get_tier_limits_for_org: {
         Args: { org_id: string }
         Returns: Json

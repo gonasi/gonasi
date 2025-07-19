@@ -3,12 +3,11 @@ import { useFetcher } from 'react-router';
 
 import type { FetchLessonBlocksProgressReturnType } from '@gonasi/database/publishedCourses';
 
-import type { GoLessonPlayInteractionReturnType } from '~/routes/go/go-lesson-play';
 import { useStore } from '~/store';
 
 export interface ViewPluginCoreResult {
   loading: boolean;
-  payload: GoLessonPlayInteractionReturnType[number] | null;
+  payload: FetchLessonBlocksProgressReturnType[number] | null;
   handleContinue: () => void;
   updatePayload: (updates: FetchLessonBlocksProgressReturnType[number]) => void;
 }
@@ -30,7 +29,7 @@ export function useViewPluginCore(blockId: string | null): ViewPluginCoreResult 
 
   const [loading, setLoading] = useState(false);
   const [payloadOverrides, setPayloadOverrides] = useState<
-    Partial<GoLessonPlayInteractionReturnType[number]>
+    Partial<FetchLessonBlocksProgressReturnType[number]>
   >({});
 
   // Capture the time the user starts viewing the block
@@ -49,14 +48,14 @@ export function useViewPluginCore(blockId: string | null): ViewPluginCoreResult 
     return {
       ...blockInteraction,
       ...payloadOverrides,
-    } as GoLessonPlayInteractionReturnType[number];
+    } as FetchLessonBlocksProgressReturnType[number];
   }, [blockInteraction, payloadOverrides]);
 
   /**
    * Allows components to update specific fields in the payload
    */
   const updatePayload = useCallback((updates: FetchLessonBlocksProgressReturnType[number]) => {
-    setPayloadOverrides((prev: Partial<GoLessonPlayInteractionReturnType[number]>) => ({
+    setPayloadOverrides((prev: Partial<FetchLessonBlocksProgressReturnType[number]>) => ({
       ...prev,
       ...updates,
     }));
@@ -77,9 +76,9 @@ export function useViewPluginCore(blockId: string | null): ViewPluginCoreResult 
       (new Date(completedAt).getTime() - new Date(startedAt).getTime()) / 1000,
     );
 
-    const enrichedPayload: GoLessonPlayInteractionReturnType[number] = {
+    const enrichedPayload: FetchLessonBlocksProgressReturnType[number] = {
       ...finalPayload,
-      is_complete: true,
+      is_completed: true,
       started_at: startedAt,
       completed_at: completedAt,
       time_spent_seconds: timeSpentSeconds,

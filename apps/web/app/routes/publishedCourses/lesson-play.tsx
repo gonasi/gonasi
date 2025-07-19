@@ -4,7 +4,7 @@ import { redirectWithError } from 'remix-toast';
 
 import {
   fetchLessonBlocksProgress,
-  fetchPublishedLessonBlocks,
+  fetchPublishedLessonBlocksWithProgress,
 } from '@gonasi/database/publishedCourses';
 
 import type { Route } from './+types/lesson-play';
@@ -35,7 +35,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 
     // Run both requests in parallel
     const [lessonAndBlocks, progress, accessResult] = await Promise.all([
-      fetchPublishedLessonBlocks({
+      fetchPublishedLessonBlocksWithProgress({
         supabase,
         courseId: params.publishedCourseId,
         chapterId: params.publishedChapterId,
