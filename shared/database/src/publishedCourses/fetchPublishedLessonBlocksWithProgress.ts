@@ -1,5 +1,7 @@
-import type { PublishedLessonWithProgressSchemaTypes } from '@gonasi/schemas/publish';
-import { PublishedLessonWithProgressSchema } from '@gonasi/schemas/publish';
+import {
+  PublishedLessonWithProgressSchema,
+  type PublishedLessonWithProgressSchemaTypes,
+} from '@gonasi/schemas/publish';
 
 import type { TypedSupabaseClient } from '../client';
 
@@ -23,16 +25,14 @@ export async function fetchPublishedLessonBlocksWithProgress({
   });
 
   if (error) {
-    console.error('Failed to fetch lesson blocks:', error);
+    console.error('❌ Failed to fetch lesson blocks:', error);
     return null;
   }
-
-  console.log(data);
 
   const result = PublishedLessonWithProgressSchema.safeParse(data);
 
   if (!result.success) {
-    console.error('Lesson data validation failed:', result.error.format());
+    console.error('❌ Lesson data validation failed:', result.error.format());
     return null;
   }
 

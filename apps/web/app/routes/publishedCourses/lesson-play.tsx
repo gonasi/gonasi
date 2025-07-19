@@ -1,20 +1,14 @@
-import { useEffect, useRef } from 'react';
+import { useRef } from 'react';
 import { Outlet } from 'react-router';
 import { redirectWithError } from 'remix-toast';
 
-import {
-  fetchLessonBlocksProgress,
-  fetchPublishedLessonBlocksWithProgress,
-} from '@gonasi/database/publishedCourses';
+import { fetchPublishedLessonBlocksWithProgress } from '@gonasi/database/publishedCourses';
 
 import type { Route } from './+types/lesson-play';
 
 import CourseAccessCard from '~/components/cards/course-access-card';
-import { useScrollAudio } from '~/components/hooks/useAutoScroll';
 import { CoursePlayLayout } from '~/components/layouts/course/course-play-layout';
-import ViewPluginTypesRenderer from '~/components/plugins/PluginRenderers/ViewPluginTypesRenderer';
 import { createClient } from '~/lib/supabase/supabase.server';
-import { useStore } from '~/store';
 
 export async function loader({ params, request }: Route.LoaderArgs) {
   try {
@@ -33,18 +27,13 @@ export async function loader({ params, request }: Route.LoaderArgs) {
       );
     }
 
-    // Run both requests in parallel
-    const [lessonAndBlocks, progress, accessResult] = await Promise.all([
+    // Fetch lesson content and access in parallel
+    const [lessonContentResult, accessCheckResult] = await Promise.all([
       fetchPublishedLessonBlocksWithProgress({
         supabase,
         courseId: params.publishedCourseId,
         chapterId: params.publishedChapterId,
         lessonId: params.publishedLessonId,
-      }),
-      fetchLessonBlocksProgress({
-        supabase,
-        publishedCourseId: params.publishedCourseId,
-        publishedLessonId: params.publishedLessonId,
       }),
       supabase.rpc('user_has_active_access', {
         p_user_id: user.id,
@@ -52,46 +41,29 @@ export async function loader({ params, request }: Route.LoaderArgs) {
       }),
     ]);
 
-    if (accessResult.error) {
-      console.error('Error checking course access:', accessResult.error);
-    }
-
     return {
-      hasAccess: Boolean(accessResult.data),
-      lessonAndBlocks,
-      progress,
+      hasAccess: Boolean(accessCheckResult.data),
+      blocksAndProgress: lessonContentResult,
     };
-  } catch (error) {
-    throw error;
+  } catch (err) {
+    console.error('Loader failed:', err);
+    throw err;
   }
 }
 
 export default function LessonPlay({ params, loaderData }: Route.ComponentProps) {
-  const { hasAccess, lessonAndBlocks, progress } = loaderData;
-
-  const { visibleBlocks, initializePlayFlow, lessonProgress, activeBlock } = useStore();
+  const { hasAccess, blocksAndProgress } = loaderData;
 
   const blockRefs = useRef<Record<string, HTMLElement | null>>({});
 
-  // Initialize and cleanup on mount/unmount
-  useEffect(() => {
-    initializePlayFlow({
-      lessonBlocks: lessonAndBlocks?.blocks ?? [],
-      lessonBlockProgress: progress ?? [],
-    });
-    return () => {
-      useStore.getState().resetPlayFlow();
-    };
-  }, [initializePlayFlow, lessonAndBlocks?.blocks, progress]);
-
   // Use the improved scroll audio hook
-  useScrollAudio(activeBlock, blockRefs);
+  // useScrollAudio(activeBlock, blockRefs);
 
   if (!hasAccess) {
     return <CourseAccessCard enrollPath={`/c/${params.publishedCourseId}`} />;
   }
 
-  if (!lessonAndBlocks) {
+  if (!blocksAndProgress) {
     return <div>No blocks found</div>;
   }
 
@@ -100,11 +72,15 @@ export default function LessonPlay({ params, loaderData }: Route.ComponentProps)
       <CoursePlayLayout
         to={`/c/${params.publishedCourseId}`}
         basePath={`/c/${params.publishedCourseId}/${params.publishedChapterId}/${params.publishedLessonId}/play`}
-        progress={lessonProgress}
+        progress={50}
         loading={false}
       >
+        <pre className='overflow-y-auto rounded-lg p-4 text-sm break-words whitespace-pre-wrap'>
+          {JSON.stringify(blocksAndProgress, null, 2)}
+        </pre>
+
         <section className='mx-auto max-w-xl px-4 py-10 md:px-0'>
-          {visibleBlocks.length > 0 &&
+          {/* {visibleBlocks.length > 0 &&
             visibleBlocks.map((block) => (
               <div
                 key={block.id}
@@ -115,7 +91,7 @@ export default function LessonPlay({ params, loaderData }: Route.ComponentProps)
               >
                 <ViewPluginTypesRenderer block={block} mode='play' />
               </div>
-            ))}
+            ))} */}
         </section>
       </CoursePlayLayout>
       <Outlet />
