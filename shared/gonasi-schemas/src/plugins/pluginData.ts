@@ -313,8 +313,8 @@ export function getPluginTypeNameById(pluginId: PluginGroupId, typeId: PluginTyp
   for (const category of ALL_PLUGINS) {
     const plugin = category.pluginGroups.find((p) => p.id === pluginId);
     if (plugin) {
-      const pluginType = plugin.pluginTypes?.find((type) => type.id === typeId);
-      if (pluginType) return pluginType.name;
+      const plugin_type = plugin.pluginTypes?.find((type) => type.id === typeId);
+      if (plugin_type) return plugin_type.name;
     }
   }
   return 'Unknown Plugin Type';

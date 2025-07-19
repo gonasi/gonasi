@@ -1,13 +1,22 @@
 import z from 'zod';
 
+import { RichTextSchema } from '../../plugins';
 import { LessonTypeSchema } from '..';
+
+export const PublishRichTextSchema = RichTextSchema.extend({
+  id: z.string({ required_error: 'Block ID is required for publishing.' }),
+});
+
+export const BlockSchema = z.discriminatedUnion('plugin_type', [RichTextSchema]);
+
+export const BlocksArraySchema = z.array(BlockSchema, {
+  required_error: `<span class="go-title">Lessons</span> are required.`,
+  invalid_type_error: `<span class="go-title">Lessons</span> should be a list of lesson objects.`,
+});
 
 export const LessonSchema = z
   .object({
-    blocks: z.array(z.any(), {
-      required_error: `<span class="go-title">Lessons</span> are required.`,
-      invalid_type_error: `<span class="go-title">Lessons</span> should be a list of lesson objects.`,
-    }),
+    blocks: BlocksArraySchema,
     id: z
       .string({ required_error: `This pricing option needs an <span class="go-title">ID</span>.` })
       .uuid(`<span class="go-title">Pricing ID</span> must be a valid UUID.`),

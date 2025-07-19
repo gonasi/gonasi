@@ -22,7 +22,7 @@ import {
 } from './richTextSchema';
 import { TrueOrFalseContentSchema, TrueOrFalseSettingsSchema } from './trueOrFalseSchema';
 
-export const BuilderSchema = z.discriminatedUnion('pluginType', [RichTextSchema]);
+export const BuilderSchema = z.discriminatedUnion('plugin_type', [RichTextSchema]);
 
 /**
  * -----------------------------

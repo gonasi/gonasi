@@ -36,13 +36,13 @@ export async function action({ request, params }: Route.ActionArgs) {
   try {
     let result = { success: false, message: '' };
 
-    switch (data.pluginType) {
+    switch (data.plugin_type) {
       case 'rich_text_editor':
         result = await upsertRichTextBlock(supabase, { ...data });
         break;
 
       default:
-        throw new Error(`Unhandled plugin type: ${data.pluginType}`);
+        throw new Error(`Unhandled plugin type: ${data.plugin_type}`);
     }
 
     return result.success

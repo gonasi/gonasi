@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-const JsonSchema = z.any();
+import { RichTextSchema } from '../plugins';
 
 export const LessonTypeSchema = z.object({
   id: z.string().uuid(),
@@ -10,14 +10,13 @@ export const LessonTypeSchema = z.object({
   bg_color: z.string(),
 });
 
-const BlockSchema = z.object({
-  id: z.string().uuid(),
-  lesson_id: z.string().uuid(),
-  plugin_type: z.string(),
-  content: JsonSchema,
-  settings: JsonSchema,
+// Published blocks schemas
+const PublishRichTextSchema = RichTextSchema.extend({
+  id: z.string(),
   position: z.number().int().nonnegative(),
 });
+
+export const PublishBlockSchema = z.discriminatedUnion('plugin_type', [PublishRichTextSchema]);
 
 export const PublishedLessonSchema = z.object({
   id: z.string().uuid(),
@@ -27,21 +26,19 @@ export const PublishedLessonSchema = z.object({
   name: z.string().nonempty(),
   position: z.number().int().nonnegative(),
   settings: z.any(),
-  lesson_types: LessonTypeSchema,
-
   total_blocks: z.number().int().positive(),
-  blocks: z.array(BlockSchema),
+  lesson_types: LessonTypeSchema,
+  blocks: z.array(PublishBlockSchema),
 });
 export type PublishedLessonSchemaTypes = z.infer<typeof PublishedLessonSchema>;
 
 const ChapterSchema = z.object({
   id: z.string().uuid(),
   course_id: z.string().uuid(),
-  lesson_count: z.number().int().nonnegative(),
   name: z.string().nonempty(),
   description: z.string().nonempty(),
   position: z.number().int().nonnegative(),
-
+  lesson_count: z.number().int().nonnegative(),
   total_lessons: z.number().int().positive(),
   total_blocks: z.number().int().positive(),
   lessons: z.array(PublishedLessonSchema),
@@ -54,6 +51,7 @@ export const CourseStructureContentSchema = z.object({
   total_blocks: z.number().int().positive(),
   chapters: z.array(ChapterSchema),
 });
+export type CourseStructureContentSchemaTypes = z.infer<typeof CourseStructureContentSchema>;
 
 // New schema for course_structure_overview (excludes settings and blocks from lessons)
 const LessonOverviewSchema = z.object({
@@ -70,10 +68,10 @@ const LessonOverviewSchema = z.object({
 const ChapterOverviewSchema = z.object({
   id: z.string().uuid(),
   course_id: z.string().uuid(),
-  lesson_count: z.number().int().nonnegative(),
   name: z.string().nonempty(),
   description: z.string().nonempty(),
   position: z.number().int().nonnegative(),
+  lesson_count: z.number().int().nonnegative(),
   total_lessons: z.number().int().positive(),
   total_blocks: z.number().int().positive(),
   lessons: z.array(LessonOverviewSchema),
@@ -85,3 +83,4 @@ export const CourseStructureOverviewSchema = z.object({
   total_blocks: z.number().int().positive(),
   chapters: z.array(ChapterOverviewSchema),
 });
+export type CourseStructureOverviewSchemaTypes = z.infer<typeof CourseStructureOverviewSchema>;

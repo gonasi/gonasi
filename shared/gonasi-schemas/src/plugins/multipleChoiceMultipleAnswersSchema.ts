@@ -65,7 +65,7 @@ export const MultipleChoiceMultipleAnswersSettingsSchema = BasePluginSettingsSch
 export const SubmitCreateMultipleChoiceMultipleAnswersSchema = z.object({
   content: MultipleChoiceMultipleAnswersContentSchema,
   lessonId: z.string({ required_error: 'Lesson ID is required.' }),
-  pluginType: z.literal('multiple_choice_multiple').default('multiple_choice_multiple'),
+  plugin_type: z.literal('multiple_choice_multiple').default('multiple_choice_multiple'),
   weight: z.number().default(1),
   settings: MultipleChoiceMultipleAnswersSettingsSchema,
 });

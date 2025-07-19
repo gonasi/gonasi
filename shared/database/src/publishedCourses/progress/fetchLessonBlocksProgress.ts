@@ -4,13 +4,13 @@ import type { TypedSupabaseClient } from '../../client';
 interface FetchLessonBlocksProgressArgs {
   supabase: TypedSupabaseClient;
   publishedCourseId: string;
-  lessonId: string;
+  publishedLessonId: string;
 }
 
 export async function fetchLessonBlocksProgress({
   supabase,
   publishedCourseId,
-  lessonId,
+  publishedLessonId,
 }: FetchLessonBlocksProgressArgs) {
   const userId = await getUserId(supabase);
 
@@ -18,7 +18,7 @@ export async function fetchLessonBlocksProgress({
     .from('block_progress')
     .select('id, block_id, is_completed, completed_at')
     .eq('published_course_id', publishedCourseId)
-    .eq('lesson_id', lessonId)
+    .eq('lesson_id', publishedLessonId)
     .eq('user_id', userId);
 
   if (error) {

@@ -1,12 +1,17 @@
+import { useRef } from 'react';
 import { Outlet } from 'react-router';
 import { redirectWithError } from 'remix-toast';
 
-import { fetchPublishedLessonBlocks } from '@gonasi/database/publishedCourses';
+import {
+  fetchLessonBlocksProgress,
+  fetchPublishedLessonBlocks,
+} from '@gonasi/database/publishedCourses';
 
 import type { Route } from './+types/lesson-play';
 
 import CourseAccessCard from '~/components/cards/course-access-card';
 import { CoursePlayLayout } from '~/components/layouts/course/course-play-layout';
+import ViewPluginTypesRenderer from '~/components/plugins/PluginRenderers/ViewPluginTypesRenderer';
 import { createClient } from '~/lib/supabase/supabase.server';
 
 export async function loader({ params, request }: Route.LoaderArgs) {
@@ -27,12 +32,17 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     }
 
     // Run both requests in parallel
-    const [lessonAndBlocks, accessResult] = await Promise.all([
+    const [lessonAndBlocks, progress, accessResult] = await Promise.all([
       fetchPublishedLessonBlocks({
         supabase,
         courseId: params.publishedCourseId,
         chapterId: params.publishedChapterId,
         lessonId: params.publishedLessonId,
+      }),
+      fetchLessonBlocksProgress({
+        supabase,
+        publishedCourseId: params.publishedCourseId,
+        publishedLessonId: params.publishedLessonId,
       }),
       supabase.rpc('user_has_active_access', {
         p_user_id: user.id,
@@ -47,6 +57,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     return {
       hasAccess: Boolean(accessResult.data),
       lessonAndBlocks,
+      progress,
     };
   } catch (error) {
     throw error;
@@ -54,7 +65,11 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 }
 
 export default function LessonPlay({ params, loaderData }: Route.ComponentProps) {
-  if (!loaderData.hasAccess) {
+  const { hasAccess, lessonAndBlocks, progress } = loaderData;
+
+  const blockRefs = useRef<Record<string, HTMLElement | null>>({});
+
+  if (!hasAccess) {
     return <CourseAccessCard enrollPath={`/c/${params.publishedCourseId}`} />;
   }
   return (
@@ -65,6 +80,25 @@ export default function LessonPlay({ params, loaderData }: Route.ComponentProps)
         progress={50}
         loading={false}
       >
+        <section className='mx-auto max-w-xl px-4 py-10 md:px-0'>
+          {lessonAndBlocks && lessonAndBlocks.blocks && lessonAndBlocks.blocks.length ? (
+            lessonAndBlocks.blocks.map((block) => {
+              return (
+                <div
+                  key={block.id}
+                  ref={(el) => {
+                    blockRefs.current[block.id] = el;
+                  }}
+                  className='scroll-mt-18 md:scroll-mt-22'
+                >
+                  <ViewPluginTypesRenderer block={block} mode='play' />
+                </div>
+              );
+            })
+          ) : (
+            <p>no blocks found</p>
+          )}
+        </section>
         <pre className='overflow-x-auto rounded p-4 text-sm whitespace-pre-wrap'>
           {JSON.stringify(loaderData, null, 2)}
         </pre>

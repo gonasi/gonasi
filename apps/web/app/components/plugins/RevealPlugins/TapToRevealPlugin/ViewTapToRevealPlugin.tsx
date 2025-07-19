@@ -27,7 +27,7 @@ export function ViewTapToRevealPlugin({ block, mode }: ViewPluginComponentProps)
   const { blockInteractionData, updatePayload, loading, canRender, handleContinue, isLastBlock } =
     useViewPluginCore({
       blockId: block.id,
-      pluginType: block.plugin_type,
+      plugin_type: block.plugin_type,
       settings: block.settings,
     });
 

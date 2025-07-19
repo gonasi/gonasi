@@ -45,7 +45,7 @@ export const TapToRevealSettingsSchema = BasePluginSettingsSchema.merge(
 export const SubmitCreateTapToRevealSchema = z.object({
   content: TapToRevealContentSchema,
   lessonId: z.string({ required_error: 'Lesson ID is required.' }),
-  pluginType: z.literal('tap_to_reveal').default('tap_to_reveal'),
+  plugin_type: z.literal('tap_to_reveal').default('tap_to_reveal'),
   weight: z.number().default(1),
   settings: TapToRevealSettingsSchema,
 });

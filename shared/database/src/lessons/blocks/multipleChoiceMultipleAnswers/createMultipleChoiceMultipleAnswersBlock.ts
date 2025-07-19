@@ -9,14 +9,14 @@ export const createMultipleChoiceMultipleAnswersBlock = async (
   blockData: SubmitCreateMultipleChoiceMultipleAnswersSchemaType,
 ): Promise<ApiResponse> => {
   const userId = await getUserId(supabase);
-  const { content, lessonId, pluginType, settings, weight } = blockData;
+  const { content, lessonId, plugin_type, settings, weight } = blockData;
 
   try {
     const { error: insertError } = await supabase
       .from('lesson_blocks')
       .insert({
         lesson_id: lessonId,
-        plugin_type: pluginType,
+        plugin_type: plugin_type,
         content,
         settings,
         weight,

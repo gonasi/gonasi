@@ -264,9 +264,9 @@ export async function seedCreateCourse() {
 
             for (let l = 0; l < blockCount; l++) {
               const richTextSchema = {
-                courseId: insertedCourse.id,
-                lessonId: lessonData.id,
-                pluginType: 'rich_text_editor' as const,
+                course_id: insertedCourse.id,
+                lesson_id: lessonData.id,
+                plugin_type: 'rich_text_editor' as const,
                 content: {
                   richTextState: FAKE_LEXICAL_STATE,
                 },
@@ -274,7 +274,7 @@ export async function seedCreateCourse() {
                   playbackMode,
                   weight: faker.number.int({ min: 1, max: 10 }),
                 },
-                organizationId: org.id,
+                organization_id: org.id,
               };
 
               const { success: blockSuccess, message: blockMessage } = await upsertRichTextBlock(

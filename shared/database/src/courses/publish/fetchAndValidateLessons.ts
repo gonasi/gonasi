@@ -52,6 +52,9 @@ export const LESSON_ERROR_NAVIGATION: Record<LessonKeys, (args: RouteParams) => 
     id: ({ organizationId, courseId, chapterId }) => ({
       route: `/${organizationId}/builder/${courseId}/content/${chapterId}/lessons/new-lesson-details`,
     }),
+    organization_id: ({ organizationId }) => ({
+      route: `/${organizationId}/dashboard`,
+    }),
     course_id: ({ organizationId, courseId }) => ({
       route: `/${organizationId}/builder/${courseId}/chapters`,
     }),
@@ -197,7 +200,7 @@ export async function fetchAndValidateLessons({
       created_at,
       updated_at,
       settings,
-      lesson_blocks(id),
+      lesson_blocks(id, lesson_id, organization_id, course_id, plugin_type, content, settings),
       lesson_types(id, name, description, lucide_icon, bg_color)
     `,
     )

@@ -59,7 +59,7 @@ export const MultipleChoiceSingleAnswerSettingsSchema = BasePluginSettingsSchema
 export const SubmitCreateMultipleChoiceSingleAnswerSchema = z.object({
   content: MultipleChoiceSingleAnswerContentSchema,
   lessonId: z.string({ required_error: 'Lesson ID is required.' }),
-  pluginType: z.literal('multiple_choice_single').default('multiple_choice_single'),
+  plugin_type: z.literal('multiple_choice_single').default('multiple_choice_single'),
   weight: z.number().default(1),
   settings: MultipleChoiceSingleAnswerSettingsSchema,
 });

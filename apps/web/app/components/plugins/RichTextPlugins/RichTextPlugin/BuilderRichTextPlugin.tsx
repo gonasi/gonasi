@@ -43,11 +43,11 @@ export function BuilderRichTextPlugin({ block }: BuilderRichTextPluginProps) {
     resolver,
     defaultValues: block
       ? {
-          blockId: block.id,
-          organizationId: params.organizationId!,
-          courseId: params.courseId!,
-          lessonId: params.lessonId!,
-          pluginType: 'rich_text_editor',
+          id: block.id,
+          organization_id: params.organizationId!,
+          course_id: params.courseId!,
+          lesson_id: params.lessonId!,
+          plugin_type: 'rich_text_editor',
           content: RichTextContentSchema.safeParse(block.content).success
             ? RichTextContentSchema.parse(block.content)
             : { richTextState: EMPTY_LEXICAL_STATE },
@@ -56,10 +56,10 @@ export function BuilderRichTextPlugin({ block }: BuilderRichTextPluginProps) {
             : { playbackMode: 'inline', weight: 1 },
         }
       : {
-          organizationId: params.organizationId!,
-          courseId: params.courseId!,
-          lessonId: params.lessonId!,
-          pluginType: 'rich_text_editor',
+          organization_id: params.organizationId!,
+          course_id: params.courseId!,
+          lesson_id: params.lessonId!,
+          plugin_type: 'rich_text_editor',
           content: { richTextState: EMPTY_LEXICAL_STATE },
           settings: { playbackMode: 'inline', weight: 1 },
         },

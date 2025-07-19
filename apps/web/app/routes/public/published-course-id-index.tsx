@@ -22,12 +22,6 @@ import { createClient } from '~/lib/supabase/supabase.server';
 import { cn } from '~/lib/utils';
 import { getLowestPricingSummary } from '~/utils/get-lowest-pricing-summary';
 
-export function headers(_: Route.HeadersArgs) {
-  return {
-    'Cache-Control': 's-maxage=1, stale-while-revalidate=59',
-  };
-}
-
 export function meta({ data }: Route.MetaArgs) {
   const course = data?.courseOverview;
 

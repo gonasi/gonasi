@@ -20,20 +20,15 @@ export const upsertRichTextBlock = async (
 ): Promise<ApiResponse> => {
   const userId = await getUserId(supabase);
 
-  const { blockId, content, organizationId, lessonId, courseId, pluginType, settings } = blockData;
-
-  // If the blockId is `'create-new'`, we omit it to allow Supabase to generate a new UUID.
-  // This is used during the creation flow when the block hasn't been persisted yet.
-  // check getActionUrl function in the utils get-action-url.ts
-  const id = blockId === 'create-new' ? undefined : blockId;
+  const { id, content, organization_id, lesson_id, course_id, plugin_type, settings } = blockData;
 
   try {
     const { error } = await supabase.from('lesson_blocks').upsert({
-      id,
-      lesson_id: lessonId,
-      course_id: courseId,
-      organization_id: organizationId,
-      plugin_type: pluginType,
+      id: id === 'create-new' ? undefined : id,
+      lesson_id,
+      course_id,
+      organization_id,
+      plugin_type,
       content,
       settings,
       created_by: userId,
@@ -50,7 +45,7 @@ export const upsertRichTextBlock = async (
     return {
       success: true,
       message:
-        blockId === 'create-new'
+        id === 'create-new'
           ? 'Rich text block created successfully.'
           : 'Rich text block successfully updated',
     };

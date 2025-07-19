@@ -41,7 +41,7 @@ export const TrueOrFalseSettingsSchema = BasePluginSettingsSchema.merge(
 export const SubmitCreateTrueOrFalseSchema = z.object({
   content: TrueOrFalseContentSchema,
   lessonId: z.string({ required_error: 'Lesson ID is required.' }),
-  pluginType: z.literal('true_or_false').default('true_or_false'),
+  plugin_type: z.literal('true_or_false').default('true_or_false'),
   weight: z.number().default(1),
   settings: TrueOrFalseSettingsSchema,
 });

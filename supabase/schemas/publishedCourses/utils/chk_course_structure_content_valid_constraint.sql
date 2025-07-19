@@ -53,13 +53,24 @@ check (
                       "type": "array",
                       "items": {
                         "type": "object",
-                        "required": ["id", "lesson_id", "plugin_type", "content", "settings", "position"],
+                        "required": [
+                          "id",
+                          "lesson_id",
+                          "plugin_type",
+                          "content",
+                          "settings",
+                          "position",
+                          "course_id",
+                          "organization_id"
+                        ],
                         "properties": {
                           "id": { "type": "string", "format": "uuid" },
                           "lesson_id": { "type": "string", "format": "uuid" },
+                          "course_id": { "type": "string", "format": "uuid" },
+                          "organization_id": { "type": "string", "format": "uuid" },
                           "plugin_type": { "type": "string" },
-                          "content": {},
-                          "settings": {},
+                          "content": {}, 
+                          "settings": {}, 
                           "position": { "type": "number", "minimum": 0 }
                         }
                       }
