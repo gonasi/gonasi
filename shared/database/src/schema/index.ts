@@ -36,39 +36,76 @@ export type Database = {
     Tables: {
       block_progress: {
         Row: {
+          attempts: number | null
           block_id: string
-          completed_at: string
+          chapter_id: string
+          completed_at: string | null
           created_at: string
+          feedback: string | null
           id: string
           is_completed: boolean
+          last_response: Json | null
           lesson_id: string
+          organization_id: string
+          plugin_type: string | null
           published_course_id: string
+          score: number | null
+          started_at: string | null
+          state: Json | null
+          time_spent_seconds: number | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          attempts?: number | null
           block_id: string
-          completed_at?: string
+          chapter_id: string
+          completed_at?: string | null
           created_at?: string
+          feedback?: string | null
           id?: string
           is_completed?: boolean
+          last_response?: Json | null
           lesson_id: string
+          organization_id: string
+          plugin_type?: string | null
           published_course_id: string
+          score?: number | null
+          started_at?: string | null
+          state?: Json | null
+          time_spent_seconds?: number | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          attempts?: number | null
           block_id?: string
-          completed_at?: string
+          chapter_id?: string
+          completed_at?: string | null
           created_at?: string
+          feedback?: string | null
           id?: string
           is_completed?: boolean
+          last_response?: Json | null
           lesson_id?: string
+          organization_id?: string
+          plugin_type?: string | null
           published_course_id?: string
+          score?: number | null
+          started_at?: string | null
+          state?: Json | null
+          time_spent_seconds?: number | null
           updated_at?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "block_progress_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "block_progress_published_course_id_fkey"
             columns: ["published_course_id"]

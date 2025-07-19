@@ -230,7 +230,7 @@ export async function seedCreateCourse() {
             continue;
           }
 
-          console.log(`  📘 Created chapter: "${chapter.name} ${j + 1}"`);
+          console.log(`📘 Created chapter: "${chapter.name} ${j + 1}"`);
 
           // Create lessons for the chapter
           const lessonCount = faker.number.int(LESSONS_FOR_CHAPTER_COUNT);

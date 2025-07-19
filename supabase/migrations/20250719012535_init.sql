@@ -26,12 +26,22 @@ create type "public"."support_level" as enum ('community', 'email', 'priority', 
 
 create table "public"."block_progress" (
     "id" uuid not null default uuid_generate_v4(),
-    "user_id" uuid not null,
+    "organization_id" uuid not null,
     "published_course_id" uuid not null,
+    "chapter_id" uuid not null,
     "lesson_id" uuid not null,
     "block_id" uuid not null,
-    "is_completed" boolean not null default true,
-    "completed_at" timestamp with time zone not null default timezone('utc'::text, now()),
+    "is_completed" boolean not null default false,
+    "started_at" timestamp with time zone,
+    "completed_at" timestamp with time zone,
+    "time_spent_seconds" integer,
+    "score" numeric,
+    "attempts" integer default 0,
+    "state" jsonb,
+    "last_response" jsonb,
+    "feedback" text,
+    "plugin_type" text,
+    "user_id" uuid not null,
     "created_at" timestamp with time zone not null default timezone('utc'::text, now()),
     "updated_at" timestamp with time zone not null default timezone('utc'::text, now())
 );
@@ -563,6 +573,8 @@ CREATE INDEX idx_block_progress_course ON public.block_progress USING btree (pub
 
 CREATE INDEX idx_block_progress_lesson ON public.block_progress USING btree (lesson_id);
 
+CREATE INDEX idx_block_progress_organization_id ON public.block_progress USING btree (organization_id);
+
 CREATE INDEX idx_block_progress_user ON public.block_progress USING btree (user_id);
 
 CREATE INDEX idx_chapters_course_id ON public.chapters USING btree (course_id);
@@ -944,6 +956,10 @@ alter table "public"."tier_limits" add constraint "tier_limits_pkey" PRIMARY KEY
 alter table "public"."user_roles" add constraint "user_roles_pkey" PRIMARY KEY using index "user_roles_pkey";
 
 alter table "public"."wallet_transactions" add constraint "wallet_transactions_pkey" PRIMARY KEY using index "wallet_transactions_pkey";
+
+alter table "public"."block_progress" add constraint "block_progress_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE not valid;
+
+alter table "public"."block_progress" validate constraint "block_progress_organization_id_fkey";
 
 alter table "public"."block_progress" add constraint "block_progress_published_course_id_fkey" FOREIGN KEY (published_course_id) REFERENCES published_courses(id) ON DELETE CASCADE not valid;
 

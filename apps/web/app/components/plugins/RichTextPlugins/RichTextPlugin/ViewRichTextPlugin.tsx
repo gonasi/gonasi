@@ -1,11 +1,6 @@
 import { useEffect } from 'react';
 import { useParams } from 'react-router';
 
-import type {
-  RichTextContentSchemaType,
-  RichTextSettingsSchemaType,
-} from '@gonasi/schemas/plugins';
-
 import { useViewPluginCore } from '../../hooks/useViewPluginCore';
 import type { ViewPluginComponentProps } from '../../PluginRenderers/ViewPluginTypesRenderer';
 
@@ -18,10 +13,10 @@ export function ViewRichTextPlugin({ block, mode }: ViewPluginComponentProps) {
   const params = useParams();
 
   // settings
-  const { playbackMode, weight } = block.settings as RichTextSettingsSchemaType;
+  const { playbackMode, weight } = block.settings;
 
   // Safely cast content to the expected structure for rich_text_editor
-  const { richTextState } = block.content as RichTextContentSchemaType;
+  const { richTextState } = block.content;
 
   const { isLastBlock } = useStore();
 

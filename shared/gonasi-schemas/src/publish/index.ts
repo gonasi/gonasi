@@ -17,6 +17,7 @@ const PublishRichTextSchema = RichTextSchema.extend({
 });
 
 export const PublishBlockSchema = z.discriminatedUnion('plugin_type', [PublishRichTextSchema]);
+export type PublishBlockSchemaTypes = z.infer<typeof PublishBlockSchema>;
 
 export const PublishedLessonSchema = z.object({
   id: z.string().uuid(),
@@ -31,6 +32,7 @@ export const PublishedLessonSchema = z.object({
   blocks: z.array(PublishBlockSchema),
 });
 export type PublishedLessonSchemaTypes = z.infer<typeof PublishedLessonSchema>;
+export type PublishedLessonBlocksArrayType = PublishedLessonSchemaTypes['blocks'];
 
 const ChapterSchema = z.object({
   id: z.string().uuid(),

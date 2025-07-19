@@ -1,21 +1,20 @@
 import type { JSX } from 'react';
 
 import type { PluginTypeId } from '@gonasi/schemas/plugins';
+import type { PublishBlockSchemaTypes } from '@gonasi/schemas/publish';
 
 import { ViewMultipleChoiceMultipleAnswersPlugin } from '../QuizPlugins/MultipleChoiceMultipleAnswers/ViewMultipleChoiceMultipleAnswersPlugin';
 import { ViewMultipleChoiceSingleAnswerPlugin } from '../QuizPlugins/MultipleChoiceSingleAnswer/ViewMultipleChoiceSingleAnswerPlugin';
 import { ViewTrueOrFalsePlugin } from '../QuizPlugins/TrueOrFalsePlugin/ViewTrueOrFalsePlugin';
 import { ViewRichTextPlugin } from '../RichTextPlugins/RichTextPlugin/ViewRichTextPlugin';
 
-import type { LessonBlockLoaderReturnType } from '~/routes/profile/course-builder/courseId/content/chapterId/lessonId/lesson-blocks/plugins/edit-plugin-modal';
-
 export interface ViewPluginComponentProps {
-  block: LessonBlockLoaderReturnType;
+  block: PublishBlockSchemaTypes;
   mode: 'preview' | 'play';
 }
 
 function unimplementedPlugin() {
-  return <div>Plugin not inplemented</div>;
+  return <div>Plugin not implemented</div>;
 }
 
 const viewPluginComponentMap: Record<

@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { Outlet } from 'react-router';
 import { redirectWithError } from 'remix-toast';
 
@@ -10,9 +10,11 @@ import {
 import type { Route } from './+types/lesson-play';
 
 import CourseAccessCard from '~/components/cards/course-access-card';
+import { useScrollAudio } from '~/components/hooks/useAutoScroll';
 import { CoursePlayLayout } from '~/components/layouts/course/course-play-layout';
 import ViewPluginTypesRenderer from '~/components/plugins/PluginRenderers/ViewPluginTypesRenderer';
 import { createClient } from '~/lib/supabase/supabase.server';
+import { useStore } from '~/store';
 
 export async function loader({ params, request }: Route.LoaderArgs) {
   try {
@@ -67,41 +69,54 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 export default function LessonPlay({ params, loaderData }: Route.ComponentProps) {
   const { hasAccess, lessonAndBlocks, progress } = loaderData;
 
+  const { visibleBlocks, initializePlayFlow, lessonProgress, activeBlock } = useStore();
+
   const blockRefs = useRef<Record<string, HTMLElement | null>>({});
+
+  // Initialize and cleanup on mount/unmount
+  useEffect(() => {
+    initializePlayFlow({
+      lessonBlocks: lessonAndBlocks?.blocks ?? [],
+      lessonBlockProgress: progress ?? [],
+    });
+    return () => {
+      useStore.getState().resetPlayFlow();
+    };
+  }, [initializePlayFlow, lessonAndBlocks?.blocks, progress]);
+
+  // Use the improved scroll audio hook
+  useScrollAudio(activeBlock, blockRefs);
 
   if (!hasAccess) {
     return <CourseAccessCard enrollPath={`/c/${params.publishedCourseId}`} />;
   }
+
+  if (!lessonAndBlocks) {
+    return <div>No blocks found</div>;
+  }
+
   return (
     <>
       <CoursePlayLayout
         to={`/c/${params.publishedCourseId}`}
         basePath={`/c/${params.publishedCourseId}/${params.publishedChapterId}/${params.publishedLessonId}/play`}
-        progress={50}
+        progress={lessonProgress}
         loading={false}
       >
         <section className='mx-auto max-w-xl px-4 py-10 md:px-0'>
-          {lessonAndBlocks && lessonAndBlocks.blocks && lessonAndBlocks.blocks.length ? (
-            lessonAndBlocks.blocks.map((block) => {
-              return (
-                <div
-                  key={block.id}
-                  ref={(el) => {
-                    blockRefs.current[block.id] = el;
-                  }}
-                  className='scroll-mt-18 md:scroll-mt-22'
-                >
-                  <ViewPluginTypesRenderer block={block} mode='play' />
-                </div>
-              );
-            })
-          ) : (
-            <p>no blocks found</p>
-          )}
+          {visibleBlocks.length > 0 &&
+            visibleBlocks.map((block) => (
+              <div
+                key={block.id}
+                ref={(el) => {
+                  blockRefs.current[block.id] = el;
+                }}
+                className='scroll-mt-18 md:scroll-mt-22'
+              >
+                <ViewPluginTypesRenderer block={block} mode='play' />
+              </div>
+            ))}
         </section>
-        <pre className='overflow-x-auto rounded p-4 text-sm whitespace-pre-wrap'>
-          {JSON.stringify(loaderData, null, 2)}
-        </pre>
       </CoursePlayLayout>
       <Outlet />
     </>

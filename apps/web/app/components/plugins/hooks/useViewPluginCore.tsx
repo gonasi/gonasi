@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useFetcher } from 'react-router';
 
-import type { BaseInteractionUpdatableFields } from '@gonasi/schemas/plugins';
+import type { FetchLessonBlocksProgressReturnType } from '@gonasi/database/publishedCourses';
 
 import type { GoLessonPlayInteractionReturnType } from '~/routes/go/go-lesson-play';
 import { useStore } from '~/store';
@@ -10,21 +10,20 @@ export interface ViewPluginCoreResult {
   loading: boolean;
   payload: GoLessonPlayInteractionReturnType[number] | null;
   handleContinue: () => void;
-  updatePayload: (updates: BaseInteractionUpdatableFields) => void;
+  updatePayload: (updates: FetchLessonBlocksProgressReturnType[number]) => void;
 }
 
 /**
  * Custom hook for managing plugin view interaction.
  *
  * Responsibilities:
- * - Extracts the current block interaction.
- * - Manages local overrides to the payload.
- * - Tracks loading state via `useFetcher`.
- * - Enriches the payload with timing info on submission.
+ * - Extracts the current block interaction
+ * - Manages local overrides to the payload
+ * - Tracks loading state via `useFetcher`
+ * - Enriches the payload with timing info on submission
  */
 export function useViewPluginCore(blockId: string | null): ViewPluginCoreResult {
   const fetcher = useFetcher();
-
   const { getBlockInteraction, isLastBlock } = useStore();
 
   const blockInteraction = getBlockInteraction(blockId ?? '');
@@ -50,14 +49,14 @@ export function useViewPluginCore(blockId: string | null): ViewPluginCoreResult 
     return {
       ...blockInteraction,
       ...payloadOverrides,
-    } as GoLessonPlayInteractionReturnType[number]; // Assumes result is complete
+    } as GoLessonPlayInteractionReturnType[number];
   }, [blockInteraction, payloadOverrides]);
 
   /**
    * Allows components to update specific fields in the payload
    */
-  const updatePayload = useCallback((updates: BaseInteractionUpdatableFields) => {
-    setPayloadOverrides((prev) => ({
+  const updatePayload = useCallback((updates: FetchLessonBlocksProgressReturnType[number]) => {
+    setPayloadOverrides((prev: Partial<GoLessonPlayInteractionReturnType[number]>) => ({
       ...prev,
       ...updates,
     }));
