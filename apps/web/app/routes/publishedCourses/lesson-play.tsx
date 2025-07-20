@@ -7,27 +7,28 @@ import { fetchPublishedLessonBlocksWithProgress } from '@gonasi/database/publish
 import type { Route } from './+types/lesson-play';
 
 import CourseAccessCard from '~/components/cards/course-access-card';
+import { useScrollAudio } from '~/components/hooks/useAutoScroll';
 import { CoursePlayLayout } from '~/components/layouts/course/course-play-layout';
+import ViewPluginTypesRenderer from '~/components/plugins/PluginRenderers/ViewPluginTypesRenderer';
 import { createClient } from '~/lib/supabase/supabase.server';
 
 export async function loader({ params, request }: Route.LoaderArgs) {
+  const { supabase } = createClient(request);
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const redirectTo = `/c/${params.publishedCourseId}/${params.publishedChapterId}/${params.publishedLessonId}/play`;
+
+  if (!user) {
+    return redirectWithError(
+      `/login?redirectTo=${encodeURIComponent(redirectTo)}`,
+      'Please log in to access this lesson.',
+    );
+  }
+
   try {
-    const { supabase } = createClient(request);
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    const redirectTo = `/c/${params.publishedCourseId}/${params.publishedChapterId}/${params.publishedLessonId}/play`;
-
-    if (!user) {
-      return redirectWithError(
-        `/login?redirectTo=${encodeURIComponent(redirectTo)}`,
-        'Please log in to access this lesson.',
-      );
-    }
-
-    // Fetch lesson content and access in parallel
     const [lessonContentResult, accessCheckResult] = await Promise.all([
       fetchPublishedLessonBlocksWithProgress({
         supabase,
@@ -45,26 +46,24 @@ export async function loader({ params, request }: Route.LoaderArgs) {
       hasAccess: Boolean(accessCheckResult.data),
       blocksAndProgress: lessonContentResult,
     };
-  } catch (err) {
-    console.error('Loader failed:', err);
-    throw err;
+  } catch (error) {
+    console.error('Lesson loader error:', error);
+    throw error;
   }
 }
 
 export default function LessonPlay({ params, loaderData }: Route.ComponentProps) {
   const { hasAccess, blocksAndProgress } = loaderData;
-
   const blockRefs = useRef<Record<string, HTMLElement | null>>({});
 
-  // Use the improved scroll audio hook
-  // useScrollAudio(activeBlock, blockRefs);
+  useScrollAudio(blocksAndProgress?.lesson_progress?.next_action?.block_id ?? null, blockRefs);
 
   if (!hasAccess) {
     return <CourseAccessCard enrollPath={`/c/${params.publishedCourseId}`} />;
   }
 
   if (!blocksAndProgress) {
-    return <div>No blocks found</div>;
+    return <div>No lesson data found.</div>;
   }
 
   return (
@@ -72,16 +71,13 @@ export default function LessonPlay({ params, loaderData }: Route.ComponentProps)
       <CoursePlayLayout
         to={`/c/${params.publishedCourseId}`}
         basePath={`/c/${params.publishedCourseId}/${params.publishedChapterId}/${params.publishedLessonId}/play`}
-        progress={50}
+        progress={blocksAndProgress.lesson_progress?.completion_percentage}
         loading={false}
       >
-        <pre className='overflow-y-auto rounded-lg p-4 text-sm break-words whitespace-pre-wrap'>
-          {JSON.stringify(blocksAndProgress, null, 2)}
-        </pre>
-
         <section className='mx-auto max-w-xl px-4 py-10 md:px-0'>
-          {/* {visibleBlocks.length > 0 &&
-            visibleBlocks.map((block) => (
+          {blocksAndProgress.blocks
+            .filter((block) => block.is_visible)
+            .map((block) => (
               <div
                 key={block.id}
                 ref={(el) => {
@@ -91,7 +87,7 @@ export default function LessonPlay({ params, loaderData }: Route.ComponentProps)
               >
                 <ViewPluginTypesRenderer block={block} mode='play' />
               </div>
-            ))} */}
+            ))}
         </section>
       </CoursePlayLayout>
       <Outlet />
