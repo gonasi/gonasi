@@ -25,7 +25,7 @@ export function ViewRichTextPlugin({ block, mode }: ViewPluginComponentProps) {
     mode === 'play' ? block.id : null,
   );
 
-  const shouldShowActionButton = !payload?.is_complete && mode !== 'preview';
+  const shouldShowActionButton = mode !== 'preview';
 
   // Sync interaction state to payload for persistence
   useEffect(() => {

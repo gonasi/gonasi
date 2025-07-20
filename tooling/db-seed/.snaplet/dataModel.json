@@ -352,9 +352,9 @@
           "maxLength": null
         },
         {
-          "id": "public.block_progress.score",
-          "name": "score",
-          "columnName": "score",
+          "id": "public.block_progress.earned_score",
+          "name": "earned_score",
+          "columnName": "earned_score",
           "type": "numeric",
           "isRequired": false,
           "kind": "scalar",
@@ -366,23 +366,23 @@
           "maxLength": null
         },
         {
-          "id": "public.block_progress.attempts",
-          "name": "attempts",
-          "columnName": "attempts",
+          "id": "public.block_progress.attempt_count",
+          "name": "attempt_count",
+          "columnName": "attempt_count",
           "type": "int4",
           "isRequired": false,
           "kind": "scalar",
           "isList": false,
           "isGenerated": false,
           "sequence": false,
-          "hasDefaultValue": true,
+          "hasDefaultValue": false,
           "isId": false,
           "maxLength": null
         },
         {
-          "id": "public.block_progress.state",
-          "name": "state",
-          "columnName": "state",
+          "id": "public.block_progress.interaction_data",
+          "name": "interaction_data",
+          "columnName": "interaction_data",
           "type": "jsonb",
           "isRequired": false,
           "kind": "scalar",

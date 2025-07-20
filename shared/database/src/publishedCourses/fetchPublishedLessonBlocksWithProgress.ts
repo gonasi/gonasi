@@ -13,11 +13,6 @@ interface FetchPublishedLessonBlocksArgs {
   revealMode?: 'progressive' | 'all' | 'linear';
 }
 
-// Union type for return data
-export type LessonDataWithType = PublishedLessonWithProgressiveRevealSchemaTypes & {
-  _dataType: 'progressive_reveal';
-};
-
 /**
  * Fetches published lesson blocks with progressive reveal functionality
  * Returns enhanced lesson data with visibility states and progress tracking
@@ -27,17 +22,12 @@ export async function fetchPublishedLessonBlocksWithProgress({
   courseId,
   chapterId,
   lessonId,
-  revealMode = 'progressive',
-}: FetchPublishedLessonBlocksArgs): Promise<LessonDataWithType | null> {
-  const { data, error } = await supabase.rpc(
-    'get_published_lesson_blocks_with_progressive_reveal',
-    {
-      p_course_id: courseId,
-      p_chapter_id: chapterId,
-      p_lesson_id: lessonId,
-      p_reveal_mode: revealMode,
-    },
-  );
+}: FetchPublishedLessonBlocksArgs): Promise<PublishedLessonWithProgressiveRevealSchemaTypes | null> {
+  const { data, error } = await supabase.rpc('get_user_lesson_blocks_progress', {
+    p_course_id: courseId,
+    p_chapter_id: chapterId,
+    p_lesson_id: lessonId,
+  });
 
   if (error) {
     console.error('❌ Supabase RPC error:', {
@@ -63,10 +53,7 @@ export async function fetchPublishedLessonBlocksWithProgress({
 
   if (enhancedResult.success) {
     console.log('✅ Successfully parsed lesson data with progressive reveal schema');
-    return {
-      ...enhancedResult.data,
-      _dataType: 'progressive_reveal' as const,
-    };
+    return enhancedResult.data;
   } else {
     console.error('❌ Zod validation failed for progressive reveal schema');
     console.error('🧩 Validation issues:', enhancedResult.error.format());

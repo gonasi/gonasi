@@ -56,7 +56,8 @@ export default function LessonPlay({ params, loaderData }: Route.ComponentProps)
   const { hasAccess, blocksAndProgress } = loaderData;
   const blockRefs = useRef<Record<string, HTMLElement | null>>({});
 
-  useScrollAudio(blocksAndProgress?.lesson_progress?.next_action?.block_id ?? null, blockRefs);
+  // Use the active block's ID from the nested structure
+  useScrollAudio(blocksAndProgress?.metadata.active_block_id ?? null, blockRefs);
 
   if (!hasAccess) {
     return <CourseAccessCard enrollPath={`/c/${params.publishedCourseId}`} />;
@@ -71,21 +72,21 @@ export default function LessonPlay({ params, loaderData }: Route.ComponentProps)
       <CoursePlayLayout
         to={`/c/${params.publishedCourseId}`}
         basePath={`/c/${params.publishedCourseId}/${params.publishedChapterId}/${params.publishedLessonId}/play`}
-        progress={blocksAndProgress.lesson_progress?.completion_percentage}
+        progress={blocksAndProgress.metadata.completion_percentage}
         loading={false}
       >
         <section className='mx-auto max-w-xl px-4 py-10 md:px-0'>
           {blocksAndProgress.blocks
-            .filter((block) => block.is_visible)
-            .map((block) => (
+            .filter((b) => b.is_visible)
+            .map((b) => (
               <div
-                key={block.id}
+                key={b.block.id}
                 ref={(el) => {
-                  blockRefs.current[block.id] = el;
+                  blockRefs.current[b.block.id] = el;
                 }}
                 className='scroll-mt-18 md:scroll-mt-22'
               >
-                <ViewPluginTypesRenderer block={block} mode='play' />
+                <ViewPluginTypesRenderer block={b.block} mode='play' />
               </div>
             ))}
         </section>

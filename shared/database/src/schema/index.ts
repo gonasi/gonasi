@@ -36,64 +36,64 @@ export type Database = {
     Tables: {
       block_progress: {
         Row: {
-          attempts: number | null
+          attempt_count: number | null
           block_id: string
           chapter_id: string
           completed_at: string | null
           created_at: string
+          earned_score: number | null
           feedback: string | null
           id: string
+          interaction_data: Json | null
           is_completed: boolean
           last_response: Json | null
           lesson_id: string
           organization_id: string
           plugin_type: string | null
           published_course_id: string
-          score: number | null
           started_at: string | null
-          state: Json | null
           time_spent_seconds: number | null
           updated_at: string
           user_id: string
         }
         Insert: {
-          attempts?: number | null
+          attempt_count?: number | null
           block_id: string
           chapter_id: string
           completed_at?: string | null
           created_at?: string
+          earned_score?: number | null
           feedback?: string | null
           id?: string
+          interaction_data?: Json | null
           is_completed?: boolean
           last_response?: Json | null
           lesson_id: string
           organization_id: string
           plugin_type?: string | null
           published_course_id: string
-          score?: number | null
           started_at?: string | null
-          state?: Json | null
           time_spent_seconds?: number | null
           updated_at?: string
           user_id: string
         }
         Update: {
-          attempts?: number | null
+          attempt_count?: number | null
           block_id?: string
           chapter_id?: string
           completed_at?: string | null
           created_at?: string
+          earned_score?: number | null
           feedback?: string | null
           id?: string
+          interaction_data?: Json | null
           is_completed?: boolean
           last_response?: Json | null
           lesson_id?: string
           organization_id?: string
           plugin_type?: string | null
           published_course_id?: string
-          score?: number | null
           started_at?: string | null
-          state?: Json | null
           time_spent_seconds?: number | null
           updated_at?: string
           user_id?: string
@@ -2009,21 +2009,16 @@ export type Database = {
         Args: { p_course_id: string; p_chapter_id: string; p_lesson_id: string }
         Returns: Json
       }
-      get_published_lesson_blocks_with_progressive_reveal: {
-        Args: {
-          p_course_id: string
-          p_chapter_id: string
-          p_lesson_id: string
-          p_reveal_mode?: string
-        }
-        Returns: Json
-      }
       get_tier_limits_for_org: {
         Args: { org_id: string }
         Returns: Json
       }
       get_user_course_state: {
         Args: { p_course_id: string }
+        Returns: Json
+      }
+      get_user_lesson_blocks_progress: {
+        Args: { p_course_id: string; p_chapter_id: string; p_lesson_id: string }
         Returns: Json
       }
       get_user_org_role: {
