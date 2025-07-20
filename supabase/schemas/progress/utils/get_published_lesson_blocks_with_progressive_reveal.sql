@@ -1,16 +1,24 @@
--- ========================================================================
+-- =============================================================================
 -- FUNCTION: get_published_lesson_blocks_with_progressive_reveal
 -- DESCRIPTION: 
 --   Returns a single lesson with intelligent block visibility and progression.
---   Implements Brilliant-style reveal where blocks unlock as user progresses.
+--   Supports Brilliant.org-style "progressive reveal" where blocks unlock based
+--   on user progress. Supports different reveal strategies: 'progressive', 
+--   'all', and 'linear'. Computes lesson-level metrics and weighted progress.
 --
---   Now supports weighted progress using block.settings.weight (1–10).
--- ========================================================================
+-- PARAMETERS:
+--   p_course_id   - ID of the published course
+--   p_chapter_id  - ID of the chapter (currently unused but may be useful)
+--   p_lesson_id   - ID of the lesson to fetch
+--   p_reveal_mode - Optional override for reveal strategy
+--
+-- SECURITY: Uses `auth.uid()` and enforces column-level access via RLS
+-- =============================================================================
 create or replace function public.get_published_lesson_blocks_with_progressive_reveal(
   p_course_id uuid,
   p_chapter_id uuid,
   p_lesson_id uuid,
-  p_reveal_mode text default 'progressive' -- 'progressive', 'all', 'linear'
+  p_reveal_mode text default 'progressive'
 )
 returns jsonb
 language plpgsql
@@ -25,20 +33,10 @@ declare
   lesson_settings jsonb;
   reveal_strategy text;
 begin
-  -- ----------------------------------------------------------------------
-  -- ACCESS CHECK
-  -- ----------------------------------------------------------------------
-  if not has_column_privilege(
-    'public.published_course_structure_content',
-    'course_structure_content',
-    'SELECT'
-  ) then
+  if not has_column_privilege('public.published_course_structure_content', 'course_structure_content', 'SELECT') then
     raise exception 'Access denied to course content';
   end if;
 
-  -- ----------------------------------------------------------------------
-  -- STEP 1: Extract lesson with settings
-  -- ----------------------------------------------------------------------
   select lesson_obj
   into lesson_data
   from public.published_course_structure_content pcs,
@@ -60,15 +58,10 @@ begin
   end if;
 
   lesson_settings := lesson_data->'settings';
-  reveal_strategy := coalesce(
-    lesson_settings->>'reveal_strategy', 
-    p_reveal_mode
-  );
+  reveal_strategy := coalesce(lesson_settings->>'reveal_strategy', p_reveal_mode);
 
-  -- ----------------------------------------------------------------------
-  -- STEP 2: Build blocks with progressive reveal logic
-  -- ----------------------------------------------------------------------
-  with lesson_blocks as (
+  with
+  lesson_blocks as (
     select 
       block_info,
       (block_info->>'id')::uuid as block_id,
@@ -76,10 +69,10 @@ begin
       block_info->>'plugin_type' as plugin_type,
       coalesce((block_info->'settings'->>'requires_completion')::boolean, true) as requires_completion,
       coalesce((block_info->'settings'->>'can_skip')::boolean, false) as can_skip,
-      (block_info->'settings'->>'preview_content') as preview_content,
       coalesce((block_info->'settings'->>'weight')::int, 1) as weight
     from jsonb_array_elements(lesson_data->'blocks') as block_info
   ),
+
   progress_data as (
     select 
       bp.block_id,
@@ -105,6 +98,7 @@ begin
       and bp.published_course_id = p_course_id
       and bp.lesson_id = p_lesson_id
   ),
+
   blocks_with_visibility as (
     select 
       lb.*,
@@ -127,7 +121,7 @@ begin
             select 1 from lesson_blocks lb2 
             join progress_data pd2 on pd2.block_id = lb2.block_id
             where lb2.position = lb.position - 1 
-            and pd2.is_completed = true
+              and pd2.is_completed = true
           )
         when reveal_strategy = 'progressive' then
           case
@@ -137,21 +131,21 @@ begin
               select 1 from lesson_blocks lb2 
               join progress_data pd2 on pd2.block_id = lb2.block_id
               where lb2.position < lb.position 
-              and (
-                pd2.is_completed = true 
-                or (not lb2.requires_completion and pd2.started_at is not null)
-              )
-              and not exists (
-                select 1 from lesson_blocks lb3
-                where lb3.position < lb.position 
-                and lb3.position > lb2.position
-                and lb3.requires_completion = true
-                and not exists (
-                  select 1 from progress_data pd3 
-                  where pd3.block_id = lb3.block_id 
-                  and pd3.is_completed = true
+                and (
+                  pd2.is_completed = true 
+                  or (not lb2.requires_completion and pd2.started_at is not null)
                 )
-              )
+                and not exists (
+                  select 1 from lesson_blocks lb3
+                  where lb3.position < lb.position 
+                    and lb3.position > lb2.position
+                    and lb3.requires_completion = true
+                    and not exists (
+                      select 1 from progress_data pd3 
+                      where pd3.block_id = lb3.block_id 
+                        and pd3.is_completed = true
+                    )
+                )
             )
           end
         else true
@@ -165,51 +159,30 @@ begin
     from lesson_blocks lb
     left join progress_data pd on pd.block_id = lb.block_id
   ),
+
   blocks_with_actions as (
     select 
       bwv.*,
       case 
         when bwv.interaction_state = 'completed' then 
-          (jsonb_build_array('review', 'skip') ||
-          case when bwv.completion_quality in ('fair', 'needs_improvement') 
-            then jsonb_build_array('retry') 
-            else '[]'::jsonb 
-          end)
+          jsonb_build_array('review', 'skip') ||
+          case when bwv.completion_quality in ('fair', 'needs_improvement') then jsonb_build_array('retry') else '[]'::jsonb end
         when bwv.interaction_state = 'in_progress' then 
           jsonb_build_array('continue', 'restart')
         when bwv.interaction_state = 'available' then 
-          (jsonb_build_array('start') ||
-          case when bwv.can_skip then jsonb_build_array('skip') else '[]'::jsonb end)
+          jsonb_build_array('start') ||
+          case when bwv.can_skip then jsonb_build_array('skip') else '[]'::jsonb end
         else jsonb_build_array()
-      end as available_actions,
-      case 
-        when not bwv.is_visible and bwv.preview_content is not null then bwv.preview_content::jsonb
-        when not bwv.is_visible then 
-          jsonb_build_object(
-            'type', 'locked_preview',
-            'message', case 
-              when bwv.position = 2 then 'Complete the first block to unlock this content'
-              else format('Complete %s more blocks to unlock', bwv.position - 1)
-            end
-          )
-        else null::jsonb
-      end as hint_content,
-      case 
-        when bwv.plugin_type = 'video' then '5-10 min'
-        when bwv.plugin_type = 'quiz' then '2-5 min'
-        when bwv.plugin_type = 'text' then '3-7 min'
-        when bwv.plugin_type = 'interactive' then '10-15 min'
-        else '5 min'
-      end as estimated_duration
+      end as available_actions
     from blocks_with_visibility bwv
   )
+
   select jsonb_agg(
     bwv.block_info ||
     jsonb_build_object(
       'is_visible', bwv.is_visible,
       'interaction_state', bwv.interaction_state,
       'available_actions', bwv.available_actions,
-      'estimated_duration', bwv.estimated_duration,
       'progress', jsonb_build_object(
         'is_completed', coalesce(bwv.is_completed, false),
         'started_at', bwv.started_at,
@@ -224,7 +197,6 @@ begin
         'recently_completed', coalesce(bwv.recently_completed, false)
       ),
       'reveal_info', jsonb_build_object(
-        'hint_content', bwv.hint_content,
         'requires_completion', bwv.requires_completion,
         'can_skip', bwv.can_skip,
         'unlock_reason', case 
@@ -240,36 +212,22 @@ begin
   into blocks_with_reveal
   from blocks_with_actions bwv;
 
-  -- ----------------------------------------------------------------------
-  -- STEP 3: Calculate weighted lesson-level metrics
-  -- ----------------------------------------------------------------------
   with lesson_metrics as (
     select 
       count(*) as total_blocks,
-
       sum(coalesce((block->'settings'->>'weight')::int, 1)) as total_weight,
-
       sum(coalesce((block->'settings'->>'weight')::int, 1)) 
         filter (where (block->'is_visible')::boolean = true) as visible_weight,
-
       sum(coalesce((block->'settings'->>'weight')::int, 1)) 
         filter (where (block->'progress'->>'is_completed')::boolean = true) as completed_weight,
-
       count(*) filter (where (block->'is_visible')::boolean = true) as visible_blocks,
       count(*) filter (where (block->'progress'->>'is_completed')::boolean = true) as completed_blocks,
       count(*) filter (where block->>'interaction_state' = 'available') as available_blocks,
       count(*) filter (where block->>'interaction_state' = 'in_progress') as in_progress_blocks,
       count(*) filter (where block->>'interaction_state' = 'locked') as locked_blocks,
-
-      coalesce(sum((block->'progress'->>'time_spent_seconds')::int) 
-        filter (where block->'progress'->>'time_spent_seconds' is not null), 0) as total_time_spent,
-
-      avg((block->'progress'->>'score')::numeric) 
-        filter (where block->'progress'->>'score' is not null) as average_score,
-
-      max((block->'progress'->>'completed_at')::timestamptz) 
-        filter (where block->'progress'->>'completed_at' is not null) as last_completed_at,
-
+      coalesce(sum((block->'progress'->>'time_spent_seconds')::int), 0) as total_time_spent,
+      avg((block->'progress'->>'score')::numeric) as average_score,
+      max((block->'progress'->>'completed_at')::timestamptz) as last_completed_at,
       (array_agg(
         jsonb_build_object(
           'block_id', block->>'id',
@@ -278,12 +236,11 @@ begin
         ) 
         order by (block->>'position')::int
       ) filter (where jsonb_array_length(block->'available_actions') > 0))[1] as next_action
-
     from jsonb_array_elements(blocks_with_reveal) as block
   )
+
   select 
-    lesson_data || 
-    jsonb_build_object(
+    lesson_data || jsonb_build_object(
       'blocks', blocks_with_reveal,
       'reveal_settings', jsonb_build_object(
         'strategy', reveal_strategy,
@@ -302,14 +259,14 @@ begin
         'in_progress_blocks', lm.in_progress_blocks,
         'locked_blocks', lm.locked_blocks,
         'completion_percentage', case 
-          when lm.visible_weight > 0 then round(lm.completed_weight * 100.0 / lm.visible_weight, 2)
-          else 0 
+          when lm.visible_weight > 0 and lm.completed_weight > 0 then round(lm.completed_weight * 100.0 / lm.visible_weight, 2)
+          else 0.0
         end,
         'overall_completion_percentage', case 
-          when lm.total_weight > 0 then round(lm.completed_weight * 100.0 / lm.total_weight, 2)
-          else 0 
+          when lm.total_weight > 0 and lm.completed_weight > 0 then round(lm.completed_weight * 100.0 / lm.total_weight, 2)
+          else 0.0
         end,
-        'is_fully_completed', lm.completed_weight = lm.total_weight,
+        'is_fully_completed', coalesce(lm.completed_weight = lm.total_weight, false),
         'total_time_spent', lm.total_time_spent,
         'average_score', round(lm.average_score, 2),
         'last_completed_at', lm.last_completed_at,
