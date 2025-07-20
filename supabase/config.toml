@@ -223,7 +223,13 @@ schema_paths = [
 
 
   './schemas/progress/utils/get_published_lesson_blocks_with_progressive_reveal.sql',
-  './schemas/progress/utils/execute_block_action.sql'
+  './schemas/progress/utils/execute_block_action.sql',
+  './schemas/progress/utils/get_next_available_content.sql',
+  './schemas/progress/utils/update_lesson_completion_status.sql',
+  './schemas/progress/utils/update_course_completion_status.sql',
+  './schemas/progress/utils/get_user_course_state.sql',
+  './schemas/progress/utils/handle_completed_content_interaction.sql',
+  './schemas/progress/utils/get_learning_path_overview.sql',
 
   # './schemas/enrollment_activities_schema_indexes_rls.sql',
 

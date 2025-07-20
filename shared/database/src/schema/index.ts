@@ -1978,6 +1978,14 @@ export type Database = {
           latest_activity_id: string
         }[]
       }
+      get_learning_path_overview: {
+        Args: { p_course_id: string }
+        Returns: Json
+      }
+      get_next_available_content: {
+        Args: { p_course_id: string; p_current_lesson_id?: string }
+        Returns: Json
+      }
       get_published_course_pricing_tier: {
         Args: { p_published_course_id: string; p_tier_id: string }
         Returns: {
@@ -2014,9 +2022,17 @@ export type Database = {
         Args: { org_id: string }
         Returns: Json
       }
+      get_user_course_state: {
+        Args: { p_course_id: string }
+        Returns: Json
+      }
       get_user_org_role: {
         Args: { arg_org_id: string; arg_user_id: string }
         Returns: string
+      }
+      handle_completed_content_interaction: {
+        Args: { p_course_id: string; p_lesson_id?: string; p_action?: string }
+        Returns: Json
       }
       has_org_role: {
         Args: { arg_org_id: string; required_role: string; arg_user_id: string }
@@ -2092,6 +2108,14 @@ export type Database = {
       switch_course_pricing_model: {
         Args: { p_course_id: string; p_user_id: string; p_target_model: string }
         Returns: undefined
+      }
+      update_course_completion_status: {
+        Args: { p_course_id: string }
+        Returns: Json
+      }
+      update_lesson_completion_status: {
+        Args: { p_course_id: string; p_lesson_id: string }
+        Returns: Json
       }
       upsert_published_course_with_content: {
         Args: { course_data: Json; structure_content: Json }

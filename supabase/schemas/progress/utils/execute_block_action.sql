@@ -1,14 +1,33 @@
 -- ========================================================================
 -- FUNCTION: execute_block_action
--- DESCRIPTION: 
---   Executes actions on blocks (start, continue, complete, skip, retry)
---   and returns updated lesson state with new reveal information.
+-- DESCRIPTION:
+--   Handles execution of a user’s action on a lesson block, 
+--   automatically updates lesson completion status, and 
+--   suggests next content if the lesson is completed.
+--
+-- INPUTS:
+--   p_course_id      - UUID of the published course
+--   p_lesson_id      - UUID of the lesson being interacted with
+--   p_block_id       - UUID of the specific block (e.g. quiz, explanation, etc.)
+--   p_action         - Action performed by user ('submit', 'skip', etc.)
+--   p_response_data  - Optional: User's response payload (e.g., answers to quiz)
+--   p_score          - Optional: Score (if action yields a numeric result)
+--
+-- RETURNS:
+--   JSONB with detailed result including:
+--     - outcome of block action
+--     - updated lesson status
+--     - recommendation for next content (if applicable)
+--     - progression metadata (lesson completed?, course completed?, etc.)
+--
+-- SECURITY:
+--   - Invoker must have permission to update their own progress
 -- ========================================================================
 create or replace function public.execute_block_action(
   p_course_id uuid,
   p_lesson_id uuid,
   p_block_id uuid,
-  p_action text, -- 'start', 'continue', 'complete', 'skip', 'retry', 'review'
+  p_action text,
   p_response_data jsonb default null,
   p_score numeric default null
 )
@@ -19,116 +38,66 @@ set search_path = ''
 as $$
 declare
   current_user_id uuid := (select auth.uid());
-  org_id uuid;
-  chapter_id uuid;
-  result jsonb;
+
+  -- Result of executing the block action (e.g., success/failure, feedback)
+  block_result jsonb;
+
+  -- JSONB with updated lesson-level progress data
+  lesson_status jsonb;
+
+  -- JSONB representing recommended next content if lesson is completed
+  next_content jsonb;
 begin
-  -- Get organization and chapter info
-  select 
-    pc.organization_id,
-    (jsonb_path_query_first(
-      pcs.course_structure_content,
-      '$.chapters[*] ? (@.lessons[*].id == $lesson_id)',
-      jsonb_build_object('lesson_id', p_lesson_id::text)
-    )->>'id')::uuid
-  into org_id, chapter_id
-  from public.published_courses pc
-  join public.published_course_structure_content pcs on pcs.id = pc.id
-  where pc.id = p_course_id;
+  -- ================================================================
+  -- STEP 1: Perform the original block action using the core handler
+  -- ================================================================
+  select public.execute_block_action(
+    p_course_id,
+    p_lesson_id,
+    p_block_id,
+    p_action,
+    p_response_data,
+    p_score
+  ) into block_result;
 
-  -- Execute the action
-  case p_action
-    when 'start' then
-      insert into public.block_progress (
-        organization_id, published_course_id, chapter_id, lesson_id, block_id,
-        user_id, is_completed, started_at, attempts
-      ) values (
-        org_id, p_course_id, chapter_id, p_lesson_id, p_block_id,
-        current_user_id, false, now(), 1
-      )
-      on conflict (user_id, published_course_id, block_id) 
-      do update set 
-        started_at = coalesce(block_progress.started_at, now()),
-        attempts = block_progress.attempts + 1,
-        updated_at = now();
+  -- If block execution failed (e.g. invalid input, already completed), return as-is
+  if not (block_result->>'success')::boolean then
+    return block_result;
+  end if;
 
-    when 'complete' then
-      insert into public.block_progress (
-        organization_id, published_course_id, chapter_id, lesson_id, block_id,
-        user_id, is_completed, started_at, completed_at, score, last_response, attempts
-      ) values (
-        org_id, p_course_id, chapter_id, p_lesson_id, p_block_id,
-        current_user_id, true, now(), now(), p_score, p_response_data, 1
-      )
-      on conflict (user_id, published_course_id, block_id) 
-      do update set 
-        is_completed = true,
-        completed_at = now(),
-        score = coalesce(excluded.score, block_progress.score),
-        last_response = coalesce(excluded.last_response, block_progress.last_response),
-        attempts = block_progress.attempts + 1,
-        updated_at = now();
+  -- ================================================================
+  -- STEP 2: Update lesson-level completion status (based on block progress)
+  -- ================================================================
+  select public.update_lesson_completion_status(p_course_id, p_lesson_id)
+  into lesson_status;
 
-    when 'skip' then
-      insert into public.block_progress (
-        organization_id, published_course_id, chapter_id, lesson_id, block_id,
-        user_id, is_completed, started_at, completed_at, state, attempts
-      ) values (
-        org_id, p_course_id, chapter_id, p_lesson_id, p_block_id,
-        current_user_id, true, now(), now(), '{"skipped": true}'::jsonb, 1
-      )
-      on conflict (user_id, published_course_id, block_id) 
-      do update set 
-        is_completed = true,
-        completed_at = now(),
-        state = '{"skipped": true}'::jsonb,
-        updated_at = now();
+  -- ================================================================
+  -- STEP 3: If the lesson is now complete, fetch the next recommended content
+  -- ================================================================
+  if (lesson_status->>'is_completed')::boolean then
+    select public.get_next_available_content(p_course_id, p_lesson_id)
+    into next_content;
+  end if;
 
-    when 'retry' then
-      update public.block_progress set
-        is_completed = false,
-        completed_at = null,
-        started_at = now(),
-        attempts = attempts + 1,
-        score = null,
-        last_response = null,
-        updated_at = now()
-      where user_id = current_user_id 
-        and published_course_id = p_course_id 
-        and block_id = p_block_id;
-
-    when 'continue' then
-      update public.block_progress set
-        started_at = coalesce(started_at, now()),
-        state = coalesce(p_response_data, state),
-        updated_at = now()
-      where user_id = current_user_id 
-        and published_course_id = p_course_id 
-        and block_id = p_block_id;
-
-    else
-      raise exception 'Invalid action: %. Valid actions are: start, complete, skip, retry, continue', p_action;
-  end case;
-
-  -- Return updated lesson state
-  select public.get_published_lesson_blocks_with_progressive_reveal(
-    p_course_id, chapter_id, p_lesson_id, 'progressive'
-  ) into result;
-
-  return jsonb_build_object(
-    'success', true,
-    'action_executed', p_action,
-    'block_id', p_block_id,
-    'lesson_state', result
+  -- ================================================================
+  -- STEP 4: Return merged result with:
+  --   - Block action outcome
+  --   - Lesson completion status
+  --   - Next content recommendation (if any)
+  --   - Auto-progression metadata
+  -- ================================================================
+  return block_result || jsonb_build_object(
+    'lesson_status', lesson_status,
+    'next_content', next_content,
+    'auto_progression', jsonb_build_object(
+      'lesson_completed', coalesce((lesson_status->>'is_completed')::boolean, false),
+      'has_next_content', next_content is not null and next_content->>'type' != 'course_completed',
+      'recommendation', case
+        when next_content->>'type' = 'course_completed' then 'Course completed! 🎉'
+        when (lesson_status->>'is_completed')::boolean then 'Lesson completed! Ready for next lesson?'
+        else 'Continue with current lesson'
+      end
+    )
   );
-
-exception
-  when others then
-    return jsonb_build_object(
-      'success', false,
-      'error', SQLERRM,
-      'action_attempted', p_action,
-      'block_id', p_block_id
-    );
 end;
 $$;
