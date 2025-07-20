@@ -1,7 +1,4 @@
-import {
-  PublishedLessonWithProgressSchema,
-  type PublishedLessonWithProgressSchemaTypes,
-} from '@gonasi/schemas/publish';
+import { PublishedLessonWithProgressSchema } from '@gonasi/schemas/publish';
 
 import type { TypedSupabaseClient } from '../client';
 
@@ -17,12 +14,15 @@ export async function fetchPublishedLessonBlocksWithProgress({
   courseId,
   chapterId,
   lessonId,
-}: FetchPublishedLessonBlocksArgs): Promise<PublishedLessonWithProgressSchemaTypes | null> {
-  const { data, error } = await supabase.rpc('get_published_lesson_blocks_with_progress', {
-    p_course_id: courseId,
-    p_chapter_id: chapterId,
-    p_lesson_id: lessonId,
-  });
+}: FetchPublishedLessonBlocksArgs) {
+  const { data, error } = await supabase.rpc(
+    'get_published_lesson_blocks_with_progressive_reveal',
+    {
+      p_course_id: courseId,
+      p_chapter_id: chapterId,
+      p_lesson_id: lessonId,
+    },
+  );
 
   if (error) {
     console.error('❌ Failed to fetch lesson blocks:', error);

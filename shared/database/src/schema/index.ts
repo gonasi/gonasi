@@ -1940,6 +1940,17 @@ export type Database = {
         }
         Returns: Json
       }
+      execute_block_action: {
+        Args: {
+          p_course_id: string
+          p_lesson_id: string
+          p_block_id: string
+          p_action: string
+          p_response_data?: Json
+          p_score?: number
+        }
+        Returns: Json
+      }
       get_active_organization_members: {
         Args: { _organization_id: string; _user_id: string }
         Returns: Json
@@ -1990,8 +2001,13 @@ export type Database = {
         Args: { p_course_id: string; p_chapter_id: string; p_lesson_id: string }
         Returns: Json
       }
-      get_published_lesson_blocks_with_progress: {
-        Args: { p_course_id: string; p_chapter_id: string; p_lesson_id: string }
+      get_published_lesson_blocks_with_progressive_reveal: {
+        Args: {
+          p_course_id: string
+          p_chapter_id: string
+          p_lesson_id: string
+          p_reveal_mode?: string
+        }
         Returns: Json
       }
       get_tier_limits_for_org: {

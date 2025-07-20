@@ -2718,6 +2718,128 @@ end;
 $function$
 ;
 
+CREATE OR REPLACE FUNCTION public.execute_block_action(p_course_id uuid, p_lesson_id uuid, p_block_id uuid, p_action text, p_response_data jsonb DEFAULT NULL::jsonb, p_score numeric DEFAULT NULL::numeric)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SET search_path TO ''
+AS $function$
+declare
+  current_user_id uuid := (select auth.uid());
+  org_id uuid;
+  chapter_id uuid;
+  result jsonb;
+begin
+  -- Get organization and chapter info
+  select 
+    pc.organization_id,
+    (jsonb_path_query_first(
+      pcs.course_structure_content,
+      '$.chapters[*] ? (@.lessons[*].id == $lesson_id)',
+      jsonb_build_object('lesson_id', p_lesson_id::text)
+    )->>'id')::uuid
+  into org_id, chapter_id
+  from public.published_courses pc
+  join public.published_course_structure_content pcs on pcs.id = pc.id
+  where pc.id = p_course_id;
+
+  -- Execute the action
+  case p_action
+    when 'start' then
+      insert into public.block_progress (
+        organization_id, published_course_id, chapter_id, lesson_id, block_id,
+        user_id, is_completed, started_at, attempts
+      ) values (
+        org_id, p_course_id, chapter_id, p_lesson_id, p_block_id,
+        current_user_id, false, now(), 1
+      )
+      on conflict (user_id, published_course_id, block_id) 
+      do update set 
+        started_at = coalesce(block_progress.started_at, now()),
+        attempts = block_progress.attempts + 1,
+        updated_at = now();
+
+    when 'complete' then
+      insert into public.block_progress (
+        organization_id, published_course_id, chapter_id, lesson_id, block_id,
+        user_id, is_completed, started_at, completed_at, score, last_response, attempts
+      ) values (
+        org_id, p_course_id, chapter_id, p_lesson_id, p_block_id,
+        current_user_id, true, now(), now(), p_score, p_response_data, 1
+      )
+      on conflict (user_id, published_course_id, block_id) 
+      do update set 
+        is_completed = true,
+        completed_at = now(),
+        score = coalesce(excluded.score, block_progress.score),
+        last_response = coalesce(excluded.last_response, block_progress.last_response),
+        attempts = block_progress.attempts + 1,
+        updated_at = now();
+
+    when 'skip' then
+      insert into public.block_progress (
+        organization_id, published_course_id, chapter_id, lesson_id, block_id,
+        user_id, is_completed, started_at, completed_at, state, attempts
+      ) values (
+        org_id, p_course_id, chapter_id, p_lesson_id, p_block_id,
+        current_user_id, true, now(), now(), '{"skipped": true}'::jsonb, 1
+      )
+      on conflict (user_id, published_course_id, block_id) 
+      do update set 
+        is_completed = true,
+        completed_at = now(),
+        state = '{"skipped": true}'::jsonb,
+        updated_at = now();
+
+    when 'retry' then
+      update public.block_progress set
+        is_completed = false,
+        completed_at = null,
+        started_at = now(),
+        attempts = attempts + 1,
+        score = null,
+        last_response = null,
+        updated_at = now()
+      where user_id = current_user_id 
+        and published_course_id = p_course_id 
+        and block_id = p_block_id;
+
+    when 'continue' then
+      update public.block_progress set
+        started_at = coalesce(started_at, now()),
+        state = coalesce(p_response_data, state),
+        updated_at = now()
+      where user_id = current_user_id 
+        and published_course_id = p_course_id 
+        and block_id = p_block_id;
+
+    else
+      raise exception 'Invalid action: %. Valid actions are: start, complete, skip, retry, continue', p_action;
+  end case;
+
+  -- Return updated lesson state
+  select public.get_published_lesson_blocks_with_progressive_reveal(
+    p_course_id, chapter_id, p_lesson_id, 'progressive'
+  ) into result;
+
+  return jsonb_build_object(
+    'success', true,
+    'action_executed', p_action,
+    'block_id', p_block_id,
+    'lesson_state', result
+  );
+
+exception
+  when others then
+    return jsonb_build_object(
+      'success', false,
+      'error', SQLERRM,
+      'action_attempted', p_action,
+      'block_id', p_block_id
+    );
+end;
+$function$
+;
+
 CREATE OR REPLACE FUNCTION public.get_active_organization_members(_organization_id uuid, _user_id uuid)
  RETURNS jsonb
  LANGUAGE plpgsql
@@ -3020,19 +3142,21 @@ end;
 $function$
 ;
 
-CREATE OR REPLACE FUNCTION public.get_published_lesson_blocks_with_progress(p_course_id uuid, p_chapter_id uuid, p_lesson_id uuid)
+CREATE OR REPLACE FUNCTION public.get_published_lesson_blocks_with_progressive_reveal(p_course_id uuid, p_chapter_id uuid, p_lesson_id uuid, p_reveal_mode text DEFAULT 'progressive'::text)
  RETURNS jsonb
  LANGUAGE plpgsql
  SET search_path TO ''
 AS $function$
 declare
-  result jsonb;                 -- Final result JSON combining lesson + blocks + stats
-  lesson_data jsonb;            -- Single lesson data extracted from nested JSON
-  blocks_with_progress jsonb;   -- List of blocks with per-user progress data
-  current_user_id uuid := (select auth.uid()); -- Authenticated user ID from Supabase JWT
+  result jsonb;
+  lesson_data jsonb;
+  blocks_with_reveal jsonb;
+  current_user_id uuid := (select auth.uid());
+  lesson_settings jsonb;
+  reveal_strategy text;
 begin
   -- ----------------------------------------------------------------------
-  -- ACCESS CHECK: Ensure caller can SELECT course content column
+  -- ACCESS CHECK
   -- ----------------------------------------------------------------------
   if not has_column_privilege(
     'public.published_course_structure_content',
@@ -3043,7 +3167,7 @@ begin
   end if;
 
   -- ----------------------------------------------------------------------
-  -- STEP 1: Extract the specific lesson object from deeply nested JSONB
+  -- STEP 1: Extract lesson with settings
   -- ----------------------------------------------------------------------
   select lesson_obj
   into lesson_data
@@ -3052,118 +3176,285 @@ begin
     select lesson_obj
     from jsonb_path_query(
       pcs.course_structure_content,
-      '$.chapters[*].lessons[*] ? (@.id == $lesson_id)',  -- Search for lesson by ID
-      jsonb_build_object('lesson_id', p_lesson_id::text) -- Bind parameter
+      '$.chapters[*].lessons[*] ? (@.id == $lesson_id)',
+      jsonb_build_object('lesson_id', p_lesson_id::text)
     ) as lesson_obj
   ) as extracted_lesson
   where pcs.id = p_course_id;
 
-  -- Exit early if lesson was not found
   if lesson_data is null then
-    return null;
+    return jsonb_build_object(
+      'error', 'Lesson not found',
+      'lesson_id', p_lesson_id
+    );
   end if;
 
+  lesson_settings := lesson_data->'settings';
+  reveal_strategy := coalesce(
+    lesson_settings->>'reveal_strategy', 
+    p_reveal_mode
+  );
+
   -- ----------------------------------------------------------------------
-  -- STEP 2: Collect all blocks and their progress for this lesson
+  -- STEP 2: Build blocks with progressive reveal logic
   -- ----------------------------------------------------------------------
   with lesson_blocks as (
-    -- Unnest lesson blocks from JSONB and assign UUIDs
     select 
       block_info,
-      (block_info->>'id')::uuid as block_id
+      (block_info->>'id')::uuid as block_id,
+      (block_info->>'position')::int as position,
+      block_info->>'plugin_type' as plugin_type,
+      coalesce((block_info->'settings'->>'requires_completion')::boolean, true) as requires_completion,
+      coalesce((block_info->'settings'->>'can_skip')::boolean, false) as can_skip,
+      (block_info->'settings'->>'preview_content') as preview_content,
+      coalesce((block_info->'settings'->>'weight')::int, 1) as weight
     from jsonb_array_elements(lesson_data->'blocks') as block_info
   ),
   progress_data as (
-    -- Collect all user progress rows for those blocks in a single query
     select 
       bp.block_id,
-      jsonb_build_object(
-        'is_completed', bp.is_completed,
-        'started_at', bp.started_at,
-        'completed_at', bp.completed_at,
-        'time_spent_seconds', bp.time_spent_seconds,
-        'score', bp.score,
-        'attempts', bp.attempts,
-        'state', bp.state,
-        'last_response', bp.last_response,
-        'feedback', bp.feedback
-      ) as progress_obj
+      bp.is_completed,
+      bp.started_at,
+      bp.completed_at,
+      bp.time_spent_seconds,
+      bp.score,
+      bp.attempts,
+      bp.state,
+      bp.last_response,
+      bp.feedback,
+      case 
+        when bp.score >= 0.8 then 'excellent'
+        when bp.score >= 0.6 then 'good'
+        when bp.score >= 0.4 then 'fair'
+        when bp.score is not null then 'needs_improvement'
+        else null
+      end as completion_quality,
+      bp.completed_at > (now() - interval '1 hour') as recently_completed
     from public.block_progress bp
     where bp.user_id = current_user_id 
       and bp.published_course_id = p_course_id
-      and bp.block_id in (
-        -- Get only block_ids from the current lesson
-        select (jsonb_array_elements(lesson_data->'blocks')->>'id')::uuid
-      )
+      and bp.lesson_id = p_lesson_id
+  ),
+  blocks_with_visibility as (
+    select 
+      lb.*,
+      pd.is_completed,
+      pd.started_at,
+      pd.completed_at,
+      pd.time_spent_seconds,
+      pd.score,
+      pd.attempts,
+      pd.state,
+      pd.last_response,
+      pd.feedback,
+      pd.completion_quality,
+      pd.recently_completed,
+      case 
+        when reveal_strategy = 'all' then true
+        when lb.position = 1 then true
+        when reveal_strategy = 'linear' then 
+          exists (
+            select 1 from lesson_blocks lb2 
+            join progress_data pd2 on pd2.block_id = lb2.block_id
+            where lb2.position = lb.position - 1 
+            and pd2.is_completed = true
+          )
+        when reveal_strategy = 'progressive' then
+          case
+            when lb.position = 1 then true
+            when lb.can_skip then true
+            else exists (
+              select 1 from lesson_blocks lb2 
+              join progress_data pd2 on pd2.block_id = lb2.block_id
+              where lb2.position < lb.position 
+              and (
+                pd2.is_completed = true 
+                or (not lb2.requires_completion and pd2.started_at is not null)
+              )
+              and not exists (
+                select 1 from lesson_blocks lb3
+                where lb3.position < lb.position 
+                and lb3.position > lb2.position
+                and lb3.requires_completion = true
+                and not exists (
+                  select 1 from progress_data pd3 
+                  where pd3.block_id = lb3.block_id 
+                  and pd3.is_completed = true
+                )
+              )
+            )
+          end
+        else true
+      end as is_visible,
+      case 
+        when pd.is_completed then 'completed'
+        when pd.started_at is not null then 'in_progress'
+        when lb.position = 1 then 'available'
+        else 'locked'
+      end as interaction_state
+    from lesson_blocks lb
+    left join progress_data pd on pd.block_id = lb.block_id
+  ),
+  blocks_with_actions as (
+    select 
+      bwv.*,
+      case 
+        when bwv.interaction_state = 'completed' then 
+          (jsonb_build_array('review', 'skip') ||
+          case when bwv.completion_quality in ('fair', 'needs_improvement') 
+            then jsonb_build_array('retry') 
+            else '[]'::jsonb 
+          end)
+        when bwv.interaction_state = 'in_progress' then 
+          jsonb_build_array('continue', 'restart')
+        when bwv.interaction_state = 'available' then 
+          (jsonb_build_array('start') ||
+          case when bwv.can_skip then jsonb_build_array('skip') else '[]'::jsonb end)
+        else jsonb_build_array()
+      end as available_actions,
+      case 
+        when not bwv.is_visible and bwv.preview_content is not null then bwv.preview_content::jsonb
+        when not bwv.is_visible then 
+          jsonb_build_object(
+            'type', 'locked_preview',
+            'message', case 
+              when bwv.position = 2 then 'Complete the first block to unlock this content'
+              else format('Complete %s more blocks to unlock', bwv.position - 1)
+            end
+          )
+        else null::jsonb
+      end as hint_content,
+      case 
+        when bwv.plugin_type = 'video' then '5-10 min'
+        when bwv.plugin_type = 'quiz' then '2-5 min'
+        when bwv.plugin_type = 'text' then '3-7 min'
+        when bwv.plugin_type = 'interactive' then '10-15 min'
+        else '5 min'
+      end as estimated_duration
+    from blocks_with_visibility bwv
   )
-  -- Combine blocks and their progress into one JSON array
   select jsonb_agg(
-    lb.block_info ||  -- Original block info
+    bwv.block_info ||
     jsonb_build_object(
-      'progress', coalesce(
-        pd.progress_obj, -- Merge user progress if available
-        -- Fallback progress object (for unseen blocks)
-        jsonb_build_object(
-          'is_completed', false,
-          'started_at', null,
-          'completed_at', null,
-          'time_spent_seconds', null,
-          'score', null,
-          'attempts', 0,
-          'state', null,
-          'last_response', null,
-          'feedback', null
-        )
+      'is_visible', bwv.is_visible,
+      'interaction_state', bwv.interaction_state,
+      'available_actions', bwv.available_actions,
+      'estimated_duration', bwv.estimated_duration,
+      'progress', jsonb_build_object(
+        'is_completed', coalesce(bwv.is_completed, false),
+        'started_at', bwv.started_at,
+        'completed_at', bwv.completed_at,
+        'time_spent_seconds', bwv.time_spent_seconds,
+        'score', bwv.score,
+        'attempts', coalesce(bwv.attempts, 0),
+        'state', bwv.state,
+        'last_response', bwv.last_response,
+        'feedback', bwv.feedback,
+        'completion_quality', bwv.completion_quality,
+        'recently_completed', coalesce(bwv.recently_completed, false)
+      ),
+      'reveal_info', jsonb_build_object(
+        'hint_content', bwv.hint_content,
+        'requires_completion', bwv.requires_completion,
+        'can_skip', bwv.can_skip,
+        'unlock_reason', case 
+          when bwv.is_visible and bwv.position = 1 then 'first_block'
+          when bwv.is_visible and bwv.can_skip then 'skippable'
+          when bwv.is_visible then 'prerequisites_met'
+          else 'locked'
+        end
       )
     )
-    order by (lb.block_info->>'position')::int -- Sort blocks by position
+    order by bwv.position
   )
-  into blocks_with_progress
-  from lesson_blocks lb
-  left join progress_data pd on pd.block_id = lb.block_id;
+  into blocks_with_reveal
+  from blocks_with_actions bwv;
 
   -- ----------------------------------------------------------------------
-  -- STEP 3: Compute lesson-level progress metrics
+  -- STEP 3: Calculate weighted lesson-level metrics
   -- ----------------------------------------------------------------------
-  with progress_stats as (
+  with lesson_metrics as (
     select 
       count(*) as total_blocks,
+
+      sum(coalesce((block->'settings'->>'weight')::int, 1)) as total_weight,
+
+      sum(coalesce((block->'settings'->>'weight')::int, 1)) 
+        filter (where (block->'is_visible')::boolean = true) as visible_weight,
+
+      sum(coalesce((block->'settings'->>'weight')::int, 1)) 
+        filter (where (block->'progress'->>'is_completed')::boolean = true) as completed_weight,
+
+      count(*) filter (where (block->'is_visible')::boolean = true) as visible_blocks,
       count(*) filter (where (block->'progress'->>'is_completed')::boolean = true) as completed_blocks,
-      coalesce(sum((block->'progress'->>'time_spent_seconds')::int) filter (where block->'progress'->>'time_spent_seconds' is not null), 0) as total_time_spent,
-      avg((block->'progress'->>'score')::numeric) filter (where block->'progress'->>'score' is not null) as average_score,
-      max((block->'progress'->>'completed_at')::timestamptz) filter (where block->'progress'->>'completed_at' is not null) as last_completed_at,
-      -- Find the first incomplete block by position
-      (array_agg(block->>'id' order by (block->>'position')::int) filter (where (block->'progress'->>'is_completed')::boolean = false))[1] as next_incomplete_block_id,
-      -- Find the first block (always useful as fallback)
-      (array_agg(block->>'id' order by (block->>'position')::int))[1] as first_block_id
-    from jsonb_array_elements(blocks_with_progress) as block
+      count(*) filter (where block->>'interaction_state' = 'available') as available_blocks,
+      count(*) filter (where block->>'interaction_state' = 'in_progress') as in_progress_blocks,
+      count(*) filter (where block->>'interaction_state' = 'locked') as locked_blocks,
+
+      coalesce(sum((block->'progress'->>'time_spent_seconds')::int) 
+        filter (where block->'progress'->>'time_spent_seconds' is not null), 0) as total_time_spent,
+
+      avg((block->'progress'->>'score')::numeric) 
+        filter (where block->'progress'->>'score' is not null) as average_score,
+
+      max((block->'progress'->>'completed_at')::timestamptz) 
+        filter (where block->'progress'->>'completed_at' is not null) as last_completed_at,
+
+      (array_agg(
+        jsonb_build_object(
+          'block_id', block->>'id',
+          'action', (block->'available_actions'->0)::text,
+          'position', (block->>'position')::int
+        ) 
+        order by (block->>'position')::int
+      ) filter (where jsonb_array_length(block->'available_actions') > 0))[1] as next_action
+
+    from jsonb_array_elements(blocks_with_reveal) as block
   )
-  -- Merge everything into one final JSON result
   select 
     lesson_data || 
     jsonb_build_object(
-      'blocks', blocks_with_progress,
+      'blocks', blocks_with_reveal,
+      'reveal_settings', jsonb_build_object(
+        'strategy', reveal_strategy,
+        'total_blocks', lm.total_blocks,
+        'visible_blocks', lm.visible_blocks,
+        'unlock_percentage', case 
+          when lm.total_weight > 0 then round(lm.visible_weight * 100.0 / lm.total_weight, 1)
+          else 0
+        end
+      ),
       'lesson_progress', jsonb_build_object(
-        'total_blocks', ps.total_blocks,
-        'completed_blocks', ps.completed_blocks,
+        'total_blocks', lm.total_blocks,
+        'visible_blocks', lm.visible_blocks,
+        'completed_blocks', lm.completed_blocks,
+        'available_blocks', lm.available_blocks,
+        'in_progress_blocks', lm.in_progress_blocks,
+        'locked_blocks', lm.locked_blocks,
         'completion_percentage', case 
-          when ps.total_blocks > 0 then round(ps.completed_blocks * 100.0 / ps.total_blocks, 2)
+          when lm.visible_weight > 0 then round(lm.completed_weight * 100.0 / lm.visible_weight, 2)
           else 0 
         end,
-        'is_fully_completed', ps.completed_blocks = ps.total_blocks,
-        'total_time_spent', ps.total_time_spent,
-        'average_score', round(ps.average_score, 2),
-        'last_completed_at', ps.last_completed_at,
-        'next_incomplete_block_id', ps.next_incomplete_block_id,
-        -- Suggest next block (fallback to first if all complete)
-        'suggested_next_block_id', case
-          when ps.completed_blocks = ps.total_blocks then ps.first_block_id
-          else ps.next_incomplete_block_id
+        'overall_completion_percentage', case 
+          when lm.total_weight > 0 then round(lm.completed_weight * 100.0 / lm.total_weight, 2)
+          else 0 
+        end,
+        'is_fully_completed', lm.completed_weight = lm.total_weight,
+        'total_time_spent', lm.total_time_spent,
+        'average_score', round(lm.average_score, 2),
+        'last_completed_at', lm.last_completed_at,
+        'next_action', lm.next_action,
+        'recommended_next_step', case
+          when lm.available_blocks > 0 then 'continue_learning'
+          when lm.in_progress_blocks > 0 then 'complete_current'
+          when lm.locked_blocks > 0 then 'unlock_more_content'
+          when lm.completed_weight = lm.total_weight then 'lesson_complete'
+          else 'start_learning'
         end
       )
     )
   into result
-  from progress_stats ps;
+  from lesson_metrics lm;
 
   return result;
 end;
