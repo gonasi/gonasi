@@ -1,9 +1,9 @@
+import { PublishBlockSchema } from '@gonasi/schemas/publish/base';
+import type { PricingSchemaTypes } from '@gonasi/schemas/publish/course-pricing';
 import {
   type CourseStructureContentSchemaTypes,
   type CourseStructureOverviewSchemaTypes,
-  PublishBlockSchema,
-} from '@gonasi/schemas/publish';
-import type { PricingSchemaTypes } from '@gonasi/schemas/publish/course-pricing';
+} from '@gonasi/schemas/publish/courseStructure';
 
 import type { TypedSupabaseClient } from '../client';
 
@@ -59,6 +59,7 @@ export async function getTransformedDataToPublish({
                 id,
                 organization_id,
                 course_id,
+                chapter_id,
                 lesson_id,
                 plugin_type,
                 content,

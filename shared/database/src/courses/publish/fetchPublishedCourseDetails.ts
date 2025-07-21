@@ -1,5 +1,5 @@
-import { CourseStructureOverviewSchema } from '@gonasi/schemas/publish';
 import { PricingSchema } from '@gonasi/schemas/publish/course-pricing';
+import { CourseStructureOverviewSchema } from '@gonasi/schemas/publish/courseStructure';
 
 import type { TypedSupabaseClient } from '../../client';
 import { generateSignedThumbnailUrl } from '../../utils';

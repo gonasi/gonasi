@@ -20,13 +20,15 @@ export const upsertRichTextBlock = async (
 ): Promise<ApiResponse> => {
   const userId = await getUserId(supabase);
 
-  const { id, content, organization_id, lesson_id, course_id, plugin_type, settings } = blockData;
+  const { id, content, organization_id, lesson_id, course_id, chapter_id, plugin_type, settings } =
+    blockData;
 
   try {
     const { error } = await supabase.from('lesson_blocks').upsert({
       id: id === 'create-new' ? undefined : id,
       lesson_id,
       course_id,
+      chapter_id,
       organization_id,
       plugin_type,
       content,

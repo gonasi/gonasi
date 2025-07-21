@@ -15,18 +15,15 @@ create table public.block_progress (
 
   -- Interaction state
   is_completed boolean not null default false,
-  started_at timestamptz,
-  completed_at timestamptz,
-  time_spent_seconds integer,
+  started_at timestamptz not null default timezone('utc', now()),
+  completed_at timestamptz not null default timezone('utc', now()),
+  time_spent_seconds integer not null default 0,
 
   -- Only applicable to interactive/scorable blocks (e.g. quizzes, coding tasks)
   earned_score numeric, -- null for non-scorable blocks like rich text
   attempt_count integer, -- null for non-attemptable blocks
   interaction_data jsonb, -- stores user input: selected answers, steps taken, etc.
   last_response jsonb,    -- optional snapshot of last full submission
-  feedback text,
-
-  plugin_type text, -- e.g. 'quiz', 'rich_text', 'code_editor'; used to interpret other fields
 
   -- Auditing
   user_id uuid not null references public.profiles(id) on delete cascade,

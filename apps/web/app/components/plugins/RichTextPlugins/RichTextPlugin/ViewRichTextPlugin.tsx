@@ -1,5 +1,4 @@
 import { useEffect } from 'react';
-import { useParams } from 'react-router';
 
 import { useViewPluginCore } from '../../hooks/useViewPluginCore';
 import type { ViewPluginComponentProps } from '../../PluginRenderers/ViewPluginTypesRenderer';
@@ -7,53 +6,51 @@ import type { ViewPluginComponentProps } from '../../PluginRenderers/ViewPluginT
 import RichTextRenderer from '~/components/go-editor/ui/RichTextRenderer';
 import { ViewPluginWrapper } from '~/components/plugins/common/ViewPluginWrapper';
 import { BlockActionButton } from '~/components/ui/button';
-import { useStore } from '~/store';
 
-export function ViewRichTextPlugin({ block, mode }: ViewPluginComponentProps) {
-  const params = useParams();
+export function ViewRichTextPlugin({ mode, blockWithProgress }: ViewPluginComponentProps) {
+  const { playbackMode, weight } = blockWithProgress.block.settings;
+  const { richTextState } = blockWithProgress.block.content;
 
-  // settings
-  const { playbackMode, weight } = block.settings;
-
-  // Safely cast content to the expected structure for rich_text_editor
-  const { richTextState } = block.content;
-
-  const { isLastBlock } = useStore();
-
-  // Hook for core view plugin logic (e.g. saving state to backend)
-  const { loading, payload, handleContinue, updatePayload } = useViewPluginCore(
-    mode === 'play' ? block.id : null,
+  // Initialize plugin logic for play mode (progress, persistence, etc.)
+  const { loading, handleContinue, updateInteractionData } = useViewPluginCore(
+    mode === 'play'
+      ? {
+          progress: blockWithProgress.block_progress,
+          blockWithProgress,
+        }
+      : null,
   );
 
-  const shouldShowActionButton = mode !== 'preview';
+  const shouldShowActionButton = mode === 'play' || !blockWithProgress.block_progress?.is_completed;
 
-  // Sync interaction state to payload for persistence
+  // Set default interaction data if block progress is missing (e.g., first-time viewer)
   useEffect(() => {
-    if (mode === 'play' && updatePayload) {
-      updatePayload({
-        plugin_type: 'rich_text_editor',
-        block_id: block.id,
-        lesson_id: params.lessonId ?? '',
-        score: 100,
-        attempts: 1,
-        state: { continue: true },
-      });
-    }
-  }, [mode, updatePayload, block.id, params.lessonId]);
+    if (mode !== 'play' || blockWithProgress.block_progress) return;
+
+    updateInteractionData({
+      plugin_type: 'rich_text_editor',
+      continue: true,
+    });
+  }, [mode, blockWithProgress.block_progress, updateInteractionData]);
 
   return (
     <ViewPluginWrapper
-      isComplete={payload?.is_complete}
+      isComplete={blockWithProgress.block_progress?.is_completed}
       playbackMode={playbackMode}
       mode={mode}
       weight={weight}
     >
       <RichTextRenderer editorState={richTextState} />
-      <div className='pt-4'>
-        {shouldShowActionButton && (
-          <BlockActionButton onClick={handleContinue} loading={loading} isLastBlock={isLastBlock} />
-        )}
-      </div>
+
+      {shouldShowActionButton && (
+        <div className='pt-4'>
+          <BlockActionButton
+            onClick={handleContinue}
+            loading={loading}
+            isLastBlock={blockWithProgress.is_last_block}
+          />
+        </div>
+      )}
     </ViewPluginWrapper>
   );
 }

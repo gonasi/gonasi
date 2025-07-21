@@ -1,7 +1,7 @@
 import type { JSX } from 'react';
 
 import type { PluginTypeId } from '@gonasi/schemas/plugins';
-import type { PublishBlockSchemaTypes } from '@gonasi/schemas/publish';
+import type { BlockWithProgressSchemaTypes } from '@gonasi/schemas/publish/progressiveReveal';
 
 import { ViewMultipleChoiceMultipleAnswersPlugin } from '../QuizPlugins/MultipleChoiceMultipleAnswers/ViewMultipleChoiceMultipleAnswersPlugin';
 import { ViewMultipleChoiceSingleAnswerPlugin } from '../QuizPlugins/MultipleChoiceSingleAnswer/ViewMultipleChoiceSingleAnswerPlugin';
@@ -9,7 +9,7 @@ import { ViewTrueOrFalsePlugin } from '../QuizPlugins/TrueOrFalsePlugin/ViewTrue
 import { ViewRichTextPlugin } from '../RichTextPlugins/RichTextPlugin/ViewRichTextPlugin';
 
 export interface ViewPluginComponentProps {
-  block: PublishBlockSchemaTypes;
+  blockWithProgress: BlockWithProgressSchemaTypes;
   mode: 'preview' | 'play';
 }
 
@@ -43,14 +43,14 @@ const viewPluginComponentMap: Record<
 };
 
 export default function ViewPluginTypesRenderer({
-  block,
+  blockWithProgress,
   mode,
 }: ViewPluginComponentProps): JSX.Element {
-  const PluginComponent = viewPluginComponentMap[block.plugin_type];
+  const PluginComponent = viewPluginComponentMap[blockWithProgress.block.plugin_type];
 
   if (!PluginComponent) {
-    return <div>Unsupported plugin type: {block.plugin_type}</div>;
+    return <div>Unsupported plugin type: {blockWithProgress.block.plugin_type}</div>;
   }
 
-  return <PluginComponent block={block} mode={mode} />;
+  return <PluginComponent mode={mode} blockWithProgress={blockWithProgress} />;
 }

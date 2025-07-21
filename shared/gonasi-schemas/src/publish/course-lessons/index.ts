@@ -1,7 +1,7 @@
 import z from 'zod';
 
 import { RichTextSchema } from '../../plugins';
-import { LessonTypeSchema } from '..';
+import { LessonTypeSchema } from '../base';
 
 export const PublishRichTextSchema = RichTextSchema.extend({
   id: z.string({ required_error: 'Block ID is required for publishing.' }),

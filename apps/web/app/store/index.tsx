@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 
 import type { FetchLessonBlocksProgressReturnType } from '@gonasi/database/publishedCourses';
-import type { PublishedLessonBlocksArrayType } from '@gonasi/schemas/publish';
+import type { PublishedLessonBlocksArrayType } from '@gonasi/schemas/publish/base';
 
 import type {
   UserActiveSessionLoaderReturnType,

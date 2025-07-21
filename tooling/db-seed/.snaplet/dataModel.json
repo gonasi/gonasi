@@ -314,12 +314,12 @@
           "name": "started_at",
           "columnName": "started_at",
           "type": "timestamptz",
-          "isRequired": false,
+          "isRequired": true,
           "kind": "scalar",
           "isList": false,
           "isGenerated": false,
           "sequence": false,
-          "hasDefaultValue": false,
+          "hasDefaultValue": true,
           "isId": false,
           "maxLength": null
         },
@@ -328,12 +328,12 @@
           "name": "completed_at",
           "columnName": "completed_at",
           "type": "timestamptz",
-          "isRequired": false,
+          "isRequired": true,
           "kind": "scalar",
           "isList": false,
           "isGenerated": false,
           "sequence": false,
-          "hasDefaultValue": false,
+          "hasDefaultValue": true,
           "isId": false,
           "maxLength": null
         },
@@ -342,12 +342,12 @@
           "name": "time_spent_seconds",
           "columnName": "time_spent_seconds",
           "type": "int4",
-          "isRequired": false,
+          "isRequired": true,
           "kind": "scalar",
           "isList": false,
           "isGenerated": false,
           "sequence": false,
-          "hasDefaultValue": false,
+          "hasDefaultValue": true,
           "isId": false,
           "maxLength": null
         },
@@ -398,34 +398,6 @@
           "name": "last_response",
           "columnName": "last_response",
           "type": "jsonb",
-          "isRequired": false,
-          "kind": "scalar",
-          "isList": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false,
-          "isId": false,
-          "maxLength": null
-        },
-        {
-          "id": "public.block_progress.feedback",
-          "name": "feedback",
-          "columnName": "feedback",
-          "type": "text",
-          "isRequired": false,
-          "kind": "scalar",
-          "isList": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false,
-          "isId": false,
-          "maxLength": null
-        },
-        {
-          "id": "public.block_progress.plugin_type",
-          "name": "plugin_type",
-          "columnName": "plugin_type",
-          "type": "text",
           "isRequired": false,
           "kind": "scalar",
           "isList": false,
@@ -1110,6 +1082,20 @@
             "id"
           ],
           "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "lesson_blocks",
+          "type": "lesson_blocks",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "lesson_blocksTochapters",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
           "isId": false,
           "isGenerated": false,
           "sequence": false,
@@ -5187,6 +5173,20 @@
           "maxLength": null
         },
         {
+          "id": "public.lesson_blocks.chapter_id",
+          "name": "chapter_id",
+          "columnName": "chapter_id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
           "id": "public.lesson_blocks.organization_id",
           "name": "organization_id",
           "columnName": "organization_id",
@@ -5311,6 +5311,24 @@
           "hasDefaultValue": false,
           "isId": false,
           "maxLength": null
+        },
+        {
+          "name": "chapters",
+          "type": "chapters",
+          "isRequired": true,
+          "kind": "object",
+          "relationName": "lesson_blocksTochapters",
+          "relationFromFields": [
+            "chapter_id"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
         },
         {
           "name": "courses",

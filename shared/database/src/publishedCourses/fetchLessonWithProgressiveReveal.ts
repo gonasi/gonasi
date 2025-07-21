@@ -1,7 +1,7 @@
 import {
-  PublishedLessonWithProgressiveRevealSchema,
-  type PublishedLessonWithProgressiveRevealSchemaTypes,
-} from '@gonasi/schemas/publish';
+  PublishedLessonWithProgressSchema,
+  type PublishedLessonWithProgressSchemaTypes,
+} from '@gonasi/schemas/publish/progressiveReveal';
 
 import type { TypedSupabaseClient } from '../client';
 
@@ -18,7 +18,7 @@ interface FetchLessonWithProgressArgs {
 }
 
 // Adds a data-type tag to the parsed lesson data
-export type ParsedLessonWithProgress = PublishedLessonWithProgressiveRevealSchemaTypes & {
+export type ParsedLessonWithProgress = PublishedLessonWithProgressSchemaTypes & {
   _dataType: 'progressive_reveal';
 };
 
@@ -69,7 +69,7 @@ export async function fetchLessonWithProgressiveReveal({
   }
 
   // Validate response using Zod schema
-  const parsedResult = PublishedLessonWithProgressiveRevealSchema.safeParse(rpcData);
+  const parsedResult = PublishedLessonWithProgressSchema.safeParse(rpcData);
 
   if (parsedResult.success) {
     console.log('✅ Zod validation successful');

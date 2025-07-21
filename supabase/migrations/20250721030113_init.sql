@@ -32,15 +32,13 @@ create table "public"."block_progress" (
     "lesson_id" uuid not null,
     "block_id" uuid not null,
     "is_completed" boolean not null default false,
-    "started_at" timestamp with time zone,
-    "completed_at" timestamp with time zone,
-    "time_spent_seconds" integer,
+    "started_at" timestamp with time zone not null default timezone('utc'::text, now()),
+    "completed_at" timestamp with time zone not null default timezone('utc'::text, now()),
+    "time_spent_seconds" integer not null default 0,
     "earned_score" numeric,
     "attempt_count" integer,
     "interaction_data" jsonb,
     "last_response" jsonb,
-    "feedback" text,
-    "plugin_type" text,
     "user_id" uuid not null,
     "created_at" timestamp with time zone not null default timezone('utc'::text, now()),
     "updated_at" timestamp with time zone not null default timezone('utc'::text, now())
@@ -271,6 +269,7 @@ create table "public"."lesson_blocks" (
     "id" uuid not null default uuid_generate_v4(),
     "lesson_id" uuid not null,
     "course_id" uuid not null,
+    "chapter_id" uuid not null,
     "organization_id" uuid not null,
     "plugin_type" text not null,
     "position" integer not null default 0,
@@ -1200,6 +1199,10 @@ alter table "public"."gonasi_wallet_transactions" add constraint "gonasi_wallet_
 alter table "public"."gonasi_wallet_transactions" validate constraint "gonasi_wallet_transactions_wallet_id_fkey";
 
 alter table "public"."gonasi_wallets" add constraint "gonasi_wallets_currency_code_key" UNIQUE using index "gonasi_wallets_currency_code_key";
+
+alter table "public"."lesson_blocks" add constraint "lesson_blocks_chapter_id_fkey" FOREIGN KEY (chapter_id) REFERENCES chapters(id) ON DELETE CASCADE not valid;
+
+alter table "public"."lesson_blocks" validate constraint "lesson_blocks_chapter_id_fkey";
 
 alter table "public"."lesson_blocks" add constraint "lesson_blocks_course_id_fkey" FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE not valid;
 
@@ -3556,7 +3559,7 @@ begin
       (pos = total_blocks_count) as is_last_block,
 
       -- Progress information from block_progress table
-      coalesce(bp.progress_data, '{}'::jsonb) as block_progress,
+      bp.progress_data as block_progress,
       coalesce(bp.is_completed, false) as is_completed,
       coalesce(bp.has_started, false) as has_started,
 

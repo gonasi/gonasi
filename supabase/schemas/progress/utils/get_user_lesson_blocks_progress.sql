@@ -56,7 +56,7 @@ begin
       (pos = total_blocks_count) as is_last_block,
 
       -- Progress information from block_progress table
-      coalesce(bp.progress_data, '{}'::jsonb) as block_progress,
+      bp.progress_data as block_progress,
       coalesce(bp.is_completed, false) as is_completed,
       coalesce(bp.has_started, false) as has_started,
 

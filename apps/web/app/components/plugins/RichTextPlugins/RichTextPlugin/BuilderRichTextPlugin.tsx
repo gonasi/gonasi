@@ -46,6 +46,7 @@ export function BuilderRichTextPlugin({ block }: BuilderRichTextPluginProps) {
           id: block.id,
           organization_id: params.organizationId!,
           course_id: params.courseId!,
+          chapter_id: params.chapterId!,
           lesson_id: params.lessonId!,
           plugin_type: 'rich_text_editor',
           content: RichTextContentSchema.safeParse(block.content).success
@@ -58,6 +59,7 @@ export function BuilderRichTextPlugin({ block }: BuilderRichTextPluginProps) {
       : {
           organization_id: params.organizationId!,
           course_id: params.courseId!,
+          chapter_id: params.chapterId!,
           lesson_id: params.lessonId!,
           plugin_type: 'rich_text_editor',
           content: { richTextState: EMPTY_LEXICAL_STATE },

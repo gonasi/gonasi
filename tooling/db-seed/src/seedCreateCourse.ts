@@ -265,6 +265,7 @@ export async function seedCreateCourse() {
             for (let l = 0; l < blockCount; l++) {
               const richTextSchema = {
                 course_id: insertedCourse.id,
+                chapter_id: chapterData.id,
                 lesson_id: lessonData.id,
                 plugin_type: 'rich_text_editor' as const,
                 content: {

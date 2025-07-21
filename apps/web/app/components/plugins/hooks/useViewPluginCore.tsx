@@ -1,101 +1,111 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useFetcher } from 'react-router';
 
-import type { FetchLessonBlocksProgressReturnType } from '@gonasi/database/publishedCourses';
+import type { BlockInteractionSchemaTypes } from '@gonasi/schemas/plugins';
+import type {
+  BlockProgressSchemaTypes,
+  BlockWithProgressSchemaTypes,
+  SubmitBlockProgressSchemaTypes,
+} from '@gonasi/schemas/publish/progressiveReveal';
 
-import { useStore } from '~/store';
+export interface ViewPluginCoreArgs {
+  progress: BlockProgressSchemaTypes;
+  blockWithProgress: BlockWithProgressSchemaTypes;
+}
 
 export interface ViewPluginCoreResult {
   loading: boolean;
-  payload: FetchLessonBlocksProgressReturnType[number] | null;
+  payload: BlockProgressSchemaTypes | null;
   handleContinue: () => void;
-  updatePayload: (updates: FetchLessonBlocksProgressReturnType[number]) => void;
+  updateInteractionData: (interactionData: BlockInteractionSchemaTypes) => void;
 }
 
 /**
- * Custom hook for managing plugin view interaction.
- *
- * Responsibilities:
- * - Extracts the current block interaction
- * - Manages local overrides to the payload
- * - Tracks loading state via `useFetcher`
- * - Enriches the payload with timing info on submission
+ * Hook for managing progressive reveal block interactions.
+ * Tracks block interaction state and prepares payloads for submission.
  */
-export function useViewPluginCore(blockId: string | null): ViewPluginCoreResult {
+export function useViewPluginCore(args: ViewPluginCoreArgs | null): ViewPluginCoreResult {
   const fetcher = useFetcher();
-  const { getBlockInteraction, isLastBlock } = useStore();
-
-  const blockInteraction = getBlockInteraction(blockId ?? '');
+  const startTimeRef = useRef<string | null>(null);
 
   const [loading, setLoading] = useState(false);
-  const [payloadOverrides, setPayloadOverrides] = useState<
-    Partial<FetchLessonBlocksProgressReturnType[number]>
+  const [interactionDataOverrides, setInteractionDataOverrides] = useState<
+    BlockInteractionSchemaTypes | object
   >({});
 
-  // Capture the time the user starts viewing the block
-  const [startedAt] = useState(() => new Date().toISOString());
+  // Capture interaction start time only once per mount
+  if (args && !startTimeRef.current) {
+    startTimeRef.current = new Date().toISOString();
+  }
 
-  // Update loading state based on fetcher's submission state
+  // Track fetcher state for loading indication
   useEffect(() => {
-    setLoading(fetcher.state === 'submitting' || fetcher.state === 'loading');
+    const isSubmitting = fetcher.state === 'submitting' || fetcher.state === 'loading';
+    setLoading(isSubmitting);
   }, [fetcher.state]);
 
-  /**
-   * Final payload used in the view.
-   * Combines the base interaction data with any local overrides.
-   */
-  const finalPayload = useMemo(() => {
-    return {
-      ...blockInteraction,
-      ...payloadOverrides,
-    } as FetchLessonBlocksProgressReturnType[number];
-  }, [blockInteraction, payloadOverrides]);
+  // Build the progress payload including interaction overrides
+  const payload = useMemo(() => {
+    if (!args) return null;
+    const baseProgress = args.blockWithProgress.block_progress ?? {};
 
-  /**
-   * Allows components to update specific fields in the payload
-   */
-  const updatePayload = useCallback((updates: FetchLessonBlocksProgressReturnType[number]) => {
-    setPayloadOverrides((prev: Partial<FetchLessonBlocksProgressReturnType[number]>) => ({
-      ...prev,
-      ...updates,
-    }));
+    return {
+      ...baseProgress,
+      interaction_data: interactionDataOverrides,
+    } as BlockProgressSchemaTypes;
+  }, [args, interactionDataOverrides]);
+
+  // Merge new interaction data with existing overrides
+  const updateInteractionData = useCallback((interactionData: BlockInteractionSchemaTypes) => {
+    setInteractionDataOverrides((prev) => ({ ...prev, ...interactionData }));
   }, []);
 
-  /**
-   * Submits the current interaction, enriched with:
-   * - start and end timestamps
-   * - time spent
-   * - plugin type
-   * - whether it is the last block
-   */
+  // Submit enriched progress payload when user continues
   const handleContinue = useCallback(() => {
-    if (!finalPayload) return;
+    if (!args || !startTimeRef.current) {
+      console.warn('Missing args or start time');
+      return;
+    }
 
     const completedAt = new Date().toISOString();
     const timeSpentSeconds = Math.round(
-      (new Date(completedAt).getTime() - new Date(startedAt).getTime()) / 1000,
+      (Date.now() - new Date(startTimeRef.current).getTime()) / 1000,
     );
 
-    const enrichedPayload: FetchLessonBlocksProgressReturnType[number] = {
-      ...finalPayload,
-      is_completed: true,
-      started_at: startedAt,
+    const { block, is_last_block } = args.blockWithProgress;
+
+    const enrichedPayload: SubmitBlockProgressSchemaTypes = {
+      block_id: block.id,
+      interaction_data: payload?.interaction_data ?? {},
+      started_at: startTimeRef.current,
       completed_at: completedAt,
       time_spent_seconds: timeSpentSeconds,
     };
 
     const formData = new FormData();
-    formData.append('intent', enrichedPayload.plugin_type ?? '');
-    formData.append('isLast', isLastBlock ? 'true' : 'false');
     formData.append('payload', JSON.stringify(enrichedPayload));
 
+    if (is_last_block) {
+      formData.append('isLast', 'true');
+    }
+
     fetcher.submit(formData, { method: 'post' });
-  }, [finalPayload, startedAt, isLastBlock, fetcher]);
+  }, [args, payload, fetcher]);
+
+  // Return safe defaults if args not provided
+  if (!args) {
+    return {
+      loading: false,
+      payload: null,
+      handleContinue: () => {},
+      updateInteractionData: () => {},
+    };
+  }
 
   return {
     loading,
-    payload: finalPayload,
+    payload,
     handleContinue,
-    updatePayload,
+    updateInteractionData,
   };
 }

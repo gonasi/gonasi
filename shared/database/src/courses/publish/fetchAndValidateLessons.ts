@@ -200,7 +200,7 @@ export async function fetchAndValidateLessons({
       created_at,
       updated_at,
       settings,
-      lesson_blocks(id, lesson_id, organization_id, course_id, plugin_type, content, settings),
+      lesson_blocks(id, lesson_id, organization_id, course_id, chapter_id, plugin_type, content, settings),
       lesson_types(id, name, description, lucide_icon, bg_color)
     `,
     )

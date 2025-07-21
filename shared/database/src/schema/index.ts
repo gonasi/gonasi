@@ -39,20 +39,18 @@ export type Database = {
           attempt_count: number | null
           block_id: string
           chapter_id: string
-          completed_at: string | null
+          completed_at: string
           created_at: string
           earned_score: number | null
-          feedback: string | null
           id: string
           interaction_data: Json | null
           is_completed: boolean
           last_response: Json | null
           lesson_id: string
           organization_id: string
-          plugin_type: string | null
           published_course_id: string
-          started_at: string | null
-          time_spent_seconds: number | null
+          started_at: string
+          time_spent_seconds: number
           updated_at: string
           user_id: string
         }
@@ -60,20 +58,18 @@ export type Database = {
           attempt_count?: number | null
           block_id: string
           chapter_id: string
-          completed_at?: string | null
+          completed_at?: string
           created_at?: string
           earned_score?: number | null
-          feedback?: string | null
           id?: string
           interaction_data?: Json | null
           is_completed?: boolean
           last_response?: Json | null
           lesson_id: string
           organization_id: string
-          plugin_type?: string | null
           published_course_id: string
-          started_at?: string | null
-          time_spent_seconds?: number | null
+          started_at?: string
+          time_spent_seconds?: number
           updated_at?: string
           user_id: string
         }
@@ -81,20 +77,18 @@ export type Database = {
           attempt_count?: number | null
           block_id?: string
           chapter_id?: string
-          completed_at?: string | null
+          completed_at?: string
           created_at?: string
           earned_score?: number | null
-          feedback?: string | null
           id?: string
           interaction_data?: Json | null
           is_completed?: boolean
           last_response?: Json | null
           lesson_id?: string
           organization_id?: string
-          plugin_type?: string | null
           published_course_id?: string
-          started_at?: string | null
-          time_spent_seconds?: number | null
+          started_at?: string
+          time_spent_seconds?: number
           updated_at?: string
           user_id?: string
         }
@@ -933,6 +927,7 @@ export type Database = {
       }
       lesson_blocks: {
         Row: {
+          chapter_id: string
           content: Json
           course_id: string
           created_at: string
@@ -947,6 +942,7 @@ export type Database = {
           updated_by: string | null
         }
         Insert: {
+          chapter_id: string
           content?: Json
           course_id: string
           created_at?: string
@@ -961,6 +957,7 @@ export type Database = {
           updated_by?: string | null
         }
         Update: {
+          chapter_id?: string
           content?: Json
           course_id?: string
           created_at?: string
@@ -975,6 +972,13 @@ export type Database = {
           updated_by?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "lesson_blocks_chapter_id_fkey"
+            columns: ["chapter_id"]
+            isOneToOne: false
+            referencedRelation: "chapters"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "lesson_blocks_course_id_fkey"
             columns: ["course_id"]

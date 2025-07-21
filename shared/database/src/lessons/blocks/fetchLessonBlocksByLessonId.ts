@@ -1,26 +1,7 @@
-import type { PluginTypeId } from '@gonasi/schemas/plugins';
+import { PublishBlockSchema } from '@gonasi/schemas/publish/base';
 
 import type { TypedSupabaseClient } from '../../client';
 
-/**
- * Fetches lesson blocks associated with a given lesson ID from the Supabase 'blocks' table.
- *
- * @param {TypedSupabaseClient} supabase - An instance of the typed Supabase client.
- * @param {string} lessonId - The ID of the lesson whose blocks should be retrieved.
- * @returns {Promise<{
- *   success: boolean;
- *   message: string;
- *   data: Array<{
- *     id: string;
- *     plugin_type: string;
- *     content: any;
- *     settings: any;
- *     position: number;
- *     lesson_id: string;
- *     updated_by: string;
- *   }> | null;
- * }>} A promise that resolves to an object indicating success, a message, and the fetched data or null if failed.
- */
 export const fetchLessonBlocksByLessonId = async (
   supabase: TypedSupabaseClient,
   lessonId: string,
@@ -28,7 +9,9 @@ export const fetchLessonBlocksByLessonId = async (
   try {
     const { data, error } = await supabase
       .from('lesson_blocks')
-      .select('id, plugin_type, content, settings, position, lesson_id, updated_by')
+      .select(
+        'id, lesson_id, plugin_type, organization_id, course_id, content, settings, position, updated_by',
+      )
       .eq('lesson_id', lessonId)
       .order('position', { ascending: true });
 
@@ -40,15 +23,21 @@ export const fetchLessonBlocksByLessonId = async (
       };
     }
 
-    const validatedData = data.map((block) => ({
-      ...block,
-      plugin_type: block.plugin_type as PluginTypeId,
-    }));
+    const parseResult = PublishBlockSchema.array().safeParse(data);
+
+    if (!parseResult.success) {
+      console.error('Validation failed for lesson blocks:', parseResult.error.format());
+      return {
+        success: false,
+        message: 'Lesson blocks validation failed.',
+        data: null,
+      };
+    }
 
     return {
       success: true,
       message: 'Lesson blocks retrieved successfully.',
-      data: validatedData,
+      data: parseResult.data,
     };
   } catch (err) {
     console.error('Unexpected error in fetchLessonBlocksByLessonId:', err);

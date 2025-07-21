@@ -159,7 +159,7 @@ export default function EditLessonContent({ loaderData, params }: Route.Componen
                       <ClientOnly fallback={<Spinner />}>
                         {() => (
                           <Suspense fallback={<Spinner />}>
-                            <ViewPluginTypesRenderer block={block} mode='preview' />
+                            <ViewPluginTypesRenderer block={block} mode='preview' progress={null} />
                           </Suspense>
                         )}
                       </ClientOnly>

@@ -5,7 +5,8 @@
 create table public.lesson_blocks (
   id uuid primary key default uuid_generate_v4(),                 -- Unique block identifier
   lesson_id uuid not null,                                       -- FK: associated lesson
-  course_id uuid not null,                                       -- Redundant but useful for filtering
+  course_id uuid not null, 
+  chapter_id uuid not null,                                         -- Redundant but useful for filtering
   organization_id uuid not null,                                 -- Redundant but useful for RLS
   plugin_type text not null,                                     -- Plugin type (e.g. rich_text, match, reveal)
   position integer not null default 0,                           -- Order within the lesson
@@ -19,6 +20,7 @@ create table public.lesson_blocks (
   -- Foreign key constraints
   foreign key (lesson_id) references public.lessons(id) on delete cascade,
   foreign key (course_id) references public.courses(id) on delete cascade,
+  foreign key (chapter_id) references public.chapters(id) on delete cascade,
   foreign key (organization_id) references public.organizations(id) on delete cascade,
   foreign key (created_by) references public.profiles(id) on delete set null,
   foreign key (updated_by) references public.profiles(id) on delete set null
