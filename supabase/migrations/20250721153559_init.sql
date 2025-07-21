@@ -2086,6 +2086,85 @@ end;
 $function$
 ;
 
+CREATE OR REPLACE FUNCTION public.complete_block(p_user_id uuid, p_published_course_id uuid, p_chapter_id uuid, p_lesson_id uuid, p_block_id uuid, p_earned_score numeric DEFAULT NULL::numeric, p_time_spent_seconds integer DEFAULT 0, p_interaction_data jsonb DEFAULT NULL::jsonb, p_last_response jsonb DEFAULT NULL::jsonb)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SET search_path TO ''
+AS $function$
+DECLARE
+  organization_id uuid;
+  result jsonb;
+  next_ids jsonb;
+BEGIN
+  -- Get organization_id from published_course
+  SELECT pc.organization_id 
+  INTO organization_id
+  FROM public.published_courses pc
+  WHERE pc.id = p_published_course_id;
+  
+  IF organization_id IS NULL THEN
+    RETURN jsonb_build_object('error', 'Published course not found');
+  END IF;
+  
+  -- Insert or update block progress
+  INSERT INTO public.block_progress (
+    user_id,
+    published_course_id,
+    chapter_id,
+    lesson_id,
+    block_id,
+    organization_id,
+    is_completed,
+    completed_at,
+    time_spent_seconds,
+    earned_score,
+    attempt_count,
+    interaction_data,
+    last_response
+  )
+  VALUES (
+    p_user_id,
+    p_published_course_id,
+    p_chapter_id,
+    p_lesson_id,
+    p_block_id,
+    organization_id,
+    true,
+    timezone('utc', now()),
+    p_time_spent_seconds,
+    p_earned_score,
+    COALESCE((SELECT attempt_count + 1 FROM public.block_progress 
+              WHERE user_id = p_user_id 
+                AND published_course_id = p_published_course_id 
+                AND block_id = p_block_id), 1),
+    p_interaction_data,
+    p_last_response
+  )
+  ON CONFLICT (user_id, published_course_id, block_id)
+  DO UPDATE SET
+    is_completed = true,
+    completed_at = timezone('utc', now()),
+    time_spent_seconds = block_progress.time_spent_seconds + EXCLUDED.time_spent_seconds,
+    earned_score = COALESCE(EXCLUDED.earned_score, block_progress.earned_score),
+    attempt_count = COALESCE(block_progress.attempt_count + 1, 1),
+    interaction_data = COALESCE(EXCLUDED.interaction_data, block_progress.interaction_data),
+    last_response = COALESCE(EXCLUDED.last_response, block_progress.last_response),
+    updated_at = timezone('utc', now());
+  
+  -- Get next navigation IDs
+  SELECT public.get_next_navigation_ids(p_user_id, p_published_course_id, p_block_id)
+  INTO next_ids;
+  
+  RETURN jsonb_build_object(
+    'success', true,
+    'block_id', p_block_id,
+    'completed_at', to_char(timezone('utc', now()), 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),
+    'navigation', next_ids
+  );
+END;
+$function$
+;
+
 CREATE OR REPLACE FUNCTION public.create_organization_wallets()
  RETURNS trigger
  LANGUAGE plpgsql
@@ -2725,78 +2804,6 @@ end;
 $function$
 ;
 
-CREATE OR REPLACE FUNCTION public.execute_block_action(p_course_id uuid, p_lesson_id uuid, p_block_id uuid, p_action text, p_response_data jsonb DEFAULT NULL::jsonb, p_score numeric DEFAULT NULL::numeric)
- RETURNS jsonb
- LANGUAGE plpgsql
- SET search_path TO ''
-AS $function$
-declare
-  current_user_id uuid := (select auth.uid());
-
-  -- Result of executing the block action (e.g., success/failure, feedback)
-  block_result jsonb;
-
-  -- JSONB with updated lesson-level progress data
-  lesson_status jsonb;
-
-  -- JSONB representing recommended next content if lesson is completed
-  next_content jsonb;
-begin
-  -- ================================================================
-  -- STEP 1: Perform the original block action using the core handler
-  -- ================================================================
-  select public.execute_block_action(
-    p_course_id,
-    p_lesson_id,
-    p_block_id,
-    p_action,
-    p_response_data,
-    p_score
-  ) into block_result;
-
-  -- If block execution failed (e.g. invalid input, already completed), return as-is
-  if not (block_result->>'success')::boolean then
-    return block_result;
-  end if;
-
-  -- ================================================================
-  -- STEP 2: Update lesson-level completion status (based on block progress)
-  -- ================================================================
-  select public.update_lesson_completion_status(p_course_id, p_lesson_id)
-  into lesson_status;
-
-  -- ================================================================
-  -- STEP 3: If the lesson is now complete, fetch the next recommended content
-  -- ================================================================
-  if (lesson_status->>'is_completed')::boolean then
-    select public.get_next_available_content(p_course_id, p_lesson_id)
-    into next_content;
-  end if;
-
-  -- ================================================================
-  -- STEP 4: Return merged result with:
-  --   - Block action outcome
-  --   - Lesson completion status
-  --   - Next content recommendation (if any)
-  --   - Auto-progression metadata
-  -- ================================================================
-  return block_result || jsonb_build_object(
-    'lesson_status', lesson_status,
-    'next_content', next_content,
-    'auto_progression', jsonb_build_object(
-      'lesson_completed', coalesce((lesson_status->>'is_completed')::boolean, false),
-      'has_next_content', next_content is not null and next_content->>'type' != 'course_completed',
-      'recommendation', case
-        when next_content->>'type' = 'course_completed' then 'Course completed! 🎉'
-        when (lesson_status->>'is_completed')::boolean then 'Lesson completed! Ready for next lesson?'
-        else 'Continue with current lesson'
-      end
-    )
-  );
-end;
-$function$
-;
-
 CREATE OR REPLACE FUNCTION public.get_active_organization_members(_organization_id uuid, _user_id uuid)
  RETURNS jsonb
  LANGUAGE plpgsql
@@ -2978,269 +2985,105 @@ end;
 $function$
 ;
 
-CREATE OR REPLACE FUNCTION public.get_learning_path_overview(p_course_id uuid)
+CREATE OR REPLACE FUNCTION public.get_next_navigation_ids(p_user_id uuid, p_published_course_id uuid, p_current_block_id uuid DEFAULT NULL::uuid)
  RETURNS jsonb
  LANGUAGE plpgsql
  SET search_path TO ''
 AS $function$
-declare
-  current_user_id uuid := (select auth.uid());
+DECLARE
   course_structure jsonb;
   result jsonb;
-begin
-  -- STEP 1: Fetch the published course structure
-  select course_structure_content into course_structure
-  from public.published_course_structure_content
-  where id = p_course_id;
-
-  -- STEP 2: Generate chapter-level progress details
-  with chapter_progress as (
-    select 
-      -- Basic chapter info
-      (chapter->>'id')::uuid as chapter_id,
-      chapter->>'title' as chapter_title,
-      (chapter->>'position')::int as chapter_position,
-      jsonb_array_length(chapter->'lessons') as total_lessons,
-
-      -- Count how many lessons in this chapter the user has completed
-      (
-        select count(*)
-        from jsonb_array_elements(chapter->'lessons') as lesson
-        where exists (
-          select 1 from public.lesson_progress lp
-          where lp.user_id = current_user_id
-            and lp.published_course_id = p_course_id
-            and lp.lesson_id = (lesson->>'id')::uuid
-            and lp.completed_at is not null
-        )
-      ) as completed_lessons,
-
-      -- Check if the user has started any lesson in this chapter
-      (
-        select count(*) > 0
-        from jsonb_array_elements(chapter->'lessons') as lesson
-        where exists (
-          select 1 from public.lesson_progress lp
-          where lp.user_id = current_user_id
-            and lp.published_course_id = p_course_id
-            and lp.lesson_id = (lesson->>'id')::uuid
-        )
-      ) as has_started,
-
-      -- Build lesson array with embedded progress per lesson
-      (
-        select jsonb_agg(
-          lesson || jsonb_build_object(
-            'progress', coalesce(lesson_progress_data.progress, jsonb_build_object(
-              'is_completed', false,
-              'completed_blocks', 0,
-              'completion_percentage', 0
-            )),
-            'is_current', lesson_progress_data.is_current,
-            'is_next', lesson_progress_data.is_next
-          )
-          order by (lesson->>'position')::int
-        )
-        from jsonb_array_elements(chapter->'lessons') as lesson
-        left join lateral (
-          select 
-            -- Fetch lesson progress metrics
-            jsonb_build_object(
-              'is_completed', lp.completed_at is not null,
-              'completed_blocks', lp.completed_blocks,
-              'total_blocks', lp.total_blocks,
-              'completion_percentage', case 
-                when lp.total_blocks > 0 then round(lp.completed_blocks * 100.0 / lp.total_blocks, 2)
-                else 0 
-              end,
-              'last_activity', lp.updated_at
-            ) as progress,
-
-            -- Mark if this is the user's currently active lesson (latest activity)
-            exists (
-              select 1
-              from public.block_progress bp
-              where bp.user_id = current_user_id
-                and bp.published_course_id = p_course_id
-                and bp.lesson_id = (lesson->>'id')::uuid
-                and bp.updated_at = (
-                  select max(bp2.updated_at)
-                  from public.block_progress bp2
-                  where bp2.user_id = current_user_id
-                    and bp2.published_course_id = p_course_id
-                )
-            ) as is_current,
-
-            -- Placeholder: can be updated later with actual "is_next" logic
-            false as is_next
-          from public.lesson_progress lp
-          where lp.user_id = current_user_id
-            and lp.published_course_id = p_course_id
-            and lp.lesson_id = (lesson->>'id')::uuid
-        ) lesson_progress_data on true
-      ) as lessons_with_progress
-
-    from jsonb_array_elements(course_structure->'chapters') as chapter
-  )
-
-  -- STEP 3: Aggregate full learning path and compute overall course progress
-  select jsonb_build_object(
-    'course_id', p_course_id,
-    'learning_path', jsonb_agg(
-      jsonb_build_object(
-        'chapter_id', cp.chapter_id,
-        'title', cp.chapter_title,
-        'position', cp.chapter_position,
-        'progress', jsonb_build_object(
-          'total_lessons', cp.total_lessons,
-          'completed_lessons', cp.completed_lessons,
-          'completion_percentage', case 
-            when cp.total_lessons > 0 then round(cp.completed_lessons * 100.0 / cp.total_lessons, 2)
-            else 0 
-          end,
-          'status', case
-            when cp.completed_lessons = cp.total_lessons then 'completed'
-            when cp.has_started then 'in_progress'
-            else 'not_started'
-          end
-        ),
-        'lessons', cp.lessons_with_progress
-      )
-      order by cp.chapter_position
-    ),
-
-    'overall_progress', (
-      select jsonb_build_object(
-        'total_chapters', count(*),
-        'completed_chapters', count(*) filter (where completed_lessons = total_lessons),
-        'in_progress_chapters', count(*) filter (where has_started and completed_lessons < total_lessons),
-        'not_started_chapters', count(*) filter (where not has_started),
-        'overall_completion_percentage', round(
-          avg(case when total_lessons > 0 then completed_lessons * 100.0 / total_lessons else 0 end), 2
-        )
-      )
-      from chapter_progress
-    )
-  ) into result
-  from chapter_progress cp;
-
-  return result;
-end;
-$function$
-;
-
-CREATE OR REPLACE FUNCTION public.get_next_available_content(p_course_id uuid, p_current_lesson_id uuid DEFAULT NULL::uuid)
- RETURNS jsonb
- LANGUAGE plpgsql
- SET search_path TO ''
-AS $function$
-declare
-  current_user_id uuid := (select auth.uid()); -- Authenticated user ID
-  course_structure jsonb;                      -- Full JSON structure of the course
-  result jsonb;                                -- Result object to return
   current_chapter_id uuid;
-  current_lesson_position int;
-  current_chapter_position int;
-begin
-  -- ============================================================
-  -- STEP 1: Retrieve the course structure as JSON
-  -- ============================================================
-  select course_structure_content into course_structure
-  from public.published_course_structure_content
-  where id = p_course_id;
-
-  -- Return an error if the course does not exist
-  if course_structure is null then
-    return jsonb_build_object('error', 'Course not found');
-  end if;
-
-  -- ============================================================
-  -- STEP 2: If no current lesson is given, return the first lesson
-  -- ============================================================
-  if p_current_lesson_id is null then
-    return jsonb_build_object(
-      'type', 'lesson',
-      'course_id', p_course_id,
-      'chapter_id', (course_structure->'chapters'->0->>'id')::uuid,
-      'lesson_id', (course_structure->'chapters'->0->'lessons'->0->>'id')::uuid,
-      'is_first_lesson', true
-    );
-  end if;
-
-  -- ============================================================
-  -- STEP 3: Flatten the course structure into lesson positions
-  --         and identify the current lesson's chapter and position
-  -- ============================================================
-  with lesson_positions as (
-    select 
-      (chapter->>'id')::uuid as chapter_id,
-      (chapter->>'position')::int as chapter_position,
-      (lesson->>'id')::uuid as lesson_id,
-      (lesson->>'position')::int as lesson_position
-    from jsonb_array_elements(course_structure->'chapters') as chapter,
-        jsonb_array_elements(chapter->'lessons') as lesson
-  ),
-
-  -- Get the current lesson’s chapter and position
-  current_position as (
-    select chapter_id, chapter_position, lesson_position
-    from lesson_positions
-    where lesson_id = p_current_lesson_id
-  ),
-
-  -- Attempt to find the next lesson in the same chapter
-  next_lesson_in_chapter as (
-    select lp.lesson_id, lp.chapter_id
-    from lesson_positions lp, current_position cp
-    where lp.chapter_id = cp.chapter_id
-      and lp.lesson_position = cp.lesson_position + 1
-  ),
-
-  -- Attempt to find the first lesson of the next chapter
-  next_chapter as (
-    select 
-      (chapter->>'id')::uuid as chapter_id,
-      (chapter->'lessons'->0->>'id')::uuid as first_lesson_id
-    from jsonb_array_elements(course_structure->'chapters') as chapter,
-         current_position cp
-    where (chapter->>'position')::int = cp.chapter_position + 1
+  current_lesson_id uuid;
+  next_block_id uuid;
+  next_lesson_id uuid;
+  next_chapter_id uuid;
+BEGIN
+  -- Get course structure
+  SELECT course_structure_content 
+  INTO course_structure
+  FROM public.published_course_structure_content 
+  WHERE id = p_published_course_id;
+  
+  IF course_structure IS NULL THEN
+    RETURN jsonb_build_object('error', 'Course structure not found');
+  END IF;
+  
+  -- If current_block_id is provided, find current context
+  IF p_current_block_id IS NOT NULL THEN
+    SELECT 
+      (chapter_obj->>'id')::uuid,
+      (lesson_obj->>'id')::uuid
+    INTO current_chapter_id, current_lesson_id
+    FROM jsonb_array_elements(course_structure->'chapters') as chapter_obj,
+         jsonb_array_elements(chapter_obj->'lessons') as lesson_obj,
+         jsonb_array_elements(lesson_obj->'blocks') as block_obj
+    WHERE (block_obj->>'id')::uuid = p_current_block_id;
+  END IF;
+  
+  -- Find next available block (first incomplete or locked block that should be accessible)
+  WITH block_progress_status AS (
+    SELECT 
+      (chapter_obj->>'id')::uuid as chapter_id,
+      (lesson_obj->>'id')::uuid as lesson_id, 
+      (block_obj->>'id')::uuid as block_id,
+      ROW_NUMBER() OVER (ORDER BY 
+        chapter_pos, lesson_pos, block_pos
+      ) as global_position,
+      COALESCE(bp.is_completed, false) as is_completed,
+      COALESCE((block_obj->'settings'->>'can_skip')::boolean, false) as can_skip,
+      LAG(COALESCE(bp.is_completed, false), 1, true) OVER (ORDER BY 
+        chapter_pos, lesson_pos, block_pos
+      ) as prev_block_completed
+    FROM jsonb_array_elements(course_structure->'chapters') WITH ORDINALITY as chapters(chapter_obj, chapter_pos),
+         jsonb_array_elements(chapter_obj->'lessons') WITH ORDINALITY as lessons(lesson_obj, lesson_pos),
+         jsonb_array_elements(lesson_obj->'blocks') WITH ORDINALITY as blocks(block_obj, block_pos)
+    LEFT JOIN public.block_progress bp ON (
+      bp.user_id = p_user_id
+      AND bp.published_course_id = p_published_course_id
+      AND bp.block_id = (block_obj->>'id')::uuid
+    )
   )
-
-  -- ============================================================
-  -- STEP 4: Determine the next available content
-  -- ============================================================
-  select case
-    -- If there is a next lesson in the same chapter, return it
-    when exists (select 1 from next_lesson_in_chapter) then
-      jsonb_build_object(
-        'type', 'lesson',
-        'course_id', p_course_id,
-        'chapter_id', (select chapter_id from next_lesson_in_chapter),
-        'lesson_id', (select lesson_id from next_lesson_in_chapter),
-        'is_same_chapter', true
-      )
-
-    -- Otherwise, if there's a next chapter, return its first lesson
-    when exists (select 1 from next_chapter) then
-      jsonb_build_object(
-        'type', 'lesson',
-        'course_id', p_course_id,
-        'chapter_id', (select chapter_id from next_chapter),
-        'lesson_id', (select first_lesson_id from next_chapter),
-        'is_new_chapter', true
-      )
-
-    -- Otherwise, we've reached the end of the course
-    else
-      jsonb_build_object(
-        'type', 'course_completed',
-        'course_id', p_course_id,
-        'completion_status', 'all_content_completed'
-      )
-  end into result;
-
-  return result;
-end;
+  SELECT block_id, lesson_id, chapter_id
+  INTO next_block_id, next_lesson_id, next_chapter_id
+  FROM block_progress_status
+  WHERE NOT is_completed 
+    AND (global_position = 1 OR prev_block_completed OR can_skip)
+  ORDER BY global_position
+  LIMIT 1;
+  
+  -- If no next block found, course might be completed
+  IF next_block_id IS NULL THEN
+    -- Check if there are any incomplete lessons
+    SELECT 
+      (lesson_obj->>'id')::uuid,
+      (chapter_obj->>'id')::uuid
+    INTO next_lesson_id, next_chapter_id
+    FROM jsonb_array_elements(course_structure->'chapters') as chapter_obj,
+         jsonb_array_elements(chapter_obj->'lessons') as lesson_obj
+    LEFT JOIN public.lesson_progress lp ON (
+      lp.user_id = p_user_id
+      AND lp.published_course_id = p_published_course_id
+      AND lp.lesson_id = (lesson_obj->>'id')::uuid
+    )
+    WHERE lp.completed_at IS NULL OR lp.id IS NULL
+    ORDER BY 
+      (chapter_obj->>'order_index')::integer,
+      (lesson_obj->>'order_index')::integer
+    LIMIT 1;
+  END IF;
+  
+  RETURN jsonb_build_object(
+    'next_block_id', next_block_id,
+    'next_lesson_id', next_lesson_id,
+    'next_chapter_id', next_chapter_id,
+    'current_context', jsonb_build_object(
+      'chapter_id', current_chapter_id,
+      'lesson_id', current_lesson_id,
+      'block_id', p_current_block_id
+    )
+  );
+END;
 $function$
 ;
 
@@ -3378,156 +3221,23 @@ AS $function$
 $function$
 ;
 
-CREATE OR REPLACE FUNCTION public.get_user_course_state(p_course_id uuid)
- RETURNS jsonb
- LANGUAGE plpgsql
- SET search_path TO ''
-AS $function$
-declare
-  current_user_id uuid := (select auth.uid());  -- Currently logged-in user
-  course_progress_data jsonb;                   -- User's course progress summary
-  last_activity jsonb;                          -- Most recent block activity
-  next_content jsonb;                           -- What should user learn next
-  result jsonb;                                 -- Final output
-begin
-  -- ============================================================
-  -- STEP 1: Fetch user's overall course progress if available
-  -- ============================================================
-  select to_jsonb(cp.*) into course_progress_data
-  from public.course_progress cp
-  where cp.user_id = current_user_id
-    and cp.published_course_id = p_course_id;
-
-  -- ============================================================
-  -- STEP 2: Fetch user's most recent block-level activity
-  -- ============================================================
-  select jsonb_build_object(
-    'last_lesson_id', bp.lesson_id,
-    'last_block_id', bp.block_id,
-    'last_activity_at', bp.updated_at,
-    'was_completed', bp.is_completed
-  ) into last_activity
-  from public.block_progress bp
-  where bp.user_id = current_user_id
-    and bp.published_course_id = p_course_id
-  order by bp.updated_at desc
-  limit 1;
-
-  -- ============================================================
-  -- STEP 3: Determine what content should be shown next
-  --   - If last activity exists, use it to find next content
-  --   - Otherwise, return the first lesson of the course
-  -- ============================================================
-  if last_activity is not null then
-    select public.get_next_available_content(
-      p_course_id, 
-      (last_activity->>'last_lesson_id')::uuid
-    ) into next_content;
-  else
-    select public.get_next_available_content(p_course_id) into next_content;
-  end if;
-
-  -- ============================================================
-  -- STEP 4: Build a comprehensive JSON response including:
-  --   - progress
-  --   - last activity
-  --   - next content
-  --   - recommendations based on state
-  -- ============================================================
-  select jsonb_build_object(
-    'course_id', p_course_id,
-    'user_id', current_user_id,
-
-    -- Fallback for first-time learners
-    'progress', coalesce(course_progress_data, jsonb_build_object(
-      'total_lessons', 0,
-      'completed_lessons', 0,
-      'total_blocks', 0,
-      'completed_blocks', 0,
-      'completion_percentage', 0,
-      'is_started', false
-    )),
-
-    -- Last block interaction by the user
-    'last_activity', last_activity,
-
-    -- Next thing to learn
-    'next_content', next_content,
-
-    -- Smart recommendation engine
-    'recommendations', case
-      -- User has never started
-      when course_progress_data is null then 
-        jsonb_build_object(
-          'action', 'start_course',
-          'message', 'Ready to begin your learning journey!'
-        )
-
-      -- Course is marked as completed
-      when (course_progress_data->>'completed_at') is not null then
-        jsonb_build_object(
-          'action', 'course_completed',
-          'message', 'Congratulations! You have completed this course.',
-          'next_steps', jsonb_build_array(
-            'review_content',
-            'explore_related_courses',
-            'apply_knowledge'
-          )
-        )
-
-      -- All content completed, but not yet marked as course completed
-      when next_content->>'type' = 'course_completed' then
-        jsonb_build_object(
-          'action', 'course_completed',
-          'message', 'You have completed all available content!'
-        )
-
-      -- User left off in a block that wasn't completed
-      when last_activity is not null and not (last_activity->>'was_completed')::boolean then
-        jsonb_build_object(
-          'action', 'continue_lesson',
-          'message', 'Continue where you left off',
-          'lesson_id', last_activity->>'last_lesson_id'
-        )
-
-      -- Default recommendation: move to next lesson
-      else
-        jsonb_build_object(
-          'action', 'next_lesson',
-          'message', 'Ready for the next lesson',
-          'next_content', next_content
-        )
-    end
-
-  ) into result;
-
-  return result;
-end;
-$function$
-;
-
 CREATE OR REPLACE FUNCTION public.get_user_lesson_blocks_progress(p_course_id uuid, p_chapter_id uuid, p_lesson_id uuid)
  RETURNS jsonb
  LANGUAGE plpgsql
  SET search_path TO ''
 AS $function$
 declare
-  lesson_data jsonb;               -- JSON representation of the lesson
-  current_user_id uuid := auth.uid(); -- Currently authenticated user ID
-  total_blocks_count int;          -- Total number of blocks in the lesson
-  result jsonb;                    -- Final response object
+  lesson_data jsonb;             -- Holds the extracted lesson object from published structure
+  current_user_id uuid := auth.uid(); -- Authenticated user's ID
+  total_blocks_count int;        -- Total number of blocks in the lesson
+  result jsonb;                  -- Final JSON result to return
 begin
-  -- ------------------------------------------------------------------------
-  -- Ensure the invoker has SELECT permission on the course content
-  -- ------------------------------------------------------------------------
+  -- Check if the user has access to the published course structure
   if not has_column_privilege('public.published_course_structure_content', 'course_structure_content', 'SELECT') then
     raise exception 'Access denied to course content';
   end if;
 
-  -- ------------------------------------------------------------------------
-  -- Fetch the lesson object from the denormalized JSON structure
-  -- Uses jsonb_path_query to find a lesson object by ID inside the course structure
-  -- ------------------------------------------------------------------------
+  -- Extract the JSONB representation of the lesson object from the published course structure
   select lesson_obj
   into lesson_data
   from public.published_course_structure_content pcs,
@@ -3539,9 +3249,7 @@ begin
   where pcs.id = p_course_id
   limit 1;
 
-  -- ------------------------------------------------------------------------
-  -- If no lesson is found, return an error payload
-  -- ------------------------------------------------------------------------
+  -- If lesson is not found, return an error object
   if lesson_data is null then
     return jsonb_build_object(
       'error', 'Lesson not found',
@@ -3549,26 +3257,28 @@ begin
     );
   end if;
 
-  -- ------------------------------------------------------------------------
-  -- Count total number of blocks within the lesson
-  -- ------------------------------------------------------------------------
+  -- Get number of blocks in the lesson
   total_blocks_count := jsonb_array_length(lesson_data->'blocks');
 
-  -- ------------------------------------------------------------------------
-  -- Step 1: Enrich each lesson block with progress info
-  -- ------------------------------------------------------------------------
+  /*
+    Step 1: Enrich lesson blocks with:
+      - Position
+      - Weight, skippable flag
+      - Progress data (if any)
+      - Derived info: visibility, active status, etc.
+  */
   with enriched_blocks as (
     select 
-      block_info as block,                         -- Raw block JSON
-      (block_info->>'id')::uuid as block_id,       -- Parsed block UUID
-      pos as position,                             -- Block's index in array (1-based)
+      block_info as block,
+      (block_info->>'id')::uuid as block_id,
+      pos as position,
 
-      -- Settings from the block JSON (fallbacks used if absent)
+      -- Extract settings for weight and skippability
       coalesce((block_info->'settings'->>'can_skip')::boolean, false) as can_skip,
       coalesce((block_info->'settings'->>'weight')::int, 1) as weight,
       (pos = total_blocks_count) as is_last_block,
 
-      -- Enriched progress info (left join may be null if no progress)
+      -- Join with block_progress data if available
       bp.progress_data as block_progress,
       coalesce(bp.is_completed, false) as is_completed,
       coalesce(bp.has_started, false) as has_started,
@@ -3576,16 +3286,13 @@ begin
       bp.earned_score,
       bp.completed_at,
 
-      -- Evaluate whether previous block was completed
+      -- Used for progressive reveal: is the previous block completed?
       lag(coalesce(bp.is_completed, false), 1, true) over (order by pos) as prev_completed
 
     from jsonb_array_elements(lesson_data->'blocks') with ordinality as blocks(block_info, pos)
 
     left join (
-      -- --------------------------------------------------------------------
-      -- Select user's block progress records for this lesson
-      -- and format them as a JSONB object for easy inclusion in the result
-      -- --------------------------------------------------------------------
+      -- Inline subquery to fetch all progress entries for this user/lesson
       select 
         block_id,
         jsonb_build_object(
@@ -3619,23 +3326,20 @@ begin
     ) bp on bp.block_id = (block_info->>'id')::uuid
   ),
 
-  -- ------------------------------------------------------------------------
-  -- Step 2: Determine block visibility and current "active" block
-  -- ------------------------------------------------------------------------
+  /*
+    Step 2: Derive visibility and active status
+      - is_visible: if first, skippable, or previous block completed
+      - is_active: if in-progress, or next unlocked
+  */
   final_blocks as (
     select 
       *,
-      -- Block is visible if it's the first, skippable, or previous was completed
       case 
         when position = 1 then true
         when can_skip then true
         else prev_completed
       end as is_visible,
 
-      -- Block is active if:
-      -- - started but not finished
-      -- - first block and not started
-      -- - unlocked and not started
       case 
         when has_started and not is_completed then true
         when not has_started and position = 1 then true
@@ -3645,11 +3349,12 @@ begin
     from enriched_blocks
   ),
 
-  -- ------------------------------------------------------------------------
-  -- Step 3: Aggregate progress statistics and construct final payload
-  -- ------------------------------------------------------------------------
+  /*
+    Step 3: Aggregate all block metadata and summary metrics
+  */
   aggregated_data as (
     select 
+      -- Full enriched blocks list
       jsonb_agg(
         jsonb_build_object(
           'block', block,
@@ -3661,7 +3366,7 @@ begin
         order by position
       ) as blocks,
 
-      -- Compute summary stats for the lesson
+      -- Summary metadata fields
       count(*) as total_blocks,
       sum(weight) as total_weight,
       sum(weight) filter (where is_completed) as completed_weight,
@@ -3679,11 +3384,10 @@ begin
         else null
       end as last_completed_at,
       (sum(weight) filter (where is_completed) = sum(weight)) as is_fully_completed
+    from final_blocks
   )
 
-  -- ------------------------------------------------------------------------
-  -- Step 4: Return final JSON response containing blocks and metadata
-  -- ------------------------------------------------------------------------
+  -- Build the final JSON object to return
   select jsonb_build_object(
     'blocks', blocks,
     'metadata', jsonb_build_object(
@@ -3707,6 +3411,7 @@ begin
   into result
   from aggregated_data;
 
+  -- Return the fully enriched progress result
   return result;
 end;
 $function$
@@ -3723,104 +3428,6 @@ AS $function$
   where om.organization_id = arg_org_id
     and om.user_id = arg_user_id
   limit 1;
-$function$
-;
-
-CREATE OR REPLACE FUNCTION public.handle_completed_content_interaction(p_course_id uuid, p_lesson_id uuid DEFAULT NULL::uuid, p_action text DEFAULT 'review'::text)
- RETURNS jsonb
- LANGUAGE plpgsql
- SET search_path TO ''
-AS $function$
-declare
-  current_user_id uuid := (select auth.uid());       -- Get the current authenticated user's ID
-  content_state jsonb;                               -- Stores the current state of the lesson/course
-  next_content jsonb;                                -- Stores next available content if skipping forward
-  result jsonb;                                      -- Final result object to return
-begin
-  -- STEP 1: Fetch current completion state
-  if p_lesson_id is not null then
-    -- If lesson ID is provided, fetch specific lesson progress
-    select to_jsonb(lp.*) into content_state
-    from public.lesson_progress lp
-    where lp.user_id = current_user_id
-      and lp.published_course_id = p_course_id
-      and lp.lesson_id = p_lesson_id;
-  else
-    -- Otherwise, fetch entire course progress
-    select to_jsonb(cp.*) into content_state
-    from public.course_progress cp
-    where cp.user_id = current_user_id
-      and cp.published_course_id = p_course_id;
-  end if;
-
-  -- STEP 2: Handle user-selected action
-  case p_action
-    when 'review' then
-      -- User wants to review content without resetting progress
-      result := jsonb_build_object(
-        'action', 'review_mode',
-        'message', 'Reviewing completed content',
-        'content_unlocked', true,
-        'show_solutions', true
-      );
-
-    when 'restart' then
-      -- User wants to restart and reset progress
-      if p_lesson_id is not null then
-        -- Reset all block progress within the lesson
-        delete from public.block_progress 
-        where user_id = current_user_id 
-          and published_course_id = p_course_id 
-          and lesson_id = p_lesson_id;
-
-        -- Remove lesson-level completion record
-        delete from public.lesson_progress
-        where user_id = current_user_id
-          and published_course_id = p_course_id
-          and lesson_id = p_lesson_id;
-      else
-        -- Reset entire course progress (blocks, lessons, course)
-        delete from public.block_progress 
-        where user_id = current_user_id and published_course_id = p_course_id;
-
-        delete from public.lesson_progress
-        where user_id = current_user_id and published_course_id = p_course_id;
-
-        delete from public.course_progress
-        where user_id = current_user_id and published_course_id = p_course_id;
-      end if;
-
-      result := jsonb_build_object(
-        'action', 'content_reset',
-        'message', 'Progress reset. You can start fresh!',
-        'reset_completed', true
-      );
-
-    when 'skip_to_next' then
-      -- User wants to skip past completed content
-      select public.get_next_available_content(p_course_id, p_lesson_id) into next_content;
-
-      result := jsonb_build_object(
-        'action', 'navigate_next',
-        'next_content', next_content,
-        'message', case
-          when next_content->>'type' = 'course_completed' 
-            then 'You have completed all available content!'
-          else 'Navigating to next available content'
-        end
-      );
-
-    else
-      -- Catch unhandled action
-      raise exception 'Unsupported action: %', p_action;
-  end case;
-
-  -- STEP 3: Return combined result
-  return result || jsonb_build_object(
-    'content_state', content_state,              -- Include the original progress state
-    'interaction_timestamp', now()               -- Timestamp the interaction
-  );
-end;
 $function$
 ;
 
@@ -5076,260 +4683,230 @@ end;
 $function$
 ;
 
-CREATE OR REPLACE FUNCTION public.update_course_completion_status(p_course_id uuid)
- RETURNS jsonb
+CREATE OR REPLACE FUNCTION public.update_progress_cascade_on_block_change()
+ RETURNS trigger
  LANGUAGE plpgsql
  SET search_path TO ''
 AS $function$
-declare
-  current_user_id uuid := (select auth.uid());  -- Authenticated user ID
-  course_structure jsonb;                       -- JSON course structure
-  course_completed boolean := false;            -- Is course fully complete
-  result jsonb;                                 -- Final JSON result
-begin
-  -- ============================================================
-  -- STEP 1: Fetch the course structure JSON
-  -- ============================================================
-  select course_structure_content into course_structure
-  from public.published_course_structure_content
-  where id = p_course_id;
-
-  -- ============================================================
-  -- STEP 2: Compute completion statistics
-  -- ============================================================
-  with course_stats as (
-    select 
-      -- Total unique chapters
-      count(distinct chapter->>'id') as total_chapters,
-
-      -- Total unique lessons
-      count(distinct lesson->>'id') as total_lessons,
-
-      -- Total number of all blocks in all lessons
-      (
-        select count(*)
-        from jsonb_array_elements(course_structure->'chapters') as chapter,
-            jsonb_array_elements(chapter->'lessons') as lesson,
-            jsonb_array_elements(lesson->'blocks') as block
-      ) as total_blocks,
-
-      -- Number of completed lessons by user
-      (
-        select count(distinct lp.lesson_id)
-        from public.lesson_progress lp
-        where lp.user_id = current_user_id
-          and lp.published_course_id = p_course_id
-          and lp.completed_at is not null
-      ) as completed_lessons,
-
-      -- Number of completed blocks by user
-      (
-        select count(*)
-        from public.block_progress bp
-        where bp.user_id = current_user_id
-          and bp.published_course_id = p_course_id
-          and bp.is_completed = true
-      ) as completed_blocks
-    from jsonb_array_elements(course_structure->'chapters') as chapter,
-        jsonb_array_elements(chapter->'lessons') as lesson
-  )
-  select 
-    total_chapters, total_lessons, total_blocks,
-    completed_lessons, completed_blocks,
-    (completed_lessons = total_lessons) as is_course_completed
-  into result
-  from course_stats;
-
-  course_completed := (result->>'is_course_completed')::boolean;
-
-  -- ============================================================
-  -- STEP 3: Insert or update `course_progress` record
-  -- ============================================================
-  insert into public.course_progress (
-    user_id, published_course_id,
-    total_blocks, completed_blocks,
-    total_lessons, completed_lessons,
-    total_chapters, completed_chapters,
-    completed_at
-  )
-  values (
-    current_user_id, p_course_id,
-    (result->>'total_blocks')::int,
-    (result->>'completed_blocks')::int,
-    (result->>'total_lessons')::int,
-    (result->>'completed_lessons')::int,
-    (result->>'total_chapters')::int,
-
-    -- Dynamically calculate how many chapters have all lessons completed
-    (
-      select count(distinct chapter_id)
-      from (
-        select distinct 
-          jsonb_path_query_first(
-            course_structure,
-            '$.chapters[*] ? (@.lessons[*].id == $lesson_id)',
-            jsonb_build_object('lesson_id', lp.lesson_id::text)
-          )->>'id' as chapter_id
-        from public.lesson_progress lp
-        where lp.user_id = current_user_id
-          and lp.published_course_id = p_course_id
-          and lp.completed_at is not null
-      ) as completed_chapters
-    ),
-
-    -- Set `completed_at` timestamp only if course is now complete
-    case when course_completed then now() else null end
-  )
-
-  on conflict (user_id, published_course_id)
-  do update set
-    total_blocks = excluded.total_blocks,
-    completed_blocks = excluded.completed_blocks,
-    total_lessons = excluded.total_lessons,
-    completed_lessons = excluded.completed_lessons,
-    total_chapters = excluded.total_chapters,
-    completed_chapters = excluded.completed_chapters,
-    completed_at = case 
-      -- Set timestamp if course just completed and it was previously null
-      when excluded.completed_lessons = excluded.total_lessons 
-        and course_progress.completed_at is null
-      then now()
-
-      -- Clear timestamp if the course regressed to incomplete
-      when excluded.completed_lessons < excluded.total_lessons
-      then null
-
-      -- Otherwise keep existing value
-      else course_progress.completed_at
-    end,
-    updated_at = now();
-
-  -- ============================================================
-  -- STEP 4: Return combined stats and completion info as JSON
-  -- ============================================================
-  return result || jsonb_build_object(
-    'course_completed', course_completed,
-    'completion_percentage',
-      round(
-        (result->>'completed_lessons')::numeric * 100.0 / greatest((result->>'total_lessons')::numeric, 1),
-        2
-      )
-  );
-end;
-$function$
-;
-
-CREATE OR REPLACE FUNCTION public.update_lesson_completion_status(p_course_id uuid, p_lesson_id uuid)
- RETURNS jsonb
- LANGUAGE plpgsql
- SET search_path TO ''
-AS $function$
-declare
-  current_user_id uuid := (select auth.uid());  -- Authenticated user
-  lesson_data jsonb;                            -- JSON structure of the lesson
-  total_blocks int;                             -- Total number of blocks
-  completed_blocks int;                         -- Number of completed blocks
-  required_blocks int;                          -- Number of blocks required for lesson completion
-  lesson_completed boolean := false;            -- Whether the lesson is considered completed
-  result jsonb;                                 -- Final result to return
-begin
-  -- ============================================================
-  -- STEP 1: Fetch the lesson's JSON structure using JSONPath
-  -- ============================================================
-  select lesson_obj into lesson_data
-  from public.published_course_structure_content pcs,
-  lateral (
-    select lesson_obj
-    from jsonb_path_query(
-      pcs.course_structure_content,
+DECLARE
+  course_structure jsonb;
+  lesson_blocks_data jsonb;
+  chapter_lessons_data jsonb;
+  
+  -- Lesson progress calculations
+  lesson_total_blocks integer;
+  lesson_completed_blocks integer;
+  lesson_is_completed boolean;
+  
+  -- Chapter progress calculations  
+  chapter_total_lessons integer;
+  chapter_completed_lessons integer;
+  chapter_is_completed boolean;
+  
+  -- Course progress calculations
+  course_total_blocks integer;
+  course_completed_blocks integer;
+  course_total_lessons integer;
+  course_completed_lessons integer;
+  course_total_chapters integer;
+  course_completed_chapters integer;
+  course_is_completed boolean;
+  
+  -- Next navigation IDs
+  next_block_id uuid;
+  next_lesson_id uuid;
+  next_chapter_id uuid;
+  
+BEGIN
+  -- Only process if this is an INSERT or completion status changed
+  IF TG_OP = 'INSERT' OR 
+     (TG_OP = 'UPDATE' AND OLD.is_completed IS DISTINCT FROM NEW.is_completed) THEN
+    
+    -- Get the published course structure
+    SELECT course_structure_content 
+    INTO course_structure
+    FROM public.published_course_structure_content 
+    WHERE id = NEW.published_course_id;
+    
+    IF course_structure IS NULL THEN
+      RAISE EXCEPTION 'Course structure not found for published_course_id: %', NEW.published_course_id;
+    END IF;
+    
+    -- =================================================================================
+    -- 1. UPDATE LESSON PROGRESS
+    -- =================================================================================
+    
+    -- Get lesson blocks and calculate progress
+    SELECT 
+      jsonb_array_length(lesson_obj->'blocks') as total_blocks,
+      COUNT(bp.id) FILTER (WHERE bp.is_completed = true) as completed_blocks
+    INTO lesson_total_blocks, lesson_completed_blocks
+    FROM jsonb_path_query(
+      course_structure,
       '$.chapters[*].lessons[*] ? (@.id == $lesson_id)',
-      jsonb_build_object('lesson_id', p_lesson_id::text)
+      jsonb_build_object('lesson_id', NEW.lesson_id::text)
     ) as lesson_obj
-  ) as extracted_lesson
-  where pcs.id = p_course_id;
-
-  -- Return early if lesson not found
-  if lesson_data is null then
-    return jsonb_build_object('error', 'Lesson not found');
-  end if;
-
-  -- ============================================================
-  -- STEP 2: Compute block completion statistics
-  -- ============================================================
-  with block_stats as (
-    select 
-      -- Total number of blocks in the lesson
-      count(*) as total,
-
-      -- Required blocks (default to true if requires_completion is missing)
-      count(*) filter (
-        where coalesce((block->'settings'->>'requires_completion')::boolean, true) = true
-      ) as required,
-
-      -- Number of completed blocks by the user
-      (
-        select count(*)
-        from public.block_progress bp
-        where bp.user_id = current_user_id
-          and bp.published_course_id = p_course_id
-          and bp.lesson_id = p_lesson_id
-          and bp.is_completed = true
-      ) as completed
-    from jsonb_array_elements(lesson_data->'blocks') as block
-  )
-  select total, required, completed, (completed >= required)
-  into total_blocks, required_blocks, completed_blocks, lesson_completed
-  from block_stats;
-
-  -- ============================================================
-  -- STEP 3: Upsert into `lesson_progress` with updated status
-  -- ============================================================
-  insert into public.lesson_progress (
-    user_id, published_course_id, lesson_id,
-    total_blocks, completed_blocks, completed_at
-  )
-  values (
-    current_user_id, p_course_id, p_lesson_id,
-    total_blocks, completed_blocks,
-    case when lesson_completed then now() else null end
-  )
-  on conflict (user_id, published_course_id, lesson_id)
-  do update set
-    total_blocks = excluded.total_blocks,
-    completed_blocks = excluded.completed_blocks,
-    completed_at = case 
-      -- If just completed, set timestamp
-      when excluded.completed_blocks >= required_blocks and lesson_progress.completed_at is null
-      then now()
-
-      -- If progress fell below required threshold, reset timestamp
-      when excluded.completed_blocks < required_blocks
-      then null
-
-      -- Otherwise retain existing timestamp
-      else lesson_progress.completed_at
-    end,
-    updated_at = now();  -- Always refresh updated_at timestamp
-
-  -- ============================================================
-  -- STEP 4: Trigger course completion update if necessary
-  -- ============================================================
-  if lesson_completed then
-    perform public.update_course_completion_status(p_course_id);
-  end if;
-
-  -- ============================================================
-  -- STEP 5: Return a summary JSON object to the caller
-  -- ============================================================
-  return jsonb_build_object(
-    'lesson_id', p_lesson_id,
-    'is_completed', lesson_completed,
-    'completed_blocks', completed_blocks,
-    'required_blocks', required_blocks,
-    'total_blocks', total_blocks,
-    'completion_percentage', round(completed_blocks * 100.0 / greatest(required_blocks, 1), 2)
-  );
-end;
+    LEFT JOIN public.block_progress bp ON (
+      bp.user_id = NEW.user_id 
+      AND bp.published_course_id = NEW.published_course_id
+      AND bp.lesson_id = NEW.lesson_id
+      AND bp.is_completed = true
+    )
+    GROUP BY lesson_obj;
+    
+    lesson_is_completed := (lesson_completed_blocks >= lesson_total_blocks);
+    
+    -- Upsert lesson progress
+    INSERT INTO public.lesson_progress (
+      user_id, 
+      published_course_id, 
+      lesson_id,
+      total_blocks,
+      completed_blocks,
+      completed_at
+    )
+    VALUES (
+      NEW.user_id,
+      NEW.published_course_id,
+      NEW.lesson_id,
+      lesson_total_blocks,
+      lesson_completed_blocks,
+      CASE WHEN lesson_is_completed THEN timezone('utc', now()) ELSE NULL END
+    )
+    ON CONFLICT (user_id, published_course_id, lesson_id)
+    DO UPDATE SET
+      completed_blocks = EXCLUDED.completed_blocks,
+      completed_at = CASE 
+        WHEN EXCLUDED.completed_blocks >= lesson_progress.total_blocks 
+          AND lesson_progress.completed_at IS NULL 
+        THEN timezone('utc', now())
+        WHEN EXCLUDED.completed_blocks < lesson_progress.total_blocks
+        THEN NULL
+        ELSE lesson_progress.completed_at
+      END,
+      updated_at = timezone('utc', now());
+    
+    -- =================================================================================
+    -- 2. UPDATE COURSE PROGRESS
+    -- =================================================================================
+    
+    -- Calculate course-wide progress
+    WITH course_stats AS (
+      SELECT 
+        -- Count total items from structure
+        (
+          SELECT SUM(jsonb_array_length(lesson_obj->'blocks'))
+          FROM jsonb_path_query(course_structure, '$.chapters[*].lessons[*]') as lesson_obj
+        ) as total_blocks_in_course,
+        (
+          SELECT COUNT(*)
+          FROM jsonb_path_query(course_structure, '$.chapters[*].lessons[*]') as lesson_obj
+        ) as total_lessons_in_course,
+        (
+          SELECT jsonb_array_length(course_structure->'chapters')
+        ) as total_chapters_in_course,
+        
+        -- Count completed items from progress tables
+        COUNT(bp.id) FILTER (WHERE bp.is_completed = true) as completed_blocks_by_user,
+        COUNT(lp.id) FILTER (WHERE lp.completed_at IS NOT NULL) as completed_lessons_by_user,
+        COUNT(DISTINCT CASE 
+          WHEN chapter_lesson_counts.lessons_in_chapter = chapter_lesson_counts.completed_lessons_in_chapter 
+          THEN chapter_lesson_counts.chapter_id 
+        END) as completed_chapters_by_user
+        
+      FROM public.block_progress bp
+      LEFT JOIN public.lesson_progress lp ON (
+        lp.user_id = bp.user_id 
+        AND lp.published_course_id = bp.published_course_id 
+        AND lp.lesson_id = bp.lesson_id
+      )
+      LEFT JOIN (
+        -- Count lessons per chapter and completed lessons per chapter
+        SELECT 
+          (chapter_obj->>'id')::uuid as chapter_id,
+          jsonb_array_length(chapter_obj->'lessons') as lessons_in_chapter,
+          COUNT(lp2.id) FILTER (WHERE lp2.completed_at IS NOT NULL) as completed_lessons_in_chapter
+        FROM jsonb_array_elements(course_structure->'chapters') as chapter_obj
+        LEFT JOIN jsonb_array_elements(chapter_obj->'lessons') as lesson_obj ON true
+        LEFT JOIN public.lesson_progress lp2 ON (
+          lp2.user_id = NEW.user_id
+          AND lp2.published_course_id = NEW.published_course_id
+          AND lp2.lesson_id = (lesson_obj->>'id')::uuid
+          AND lp2.completed_at IS NOT NULL
+        )
+        GROUP BY chapter_obj
+      ) chapter_lesson_counts ON true
+      WHERE bp.user_id = NEW.user_id 
+        AND bp.published_course_id = NEW.published_course_id
+    )
+    SELECT 
+      total_blocks_in_course,
+      completed_blocks_by_user,
+      total_lessons_in_course,
+      completed_lessons_by_user,
+      total_chapters_in_course,
+      completed_chapters_by_user
+    INTO 
+      course_total_blocks,
+      course_completed_blocks,
+      course_total_lessons,
+      course_completed_lessons,
+      course_total_chapters,
+      course_completed_chapters
+    FROM course_stats;
+    
+    course_is_completed := (
+      course_completed_blocks >= course_total_blocks AND
+      course_completed_lessons >= course_total_lessons AND
+      course_completed_chapters >= course_total_chapters
+    );
+    
+    -- Upsert course progress
+    INSERT INTO public.course_progress (
+      user_id,
+      published_course_id,
+      total_blocks,
+      completed_blocks,
+      total_lessons,
+      completed_lessons,
+      total_chapters,
+      completed_chapters,
+      completed_at
+    )
+    VALUES (
+      NEW.user_id,
+      NEW.published_course_id,
+      course_total_blocks,
+      course_completed_blocks,
+      course_total_lessons,
+      course_completed_lessons,
+      course_total_chapters,
+      course_completed_chapters,
+      CASE WHEN course_is_completed THEN timezone('utc', now()) ELSE NULL END
+    )
+    ON CONFLICT (user_id, published_course_id)
+    DO UPDATE SET
+      completed_blocks = EXCLUDED.completed_blocks,
+      completed_lessons = EXCLUDED.completed_lessons,
+      completed_chapters = EXCLUDED.completed_chapters,
+      completed_at = CASE 
+        WHEN EXCLUDED.completed_blocks >= course_progress.total_blocks 
+          AND EXCLUDED.completed_lessons >= course_progress.total_lessons
+          AND EXCLUDED.completed_chapters >= course_progress.total_chapters
+          AND course_progress.completed_at IS NULL
+        THEN timezone('utc', now())
+        WHEN NOT (EXCLUDED.completed_blocks >= course_progress.total_blocks 
+          AND EXCLUDED.completed_lessons >= course_progress.total_lessons
+          AND EXCLUDED.completed_chapters >= course_progress.total_chapters)
+        THEN NULL
+        ELSE course_progress.completed_at
+      END,
+      updated_at = timezone('utc', now());
+  
+  END IF;
+  
+  RETURN COALESCE(NEW, OLD);
+END;
 $function$
 ;
 
@@ -7530,6 +7107,8 @@ using ((EXISTS ( SELECT 1
    FROM organization_wallets w
   WHERE ((w.id = wallet_transactions.wallet_id) AND (get_user_org_role(w.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text]))))));
 
+
+CREATE TRIGGER trg_block_progress_cascade_update AFTER INSERT OR UPDATE ON public.block_progress FOR EACH ROW EXECUTE FUNCTION update_progress_cascade_on_block_change();
 
 CREATE TRIGGER trg_block_progress_set_updated_at BEFORE UPDATE ON public.block_progress FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 

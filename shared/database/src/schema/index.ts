@@ -1898,6 +1898,20 @@ export type Database = {
         }
         Returns: boolean
       }
+      complete_block: {
+        Args: {
+          p_user_id: string
+          p_published_course_id: string
+          p_chapter_id: string
+          p_lesson_id: string
+          p_block_id: string
+          p_earned_score?: number
+          p_time_spent_seconds?: number
+          p_interaction_data?: Json
+          p_last_response?: Json
+        }
+        Returns: Json
+      }
       custom_access_token_hook: {
         Args: { event: Json }
         Returns: Json
@@ -1944,17 +1958,6 @@ export type Database = {
         }
         Returns: Json
       }
-      execute_block_action: {
-        Args: {
-          p_course_id: string
-          p_lesson_id: string
-          p_block_id: string
-          p_action: string
-          p_response_data?: Json
-          p_score?: number
-        }
-        Returns: Json
-      }
       get_active_organization_members: {
         Args: { _organization_id: string; _user_id: string }
         Returns: Json
@@ -1982,12 +1985,12 @@ export type Database = {
           latest_activity_id: string
         }[]
       }
-      get_learning_path_overview: {
-        Args: { p_course_id: string }
-        Returns: Json
-      }
-      get_next_available_content: {
-        Args: { p_course_id: string; p_current_lesson_id?: string }
+      get_next_navigation_ids: {
+        Args: {
+          p_user_id: string
+          p_published_course_id: string
+          p_current_block_id?: string
+        }
         Returns: Json
       }
       get_published_course_pricing_tier: {
@@ -2017,10 +2020,6 @@ export type Database = {
         Args: { org_id: string }
         Returns: Json
       }
-      get_user_course_state: {
-        Args: { p_course_id: string }
-        Returns: Json
-      }
       get_user_lesson_blocks_progress: {
         Args: { p_course_id: string; p_chapter_id: string; p_lesson_id: string }
         Returns: Json
@@ -2028,10 +2027,6 @@ export type Database = {
       get_user_org_role: {
         Args: { arg_org_id: string; arg_user_id: string }
         Returns: string
-      }
-      handle_completed_content_interaction: {
-        Args: { p_course_id: string; p_lesson_id?: string; p_action?: string }
-        Returns: Json
       }
       has_org_role: {
         Args: { arg_org_id: string; required_role: string; arg_user_id: string }
@@ -2107,14 +2102,6 @@ export type Database = {
       switch_course_pricing_model: {
         Args: { p_course_id: string; p_user_id: string; p_target_model: string }
         Returns: undefined
-      }
-      update_course_completion_status: {
-        Args: { p_course_id: string }
-        Returns: Json
-      }
-      update_lesson_completion_status: {
-        Args: { p_course_id: string; p_lesson_id: string }
-        Returns: Json
       }
       upsert_published_course_with_content: {
         Args: { course_data: Json; structure_content: Json }
