@@ -1,7 +1,7 @@
 -- ====================================================================================
--- TABLE: block_progress
+-- TABLE: block_progress (Updated with weight support)
 -- DESCRIPTION: Tracks per-user progress for individual blocks in lessons of a course.
---              A block is considered completed if a row exists.
+--              A block is considered completed if a row exists. Now supports weighted progress.
 -- ====================================================================================
 create table public.block_progress (
   id uuid primary key default uuid_generate_v4(),
@@ -12,6 +12,9 @@ create table public.block_progress (
   chapter_id uuid not null, -- snapshot-based chapter reference
   lesson_id uuid not null,  -- snapshot-based lesson reference
   block_id uuid not null,   -- snapshot-based block reference
+
+  -- Weight information (stored from course structure at completion time)
+  block_weight numeric not null default 1.0, -- weight of this block for progress calculation
 
   -- Interaction state
   is_completed boolean not null default false,
@@ -66,6 +69,9 @@ create index idx_block_progress_user_course_completed
 create index idx_block_progress_user_block
   on public.block_progress(user_id, block_id);
 
+-- New index for weight-based calculations
+create index idx_block_progress_lesson_weight
+  on public.block_progress(lesson_id, block_weight);
 
 -- ------------------------------------------------------------------------------------
 -- Trigger to automatically update the updated_at timestamp on any row update

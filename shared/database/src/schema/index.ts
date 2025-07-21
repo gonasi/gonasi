@@ -38,6 +38,7 @@ export type Database = {
         Row: {
           attempt_count: number | null
           block_id: string
+          block_weight: number
           chapter_id: string
           completed_at: string
           created_at: string
@@ -57,6 +58,7 @@ export type Database = {
         Insert: {
           attempt_count?: number | null
           block_id: string
+          block_weight?: number
           chapter_id: string
           completed_at?: string
           created_at?: string
@@ -76,6 +78,7 @@ export type Database = {
         Update: {
           attempt_count?: number | null
           block_id?: string
+          block_weight?: number
           chapter_id?: string
           completed_at?: string
           created_at?: string
@@ -560,13 +563,19 @@ export type Database = {
           completed_at: string | null
           completed_blocks: number
           completed_chapters: number
+          completed_lesson_weight: number
           completed_lessons: number
+          completed_weight: number
           created_at: string
           id: string
+          lesson_progress_percentage: number | null
+          progress_percentage: number | null
           published_course_id: string
           total_blocks: number
           total_chapters: number
+          total_lesson_weight: number
           total_lessons: number
+          total_weight: number
           updated_at: string
           user_id: string
         }
@@ -574,13 +583,19 @@ export type Database = {
           completed_at?: string | null
           completed_blocks?: number
           completed_chapters?: number
+          completed_lesson_weight?: number
           completed_lessons?: number
+          completed_weight?: number
           created_at?: string
           id?: string
+          lesson_progress_percentage?: number | null
+          progress_percentage?: number | null
           published_course_id: string
           total_blocks: number
           total_chapters: number
+          total_lesson_weight?: number
           total_lessons: number
+          total_weight?: number
           updated_at?: string
           user_id: string
         }
@@ -588,13 +603,19 @@ export type Database = {
           completed_at?: string | null
           completed_blocks?: number
           completed_chapters?: number
+          completed_lesson_weight?: number
           completed_lessons?: number
+          completed_weight?: number
           created_at?: string
           id?: string
+          lesson_progress_percentage?: number | null
+          progress_percentage?: number | null
           published_course_id?: string
           total_blocks?: number
           total_chapters?: number
+          total_lesson_weight?: number
           total_lessons?: number
+          total_weight?: number
           updated_at?: string
           user_id?: string
         }
@@ -1020,33 +1041,42 @@ export type Database = {
         Row: {
           completed_at: string | null
           completed_blocks: number
+          completed_weight: number
           created_at: string
           id: string
           lesson_id: string
+          progress_percentage: number | null
           published_course_id: string
           total_blocks: number
+          total_weight: number
           updated_at: string
           user_id: string
         }
         Insert: {
           completed_at?: string | null
           completed_blocks?: number
+          completed_weight?: number
           created_at?: string
           id?: string
           lesson_id: string
+          progress_percentage?: number | null
           published_course_id: string
           total_blocks: number
+          total_weight?: number
           updated_at?: string
           user_id: string
         }
         Update: {
           completed_at?: string | null
           completed_blocks?: number
+          completed_weight?: number
           created_at?: string
           id?: string
           lesson_id?: string
+          progress_percentage?: number | null
           published_course_id?: string
           total_blocks?: number
+          total_weight?: number
           updated_at?: string
           user_id?: string
         }

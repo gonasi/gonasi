@@ -1,5 +1,5 @@
 -- ============================================================================
--- helper function: mark a block as completed and update progress metadata
+-- helper function: mark a block as completed and update progress metadata (with weight support)
 -- ============================================================================
 create or replace function public.complete_block(
   p_user_id uuid,
@@ -19,6 +19,8 @@ set search_path = ''
 as $$
 declare
   organization_id uuid;
+  block_weight numeric;
+  course_structure jsonb;
   result jsonb;
   next_ids jsonb;
 begin
@@ -36,7 +38,31 @@ begin
   end if;
 
   -- ============================================================================
-  -- step 2: insert or update block progress
+  -- step 2: get the block weight from course structure
+  -- ============================================================================
+  select course_structure_content 
+  into course_structure
+  from public.published_course_structure_content 
+  where id = p_published_course_id;
+
+  if course_structure is null then
+    return jsonb_build_object('error', 'course structure not found');
+  end if;
+
+  -- extract block weight from course structure
+  select coalesce(
+    (select (block_obj->>'weight')::numeric
+     from jsonb_path_query(
+       course_structure,
+       '$.chapters[*].lessons[*].blocks[*] ? (@.id == $block_id)',
+       jsonb_build_object('block_id', p_block_id::text)
+     ) as block_obj
+     limit 1),
+    1.0 -- default weight if not specified
+  ) into block_weight;
+
+  -- ============================================================================
+  -- step 3: insert or update block progress with weight information
   -- ============================================================================
   insert into public.block_progress (
     user_id,
@@ -45,6 +71,7 @@ begin
     lesson_id,
     block_id,
     organization_id,
+    block_weight,
     is_completed,
     completed_at,
     time_spent_seconds,
@@ -60,6 +87,7 @@ begin
     p_lesson_id,
     p_block_id,
     organization_id,
+    block_weight,
     true, -- mark as completed
     timezone('utc', now()),
     p_time_spent_seconds,
@@ -83,10 +111,11 @@ begin
     attempt_count = coalesce(block_progress.attempt_count + 1, 1),
     interaction_data = coalesce(excluded.interaction_data, block_progress.interaction_data),
     last_response = coalesce(excluded.last_response, block_progress.last_response),
+    block_weight = excluded.block_weight, -- update weight in case it changed
     updated_at = timezone('utc', now());
 
   -- ============================================================================
-  -- step 3: fetch next navigation target (e.g., next block or lesson)
+  -- step 4: fetch next navigation target (e.g., next block or lesson)
   -- ============================================================================
   select public.get_next_navigation_ids(
     p_user_id,
@@ -96,11 +125,12 @@ begin
   into next_ids;
 
   -- ============================================================================
-  -- step 4: return a success object including next navigation info
+  -- step 5: return a success object including next navigation info
   -- ============================================================================
   return jsonb_build_object(
     'success', true,
     'block_id', p_block_id,
+    'block_weight', block_weight,
     'completed_at', to_char(timezone('utc', now()), 'yyyy-mm-dd"T"hh24:mi:ss.ms"Z"'),
     'navigation', next_ids
   );
