@@ -20,30 +20,29 @@ export const BlockProgressSchema = z
 
     // Progress state
     is_completed: z.boolean(),
-    started_at: z.string().datetime(), // when user started the block
-    completed_at: z.string().datetime(), // when they completed it
-    time_spent_seconds: z.number(), // total time spent on the block
+    started_at: z.string().datetime(),
+    completed_at: z.string().datetime(),
+    time_spent_seconds: z.number(),
 
     // Scoring & attempts
-    earned_score: z.number().nullable(), // points earned
-    attempt_count: z.number().nullable(), // number of attempts made
+    earned_score: z.number().nullable(),
+    attempt_count: z.number().nullable(),
 
     // Raw interaction details
     interaction_data: z.union([
       BlockInteractionSchema,
       z.object({}).strict(), // strictly empty object
-    ]), // actual input/actions
-    last_response: z.record(z.unknown()).nullable(), // last submitted answer
-    feedback: z.string().nullable(), // system or instructor feedback
+    ]),
 
-    plugin_type: z.string(), // identifies which plugin rendered this block
+    last_response: z.record(z.unknown()).nullable(),
+    feedback: z.string().nullable().optional(), // <-- made optional
 
     // Audit
     user_id: z.string().uuid(),
     created_at: z.string().datetime(),
     updated_at: z.string().datetime(),
   })
-  .nullable(); // null means no progress yet
+  .nullable();
 
 export type BlockProgressSchemaTypes = z.infer<typeof BlockProgressSchema>;
 
@@ -52,6 +51,7 @@ export type BlockProgressSchemaTypes = z.infer<typeof BlockProgressSchema>;
 // Used when a user submits progress for a block
 //
 export const SubmitBlockProgressSchema = z.object({
+  organization_id: z.string().uuid(),
   block_id: z.string().uuid(),
   started_at: z.string().datetime(),
   completed_at: z.string().datetime(),
@@ -68,6 +68,17 @@ export const SubmitBlockProgressSchema = z.object({
 });
 
 export type SubmitBlockProgressSchemaTypes = z.infer<typeof SubmitBlockProgressSchema>;
+
+export const CompleteBlockProgressInsertSchema = SubmitBlockProgressSchema.extend({
+  organization_id: z.string().uuid(),
+  published_course_id: z.string().uuid(),
+  chapter_id: z.string().uuid(),
+  lesson_id: z.string().uuid(),
+});
+
+export type CompleteBlockProgressInsertSchemaTypes = z.infer<
+  typeof CompleteBlockProgressInsertSchema
+>;
 
 //
 // BlockProgressOverridesSchema

@@ -44,7 +44,7 @@ export default function LessonBlockWrapper(props: LessonBlockWrapperProps) {
       dragControls={blockDragControls}
       className='bg-card/80 border-card w-full rounded-lg border'
     >
-      <div className={cn('relative px-4 pt-4')}>
+      <div className={cn('relative px-4 py-4')}>
         <>
           <div className='absolute top-3 -left-4'>
             <ReorderIconTooltip

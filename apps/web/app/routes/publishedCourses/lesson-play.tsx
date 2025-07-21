@@ -1,7 +1,8 @@
 import { useRef } from 'react';
-import { Outlet } from 'react-router';
-import { dataWithError, dataWithSuccess, redirectWithError } from 'remix-toast';
+import { Outlet, redirect } from 'react-router';
+import { dataWithError, redirectWithError } from 'remix-toast';
 
+import { createBlockInteraction } from '@gonasi/database/lessons';
 import { fetchPublishedLessonBlocksWithProgress } from '@gonasi/database/publishedCourses';
 import { SubmitBlockProgressSchema } from '@gonasi/schemas/publish/progressiveReveal';
 
@@ -13,15 +14,14 @@ import { CoursePlayLayout } from '~/components/layouts/course/course-play-layout
 import ViewPluginTypesRenderer from '~/components/plugins/PluginRenderers/ViewPluginTypesRenderer';
 import { createClient } from '~/lib/supabase/supabase.server';
 
+// --- Metadata Configuration ---
 export function meta({ data }: Route.MetaArgs) {
   const metadata = data?.lessonData?.metadata;
   const hasAccess = data?.hasAccess;
 
   if (!hasAccess) {
     return [
-      {
-        title: 'Unlock This Lesson • Gonasi',
-      },
+      { title: 'Unlock This Lesson • Gonasi' },
       {
         name: 'description',
         content:
@@ -32,9 +32,7 @@ export function meta({ data }: Route.MetaArgs) {
 
   if (!metadata) {
     return [
-      {
-        title: 'Lesson Not Found • Gonasi',
-      },
+      { title: 'Lesson Not Found • Gonasi' },
       {
         name: 'description',
         content:
@@ -43,67 +41,70 @@ export function meta({ data }: Route.MetaArgs) {
     ];
   }
 
-  const completion = metadata.completion_percentage;
-  const totalBlocks = metadata.total_blocks;
-  const completedBlocks = metadata.completed_blocks;
+  const { completion_percentage, total_blocks, completed_blocks } = metadata;
 
   return [
     {
-      title: `Lesson Progress • ${completedBlocks}/${totalBlocks} Completed • Gonasi`,
+      title: `Lesson Progress • ${completed_blocks}/${total_blocks} Completed • Gonasi`,
     },
     {
       name: 'description',
-      content: `You've completed ${completion}% of this interactive lesson. Continue learning with Gonasi.`,
+      content: `You've completed ${completion_percentage}% of this interactive lesson. Continue learning with Gonasi.`,
     },
   ];
 }
 
+// --- Action Handler for Submitting Block Interaction ---
 export async function action({ request, params }: Route.ActionArgs) {
   const formData = await request.formData();
   const { supabase } = createClient(request);
 
   const isLastInteraction = formData.get('isLast') === 'true';
+  const payloadString = formData.get('payload');
 
-  const payloadValue = formData.get('payload');
-
-  if (typeof payloadValue !== 'string') {
+  if (typeof payloadString !== 'string') {
     return dataWithError(null, 'Missing or invalid payload data');
   }
 
-  const interactionPayload = JSON.parse(payloadValue);
-  console.log('Payload Received:', interactionPayload);
+  const parsedPayload = JSON.parse(payloadString);
+  console.log('Payload Received:', parsedPayload);
 
-  // Validate against base interaction schema
-  const baseSchemaValidation = SubmitBlockProgressSchema.safeParse(interactionPayload);
-
-  if (!baseSchemaValidation.success) {
+  const validation = SubmitBlockProgressSchema.safeParse(parsedPayload);
+  if (!validation.success) {
     return dataWithError(null, 'Payload does not match required structure', { status: 400 });
   }
 
   try {
-    return dataWithSuccess(null, 'submit worked');
-    // const { success: recordSuccess, message: recordMessage } = await createBlockInteraction(
-    //   supabase,
-    //   baseSchemaValidation.data,
-    // );
+    const result = await createBlockInteraction({
+      supabase,
+      data: {
+        ...validation.data,
+        chapter_id: params.publishedChapterId,
+        lesson_id: params.publishedLessonId,
+        published_course_id: params.publishedCourseId,
+      },
+    });
 
-    // if (!recordSuccess) {
-    //   return dataWithError(null, recordMessage, { status: 400 });
-    // }
+    if (!result.success) {
+      return dataWithError(null, result.message, { status: 400 });
+    }
 
-    // if (isLastInteraction) {
-    //   return redirect(`/go/course/${courseId}/${chapterId}/${lessonId}/play/completed`);
-    // }
-  } catch (unexpectedError) {
-    console.error(`Failed to process  interaction:`, unexpectedError);
-    const errorMessage =
-      unexpectedError instanceof Error
-        ? unexpectedError.message
+    if (isLastInteraction) {
+      // TODO: Redirect to completed page once it's ready
+      return redirect('/go/course');
+    }
+    return true;
+  } catch (err) {
+    console.error(`Failed to process interaction:`, err);
+    const message =
+      err instanceof Error
+        ? err.message
         : 'An unexpected error occurred while processing the interaction';
-    return dataWithError(null, errorMessage, { status: 500 });
+    return dataWithError(null, message, { status: 500 });
   }
 }
 
+// --- Loader for Lesson Content + Access Check ---
 export async function loader({ params, request }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
   const {
@@ -143,13 +144,12 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   }
 }
 
+// --- Lesson Playback Component ---
 export default function LessonPlay({ params, loaderData }: Route.ComponentProps) {
   const { hasAccess, lessonData } = loaderData;
+  const blockRefs = useRef<Record<string, HTMLElement | null>>({});
 
-  // Refs used for scroll targeting of specific lesson blocks
-  const blockElementRefs = useRef<Record<string, HTMLElement | null>>({});
-
-  useScrollAudio(lessonData?.metadata.active_block_id ?? null, blockElementRefs);
+  useScrollAudio(lessonData?.metadata.active_block_id ?? null, blockRefs);
 
   if (!hasAccess) {
     return <CourseAccessCard enrollPath={`/c/${params.publishedCourseId}`} />;
@@ -169,16 +169,16 @@ export default function LessonPlay({ params, loaderData }: Route.ComponentProps)
       >
         <section className='mx-auto max-w-xl px-4 py-10 md:px-0'>
           {lessonData.blocks
-            .filter((blockItem) => blockItem.is_visible)
-            .map((blockItem) => (
+            .filter((block) => block.is_visible)
+            .map((block) => (
               <div
-                key={blockItem.block.id}
-                ref={(element) => {
-                  blockElementRefs.current[blockItem.block.id] = element;
+                key={block.block.id}
+                ref={(el) => {
+                  blockRefs.current[block.block.id] = el;
                 }}
                 className='scroll-mt-18 md:scroll-mt-22'
               >
-                <ViewPluginTypesRenderer mode='play' blockWithProgress={blockItem} />
+                <ViewPluginTypesRenderer mode='play' blockWithProgress={block} />
               </div>
             ))}
         </section>

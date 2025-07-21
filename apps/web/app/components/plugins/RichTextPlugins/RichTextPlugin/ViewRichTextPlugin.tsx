@@ -29,7 +29,6 @@ export function ViewRichTextPlugin({ mode, blockWithProgress }: ViewPluginCompon
 
     updateInteractionData({
       plugin_type: 'rich_text_editor',
-      continue: true,
     });
   }, [mode, blockWithProgress.block_progress, updateInteractionData]);
 

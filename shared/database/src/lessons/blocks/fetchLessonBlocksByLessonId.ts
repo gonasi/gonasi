@@ -10,7 +10,7 @@ export const fetchLessonBlocksByLessonId = async (
     const { data, error } = await supabase
       .from('lesson_blocks')
       .select(
-        'id, lesson_id, plugin_type, organization_id, course_id, content, settings, position, updated_by',
+        'id, chapter_id, lesson_id, plugin_type, organization_id, course_id, content, settings, position, updated_by',
       )
       .eq('lesson_id', lessonId)
       .order('position', { ascending: true });

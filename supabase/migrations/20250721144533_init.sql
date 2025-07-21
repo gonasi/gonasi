@@ -3512,17 +3512,22 @@ CREATE OR REPLACE FUNCTION public.get_user_lesson_blocks_progress(p_course_id uu
  SET search_path TO ''
 AS $function$
 declare
-  lesson_data jsonb;
-  current_user_id uuid := auth.uid();
-  total_blocks_count int;
-  result jsonb;
+  lesson_data jsonb;               -- JSON representation of the lesson
+  current_user_id uuid := auth.uid(); -- Currently authenticated user ID
+  total_blocks_count int;          -- Total number of blocks in the lesson
+  result jsonb;                    -- Final response object
 begin
-  -- === Permission check for safety ===
+  -- ------------------------------------------------------------------------
+  -- Ensure the invoker has SELECT permission on the course content
+  -- ------------------------------------------------------------------------
   if not has_column_privilege('public.published_course_structure_content', 'course_structure_content', 'SELECT') then
     raise exception 'Access denied to course content';
   end if;
 
-  -- === Fetch the lesson JSON (from denormalized published structure) ===
+  -- ------------------------------------------------------------------------
+  -- Fetch the lesson object from the denormalized JSON structure
+  -- Uses jsonb_path_query to find a lesson object by ID inside the course structure
+  -- ------------------------------------------------------------------------
   select lesson_obj
   into lesson_data
   from public.published_course_structure_content pcs,
@@ -3534,7 +3539,9 @@ begin
   where pcs.id = p_course_id
   limit 1;
 
-  -- === If the lesson was not found, return an error ===
+  -- ------------------------------------------------------------------------
+  -- If no lesson is found, return an error payload
+  -- ------------------------------------------------------------------------
   if lesson_data is null then
     return jsonb_build_object(
       'error', 'Lesson not found',
@@ -3542,42 +3549,64 @@ begin
     );
   end if;
 
-  -- === Count total number of blocks in lesson ===
+  -- ------------------------------------------------------------------------
+  -- Count total number of blocks within the lesson
+  -- ------------------------------------------------------------------------
   total_blocks_count := jsonb_array_length(lesson_data->'blocks');
 
-  -- === Enriched block data with progress ===
+  -- ------------------------------------------------------------------------
+  -- Step 1: Enrich each lesson block with progress info
+  -- ------------------------------------------------------------------------
   with enriched_blocks as (
     select 
-      -- From lesson JSON array
-      block_info as block,
-      (block_info->>'id')::uuid as block_id,
-      pos as position,
+      block_info as block,                         -- Raw block JSON
+      (block_info->>'id')::uuid as block_id,       -- Parsed block UUID
+      pos as position,                             -- Block's index in array (1-based)
 
-      -- Extract block-specific settings
+      -- Settings from the block JSON (fallbacks used if absent)
       coalesce((block_info->'settings'->>'can_skip')::boolean, false) as can_skip,
       coalesce((block_info->'settings'->>'weight')::int, 1) as weight,
       (pos = total_blocks_count) as is_last_block,
 
-      -- Progress information from block_progress table
+      -- Enriched progress info (left join may be null if no progress)
       bp.progress_data as block_progress,
       coalesce(bp.is_completed, false) as is_completed,
       coalesce(bp.has_started, false) as has_started,
-
-      -- For metrics
       coalesce(bp.time_spent, 0) as time_spent_seconds,
       bp.earned_score,
       bp.completed_at,
 
-      -- For visibility logic
+      -- Evaluate whether previous block was completed
       lag(coalesce(bp.is_completed, false), 1, true) over (order by pos) as prev_completed
 
     from jsonb_array_elements(lesson_data->'blocks') with ordinality as blocks(block_info, pos)
 
     left join (
-      -- Inline progress records for this lesson and user
+      -- --------------------------------------------------------------------
+      -- Select user's block progress records for this lesson
+      -- and format them as a JSONB object for easy inclusion in the result
+      -- --------------------------------------------------------------------
       select 
         block_id,
-        to_jsonb(bp.*) as progress_data,
+        jsonb_build_object(
+          'id', bp.id,
+          'user_id', bp.user_id,
+          'block_id', bp.block_id,
+          'lesson_id', bp.lesson_id,
+          'chapter_id', bp.chapter_id,
+          'created_at', case when bp.created_at is not null then to_char(bp.created_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') else null end,
+          'started_at', case when bp.started_at is not null then to_char(bp.started_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') else null end,
+          'updated_at', case when bp.updated_at is not null then to_char(bp.updated_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') else null end,
+          'completed_at', case when bp.completed_at is not null then to_char(bp.completed_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') else null end,
+          'earned_score', bp.earned_score,
+          'is_completed', bp.is_completed,
+          'attempt_count', bp.attempt_count,
+          'last_response', bp.last_response,
+          'organization_id', bp.organization_id,
+          'interaction_data', bp.interaction_data,
+          'time_spent_seconds', bp.time_spent_seconds,
+          'published_course_id', bp.published_course_id
+        ) as progress_data,
         is_completed,
         started_at is not null as has_started,
         coalesce(time_spent_seconds, 0) as time_spent,
@@ -3590,18 +3619,23 @@ begin
     ) bp on bp.block_id = (block_info->>'id')::uuid
   ),
 
-  -- === Determine block visibility and active status ===
+  -- ------------------------------------------------------------------------
+  -- Step 2: Determine block visibility and current "active" block
+  -- ------------------------------------------------------------------------
   final_blocks as (
     select 
       *,
-      -- Determine whether the block is currently visible
+      -- Block is visible if it's the first, skippable, or previous was completed
       case 
-        when position = 1 then true -- First block always visible
-        when can_skip then true     -- Can skip overrides progression
-        else prev_completed         -- Otherwise, check if previous block was completed
+        when position = 1 then true
+        when can_skip then true
+        else prev_completed
       end as is_visible,
 
-      -- Determine whether the block is the currently "active" one
+      -- Block is active if:
+      -- - started but not finished
+      -- - first block and not started
+      -- - unlocked and not started
       case 
         when has_started and not is_completed then true
         when not has_started and position = 1 then true
@@ -3611,10 +3645,11 @@ begin
     from enriched_blocks
   ),
 
-  -- === Aggregate metrics and build response ===
+  -- ------------------------------------------------------------------------
+  -- Step 3: Aggregate progress statistics and construct final payload
+  -- ------------------------------------------------------------------------
   aggregated_data as (
     select 
-      -- Reconstruct the full block list for output
       jsonb_agg(
         jsonb_build_object(
           'block', block,
@@ -3626,7 +3661,7 @@ begin
         order by position
       ) as blocks,
 
-      -- Metadata: lesson-level summaries
+      -- Compute summary stats for the lesson
       count(*) as total_blocks,
       sum(weight) as total_weight,
       sum(weight) filter (where is_completed) as completed_weight,
@@ -3638,12 +3673,17 @@ begin
       (array_agg(block_id order by position) filter (where is_active))[1] as active_block_id,
       sum(time_spent_seconds) as total_time_spent,
       avg(earned_score) as average_score,
-      max(completed_at) as last_completed_at,
+      case 
+        when max(completed_at) is not null 
+        then to_char(max(completed_at) at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')
+        else null
+      end as last_completed_at,
       (sum(weight) filter (where is_completed) = sum(weight)) as is_fully_completed
-    from final_blocks
   )
 
-  -- === Build final JSON response ===
+  -- ------------------------------------------------------------------------
+  -- Step 4: Return final JSON response containing blocks and metadata
+  -- ------------------------------------------------------------------------
   select jsonb_build_object(
     'blocks', blocks,
     'metadata', jsonb_build_object(

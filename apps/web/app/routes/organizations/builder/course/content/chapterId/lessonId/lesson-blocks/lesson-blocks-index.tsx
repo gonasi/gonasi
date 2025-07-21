@@ -145,8 +145,10 @@ export default function EditLessonContent({ loaderData, params }: Route.Componen
                 onReorder={handleReorder}
                 className='flex w-full flex-col space-y-8 py-10'
               >
-                {reorderedBlocks.map((block) => {
+                {reorderedBlocks.map((block, index) => {
                   const blockIdPath = `${lessonBasePath}/${block.id}`;
+                  const isLastBlock = index === reorderedBlocks.length - 1;
+
                   return (
                     <LessonBlockWrapper
                       key={block.id}
@@ -159,7 +161,16 @@ export default function EditLessonContent({ loaderData, params }: Route.Componen
                       <ClientOnly fallback={<Spinner />}>
                         {() => (
                           <Suspense fallback={<Spinner />}>
-                            <ViewPluginTypesRenderer block={block} mode='preview' progress={null} />
+                            <ViewPluginTypesRenderer
+                              blockWithProgress={{
+                                block,
+                                block_progress: null,
+                                is_active: false,
+                                is_visible: true,
+                                is_last_block: isLastBlock,
+                              }}
+                              mode='preview'
+                            />
                           </Suspense>
                         )}
                       </ClientOnly>

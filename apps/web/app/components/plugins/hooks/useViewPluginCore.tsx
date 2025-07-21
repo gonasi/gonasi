@@ -75,6 +75,7 @@ export function useViewPluginCore(args: ViewPluginCoreArgs | null): ViewPluginCo
     const { block, is_last_block } = args.blockWithProgress;
 
     const enrichedPayload: SubmitBlockProgressSchemaTypes = {
+      organization_id: block.organization_id,
       block_id: block.id,
       interaction_data: payload?.interaction_data ?? {},
       started_at: startTimeRef.current,
