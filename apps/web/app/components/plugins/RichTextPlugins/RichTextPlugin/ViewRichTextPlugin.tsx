@@ -21,7 +21,7 @@ export function ViewRichTextPlugin({ mode, blockWithProgress }: ViewPluginCompon
       : null,
   );
 
-  const shouldShowActionButton = mode === 'play' || !blockWithProgress.block_progress?.is_completed;
+  const shouldShowActionButton = mode === 'play' && !blockWithProgress.block_progress?.is_completed;
 
   // Set default interaction data if block progress is missing (e.g., first-time viewer)
   useEffect(() => {
@@ -40,16 +40,15 @@ export function ViewRichTextPlugin({ mode, blockWithProgress }: ViewPluginCompon
       weight={weight}
     >
       <RichTextRenderer editorState={richTextState} />
-
-      {shouldShowActionButton && (
-        <div className='pt-4'>
+      <div className='py-4'>
+        {shouldShowActionButton && (
           <BlockActionButton
             onClick={handleContinue}
             loading={loading}
             isLastBlock={blockWithProgress.is_last_block}
           />
-        </div>
-      )}
+        )}
+      </div>
     </ViewPluginWrapper>
   );
 }
