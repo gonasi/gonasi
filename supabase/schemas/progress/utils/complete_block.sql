@@ -2,7 +2,7 @@
 -- FUNCTION: complete_block
 -- =============================================================================
 -- Description:
--- Marks a block as completed for a given user and updates progress metadata.
+-- Marks a block as completed for the authenticated user and updates progress metadata.
 -- Performs the following:
 --   1. Validates the block weight from the course structure.
 --   2. Inserts or updates block progress.
@@ -10,7 +10,6 @@
 --   4. Returns navigation metadata for next content.
 --
 -- Parameters:
---   p_user_id              - UUID of the user completing the block
 --   p_published_course_id  - UUID of the published course
 --   p_chapter_id           - UUID of the chapter containing the block
 --   p_lesson_id            - UUID of the lesson containing the block
@@ -26,12 +25,11 @@
 -- =============================================================================
 
 create or replace function public.complete_block(
-  p_user_id uuid,
   p_published_course_id uuid,
   p_chapter_id uuid,
   p_lesson_id uuid,
   p_block_id uuid,
-  p_block_weight numeric,
+  p_block_weight numeric default null,
   p_earned_score numeric default null,
   p_time_spent_seconds integer default 0,
   p_interaction_data jsonb default null,
@@ -43,6 +41,7 @@ security invoker
 set search_path = ''
 as $$
 declare
+  current_user_id uuid;
   organization_id uuid;
   structure_weight numeric;
   final_weight numeric;
@@ -51,12 +50,22 @@ declare
   was_already_completed boolean := false;
 begin
   -- =========================================================================
-  -- STEP 1: Get organization_id for this course
+  -- STEP 1: Get current authenticated user ID
+  -- =========================================================================
+  current_user_id := (select auth.uid());
+  
+  -- Abort if no authenticated user
+  if current_user_id is null then
+    return jsonb_build_object('error', 'user not authenticated');
+  end if;
+
+  -- =========================================================================
+  -- STEP 2: Get organization_id for this course
   -- =========================================================================
   select pc.organization_id
     into organization_id
     from public.published_courses pc
-   where pc.id = p_published_course_id;
+    where pc.id = p_published_course_id;
 
   -- Abort if course not found or not associated with an organization
   if organization_id is null then
@@ -64,35 +73,35 @@ begin
   end if;
 
   -- =========================================================================
-  -- STEP 2: Validate block weight using course structure
+  -- STEP 3: Validate block weight using course structure
   -- =========================================================================
   select coalesce((block_obj->>'weight')::numeric, 1.0)
     into structure_weight
     from public.published_course_structure_content pcsc,
-         jsonb_path_query(
-           pcsc.course_structure_content,
-           '$.chapters[*].lessons[*].blocks[*] ? (@.id == $block_id)',
-           jsonb_build_object('block_id', p_block_id::text)
-         ) as block_obj
+          jsonb_path_query(
+            pcsc.course_structure_content,
+            '$.chapters[*].lessons[*].blocks[*] ? (@.id == $block_id)',
+            jsonb_build_object('block_id', p_block_id::text)
+          ) as block_obj
    where pcsc.id = p_published_course_id;
 
   -- Use structure weight if available; otherwise use provided or default to 1.0
   final_weight := coalesce(structure_weight, p_block_weight, 1.0);
 
   -- =========================================================================
-  -- STEP 3: Check if the block was already marked as completed
+  -- STEP 4: Check if the block was already marked as completed
   -- =========================================================================
   select bp.is_completed
     into was_already_completed
     from public.block_progress bp
-   where bp.user_id = p_user_id
-     and bp.published_course_id = p_published_course_id
-     and bp.block_id = p_block_id;
+    where bp.user_id = current_user_id
+      and bp.published_course_id = p_published_course_id
+      and bp.block_id = p_block_id;
 
   was_already_completed := coalesce(was_already_completed, false);
 
   -- =========================================================================
-  -- STEP 4: Insert or update block progress record
+  -- STEP 5: Insert or update block progress record
   -- =========================================================================
   insert into public.block_progress (
     user_id,
@@ -111,7 +120,7 @@ begin
     last_response
   )
   values (
-    p_user_id,
+    current_user_id,
     p_published_course_id,
     p_chapter_id,
     p_lesson_id,
@@ -130,9 +139,9 @@ begin
   do update set
     is_completed = true,
     completed_at = case
-                     when block_progress.is_completed then block_progress.completed_at
-                     else timezone('utc', now())
-                   end,
+                      when block_progress.is_completed then block_progress.completed_at
+                      else timezone('utc', now())
+                    end,
     time_spent_seconds = block_progress.time_spent_seconds + excluded.time_spent_seconds,
     earned_score = coalesce(excluded.earned_score, block_progress.earned_score),
     attempt_count = coalesce(block_progress.attempt_count + 1, 1),
@@ -142,38 +151,39 @@ begin
     updated_at = timezone('utc', now());
 
   -- =========================================================================
-  -- STEP 5: Trigger lesson and course progress updates if newly completed
+  -- STEP 6: Trigger lesson and course progress updates if newly completed
   -- =========================================================================
   if not was_already_completed then
     -- Recalculate lesson-level progress
     perform public.update_lesson_progress_for_user(
-      p_user_id,
+      current_user_id,
       p_published_course_id,
       p_lesson_id
     );
 
     -- Recalculate course-level progress
     perform public.update_course_progress_for_user(
-      p_user_id,
+      current_user_id,
       p_published_course_id
     );
   end if;
 
   -- =========================================================================
-  -- STEP 6: Determine next navigation targets
+  -- STEP 7: Determine next navigation targets
   -- =========================================================================
   select public.get_next_navigation_ids(
-    p_user_id,
+    current_user_id,
     p_published_course_id,
     p_block_id
   )
   into next_ids;
 
   -- =========================================================================
-  -- STEP 7: Return final status with metadata
+  -- STEP 8: Return final status with metadata
   -- =========================================================================
   return jsonb_build_object(
     'success', true,
+    'user_id', current_user_id,
     'block_id', p_block_id,
     'block_weight', final_weight,
     'weight_source', case

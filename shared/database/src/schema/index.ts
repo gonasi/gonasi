@@ -1930,12 +1930,11 @@ export type Database = {
       }
       complete_block: {
         Args: {
-          p_user_id: string
           p_published_course_id: string
           p_chapter_id: string
           p_lesson_id: string
           p_block_id: string
-          p_block_weight: number
+          p_block_weight?: number
           p_earned_score?: number
           p_time_spent_seconds?: number
           p_interaction_data?: Json

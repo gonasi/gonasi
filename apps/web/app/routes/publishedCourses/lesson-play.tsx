@@ -93,6 +93,8 @@ export async function action({ request, params }: Route.ActionArgs) {
       // TODO: Redirect to completed page once it's ready
       return redirect('/go/course');
     }
+
+    console.log('result: ', result.data);
     return true;
   } catch (err) {
     console.error(`Failed to process interaction:`, err);

@@ -1,6 +1,5 @@
 import type { CompleteBlockProgressInsertSchemaTypes } from '@gonasi/schemas/publish/progressiveReveal';
 
-import { getUserId } from '../../auth';
 import type { TypedSupabaseClient } from '../../client';
 import type { Json } from '../../schema';
 import type { ApiResponse } from '../../types';
@@ -37,8 +36,6 @@ export const createBlockInteraction = async ({
   supabase,
   data,
 }: CreateBlockInteractionArgs): Promise<ApiResponseWithNavigation> => {
-  const user_id = await getUserId(supabase);
-
   const {
     published_course_id,
     chapter_id,
@@ -53,7 +50,6 @@ export const createBlockInteraction = async ({
 
   try {
     const { data: result, error } = (await supabase.rpc('complete_block', {
-      p_user_id: user_id,
       p_published_course_id: published_course_id,
       p_chapter_id: chapter_id,
       p_lesson_id: lesson_id,
