@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { ArrowDown, BookOpen, ChevronRight, Clock, StarOff, TableOfContents } from 'lucide-react';
 
 import {
-  fetchPublishedPublicCourseById,
+  fetchCourseOverviewWithProgress,
   getEnrollmentStatus,
 } from '@gonasi/database/publishedCourses';
 import { timeAgo } from '@gonasi/utils/timeAgo';
@@ -56,7 +56,7 @@ export type CourseChaptersType = CourseOverviewType['course_structure_overview']
 export type CourseLessonType = CourseChaptersType[number]['lessons'][number];
 
 export async function loader({ params, request }: Route.LoaderArgs): Promise<{
-  courseOverview: Awaited<ReturnType<typeof fetchPublishedPublicCourseById>>;
+  courseOverview: Awaited<ReturnType<typeof fetchCourseOverviewWithProgress>>;
   enrollmentStatus: Awaited<ReturnType<typeof getEnrollmentStatus>>;
 }> {
   try {
@@ -64,7 +64,7 @@ export async function loader({ params, request }: Route.LoaderArgs): Promise<{
     const publishedCourseId = params.publishedCourseId;
 
     const [courseOverview, enrollmentStatus] = await Promise.all([
-      fetchPublishedPublicCourseById({ supabase, courseId: publishedCourseId }),
+      fetchCourseOverviewWithProgress({ supabase, courseId: publishedCourseId }),
       getEnrollmentStatus({ supabase, publishedCourseId }),
     ]);
 

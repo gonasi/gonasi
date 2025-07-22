@@ -1997,6 +1997,10 @@ export type Database = {
         Args: { p_course_id: string }
         Returns: Database["public"]["Enums"]["payment_frequency"][]
       }
+      get_course_progress_overview: {
+        Args: { p_published_course_id: string }
+        Returns: Json
+      }
       get_effective_pricing_for_published_tier: {
         Args: { p_published_course_id: string; p_tier_id: string }
         Returns: {

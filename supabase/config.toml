@@ -227,7 +227,9 @@ schema_paths = [
   './schemas/progress/utils/update_course_progress_for_user.sql',
   './schemas/progress/utils/update_progress_cascade_on_block_change.sql',
   './schemas/progress/utils/get_next_navigation_ids.sql',
-  './schemas/progress/utils/complete_block.sql'
+  './schemas/progress/utils/complete_block.sql',
+
+  './schemas/publishedCourses/utils/get_course_progress_overview.sql'
 
   # './schemas/enrollment_activities_schema_indexes_rls.sql',
 
