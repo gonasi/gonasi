@@ -1,9 +1,9 @@
 -- =====================================================================================================
--- FUNCTION: get_course_progress_overview
+-- FUNCTION: get_course_progress_overview (FIXED VERSION)
 -- DESCRIPTION:
 --   Returns a full JSON overview of the current authenticated user's progress in a published course,
 --   including:
---     - Course metadata
+--     - Course metadata with category and subcategory names
 --     - Organization information
 --     - User progress metrics (if enrolled)
 --     - Chapter and lesson structure with per-lesson progress
@@ -13,6 +13,8 @@
 -- NOTES:
 --   - Uses auth.uid() to determine the authenticated user.
 --   - If the user is not enrolled, progress will be excluded from the response.
+--   - All timestamp fields are formatted as ISO 8601 strings with timezone for Zod validation
+--   - FIXED: Now properly handles case when user is enrolled but has no progress records yet
 -- =====================================================================================================
 
 create or replace function public.get_course_progress_overview(
@@ -26,7 +28,7 @@ as $$
 declare
   v_result json;             -- Final JSON response
   v_course_exists boolean;   -- Flag: course exists and is active
-  v_user_id uuid := auth.uid(); -- Authenticated user
+  v_user_id uuid := (select auth.uid()); -- Authenticated user
   v_user_enrolled boolean;   -- Flag: user is enrolled and enrollment is active
 begin
   -- Validate course ID
@@ -57,7 +59,7 @@ begin
 
   -- Build the response JSON
   select json_build_object(
-    -- Course metadata
+    -- Course metadata with category information
     'course', json_build_object(
       'id', pc.id,
       'name', pc.name,
@@ -67,10 +69,15 @@ begin
       'total_chapters', pc.total_chapters,
       'total_lessons', pc.total_lessons,
       'total_blocks', pc.total_blocks,
+      'pricing_tiers', pc.pricing_tiers,
       'average_rating', pc.average_rating,
       'total_reviews', pc.total_reviews,
       'total_enrollments', pc.total_enrollments,
-      'published_at', pc.published_at
+      'published_at', to_char(pc.published_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),
+      'category_id', pc.category_id,
+      'category_name', cat.name,
+      'subcategory_id', pc.subcategory_id,
+      'subcategory_name', subcat.name
     ),
 
     -- Organization metadata
@@ -78,58 +85,60 @@ begin
       'id', org.id,
       'name', org.name,
       'handle', org.handle,
-      'description', org.description,
-      'website_url', org.website_url,
       'avatar_url', org.avatar_url,
       'blur_hash', org.blur_hash,
-      'banner_url', org.banner_url,
-      'banner_blur_hash', org.banner_blur_hash,
-      'is_public', org.is_public,
-      'is_verified', org.is_verified,
-      'email', org.email,
-      'phone_number', org.phone_number,
-      'location', org.location,
-      'tier', org.tier,
-      'created_at', org.created_at
+      'is_verified', org.is_verified
     ),
 
-    -- Overall progress
+    -- Overall progress (FIXED)
     'overall_progress', case
       when v_user_enrolled then
-        coalesce(
-          json_build_object(
-            'total_blocks', cp.total_blocks,
-            'completed_blocks', cp.completed_blocks,
-            'total_lessons', cp.total_lessons,
-            'completed_lessons', cp.completed_lessons,
-            'total_chapters', cp.total_chapters,
-            'completed_chapters', cp.completed_chapters,
-            'total_weight', cp.total_weight,
-            'completed_weight', cp.completed_weight,
-            'progress_percentage', cp.progress_percentage,
-            'total_lesson_weight', cp.total_lesson_weight,
-            'completed_lesson_weight', cp.completed_lesson_weight,
-            'lesson_progress_percentage', cp.lesson_progress_percentage,
-            'completed_at', cp.completed_at,
-            'updated_at', cp.updated_at
-          ),
-          json_build_object(
-            'total_blocks', pc.total_blocks,
-            'completed_blocks', 0,
-            'total_lessons', pc.total_lessons,
-            'completed_lessons', 0,
-            'total_chapters', pc.total_chapters,
-            'completed_chapters', 0,
-            'total_weight', 0,
-            'completed_weight', 0,
-            'progress_percentage', 0,
-            'total_lesson_weight', 0,
-            'completed_lesson_weight', 0,
-            'lesson_progress_percentage', 0,
-            'completed_at', null,
-            'updated_at', null
-          )
-        )
+        case
+          when cp.id is not null then
+            -- User has progress records
+            json_build_object(
+              'total_blocks', cp.total_blocks,
+              'completed_blocks', cp.completed_blocks,
+              'total_lessons', cp.total_lessons,
+              'completed_lessons', cp.completed_lessons,
+              'total_chapters', cp.total_chapters,
+              'completed_chapters', cp.completed_chapters,
+              'total_weight', cp.total_weight,
+              'completed_weight', cp.completed_weight,
+              'progress_percentage', cp.progress_percentage,
+              'total_lesson_weight', cp.total_lesson_weight,
+              'completed_lesson_weight', cp.completed_lesson_weight,
+              'lesson_progress_percentage', cp.lesson_progress_percentage,
+              'completed_at', case 
+                when cp.completed_at is not null then 
+                  to_char(cp.completed_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')
+                else null 
+              end,
+              'updated_at', case 
+                when cp.updated_at is not null then 
+                  to_char(cp.updated_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')
+                else null 
+              end
+            )
+          else
+            -- User is enrolled but has no progress records yet
+            json_build_object(
+              'total_blocks', pc.total_blocks,
+              'completed_blocks', 0,
+              'total_lessons', pc.total_lessons,
+              'completed_lessons', 0,
+              'total_chapters', pc.total_chapters,
+              'completed_chapters', 0,
+              'total_weight', 0,
+              'completed_weight', 0,
+              'progress_percentage', 0,
+              'total_lesson_weight', 0,
+              'completed_lesson_weight', 0,
+              'lesson_progress_percentage', 0,
+              'completed_at', null,
+              'updated_at', null
+            )
+        end
       else null
     end,
 
@@ -201,8 +210,16 @@ begin
             'total_weight', lp.total_weight,
             'completed_weight', lp.completed_weight,
             'progress_percentage', lp.progress_percentage,
-            'completed_at', lp.completed_at,
-            'updated_at', lp.updated_at
+            'completed_at', case 
+              when lp.completed_at is not null then 
+                to_char(lp.completed_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')
+              else null 
+            end,
+            'updated_at', case 
+              when lp.updated_at is not null then 
+                to_char(lp.updated_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')
+              else null 
+            end
           ) as progress_data
           from public.lesson_progress lp
           where v_user_enrolled
@@ -240,14 +257,14 @@ begin
             'block_id', sub.block_id,
             'lesson_id', sub.lesson_id,
             'chapter_id', sub.chapter_id,
-            'completed_at', sub.completed_at,
+            'completed_at', to_char(sub.completed_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),
             'time_spent_seconds', sub.time_spent_seconds,
             'earned_score', sub.earned_score
           )
         )
         from (
           select bp.block_id, bp.lesson_id, bp.chapter_id, bp.completed_at,
-                 bp.time_spent_seconds, bp.earned_score
+                  bp.time_spent_seconds, bp.earned_score
           from public.block_progress bp
           where bp.user_id = v_user_id
             and bp.published_course_id = p_published_course_id
@@ -277,18 +294,29 @@ begin
               and bp.earned_score is not null
           ), null),
           'completion_streak', 0, -- TODO: implement streak logic
-          'started_at', (
-            select min(bp.started_at)
-            from public.block_progress bp
-            where bp.user_id = v_user_id
-              and bp.published_course_id = p_published_course_id
-          )
+          'started_at', case
+            when (
+              select min(bp.started_at)
+              from public.block_progress bp
+              where bp.user_id = v_user_id
+                and bp.published_course_id = p_published_course_id
+            ) is not null then
+              to_char((
+                select min(bp.started_at)
+                from public.block_progress bp
+                where bp.user_id = v_user_id
+                  and bp.published_course_id = p_published_course_id
+              ) at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')
+            else null
+          end
         )
       else null
     end
   ) into v_result
   from public.published_courses pc
-  inner join public.organizations org on pc.organization_id = org.id -- Added join with organizations table
+  inner join public.organizations org on pc.organization_id = org.id
+  left join public.course_categories cat on pc.category_id = cat.id
+  left join public.course_sub_categories subcat on pc.subcategory_id = subcat.id
   left join public.course_progress cp 
     on v_user_enrolled 
     and cp.published_course_id = pc.id 

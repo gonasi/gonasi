@@ -2,6 +2,8 @@ import { useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router';
 import { motion } from 'framer-motion';
 
+import type { PublishOverviewChapter } from '@gonasi/schemas/publish/course-overview-with-progress';
+
 import { NotFoundCard } from '../cards';
 import { LessonHoverCard } from '../cards/lesson-hover-card';
 import { LessonViewCard } from '../cards/lesson-view-card';
@@ -10,11 +12,10 @@ import { StickyChapterHeader } from './sticky-chapter-header';
 
 import { cn } from '~/lib/utils';
 import type { UserActiveChapterAndLessonLoaderReturnType } from '~/routes/go/go-course-details';
-import type { CourseChaptersType } from '~/routes/public/published-course-id-index';
 
 interface Props {
   publishedCourseId: string;
-  chapters: CourseChaptersType;
+  chapters: PublishOverviewChapter[];
   activeChapterAndLesson?: UserActiveChapterAndLessonLoaderReturnType;
   userHasAccess: boolean;
 }
@@ -132,7 +133,7 @@ export function ChapterLessonTree({
                       >
                         {isPath ? (
                           <LessonHoverCard
-                            lessonTypes={lesson.lesson_types}
+                            lessonTypes={lesson.lesson_type}
                             name={lesson.name}
                             to={`/c/${publishedCourseId}/${chapter.id}/${lesson.id}/play`}
                             // isCompleted={lesson.isCompleted}
@@ -142,7 +143,7 @@ export function ChapterLessonTree({
                           />
                         ) : (
                           <LessonViewCard
-                            lessonTypes={lesson.lesson_types}
+                            lessonTypes={lesson.lesson_type}
                             name={lesson.name}
                             to={`/c/${publishedCourseId}/${chapter.id}/${lesson.id}/play`}
                             // isCompleted={lesson.isCompleted}

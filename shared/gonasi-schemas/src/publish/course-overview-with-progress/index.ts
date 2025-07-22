@@ -1,31 +1,23 @@
 import { z } from 'zod';
 
-// Base schemas for reusable types
+import { PricingSchema } from '../course-pricing';
+
+// Base schemas
 const UUIDSchema = z.string().uuid();
 const TimestampSchema = z.string().datetime();
 
 // Organization schema
-const OrganizationSchema = z.object({
+const PublishOverviewOrganizationSchema = z.object({
   id: UUIDSchema,
   name: z.string(),
   handle: z.string(),
-  description: z.string().nullable(),
-  website_url: z.string().nullable(),
   avatar_url: z.string().nullable(),
   blur_hash: z.string().nullable(),
-  banner_url: z.string().nullable(),
-  banner_blur_hash: z.string().nullable(),
-  is_public: z.boolean(),
   is_verified: z.boolean(),
-  email: z.string().nullable(),
-  phone_number: z.string().nullable(),
-  location: z.string().nullable(),
-  tier: z.string(),
-  created_at: TimestampSchema,
 });
 
 // Lesson type schema
-const LessonTypeSchema = z.object({
+const PublishOverviewLessonTypeSchema = z.object({
   id: UUIDSchema,
   name: z.string(),
   description: z.string(),
@@ -34,7 +26,7 @@ const LessonTypeSchema = z.object({
 });
 
 // Lesson progress schema
-const LessonProgressSchema = z.object({
+const PublishOverviewLessonProgressSchema = z.object({
   total_blocks: z.number().int().min(0),
   completed_blocks: z.number().int().min(0),
   total_weight: z.number().min(0),
@@ -44,48 +36,53 @@ const LessonProgressSchema = z.object({
   updated_at: TimestampSchema.nullable().optional(),
 });
 
-// Lesson schema with nested progress (nullable for non-enrolled users)
-const LessonSchema = z.object({
+// Lesson schema
+const PublishOverviewLessonSchema = z.object({
   id: UUIDSchema,
   name: z.string().min(1),
   position: z.number().int().min(0),
   total_blocks: z.number().int().min(1),
-  lesson_type: LessonTypeSchema,
-  progress: LessonProgressSchema.nullable(), // null for non-enrolled users
+  lesson_type: PublishOverviewLessonTypeSchema,
+  progress: PublishOverviewLessonProgressSchema.nullable(),
 });
 
-// Chapter schema with lessons and progress (nullable progress fields for non-enrolled users)
-const ChapterSchema = z.object({
+// Chapter schema
+const PublishOverviewChapterSchema = z.object({
   id: UUIDSchema,
   name: z.string().min(1),
   description: z.string().min(1),
   position: z.number().int().min(0),
   total_lessons: z.number().int().min(1),
   total_blocks: z.number().int().min(1),
-  completed_lessons: z.number().int().min(0).nullable(), // null for non-enrolled users
-  completed_blocks: z.number().int().min(0).nullable(), // null for non-enrolled users
-  progress_percentage: z.number().min(0).max(100).nullable(), // null for non-enrolled users
-  lessons: z.array(LessonSchema),
+  completed_lessons: z.number().int().min(0).nullable(),
+  completed_blocks: z.number().int().min(0).nullable(),
+  progress_percentage: z.number().min(0).max(100).nullable(),
+  lessons: z.array(PublishOverviewLessonSchema),
 });
 
-// Course basic info schema
-const CourseSchema = z.object({
+// Course schema
+const PublishOverviewCourseSchema = z.object({
   id: UUIDSchema,
   name: z.string().min(1),
   description: z.string().min(1),
-  image_url: z.string().url(),
+  image_url: z.string(),
   blur_hash: z.string().nullable(),
   total_chapters: z.number().int().min(1),
   total_lessons: z.number().int().min(1),
   total_blocks: z.number().int().min(1),
+  pricing_tiers: PricingSchema,
   average_rating: z.number().min(1).max(5).nullable(),
   total_reviews: z.number().int().min(0),
   total_enrollments: z.number().int().min(0),
   published_at: TimestampSchema,
+  category_id: UUIDSchema.nullable(),
+  category_name: z.string().nullable(),
+  subcategory_id: UUIDSchema.nullable(),
+  subcategory_name: z.string().nullable(),
 });
 
 // Overall progress schema
-const OverallProgressSchema = z.object({
+const PublishOverviewOverallProgressSchema = z.object({
   total_blocks: z.number().int().min(0),
   completed_blocks: z.number().int().min(0),
   total_lessons: z.number().int().min(0),
@@ -103,7 +100,7 @@ const OverallProgressSchema = z.object({
 });
 
 // Recent activity item schema
-const RecentActivityItemSchema = z.object({
+const PublishOverviewRecentActivityItemSchema = z.object({
   block_id: UUIDSchema,
   lesson_id: UUIDSchema,
   chapter_id: UUIDSchema,
@@ -113,77 +110,35 @@ const RecentActivityItemSchema = z.object({
 });
 
 // Statistics schema
-const StatisticsSchema = z.object({
+const PublishOverviewStatisticsSchema = z.object({
   total_time_spent: z.number().int().min(0),
   average_score: z.number().min(0).max(100).nullable(),
   completion_streak: z.number().int().min(0),
   started_at: TimestampSchema.nullable(),
 });
 
-// Main course progress overview schema - now includes organization
-export const CourseProgressOverviewSchema = z.object({
-  course: CourseSchema,
-  organization: OrganizationSchema, // Added organization data
-  overall_progress: OverallProgressSchema.nullable(), // null for non-enrolled users
-  chapters: z.array(ChapterSchema),
-  recent_activity: z.array(RecentActivityItemSchema).nullable(),
-  statistics: StatisticsSchema.nullable(), // null for non-enrolled users
+// Main progress overview schema
+export const PublishOverviewCourseProgressOverviewSchema = z.object({
+  course: PublishOverviewCourseSchema,
+  organization: PublishOverviewOrganizationSchema,
+  overall_progress: PublishOverviewOverallProgressSchema.nullable(),
+  chapters: z.array(PublishOverviewChapterSchema),
+  recent_activity: z.array(PublishOverviewRecentActivityItemSchema).nullable(),
+  statistics: PublishOverviewStatisticsSchema.nullable(),
 });
 
-// Type exports for TypeScript usage
-export type CourseProgressOverview = z.infer<typeof CourseProgressOverviewSchema>;
-export type Course = z.infer<typeof CourseSchema>;
-export type Organization = z.infer<typeof OrganizationSchema>; // Added organization type
-export type OverallProgress = z.infer<typeof OverallProgressSchema>;
-export type Chapter = z.infer<typeof ChapterSchema>;
-export type Lesson = z.infer<typeof LessonSchema>;
-export type LessonProgress = z.infer<typeof LessonProgressSchema>;
-export type LessonType = z.infer<typeof LessonTypeSchema>;
-export type RecentActivityItem = z.infer<typeof RecentActivityItemSchema>;
-export type Statistics = z.infer<typeof StatisticsSchema>;
-
-// Helper function to validate RPC response
-export function validateCourseProgressOverview(data: unknown): CourseProgressOverview {
-  return CourseProgressOverviewSchema.parse(data);
-}
-
-// Usage example for calling the RPC
-export interface GetCourseProgressOverviewParams {
-  publishedCourseId: string;
-  userId?: string; // Optional - if not provided, uses authenticated user
-}
-
-// Example Supabase function call type (adjust based on your Supabase client setup)
-export async function getCourseProgressOverview(
-  supabase: any, // Replace with your Supabase client type
-  params: GetCourseProgressOverviewParams,
-): Promise<CourseProgressOverview> {
-  const { data, error } = await supabase.rpc('get_course_progress_overview', {
-    p_published_course_id: params.publishedCourseId,
-    p_user_id: params.userId || null, // Let the RPC handle auth.uid() if not provided
-  });
-
-  if (error) {
-    throw new Error(`Failed to fetch course progress: ${error.message}`);
-  }
-
-  return validateCourseProgressOverview(data);
-}
-
-// Helper function to check if user has access to progress data
-export function hasProgressAccess(data: CourseProgressOverview): boolean {
-  return data.overall_progress !== null;
-}
-
-// Helper function to get enrollment status from the response
-export function getEnrollmentStatus(
-  data: CourseProgressOverview,
-): 'enrolled' | 'not_enrolled' | 'logged_out' {
-  if (data.overall_progress !== null) {
-    return 'enrolled';
-  }
-  if (data.statistics !== null || data.recent_activity !== null) {
-    return 'not_enrolled'; // User is logged in but not enrolled
-  }
-  return 'logged_out'; // No user context
-}
+// Type exports
+export type PublishOverviewCourseProgressOverview = z.infer<
+  typeof PublishOverviewCourseProgressOverviewSchema
+>;
+export type PublishOverviewCourse = z.infer<typeof PublishOverviewCourseSchema>;
+export type PublishOverviewOrganization = z.infer<typeof PublishOverviewOrganizationSchema>;
+export type PublishOverviewOverallProgress = z.infer<typeof PublishOverviewOverallProgressSchema>;
+export type PublishOverviewChapter = z.infer<typeof PublishOverviewChapterSchema>;
+export type PublishOverviewLesson = z.infer<typeof PublishOverviewLessonSchema>;
+export type PublishOverviewLessonProgress = z.infer<typeof PublishOverviewLessonProgressSchema>;
+export type PublishOverviewLessonType = z.infer<typeof PublishOverviewLessonTypeSchema>;
+export type PublishOverviewRecentActivityItem = z.infer<
+  typeof PublishOverviewRecentActivityItemSchema
+>;
+export type PublishOverviewStatistics = z.infer<typeof PublishOverviewStatisticsSchema>;

@@ -23,7 +23,7 @@ import { cn } from '~/lib/utils';
 import { getLowestPricingSummary } from '~/utils/get-lowest-pricing-summary';
 
 export function meta({ data }: Route.MetaArgs) {
-  const course = data?.courseOverview;
+  const course = data?.courseOverview?.course;
 
   if (!course) {
     return [
@@ -97,18 +97,17 @@ function MetaInfoItem({ label, timestamp }: { label: string; timestamp: string }
 }
 
 export default function PublishedCourseIdIndex({ loaderData }: Route.ComponentProps) {
+  const course = loaderData.courseOverview?.course;
+  const chapters = loaderData.courseOverview?.chapters;
+  const organization = loaderData.courseOverview?.organization;
   const daysRemaining = loaderData.enrollmentStatus?.days_remaining ?? 0;
 
-  const params = new URLSearchParams(location.search);
+  const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
   const redirectTo = params.get('redirectTo');
   const closeLink = redirectTo ?? '/';
 
-  if (!loaderData.courseOverview) {
-    return (
-      <div>
-        <NotFoundCard message='Could not load course' />
-      </div>
-    );
+  if (!course || !organization || !chapters) {
+    return <NotFoundCard message='Could not load course' />;
   }
 
   return (
@@ -119,14 +118,14 @@ export default function PublishedCourseIdIndex({ loaderData }: Route.ComponentPr
             leadingIcon={
               <div className='border-foreground/20 flex w-10 flex-shrink-0 items-center justify-center rounded-full border'>
                 <GoThumbnail
-                  iconUrl={loaderData.courseOverview.image_url}
-                  name={loaderData.courseOverview?.name}
-                  blurHash={loaderData.courseOverview.blur_hash}
+                  iconUrl={course.image_url}
+                  name={course.name}
+                  blurHash={course.blur_hash}
                   objectFit='fill'
                 />
               </div>
             }
-            title={loaderData.courseOverview.name}
+            title={course.name}
             closeRoute={closeLink}
           />
           <Modal.Body className='px-0 md:px-4'>
@@ -144,19 +143,13 @@ export default function PublishedCourseIdIndex({ loaderData }: Route.ComponentPr
                   animate='show'
                 >
                   <div className='flex items-center space-x-2 overflow-auto'>
-                    <Badge variant='outline'>
-                      {loaderData.courseOverview.course_categories?.name}
-                    </Badge>
+                    <Badge variant='outline'>{course.category_name}</Badge>
                     <ChevronRight size={12} />
-                    <Badge variant='outline'>
-                      {loaderData.courseOverview.course_sub_categories?.name}
-                    </Badge>
+                    <Badge variant='outline'>{course.subcategory_name}</Badge>
                   </div>
 
-                  <h2 className='line-clamp-3 text-xl'>{loaderData.courseOverview.name}</h2>
-                  <p className='font-secondary text-muted-foreground'>
-                    {loaderData.courseOverview.description}
-                  </p>
+                  <h2 className='line-clamp-3 text-xl'>{course.name}</h2>
+                  <p className='font-secondary text-muted-foreground'>{course.description}</p>
 
                   <motion.div variants={fadeIn} initial='hidden' animate='show'>
                     <div className='flex gap-2 pb-2'>
@@ -166,11 +159,11 @@ export default function PublishedCourseIdIndex({ loaderData }: Route.ComponentPr
                     </div>
                   </motion.div>
 
-                  <NavLink to={`/${loaderData.courseOverview.organizations.handle}`}>
+                  <NavLink to={`/${organization.handle}`}>
                     {({ isPending }) => (
                       <UserAvatar
-                        username={loaderData.courseOverview?.organizations.name ?? ''}
-                        imageUrl={loaderData.courseOverview?.organizations.avatar_url}
+                        username={organization.name}
+                        imageUrl={organization.avatar_url}
                         size='xs'
                         isPending={isPending}
                         alwaysShowUsername
@@ -180,8 +173,8 @@ export default function PublishedCourseIdIndex({ loaderData }: Route.ComponentPr
 
                   <motion.div variants={fadeIn} initial='hidden' animate='show'>
                     <div className='flex flex-col space-y-2 lg:flex-row lg:space-y-0 lg:space-x-4'>
-                      <MetaInfoItem label='Published' timestamp='created_at' />
-                      <MetaInfoItem label='Updated' timestamp='updated_at' />
+                      <MetaInfoItem label='Published' timestamp={course.published_at} />
+                      <MetaInfoItem label='Updated' timestamp={course.published_at} />
                     </div>
                   </motion.div>
 
@@ -189,15 +182,14 @@ export default function PublishedCourseIdIndex({ loaderData }: Route.ComponentPr
                     <div className='flex items-center space-x-1'>
                       <TableOfContents size={12} />
                       <span>
-                        {loaderData.courseOverview.total_chapters}{' '}
-                        {loaderData.courseOverview.total_chapters === 1 ? 'chapter' : 'chapters'}
+                        {course.total_chapters}{' '}
+                        {course.total_chapters === 1 ? 'chapter' : 'chapters'}
                       </span>
                     </div>
                     <div className='flex items-center space-x-1'>
                       <BookOpen size={12} />
                       <span>
-                        {loaderData.courseOverview.total_lessons}{' '}
-                        {loaderData.courseOverview.total_lessons === 1 ? 'lesson' : 'lessons'}
+                        {course.total_lessons} {course.total_lessons === 1 ? 'lesson' : 'lessons'}
                       </span>
                     </div>
                   </div>
@@ -211,14 +203,13 @@ export default function PublishedCourseIdIndex({ loaderData }: Route.ComponentPr
                 >
                   <div className='flex flex-col'>
                     <GoThumbnail
-                      iconUrl={loaderData.courseOverview.image_url}
-                      name={loaderData.courseOverview.name}
-                      blurHash={loaderData.courseOverview.blur_hash}
+                      iconUrl={course.image_url}
+                      name={course.name}
+                      blurHash={course.blur_hash}
                       badges={[
-                        loaderData.enrollmentStatus?.is_active ? (
+                        loaderData.enrollmentStatus?.is_active && (
                           <div className='bg-card/85 flex items-center justify-between rounded-sm p-2'>
                             <div className='flex flex-col items-center text-center'>
-                              <div className='flex items-center space-x-1' />
                               <div
                                 className={cn(
                                   'flex items-center justify-center rounded-sm px-2 py-1 text-lg font-semibold',
@@ -237,9 +228,10 @@ export default function PublishedCourseIdIndex({ loaderData }: Route.ComponentPr
                               </div>
                             </div>
                           </div>
-                        ) : null,
+                        ),
                       ]}
                     />
+
                     <div className='bg-card px-4'>
                       {loaderData.enrollmentStatus?.is_active ? (
                         <div className='py-4'>
@@ -256,18 +248,18 @@ export default function PublishedCourseIdIndex({ loaderData }: Route.ComponentPr
                         <div>
                           <div className='flex w-full items-center justify-between py-4'>
                             <GoPricingSheet
-                              pricingData={loaderData.courseOverview.pricing_tiers}
+                              pricingData={course.pricing_tiers}
                               side='left'
                               variant='primary'
                               className='w-full'
                             />
                           </div>
                           <div className='flex w-full items-center justify-center space-x-1 pb-4 text-xs'>
-                            {loaderData.courseOverview.pricing_tiers[0]?.is_free ? null : (
+                            {!course.pricing_tiers[0]?.is_free && (
                               <span className='text-muted-foreground'>Starting at</span>
                             )}
                             <span className='text-foreground text-sm font-semibold'>
-                              {getLowestPricingSummary(loaderData.courseOverview.pricing_tiers)}
+                              {getLowestPricingSummary(course.pricing_tiers)}
                             </span>
                           </div>
                         </div>
@@ -284,8 +276,8 @@ export default function PublishedCourseIdIndex({ loaderData }: Route.ComponentPr
                 animate='show'
               >
                 <ChapterLessonTree
-                  publishedCourseId={loaderData.courseOverview.id}
-                  chapters={loaderData.courseOverview.course_structure_overview.chapters}
+                  publishedCourseId={course.id}
+                  chapters={chapters}
                   userHasAccess={loaderData.enrollmentStatus?.is_active ?? false}
                 />
               </motion.div>
@@ -295,8 +287,8 @@ export default function PublishedCourseIdIndex({ loaderData }: Route.ComponentPr
       </Modal>
       <Outlet
         context={{
-          name: loaderData.courseOverview.name,
-          pricingData: loaderData.courseOverview.pricing_tiers,
+          name: course.name,
+          pricingData: course.pricing_tiers,
         }}
       />
     </>
