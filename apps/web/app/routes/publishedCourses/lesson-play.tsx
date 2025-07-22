@@ -208,6 +208,12 @@ export default function LessonPlay({ params, loaderData }: Route.ComponentProps)
         to={`/c/${params.publishedCourseId}`}
         basePath={`/c/${params.publishedCourseId}/${params.publishedChapterId}/${params.publishedLessonId}/play`}
         progress={lessonData.metadata.completion_percentage}
+        segments={lessonData.blocks.map((blockItem) => ({
+          id: blockItem.block.id,
+          weight: blockItem.block.settings.weight,
+          is_complete: blockItem.block_progress?.is_completed ?? false,
+        }))}
+        activeBlockId={lessonData?.metadata.active_block_id ?? undefined}
         loading={false}
       >
         <section className='mx-auto max-w-xl px-4 py-10 md:px-0'>
@@ -303,7 +309,7 @@ export default function LessonPlay({ params, loaderData }: Route.ComponentProps)
                   const isSameChapter = next_lesson.chapter_id === params.publishedChapterId;
                   renderedRoutes.push({
                     key: 'next',
-                    label: isSameChapter ? 'Next' : 'Module',
+                    label: isSameChapter ? 'Next' : 'Next Chapter',
                     path: `/c/${next_lesson.course_id}/${next_lesson.chapter_id}/${next_lesson.lesson_id}/play`,
                     animate: !isContinueDistinct, // Only animate "Next" if there's no "Continue" button
                     Icon: isSameChapter ? ArrowRight : BookOpen,

@@ -5,7 +5,7 @@ import { Container } from '../container';
 
 import { ActionDropdown } from '~/components/action-dropdown';
 import { BackArrowNavLink } from '~/components/ui/button';
-import { Progress } from '~/components/ui/progress';
+import { SegmentedProgress } from '~/components/ui/progress';
 import { cn } from '~/lib/utils';
 import { useStore } from '~/store';
 
@@ -13,10 +13,20 @@ interface Props extends PropsWithChildren {
   to: string;
   basePath: string;
   progress: number;
+  segments: { id: string; weight: number; is_complete: boolean }[];
   loading: boolean;
+  activeBlockId?: string;
 }
 
-export function CoursePlayLayout({ children, to, basePath, progress, loading }: Props) {
+export function CoursePlayLayout({
+  children,
+  to,
+  basePath,
+  progress,
+  loading,
+  segments,
+  activeBlockId,
+}: Props) {
   const { isSoundEnabled, isVibrationEnabled, toggleSound, toggleVibration } = useStore();
 
   const items = [
@@ -43,7 +53,9 @@ export function CoursePlayLayout({ children, to, basePath, progress, loading }: 
       <div className='bg-background/80 sticky top-0 z-50 shadow-sm backdrop-blur'>
         <Container className='flex items-center justify-between space-x-4 py-4 md:space-x-8 md:py-6'>
           <BackArrowNavLink to={to} />
-          <Progress value={progress} />
+
+          <SegmentedProgress segments={segments} activeBlockId={activeBlockId} />
+
           <div>
             {loading ? (
               <LoaderCircle className='animate-spin cursor-not-allowed' aria-disabled />
