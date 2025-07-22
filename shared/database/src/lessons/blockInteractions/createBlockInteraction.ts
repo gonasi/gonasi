@@ -9,25 +9,36 @@ interface CreateBlockInteractionArgs {
   data: CompleteBlockProgressInsertSchemaTypes;
 }
 
+interface CompletionStatus {
+  is_course_complete: boolean;
+  is_lesson_complete: boolean;
+  is_chapter_complete: boolean;
+}
+
+interface NavigationContext {
+  chapter_id: string | null;
+  lesson_id: string | null;
+  block_id: string | null;
+}
+
+interface BlockNavigation {
+  next_block_id: string | null;
+  next_lesson_id: string | null;
+  next_chapter_id: string | null;
+  current_context: NavigationContext;
+  completion_status: CompletionStatus;
+}
+
 interface CompleteBlockResponse {
   success: boolean;
   block_id: string;
   completed_at: string;
-  navigation: {
-    next_block_id: string | null;
-    next_lesson_id: string | null;
-    next_chapter_id: string | null;
-    current_context: {
-      chapter_id: string | null;
-      lesson_id: string | null;
-      block_id: string | null;
-    };
-  };
+  navigation: BlockNavigation;
 }
 
 type ApiResponseWithNavigation = Omit<ApiResponse, 'data'> & {
   data?: {
-    navigation: CompleteBlockResponse['navigation'];
+    navigation: BlockNavigation;
     completed_at: string;
   };
 };

@@ -2019,6 +2019,14 @@ export type Database = {
           latest_activity_id: string
         }[]
       }
+      get_lesson_navigation_ids: {
+        Args: {
+          p_user_id: string
+          p_published_course_id: string
+          p_current_lesson_id: string
+        }
+        Returns: Json
+      }
       get_next_navigation_ids: {
         Args: {
           p_user_id: string

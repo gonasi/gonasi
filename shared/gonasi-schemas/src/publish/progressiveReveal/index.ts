@@ -110,7 +110,7 @@ export const LessonMetadataSchema = z.object({
   available_blocks: z.number(),
   completed_blocks: z.number(),
 
-  active_block_id: z.string().uuid(), // block user is currently on
+  active_block_id: z.string().uuid().nullable(),
   total_time_spent: z.number(),
   last_completed_at: z.string().datetime().nullable(),
 

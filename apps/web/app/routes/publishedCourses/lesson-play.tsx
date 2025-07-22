@@ -1,9 +1,14 @@
-import { useRef } from 'react';
-import { Outlet, redirect } from 'react-router';
+import { Suspense, useRef } from 'react';
+import { Await, Outlet, redirect, useNavigate } from 'react-router';
+import { motion } from 'framer-motion';
+import { ArrowRight, LoaderCircle } from 'lucide-react';
 import { dataWithError, redirectWithError } from 'remix-toast';
 
 import { createBlockInteraction } from '@gonasi/database/lessons';
-import { fetchPublishedLessonBlocksWithProgress } from '@gonasi/database/publishedCourses';
+import {
+  fetchLessonNavigationIds,
+  fetchPublishedLessonBlocksWithProgress,
+} from '@gonasi/database/publishedCourses';
 import { SubmitBlockProgressSchema } from '@gonasi/schemas/publish/progressiveReveal';
 
 import type { Route } from './+types/lesson-play';
@@ -12,7 +17,26 @@ import CourseAccessCard from '~/components/cards/course-access-card';
 import { useScrollAudio } from '~/components/hooks/useAutoScroll';
 import { CoursePlayLayout } from '~/components/layouts/course/course-play-layout';
 import ViewPluginTypesRenderer from '~/components/plugins/PluginRenderers/ViewPluginTypesRenderer';
+import { OutlineButton } from '~/components/ui/button';
 import { createClient } from '~/lib/supabase/supabase.server';
+
+// Framer Motion animation for nudge effect on the call-to-action button
+const nudgeAnimation = {
+  initial: { opacity: 0, y: 10 },
+  animate: {
+    opacity: 1,
+    y: [0, -4, 0],
+    transition: {
+      opacity: { delay: 1, duration: 0.3, ease: 'easeOut' },
+      y: {
+        duration: 1.2,
+        repeat: Infinity,
+        repeatType: 'loop',
+        ease: 'easeInOut',
+      },
+    },
+  },
+};
 
 // --- Metadata Configuration ---
 export function meta({ data }: Route.MetaArgs) {
@@ -136,9 +160,16 @@ export async function loader({ params, request }: Route.LoaderArgs) {
       }),
     ]);
 
+    const lessonNavigationPromise = fetchLessonNavigationIds({
+      supabase,
+      courseId: params.publishedCourseId,
+      lessonId: params.publishedLessonId,
+    });
+
     return {
       hasAccess: Boolean(accessResult.data),
       lessonData,
+      lessonNavigationPromise,
     };
   } catch (error) {
     console.error('Lesson loader error:', error);
@@ -148,7 +179,9 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 
 // --- Lesson Playback Component ---
 export default function LessonPlay({ params, loaderData }: Route.ComponentProps) {
-  const { hasAccess, lessonData } = loaderData;
+  const { hasAccess, lessonData, lessonNavigationPromise } = loaderData;
+
+  const navigate = useNavigate();
   const blockRefs = useRef<Record<string, HTMLElement | null>>({});
 
   useScrollAudio(lessonData?.metadata.active_block_id ?? null, blockRefs);
@@ -183,6 +216,55 @@ export default function LessonPlay({ params, loaderData }: Route.ComponentProps)
                 <ViewPluginTypesRenderer mode='play' blockWithProgress={block} />
               </div>
             ))}
+
+          <Suspense fallback={<LoaderCircle className='animate-spin' />}>
+            <Await
+              resolve={lessonNavigationPromise}
+              errorElement={
+                <div className='text-muted-foreground text-center text-sm'>
+                  We couldn’t load the next lesson right now.
+                </div>
+              }
+            >
+              {(navigationData) => {
+                if (!navigationData) return null;
+
+                const { is_course_complete } = navigationData.course_info ?? {};
+                if (is_course_complete) return null;
+
+                const nextLessonTarget =
+                  navigationData.continue_course ?? navigationData.next_lesson;
+
+                if (!nextLessonTarget) return null;
+
+                const { course_id, chapter_id, lesson_id } = nextLessonTarget;
+
+                const isSameChapter = chapter_id === params.publishedChapterId;
+
+                const ctaButtonLabel =
+                  navigationData.continue_course?.is_different_from_next === true
+                    ? 'Pick up where you left off'
+                    : isSameChapter
+                      ? 'Go to next lesson'
+                      : 'Keep going to next chapter';
+
+                return (
+                  <div className='fixed right-4 bottom-10 container flex w-full justify-end'>
+                    <motion.div initial={nudgeAnimation.initial} animate={nudgeAnimation.animate}>
+                      <OutlineButton
+                        type='button'
+                        className='bg-card/80 rounded-full shadow-lg'
+                        onClick={() => navigate(`/c/${course_id}/${chapter_id}/${lesson_id}/play`)}
+                        rightIcon={<ArrowRight />}
+                      >
+                        {ctaButtonLabel}
+                      </OutlineButton>
+                    </motion.div>
+                  </div>
+                );
+              }}
+            </Await>
+          </Suspense>
         </section>
       </CoursePlayLayout>
       <Outlet />
