@@ -1,12 +1,12 @@
 -- =====================================================================================================
--- FUNCTION: get_course_progress_overview (FIXED VERSION)
+-- FUNCTION: get_course_progress_overview (UPDATED VERSION)
 -- DESCRIPTION:
 --   Returns a full JSON overview of the current authenticated user's progress in a published course,
 --   including:
 --     - Course metadata with category and subcategory names
 --     - Organization information
---     - User progress metrics (if enrolled)
---     - Chapter and lesson structure with per-lesson progress
+--     - User progress metrics (if enrolled) with active chapter/lesson IDs
+--     - Chapter and lesson structure with per-lesson progress and active flags
 --     - Recent activity (recently completed blocks)
 --     - Additional statistics like total time spent, average score, and first activity timestamp
 --
@@ -14,7 +14,8 @@
 --   - Uses auth.uid() to determine the authenticated user.
 --   - If the user is not enrolled, progress will be excluded from the response.
 --   - All timestamp fields are formatted as ISO 8601 strings with timezone for Zod validation
---   - FIXED: Now properly handles case when user is enrolled but has no progress records yet
+--   - UPDATED: Now includes active_chapter_id and active_lesson_id in overall_progress
+--   - UPDATED: Now includes is_active flags for chapters and lessons
 -- =====================================================================================================
 
 create or replace function public.get_course_progress_overview(
@@ -30,6 +31,8 @@ declare
   v_course_exists boolean;   -- Flag: course exists and is active
   v_user_id uuid := (select auth.uid()); -- Authenticated user
   v_user_enrolled boolean;   -- Flag: user is enrolled and enrollment is active
+  v_active_chapter_id uuid;  -- Current active chapter for user
+  v_active_lesson_id uuid;   -- Current active lesson for user
 begin
   -- Validate course ID
   if p_published_course_id is null then
@@ -56,6 +59,29 @@ begin
       and ce.is_active = true
       and (ce.expires_at is null or ce.expires_at > now())
   ) into v_user_enrolled;
+
+  -- Determine active chapter and lesson IDs if user is enrolled
+  if v_user_enrolled then
+    -- Find the first incomplete lesson as the active lesson
+    -- This logic assumes the user should continue with the first incomplete lesson
+    select 
+      (lesson->>'id')::uuid,
+      (chapter->>'id')::uuid
+    into v_active_lesson_id, v_active_chapter_id
+    from public.published_courses pc_inner
+    cross join jsonb_array_elements((pc_inner.course_structure_overview->'chapters')::jsonb) as chapter
+    cross join jsonb_array_elements((chapter->'lessons')::jsonb) as lesson
+    left join public.lesson_progress lp 
+      on lp.user_id = v_user_id
+      and lp.published_course_id = p_published_course_id
+      and lp.lesson_id = (lesson->>'id')::uuid
+    where pc_inner.id = p_published_course_id
+      and (lp.completed_at is null) -- lesson not completed
+    order by 
+      (chapter->>'position')::integer,
+      (lesson->>'position')::integer
+    limit 1;
+  end if;
 
   -- Build the response JSON
   select json_build_object(
@@ -90,7 +116,7 @@ begin
       'is_verified', org.is_verified
     ),
 
-    -- Overall progress (FIXED)
+    -- Overall progress (UPDATED with active IDs)
     'overall_progress', case
       when v_user_enrolled then
         case
@@ -118,7 +144,9 @@ begin
                 when cp.updated_at is not null then 
                   to_char(cp.updated_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')
                 else null 
-              end
+              end,
+              'active_chapter_id', v_active_chapter_id,
+              'active_lesson_id', v_active_lesson_id
             )
           else
             -- User is enrolled but has no progress records yet
@@ -136,13 +164,15 @@ begin
               'completed_lesson_weight', 0,
               'lesson_progress_percentage', 0,
               'completed_at', null,
-              'updated_at', null
+              'updated_at', null,
+              'active_chapter_id', v_active_chapter_id,
+              'active_lesson_id', v_active_lesson_id
             )
         end
       else null
     end,
 
-    -- Chapters and lesson progress
+    -- Chapters and lesson progress (UPDATED with is_active flags)
     'chapters', (
       select json_agg(
         json_build_object(
@@ -166,6 +196,7 @@ begin
               )
             else null
           end,
+          'is_active', case when v_user_enrolled then (chapter_data.id = v_active_chapter_id) else false end,
           'lessons', chapter_data.lessons
         )
         order by chapter_data.position
@@ -185,6 +216,7 @@ begin
               'position', (lesson->>'position')::integer,
               'total_blocks', (lesson->>'total_blocks')::integer,
               'lesson_type', lesson->'lesson_types',
+              'is_active', case when v_user_enrolled then ((lesson->>'id')::uuid = v_active_lesson_id) else false end,
               'progress', case
                 when v_user_enrolled then
                   coalesce(lp_data.progress_data, json_build_object(
@@ -193,7 +225,8 @@ begin
                     'total_weight', 0,
                     'completed_weight', 0,
                     'progress_percentage', 0,
-                    'completed_at', null
+                    'completed_at', null,
+                    'updated_at', null
                   ))
                 else null
               end

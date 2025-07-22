@@ -11,12 +11,12 @@ import { DisplayMode } from '../search-params/display-mode';
 import { StickyChapterHeader } from './sticky-chapter-header';
 
 import { cn } from '~/lib/utils';
-import type { UserActiveChapterAndLessonLoaderReturnType } from '~/routes/go/go-course-details';
 
 interface Props {
   publishedCourseId: string;
   chapters: PublishOverviewChapter[];
-  activeChapterAndLesson?: UserActiveChapterAndLessonLoaderReturnType;
+  activeChapterId?: string | null;
+  activeLessonId?: string | null;
   userHasAccess: boolean;
 }
 export interface ColorClass {
@@ -49,7 +49,8 @@ const itemVariants = {
 export function ChapterLessonTree({
   publishedCourseId,
   chapters,
-  activeChapterAndLesson,
+  activeChapterId,
+  activeLessonId,
   userHasAccess,
 }: Props) {
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
@@ -67,13 +68,13 @@ export function ChapterLessonTree({
         behavior: 'smooth',
         block: 'start',
       });
-    } else if (activeChapterAndLesson?.lessonId) {
-      lessonRefs.current[activeChapterAndLesson.lessonId]?.scrollIntoView({
+    } else if (activeLessonId) {
+      lessonRefs.current[activeLessonId]?.scrollIntoView({
         behavior: 'smooth',
         block: 'start',
       });
     }
-  }, [activeChapterAndLesson?.lessonId, scrollToChapter]);
+  }, [activeLessonId, scrollToChapter]);
 
   return (
     <div className='relative pb-[500px]'>
@@ -91,7 +92,7 @@ export function ChapterLessonTree({
               id={chapter.id}
               className='mb-8 scroll-mt-18'
             >
-              <StickyChapterHeader name={chapter.name} />
+              <StickyChapterHeader name={chapter.name} isActive={chapter.id === activeChapterId} />
               <div>
                 <p className='text-muted-foreground font-secondary line-clamp-3 text-sm'>
                   {chapter.description}
@@ -136,9 +137,8 @@ export function ChapterLessonTree({
                             lessonTypes={lesson.lesson_type}
                             name={lesson.name}
                             to={`/c/${publishedCourseId}/${chapter.id}/${lesson.id}/play`}
-                            // isCompleted={lesson.isCompleted}
-                            isCompleted={false}
-                            isActiveLesson={lesson.id === activeChapterAndLesson?.lessonId}
+                            progressPercentage={lesson.progress?.progress_percentage}
+                            isActiveLesson={lesson.id === activeLessonId}
                             userHasAccess={userHasAccess}
                           />
                         ) : (
@@ -146,10 +146,8 @@ export function ChapterLessonTree({
                             lessonTypes={lesson.lesson_type}
                             name={lesson.name}
                             to={`/c/${publishedCourseId}/${chapter.id}/${lesson.id}/play`}
-                            // isCompleted={lesson.isCompleted}
-
-                            isCompleted={false}
-                            isActiveLesson={lesson.id === activeChapterAndLesson?.lessonId}
+                            progressPercentage={lesson.progress?.progress_percentage}
+                            isActiveLesson={lesson.id === activeLessonId}
                             userHasAccess={userHasAccess}
                           />
                         )}

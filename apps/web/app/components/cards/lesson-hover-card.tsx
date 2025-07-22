@@ -12,12 +12,12 @@ import { HoverCard, HoverCardContent, HoverCardTrigger } from '~/components/ui/h
 import { cn } from '~/lib/utils';
 
 interface Props {
-  isCompleted: boolean;
   to: string;
   name: string;
   lessonTypes: LessonTypes | null;
   isActiveLesson: boolean;
   userHasAccess: boolean;
+  progressPercentage?: number;
 }
 
 const nudgeAnimation = {
@@ -32,16 +32,16 @@ const nudgeAnimation = {
 };
 
 export function LessonHoverCard({
-  isCompleted,
   to,
   name,
   lessonTypes,
   isActiveLesson,
   userHasAccess,
+  progressPercentage,
 }: Props) {
   const statusText = !userHasAccess
     ? '🔒 Locked'
-    : isCompleted
+    : progressPercentage === 100
       ? '🎓 Completed'
       : isActiveLesson
         ? '📘 Next Lesson'
@@ -66,17 +66,17 @@ export function LessonHoverCard({
                 style={{
                   backgroundColor: hslToHsla(
                     lessonTypes?.bg_color ?? 'hsl(40 90% 56%)',
-                    isCompleted ? 20 : 80,
+                    progressPercentage === 100 ? 20 : 80,
                   ),
                   borderColor: hslToHsla(
                     lessonTypes?.bg_color ?? 'hsl(40 90% 56%)',
-                    isCompleted ? 40 : 99,
+                    progressPercentage === 100 ? 40 : 99,
                   ),
                 }}
               >
                 <LucideIconRenderer name={lessonTypes?.lucide_icon} size={28} strokeWidth={3} />
 
-                {isCompleted && (
+                {progressPercentage === 100 && (
                   <div
                     className='text-success-foreground absolute -top-2 right-2 flex h-6 w-6 -rotate-[30deg] items-center justify-center rounded-full p-0.5 text-xs font-bold shadow-md'
                     style={{

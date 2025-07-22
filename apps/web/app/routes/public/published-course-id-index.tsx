@@ -89,7 +89,7 @@ function MetaInfoItem({ label, timestamp }: { label: string; timestamp: string }
 }
 
 export default function PublishedCourseIdIndex({ loaderData }: Route.ComponentProps) {
-  const { course, chapters, organization } = loaderData.courseOverview;
+  const { course, chapters, organization, overall_progress } = loaderData.courseOverview;
   const daysRemaining = loaderData.enrollmentStatus?.days_remaining ?? 0;
 
   const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
@@ -271,7 +271,8 @@ export default function PublishedCourseIdIndex({ loaderData }: Route.ComponentPr
                   publishedCourseId={course.id}
                   chapters={chapters}
                   userHasAccess={loaderData.enrollmentStatus?.is_active ?? false}
-                  // activeChapterAndLesson={}
+                  activeChapterId={overall_progress?.active_chapter_id}
+                  activeLessonId={overall_progress?.active_lesson_id}
                 />
               </motion.div>
             </motion.div>

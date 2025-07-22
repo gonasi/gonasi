@@ -44,6 +44,7 @@ const PublishOverviewLessonSchema = z.object({
   total_blocks: z.number().int().min(1),
   lesson_type: PublishOverviewLessonTypeSchema,
   progress: PublishOverviewLessonProgressSchema.nullable(),
+  is_active: z.boolean(), // NEW: indicates if this is the active lesson
 });
 
 // Chapter schema
@@ -58,6 +59,7 @@ const PublishOverviewChapterSchema = z.object({
   completed_blocks: z.number().int().min(0).nullable(),
   progress_percentage: z.number().min(0).max(100).nullable(),
   lessons: z.array(PublishOverviewLessonSchema),
+  is_active: z.boolean(), // NEW: indicates if this is the active chapter
 });
 
 // Course schema
@@ -97,6 +99,9 @@ const PublishOverviewOverallProgressSchema = z.object({
   lesson_progress_percentage: z.number().min(0).max(100),
   completed_at: TimestampSchema.nullable(),
   updated_at: TimestampSchema.nullable(),
+  // NEW: Active navigation fields
+  active_chapter_id: UUIDSchema.nullable(),
+  active_lesson_id: UUIDSchema.nullable(),
 });
 
 // Recent activity item schema

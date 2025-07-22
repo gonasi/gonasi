@@ -9,12 +9,12 @@ import { LucideIconRenderer } from './lucide-icon-renderer';
 import type { LessonTypes } from './types';
 
 interface Props {
-  isCompleted: boolean;
   to: string;
   name: string;
   lessonTypes: LessonTypes | null;
   isActiveLesson: boolean;
   userHasAccess: boolean;
+  progressPercentage?: number;
 }
 
 const nudgeAnimation = {
@@ -29,19 +29,19 @@ const nudgeAnimation = {
 };
 
 export function LessonViewCard({
-  isCompleted,
   to,
   name,
   lessonTypes,
   isActiveLesson,
   userHasAccess,
+  progressPercentage,
 }: Props) {
   const borderTopColor = hslToHsla(lessonTypes?.bg_color ?? 'hsl(40 90% 56%)', 20);
   const iconColor = lessonTypes?.bg_color ?? 'hsl(40 90% 56%)';
 
   const statusText = !userHasAccess
     ? '🔒 Locked'
-    : isCompleted
+    : progressPercentage === 100
       ? '🎓 Completed'
       : isActiveLesson
         ? '📘 Next Lesson'
@@ -66,7 +66,7 @@ export function LessonViewCard({
           {name}
         </h3>
 
-        {isCompleted && (
+        {progressPercentage === 100 && (
           <div
             className='text-foreground absolute -top-8 -right-6 rounded-full border-2 p-1'
             style={{
