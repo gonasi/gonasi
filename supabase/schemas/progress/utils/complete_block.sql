@@ -1,5 +1,6 @@
 -- ============================================================================
--- helper function: mark a block as completed and update progress metadata (simplified weight handling)
+-- helper function: mark a block as completed and update progress metadata
+-- FIXED: Validates weight against structure, prevents inconsistencies
 -- ============================================================================
 create or replace function public.complete_block(
   p_user_id uuid,
@@ -7,7 +8,7 @@ create or replace function public.complete_block(
   p_chapter_id uuid,
   p_lesson_id uuid,
   p_block_id uuid,
-  p_block_weight numeric, -- NEW: explicit block weight parameter
+  p_block_weight numeric, -- provided block weight parameter
   p_earned_score numeric default null,
   p_time_spent_seconds integer default 0,
   p_interaction_data jsonb default null,
@@ -20,6 +21,8 @@ set search_path = ''
 as $$
 declare
   organization_id uuid;
+  structure_weight numeric;
+  final_weight numeric;
   result jsonb;
   next_ids jsonb;
 begin
@@ -37,7 +40,29 @@ begin
   end if;
 
   -- ============================================================================
-  -- step 2: insert or update block progress with provided weight
+  -- step 2: validate weight against course structure (NEW)
+  -- ============================================================================
+  select coalesce((block_obj->>'weight')::numeric, 1.0)
+  into structure_weight
+  from public.published_course_structure_content pcsc,
+       jsonb_path_query(
+         pcsc.course_structure_content,
+         '$.chapters[*].lessons[*].blocks[*] ? (@.id == $block_id)',
+         jsonb_build_object('block_id', p_block_id::text)
+       ) as block_obj
+  where pcsc.id = p_published_course_id;
+  
+  -- use structure weight as authoritative source, fall back to provided weight
+  final_weight := coalesce(structure_weight, p_block_weight, 1.0);
+  
+  -- warn if provided weight doesn't match structure (for debugging)
+  if structure_weight is not null and abs(structure_weight - p_block_weight) > 0.0001 then
+    raise notice 'Weight mismatch for block %: structure=%, provided=%, using structure weight', 
+      p_block_id, structure_weight, p_block_weight;
+  end if;
+
+  -- ============================================================================
+  -- step 3: insert or update block progress with validated weight
   -- ============================================================================
   insert into public.block_progress (
     user_id,
@@ -46,7 +71,7 @@ begin
     lesson_id,
     block_id,
     organization_id,
-    block_weight, -- use the provided weight directly
+    block_weight, -- use validated weight
     is_completed,
     completed_at,
     time_spent_seconds,
@@ -62,7 +87,7 @@ begin
     p_lesson_id,
     p_block_id,
     organization_id,
-    p_block_weight, -- use provided weight
+    final_weight, -- use validated weight
     true, -- mark as completed
     timezone('utc', now()),
     p_time_spent_seconds,
@@ -86,11 +111,11 @@ begin
     attempt_count = coalesce(block_progress.attempt_count + 1, 1),
     interaction_data = coalesce(excluded.interaction_data, block_progress.interaction_data),
     last_response = coalesce(excluded.last_response, block_progress.last_response),
-    block_weight = excluded.block_weight, -- update weight in case it changed
+    block_weight = excluded.block_weight, -- update to validated weight
     updated_at = timezone('utc', now());
 
   -- ============================================================================
-  -- step 3: fetch next navigation target (e.g., next block or lesson)
+  -- step 4: fetch next navigation target (e.g., next block or lesson)
   -- ============================================================================
   select public.get_next_navigation_ids(
     p_user_id,
@@ -100,12 +125,16 @@ begin
   into next_ids;
 
   -- ============================================================================
-  -- step 4: return a success object including next navigation info
+  -- step 5: return a success object including next navigation info
   -- ============================================================================
   return jsonb_build_object(
     'success', true,
     'block_id', p_block_id,
-    'block_weight', p_block_weight,
+    'block_weight', final_weight, -- return the validated weight used
+    'weight_source', case 
+      when structure_weight is not null then 'structure'
+      else 'provided'
+    end,
     'completed_at', to_char(timezone('utc', now()), 'yyyy-mm-dd"T"hh24:mi:ss.ms"Z"'),
     'navigation', next_ids
   );
