@@ -4,6 +4,26 @@ import { z } from 'zod';
 const UUIDSchema = z.string().uuid();
 const TimestampSchema = z.string().datetime();
 
+// Organization schema
+const OrganizationSchema = z.object({
+  id: UUIDSchema,
+  name: z.string(),
+  handle: z.string(),
+  description: z.string().nullable(),
+  website_url: z.string().nullable(),
+  avatar_url: z.string().nullable(),
+  blur_hash: z.string().nullable(),
+  banner_url: z.string().nullable(),
+  banner_blur_hash: z.string().nullable(),
+  is_public: z.boolean(),
+  is_verified: z.boolean(),
+  email: z.string().nullable(),
+  phone_number: z.string().nullable(),
+  location: z.string().nullable(),
+  tier: z.string(),
+  created_at: TimestampSchema,
+});
+
 // Lesson type schema
 const LessonTypeSchema = z.object({
   id: UUIDSchema,
@@ -100,9 +120,10 @@ const StatisticsSchema = z.object({
   started_at: TimestampSchema.nullable(),
 });
 
-// Main course progress overview schema
+// Main course progress overview schema - now includes organization
 export const CourseProgressOverviewSchema = z.object({
   course: CourseSchema,
+  organization: OrganizationSchema, // Added organization data
   overall_progress: OverallProgressSchema.nullable(), // null for non-enrolled users
   chapters: z.array(ChapterSchema),
   recent_activity: z.array(RecentActivityItemSchema).nullable(),
@@ -112,6 +133,7 @@ export const CourseProgressOverviewSchema = z.object({
 // Type exports for TypeScript usage
 export type CourseProgressOverview = z.infer<typeof CourseProgressOverviewSchema>;
 export type Course = z.infer<typeof CourseSchema>;
+export type Organization = z.infer<typeof OrganizationSchema>; // Added organization type
 export type OverallProgress = z.infer<typeof OverallProgressSchema>;
 export type Chapter = z.infer<typeof ChapterSchema>;
 export type Lesson = z.infer<typeof LessonSchema>;

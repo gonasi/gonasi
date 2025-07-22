@@ -4,6 +4,7 @@
 --   Returns a full JSON overview of the current authenticated user's progress in a published course,
 --   including:
 --     - Course metadata
+--     - Organization information
 --     - User progress metrics (if enrolled)
 --     - Chapter and lesson structure with per-lesson progress
 --     - Recent activity (recently completed blocks)
@@ -70,6 +71,26 @@ begin
       'total_reviews', pc.total_reviews,
       'total_enrollments', pc.total_enrollments,
       'published_at', pc.published_at
+    ),
+
+    -- Organization metadata
+    'organization', json_build_object(
+      'id', org.id,
+      'name', org.name,
+      'handle', org.handle,
+      'description', org.description,
+      'website_url', org.website_url,
+      'avatar_url', org.avatar_url,
+      'blur_hash', org.blur_hash,
+      'banner_url', org.banner_url,
+      'banner_blur_hash', org.banner_blur_hash,
+      'is_public', org.is_public,
+      'is_verified', org.is_verified,
+      'email', org.email,
+      'phone_number', org.phone_number,
+      'location', org.location,
+      'tier', org.tier,
+      'created_at', org.created_at
     ),
 
     -- Overall progress
@@ -267,6 +288,7 @@ begin
     end
   ) into v_result
   from public.published_courses pc
+  inner join public.organizations org on pc.organization_id = org.id -- Added join with organizations table
   left join public.course_progress cp 
     on v_user_enrolled 
     and cp.published_course_id = pc.id 
