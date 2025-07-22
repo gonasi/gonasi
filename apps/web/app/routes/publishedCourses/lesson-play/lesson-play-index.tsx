@@ -19,7 +19,7 @@ import {
 } from '@gonasi/database/publishedCourses';
 import { SubmitBlockProgressSchema } from '@gonasi/schemas/publish/progressiveReveal';
 
-import type { Route } from './+types/lesson-play';
+import type { Route } from './+types/lesson-play-index';
 
 import CourseAccessCard from '~/components/cards/course-access-card';
 import { useScrollAudio } from '~/components/hooks/useAutoScroll';
@@ -121,9 +121,20 @@ export async function action({ request, params }: Route.ActionArgs) {
       return dataWithError(null, result.message, { status: 400 });
     }
 
-    if (isLastInteraction) {
-      // TODO: Redirect to completed page once it's ready
-      return redirect('/go/course');
+    const navigation = result.data?.navigation;
+
+    if (isLastInteraction && navigation) {
+      const { is_lesson_complete, is_chapter_complete } = navigation.completion_status;
+
+      if (is_chapter_complete) {
+        return redirect(`/c/${params.publishedCourseId}/complete/${params.publishedChapterId}`);
+      }
+
+      if (is_lesson_complete) {
+        return redirect(
+          `/c/${params.publishedCourseId}/${params.publishedChapterId}/${params.publishedLessonId}/play/${navigation.next_lesson_id}/complete`,
+        );
+      }
     }
 
     console.log('result: ', result.data);

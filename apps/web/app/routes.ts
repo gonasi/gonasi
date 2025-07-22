@@ -21,7 +21,8 @@ export default [
 
   route(
     'c/:publishedCourseId/:publishedChapterId/:publishedLessonId/play',
-    'routes/publishedCourses/lesson-play.tsx',
+    'routes/publishedCourses/lesson-play/lesson-play-index.tsx',
+    [route(':nextLessonId/complete', 'routes/publishedCourses/lesson-play/complete-lesson.tsx')],
   ),
 
   route(':organizationHandle', 'routes/publicOrganizations/public-organization-profile-index.tsx'),

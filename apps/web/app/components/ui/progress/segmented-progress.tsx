@@ -103,7 +103,7 @@ export const SegmentedProgress: React.FC<SegmentedProgressProps> = ({
               height,
               'bg-muted/40',
               isOnly ? 'rounded-full' : isFirst ? 'rounded-l-full' : isLast ? 'rounded-r-full' : '',
-              !isFirst && 'ml-1',
+              !isFirst && 'ml-0.5 md:ml-1',
               activeBlockId === segment.id && 'bg-muted-foreground/20 animate-pulse',
             )}
           >
