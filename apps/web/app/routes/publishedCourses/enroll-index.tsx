@@ -10,9 +10,9 @@ import {
   InitializeEnrollTransactionSchema,
   type InitializeEnrollTransactionSchemaTypes,
 } from '@gonasi/schemas/payments';
+import type { PricingSchemaTypes } from '@gonasi/schemas/publish/course-pricing';
 
 import type { Route } from './+types/enroll-index';
-import type { CoursePricingDataType } from '../public/published-course-id-index';
 
 import { PricingOptionCard } from '~/components/cards/go-course-card/PricingOptionCard';
 import { Button } from '~/components/ui/button';
@@ -23,7 +23,7 @@ import { useIsPending } from '~/utils/misc';
 
 export interface CoursePricingContextType {
   name: string;
-  pricingData: CoursePricingDataType[];
+  pricingData: PricingSchemaTypes;
 }
 
 const resolver = zodResolver(InitializeEnrollTransactionSchema);

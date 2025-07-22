@@ -3066,51 +3066,55 @@ begin
       'is_verified', org.is_verified
     ),
 
-    -- Overall progress
+    -- Overall progress (FIXED)
     'overall_progress', case
       when v_user_enrolled then
-        coalesce(
-          json_build_object(
-            'total_blocks', cp.total_blocks,
-            'completed_blocks', cp.completed_blocks,
-            'total_lessons', cp.total_lessons,
-            'completed_lessons', cp.completed_lessons,
-            'total_chapters', cp.total_chapters,
-            'completed_chapters', cp.completed_chapters,
-            'total_weight', cp.total_weight,
-            'completed_weight', cp.completed_weight,
-            'progress_percentage', cp.progress_percentage,
-            'total_lesson_weight', cp.total_lesson_weight,
-            'completed_lesson_weight', cp.completed_lesson_weight,
-            'lesson_progress_percentage', cp.lesson_progress_percentage,
-            'completed_at', case 
-              when cp.completed_at is not null then 
-                to_char(cp.completed_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')
-              else null 
-            end,
-            'updated_at', case 
-              when cp.updated_at is not null then 
-                to_char(cp.updated_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')
-              else null 
-            end
-          ),
-          json_build_object(
-            'total_blocks', pc.total_blocks,
-            'completed_blocks', 0,
-            'total_lessons', pc.total_lessons,
-            'completed_lessons', 0,
-            'total_chapters', pc.total_chapters,
-            'completed_chapters', 0,
-            'total_weight', 0,
-            'completed_weight', 0,
-            'progress_percentage', 0,
-            'total_lesson_weight', 0,
-            'completed_lesson_weight', 0,
-            'lesson_progress_percentage', 0,
-            'completed_at', null,
-            'updated_at', null
-          )
-        )
+        case
+          when cp.id is not null then
+            -- User has progress records
+            json_build_object(
+              'total_blocks', cp.total_blocks,
+              'completed_blocks', cp.completed_blocks,
+              'total_lessons', cp.total_lessons,
+              'completed_lessons', cp.completed_lessons,
+              'total_chapters', cp.total_chapters,
+              'completed_chapters', cp.completed_chapters,
+              'total_weight', cp.total_weight,
+              'completed_weight', cp.completed_weight,
+              'progress_percentage', cp.progress_percentage,
+              'total_lesson_weight', cp.total_lesson_weight,
+              'completed_lesson_weight', cp.completed_lesson_weight,
+              'lesson_progress_percentage', cp.lesson_progress_percentage,
+              'completed_at', case 
+                when cp.completed_at is not null then 
+                  to_char(cp.completed_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')
+                else null 
+              end,
+              'updated_at', case 
+                when cp.updated_at is not null then 
+                  to_char(cp.updated_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')
+                else null 
+              end
+            )
+          else
+            -- User is enrolled but has no progress records yet
+            json_build_object(
+              'total_blocks', pc.total_blocks,
+              'completed_blocks', 0,
+              'total_lessons', pc.total_lessons,
+              'completed_lessons', 0,
+              'total_chapters', pc.total_chapters,
+              'completed_chapters', 0,
+              'total_weight', 0,
+              'completed_weight', 0,
+              'progress_percentage', 0,
+              'total_lesson_weight', 0,
+              'completed_lesson_weight', 0,
+              'lesson_progress_percentage', 0,
+              'completed_at', null,
+              'updated_at', null
+            )
+        end
       else null
     end,
 
@@ -3406,6 +3410,11 @@ declare
   next_block_id uuid;
   next_lesson_id uuid;
   next_chapter_id uuid;
+  
+  -- completion status variables
+  current_lesson_complete boolean := false;
+  current_chapter_complete boolean := false;
+  course_complete boolean := false;
 begin
   -- fetch the full course structure for the given published course
   select course_structure_content 
@@ -3452,14 +3461,43 @@ begin
       and bp.published_course_id = p_published_course_id
       and bp.block_id = (block_obj ->> 'id')::uuid
     )
+  ),
+  -- lesson completion status
+  lesson_completion as (
+    select 
+      (chapter_obj ->> 'id')::uuid as chapter_id,
+      (lesson_obj ->> 'id')::uuid as lesson_id,
+      -- lesson is complete if all its blocks are completed
+      bool_and(coalesce(bp.is_completed, false)) as is_lesson_complete,
+      count(*) as total_lesson_blocks,
+      count(bp.is_completed) filter (where bp.is_completed = true) as completed_lesson_blocks
+    from jsonb_array_elements(course_structure -> 'chapters') as chapter_obj,
+         jsonb_array_elements(chapter_obj -> 'lessons') as lesson_obj,
+         jsonb_array_elements(lesson_obj -> 'blocks') as block_obj
+    left join public.block_progress bp on (
+      bp.user_id = p_user_id
+      and bp.published_course_id = p_published_course_id
+      and bp.block_id = (block_obj ->> 'id')::uuid
+    )
+    group by chapter_id, lesson_id
+  ),
+  -- chapter completion status
+  chapter_completion as (
+    select 
+      chapter_id,
+      bool_and(is_lesson_complete) as is_chapter_complete,
+      count(*) as total_chapter_lessons,
+      count(*) filter (where is_lesson_complete = true) as completed_chapter_lessons
+    from lesson_completion
+    group by chapter_id
   )
   -- select the next block that is either the first, has a completed predecessor, or is skippable
-  select block_id, lesson_id, chapter_id
+  select bps.block_id, bps.lesson_id, bps.chapter_id
   into next_block_id, next_lesson_id, next_chapter_id
-  from block_progress_status
-  where not is_completed
-    and (global_position = 1 or prev_block_completed or can_skip)
-  order by global_position
+  from block_progress_status bps
+  where not bps.is_completed
+    and (bps.global_position = 1 or bps.prev_block_completed or bps.can_skip)
+  order by bps.global_position
   limit 1;
 
   -- fallback: if no next block found, try to find the next incomplete lesson
@@ -3482,6 +3520,30 @@ begin
     limit 1;
   end if;
 
+  -- get completion status for current context
+  if current_lesson_id is not null then
+    select 
+      coalesce(lc.is_lesson_complete, false),
+      coalesce(cc.is_chapter_complete, false)
+    into current_lesson_complete, current_chapter_complete
+    from lesson_completion lc
+    left join chapter_completion cc on cc.chapter_id = lc.chapter_id
+    where lc.lesson_id = current_lesson_id;
+  end if;
+
+  -- calculate overall course completion (all blocks completed)
+  select 
+    count(*) = count(bp.is_completed) filter (where bp.is_completed = true)
+  into course_complete
+  from jsonb_array_elements(course_structure -> 'chapters') as chapter_obj,
+       jsonb_array_elements(chapter_obj -> 'lessons') as lesson_obj,
+       jsonb_array_elements(lesson_obj -> 'blocks') as block_obj
+  left join public.block_progress bp on (
+    bp.user_id = p_user_id
+    and bp.published_course_id = p_published_course_id
+    and bp.block_id = (block_obj ->> 'id')::uuid
+  );
+
   -- return the result as structured jsonb
   return jsonb_build_object(
     'next_block_id', next_block_id,
@@ -3490,7 +3552,10 @@ begin
     'current_context', jsonb_build_object(
       'chapter_id', current_chapter_id,
       'lesson_id', current_lesson_id,
-      'block_id', p_current_block_id
+      'block_id', p_current_block_id,
+      'lesson_is_complete', current_lesson_complete,
+      'chapter_is_complete', current_chapter_complete,
+      'course_is_complete', course_complete
     )
   );
 end;
