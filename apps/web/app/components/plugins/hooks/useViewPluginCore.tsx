@@ -81,6 +81,7 @@ export function useViewPluginCore(args: ViewPluginCoreArgs | null): ViewPluginCo
       started_at: startTimeRef.current,
       completed_at: completedAt,
       time_spent_seconds: timeSpentSeconds,
+      block_weight: block.settings.weight,
     };
 
     const formData = new FormData();

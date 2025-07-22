@@ -45,6 +45,7 @@ export const createBlockInteraction = async ({
     lesson_id,
     block_id,
     time_spent_seconds = 0,
+    block_weight,
     earned_score = null,
     interaction_data = null,
     last_response = null,
@@ -61,6 +62,7 @@ export const createBlockInteraction = async ({
       p_time_spent_seconds: time_spent_seconds === null ? undefined : time_spent_seconds,
       p_interaction_data: interaction_data as unknown as Json,
       p_last_response: last_response as unknown as Json,
+      p_block_weight: block_weight,
     })) as { data: CompleteBlockResponse | { error: string } | null; error: any };
 
     if (error) {

@@ -176,7 +176,22 @@ begin
         count(*) filter (where bp.is_completed = true) as completed_blocks_by_user,
         coalesce(sum(bp.block_weight) filter (where bp.is_completed = true), 0) as completed_weight_by_user,
         count(distinct lp.lesson_id) filter (where lp.completed_at is not null) as completed_lessons_by_user,
-        coalesce(sum(lp.total_weight) filter (where lp.completed_at is not null), 0) as completed_lesson_weight_by_user
+        -- FIX: Calculate completed lesson weight correctly
+        -- Should be sum of block weights from completed blocks in completed lessons only
+        coalesce(
+          (select sum(bp2.block_weight)
+          from public.block_progress bp2
+          inner join public.lesson_progress lp2 on (
+            lp2.user_id = bp2.user_id 
+            and lp2.published_course_id = bp2.published_course_id 
+            and lp2.lesson_id = bp2.lesson_id
+            and lp2.completed_at is not null  -- only from completed lessons
+          )
+          where bp2.user_id = new.user_id 
+            and bp2.published_course_id = new.published_course_id
+            and bp2.is_completed = true),
+          0
+        ) as completed_lesson_weight_by_user
       from public.block_progress bp
       left join public.lesson_progress lp on (
         lp.user_id = bp.user_id 

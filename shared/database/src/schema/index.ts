@@ -1935,6 +1935,7 @@ export type Database = {
           p_chapter_id: string
           p_lesson_id: string
           p_block_id: string
+          p_block_weight: number
           p_earned_score?: number
           p_time_spent_seconds?: number
           p_interaction_data?: Json

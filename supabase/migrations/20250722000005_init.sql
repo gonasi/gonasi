@@ -2116,15 +2116,13 @@ end;
 $function$
 ;
 
-CREATE OR REPLACE FUNCTION public.complete_block(p_user_id uuid, p_published_course_id uuid, p_chapter_id uuid, p_lesson_id uuid, p_block_id uuid, p_earned_score numeric DEFAULT NULL::numeric, p_time_spent_seconds integer DEFAULT 0, p_interaction_data jsonb DEFAULT NULL::jsonb, p_last_response jsonb DEFAULT NULL::jsonb)
+CREATE OR REPLACE FUNCTION public.complete_block(p_user_id uuid, p_published_course_id uuid, p_chapter_id uuid, p_lesson_id uuid, p_block_id uuid, p_block_weight numeric, p_earned_score numeric DEFAULT NULL::numeric, p_time_spent_seconds integer DEFAULT 0, p_interaction_data jsonb DEFAULT NULL::jsonb, p_last_response jsonb DEFAULT NULL::jsonb)
  RETURNS jsonb
  LANGUAGE plpgsql
  SET search_path TO ''
 AS $function$
 declare
   organization_id uuid;
-  block_weight numeric;
-  course_structure jsonb;
   result jsonb;
   next_ids jsonb;
 begin
@@ -2142,31 +2140,7 @@ begin
   end if;
 
   -- ============================================================================
-  -- step 2: get the block weight from course structure
-  -- ============================================================================
-  select course_structure_content 
-  into course_structure
-  from public.published_course_structure_content 
-  where id = p_published_course_id;
-
-  if course_structure is null then
-    return jsonb_build_object('error', 'course structure not found');
-  end if;
-
-  -- extract block weight from course structure
-  select coalesce(
-    (select (block_obj->>'weight')::numeric
-     from jsonb_path_query(
-       course_structure,
-       '$.chapters[*].lessons[*].blocks[*] ? (@.id == $block_id)',
-       jsonb_build_object('block_id', p_block_id::text)
-     ) as block_obj
-     limit 1),
-    1.0 -- default weight if not specified
-  ) into block_weight;
-
-  -- ============================================================================
-  -- step 3: insert or update block progress with weight information
+  -- step 2: insert or update block progress with provided weight
   -- ============================================================================
   insert into public.block_progress (
     user_id,
@@ -2175,7 +2149,7 @@ begin
     lesson_id,
     block_id,
     organization_id,
-    block_weight,
+    block_weight, -- use the provided weight directly
     is_completed,
     completed_at,
     time_spent_seconds,
@@ -2191,7 +2165,7 @@ begin
     p_lesson_id,
     p_block_id,
     organization_id,
-    block_weight,
+    p_block_weight, -- use provided weight
     true, -- mark as completed
     timezone('utc', now()),
     p_time_spent_seconds,
@@ -2219,7 +2193,7 @@ begin
     updated_at = timezone('utc', now());
 
   -- ============================================================================
-  -- step 4: fetch next navigation target (e.g., next block or lesson)
+  -- step 3: fetch next navigation target (e.g., next block or lesson)
   -- ============================================================================
   select public.get_next_navigation_ids(
     p_user_id,
@@ -2229,12 +2203,12 @@ begin
   into next_ids;
 
   -- ============================================================================
-  -- step 5: return a success object including next navigation info
+  -- step 4: return a success object including next navigation info
   -- ============================================================================
   return jsonb_build_object(
     'success', true,
     'block_id', p_block_id,
-    'block_weight', block_weight,
+    'block_weight', p_block_weight,
     'completed_at', to_char(timezone('utc', now()), 'yyyy-mm-dd"T"hh24:mi:ss.ms"Z"'),
     'navigation', next_ids
   );
@@ -4934,7 +4908,22 @@ begin
         count(*) filter (where bp.is_completed = true) as completed_blocks_by_user,
         coalesce(sum(bp.block_weight) filter (where bp.is_completed = true), 0) as completed_weight_by_user,
         count(distinct lp.lesson_id) filter (where lp.completed_at is not null) as completed_lessons_by_user,
-        coalesce(sum(lp.total_weight) filter (where lp.completed_at is not null), 0) as completed_lesson_weight_by_user
+        -- FIX: Calculate completed lesson weight correctly
+        -- Should be sum of block weights from completed blocks in completed lessons only
+        coalesce(
+          (select sum(bp2.block_weight)
+          from public.block_progress bp2
+          inner join public.lesson_progress lp2 on (
+            lp2.user_id = bp2.user_id 
+            and lp2.published_course_id = bp2.published_course_id 
+            and lp2.lesson_id = bp2.lesson_id
+            and lp2.completed_at is not null  -- only from completed lessons
+          )
+          where bp2.user_id = new.user_id 
+            and bp2.published_course_id = new.published_course_id
+            and bp2.is_completed = true),
+          0
+        ) as completed_lesson_weight_by_user
       from public.block_progress bp
       left join public.lesson_progress lp on (
         lp.user_id = bp.user_id 
