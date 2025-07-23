@@ -1,48 +1,48 @@
+import { z } from 'zod';
+
 import type { CompleteBlockProgressInsertSchemaTypes } from '@gonasi/schemas/publish/progressiveReveal';
+import { UnifiedNavigationSchema } from '@gonasi/schemas/publish/unified-navigation';
 
 import type { TypedSupabaseClient } from '../../client';
 import type { Json } from '../../schema';
 import type { ApiResponse } from '../../types';
 
+// =====================================================================================
+// ✅ Define expected structure of the complete_block return payload using Zod
+// =====================================================================================
+const CompleteBlockResponseSchema = z.object({
+  success: z.boolean(),
+  user_id: z.string().uuid(),
+  block_id: z.string().uuid(),
+  lesson_id: z.string().uuid(),
+  chapter_id: z.string().uuid(),
+  block_weight: z.number(),
+  weight_source: z.enum(['structure', 'provided']),
+  was_already_completed: z.boolean(),
+  completed_at: z.string().datetime(),
+  navigation: UnifiedNavigationSchema,
+});
+
+type UnifiedNavigation = z.infer<typeof UnifiedNavigationSchema>;
+
+// =====================================================================================
+// ✅ Return shape for calling functions
+// =====================================================================================
 interface CreateBlockInteractionArgs {
   supabase: TypedSupabaseClient;
   data: CompleteBlockProgressInsertSchemaTypes;
 }
 
-interface CompletionStatus {
-  is_course_complete: boolean;
-  is_lesson_complete: boolean;
-  is_chapter_complete: boolean;
-}
-
-interface NavigationContext {
-  chapter_id: string | null;
-  lesson_id: string | null;
-  block_id: string | null;
-}
-
-interface BlockNavigation {
-  next_block_id: string | null;
-  next_lesson_id: string | null;
-  next_chapter_id: string | null;
-  current_context: NavigationContext;
-  completion_status: CompletionStatus;
-}
-
-interface CompleteBlockResponse {
-  success: boolean;
-  block_id: string;
-  completed_at: string;
-  navigation: BlockNavigation;
-}
-
 type ApiResponseWithNavigation = Omit<ApiResponse, 'data'> & {
   data?: {
-    navigation: BlockNavigation;
+    navigation: UnifiedNavigation;
     completed_at: string;
   };
 };
 
+// =====================================================================================
+// ✅ Main function
+// =====================================================================================
 export const createBlockInteraction = async ({
   supabase,
   data,
@@ -65,30 +65,47 @@ export const createBlockInteraction = async ({
       p_chapter_id: chapter_id,
       p_lesson_id: lesson_id,
       p_block_id: block_id,
-      p_earned_score: earned_score === null ? undefined : earned_score,
-      p_time_spent_seconds: time_spent_seconds === null ? undefined : time_spent_seconds,
+      p_earned_score: earned_score ?? undefined,
+      p_time_spent_seconds: time_spent_seconds ?? undefined,
       p_interaction_data: interaction_data as unknown as Json,
       p_last_response: last_response as unknown as Json,
-      p_block_weight: block_weight,
-    })) as { data: CompleteBlockResponse | { error: string } | null; error: any };
+      p_block_weight: block_weight ?? undefined,
+    })) as { data: unknown; error: any };
+
+    console.log('Raw result from complete_block:', JSON.stringify(result, null, 2));
 
     if (error) {
-      console.error('Supabase RPC error (complete_block):', error);
+      console.error('Supabase RPC error (complete_block):', JSON.stringify(error, null, 2));
       return {
         success: false,
         message: 'Unable to save block progress. Please try again later.',
       };
     }
 
-    if (result && 'error' in result) {
-      console.error('RPC logic error:', result.error);
+    // Handle possible logic-level error returned from function
+    if (result && typeof result === 'object' && 'error' in result) {
+      const errMsg = (result as any).error;
+      console.error('RPC logic error:', errMsg);
       return {
         success: false,
-        message: result.error || 'Unable to save block progress.',
+        message: errMsg || 'Unable to save block progress.',
       };
     }
 
-    const completeBlock = result as CompleteBlockResponse;
+    // Validate result shape using Zod
+    const parsed = CompleteBlockResponseSchema.safeParse(result);
+    if (!parsed.success) {
+      console.error(
+        'Invalid response from complete_block:',
+        JSON.stringify(parsed.error.format(), null, 2),
+      );
+      return {
+        success: false,
+        message: 'Unexpected server response. Please try again.',
+      };
+    }
+
+    const completeBlock = parsed.data;
 
     return {
       success: true,

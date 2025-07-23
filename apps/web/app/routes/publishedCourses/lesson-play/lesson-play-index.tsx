@@ -14,8 +14,8 @@ import { dataWithError, redirectWithError } from 'remix-toast';
 
 import { createBlockInteraction } from '@gonasi/database/lessons';
 import {
-  getUnifiedNavigation,
   fetchPublishedLessonBlocksWithProgress,
+  getUnifiedNavigation,
 } from '@gonasi/database/publishedCourses';
 import { SubmitBlockProgressSchema } from '@gonasi/schemas/publish/progressiveReveal';
 
@@ -99,7 +99,6 @@ export async function action({ request, params }: Route.ActionArgs) {
   }
 
   const parsedPayload = JSON.parse(payloadString);
-  console.log('Payload Received:', parsedPayload);
 
   const validation = SubmitBlockProgressSchema.safeParse(parsedPayload);
   if (!validation.success) {
@@ -124,15 +123,15 @@ export async function action({ request, params }: Route.ActionArgs) {
     const navigation = result.data?.navigation;
 
     if (isLastInteraction && navigation) {
-      const { is_lesson_complete, is_chapter_complete } = navigation.completion_status;
+      const { lesson, chapter } = navigation.current;
 
-      if (is_chapter_complete) {
+      if (chapter?.is_completed) {
         return redirect(`/c/${params.publishedCourseId}/complete/${params.publishedChapterId}`);
       }
 
-      if (is_lesson_complete) {
+      if (lesson?.is_completed) {
         return redirect(
-          `/c/${params.publishedCourseId}/${params.publishedChapterId}/${params.publishedLessonId}/play/${navigation.next_lesson_id}/complete`,
+          `/c/${params.publishedCourseId}/${params.publishedChapterId}/${params.publishedLessonId}/play/${navigation.continue.lesson?.id}/complete`,
         );
       }
     }

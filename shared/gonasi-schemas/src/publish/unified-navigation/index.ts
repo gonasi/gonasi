@@ -1,29 +1,17 @@
-import { z } from 'zod';
+import z from 'zod';
 
-export const LessonMetadataSchema = z.object({
-  lesson_id: z.string().uuid(),
-  chapter_id: z.string().uuid(),
-  course_id: z.string().uuid(),
-});
-
-export const CurrentLessonSchema = LessonMetadataSchema.extend({
-  is_complete: z.boolean(),
-  progress_percentage: z.number(),
-});
-
-export const ContinueLessonSchema = LessonMetadataSchema.extend({
-  is_different_from_next: z.boolean(),
-});
+import { CompletionNavigationStateSchema } from './completion-navigation-state-schema';
+import { ContinueNavigationStateSchema } from './continue-navigation-state-schema';
+import { CourseNavigationInfoSchema } from './course-navigation-info-schema';
+import { CurrentNavigationStateSchema } from './current-navigation-state-schema';
+import { NextNavigationStateSchema } from './next-navigation-state-schema';
+import { PreviousNavigationStateSchema } from './previous-navigation-state-schema';
 
 export const UnifiedNavigationSchema = z.object({
-  current_lesson: CurrentLessonSchema,
-  previous_lesson: LessonMetadataSchema.nullable(),
-  next_lesson: LessonMetadataSchema.nullable(),
-  continue_course: ContinueLessonSchema.nullable(),
-  course_info: z.object({
-    course_id: z.string().uuid(),
-    total_lessons: z.number(),
-    completed_lessons: z.number(),
-    is_course_complete: z.boolean(),
-  }),
+  current: CurrentNavigationStateSchema,
+  previous: PreviousNavigationStateSchema,
+  next: NextNavigationStateSchema,
+  continue: ContinueNavigationStateSchema,
+  completion: CompletionNavigationStateSchema,
+  course_info: CourseNavigationInfoSchema,
 });

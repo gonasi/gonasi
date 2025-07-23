@@ -202,7 +202,7 @@ begin
       else 'provided'
     end,
     'was_already_completed', was_already_completed,
-    'completed_at', to_char(timezone('utc', now()), 'yyyy-mm-dd"T"hh24:mi:ss.ms"Z"'),
+    'completed_at', date_trunc('second', timezone('utc', now()))::timestamptz,
     'navigation', unified_navigation
   );
 end;

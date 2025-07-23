@@ -180,6 +180,7 @@ schema_paths = [
   './schemas/publishedCourses/utils/chk_course_structure_content_valid_constraint.sql',
   './schemas/publishedCourses/utils/get_published_lesson_blocks.sql',
   './schemas/publishedCourses/utils/upsert_published_course_with_content.sql',
+  './schemas/publishedCourses/utils/get_course_progress_overview.sql',
 
   # enrollment related tables
   './schemas/enrollments/course_enrollments_schema_and_indexes.sql',
@@ -242,7 +243,7 @@ schema_paths = [
   './schemas/progress/utils/get_lesson_navigation_ids.sql',
 
 
-  './schemas/publishedCourses/utils/get_course_progress_overview.sql'
+
 
   # './schemas/enrollment_activities_schema_indexes_rls.sql',
 
