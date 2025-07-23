@@ -33,11 +33,11 @@ begin
   select lesson_obj
   into lesson_data
   from public.published_course_structure_content pcs,
-       jsonb_path_query(
-         pcs.course_structure_content,
-         '$.chapters[*].lessons[*] ? (@.id == $lesson_id)',
-         jsonb_build_object('lesson_id', p_lesson_id::text)
-       ) as lesson_obj
+        jsonb_path_query(
+          pcs.course_structure_content,
+          '$.chapters[*].lessons[*] ? (@.id == $lesson_id)',
+          jsonb_build_object('lesson_id', p_lesson_id::text)
+        ) as lesson_obj
   where pcs.id = p_course_id
   limit 1;
 
@@ -52,25 +52,16 @@ begin
   -- Get number of blocks in the lesson
   total_blocks_count := jsonb_array_length(lesson_data->'blocks');
 
-  /*
-    Step 1: Enrich lesson blocks with:
-      - Position
-      - Weight, skippable flag
-      - Progress data (if any)
-      - Derived info: visibility, active status, etc.
-  */
   with enriched_blocks as (
     select 
       block_info as block,
       (block_info->>'id')::uuid as block_id,
       pos as position,
 
-      -- Extract settings for weight and skippability
       coalesce((block_info->'settings'->>'can_skip')::boolean, false) as can_skip,
       coalesce((block_info->'settings'->>'weight')::int, 1) as weight,
       (pos = total_blocks_count) as is_last_block,
 
-      -- Join with block_progress data if available
       bp.progress_data as block_progress,
       coalesce(bp.is_completed, false) as is_completed,
       coalesce(bp.has_started, false) as has_started,
@@ -78,13 +69,11 @@ begin
       bp.earned_score,
       bp.completed_at,
 
-      -- Used for progressive reveal: is the previous block completed?
       lag(coalesce(bp.is_completed, false), 1, true) over (order by pos) as prev_completed
 
     from jsonb_array_elements(lesson_data->'blocks') with ordinality as blocks(block_info, pos)
 
     left join (
-      -- Inline subquery to fetch all progress entries for this user/lesson
       select 
         block_id,
         jsonb_build_object(
@@ -93,10 +82,10 @@ begin
           'block_id', bp.block_id,
           'lesson_id', bp.lesson_id,
           'chapter_id', bp.chapter_id,
-          'created_at', case when bp.created_at is not null then to_char(bp.created_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') else null end,
-          'started_at', case when bp.started_at is not null then to_char(bp.started_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') else null end,
-          'updated_at', case when bp.updated_at is not null then to_char(bp.updated_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') else null end,
-          'completed_at', case when bp.completed_at is not null then to_char(bp.completed_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') else null end,
+          'created_at', case when bp.created_at is not null then date_trunc('milliseconds', bp.created_at at time zone 'UTC')::timestamptz else null end,
+          'started_at', case when bp.started_at is not null then date_trunc('milliseconds', bp.started_at at time zone 'UTC')::timestamptz else null end,
+          'updated_at', case when bp.updated_at is not null then date_trunc('milliseconds', bp.updated_at at time zone 'UTC')::timestamptz else null end,
+          'completed_at', case when bp.completed_at is not null then date_trunc('milliseconds', bp.completed_at at time zone 'UTC')::timestamptz else null end,
           'earned_score', bp.earned_score,
           'is_completed', bp.is_completed,
           'attempt_count', bp.attempt_count,
@@ -118,11 +107,6 @@ begin
     ) bp on bp.block_id = (block_info->>'id')::uuid
   ),
 
-  /*
-    Step 2: Derive visibility and active status
-      - is_visible: if first, skippable, or previous block completed
-      - is_active: if in-progress, or next unlocked
-  */
   final_blocks as (
     select 
       *,
@@ -141,12 +125,8 @@ begin
     from enriched_blocks
   ),
 
-  /*
-    Step 3: Aggregate all block metadata and summary metrics
-  */
   aggregated_data as (
     select 
-      -- Full enriched blocks list
       jsonb_agg(
         jsonb_build_object(
           'block', block,
@@ -158,7 +138,6 @@ begin
         order by position
       ) as blocks,
 
-      -- Summary metadata fields
       count(*) as total_blocks,
       sum(weight) as total_weight,
       sum(weight) filter (where is_completed) as completed_weight,
@@ -172,14 +151,13 @@ begin
       avg(earned_score) as average_score,
       case 
         when max(completed_at) is not null 
-        then to_char(max(completed_at) at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')
+        then date_trunc('milliseconds', max(completed_at) at time zone 'UTC')::timestamptz
         else null
       end as last_completed_at,
       (sum(weight) filter (where is_completed) = sum(weight)) as is_fully_completed
     from final_blocks
   )
 
-  -- Build the final JSON object to return
   select jsonb_build_object(
     'blocks', blocks,
     'metadata', jsonb_build_object(
@@ -203,7 +181,6 @@ begin
   into result
   from aggregated_data;
 
-  -- Return the fully enriched progress result
   return result;
 end;
 $$;

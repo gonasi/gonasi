@@ -1,10 +1,10 @@
 import { z } from 'zod';
 
+import { safeDateTime } from '../../utils';
 import { PricingSchema } from '../course-pricing';
 
 // === Reusable Schemas ===
 const UUIDSchema = z.string().uuid();
-const TimestampSchema = z.string().datetime();
 
 // === Organization Schema ===
 const PublishOverviewOrganizationSchema = z.object({
@@ -77,7 +77,7 @@ const PublishOverviewCourseSchema = z.object({
   average_rating: z.number().min(1).max(5).nullable().optional(),
   total_reviews: z.number().int().min(0),
   total_enrollments: z.number().int().min(0),
-  published_at: TimestampSchema,
+  published_at: safeDateTime(),
   category_id: UUIDSchema.nullable(),
   category_name: z.string().nullable(),
   subcategory_id: UUIDSchema.nullable(),
@@ -98,8 +98,8 @@ const PublishOverviewOverallProgressSchema = z.object({
   total_lesson_weight: z.number().min(0),
   completed_lesson_weight: z.number().min(0),
   lesson_progress_percentage: z.number().min(0).max(100),
-  completed_at: TimestampSchema.nullable(),
-  updated_at: TimestampSchema.nullable(),
+  completed_at: safeDateTime().nullable(),
+  updated_at: safeDateTime().nullable(),
   active_chapter_id: UUIDSchema.nullable(),
   active_lesson_id: UUIDSchema.nullable(),
   is_completed: z.boolean(),
@@ -110,7 +110,7 @@ const PublishOverviewRecentActivityItemSchema = z.object({
   block_id: UUIDSchema,
   lesson_id: UUIDSchema,
   chapter_id: UUIDSchema,
-  completed_at: TimestampSchema,
+  completed_at: safeDateTime(),
   time_spent_seconds: z.number().int().min(0),
   earned_score: z.number().nullable(),
   is_completed: z.literal(true),
@@ -121,7 +121,7 @@ const PublishOverviewStatisticsSchema = z.object({
   total_time_spent: z.number().int().min(0),
   average_score: z.number().min(0).max(100).nullable(),
   completion_streak: z.number().int().min(0),
-  started_at: TimestampSchema.nullable(),
+  started_at: safeDateTime().nullable(),
 });
 
 // === Main Course Progress Overview Schema ===

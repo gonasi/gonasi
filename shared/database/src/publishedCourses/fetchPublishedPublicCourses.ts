@@ -139,8 +139,6 @@ export async function fetchPublishedPublicCourses({
     }),
   );
 
-  console.log('[fetchPublishedPublicCourses] Returning processed data');
-
   return {
     count: count || 0,
     data: processedCourses,

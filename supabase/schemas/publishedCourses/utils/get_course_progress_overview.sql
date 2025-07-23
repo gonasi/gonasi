@@ -90,7 +90,7 @@ begin
       'average_rating', pc.average_rating,
       'total_reviews', pc.total_reviews,
       'total_enrollments', pc.total_enrollments,
-      'published_at', to_char(pc.published_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),
+      'published_at', date_trunc('milliseconds', pc.published_at at time zone 'UTC')::timestamptz,
       'category_id', pc.category_id,
       'category_name', cat.name,
       'subcategory_id', pc.subcategory_id,
@@ -123,14 +123,8 @@ begin
               'total_lesson_weight', cp.total_lesson_weight,
               'completed_lesson_weight', cp.completed_lesson_weight,
               'lesson_progress_percentage', cp.lesson_progress_percentage,
-              'completed_at', case 
-                when cp.completed_at is not null then 
-                  to_char(cp.completed_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')
-                else null end,
-              'updated_at', case 
-                when cp.updated_at is not null then 
-                  to_char(cp.updated_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')
-                else null end,
+              'completed_at', date_trunc('milliseconds', cp.completed_at at time zone 'UTC')::timestamptz,
+              'updated_at', date_trunc('milliseconds', cp.updated_at at time zone 'UTC')::timestamptz,
               'active_chapter_id', v_active_chapter_id,
               'active_lesson_id', v_active_lesson_id,
               'is_completed', cp.is_completed
@@ -234,14 +228,8 @@ begin
             'total_weight', lp.total_weight,
             'completed_weight', lp.completed_weight,
             'progress_percentage', lp.progress_percentage,
-            'completed_at', case 
-              when lp.completed_at is not null then 
-                to_char(lp.completed_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')
-              else null end,
-            'updated_at', case 
-              when lp.updated_at is not null then 
-                to_char(lp.updated_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')
-              else null end,
+            'completed_at', date_trunc('milliseconds', lp.completed_at at time zone 'UTC')::timestamptz,
+            'updated_at', date_trunc('milliseconds', lp.updated_at at time zone 'UTC')::timestamptz,
             'is_completed', lp.is_completed
           ) as progress_data
           from public.lesson_progress lp
@@ -279,7 +267,7 @@ begin
             'block_id', sub.block_id,
             'lesson_id', sub.lesson_id,
             'chapter_id', sub.chapter_id,
-            'completed_at', to_char(sub.completed_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),
+            'completed_at', date_trunc('milliseconds', sub.completed_at at time zone 'UTC')::timestamptz,
             'time_spent_seconds', sub.time_spent_seconds,
             'earned_score', sub.earned_score,
             'is_completed', true
@@ -316,21 +304,12 @@ begin
               and bp.earned_score is not null
           ), null),
           'completion_streak', 0,
-          'started_at', case
-            when (
-              select min(bp.started_at)
-              from public.block_progress bp
-              where bp.user_id = v_user_id
-                and bp.published_course_id = p_published_course_id
-            ) is not null then
-              to_char((
-                select min(bp.started_at)
-                from public.block_progress bp
-                where bp.user_id = v_user_id
-                  and bp.published_course_id = p_published_course_id
-              ) at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')
-            else null
-          end
+          'started_at', (
+            select date_trunc('milliseconds', min(bp.started_at) at time zone 'UTC')::timestamptz
+            from public.block_progress bp
+            where bp.user_id = v_user_id
+              and bp.published_course_id = p_published_course_id
+          )
         )
       else null
     end
