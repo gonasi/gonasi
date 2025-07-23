@@ -48,6 +48,37 @@ create table "public"."block_progress" (
 
 alter table "public"."block_progress" enable row level security;
 
+create table "public"."chapter_progress" (
+    "id" uuid not null default uuid_generate_v4(),
+    "user_id" uuid not null,
+    "published_course_id" uuid not null,
+    "chapter_id" uuid not null,
+    "total_lessons" integer not null,
+    "completed_lessons" integer not null default 0,
+    "total_blocks" integer not null,
+    "completed_blocks" integer not null default 0,
+    "total_weight" numeric not null default 0,
+    "completed_weight" numeric not null default 0,
+    "progress_percentage" numeric generated always as (
+CASE
+    WHEN (total_weight > (0)::numeric) THEN ((completed_weight / total_weight) * (100)::numeric)
+    ELSE (0)::numeric
+END) stored,
+    "total_lesson_weight" numeric not null default 0,
+    "completed_lesson_weight" numeric not null default 0,
+    "lesson_progress_percentage" numeric generated always as (
+CASE
+    WHEN (total_lesson_weight > (0)::numeric) THEN ((completed_lesson_weight / total_lesson_weight) * (100)::numeric)
+    ELSE (0)::numeric
+END) stored,
+    "completed_at" timestamp with time zone,
+    "updated_at" timestamp with time zone not null default timezone('utc'::text, now()),
+    "created_at" timestamp with time zone not null default timezone('utc'::text, now())
+);
+
+
+alter table "public"."chapter_progress" enable row level security;
+
 create table "public"."chapters" (
     "id" uuid not null default uuid_generate_v4(),
     "organization_id" uuid not null,
@@ -558,6 +589,10 @@ CREATE UNIQUE INDEX block_progress_pkey ON public.block_progress USING btree (id
 
 CREATE UNIQUE INDEX block_progress_user_id_published_course_id_block_id_key ON public.block_progress USING btree (user_id, published_course_id, block_id);
 
+CREATE UNIQUE INDEX chapter_progress_pkey ON public.chapter_progress USING btree (id);
+
+CREATE UNIQUE INDEX chapter_progress_user_id_published_course_id_chapter_id_key ON public.chapter_progress USING btree (user_id, published_course_id, chapter_id);
+
 CREATE UNIQUE INDEX chapters_pkey ON public.chapters USING btree (id);
 
 CREATE UNIQUE INDEX course_categories_pkey ON public.course_categories USING btree (id);
@@ -603,6 +638,18 @@ CREATE INDEX idx_block_progress_user ON public.block_progress USING btree (user_
 CREATE INDEX idx_block_progress_user_block ON public.block_progress USING btree (user_id, block_id);
 
 CREATE INDEX idx_block_progress_user_course_completed ON public.block_progress USING btree (user_id, published_course_id) WHERE (is_completed = true);
+
+CREATE INDEX idx_chapter_progress_chapter ON public.chapter_progress USING btree (chapter_id);
+
+CREATE INDEX idx_chapter_progress_completed_at ON public.chapter_progress USING btree (completed_at);
+
+CREATE INDEX idx_chapter_progress_course ON public.chapter_progress USING btree (published_course_id);
+
+CREATE INDEX idx_chapter_progress_lesson_percentage ON public.chapter_progress USING btree (lesson_progress_percentage);
+
+CREATE INDEX idx_chapter_progress_percentage ON public.chapter_progress USING btree (progress_percentage);
+
+CREATE INDEX idx_chapter_progress_user ON public.chapter_progress USING btree (user_id);
 
 CREATE INDEX idx_chapters_course_id ON public.chapters USING btree (course_id);
 
@@ -936,6 +983,8 @@ CREATE UNIQUE INDEX wallet_transactions_pkey ON public.wallet_transactions USING
 
 alter table "public"."block_progress" add constraint "block_progress_pkey" PRIMARY KEY using index "block_progress_pkey";
 
+alter table "public"."chapter_progress" add constraint "chapter_progress_pkey" PRIMARY KEY using index "chapter_progress_pkey";
+
 alter table "public"."chapters" add constraint "chapters_pkey" PRIMARY KEY using index "chapters_pkey";
 
 alter table "public"."course_categories" add constraint "course_categories_pkey" PRIMARY KEY using index "course_categories_pkey";
@@ -1003,6 +1052,16 @@ alter table "public"."block_progress" add constraint "block_progress_user_id_fke
 alter table "public"."block_progress" validate constraint "block_progress_user_id_fkey";
 
 alter table "public"."block_progress" add constraint "block_progress_user_id_published_course_id_block_id_key" UNIQUE using index "block_progress_user_id_published_course_id_block_id_key";
+
+alter table "public"."chapter_progress" add constraint "chapter_progress_published_course_id_fkey" FOREIGN KEY (published_course_id) REFERENCES published_courses(id) ON DELETE CASCADE not valid;
+
+alter table "public"."chapter_progress" validate constraint "chapter_progress_published_course_id_fkey";
+
+alter table "public"."chapter_progress" add constraint "chapter_progress_user_id_fkey" FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE not valid;
+
+alter table "public"."chapter_progress" validate constraint "chapter_progress_user_id_fkey";
+
+alter table "public"."chapter_progress" add constraint "chapter_progress_user_id_published_course_id_chapter_id_key" UNIQUE using index "chapter_progress_user_id_published_course_id_chapter_id_key";
 
 alter table "public"."chapters" add constraint "chapters_course_id_fkey" FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE not valid;
 
@@ -6139,6 +6198,48 @@ grant truncate on table "public"."block_progress" to "service_role";
 
 grant update on table "public"."block_progress" to "service_role";
 
+grant delete on table "public"."chapter_progress" to "anon";
+
+grant insert on table "public"."chapter_progress" to "anon";
+
+grant references on table "public"."chapter_progress" to "anon";
+
+grant select on table "public"."chapter_progress" to "anon";
+
+grant trigger on table "public"."chapter_progress" to "anon";
+
+grant truncate on table "public"."chapter_progress" to "anon";
+
+grant update on table "public"."chapter_progress" to "anon";
+
+grant delete on table "public"."chapter_progress" to "authenticated";
+
+grant insert on table "public"."chapter_progress" to "authenticated";
+
+grant references on table "public"."chapter_progress" to "authenticated";
+
+grant select on table "public"."chapter_progress" to "authenticated";
+
+grant trigger on table "public"."chapter_progress" to "authenticated";
+
+grant truncate on table "public"."chapter_progress" to "authenticated";
+
+grant update on table "public"."chapter_progress" to "authenticated";
+
+grant delete on table "public"."chapter_progress" to "service_role";
+
+grant insert on table "public"."chapter_progress" to "service_role";
+
+grant references on table "public"."chapter_progress" to "service_role";
+
+grant select on table "public"."chapter_progress" to "service_role";
+
+grant trigger on table "public"."chapter_progress" to "service_role";
+
+grant truncate on table "public"."chapter_progress" to "service_role";
+
+grant update on table "public"."chapter_progress" to "service_role";
+
 grant delete on table "public"."chapters" to "anon";
 
 grant insert on table "public"."chapters" to "anon";
@@ -7304,6 +7405,53 @@ to authenticated
 using ((user_id = ( SELECT auth.uid() AS uid)));
 
 
+create policy "delete: user can delete their own progress"
+on "public"."chapter_progress"
+as permissive
+for delete
+to authenticated
+using ((user_id = ( SELECT auth.uid() AS uid)));
+
+
+create policy "insert: user can create their own progress"
+on "public"."chapter_progress"
+as permissive
+for insert
+to authenticated
+with check ((user_id = ( SELECT auth.uid() AS uid)));
+
+
+create policy "select: anon users can view public progress"
+on "public"."chapter_progress"
+as permissive
+for select
+to anon
+using ((EXISTS ( SELECT 1
+   FROM profiles p
+  WHERE ((p.id = chapter_progress.user_id) AND (p.is_public = true)))));
+
+
+create policy "select: auth users can view public or same-org progress"
+on "public"."chapter_progress"
+as permissive
+for select
+to authenticated
+using ((EXISTS ( SELECT 1
+   FROM profiles p
+  WHERE ((p.id = chapter_progress.user_id) AND ((p.is_public = true) OR (EXISTS ( SELECT 1
+           FROM (organization_members m1
+             JOIN organization_members m2 ON ((m1.organization_id = m2.organization_id)))
+          WHERE ((m1.user_id = chapter_progress.user_id) AND (m2.user_id = ( SELECT auth.uid() AS uid))))))))));
+
+
+create policy "update: user can update their own progress"
+on "public"."chapter_progress"
+as permissive
+for update
+to authenticated
+using ((user_id = ( SELECT auth.uid() AS uid)));
+
+
 create policy "delete: can_user_edit_course allows deleting chapters"
 on "public"."chapters"
 as permissive
@@ -8098,6 +8246,8 @@ using ((EXISTS ( SELECT 1
 
 
 CREATE TRIGGER trg_block_progress_set_updated_at BEFORE UPDATE ON public.block_progress FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER trg_chapter_progress_set_updated_at BEFORE UPDATE ON public.chapter_progress FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER trg_set_chapter_position BEFORE INSERT ON public.chapters FOR EACH ROW EXECUTE FUNCTION set_chapter_position();
 

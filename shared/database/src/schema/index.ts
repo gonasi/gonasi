@@ -119,6 +119,81 @@ export type Database = {
           },
         ]
       }
+      chapter_progress: {
+        Row: {
+          chapter_id: string
+          completed_at: string | null
+          completed_blocks: number
+          completed_lesson_weight: number
+          completed_lessons: number
+          completed_weight: number
+          created_at: string
+          id: string
+          lesson_progress_percentage: number | null
+          progress_percentage: number | null
+          published_course_id: string
+          total_blocks: number
+          total_lesson_weight: number
+          total_lessons: number
+          total_weight: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          chapter_id: string
+          completed_at?: string | null
+          completed_blocks?: number
+          completed_lesson_weight?: number
+          completed_lessons?: number
+          completed_weight?: number
+          created_at?: string
+          id?: string
+          lesson_progress_percentage?: number | null
+          progress_percentage?: number | null
+          published_course_id: string
+          total_blocks: number
+          total_lesson_weight?: number
+          total_lessons: number
+          total_weight?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          chapter_id?: string
+          completed_at?: string | null
+          completed_blocks?: number
+          completed_lesson_weight?: number
+          completed_lessons?: number
+          completed_weight?: number
+          created_at?: string
+          id?: string
+          lesson_progress_percentage?: number | null
+          progress_percentage?: number | null
+          published_course_id?: string
+          total_blocks?: number
+          total_lesson_weight?: number
+          total_lessons?: number
+          total_weight?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chapter_progress_published_course_id_fkey"
+            columns: ["published_course_id"]
+            isOneToOne: false
+            referencedRelation: "published_courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chapter_progress_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chapters: {
         Row: {
           course_id: string
