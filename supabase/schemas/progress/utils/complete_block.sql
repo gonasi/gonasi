@@ -7,7 +7,7 @@
 --   1. Validates the block weight from the course structure.
 --   2. Inserts or updates block progress.
 --   3. Triggers lesson, chapter, and course progress updates.
---   4. Returns navigation metadata for next content.
+--   4. Returns navigation metadata for next content using unified navigation system.
 --
 -- Parameters:
 --   p_published_course_id  - UUID of the published course
@@ -21,7 +21,7 @@
 --   p_last_response        - JSONB payload of final user submission (optional)
 --
 -- Returns:
---   JSONB object with completion status, block metadata, and next navigation targets.
+--   JSONB object with completion status, block metadata, and unified navigation data.
 -- =============================================================================
 
 create or replace function public.complete_block(
@@ -46,7 +46,7 @@ declare
   structure_weight numeric;
   final_weight numeric;
   result jsonb;
-  next_ids jsonb;
+  unified_navigation jsonb;
   was_already_completed boolean := false;
 begin
   -- =========================================================================
@@ -83,7 +83,7 @@ begin
             '$.chapters[*].lessons[*].blocks[*] ? (@.id == $block_id)',
             jsonb_build_object('block_id', p_block_id::text)
           ) as block_obj
-   where pcsc.id = p_published_course_id;
+    where pcsc.id = p_published_course_id;
 
   -- Use structure weight if available; otherwise use provided or default to 1.0
   final_weight := coalesce(structure_weight, p_block_weight, 1.0);
@@ -176,22 +176,26 @@ begin
   end if;
 
   -- =========================================================================
-  -- STEP 7: Determine next navigation targets
+  -- STEP 7: Get unified navigation data using the new navigation system
   -- =========================================================================
-  select public.get_next_navigation_ids(
+  select public.get_unified_navigation(
     current_user_id,
     p_published_course_id,
-    p_block_id
+    p_block_id,
+    p_lesson_id,
+    p_chapter_id
   )
-  into next_ids;
+  into unified_navigation;
 
   -- =========================================================================
-  -- STEP 8: Return final status with metadata
+  -- STEP 8: Return final status with metadata and enhanced navigation
   -- =========================================================================
   return jsonb_build_object(
     'success', true,
     'user_id', current_user_id,
     'block_id', p_block_id,
+    'lesson_id', p_lesson_id,
+    'chapter_id', p_chapter_id,
     'block_weight', final_weight,
     'weight_source', case
       when structure_weight is not null then 'structure'
@@ -199,7 +203,7 @@ begin
     end,
     'was_already_completed', was_already_completed,
     'completed_at', to_char(timezone('utc', now()), 'yyyy-mm-dd"T"hh24:mi:ss.ms"Z"'),
-    'navigation', next_ids
+    'navigation', unified_navigation
   );
 end;
 $$;
