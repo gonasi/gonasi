@@ -15,7 +15,6 @@
 -- returns:
 --   jsonb object with detailed progress breakdown
 -- =============================================================================
-
 create or replace function public.get_completion_navigation_state(
   p_user_id uuid,
   p_published_course_id uuid,
@@ -52,33 +51,33 @@ begin
     from jsonb_array_elements(course_structure -> 'chapters') as chapter_obj
   ),
 
-  -- count of completed blocks for the user
+  -- count of completed blocks for the user (CHANGED TO LEFT JOIN)
   completed_blocks as (
     select count(*) as count
     from all_blocks ab
-    inner join public.block_progress bp on bp.block_id = ab.block_id
-    where bp.user_id = p_user_id
-      and bp.published_course_id = p_published_course_id
-      and bp.is_completed = true
+    left join public.block_progress bp on bp.block_id = ab.block_id
+    where (bp.user_id = p_user_id or bp.user_id is null)
+      and (bp.published_course_id = p_published_course_id or bp.published_course_id is null)
+      and coalesce(bp.is_completed, false) = true
   ),
 
-  -- count of completed lessons for the user
+  -- count of completed lessons for the user (CHANGED TO LEFT JOIN)
   completed_lessons as (
     select count(*) as count
     from all_lessons al
-    inner join public.lesson_progress lp on lp.lesson_id = al.lesson_id
-    where lp.user_id = p_user_id
-      and lp.published_course_id = p_published_course_id
+    left join public.lesson_progress lp on lp.lesson_id = al.lesson_id
+    where (lp.user_id = p_user_id or lp.user_id is null)
+      and (lp.published_course_id = p_published_course_id or lp.published_course_id is null)
       and lp.completed_at is not null
   ),
 
-  -- count of completed chapters for the user
+  -- count of completed chapters for the user (CHANGED TO LEFT JOIN)
   completed_chapters as (
     select count(*) as count
     from all_chapters ac
-    inner join public.chapter_progress cp on cp.chapter_id = ac.chapter_id
-    where cp.user_id = p_user_id
-      and cp.published_course_id = p_published_course_id
+    left join public.chapter_progress cp on cp.chapter_id = ac.chapter_id
+    where (cp.user_id = p_user_id or cp.user_id is null)
+      and (cp.published_course_id = p_published_course_id or cp.published_course_id is null)
       and cp.completed_at is not null
   )
 
@@ -92,7 +91,7 @@ begin
     (select count from completed_chapters) as completed_chapters
   into completion_stats;
 
-  -- build and return a detailed jsonb completion object
+  -- Build and return detailed jsonb completion object
   return jsonb_build_object(
     'blocks', jsonb_build_object(
       'total', completion_stats.total_blocks,

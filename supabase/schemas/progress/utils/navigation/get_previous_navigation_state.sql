@@ -17,7 +17,6 @@
 --   chapter: { id, course_id } | null
 -- }
 -- =============================================================================
-
 create or replace function public.get_previous_navigation_state(
   p_user_id uuid,
   p_published_course_id uuid,
@@ -34,107 +33,88 @@ declare
   prev_lesson record;
   prev_chapter record;
 begin
-  -- =========================================================================
-  -- STEP 1: Find the previous block (based on global order index)
-  -- =========================================================================
-  if current_context.block_id is not null then
-    with block_structure as (
-      select
-        (chapter_obj ->> 'id')::uuid as chapter_id,
-        (lesson_obj ->> 'id')::uuid as lesson_id,
-        (block_obj ->> 'id')::uuid as block_id,
-        row_number() over (
-          order by 
-            (chapter_obj ->> 'order_index')::int,
-            (lesson_obj ->> 'order_index')::int,
-            (block_obj ->> 'order_index')::int
-        ) as global_order
-      from jsonb_array_elements(course_structure -> 'chapters') as chapter_obj,
-           jsonb_array_elements(chapter_obj -> 'lessons') as lesson_obj,
-           jsonb_array_elements(lesson_obj -> 'blocks') as block_obj
-    )
-    select chapter_id, lesson_id, block_id
-    into prev_block
-    from block_structure
-    where global_order = current_context.block_global_order - 1;
-  end if;
+  -- Always assign prev_block record (with defaults)
+  select
+    coalesce(bs.chapter_id, null::uuid) as chapter_id,
+    coalesce(bs.lesson_id, null::uuid) as lesson_id,
+    coalesce(bs.block_id, null::uuid) as block_id
+  into prev_block
+  from (
+    select null::uuid as chapter_id, null::uuid as lesson_id, null::uuid as block_id
+  ) as defaults
+  left join (
+    select
+      (chapter_obj ->> 'id')::uuid as chapter_id,
+      (lesson_obj ->> 'id')::uuid as lesson_id,
+      (block_obj ->> 'id')::uuid as block_id,
+      row_number() over (
+        order by 
+          (chapter_obj ->> 'order_index')::int,
+          (lesson_obj ->> 'order_index')::int,
+          (block_obj ->> 'order_index')::int
+      ) as global_order
+    from jsonb_array_elements(course_structure -> 'chapters') as chapter_obj,
+         jsonb_array_elements(chapter_obj -> 'lessons') as lesson_obj,
+         jsonb_array_elements(lesson_obj -> 'blocks') as block_obj
+  ) bs on (
+    current_context.block_id is not null 
+    and bs.global_order = current_context.block_global_order - 1
+  );
 
+  -- Always assign prev_lesson record (with defaults)
+  select
+    coalesce(ls.chapter_id, null::uuid) as chapter_id,
+    coalesce(ls.lesson_id, null::uuid) as lesson_id
+  into prev_lesson
+  from (
+    select null::uuid as chapter_id, null::uuid as lesson_id
+  ) as defaults
+  left join (
+    select
+      (chapter_obj ->> 'id')::uuid as chapter_id,
+      (lesson_obj ->> 'id')::uuid as lesson_id,
+      row_number() over (
+        order by 
+          (chapter_obj ->> 'order_index')::int,
+          (lesson_obj ->> 'order_index')::int
+      ) as global_order
+    from jsonb_array_elements(course_structure -> 'chapters') as chapter_obj,
+         jsonb_array_elements(chapter_obj -> 'lessons') as lesson_obj
+  ) ls on (
+    case 
+      when current_context.lesson_id is not null then
+        ls.global_order = current_context.lesson_global_order - 1
+      else
+        current_context.lesson_global_order is not null 
+        and ls.global_order < current_context.lesson_global_order
+    end
+  );
 
--- Find the previous lesson (based on global order index)
-  if current_context.lesson_id is not null then
-    with lesson_structure as (
-      select
-        (chapter_obj ->> 'id')::uuid as chapter_id,
-        (lesson_obj ->> 'id')::uuid as lesson_id,
-        row_number() over (
-          order by 
-            (chapter_obj ->> 'order_index')::int,
-            (lesson_obj ->> 'order_index')::int
-        ) as global_order
-      from jsonb_array_elements(course_structure -> 'chapters') as chapter_obj,
-           jsonb_array_elements(chapter_obj -> 'lessons') as lesson_obj
-    )
-    select chapter_id, lesson_id
-    into prev_lesson
-    from lesson_structure
-    where global_order = current_context.lesson_global_order - 1;
-  else
-    -- If no current lesson, find previous lesson before current block's lesson
-    with lesson_structure as (
-      select
-        (chapter_obj ->> 'id')::uuid as chapter_id,
-        (lesson_obj ->> 'id')::uuid as lesson_id,
-        row_number() over (
-          order by 
-            (chapter_obj ->> 'order_index')::int,
-            (lesson_obj ->> 'order_index')::int
-        ) as global_order
-      from jsonb_array_elements(course_structure -> 'chapters') as chapter_obj,
-           jsonb_array_elements(chapter_obj -> 'lessons') as lesson_obj
-    )
-    select chapter_id, lesson_id
-    into prev_lesson
-    from lesson_structure
-    where global_order < coalesce(current_context.lesson_global_order, 999999)
-    order by global_order desc
-    limit 1;
-  end if;
+  -- Always assign prev_chapter record (with defaults)
+  select
+    coalesce(cs.chapter_id, null::uuid) as chapter_id
+  into prev_chapter
+  from (
+    select null::uuid as chapter_id
+  ) as defaults
+  left join (
+    select
+      (chapter_obj ->> 'id')::uuid as chapter_id,
+      row_number() over (
+        order by (chapter_obj ->> 'order_index')::int
+      ) as global_order
+    from jsonb_array_elements(course_structure -> 'chapters') as chapter_obj
+  ) cs on (
+    case 
+      when current_context.chapter_id is not null then
+        cs.global_order = current_context.chapter_global_order - 1
+      else
+        current_context.chapter_global_order is not null 
+        and cs.global_order < current_context.chapter_global_order
+    end
+  );
 
-  -- Find the previous chapter (based on global order index)
-  if current_context.chapter_id is not null then
-    with chapter_structure as (
-      select
-        (chapter_obj ->> 'id')::uuid as chapter_id,
-        row_number() over (
-          order by (chapter_obj ->> 'order_index')::int
-        ) as global_order
-      from jsonb_array_elements(course_structure -> 'chapters') as chapter_obj
-    )
-    select chapter_id
-    into prev_chapter
-    from chapter_structure
-    where global_order = current_context.chapter_global_order - 1;
-  else
-    -- If no current chapter, find previous chapter before current block's chapter
-    with chapter_structure as (
-      select
-        (chapter_obj ->> 'id')::uuid as chapter_id,
-        row_number() over (
-          order by (chapter_obj ->> 'order_index')::int
-        ) as global_order
-      from jsonb_array_elements(course_structure -> 'chapters') as chapter_obj
-    )
-    select chapter_id
-    into prev_chapter
-    from chapter_structure
-    where global_order < coalesce(current_context.chapter_global_order, 999999)
-    order by global_order desc
-    limit 1;
-  end if;
-
-  -- =========================================================================
-  -- STEP 4: Return unified JSONB result with previous navigation pointers
-  -- =========================================================================
+  -- Return unified JSONB result
   return jsonb_build_object(
     'block', case when prev_block.block_id is not null then
       jsonb_build_object(
