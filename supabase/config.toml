@@ -215,6 +215,9 @@ schema_paths = [
   './schemas/progress/course_progress_schema_indexes.sql',
   './schemas/progress/course_progress_rls.sql',
 
+  './schemas/progress/chapter_progress_schema_indexes.sql',
+  './schemas/progress/chapter_progress_rls.sql',
+
   './schemas/progress/lesson_progress_schema_indexes.sql',
   './schemas/progress/lesson_progress_rls.sql',
 
