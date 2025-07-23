@@ -122,9 +122,6 @@ export async function action({ request, params }: Route.ActionArgs) {
 
     const navigation = result.data?.navigation;
 
-    console.log('NAVIGATION: ', JSON.stringify(navigation, null, 4));
-    console.log('last: ', isLastInteraction, navigation);
-
     if (isLastInteraction && navigation) {
       const { lesson, chapter, course } = navigation.current;
 

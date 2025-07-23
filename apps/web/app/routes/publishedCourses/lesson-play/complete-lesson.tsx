@@ -2,7 +2,7 @@ import Confetti from 'react-confetti-boom';
 import { redirect } from 'react-router';
 import { differenceInMinutes } from 'date-fns';
 import { motion } from 'framer-motion';
-import { ArrowRight, BookOpen, CheckCircle } from 'lucide-react';
+import { ArrowRight, BookOpen, CheckCircle, NotebookPen } from 'lucide-react';
 
 import {
   fetchLessonOverviewWithChapterProgress,
@@ -56,13 +56,18 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     ]);
 
     const current = navigationData?.current;
+    console.debug('Resolved current context:', current);
 
     const canonicalLessonUrl = `/c/${current?.course.id}/${current?.chapter?.id}/${current?.lesson?.id}/play`;
+    console.debug('Canonical lesson URL:', canonicalLessonUrl);
+
+    if (!navigationData) {
+      return redirect(canonicalLessonUrl);
+    }
 
     const isNonCanonical =
       params.publishedCourseId !== current?.course?.id ||
-      params.publishedLessonId !== current?.lesson?.id ||
-      params.nextLessonId !== navigationData?.continue?.lesson?.id;
+      params.publishedLessonId !== current?.lesson?.id;
 
     if (isNonCanonical) {
       console.warn('Non-canonical lesson URL, redirecting to canonical URL');
@@ -98,7 +103,18 @@ export default function CompleteLesson({ loaderData, params }: Route.ComponentPr
   const chapterProgress = Math.round(overviewData?.progress?.progress_percentage ?? 0);
   const courseId = params.publishedCourseId;
 
-  const nextLesson = navigationData?.next?.lesson;
+  const continueBlock = navigationData?.continue.block;
+  const continueLesson = navigationData?.continue.lesson;
+
+  const continueLessonPath = continueLesson
+    ? `/c/${continueLesson.course_id}/${continueLesson.chapter_id}/${continueLesson.id}/play`
+    : `/c/${courseId}`;
+
+  const continueBlockPath = continueBlock
+    ? `/c/${continueBlock.course_id}/${continueBlock.chapter_id}/${continueBlock.lesson_id}/play`
+    : `/c/${courseId}`;
+
+  const sameContinueTarget = continueLessonPath === continueBlockPath;
 
   return (
     <Modal open>
@@ -122,7 +138,7 @@ export default function CompleteLesson({ loaderData, params }: Route.ComponentPr
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.2 }}
             >
-              You Did It! 🎉
+              Lesson Complete!
             </motion.h1>
             <motion.p
               className='text-md mt-2 px-3 text-green-600 dark:text-green-400'
@@ -130,7 +146,7 @@ export default function CompleteLesson({ loaderData, params }: Route.ComponentPr
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.3 }}
             >
-              <strong>{lessonName}</strong> is officially in the bag. Awesome work!
+              <strong>{lessonName}</strong> is officially in the bag. Nicely done!
             </motion.p>
           </motion.div>
 
@@ -140,21 +156,22 @@ export default function CompleteLesson({ loaderData, params }: Route.ComponentPr
             animate='visible'
             variants={{ visible: { transition: { staggerChildren: 0.15 } } }}
           >
-            {['You’re on a roll! 🎯', 'Keep going... your future self will thank you. 🚀'].map(
-              (message, index) => (
-                <motion.div
-                  key={index}
-                  className='flex items-start gap-3'
-                  variants={{
-                    hidden: { opacity: 0, y: 10 },
-                    visible: { opacity: 1, y: 0 },
-                  }}
-                >
-                  <CheckCircle className='mt-0.5 h-5 w-5 flex-shrink-0 text-green-500' />
-                  <p className='text-foreground font-secondary'>{message}</p>
-                </motion.div>
-              ),
-            )}
+            {[
+              'You’re on a roll! 🎯',
+              'Keep the momentum going... your future self will thank you. 🚀',
+            ].map((message, index) => (
+              <motion.div
+                key={index}
+                className='flex items-start gap-3'
+                variants={{
+                  hidden: { opacity: 0, y: 10 },
+                  visible: { opacity: 1, y: 0 },
+                }}
+              >
+                <CheckCircle className='mt-0.5 h-5 w-5 flex-shrink-0 text-green-500' />
+                <p className='text-foreground font-secondary'>{message}</p>
+              </motion.div>
+            ))}
           </motion.div>
 
           <motion.div
@@ -164,9 +181,7 @@ export default function CompleteLesson({ loaderData, params }: Route.ComponentPr
             transition={{ delay: 0.6 }}
           >
             <div className='mb-2 flex items-center justify-between'>
-              <span className='text-foreground text-sm font-medium'>
-                Chapter {chapterName} Progress
-              </span>
+              <span className='text-foreground text-sm font-medium'>Chapter: {chapterName}</span>
               <span className='text-foreground text-sm font-medium'>{`${chapterProgress}%`}</span>
             </div>
             <div className='bg-muted-foreground h-2 w-full overflow-hidden rounded-full'>
@@ -180,26 +195,37 @@ export default function CompleteLesson({ loaderData, params }: Route.ComponentPr
           </motion.div>
 
           <div className='mt-6 flex flex-col gap-3'>
-            <NavLinkButton
-              className='w-full gap-2 bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600'
-              to={
-                nextLesson
-                  ? `/c/${courseId}/${nextLesson.chapter_id}/${nextLesson.id}/play`
-                  : `/c/${courseId}`
-              }
-              rightIcon={<ArrowRight />}
-            >
-              Let’s Go! Next Lesson
-            </NavLinkButton>
+            <div className='flex flex-col space-y-4'>
+              {!sameContinueTarget && continueBlock && (
+                <NavLinkButton
+                  className='w-full gap-2'
+                  to={continueBlockPath}
+                  rightIcon={<ArrowRight />}
+                >
+                  Jump to next unfinished block
+                </NavLinkButton>
+              )}
 
-            <NavLinkButton
-              className='w-full gap-2'
-              variant='ghost'
-              leftIcon={<BookOpen />}
-              to={`/c/${courseId}`}
-            >
-              Back to Chapter Overview
-            </NavLinkButton>
+              {continueLesson && (
+                <NavLinkButton
+                  className='w-full gap-2'
+                  variant='secondary'
+                  to={continueLessonPath}
+                  rightIcon={<NotebookPen />}
+                >
+                  Continue to next lesson
+                </NavLinkButton>
+              )}
+
+              <NavLinkButton
+                className='w-full gap-2'
+                variant='ghost'
+                leftIcon={<BookOpen />}
+                to={`/c/${courseId}`}
+              >
+                View chapter progress
+              </NavLinkButton>
+            </div>
           </div>
         </Modal.Body>
       </Modal.Content>
