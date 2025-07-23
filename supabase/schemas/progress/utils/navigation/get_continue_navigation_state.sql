@@ -63,57 +63,53 @@ begin
   order by bs.global_order
   limit 1;
 
-  -- ===========================================================================
   -- Get the next incomplete lesson (after current lesson global order)
-  -- ===========================================================================
-  with lesson_structure as (
-    select
-      (chapter_obj ->> 'id')::uuid as chapter_id,
-      (lesson_obj ->> 'id')::uuid as lesson_id,
-      row_number() over (
-        order by
-          (chapter_obj ->> 'order_index')::int,
-          (lesson_obj ->> 'order_index')::int
-      ) as global_order
-    from jsonb_array_elements(course_structure -> 'chapters') as chapter_obj,
-         jsonb_array_elements(chapter_obj -> 'lessons') as lesson_obj
-  )
-  select ls.chapter_id, ls.lesson_id
-  into continue_lesson
-  from lesson_structure ls
-  left join public.lesson_progress lp on (
-    lp.user_id = p_user_id
-    and lp.published_course_id = p_published_course_id
-    and lp.lesson_id = ls.lesson_id
-  )
-  where ls.global_order > coalesce(current_context.lesson_global_order, 0)
-    and (lp.completed_at is null or lp.id is null)
-  order by ls.global_order
-  limit 1;
+    with lesson_structure as (
+      select
+        (chapter_obj ->> 'id')::uuid as chapter_id,
+        (lesson_obj ->> 'id')::uuid as lesson_id,
+        row_number() over (
+          order by
+            (chapter_obj ->> 'order_index')::int,
+            (lesson_obj ->> 'order_index')::int
+        ) as global_order
+      from jsonb_array_elements(course_structure -> 'chapters') as chapter_obj,
+          jsonb_array_elements(chapter_obj -> 'lessons') as lesson_obj
+    )
+    select ls.chapter_id, ls.lesson_id
+    into continue_lesson
+    from lesson_structure ls
+    left join public.lesson_progress lp on (
+      lp.user_id = p_user_id
+      and lp.published_course_id = p_published_course_id
+      and lp.lesson_id = ls.lesson_id
+    )
+    where ls.global_order > coalesce(current_context.lesson_global_order, 0)
+      and (lp.completed_at is null)
+    order by ls.global_order
+    limit 1;
 
-  -- ===========================================================================
-  -- Get the next incomplete chapter (after current chapter global order)
-  -- ===========================================================================
-  with chapter_structure as (
-    select
-      (chapter_obj ->> 'id')::uuid as chapter_id,
-      row_number() over (
-        order by (chapter_obj ->> 'order_index')::int
-      ) as global_order
-    from jsonb_array_elements(course_structure -> 'chapters') as chapter_obj
-  )
-  select cs.chapter_id
-  into continue_chapter
-  from chapter_structure cs
-  left join public.chapter_progress cp on (
-    cp.user_id = p_user_id
-    and cp.published_course_id = p_published_course_id
-    and cp.chapter_id = cs.chapter_id
-  )
-  where cs.global_order > coalesce(current_context.chapter_global_order, 0)
-    and (cp.completed_at is null or cp.id is null)
-  order by cs.global_order
-  limit 1;
+    -- Get the next incomplete chapter (after current chapter global order)
+    with chapter_structure as (
+      select
+        (chapter_obj ->> 'id')::uuid as chapter_id,
+        row_number() over (
+          order by (chapter_obj ->> 'order_index')::int
+        ) as global_order
+      from jsonb_array_elements(course_structure -> 'chapters') as chapter_obj
+    )
+    select cs.chapter_id
+    into continue_chapter
+    from chapter_structure cs
+    left join public.chapter_progress cp on (
+      cp.user_id = p_user_id
+      and cp.published_course_id = p_published_course_id
+      and cp.chapter_id = cs.chapter_id
+    )
+    where cs.global_order > coalesce(current_context.chapter_global_order, 0)
+      and (cp.completed_at is null)
+    order by cs.global_order
+    limit 1;
 
   -- ===========================================================================
   -- Build the return JSONB object with next incomplete targets

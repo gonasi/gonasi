@@ -3250,57 +3250,53 @@ begin
   order by bs.global_order
   limit 1;
 
-  -- ===========================================================================
   -- Get the next incomplete lesson (after current lesson global order)
-  -- ===========================================================================
-  with lesson_structure as (
-    select
-      (chapter_obj ->> 'id')::uuid as chapter_id,
-      (lesson_obj ->> 'id')::uuid as lesson_id,
-      row_number() over (
-        order by
-          (chapter_obj ->> 'order_index')::int,
-          (lesson_obj ->> 'order_index')::int
-      ) as global_order
-    from jsonb_array_elements(course_structure -> 'chapters') as chapter_obj,
-         jsonb_array_elements(chapter_obj -> 'lessons') as lesson_obj
-  )
-  select ls.chapter_id, ls.lesson_id
-  into continue_lesson
-  from lesson_structure ls
-  left join public.lesson_progress lp on (
-    lp.user_id = p_user_id
-    and lp.published_course_id = p_published_course_id
-    and lp.lesson_id = ls.lesson_id
-  )
-  where ls.global_order > coalesce(current_context.lesson_global_order, 0)
-    and (lp.completed_at is null or lp.id is null)
-  order by ls.global_order
-  limit 1;
+    with lesson_structure as (
+      select
+        (chapter_obj ->> 'id')::uuid as chapter_id,
+        (lesson_obj ->> 'id')::uuid as lesson_id,
+        row_number() over (
+          order by
+            (chapter_obj ->> 'order_index')::int,
+            (lesson_obj ->> 'order_index')::int
+        ) as global_order
+      from jsonb_array_elements(course_structure -> 'chapters') as chapter_obj,
+          jsonb_array_elements(chapter_obj -> 'lessons') as lesson_obj
+    )
+    select ls.chapter_id, ls.lesson_id
+    into continue_lesson
+    from lesson_structure ls
+    left join public.lesson_progress lp on (
+      lp.user_id = p_user_id
+      and lp.published_course_id = p_published_course_id
+      and lp.lesson_id = ls.lesson_id
+    )
+    where ls.global_order > coalesce(current_context.lesson_global_order, 0)
+      and (lp.completed_at is null)
+    order by ls.global_order
+    limit 1;
 
-  -- ===========================================================================
-  -- Get the next incomplete chapter (after current chapter global order)
-  -- ===========================================================================
-  with chapter_structure as (
-    select
-      (chapter_obj ->> 'id')::uuid as chapter_id,
-      row_number() over (
-        order by (chapter_obj ->> 'order_index')::int
-      ) as global_order
-    from jsonb_array_elements(course_structure -> 'chapters') as chapter_obj
-  )
-  select cs.chapter_id
-  into continue_chapter
-  from chapter_structure cs
-  left join public.chapter_progress cp on (
-    cp.user_id = p_user_id
-    and cp.published_course_id = p_published_course_id
-    and cp.chapter_id = cs.chapter_id
-  )
-  where cs.global_order > coalesce(current_context.chapter_global_order, 0)
-    and (cp.completed_at is null or cp.id is null)
-  order by cs.global_order
-  limit 1;
+    -- Get the next incomplete chapter (after current chapter global order)
+    with chapter_structure as (
+      select
+        (chapter_obj ->> 'id')::uuid as chapter_id,
+        row_number() over (
+          order by (chapter_obj ->> 'order_index')::int
+        ) as global_order
+      from jsonb_array_elements(course_structure -> 'chapters') as chapter_obj
+    )
+    select cs.chapter_id
+    into continue_chapter
+    from chapter_structure cs
+    left join public.chapter_progress cp on (
+      cp.user_id = p_user_id
+      and cp.published_course_id = p_published_course_id
+      and cp.chapter_id = cs.chapter_id
+    )
+    where cs.global_order > coalesce(current_context.chapter_global_order, 0)
+      and (cp.completed_at is null)
+    order by cs.global_order
+    limit 1;
 
   -- ===========================================================================
   -- Build the return JSONB object with next incomplete targets
@@ -3470,8 +3466,8 @@ begin
               'total_lesson_weight', cp.total_lesson_weight,
               'completed_lesson_weight', cp.completed_lesson_weight,
               'lesson_progress_percentage', cp.lesson_progress_percentage,
-              'completed_at', case when cp.completed_at is not null then date_trunc('milliseconds', cp.completed_at at time zone 'UTC')::timestamptz else null end,
-              'updated_at', case when cp.updated_at is not null then date_trunc('milliseconds', cp.updated_at at time zone 'UTC')::timestamptz else null end,
+              'completed_at', date_trunc('milliseconds', cp.completed_at at time zone 'UTC')::timestamptz,
+              'updated_at', date_trunc('milliseconds', cp.updated_at at time zone 'UTC')::timestamptz,
               'active_chapter_id', v_active_chapter_id,
               'active_lesson_id', v_active_lesson_id,
               'is_completed', cp.is_completed
@@ -3500,7 +3496,112 @@ begin
       else null
     end,
 
-    -- (chapter and lesson logic remains the same, just updating all date fields inside json_build_object similarly...)
+    'chapters', (
+      select json_agg(
+        json_build_object(
+          'id', chapter_data.id,
+          'name', chapter_data.name,
+          'description', chapter_data.description,
+          'position', chapter_data.position,
+          'total_lessons', chapter_data.total_lessons,
+          'total_blocks', chapter_data.total_blocks,
+          'completed_lessons', case when v_user_enrolled then coalesce(chapter_progress.completed_lessons, 0) else null end,
+          'completed_blocks', case when v_user_enrolled then coalesce(chapter_progress.completed_blocks, 0) else null end,
+          'progress_percentage', case
+            when v_user_enrolled then
+              coalesce(
+                case
+                  when chapter_data.total_blocks > 0 then
+                    round((coalesce(chapter_progress.completed_blocks, 0)::numeric / chapter_data.total_blocks * 100), 2)
+                  else 0
+                end, 0
+              )
+            else null
+          end,
+          'is_active', case when v_user_enrolled then (chapter_data.id = v_active_chapter_id) else false end,
+          'is_completed', case
+            when v_user_enrolled and chapter_data.total_lessons > 0 then
+              coalesce(chapter_progress.completed_lessons, 0) = chapter_data.total_lessons
+            else false
+          end,
+          'lessons', chapter_data.lessons
+        )
+        order by chapter_data.position
+      )
+      from (
+        select
+          (chapter->>'id')::uuid as id,
+          chapter->>'name' as name,
+          chapter->>'description' as description,
+          (chapter->>'position')::integer as position,
+          (chapter->>'total_lessons')::integer as total_lessons,
+          (chapter->>'total_blocks')::integer as total_blocks,
+          json_agg(
+            json_build_object(
+              'id', (lesson->>'id')::uuid,
+              'name', lesson->>'name',
+              'position', (lesson->>'position')::integer,
+              'total_blocks', (lesson->>'total_blocks')::integer,
+              'lesson_type', lesson->'lesson_types',
+              'is_active', case when v_user_enrolled then ((lesson->>'id')::uuid = v_active_lesson_id) else false end,
+              'progress', case
+                when v_user_enrolled then
+                  coalesce(lp_data.progress_data, json_build_object(
+                    'total_blocks', (lesson->>'total_blocks')::integer,
+                    'completed_blocks', 0,
+                    'total_weight', 0,
+                    'completed_weight', 0,
+                    'progress_percentage', 0,
+                    'completed_at', null,
+                    'updated_at', null,
+                    'is_completed', false
+                  ))
+                else null
+              end
+            )
+            order by (lesson->>'position')::integer
+          ) as lessons
+        from public.published_courses pc_inner
+        cross join jsonb_array_elements((pc_inner.course_structure_overview->'chapters')::jsonb) as chapter
+        cross join jsonb_array_elements((chapter->'lessons')::jsonb) as lesson
+        left join lateral (
+          select json_build_object(
+            'total_blocks', lp.total_blocks,
+            'completed_blocks', lp.completed_blocks,
+            'total_weight', lp.total_weight,
+            'completed_weight', lp.completed_weight,
+            'progress_percentage', lp.progress_percentage,
+            'completed_at', date_trunc('milliseconds', lp.completed_at at time zone 'UTC')::timestamptz,
+            'updated_at', date_trunc('milliseconds', lp.updated_at at time zone 'UTC')::timestamptz,
+            'is_completed', lp.is_completed
+          ) as progress_data
+          from public.lesson_progress lp
+          where v_user_enrolled
+            and lp.user_id = v_user_id
+            and lp.published_course_id = p_published_course_id
+            and lp.lesson_id = (lesson->>'id')::uuid
+        ) lp_data on true
+        where pc_inner.id = p_published_course_id
+        group by 
+          (chapter->>'id')::uuid,
+          chapter->>'name',
+          chapter->>'description',
+          (chapter->>'position')::integer,
+          (chapter->>'total_lessons')::integer,
+          (chapter->>'total_blocks')::integer
+      ) chapter_data
+      left join lateral (
+        select 
+          count(*) filter (where lp.completed_at is not null) as completed_lessons,
+          sum(lp.completed_blocks) as completed_blocks
+        from jsonb_array_elements(chapter_data.lessons::jsonb) as lesson_item
+        left join public.lesson_progress lp 
+          on v_user_enrolled
+          and lp.lesson_id = ((lesson_item->>'id')::uuid)
+          and lp.user_id = v_user_id
+          and lp.published_course_id = p_published_course_id
+      ) chapter_progress on true
+    ),
 
     'recent_activity', case
       when v_user_enrolled then (
@@ -3546,21 +3647,12 @@ begin
               and bp.earned_score is not null
           ), null),
           'completion_streak', 0,
-          'started_at', case
-            when (
-              select min(bp.started_at)
-              from public.block_progress bp
-              where bp.user_id = v_user_id
-                and bp.published_course_id = p_published_course_id
-            ) is not null then
-              date_trunc('milliseconds', (
-                select min(bp.started_at)
-                from public.block_progress bp
-                where bp.user_id = v_user_id
-                  and bp.published_course_id = p_published_course_id
-              ) at time zone 'UTC')::timestamptz
-            else null
-          end
+          'started_at', (
+            select date_trunc('milliseconds', min(bp.started_at) at time zone 'UTC')::timestamptz
+            from public.block_progress bp
+            where bp.user_id = v_user_id
+              and bp.published_course_id = p_published_course_id
+          )
         )
       else null
     end
@@ -4008,9 +4100,8 @@ begin
     where global_order = current_context.block_global_order + 1;
   end if;
 
-  -- ===========================================================================
-  -- Determine the next lesson (based on global sequential order of lessons)
-  -- ===========================================================================
+
+-- Determine the next lesson (based on global sequential order of lessons)
   if current_context.lesson_id is not null then
     with lesson_structure as (
       select
@@ -4028,11 +4119,27 @@ begin
     into next_lesson
     from lesson_structure
     where global_order = current_context.lesson_global_order + 1;
+  else
+    -- If no current lesson, find next lesson after current block's lesson
+    with lesson_structure as (
+      select
+        (chapter_obj ->> 'id')::uuid as chapter_id,
+        (lesson_obj ->> 'id')::uuid as lesson_id,
+        row_number() over (
+          order by
+            (chapter_obj ->> 'order_index')::int,
+            (lesson_obj ->> 'order_index')::int
+        ) as global_order
+      from jsonb_array_elements(course_structure -> 'chapters') as chapter_obj,
+            jsonb_array_elements(chapter_obj -> 'lessons') as lesson_obj
+    )
+    select chapter_id, lesson_id
+    into next_lesson
+    from lesson_structure
+    where global_order > coalesce(current_context.lesson_global_order, 0);
   end if;
 
-  -- ===========================================================================
   -- Determine the next chapter (based on global sequential order of chapters)
-  -- ===========================================================================
   if current_context.chapter_id is not null then
     with chapter_structure as (
       select
@@ -4046,8 +4153,22 @@ begin
     into next_chapter
     from chapter_structure
     where global_order = current_context.chapter_global_order + 1;
+  else
+    -- If no current chapter, find next chapter after current block's chapter
+    with chapter_structure as (
+      select
+        (chapter_obj ->> 'id')::uuid as chapter_id,
+        row_number() over (
+          order by (chapter_obj ->> 'order_index')::int
+        ) as global_order
+      from jsonb_array_elements(course_structure -> 'chapters') as chapter_obj
+    )
+    select chapter_id
+    into next_chapter
+    from chapter_structure
+    where global_order > coalesce(current_context.chapter_global_order, 0);
   end if;
-
+  
   -- ===========================================================================
   -- Return a JSONB object containing the next navigable block, lesson, chapter
   -- ===========================================================================
@@ -4119,9 +4240,8 @@ begin
     where global_order = current_context.block_global_order - 1;
   end if;
 
-  -- =========================================================================
-  -- STEP 2: Find the previous lesson (based on global order index)
-  -- =========================================================================
+
+-- Find the previous lesson (based on global order index)
   if current_context.lesson_id is not null then
     with lesson_structure as (
       select
@@ -4139,11 +4259,29 @@ begin
     into prev_lesson
     from lesson_structure
     where global_order = current_context.lesson_global_order - 1;
+  else
+    -- If no current lesson, find previous lesson before current block's lesson
+    with lesson_structure as (
+      select
+        (chapter_obj ->> 'id')::uuid as chapter_id,
+        (lesson_obj ->> 'id')::uuid as lesson_id,
+        row_number() over (
+          order by 
+            (chapter_obj ->> 'order_index')::int,
+            (lesson_obj ->> 'order_index')::int
+        ) as global_order
+      from jsonb_array_elements(course_structure -> 'chapters') as chapter_obj,
+           jsonb_array_elements(chapter_obj -> 'lessons') as lesson_obj
+    )
+    select chapter_id, lesson_id
+    into prev_lesson
+    from lesson_structure
+    where global_order < coalesce(current_context.lesson_global_order, 999999)
+    order by global_order desc
+    limit 1;
   end if;
 
-  -- =========================================================================
-  -- STEP 3: Find the previous chapter (based on global order index)
-  -- =========================================================================
+  -- Find the previous chapter (based on global order index)
   if current_context.chapter_id is not null then
     with chapter_structure as (
       select
@@ -4157,6 +4295,22 @@ begin
     into prev_chapter
     from chapter_structure
     where global_order = current_context.chapter_global_order - 1;
+  else
+    -- If no current chapter, find previous chapter before current block's chapter
+    with chapter_structure as (
+      select
+        (chapter_obj ->> 'id')::uuid as chapter_id,
+        row_number() over (
+          order by (chapter_obj ->> 'order_index')::int
+        ) as global_order
+      from jsonb_array_elements(course_structure -> 'chapters') as chapter_obj
+    )
+    select chapter_id
+    into prev_chapter
+    from chapter_structure
+    where global_order < coalesce(current_context.chapter_global_order, 999999)
+    order by global_order desc
+    limit 1;
   end if;
 
   -- =========================================================================

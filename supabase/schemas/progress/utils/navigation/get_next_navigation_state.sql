@@ -56,9 +56,8 @@ begin
     where global_order = current_context.block_global_order + 1;
   end if;
 
-  -- ===========================================================================
-  -- Determine the next lesson (based on global sequential order of lessons)
-  -- ===========================================================================
+
+-- Determine the next lesson (based on global sequential order of lessons)
   if current_context.lesson_id is not null then
     with lesson_structure as (
       select
@@ -76,11 +75,27 @@ begin
     into next_lesson
     from lesson_structure
     where global_order = current_context.lesson_global_order + 1;
+  else
+    -- If no current lesson, find next lesson after current block's lesson
+    with lesson_structure as (
+      select
+        (chapter_obj ->> 'id')::uuid as chapter_id,
+        (lesson_obj ->> 'id')::uuid as lesson_id,
+        row_number() over (
+          order by
+            (chapter_obj ->> 'order_index')::int,
+            (lesson_obj ->> 'order_index')::int
+        ) as global_order
+      from jsonb_array_elements(course_structure -> 'chapters') as chapter_obj,
+            jsonb_array_elements(chapter_obj -> 'lessons') as lesson_obj
+    )
+    select chapter_id, lesson_id
+    into next_lesson
+    from lesson_structure
+    where global_order > coalesce(current_context.lesson_global_order, 0);
   end if;
 
-  -- ===========================================================================
   -- Determine the next chapter (based on global sequential order of chapters)
-  -- ===========================================================================
   if current_context.chapter_id is not null then
     with chapter_structure as (
       select
@@ -94,8 +109,22 @@ begin
     into next_chapter
     from chapter_structure
     where global_order = current_context.chapter_global_order + 1;
+  else
+    -- If no current chapter, find next chapter after current block's chapter
+    with chapter_structure as (
+      select
+        (chapter_obj ->> 'id')::uuid as chapter_id,
+        row_number() over (
+          order by (chapter_obj ->> 'order_index')::int
+        ) as global_order
+      from jsonb_array_elements(course_structure -> 'chapters') as chapter_obj
+    )
+    select chapter_id
+    into next_chapter
+    from chapter_structure
+    where global_order > coalesce(current_context.chapter_global_order, 0);
   end if;
-
+  
   -- ===========================================================================
   -- Return a JSONB object containing the next navigable block, lesson, chapter
   -- ===========================================================================

@@ -1,11 +1,11 @@
 import Confetti from 'react-confetti-boom';
-import { redirect } from 'react-router';
+import { differenceInMinutes } from 'date-fns';
 import { motion } from 'framer-motion';
 import { ArrowRight, BookOpen, CheckCircle } from 'lucide-react';
 
 import {
-  getUnifiedNavigation,
   fetchLessonOverviewWithChapterProgress,
+  getUnifiedNavigation,
 } from '@gonasi/database/publishedCourses';
 
 import type { Route } from './+types/complete-lesson';
@@ -17,15 +17,10 @@ import { createClient } from '~/lib/supabase/supabase.server';
 export function meta({ data }: Route.MetaArgs) {
   const lesson = data?.overviewData?.lesson;
   const chapter = data?.overviewData?.chapter;
-  const courseInfo = data?.navigationData?.course_info;
 
   const lessonName = lesson?.name ?? 'Lesson';
   const chapterName = chapter?.name ?? 'Chapter';
-  const courseProgress = courseInfo
-    ? `${courseInfo.completed_lessons}/${courseInfo.total_lessons} lessons done`
-    : 'Lesson wrapped up';
-
-  const isCourseComplete = courseInfo?.is_course_complete ?? false;
+  const courseProgress = 'Lesson wrapped up';
 
   return [
     {
@@ -33,9 +28,7 @@ export function meta({ data }: Route.MetaArgs) {
     },
     {
       name: 'description',
-      content: isCourseComplete
-        ? `🎓 Boom! You’ve completed the course. "${lessonName}" in ${chapterName} was the final stretch. Well played! 🚀`
-        : `✅ You just wrapped up "${lessonName}" in ${chapterName}. ${courseProgress}. Keep the streak going! 💪`,
+      content: `✅ You just wrapped up "${lessonName}" in ${chapterName}. ${courseProgress}. Keep the streak going! 💪`,
     },
   ];
 }
@@ -43,7 +36,11 @@ export function meta({ data }: Route.MetaArgs) {
 export async function loader({ params, request }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
 
+  console.debug('Loader invoked with params:', params);
+
   try {
+    console.debug('Fetching navigation and lesson overview data...');
+
     const [navigationData, overviewData] = await Promise.all([
       getUnifiedNavigation({
         supabase,
@@ -57,23 +54,43 @@ export async function loader({ params, request }: Route.LoaderArgs) {
       }),
     ]);
 
-    const currentLesson = navigationData?.current_lesson;
+    console.debug('navigationData:', navigationData);
+    console.debug('overviewData:', overviewData);
 
-    const canonicalLessonUrl = `/c/${currentLesson?.course_id}/${currentLesson?.chapter_id}/${currentLesson?.lesson_id}/play`;
+    const current = navigationData?.current;
+    console.debug('Resolved current context:', current);
+
+    const canonicalLessonUrl = `/c/${current?.course.id}/${current?.chapter?.id}/${current?.lesson?.id}/play`;
+    console.debug('Canonical lesson URL:', canonicalLessonUrl);
 
     const isNonCanonical =
-      params.publishedCourseId !== currentLesson?.course_id ||
-      params.publishedChapterId !== currentLesson?.chapter_id ||
-      params.publishedLessonId !== currentLesson?.lesson_id ||
-      params.nextLessonId !== navigationData?.next_lesson?.lesson_id;
+      params.publishedCourseId !== current?.course?.id ||
+      params.publishedLessonId !== current?.lesson?.id ||
+      params.nextLessonId !== navigationData?.continue?.lesson?.id;
 
-    console.log('******* log: ', params.nextLessonId, navigationData);
+    console.debug('isNonCanonical:', isNonCanonical);
 
     if (isNonCanonical) {
       console.warn('Non-canonical lesson URL, redirecting to canonical URL');
-      throw redirect(canonicalLessonUrl);
+      // return redirect(canonicalLessonUrl);
     }
 
+    if (current.lesson?.completed_at) {
+      const completedAt = new Date(current.lesson.completed_at);
+      const now = new Date();
+      const minutesAgo = differenceInMinutes(now, completedAt);
+
+      console.debug('Lesson completed_at:', completedAt.toISOString());
+      console.debug('Now:', now.toISOString());
+      console.debug('Minutes since completion:', minutesAgo);
+
+      if (minutesAgo > 5) {
+        console.warn('Lesson was completed more than 5 minutes ago, redirecting...');
+        // return redirect(canonicalLessonUrl);
+      }
+    }
+
+    console.debug('Returning lesson and navigation data to client');
     return {
       navigationData,
       overviewData,
@@ -91,7 +108,8 @@ export default function CompleteLesson({ loaderData, params }: Route.ComponentPr
   const chapterName = overviewData?.chapter?.name ?? 'this chapter';
   const chapterProgress = Math.round(overviewData?.progress?.progress_percentage ?? 0);
   const courseId = params.publishedCourseId;
-  const nextLesson = navigationData?.next_lesson;
+
+  const nextLesson = navigationData?.next?.lesson;
 
   return (
     <Modal open>
@@ -177,8 +195,8 @@ export default function CompleteLesson({ loaderData, params }: Route.ComponentPr
               className='w-full gap-2 bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600'
               to={
                 nextLesson
-                  ? `/c/${nextLesson.course_id}/${nextLesson.chapter_id}/${nextLesson.lesson_id}/play`
-                  : '/'
+                  ? `/c/${courseId}/${nextLesson.chapter_id}/${nextLesson.id}/play`
+                  : `/c/${courseId}`
               }
               rightIcon={<ArrowRight />}
             >
