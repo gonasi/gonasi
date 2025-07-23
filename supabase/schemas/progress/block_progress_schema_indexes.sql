@@ -6,36 +6,45 @@
 create table public.block_progress (
   id uuid primary key default uuid_generate_v4(),
 
-  -- Foreign keys and contextual metadata
+  -- foreign keys and contextual metadata
   organization_id uuid not null references public.organizations(id) on delete cascade,
   published_course_id uuid not null references public.published_courses(id) on delete cascade,
   chapter_id uuid not null, -- snapshot-based chapter reference
   lesson_id uuid not null,  -- snapshot-based lesson reference
   block_id uuid not null,   -- snapshot-based block reference
 
-  -- Weight information (stored from course structure at completion time)
+  -- weight information (stored from course structure at completion time)
   block_weight numeric not null default 1.0, -- weight of this block for progress calculation
 
-  -- Interaction state
+  -- interaction state
   is_completed boolean not null default false,
   started_at timestamptz not null default timezone('utc', now()),
   completed_at timestamptz not null default timezone('utc', now()),
   time_spent_seconds integer not null default 0,
 
-  -- Only applicable to interactive/scorable blocks (e.g. quizzes, coding tasks)
+  -- progress percentage (binary: 0% or 100% based on completion)
+  progress_percentage numeric generated always as (
+    case 
+      when is_completed = true then 100
+      else 0
+    end
+  ) stored,
+
+  -- only applicable to interactive/scorable blocks (e.g. quizzes, coding tasks)
   earned_score numeric, -- null for non-scorable blocks like rich text
   attempt_count integer, -- null for non-attemptable blocks
   interaction_data jsonb, -- stores user input: selected answers, steps taken, etc.
   last_response jsonb,    -- optional snapshot of last full submission
 
-  -- Auditing
+  -- auditing
   user_id uuid not null references public.profiles(id) on delete cascade,
   created_at timestamptz not null default timezone('utc', now()),
   updated_at timestamptz not null default timezone('utc', now()),
 
-  -- Enforce uniqueness: only one record per user per published block
+  -- enforce uniqueness: only one record per user per published block
   unique (user_id, published_course_id, block_id)
 );
+
 
 -- ------------------------------------------------------------------------------------
 -- Indexes for performance (deduplicated)

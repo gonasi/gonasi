@@ -18,6 +18,8 @@ create table public.chapter_progress (
   total_blocks integer not null,
   completed_blocks integer not null default 0,
 
+  is_completed boolean not null default false,
+  
   -- Weight-based progress tracking
   total_weight numeric not null default 0,
   completed_weight numeric not null default 0,

@@ -49,6 +49,7 @@ export type Database = {
           last_response: Json | null
           lesson_id: string
           organization_id: string
+          progress_percentage: number | null
           published_course_id: string
           started_at: string
           time_spent_seconds: number
@@ -69,6 +70,7 @@ export type Database = {
           last_response?: Json | null
           lesson_id: string
           organization_id: string
+          progress_percentage?: number | null
           published_course_id: string
           started_at?: string
           time_spent_seconds?: number
@@ -89,6 +91,7 @@ export type Database = {
           last_response?: Json | null
           lesson_id?: string
           organization_id?: string
+          progress_percentage?: number | null
           published_course_id?: string
           started_at?: string
           time_spent_seconds?: number
@@ -129,6 +132,7 @@ export type Database = {
           completed_weight: number
           created_at: string
           id: string
+          is_completed: boolean
           lesson_progress_percentage: number | null
           progress_percentage: number | null
           published_course_id: string
@@ -148,6 +152,7 @@ export type Database = {
           completed_weight?: number
           created_at?: string
           id?: string
+          is_completed?: boolean
           lesson_progress_percentage?: number | null
           progress_percentage?: number | null
           published_course_id: string
@@ -167,6 +172,7 @@ export type Database = {
           completed_weight?: number
           created_at?: string
           id?: string
+          is_completed?: boolean
           lesson_progress_percentage?: number | null
           progress_percentage?: number | null
           published_course_id?: string
@@ -643,6 +649,7 @@ export type Database = {
           completed_weight: number
           created_at: string
           id: string
+          is_completed: boolean
           lesson_progress_percentage: number | null
           progress_percentage: number | null
           published_course_id: string
@@ -663,6 +670,7 @@ export type Database = {
           completed_weight?: number
           created_at?: string
           id?: string
+          is_completed?: boolean
           lesson_progress_percentage?: number | null
           progress_percentage?: number | null
           published_course_id: string
@@ -683,6 +691,7 @@ export type Database = {
           completed_weight?: number
           created_at?: string
           id?: string
+          is_completed?: boolean
           lesson_progress_percentage?: number | null
           progress_percentage?: number | null
           published_course_id?: string
@@ -1119,6 +1128,7 @@ export type Database = {
           completed_weight: number
           created_at: string
           id: string
+          is_completed: boolean
           lesson_id: string
           progress_percentage: number | null
           published_course_id: string
@@ -1133,6 +1143,7 @@ export type Database = {
           completed_weight?: number
           created_at?: string
           id?: string
+          is_completed?: boolean
           lesson_id: string
           progress_percentage?: number | null
           published_course_id: string
@@ -1147,6 +1158,7 @@ export type Database = {
           completed_weight?: number
           created_at?: string
           id?: string
+          is_completed?: boolean
           lesson_id?: string
           progress_percentage?: number | null
           published_course_id?: string

@@ -17,6 +17,8 @@ create table public.course_progress (
   total_lessons integer not null,
   completed_lessons integer not null default 0,
 
+  is_completed boolean not null default false,
+
   -- Chapter counts
   total_chapters integer not null,
   completed_chapters integer not null default 0,

@@ -36,6 +36,11 @@ create table "public"."block_progress" (
     "started_at" timestamp with time zone not null default timezone('utc'::text, now()),
     "completed_at" timestamp with time zone not null default timezone('utc'::text, now()),
     "time_spent_seconds" integer not null default 0,
+    "progress_percentage" numeric generated always as (
+CASE
+    WHEN (is_completed = true) THEN 100
+    ELSE 0
+END) stored,
     "earned_score" numeric,
     "attempt_count" integer,
     "interaction_data" jsonb,
@@ -57,6 +62,7 @@ create table "public"."chapter_progress" (
     "completed_lessons" integer not null default 0,
     "total_blocks" integer not null,
     "completed_blocks" integer not null default 0,
+    "is_completed" boolean not null default false,
     "total_weight" numeric not null default 0,
     "completed_weight" numeric not null default 0,
     "progress_percentage" numeric generated always as (
@@ -205,6 +211,7 @@ create table "public"."course_progress" (
     "completed_blocks" integer not null default 0,
     "total_lessons" integer not null,
     "completed_lessons" integer not null default 0,
+    "is_completed" boolean not null default false,
     "total_chapters" integer not null,
     "completed_chapters" integer not null default 0,
     "total_weight" numeric not null default 0,
@@ -337,6 +344,7 @@ create table "public"."lesson_progress" (
     "lesson_id" uuid not null,
     "total_blocks" integer not null,
     "completed_blocks" integer not null default 0,
+    "is_completed" boolean not null default false,
     "total_weight" numeric not null default 0,
     "completed_weight" numeric not null default 0,
     "progress_percentage" numeric generated always as (
@@ -780,6 +788,8 @@ CREATE INDEX idx_gonasi_wallet_transactions_direction ON public.gonasi_wallet_tr
 CREATE INDEX idx_gonasi_wallet_transactions_type ON public.gonasi_wallet_transactions USING btree (type);
 
 CREATE INDEX idx_gonasi_wallet_transactions_wallet_id ON public.gonasi_wallet_transactions USING btree (wallet_id);
+
+CREATE INDEX idx_lesson_blocks_chapter_id ON public.lesson_blocks USING btree (chapter_id);
 
 CREATE INDEX idx_lesson_blocks_course_id ON public.lesson_blocks USING btree (course_id);
 

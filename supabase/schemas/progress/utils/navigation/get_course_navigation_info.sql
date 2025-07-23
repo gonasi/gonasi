@@ -3,7 +3,7 @@
 -- =============================================================================
 -- description:
 --   Returns basic metadata for a published course used in the navigation context,
---   such as title, description, and associated organization.
+--   such as name, description, and associated organization.
 --
 -- parameters:
 --   p_user_id              - uuid of the user (currently unused but reserved for future use)
@@ -11,7 +11,7 @@
 --   course_structure       - jsonb structure of the course (not used here)
 --
 -- returns:
---   jsonb object with: id, title, description, organization_id
+--   jsonb object with: id, name, description, organization_id
 -- =============================================================================
 
 create or replace function public.get_course_navigation_info(
@@ -30,7 +30,7 @@ begin
   -- fetch basic metadata about the course
   select 
     pc.id,
-    pc.title,
+    pc.name,
     pc.description,
     pc.organization_id
   into course_info
@@ -40,7 +40,7 @@ begin
   -- return the course metadata as a jsonb object
   return jsonb_build_object(
     'id', course_info.id,
-    'title', course_info.title,
+    'name', course_info.name,
     'description', course_info.description,
     'organization_id', course_info.organization_id
   );
