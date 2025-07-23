@@ -15,7 +15,18 @@ export async function fetchLessonOverviewWithChapterProgress({
 }: FetchLessonOverviewArgs) {
   const { data, error } = await supabase
     .from('published_courses')
-    .select('id, course_structure_overview')
+    .select(
+      `
+        id,
+        course_structure_overview,
+        chapter_progress (
+          chapter_id,
+          progress_percentage,
+          total_lessons,
+          completed_lessons
+        )
+      `,
+    )
     .eq('id', courseId)
     .single();
 
@@ -24,7 +35,6 @@ export async function fetchLessonOverviewWithChapterProgress({
     return null;
   }
 
-  // Changed from CourseStructureContentSchema to CourseStructureOverviewSchema
   const parseResult = CourseStructureOverviewSchema.safeParse(data?.course_structure_overview);
 
   if (!parseResult.success) {
@@ -37,7 +47,14 @@ export async function fetchLessonOverviewWithChapterProgress({
   for (const chapter of chapters) {
     const lesson = chapter.lessons.find((l) => l.id === lessonId);
     if (lesson) {
-      return { chapter, lesson };
+      const chapterProgress =
+        data.chapter_progress?.find((p) => p.chapter_id === chapter.id) ?? null;
+
+      return {
+        chapter,
+        lesson,
+        progress: chapterProgress,
+      };
     }
   }
 

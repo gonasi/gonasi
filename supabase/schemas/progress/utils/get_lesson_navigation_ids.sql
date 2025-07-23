@@ -44,7 +44,6 @@
 --       }
 --     }
 -- ================================================================================
-
 create or replace function public.get_lesson_navigation_ids(
   p_user_id uuid,
   p_published_course_id uuid,
@@ -92,7 +91,7 @@ begin
           (lesson_obj ->> 'order_index')::integer
       ) as global_order
     from jsonb_array_elements(course_structure -> 'chapters') as chapter_obj,
-         jsonb_array_elements(chapter_obj -> 'lessons') as lesson_obj
+        jsonb_array_elements(chapter_obj -> 'lessons') as lesson_obj
   )
   select 
     ls.chapter_id,
@@ -127,7 +126,7 @@ begin
           (lesson_obj ->> 'order_index')::integer
       ) as global_order
     from jsonb_array_elements(course_structure -> 'chapters') as chapter_obj,
-         jsonb_array_elements(chapter_obj -> 'lessons') as lesson_obj
+        jsonb_array_elements(chapter_obj -> 'lessons') as lesson_obj
   )
   select 
     ls.chapter_id,
@@ -137,7 +136,7 @@ begin
   where ls.global_order = current_lesson_info.global_order - 1;
 
   -- =========================================================================
-  -- step 4: get next lesson (lesson with global_order = current + 1)
+  -- step 4: get next lesson (next incomplete lesson, not just sequential)
   -- =========================================================================
   with lesson_structure as (
     select 
@@ -149,47 +148,28 @@ begin
           (lesson_obj ->> 'order_index')::integer
       ) as global_order
     from jsonb_array_elements(course_structure -> 'chapters') as chapter_obj,
-         jsonb_array_elements(chapter_obj -> 'lessons') as lesson_obj
+        jsonb_array_elements(chapter_obj -> 'lessons') as lesson_obj
   )
   select 
     ls.chapter_id,
     ls.lesson_id
   into next_lesson_info
   from lesson_structure ls
-  where ls.global_order = current_lesson_info.global_order + 1;
+  left join public.lesson_progress lp on (
+    lp.user_id = p_user_id
+    and lp.published_course_id = p_published_course_id
+    and lp.lesson_id = ls.lesson_id
+  )
+  where ls.global_order > current_lesson_info.global_order
+    and (lp.completed_at is null or lp.id is null)
+  order by ls.global_order
+  limit 1;
 
   -- =========================================================================
   -- step 5: get continue course lesson (next incomplete lesson)
-  -- only relevant if current lesson is complete
+  -- this is the same as next_lesson for smart navigation
   -- =========================================================================
-  if current_lesson_info.is_complete then
-    with lesson_structure as (
-      select 
-        (chapter_obj ->> 'id')::uuid as chapter_id,
-        (lesson_obj ->> 'id')::uuid as lesson_id,
-        row_number() over (
-          order by 
-            (chapter_obj ->> 'order_index')::integer,
-            (lesson_obj ->> 'order_index')::integer
-        ) as global_order
-      from jsonb_array_elements(course_structure -> 'chapters') as chapter_obj,
-           jsonb_array_elements(chapter_obj -> 'lessons') as lesson_obj
-    )
-    select 
-      ls.chapter_id,
-      ls.lesson_id
-    into continue_lesson_info
-    from lesson_structure ls
-    left join public.lesson_progress lp on (
-      lp.user_id = p_user_id
-      and lp.published_course_id = p_published_course_id
-      and lp.lesson_id = ls.lesson_id
-    )
-    where (lp.completed_at is null or lp.id is null)
-      and ls.global_order > current_lesson_info.global_order
-    order by ls.global_order
-    limit 1;
-  end if;
+  continue_lesson_info := next_lesson_info;
 
   -- =========================================================================
   -- step 6: get course completion statistics
@@ -198,7 +178,7 @@ begin
     select 
       (lesson_obj ->> 'id')::uuid as lesson_id
     from jsonb_array_elements(course_structure -> 'chapters') as chapter_obj,
-         jsonb_array_elements(chapter_obj -> 'lessons') as lesson_obj
+        jsonb_array_elements(chapter_obj -> 'lessons') as lesson_obj
   ),
   completed_lessons as (
     select count(*) as count
@@ -257,8 +237,7 @@ begin
           'chapter_id', continue_lesson_info.chapter_id,
           'course_id', p_published_course_id,
           'is_different_from_next', (
-            continue_lesson_info.lesson_id != next_lesson_info.lesson_id 
-            or next_lesson_info.lesson_id is null
+            continue_lesson_info.lesson_id != coalesce(next_lesson_info.lesson_id, continue_lesson_info.lesson_id)
           )
         )
       else null

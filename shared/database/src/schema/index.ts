@@ -2106,7 +2106,7 @@ export type Database = {
         Args: {
           p_user_id: string
           p_published_course_id: string
-          p_current_block_id?: string
+          p_current_block_id: string
         }
         Returns: Json
       }
