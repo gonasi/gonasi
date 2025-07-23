@@ -1,120 +1,151 @@
 -- =============================================================================
 -- FUNCTION: get_continue_navigation_state
 -- =============================================================================
--- Returns smart "continue" navigation targets (next incomplete content).
+-- Description:
+--   Returns the "smart" continue navigation targets: the next incomplete block,
+--   lesson, and chapter, in that order of priority. Skips completed content.
+--
+-- Parameters:
+--   p_user_id              - UUID of the user
+--   p_published_course_id  - UUID of the published course
+--   course_structure       - JSONB structure of the published course
+--   current_context        - Record with current IDs and global order indexes
+--
+-- Returns:
+--   A JSONB object containing the next incomplete block, lesson, or chapter,
+--   or nulls if everything has been completed.
 -- =============================================================================
 
-CREATE OR REPLACE FUNCTION public.get_continue_navigation_state(
+create or replace function public.get_continue_navigation_state(
   p_user_id uuid,
   p_published_course_id uuid,
   course_structure jsonb,
   current_context record
 )
-RETURNS jsonb
-LANGUAGE plpgsql
-SECURITY INVOKER
-SET search_path = ''
-AS $$
-DECLARE
+returns jsonb
+language plpgsql
+security invoker
+set search_path = ''
+as $$
+declare
   continue_block record;
   continue_lesson record;
   continue_chapter record;
-BEGIN
-  -- Get next incomplete block
-  WITH block_structure AS (
-    SELECT
+begin
+  -- ===========================================================================
+  -- Get the next incomplete block (after current block global order)
+  -- ===========================================================================
+  with block_structure as (
+    select
       (chapter_obj ->> 'id')::uuid as chapter_id,
       (lesson_obj ->> 'id')::uuid as lesson_id,
       (block_obj ->> 'id')::uuid as block_id,
-      ROW_NUMBER() OVER (ORDER BY 
-        (chapter_obj ->> 'order_index')::int,
-        (lesson_obj ->> 'order_index')::int,
-        (block_obj ->> 'order_index')::int
+      row_number() over (
+        order by
+          (chapter_obj ->> 'order_index')::int,
+          (lesson_obj ->> 'order_index')::int,
+          (block_obj ->> 'order_index')::int
       ) as global_order
-    FROM jsonb_array_elements(course_structure -> 'chapters') as chapter_obj,
+    from jsonb_array_elements(course_structure -> 'chapters') as chapter_obj,
          jsonb_array_elements(chapter_obj -> 'lessons') as lesson_obj,
          jsonb_array_elements(lesson_obj -> 'blocks') as block_obj
   )
-  SELECT bs.chapter_id, bs.lesson_id, bs.block_id
-  INTO continue_block
-  FROM block_structure bs
-  LEFT JOIN public.block_progress bp ON (
+  select bs.chapter_id, bs.lesson_id, bs.block_id
+  into continue_block
+  from block_structure bs
+  left join public.block_progress bp on (
     bp.user_id = p_user_id
-    AND bp.published_course_id = p_published_course_id
-    AND bp.block_id = bs.block_id
+    and bp.published_course_id = p_published_course_id
+    and bp.block_id = bs.block_id
   )
-  WHERE bs.global_order > COALESCE(current_context.block_global_order, 0)
-    AND (bp.is_completed IS FALSE OR bp.id IS NULL)
-  ORDER BY bs.global_order
-  LIMIT 1;
+  where bs.global_order > coalesce(current_context.block_global_order, 0)
+    and (bp.is_completed is false or bp.id is null)
+  order by bs.global_order
+  limit 1;
 
-  -- Get next incomplete lesson
-  WITH lesson_structure AS (
-    SELECT
+  -- ===========================================================================
+  -- Get the next incomplete lesson (after current lesson global order)
+  -- ===========================================================================
+  with lesson_structure as (
+    select
       (chapter_obj ->> 'id')::uuid as chapter_id,
       (lesson_obj ->> 'id')::uuid as lesson_id,
-      ROW_NUMBER() OVER (ORDER BY 
-        (chapter_obj ->> 'order_index')::int,
-        (lesson_obj ->> 'order_index')::int
+      row_number() over (
+        order by
+          (chapter_obj ->> 'order_index')::int,
+          (lesson_obj ->> 'order_index')::int
       ) as global_order
-    FROM jsonb_array_elements(course_structure -> 'chapters') as chapter_obj,
+    from jsonb_array_elements(course_structure -> 'chapters') as chapter_obj,
          jsonb_array_elements(chapter_obj -> 'lessons') as lesson_obj
   )
-  SELECT ls.chapter_id, ls.lesson_id
-  INTO continue_lesson
-  FROM lesson_structure ls
-  LEFT JOIN public.lesson_progress lp ON (
+  select ls.chapter_id, ls.lesson_id
+  into continue_lesson
+  from lesson_structure ls
+  left join public.lesson_progress lp on (
     lp.user_id = p_user_id
-    AND lp.published_course_id = p_published_course_id
-    AND lp.lesson_id = ls.lesson_id
+    and lp.published_course_id = p_published_course_id
+    and lp.lesson_id = ls.lesson_id
   )
-  WHERE ls.global_order > COALESCE(current_context.lesson_global_order, 0)
-    AND (lp.completed_at IS NULL OR lp.id IS NULL)
-  ORDER BY ls.global_order
-  LIMIT 1;
+  where ls.global_order > coalesce(current_context.lesson_global_order, 0)
+    and (lp.completed_at is null or lp.id is null)
+  order by ls.global_order
+  limit 1;
 
-  -- Get next incomplete chapter
-  WITH chapter_structure AS (
-    SELECT
+  -- ===========================================================================
+  -- Get the next incomplete chapter (after current chapter global order)
+  -- ===========================================================================
+  with chapter_structure as (
+    select
       (chapter_obj ->> 'id')::uuid as chapter_id,
-      ROW_NUMBER() OVER (ORDER BY (chapter_obj ->> 'order_index')::int) as global_order
-    FROM jsonb_array_elements(course_structure -> 'chapters') as chapter_obj
+      row_number() over (
+        order by (chapter_obj ->> 'order_index')::int
+      ) as global_order
+    from jsonb_array_elements(course_structure -> 'chapters') as chapter_obj
   )
-  SELECT cs.chapter_id
-  INTO continue_chapter
-  FROM chapter_structure cs
-  LEFT JOIN public.chapter_progress cp ON (
+  select cs.chapter_id
+  into continue_chapter
+  from chapter_structure cs
+  left join public.chapter_progress cp on (
     cp.user_id = p_user_id
-    AND cp.published_course_id = p_published_course_id
-    AND cp.chapter_id = cs.chapter_id
+    and cp.published_course_id = p_published_course_id
+    and cp.chapter_id = cs.chapter_id
   )
-  WHERE cs.global_order > COALESCE(current_context.chapter_global_order, 0)
-    AND (cp.completed_at IS NULL OR cp.id IS NULL)
-  ORDER BY cs.global_order
-  LIMIT 1;
+  where cs.global_order > coalesce(current_context.chapter_global_order, 0)
+    and (cp.completed_at is null or cp.id is null)
+  order by cs.global_order
+  limit 1;
 
-  RETURN jsonb_build_object(
-    'block', CASE WHEN continue_block.block_id IS NOT NULL THEN
-      jsonb_build_object(
-        'id', continue_block.block_id,
-        'lesson_id', continue_block.lesson_id,
-        'chapter_id', continue_block.chapter_id,
-        'course_id', p_published_course_id
-      )
-      ELSE NULL END,
-    'lesson', CASE WHEN continue_lesson.lesson_id IS NOT NULL THEN
-      jsonb_build_object(
-        'id', continue_lesson.lesson_id,
-        'chapter_id', continue_lesson.chapter_id,
-        'course_id', p_published_course_id
-      )
-      ELSE NULL END,
-    'chapter', CASE WHEN continue_chapter.chapter_id IS NOT NULL THEN
-      jsonb_build_object(
-        'id', continue_chapter.chapter_id,
-        'course_id', p_published_course_id
-      )
-      ELSE NULL END
+  -- ===========================================================================
+  -- Build the return JSONB object with next incomplete targets
+  -- ===========================================================================
+  return jsonb_build_object(
+    'block', case
+      when continue_block.block_id is not null then
+        jsonb_build_object(
+          'id', continue_block.block_id,
+          'lesson_id', continue_block.lesson_id,
+          'chapter_id', continue_block.chapter_id,
+          'course_id', p_published_course_id
+        )
+      else null
+    end,
+    'lesson', case
+      when continue_lesson.lesson_id is not null then
+        jsonb_build_object(
+          'id', continue_lesson.lesson_id,
+          'chapter_id', continue_lesson.chapter_id,
+          'course_id', p_published_course_id
+        )
+      else null
+    end,
+    'chapter', case
+      when continue_chapter.chapter_id is not null then
+        jsonb_build_object(
+          'id', continue_chapter.chapter_id,
+          'course_id', p_published_course_id
+        )
+      else null
+    end
   );
-END;
+end;
 $$;

@@ -1,17 +1,31 @@
 -- =============================================================================
 -- FUNCTION: resolve_current_context
 -- =============================================================================
--- Resolves the current context (block, lesson, chapter) from provided IDs
--- and returns structured information with global ordering.
+-- Resolves the current context (block, lesson, chapter) from provided identifiers
+-- and returns a structured record with global ordering for each level.
+--
+-- Parameters:
+--   course_structure  - JSONB structure of the published course
+--   p_block_id        - UUID of the current block (optional)
+--   p_lesson_id       - UUID of the current lesson (optional)
+--   p_chapter_id      - UUID of the current chapter (optional)
+--
+-- Returns TABLE:
+--   block_id             - UUID of the resolved block (nullable)
+--   lesson_id            - UUID of the resolved lesson (nullable)
+--   chapter_id           - UUID of the resolved chapter
+--   block_global_order   - Global order index for the block (nullable)
+--   lesson_global_order  - Global order index for the lesson (nullable)
+--   chapter_global_order - Global order index for the chapter
 -- =============================================================================
 
-CREATE OR REPLACE FUNCTION public.resolve_current_context(
+create or replace function public.resolve_current_context(
   course_structure jsonb,
-  p_block_id uuid DEFAULT NULL,
-  p_lesson_id uuid DEFAULT NULL,
-  p_chapter_id uuid DEFAULT NULL
+  p_block_id uuid default null,
+  p_lesson_id uuid default null,
+  p_chapter_id uuid default null
 )
-RETURNS TABLE(
+returns table(
   block_id uuid,
   lesson_id uuid,
   chapter_id uuid,
@@ -19,83 +33,120 @@ RETURNS TABLE(
   lesson_global_order integer,
   chapter_global_order integer
 )
-LANGUAGE plpgsql
-SECURITY INVOKER
-SET search_path = ''
-AS $$
-BEGIN
-  -- If block_id is provided, resolve from block
-  IF p_block_id IS NOT NULL THEN
-    RETURN QUERY
-    WITH structure AS (
-      SELECT
+language plpgsql
+security invoker
+set search_path = ''
+as $$
+begin
+  -- =========================================================================
+  -- CASE 1: Resolve context from block_id (most granular level)
+  -- =========================================================================
+  if p_block_id is not null then
+    return query
+    with structure as (
+      select
         (chapter_obj ->> 'id')::uuid as chap_id,
         (lesson_obj ->> 'id')::uuid as less_id,
         (block_obj ->> 'id')::uuid as block_id,
-        ROW_NUMBER() OVER (ORDER BY 
-          (chapter_obj ->> 'order_index')::int,
-          (lesson_obj ->> 'order_index')::int,
-          (block_obj ->> 'order_index')::int
+
+        -- Compute global ordering
+        row_number() over (
+          order by 
+            (chapter_obj ->> 'order_index')::int,
+            (lesson_obj ->> 'order_index')::int,
+            (block_obj ->> 'order_index')::int
         ) as block_order,
-        ROW_NUMBER() OVER (ORDER BY 
-          (chapter_obj ->> 'order_index')::int,
-          (lesson_obj ->> 'order_index')::int
+
+        row_number() over (
+          order by 
+            (chapter_obj ->> 'order_index')::int,
+            (lesson_obj ->> 'order_index')::int
         ) as lesson_order,
-        ROW_NUMBER() OVER (ORDER BY 
-          (chapter_obj ->> 'order_index')::int
+
+        row_number() over (
+          order by 
+            (chapter_obj ->> 'order_index')::int
         ) as chapter_order
-      FROM jsonb_array_elements(course_structure -> 'chapters') as chapter_obj,
-           jsonb_array_elements(chapter_obj -> 'lessons') as lesson_obj,
-           jsonb_array_elements(lesson_obj -> 'blocks') as block_obj
+
+      from jsonb_array_elements(course_structure -> 'chapters') as chapter_obj,
+            jsonb_array_elements(chapter_obj -> 'lessons') as lesson_obj,
+            jsonb_array_elements(lesson_obj -> 'blocks') as block_obj
     )
-    SELECT s.block_id, s.less_id, s.chap_id, 
-           s.block_order::int, s.lesson_order::int, s.chapter_order::int
-    FROM structure s
-    WHERE s.block_id = p_block_id;
-    
-  -- If lesson_id is provided, resolve from lesson
-  ELSIF p_lesson_id IS NOT NULL THEN
-    RETURN QUERY
-    WITH structure AS (
-      SELECT
+    select
+      s.block_id,
+      s.less_id,
+      s.chap_id,
+      s.block_order::int,
+      s.lesson_order::int,
+      s.chapter_order::int
+    from structure s
+    where s.block_id = p_block_id;
+
+  -- =========================================================================
+  -- CASE 2: Resolve context from lesson_id
+  -- =========================================================================
+  elsif p_lesson_id is not null then
+    return query
+    with structure as (
+      select
         (chapter_obj ->> 'id')::uuid as chap_id,
         (lesson_obj ->> 'id')::uuid as less_id,
-        NULL::uuid as block_id,
-        NULL::int as block_order,
-        ROW_NUMBER() OVER (ORDER BY 
-          (chapter_obj ->> 'order_index')::int,
-          (lesson_obj ->> 'order_index')::int
+        null::uuid as block_id,
+        null::int as block_order,
+
+        row_number() over (
+          order by 
+            (chapter_obj ->> 'order_index')::int,
+            (lesson_obj ->> 'order_index')::int
         ) as lesson_order,
-        ROW_NUMBER() OVER (ORDER BY 
-          (chapter_obj ->> 'order_index')::int
+
+        row_number() over (
+          order by 
+            (chapter_obj ->> 'order_index')::int
         ) as chapter_order
-      FROM jsonb_array_elements(course_structure -> 'chapters') as chapter_obj,
+
+      from jsonb_array_elements(course_structure -> 'chapters') as chapter_obj,
            jsonb_array_elements(chapter_obj -> 'lessons') as lesson_obj
     )
-    SELECT s.block_id, s.less_id, s.chap_id, 
-           s.block_order, s.lesson_order::int, s.chapter_order::int
-    FROM structure s
-    WHERE s.less_id = p_lesson_id;
-    
-  -- If chapter_id is provided, resolve from chapter
-  ELSIF p_chapter_id IS NOT NULL THEN
-    RETURN QUERY
-    WITH structure AS (
-      SELECT
+    select
+      s.block_id,
+      s.less_id,
+      s.chap_id,
+      s.block_order,
+      s.lesson_order::int,
+      s.chapter_order::int
+    from structure s
+    where s.less_id = p_lesson_id;
+
+  -- =========================================================================
+  -- CASE 3: Resolve context from chapter_id (coarsest level)
+  -- =========================================================================
+  elsif p_chapter_id is not null then
+    return query
+    with structure as (
+      select
         (chapter_obj ->> 'id')::uuid as chap_id,
-        NULL::uuid as less_id,
-        NULL::uuid as block_id,
-        NULL::int as block_order,
-        NULL::int as lesson_order,
-        ROW_NUMBER() OVER (ORDER BY 
-          (chapter_obj ->> 'order_index')::int
+        null::uuid as less_id,
+        null::uuid as block_id,
+        null::int as block_order,
+        null::int as lesson_order,
+
+        row_number() over (
+          order by 
+            (chapter_obj ->> 'order_index')::int
         ) as chapter_order
-      FROM jsonb_array_elements(course_structure -> 'chapters') as chapter_obj
+
+      from jsonb_array_elements(course_structure -> 'chapters') as chapter_obj
     )
-    SELECT s.block_id, s.less_id, s.chap_id, 
-           s.block_order, s.lesson_order, s.chapter_order::int
-    FROM structure s
-    WHERE s.chap_id = p_chapter_id;
-  END IF;
-END;
+    select
+      s.block_id,
+      s.less_id,
+      s.chap_id,
+      s.block_order,
+      s.lesson_order,
+      s.chapter_order::int
+    from structure s
+    where s.chap_id = p_chapter_id;
+  end if;
+end;
 $$;
