@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 import type { CompleteBlockProgressInsertSchemaTypes } from '@gonasi/schemas/publish/progressiveReveal';
 import { UnifiedNavigationSchema } from '@gonasi/schemas/publish/unified-navigation';
+import { safeDateTime } from '@gonasi/schemas/utils';
 
 import type { TypedSupabaseClient } from '../../client';
 import type { Json } from '../../schema';
@@ -19,7 +20,7 @@ const CompleteBlockResponseSchema = z.object({
   block_weight: z.number(),
   weight_source: z.enum(['structure', 'provided']),
   was_already_completed: z.boolean(),
-  completed_at: z.string().datetime(),
+  completed_at: safeDateTime(),
   navigation: UnifiedNavigationSchema,
 });
 
@@ -71,8 +72,6 @@ export const createBlockInteraction = async ({
       p_last_response: last_response as unknown as Json,
       p_block_weight: block_weight ?? undefined,
     })) as { data: unknown; error: any };
-
-    console.log('Raw result from complete_block:', JSON.stringify(result, null, 2));
 
     if (error) {
       console.error('Supabase RPC error (complete_block):', JSON.stringify(error, null, 2));

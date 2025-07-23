@@ -122,21 +122,27 @@ export async function action({ request, params }: Route.ActionArgs) {
 
     const navigation = result.data?.navigation;
 
+    console.log('NAVIGATION: ', JSON.stringify(navigation, null, 4));
+    console.log('last: ', isLastInteraction, navigation);
+
     if (isLastInteraction && navigation) {
-      const { lesson, chapter } = navigation.current;
+      const { lesson, chapter, course } = navigation.current;
 
       if (chapter?.is_completed) {
         return redirect(`/c/${params.publishedCourseId}/complete/${params.publishedChapterId}`);
       }
 
       if (lesson?.is_completed) {
+        console.log(
+          'url: ',
+          `/c/${course.id}/${params.publishedChapterId}/${params.publishedLessonId}/play/${navigation.continue.lesson?.id}/complete`,
+        );
         return redirect(
-          `/c/${params.publishedCourseId}/${params.publishedChapterId}/${params.publishedLessonId}/play/${navigation.continue.lesson?.id}/complete`,
+          `/c/${course.id}/${params.publishedChapterId}/${params.publishedLessonId}/play/${navigation.continue.lesson?.id}/complete`,
         );
       }
     }
 
-    console.log('result: ', result.data);
     return true;
   } catch (err) {
     console.error(`Failed to process interaction:`, err);

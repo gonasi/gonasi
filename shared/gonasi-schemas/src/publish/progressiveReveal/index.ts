@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { BlockInteractionSchema } from '../../plugins';
+import { safeDateTime } from '../../utils';
 import { PublishBlockSchema } from '../base';
 
 //
@@ -20,8 +21,8 @@ export const BlockProgressSchema = z
 
     // Progress state
     is_completed: z.boolean(),
-    started_at: z.string().datetime(),
-    completed_at: z.string().datetime(),
+    started_at: safeDateTime(),
+    completed_at: safeDateTime(),
     time_spent_seconds: z.number(),
 
     // Scoring & attempts
@@ -39,8 +40,8 @@ export const BlockProgressSchema = z
 
     // Audit
     user_id: z.string().uuid(),
-    created_at: z.string().datetime(),
-    updated_at: z.string().datetime(),
+    created_at: safeDateTime(),
+    updated_at: safeDateTime(),
   })
   .nullable();
 
@@ -53,8 +54,8 @@ export type BlockProgressSchemaTypes = z.infer<typeof BlockProgressSchema>;
 export const SubmitBlockProgressSchema = z.object({
   organization_id: z.string().uuid(),
   block_id: z.string().uuid(),
-  started_at: z.string().datetime(),
-  completed_at: z.string().datetime(),
+  started_at: safeDateTime(),
+  completed_at: safeDateTime(),
   time_spent_seconds: z.number(),
   earned_score: z.number().optional(),
   attempt_count: z.number().optional(),
@@ -112,7 +113,7 @@ export const LessonMetadataSchema = z.object({
 
   active_block_id: z.string().uuid().nullable(),
   total_time_spent: z.number(),
-  last_completed_at: z.string().datetime().nullable(),
+  last_completed_at: safeDateTime().nullable(),
 
   is_fully_completed: z.boolean().nullable(),
   completion_percentage: z.number(),

@@ -1,4 +1,6 @@
 import { z } from 'zod';
 
+import { safeDateTime } from '../../../utils';
+
 export const UUIDSchema = z.string().uuid();
-export const TimestampSchema = z.string().datetime().nullable();
+export const TimestampSchema = safeDateTime().nullable();
