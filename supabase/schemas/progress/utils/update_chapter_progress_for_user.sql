@@ -72,8 +72,8 @@ begin
       (block_obj->>'id')::uuid as block_id,
       coalesce((block_obj->>'weight')::numeric, 1.0) as block_weight
     from jsonb_array_elements(course_structure->'chapters') as chapter_obj,
-         jsonb_array_elements(chapter_obj->'lessons') as lesson_obj,
-         jsonb_array_elements(lesson_obj->'blocks') as block_obj
+          jsonb_array_elements(chapter_obj->'lessons') as lesson_obj,
+          jsonb_array_elements(lesson_obj->'blocks') as block_obj
     where (chapter_obj->>'id')::uuid = p_chapter_id
   ),
 
@@ -160,6 +160,7 @@ begin
   -- ============================================================================
   -- STEP 5: Upsert progress into chapter_progress table
   -- ============================================================================
+  -- Add `is_completed` to the insert and update sections
   insert into public.chapter_progress (
     user_id,
     published_course_id,
@@ -172,11 +173,12 @@ begin
     completed_weight,
     total_lesson_weight,
     completed_lesson_weight,
+    is_completed,  -- <-- added
     completed_at
   )
   values (
     p_user_id,
-    p_published_course_id,
+    p_published_course_id, 
     p_chapter_id,
     chapter_total_blocks,
     chapter_completed_blocks,
@@ -186,6 +188,7 @@ begin
     chapter_completed_weight,
     chapter_total_lesson_weight,
     chapter_completed_lesson_weight,
+    chapter_is_completed,  -- <-- added
     case when chapter_is_completed then timezone('utc', now()) else null end
   )
   on conflict (user_id, published_course_id, chapter_id)
@@ -198,6 +201,7 @@ begin
     completed_weight = excluded.completed_weight,
     total_lesson_weight = excluded.total_lesson_weight,
     completed_lesson_weight = excluded.completed_lesson_weight,
+    is_completed = excluded.is_completed,  -- <-- added
     -- Handle setting or unsetting completed_at
     completed_at = case 
       when excluded.completed_weight >= excluded.total_weight - 0.0001

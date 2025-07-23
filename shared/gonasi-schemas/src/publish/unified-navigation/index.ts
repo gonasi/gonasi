@@ -15,7 +15,7 @@ export const ContinueLessonSchema = LessonMetadataSchema.extend({
   is_different_from_next: z.boolean(),
 });
 
-export const LessonNavigationResponseSchema = z.object({
+export const UnifiedNavigationSchema = z.object({
   current_lesson: CurrentLessonSchema,
   previous_lesson: LessonMetadataSchema.nullable(),
   next_lesson: LessonMetadataSchema.nullable(),

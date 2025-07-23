@@ -1,3 +1,3 @@
 export * from './fetchLessonBlocksProgress';
-export * from './fetchLessonNavigationIds';
+export * from './getUnifiedNavigation';
 export * from './fetchLessonOverviewWithChapterProgress';

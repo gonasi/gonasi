@@ -43,7 +43,7 @@ begin
   all_lessons as (
     select (lesson_obj ->> 'id')::uuid as lesson_id
     from jsonb_array_elements(course_structure -> 'chapters') as chapter_obj,
-         jsonb_array_elements(chapter_obj -> 'lessons') as lesson_obj
+          jsonb_array_elements(chapter_obj -> 'lessons') as lesson_obj
   ),
 
   -- extract all chapter ids

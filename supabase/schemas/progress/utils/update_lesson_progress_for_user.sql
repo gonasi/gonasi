@@ -103,7 +103,7 @@ begin
   -- ============================================================================
   lesson_is_completed := (
     lesson_total_weight > 0 and 
-    lesson_completed_weight >= lesson_total_weight - 0.0001  -- tolerate float errors
+    lesson_completed_weight >= lesson_total_weight - 0.0001
   );
 
   -- ============================================================================
@@ -117,6 +117,7 @@ begin
     completed_blocks,
     total_weight,
     completed_weight,
+    is_completed,
     completed_at
   )
   values (
@@ -127,6 +128,7 @@ begin
     lesson_completed_blocks,
     lesson_total_weight,
     lesson_completed_weight,
+    lesson_is_completed,
     case when lesson_is_completed then timezone('utc', now()) else null end
   )
   on conflict (user_id, published_course_id, lesson_id)
@@ -135,18 +137,12 @@ begin
     completed_blocks = excluded.completed_blocks,
     total_weight     = excluded.total_weight,
     completed_weight = excluded.completed_weight,
+    is_completed     = excluded.is_completed,
     completed_at = case 
-      -- set completed_at if it's newly completed
-      when excluded.completed_weight >= excluded.total_weight - 0.0001
-           and excluded.total_weight > 0
-           and lesson_progress.completed_at is null
+      when excluded.is_completed and lesson_progress.completed_at is null
       then timezone('utc', now())
-
-      -- reset completed_at if progress is no longer sufficient
-      when excluded.completed_weight < excluded.total_weight - 0.0001
+      when not excluded.is_completed
       then null
-
-      -- else, retain existing completed_at
       else lesson_progress.completed_at
     end,
     updated_at = timezone('utc', now());

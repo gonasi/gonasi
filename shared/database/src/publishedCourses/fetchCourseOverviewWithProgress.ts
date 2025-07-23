@@ -39,6 +39,8 @@ export async function fetchCourseOverviewWithProgress({
     return null;
   }
 
+  console.log('******* data: ', data);
+
   const parsed = PublishOverviewCourseProgressOverviewSchema.safeParse(data);
 
   if (!parsed.success) {

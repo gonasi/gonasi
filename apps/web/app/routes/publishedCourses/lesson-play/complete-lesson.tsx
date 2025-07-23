@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { ArrowRight, BookOpen, CheckCircle } from 'lucide-react';
 
 import {
-  fetchLessonNavigationIds,
+  getUnifiedNavigation,
   fetchLessonOverviewWithChapterProgress,
 } from '@gonasi/database/publishedCourses';
 
@@ -45,7 +45,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 
   try {
     const [navigationData, overviewData] = await Promise.all([
-      fetchLessonNavigationIds({
+      getUnifiedNavigation({
         supabase,
         courseId: params.publishedCourseId,
         lessonId: params.publishedLessonId,

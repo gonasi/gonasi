@@ -2,41 +2,44 @@ import { z } from 'zod';
 
 import { PricingSchema } from '../course-pricing';
 
-// Base schemas
+// === Reusable Schemas ===
 const UUIDSchema = z.string().uuid();
 const TimestampSchema = z.string().datetime();
 
-// Organization schema
+// === Organization Schema ===
 const PublishOverviewOrganizationSchema = z.object({
   id: UUIDSchema,
   name: z.string(),
   handle: z.string(),
   avatar_url: z.string().nullable(),
   blur_hash: z.string().nullable(),
-  is_verified: z.boolean(),
+  is_verified: z.boolean().optional(),
 });
 
-// Lesson type schema
-const PublishOverviewLessonTypeSchema = z.object({
-  id: UUIDSchema,
-  name: z.string(),
-  description: z.string(),
-  lucide_icon: z.string(),
-  bg_color: z.string(),
-});
+// === Lesson Type Schema ===
+const PublishOverviewLessonTypeSchema = z
+  .object({
+    id: UUIDSchema.optional(),
+    name: z.string().optional(),
+    description: z.string().optional(),
+    lucide_icon: z.string().optional(),
+    bg_color: z.string().optional(),
+  })
+  .passthrough(); // Allow additional fields from the database
 
-// Lesson progress schema
+// === Lesson Progress Schema ===
 const PublishOverviewLessonProgressSchema = z.object({
   total_blocks: z.number().int().min(0),
   completed_blocks: z.number().int().min(0),
   total_weight: z.number().min(0),
   completed_weight: z.number().min(0),
   progress_percentage: z.number().min(0).max(100),
-  completed_at: TimestampSchema.nullable(),
-  updated_at: TimestampSchema.nullable().optional(),
+  completed_at: z.string().nullable(),
+  updated_at: z.string().nullable().optional(),
+  is_completed: z.boolean(),
 });
 
-// Lesson schema
+// === Lesson Schema (Updated to match function output) ===
 const PublishOverviewLessonSchema = z.object({
   id: UUIDSchema,
   name: z.string().min(1),
@@ -44,25 +47,23 @@ const PublishOverviewLessonSchema = z.object({
   total_blocks: z.number().int().min(1),
   lesson_type: PublishOverviewLessonTypeSchema,
   progress: PublishOverviewLessonProgressSchema.nullable(),
-  is_active: z.boolean(), // NEW: indicates if this is the active lesson
+  is_active: z.boolean().default(false),
+  is_completed: z.boolean().default(false),
 });
 
-// Chapter schema
+// === Chapter Schema (Updated to match function output) ===
 const PublishOverviewChapterSchema = z.object({
   id: UUIDSchema,
   name: z.string().min(1),
-  description: z.string().min(1),
   position: z.number().int().min(0),
   total_lessons: z.number().int().min(1),
-  total_blocks: z.number().int().min(1),
-  completed_lessons: z.number().int().min(0).nullable(),
-  completed_blocks: z.number().int().min(0).nullable(),
-  progress_percentage: z.number().min(0).max(100).nullable(),
   lessons: z.array(PublishOverviewLessonSchema),
-  is_active: z.boolean(), // NEW: indicates if this is the active chapter
 });
 
-// Course schema
+// === Published Chapters with Progress Response Schema ===
+export const PublishedChaptersWithProgressSchema = z.array(PublishOverviewChapterSchema);
+
+// === Course Schema ===
 const PublishOverviewCourseSchema = z.object({
   id: UUIDSchema,
   name: z.string().min(1),
@@ -73,7 +74,7 @@ const PublishOverviewCourseSchema = z.object({
   total_lessons: z.number().int().min(1),
   total_blocks: z.number().int().min(1),
   pricing_tiers: PricingSchema,
-  average_rating: z.number().min(1).max(5).nullable(),
+  average_rating: z.number().min(1).max(5).nullable().optional(),
   total_reviews: z.number().int().min(0),
   total_enrollments: z.number().int().min(0),
   published_at: TimestampSchema,
@@ -83,7 +84,7 @@ const PublishOverviewCourseSchema = z.object({
   subcategory_name: z.string().nullable(),
 });
 
-// Overall progress schema
+// === Overall Progress Schema ===
 const PublishOverviewOverallProgressSchema = z.object({
   total_blocks: z.number().int().min(0),
   completed_blocks: z.number().int().min(0),
@@ -99,12 +100,12 @@ const PublishOverviewOverallProgressSchema = z.object({
   lesson_progress_percentage: z.number().min(0).max(100),
   completed_at: TimestampSchema.nullable(),
   updated_at: TimestampSchema.nullable(),
-  // NEW: Active navigation fields
   active_chapter_id: UUIDSchema.nullable(),
   active_lesson_id: UUIDSchema.nullable(),
+  is_completed: z.boolean(),
 });
 
-// Recent activity item schema
+// === Recent Activity Item Schema ===
 const PublishOverviewRecentActivityItemSchema = z.object({
   block_id: UUIDSchema,
   lesson_id: UUIDSchema,
@@ -112,9 +113,10 @@ const PublishOverviewRecentActivityItemSchema = z.object({
   completed_at: TimestampSchema,
   time_spent_seconds: z.number().int().min(0),
   earned_score: z.number().nullable(),
+  is_completed: z.literal(true),
 });
 
-// Statistics schema
+// === User Statistics Schema ===
 const PublishOverviewStatisticsSchema = z.object({
   total_time_spent: z.number().int().min(0),
   average_score: z.number().min(0).max(100).nullable(),
@@ -122,7 +124,7 @@ const PublishOverviewStatisticsSchema = z.object({
   started_at: TimestampSchema.nullable(),
 });
 
-// Main progress overview schema
+// === Main Course Progress Overview Schema ===
 export const PublishOverviewCourseProgressOverviewSchema = z.object({
   course: PublishOverviewCourseSchema,
   organization: PublishOverviewOrganizationSchema,
@@ -132,7 +134,7 @@ export const PublishOverviewCourseProgressOverviewSchema = z.object({
   statistics: PublishOverviewStatisticsSchema.nullable(),
 });
 
-// Type exports
+// === Type Exports ===
 export type PublishOverviewCourseProgressOverview = z.infer<
   typeof PublishOverviewCourseProgressOverviewSchema
 >;

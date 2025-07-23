@@ -2,7 +2,6 @@
 import { NavLink, Outlet } from 'react-router';
 import { motion } from 'framer-motion';
 import { ArrowDown, BookOpen, ChevronRight, Clock, StarOff, TableOfContents } from 'lucide-react';
-import { redirectWithError } from 'remix-toast';
 
 // Internal utilities
 import {
@@ -58,9 +57,9 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     getEnrollmentStatus({ supabase, publishedCourseId }),
   ]);
 
-  if (!courseOverview) {
-    return redirectWithError('/explore', 'Could not find course data');
-  }
+  // if (!courseOverview) {
+  //   return redirectWithError('/explore', 'Could not find course data');
+  // }
 
   return { courseOverview, enrollmentStatus };
 }

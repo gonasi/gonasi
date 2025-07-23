@@ -14,7 +14,7 @@ import { dataWithError, redirectWithError } from 'remix-toast';
 
 import { createBlockInteraction } from '@gonasi/database/lessons';
 import {
-  fetchLessonNavigationIds,
+  getUnifiedNavigation,
   fetchPublishedLessonBlocksWithProgress,
 } from '@gonasi/database/publishedCourses';
 import { SubmitBlockProgressSchema } from '@gonasi/schemas/publish/progressiveReveal';
@@ -179,7 +179,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
       }),
     ]);
 
-    const lessonNavigationPromise = fetchLessonNavigationIds({
+    const lessonNavigationPromise = getUnifiedNavigation({
       supabase,
       courseId: params.publishedCourseId,
       lessonId: params.publishedLessonId,

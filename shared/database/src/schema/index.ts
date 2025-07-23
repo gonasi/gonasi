@@ -2110,7 +2110,7 @@ export type Database = {
         Returns: Json
       }
       get_course_progress_overview: {
-        Args: { p_published_course_id: string }
+        Args: { p_published_course_id: string; p_user_id?: string }
         Returns: Json
       }
       get_current_navigation_state: {
@@ -2146,14 +2146,6 @@ export type Database = {
           p_user_id: string
           p_published_course_id: string
           p_current_lesson_id: string
-        }
-        Returns: Json
-      }
-      get_next_navigation_ids: {
-        Args: {
-          p_user_id: string
-          p_published_course_id: string
-          p_current_block_id: string
         }
         Returns: Json
       }
