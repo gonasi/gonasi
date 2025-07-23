@@ -2071,8 +2071,43 @@ export type Database = {
         Args: { p_course_id: string }
         Returns: Database["public"]["Enums"]["payment_frequency"][]
       }
+      get_completion_navigation_state: {
+        Args: {
+          p_user_id: string
+          p_published_course_id: string
+          course_structure: Json
+          current_context: Record<string, unknown>
+        }
+        Returns: Json
+      }
+      get_continue_navigation_state: {
+        Args: {
+          p_user_id: string
+          p_published_course_id: string
+          course_structure: Json
+          current_context: Record<string, unknown>
+        }
+        Returns: Json
+      }
+      get_course_navigation_info: {
+        Args: {
+          p_user_id: string
+          p_published_course_id: string
+          course_structure: Json
+        }
+        Returns: Json
+      }
       get_course_progress_overview: {
         Args: { p_published_course_id: string }
+        Returns: Json
+      }
+      get_current_navigation_state: {
+        Args: {
+          p_user_id: string
+          p_published_course_id: string
+          course_structure: Json
+          current_context: Record<string, unknown>
+        }
         Returns: Json
       }
       get_effective_pricing_for_published_tier: {
@@ -2110,6 +2145,24 @@ export type Database = {
         }
         Returns: Json
       }
+      get_next_navigation_state: {
+        Args: {
+          p_user_id: string
+          p_published_course_id: string
+          course_structure: Json
+          current_context: Record<string, unknown>
+        }
+        Returns: Json
+      }
+      get_previous_navigation_state: {
+        Args: {
+          p_user_id: string
+          p_published_course_id: string
+          course_structure: Json
+          current_context: Record<string, unknown>
+        }
+        Returns: Json
+      }
       get_published_course_pricing_tier: {
         Args: { p_published_course_id: string; p_tier_id: string }
         Returns: {
@@ -2135,6 +2188,16 @@ export type Database = {
       }
       get_tier_limits_for_org: {
         Args: { org_id: string }
+        Returns: Json
+      }
+      get_unified_navigation: {
+        Args: {
+          p_user_id: string
+          p_published_course_id: string
+          p_current_block_id?: string
+          p_current_lesson_id?: string
+          p_current_chapter_id?: string
+        }
         Returns: Json
       }
       get_user_lesson_blocks_progress: {
@@ -2203,6 +2266,22 @@ export type Database = {
           p_updated_by: string
         }
         Returns: undefined
+      }
+      resolve_current_context: {
+        Args: {
+          course_structure: Json
+          p_block_id?: string
+          p_lesson_id?: string
+          p_chapter_id?: string
+        }
+        Returns: {
+          block_id: string
+          lesson_id: string
+          chapter_id: string
+          block_global_order: number
+          lesson_global_order: number
+          chapter_global_order: number
+        }[]
       }
       rpc_verify_and_set_active_organization: {
         Args: { organization_id_from_url: string }

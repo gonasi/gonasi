@@ -233,6 +233,15 @@ schema_paths = [
   './schemas/progress/utils/complete_block.sql',
   './schemas/progress/utils/get_lesson_navigation_ids.sql',
 
+  './schemas/progress/utils/navigation/get_unified_navigation.sql',
+  './schemas/progress/utils/navigation/resolve_current_context.sql',
+  './schemas/progress/utils/navigation/get_current_navigation_state.sql',
+  './schemas/progress/utils/navigation/get_previous_navigation_state.sql',
+  './schemas/progress/utils/navigation/get_next_navigation_state.sql',
+  './schemas/progress/utils/navigation/get_continue_navigation_state.sql',
+  './schemas/progress/utils/navigation/get_completion_navigation_state.sql',
+  './schemas/progress/utils/navigation/get_course_navigation_info.sql',
+
   './schemas/publishedCourses/utils/get_course_progress_overview.sql'
 
   # './schemas/enrollment_activities_schema_indexes_rls.sql',
