@@ -1,4 +1,5 @@
 import Confetti from 'react-confetti-boom';
+import { redirect } from 'react-router';
 import { differenceInMinutes } from 'date-fns';
 import { motion } from 'framer-motion';
 import { ArrowRight, BookOpen, CheckCircle } from 'lucide-react';
@@ -54,25 +55,18 @@ export async function loader({ params, request }: Route.LoaderArgs) {
       }),
     ]);
 
-    console.debug('navigationData:', navigationData);
-    console.debug('overviewData:', overviewData);
-
     const current = navigationData?.current;
-    console.debug('Resolved current context:', current);
 
     const canonicalLessonUrl = `/c/${current?.course.id}/${current?.chapter?.id}/${current?.lesson?.id}/play`;
-    console.debug('Canonical lesson URL:', canonicalLessonUrl);
 
     const isNonCanonical =
       params.publishedCourseId !== current?.course?.id ||
       params.publishedLessonId !== current?.lesson?.id ||
       params.nextLessonId !== navigationData?.continue?.lesson?.id;
 
-    console.debug('isNonCanonical:', isNonCanonical);
-
     if (isNonCanonical) {
       console.warn('Non-canonical lesson URL, redirecting to canonical URL');
-      // return redirect(canonicalLessonUrl);
+      return redirect(canonicalLessonUrl);
     }
 
     if (current.lesson?.completed_at) {
@@ -80,17 +74,12 @@ export async function loader({ params, request }: Route.LoaderArgs) {
       const now = new Date();
       const minutesAgo = differenceInMinutes(now, completedAt);
 
-      console.debug('Lesson completed_at:', completedAt.toISOString());
-      console.debug('Now:', now.toISOString());
-      console.debug('Minutes since completion:', minutesAgo);
-
       if (minutesAgo > 5) {
         console.warn('Lesson was completed more than 5 minutes ago, redirecting...');
-        // return redirect(canonicalLessonUrl);
+        return redirect(canonicalLessonUrl);
       }
     }
 
-    console.debug('Returning lesson and navigation data to client');
     return {
       navigationData,
       overviewData,
