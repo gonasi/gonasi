@@ -6,7 +6,7 @@
 -- Performs the following:
 --   1. Validates the block weight from the course structure.
 --   2. Inserts or updates block progress.
---   3. Triggers lesson and course progress updates.
+--   3. Triggers lesson, chapter, and course progress updates.
 --   4. Returns navigation metadata for next content.
 --
 -- Parameters:
@@ -151,7 +151,7 @@ begin
     updated_at = timezone('utc', now());
 
   -- =========================================================================
-  -- STEP 6: Trigger lesson and course progress updates if newly completed
+  -- STEP 6: Trigger lesson, chapter, and course progress updates if newly completed
   -- =========================================================================
   if not was_already_completed then
     -- Recalculate lesson-level progress
@@ -159,6 +159,13 @@ begin
       current_user_id,
       p_published_course_id,
       p_lesson_id
+    );
+
+    -- Recalculate chapter-level progress
+    perform public.update_chapter_progress_for_user(
+      current_user_id,
+      p_published_course_id,
+      p_chapter_id
     );
 
     -- Recalculate course-level progress

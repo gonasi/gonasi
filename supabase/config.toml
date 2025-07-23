@@ -227,6 +227,7 @@ schema_paths = [
 
   './schemas/progress/utils/get_user_lesson_blocks_progress.sql',
   './schemas/progress/utils/update_lesson_progress_for_user.sql',
+  './schemas/progress/utils/update_chapter_progress_for_user.sql',
   './schemas/progress/utils/update_course_progress_for_user.sql',
   './schemas/progress/utils/get_next_navigation_ids.sql',
   './schemas/progress/utils/complete_block.sql',

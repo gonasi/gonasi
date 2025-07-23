@@ -2220,6 +2220,14 @@ export type Database = {
         Args: { p_course_id: string; p_user_id: string; p_target_model: string }
         Returns: undefined
       }
+      update_chapter_progress_for_user: {
+        Args: {
+          p_user_id: string
+          p_published_course_id: string
+          p_chapter_id: string
+        }
+        Returns: undefined
+      }
       update_course_progress_for_user: {
         Args: { p_user_id: string; p_published_course_id: string }
         Returns: undefined
