@@ -13,6 +13,8 @@ export default [
         route('cancel', 'routes/publishedCourses/cancel-enroll.tsx'),
       ]),
       route('enroll/status', 'routes/publishedCourses/enroll-status.tsx'),
+      route('complete', 'routes/publishedCourses/complete-course.tsx'),
+      route('complete/:publishedChapterId', 'routes/publishedCourses/complete-chapter.tsx'),
     ]),
 
     route('api/check-username-exists', 'routes/api/check-username-exists.ts'),

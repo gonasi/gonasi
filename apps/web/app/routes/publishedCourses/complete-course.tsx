@@ -1,5 +1,6 @@
 import Confetti from 'react-confetti-boom';
 import { redirect } from 'react-router';
+import { differenceInMinutes } from 'date-fns';
 import { motion } from 'framer-motion';
 import { ArrowRight, BookOpen, CheckCircle, NotebookPen } from 'lucide-react';
 
@@ -8,7 +9,7 @@ import {
   getUnifiedNavigation,
 } from '@gonasi/database/publishedCourses';
 
-import type { Route } from './+types/complete-lesson';
+import type { Route } from './+types/complete-course';
 
 import { NavLinkButton } from '~/components/ui/button';
 import { Modal } from '~/components/ui/modal';
@@ -36,8 +37,6 @@ export function meta({ data }: Route.MetaArgs) {
 export async function loader({ params, request }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
 
-  console.debug('Loader invoked with params:', params);
-
   try {
     console.debug('Fetching navigation and lesson overview data...');
 
@@ -54,11 +53,11 @@ export async function loader({ params, request }: Route.LoaderArgs) {
       }),
     ]);
 
-    console.log('data: ', JSON.stringify(overviewData, null, 4));
-
     const current = navigationData?.current;
+    console.debug('Resolved current context:', current);
 
     const canonicalLessonUrl = `/c/${current?.course.id}/${current?.chapter?.id}/${current?.lesson?.id}/play`;
+    console.debug('Canonical lesson URL:', canonicalLessonUrl);
 
     if (!navigationData) {
       return redirect(canonicalLessonUrl);
@@ -73,16 +72,16 @@ export async function loader({ params, request }: Route.LoaderArgs) {
       return redirect(canonicalLessonUrl);
     }
 
-    // if (current.lesson?.completed_at) {
-    //   const completedAt = new Date(current.lesson.completed_at);
-    //   const now = new Date();
-    //   const minutesAgo = differenceInMinutes(now, completedAt);
+    if (current.lesson?.completed_at) {
+      const completedAt = new Date(current.lesson.completed_at);
+      const now = new Date();
+      const minutesAgo = differenceInMinutes(now, completedAt);
 
-    //   if (minutesAgo > 5) {
-    //     console.warn('Lesson was completed more than 5 minutes ago, redirecting...');
-    //     return redirect(canonicalLessonUrl);
-    //   }
-    // }
+      if (minutesAgo > 5) {
+        console.warn('Lesson was completed more than 5 minutes ago, redirecting...');
+        return redirect(canonicalLessonUrl);
+      }
+    }
 
     return {
       navigationData,

@@ -125,15 +125,15 @@ export async function action({ request, params }: Route.ActionArgs) {
     if (isLastInteraction && navigation) {
       const { lesson, chapter, course } = navigation.current;
 
+      if (result.data?.navigation.completion.course.is_complete) {
+        return redirect(`/c/${params.publishedCourseId}/complete`);
+      }
+
       if (chapter?.is_completed) {
         return redirect(`/c/${params.publishedCourseId}/complete/${params.publishedChapterId}`);
       }
 
       if (lesson?.is_completed) {
-        console.log(
-          'url: ',
-          `/c/${course.id}/${params.publishedChapterId}/${params.publishedLessonId}/play/${navigation.continue.lesson?.id}/complete`,
-        );
         return redirect(
           `/c/${course.id}/${params.publishedChapterId}/${params.publishedLessonId}/play/${navigation.continue.lesson?.id}/complete`,
         );
@@ -255,10 +255,10 @@ export default function LessonPlay({ params, loaderData }: Route.ComponentProps)
               {(navigationData) => {
                 if (!navigationData) return null;
                 // Handle completed courses - still show previous lesson navigation
-                if (navigationData.course_info?.is_course_complete) {
-                  const { previous_lesson } = navigationData;
+                if (navigationData.completion?.course?.is_complete) {
+                  const previousLesson = navigationData.previous?.lesson;
 
-                  if (!previous_lesson) return null;
+                  if (!previousLesson) return null;
 
                   return (
                     <div className='fixed bottom-10 flex w-full justify-end gap-4 px-4'>
@@ -267,7 +267,7 @@ export default function LessonPlay({ params, loaderData }: Route.ComponentProps)
                         className='bg-card/80 rounded-full shadow-md'
                         onClick={() =>
                           navigate(
-                            `/c/${previous_lesson.course_id}/${previous_lesson.chapter_id}/${previous_lesson.lesson_id}/play`,
+                            `/c/${previousLesson.course_id}/${previousLesson.chapter_id}/${previousLesson.id}/play`,
                           )
                         }
                         leftIcon={<ArrowLeft />}
@@ -287,11 +287,13 @@ export default function LessonPlay({ params, loaderData }: Route.ComponentProps)
                     </div>
                   );
                 }
-                const { previous_lesson, continue_course, next_lesson } = navigationData;
+                const previousLesson = navigationData.previous?.lesson;
+                const continueLesson = navigationData.continue?.lesson;
+                const nextLesson = navigationData.next?.lesson;
                 const isContinueDistinct =
-                  continue_course &&
-                  (continue_course.chapter_id !== next_lesson?.chapter_id ||
-                    continue_course.lesson_id !== next_lesson?.lesson_id);
+                  continueLesson &&
+                  (continueLesson.chapter_id !== nextLesson?.chapter_id ||
+                    continueLesson.id !== nextLesson?.id);
                 const renderedRoutes: {
                   key: string;
                   label: string;
@@ -300,30 +302,30 @@ export default function LessonPlay({ params, loaderData }: Route.ComponentProps)
                   Icon: LucideIcon;
                   iconPosition?: 'left' | 'right';
                 }[] = [];
-                if (previous_lesson) {
+                if (previousLesson) {
                   renderedRoutes.push({
                     key: 'prev',
                     label: 'Back',
-                    path: `/c/${previous_lesson.course_id}/${previous_lesson.chapter_id}/${previous_lesson.lesson_id}/play`,
+                    path: `/c/${previousLesson.course_id}/${previousLesson.chapter_id}/${previousLesson.id}/play`,
                     Icon: ArrowLeft,
                     iconPosition: 'left',
                   });
                 }
-                if (isContinueDistinct) {
+                if (isContinueDistinct && continueLesson) {
                   renderedRoutes.push({
                     key: 'continue',
                     label: 'Continue',
-                    path: `/c/${continue_course.course_id}/${continue_course.chapter_id}/${continue_course.lesson_id}/play`,
+                    path: `/c/${continueLesson.course_id}/${continueLesson.chapter_id}/${continueLesson.id}/play`,
                     animate: true, // Emphasize "Continue" when it's the primary action
                     Icon: Play,
                   });
                 }
-                if (next_lesson) {
-                  const isSameChapter = next_lesson.chapter_id === params.publishedChapterId;
+                if (nextLesson) {
+                  const isSameChapter = nextLesson.chapter_id === params.publishedChapterId;
                   renderedRoutes.push({
                     key: 'next',
                     label: isSameChapter ? 'Next' : 'Next Chapter',
-                    path: `/c/${next_lesson.course_id}/${next_lesson.chapter_id}/${next_lesson.lesson_id}/play`,
+                    path: `/c/${nextLesson.course_id}/${nextLesson.chapter_id}/${nextLesson.id}/play`,
                     animate: !isContinueDistinct, // Only animate "Next" if there's no "Continue" button
                     Icon: isSameChapter ? ArrowRight : BookOpen,
                   });
