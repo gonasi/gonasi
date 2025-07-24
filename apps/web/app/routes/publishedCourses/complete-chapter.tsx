@@ -1,6 +1,6 @@
 import Confetti from 'react-confetti-boom';
 import { motion } from 'framer-motion';
-import { BookOpen, CheckCircle } from 'lucide-react';
+import { BookOpen } from 'lucide-react';
 
 import {
   fetchChapterOverviewWithCourseProgress,
@@ -9,6 +9,7 @@ import {
 
 import type { Route } from './+types/complete-chapter';
 
+import { LucideIconRenderer } from '~/components/cards';
 import { NavLinkButton } from '~/components/ui/button';
 import { Modal } from '~/components/ui/modal';
 import { createClient } from '~/lib/supabase/supabase.server';
@@ -57,7 +58,7 @@ export default function CompleteCh({ loaderData, params }: Route.ComponentProps)
   return (
     <Modal open>
       <Modal.Content size='md'>
-        <Modal.Header hasClose={false} />
+        <Modal.Header hasClose={false} className='bg-transparent' />
         <Modal.Body className='px-4 pt-2 pb-8'>
           <Confetti
             mode='boom'
@@ -81,7 +82,7 @@ export default function CompleteCh({ loaderData, params }: Route.ComponentProps)
             transition={{ duration: 0.4, ease: 'easeOut' }}
           >
             <div className='mb-2 inline-flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-800'>
-              <span className='text-4xl'>🎉</span>
+              <span className='text-4xl'>🏆</span>
             </div>
 
             <motion.h1
@@ -125,8 +126,14 @@ export default function CompleteCh({ loaderData, params }: Route.ComponentProps)
                 animate='visible'
                 transition={{ duration: 0.3 }}
               >
-                <CheckCircle className='mt-0.5 h-5 w-5 flex-shrink-0 text-green-500' />
-                <p className='text-foreground font-medium'>{lesson.name}</p>
+                <LucideIconRenderer
+                  name={lesson.lesson_types.lucide_icon}
+                  aria-hidden
+                  color={lesson.lesson_types.bg_color}
+                  className='shrink-0 rotate-[30deg] transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:rotate-0'
+                />
+
+                <p className='text-muted-foreground font-secondary'>{lesson.name}</p>
               </motion.div>
             ))}
           </motion.div>

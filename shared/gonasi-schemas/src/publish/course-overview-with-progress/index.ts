@@ -47,7 +47,7 @@ const PublishOverviewLessonSchema = z.object({
   total_blocks: z.number().int().min(1),
   lesson_type: PublishOverviewLessonTypeSchema,
   progress: PublishOverviewLessonProgressSchema.nullable(),
-  is_active: z.boolean().default(false),
+  is_active: z.boolean().default(false).nullable(),
   is_completed: z.boolean().default(false),
 });
 
@@ -55,6 +55,7 @@ const PublishOverviewLessonSchema = z.object({
 const PublishOverviewChapterSchema = z.object({
   id: UUIDSchema,
   name: z.string().min(1),
+  description: z.string().nullable(),
   position: z.number().int().min(0),
   total_lessons: z.number().int().min(1),
   lessons: z.array(PublishOverviewLessonSchema),

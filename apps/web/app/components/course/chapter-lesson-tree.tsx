@@ -59,7 +59,7 @@ export function ChapterLessonTree({
   const [searchParams] = useSearchParams();
 
   const displayMode = searchParams.get('display') || 'path';
-  const scrollToChapter = searchParams.get('next-chapter-id');
+  const scrollToChapter = searchParams.get('navChapter');
   const isPath = displayMode === 'path';
 
   useEffect(() => {
@@ -90,9 +90,13 @@ export function ChapterLessonTree({
                 sectionRefs.current[chapter.id] = el;
               }}
               id={chapter.id}
-              className='mb-8 scroll-mt-18'
+              className='mb-8 scroll-mt-20'
             >
-              <StickyChapterHeader name={chapter.name} isActive={chapter.id === activeChapterId} />
+              <StickyChapterHeader
+                name={chapter.name}
+                isActive={chapter.id === activeChapterId}
+                nudge={chapter.id === scrollToChapter}
+              />
               <div>
                 <p className='text-muted-foreground font-secondary line-clamp-3 text-sm'>
                   {chapter.description}

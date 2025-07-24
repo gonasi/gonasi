@@ -360,6 +360,19 @@ END) stored,
 
 alter table "public"."lesson_progress" enable row level security;
 
+create table "public"."lesson_reset_count" (
+    "id" uuid not null default uuid_generate_v4(),
+    "user_id" uuid not null,
+    "published_course_id" uuid not null,
+    "lesson_id" uuid not null,
+    "reset_count" integer not null default 0,
+    "updated_at" timestamp with time zone not null default timezone('utc'::text, now()),
+    "created_at" timestamp with time zone not null default timezone('utc'::text, now())
+);
+
+
+alter table "public"."lesson_reset_count" enable row level security;
+
 create table "public"."lesson_types" (
     "id" uuid not null default uuid_generate_v4(),
     "name" text not null,
@@ -813,6 +826,12 @@ CREATE INDEX idx_lesson_progress_percentage ON public.lesson_progress USING btre
 
 CREATE INDEX idx_lesson_progress_user ON public.lesson_progress USING btree (user_id);
 
+CREATE INDEX idx_lesson_reset_course_id ON public.lesson_reset_count USING btree (published_course_id);
+
+CREATE INDEX idx_lesson_reset_lesson_id ON public.lesson_reset_count USING btree (lesson_id);
+
+CREATE INDEX idx_lesson_reset_user_id ON public.lesson_reset_count USING btree (user_id);
+
 CREATE INDEX idx_lesson_types_created_by ON public.lesson_types USING btree (created_by);
 
 CREATE INDEX idx_lesson_types_updated_by ON public.lesson_types USING btree (updated_by);
@@ -925,6 +944,10 @@ CREATE UNIQUE INDEX lesson_progress_pkey ON public.lesson_progress USING btree (
 
 CREATE UNIQUE INDEX lesson_progress_user_id_published_course_id_lesson_id_key ON public.lesson_progress USING btree (user_id, published_course_id, lesson_id);
 
+CREATE UNIQUE INDEX lesson_reset_count_pkey ON public.lesson_reset_count USING btree (id);
+
+CREATE UNIQUE INDEX lesson_reset_count_user_id_published_course_id_lesson_id_key ON public.lesson_reset_count USING btree (user_id, published_course_id, lesson_id);
+
 CREATE UNIQUE INDEX lesson_types_bg_color_key ON public.lesson_types USING btree (bg_color);
 
 CREATE UNIQUE INDEX lesson_types_name_key ON public.lesson_types USING btree (name);
@@ -1022,6 +1045,8 @@ alter table "public"."gonasi_wallets" add constraint "gonasi_wallets_pkey" PRIMA
 alter table "public"."lesson_blocks" add constraint "lesson_blocks_pkey" PRIMARY KEY using index "lesson_blocks_pkey";
 
 alter table "public"."lesson_progress" add constraint "lesson_progress_pkey" PRIMARY KEY using index "lesson_progress_pkey";
+
+alter table "public"."lesson_reset_count" add constraint "lesson_reset_count_pkey" PRIMARY KEY using index "lesson_reset_count_pkey";
 
 alter table "public"."lesson_types" add constraint "lesson_types_pkey" PRIMARY KEY using index "lesson_types_pkey";
 
@@ -1332,6 +1357,16 @@ alter table "public"."lesson_progress" add constraint "lesson_progress_user_id_f
 alter table "public"."lesson_progress" validate constraint "lesson_progress_user_id_fkey";
 
 alter table "public"."lesson_progress" add constraint "lesson_progress_user_id_published_course_id_lesson_id_key" UNIQUE using index "lesson_progress_user_id_published_course_id_lesson_id_key";
+
+alter table "public"."lesson_reset_count" add constraint "lesson_reset_count_published_course_id_fkey" FOREIGN KEY (published_course_id) REFERENCES published_courses(id) ON DELETE CASCADE not valid;
+
+alter table "public"."lesson_reset_count" validate constraint "lesson_reset_count_published_course_id_fkey";
+
+alter table "public"."lesson_reset_count" add constraint "lesson_reset_count_user_id_fkey" FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE not valid;
+
+alter table "public"."lesson_reset_count" validate constraint "lesson_reset_count_user_id_fkey";
+
+alter table "public"."lesson_reset_count" add constraint "lesson_reset_count_user_id_published_course_id_lesson_id_key" UNIQUE using index "lesson_reset_count_user_id_published_course_id_lesson_id_key";
 
 alter table "public"."lesson_types" add constraint "lesson_types_bg_color_key" UNIQUE using index "lesson_types_bg_color_key";
 
@@ -3876,212 +3911,6 @@ begin
       else extract(day from enrollment_expires_at - now_utc)::int
     end as days_remaining,
     latest_activity_id_val as latest_activity_id;
-end;
-$function$
-;
-
-CREATE OR REPLACE FUNCTION public.get_lesson_navigation_ids(p_user_id uuid, p_published_course_id uuid, p_current_lesson_id uuid)
- RETURNS jsonb
- LANGUAGE plpgsql
- SET search_path TO ''
-AS $function$
-declare
-  course_structure jsonb;
-  current_lesson_info record;
-  previous_lesson_info record;
-  next_lesson_info record;
-  continue_lesson_info record;
-  course_stats record;
-  result jsonb;
-begin
-  -- =========================================================================
-  -- step 1: get the course structure
-  -- =========================================================================
-  select course_structure_content 
-  into course_structure
-  from public.published_course_structure_content 
-  where id = p_published_course_id;
-
-  -- return error if course structure not found
-  if course_structure is null then
-    return jsonb_build_object('error', 'course structure not found');
-  end if;
-
-  -- =========================================================================
-  -- step 2: get current lesson info and completion status
-  -- =========================================================================
-  with lesson_structure as (
-    select 
-      (chapter_obj ->> 'id')::uuid as chapter_id,
-      (lesson_obj ->> 'id')::uuid as lesson_id,
-      (chapter_obj ->> 'order_index')::integer as chapter_order,
-      (lesson_obj ->> 'order_index')::integer as lesson_order,
-      row_number() over (
-        order by 
-          (chapter_obj ->> 'order_index')::integer,
-          (lesson_obj ->> 'order_index')::integer
-      ) as global_order
-    from jsonb_array_elements(course_structure -> 'chapters') as chapter_obj,
-        jsonb_array_elements(chapter_obj -> 'lessons') as lesson_obj
-  )
-  select 
-    ls.chapter_id,
-    ls.lesson_id,
-    ls.global_order,
-    coalesce(lp.completed_at is not null, false) as is_complete,
-    coalesce(lp.progress_percentage, 0) as progress_percentage
-  into current_lesson_info
-  from lesson_structure ls
-  left join public.lesson_progress lp on (
-    lp.user_id = p_user_id
-    and lp.published_course_id = p_published_course_id
-    and lp.lesson_id = ls.lesson_id
-  )
-  where ls.lesson_id = p_current_lesson_id;
-
-  -- return error if current lesson not found
-  if current_lesson_info is null then
-    return jsonb_build_object('error', 'current lesson not found in course structure');
-  end if;
-
-  -- =========================================================================
-  -- step 3: get previous lesson (lesson with global_order = current - 1)
-  -- =========================================================================
-  with lesson_structure as (
-    select 
-      (chapter_obj ->> 'id')::uuid as chapter_id,
-      (lesson_obj ->> 'id')::uuid as lesson_id,
-      row_number() over (
-        order by 
-          (chapter_obj ->> 'order_index')::integer,
-          (lesson_obj ->> 'order_index')::integer
-      ) as global_order
-    from jsonb_array_elements(course_structure -> 'chapters') as chapter_obj,
-        jsonb_array_elements(chapter_obj -> 'lessons') as lesson_obj
-  )
-  select 
-    ls.chapter_id,
-    ls.lesson_id
-  into previous_lesson_info
-  from lesson_structure ls
-  where ls.global_order = current_lesson_info.global_order - 1;
-
-  -- =========================================================================
-  -- step 4: get next lesson (next incomplete lesson, not just sequential)
-  -- =========================================================================
-  with lesson_structure as (
-    select 
-      (chapter_obj ->> 'id')::uuid as chapter_id,
-      (lesson_obj ->> 'id')::uuid as lesson_id,
-      row_number() over (
-        order by 
-          (chapter_obj ->> 'order_index')::integer,
-          (lesson_obj ->> 'order_index')::integer
-      ) as global_order
-    from jsonb_array_elements(course_structure -> 'chapters') as chapter_obj,
-        jsonb_array_elements(chapter_obj -> 'lessons') as lesson_obj
-  )
-  select 
-    ls.chapter_id,
-    ls.lesson_id
-  into next_lesson_info
-  from lesson_structure ls
-  left join public.lesson_progress lp on (
-    lp.user_id = p_user_id
-    and lp.published_course_id = p_published_course_id
-    and lp.lesson_id = ls.lesson_id
-  )
-  where ls.global_order > current_lesson_info.global_order
-    and (lp.completed_at is null or lp.id is null)
-  order by ls.global_order
-  limit 1;
-
-  -- =========================================================================
-  -- step 5: get continue course lesson (next incomplete lesson)
-  -- this is the same as next_lesson for smart navigation
-  -- =========================================================================
-  continue_lesson_info := next_lesson_info;
-
-  -- =========================================================================
-  -- step 6: get course completion statistics
-  -- =========================================================================
-  with all_lessons as (
-    select 
-      (lesson_obj ->> 'id')::uuid as lesson_id
-    from jsonb_array_elements(course_structure -> 'chapters') as chapter_obj,
-        jsonb_array_elements(chapter_obj -> 'lessons') as lesson_obj
-  ),
-  completed_lessons as (
-    select count(*) as count
-    from all_lessons al
-    inner join public.lesson_progress lp on (
-      lp.user_id = p_user_id
-      and lp.published_course_id = p_published_course_id
-      and lp.lesson_id = al.lesson_id
-      and lp.completed_at is not null
-    )
-  ),
-  total_lessons as (
-    select count(*) as count
-    from all_lessons
-  )
-  select 
-    tl.count as total_lessons,
-    cl.count as completed_lessons,
-    (cl.count = tl.count and tl.count > 0) as is_course_complete
-  into course_stats
-  from total_lessons tl, completed_lessons cl;
-
-  -- =========================================================================
-  -- step 7: build and return the result
-  -- =========================================================================
-  result := jsonb_build_object(
-    'current_lesson', jsonb_build_object(
-      'lesson_id', current_lesson_info.lesson_id,
-      'chapter_id', current_lesson_info.chapter_id,
-      'course_id', p_published_course_id,
-      'is_complete', current_lesson_info.is_complete,
-      'progress_percentage', current_lesson_info.progress_percentage
-    ),
-    'previous_lesson', case 
-      when previous_lesson_info.lesson_id is not null then
-        jsonb_build_object(
-          'lesson_id', previous_lesson_info.lesson_id,
-          'chapter_id', previous_lesson_info.chapter_id,
-          'course_id', p_published_course_id
-        )
-      else null
-    end,
-    'next_lesson', case 
-      when next_lesson_info.lesson_id is not null then
-        jsonb_build_object(
-          'lesson_id', next_lesson_info.lesson_id,
-          'chapter_id', next_lesson_info.chapter_id,
-          'course_id', p_published_course_id
-        )
-      else null
-    end,
-    'continue_course', case 
-      when continue_lesson_info.lesson_id is not null then
-        jsonb_build_object(
-          'lesson_id', continue_lesson_info.lesson_id,
-          'chapter_id', continue_lesson_info.chapter_id,
-          'course_id', p_published_course_id,
-          'is_different_from_next', (
-            continue_lesson_info.lesson_id != coalesce(next_lesson_info.lesson_id, continue_lesson_info.lesson_id)
-          )
-        )
-      else null
-    end,
-    'course_info', jsonb_build_object(
-      'course_id', p_published_course_id,
-      'total_lessons', course_stats.total_lessons,
-      'completed_lessons', course_stats.completed_lessons,
-      'is_course_complete', course_stats.is_course_complete
-    )
-  );
-
-  return result;
 end;
 $function$
 ;
@@ -7553,6 +7382,48 @@ grant truncate on table "public"."lesson_progress" to "service_role";
 
 grant update on table "public"."lesson_progress" to "service_role";
 
+grant delete on table "public"."lesson_reset_count" to "anon";
+
+grant insert on table "public"."lesson_reset_count" to "anon";
+
+grant references on table "public"."lesson_reset_count" to "anon";
+
+grant select on table "public"."lesson_reset_count" to "anon";
+
+grant trigger on table "public"."lesson_reset_count" to "anon";
+
+grant truncate on table "public"."lesson_reset_count" to "anon";
+
+grant update on table "public"."lesson_reset_count" to "anon";
+
+grant delete on table "public"."lesson_reset_count" to "authenticated";
+
+grant insert on table "public"."lesson_reset_count" to "authenticated";
+
+grant references on table "public"."lesson_reset_count" to "authenticated";
+
+grant select on table "public"."lesson_reset_count" to "authenticated";
+
+grant trigger on table "public"."lesson_reset_count" to "authenticated";
+
+grant truncate on table "public"."lesson_reset_count" to "authenticated";
+
+grant update on table "public"."lesson_reset_count" to "authenticated";
+
+grant delete on table "public"."lesson_reset_count" to "service_role";
+
+grant insert on table "public"."lesson_reset_count" to "service_role";
+
+grant references on table "public"."lesson_reset_count" to "service_role";
+
+grant select on table "public"."lesson_reset_count" to "service_role";
+
+grant trigger on table "public"."lesson_reset_count" to "service_role";
+
+grant truncate on table "public"."lesson_reset_count" to "service_role";
+
+grant update on table "public"."lesson_reset_count" to "service_role";
+
 grant delete on table "public"."lesson_types" to "anon";
 
 grant insert on table "public"."lesson_types" to "anon";
@@ -8578,6 +8449,53 @@ to authenticated
 using ((user_id = ( SELECT auth.uid() AS uid)));
 
 
+create policy "delete: user can delete their own reset count"
+on "public"."lesson_reset_count"
+as permissive
+for delete
+to authenticated
+using ((user_id = ( SELECT auth.uid() AS uid)));
+
+
+create policy "insert: user can create their own reset count"
+on "public"."lesson_reset_count"
+as permissive
+for insert
+to authenticated
+with check ((user_id = ( SELECT auth.uid() AS uid)));
+
+
+create policy "select: anon users can view public resets"
+on "public"."lesson_reset_count"
+as permissive
+for select
+to anon
+using ((EXISTS ( SELECT 1
+   FROM profiles p
+  WHERE ((p.id = lesson_reset_count.user_id) AND (p.is_public = true)))));
+
+
+create policy "select: auth users can view public or same-org resets"
+on "public"."lesson_reset_count"
+as permissive
+for select
+to authenticated
+using ((EXISTS ( SELECT 1
+   FROM profiles p
+  WHERE ((p.id = lesson_reset_count.user_id) AND ((p.is_public = true) OR (EXISTS ( SELECT 1
+           FROM (organization_members m1
+             JOIN organization_members m2 ON ((m1.organization_id = m2.organization_id)))
+          WHERE ((m1.user_id = lesson_reset_count.user_id) AND (m2.user_id = ( SELECT auth.uid() AS uid))))))))));
+
+
+create policy "update: user can update their own reset count"
+on "public"."lesson_reset_count"
+as permissive
+for update
+to authenticated
+using ((user_id = ( SELECT auth.uid() AS uid)));
+
+
 create policy "Authenticated users can delete lesson types"
 on "public"."lesson_types"
 as permissive
@@ -9011,6 +8929,8 @@ CREATE TRIGGER set_updated_at_gonasi_wallets BEFORE UPDATE ON public.gonasi_wall
 CREATE TRIGGER trg_set_lesson_block_position BEFORE INSERT ON public.lesson_blocks FOR EACH ROW EXECUTE FUNCTION set_lesson_block_position();
 
 CREATE TRIGGER trg_lesson_progress_set_updated_at BEFORE UPDATE ON public.lesson_progress FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER trg_lesson_reset_set_updated_at BEFORE UPDATE ON public.lesson_reset_count FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER trg_lesson_types_set_updated_at BEFORE UPDATE ON public.lesson_types FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 

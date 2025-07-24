@@ -42,7 +42,10 @@ export async function fetchCourseOverviewWithProgress({
   const parsed = PublishOverviewCourseProgressOverviewSchema.safeParse(data);
 
   if (!parsed.success) {
-    console.error('[fetchCourseOverviewWithProgress] Invalid response schema:', parsed.error);
+    console.error(
+      '[fetchCourseOverviewWithProgress] Invalid response schema:',
+      JSON.stringify(parsed.error, null, 4),
+    );
     return null;
   }
 

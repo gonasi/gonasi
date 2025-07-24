@@ -1184,6 +1184,51 @@ export type Database = {
           },
         ]
       }
+      lesson_reset_count: {
+        Row: {
+          created_at: string
+          id: string
+          lesson_id: string
+          published_course_id: string
+          reset_count: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lesson_id: string
+          published_course_id: string
+          reset_count?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lesson_id?: string
+          published_course_id?: string
+          reset_count?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lesson_reset_count_published_course_id_fkey"
+            columns: ["published_course_id"]
+            isOneToOne: false
+            referencedRelation: "published_courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lesson_reset_count_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lesson_types: {
         Row: {
           bg_color: string
@@ -2140,14 +2185,6 @@ export type Database = {
           days_remaining: number
           latest_activity_id: string
         }[]
-      }
-      get_lesson_navigation_ids: {
-        Args: {
-          p_user_id: string
-          p_published_course_id: string
-          p_current_lesson_id: string
-        }
-        Returns: Json
       }
       get_next_navigation_state: {
         Args: {

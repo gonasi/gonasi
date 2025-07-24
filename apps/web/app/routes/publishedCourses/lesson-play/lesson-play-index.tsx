@@ -1,14 +1,12 @@
 import { Suspense, useRef } from 'react';
-import { Await, Outlet, redirect, useNavigate } from 'react-router';
-import { motion } from 'framer-motion';
+import { Await, Outlet, redirect } from 'react-router';
 import {
-  ArrowLeft,
-  ArrowRight,
-  BookOpen,
-  CheckCircle,
+  ChevronLeft,
+  ChevronRight,
   LoaderCircle,
-  type LucideIcon,
-  Play,
+  PlayCircle,
+  SkipBack,
+  SkipForward,
 } from 'lucide-react';
 import { dataWithError, redirectWithError } from 'remix-toast';
 
@@ -25,26 +23,8 @@ import CourseAccessCard from '~/components/cards/course-access-card';
 import { useScrollAudio } from '~/components/hooks/useAutoScroll';
 import { CoursePlayLayout } from '~/components/layouts/course/course-play-layout';
 import ViewPluginTypesRenderer from '~/components/plugins/PluginRenderers/ViewPluginTypesRenderer';
-import { OutlineButton } from '~/components/ui/button';
+import { IconNavLink } from '~/components/ui/button';
 import { createClient } from '~/lib/supabase/supabase.server';
-
-// Framer Motion animation for nudge effect on the call-to-action button
-const nudgeAnimation = {
-  initial: { opacity: 0, y: 10 },
-  animate: {
-    opacity: 1,
-    y: [0, -4, 0],
-    transition: {
-      opacity: { delay: 1, duration: 0.3, ease: 'easeOut' },
-      y: {
-        duration: 1.2,
-        repeat: Infinity,
-        repeatType: 'loop',
-        ease: 'easeInOut',
-      },
-    },
-  },
-};
 
 // --- Metadata Configuration ---
 export function meta({ data }: Route.MetaArgs) {
@@ -131,7 +111,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 
       if (chapter?.is_completed) {
         return redirect(
-          `/c/${params.publishedCourseId}/complete/${navigation.continue.chapter?.id}`,
+          `/c/${params.publishedCourseId}/complete/${navigation.current.chapter?.id}`,
         );
       }
 
@@ -204,7 +184,6 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 export default function LessonPlay({ params, loaderData }: Route.ComponentProps) {
   const { hasAccess, lessonData, lessonNavigationPromise } = loaderData;
 
-  const navigate = useNavigate();
   const blockRefs = useRef<Record<string, HTMLElement | null>>({});
 
   useScrollAudio(lessonData?.metadata.active_block_id ?? null, blockRefs);
@@ -257,103 +236,66 @@ export default function LessonPlay({ params, loaderData }: Route.ComponentProps)
               {(navigationData) => {
                 if (!navigationData) return null;
                 // Handle completed courses - still show previous lesson navigation
-                if (navigationData.completion?.course?.is_complete) {
-                  const previousLesson = navigationData.previous?.lesson;
-
-                  if (!previousLesson) return null;
-
+                if (navigationData.current?.lesson?.is_completed) {
                   return (
-                    <div className='fixed bottom-10 flex w-full justify-end gap-4 px-4'>
-                      <OutlineButton
-                        type='button'
-                        className='bg-card/80 rounded-full shadow-md'
-                        onClick={() =>
-                          navigate(
-                            `/c/${previousLesson.course_id}/${previousLesson.chapter_id}/${previousLesson.id}/play`,
-                          )
-                        }
-                        leftIcon={<ArrowLeft />}
-                        rightIcon={undefined}
-                      >
-                        Back
-                      </OutlineButton>
-                      <OutlineButton
-                        type='button'
-                        className='bg-card/80 rounded-full opacity-60 shadow-md'
-                        disabled
-                        rightIcon={<CheckCircle />}
-                        leftIcon={undefined}
-                      >
-                        Complete
-                      </OutlineButton>
-                    </div>
+                    <nav className='bg-background/95 border-border fixed right-0 bottom-0 left-0 h-16 border-t backdrop-blur-sm md:h-20'>
+                      <div className='container mx-auto h-full px-4 md:px-0'>
+                        <div className='flex h-full items-center justify-between space-x-2'>
+                          {/* Previous Chapter */}
+                          <IconNavLink
+                            to={`/c/${navigationData.previous.chapter?.course_id}?navChapter=${navigationData.previous.chapter?.id}`}
+                            icon={SkipBack}
+                            label='Previous Chapter'
+                            hideLabelOnMobile
+                            disabled={!navigationData.previous.chapter}
+                          />
+
+                          {/* Previous Lesson */}
+                          <IconNavLink
+                            to={`/c/${navigationData.previous.lesson?.course_id}/${navigationData.previous.lesson?.chapter_id}/${navigationData.previous.lesson?.id}/play`}
+                            icon={ChevronLeft}
+                            label='Previous Lesson'
+                            hideLabelOnMobile
+                            disabled={!navigationData.previous.lesson}
+                          />
+
+                          {/* Play/Continue Button - Primary Action */}
+                          <IconNavLink
+                            to={`/c/${navigationData.continue.lesson?.course_id}/${navigationData.continue.lesson?.chapter_id}/${navigationData.continue.lesson?.id}/play`}
+                            icon={PlayCircle}
+                            label='Continue Learning'
+                            hideLabelOnMobile
+                          />
+
+                          {/* Next Lesson */}
+                          <IconNavLink
+                            to={`/c/${navigationData.next.lesson?.course_id}/${navigationData.next.lesson?.chapter_id}/${navigationData.next.lesson?.id}/play`}
+                            icon={ChevronRight}
+                            label='Next Lesson'
+                            hideLabelOnMobile
+                            disabled={
+                              !navigationData.next.lesson ||
+                              !navigationData.continue.lesson ||
+                              navigationData.next.lesson.id === navigationData.continue.lesson.id
+                            }
+                          />
+                          <IconNavLink
+                            to={`/c/${navigationData.next.chapter?.course_id}?navChapter=${navigationData.next.chapter?.id}`}
+                            icon={SkipForward}
+                            label='Next Chapter'
+                            hideLabelOnMobile
+                            disabled={
+                              !navigationData.next.chapter ||
+                              !navigationData.continue.chapter ||
+                              navigationData.next.chapter.id === navigationData.continue.chapter.id
+                            }
+                          />
+                        </div>
+                      </div>
+                    </nav>
                   );
                 }
-                const previousLesson = navigationData.previous?.lesson;
-                const continueLesson = navigationData.continue?.lesson;
-                const nextLesson = navigationData.next?.lesson;
-                const isContinueDistinct =
-                  continueLesson &&
-                  (continueLesson.chapter_id !== nextLesson?.chapter_id ||
-                    continueLesson.id !== nextLesson?.id);
-                const renderedRoutes: {
-                  key: string;
-                  label: string;
-                  path: string;
-                  animate?: boolean;
-                  Icon: LucideIcon;
-                  iconPosition?: 'left' | 'right';
-                }[] = [];
-                if (previousLesson) {
-                  renderedRoutes.push({
-                    key: 'prev',
-                    label: 'Back',
-                    path: `/c/${previousLesson.course_id}/${previousLesson.chapter_id}/${previousLesson.id}/play`,
-                    Icon: ArrowLeft,
-                    iconPosition: 'left',
-                  });
-                }
-                if (isContinueDistinct && continueLesson) {
-                  renderedRoutes.push({
-                    key: 'continue',
-                    label: 'Continue',
-                    path: `/c/${continueLesson.course_id}/${continueLesson.chapter_id}/${continueLesson.id}/play`,
-                    animate: true, // Emphasize "Continue" when it's the primary action
-                    Icon: Play,
-                  });
-                }
-                if (nextLesson) {
-                  const isSameChapter = nextLesson.chapter_id === params.publishedChapterId;
-                  renderedRoutes.push({
-                    key: 'next',
-                    label: isSameChapter ? 'Next' : 'Next Chapter',
-                    path: `/c/${nextLesson.course_id}/${nextLesson.chapter_id}/${nextLesson.id}/play`,
-                    animate: !isContinueDistinct, // Only animate "Next" if there's no "Continue" button
-                    Icon: isSameChapter ? ArrowRight : BookOpen,
-                  });
-                }
-                if (renderedRoutes.length === 0) return null;
-                return (
-                  <div className='fixed right-4 bottom-10 flex w-full justify-end gap-4 px-4'>
-                    {renderedRoutes.map(({ key, label, path, animate, Icon, iconPosition }) => (
-                      <motion.div
-                        key={key}
-                        initial={animate ? nudgeAnimation.initial : false}
-                        animate={animate ? nudgeAnimation.animate : false}
-                      >
-                        <OutlineButton
-                          type='button'
-                          className='bg-card/80 rounded-full shadow-md'
-                          onClick={() => navigate(path)}
-                          leftIcon={iconPosition === 'left' ? <Icon /> : undefined}
-                          rightIcon={iconPosition !== 'left' ? <Icon /> : undefined}
-                        >
-                          {label}
-                        </OutlineButton>
-                      </motion.div>
-                    ))}
-                  </div>
-                );
+                return null;
               }}
             </Await>
           </Suspense>

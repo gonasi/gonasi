@@ -75,6 +75,7 @@ const Header = ({
   hasClose = true,
   closeRoute,
   settingsPopover,
+  className,
 }: {
   leadingIcon?: React.ReactNode;
   title?: string;
@@ -82,9 +83,12 @@ const Header = ({
   hasClose?: boolean;
   closeRoute?: string;
   settingsPopover?: React.ReactNode;
+  className?: string;
 }) => {
   return (
-    <div className='bg-background/95 sticky top-0 z-10 flex items-center justify-between p-4'>
+    <div
+      className={`bg-background/95 sticky top-0 z-10 flex items-center justify-between p-4 ${className}`}
+    >
       <div className='flex flex-1 items-center gap-2'>
         {leadingIcon ?? null}
         {title ? (
