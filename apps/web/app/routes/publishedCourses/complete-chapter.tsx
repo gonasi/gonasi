@@ -1,4 +1,6 @@
 import Confetti from 'react-confetti-boom';
+import { redirect } from 'react-router';
+import { differenceInMinutes } from 'date-fns';
 import { motion } from 'framer-motion';
 import { BookOpen } from 'lucide-react';
 
@@ -43,13 +45,38 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     }),
   ]);
 
+  const current = navigationData?.current;
+  const canonicalChapterUrl = `/c/${current?.course.id}/${current?.chapter?.id}/complete`;
+
+  if (!navigationData) {
+    return redirect(canonicalChapterUrl);
+  }
+
+  const isNonCanonical =
+    params.publishedCourseId !== current?.course?.id ||
+    params.completedChapterId !== current?.chapter?.id;
+
+  if (isNonCanonical) {
+    return redirect(canonicalChapterUrl);
+  }
+
+  // Time-bound redirect: if chapter was completed more than 5 minutes ago, redirect
+  if (current.chapter?.completed_at) {
+    const completedAt = new Date(current.chapter.completed_at);
+    const now = new Date();
+    const minutesAgo = differenceInMinutes(now, completedAt);
+    if (minutesAgo > 5) {
+      return redirect(canonicalChapterUrl);
+    }
+  }
+
   return {
     navigationData,
     overviewData,
   };
 }
 
-export default function CompleteCh({ loaderData, params }: Route.ComponentProps) {
+export default function CompleteChapter({ loaderData, params }: Route.ComponentProps) {
   const { overviewData } = loaderData;
   const chapterName = overviewData?.chapter?.name ?? 'this chapter';
   const chapterProgress = Math.round(overviewData?.progress?.progress_percentage ?? 0);
