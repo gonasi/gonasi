@@ -237,6 +237,7 @@ export default function LessonPlay({ params, loaderData }: Route.ComponentProps)
                 if (!navigationData) return null;
                 // Handle completed courses - still show previous lesson navigation
                 if (navigationData.current?.lesson?.is_completed) {
+                  console.log(JSON.stringify(navigationData, null, 4));
                   return (
                     <nav className='bg-background/95 border-border fixed right-0 bottom-0 left-0 h-16 border-t backdrop-blur-sm md:h-20'>
                       <div className='container mx-auto h-full px-4 md:px-0'>

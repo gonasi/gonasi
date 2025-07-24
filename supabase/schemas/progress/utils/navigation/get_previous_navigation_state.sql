@@ -105,13 +105,8 @@ begin
       ) as global_order
     from jsonb_array_elements(course_structure -> 'chapters') as chapter_obj
   ) cs on (
-    case 
-      when current_context.chapter_id is not null then
-        cs.global_order = current_context.chapter_global_order - 1
-      else
-        current_context.chapter_global_order is not null 
-        and cs.global_order < current_context.chapter_global_order
-    end
+    current_context.chapter_global_order is not null 
+    and cs.global_order = current_context.chapter_global_order - 1
   );
 
   -- Return unified JSONB result
