@@ -123,7 +123,7 @@ begin
   -- =========================================================================
   elsif p_chapter_id is not null then
     return query
-    with structure as (
+    with structure as ( 
       select
         (chapter_obj ->> 'id')::uuid as chap_id,
         null::uuid as less_id,

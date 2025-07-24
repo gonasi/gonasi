@@ -3,10 +3,10 @@ import { Await, Outlet, redirect } from 'react-router';
 import {
   ChevronLeft,
   ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
   LoaderCircle,
   PlayCircle,
-  SkipBack,
-  SkipForward,
 } from 'lucide-react';
 import { dataWithError, redirectWithError } from 'remix-toast';
 
@@ -166,6 +166,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     const lessonNavigationPromise = getUnifiedNavigation({
       supabase,
       courseId: params.publishedCourseId,
+      chapterId: params.publishedChapterId,
       lessonId: params.publishedLessonId,
     });
 
@@ -237,7 +238,8 @@ export default function LessonPlay({ params, loaderData }: Route.ComponentProps)
                 if (!navigationData) return null;
                 // Handle completed courses - still show previous lesson navigation
                 if (navigationData.current?.lesson?.is_completed) {
-                  console.log(JSON.stringify(navigationData, null, 4));
+                  const shouldPulse = !!navigationData.continue.lesson;
+
                   return (
                     <nav className='bg-background/95 border-border fixed right-0 bottom-0 left-0 h-16 border-t backdrop-blur-sm md:h-20'>
                       <div className='container mx-auto h-full px-4 md:px-0'>
@@ -245,7 +247,7 @@ export default function LessonPlay({ params, loaderData }: Route.ComponentProps)
                           {/* Previous Chapter */}
                           <IconNavLink
                             to={`/c/${navigationData.previous.chapter?.course_id}?navChapter=${navigationData.previous.chapter?.id}`}
-                            icon={SkipBack}
+                            icon={ChevronsLeft}
                             label='Previous Chapter'
                             hideLabelOnMobile
                             disabled={!navigationData.previous.chapter}
@@ -261,11 +263,19 @@ export default function LessonPlay({ params, loaderData }: Route.ComponentProps)
                           />
 
                           {/* Play/Continue Button - Primary Action */}
+
                           <IconNavLink
-                            to={`/c/${navigationData.continue.lesson?.course_id}/${navigationData.continue.lesson?.chapter_id}/${navigationData.continue.lesson?.id}/play`}
+                            to={
+                              shouldPulse
+                                ? `/c/${navigationData.continue.lesson?.course_id}/${navigationData.continue.lesson?.chapter_id}/${navigationData.continue.lesson?.id}/play`
+                                : '#'
+                            }
                             icon={PlayCircle}
                             label='Continue Learning'
                             hideLabelOnMobile
+                            disabled={!shouldPulse}
+                            shouldPulse={shouldPulse}
+                            size={26}
                           />
 
                           {/* Next Lesson */}
@@ -274,22 +284,14 @@ export default function LessonPlay({ params, loaderData }: Route.ComponentProps)
                             icon={ChevronRight}
                             label='Next Lesson'
                             hideLabelOnMobile
-                            disabled={
-                              !navigationData.next.lesson ||
-                              !navigationData.continue.lesson ||
-                              navigationData.next.lesson.id === navigationData.continue.lesson.id
-                            }
+                            disabled={!navigationData.next.lesson}
                           />
                           <IconNavLink
                             to={`/c/${navigationData.next.chapter?.course_id}?navChapter=${navigationData.next.chapter?.id}`}
-                            icon={SkipForward}
+                            icon={ChevronsRight}
                             label='Next Chapter'
                             hideLabelOnMobile
-                            disabled={
-                              !navigationData.next.chapter ||
-                              !navigationData.continue.chapter ||
-                              navigationData.next.chapter.id === navigationData.continue.chapter.id
-                            }
+                            disabled={!navigationData.next.chapter}
                           />
                         </div>
                       </div>

@@ -104,3 +104,4 @@ begin
   return navigation_result;
 end;
 $$;
+ 
