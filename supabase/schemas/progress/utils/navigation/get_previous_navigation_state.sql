@@ -1,5 +1,5 @@
 -- =============================================================================
--- FUNCTION: get_previous_navigation_state
+-- FUNCTION: get_previous_navigation_state (FIXED)
 -- =============================================================================
 -- Returns previous navigation targets for the current context.
 -- Supports fallback at the block, lesson, and chapter level based on global order.
@@ -32,7 +32,15 @@ declare
   prev_block record;
   prev_lesson record;
   prev_chapter record;
+  current_chapter_order integer;
 begin
+  -- Get the current chapter's global order for reference
+  select
+    row_number() over (order by (chapter_obj ->> 'order_index')::int) as chapter_order
+  into current_chapter_order
+  from jsonb_array_elements(course_structure -> 'chapters') as chapter_obj
+  where (chapter_obj ->> 'id')::uuid = current_context.chapter_id;
+
   -- Always assign prev_block record (with defaults)
   select
     coalesce(bs.chapter_id, null::uuid) as chapter_id,
@@ -81,16 +89,11 @@ begin
     from jsonb_array_elements(course_structure -> 'chapters') as chapter_obj,
          jsonb_array_elements(chapter_obj -> 'lessons') as lesson_obj
   ) ls on (
-    case 
-      when current_context.lesson_id is not null then
-        ls.global_order = current_context.lesson_global_order - 1
-      else
-        current_context.lesson_global_order is not null 
-        and ls.global_order < current_context.lesson_global_order
-    end
+    current_context.lesson_global_order is not null 
+    and ls.global_order = current_context.lesson_global_order - 1
   );
 
-  -- Always assign prev_chapter record (with defaults)
+  -- FIXED: Always assign prev_chapter record based on current chapter's position
   select
     coalesce(cs.chapter_id, null::uuid) as chapter_id
   into prev_chapter
@@ -105,8 +108,8 @@ begin
       ) as global_order
     from jsonb_array_elements(course_structure -> 'chapters') as chapter_obj
   ) cs on (
-    current_context.chapter_global_order is not null 
-    and cs.global_order = current_context.chapter_global_order - 1
+    current_chapter_order is not null 
+    and cs.global_order = current_chapter_order - 1
   );
 
   -- Return unified JSONB result
