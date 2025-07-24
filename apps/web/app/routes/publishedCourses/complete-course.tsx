@@ -37,6 +37,8 @@ export function meta({ data }: Route.MetaArgs) {
 export async function loader({ params, request }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
 
+  console.debug('Loader invoked with params:', params);
+
   try {
     console.debug('Fetching navigation and lesson overview data...');
 

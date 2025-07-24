@@ -130,7 +130,9 @@ export async function action({ request, params }: Route.ActionArgs) {
       }
 
       if (chapter?.is_completed) {
-        return redirect(`/c/${params.publishedCourseId}/complete/${params.publishedChapterId}`);
+        return redirect(
+          `/c/${params.publishedCourseId}/complete/${navigation.continue.chapter?.id}`,
+        );
       }
 
       if (lesson?.is_completed) {
