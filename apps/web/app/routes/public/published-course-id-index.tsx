@@ -1,13 +1,24 @@
 // External dependencies
-import { NavLink, Outlet } from 'react-router';
+import { Suspense } from 'react';
+import { Await, NavLink, Outlet } from 'react-router';
 import { motion } from 'framer-motion';
-import { ArrowDown, BookOpen, ChevronRight, Clock, StarOff, TableOfContents } from 'lucide-react';
+import {
+  ArrowDown,
+  BookOpen,
+  CheckCircle,
+  ChevronRight,
+  Clock,
+  LoaderCircle,
+  StarOff,
+  TableOfContents,
+} from 'lucide-react';
 import { redirectWithError } from 'remix-toast';
 
 // Internal utilities
 import {
   fetchCourseOverviewWithProgress,
   getEnrollmentStatus,
+  getUnifiedNavigation,
 } from '@gonasi/database/publishedCourses';
 import { timeAgo } from '@gonasi/utils/timeAgo';
 
@@ -23,6 +34,7 @@ import { ChapterLessonTree } from '~/components/course';
 import { Badge } from '~/components/ui/badge';
 import { NavLinkButton } from '~/components/ui/button';
 import { Modal } from '~/components/ui/modal';
+import { Progress } from '~/components/ui/progress';
 import { createClient } from '~/lib/supabase/supabase.server';
 import { cn } from '~/lib/utils';
 import { getLowestPricingSummary } from '~/utils/get-lowest-pricing-summary';
@@ -62,7 +74,12 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     return redirectWithError('/explore', 'Could not find course data');
   }
 
-  return { courseOverview, enrollmentStatus };
+  const lessonNavigationPromise = getUnifiedNavigation({
+    supabase,
+    courseId: params.publishedCourseId,
+  });
+
+  return { courseOverview, enrollmentStatus, lessonNavigationPromise };
 }
 
 const motionConfig = {
@@ -223,21 +240,71 @@ export default function PublishedCourseIdIndex({ loaderData }: Route.ComponentPr
                       badges={[badgeContent]}
                     />
 
-                    <div className='bg-card px-4'>
+                    <div className='bg-card'>
                       {loaderData.enrollmentStatus?.is_active ? (
-                        <div className='py-4'>
-                          <NavLinkButton
-                            className='w-full'
-                            rightIcon={<ArrowDown />}
-                            variant='secondary'
-                            to=''
-                          >
-                            Continue
-                          </NavLinkButton>
+                        <div className=''>
+                          <Suspense fallback={<LoaderCircle className='animate-spin' />}>
+                            <Await
+                              resolve={loaderData.lessonNavigationPromise}
+                              errorElement={
+                                <div className='text-muted-foreground text-center text-sm'>
+                                  {`We couldn't load the next lesson right now.`}
+                                </div>
+                              }
+                            >
+                              {(navigationData) => {
+                                if (!navigationData) return null;
+
+                                const AnimatedCheck = motion(CheckCircle);
+
+                                return (
+                                  <div className='flex flex-col items-center'>
+                                    <Progress
+                                      value={
+                                        navigationData.completion.course.is_complete
+                                          ? 100
+                                          : navigationData.completion.blocks.percentage
+                                      }
+                                      className='h-1 rounded-none'
+                                      bgClassName='from-secondary/70 to-primary/70 bg-gradient-to-r'
+                                    />
+                                    <div className='w-full px-4 py-4'>
+                                      {navigationData.completion.course.is_complete ? (
+                                        <div className='flex items-center gap-2'>
+                                          <AnimatedCheck
+                                            className='h-6 w-6'
+                                            strokeWidth={2}
+                                            animate={{ scale: [1, 1.1, 1] }}
+                                            transition={{
+                                              duration: 2,
+                                              repeat: Infinity,
+                                              ease: 'easeInOut',
+                                            }}
+                                          />
+                                          <span className='mt-0.5 text-lg font-semibold'>
+                                            Course Completed
+                                          </span>
+                                        </div>
+                                      ) : (
+                                        <NavLinkButton
+                                          className='w-full'
+                                          rightIcon={<ArrowDown />}
+                                          variant='secondary'
+                                          to=''
+                                        >
+                                          Continue
+                                        </NavLinkButton>
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              }}
+                            </Await>
+                          </Suspense>
                         </div>
                       ) : (
                         <>
-                          <div className='flex w-full items-center justify-between py-4'>
+                          <div className='flex w-full items-center justify-between px-4 py-4'>
                             <GoPricingSheet
                               pricingData={course.pricing_tiers}
                               side='left'
