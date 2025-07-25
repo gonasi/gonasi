@@ -90,7 +90,7 @@ export default function CompleteChapter({ loaderData, params }: Route.ComponentP
           <Confetti
             mode='boom'
             particleCount={180}
-            colors={['#f97316', '#10b981', '#0f172a', '#ffffff']}
+            colors={['#f74d40', '#20c9d0', '#0f172a', '#ffffff']}
             x={0.5}
             y={0.4}
             deg={270}

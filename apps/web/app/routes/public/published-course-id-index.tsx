@@ -21,7 +21,7 @@ import { GoThumbnail } from '~/components/cards/go-course-card';
 import { GoPricingSheet } from '~/components/cards/go-course-card/GoPricingSheet';
 import { ChapterLessonTree } from '~/components/course';
 import { Badge } from '~/components/ui/badge';
-import { Button } from '~/components/ui/button';
+import { NavLinkButton } from '~/components/ui/button';
 import { Modal } from '~/components/ui/modal';
 import { createClient } from '~/lib/supabase/supabase.server';
 import { cn } from '~/lib/utils';
@@ -226,14 +226,14 @@ export default function PublishedCourseIdIndex({ loaderData }: Route.ComponentPr
                     <div className='bg-card px-4'>
                       {loaderData.enrollmentStatus?.is_active ? (
                         <div className='py-4'>
-                          <Button
+                          <NavLinkButton
                             className='w-full'
-                            rightIconAtEdge
                             rightIcon={<ArrowDown />}
                             variant='secondary'
+                            to=''
                           >
                             Continue
-                          </Button>
+                          </NavLinkButton>
                         </div>
                       ) : (
                         <>

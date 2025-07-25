@@ -45,11 +45,11 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     ]);
 
     const current = navigationData?.current;
-    const canonicalCourseUrl = `/c/${current?.course.id}/complete`;
+    const canonicalCourseUrl = `/c/${current?.course.id}`;
 
-    if (!navigationData) {
-      return redirect(canonicalCourseUrl);
-    }
+    // if (!navigationData) {
+    //   return redirect(canonicalCourseUrl);
+    // }
 
     const isNonCanonical = params.publishedCourseId !== current?.course?.id;
 
@@ -87,7 +87,20 @@ export default function CompleteCourse({ loaderData, params }: Route.ComponentPr
       <Modal.Content size='md'>
         <Modal.Header hasClose={false} />
         <Modal.Body className='px-4 pt-2 pb-8'>
-          <Confetti particleCount={120} colors={['#f74d40', '#20c9d0', '#0f172a', '#ffffff']} />
+          <Confetti
+            mode='boom'
+            particleCount={380}
+            colors={['#f74d40', '#20c9d0', '#0f172a', '#ffffff']}
+            x={0.5}
+            y={0.4}
+            deg={270}
+            shapeSize={14}
+            spreadDeg={65}
+            effectCount={10}
+            effectInterval={1000}
+            launchSpeed={1.3}
+            opacityDeltaMultiplier={1.1}
+          />
 
           <motion.div
             className='mb-6 text-center'

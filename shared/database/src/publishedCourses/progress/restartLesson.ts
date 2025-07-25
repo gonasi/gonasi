@@ -2,22 +2,20 @@ import { getUserId } from '../../auth';
 import type { TypedSupabaseClient } from '../../client';
 import type { ApiResponse } from '../../types';
 
-/**
- * Deletes all block interaction entries for the current user in a given lesson.
- *
- * @param supabase - An authenticated Supabase client instance.
- * @param lessonId - The ID of the lesson whose interactions should be deleted.
- * @returns A promise that resolves to an ApiResponse indicating success or failure.
- */
-export const resetBlockInteractionsByLesson = async (
-  supabase: TypedSupabaseClient,
-  lessonId: string,
-): Promise<ApiResponse> => {
+interface RestartLessonArgs {
+  supabase: TypedSupabaseClient;
+  lessonId: string;
+}
+
+export const restartLesson = async ({
+  supabase,
+  lessonId,
+}: RestartLessonArgs): Promise<ApiResponse> => {
   const userId = await getUserId(supabase);
 
   try {
     const { error } = await supabase
-      .from('block_interactions')
+      .from('lesson_progress')
       .delete()
       .match({ user_id: userId, lesson_id: lessonId });
 
@@ -34,7 +32,7 @@ export const resetBlockInteractionsByLesson = async (
       message: 'Lesson reset successfully.',
     };
   } catch (err) {
-    console.error('Error in resetBlockInteractionsByLesson:', err);
+    console.error('Error in restartLesson:', err);
     return {
       success: false,
       message: 'Unexpected server error. Please contact support if the issue persists.',
