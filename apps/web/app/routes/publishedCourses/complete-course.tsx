@@ -45,12 +45,13 @@ export async function loader({ params, request }: Route.LoaderArgs) {
       }),
     ]);
 
-    if (!navigationData) {
+    if (!navigationData || !navigationData.completion.course.is_complete) {
       return redirect(`/c/${params.publishedCourseId}`);
     }
 
     // Time-bound redirect: if course was completed more than 5 minutes ago, redirect
     const completedAt = overviewData?.overall_progress?.completed_at;
+
     if (completedAt) {
       const completedDate = new Date(completedAt);
       const now = new Date();
@@ -68,6 +69,24 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     throw error;
   }
 }
+
+const confettiColors = [
+  // Theme colors
+  '#f74d40', // red-orange
+  '#20c9d0', // cyan
+  '#0f172a', // slate/dark
+  '#ffffff', // white
+
+  // Additions for visual contrast and vibrancy
+  '#facc15', // amber/yellow
+  '#4ade80', // green-400
+  '#a855f7', // purple-500
+  '#3b82f6', // blue-500
+  '#fb923c', // orange-400
+  '#ec4899', // pink-500
+  '#14b8a6', // teal-500
+  '#f472b6', // rose-400
+];
 
 export default function CompleteCourse({ loaderData, params }: Route.ComponentProps) {
   const { overviewData } = loaderData;
@@ -126,7 +145,7 @@ export default function CompleteCourse({ loaderData, params }: Route.ComponentPr
               key={burst.id}
               mode='boom'
               particleCount={Math.floor(150 + Math.random() * 250)}
-              colors={['#f74d40', '#20c9d0', '#0f172a', '#ffffff']}
+              colors={confettiColors}
               x={burst.x}
               y={burst.y}
               deg={burst.deg}

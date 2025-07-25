@@ -59,7 +59,7 @@ export function StickyChapterHeader({
         {isActive && <Play size={16} className='text-primary animate-pulse' />}
         <motion.h1
           animate={headingControls}
-          className='text-foreground line-clamp-1 text-lg font-bold transition-colors duration-300 md:text-2xl'
+          className='text-foreground line-clamp-1 text-lg font-bold transition-colors duration-300'
         >
           {name}
         </motion.h1>

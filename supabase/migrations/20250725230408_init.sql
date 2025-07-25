@@ -3458,7 +3458,7 @@ declare
 begin
   -- Context: BLOCK LEVEL
   if current_context.block_id is not null then
-    -- Next incomplete block
+    -- Next incomplete block (check ALL blocks, not just those after current)
     select
       bs.chapter_id, bs.lesson_id, bs.block_id
     into continue_block
@@ -3483,12 +3483,11 @@ begin
       and bp.block_id = bs.block_id
       and bp.is_completed = true
     )
-    where bs.global_order > coalesce(current_context.block_global_order, 0)
-      and bp.id is null
+    where bp.id is null -- Find incomplete blocks
     order by bs.global_order
     limit 1;
 
-    -- Next incomplete lesson
+    -- Next incomplete lesson (check ALL lessons, not just those after current)
     select
       ls.chapter_id, ls.lesson_id
     into continue_lesson
@@ -3510,12 +3509,11 @@ begin
       and lp.lesson_id = ls.lesson_id
       and lp.completed_at is not null
     )
-    where ls.global_order > coalesce(current_context.lesson_global_order, 0)
-      and lp.id is null
+    where lp.id is null -- Find incomplete lessons
     order by ls.global_order
     limit 1;
 
-    -- Next incomplete chapter
+    -- Next incomplete chapter (check ALL chapters, not just those after current)
     select
       cs.chapter_id
     into continue_chapter
@@ -3533,8 +3531,7 @@ begin
       and cp.chapter_id = cs.chapter_id
       and cp.completed_at is not null
     )
-    where cs.global_order > coalesce(current_context.chapter_global_order, 0)
-      and cp.id is null
+    where cp.id is null -- Find incomplete chapters
     order by cs.global_order
     limit 1;
 
@@ -3561,7 +3558,7 @@ begin
 
   -- Context: LESSON LEVEL
   elsif current_context.lesson_id is not null then
-    -- Next incomplete lesson
+    -- Next incomplete lesson (check ALL lessons, not just those after current)
     select
       ls.chapter_id, ls.lesson_id
     into continue_lesson
@@ -3583,12 +3580,11 @@ begin
       and lp.lesson_id = ls.lesson_id
       and lp.completed_at is not null
     )
-    where ls.global_order > coalesce(current_context.lesson_global_order, 0)
-      and lp.id is null
+    where lp.id is null -- Find incomplete lessons
     order by ls.global_order
     limit 1;
 
-    -- Next incomplete chapter
+    -- Next incomplete chapter (check ALL chapters, not just those after current)
     select
       cs.chapter_id
     into continue_chapter
@@ -3606,8 +3602,7 @@ begin
       and cp.chapter_id = cs.chapter_id
       and cp.completed_at is not null
     )
-    where cs.global_order > coalesce(current_context.chapter_global_order, 0)
-      and cp.id is null
+    where cp.id is null -- Find incomplete chapters
     order by cs.global_order
     limit 1;
 
@@ -3628,7 +3623,7 @@ begin
 
   -- Context: CHAPTER LEVEL
   elsif current_context.chapter_id is not null then
-    -- Next incomplete chapter
+    -- Next incomplete chapter (check ALL chapters, not just those after current)
     select
       cs.chapter_id
     into continue_chapter
@@ -3646,8 +3641,7 @@ begin
       and cp.chapter_id = cs.chapter_id
       and cp.completed_at is not null
     )
-    where cs.global_order > coalesce(current_context.chapter_global_order, 0)
-      and cp.id is null
+    where cp.id is null -- Find incomplete chapters
     order by cs.global_order
     limit 1;
 
