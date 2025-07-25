@@ -15,6 +15,7 @@ export default [
       route('enroll/status', 'routes/publishedCourses/enroll-status.tsx'),
       route('complete', 'routes/publishedCourses/complete-course.tsx'),
       route('complete/:completedChapterId', 'routes/publishedCourses/complete-chapter.tsx'),
+      route('reset', 'routes/publishedCourses/reset-course.tsx'),
     ]),
 
     route('api/check-username-exists', 'routes/api/check-username-exists.ts'),

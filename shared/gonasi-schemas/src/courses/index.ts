@@ -65,3 +65,8 @@ export const EditCourseGroupingSchema = z.object({
   subcategory: CourseSubcategorySchema,
 });
 export type EditCourseGroupingSchemaTypes = z.infer<typeof EditCourseGroupingSchema>;
+
+export const ResetCourseSchema = z.object({
+  courseId: z.string().uuid(),
+});
+export type ResetCourseSchemaTypes = z.infer<typeof ResetCourseSchema>;

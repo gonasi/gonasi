@@ -11,6 +11,7 @@ import {
   LoaderCircle,
   StarOff,
   TableOfContents,
+  TimerReset,
 } from 'lucide-react';
 import { redirectWithError } from 'remix-toast';
 
@@ -308,20 +309,32 @@ export default function PublishedCourseIdIndex({ params, loaderData }: Route.Com
                                     />
                                     <div className='w-full px-4 py-4'>
                                       {navigationData.completion.course.is_complete ? (
-                                        <div className='flex items-center gap-2'>
-                                          <AnimatedCheck
-                                            className='h-6 w-6'
-                                            strokeWidth={2}
-                                            animate={{ scale: [1, 1.1, 1] }}
-                                            transition={{
-                                              duration: 2,
-                                              repeat: Infinity,
-                                              ease: 'easeInOut',
-                                            }}
-                                          />
-                                          <span className='mt-0.5 text-lg font-semibold'>
-                                            Course Completed
-                                          </span>
+                                        <div className='flex flex-col space-y-4'>
+                                          <div className='flex items-center gap-2'>
+                                            <AnimatedCheck
+                                              className='h-5 w-5'
+                                              strokeWidth={2}
+                                              animate={{ scale: [1, 1.1, 1] }}
+                                              transition={{
+                                                duration: 2,
+                                                repeat: Infinity,
+                                                ease: 'easeInOut',
+                                              }}
+                                            />
+                                            <span className='text-md mt-0.5 font-semibold'>
+                                              Course Completed
+                                            </span>
+                                          </div>
+                                          <div>
+                                            <NavLinkButton
+                                              to={`/c/${params.publishedCourseId}/reset`}
+                                              variant='danger'
+                                              className='w-full'
+                                              rightIcon={<TimerReset />}
+                                            >
+                                              Reset Course
+                                            </NavLinkButton>
+                                          </div>
                                         </div>
                                       ) : (
                                         <NavLinkButton
