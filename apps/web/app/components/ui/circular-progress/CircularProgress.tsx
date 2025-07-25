@@ -10,6 +10,7 @@ export interface CircularProgressProps extends React.HTMLAttributes<HTMLDivEleme
   showValue?: boolean;
   valueLabel?: string;
   colorClass?: string;
+  children?: React.ReactNode;
 }
 
 const CircularProgress = React.forwardRef<HTMLDivElement, CircularProgressProps>(
@@ -23,6 +24,7 @@ const CircularProgress = React.forwardRef<HTMLDivElement, CircularProgressProps>
       showValue = false,
       valueLabel,
       colorClass = 'text-secondary',
+      children,
       ...props
     },
     ref,
@@ -30,7 +32,7 @@ const CircularProgress = React.forwardRef<HTMLDivElement, CircularProgressProps>
     const percentage = value / max;
     const radius = (size - thickness) / 2;
     const circumference = 2 * Math.PI * radius;
-    const strokeDashoffset = percentage * circumference; // <== reversed logic
+    const strokeDashoffset = (1 - percentage) * circumference;
 
     return (
       <div
@@ -66,9 +68,10 @@ const CircularProgress = React.forwardRef<HTMLDivElement, CircularProgressProps>
             strokeLinecap='round'
           />
         </svg>
-        {showValue && (
+
+        {(children || showValue) && (
           <div className='absolute inset-0 flex items-center justify-center text-sm font-medium'>
-            {valueLabel ? valueLabel : `${Math.round((1 - percentage) * 100)}%`}
+            {children ? children : valueLabel ? valueLabel : `${Math.round(percentage * 100)}%`}
           </div>
         )}
       </div>

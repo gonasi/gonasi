@@ -5092,7 +5092,10 @@ CREATE OR REPLACE FUNCTION public.increment_lesson_reset_count()
  SET search_path TO ''
 AS $function$
 begin
-  -- Insert or update the reset count for this user-course-lesson combination
+  -- Optional debug log
+  raise notice 'Lesson reset: user_id=%, course_id=%, lesson_id=%',
+    OLD.user_id, OLD.published_course_id, OLD.lesson_id;
+
   insert into public.lesson_reset_count (
     user_id,
     published_course_id,
@@ -5107,8 +5110,7 @@ begin
   )
   on conflict (user_id, published_course_id, lesson_id)
   do update set
-    reset_count = lesson_reset_count.reset_count + 1,
-    updated_at = timezone('utc', now());
+    reset_count = lesson_reset_count.reset_count + 1;
 
   return OLD;
 end;
@@ -5912,6 +5914,39 @@ begin
       s.chapter_order::int
     from structure s
     where s.chap_id = p_chapter_id;
+
+  -- =========================================================================
+  -- CASE 4: No specific context provided - return first chapter as default
+  -- This handles scenarios like "user completed course" where we need a 
+  -- navigation context but don't have a specific current position.
+  -- =========================================================================
+  else
+    return query
+    with structure as ( 
+      select
+        (chapter_obj ->> 'id')::uuid as chap_id,
+        null::uuid as less_id,
+        null::uuid as block_id,
+        null::int as block_order,
+        null::int as lesson_order,
+
+        row_number() over (
+          order by 
+            (chapter_obj ->> 'order_index')::int
+        ) as chapter_order
+
+      from jsonb_array_elements(course_structure -> 'chapters') as chapter_obj
+    )
+    select
+      s.block_id,
+      s.less_id,
+      s.chap_id,
+      s.block_order,
+      s.lesson_order,
+      s.chapter_order::int
+    from structure s
+    where s.chapter_order = 1  -- Return the first chapter
+    limit 1;
   end if;
 end;
 $function$
@@ -9439,6 +9474,8 @@ CREATE TRIGGER set_updated_at_gonasi_wallet_transactions BEFORE UPDATE ON public
 CREATE TRIGGER set_updated_at_gonasi_wallets BEFORE UPDATE ON public.gonasi_wallets FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER trg_set_lesson_block_position BEFORE INSERT ON public.lesson_blocks FOR EACH ROW EXECUTE FUNCTION set_lesson_block_position();
+
+CREATE TRIGGER trg_increment_lesson_reset_count AFTER DELETE ON public.lesson_progress FOR EACH ROW EXECUTE FUNCTION increment_lesson_reset_count();
 
 CREATE TRIGGER trg_lesson_progress_set_updated_at BEFORE UPDATE ON public.lesson_progress FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 

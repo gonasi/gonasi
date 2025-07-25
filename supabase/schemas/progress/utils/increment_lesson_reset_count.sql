@@ -9,7 +9,10 @@ language plpgsql
 set search_path = ''
 as $$
 begin
-  -- Insert or update the reset count for this user-course-lesson combination
+  -- Optional debug log
+  raise notice 'Lesson reset: user_id=%, course_id=%, lesson_id=%',
+    OLD.user_id, OLD.published_course_id, OLD.lesson_id;
+
   insert into public.lesson_reset_count (
     user_id,
     published_course_id,
@@ -24,8 +27,7 @@ begin
   )
   on conflict (user_id, published_course_id, lesson_id)
   do update set
-    reset_count = lesson_reset_count.reset_count + 1,
-    updated_at = timezone('utc', now());
+    reset_count = lesson_reset_count.reset_count + 1;
 
   return OLD;
 end;

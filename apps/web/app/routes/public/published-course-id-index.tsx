@@ -33,6 +33,7 @@ import { GoPricingSheet } from '~/components/cards/go-course-card/GoPricingSheet
 import { ChapterLessonTree } from '~/components/course';
 import { Badge } from '~/components/ui/badge';
 import { NavLinkButton } from '~/components/ui/button';
+import { CircularProgress } from '~/components/ui/circular-progress';
 import { Modal } from '~/components/ui/modal';
 import { Progress } from '~/components/ui/progress';
 import { createClient } from '~/lib/supabase/supabase.server';
@@ -105,12 +106,14 @@ function MetaInfoItem({ label, timestamp }: { label: string; timestamp: string }
   );
 }
 
-export default function PublishedCourseIdIndex({ loaderData }: Route.ComponentProps) {
+export default function PublishedCourseIdIndex({ params, loaderData }: Route.ComponentProps) {
   const { course, chapters, organization, overall_progress } = loaderData.courseOverview;
   const daysRemaining = loaderData.enrollmentStatus?.days_remaining ?? 0;
 
-  const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
-  const redirectTo = params.get('redirectTo') ?? '/';
+  const searchParams = new URLSearchParams(
+    typeof window !== 'undefined' ? window.location.search : '',
+  );
+  const redirectTo = searchParams.get('redirectTo') ?? '/';
 
   if (!course || !organization || !chapters) {
     return <NotFoundCard message='Could not load course' />;
@@ -145,14 +148,49 @@ export default function PublishedCourseIdIndex({ loaderData }: Route.ComponentPr
         <Modal.Content size='full'>
           <Modal.Header
             leadingIcon={
-              <div className='border-foreground/20 flex w-10 flex-shrink-0 items-center justify-center border'>
-                <GoThumbnail
-                  iconUrl={course.image_url}
-                  name={course.name}
-                  blurHash={course.blur_hash}
-                  objectFit='fill'
-                />
-              </div>
+              <Suspense
+                fallback={
+                  <CircularProgress size={40} thickness={3} colorClass='text-primary/5' value={0} />
+                }
+              >
+                <Await
+                  resolve={loaderData.lessonNavigationPromise}
+                  errorElement={
+                    <CircularProgress
+                      size={40}
+                      thickness={3}
+                      colorClass='text-transparent'
+                      value={0}
+                    />
+                  }
+                >
+                  {(navigationData) => {
+                    if (!navigationData) return null;
+
+                    return (
+                      <CircularProgress
+                        size={40}
+                        thickness={3}
+                        colorClass='text-primary'
+                        value={
+                          navigationData.completion.course.is_complete
+                            ? 100
+                            : navigationData.completion.blocks.percentage
+                        }
+                      >
+                        <GoThumbnail
+                          iconUrl={course.image_url}
+                          name={course.name}
+                          blurHash={course.blur_hash}
+                          objectFit='fill'
+                          className='m-1 rounded-full'
+                          aspectRatio='1/1'
+                        />
+                      </CircularProgress>
+                    );
+                  }}
+                </Await>
+              </Suspense>
             }
             title={course.name}
             closeRoute={redirectTo}
@@ -290,7 +328,11 @@ export default function PublishedCourseIdIndex({ loaderData }: Route.ComponentPr
                                           className='w-full'
                                           rightIcon={<ArrowDown />}
                                           variant='secondary'
-                                          to=''
+                                          to={
+                                            navigationData.current?.chapter?.id
+                                              ? `/c/${params.publishedCourseId}?continue=${navigationData.current.chapter.id}`
+                                              : `/c/${params.publishedCourseId}`
+                                          }
                                         >
                                           Continue
                                         </NavLinkButton>

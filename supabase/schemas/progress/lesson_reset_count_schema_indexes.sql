@@ -32,3 +32,9 @@ create trigger trg_lesson_reset_set_updated_at
 before update on public.lesson_reset_count
 for each row
 execute function public.update_updated_at_column();
+
+
+create trigger trg_increment_lesson_reset_count
+after delete on public.lesson_progress
+for each row
+execute function public.increment_lesson_reset_count();

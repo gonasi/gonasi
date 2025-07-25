@@ -59,11 +59,17 @@ export function ChapterLessonTree({
   const [searchParams] = useSearchParams();
 
   const displayMode = searchParams.get('display') || 'path';
+  const continueScroll = searchParams.get('continue');
   const scrollToChapter = searchParams.get('navChapter');
   const isPath = displayMode === 'path';
 
   useEffect(() => {
-    if (scrollToChapter) {
+    if (continueScroll) {
+      sectionRefs.current[continueScroll]?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    } else if (scrollToChapter) {
       sectionRefs.current[scrollToChapter]?.scrollIntoView({
         behavior: 'smooth',
         block: 'start',
@@ -74,7 +80,7 @@ export function ChapterLessonTree({
         block: 'start',
       });
     }
-  }, [activeLessonId, scrollToChapter]);
+  }, [activeLessonId, continueScroll, scrollToChapter]);
 
   return (
     <div className='relative pb-[500px]'>
