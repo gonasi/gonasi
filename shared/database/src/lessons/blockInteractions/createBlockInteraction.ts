@@ -17,8 +17,6 @@ const CompleteBlockResponseSchema = z.object({
   block_id: z.string().uuid(),
   lesson_id: z.string().uuid(),
   chapter_id: z.string().uuid(),
-  block_weight: z.number(),
-  weight_source: z.enum(['structure', 'provided']),
   was_already_completed: z.boolean(),
   completed_at: safeDateTime(),
   navigation: UnifiedNavigationSchema,
@@ -61,7 +59,6 @@ export const createBlockInteraction = async ({
     lesson_id,
     block_id,
     time_spent_seconds = 0,
-    block_weight,
     earned_score = null,
     interaction_data = null,
     last_response = null,
@@ -77,7 +74,6 @@ export const createBlockInteraction = async ({
       p_time_spent_seconds: time_spent_seconds ?? undefined,
       p_interaction_data: interaction_data as unknown as Json,
       p_last_response: last_response as unknown as Json,
-      p_block_weight: block_weight ?? undefined,
     })) as { data: unknown; error: any };
 
     if (error) {

@@ -2253,7 +2253,7 @@ end;
 $function$
 ;
 
-CREATE OR REPLACE FUNCTION public.complete_block(p_published_course_id uuid, p_chapter_id uuid, p_lesson_id uuid, p_block_id uuid, p_block_weight numeric DEFAULT NULL::numeric, p_earned_score numeric DEFAULT NULL::numeric, p_time_spent_seconds integer DEFAULT 0, p_interaction_data jsonb DEFAULT NULL::jsonb, p_last_response jsonb DEFAULT NULL::jsonb)
+CREATE OR REPLACE FUNCTION public.complete_block(p_published_course_id uuid, p_chapter_id uuid, p_lesson_id uuid, p_block_id uuid, p_earned_score numeric DEFAULT NULL::numeric, p_time_spent_seconds integer DEFAULT 0, p_interaction_data jsonb DEFAULT NULL::jsonb, p_last_response jsonb DEFAULT NULL::jsonb)
  RETURNS jsonb
  LANGUAGE plpgsql
  SET search_path TO ''
@@ -2304,7 +2304,6 @@ begin
 
   select coalesce(
     (block_obj->>'weight')::numeric,
-    p_block_weight,
     1.0
   )
   into block_weight
@@ -2316,7 +2315,7 @@ begin
   limit 1;
 
   if block_weight is null then
-    block_weight := coalesce(p_block_weight, 1.0);
+    raise exception 'Block weight not found in structure for block_id: %', p_block_id;
   end if;
 
   with course_blocks as (
@@ -2330,9 +2329,7 @@ begin
          jsonb_array_elements(lesson_obj->'blocks') as block_obj
   ),
   lesson_weights as (
-    select 
-      lesson_id,
-      sum(weight) as lesson_weight
+    select lesson_id, sum(weight) as lesson_weight
     from course_blocks
     group by lesson_id
   )
@@ -2365,9 +2362,7 @@ begin
     jsonb_array_elements(lesson_obj->'blocks') as block_obj
   ),
   chapter_lesson_weights as (
-    select 
-      lesson_id,
-      sum(weight) as lesson_weight
+    select lesson_id, sum(weight) as lesson_weight
     from chapter_blocks
     group by lesson_id
   )
@@ -2397,7 +2392,6 @@ begin
   ) as lesson_obj,
   jsonb_array_elements(lesson_obj->'blocks') as block_obj;
 
-  -- Upsert course_progress
   insert into public.course_progress (
     user_id,
     published_course_id,
@@ -2426,7 +2420,6 @@ begin
     updated_at = timezone('utc', now())
   returning id into v_course_progress_id;
 
-  -- Upsert chapter_progress
   insert into public.chapter_progress (
     course_progress_id,
     user_id,
@@ -2457,7 +2450,6 @@ begin
     updated_at = timezone('utc', now())
   returning id into v_chapter_progress_id;
 
-  -- Upsert lesson_progress
   insert into public.lesson_progress (
     chapter_progress_id,
     user_id,
@@ -2482,13 +2474,8 @@ begin
     updated_at = timezone('utc', now())
   returning id into v_lesson_progress_id;
 
-  -- Fetch block progress
-  select 
-    is_completed,
-    completed_at
-  into 
-    was_already_completed,
-    existing_completed_at
+  select is_completed, completed_at
+  into was_already_completed, existing_completed_at
   from public.block_progress
   where user_id = current_user_id
     and published_course_id = p_published_course_id
@@ -2498,7 +2485,6 @@ begin
     was_already_completed := false;
   end if;
 
-  -- Upsert block_progress
   insert into public.block_progress (
     lesson_progress_id,
     organization_id,
@@ -2547,26 +2533,19 @@ begin
     updated_at = timezone('utc', now())
   returning id into v_block_progress_id;
 
-  -- Sync higher progress
   if not was_already_completed then
     perform public.update_lesson_progress_for_user(current_user_id, p_published_course_id, p_lesson_id);
-    perform public.update_chapter_progress_for_user(
-      current_user_id,
-      p_published_course_id,
-      p_chapter_id,
-      v_course_progress_id -- ✅ pass it in
-    );
+    perform public.update_chapter_progress_for_user(current_user_id, p_published_course_id, p_chapter_id, v_course_progress_id);
     perform public.update_course_progress_for_user(current_user_id, p_published_course_id);
   end if;
 
-  -- Navigation fallback
   begin
     select public.get_unified_navigation(
       current_user_id,
       p_published_course_id,
-      p_chapter_id,
+      p_block_id,
       p_lesson_id,
-      p_block_id
+      p_chapter_id
     ) into navigation_data;
   exception
     when others then
@@ -2598,8 +2577,8 @@ exception
   when others then
     return jsonb_build_object(
       'success', false,
-      'error', SQLERRM,
-      'error_detail', SQLSTATE
+      'error', sqlerrm,
+      'error_detail', sqlstate
     );
 end;
 $function$
