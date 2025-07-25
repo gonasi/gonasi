@@ -45,9 +45,9 @@ export async function loader({ params, request }: Route.LoaderArgs) {
       }),
     ]);
 
-    if (!navigationData) {
-      return redirect(`/c/${params.publishedCourseId}`);
-    }
+    // if (!navigationData) {
+    //   return redirect(`/c/${params.publishedCourseId}`);
+    // }
 
     // Time-bound redirect: if course was completed more than 5 minutes ago, redirect
     const completedAt = overviewData?.overall_progress?.completed_at;

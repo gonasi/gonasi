@@ -29,8 +29,8 @@ export async function getUnifiedNavigation({
   const userId = await getUserId(supabase);
 
   const { data, error } = await supabase.rpc('get_unified_navigation', {
-    p_published_course_id: courseId,
     p_user_id: userId,
+    p_published_course_id: courseId,
     p_current_block_id: blockId,
     p_current_lesson_id: lessonId,
     p_current_chapter_id: chapterId,
@@ -45,6 +45,8 @@ export async function getUnifiedNavigation({
     console.warn(`[getUnifiedNavigation] No data returned for course ${courseId}`);
     return null;
   }
+
+  console.log(JSON.stringify(data, null, 4));
 
   const parsed = UnifiedNavigationSchema.safeParse(data);
   if (!parsed.success) {
