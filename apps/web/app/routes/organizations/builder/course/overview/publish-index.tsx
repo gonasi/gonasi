@@ -1,6 +1,6 @@
 import { Suspense, useState } from 'react';
 import { Await, Link, useFetcher, useLoaderData } from 'react-router';
-import { RefreshCw } from 'lucide-react';
+import { AlertTriangle, RefreshCw } from 'lucide-react';
 import { dataWithError, redirectWithSuccess } from 'remix-toast';
 
 import {
@@ -173,7 +173,14 @@ export default function NewPublishIndex({ params }: Route.ComponentProps) {
               }}
             </Await>
           </Suspense>
-
+          <div className='bg-warning/80 text-warning-foreground flex items-start gap-2 p-4'>
+            <AlertTriangle className='text-warning-foreground mt-0.5 h-5 w-5' />
+            <p className='text-sm leading-relaxed'>
+              <span className='font-secondary font-semibold'>Warning:</span> Publishing this course
+              will <span className='font-semibold'>reset all user progress</span>. This action is{' '}
+              <span className='italic'>irreversible</span>.
+            </p>
+          </div>
           <div className='my-6'>
             <div className='flex w-full items-center justify-between space-x-4'>
               <NavLinkButton
@@ -195,7 +202,6 @@ export default function NewPublishIndex({ params }: Route.ComponentProps) {
               </Button>
             </div>
           </div>
-
           {!isAnyLoading() && !!hasAnyError() && (
             <p className='font-secondary text-muted-foreground w-full pt-4 text-center text-sm'>
               Almost there! Just fix a few things and you’ll be good to go 🚀

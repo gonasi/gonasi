@@ -2761,6 +2761,18 @@ end;
 $function$
 ;
 
+CREATE OR REPLACE FUNCTION public.enqueue_delete_course_progress(course_id uuid)
+ RETURNS void
+ LANGUAGE sql
+ SET search_path TO ''
+AS $function$
+  select pgmq.send(
+    'delete_course_progress_queue',
+    jsonb_build_object('course_id', course_id)
+  );
+$function$
+;
+
 CREATE OR REPLACE FUNCTION public.enroll_user_in_published_course(p_user_id uuid, p_published_course_id uuid, p_tier_id uuid, p_tier_name text, p_tier_description text, p_payment_frequency text, p_currency_code text, p_is_free boolean, p_effective_price numeric, p_organization_id uuid, p_promotional_price numeric DEFAULT NULL::numeric, p_is_promotional boolean DEFAULT false, p_payment_processor_id text DEFAULT NULL::text, p_payment_amount numeric DEFAULT NULL::numeric, p_payment_method text DEFAULT NULL::text, p_payment_processor_fee numeric DEFAULT NULL::numeric, p_created_by uuid DEFAULT NULL::uuid)
  RETURNS jsonb
  LANGUAGE plpgsql
@@ -5100,6 +5112,63 @@ end;
 $function$
 ;
 
+CREATE OR REPLACE FUNCTION public.process_delete_course_progress()
+ RETURNS void
+ LANGUAGE plpgsql
+ SET search_path TO ''
+AS $function$
+declare
+  task pgmq.message_record;
+  course_uuid uuid;
+begin
+  for task in
+    select * from pgmq.read('delete_course_progress_queue', 60, 5)  -- vt=60s, qty=5
+  loop
+    begin
+      -- Parse the JSON message and validate course_id
+      course_uuid := (task.message->>'course_id')::uuid;
+      
+      if course_uuid is null then
+        raise exception 'Invalid course_id in message';
+      end if;
+
+      -- Delete from all progress tables in dependency order
+      -- Start with the most granular (block_progress) and work up
+      
+      -- Delete block progress
+      delete from public.block_progress
+      where published_course_id = course_uuid;
+
+      -- Delete lesson progress
+      delete from public.lesson_progress
+      where published_course_id = course_uuid;
+
+      -- Delete chapter progress
+      delete from public.chapter_progress
+      where published_course_id = course_uuid;
+
+      -- Delete course progress
+      delete from public.course_progress
+      where published_course_id = course_uuid;
+
+      -- Delete the message if successful
+      perform pgmq.delete('delete_course_progress_queue', task.msg_id);
+      
+      raise notice 'Successfully deleted progress for course: %', course_uuid;
+      
+    exception
+      when others then
+        -- Log error but don't requeue to avoid infinite loops
+        raise warning 'Failed to process delete task for course %: %', 
+          coalesce((task.message->>'course_id'), 'unknown'), sqlerrm;
+        -- Still delete the message to prevent reprocessing
+        perform pgmq.delete('delete_course_progress_queue', task.msg_id);
+    end;
+  end loop;
+end;
+$function$
+;
+
 CREATE OR REPLACE FUNCTION public.reorder_chapters(p_course_id uuid, chapter_positions jsonb, p_updated_by uuid)
  RETURNS void
  LANGUAGE plpgsql
@@ -6729,8 +6798,17 @@ CREATE OR REPLACE FUNCTION public.upsert_published_course_with_content(course_da
  SECURITY DEFINER
  SET search_path TO ''
 AS $function$
+declare
+  course_uuid uuid;
 begin
-  -- upsert into published_courses
+  -- Extract course ID for progress reset
+  course_uuid := (course_data->>'id')::uuid;
+  
+  if course_uuid is null then
+    raise exception 'course_data must contain a valid id field';
+  end if;
+
+  -- Upsert into published_courses
   insert into public.published_courses (
     id,
     organization_id,
@@ -6758,7 +6836,7 @@ begin
     published_at
   )
   values (
-    (course_data->>'id')::uuid,
+    course_uuid,
     (course_data->>'organization_id')::uuid,
     (course_data->>'category_id')::uuid,
     (course_data->>'subcategory_id')::uuid,
@@ -6809,18 +6887,24 @@ begin
     published_at = excluded.published_at,
     updated_at = timezone('utc', now());
 
-  -- upsert into published_course_structure_content
+  -- Upsert into published_course_structure_content
   insert into public.published_course_structure_content (
     id,
     course_structure_content
   )
   values (
-    (course_data->>'id')::uuid,
+    course_uuid,
     structure_content
   )
   on conflict (id) do update set
     course_structure_content = excluded.course_structure_content,
     updated_at = timezone('utc', now());
+
+  -- Enqueue progress deletion for this course
+  -- This will reset all user progress when the course is published/updated
+  perform public.enqueue_delete_course_progress(course_uuid);
+  
+  raise notice 'Course % published and progress reset queued', course_uuid;
 end;
 $function$
 ;
@@ -9411,5 +9495,10 @@ with check (((bucket_id = 'organization_profile_photos'::text) AND (EXISTS ( SEL
    FROM organizations o
   WHERE ((o.id = (split_part(objects.name, '/'::text, 1))::uuid) AND (get_user_org_role(o.id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])))))));
 
+
+
+revoke select on table "pgmq"."a_delete_course_progress_queue" from "pg_monitor";
+
+revoke select on table "pgmq"."q_delete_course_progress_queue" from "pg_monitor";
 
 

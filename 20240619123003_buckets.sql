@@ -1,8 +1,3 @@
--- Enable the "pg_jsonschema" extension
-create extension pg_jsonschema with schema extensions;
-create extension if not exists "uuid-ossp";
-
-
 -- ===============================================
 -- set up public storage bucket for user profile_photos
 -- ===============================================

@@ -2098,6 +2098,10 @@ export type Database = {
         Args: { extension: string }
         Returns: Database["public"]["Enums"]["file_type"]
       }
+      enqueue_delete_course_progress: {
+        Args: { course_id: string }
+        Returns: undefined
+      }
       enroll_user_in_published_course: {
         Args: {
           p_user_id: string
@@ -2277,6 +2281,10 @@ export type Database = {
           p_created_by?: string
         }
         Returns: Json
+      }
+      process_delete_course_progress: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       reorder_chapters: {
         Args: {

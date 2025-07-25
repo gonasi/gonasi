@@ -49,6 +49,8 @@ max_client_conn = 100
 # Specifies an ordered list of schema files that describe your database.
 # Supports glob patterns relative to supabase directory: "./schemas/*.sql"
 schema_paths = [
+  './migrations/20240619123002_extensions.sql',
+
   './schemas/update_updated_at_column.sql',
 
   './schemas/enums/course_access.sql',
@@ -179,6 +181,10 @@ schema_paths = [
   './schemas/publishedCourses/utils/chk_course_structure_overview_valid_constraint.sql',
   './schemas/publishedCourses/utils/chk_course_structure_content_valid_constraint.sql',
   './schemas/publishedCourses/utils/get_published_lesson_blocks.sql',
+
+  './schemas/publishedCourses/utils/queues/process_delete_course_progress.sql',
+  './schemas/publishedCourses/utils/queues/enqueue_delete_course_progress.sql',
+
   './schemas/publishedCourses/utils/upsert_published_course_with_content.sql',
   './schemas/publishedCourses/utils/get_course_progress_overview.sql',
 

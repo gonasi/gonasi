@@ -1,7 +1,3 @@
--- Enable the "pg_jsonschema" extension
-create extension pg_jsonschema with schema extensions;
-
-
 alter table public.published_courses
 add constraint chk_pricing_tiers_valid
 check (

@@ -1,6 +1,6 @@
 -- ====================================================================================
--- FUNCTION: upsert_published_course_with_content
--- PURPOSE: Atomically upserts both the published_courses and published_course_structure_content tables
+-- FUNCTION: upsert_published_course_with_content (Updated)  
+-- PURPOSE: Atomically upserts published course data and resets all user progress
 -- SECURITY: Runs as definer with restricted search_path
 -- ====================================================================================
 create or replace function public.upsert_published_course_with_content(
@@ -12,8 +12,17 @@ language plpgsql
 security definer
 set search_path = ''
 as $$
+declare
+  course_uuid uuid;
 begin
-  -- upsert into published_courses
+  -- Extract course ID for progress reset
+  course_uuid := (course_data->>'id')::uuid;
+  
+  if course_uuid is null then
+    raise exception 'course_data must contain a valid id field';
+  end if;
+
+  -- Upsert into published_courses
   insert into public.published_courses (
     id,
     organization_id,
@@ -41,7 +50,7 @@ begin
     published_at
   )
   values (
-    (course_data->>'id')::uuid,
+    course_uuid,
     (course_data->>'organization_id')::uuid,
     (course_data->>'category_id')::uuid,
     (course_data->>'subcategory_id')::uuid,
@@ -92,17 +101,23 @@ begin
     published_at = excluded.published_at,
     updated_at = timezone('utc', now());
 
-  -- upsert into published_course_structure_content
+  -- Upsert into published_course_structure_content
   insert into public.published_course_structure_content (
     id,
     course_structure_content
   )
   values (
-    (course_data->>'id')::uuid,
+    course_uuid,
     structure_content
   )
   on conflict (id) do update set
     course_structure_content = excluded.course_structure_content,
     updated_at = timezone('utc', now());
+
+  -- Enqueue progress deletion for this course
+  -- This will reset all user progress when the course is published/updated
+  perform public.enqueue_delete_course_progress(course_uuid);
+  
+  raise notice 'Course % published and progress reset queued', course_uuid;
 end;
 $$;
