@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import Confetti from 'react-confetti-boom';
 import { redirect } from 'react-router';
 import { differenceInMinutes } from 'date-fns';
@@ -44,17 +45,8 @@ export async function loader({ params, request }: Route.LoaderArgs) {
       }),
     ]);
 
-    const current = navigationData?.current;
-    const canonicalCourseUrl = `/c/${current?.course.id}`;
-
-    // if (!navigationData) {
-    //   return redirect(canonicalCourseUrl);
-    // }
-
-    const isNonCanonical = params.publishedCourseId !== current?.course?.id;
-
-    if (isNonCanonical) {
-      return redirect(canonicalCourseUrl);
+    if (!navigationData) {
+      return redirect(`/c/${params.publishedCourseId}`);
     }
 
     // Time-bound redirect: if course was completed more than 5 minutes ago, redirect
@@ -64,7 +56,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
       const now = new Date();
       const minutesAgo = differenceInMinutes(now, completedDate);
       if (minutesAgo > 5) {
-        return redirect(canonicalCourseUrl);
+        return redirect(`/c/${params.publishedCourseId}`);
       }
     }
 
@@ -82,25 +74,68 @@ export default function CompleteCourse({ loaderData, params }: Route.ComponentPr
   const courseName = overviewData?.course?.name ?? 'this course';
   const courseId = params.publishedCourseId;
 
+  const [confettiBursts, setConfettiBursts] = useState<
+    {
+      id: string;
+      x: number;
+      y: number;
+      deg: number;
+      shapeSize: number;
+      spreadDeg: number;
+      launchSpeed: number;
+      opacityDeltaMultiplier: number;
+      createdAt: number;
+    }[]
+  >([]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const now = Date.now();
+      const lifetime = 5000; // keep bursts alive for 5 seconds
+
+      setConfettiBursts((prev) => {
+        // filter out old bursts
+        const fresh = prev.filter((b) => now - b.createdAt < lifetime);
+        // add a new burst
+        const newBurst = {
+          id: crypto.randomUUID(),
+          createdAt: now,
+          x: Math.random(),
+          y: Math.random() * 0.7,
+          deg: Math.floor(Math.random() * 360),
+          shapeSize: 10 + Math.random() * 20,
+          spreadDeg: 40 + Math.random() * 60,
+          launchSpeed: 1 + Math.random() * 2,
+          opacityDeltaMultiplier: 0.8 + Math.random() * 0.5,
+        };
+        return [...fresh, newBurst];
+      });
+    }, 800);
+
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <Modal open>
       <Modal.Content size='md'>
-        <Modal.Header hasClose={false} />
+        <Modal.Header hasClose={false} className='bg-transparent' />
         <Modal.Body className='px-4 pt-2 pb-8'>
-          <Confetti
-            mode='boom'
-            particleCount={380}
-            colors={['#f74d40', '#20c9d0', '#0f172a', '#ffffff']}
-            x={0.5}
-            y={0.4}
-            deg={270}
-            shapeSize={14}
-            spreadDeg={65}
-            effectCount={10}
-            effectInterval={1000}
-            launchSpeed={1.3}
-            opacityDeltaMultiplier={1.1}
-          />
+          {/* Infinite, optimized confetti pops */}
+          {confettiBursts.map((burst) => (
+            <Confetti
+              key={burst.id}
+              mode='boom'
+              particleCount={Math.floor(150 + Math.random() * 250)}
+              colors={['#f74d40', '#20c9d0', '#0f172a', '#ffffff']}
+              x={burst.x}
+              y={burst.y}
+              deg={burst.deg}
+              shapeSize={burst.shapeSize}
+              spreadDeg={burst.spreadDeg}
+              launchSpeed={burst.launchSpeed}
+              opacityDeltaMultiplier={burst.opacityDeltaMultiplier}
+            />
+          ))}
 
           <motion.div
             className='mb-6 text-center'

@@ -48,7 +48,10 @@ export async function getUnifiedNavigation({
 
   const parsed = UnifiedNavigationSchema.safeParse(data);
   if (!parsed.success) {
-    console.error('[getUnifiedNavigation] Invalid response schema:', parsed.error);
+    console.error(
+      '[getUnifiedNavigation] Invalid response schema:',
+      JSON.stringify(parsed.error, null, 4),
+    );
     return null;
   }
 
