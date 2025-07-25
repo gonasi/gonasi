@@ -38,6 +38,8 @@ declare
   lesson_total_weight numeric := 0;
   lesson_completed_weight numeric := 0;
   lesson_is_completed boolean := false;
+  v_chapter_id uuid;
+  v_chapter_progress_id uuid;
 begin
   -- ============================================================================
   -- step 1: fetch the structure jsonb for the published course
@@ -49,6 +51,32 @@ begin
 
   if course_structure is null then
     raise exception 'course structure not found for published_course_id: %', p_published_course_id;
+  end if;
+
+  -- Find the chapter_id for this lesson from the course structure
+  select (chapter_obj->>'id')::uuid
+  into v_chapter_id
+  from jsonb_path_query(
+    course_structure,
+    '$.chapters[*] ? (@.lessons[*].id == $lesson_id)',
+    jsonb_build_object('lesson_id', p_lesson_id::text)
+  ) as chapter_obj
+  limit 1;
+
+  if v_chapter_id is null then
+    raise exception 'Could not find chapter for lesson_id: %', p_lesson_id;
+  end if;
+
+  -- Find the chapter_progress_id for this user, course, and chapter
+  select id
+  into v_chapter_progress_id
+  from public.chapter_progress
+  where user_id = p_user_id
+    and published_course_id = p_published_course_id
+    and chapter_id = v_chapter_id;
+
+  if v_chapter_progress_id is null then
+    raise exception 'Could not find chapter_progress for user: %, course: %, lesson: %, chapter: %', p_user_id, p_published_course_id, p_lesson_id, v_chapter_id;
   end if;
 
   -- ============================================================================
@@ -110,6 +138,7 @@ begin
   -- step 6: upsert lesson_progress row for the user
   -- ============================================================================
   insert into public.lesson_progress (
+    chapter_progress_id,
     user_id, 
     published_course_id, 
     lesson_id,
@@ -121,6 +150,7 @@ begin
     completed_at
   )
   values (
+    v_chapter_progress_id,
     p_user_id,
     p_published_course_id,
     p_lesson_id,
@@ -133,6 +163,7 @@ begin
   )
   on conflict (user_id, published_course_id, lesson_id)
   do update set
+    chapter_progress_id = excluded.chapter_progress_id,
     total_blocks     = excluded.total_blocks,
     completed_blocks = excluded.completed_blocks,
     total_weight     = excluded.total_weight,

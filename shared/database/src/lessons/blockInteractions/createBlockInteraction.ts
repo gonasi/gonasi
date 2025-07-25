@@ -22,6 +22,10 @@ const CompleteBlockResponseSchema = z.object({
   was_already_completed: z.boolean(),
   completed_at: safeDateTime(),
   navigation: UnifiedNavigationSchema,
+  // Add new fields for progress record IDs
+  lesson_progress_id: z.string().uuid(),
+  chapter_progress_id: z.string().uuid(),
+  course_progress_id: z.string().uuid(),
 });
 
 type UnifiedNavigation = z.infer<typeof UnifiedNavigationSchema>;
@@ -38,6 +42,9 @@ type ApiResponseWithNavigation = Omit<ApiResponse, 'data'> & {
   data?: {
     navigation: UnifiedNavigation;
     completed_at: string;
+    lesson_progress_id: string;
+    chapter_progress_id: string;
+    course_progress_id: string;
   };
 };
 
@@ -84,7 +91,7 @@ export const createBlockInteraction = async ({
     // Handle possible logic-level error returned from function
     if (result && typeof result === 'object' && 'error' in result) {
       const errMsg = (result as any).error;
-      console.error('RPC logic error:', errMsg);
+      console.error('RPC logic error:', result);
       return {
         success: false,
         message: errMsg || 'Unable to save block progress.',
@@ -112,6 +119,9 @@ export const createBlockInteraction = async ({
       data: {
         navigation: completeBlock.navigation,
         completed_at: completeBlock.completed_at,
+        lesson_progress_id: completeBlock.lesson_progress_id,
+        chapter_progress_id: completeBlock.chapter_progress_id,
+        course_progress_id: completeBlock.course_progress_id,
       },
     };
   } catch (err) {
