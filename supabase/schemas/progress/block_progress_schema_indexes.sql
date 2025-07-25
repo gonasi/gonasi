@@ -1,10 +1,13 @@
 -- ====================================================================================
--- TABLE: block_progress (Updated with weight support)
+-- TABLE: block_progress (Updated with weight support and cascading relationships)
 -- DESCRIPTION: Tracks per-user progress for individual blocks in lessons of a course.
 --              A block is considered completed if a row exists. Now supports weighted progress.
 -- ====================================================================================
 create table public.block_progress (
   id uuid primary key default uuid_generate_v4(),
+
+  -- Cascading relationship to lesson_progress
+  lesson_progress_id uuid not null references public.lesson_progress(id) on delete cascade,
 
   -- foreign keys and contextual metadata
   organization_id uuid not null references public.organizations(id) on delete cascade,
@@ -42,7 +45,8 @@ create table public.block_progress (
   updated_at timestamptz not null default timezone('utc', now()),
 
   -- enforce uniqueness: only one record per user per published block
-  unique (user_id, published_course_id, block_id)
+  unique (user_id, published_course_id, block_id),
+  unique (lesson_progress_id, block_id)
 );
 
 
@@ -81,6 +85,10 @@ create index idx_block_progress_user_block
 -- New index for weight-based calculations
 create index idx_block_progress_lesson_weight
   on public.block_progress(lesson_id, block_weight);
+
+-- Index for the new cascading relationship
+create index idx_block_progress_lesson_progress
+  on public.block_progress(lesson_progress_id);
 
 -- ------------------------------------------------------------------------------------
 -- Trigger to automatically update the updated_at timestamp on any row update

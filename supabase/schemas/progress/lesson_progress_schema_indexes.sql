@@ -1,10 +1,13 @@
 -- ====================================================================================
--- TABLE: lesson_progress (Updated with weight support)
+-- TABLE: lesson_progress (Updated with weight support and cascading relationships)
 -- DESCRIPTION: Tracks per-user progress within lessons of a published course.
 --              Progress is tied to the published course snapshot and now uses weighted calculations.
 -- ====================================================================================
 create table public.lesson_progress (
   id uuid primary key default uuid_generate_v4(),
+
+  -- Cascading relationship to chapter_progress
+  chapter_progress_id uuid not null references public.chapter_progress(id) on delete cascade,
 
   user_id uuid not null references public.profiles(id) on delete cascade,
   published_course_id uuid not null references public.published_courses(id) on delete cascade,
@@ -30,7 +33,8 @@ create table public.lesson_progress (
   updated_at timestamptz not null default timezone('utc', now()),
   created_at timestamptz not null default timezone('utc', now()),
 
-  unique (user_id, published_course_id, lesson_id)
+  unique (user_id, published_course_id, lesson_id),
+  unique (chapter_progress_id, lesson_id)
 );
 
 -- Indexes for performance
@@ -39,6 +43,7 @@ create index idx_lesson_progress_course on public.lesson_progress(published_cour
 create index idx_lesson_progress_lesson on public.lesson_progress(lesson_id);
 create index idx_lesson_progress_completed_at on public.lesson_progress(completed_at);
 create index idx_lesson_progress_percentage on public.lesson_progress(progress_percentage);
+create index idx_lesson_progress_chapter_progress on public.lesson_progress(chapter_progress_id);
 
 -- Automatically update `updated_at` timestamp
 create trigger trg_lesson_progress_set_updated_at

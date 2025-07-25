@@ -48,6 +48,7 @@ export type Database = {
           is_completed: boolean
           last_response: Json | null
           lesson_id: string
+          lesson_progress_id: string
           organization_id: string
           progress_percentage: number | null
           published_course_id: string
@@ -69,6 +70,7 @@ export type Database = {
           is_completed?: boolean
           last_response?: Json | null
           lesson_id: string
+          lesson_progress_id: string
           organization_id: string
           progress_percentage?: number | null
           published_course_id: string
@@ -90,6 +92,7 @@ export type Database = {
           is_completed?: boolean
           last_response?: Json | null
           lesson_id?: string
+          lesson_progress_id?: string
           organization_id?: string
           progress_percentage?: number | null
           published_course_id?: string
@@ -99,6 +102,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "block_progress_lesson_progress_id_fkey"
+            columns: ["lesson_progress_id"]
+            isOneToOne: false
+            referencedRelation: "lesson_progress"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "block_progress_organization_id_fkey"
             columns: ["organization_id"]
@@ -130,6 +140,7 @@ export type Database = {
           completed_lesson_weight: number
           completed_lessons: number
           completed_weight: number
+          course_progress_id: string
           created_at: string
           id: string
           is_completed: boolean
@@ -150,6 +161,7 @@ export type Database = {
           completed_lesson_weight?: number
           completed_lessons?: number
           completed_weight?: number
+          course_progress_id: string
           created_at?: string
           id?: string
           is_completed?: boolean
@@ -170,6 +182,7 @@ export type Database = {
           completed_lesson_weight?: number
           completed_lessons?: number
           completed_weight?: number
+          course_progress_id?: string
           created_at?: string
           id?: string
           is_completed?: boolean
@@ -184,6 +197,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "chapter_progress_course_progress_id_fkey"
+            columns: ["course_progress_id"]
+            isOneToOne: false
+            referencedRelation: "course_progress"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "chapter_progress_published_course_id_fkey"
             columns: ["published_course_id"]
@@ -1123,6 +1143,7 @@ export type Database = {
       }
       lesson_progress: {
         Row: {
+          chapter_progress_id: string
           completed_at: string | null
           completed_blocks: number
           completed_weight: number
@@ -1138,6 +1159,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          chapter_progress_id: string
           completed_at?: string | null
           completed_blocks?: number
           completed_weight?: number
@@ -1153,6 +1175,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          chapter_progress_id?: string
           completed_at?: string | null
           completed_blocks?: number
           completed_weight?: number
@@ -1168,6 +1191,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "lesson_progress_chapter_progress_id_fkey"
+            columns: ["chapter_progress_id"]
+            isOneToOne: false
+            referencedRelation: "chapter_progress"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "lesson_progress_published_course_id_fkey"
             columns: ["published_course_id"]
@@ -1186,6 +1216,7 @@ export type Database = {
       }
       lesson_reset_count: {
         Row: {
+          course_progress_id: string
           created_at: string
           id: string
           lesson_id: string
@@ -1195,6 +1226,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          course_progress_id: string
           created_at?: string
           id?: string
           lesson_id: string
@@ -1204,6 +1236,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          course_progress_id?: string
           created_at?: string
           id?: string
           lesson_id?: string
@@ -1213,6 +1246,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "lesson_reset_count_course_progress_id_fkey"
+            columns: ["course_progress_id"]
+            isOneToOne: false
+            referencedRelation: "course_progress"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "lesson_reset_count_published_course_id_fkey"
             columns: ["published_course_id"]

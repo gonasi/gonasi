@@ -26,6 +26,7 @@ create type "public"."support_level" as enum ('community', 'email', 'priority', 
 
 create table "public"."block_progress" (
     "id" uuid not null default uuid_generate_v4(),
+    "lesson_progress_id" uuid not null,
     "organization_id" uuid not null,
     "published_course_id" uuid not null,
     "chapter_id" uuid not null,
@@ -55,6 +56,7 @@ alter table "public"."block_progress" enable row level security;
 
 create table "public"."chapter_progress" (
     "id" uuid not null default uuid_generate_v4(),
+    "course_progress_id" uuid not null,
     "user_id" uuid not null,
     "published_course_id" uuid not null,
     "chapter_id" uuid not null,
@@ -339,6 +341,7 @@ alter table "public"."lesson_blocks" enable row level security;
 
 create table "public"."lesson_progress" (
     "id" uuid not null default uuid_generate_v4(),
+    "chapter_progress_id" uuid not null,
     "user_id" uuid not null,
     "published_course_id" uuid not null,
     "lesson_id" uuid not null,
@@ -362,6 +365,7 @@ alter table "public"."lesson_progress" enable row level security;
 
 create table "public"."lesson_reset_count" (
     "id" uuid not null default uuid_generate_v4(),
+    "course_progress_id" uuid not null,
     "user_id" uuid not null,
     "published_course_id" uuid not null,
     "lesson_id" uuid not null,
@@ -606,9 +610,13 @@ create table "public"."wallet_transactions" (
 
 alter table "public"."wallet_transactions" enable row level security;
 
+CREATE UNIQUE INDEX block_progress_lesson_progress_id_block_id_key ON public.block_progress USING btree (lesson_progress_id, block_id);
+
 CREATE UNIQUE INDEX block_progress_pkey ON public.block_progress USING btree (id);
 
 CREATE UNIQUE INDEX block_progress_user_id_published_course_id_block_id_key ON public.block_progress USING btree (user_id, published_course_id, block_id);
+
+CREATE UNIQUE INDEX chapter_progress_course_progress_id_chapter_id_key ON public.chapter_progress USING btree (course_progress_id, chapter_id);
 
 CREATE UNIQUE INDEX chapter_progress_pkey ON public.chapter_progress USING btree (id);
 
@@ -648,6 +656,8 @@ CREATE INDEX idx_block_progress_completed_at ON public.block_progress USING btre
 
 CREATE INDEX idx_block_progress_lesson ON public.block_progress USING btree (lesson_id);
 
+CREATE INDEX idx_block_progress_lesson_progress ON public.block_progress USING btree (lesson_progress_id);
+
 CREATE INDEX idx_block_progress_lesson_weight ON public.block_progress USING btree (lesson_id, block_weight);
 
 CREATE INDEX idx_block_progress_organization ON public.block_progress USING btree (organization_id);
@@ -665,6 +675,8 @@ CREATE INDEX idx_chapter_progress_chapter ON public.chapter_progress USING btree
 CREATE INDEX idx_chapter_progress_completed_at ON public.chapter_progress USING btree (completed_at);
 
 CREATE INDEX idx_chapter_progress_course ON public.chapter_progress USING btree (published_course_id);
+
+CREATE INDEX idx_chapter_progress_course_progress ON public.chapter_progress USING btree (course_progress_id);
 
 CREATE INDEX idx_chapter_progress_lesson_percentage ON public.chapter_progress USING btree (lesson_progress_percentage);
 
@@ -816,6 +828,8 @@ CREATE INDEX idx_lesson_blocks_position ON public.lesson_blocks USING btree ("po
 
 CREATE INDEX idx_lesson_blocks_updated_by ON public.lesson_blocks USING btree (updated_by);
 
+CREATE INDEX idx_lesson_progress_chapter_progress ON public.lesson_progress USING btree (chapter_progress_id);
+
 CREATE INDEX idx_lesson_progress_completed_at ON public.lesson_progress USING btree (completed_at);
 
 CREATE INDEX idx_lesson_progress_course ON public.lesson_progress USING btree (published_course_id);
@@ -827,6 +841,8 @@ CREATE INDEX idx_lesson_progress_percentage ON public.lesson_progress USING btre
 CREATE INDEX idx_lesson_progress_user ON public.lesson_progress USING btree (user_id);
 
 CREATE INDEX idx_lesson_reset_course_id ON public.lesson_reset_count USING btree (published_course_id);
+
+CREATE INDEX idx_lesson_reset_course_progress ON public.lesson_reset_count USING btree (course_progress_id);
 
 CREATE INDEX idx_lesson_reset_lesson_id ON public.lesson_reset_count USING btree (lesson_id);
 
@@ -940,9 +956,13 @@ CREATE INDEX idx_wallet_transactions_withdrawal_request_id ON public.wallet_tran
 
 CREATE UNIQUE INDEX lesson_blocks_pkey ON public.lesson_blocks USING btree (id);
 
+CREATE UNIQUE INDEX lesson_progress_chapter_progress_id_lesson_id_key ON public.lesson_progress USING btree (chapter_progress_id, lesson_id);
+
 CREATE UNIQUE INDEX lesson_progress_pkey ON public.lesson_progress USING btree (id);
 
 CREATE UNIQUE INDEX lesson_progress_user_id_published_course_id_lesson_id_key ON public.lesson_progress USING btree (user_id, published_course_id, lesson_id);
+
+CREATE UNIQUE INDEX lesson_reset_count_course_progress_id_lesson_id_key ON public.lesson_reset_count USING btree (course_progress_id, lesson_id);
 
 CREATE UNIQUE INDEX lesson_reset_count_pkey ON public.lesson_reset_count USING btree (id);
 
@@ -1074,6 +1094,12 @@ alter table "public"."user_roles" add constraint "user_roles_pkey" PRIMARY KEY u
 
 alter table "public"."wallet_transactions" add constraint "wallet_transactions_pkey" PRIMARY KEY using index "wallet_transactions_pkey";
 
+alter table "public"."block_progress" add constraint "block_progress_lesson_progress_id_block_id_key" UNIQUE using index "block_progress_lesson_progress_id_block_id_key";
+
+alter table "public"."block_progress" add constraint "block_progress_lesson_progress_id_fkey" FOREIGN KEY (lesson_progress_id) REFERENCES lesson_progress(id) ON DELETE CASCADE not valid;
+
+alter table "public"."block_progress" validate constraint "block_progress_lesson_progress_id_fkey";
+
 alter table "public"."block_progress" add constraint "block_progress_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE not valid;
 
 alter table "public"."block_progress" validate constraint "block_progress_organization_id_fkey";
@@ -1087,6 +1113,12 @@ alter table "public"."block_progress" add constraint "block_progress_user_id_fke
 alter table "public"."block_progress" validate constraint "block_progress_user_id_fkey";
 
 alter table "public"."block_progress" add constraint "block_progress_user_id_published_course_id_block_id_key" UNIQUE using index "block_progress_user_id_published_course_id_block_id_key";
+
+alter table "public"."chapter_progress" add constraint "chapter_progress_course_progress_id_chapter_id_key" UNIQUE using index "chapter_progress_course_progress_id_chapter_id_key";
+
+alter table "public"."chapter_progress" add constraint "chapter_progress_course_progress_id_fkey" FOREIGN KEY (course_progress_id) REFERENCES course_progress(id) ON DELETE CASCADE not valid;
+
+alter table "public"."chapter_progress" validate constraint "chapter_progress_course_progress_id_fkey";
 
 alter table "public"."chapter_progress" add constraint "chapter_progress_published_course_id_fkey" FOREIGN KEY (published_course_id) REFERENCES published_courses(id) ON DELETE CASCADE not valid;
 
@@ -1348,6 +1380,12 @@ alter table "public"."lesson_blocks" add constraint "lesson_blocks_updated_by_fk
 
 alter table "public"."lesson_blocks" validate constraint "lesson_blocks_updated_by_fkey";
 
+alter table "public"."lesson_progress" add constraint "lesson_progress_chapter_progress_id_fkey" FOREIGN KEY (chapter_progress_id) REFERENCES chapter_progress(id) ON DELETE CASCADE not valid;
+
+alter table "public"."lesson_progress" validate constraint "lesson_progress_chapter_progress_id_fkey";
+
+alter table "public"."lesson_progress" add constraint "lesson_progress_chapter_progress_id_lesson_id_key" UNIQUE using index "lesson_progress_chapter_progress_id_lesson_id_key";
+
 alter table "public"."lesson_progress" add constraint "lesson_progress_published_course_id_fkey" FOREIGN KEY (published_course_id) REFERENCES published_courses(id) ON DELETE CASCADE not valid;
 
 alter table "public"."lesson_progress" validate constraint "lesson_progress_published_course_id_fkey";
@@ -1357,6 +1395,12 @@ alter table "public"."lesson_progress" add constraint "lesson_progress_user_id_f
 alter table "public"."lesson_progress" validate constraint "lesson_progress_user_id_fkey";
 
 alter table "public"."lesson_progress" add constraint "lesson_progress_user_id_published_course_id_lesson_id_key" UNIQUE using index "lesson_progress_user_id_published_course_id_lesson_id_key";
+
+alter table "public"."lesson_reset_count" add constraint "lesson_reset_count_course_progress_id_fkey" FOREIGN KEY (course_progress_id) REFERENCES course_progress(id) ON DELETE CASCADE not valid;
+
+alter table "public"."lesson_reset_count" validate constraint "lesson_reset_count_course_progress_id_fkey";
+
+alter table "public"."lesson_reset_count" add constraint "lesson_reset_count_course_progress_id_lesson_id_key" UNIQUE using index "lesson_reset_count_course_progress_id_lesson_id_key";
 
 alter table "public"."lesson_reset_count" add constraint "lesson_reset_count_published_course_id_fkey" FOREIGN KEY (published_course_id) REFERENCES published_courses(id) ON DELETE CASCADE not valid;
 
