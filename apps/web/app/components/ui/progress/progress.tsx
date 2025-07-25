@@ -4,11 +4,11 @@ import { motion } from 'framer-motion';
 
 import { cn } from '~/lib/utils';
 
-function Progress({
-  className,
-  value = 0,
-  ...props
-}: React.ComponentProps<typeof ProgressPrimitive.Root>) {
+interface ProgressProps extends React.ComponentProps<typeof ProgressPrimitive.Root> {
+  bgClassName?: string;
+}
+
+function Progress({ className, bgClassName, value = 0, ...props }: ProgressProps) {
   return (
     <ProgressPrimitive.Root
       data-slot='progress'
@@ -17,7 +17,7 @@ function Progress({
     >
       <motion.div
         data-slot='progress-indicator'
-        className='bg-secondary h-full w-full flex-1'
+        className={cn('bg-secondary h-full flex-1', bgClassName)}
         initial={{ width: '0%' }}
         animate={{ width: `${value}%` }}
         transition={{ duration: 1, ease: 'easeInOut' }}

@@ -133,6 +133,8 @@ export async function action({ request, params }: Route.ActionArgs) {
   }
 }
 
+export type LessonNavigationPromise = ReturnType<typeof getUnifiedNavigation>;
+
 // --- Loader for Lesson Content + Access Check ---
 export async function loader({ params, request }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
@@ -210,6 +212,7 @@ export default function LessonPlay({ params, loaderData }: Route.ComponentProps)
         }))}
         activeBlockId={lessonData?.metadata.active_block_id ?? undefined}
         loading={false}
+        lessonNavigationPromise={lessonNavigationPromise}
       >
         <section className='mx-auto max-w-xl px-4 py-10 md:px-0'>
           {lessonData.blocks
@@ -239,9 +242,9 @@ export default function LessonPlay({ params, loaderData }: Route.ComponentProps)
                 // Handle completed courses - still show previous lesson navigation
                 if (navigationData.current?.lesson?.is_completed) {
                   const shouldPulse = !!navigationData.continue.lesson;
-
+                  console.log('Data: ', JSON.stringify(navigationData, null, 4));
                   return (
-                    <nav className='bg-background/95 border-border fixed right-0 bottom-0 left-0 h-16 border-t backdrop-blur-sm md:h-20'>
+                    <nav className='bg-background/95 border-border/5 fixed right-0 bottom-0 left-0 h-16 border-t backdrop-blur-sm md:h-20'>
                       <div className='container mx-auto h-full px-4 md:px-0'>
                         <div className='flex h-full items-center justify-between space-x-2'>
                           {/* Previous Chapter */}
@@ -263,7 +266,6 @@ export default function LessonPlay({ params, loaderData }: Route.ComponentProps)
                           />
 
                           {/* Play/Continue Button - Primary Action */}
-
                           <IconNavLink
                             to={
                               shouldPulse
@@ -286,6 +288,8 @@ export default function LessonPlay({ params, loaderData }: Route.ComponentProps)
                             hideLabelOnMobile
                             disabled={!navigationData.next.lesson}
                           />
+
+                          {/* Next Chapter */}
                           <IconNavLink
                             to={`/c/${navigationData.next.chapter?.course_id}?navChapter=${navigationData.next.chapter?.id}`}
                             icon={ChevronsRight}
