@@ -2383,6 +2383,7 @@ export type Database = {
           p_user_id: string
           p_published_course_id: string
           p_chapter_id: string
+          p_course_progress_id: string
         }
         Returns: undefined
       }

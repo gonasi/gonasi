@@ -2260,111 +2260,144 @@ CREATE OR REPLACE FUNCTION public.complete_block(p_published_course_id uuid, p_c
 AS $function$
 declare
   current_user_id uuid;
-  organization_id uuid;
-  structure_weight numeric;
-  final_weight numeric;
-  result jsonb;
-  unified_navigation jsonb;
-  was_already_completed boolean := false;
-  
-  -- Progress record IDs for cascading relationships
+  v_organization_id uuid;
+  course_structure jsonb;
+  block_weight numeric;
+  course_total_blocks integer := 0;
+  course_total_lessons integer := 0;
+  course_total_chapters integer := 0;
+  course_total_weight numeric := 0;
+  course_total_lesson_weight numeric := 0;
+  chapter_total_blocks integer := 0;
+  chapter_total_lessons integer := 0;
+  chapter_total_weight numeric := 0;
+  chapter_total_lesson_weight numeric := 0;
+  lesson_total_blocks integer := 0;
+  lesson_total_weight numeric := 0;
   v_course_progress_id uuid;
   v_chapter_progress_id uuid;
   v_lesson_progress_id uuid;
-  
-  -- Course structure data for validation and initialization
-  v_course_structure jsonb;
-  v_total_chapters integer;
-  v_total_lessons integer;
-  v_total_blocks integer;
-  v_total_course_weight numeric;
-  v_total_lesson_weight numeric;
-  
-  -- Chapter structure data
-  v_chapter_lessons integer;
-  v_chapter_blocks integer;
-  v_chapter_weight numeric;
-  v_chapter_lesson_weight numeric;
-  
-  -- Lesson structure data
-  v_lesson_blocks integer;
-  v_lesson_weight numeric;
+  v_block_progress_id uuid;
+  was_already_completed boolean := false;
+  existing_completed_at timestamptz;
+  navigation_data jsonb;
+  result jsonb;
 begin
-  -- =========================================================================
-  -- STEP 1: Get current authenticated user ID
-  -- =========================================================================
-  current_user_id := (select auth.uid());
-  
-  -- Abort if no authenticated user
+  current_user_id := auth.uid();
   if current_user_id is null then
-    return jsonb_build_object('error', 'user not authenticated');
+    raise exception 'User not authenticated';
   end if;
 
-  -- =========================================================================
-  -- STEP 2: Get organization_id and course structure for this course
-  -- =========================================================================
-  select pc.organization_id, pcsc.course_structure_content
-    into organization_id, v_course_structure
-    from public.published_courses pc
-    left join public.published_course_structure_content pcsc on pcsc.id = pc.id
-    where pc.id = p_published_course_id;
+  select 
+    pcsc.course_structure_content,
+    pc.organization_id
+  into 
+    course_structure,
+    v_organization_id
+  from public.published_course_structure_content pcsc
+  inner join public.published_courses pc on pc.id = pcsc.id
+  where pcsc.id = p_published_course_id;
 
-  -- Abort if course not found or not associated with an organization
-  if organization_id is null then
-    return jsonb_build_object('error', 'published course not found');
+  if course_structure is null then
+    raise exception 'Course structure not found for published_course_id: %', p_published_course_id;
   end if;
 
-  -- =========================================================================
-  -- STEP 3: Validate block weight and extract structure metadata
-  -- =========================================================================
-  select coalesce((block_obj->>'weight')::numeric, 1.0)
-    into structure_weight
+  select coalesce(
+    (block_obj->>'weight')::numeric,
+    p_block_weight,
+    1.0
+  )
+  into block_weight
+  from jsonb_path_query(
+    course_structure,
+    '$.chapters[*].lessons[*].blocks[*] ? (@.id == $block_id)',
+    jsonb_build_object('block_id', p_block_id::text)
+  ) as block_obj
+  limit 1;
+
+  if block_weight is null then
+    block_weight := coalesce(p_block_weight, 1.0);
+  end if;
+
+  with course_blocks as (
+    select 
+      (chapter_obj->>'id')::uuid as chapter_id,
+      (lesson_obj->>'id')::uuid as lesson_id,
+      (block_obj->>'id')::uuid as block_id,
+      coalesce((block_obj->>'weight')::numeric, 1.0) as weight
+    from jsonb_array_elements(course_structure->'chapters') as chapter_obj,
+         jsonb_array_elements(chapter_obj->'lessons') as lesson_obj,
+         jsonb_array_elements(lesson_obj->'blocks') as block_obj
+  ),
+  lesson_weights as (
+    select 
+      lesson_id,
+      sum(weight) as lesson_weight
+    from course_blocks
+    group by lesson_id
+  )
+  select 
+    count(distinct cb.block_id),
+    count(distinct cb.lesson_id),
+    count(distinct cb.chapter_id),
+    sum(cb.weight),
+    sum(lw.lesson_weight)
+  into 
+    course_total_blocks,
+    course_total_lessons,
+    course_total_chapters,
+    course_total_weight,
+    course_total_lesson_weight
+  from course_blocks cb
+  inner join lesson_weights lw on lw.lesson_id = cb.lesson_id;
+
+  with chapter_blocks as (
+    select 
+      (lesson_obj->>'id')::uuid as lesson_id,
+      (block_obj->>'id')::uuid as block_id,
+      coalesce((block_obj->>'weight')::numeric, 1.0) as weight
     from jsonb_path_query(
-      v_course_structure,
-      '$.chapters[*].lessons[*].blocks[*] ? (@.id == $block_id)',
-      jsonb_build_object('block_id', p_block_id::text)
-    ) as block_obj;
-
-  -- Use structure weight if available; otherwise use provided or default to 1.0
-  final_weight := coalesce(structure_weight, p_block_weight, 1.0);
-
-  -- Extract course-level totals from structure
+      course_structure,
+      '$.chapters[*] ? (@.id == $chapter_id)',
+      jsonb_build_object('chapter_id', p_chapter_id::text)
+    ) as chapter_obj,
+    jsonb_array_elements(chapter_obj->'lessons') as lesson_obj,
+    jsonb_array_elements(lesson_obj->'blocks') as block_obj
+  ),
+  chapter_lesson_weights as (
+    select 
+      lesson_id,
+      sum(weight) as lesson_weight
+    from chapter_blocks
+    group by lesson_id
+  )
   select 
-    jsonb_array_length(v_course_structure->'chapters'),
-    (select count(*)::integer from jsonb_path_query(v_course_structure, '$.chapters[*].lessons[*]')),
-    (select count(*)::integer from jsonb_path_query(v_course_structure, '$.chapters[*].lessons[*].blocks[*]')),
-    coalesce((select sum((block_obj->>'weight')::numeric) from jsonb_path_query(v_course_structure, '$.chapters[*].lessons[*].blocks[*]') as block_obj), 0),
-    coalesce((select sum((lesson_obj->>'weight')::numeric) from jsonb_path_query(v_course_structure, '$.chapters[*].lessons[*]') as lesson_obj), 0)
-  into v_total_chapters, v_total_lessons, v_total_blocks, v_total_course_weight, v_total_lesson_weight;
+    count(distinct cb.block_id),
+    count(distinct cb.lesson_id),
+    sum(cb.weight),
+    sum(clw.lesson_weight)
+  into 
+    chapter_total_blocks,
+    chapter_total_lessons,
+    chapter_total_weight,
+    chapter_total_lesson_weight
+  from chapter_blocks cb
+  inner join chapter_lesson_weights clw on clw.lesson_id = cb.lesson_id;
 
-  -- Extract chapter-level totals
   select 
-    jsonb_array_length(chapter_obj->'lessons'),
-    (select count(*)::integer from jsonb_path_query(chapter_obj, '$.lessons[*].blocks[*]')),
-    coalesce((select sum((block_obj->>'weight')::numeric) from jsonb_path_query(chapter_obj, '$.lessons[*].blocks[*]') as block_obj), 0),
-    coalesce((select sum((lesson_obj->>'weight')::numeric) from jsonb_path_query(chapter_obj, '$.lessons[*]') as lesson_obj), 0)
-  into v_chapter_lessons, v_chapter_blocks, v_chapter_weight, v_chapter_lesson_weight
+    count(*),
+    sum(coalesce((block_obj->>'weight')::numeric, 1.0))
+  into 
+    lesson_total_blocks,
+    lesson_total_weight
   from jsonb_path_query(
-    v_course_structure,
-    '$.chapters[*] ? (@.id == $chapter_id)',
-    jsonb_build_object('chapter_id', p_chapter_id::text)
-  ) as chapter_obj;
-
-  -- Extract lesson-level totals
-  select 
-    jsonb_array_length(lesson_obj->'blocks'),
-    coalesce((select sum((block_obj->>'weight')::numeric) from jsonb_path_query(lesson_obj, '$.blocks[*]') as block_obj), 0)
-  into v_lesson_blocks, v_lesson_weight
-  from jsonb_path_query(
-    v_course_structure,
+    course_structure,
     '$.chapters[*].lessons[*] ? (@.id == $lesson_id)',
     jsonb_build_object('lesson_id', p_lesson_id::text)
-  ) as lesson_obj;
+  ) as lesson_obj,
+  jsonb_array_elements(lesson_obj->'blocks') as block_obj;
 
-  -- =========================================================================
-  -- STEP 4: Ensure course progress record exists
-  -- =========================================================================
-  v_course_progress_id := null;
+  -- Upsert course_progress
   insert into public.course_progress (
     user_id,
     published_course_id,
@@ -2373,42 +2406,34 @@ begin
     total_chapters,
     total_weight,
     total_lesson_weight
-  )
+  ) 
   values (
     current_user_id,
     p_published_course_id,
-    v_total_blocks,
-    v_total_lessons,
-    v_total_chapters,
-    v_total_course_weight,
-    v_total_lesson_weight
+    course_total_blocks,
+    course_total_lessons,
+    course_total_chapters,
+    course_total_weight,
+    course_total_lesson_weight
   )
   on conflict (user_id, published_course_id)
-  do nothing
+  do update set
+    total_blocks = excluded.total_blocks,
+    total_lessons = excluded.total_lessons,
+    total_chapters = excluded.total_chapters,
+    total_weight = excluded.total_weight,
+    total_lesson_weight = excluded.total_lesson_weight,
+    updated_at = timezone('utc', now())
   returning id into v_course_progress_id;
 
-  if v_course_progress_id is null then
-    select id into v_course_progress_id
-    from public.course_progress
-    where user_id = current_user_id
-      and published_course_id = p_published_course_id;
-  end if;
-
-  if v_course_progress_id is null then
-    return jsonb_build_object('error', 'Could not create or find course_progress');
-  end if;
-
-  -- =========================================================================
-  -- STEP 5: Ensure chapter progress record exists
-  -- =========================================================================
-  v_chapter_progress_id := null;
+  -- Upsert chapter_progress
   insert into public.chapter_progress (
     course_progress_id,
     user_id,
     published_course_id,
     chapter_id,
-    total_lessons,
     total_blocks,
+    total_lessons,
     total_weight,
     total_lesson_weight
   )
@@ -2417,31 +2442,22 @@ begin
     current_user_id,
     p_published_course_id,
     p_chapter_id,
-    v_chapter_lessons,
-    v_chapter_blocks,
-    v_chapter_weight,
-    v_chapter_lesson_weight
+    chapter_total_blocks,
+    chapter_total_lessons,
+    chapter_total_weight,
+    chapter_total_lesson_weight
   )
   on conflict (user_id, published_course_id, chapter_id)
-  do nothing
+  do update set
+    course_progress_id = excluded.course_progress_id,
+    total_blocks = excluded.total_blocks,
+    total_lessons = excluded.total_lessons,
+    total_weight = excluded.total_weight,
+    total_lesson_weight = excluded.total_lesson_weight,
+    updated_at = timezone('utc', now())
   returning id into v_chapter_progress_id;
 
-  if v_chapter_progress_id is null then
-    select id into v_chapter_progress_id
-    from public.chapter_progress
-    where user_id = current_user_id
-      and published_course_id = p_published_course_id
-      and chapter_id = p_chapter_id;
-  end if;
-
-  if v_chapter_progress_id is null then
-    return jsonb_build_object('error', 'Could not create or find chapter_progress');
-  end if;
-
-  -- =========================================================================
-  -- STEP 6: Ensure lesson progress record exists
-  -- =========================================================================
-  v_lesson_progress_id := null;
+  -- Upsert lesson_progress
   insert into public.lesson_progress (
     chapter_progress_id,
     user_id,
@@ -2455,48 +2471,41 @@ begin
     current_user_id,
     p_published_course_id,
     p_lesson_id,
-    v_lesson_blocks,
-    v_lesson_weight
+    lesson_total_blocks,
+    lesson_total_weight
   )
   on conflict (user_id, published_course_id, lesson_id)
-  do nothing
+  do update set
+    chapter_progress_id = excluded.chapter_progress_id,
+    total_blocks = excluded.total_blocks,
+    total_weight = excluded.total_weight,
+    updated_at = timezone('utc', now())
   returning id into v_lesson_progress_id;
 
-  if v_lesson_progress_id is null then
-    select id into v_lesson_progress_id
-    from public.lesson_progress
-    where user_id = current_user_id
-      and published_course_id = p_published_course_id
-      and lesson_id = p_lesson_id;
+  -- Fetch block progress
+  select 
+    is_completed,
+    completed_at
+  into 
+    was_already_completed,
+    existing_completed_at
+  from public.block_progress
+  where user_id = current_user_id
+    and published_course_id = p_published_course_id
+    and block_id = p_block_id;
+
+  if was_already_completed is null then
+    was_already_completed := false;
   end if;
 
-  if v_lesson_progress_id is null then
-    return jsonb_build_object('error', 'Could not create or find lesson_progress');
-  end if;
-
-  -- =========================================================================
-  -- STEP 7: Check if the block was already marked as completed
-  -- =========================================================================
-  select bp.is_completed
-    into was_already_completed
-    from public.block_progress bp
-    where bp.user_id = current_user_id
-      and bp.published_course_id = p_published_course_id
-      and bp.block_id = p_block_id;
-
-  was_already_completed := coalesce(was_already_completed, false);
-
-  -- =========================================================================
-  -- STEP 8: Insert or update block progress record with lesson_progress_id
-  -- =========================================================================
+  -- Upsert block_progress
   insert into public.block_progress (
     lesson_progress_id,
-    user_id,
+    organization_id,
     published_course_id,
     chapter_id,
     lesson_id,
     block_id,
-    organization_id,
     block_weight,
     is_completed,
     completed_at,
@@ -2504,111 +2513,94 @@ begin
     earned_score,
     attempt_count,
     interaction_data,
-    last_response
+    last_response,
+    user_id
   )
   values (
     v_lesson_progress_id,
-    current_user_id,
+    v_organization_id,
     p_published_course_id,
     p_chapter_id,
     p_lesson_id,
     p_block_id,
-    organization_id,
-    final_weight, 
+    block_weight,
     true,
     timezone('utc', now()),
     p_time_spent_seconds,
     p_earned_score,
     1,
     p_interaction_data,
-    p_last_response
+    p_last_response,
+    current_user_id
   )
   on conflict (user_id, published_course_id, block_id)
   do update set
+    lesson_progress_id = excluded.lesson_progress_id,
+    block_weight = excluded.block_weight,
     is_completed = true,
-    completed_at = case
-                      when block_progress.is_completed then block_progress.completed_at
-                      else timezone('utc', now())
-                    end,
+    completed_at = coalesce(block_progress.completed_at, timezone('utc', now())),
     time_spent_seconds = block_progress.time_spent_seconds + excluded.time_spent_seconds,
     earned_score = coalesce(excluded.earned_score, block_progress.earned_score),
-    attempt_count = coalesce(block_progress.attempt_count + 1, 1),
+    attempt_count = coalesce(block_progress.attempt_count, 0) + 1,
     interaction_data = coalesce(excluded.interaction_data, block_progress.interaction_data),
     last_response = coalesce(excluded.last_response, block_progress.last_response),
-    block_weight = excluded.block_weight,
-    lesson_progress_id = excluded.lesson_progress_id,
-    updated_at = timezone('utc', now());
+    updated_at = timezone('utc', now())
+  returning id into v_block_progress_id;
 
-  -- =========================================================================
-  -- STEP 9: Trigger lesson, chapter, and course progress updates if newly completed
-  -- =========================================================================
+  -- Sync higher progress
   if not was_already_completed then
-    begin
-      -- Recalculate lesson-level progress
-      perform public.update_lesson_progress_for_user(
-        current_user_id,
-        p_published_course_id,
-        p_lesson_id
-      );
-    exception when others then
-      return jsonb_build_object('error', 'Failed to update lesson progress for user', 'details', sqlerrm);
-    end;
-
-    begin
-      -- Recalculate chapter-level progress
-      perform public.update_chapter_progress_for_user(
-        current_user_id,
-        p_published_course_id,
-        p_chapter_id
-      );
-    exception when others then
-      return jsonb_build_object('error', 'Failed to update chapter progress for user');
-    end;
-
-    begin
-      -- Recalculate course-level progress
-      perform public.update_course_progress_for_user(
-        current_user_id,
-        p_published_course_id
-      );
-    exception when others then
-      return jsonb_build_object('error', 'Failed to update course progress for user');
-    end;
+    perform public.update_lesson_progress_for_user(current_user_id, p_published_course_id, p_lesson_id);
+    perform public.update_chapter_progress_for_user(
+      current_user_id,
+      p_published_course_id,
+      p_chapter_id,
+      v_course_progress_id -- ✅ pass it in
+    );
+    perform public.update_course_progress_for_user(current_user_id, p_published_course_id);
   end if;
 
-  -- =========================================================================
-  -- STEP 10: Get unified navigation data using the new navigation system
-  -- =========================================================================
-  select public.get_unified_navigation(
-    current_user_id,
-    p_published_course_id,
-    p_block_id,
-    p_lesson_id,
-    p_chapter_id
-  )
-  into unified_navigation;
+  -- Navigation fallback
+  begin
+    select public.get_unified_navigation(
+      current_user_id,
+      p_published_course_id,
+      p_chapter_id,
+      p_lesson_id,
+      p_block_id
+    ) into navigation_data;
+  exception
+    when others then
+      navigation_data := jsonb_build_object('error', 'Navigation data unavailable');
+  end;
 
-  -- =========================================================================
-  -- STEP 11: Return final status with metadata, progress IDs, and enhanced navigation
-  -- =========================================================================
-  return jsonb_build_object(
+  result := jsonb_build_object(
     'success', true,
     'user_id', current_user_id,
-    'block_id', p_block_id,
-    'lesson_id', p_lesson_id,
+    'published_course_id', p_published_course_id,
     'chapter_id', p_chapter_id,
-    'block_weight', final_weight,
-    'weight_source', case
-      when structure_weight is not null then 'structure'
-      else 'provided'
-    end,
-    'was_already_completed', was_already_completed,
-    'completed_at', date_trunc('second', timezone('utc', now()))::timestamptz,
-    'lesson_progress_id', v_lesson_progress_id,
-    'chapter_progress_id', v_chapter_progress_id,
+    'lesson_id', p_lesson_id,
+    'block_id', p_block_id,
     'course_progress_id', v_course_progress_id,
-    'navigation', unified_navigation
+    'chapter_progress_id', v_chapter_progress_id,
+    'lesson_progress_id', v_lesson_progress_id,
+    'block_progress_id', v_block_progress_id,
+    'was_already_completed', was_already_completed,
+    'block_weight', block_weight,
+    'earned_score', p_earned_score,
+    'time_spent_seconds', p_time_spent_seconds,
+    'completed_at', date_trunc('second', timezone('utc', coalesce(existing_completed_at, now())))::timestamptz,
+    'navigation', navigation_data
   );
+
+  return result;
+
+exception
+  when others then
+    return jsonb_build_object(
+      'success', false,
+      'error', SQLERRM,
+      'error_detail', SQLSTATE
+    );
 end;
 $function$
 ;
@@ -6467,35 +6459,29 @@ end;
 $function$
 ;
 
-CREATE OR REPLACE FUNCTION public.update_chapter_progress_for_user(p_user_id uuid, p_published_course_id uuid, p_chapter_id uuid)
+CREATE OR REPLACE FUNCTION public.update_chapter_progress_for_user(p_user_id uuid, p_published_course_id uuid, p_chapter_id uuid, p_course_progress_id uuid)
  RETURNS void
  LANGUAGE plpgsql
  SET search_path TO ''
 AS $function$
 declare
-  -- Course structure JSON object
   course_structure jsonb;
 
-  -- Total vs completed counts for this chapter
   chapter_total_blocks integer := 0;
   chapter_completed_blocks integer := 0;
 
   chapter_total_lessons integer := 0;
   chapter_completed_lessons integer := 0;
 
-  -- Weight-related tracking for this chapter
   chapter_total_weight numeric := 0;
   chapter_completed_weight numeric := 0;
 
   chapter_total_lesson_weight numeric := 0;
   chapter_completed_lesson_weight numeric := 0;
 
-  -- Flag for full chapter completion
   chapter_is_completed boolean := false;
 begin
-  -- ============================================================================
   -- STEP 1: Load course structure
-  -- ============================================================================
   select course_structure_content 
   into course_structure
   from public.published_course_structure_content 
@@ -6505,43 +6491,33 @@ begin
     raise exception 'Course structure not found for published_course_id: %', p_published_course_id;
   end if;
 
-  -- ============================================================================
-  -- STEP 2: Compute chapter progress metrics using CTEs
-  -- ============================================================================
-
+  -- STEP 2: Compute chapter progress
   with chapter_blocks as (
-    -- Flatten all blocks within the specific chapter with their weights
     select 
       (chapter_obj->>'id')::uuid as chapter_id,
       (lesson_obj->>'id')::uuid as lesson_id,
       (block_obj->>'id')::uuid as block_id,
       coalesce((block_obj->>'weight')::numeric, 1.0) as block_weight
     from jsonb_array_elements(course_structure->'chapters') as chapter_obj,
-          jsonb_array_elements(chapter_obj->'lessons') as lesson_obj,
-          jsonb_array_elements(lesson_obj->'blocks') as block_obj
+         jsonb_array_elements(chapter_obj->'lessons') as lesson_obj,
+         jsonb_array_elements(lesson_obj->'blocks') as block_obj
     where (chapter_obj->>'id')::uuid = p_chapter_id
   ),
-
   chapter_lesson_weights as (
-    -- Aggregate weights per lesson within this chapter
     select 
       lesson_id,
       sum(block_weight) as lesson_weight
     from chapter_blocks
     group by lesson_id
   ),
-
   chapter_stats as (
-    -- Total chapter-wide stats
     select 
       count(*) as total_blocks,
       count(distinct lesson_id) as total_lessons,
       sum(block_weight) as total_weight
     from chapter_blocks
   ),
-
   user_chapter_block_progress as (
-    -- User-specific completed blocks and weight within this chapter
     select 
       count(*) filter (where bp.is_completed = true) as completed_blocks,
       coalesce(sum(cb.block_weight) filter (where bp.is_completed = true), 0) as completed_weight
@@ -6552,9 +6528,7 @@ begin
       and bp.block_id = cb.block_id
     )
   ),
-
   user_chapter_lesson_progress as (
-    -- User-specific completed lessons and lesson weights within this chapter
     select 
       count(*) filter (where lp.completed_at is not null) as completed_lessons,
       coalesce(sum(clw.lesson_weight) filter (where lp.completed_at is not null), 0) as completed_lesson_weight,
@@ -6566,10 +6540,6 @@ begin
       and lp.lesson_id = clw.lesson_id
     )
   )
-
-  -- ============================================================================
-  -- STEP 3: Store computed values into local variables
-  -- ============================================================================
   select 
     cs.total_blocks,
     ucbp.completed_blocks,
@@ -6592,9 +6562,7 @@ begin
   cross join user_chapter_block_progress ucbp
   cross join user_chapter_lesson_progress uclp;
 
-  -- ============================================================================
-  -- STEP 4: Determine if chapter is fully completed
-  -- ============================================================================
+  -- STEP 3: Determine completion
   chapter_is_completed := (
     chapter_total_weight > 0 and 
     chapter_completed_weight >= chapter_total_weight - 0.0001 and
@@ -6602,11 +6570,9 @@ begin
     chapter_total_lessons > 0
   );
 
-  -- ============================================================================
-  -- STEP 5: Upsert progress into chapter_progress table
-  -- ============================================================================
-  -- Add `is_completed` to the insert and update sections
+  -- STEP 4: Upsert into chapter_progress with course_progress_id
   insert into public.chapter_progress (
+    course_progress_id,  -- ✅ Required
     user_id,
     published_course_id,
     chapter_id,
@@ -6618,10 +6584,11 @@ begin
     completed_weight,
     total_lesson_weight,
     completed_lesson_weight,
-    is_completed,  -- <-- added
+    is_completed,
     completed_at
   )
   values (
+    p_course_progress_id,
     p_user_id,
     p_published_course_id, 
     p_chapter_id,
@@ -6633,11 +6600,12 @@ begin
     chapter_completed_weight,
     chapter_total_lesson_weight,
     chapter_completed_lesson_weight,
-    chapter_is_completed,  -- <-- added
+    chapter_is_completed,
     case when chapter_is_completed then timezone('utc', now()) else null end
   )
   on conflict (user_id, published_course_id, chapter_id)
   do update set
+    course_progress_id = excluded.course_progress_id,  -- ✅ Update it
     total_blocks = excluded.total_blocks,
     completed_blocks = excluded.completed_blocks,
     total_lessons = excluded.total_lessons,
@@ -6646,8 +6614,7 @@ begin
     completed_weight = excluded.completed_weight,
     total_lesson_weight = excluded.total_lesson_weight,
     completed_lesson_weight = excluded.completed_lesson_weight,
-    is_completed = excluded.is_completed,  -- <-- added
-    -- Handle setting or unsetting completed_at
+    is_completed = excluded.is_completed,
     completed_at = case 
       when excluded.completed_weight >= excluded.total_weight - 0.0001
         and excluded.total_weight > 0

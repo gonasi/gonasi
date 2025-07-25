@@ -16,11 +16,31 @@
 -- SECURITY:
 --   Runs with invoker privileges to ensure user-specific access controls
 -- ===================================================================================
+-- ===================================================================================
+-- FUNCTION: update_chapter_progress_for_user
+-- DESCRIPTION:
+--   Calculates and updates a user's progress within a specific chapter of a published course.
+--   This includes block and lesson progress, as well as cumulative weights within the chapter.
+--   If the user completes the chapter, it updates the `completed_at` timestamp.
+--
+-- PARAMETERS:
+--   p_user_id              - UUID of the user
+--   p_published_course_id  - UUID of the published course
+--   p_chapter_id           - UUID of the specific chapter to update
+--   p_course_progress_id   - UUID of the course_progress record (required for FK)
+--
+-- RETURNS:
+--   VOID
+--
+-- SECURITY:
+--   Runs with invoker privileges to ensure user-specific access controls
+-- ===================================================================================
 
 create or replace function public.update_chapter_progress_for_user(
   p_user_id uuid,
   p_published_course_id uuid,
-  p_chapter_id uuid
+  p_chapter_id uuid,
+  p_course_progress_id uuid  -- ✅ Required FK reference
 )
 returns void
 language plpgsql
@@ -28,29 +48,23 @@ security invoker
 set search_path = ''
 as $$
 declare
-  -- Course structure JSON object
   course_structure jsonb;
 
-  -- Total vs completed counts for this chapter
   chapter_total_blocks integer := 0;
   chapter_completed_blocks integer := 0;
 
   chapter_total_lessons integer := 0;
   chapter_completed_lessons integer := 0;
 
-  -- Weight-related tracking for this chapter
   chapter_total_weight numeric := 0;
   chapter_completed_weight numeric := 0;
 
   chapter_total_lesson_weight numeric := 0;
   chapter_completed_lesson_weight numeric := 0;
 
-  -- Flag for full chapter completion
   chapter_is_completed boolean := false;
 begin
-  -- ============================================================================
   -- STEP 1: Load course structure
-  -- ============================================================================
   select course_structure_content 
   into course_structure
   from public.published_course_structure_content 
@@ -60,43 +74,33 @@ begin
     raise exception 'Course structure not found for published_course_id: %', p_published_course_id;
   end if;
 
-  -- ============================================================================
-  -- STEP 2: Compute chapter progress metrics using CTEs
-  -- ============================================================================
-
+  -- STEP 2: Compute chapter progress
   with chapter_blocks as (
-    -- Flatten all blocks within the specific chapter with their weights
     select 
       (chapter_obj->>'id')::uuid as chapter_id,
       (lesson_obj->>'id')::uuid as lesson_id,
       (block_obj->>'id')::uuid as block_id,
       coalesce((block_obj->>'weight')::numeric, 1.0) as block_weight
     from jsonb_array_elements(course_structure->'chapters') as chapter_obj,
-          jsonb_array_elements(chapter_obj->'lessons') as lesson_obj,
-          jsonb_array_elements(lesson_obj->'blocks') as block_obj
+         jsonb_array_elements(chapter_obj->'lessons') as lesson_obj,
+         jsonb_array_elements(lesson_obj->'blocks') as block_obj
     where (chapter_obj->>'id')::uuid = p_chapter_id
   ),
-
   chapter_lesson_weights as (
-    -- Aggregate weights per lesson within this chapter
     select 
       lesson_id,
       sum(block_weight) as lesson_weight
     from chapter_blocks
     group by lesson_id
   ),
-
   chapter_stats as (
-    -- Total chapter-wide stats
     select 
       count(*) as total_blocks,
       count(distinct lesson_id) as total_lessons,
       sum(block_weight) as total_weight
     from chapter_blocks
   ),
-
   user_chapter_block_progress as (
-    -- User-specific completed blocks and weight within this chapter
     select 
       count(*) filter (where bp.is_completed = true) as completed_blocks,
       coalesce(sum(cb.block_weight) filter (where bp.is_completed = true), 0) as completed_weight
@@ -107,9 +111,7 @@ begin
       and bp.block_id = cb.block_id
     )
   ),
-
   user_chapter_lesson_progress as (
-    -- User-specific completed lessons and lesson weights within this chapter
     select 
       count(*) filter (where lp.completed_at is not null) as completed_lessons,
       coalesce(sum(clw.lesson_weight) filter (where lp.completed_at is not null), 0) as completed_lesson_weight,
@@ -121,10 +123,6 @@ begin
       and lp.lesson_id = clw.lesson_id
     )
   )
-
-  -- ============================================================================
-  -- STEP 3: Store computed values into local variables
-  -- ============================================================================
   select 
     cs.total_blocks,
     ucbp.completed_blocks,
@@ -147,9 +145,7 @@ begin
   cross join user_chapter_block_progress ucbp
   cross join user_chapter_lesson_progress uclp;
 
-  -- ============================================================================
-  -- STEP 4: Determine if chapter is fully completed
-  -- ============================================================================
+  -- STEP 3: Determine completion
   chapter_is_completed := (
     chapter_total_weight > 0 and 
     chapter_completed_weight >= chapter_total_weight - 0.0001 and
@@ -157,11 +153,9 @@ begin
     chapter_total_lessons > 0
   );
 
-  -- ============================================================================
-  -- STEP 5: Upsert progress into chapter_progress table
-  -- ============================================================================
-  -- Add `is_completed` to the insert and update sections
+  -- STEP 4: Upsert into chapter_progress with course_progress_id
   insert into public.chapter_progress (
+    course_progress_id,  -- ✅ Required
     user_id,
     published_course_id,
     chapter_id,
@@ -173,10 +167,11 @@ begin
     completed_weight,
     total_lesson_weight,
     completed_lesson_weight,
-    is_completed,  -- <-- added
+    is_completed,
     completed_at
   )
   values (
+    p_course_progress_id,
     p_user_id,
     p_published_course_id, 
     p_chapter_id,
@@ -188,11 +183,12 @@ begin
     chapter_completed_weight,
     chapter_total_lesson_weight,
     chapter_completed_lesson_weight,
-    chapter_is_completed,  -- <-- added
+    chapter_is_completed,
     case when chapter_is_completed then timezone('utc', now()) else null end
   )
   on conflict (user_id, published_course_id, chapter_id)
   do update set
+    course_progress_id = excluded.course_progress_id,  -- ✅ Update it
     total_blocks = excluded.total_blocks,
     completed_blocks = excluded.completed_blocks,
     total_lessons = excluded.total_lessons,
@@ -201,8 +197,7 @@ begin
     completed_weight = excluded.completed_weight,
     total_lesson_weight = excluded.total_lesson_weight,
     completed_lesson_weight = excluded.completed_lesson_weight,
-    is_completed = excluded.is_completed,  -- <-- added
-    -- Handle setting or unsetting completed_at
+    is_completed = excluded.is_completed,
     completed_at = case 
       when excluded.completed_weight >= excluded.total_weight - 0.0001
         and excluded.total_weight > 0

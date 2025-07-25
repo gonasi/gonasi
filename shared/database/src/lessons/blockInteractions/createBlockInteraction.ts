@@ -98,6 +98,8 @@ export const createBlockInteraction = async ({
       };
     }
 
+    console.log('result is: ', JSON.stringify(result));
+
     // Validate result shape using Zod
     const parsed = CompleteBlockResponseSchema.safeParse(result);
     if (!parsed.success) {
