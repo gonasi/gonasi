@@ -3,6 +3,7 @@
 -- =============================================================================
 -- Resolves the current context (block, lesson, chapter) from provided identifiers
 -- and returns a structured record with global ordering for each level.
+-- If no identifiers are provided, returns the first chapter as default context.
 --
 -- Parameters:
 --   course_structure  - JSONB structure of the published course
@@ -147,6 +148,39 @@ begin
       s.chapter_order::int
     from structure s
     where s.chap_id = p_chapter_id;
+
+  -- =========================================================================
+  -- CASE 4: No specific context provided - return first chapter as default
+  -- This handles scenarios like "user completed course" where we need a 
+  -- navigation context but don't have a specific current position.
+  -- =========================================================================
+  else
+    return query
+    with structure as ( 
+      select
+        (chapter_obj ->> 'id')::uuid as chap_id,
+        null::uuid as less_id,
+        null::uuid as block_id,
+        null::int as block_order,
+        null::int as lesson_order,
+
+        row_number() over (
+          order by 
+            (chapter_obj ->> 'order_index')::int
+        ) as chapter_order
+
+      from jsonb_array_elements(course_structure -> 'chapters') as chapter_obj
+    )
+    select
+      s.block_id,
+      s.less_id,
+      s.chap_id,
+      s.block_order,
+      s.lesson_order,
+      s.chapter_order::int
+    from structure s
+    where s.chapter_order = 1  -- Return the first chapter
+    limit 1;
   end if;
 end;
 $$;

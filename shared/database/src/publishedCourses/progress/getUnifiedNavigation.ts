@@ -46,8 +46,6 @@ export async function getUnifiedNavigation({
     return null;
   }
 
-  console.log(JSON.stringify(data, null, 4));
-
   const parsed = UnifiedNavigationSchema.safeParse(data);
   if (!parsed.success) {
     console.error(

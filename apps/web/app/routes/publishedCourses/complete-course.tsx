@@ -45,9 +45,9 @@ export async function loader({ params, request }: Route.LoaderArgs) {
       }),
     ]);
 
-    // if (!navigationData) {
-    //   return redirect(`/c/${params.publishedCourseId}`);
-    // }
+    if (!navigationData) {
+      return redirect(`/c/${params.publishedCourseId}`);
+    }
 
     // Time-bound redirect: if course was completed more than 5 minutes ago, redirect
     const completedAt = overviewData?.overall_progress?.completed_at;
@@ -103,7 +103,7 @@ export default function CompleteCourse({ loaderData, params }: Route.ComponentPr
           x: Math.random(),
           y: Math.random() * 0.7,
           deg: Math.floor(Math.random() * 360),
-          shapeSize: 10 + Math.random() * 20,
+          shapeSize: 5 + Math.random() * 20,
           spreadDeg: 40 + Math.random() * 60,
           launchSpeed: 1 + Math.random() * 2,
           opacityDeltaMultiplier: 0.8 + Math.random() * 0.5,
