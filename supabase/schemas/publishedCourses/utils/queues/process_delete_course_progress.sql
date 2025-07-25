@@ -37,6 +37,10 @@ begin
       delete from public.course_progress
       where published_course_id = course_uuid;
 
+      -- Delete lesson reset counts for this course
+      delete from public.lesson_reset_count
+      where published_course_id = course_uuid;
+
       -- Delete the message if successful
       perform pgmq.delete('delete_course_progress_queue', task.msg_id);
       

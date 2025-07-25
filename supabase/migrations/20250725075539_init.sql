@@ -365,7 +365,6 @@ alter table "public"."lesson_progress" enable row level security;
 
 create table "public"."lesson_reset_count" (
     "id" uuid not null default uuid_generate_v4(),
-    "course_progress_id" uuid not null,
     "user_id" uuid not null,
     "published_course_id" uuid not null,
     "lesson_id" uuid not null,
@@ -842,8 +841,6 @@ CREATE INDEX idx_lesson_progress_user ON public.lesson_progress USING btree (use
 
 CREATE INDEX idx_lesson_reset_course_id ON public.lesson_reset_count USING btree (published_course_id);
 
-CREATE INDEX idx_lesson_reset_course_progress ON public.lesson_reset_count USING btree (course_progress_id);
-
 CREATE INDEX idx_lesson_reset_lesson_id ON public.lesson_reset_count USING btree (lesson_id);
 
 CREATE INDEX idx_lesson_reset_user_id ON public.lesson_reset_count USING btree (user_id);
@@ -961,8 +958,6 @@ CREATE UNIQUE INDEX lesson_progress_chapter_progress_id_lesson_id_key ON public.
 CREATE UNIQUE INDEX lesson_progress_pkey ON public.lesson_progress USING btree (id);
 
 CREATE UNIQUE INDEX lesson_progress_user_id_published_course_id_lesson_id_key ON public.lesson_progress USING btree (user_id, published_course_id, lesson_id);
-
-CREATE UNIQUE INDEX lesson_reset_count_course_progress_id_lesson_id_key ON public.lesson_reset_count USING btree (course_progress_id, lesson_id);
 
 CREATE UNIQUE INDEX lesson_reset_count_pkey ON public.lesson_reset_count USING btree (id);
 
@@ -1395,12 +1390,6 @@ alter table "public"."lesson_progress" add constraint "lesson_progress_user_id_f
 alter table "public"."lesson_progress" validate constraint "lesson_progress_user_id_fkey";
 
 alter table "public"."lesson_progress" add constraint "lesson_progress_user_id_published_course_id_lesson_id_key" UNIQUE using index "lesson_progress_user_id_published_course_id_lesson_id_key";
-
-alter table "public"."lesson_reset_count" add constraint "lesson_reset_count_course_progress_id_fkey" FOREIGN KEY (course_progress_id) REFERENCES course_progress(id) ON DELETE CASCADE not valid;
-
-alter table "public"."lesson_reset_count" validate constraint "lesson_reset_count_course_progress_id_fkey";
-
-alter table "public"."lesson_reset_count" add constraint "lesson_reset_count_course_progress_id_lesson_id_key" UNIQUE using index "lesson_reset_count_course_progress_id_lesson_id_key";
 
 alter table "public"."lesson_reset_count" add constraint "lesson_reset_count_published_course_id_fkey" FOREIGN KEY (published_course_id) REFERENCES published_courses(id) ON DELETE CASCADE not valid;
 
@@ -4940,6 +4929,35 @@ AS $function$
 $function$
 ;
 
+CREATE OR REPLACE FUNCTION public.increment_lesson_reset_count()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO ''
+AS $function$
+begin
+  -- Insert or update the reset count for this user-course-lesson combination
+  insert into public.lesson_reset_count (
+    user_id,
+    published_course_id,
+    lesson_id,
+    reset_count
+  )
+  values (
+    OLD.user_id,
+    OLD.published_course_id,
+    OLD.lesson_id,
+    1
+  )
+  on conflict (user_id, published_course_id, lesson_id)
+  do update set
+    reset_count = lesson_reset_count.reset_count + 1,
+    updated_at = timezone('utc', now());
+
+  return OLD;
+end;
+$function$
+;
+
 CREATE OR REPLACE FUNCTION public.is_user_already_member(arg_org_id uuid, user_email text)
  RETURNS boolean
  LANGUAGE sql
@@ -5193,6 +5211,10 @@ begin
 
       -- Delete course progress
       delete from public.course_progress
+      where published_course_id = course_uuid;
+
+      -- Delete lesson reset counts for this course
+      delete from public.lesson_reset_count
       where published_course_id = course_uuid;
 
       -- Delete the message if successful
