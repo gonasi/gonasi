@@ -18,89 +18,103 @@ export interface ViewPluginCoreResult {
   payload: BlockProgressSchemaTypes | null;
   handleContinue: () => void;
   updateInteractionData: (interactionData: BlockInteractionSchemaTypes) => void;
+  updateEarnedScore: (score: number) => void;
+  updateAttemptsCount: (count: number) => void;
 }
 
 /**
- * Hook for managing progressive reveal block interactions.
- * Tracks block interaction state and prepares payloads for submission.
+ * Hook to manage user interaction for a plugin block.
+ * Tracks interaction data, attempt count, earned score, and handles submission.
  */
 export function useViewPluginCore(args: ViewPluginCoreArgs | null): ViewPluginCoreResult {
   const fetcher = useFetcher();
-  const startTimeRef = useRef<string | null>(null);
 
+  const startTimeRef = useRef<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [interactionDataOverrides, setInteractionDataOverrides] = useState<
     BlockInteractionSchemaTypes | object
   >({});
+  const [earnedScore, setEarnedScore] = useState<number | null>(null);
+  const [attemptCount, setAttemptCount] = useState<number | null>(null);
 
-  // Capture interaction start time only once per mount
+  // Initialize session start time
   if (args && !startTimeRef.current) {
     startTimeRef.current = new Date().toISOString();
   }
 
-  // Track fetcher state for loading indication
+  // Sync loading state with fetcher
   useEffect(() => {
-    const isSubmitting = fetcher.state === 'submitting' || fetcher.state === 'loading';
-    setLoading(isSubmitting);
+    setLoading(fetcher.state === 'submitting' || fetcher.state === 'loading');
   }, [fetcher.state]);
 
-  // Build the progress payload including interaction overrides
+  // Compose current interaction payload
   const payload = useMemo(() => {
     if (!args) return null;
-    const baseProgress = args.blockWithProgress.block_progress ?? {};
 
+    const baseProgress = args.blockWithProgress.block_progress ?? {};
     return {
       ...baseProgress,
       interaction_data: interactionDataOverrides,
+      ...(earnedScore != null && { earned_score: earnedScore }),
+      ...(attemptCount != null && { attempt_count: attemptCount }),
     } as BlockProgressSchemaTypes;
-  }, [args, interactionDataOverrides]);
+  }, [args, interactionDataOverrides, earnedScore, attemptCount]);
 
-  // Merge new interaction data with existing overrides
+  // Merge incoming interaction data
   const updateInteractionData = useCallback((interactionData: BlockInteractionSchemaTypes) => {
     setInteractionDataOverrides((prev) => ({ ...prev, ...interactionData }));
   }, []);
 
-  // Submit enriched progress payload when user continues
+  const updateEarnedScore = useCallback((score: number) => {
+    setEarnedScore(score);
+  }, []);
+
+  const updateAttemptsCount = useCallback((count: number) => {
+    setAttemptCount(count);
+  }, []);
+
+  // Submit interaction
   const handleContinue = useCallback(() => {
     if (!args || !startTimeRef.current) {
-      console.warn('Missing args or start time');
+      console.warn('Missing args or start time for block submission');
       return;
     }
+
+    const { block, is_last_block } = args.blockWithProgress;
 
     const completedAt = new Date().toISOString();
     const timeSpentSeconds = Math.round(
       (Date.now() - new Date(startTimeRef.current).getTime()) / 1000,
     );
 
-    const { block, is_last_block } = args.blockWithProgress;
-
     const enrichedPayload: SubmitBlockProgressSchemaTypes = {
       organization_id: block.organization_id,
       block_id: block.id,
-      interaction_data: payload?.interaction_data ?? {},
       started_at: startTimeRef.current,
       completed_at: completedAt,
       time_spent_seconds: timeSpentSeconds,
-      block_weight: block.settings.weight,
+      ...(earnedScore != null && { earned_score: earnedScore }),
+      ...(attemptCount != null && { attempt_count: attemptCount }),
+      interaction_data: payload?.interaction_data ?? {},
     };
 
     const formData = new FormData();
     formData.append('payload', JSON.stringify(enrichedPayload));
-
     if (is_last_block) {
       formData.append('isLast', 'true');
     }
 
     fetcher.submit(formData, { method: 'post' });
-  }, [args, payload, fetcher]);
+  }, [args, earnedScore, attemptCount, payload?.interaction_data, fetcher]);
 
-  // Return safe defaults if args not provided
   if (!args) {
     return {
       loading: false,
       payload: null,
       handleContinue: () => {},
       updateInteractionData: () => {},
+      updateEarnedScore: () => {},
+      updateAttemptsCount: () => {},
     };
   }
 
@@ -109,5 +123,7 @@ export function useViewPluginCore(args: ViewPluginCoreArgs | null): ViewPluginCo
     payload,
     handleContinue,
     updateInteractionData,
+    updateEarnedScore,
+    updateAttemptsCount,
   };
 }

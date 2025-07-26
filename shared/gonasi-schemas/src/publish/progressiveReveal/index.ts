@@ -59,7 +59,6 @@ export const SubmitBlockProgressSchema = z.object({
   earned_score: z.number().optional(),
   attempt_count: z.number().optional(),
   last_response: z.record(z.unknown()).optional(),
-  block_weight: z.number(),
 
   // This is the actual interaction payload from the frontend
   interaction_data: z.union([
@@ -75,7 +74,6 @@ export const CompleteBlockProgressInsertSchema = SubmitBlockProgressSchema.exten
   published_course_id: z.string().uuid(),
   chapter_id: z.string().uuid(),
   lesson_id: z.string().uuid(),
-  block_weight: z.number(),
 });
 
 export type CompleteBlockProgressInsertSchemaTypes = z.infer<

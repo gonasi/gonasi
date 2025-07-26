@@ -197,9 +197,6 @@ export function useTrueOrFalseInteraction(
     revealCorrectAnswer,
     tryAgain,
     reset,
-
-    // Deprecated - keeping for backward compatibility but prefer isCompleted
-    hasChecked: isCompleted,
   };
 }
 

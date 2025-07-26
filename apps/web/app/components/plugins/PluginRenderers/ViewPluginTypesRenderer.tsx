@@ -3,6 +3,7 @@ import type { JSX } from 'react';
 import type { PluginTypeId } from '@gonasi/schemas/plugins';
 import type { BlockWithProgressSchemaTypes } from '@gonasi/schemas/publish/progressiveReveal';
 
+import { ViewTrueOrFalsePlugin } from '../QuizPlugins/TrueOrFalsePlugin/ViewTrueOrFalsePlugin';
 import { ViewRichTextPlugin } from '../RichTextPlugins/RichTextPlugin/ViewRichTextPlugin';
 
 export interface ViewPluginComponentProps {
@@ -18,7 +19,7 @@ const viewPluginComponentMap: Record<
   PluginTypeId,
   (props: ViewPluginComponentProps) => JSX.Element
 > = {
-  true_or_false: unimplementedPlugin,
+  true_or_false: ViewTrueOrFalsePlugin,
   tap_to_reveal: unimplementedPlugin,
   rich_text_editor: ViewRichTextPlugin,
   multiple_choice_multiple: unimplementedPlugin,
