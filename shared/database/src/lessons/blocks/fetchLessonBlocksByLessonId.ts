@@ -1,4 +1,4 @@
-import { PublishBlockSchema } from '@gonasi/schemas/publish/base';
+import { PublishedBuilderSchema } from '@gonasi/schemas/plugins';
 
 import type { TypedSupabaseClient } from '../../client';
 
@@ -23,7 +23,7 @@ export const fetchLessonBlocksByLessonId = async (
       };
     }
 
-    const parseResult = PublishBlockSchema.array().safeParse(data);
+    const parseResult = PublishedBuilderSchema.array().safeParse(data);
 
     if (!parseResult.success) {
       console.error('Validation failed for lesson blocks:', parseResult.error.format());

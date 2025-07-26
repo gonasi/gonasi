@@ -1,4 +1,4 @@
-import { PublishBlockSchema } from '@gonasi/schemas/publish/base';
+import { PublishedBuilderSchema } from '@gonasi/schemas/plugins';
 import type { PricingSchemaTypes } from '@gonasi/schemas/publish/course-pricing';
 import {
   type CourseStructureContentSchemaTypes,
@@ -169,7 +169,7 @@ export async function getTransformedDataToPublish({
           },
           blocks:
             lesson.lesson_blocks?.map((block) => {
-              const parseResult = PublishBlockSchema.safeParse(block);
+              const parseResult = PublishedBuilderSchema.safeParse(block);
 
               if (!parseResult.success) {
                 throw new Error(

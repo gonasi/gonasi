@@ -1,8 +1,7 @@
 import { z } from 'zod';
 
-import { BlockInteractionSchema } from '../../plugins';
+import { BlockInteractionSchema, PublishedBuilderSchema } from '../../plugins';
 import { safeDateTime } from '../../utils';
-import { PublishBlockSchema } from '../base';
 
 //
 // BlockProgressSchema
@@ -124,7 +123,7 @@ export const LessonMetadataSchema = z.object({
 // Combines a block definition with progress state
 //
 export const BlockWithProgressSchema = z.object({
-  block: PublishBlockSchema, // the rendered block itself
+  block: PublishedBuilderSchema, // the rendered block itself
 
   is_active: z.boolean(),
   is_visible: z.boolean(),

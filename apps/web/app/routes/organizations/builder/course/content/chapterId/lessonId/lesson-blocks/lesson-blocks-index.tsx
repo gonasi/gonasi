@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect, useState } from 'react';
 import { data, Outlet, useFetcher, useNavigate } from 'react-router';
 import { Reorder } from 'framer-motion';
 import { PenOff, SquarePen } from 'lucide-react';
-import { dataWithError, redirectWithError } from 'remix-toast';
+import { dataWithError } from 'remix-toast';
 import { ClientOnly } from 'remix-utils/client-only';
 
 import {
@@ -42,13 +42,13 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     }),
   ]);
 
-  if (!lesson || !lessonBlocks.data) {
-    // Redirect with error if data is missing
-    return redirectWithError(
-      `/${params.organizationId}/builder/${params.courseId}/content/${params.chapterId}/lessons`,
-      'Lesson not found',
-    );
-  }
+  // if (!lesson || !lessonBlocks.data) {
+  //   // Redirect with error if data is missing
+  //   return redirectWithError(
+  //     `/${params.organizationId}/builder/${params.courseId}/content/${params.chapterId}/lessons`,
+  //     'Lesson not found',
+  //   );
+  // }
 
   return { lesson, lessonBlocks: lessonBlocks.data, canEdit: Boolean(canEdit.data) };
 }

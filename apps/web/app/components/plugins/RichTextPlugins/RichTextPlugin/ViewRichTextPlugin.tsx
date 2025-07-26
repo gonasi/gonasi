@@ -1,5 +1,7 @@
 import { useEffect } from 'react';
 
+import type { BuilderSchemaTypes } from '@gonasi/schemas/plugins';
+
 import { useViewPluginCore } from '../../hooks/useViewPluginCore';
 import type { ViewPluginComponentProps } from '../../PluginRenderers/ViewPluginTypesRenderer';
 
@@ -7,9 +9,11 @@ import RichTextRenderer from '~/components/go-editor/ui/RichTextRenderer';
 import { ViewPluginWrapper } from '~/components/plugins/common/ViewPluginWrapper';
 import { BlockActionButton } from '~/components/ui/button';
 
+type RichTextPluginType = Extract<BuilderSchemaTypes, { plugin_type: 'rich_text_editor' }>;
+
 export function ViewRichTextPlugin({ mode, blockWithProgress }: ViewPluginComponentProps) {
   const { playbackMode, weight } = blockWithProgress.block.settings;
-  const { richTextState } = blockWithProgress.block.content;
+  const { richTextState } = (blockWithProgress.block as RichTextPluginType).content;
 
   // Initialize plugin logic for play mode (progress, persistence, etc.)
   const { loading, handleContinue, updateInteractionData } = useViewPluginCore(

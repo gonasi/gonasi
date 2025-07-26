@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { RichTextSchema } from '../../plugins';
+import { PublishedBuilderSchema } from '../../plugins';
 
 // Base lesson type schema
 export const LessonTypeSchema = z.object({
@@ -10,15 +10,6 @@ export const LessonTypeSchema = z.object({
   lucide_icon: z.string(),
   bg_color: z.string(),
 });
-
-// Base published block schema
-const PublishRichTextSchema = RichTextSchema.extend({
-  id: z.string(),
-  position: z.number().int().nonnegative(),
-});
-
-export const PublishBlockSchema = z.discriminatedUnion('plugin_type', [PublishRichTextSchema]);
-export type PublishBlockSchemaTypes = z.infer<typeof PublishBlockSchema>;
 
 // Base published lesson schema
 export const PublishedLessonSchema = z.object({
@@ -31,7 +22,7 @@ export const PublishedLessonSchema = z.object({
   settings: z.any(),
   total_blocks: z.number().int().positive(),
   lesson_types: LessonTypeSchema,
-  blocks: z.array(PublishBlockSchema),
+  blocks: z.array(PublishedBuilderSchema),
 });
 
 export type PublishedLessonSchemaTypes = z.infer<typeof PublishedLessonSchema>;
