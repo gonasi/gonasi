@@ -1,8 +1,6 @@
 export * from './pluginData';
 export * from './pluginSettings';
-export * from './richTextSchema';
 export * from './blocksPositioning';
-export * from './trueOrFalseSchema';
 export * from './multipleChoiceSingleAnswerSchema';
 export * from './multipleChoiceMultipleAnswersSchema';
 export * from './tapToRevealSchema';
@@ -11,3 +9,5 @@ export * from './tapToRevealSchema';
 export * from './schemaMap';
 export * from './baseInteractionSchema';
 export * from './utils';
+export * from './schemas';
+export * from './interactions';

@@ -1,4 +1,4 @@
-import type { PluginTypeId } from '@gonasi/schemas/plugins';
+import { BuilderSchema } from '@gonasi/schemas/plugins';
 
 import type { TypedSupabaseClient } from '../../client';
 
@@ -6,7 +6,9 @@ export const fetchSingleBlockByBlockId = async (supabase: TypedSupabaseClient, b
   try {
     const { data, error } = await supabase
       .from('lesson_blocks')
-      .select('id, plugin_type, content, settings')
+      .select(
+        'id, organization_id, course_id, chapter_id, lesson_id, plugin_type, content, settings',
+      )
       .eq('id', blockId)
       .single();
 
@@ -19,13 +21,21 @@ export const fetchSingleBlockByBlockId = async (supabase: TypedSupabaseClient, b
       };
     }
 
+    const parsed = BuilderSchema.safeParse(data);
+
+    if (!parsed.success) {
+      console.error('Block validation failed:', parsed.error.flatten());
+      return {
+        success: false,
+        message: 'Block data was malformed or unsupported.',
+        data: null,
+      };
+    }
+
     return {
       success: true,
       message: 'Got the block!',
-      data: {
-        ...data,
-        plugin_type: data.plugin_type as PluginTypeId,
-      },
+      data: parsed.data,
     };
   } catch (err) {
     console.error('Error grabbing block:', err);

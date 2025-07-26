@@ -2,9 +2,10 @@ import type { JSX } from 'react';
 
 import type { PluginTypeId } from '@gonasi/schemas/plugins';
 
+import { BuilderTrueOrFalsePlugin } from '../QuizPlugins/TrueOrFalsePlugin/BuilderTrueOrFalsePlugin';
 import { BuilderRichTextPlugin } from '../RichTextPlugins/RichTextPlugin/BuilderRichTextPlugin';
 
-import type { LessonBlockLoaderReturnType } from '~/routes/profile/course-builder/courseId/content/chapterId/lessonId/lesson-blocks/plugins/edit-plugin-modal';
+import type { LessonBlockLoaderReturnType } from '~/routes/organizations/builder/course/content/chapterId/lessonId/lesson-blocks/plugins/edit-plugin-modal';
 
 interface BuilderPluginRendererProps {
   pluginTypeId: PluginTypeId;
@@ -21,7 +22,7 @@ const pluginComponentMap: Record<
   (props: { block?: LessonBlockLoaderReturnType }) => JSX.Element
 > = {
   rich_text_editor: BuilderRichTextPlugin,
-  true_or_false: notImplemented,
+  true_or_false: BuilderTrueOrFalsePlugin,
   tap_to_reveal: notImplemented,
   multiple_choice_multiple: notImplemented,
   multiple_choice_single: notImplemented,

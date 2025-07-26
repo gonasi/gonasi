@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
-import { BasePluginSettingsSchema } from './pluginSettings';
-import { NonEmptyLexicalState } from './utils';
+import { BasePluginSettingsSchema } from '../../pluginSettings';
+import { NonEmptyLexicalState } from '../../utils';
 
 export const RichTextContentSchema = z.object({
   richTextState: NonEmptyLexicalState,
