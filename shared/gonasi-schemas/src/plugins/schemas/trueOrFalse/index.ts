@@ -1,31 +1,23 @@
 import { z } from 'zod';
 
 import { BasePluginSettingsSchema, LayoutPluginSettingsSchema } from '../../pluginSettings';
+import { NonEmptyLexicalState } from '../../utils';
 
 //
 // Content Schema
 //
 export const TrueOrFalseContentSchema = z.object({
-  questionState: z
-    .string({ required_error: 'Question is required.' })
-    .trim()
-    .min(5, 'The question must be at least 5 characters long.'),
-
+  questionState: NonEmptyLexicalState,
   correctAnswer: z.enum(['true', 'false'], {
     required_error: 'Select whether the correct answer is true or false.',
   }),
-
   hint: z
     .string()
     .trim()
     .min(10, 'Hint must be at least 10 characters.')
     .max(100, 'Hint must be 100 characters or fewer.')
     .optional(),
-
-  explanationState: z
-    .string({ required_error: 'Explanation is required.' })
-    .trim()
-    .min(10, 'The explanation must be at least 10 characters long.'),
+  explanationState: NonEmptyLexicalState,
 });
 export type TrueOrFalseContentSchemaTypes = z.infer<typeof TrueOrFalseContentSchema>;
 

@@ -20,7 +20,11 @@ import { BlockWeightField } from '../../common/settings/BlockWeightField';
 import { PlaybackModeField } from '../../common/settings/PlaybackModeField';
 
 import { BackArrowNavLink, Button } from '~/components/ui/button';
-import { GoRichTextInputField } from '~/components/ui/forms/elements';
+import {
+  GoRadioGroupField,
+  GoRichTextInputField,
+  GoTextAreaField,
+} from '~/components/ui/forms/elements';
 import { Modal } from '~/components/ui/modal';
 import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover';
 import type { LessonBlockLoaderReturnType } from '~/routes/organizations/builder/course/content/chapterId/lessonId/lesson-blocks/plugins/edit-plugin-modal';
@@ -104,8 +108,8 @@ export function BuilderTrueOrFalsePlugin({ block }: BuilderTrueOrFalsePluginProp
         <form onSubmit={methods.handleSubmit} method='POST' action={actionUrl}>
           <HoneypotInputs />
           <Modal.Header
-            leadingIcon={block && block.id ? null : <BackArrowNavLink to={backRoute} />}
-            title={block && block.id ? 'Edit True or False' : 'Add True or False'}
+            leadingIcon={block?.id ? null : <BackArrowNavLink to={backRoute} />}
+            title={block?.id ? 'Edit True or False' : 'Add True or False'}
             closeRoute={lessonPath}
             settingsPopover={
               <Popover>
@@ -118,7 +122,10 @@ export function BuilderTrueOrFalsePlugin({ block }: BuilderTrueOrFalsePluginProp
                 <PopoverContent className='w-full max-w-md'>
                   <div className='grid gap-4'>
                     <div className='space-y-2'>
-                      <h4 className='leading-none font-medium'>Block Settings</h4>
+                      <h4 className='leading-none font-medium'>Block settings</h4>
+                      <p className='text-muted-foreground text-sm'>
+                        Tweak how this block behaves — your rules, your way!
+                      </p>
                     </div>
                     <div className='grid gap-2'>
                       <BlockWeightField name='settings.weight' />
@@ -136,10 +143,30 @@ export function BuilderTrueOrFalsePlugin({ block }: BuilderTrueOrFalsePluginProp
             <GoRichTextInputField
               name='content.questionState'
               labelProps={{ children: 'Question', required: true }}
-              description='Enter your true/false question.'
-              placeholder='Start typing your question...'
+              placeholder='Type your brain teaser here...'
+              description='What statement should learners decide is true or false? Make it fun!'
             />
-
+            <GoRadioGroupField
+              name='content.correctAnswer'
+              labelProps={{ children: 'What’s the right call?' }}
+              options={[
+                { value: 'true', label: 'True' },
+                { value: 'false', label: 'False' },
+              ]}
+              description='Pick the correct answer — no pressure!'
+            />
+            <GoRichTextInputField
+              name='content.explanationState'
+              labelProps={{ children: 'Why is that the answer?', required: true }}
+              placeholder='Share your wisdom...'
+              description='Help learners get the “aha!” moment by explaining the logic.'
+            />
+            <GoTextAreaField
+              name='content.hint'
+              labelProps={{ children: 'Need a hint?' }}
+              textareaProps={{ disabled: isDisabled }}
+              description='Give learners a gentle nudge if they’re stuck (optional).'
+            />
             <div className='mt-4 flex justify-between space-x-2'>
               <Button
                 type='submit'
@@ -147,7 +174,7 @@ export function BuilderTrueOrFalsePlugin({ block }: BuilderTrueOrFalsePluginProp
                 disabled={isDisabled || !methods.formState.isDirty}
                 isLoading={isDisabled}
               >
-                Save
+                Save it!
               </Button>
             </div>
           </Modal.Body>
