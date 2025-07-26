@@ -1,12 +1,7 @@
 import { useEffect, useMemo } from 'react';
-import { useParams } from 'react-router';
 import { Check, PartyPopper, X, XCircle } from 'lucide-react';
 
-import type {
-  TrueOrFalseContentSchemaType,
-  TrueOrFalseSettingsSchemaType,
-  TrueOrFalseStateInteractionSchemaType,
-} from '@gonasi/schemas/plugins';
+import type { BlockInteractionSchemaTypes, BuilderSchemaTypes } from '@gonasi/schemas/plugins';
 
 import { useTrueOrFalseInteraction } from './hooks/useTrueOrFalseInteraction';
 import { PlayPluginWrapper } from '../../common/PlayPluginWrapper';
@@ -29,18 +24,27 @@ import {
 import { cn } from '~/lib/utils';
 import { useStore } from '~/store';
 
-export function ViewTrueOrFalsePlugin({ block, mode }: ViewPluginComponentProps) {
-  const params = useParams();
+type TrueOrFalsePluginType = Extract<BuilderSchemaTypes, { plugin_type: 'true_or_false' }>;
+type TrueOrFalseInteractionType = Extract<
+  BlockInteractionSchemaTypes,
+  { plugin_type: 'true_or_false' }
+>;
 
-  const { playbackMode, layoutStyle, randomization } =
-    block.settings as TrueOrFalseSettingsSchemaType;
-  const { questionState, correctAnswer, explanationState, hint } =
-    block.content as TrueOrFalseContentSchemaType;
+export function ViewTrueOrFalsePlugin({ blockWithProgress, mode }: ViewPluginComponentProps) {
+  const {
+    settings: { playbackMode, layoutStyle, randomization, weight },
+    content: { questionState, correctAnswer, explanationState, hint },
+  } = blockWithProgress.block as TrueOrFalsePluginType;
 
   const { isExplanationBottomSheetOpen, setExplanationState, isLastBlock } = useStore();
 
-  const { loading, payload, handleContinue, updatePayload } = useViewPluginCore(
-    mode === 'play' ? block.id : null,
+  const { loading, payload, handleContinue, updateInteractionData } = useViewPluginCore(
+    mode === 'play'
+      ? {
+          progress: blockWithProgress.block_progress,
+          blockWithProgress,
+        }
+      : null,
   );
 
   const {
@@ -56,7 +60,7 @@ export function ViewTrueOrFalsePlugin({ block, mode }: ViewPluginComponentProps)
     reset,
     attemptsCount,
   } = useTrueOrFalseInteraction(
-    payload?.state as TrueOrFalseStateInteractionSchemaType,
+    payload?.interaction_data as TrueOrFalseInteractionType,
     correctAnswer,
   );
 
@@ -66,24 +70,21 @@ export function ViewTrueOrFalsePlugin({ block, mode }: ViewPluginComponentProps)
   }, [randomization]);
 
   useEffect(() => {
-    if (mode === 'play' && updatePayload) {
-      updatePayload({
-        plugin_type: 'true_or_false',
-        block_id: block.id,
-        lesson_id: params.lessonId ?? '',
-        score,
-        attempts: attemptsCount,
-        state: { ...state },
+    if (mode === 'play') {
+      updateInteractionData({
+        ...state,
+        earned_,
       });
     }
-  }, [state, isCompleted, mode, updatePayload, block.id, params.lessonId, score, attemptsCount]);
+  }, [state, isCompleted, mode, updateInteractionData, score, attemptsCount]);
 
   return (
     <ViewPluginWrapper
-      isComplete={mode === 'preview' ? isCompleted : payload?.is_complete}
+      isComplete={blockWithProgress.block_progress?.is_completed}
       playbackMode={playbackMode}
       mode={mode}
       reset={reset}
+      weight={weight}
     >
       <PlayPluginWrapper hint={hint}>
         <RichTextRenderer editorState={questionState} />
@@ -147,10 +148,10 @@ export function ViewTrueOrFalsePlugin({ block, mode }: ViewPluginComponentProps)
               icon={<PartyPopper />}
               label={state.hasRevealedCorrectAnswer ? 'Answer Revealed' : 'Correct!'}
               score={score}
-              hasBeenPlayed={payload?.is_complete}
+              hasBeenPlayed={blockWithProgress.block_progress?.is_completed}
               actions={
                 <div className='flex'>
-                  {!payload?.is_complete && (
+                  {!blockWithProgress.block_progress?.is_completed && (
                     <BlockActionButton
                       onClick={handleContinue}
                       loading={loading}
@@ -179,7 +180,7 @@ export function ViewTrueOrFalsePlugin({ block, mode }: ViewPluginComponentProps)
               color='destructive'
               icon={<XCircle />}
               label='Incorrect!'
-              hasBeenPlayed={payload?.is_complete}
+              hasBeenPlayed={blockWithProgress.block_progress?.is_completed}
               actions={
                 <div className='flex items-center space-x-4'>
                   <TryAgainButton onClick={tryAgain} />

@@ -12,8 +12,10 @@ import { BlockActionButton } from '~/components/ui/button';
 type RichTextPluginType = Extract<BuilderSchemaTypes, { plugin_type: 'rich_text_editor' }>;
 
 export function ViewRichTextPlugin({ mode, blockWithProgress }: ViewPluginComponentProps) {
-  const { playbackMode, weight } = blockWithProgress.block.settings;
-  const { richTextState } = (blockWithProgress.block as RichTextPluginType).content;
+  const {
+    content: { richTextState },
+    settings: { playbackMode, weight },
+  } = blockWithProgress.block as RichTextPluginType;
 
   // Initialize plugin logic for play mode (progress, persistence, etc.)
   const { loading, handleContinue, updateInteractionData } = useViewPluginCore(

@@ -2,7 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 
 import {
   TrueOrFalseStateInteractionSchema,
-  type TrueOrFalseStateInteractionSchemaType,
+  type TrueOrFalseStateInteractionSchemaTypes,
 } from '@gonasi/schemas/plugins';
 
 import { calculateTrueFalseScore } from '../utils';
@@ -19,14 +19,14 @@ const getTimestamp = () => Date.now();
  * @param correctAnswer - The correct answer for the question, either 'true' or 'false'
  */
 export function useTrueOrFalseInteraction(
-  initial: TrueOrFalseStateInteractionSchemaType | null,
+  initial: TrueOrFalseStateInteractionSchemaTypes | null,
   correctAnswer: 'true' | 'false',
 ) {
   // Fallback state used if `initial` is null
-  const defaultState: TrueOrFalseStateInteractionSchemaType = schema.parse({});
+  const defaultState: TrueOrFalseStateInteractionSchemaTypes = schema.parse({});
 
   // Main interaction state validated by schema (parsed from initial or fallback)
-  const [state, setState] = useState<TrueOrFalseStateInteractionSchemaType>(() =>
+  const [state, setState] = useState<TrueOrFalseStateInteractionSchemaTypes>(() =>
     schema.parse(initial ?? defaultState),
   );
 

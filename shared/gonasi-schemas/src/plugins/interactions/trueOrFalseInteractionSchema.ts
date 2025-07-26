@@ -18,6 +18,7 @@ export const TrueOrFalseStateInteractionSchema = z.object({
       }),
     )
     .default([]),
+
   showCheckIfAnswerIsCorrectButton: z.boolean().default(true),
   showTryAgainButton: z.boolean().default(false),
   showShowAnswerButton: z.boolean().default(false),
@@ -26,3 +27,7 @@ export const TrueOrFalseStateInteractionSchema = z.object({
   canShowExplanationButton: z.boolean().default(false),
   hasRevealedCorrectAnswer: z.boolean().default(false),
 });
+
+export type TrueOrFalseStateInteractionSchemaTypes = z.infer<
+  typeof TrueOrFalseStateInteractionSchema
+>;
