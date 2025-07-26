@@ -9,6 +9,7 @@ export const BuilderSchema = z.discriminatedUnion('plugin_type', [
   RichTextSchema,
   TrueOrFalseSchema,
 ]);
+export type BuilderSchemaTypes = z.infer<typeof BuilderSchema>;
 
 export const BlockInteractionSchema = z.discriminatedUnion('plugin_type', [
   RichTextStateInteractionSchema,

@@ -3,7 +3,7 @@ import { getValidatedFormData } from 'remix-hook-form';
 import { dataWithError, redirectWithSuccess } from 'remix-toast';
 import type z from 'zod';
 
-import { upsertRichTextBlock } from '@gonasi/database/lessons';
+import { upsertLessonBlock } from '@gonasi/database/lessons';
 import { BuilderSchema } from '@gonasi/schemas/plugins';
 
 import type { Route } from './+types/upsert-plugin-api';
@@ -34,16 +34,7 @@ export async function action({ request, params }: Route.ActionArgs) {
   const { supabase } = createClient(request);
 
   try {
-    let result = { success: false, message: '' };
-
-    switch (data.plugin_type) {
-      case 'rich_text_editor':
-        result = await upsertRichTextBlock(supabase, { ...data });
-        break;
-
-      default:
-        throw new Error(`Unhandled plugin type: ${data.plugin_type}`);
-    }
+    const result = await upsertLessonBlock({ supabase, blockData: data });
 
     return result.success
       ? redirectWithSuccess(redirectUrl, result.message)
