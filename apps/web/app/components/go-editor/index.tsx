@@ -6,7 +6,7 @@ import { $isTextNode, TextNode } from 'lexical';
 import debounce from 'lodash/debounce';
 
 import { FlashMessageContext } from './context/FlashMessageContext';
-import { SettingsContext, useSettings } from './context/SettingsContext';
+import { SettingsContext } from './context/SettingsContext';
 import { SharedHistoryContext } from './context/SharedHistoryContext';
 import { ToolbarContext } from './context/ToolbarContext';
 import { GonasiNodes } from './nodes/GonasiNodes';
@@ -88,10 +88,6 @@ interface EditorProps {
 }
 
 function GoEditor({ editorState, setEditorState, loading, placeholder, hasError }: EditorProps) {
-  const {
-    settings: { isCollab },
-  } = useSettings();
-
   const debouncedSetEditorStateRef = useRef<((state: string) => void) | null>(null);
 
   useEffect(() => {
@@ -113,7 +109,7 @@ function GoEditor({ editorState, setEditorState, loading, placeholder, hasError 
       throw error;
     },
     nodes: [...GonasiNodes],
-    editorState: isCollab ? null : editorState,
+    editorState,
     html: { import: buildImportMap() },
     editable: !loading,
   };
@@ -126,17 +122,15 @@ function GoEditor({ editorState, setEditorState, loading, placeholder, hasError 
             <SharedHistoryContext>
               <TableContext>
                 <ToolbarContext>
-                  <div className='editor-shell'>
-                    <Editor placeholder={placeholder} hasError={hasError} />
-                    <OnChangePlugin
-                      onChange={(editorState) => {
-                        editorState.read(() => {
-                          const json = JSON.stringify(editorState);
-                          debouncedSetEditorStateRef.current?.(json);
-                        });
-                      }}
-                    />
-                  </div>
+                  <Editor placeholder={placeholder} hasError={hasError} />
+                  <OnChangePlugin
+                    onChange={(editorState) => {
+                      editorState.read(() => {
+                        const json = JSON.stringify(editorState);
+                        debouncedSetEditorStateRef.current?.(json);
+                      });
+                    }}
+                  />
                 </ToolbarContext>
               </TableContext>
             </SharedHistoryContext>

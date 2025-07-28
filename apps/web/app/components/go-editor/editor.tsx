@@ -23,8 +23,6 @@ import ToolbarPlugin from './plugins/ToolbarPlugin';
 import TreeViewPlugin from './plugins/TreeViewPlugin';
 import ContentEditable from './ui/ContentEditable';
 
-import { cn } from '~/lib/utils';
-
 interface Props {
   placeholder?: string;
   hasError?: boolean;
@@ -45,37 +43,31 @@ export default function Editor({ placeholder = 'Enter text', hasError }: Props):
         setIsLinkEditMode={() => {}}
       />
       <ShortcutsPlugin editor={activeEditor} setIsLinkEditMode={() => {}} />
-      <div className={cn('editor-container', settings.showTreeView && 'tree-view')}>
-        {settings.isMaxLength && <MaxLengthPlugin maxLength={30} />}
-        <AutoFocusPlugin />
-        {settings.selectionAlwaysOnDisplay && <SelectionAlwaysOnDisplay />}
-        <ClearEditorPlugin />
-        <HistoryPlugin externalHistoryState={historyState} />
-        <RichTextPlugin
-          contentEditable={
-            <div className='editor-scroller'>
-              <div className='editor'>
-                <ContentEditable placeholder={placeholder} />
-              </div>
-            </div>
-          }
-          ErrorBoundary={LexicalErrorBoundary}
-        />
 
-        <FilesPlugin />
-        <ListPlugin />
-        <CheckListPlugin />
-        <TablePlugin
-          hasCellMerge={settings.tableCellMerge}
-          hasCellBackgroundColor={settings.tableCellBackgroundColor}
-          hasHorizontalScroll={settings.tableHorizontalScroll}
-        />
-        <TabFocusPlugin />
-        {(settings.isCharLimit || settings.isCharLimitUtf8) && (
-          <CharacterLimitPlugin charset={settings.isCharLimit ? 'UTF-16' : 'UTF-8'} maxLength={5} />
-        )}
-        {settings.isAutocomplete && <AutocompletePlugin />}
-      </div>
+      {settings.isMaxLength && <MaxLengthPlugin maxLength={30} />}
+      <AutoFocusPlugin />
+      {settings.selectionAlwaysOnDisplay && <SelectionAlwaysOnDisplay />}
+      <ClearEditorPlugin />
+      <HistoryPlugin externalHistoryState={historyState} />
+      <RichTextPlugin
+        contentEditable={<ContentEditable placeholder={placeholder} hasError={hasError} />}
+        ErrorBoundary={LexicalErrorBoundary}
+      />
+
+      <FilesPlugin />
+      <ListPlugin />
+      <CheckListPlugin />
+      <TablePlugin
+        hasCellMerge={settings.tableCellMerge}
+        hasCellBackgroundColor={settings.tableCellBackgroundColor}
+        hasHorizontalScroll={settings.tableHorizontalScroll}
+      />
+      <TabFocusPlugin />
+      {(settings.isCharLimit || settings.isCharLimitUtf8) && (
+        <CharacterLimitPlugin charset={settings.isCharLimit ? 'UTF-16' : 'UTF-8'} maxLength={5} />
+      )}
+      {settings.isAutocomplete && <AutocompletePlugin />}
+
       {settings.showTreeView && <TreeViewPlugin />}
     </>
   );

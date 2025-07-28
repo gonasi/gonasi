@@ -148,7 +148,7 @@ export function BuilderTrueOrFalsePlugin({ block }: BuilderTrueOrFalsePluginProp
               </Popover>
             }
           />
-          <Modal.Body>
+          <Modal.Body className='isolate max-h-[70vh] overflow-y-auto'>
             <GoRichTextInputField
               name='content.questionState'
               labelProps={{ children: 'Question', required: true }}
