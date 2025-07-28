@@ -12,7 +12,7 @@ import {
 import { BlockWeightField } from '../../common/settings/BlockWeightField';
 import { LayoutField } from '../../common/settings/LayoutField';
 import { PlaybackModeField } from '../../common/settings/PlaybackModeField';
-import { RandomizationField } from '../../common/settings/RandomizationField';
+import { RandomizationField } from '../../common/settings/RandomizationModeField';
 import type { EditPluginSettingsComponentProps } from '../../PluginRenderers/EditPluginSettingsTypeRenderer';
 
 import { Button } from '~/components/ui/button';

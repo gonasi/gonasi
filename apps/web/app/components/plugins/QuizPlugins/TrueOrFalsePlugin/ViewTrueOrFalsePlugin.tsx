@@ -59,10 +59,28 @@ export function ViewTrueOrFalsePlugin({ blockWithProgress, mode }: ViewPluginCom
     mode === 'play' ? { progress: blockWithProgress.block_progress, blockWithProgress } : null,
   );
 
-  const parsedInteractionData: TrueOrFalseInteractionType | null = useMemo(() => {
+  // Extract interaction data from DB - this is the key change
+  const initialInteractionData: TrueOrFalseInteractionType | null = useMemo(() => {
+    if (mode === 'preview') return null;
+
+    // Get interaction data from the database via block progress
+    const dbInteractionData = blockWithProgress.block_progress?.interaction_data;
+
+    console.log('DB Interaction Data:', dbInteractionData); // Debug log
+
+    return isTrueOrFalseInteraction(dbInteractionData) ? dbInteractionData : null;
+  }, [blockWithProgress.block_progress?.interaction_data, mode]);
+
+  // Also get the current selected option from payload if available
+  const parsedPayloadData: TrueOrFalseInteractionType | null = useMemo(() => {
     const data = payload?.interaction_data;
     return isTrueOrFalseInteraction(data) ? data : null;
   }, [payload?.interaction_data]);
+
+  // Use the most recent data (payload takes precedence over initial DB data)
+  const currentInteractionData = parsedPayloadData || initialInteractionData;
+
+  console.log('Current Interaction Data:', currentInteractionData); // Debug log
 
   const {
     state,
@@ -76,7 +94,7 @@ export function ViewTrueOrFalsePlugin({ blockWithProgress, mode }: ViewPluginCom
     score,
     reset,
     attemptsCount,
-  } = useTrueOrFalseInteraction(parsedInteractionData, correctAnswer);
+  } = useTrueOrFalseInteraction(currentInteractionData, correctAnswer);
 
   const answerOptions = useMemo(() => {
     const options = [true, false];
@@ -84,16 +102,46 @@ export function ViewTrueOrFalsePlugin({ blockWithProgress, mode }: ViewPluginCom
   }, [randomization]);
 
   useEffect(() => {
-    if (mode === 'play') updateInteractionData({ ...state });
+    if (mode === 'play') {
+      console.log('Updating interaction data:', state); // Debug log
+      updateInteractionData({ ...state });
+    }
   }, [mode, state, updateInteractionData]);
 
   useEffect(() => {
-    if (mode === 'play') updateEarnedScore(score);
+    if (mode === 'play') {
+      console.log('Updating earned score:', score); // Debug log
+      updateEarnedScore(score);
+    }
   }, [mode, score, updateEarnedScore]);
 
   useEffect(() => {
-    if (mode === 'play') updateAttemptsCount(attemptsCount);
+    if (mode === 'play') {
+      console.log('Updating attempts count:', attemptsCount); // Debug log
+      updateAttemptsCount(attemptsCount);
+    }
   }, [mode, attemptsCount, updateAttemptsCount]);
+
+  // Debug log for component state
+  useEffect(() => {
+    console.log('ViewTrueOrFalsePlugin State:', {
+      mode,
+      isCompleted,
+      blockProgress: blockWithProgress.block_progress,
+      state,
+      selectedOption,
+      score,
+      attemptsCount,
+    });
+  }, [
+    mode,
+    isCompleted,
+    blockWithProgress.block_progress,
+    state,
+    selectedOption,
+    score,
+    attemptsCount,
+  ]);
 
   return (
     <ViewPluginWrapper

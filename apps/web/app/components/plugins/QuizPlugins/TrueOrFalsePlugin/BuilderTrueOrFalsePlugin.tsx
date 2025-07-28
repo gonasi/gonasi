@@ -17,7 +17,9 @@ import {
 } from '@gonasi/schemas/plugins';
 
 import { BlockWeightField } from '../../common/settings/BlockWeightField';
+import { LayoutStyleField } from '../../common/settings/LayoutStyleField';
 import { PlaybackModeField } from '../../common/settings/PlaybackModeField';
+import { RandomizationModeField } from '../../common/settings/RandomizationModeField';
 
 import { BackArrowNavLink, Button } from '~/components/ui/button';
 import {
@@ -101,6 +103,8 @@ export function BuilderTrueOrFalsePlugin({ block }: BuilderTrueOrFalsePluginProp
   const isDisabled = isPending || methods.formState.isSubmitting;
 
   const watchPlaybackMode = methods.watch('settings.playbackMode');
+  const watchLayoutStyle = methods.watch('settings.layoutStyle');
+  const watchRandomization = methods.watch('settings.randomization');
 
   return (
     <Modal.Content size='md'>
@@ -124,7 +128,7 @@ export function BuilderTrueOrFalsePlugin({ block }: BuilderTrueOrFalsePluginProp
                     <div className='space-y-2'>
                       <h4 className='leading-none font-medium'>Block settings</h4>
                       <p className='text-muted-foreground text-sm'>
-                        Tweak how this block behaves — your rules, your way!
+                        Tweak how this block behaves, your rules, your way!
                       </p>
                     </div>
                     <div className='grid gap-2'>
@@ -132,6 +136,11 @@ export function BuilderTrueOrFalsePlugin({ block }: BuilderTrueOrFalsePluginProp
                       <PlaybackModeField
                         name='settings.playbackMode'
                         watchValue={watchPlaybackMode}
+                      />
+                      <LayoutStyleField name='settings.layoutStyle' watchValue={watchLayoutStyle} />
+                      <RandomizationModeField
+                        name='settings.randomization'
+                        watchValue={watchRandomization}
                       />
                     </div>
                   </div>

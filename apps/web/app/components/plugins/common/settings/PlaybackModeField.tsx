@@ -1,4 +1,4 @@
-import { LayoutPanelTop, SquareStack } from 'lucide-react';
+import { MonitorPlay, Text } from 'lucide-react';
 
 import { GoRadioGroupField } from '~/components/ui/forms/elements';
 
@@ -12,9 +12,8 @@ export function PlaybackModeField({ name, watchValue }: PlaybackModeFieldProps) 
     <GoRadioGroupField
       labelProps={{
         children: 'Playback mode',
-        endAdornment:
-          watchValue === 'inline' ? <LayoutPanelTop size={14} /> : <SquareStack size={14} />,
-        endAdornmentKey: watchValue, // 👈 this is what makes the animation work
+        endAdornment: watchValue === 'inline' ? <Text size={14} /> : <MonitorPlay size={14} />,
+        endAdornmentKey: watchValue,
       }}
       name={name}
       description='How this block appears in lessons.'
