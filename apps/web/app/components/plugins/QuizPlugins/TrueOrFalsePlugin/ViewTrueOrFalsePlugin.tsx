@@ -24,12 +24,21 @@ import {
 import { cn } from '~/lib/utils';
 import { useStore } from '~/store';
 
-// Type narrowing
 type TrueOrFalsePluginType = Extract<BuilderSchemaTypes, { plugin_type: 'true_or_false' }>;
+
 type TrueOrFalseInteractionType = Extract<
   BlockInteractionSchemaTypes,
   { plugin_type: 'true_or_false' }
 >;
+
+function isTrueOrFalseInteraction(data: unknown): data is TrueOrFalseInteractionType {
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    'plugin_type' in data &&
+    (data as any).plugin_type === 'true_or_false'
+  );
+}
 
 export function ViewTrueOrFalsePlugin({ blockWithProgress, mode }: ViewPluginComponentProps) {
   const {
@@ -47,27 +56,12 @@ export function ViewTrueOrFalsePlugin({ blockWithProgress, mode }: ViewPluginCom
     updateEarnedScore,
     updateAttemptsCount,
   } = useViewPluginCore(
-    mode === 'play'
-      ? {
-          progress: blockWithProgress.block_progress,
-          blockWithProgress,
-        }
-      : null,
+    mode === 'play' ? { progress: blockWithProgress.block_progress, blockWithProgress } : null,
   );
 
   const parsedInteractionData: TrueOrFalseInteractionType | null = useMemo(() => {
     const data = payload?.interaction_data;
-
-    if (
-      data &&
-      typeof data === 'object' &&
-      'plugin_type' in data &&
-      data.plugin_type === 'true_or_false'
-    ) {
-      return data as TrueOrFalseInteractionType;
-    }
-
-    return null;
+    return isTrueOrFalseInteraction(data) ? data : null;
   }, [payload?.interaction_data]);
 
   const {
@@ -84,33 +78,26 @@ export function ViewTrueOrFalsePlugin({ blockWithProgress, mode }: ViewPluginCom
     attemptsCount,
   } = useTrueOrFalseInteraction(parsedInteractionData, correctAnswer);
 
-  // Shuffle options if enabled
   const answerOptions = useMemo(() => {
     const options = [true, false];
     return randomization === 'shuffle' ? shuffleArray(options) : options;
   }, [randomization]);
 
-  // Sync interaction state to payload (for submission)
   useEffect(() => {
-    if (mode !== 'play') return;
-    updateInteractionData({ ...state });
+    if (mode === 'play') updateInteractionData({ ...state });
   }, [mode, state, updateInteractionData]);
 
-  // Sync score
   useEffect(() => {
-    if (mode !== 'play') return;
-    updateEarnedScore(score);
+    if (mode === 'play') updateEarnedScore(score);
   }, [mode, score, updateEarnedScore]);
 
-  // Sync attempts
   useEffect(() => {
-    if (mode !== 'play') return;
-    updateAttemptsCount(attemptsCount);
+    if (mode === 'play') updateAttemptsCount(attemptsCount);
   }, [mode, attemptsCount, updateAttemptsCount]);
 
   return (
     <ViewPluginWrapper
-      isComplete={isCompleted}
+      isComplete={mode === 'preview' ? isCompleted : blockWithProgress.block_progress?.is_completed}
       playbackMode={playbackMode}
       mode={mode}
       reset={reset}
@@ -120,7 +107,6 @@ export function ViewTrueOrFalsePlugin({ blockWithProgress, mode }: ViewPluginCom
         <RichTextRenderer editorState={questionState} />
 
         <div className='flex flex-col gap-4'>
-          {/* True/False Option Buttons */}
           <div
             className={cn('gap-4 py-6', {
               'grid grid-cols-1': layoutStyle === 'single',
@@ -129,26 +115,35 @@ export function ViewTrueOrFalsePlugin({ blockWithProgress, mode }: ViewPluginCom
           >
             {answerOptions.map((val) => {
               const isSelected = selectedOption === val;
-              const icon = val ? <Check /> : <X />;
-              const isCorrectAttempt = state.correctAttempt?.selected === val;
+              const isCorrectAttempt =
+                state.correctAttempt?.selected === val && !state.correctAttempt?.wasRevealed;
+              const isRevealedCorrect =
+                state.correctAttempt?.selected === val && state.correctAttempt?.wasRevealed;
               const isWrongAttempt = state.wrongAttempts.some((a) => a.selected === val);
-              const isDisabled = !canInteract || isWrongAttempt || isCorrectAttempt;
+              const isDisabled =
+                !canInteract || isCorrectAttempt || isWrongAttempt || isRevealedCorrect;
 
               return (
                 <div key={String(val)} className='relative w-full'>
                   <TrueOrFalseOptionsButton
                     val={val}
-                    icon={icon}
+                    icon={val ? <Check /> : <X />}
                     isSelected={isSelected}
                     isDisabled={isDisabled}
                     selectOption={() => selectOption(val)}
                   />
-                  {/* Attempt indicators */}
+
                   <div className='absolute -top-1.5 -right-1.5 rounded-full'>
                     {isCorrectAttempt && (
                       <Check
                         size={14}
                         className='text-success-foreground bg-success rounded-full p-0.5'
+                      />
+                    )}
+                    {isRevealedCorrect && (
+                      <Check
+                        size={14}
+                        className='text-muted-foreground bg-muted rounded-full p-0.5'
                       />
                     )}
                     {isWrongAttempt && (
@@ -164,12 +159,10 @@ export function ViewTrueOrFalsePlugin({ blockWithProgress, mode }: ViewPluginCom
           </div>
         </div>
 
-        {/* Attempts Counter */}
         <div className='text-muted-foreground font-secondary pb-1 text-xs'>
           Attempts: <span className='font-normal'>{attemptsCount}</span>
         </div>
 
-        {/* Feedback & Actions */}
         <div className='w-full pb-4'>
           {state.showCheckIfAnswerIsCorrectButton && (
             <CheckAnswerButton disabled={selectedOption === null} onClick={checkAnswer} />
@@ -181,10 +174,10 @@ export function ViewTrueOrFalsePlugin({ blockWithProgress, mode }: ViewPluginCom
               icon={<PartyPopper />}
               label={state.hasRevealedCorrectAnswer ? 'Answer Revealed' : 'Correct!'}
               score={score}
-              hasBeenPlayed={isCompleted}
+              hasBeenPlayed={blockWithProgress.block_progress?.is_completed}
               actions={
                 <div className='flex'>
-                  {!isCompleted && (
+                  {!blockWithProgress.block_progress?.is_completed && (
                     <BlockActionButton
                       onClick={handleContinue}
                       loading={loading}
@@ -213,7 +206,7 @@ export function ViewTrueOrFalsePlugin({ blockWithProgress, mode }: ViewPluginCom
               color='destructive'
               icon={<XCircle />}
               label='Incorrect!'
-              hasBeenPlayed={isCompleted}
+              hasBeenPlayed={blockWithProgress.block_progress?.is_completed}
               actions={
                 <div className='flex items-center space-x-4'>
                   <TryAgainButton onClick={tryAgain} />

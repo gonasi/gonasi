@@ -6,6 +6,7 @@ export const TrueOrFalseStateInteractionSchema = z.object({
     .object({
       selected: z.boolean(),
       timestamp: z.number(),
+      wasRevealed: z.boolean().optional(),
     })
     .nullable()
     .default(null),

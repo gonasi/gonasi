@@ -1,7 +1,7 @@
-import type { TrueOrFalseStateInteractionSchemaType } from '@gonasi/schemas/plugins';
+import { type TrueOrFalseStateInteractionSchemaTypes } from '@gonasi/schemas/plugins';
 
 // Score calculation function
-export function calculateTrueFalseScore(state: TrueOrFalseStateInteractionSchemaType): number {
+export function calculateTrueFalseScore(state: TrueOrFalseStateInteractionSchemaTypes): number {
   const MAX_SCORE = 100;
   const PENALTY_PER_WRONG_ATTEMPT = 50;
 
@@ -11,7 +11,7 @@ export function calculateTrueFalseScore(state: TrueOrFalseStateInteractionSchema
   }
 
   // No score if the correct answer was revealed (not earned)
-  if (state.hasRevealedCorrectAnswer) {
+  if (state.correctAttempt?.wasRevealed) {
     return 0;
   }
 
