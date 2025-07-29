@@ -1,14 +1,12 @@
-import { lazy, Suspense } from 'react';
 import { Controller, get } from 'react-hook-form';
 import { useRemixFormContext } from 'remix-hook-form';
 
 import { Label, type LabelProps } from '../../label';
 import { ErrorDisplay, FormDescription } from './Common';
 
-import { Spinner } from '~/components/loaders';
+import GoEditor from '~/components/go-editor';
 
 // Lazy import the rich editor
-const LazyRichTextInput = lazy(() => import('../../../go-editor'));
 
 interface GoRichTextInputFieldProps {
   name: string;
@@ -44,17 +42,15 @@ export function GoRichTextInputField({
         <div className={className}>
           <Label htmlFor={id} error={hasError} {...labelProps} />
 
-          <Suspense fallback={<Spinner />}>
-            <LazyRichTextInput
-              editorState={field.value}
-              setEditorState={(value) => {
-                field.onChange(value);
-              }}
-              loading={false}
-              placeholder={placeholder}
-              hasError={hasError}
-            />
-          </Suspense>
+          <GoEditor
+            editorState={field.value}
+            setEditorState={(value) => {
+              field.onChange(value);
+            }}
+            loading={false}
+            placeholder={placeholder}
+            hasError={hasError}
+          />
 
           <div className='min-h-[32px] pt-1 pb-3'>
             {hasError && errorMessage && <ErrorDisplay error={errorMessage} />}

@@ -179,7 +179,7 @@ export default function CompleteLesson({ loaderData, params }: Route.ComponentPr
             transition={{ delay: 0.6 }}
           >
             <div className='mb-2 flex items-center justify-between'>
-              <span className='text-foreground text-sm font-medium'>Chapter: {chapterName}</span>
+              <span className='text-foreground text-sm font-medium'>{chapterName}</span>
               <span className='text-foreground text-sm font-medium'>{`${chapterProgress}%`}</span>
             </div>
             <div className='bg-muted-foreground h-2 w-full overflow-hidden rounded-full'>
