@@ -5,6 +5,7 @@ import type { PluginTypeId } from '@gonasi/schemas/plugins';
 import { BuilderTrueOrFalsePlugin } from '../QuizPlugins/TrueOrFalsePlugin/BuilderTrueOrFalsePlugin';
 import { BuilderRichTextPlugin } from '../RichTextPlugins/RichTextPlugin/BuilderRichTextPlugin';
 
+import { Modal } from '~/components/ui/modal';
 import type { LessonBlockLoaderReturnType } from '~/routes/organizations/builder/course/content/chapterId/lessonId/lesson-blocks/plugins/edit-plugin-modal';
 
 interface BuilderPluginRendererProps {
@@ -43,7 +44,19 @@ const pluginComponentMap: Record<
 };
 
 function UnsupportedPluginMessage({ pluginTypeId }: { pluginTypeId: PluginTypeId }) {
-  return <div>Unsupported plugin type: {pluginTypeId}</div>;
+  return (
+    <Modal open>
+      <Modal.Content size='sm'>
+        <Modal.Header title='Unsupported Plugin' closeRoute='/' />
+        <Modal.Body>
+          <p>
+            The plugin <strong>{pluginTypeId}</strong> is not currently supported. Please try a
+            different one or contact support for help.
+          </p>
+        </Modal.Body>
+      </Modal.Content>
+    </Modal>
+  );
 }
 
 export default function BuilderPluginRenderer({
