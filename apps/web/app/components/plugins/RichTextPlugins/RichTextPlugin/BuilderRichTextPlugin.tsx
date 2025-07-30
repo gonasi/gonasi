@@ -16,7 +16,7 @@ import { BlockWeightField } from '../../common/settings/BlockWeightField';
 import { PlaybackModeField } from '../../common/settings/PlaybackModeField';
 
 import { BackArrowNavLink, Button } from '~/components/ui/button';
-import { GoRichTextInputField } from '~/components/ui/forms/elements';
+import { GoLexicalInputField } from '~/components/ui/forms/elements/GoLexicalInputField';
 import { Modal } from '~/components/ui/modal';
 import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover';
 import type { LessonBlockLoaderReturnType } from '~/routes/organizations/builder/course/content/chapterId/lessonId/lesson-blocks/plugins/edit-plugin-modal';
@@ -116,7 +116,7 @@ export function BuilderRichTextPlugin({ block }: BuilderRichTextPluginProps) {
             }
           />
           <Modal.Body>
-            <GoRichTextInputField
+            <GoLexicalInputField
               name='content.richTextState'
               labelProps={{ children: 'Rich Text', required: true }}
               description='You can format your content using rich text.'
