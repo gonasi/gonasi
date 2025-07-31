@@ -47,7 +47,7 @@ export default function LexicalContentEditable({
     <div className='relative'>
       <ContentEditable
         className={cn(className, {
-          'border-input min-h-20 rounded-lg border px-3 py-2': !readOnly,
+          'border-input min-h-20 rounded-lg border px-4 py-2': !readOnly,
           'px-4 md:px-0': readOnly,
           'border-danger': hasError,
         })}

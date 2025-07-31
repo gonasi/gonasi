@@ -43,16 +43,17 @@ export default function DraggableBlockPlugin({
         <div
           ref={menuRef}
           className={cn(
-            'absolute top-0 left-0 z-10 flex gap-1 rounded px-1 py-0.5 opacity-0 transition-opacity',
-            'cursor-grab hover:opacity-100',
-            'bg-white shadow-sm',
+            'absolute top-0 -left-4 z-10 flex gap-1 rounded p-1 opacity-0 transition-opacity',
+            'cursor-grab',
+            'bg-card border-border/20 shadow-sm',
           )}
         >
           <button
+            type='button'
             title='Click to add below'
             onClick={insertBlock}
             className={cn(
-              'flex h-4 w-4 items-center justify-center text-gray-500 hover:bg-gray-200',
+              'text-card-foreground hover:bg-card/80 flex h-5 w-5 items-center justify-center',
               'rounded transition-colors',
             )}
           >
@@ -60,7 +61,7 @@ export default function DraggableBlockPlugin({
           </button>
           <div
             className={cn(
-              'flex h-4 w-4 items-center justify-center text-gray-400 hover:bg-gray-200',
+              'hover:bg-card/80 text-card-foreground flex h-5 w-5 items-center justify-center',
               'rounded transition-colors',
             )}
           >
@@ -72,7 +73,7 @@ export default function DraggableBlockPlugin({
         <div
           ref={targetLineRef}
           className={cn(
-            'pointer-events-none absolute top-0 left-0 h-1 w-full bg-sky-400 opacity-0',
+            'bg-secondary pointer-events-none absolute top-0 left-0 h-1 w-full opacity-0',
           )}
         />
       }
