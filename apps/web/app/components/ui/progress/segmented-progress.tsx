@@ -93,10 +93,12 @@ export const SegmentedProgress: React.FC<SegmentedProgressProps> = ({
         const isLast = index === segments.length - 1;
         const isOnly = segments.length === 1;
         const isAnimated = animatedSegments.has(index);
+        const isActive = activeBlockId === segment.id;
 
         return (
-          <div
+          <motion.div
             key={segment.id}
+            layout
             style={{ flexGrow: segment.weight }}
             className={cn(
               'relative overflow-hidden',
@@ -104,24 +106,44 @@ export const SegmentedProgress: React.FC<SegmentedProgressProps> = ({
               'bg-muted/40',
               isOnly ? 'rounded-full' : isFirst ? 'rounded-l-full' : isLast ? 'rounded-r-full' : '',
               !isFirst && 'ml-0.5 md:ml-1',
-              activeBlockId === segment.id && 'bg-muted-foreground/20 animate-pulse',
             )}
           >
-            {/* Animated overlay */}
+            {/* Pulse highlight for active block */}
+            {isActive && (
+              <motion.div
+                layoutId='activeHighlight'
+                className='bg-muted-foreground/20 absolute inset-0 rounded-full'
+                initial={{ opacity: 0 }}
+                animate={{ opacity: [0.2, 0.4, 0.2] }}
+                transition={{
+                  duration: 1.5,
+                  repeat: Infinity,
+                  ease: 'easeInOut',
+                }}
+              />
+            )}
+
+            {/* Completed animated overlay */}
             <motion.div
-              initial={false}
-              animate={{
-                scaleX: segment.is_complete && isAnimated ? 1 : 0,
-              }}
+              initial={{ scaleX: 0, opacity: 0 }}
+              animate={
+                segment.is_complete && isAnimated
+                  ? { scaleX: 1, opacity: 1 }
+                  : { scaleX: 0, opacity: 0 }
+              }
               transition={{
-                type: 'spring',
-                stiffness: 260,
-                damping: 20,
-                mass: 0.5,
+                scaleX: {
+                  type: 'spring',
+                  stiffness: 260,
+                  damping: 20,
+                  mass: 0.5,
+                },
+                opacity: {
+                  duration: 0.3,
+                  ease: 'easeInOut',
+                },
               }}
-              style={{
-                transformOrigin: 'left',
-              }}
+              style={{ transformOrigin: 'left' }}
               className={cn(
                 'bg-primary absolute inset-0',
                 isOnly
@@ -133,7 +155,7 @@ export const SegmentedProgress: React.FC<SegmentedProgressProps> = ({
                       : '',
               )}
             />
-          </div>
+          </motion.div>
         );
       })}
     </div>

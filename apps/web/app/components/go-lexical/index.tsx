@@ -1,6 +1,7 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AutoFocusPlugin } from '@lexical/react/LexicalAutoFocusPlugin';
 import { LexicalComposer } from '@lexical/react/LexicalComposer';
+import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
 import { ContentEditable } from '@lexical/react/LexicalContentEditable';
 import { LexicalErrorBoundary } from '@lexical/react/LexicalErrorBoundary';
 import { HistoryPlugin } from '@lexical/react/LexicalHistoryPlugin';
@@ -18,7 +19,8 @@ import { $isTextNode, isHTMLElement, ParagraphNode, TextNode } from 'lexical';
 import debounce from 'lodash.debounce';
 
 import ToolbarPlugin from './plugins/ToolbarPlugin';
-import TreeViewPlugin from './plugins/TreeViewPlugin';
+import { ToolbarContext } from './plugins/ToolbarPlugin/ToolbarContext';
+import GoLexicalNodes from './nodes';
 import { parseAllowedColor, parseAllowedFontSize } from './styleConfig';
 import DefaultTheme from './theme';
 
@@ -134,6 +136,10 @@ export default function GoLexical({
 }: GoLexicalProps) {
   const debouncedSetEditorStateRef = useRef<((state: string) => void) | null>(null);
 
+  const [editor] = useLexicalComposerContext();
+  const [activeEditor, setActiveEditor] = useState(editor);
+  const [isLinkEditMode, setIsLinkEditMode] = useState<boolean>(false);
+
   useEffect(() => {
     const debounced = debounce((state: string) => {
       setEditorState(state);
@@ -151,7 +157,7 @@ export default function GoLexical({
       import: constructImportMap(),
     },
     namespace: 'Gonasi Lexical',
-    nodes: [ParagraphNode, TextNode],
+    nodes: GoLexicalNodes,
     onError(error: Error) {
       throw error;
     },
@@ -162,46 +168,57 @@ export default function GoLexical({
 
   return (
     <LexicalComposer initialConfig={editorConfig}>
-      <div
-        className={cn(
-          'text-foreground relative mx-auto mt-5 mb-5 w-full rounded-t-[10px] text-left leading-5 font-normal',
-        )}
-      >
-        <ToolbarPlugin />
-        <div className={cn('bg-background relative')}>
-          <RichTextPlugin
-            contentEditable={
-              <ContentEditable
-                className={cn(
-                  'tab-[1] text-md caret-foreground relative min-h-[150px] resize-none px-4 py-4 outline-none',
-                )}
-                aria-placeholder={placeholder}
-                placeholder={
-                  <div
-                    className={cn(
-                      'text-4 text-foreground pointer-events-none absolute top-4 left-4 inline-block overflow-hidden text-ellipsis select-none',
-                    )}
-                  >
-                    {placeholder}
-                  </div>
-                }
-              />
-            }
-            ErrorBoundary={LexicalErrorBoundary}
+      <ToolbarContext>
+        <div
+          className={cn(
+            'text-foreground relative mx-auto w-full rounded-t-[10px] text-left leading-5 font-normal',
+          )}
+        >
+          <ToolbarPlugin
+            editor={editor}
+            activeEditor={activeEditor}
+            setActiveEditor={setActiveEditor}
+            setIsLinkEditMode={setIsLinkEditMode}
           />
-          <OnChangePlugin
-            onChange={(editorState) => {
-              editorState.read(() => {
-                const json = JSON.stringify(editorState);
-                debouncedSetEditorStateRef.current?.(json);
-              });
-            }}
-          />
-          <HistoryPlugin />
-          <AutoFocusPlugin />
-          <TreeViewPlugin />
+          <div className={cn('bg-background relative')}>
+            <RichTextPlugin
+              contentEditable={
+                <ContentEditable
+                  className={cn(
+                    'tab-[1] text-md caret-foreground relative min-h-[100px] resize-none px-4 outline-none',
+                    'border-input rounded-md border transition-colors',
+                    'focus-visible:ring-ring focus-visible:ring-2 focus-visible:ring-offset-2',
+                    hasError && 'border-danger',
+                  )}
+                  aria-placeholder={placeholder}
+                  placeholder={
+                    <div
+                      className={cn(
+                        'text-4 text-foreground pointer-events-none absolute top-4 left-4 inline-block overflow-hidden text-ellipsis select-none',
+                      )}
+                    >
+                      {placeholder}
+                    </div>
+                  }
+                />
+              }
+              ErrorBoundary={LexicalErrorBoundary}
+            />
+
+            <OnChangePlugin
+              onChange={(editorState) => {
+                editorState.read(() => {
+                  const json = JSON.stringify(editorState);
+                  debouncedSetEditorStateRef.current?.(json);
+                });
+              }}
+            />
+            <HistoryPlugin />
+            <AutoFocusPlugin />
+            {/* <TreeViewPlugin /> */}
+          </div>
         </div>
-      </div>
+      </ToolbarContext>
     </LexicalComposer>
   );
 }

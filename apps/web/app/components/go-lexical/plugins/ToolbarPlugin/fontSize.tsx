@@ -1,8 +1,8 @@
 import * as React from 'react';
 import type { LexicalEditor } from 'lexical';
 
-import { MAX_ALLOWED_FONT_SIZE, MIN_ALLOWED_FONT_SIZE } from '../../context/ToolbarContext';
 import { SHORTCUTS } from '../ShortcutsPlugin/shortcuts';
+import { MAX_ALLOWED_FONT_SIZE, MIN_ALLOWED_FONT_SIZE } from './ToolbarContext';
 import { updateFontSize, updateFontSizeInSelection, UpdateFontSizeType } from './utils';
 
 import { cn } from '~/lib/utils'; // Adjust import based on your setup
