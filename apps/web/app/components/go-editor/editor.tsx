@@ -82,7 +82,7 @@ export default function Editor({ placeholder = 'Enter text', hasError }: Props):
       <HistoryPlugin externalHistoryState={historyState} />
       <RichTextPlugin
         contentEditable={
-          <div ref={onRef} className='relative'>
+          <div ref={onRef} className='relative mx-auto max-w-xl'>
             <ContentEditable placeholder={placeholder} hasError={hasError} />
           </div>
         }

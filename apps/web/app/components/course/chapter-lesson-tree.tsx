@@ -60,7 +60,7 @@ export function ChapterLessonTree({
 
   const displayMode = searchParams.get('display') || 'path';
   const continueScroll = searchParams.get('continue');
-  const scrollToChapter = searchParams.get('navChapter');
+  const scrollToChapter = searchParams.get('chapter');
   const isPath = displayMode === 'path';
 
   useEffect(() => {

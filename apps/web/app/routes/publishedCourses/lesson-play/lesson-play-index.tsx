@@ -249,7 +249,7 @@ export default function LessonPlay({ params, loaderData }: Route.ComponentProps)
                         <div className='flex h-full items-center justify-between space-x-2'>
                           {/* Previous Chapter */}
                           <IconNavLink
-                            to={`/c/${navigationData.previous.chapter?.course_id}?navChapter=${navigationData.previous.chapter?.id}`}
+                            to={`/c/${navigationData.previous.chapter?.course_id}?chapter=${navigationData.previous.chapter?.id}`}
                             icon={ChevronsLeft}
                             label='Previous Chapter'
                             hideLabelOnMobile
@@ -291,7 +291,7 @@ export default function LessonPlay({ params, loaderData }: Route.ComponentProps)
 
                           {/* Next Chapter */}
                           <IconNavLink
-                            to={`/c/${navigationData.next.chapter?.course_id}?navChapter=${navigationData.next.chapter?.id}`}
+                            to={`/c/${navigationData.next.chapter?.course_id}?chapter=${navigationData.next.chapter?.id}`}
                             icon={ChevronsRight}
                             label='Next Chapter'
                             hideLabelOnMobile

@@ -10,6 +10,7 @@ import {
 } from '@gonasi/database/publishedCourses';
 
 import type { Route } from './+types/complete-lesson';
+import { confettiColors } from '../complete-course';
 
 import { NavLinkButton } from '~/components/ui/button';
 import { Modal } from '~/components/ui/modal';
@@ -117,9 +118,16 @@ export default function CompleteLesson({ loaderData, params }: Route.ComponentPr
   return (
     <Modal open>
       <Modal.Content size='md'>
-        <Modal.Header hasClose={false} />
+        <Modal.Header hasClose={false} className='bg-transparent' />
         <Modal.Body className='px-4 pt-2 pb-8'>
-          <Confetti particleCount={100} colors={['#f74d40', '#20c9d0', '#0f172a', '#ffffff']} />
+          <Confetti
+            particleCount={200}
+            colors={confettiColors}
+            effectCount={2}
+            effectInterval={500}
+            launchSpeed={1}
+            opacityDeltaMultiplier={1.1}
+          />
 
           <motion.div
             className='mb-6 text-center'

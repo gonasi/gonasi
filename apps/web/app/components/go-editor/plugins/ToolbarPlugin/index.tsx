@@ -47,6 +47,7 @@ import {
   File,
   FilePlus2,
   Highlighter,
+  ImagePlus,
   IndentIncrease,
   Italic,
   Link,
@@ -614,6 +615,58 @@ export default function ToolbarPlugin({
 
   return (
     <div className={cn('toolbar')}>
+      {canViewerSeeInsertDropdown && (
+        <>
+          <div className='flex-shrink-0'>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant='ghost'
+                  size='sm'
+                  disabled={!isEditable}
+                  leftIcon={<Plus />}
+                  rightIcon={<ChevronDown />}
+                  aria-label='Insert specialized editor node'
+                >
+                  Insert
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className=''>
+                <DropdownMenuGroup>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      activeEditor.dispatchCommand(INSERT_HORIZONTAL_RULE_COMMAND, undefined);
+                    }}
+                    active={toolbarState.isLowercase}
+                  >
+                    <ImagePlus />
+                    Image
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      activeEditor.dispatchCommand(INSERT_HORIZONTAL_RULE_COMMAND, undefined);
+                    }}
+                    active={toolbarState.isLowercase}
+                  >
+                    <Tag />
+                    Tag
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      activeEditor.dispatchCommand(INSERT_HORIZONTAL_RULE_COMMAND, undefined);
+                    }}
+                    active={toolbarState.isLowercase}
+                  >
+                    <SquareSplitVertical />
+                    Horizontal Rule
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </>
+      )}
+
       <IconTooltipButton
         disabled={!isEditable}
         onClick={() => {
@@ -850,49 +903,6 @@ export default function ToolbarPlugin({
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-
-        {canViewerSeeInsertDropdown && (
-          <>
-            <div className='flex-shrink-0'>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant='ghost'
-                    size='sm'
-                    disabled={!isEditable}
-                    leftIcon={<Plus />}
-                    rightIcon={<ChevronDown />}
-                    aria-label='Insert specialized editor node'
-                  >
-                    Insert
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className=''>
-                  <DropdownMenuGroup>
-                    <DropdownMenuItem
-                      onClick={() => {
-                        activeEditor.dispatchCommand(INSERT_HORIZONTAL_RULE_COMMAND, undefined);
-                      }}
-                      active={toolbarState.isLowercase}
-                    >
-                      <Tag />
-                      Tag
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => {
-                        activeEditor.dispatchCommand(INSERT_HORIZONTAL_RULE_COMMAND, undefined);
-                      }}
-                      active={toolbarState.isLowercase}
-                    >
-                      <SquareSplitVertical />
-                      Horizontal Rule
-                    </DropdownMenuItem>
-                  </DropdownMenuGroup>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          </>
-        )}
       </>
 
       <ElementFormatDropdown

@@ -10,6 +10,7 @@ import {
 } from '@gonasi/database/publishedCourses';
 
 import type { Route } from './+types/complete-chapter';
+import { confettiColors } from './complete-course';
 
 import { LucideIconRenderer } from '~/components/cards';
 import { NavLinkButton } from '~/components/ui/button';
@@ -90,13 +91,13 @@ export default function CompleteChapter({ loaderData, params }: Route.ComponentP
           <Confetti
             mode='boom'
             particleCount={180}
-            colors={['#f74d40', '#20c9d0', '#0f172a', '#ffffff']}
+            colors={confettiColors}
             x={0.5}
             y={0.4}
             deg={270}
             shapeSize={14}
             spreadDeg={65}
-            effectCount={4}
+            effectCount={5}
             effectInterval={800}
             launchSpeed={1.3}
             opacityDeltaMultiplier={1.1}

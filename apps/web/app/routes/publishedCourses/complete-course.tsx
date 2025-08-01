@@ -70,7 +70,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   }
 }
 
-const confettiColors = [
+export const confettiColors = [
   // Theme colors
   '#f74d40', // red-orange
   '#20c9d0', // cyan

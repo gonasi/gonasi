@@ -83,7 +83,7 @@ export function BuilderRichTextPlugin({ block }: BuilderRichTextPluginProps) {
 
   return (
     <Modal open>
-      <Modal.Content size='md'>
+      <Modal.Content size='lg'>
         <RemixFormProvider {...methods}>
           <form
             onSubmit={methods.handleSubmit}
