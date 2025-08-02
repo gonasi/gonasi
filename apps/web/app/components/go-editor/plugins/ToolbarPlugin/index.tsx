@@ -45,7 +45,6 @@ import {
   Code,
   Eraser,
   File,
-  FilePlus2,
   Highlighter,
   ImagePlus,
   IndentIncrease,
@@ -99,7 +98,7 @@ import {
 } from '~/components/ui/dropdown-menu';
 import { cn } from '~/lib/utils';
 
-const InsertFileDialog = lazy(() => import('../FilesPlugin/InsertFileDialog'));
+const InsertImageDialog = lazy(() => import('../Files/ImagesPlugin/InsertImageDialog'));
 
 const FONT_FAMILY_OPTIONS: [string, string][] = [
   ['Arial', 'Arial'],
@@ -635,7 +634,19 @@ export default function ToolbarPlugin({
                 <DropdownMenuGroup>
                   <DropdownMenuItem
                     onClick={() => {
-                      activeEditor.dispatchCommand(INSERT_HORIZONTAL_RULE_COMMAND, undefined);
+                      showModal(
+                        'Insert Image', // title
+                        (
+                          onClose, // getContent
+                        ) => (
+                          <Suspense fallback={<Spinner />}>
+                            <InsertImageDialog activeEditor={activeEditor} onClose={onClose} />
+                          </Suspense>
+                        ),
+                        '', // className (empty string is fine)
+                        <File />, // leadingIcon (null is valid)
+                        'lg', // size (valid value from 'sm' | 'md' | 'lg' | 'full')
+                      );
                     }}
                     active={toolbarState.isLowercase}
                   >
@@ -667,28 +678,6 @@ export default function ToolbarPlugin({
         </>
       )}
 
-      <IconTooltipButton
-        disabled={!isEditable}
-        onClick={() => {
-          showModal(
-            'Insert File', // title
-            (
-              onClose, // getContent
-            ) => (
-              <Suspense fallback={<Spinner />}>
-                <InsertFileDialog activeEditor={activeEditor} onClose={onClose} />
-              </Suspense>
-            ),
-            '', // className (empty string is fine)
-            <File />, // leadingIcon (null is valid)
-            'lg', // size (valid value from 'sm' | 'md' | 'lg' | 'full')
-          );
-        }}
-        title='Upload file'
-        type='button'
-        aria-label='Upload file.'
-        icon={FilePlus2}
-      />
       <IconTooltipButton
         disabled={!toolbarState.canUndo || !isEditable}
         onClick={() => {

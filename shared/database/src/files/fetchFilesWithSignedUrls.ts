@@ -6,6 +6,7 @@ import type { FetchDataParams } from '../types';
 
 interface FetchFilesParams extends FetchDataParams {
   courseId: string;
+  fileType: FileType;
 }
 
 export async function fetchFilesWithSignedUrls({
@@ -14,16 +15,16 @@ export async function fetchFilesWithSignedUrls({
   searchQuery = '',
   limit = 12,
   page = 1,
+  fileType,
 }: FetchFilesParams) {
-  // TODO: Implement user permission check
-
   const { startIndex, endIndex } = getPaginationRange(page, limit);
 
   let query = supabase
     .from('file_library')
     .select('*', { count: 'exact' })
     .order('created_at', { ascending: false })
-    .eq('course_id', courseId);
+    .eq('course_id', courseId)
+    .eq('file_type', fileType);
 
   if (searchQuery) {
     query = query.ilike('name', `%${searchQuery}%`);

@@ -14,6 +14,7 @@ import { useSettings } from './context/SettingsContext';
 import { useSharedHistoryContext } from './context/SharedHistoryContext';
 import AutocompletePlugin from './plugins/AutocompletePlugin';
 import DraggableBlockPlugin from './plugins/DraggableBlockPlugin';
+import ImagesPlugin from './plugins/Files/ImagesPlugin';
 import FilesPlugin from './plugins/FilesPlugin';
 import { AutoFocusPlugin } from './plugins/LexicalAutoFocusPlugin';
 import { ListPlugin } from './plugins/LexicalListPlugin';
@@ -90,6 +91,7 @@ export default function Editor({ placeholder = 'Enter text', hasError }: Props):
       />
 
       <FilesPlugin />
+      <ImagesPlugin />
       <ListPlugin />
       <CheckListPlugin />
       <TablePlugin

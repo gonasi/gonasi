@@ -244,7 +244,7 @@ export default function LessonPlay({ params, loaderData }: Route.ComponentProps)
                   const shouldPulse = !!navigationData.continue.lesson;
 
                   return (
-                    <nav className='bg-background/95 border-border/5 fixed right-0 bottom-0 left-0 h-16 border-t backdrop-blur-sm md:h-20'>
+                    <nav className='bg-background/90 border-border/5 fixed right-0 bottom-0 left-0 z-10 h-16 border-t backdrop-blur-sm md:h-20'>
                       <div className='container mx-auto h-full px-4 md:px-0'>
                         <div className='flex h-full items-center justify-between space-x-2'>
                           {/* Previous Chapter */}

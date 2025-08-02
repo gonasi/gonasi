@@ -1,12 +1,11 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'react-router';
-import type { LexicalCommand } from 'lexical';
-import { createCommand } from 'lexical';
 import { Search, X } from 'lucide-react';
 
 import { fetchFilesWithSignedUrls } from '@gonasi/database/files';
+import type { FileType } from '@gonasi/schemas/file';
 
-import type { FilePayload } from '../../nodes/FileNode';
+import type { InsertImagePayload } from './ImagesPlugin';
 
 import FileRenderer from '~/components/file-renderers/file-renderer';
 import { Spinner } from '~/components/loaders';
@@ -16,15 +15,14 @@ import { createBrowserClient } from '~/lib/supabase/supabaseClient';
 import type { FileLoaderReturnType } from '~/routes/dashboard/file-library/all-files';
 import { useStore } from '~/store';
 
-export type InsertFilePayload = Readonly<FilePayload>;
+export type InsertFilePayload = InsertImagePayload;
 
-export const INSERT_FILE_COMMAND: LexicalCommand<InsertFilePayload> =
-  createCommand('INSERT_FILE_COMMAND');
-
-export function InsertFileDialogBody({
+export function InsertFileDialog({
   handleFileInsert,
+  fileType,
 }: {
   handleFileInsert: (payload: InsertFilePayload) => void;
+  fileType: FileType;
 }): React.JSX.Element {
   const params = useParams();
   const { activeSession } = useStore();
@@ -83,6 +81,7 @@ export function InsertFileDialogBody({
       try {
         const fetchedFiles = await fetchFilesWithSignedUrls({
           supabase,
+          fileType,
           courseId: params.courseId,
           searchQuery: debouncedSearchQuery,
           limit,

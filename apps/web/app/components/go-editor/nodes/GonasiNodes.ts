@@ -10,6 +10,7 @@ import { TableCellNode, TableNode, TableRowNode } from '@lexical/table';
 import type { Klass, LexicalNode } from 'lexical';
 
 import { FileNode } from './FileNode';
+import { ImageNode } from './ImageNode';
 
 export const GonasiNodes: Klass<LexicalNode>[] = [
   HeadingNode,
@@ -29,6 +30,7 @@ export const GonasiNodes: Klass<LexicalNode>[] = [
   // PollNode,
   // StickyNode,
   FileNode,
+  ImageNode,
   // InlineImageNode,
   // EmojiNode,
   // ExcalidrawNode,
