@@ -98,7 +98,7 @@ export function InsertFileDialog({
     };
 
     fetchData();
-  }, [supabase, debouncedSearchQuery, limit, params.courseId]);
+  }, [supabase, debouncedSearchQuery, limit, params.courseId, fileType]);
 
   // Fetch more when pagination changes
   useEffect(() => {
@@ -113,6 +113,7 @@ export function InsertFileDialog({
           searchQuery: debouncedSearchQuery,
           limit,
           page,
+          fileType,
         });
 
         setFiles((prev) => ({
@@ -132,7 +133,7 @@ export function InsertFileDialog({
     };
 
     fetchMoreData();
-  }, [supabase, params.courseId, page, limit, debouncedSearchQuery, files.data.length]);
+  }, [supabase, params.courseId, page, limit, debouncedSearchQuery, files.data.length, fileType]);
 
   return (
     <div className='flex flex-col space-y-4'>

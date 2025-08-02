@@ -12,10 +12,8 @@ import type {
 } from 'lexical';
 import { $applyNodeReplacement, $getRoot, DecoratorNode } from 'lexical';
 
-// const ImageComponent = React.lazy(() => import('./ImageComponent'));
-
 export interface ImagePayload {
-  imageId: string;
+  fileId: string;
   width?: number;
   height?: number;
   maxWidth?: number;
@@ -24,7 +22,7 @@ export interface ImagePayload {
 
 export type SerializedImageNode = Spread<
   {
-    imageId: string;
+    fileId: string;
     width?: number;
     height?: number;
     maxWidth: number;
@@ -35,9 +33,9 @@ export type SerializedImageNode = Spread<
 function $convertImageElement(domNode: Node): null | DOMConversionOutput {
   const div = domNode as HTMLElement;
 
-  const imageId = div.getAttribute('data-image-id');
+  const fileId = div.getAttribute('data-file-id');
 
-  if (!imageId) {
+  if (!fileId) {
     return null;
   }
 
@@ -45,7 +43,7 @@ function $convertImageElement(domNode: Node): null | DOMConversionOutput {
   const height = div.getAttribute('data-height');
 
   const node = $createImageNode({
-    imageId,
+    fileId,
     width: width ? parseInt(width, 10) : undefined,
     height: height ? parseInt(height, 10) : undefined,
   });
@@ -54,7 +52,7 @@ function $convertImageElement(domNode: Node): null | DOMConversionOutput {
 }
 
 export class ImageNode extends DecoratorNode<JSX.Element> {
-  __imageId: string;
+  __fileId: string;
   __width: number | undefined;
   __height: number | undefined;
   __maxWidth: number;
@@ -64,28 +62,27 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
   }
 
   static clone(node: ImageNode): ImageNode {
-    return new ImageNode(node.__imageId, node.__maxWidth, node.__width, node.__height, node.__key);
+    return new ImageNode(node.__fileId, node.__maxWidth, node.__width, node.__height, node.__key);
   }
 
   constructor(
-    imageId: string,
+    fileId: string,
     maxWidth: number = 500,
     width?: number,
     height?: number,
     key?: NodeKey,
   ) {
     super(key);
-    this.__imageId = imageId;
+    this.__fileId = fileId;
     this.__maxWidth = maxWidth;
     this.__width = width;
     this.__height = height;
   }
 
-  // Serialization
   static importJSON(serializedNode: SerializedImageNode): ImageNode {
-    const { imageId, width, height, maxWidth } = serializedNode;
+    const { fileId, width, height, maxWidth } = serializedNode;
     return $createImageNode({
-      imageId,
+      fileId,
       width,
       height,
       maxWidth,
@@ -95,17 +92,16 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
   exportJSON(): SerializedImageNode {
     return {
       ...super.exportJSON(),
-      imageId: this.__imageId,
+      fileId: this.__fileId,
       width: this.__width,
       height: this.__height,
       maxWidth: this.__maxWidth,
     };
   }
 
-  // DOM Export/Import
   exportDOM(): DOMExportOutput {
     const element = document.createElement('div');
-    element.setAttribute('data-image-id', this.__imageId);
+    element.setAttribute('data-file-id', this.__fileId);
     element.setAttribute('data-lexical-image', 'true');
 
     if (this.__width) {
@@ -122,11 +118,7 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
     return {
       div: (node: Node) => {
         const div = node as HTMLElement;
-        // Only convert divs that have our image marker
-        if (
-          div.getAttribute('data-lexical-image') === 'true' &&
-          div.getAttribute('data-image-id')
-        ) {
+        if (div.getAttribute('data-lexical-image') === 'true' && div.getAttribute('data-file-id')) {
           return {
             conversion: $convertImageElement,
             priority: 1,
@@ -137,7 +129,6 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
     };
   }
 
-  // View
   createDOM(config: EditorConfig): HTMLElement {
     const span = document.createElement('span');
     const theme = config.theme;
@@ -152,25 +143,17 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
     return false;
   }
 
-  // Decorator
   decorate(): JSX.Element {
     return (
-      // <ImageComponent
-      //   imageId={this.__imageId}
-      //   width={this.__width}
-      //   height={this.__height}
-      //   maxWidth={this.__maxWidth}
-      //   nodeKey={this.getKey()}
-      // />
-      <div data-image-id={this.__imageId}>
-        Unpic Image component goes here (imageId: {this.__imageId})
+      <div data-file-id={this.__fileId}>
+        Unpic Image component goes here (fileId: {this.__fileId})
       </div>
     );
   }
 
   // Getters
-  getImageId(): string {
-    return this.__imageId;
+  getFileId(): string {
+    return this.__fileId;
   }
 
   getWidth(): number | undefined {
@@ -186,9 +169,9 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
   }
 
   // Setters
-  setImageId(imageId: string): void {
+  setFileId(fileId: string): void {
     const writable = this.getWritable();
-    writable.__imageId = imageId;
+    writable.__fileId = fileId;
   }
 
   setWidthAndHeight(width?: number, height?: number): void {
@@ -203,17 +186,18 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
   }
 }
 
+// Node creation
 export function $createImageNode(payload: ImagePayload): ImageNode {
-  const { imageId, width, height = 250, maxWidth = 500, key } = payload;
-
-  return $applyNodeReplacement(new ImageNode(imageId, maxWidth, width, height, key));
+  const { fileId, width, height = 250, maxWidth = 500, key } = payload;
+  return $applyNodeReplacement(new ImageNode(fileId, maxWidth, width, height, key));
 }
 
+// Type guard
 export function $isImageNode(node: LexicalNode | null | undefined): node is ImageNode {
   return node instanceof ImageNode;
 }
 
-// Utility functions for working with ImageNodes
+// Utility functions
 export function $getAllImageNodes(): ImageNode[] {
   const root = $getRoot();
   const imageNodes: ImageNode[] = [];
@@ -223,7 +207,6 @@ export function $getAllImageNodes(): ImageNode[] {
       imageNodes.push(node);
     }
 
-    // Only ElementNode has getChildren method
     if (node.getType() !== 'text' && 'getChildren' in node) {
       const elementNode = node as ElementNode;
       const children = elementNode.getChildren();
@@ -235,7 +218,7 @@ export function $getAllImageNodes(): ImageNode[] {
   return imageNodes;
 }
 
-export function $findImageNodeByImageId(imageId: string): ImageNode | null {
+export function $findImageNodeByFileId(fileId: string): ImageNode | null {
   const imageNodes = $getAllImageNodes();
-  return imageNodes.find((node) => node.getImageId() === imageId) || null;
+  return imageNodes.find((node) => node.getFileId() === fileId) || null;
 }

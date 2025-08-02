@@ -57,7 +57,7 @@ export default function LexicalContentEditable({
       {!readOnly && isEmpty && (
         <div
           className={cn(
-            'text-muted-foreground font-secondary pointer-events-none absolute top-5 left-3 text-xs select-none md:text-sm',
+            'text-muted-foreground font-secondary pointer-events-none absolute top-5 left-4 text-xs select-none md:text-sm',
             placeholderClassName,
           )}
         >
