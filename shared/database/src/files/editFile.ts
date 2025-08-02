@@ -1,5 +1,5 @@
 import type { EditFileSchemaTypes } from '@gonasi/schemas/file';
-import { getFileMetadata } from '@gonasi/schemas/file';
+import { FileType, getFileMetadata } from '@gonasi/schemas/file';
 
 import { getUserId } from '../auth';
 import type { TypedSupabaseClient } from '../client';
@@ -49,7 +49,7 @@ export const editFile = async (
     }
 
     // Update image-related metadata only
-    const { error: updateError } = await supabase
+    const { error: updateError, data } = await supabase
       .from('file_library')
       .update({
         size,
@@ -58,11 +58,30 @@ export const editFile = async (
         file_type,
         updated_by: userId,
       })
-      .eq('id', fileId);
+      .eq('id', fileId)
+      .select()
+      .single();
 
-    if (updateError) {
+    if (updateError || !data) {
       console.error('Database metadata update failed:', updateError);
       return { success: false, message: `Failed to update file metadata: ${updateError.message}` };
+    }
+
+    if (file_type === FileType.IMAGE) {
+      supabase.functions
+        .invoke('generate-blurhash', {
+          body: {
+            bucket: FILE_LIBRARY_BUCKET,
+            object_key: path,
+            table: 'file_library',
+            column: 'blur_preview',
+            row_id_column: 'id',
+            row_id_value: data.id,
+          },
+        })
+        .catch((err) => {
+          console.error('BlurHash generation failed:', err);
+        });
     }
 
     return {

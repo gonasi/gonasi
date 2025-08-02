@@ -6,7 +6,7 @@ import type { FetchDataParams } from '../types';
 
 interface FetchFilesParams extends FetchDataParams {
   courseId: string;
-  fileType: FileType;
+  fileType?: FileType;
 }
 
 export async function fetchFilesWithSignedUrls({
@@ -23,8 +23,11 @@ export async function fetchFilesWithSignedUrls({
     .from('file_library')
     .select('*', { count: 'exact' })
     .order('created_at', { ascending: false })
-    .eq('course_id', courseId)
-    .eq('file_type', fileType);
+    .eq('course_id', courseId);
+
+  if (fileType) {
+    query = query.eq('file_type', fileType);
+  }
 
   if (searchQuery) {
     query = query.ilike('name', `%${searchQuery}%`);

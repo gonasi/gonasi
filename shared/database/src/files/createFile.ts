@@ -1,5 +1,5 @@
 import type { NewFileSchemaTypes } from '@gonasi/schemas/file';
-import { getFileMetadata } from '@gonasi/schemas/file';
+import { FileType, getFileMetadata } from '@gonasi/schemas/file';
 
 import { getUserId } from '../auth';
 import type { TypedSupabaseClient } from '../client';
@@ -49,23 +49,44 @@ export const createFile = async (
     }
 
     // Create file metadata entry in the database
-    const { error: insertError } = await supabase.from('file_library').insert({
-      course_id: courseId,
-      organization_id: organizationId,
-      name,
-      path: uploadResponse.path,
-      size,
-      mime_type,
-      extension,
-      file_type,
-      created_by: userId,
-      updated_by: userId,
-    });
+    const { error: insertError, data } = await supabase
+      .from('file_library')
+      .insert({
+        course_id: courseId,
+        organization_id: organizationId,
+        name,
+        path: uploadResponse.path,
+        size,
+        mime_type,
+        extension,
+        file_type,
+        created_by: userId,
+        updated_by: userId,
+      })
+      .select()
+      .single();
 
-    if (insertError) {
+    if (insertError || !data) {
       // Rollback uploaded file if DB insert fails
       await supabase.storage.from(FILE_LIBRARY_BUCKET).remove([uploadResponse.path]);
       return { success: false, message: `Failed to save file metadata: ${insertError.message}` };
+    }
+
+    if (file_type === FileType.IMAGE) {
+      supabase.functions
+        .invoke('generate-blurhash', {
+          body: {
+            bucket: FILE_LIBRARY_BUCKET,
+            object_key: uploadResponse.path,
+            table: 'file_library',
+            column: 'blur_preview',
+            row_id_column: 'id',
+            row_id_value: data.id,
+          },
+        })
+        .catch((err) => {
+          console.error('BlurHash generation failed:', err);
+        });
     }
 
     return {

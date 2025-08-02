@@ -24,7 +24,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
 
   const [file, canEdit] = await Promise.all([
-    fetchFileById(supabase, params.fileId),
+    fetchFileById({ supabase, fileId: params.fileId }),
     supabase.rpc('can_user_edit_course', {
       arg_course_id: params.courseId,
     }),

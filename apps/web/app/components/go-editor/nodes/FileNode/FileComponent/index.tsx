@@ -5,14 +5,13 @@ import { CLICK_COMMAND, COMMAND_PRIORITY_LOW } from 'lexical';
 import { CircleOff } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { fetchFileById } from '@gonasi/database/files';
+import { fetchFileById, type FetchFileByIdReturn } from '@gonasi/database/files';
 
 import { FileComponentWrapper } from './FileComponentWrapper';
 
 import FileNodeRenderer from '~/components/file-renderers/file-node-renderer';
 import { Spinner } from '~/components/loaders';
 import { createBrowserClient } from '~/lib/supabase/supabaseClient';
-import type { FileLoaderItemType } from '~/routes/dashboard/file-library/all-files';
 import { useStore } from '~/store';
 
 interface FileComponentProps {
@@ -27,7 +26,7 @@ const FileComponent: React.FC<FileComponentProps> = ({ fileId, nodeKey }) => {
   const { activeSession } = useStore();
   const [editor] = useLexicalComposerContext();
 
-  const [fileMetadata, setFileMetadata] = useState<FileLoaderItemType | null>(null);
+  const [fileMetadata, setFileMetadata] = useState<FetchFileByIdReturn>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -56,7 +55,7 @@ const FileComponent: React.FC<FileComponentProps> = ({ fileId, nodeKey }) => {
 
     try {
       setLoading(true);
-      const data = await fetchFileById(supabase, fileId);
+      const data = await fetchFileById({ supabase, fileId });
 
       if (!data) {
         setError('File not found');

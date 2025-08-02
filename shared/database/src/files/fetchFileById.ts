@@ -7,8 +7,10 @@ interface FetchFileByIdArgs {
   supabase: TypedSupabaseClient;
   fileId: string;
   expirySeconds?: number;
-  mode: 'preview' | 'play';
+  mode?: 'preview' | 'play';
 }
+
+export type FetchFileByIdReturn = Awaited<ReturnType<typeof fetchFileById>>;
 
 /**
  * Fetches a single file from the file_library table by its ID and generates a signed URL for it.
@@ -20,13 +22,30 @@ export async function fetchFileById({
   supabase,
   fileId,
   expirySeconds = 3600,
-  mode,
+  mode = 'preview',
 }: FetchFileByIdArgs) {
   try {
     // Fetch the file metadata from the database
     const { data, error } = await supabase
       .from('file_library')
-      .select('id, name, path, file_type, blur_preview')
+      .select(
+        `
+          id,
+          created_by,
+          updated_by,
+          name,
+          size,
+          path,
+          mime_type,
+          extension,
+          created_at,
+          updated_at,
+          course_id,
+          organization_id,
+          blur_preview,
+          file_type
+        `,
+      )
       .eq('id', fileId)
       .single();
 
