@@ -77,6 +77,47 @@ const MIME_TYPES: Record<string, string> = {
   txt: 'text/plain',
 };
 
+export type AspectRatioOption = '16/9' | '4/3' | '1/1' | '3/2' | '9/16' | '4/1' | '263/100';
+
+export const AspectRatioClasses: Record<AspectRatioOption, string> = {
+  '16/9': 'aspect-[16/9]', // standard video & responsive banner
+  '4/3': 'aspect-[4/3]', // classic photo/video
+  '1/1': 'aspect-square', // square (e.g., avatars)
+  '3/2': 'aspect-[3/2]', // slightly taller than 16/9
+  '9/16': 'aspect-[9/16]', // vertical reels/stories
+  '4/1': 'aspect-[4/1]', // LinkedIn-style cover photo
+  '263/100': 'aspect-[263/100]', // Facebook-style cover photo (~2.63:1)
+};
+
+export type ObjectFitType =
+  | 'contain'
+  | 'cover'
+  | 'fill'
+  | 'none'
+  | 'scale-down'
+  | 'inherit'
+  | 'initial';
+
+export const VALID_ASPECT_RATIOS: AspectRatioOption[] = [
+  '16/9',
+  '4/3',
+  '1/1',
+  '3/2',
+  '9/16',
+  '4/1',
+  '263/100',
+];
+
+export const VALID_OBJECT_FITS: ObjectFitType[] = [
+  'contain',
+  'cover',
+  'fill',
+  'none',
+  'scale-down',
+  'inherit',
+  'initial',
+];
+
 // ----------------------
 // Utility Functions
 // ----------------------

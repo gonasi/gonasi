@@ -12,11 +12,17 @@ import type {
 } from 'lexical';
 import { $applyNodeReplacement, $getRoot, DecoratorNode } from 'lexical';
 
+import type { AspectRatioOption, ObjectFitType } from '@gonasi/schemas/file';
+import { VALID_ASPECT_RATIOS, VALID_OBJECT_FITS } from '@gonasi/schemas/file';
+
 export interface ImagePayload {
   fileId: string;
   width?: number;
   height?: number;
   maxWidth?: number;
+  blurHash?: string;
+  objectFit?: ObjectFitType;
+  aspectRatio?: AspectRatioOption;
   key?: NodeKey;
 }
 
@@ -26,26 +32,39 @@ export type SerializedImageNode = Spread<
     width?: number;
     height?: number;
     maxWidth: number;
+    blurHash?: string;
+    objectFit?: ObjectFitType;
+    aspectRatio?: AspectRatioOption;
   },
   SerializedLexicalNode
 >;
 
 function $convertImageElement(domNode: Node): null | DOMConversionOutput {
   const div = domNode as HTMLElement;
-
   const fileId = div.getAttribute('data-file-id');
-
-  if (!fileId) {
-    return null;
-  }
+  if (!fileId) return null;
 
   const width = div.getAttribute('data-width');
   const height = div.getAttribute('data-height');
+  const blurHash = div.getAttribute('data-blur-hash') || undefined;
+
+  const aspectRatioAttr = div.getAttribute('data-aspect-ratio');
+  const aspectRatio = VALID_ASPECT_RATIOS.includes(aspectRatioAttr as AspectRatioOption)
+    ? (aspectRatioAttr as AspectRatioOption)
+    : undefined;
+
+  const objectFitAttr = div.getAttribute('data-object-fit');
+  const objectFit = VALID_OBJECT_FITS.includes(objectFitAttr as ObjectFitType)
+    ? (objectFitAttr as ObjectFitType)
+    : undefined;
 
   const node = $createImageNode({
     fileId,
     width: width ? parseInt(width, 10) : undefined,
     height: height ? parseInt(height, 10) : undefined,
+    blurHash,
+    objectFit,
+    aspectRatio,
   });
 
   return { node };
@@ -56,13 +75,25 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
   __width: number | undefined;
   __height: number | undefined;
   __maxWidth: number;
+  __blurHash: string | undefined;
+  __objectFit: ObjectFitType | undefined;
+  __aspectRatio: AspectRatioOption | undefined;
 
   static getType(): string {
     return 'image';
   }
 
   static clone(node: ImageNode): ImageNode {
-    return new ImageNode(node.__fileId, node.__maxWidth, node.__width, node.__height, node.__key);
+    return new ImageNode(
+      node.__fileId,
+      node.__maxWidth,
+      node.__width,
+      node.__height,
+      node.__blurHash,
+      node.__objectFit,
+      node.__aspectRatio,
+      node.__key,
+    );
   }
 
   constructor(
@@ -70,6 +101,9 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
     maxWidth: number = 500,
     width?: number,
     height?: number,
+    blurHash?: string,
+    objectFit?: ObjectFitType,
+    aspectRatio?: AspectRatioOption,
     key?: NodeKey,
   ) {
     super(key);
@@ -77,15 +111,21 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
     this.__maxWidth = maxWidth;
     this.__width = width;
     this.__height = height;
+    this.__blurHash = blurHash;
+    this.__objectFit = objectFit;
+    this.__aspectRatio = aspectRatio;
   }
 
   static importJSON(serializedNode: SerializedImageNode): ImageNode {
-    const { fileId, width, height, maxWidth } = serializedNode;
+    const { fileId, width, height, maxWidth, blurHash, objectFit, aspectRatio } = serializedNode;
     return $createImageNode({
       fileId,
       width,
       height,
       maxWidth,
+      blurHash,
+      objectFit,
+      aspectRatio,
     });
   }
 
@@ -96,20 +136,22 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
       width: this.__width,
       height: this.__height,
       maxWidth: this.__maxWidth,
+      blurHash: this.__blurHash,
+      objectFit: this.__objectFit,
+      aspectRatio: this.__aspectRatio,
     };
   }
 
   exportDOM(): DOMExportOutput {
     const element = document.createElement('div');
-    element.setAttribute('data-file-id', this.__fileId);
     element.setAttribute('data-lexical-image', 'true');
+    element.setAttribute('data-file-id', this.__fileId);
 
-    if (this.__width) {
-      element.setAttribute('data-width', this.__width.toString());
-    }
-    if (this.__height) {
-      element.setAttribute('data-height', this.__height.toString());
-    }
+    if (this.__width) element.setAttribute('data-width', this.__width.toString());
+    if (this.__height) element.setAttribute('data-height', this.__height.toString());
+    if (this.__blurHash) element.setAttribute('data-blur-hash', this.__blurHash);
+    if (this.__objectFit) element.setAttribute('data-object-fit', this.__objectFit);
+    if (this.__aspectRatio) element.setAttribute('data-aspect-ratio', this.__aspectRatio);
 
     return { element };
   }
@@ -133,9 +175,7 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
     const span = document.createElement('span');
     const theme = config.theme;
     const className = theme.image;
-    if (className !== undefined) {
-      span.className = className;
-    }
+    if (className) span.className = className;
     return span;
   }
 
@@ -145,8 +185,16 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
 
   decorate(): JSX.Element {
     return (
-      <div data-file-id={this.__fileId}>
+      <div
+        data-file-id={this.__fileId}
+        style={{
+          ...(this.__aspectRatio && { aspectRatio: this.__aspectRatio }),
+        }}
+      >
         Unpic Image component goes here (fileId: {this.__fileId})
+        {this.__blurHash && <div>BlurHash: {this.__blurHash}</div>}
+        {this.__objectFit && <div>Object Fit: {this.__objectFit}</div>}
+        {this.__aspectRatio && <div>Aspect Ratio: {this.__aspectRatio}</div>}
       </div>
     );
   }
@@ -168,6 +216,18 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
     return this.__maxWidth;
   }
 
+  getBlurHash(): string | undefined {
+    return this.__blurHash;
+  }
+
+  getObjectFit(): ObjectFitType | undefined {
+    return this.__objectFit;
+  }
+
+  getAspectRatio(): AspectRatioOption | undefined {
+    return this.__aspectRatio;
+  }
+
   // Setters
   setFileId(fileId: string): void {
     const writable = this.getWritable();
@@ -184,12 +244,50 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
     const writable = this.getWritable();
     writable.__maxWidth = maxWidth;
   }
+
+  setBlurHash(blurHash?: string): void {
+    const writable = this.getWritable();
+    writable.__blurHash = blurHash;
+  }
+
+  setObjectFit(objectFit?: ObjectFitType): void {
+    const writable = this.getWritable();
+    writable.__objectFit = objectFit;
+  }
+
+  setAspectRatio(aspectRatio?: AspectRatioOption): void {
+    const writable = this.getWritable();
+    writable.__aspectRatio = aspectRatio;
+  }
+
+  setImageStyling(options: {
+    blurHash?: string;
+    objectFit?: ObjectFitType;
+    aspectRatio?: AspectRatioOption;
+  }): void {
+    const writable = this.getWritable();
+    if (options.blurHash !== undefined) writable.__blurHash = options.blurHash;
+    if (options.objectFit !== undefined) writable.__objectFit = options.objectFit;
+    if (options.aspectRatio !== undefined) writable.__aspectRatio = options.aspectRatio;
+  }
 }
 
-// Node creation
+// Factory
 export function $createImageNode(payload: ImagePayload): ImageNode {
-  const { fileId, width, height = 250, maxWidth = 500, key } = payload;
-  return $applyNodeReplacement(new ImageNode(fileId, maxWidth, width, height, key));
+  const {
+    fileId,
+    width,
+    height = 250,
+    maxWidth = 500,
+    blurHash,
+    objectFit = 'cover',
+    aspectRatio = '16/9',
+    key,
+  } = payload;
+
+  return $applyNodeReplacement(
+    new ImageNode(fileId, maxWidth, width, height, blurHash, objectFit, aspectRatio, key),
+  );
 }
 
 // Type guard
@@ -197,7 +295,7 @@ export function $isImageNode(node: LexicalNode | null | undefined): node is Imag
   return node instanceof ImageNode;
 }
 
-// Utility functions
+// Utility
 export function $getAllImageNodes(): ImageNode[] {
   const root = $getRoot();
   const imageNodes: ImageNode[] = [];
@@ -209,8 +307,7 @@ export function $getAllImageNodes(): ImageNode[] {
 
     if (node.getType() !== 'text' && 'getChildren' in node) {
       const elementNode = node as ElementNode;
-      const children = elementNode.getChildren();
-      children.forEach(traverse);
+      elementNode.getChildren().forEach(traverse);
     }
   };
 

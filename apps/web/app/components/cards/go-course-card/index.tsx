@@ -3,6 +3,12 @@ import { Image } from '@unpic/react';
 import { motion } from 'framer-motion';
 import { ImageIcon } from 'lucide-react';
 
+import {
+  AspectRatioClasses,
+  type AspectRatioOption,
+  type ObjectFitType,
+} from '@gonasi/schemas/file';
+
 import { CardTitle } from '~/components/ui/card';
 import { cn } from '~/lib/utils';
 
@@ -10,25 +16,13 @@ function GoCardContent({ className, ...props }: React.ComponentProps<'div'>) {
   return <div data-slot='go-card-content' className={cn('px-4 py-2', className)} {...props} />;
 }
 
-type AspectRatioOption = '16/9' | '4/3' | '1/1' | '3/2' | '9/16' | '4/1' | '263/100';
-
-const aspectRatioClasses: Record<AspectRatioOption, string> = {
-  '16/9': 'aspect-[16/9]', // standard video & responsive banner
-  '4/3': 'aspect-[4/3]', // classic photo/video
-  '1/1': 'aspect-square', // square (e.g., avatars)
-  '3/2': 'aspect-[3/2]', // slightly taller than 16/9
-  '9/16': 'aspect-[9/16]', // vertical reels/stories
-  '4/1': 'aspect-[4/1]', // LinkedIn-style cover photo
-  '263/100': 'aspect-[263/100]', // Facebook-style cover photo (~2.63:1)
-};
-
 interface GoThumbnailProps {
   iconUrl: string | null;
   blurHash: string | null;
   name: string;
   badges?: React.ReactNode[];
   className?: string;
-  objectFit?: 'contain' | 'cover' | 'fill' | 'none' | 'scale-down' | 'inherit' | 'initial';
+  objectFit?: ObjectFitType;
   aspectRatio?: AspectRatioOption;
   noThumbnailText?: string;
 }
@@ -44,7 +38,7 @@ function GoThumbnail({
   noThumbnailText = 'No thumbnail available',
 }: GoThumbnailProps) {
   const placeholder = blurHash ? blurhashToCssGradientString(blurHash) : 'auto';
-  const aspectClass = aspectRatioClasses[aspectRatio];
+  const aspectClass = AspectRatioClasses[aspectRatio];
 
   return (
     <div
