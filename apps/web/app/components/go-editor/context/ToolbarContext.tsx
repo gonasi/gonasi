@@ -136,3 +136,5 @@ export const useToolbarState = () => {
 
   return context;
 };
+
+export type { ToolbarStateKey, ToolbarStateValue };

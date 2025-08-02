@@ -23,6 +23,7 @@ import {
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
 
+import type { ToolbarStateKey, ToolbarStateValue } from '../../context/ToolbarContext';
 import { blockTypeToBlockName } from '../../context/ToolbarContext';
 
 import { getSelectedNode } from '~/components/go-editor/utils/getSelectedNode';
@@ -31,7 +32,10 @@ interface UseToolbarUpdatesProps {
   editor: LexicalEditor;
   activeEditor: LexicalEditor;
   setActiveEditor: (editor: LexicalEditor) => void;
-  updateToolbarState: (key: string, value: any) => void;
+  updateToolbarState: <Key extends ToolbarStateKey>(
+    key: Key,
+    value: ToolbarStateValue<Key>,
+  ) => void;
 }
 
 export function useToolbarUpdates({

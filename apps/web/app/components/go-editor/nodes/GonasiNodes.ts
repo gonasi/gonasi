@@ -65,4 +65,5 @@ export const GonasiRichTextRendererNodes: Klass<LexicalNode>[] = [
   LinkNode,
   OverflowNode,
   FileNode,
+  ImageNode,
 ];

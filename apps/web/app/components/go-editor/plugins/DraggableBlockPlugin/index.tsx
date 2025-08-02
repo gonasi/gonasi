@@ -43,7 +43,7 @@ export default function DraggableBlockPlugin({
         <div
           ref={menuRef}
           className={cn(
-            'absolute top-0 -left-4 z-10 flex gap-1 rounded p-1 opacity-0 transition-opacity',
+            'absolute top-0 -left-6 z-10 flex gap-1 rounded p-1 opacity-0 transition-opacity',
             'cursor-grab',
             'bg-card border-border/20 shadow-sm',
           )}
@@ -53,7 +53,7 @@ export default function DraggableBlockPlugin({
             title='Click to add below'
             onClick={insertBlock}
             className={cn(
-              'text-card-foreground hover:bg-card/80 flex h-5 w-5 items-center justify-center',
+              'text-card-foreground hover:bg-card/80 flex h-3 w-3 items-center justify-center',
               'rounded transition-colors',
             )}
           >
@@ -61,7 +61,7 @@ export default function DraggableBlockPlugin({
           </button>
           <div
             className={cn(
-              'hover:bg-card/80 text-card-foreground flex h-5 w-5 items-center justify-center',
+              'hover:bg-card/80 text-card-foreground flex h-3 w-3 items-center justify-center',
               'rounded transition-colors',
             )}
           >

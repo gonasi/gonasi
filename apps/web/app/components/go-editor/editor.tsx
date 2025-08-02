@@ -40,7 +40,8 @@ export default function Editor({ placeholder = 'Enter text', hasError }: Props):
   const [editor] = useLexicalComposerContext();
 
   const [activeEditor, setActiveEditor] = useState(editor);
-  const [isLinkEditMode, setIsLinkEditMode] = useState<boolean>(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [_isLinkEditMode, setIsLinkEditMode] = useState<boolean>(false);
 
   const onRef = (_floatingAnchorElem: HTMLDivElement) => {
     if (_floatingAnchorElem !== null) {
