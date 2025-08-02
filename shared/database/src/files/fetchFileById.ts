@@ -1,52 +1,59 @@
 import type { FileType } from '@gonasi/schemas/file';
 
 import type { TypedSupabaseClient } from '../client';
-import { FILE_LIBRARY_BUCKET } from '../constants';
+import { FILE_LIBRARY_BUCKET, PUBLISHED_FILE_LIBRARY_BUCKET } from '../constants';
+
+interface FetchFileByIdArgs {
+  supabase: TypedSupabaseClient;
+  fileId: string;
+  expirySeconds?: number;
+  mode: 'preview' | 'play';
+}
 
 /**
  * Fetches a single file from the file_library table by its ID and generates a signed URL for it.
  *
- * @param supabase - Supabase client instance.
- * @param fileId - The unique identifier of the file to fetch.
- * @param expirySeconds - How long the signed URL should be valid for (in seconds). Default is 3600 (1 hour).
- * @returns Promise with an object containing the file data with a signed URL or an error message.
+ * @param args - Object containing supabase client, file ID, optional expiry time, and mode ('preview' or 'play').
+ * @returns Promise with an object containing the file data and signed URL or null on error.
  */
-export async function fetchFileById(
-  supabase: TypedSupabaseClient,
-  fileId: string,
+export async function fetchFileById({
+  supabase,
+  fileId,
   expirySeconds = 3600,
-) {
+  mode,
+}: FetchFileByIdArgs) {
   try {
     // Fetch the file metadata from the database
     const { data, error } = await supabase
       .from('file_library')
-      .select('*')
+      .select('id, name, path, file_type, blur_preview')
       .eq('id', fileId)
       .single();
 
     if (error || !data) {
-      console.error('Error fetching file_library: ', error);
+      console.error('[fetchFileById] Error fetching file_library:', error, 'fileId:', fileId);
       return null;
     }
+
+    const bucket = mode === 'preview' ? FILE_LIBRARY_BUCKET : PUBLISHED_FILE_LIBRARY_BUCKET;
 
     // Generate a signed URL for the file
     const { data: signedUrlData, error: signedUrlError } = await supabase.storage
-      .from(FILE_LIBRARY_BUCKET)
+      .from(bucket)
       .createSignedUrl(data.path, expirySeconds);
 
     if (signedUrlError) {
-      console.error('Error signed url: ', signedUrlError);
+      console.error('[fetchFileById] Error creating signed URL:', signedUrlError);
       return null;
     }
 
-    // Return the file data with the signed URL
     return {
       ...data,
       file_type: data.file_type as FileType,
       signed_url: signedUrlData?.signedUrl ?? null,
     };
   } catch (error) {
-    console.error('Unexpected error during file fetch:', error);
+    console.error('[fetchFileById] Unexpected error:', error);
     return null;
   }
 }

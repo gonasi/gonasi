@@ -15,6 +15,8 @@ import { $applyNodeReplacement, $getRoot, DecoratorNode } from 'lexical';
 import type { AspectRatioOption, ObjectFitType } from '@gonasi/schemas/file';
 import { VALID_ASPECT_RATIOS, VALID_OBJECT_FITS } from '@gonasi/schemas/file';
 
+import { RenderImage } from './RenderImage';
+
 export interface ImagePayload {
   fileId: string;
   width?: number;
@@ -185,16 +187,14 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
 
   decorate(): JSX.Element {
     return (
-      <div
-        data-file-id={this.__fileId}
-        style={{
-          ...(this.__aspectRatio && { aspectRatio: this.__aspectRatio }),
-        }}
-      >
-        Unpic Image component goes here (fileId: {this.__fileId})
-        {this.__blurHash && <div>BlurHash: {this.__blurHash}</div>}
-        {this.__objectFit && <div>Object Fit: {this.__objectFit}</div>}
-        {this.__aspectRatio && <div>Aspect Ratio: {this.__aspectRatio}</div>}
+      <div data-file-id={this.__fileId}>
+        <RenderImage
+          fileId={this.__fileId}
+          objectFit={this.__objectFit}
+          blurHash={this.__blurHash}
+          width={this.__width}
+          height={this.__height}
+        />
       </div>
     );
   }
