@@ -48,18 +48,22 @@ async function generateBlurHashTask(
       throw new Error('Could not generate signed URL');
     }
 
+    // Fetch and decode the image
     const imageResponse = await fetch(signedUrlData.signedUrl);
     if (!imageResponse.ok) throw new Error('Failed to download image');
 
     const imageBuffer = new Uint8Array(await imageResponse.arrayBuffer());
     const image = await Image.decode(imageBuffer);
+
+    // Resize to a smaller size for blurhash (optional but recommended for performance)
     const resized = image.resize(32, 32);
 
-    const pixels = resized.bitmap;
-    const width = resized.width;
-    const height = resized.height;
+    // Convert imagescript bitmap to Uint8ClampedArray format expected by blurhash
+    // imagescript stores pixels as RGBA in a Uint8Array, we need to convert to Uint8ClampedArray
+    const pixels = new Uint8ClampedArray(resized.bitmap);
 
-    const blurHash = encode(pixels, width, height, 4, 4);
+    // Generate blurhash with the converted pixel data
+    const blurHash = encode(pixels, resized.width, resized.height, 4, 4);
 
     const { error: updateError } = await supabase
       .from(table)
@@ -80,7 +84,7 @@ async function generateBlurHashTask(
 }
 
 addEventListener('beforeunload', (ev) => {
-  console.log('[generate-blurhash] Function will shutdown due to', ev.detail?.reason);
+  console.log('[generate-blurhash] Function will shutdown due to', ev);
 });
 
 Deno.serve(async (req) => {
