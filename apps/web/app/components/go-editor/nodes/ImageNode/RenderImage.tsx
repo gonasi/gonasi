@@ -9,10 +9,10 @@ import type { ImagePayload } from '.';
 
 export function RenderImage({
   fileId,
-  objectFit = 'cover',
+  objectFit = 'contain',
   blurHash,
-  width = 800,
-  height = 600,
+  width = 500,
+  height = 500,
 }: ImagePayload) {
   const fetcher = useFetcher<typeof loader>();
   const [isLoaded, setIsLoaded] = useState(false);

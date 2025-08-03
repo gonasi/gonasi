@@ -8,14 +8,17 @@ import type { ViewPluginComponentProps } from '../../PluginRenderers/ViewPluginT
 import RichTextRenderer from '~/components/go-editor/ui/RichTextRenderer';
 import { ViewPluginWrapper } from '~/components/plugins/common/ViewPluginWrapper';
 import { BlockActionButton } from '~/components/ui/button';
+import { useStore } from '~/store';
 
 type RichTextPluginType = Extract<BuilderSchemaTypes, { plugin_type: 'rich_text_editor' }>;
 
-export function ViewRichTextPlugin({ mode, blockWithProgress }: ViewPluginComponentProps) {
+export function ViewRichTextPlugin({ blockWithProgress }: ViewPluginComponentProps) {
   const {
     content: { richTextState },
     settings: { playbackMode, weight },
   } = blockWithProgress.block as RichTextPluginType;
+
+  const { mode } = useStore();
 
   // Initialize plugin logic for play mode (progress, persistence, etc.)
   const { loading, handleContinue, updateInteractionData } = useViewPluginCore(

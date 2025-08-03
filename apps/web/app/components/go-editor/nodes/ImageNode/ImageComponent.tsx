@@ -1,10 +1,13 @@
 import type { JSX } from 'react';
-import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useFetcher } from 'react-router';
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
 import { useLexicalEditable } from '@lexical/react/useLexicalEditable';
 import { useLexicalNodeSelection } from '@lexical/react/useLexicalNodeSelection';
 import { mergeRegister } from '@lexical/utils';
-import type { BaseSelection, LexicalCommand, NodeKey } from 'lexical';
+import { blurhashToCssGradientString } from '@unpic/placeholder';
+import { motion } from 'framer-motion';
+import type { BaseSelection, LexicalCommand } from 'lexical';
 import {
   $getSelection,
   $isNodeSelection,
@@ -16,34 +19,14 @@ import {
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
 
-import brokenImage from '../images/image-broken.svg';
-import './ImageNode.css';
+import type { loader } from '../../../../routes/api/get-signed-url';
+import type { ImagePayload } from '.';
 
-const imageCache = new Map<string, Promise<boolean> | boolean>();
+import { useStore } from '~/store';
 
 export const RIGHT_CLICK_IMAGE_COMMAND: LexicalCommand<MouseEvent> = createCommand(
   'RIGHT_CLICK_IMAGE_COMMAND',
 );
-
-function useSuspenseImage(src: string) {
-  let cached = imageCache.get(src);
-  if (typeof cached === 'boolean') {
-    return cached;
-  } else if (!cached) {
-    cached = new Promise<boolean>((resolve) => {
-      const img = new Image();
-      img.src = src;
-      img.onload = () => resolve(false);
-      img.onerror = () => resolve(true);
-    }).then((hasError) => {
-      imageCache.set(src, hasError);
-      return hasError;
-    });
-    imageCache.set(src, cached);
-    throw cached;
-  }
-  throw cached;
-}
 
 function isSVG(src: string): boolean {
   return src.toLowerCase().endsWith('.svg');
@@ -57,7 +40,7 @@ function LazyImage({
   width,
   height,
   maxWidth,
-  onError,
+  onLoad,
 }: {
   altText: string;
   className: string | null;
@@ -66,7 +49,7 @@ function LazyImage({
   maxWidth: number;
   src: string;
   width: 'inherit' | number;
-  onError: () => void;
+  onLoad: () => void;
 }): JSX.Element {
   const [dimensions, setDimensions] = useState<{
     width: number;
@@ -84,18 +67,6 @@ function LazyImage({
       });
     }
   }, [imageRef, isSVGImage]);
-
-  const hasError = useSuspenseImage(src);
-
-  useEffect(() => {
-    if (hasError) {
-      onError();
-    }
-  }, [hasError, onError]);
-
-  if (hasError) {
-    return <BrokenImage />;
-  }
 
   // Calculate final dimensions with proper scaling
   const calculateDimensions = () => {
@@ -122,7 +93,7 @@ function LazyImage({
     }
 
     // Scale down if height exceeds maxHeight while maintaining aspect ratio
-    const maxHeight = 500;
+    const maxHeight = 800;
     if (finalHeight > maxHeight) {
       const scale = maxHeight / finalHeight;
       finalHeight = maxHeight;
@@ -145,7 +116,6 @@ function LazyImage({
       alt={altText}
       ref={imageRef}
       style={imageStyle}
-      onError={onError}
       draggable='false'
       onLoad={(e) => {
         if (isSVGImage) {
@@ -155,49 +125,40 @@ function LazyImage({
             width: img.naturalWidth,
           });
         }
+        onLoad();
       }}
-    />
-  );
-}
-
-function BrokenImage(): JSX.Element {
-  return (
-    <img
-      src={brokenImage}
-      style={{
-        height: 200,
-        opacity: 0.2,
-        width: 200,
-      }}
-      draggable='false'
-      alt='Broken'
     />
   );
 }
 
 export default function ImageComponent({
-  src,
-  altText,
-  nodeKey,
-  width,
-  height,
+  fileId,
+  objectFit = 'contain',
+  blurHash,
+  width = 500,
+  height = 500,
   maxWidth,
-  imageId,
-}: {
-  altText: string;
-  height: 'inherit' | number;
-  maxWidth: number;
-  nodeKey: NodeKey;
-  src: string;
-  width: 'inherit' | number;
-  imageId?: string;
-}): JSX.Element {
+  key,
+}: ImagePayload) {
+  const { mode } = useStore();
+  const fetcher = useFetcher<typeof loader>();
+
   const imageRef = useRef<null | HTMLImageElement>(null);
-  const [isSelected, setSelected, clearSelection] = useLexicalNodeSelection(nodeKey);
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [isSelected, setSelected, clearSelection] = useLexicalNodeSelection(key ?? '');
   const [editor] = useLexicalComposerContext();
   const [selection, setSelection] = useState<BaseSelection | null>(null);
-  const [isLoadError, setIsLoadError] = useState<boolean>(false);
   const isEditable = useLexicalEditable();
+
+  useEffect(() => {
+    if (fileId) {
+      fetcher.load(`/api/files/${fileId}/signed-url?mode=${mode}`);
+    }
+  }, [fileId]);
+
+  const src = fetcher.data?.file?.signed_url;
+  const backgroundBlur = blurHash || fetcher.data?.file?.blur_preview || undefined;
+  const placeholder = backgroundBlur ? blurhashToCssGradientString(backgroundBlur) : '#f3f4f6';
 
   const onClick = useCallback(
     (payload: MouseEvent) => {
@@ -276,31 +237,53 @@ export default function ImageComponent({
       unregister();
       rootElement?.removeEventListener('contextmenu', onRightClick);
     };
-  }, [clearSelection, editor, isSelected, nodeKey, onClick, onRightClick, setSelected]);
+  }, [clearSelection, editor, isSelected, key, onClick, onRightClick, setSelected]);
 
   const draggable = isSelected && $isNodeSelection(selection);
   const isFocused = isSelected && isEditable;
 
+  // className={isFocused ? `focused ${$isNodeSelection(selection) ? 'draggable' : ''}` : null}
+
   return (
-    <Suspense fallback={null}>
-      <div draggable={draggable}>
-        {isLoadError ? (
-          <BrokenImage />
-        ) : (
+    <div
+      draggable={draggable}
+      className='relative overflow-hidden'
+      style={{
+        maxWidth: '100%',
+        width,
+        height,
+      }}
+    >
+      {/* Blurred placeholder layer (behind) */}
+      <div
+        className='absolute inset-0'
+        style={{
+          background: placeholder,
+          objectFit,
+        }}
+      />
+      {/* Real image layer (on top, animated in) */}
+      {src && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: isLoaded ? 1 : 0 }}
+          transition={{ duration: 0.6, ease: 'easeOut' }}
+          className='absolute inset-0'
+        >
           <LazyImage
             className={
               isFocused ? `focused ${$isNodeSelection(selection) ? 'draggable' : ''}` : null
             }
             src={src}
-            altText={altText}
+            altText='Rich Text Image'
             imageRef={imageRef}
             width={width}
             height={height}
-            maxWidth={maxWidth}
-            onError={() => setIsLoadError(true)}
+            maxWidth={maxWidth ?? 800}
+            onLoad={() => setIsLoaded(true)}
           />
-        )}
-      </div>
-    </Suspense>
+        </motion.div>
+      )}
+    </div>
   );
 }

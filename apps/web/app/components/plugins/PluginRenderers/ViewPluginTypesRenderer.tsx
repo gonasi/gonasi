@@ -8,7 +8,6 @@ import { ViewRichTextPlugin } from '../RichTextPlugins/RichTextPlugin/ViewRichTe
 
 export interface ViewPluginComponentProps {
   blockWithProgress: BlockWithProgressSchemaTypes;
-  mode: 'preview' | 'play';
 }
 
 function unimplementedPlugin() {
@@ -42,7 +41,6 @@ const viewPluginComponentMap: Record<
 
 export default function ViewPluginTypesRenderer({
   blockWithProgress,
-  mode,
 }: ViewPluginComponentProps): JSX.Element {
   const PluginComponent = viewPluginComponentMap[blockWithProgress.block.plugin_type];
 
@@ -50,5 +48,5 @@ export default function ViewPluginTypesRenderer({
     return <div>Unsupported plugin type: {blockWithProgress.block.plugin_type}</div>;
   }
 
-  return <PluginComponent mode={mode} blockWithProgress={blockWithProgress} />;
+  return <PluginComponent blockWithProgress={blockWithProgress} />;
 }

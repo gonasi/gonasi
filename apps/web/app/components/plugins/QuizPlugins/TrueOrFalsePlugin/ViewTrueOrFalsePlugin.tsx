@@ -40,13 +40,15 @@ function isTrueOrFalseInteraction(data: unknown): data is TrueOrFalseInteraction
   );
 }
 
-export function ViewTrueOrFalsePlugin({ blockWithProgress, mode }: ViewPluginComponentProps) {
+export function ViewTrueOrFalsePlugin({ blockWithProgress }: ViewPluginComponentProps) {
   const {
     settings: { playbackMode, layoutStyle, randomization, weight },
     content: { questionState, correctAnswer, explanationState, hint },
   } = blockWithProgress.block as TrueOrFalsePluginType;
 
-  const { isExplanationBottomSheetOpen, setExplanationState, isLastBlock } = useStore();
+  const { is_last_block } = blockWithProgress;
+
+  const { isExplanationBottomSheetOpen, setExplanationState, mode } = useStore();
 
   const {
     loading,
@@ -79,8 +81,6 @@ export function ViewTrueOrFalsePlugin({ blockWithProgress, mode }: ViewPluginCom
 
   // Use the most recent data (payload takes precedence over initial DB data)
   const currentInteractionData = parsedPayloadData || initialInteractionData;
-
-  console.log('Current Interaction Data:', currentInteractionData); // Debug log
 
   const {
     state,
@@ -229,7 +229,7 @@ export function ViewTrueOrFalsePlugin({ blockWithProgress, mode }: ViewPluginCom
                     <BlockActionButton
                       onClick={handleContinue}
                       loading={loading}
-                      isLastBlock={isLastBlock}
+                      isLastBlock={is_last_block}
                       disabled={mode === 'preview'}
                     />
                   )}
