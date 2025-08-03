@@ -5,6 +5,9 @@ import type { Route } from './+types/search-files';
 
 import { createClient } from '~/lib/supabase/supabase.server';
 
+type SearchFilesResponse = Awaited<ReturnType<typeof loader>>;
+export type SearchFileResult = SearchFilesResponse['data'][number];
+
 export async function loader({ request, params }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
   const url = new URL(request.url);
