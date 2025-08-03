@@ -1,4 +1,4 @@
-import { type JSX, useEffect } from 'react';
+import { type JSX, useEffect, useRef } from 'react';
 import { useFetcher, useParams, useSearchParams } from 'react-router';
 import { AnimatePresence, motion } from 'framer-motion';
 import type { LexicalEditor } from 'lexical';
@@ -20,6 +20,7 @@ export default function InsertImageDialog({
   const params = useParams();
   const fetcher = useFetcher<typeof loader>();
   const [searchParams] = useSearchParams();
+  const initialLoadRef = useRef(false);
 
   useEffect(() => {
     // Build URL with proper parameter handling
@@ -36,8 +37,12 @@ export default function InsertImageDialog({
 
     // Load the data
     fetcher.load(searchUrl.pathname + searchUrl.search);
+    initialLoadRef.current = true;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.courseId, searchParams, fetcher.load]);
+
+  // Show spinner during initial load or when there's no data yet
+  const isInitialLoading = !initialLoadRef.current || (fetcher.state !== 'idle' && !fetcher.data);
 
   return (
     <div className='pb-8'>
@@ -49,7 +54,7 @@ export default function InsertImageDialog({
       >
         <SearchInput placeholder='Search for images...' />
       </motion.div>
-      {fetcher.state !== 'idle' ? (
+      {isInitialLoading ? (
         <Spinner />
       ) : fetcher.data?.data && fetcher.data.data.length > 0 ? (
         <div className='flex flex-col space-y-4'>
@@ -81,7 +86,7 @@ export default function InsertImageDialog({
           </motion.div>
         </div>
       ) : (
-        <div className='mt-4 text-center text-gray-500'>No images found</div>
+        <div className='text-muted-foreground mt-4 text-center'>No images found</div>
       )}
     </div>
   );
