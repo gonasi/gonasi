@@ -7,13 +7,7 @@ import { motion } from 'framer-motion';
 import type { loader } from '../../../../routes/api/get-signed-url';
 import type { ImagePayload } from '.';
 
-export function RenderImage({
-  fileId,
-  objectFit = 'contain',
-  blurHash,
-  width = 500,
-  height = 500,
-}: ImagePayload) {
+export function RenderImage({ fileId, blurHash, width = 500, height = 500 }: ImagePayload) {
   const fetcher = useFetcher<typeof loader>();
   const [isLoaded, setIsLoaded] = useState(false);
   const mode = 'preview';
@@ -22,7 +16,8 @@ export function RenderImage({
     if (fileId) {
       fetcher.load(`/api/files/${fileId}/signed-url?mode=${mode}`);
     }
-  }, [fileId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fileId, mode]);
 
   const src = fetcher.data?.file?.signed_url;
   const backgroundBlur = blurHash || fetcher.data?.file?.blur_preview || undefined;
@@ -42,7 +37,6 @@ export function RenderImage({
         className='absolute inset-0'
         style={{
           background: placeholder,
-          objectFit,
         }}
       />
 
@@ -59,7 +53,6 @@ export function RenderImage({
             layout='fixed'
             width={width}
             height={height}
-            objectFit={objectFit}
             alt='Image'
             onLoad={() => setIsLoaded(true)}
             className='h-full w-full object-cover'

@@ -1,8 +1,8 @@
-import * as React from 'react';
+import type * as React from 'react';
 import type { EditorConfig, LexicalNode, NodeKey, SerializedLexicalNode, Spread } from 'lexical';
 import { $applyNodeReplacement, DecoratorNode } from 'lexical';
 
-const ImageComponent = React.lazy(() => import('./ImageComponent'));
+import { RenderImage } from './RenderImage';
 
 export interface CropRegion {
   x: number;
@@ -13,8 +13,8 @@ export interface CropRegion {
 
 export interface ImagePayload {
   fileId: string;
-  width?: number;
-  height?: number;
+  width: number;
+  height: number;
   maxWidth?: number;
   blurHash?: string;
   cropRegion?: CropRegion;
@@ -24,8 +24,8 @@ export interface ImagePayload {
 export type SerializedImageNode = Spread<
   {
     fileId: string;
-    width?: number;
-    height?: number;
+    width: number;
+    height: number;
     maxWidth?: number;
     blurHash?: string;
     cropRegion?: CropRegion;
@@ -35,8 +35,8 @@ export type SerializedImageNode = Spread<
 
 export class ImageNode extends DecoratorNode<React.JSX.Element> {
   __fileId: string;
-  __width?: number;
-  __height?: number;
+  __width: number;
+  __height: number;
   __maxWidth?: number;
   __blurHash?: string;
   __cropRegion?: CropRegion;
@@ -59,8 +59,8 @@ export class ImageNode extends DecoratorNode<React.JSX.Element> {
 
   constructor(
     fileId: string,
-    width?: number,
-    height?: number,
+    width: number,
+    height: number,
     maxWidth?: number,
     blurHash?: string,
     cropRegion?: CropRegion,
@@ -112,17 +112,7 @@ export class ImageNode extends DecoratorNode<React.JSX.Element> {
   }
 
   decorate(): React.JSX.Element {
-    return (
-      <ImageComponent
-        fileId={this.__fileId}
-        width={this.__width}
-        height={this.__height}
-        maxWidth={this.__maxWidth}
-        blurHash={this.__blurHash}
-        cropRegion={this.__cropRegion}
-        key={this.getKey()}
-      />
-    );
+    return <RenderImage fileId={this.__fileId} width={this.__width} height={this.__height} />;
   }
 }
 

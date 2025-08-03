@@ -19,6 +19,7 @@ import LessonBlockWrapper from '~/components/plugins/LessonBlockWrapper';
 import { PluginButton } from '~/components/ui/button';
 import { Modal } from '~/components/ui/modal';
 import { createClient } from '~/lib/supabase/supabase.server';
+import { useStore } from '~/store';
 
 // Lazy load plugin renderer for better performance
 const ViewPluginTypesRenderer = lazy(
@@ -93,6 +94,12 @@ export default function EditLessonContent({ loaderData, params }: Route.Componen
   const { lesson, lessonBlocks, canEdit } = loaderData;
   const fetcher = useFetcher();
   const navigate = useNavigate();
+
+  const { setMode } = useStore();
+
+  useEffect(() => {
+    setMode('preview');
+  }, [setMode]);
 
   const basePath = `/${params.organizationId}/builder/${params.courseId}/content`;
   const lessonBasePath = `${basePath}/${params.chapterId}/${params.lessonId}/lesson-blocks`;

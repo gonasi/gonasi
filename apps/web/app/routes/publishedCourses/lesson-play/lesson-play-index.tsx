@@ -1,4 +1,4 @@
-import { Suspense, useRef } from 'react';
+import { Suspense, useEffect, useRef } from 'react';
 import { Await, Outlet, redirect } from 'react-router';
 import {
   ChevronLeft,
@@ -25,6 +25,7 @@ import { CoursePlayLayout } from '~/components/layouts/course/course-play-layout
 import ViewPluginTypesRenderer from '~/components/plugins/PluginRenderers/ViewPluginTypesRenderer';
 import { IconNavLink } from '~/components/ui/button';
 import { createClient } from '~/lib/supabase/supabase.server';
+import { useStore } from '~/store';
 
 // --- Metadata Configuration ---
 export function meta({ data }: Route.MetaArgs) {
@@ -186,8 +187,12 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 // --- Lesson Playback Component ---
 export default function LessonPlay({ params, loaderData }: Route.ComponentProps) {
   const { hasAccess, lessonData, lessonNavigationPromise } = loaderData;
-
+  const { setMode } = useStore();
   const blockRefs = useRef<Record<string, HTMLElement | null>>({});
+
+  useEffect(() => {
+    setMode('play');
+  }, [setMode]);
 
   useScrollAudio(lessonData?.metadata.active_block_id ?? null, blockRefs);
 
@@ -225,7 +230,7 @@ export default function LessonPlay({ params, loaderData }: Route.ComponentProps)
                 }}
                 className='scroll-mt-18 md:scroll-mt-22'
               >
-                <ViewPluginTypesRenderer mode='play' blockWithProgress={block} />
+                <ViewPluginTypesRenderer blockWithProgress={block} />
               </div>
             ))}
           <Suspense fallback={<LoaderCircle className='animate-spin' />}>

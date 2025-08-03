@@ -1,10 +1,14 @@
-import { type JSX, useEffect, useRef } from 'react';
+import { type JSX, useEffect } from 'react';
+import { useFetcher, useParams, useSearchParams } from 'react-router';
+import { AnimatePresence, motion } from 'framer-motion';
 import type { LexicalEditor } from 'lexical';
 
 import { FileType } from '@gonasi/schemas/file';
 
-import { InsertFileDialog } from '../InsertFileDialog';
-import { INSERT_IMAGE_COMMAND, type InsertImagePayload } from '.';
+import FileRenderer from '~/components/file-renderers/file-renderer';
+import { Spinner } from '~/components/loaders';
+import { SearchInput } from '~/components/search-params/search-input';
+import type { loader } from '~/routes/api/search-files';
 
 export default function InsertImageDialog({
   activeEditor,
@@ -13,27 +17,72 @@ export default function InsertImageDialog({
   activeEditor: LexicalEditor;
   onClose: () => void;
 }): JSX.Element {
-  const hasModifier = useRef(false);
+  const params = useParams();
+  const fetcher = useFetcher<typeof loader>();
+  const [searchParams] = useSearchParams();
 
   useEffect(() => {
-    hasModifier.current = false;
-    const handler = (e: KeyboardEvent) => {
-      hasModifier.current = e.altKey;
-    };
-    document.addEventListener('keydown', handler);
-    return () => {
-      document.removeEventListener('keydown', handler);
-    };
-  }, [activeEditor]);
+    // Build URL with proper parameter handling
+    const searchName = searchParams.get('name') || '';
+    const page = searchParams.get('page') || '1';
+    const searchUrl = new URL(`/api/files/${params.courseId}/search`, window.location.origin);
 
-  const handleFileInsert = (payload: InsertImagePayload) => {
-    activeEditor.dispatchCommand(INSERT_IMAGE_COMMAND, payload);
-    onClose();
-  };
+    // Add search parameters
+    searchUrl.searchParams.set('fileType', FileType.IMAGE);
+    searchUrl.searchParams.set('page', page);
+    if (searchName) {
+      searchUrl.searchParams.set('name', searchName);
+    }
+
+    // Load the data
+    fetcher.load(searchUrl.pathname + searchUrl.search);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [params.courseId, searchParams, fetcher.load]);
 
   return (
-    <>
-      <InsertFileDialog handleFileInsert={handleFileInsert} fileType={FileType.IMAGE} />
-    </>
+    <div className='pb-8'>
+      <motion.div
+        className='py-4'
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+      >
+        <SearchInput placeholder='Search for images...' />
+      </motion.div>
+      {fetcher.state !== 'idle' ? (
+        <Spinner />
+      ) : fetcher.data?.data && fetcher.data.data.length > 0 ? (
+        <div className='flex flex-col space-y-4'>
+          <motion.div
+            className='grid grid-cols-2 gap-1 lg:grid-cols-4'
+            initial='hidden'
+            animate='visible'
+            variants={{
+              visible: {
+                transition: {
+                  staggerChildren: 0.05,
+                },
+              },
+            }}
+          >
+            <AnimatePresence>
+              {fetcher.data.data.map((file) => (
+                <motion.div
+                  key={file.id}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <FileRenderer file={file} canEdit={false} />
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </motion.div>
+        </div>
+      ) : (
+        <div className='mt-4 text-center text-gray-500'>No images found</div>
+      )}
+    </div>
   );
 }

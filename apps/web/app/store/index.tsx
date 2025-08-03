@@ -84,6 +84,6 @@ export const useStore = create<StoreState>((set) => ({
   setVibration: (vibrationEnabled) => set({ isVibrationEnabled: vibrationEnabled }),
 
   // ----- Mode State -----
-  mode: 'preview',
+  mode: 'play',
   setMode: (mode) => set({ mode }),
 }));

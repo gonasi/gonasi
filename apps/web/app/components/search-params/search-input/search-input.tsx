@@ -24,15 +24,23 @@ export const SearchInput = ({
 
   const debouncedSetSearchParams = useRef(
     debounce((newValue: string) => {
-      const currentParams = new URLSearchParams(window.location.search);
+      setSearchParams(
+        (prev) => {
+          const newParams = new URLSearchParams(prev);
 
-      if (newValue) {
-        currentParams.set(queryParam, newValue);
-      } else {
-        currentParams.delete(queryParam);
-      }
+          if (newValue) {
+            newParams.set(queryParam, newValue);
+          } else {
+            newParams.delete(queryParam);
+          }
 
-      setSearchParams(currentParams, { replace: true });
+          // Reset to page 1 when searching
+          newParams.set('page', '1');
+
+          return newParams;
+        },
+        { replace: true },
+      );
     }, debounceMs),
   ).current;
 
@@ -40,13 +48,15 @@ export const SearchInput = ({
   useEffect(() => {
     debouncedSetSearchParams(deferredValue);
     return () => debouncedSetSearchParams.cancel();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [deferredValue]);
+  }, [deferredValue, debouncedSetSearchParams]);
 
-  // Sync query param -> value on back/forward nav or external changes
+  // Sync query param -> value on back/forward nav
   useEffect(() => {
-    const externalValue = searchParams.get(queryParam) ?? '';
-    setValue(externalValue);
+    const paramValue = searchParams.get(queryParam) ?? '';
+    if (paramValue !== value) {
+      setValue(paramValue);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, queryParam]);
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {

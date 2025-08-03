@@ -1,11 +1,12 @@
 import type { JSX } from 'react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useFetcher } from 'react-router';
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
 import { useLexicalEditable } from '@lexical/react/useLexicalEditable';
 import { useLexicalNodeSelection } from '@lexical/react/useLexicalNodeSelection';
 import { mergeRegister } from '@lexical/utils';
 import { blurhashToCssGradientString } from '@unpic/placeholder';
+import { Image } from '@unpic/react';
 import { motion } from 'framer-motion';
 import type { BaseSelection, LexicalCommand, LexicalEditor } from 'lexical';
 import {
@@ -28,22 +29,43 @@ import { $isImageNode, type ImagePayload } from '.';
 
 import { useStore } from '~/store';
 
+// Constants
 export const RIGHT_CLICK_IMAGE_COMMAND: LexicalCommand<MouseEvent> = createCommand(
   'RIGHT_CLICK_IMAGE_COMMAND',
 );
 
-const imageCache = new Map<string, Promise<boolean> | boolean>();
+const DEFAULT_FALLBACK_COLOR = '#f3f4f6';
+const MAX_SVG_HEIGHT = 500;
+const RESIZE_TIMEOUT = 200;
+const ANIMATION_DURATION = 0.6;
 
-function isSVG(src: string): boolean {
-  return src.toLowerCase().endsWith('.svg');
+// Types
+interface ImageDimensions {
+  width: number;
+  height: number;
 }
 
-function useSuspenseImage(src: string) {
-  let cached = imageCache.get(src);
+interface CalculatedDimensions {
+  width: number | 'inherit';
+  height: number | 'inherit';
+  maxWidth: number;
+}
+
+// Image cache for better performance
+const imageCache = new Map<string, Promise<boolean> | boolean>();
+
+// Utility functions
+const isSVG = (src: string): boolean => src.toLowerCase().endsWith('.svg');
+
+const useSuspenseImage = (src: string): boolean => {
+  const cached = imageCache.get(src);
+
   if (typeof cached === 'boolean') {
     return cached;
-  } else if (!cached) {
-    cached = new Promise<boolean>((resolve) => {
+  }
+
+  if (!cached) {
+    const promise = new Promise<boolean>((resolve) => {
       const img = new Image();
       img.src = src;
       img.onload = () => resolve(false);
@@ -52,52 +74,48 @@ function useSuspenseImage(src: string) {
       imageCache.set(src, hasError);
       return hasError;
     });
-    imageCache.set(src, cached);
-    throw cached;
+
+    imageCache.set(src, promise);
+    throw promise;
   }
+
   throw cached;
-}
+};
 
-function BrokenImage(): JSX.Element {
-  return <h2>Broken Image</h2>;
-}
+// Component for broken image state
+const BrokenImage = (): JSX.Element => (
+  <div className='flex h-full w-full items-center justify-center bg-gray-100 text-gray-500'>
+    <span>Image failed to load</span>
+  </div>
+);
 
-function LazyImage({
-  altText,
-  className,
-  imageRef,
-  src,
-  width,
-  height,
-  maxWidth,
-  onError,
-  onLoad,
-}: {
+// Props interface for LazyImage
+interface LazyImageProps {
   altText: string;
   className: string | null;
   height: 'inherit' | number;
-  imageRef: { current: null | HTMLImageElement };
+  imageRef: React.RefObject<HTMLImageElement>;
   maxWidth: number;
   src: string;
   width: 'inherit' | number;
   onError: () => void;
   onLoad: () => void;
-}): JSX.Element {
-  const [dimensions, setDimensions] = useState<{
-    width: number;
-    height: number;
-  } | null>(null);
-  const isSVGImage = isSVG(src);
+}
 
-  useEffect(() => {
-    if (imageRef.current && isSVGImage) {
-      const { naturalWidth, naturalHeight } = imageRef.current;
-      setDimensions({
-        height: naturalHeight,
-        width: naturalWidth,
-      });
-    }
-  }, [imageRef, isSVGImage]);
+// Optimized LazyImage component
+const LazyImage = ({
+  altText,
+  className,
+  src,
+  width,
+  height,
+  maxWidth,
+  imageRef,
+  onError,
+  onLoad,
+}: LazyImageProps): JSX.Element => {
+  const [dimensions, setDimensions] = useState<ImageDimensions | null>(null);
+  const isSVGImage = useMemo(() => isSVG(src), [src]);
 
   const hasError = useSuspenseImage(src);
 
@@ -107,9 +125,7 @@ function LazyImage({
     }
   }, [hasError, onError]);
 
-  if (hasError) return <BrokenImage />;
-
-  const calculateDimensions = () => {
+  const calculateDimensions = useCallback((): CalculatedDimensions => {
     if (!isSVGImage) {
       return { height, maxWidth, width };
     }
@@ -120,16 +136,17 @@ function LazyImage({
     let finalWidth = naturalWidth;
     let finalHeight = naturalHeight;
 
+    // Scale down if width exceeds maxWidth
     if (finalWidth > maxWidth) {
       const scale = maxWidth / finalWidth;
       finalWidth = maxWidth;
       finalHeight = Math.round(finalHeight * scale);
     }
 
-    const maxHeight = 500;
-    if (finalHeight > maxHeight) {
-      const scale = maxHeight / finalHeight;
-      finalHeight = maxHeight;
+    // Scale down if height exceeds maximum
+    if (finalHeight > MAX_SVG_HEIGHT) {
+      const scale = MAX_SVG_HEIGHT / finalHeight;
+      finalHeight = MAX_SVG_HEIGHT;
       finalWidth = Math.round(finalWidth * scale);
     }
 
@@ -138,7 +155,26 @@ function LazyImage({
       maxWidth,
       width: finalWidth,
     };
-  };
+  }, [isSVGImage, dimensions, height, maxWidth, width]);
+
+  const handleLoad = useCallback(
+    (e: React.SyntheticEvent<HTMLImageElement>) => {
+      onLoad();
+
+      if (isSVGImage) {
+        const img = e.currentTarget;
+        setDimensions({
+          height: img.naturalHeight,
+          width: img.naturalWidth,
+        });
+      }
+    },
+    [isSVGImage, onLoad],
+  );
+
+  if (hasError) {
+    return <BrokenImage />;
+  }
 
   const imageStyle = calculateDimensions();
 
@@ -150,21 +186,13 @@ function LazyImage({
       ref={imageRef}
       style={imageStyle}
       onError={onError}
-      draggable='false'
-      onLoad={(e) => {
-        onLoad(); // Call the onLoad callback
-        if (isSVGImage) {
-          const img = e.currentTarget;
-          setDimensions({
-            height: img.naturalHeight,
-            width: img.naturalWidth,
-          });
-        }
-      }}
+      onLoad={handleLoad}
+      draggable={false}
     />
   );
-}
+};
 
+// Main ImageComponent
 export default function ImageComponent({
   fileId,
   width = 500,
@@ -175,35 +203,39 @@ export default function ImageComponent({
   key,
 }: ImagePayload): JSX.Element {
   const fetcher = useFetcher<typeof loader>();
-
-  const imageRef = useRef<null | HTMLImageElement>(null);
-  const buttonRef = useRef<HTMLButtonElement | null>(null);
+  const imageRef = useRef<HTMLImageElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const activeEditorRef = useRef<LexicalEditor | null>(null);
 
   const [isSelected, setSelected, clearSelection] = useLexicalNodeSelection(key ?? '');
-  const [isResizing, setIsResizing] = useState<boolean>(false);
-  const [editor] = useLexicalComposerContext();
+  const [isResizing, setIsResizing] = useState(false);
   const [selection, setSelection] = useState<BaseSelection | null>(null);
-  const activeEditorRef = useRef<LexicalEditor | null>(null);
-  const isEditable = useLexicalEditable();
   const [showCropper, setShowCropper] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
 
+  const [editor] = useLexicalComposerContext();
+  const isEditable = useLexicalEditable();
   const { mode } = useStore();
 
-  // Fixed: Added nodeKey which was missing
   const nodeKey = key ?? '';
 
+  // Fetch signed URL when fileId changes
   useEffect(() => {
     if (fileId) {
       fetcher.load(`/api/files/${fileId}/signed-url?mode=${mode}`);
     }
   }, [fileId, fetcher, mode]);
 
+  // Memoized values
   const src = fetcher.data?.file?.signed_url;
-  const backgroundBlur = blurHash || fetcher.data?.file?.blur_preview || undefined;
-  const placeholder = backgroundBlur ? blurhashToCssGradientString(backgroundBlur) : '#f3f4f6';
+  const backgroundBlur = blurHash || fetcher.data?.file?.blur_preview;
+  const placeholder = useMemo(
+    () => (backgroundBlur ? blurhashToCssGradientString(backgroundBlur) : DEFAULT_FALLBACK_COLOR),
+    [backgroundBlur],
+  );
 
-  const $onEnter = useCallback(
+  // Event handlers
+  const handleEnter = useCallback(
     (event: KeyboardEvent) => {
       const latestSelection = $getSelection();
       if (
@@ -221,7 +253,7 @@ export default function ImageComponent({
     [isSelected],
   );
 
-  const $onEscape = useCallback((event: KeyboardEvent) => {
+  const handleEscape = useCallback((event: KeyboardEvent) => {
     if (buttonRef.current === event.target) {
       $setSelection(null);
       setShowCropper(false);
@@ -230,9 +262,10 @@ export default function ImageComponent({
     return false;
   }, []);
 
-  const onClick = useCallback(
+  const handleClick = useCallback(
     (payload: MouseEvent) => {
       if (isResizing) return true;
+
       if (payload.target === imageRef.current) {
         if (payload.shiftKey) {
           setSelected(!isSelected);
@@ -247,7 +280,7 @@ export default function ImageComponent({
     [isResizing, isSelected, setSelected, clearSelection],
   );
 
-  const onRightClick = useCallback(
+  const handleRightClick = useCallback(
     (event: MouseEvent) => {
       editor.getEditorState().read(() => {
         const latestSelection = $getSelection();
@@ -264,8 +297,36 @@ export default function ImageComponent({
     [editor],
   );
 
+  const handleResizeStart = useCallback(() => {
+    setIsResizing(true);
+  }, []);
+
+  const handleResizeEnd = useCallback(
+    (nextWidth: 'inherit' | number, nextHeight: 'inherit' | number) => {
+      setTimeout(() => setIsResizing(false), RESIZE_TIMEOUT);
+
+      editor.update(() => {
+        const node = $getNodeByKey(nodeKey);
+        if ($isImageNode(node)) {
+          node.setWidthAndHeight(nextWidth, nextHeight);
+        }
+      });
+    },
+    [editor, nodeKey],
+  );
+
+  const handleImageLoad = useCallback(() => {
+    setIsLoaded(true);
+  }, []);
+
+  const handleImageError = useCallback(() => {
+    // Handle error if needed
+  }, []);
+
+  // Register editor commands and listeners
   useEffect(() => {
     const rootElement = editor.getRootElement();
+
     const unregister = mergeRegister(
       editor.registerUpdateListener(({ editorState }) => {
         const updatedSelection = editorState.read(() => $getSelection());
@@ -279,8 +340,8 @@ export default function ImageComponent({
         },
         COMMAND_PRIORITY_LOW,
       ),
-      editor.registerCommand(CLICK_COMMAND, onClick, COMMAND_PRIORITY_LOW),
-      editor.registerCommand(RIGHT_CLICK_IMAGE_COMMAND, onClick, COMMAND_PRIORITY_LOW),
+      editor.registerCommand(CLICK_COMMAND, handleClick, COMMAND_PRIORITY_LOW),
+      editor.registerCommand(RIGHT_CLICK_IMAGE_COMMAND, handleClick, COMMAND_PRIORITY_LOW),
       editor.registerCommand(
         DRAGSTART_COMMAND,
         (event) => {
@@ -292,38 +353,20 @@ export default function ImageComponent({
         },
         COMMAND_PRIORITY_LOW,
       ),
-      editor.registerCommand(KEY_ENTER_COMMAND, $onEnter, COMMAND_PRIORITY_LOW),
-      editor.registerCommand(KEY_ESCAPE_COMMAND, $onEscape, COMMAND_PRIORITY_LOW),
+      editor.registerCommand(KEY_ENTER_COMMAND, handleEnter, COMMAND_PRIORITY_LOW),
+      editor.registerCommand(KEY_ESCAPE_COMMAND, handleEscape, COMMAND_PRIORITY_LOW),
     );
-    rootElement?.addEventListener('contextmenu', onRightClick);
+
+    const handleContextMenu = (event: Event) => handleRightClick(event as MouseEvent);
+    rootElement?.addEventListener('contextmenu', handleContextMenu);
+
     return () => {
       unregister();
-      rootElement?.removeEventListener('contextmenu', onRightClick);
+      rootElement?.removeEventListener('contextmenu', handleContextMenu);
     };
-  }, [
-    clearSelection,
-    editor,
-    isResizing,
-    isSelected,
-    $onEnter,
-    $onEscape,
-    onClick,
-    onRightClick,
-    setSelected,
-  ]);
+  }, [editor, handleClick, handleEnter, handleEscape, handleRightClick]);
 
-  const onResizeEnd = (nextWidth: 'inherit' | number, nextHeight: 'inherit' | number) => {
-    setTimeout(() => setIsResizing(false), 200);
-    editor.update(() => {
-      const node = $getNodeByKey(nodeKey);
-      if ($isImageNode(node)) {
-        node.setWidthAndHeight(nextWidth, nextHeight);
-      }
-    });
-  };
-
-  const onResizeStart = () => setIsResizing(true);
-
+  // Computed values for rendering
   const draggable = isSelected && $isNodeSelection(selection) && !isResizing;
   const isFocused = (isSelected || isResizing) && isEditable;
 
@@ -338,38 +381,34 @@ export default function ImageComponent({
           height,
         }}
       >
-        {/* Blurred placeholder layer (behind) */}
-        <div
-          className='absolute inset-0'
-          style={{
-            background: placeholder,
-          }}
-        />
+        {/* Placeholder background */}
+        <div className='absolute inset-0' style={{ background: placeholder }} />
 
-        {/* Real image layer (on top, animated in) */}
+        {/* Main image with fade-in animation */}
         {src && (
           <motion.div
             initial={{ opacity: 0 }}
-            animate={{ opacity: isLoaded ? 1 : 0 }} // Fixed: Added animate prop
-            transition={{ duration: 0.6, ease: 'easeOut' }}
+            animate={{ opacity: isLoaded ? 1 : 0 }}
+            transition={{ duration: ANIMATION_DURATION, ease: 'easeOut' }}
             className='absolute inset-0'
           >
-            <LazyImage
-              altText='Rich Text Image'
-              className='h-full w-full object-cover'
-              height={height}
-              imageRef={imageRef}
-              maxWidth={maxWidth}
+            <Image
               src={src}
+              layout='fixed'
               width={width}
-              onLoad={() => setIsLoaded(true)}
-              onError={() => {}}
+              height={height}
+              alt='Rich Text Image'
+              onLoad={handleImageLoad}
+              className='h-full w-full object-cover'
             />
           </motion.div>
         )}
       </div>
 
-      {$isNodeSelection(selection) && isFocused && <h2>resize</h2>}
+      {/* Resize controls */}
+      {$isNodeSelection(selection) && isFocused && (
+        <div className='mt-2 text-sm text-gray-500'>Resize controls active</div>
+      )}
     </>
   );
 }
