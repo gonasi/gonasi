@@ -21,6 +21,7 @@ import {
 
 import { calculateDimensions } from './utils/calculateDimensions';
 import type { ImagePayload } from '.';
+import ImageResizer from './ImageResizer';
 import { $isImageNode } from '.';
 
 import type { loader } from '~/routes/api/get-signed-url';
@@ -286,9 +287,11 @@ export default function ImageComponent({
         <div draggable={draggable}>
           <LazyImage
             className={
-              isFocused ? `focused ${$isNodeSelection(selection) ? 'draggable' : ''}` : null
+              isFocused
+                ? `${$isNodeSelection(selection) ? 'cursor-grab active:cursor-grabbing' : ''} ring-secondary ring-2 ring-offset-2`
+                : ''
             }
-            src={src}
+            src={src ?? ''}
             altText='Rich Text Image'
             imageRef={imageRef}
             width={width}
@@ -303,7 +306,14 @@ export default function ImageComponent({
           />
         </div>
 
-        {$isNodeSelection(selection) && isFocused && <h2>Resize Component Soon</h2>}
+        {$isNodeSelection(selection) && isFocused && (
+          <ImageResizer
+            editor={editor}
+            imageRef={imageRef}
+            onResizeEnd={onResizeEnd}
+            onResizeStart={onResizeStart}
+          />
+        )}
       </>
     </Suspense>
   );
