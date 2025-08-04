@@ -40,6 +40,10 @@ function LazyImage({
   height,
   maxWidth,
   onError,
+  placeholder,
+  isLoaded,
+  onLoad,
+  hasError,
 }: {
   altText: string;
   className: string | null;
@@ -50,6 +54,10 @@ function LazyImage({
   isSVGImage: boolean;
   width: 'inherit' | number;
   onError: () => void;
+  placeholder: string;
+  isLoaded: boolean;
+  onLoad: () => void;
+  hasError: boolean;
 }): JSX.Element {
   const [dimensions, setDimensions] = useState<{
     width: number;
@@ -75,24 +83,51 @@ function LazyImage({
   });
 
   return (
-    <img
-      className={className || undefined}
-      src={src}
-      alt={altText}
-      ref={imageRef}
-      style={imageStyle} // only style, not width/height props
-      onError={onError}
-      draggable='false'
-      onLoad={(e) => {
-        if (isSVGImage) {
-          const img = e.currentTarget;
-          setDimensions({
-            height: img.naturalHeight,
-            width: img.naturalWidth,
-          });
-        }
-      }}
-    />
+    <div className='relative overflow-hidden' style={imageStyle}>
+      {/* Blurred placeholder layer (behind) */}
+      <div
+        className='absolute inset-0 transition-opacity duration-600 ease-out'
+        style={{
+          background: placeholder,
+          opacity: isLoaded ? 0 : 1,
+        }}
+      />
+
+      {/* Error state */}
+      {hasError && (
+        <div className='absolute inset-0 flex items-center justify-center bg-gray-100 text-gray-500'>
+          <div className='text-center'>
+            <div className='mb-2 text-2xl'>📷</div>
+            <div className='text-sm'>Image not found</div>
+          </div>
+        </div>
+      )}
+
+      {/* Real image layer (on top) */}
+      {src && !hasError && (
+        <img
+          className={`${className || ''} absolute inset-0 h-full w-full object-cover transition-opacity duration-600 ease-out`}
+          src={src}
+          alt={altText}
+          ref={imageRef}
+          style={{
+            opacity: isLoaded ? 1 : 0,
+          }}
+          onError={onError}
+          draggable='false'
+          onLoad={(e) => {
+            if (isSVGImage) {
+              const img = e.currentTarget;
+              setDimensions({
+                height: img.naturalHeight,
+                width: img.naturalWidth,
+              });
+            }
+            onLoad();
+          }}
+        />
+      )}
+    </div>
   );
 }
 
@@ -123,12 +158,23 @@ export default function ImageComponent({
   const src = fetcher.data?.file?.signed_url;
   const backgroundBlur = blurHash || fetcher.data?.file?.blur_preview || undefined;
   const placeholder = backgroundBlur ? blurhashToCssGradientString(backgroundBlur) : '#f3f4f6';
+  const isSVGImage = fetcher.data?.file?.extension === 'svg';
 
   const [selection, setSelection] = useState<BaseSelection | null>(null);
   const activeEditorRef = useRef<LexicalEditor | null>(null);
 
   const [isLoadError, setIsLoadError] = useState<boolean>(false);
   const isEditable = useLexicalEditable();
+
+  // Check for fetcher errors (file not found, etc.)
+  const hasFetcherError = Boolean(
+    fetcher.state === 'idle' && fileId && (!fetcher.data || !fetcher.data.file),
+  );
+  const hasError = Boolean(isLoadError || hasFetcherError);
+
+  const handleImageLoad = useCallback(() => {
+    setIsLoaded(true);
+  }, []);
 
   const onClick = useCallback(
     (payload: MouseEvent) => {
@@ -233,6 +279,7 @@ export default function ImageComponent({
 
   const draggable = isSelected && $isNodeSelection(selection) && !isResizing;
   const isFocused = (isSelected || isResizing) && isEditable;
+
   return (
     <Suspense fallback={null}>
       <>
@@ -248,6 +295,11 @@ export default function ImageComponent({
             height={height}
             maxWidth={maxWidth}
             onError={() => setIsLoadError(true)}
+            placeholder={placeholder}
+            isLoaded={isLoaded && !!src}
+            onLoad={handleImageLoad}
+            isSVGImage={isSVGImage}
+            hasError={hasError}
           />
         </div>
 

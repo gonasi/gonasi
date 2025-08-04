@@ -55,7 +55,6 @@ export async function fetchFileById({
     }
 
     const bucket = mode === 'preview' ? FILE_LIBRARY_BUCKET : PUBLISHED_FILE_LIBRARY_BUCKET;
-
     // Generate a signed URL for the file
     const { data: signedUrlData, error: signedUrlError } = await supabase.storage
       .from(bucket)

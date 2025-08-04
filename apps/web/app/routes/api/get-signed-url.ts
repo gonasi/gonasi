@@ -10,13 +10,19 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   const url = new URL(request.url);
   const modeParam = url.searchParams.get('mode');
 
-  const mode = modeParam === 'play' || modeParam === 'preview' ? modeParam : 'preview';
+  if (modeParam !== 'play' && modeParam !== 'preview') {
+    throw new Response('Invalid mode', { status: 400 });
+  }
+
+  if (!params.fileId) {
+    throw new Response('Missing fileId', { status: 400 });
+  }
 
   const { supabase } = createClient(request);
   const file = await fetchFileById({
     supabase,
     fileId: params.fileId,
-    mode,
+    mode: modeParam,
   });
 
   return data({ file });
