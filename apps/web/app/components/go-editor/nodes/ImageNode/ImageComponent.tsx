@@ -132,18 +132,22 @@ function LazyImage({
   );
 }
 
+interface ImageComponentProps extends ImagePayload {
+  nodeKey: string;
+}
+
 export default function ImageComponent({
   fileId,
   blurHash,
-  key,
+  nodeKey,
   width,
   height,
   maxWidth = 800,
-}: ImagePayload) {
+}: ImageComponentProps) {
   const fetcher = useFetcher<typeof loader>();
   const [isLoaded, setIsLoaded] = useState(false);
   const imageRef = useRef<null | HTMLImageElement>(null);
-  const [isSelected, setSelected, clearSelection] = useLexicalNodeSelection(key ?? '');
+  const [isSelected, setSelected, clearSelection] = useLexicalNodeSelection(nodeKey);
   const [isResizing, setIsResizing] = useState<boolean>(false);
   const [editor] = useLexicalComposerContext();
 
@@ -267,7 +271,7 @@ export default function ImageComponent({
     }, 200);
 
     editor.update(() => {
-      const node = $getNodeByKey(key ?? '');
+      const node = $getNodeByKey(nodeKey);
       if ($isImageNode(node)) {
         node.setWidthAndHeight(nextWidth, nextHeight);
       }
