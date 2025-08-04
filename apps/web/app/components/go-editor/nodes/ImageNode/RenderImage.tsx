@@ -50,12 +50,10 @@ export function RenderImage({ fileId, blurHash, width = 500, height = 500 }: Ima
         >
           <Image
             src={src}
-            layout='fixed'
             width={width}
             height={height}
             alt='Image'
             onLoad={() => setIsLoaded(true)}
-            className='h-full w-full object-cover'
           />
         </motion.div>
       )}

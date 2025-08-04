@@ -2,7 +2,7 @@ import type * as React from 'react';
 import type { EditorConfig, LexicalNode, NodeKey, SerializedLexicalNode, Spread } from 'lexical';
 import { $applyNodeReplacement, DecoratorNode } from 'lexical';
 
-import { RenderImage } from './RenderImage';
+import ImageComponent from './ImageComponent';
 
 export interface CropRegion {
   x: number;
@@ -112,7 +112,7 @@ export class ImageNode extends DecoratorNode<React.JSX.Element> {
   }
 
   decorate(): React.JSX.Element {
-    return <RenderImage fileId={this.__fileId} width={this.__width} height={this.__height} />;
+    return <ImageComponent fileId={this.__fileId} width={this.__width} height={this.__height} />;
   }
 }
 
