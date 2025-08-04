@@ -112,7 +112,16 @@ export class ImageNode extends DecoratorNode<React.JSX.Element> {
   }
 
   decorate(): React.JSX.Element {
-    return <ImageComponent fileId={this.__fileId} width={this.__width} height={this.__height} />;
+    return (
+      <ImageComponent
+        fileId={this.__fileId}
+        width={this.__width}
+        height={this.__height}
+        blurHash={this.__blurHash}
+        key={this.getKey()}
+        cropRegion={this.__cropRegion}
+      />
+    );
   }
 }
 

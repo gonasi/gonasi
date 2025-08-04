@@ -156,10 +156,10 @@ export default function ImageComponent({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fileId, mode]);
 
-  const src = fetcher.data?.file?.signed_url;
-  const backgroundBlur = blurHash || fetcher.data?.file?.blur_preview || undefined;
-  const placeholder = backgroundBlur ? blurhashToCssGradientString(backgroundBlur) : '#f3f4f6';
-  const isSVGImage = fetcher.data?.file?.extension === 'svg';
+  const src = fetcher.data?.success ? fetcher.data.data?.signed_url : undefined;
+
+  const placeholder = blurHash ? blurhashToCssGradientString(blurHash) : '#f3f4f6';
+  const isSVGImage = fetcher.data?.success ? fetcher.data.data?.extension === 'svg' : false;
 
   const [selection, setSelection] = useState<BaseSelection | null>(null);
   const activeEditorRef = useRef<LexicalEditor | null>(null);
@@ -167,9 +167,9 @@ export default function ImageComponent({
   const [isLoadError, setIsLoadError] = useState<boolean>(false);
   const isEditable = useLexicalEditable();
 
-  // Check for fetcher errors (file not found, etc.)
+  // Fixed: Only consider it a fetcher error if the fetcher has completed and the API returned success: false
   const hasFetcherError = Boolean(
-    fetcher.state === 'idle' && fileId && (!fetcher.data || !fetcher.data.file),
+    fetcher.state === 'idle' && fetcher.data && fetcher.data.success === false, // Check the success field from the new API shape
   );
   const hasError = Boolean(isLoadError || hasFetcherError);
 

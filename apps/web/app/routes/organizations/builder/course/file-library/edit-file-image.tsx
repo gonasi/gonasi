@@ -35,14 +35,14 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     );
   }
 
-  if (file === null) {
+  if (file.data === null) {
     return redirectWithError(
       `/${params.organizationId}/builder/${params.courseId}/file-library`,
       'File does not exist',
     );
   }
 
-  return file;
+  return file.data;
 }
 
 export async function action({ request, params }: Route.ActionArgs) {

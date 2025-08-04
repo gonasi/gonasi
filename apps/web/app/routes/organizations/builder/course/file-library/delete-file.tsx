@@ -37,16 +37,16 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     );
   }
 
-  if (file === null)
+  if (file.data === null)
     return redirectWithError(
       `/${params.organizationId}/builder/${params.courseId}/file-library`,
       'File does not exist',
     );
 
   return data({
-    fileId: file.id,
-    name: file.name,
-    path: file.path,
+    fileId: file.data.id,
+    name: file.data.name,
+    path: file.data.path,
   });
 }
 

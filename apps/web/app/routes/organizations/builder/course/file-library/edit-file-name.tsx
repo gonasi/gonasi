@@ -65,13 +65,13 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     );
   }
 
-  if (file === null)
+  if (file.data === null)
     return redirectWithError(
       `/${params.organizationId}/builder/${params.courseId}/file-library`,
       'File does not exist',
     );
 
-  return data(file);
+  return data(file.data);
 }
 
 export default function EditFileName({ loaderData, params }: Route.ComponentProps) {

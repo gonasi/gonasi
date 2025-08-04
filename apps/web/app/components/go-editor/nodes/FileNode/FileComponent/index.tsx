@@ -55,7 +55,7 @@ const FileComponent: React.FC<FileComponentProps> = ({ fileId, nodeKey }) => {
 
     try {
       setLoading(true);
-      const data = await fetchFileById({ supabase, fileId });
+      const { data } = await fetchFileById({ supabase, fileId });
 
       if (!data) {
         setError('File not found');

@@ -10,14 +10,6 @@ interface FetchFileByIdArgs {
   mode?: 'preview' | 'play';
 }
 
-export type FetchFileByIdReturn = Awaited<ReturnType<typeof fetchFileById>>;
-
-/**
- * Fetches a single file from the file_library table by its ID and generates a signed URL for it.
- *
- * @param args - Object containing supabase client, file ID, optional expiry time, and mode ('preview' or 'play').
- * @returns Promise with an object containing the file data and signed URL or null on error.
- */
 export async function fetchFileById({
   supabase,
   fileId,
@@ -25,7 +17,6 @@ export async function fetchFileById({
   mode = 'preview',
 }: FetchFileByIdArgs) {
   try {
-    // Fetch the file metadata from the database
     const { data, error } = await supabase
       .from('file_library')
       .select(
@@ -51,27 +42,45 @@ export async function fetchFileById({
 
     if (error || !data) {
       console.error('[fetchFileById] Error fetching file_library:', error, 'fileId:', fileId);
-      return null;
+      return {
+        success: false,
+        message: 'File not found or failed to fetch from database',
+        data: null,
+      };
     }
 
     const bucket = mode === 'preview' ? FILE_LIBRARY_BUCKET : PUBLISHED_FILE_LIBRARY_BUCKET;
-    // Generate a signed URL for the file
+
     const { data: signedUrlData, error: signedUrlError } = await supabase.storage
       .from(bucket)
       .createSignedUrl(data.path, expirySeconds);
 
     if (signedUrlError) {
       console.error('[fetchFileById] Error creating signed URL:', signedUrlError);
-      return null;
+      return {
+        success: false,
+        message: 'Failed to generate signed URL',
+        data: null,
+      };
     }
 
     return {
-      ...data,
-      file_type: data.file_type as FileType,
-      signed_url: signedUrlData?.signedUrl ?? null,
+      success: true,
+      message: 'File fetched successfully',
+      data: {
+        ...data,
+        file_type: data.file_type as FileType,
+        signed_url: signedUrlData?.signedUrl ?? null,
+      },
     };
   } catch (error) {
     console.error('[fetchFileById] Unexpected error:', error);
-    return null;
+    return {
+      success: false,
+      message: 'Unexpected error occurred',
+      data: null,
+    };
   }
 }
+
+export type FetchFileByIdReturn = Awaited<ReturnType<typeof fetchFileById>>['data'];

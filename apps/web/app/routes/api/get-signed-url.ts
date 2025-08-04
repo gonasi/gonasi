@@ -1,5 +1,3 @@
-import { data } from 'react-router';
-
 import { fetchFileById } from '@gonasi/database/files';
 
 import type { Route } from './+types/get-signed-url';
@@ -19,11 +17,11 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   }
 
   const { supabase } = createClient(request);
-  const file = await fetchFileById({
+  const data = await fetchFileById({
     supabase,
     fileId: params.fileId,
     mode: modeParam,
   });
 
-  return data({ file });
+  return data;
 }
