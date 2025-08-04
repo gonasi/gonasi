@@ -85,9 +85,18 @@ interface EditorProps {
   loading: boolean;
   placeholder?: string;
   hasError?: boolean;
+  // Add callback for immediate updates (non-debounced)
+  onImmediateChange?: (state: string) => void;
 }
 
-function GoEditor({ editorState, setEditorState, loading, placeholder, hasError }: EditorProps) {
+function GoEditor({
+  editorState,
+  setEditorState,
+  loading,
+  placeholder,
+  hasError,
+  onImmediateChange,
+}: EditorProps) {
   const debouncedSetEditorStateRef = useRef<((state: string) => void) | null>(null);
 
   useEffect(() => {
@@ -127,6 +136,11 @@ function GoEditor({ editorState, setEditorState, loading, placeholder, hasError 
                     onChange={(editorState) => {
                       editorState.read(() => {
                         const json = JSON.stringify(editorState);
+
+                        // Call immediate change callback first (for form state updates)
+                        onImmediateChange?.(json);
+
+                        // Then call the debounced version (for final persistence)
                         debouncedSetEditorStateRef.current?.(json);
                       });
                     }}

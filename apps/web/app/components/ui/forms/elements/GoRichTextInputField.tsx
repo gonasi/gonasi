@@ -6,8 +6,6 @@ import { ErrorDisplay, FormDescription } from './Common';
 
 import GoEditor from '~/components/go-editor';
 
-// Lazy import the rich editor
-
 interface GoRichTextInputFieldProps {
   name: string;
   description?: string;
@@ -26,11 +24,12 @@ export function GoRichTextInputField({
   const {
     control,
     formState: { errors },
+    setValue,
   } = useRemixFormContext();
 
   const id = name;
   const descriptionId = `${id}-description`;
-  const error = get(errors, name); // correct way to access nested errors
+  const error = get(errors, name);
   const hasError = !!error;
   const errorMessage = error?.message?.toString() || 'This field has an error';
 
@@ -45,7 +44,16 @@ export function GoRichTextInputField({
           <GoEditor
             editorState={field.value}
             setEditorState={(value) => {
+              // This is debounced - use for final state persistence
               field.onChange(value);
+            }}
+            onImmediateChange={(value) => {
+              // This fires immediately on any change - use for form state
+              setValue(name, value, {
+                shouldDirty: true,
+                shouldValidate: false, // Don't validate immediately to avoid performance issues
+                shouldTouch: true,
+              });
             }}
             loading={false}
             placeholder={placeholder}
