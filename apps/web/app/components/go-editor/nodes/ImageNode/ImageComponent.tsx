@@ -84,36 +84,24 @@ function LazyImage({
   });
 
   return (
-    <div className='relative overflow-hidden' style={imageStyle}>
-      {/* Blurred placeholder layer (behind) */}
-      <div
-        className='absolute inset-0 transition-opacity duration-600 ease-out'
-        style={{
-          background: placeholder,
-          opacity: isLoaded ? 0 : 1,
-        }}
-      />
-
-      {/* Error state */}
-      {hasError && (
-        <div className='absolute inset-0 flex items-center justify-center bg-gray-100 text-gray-500'>
-          <div className='text-center'>
-            <div className='mb-2 text-2xl'>📷</div>
-            <div className='text-sm'>Image not found</div>
-          </div>
-        </div>
+    <>
+      {!src && !hasError && (
+        <div
+          className={className || undefined}
+          style={{
+            background: placeholder,
+            opacity: isLoaded ? 0 : 1,
+            ...imageStyle,
+          }}
+        />
       )}
-
-      {/* Real image layer (on top) */}
       {src && !hasError && (
         <img
-          className={`${className || ''} absolute inset-0 h-full w-full object-cover transition-opacity duration-600 ease-out`}
+          className={className || undefined}
           src={src}
           alt={altText}
           ref={imageRef}
-          style={{
-            opacity: isLoaded ? 1 : 0,
-          }}
+          style={imageStyle}
           onError={onError}
           draggable='false'
           onLoad={(e) => {
@@ -128,7 +116,7 @@ function LazyImage({
           }}
         />
       )}
-    </div>
+    </>
   );
 }
 

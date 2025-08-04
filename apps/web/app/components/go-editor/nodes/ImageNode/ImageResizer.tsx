@@ -1,4 +1,13 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
+
 import type { JSX } from 'react';
+import type * as React from 'react';
 import { useRef } from 'react';
 import { calculateZoomLevel } from '@lexical/utils';
 import type { LexicalEditor } from 'lexical';
@@ -126,6 +135,7 @@ export default function ImageResizer({
       setStartCursor(direction);
       onResizeStart();
 
+      controlWrapper.classList.add('resizing');
       image.style.height = `${height}px`;
       image.style.width = `${width}px`;
 
@@ -191,6 +201,8 @@ export default function ImageResizer({
       positioning.currentHeight = 0;
       positioning.isResizing = false;
 
+      controlWrapper.classList.remove('resizing');
+
       setEndCursor();
       onResizeEnd(width, height);
 
@@ -201,58 +213,58 @@ export default function ImageResizer({
 
   return (
     <div ref={controlWrapperRef} className='relative'>
-      {/* North */}
+      {/* North handle */}
       <div
-        className='absolute -top-1 right-2 left-2 h-2 cursor-ns-resize bg-blue-500 opacity-0 transition-opacity hover:opacity-100'
+        className='absolute -top-1 left-1/2 h-2 w-6 -translate-x-1/2 cursor-ns-resize bg-blue-500 opacity-0 transition-opacity hover:opacity-100'
         onPointerDown={(event) => {
           handlePointerDown(event, Direction.north);
         }}
       />
-      {/* Northeast */}
+      {/* Northeast handle */}
       <div
-        className='absolute -top-1 -right-1 h-2 w-2 cursor-nesw-resize bg-blue-500 opacity-0 transition-opacity hover:opacity-100'
+        className='absolute -top-1 -right-1 h-3 w-3 cursor-nwse-resize bg-blue-500 opacity-0 transition-opacity hover:opacity-100'
         onPointerDown={(event) => {
           handlePointerDown(event, Direction.north | Direction.east);
         }}
       />
-      {/* East */}
+      {/* East handle */}
       <div
-        className='absolute top-2 -right-1 bottom-2 w-2 cursor-ew-resize bg-blue-500 opacity-0 transition-opacity hover:opacity-100'
+        className='absolute top-1/2 -right-1 h-6 w-2 -translate-y-1/2 cursor-ew-resize bg-blue-500 opacity-0 transition-opacity hover:opacity-100'
         onPointerDown={(event) => {
           handlePointerDown(event, Direction.east);
         }}
       />
-      {/* Southeast */}
+      {/* Southeast handle */}
       <div
-        className='absolute -right-1 -bottom-1 h-2 w-2 cursor-nwse-resize bg-blue-500 opacity-0 transition-opacity hover:opacity-100'
+        className='absolute -right-1 -bottom-1 h-3 w-3 cursor-nwse-resize bg-blue-500 opacity-0 transition-opacity hover:opacity-100'
         onPointerDown={(event) => {
           handlePointerDown(event, Direction.south | Direction.east);
         }}
       />
-      {/* South */}
+      {/* South handle */}
       <div
-        className='absolute right-2 -bottom-1 left-2 h-2 cursor-ns-resize bg-blue-500 opacity-0 transition-opacity hover:opacity-100'
+        className='absolute -bottom-1 left-1/2 h-2 w-6 -translate-x-1/2 cursor-ns-resize bg-blue-500 opacity-0 transition-opacity hover:opacity-100'
         onPointerDown={(event) => {
           handlePointerDown(event, Direction.south);
         }}
       />
-      {/* Southwest */}
+      {/* Southwest handle */}
       <div
-        className='absolute -bottom-1 -left-1 h-2 w-2 cursor-nesw-resize bg-blue-500 opacity-0 transition-opacity hover:opacity-100'
+        className='absolute -bottom-1 -left-1 h-3 w-3 cursor-nesw-resize bg-blue-500 opacity-0 transition-opacity hover:opacity-100'
         onPointerDown={(event) => {
           handlePointerDown(event, Direction.south | Direction.west);
         }}
       />
-      {/* West */}
+      {/* West handle */}
       <div
-        className='absolute top-2 bottom-2 -left-1 w-2 cursor-ew-resize bg-blue-500 opacity-0 transition-opacity hover:opacity-100'
+        className='absolute top-1/2 -left-1 h-6 w-2 -translate-y-1/2 cursor-ew-resize bg-blue-500 opacity-0 transition-opacity hover:opacity-100'
         onPointerDown={(event) => {
           handlePointerDown(event, Direction.west);
         }}
       />
-      {/* Northwest */}
+      {/* Northwest handle */}
       <div
-        className='absolute -top-1 -left-1 h-2 w-2 cursor-nwse-resize bg-blue-500 opacity-0 transition-opacity hover:opacity-100'
+        className='absolute -top-1 -left-1 h-3 w-3 cursor-nesw-resize bg-blue-500 opacity-0 transition-opacity hover:opacity-100'
         onPointerDown={(event) => {
           handlePointerDown(event, Direction.north | Direction.west);
         }}
