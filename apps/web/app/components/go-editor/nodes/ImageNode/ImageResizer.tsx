@@ -212,59 +212,59 @@ export default function ImageResizer({
   };
 
   return (
-    <div ref={controlWrapperRef} className='relative'>
+    <div ref={controlWrapperRef} className='pointer-events-none absolute inset-0'>
       {/* North handle */}
       <div
-        className='absolute -top-1 left-1/2 h-2 w-6 -translate-x-1/2 cursor-ns-resize bg-blue-500 opacity-0 transition-opacity hover:opacity-100'
+        className='bg-secondary pointer-events-auto absolute -top-1 left-1/2 h-2 w-6 -translate-x-1/2 cursor-ns-resize opacity-95 transition-opacity hover:opacity-100'
         onPointerDown={(event) => {
           handlePointerDown(event, Direction.north);
         }}
       />
       {/* Northeast handle */}
       <div
-        className='absolute -top-1 -right-1 h-3 w-3 cursor-nwse-resize bg-blue-500 opacity-0 transition-opacity hover:opacity-100'
+        className='bg-secondary pointer-events-auto absolute -top-1 -right-1 h-3 w-3 cursor-nwse-resize opacity-95 transition-opacity hover:opacity-100'
         onPointerDown={(event) => {
           handlePointerDown(event, Direction.north | Direction.east);
         }}
       />
       {/* East handle */}
       <div
-        className='absolute top-1/2 -right-1 h-6 w-2 -translate-y-1/2 cursor-ew-resize bg-blue-500 opacity-0 transition-opacity hover:opacity-100'
+        className='bg-secondary pointer-events-auto absolute top-1/2 -right-1 h-6 w-2 -translate-y-1/2 cursor-ew-resize opacity-95 transition-opacity hover:opacity-100'
         onPointerDown={(event) => {
           handlePointerDown(event, Direction.east);
         }}
       />
       {/* Southeast handle */}
       <div
-        className='absolute -right-1 -bottom-1 h-3 w-3 cursor-nwse-resize bg-blue-500 opacity-0 transition-opacity hover:opacity-100'
+        className='bg-secondary pointer-events-auto absolute -right-1 -bottom-1 h-3 w-3 cursor-nwse-resize opacity-95 transition-opacity hover:opacity-100'
         onPointerDown={(event) => {
           handlePointerDown(event, Direction.south | Direction.east);
         }}
       />
       {/* South handle */}
       <div
-        className='absolute -bottom-1 left-1/2 h-2 w-6 -translate-x-1/2 cursor-ns-resize bg-blue-500 opacity-0 transition-opacity hover:opacity-100'
+        className='bg-secondary pointer-events-auto absolute -bottom-1 left-1/2 h-2 w-6 -translate-x-1/2 cursor-ns-resize opacity-95 transition-opacity hover:opacity-100'
         onPointerDown={(event) => {
           handlePointerDown(event, Direction.south);
         }}
       />
       {/* Southwest handle */}
       <div
-        className='absolute -bottom-1 -left-1 h-3 w-3 cursor-nesw-resize bg-blue-500 opacity-0 transition-opacity hover:opacity-100'
+        className='bg-secondary pointer-events-auto absolute -bottom-1 -left-1 h-3 w-3 cursor-nesw-resize opacity-95 transition-opacity hover:opacity-100'
         onPointerDown={(event) => {
           handlePointerDown(event, Direction.south | Direction.west);
         }}
       />
       {/* West handle */}
       <div
-        className='absolute top-1/2 -left-1 h-6 w-2 -translate-y-1/2 cursor-ew-resize bg-blue-500 opacity-0 transition-opacity hover:opacity-100'
+        className='bg-secondary pointer-events-auto absolute top-1/2 -left-1 h-6 w-2 -translate-y-1/2 cursor-ew-resize opacity-95 transition-opacity hover:opacity-100'
         onPointerDown={(event) => {
           handlePointerDown(event, Direction.west);
         }}
       />
       {/* Northwest handle */}
       <div
-        className='absolute -top-1 -left-1 h-3 w-3 cursor-nesw-resize bg-blue-500 opacity-0 transition-opacity hover:opacity-100'
+        className='bg-secondary pointer-events-auto absolute -top-1 -left-1 h-3 w-3 cursor-nesw-resize opacity-95 transition-opacity hover:opacity-100'
         onPointerDown={(event) => {
           handlePointerDown(event, Direction.north | Direction.west);
         }}
