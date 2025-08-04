@@ -43,7 +43,7 @@ export default function DraggableBlockPlugin({
         <div
           ref={menuRef}
           className={cn(
-            'absolute top-0 -left-6 z-10 flex gap-1 rounded p-1 opacity-0 transition-opacity',
+            'absolute top-0 -left-2 z-10 flex gap-1 rounded p-1 opacity-0 transition-opacity',
             'cursor-grab',
             'bg-card border-border/20 shadow-sm',
           )}
