@@ -1,11 +1,9 @@
-import type { JSX } from 'react';
+import type React from 'react';
+import { type JSX, lazy, Suspense } from 'react';
 
 import type { PluginTypeId } from '@gonasi/schemas/plugins';
 
-import { BuilderMultipleChoiceSingleAnswerPlugin } from '../QuizPlugins/MultipleChoiceSingleAnswer/BuilderMultipleChoiceSingleAnswerPlugin';
-import { BuilderTrueOrFalsePlugin } from '../QuizPlugins/TrueOrFalsePlugin/BuilderTrueOrFalsePlugin';
-import { BuilderRichTextPlugin } from '../RichTextPlugins/RichTextPlugin/BuilderRichTextPlugin';
-
+import { Spinner } from '~/components/loaders';
 import { Modal } from '~/components/ui/modal';
 import type { LessonBlockLoaderReturnType } from '~/routes/organizations/builder/course/content/chapterId/lessonId/lesson-blocks/plugins/edit-plugin-modal';
 
@@ -18,16 +16,36 @@ function notImplemented(): never {
   throw new Error('Plugin component not implemented.');
 }
 
+// Lazy load the builder plugin components
+const LazyBuilderMultipleChoiceSingleAnswerPlugin = lazy(() =>
+  import('../QuizPlugins/MultipleChoiceSingleAnswer/BuilderMultipleChoiceSingleAnswerPlugin').then(
+    (module) => ({ default: module.BuilderMultipleChoiceSingleAnswerPlugin }),
+  ),
+);
+
+const LazyBuilderTrueOrFalsePlugin = lazy(() =>
+  import('../QuizPlugins/TrueOrFalsePlugin/BuilderTrueOrFalsePlugin').then((module) => ({
+    default: module.BuilderTrueOrFalsePlugin,
+  })),
+);
+
+const LazyBuilderRichTextPlugin = lazy(() =>
+  import('../RichTextPlugins/RichTextPlugin/BuilderRichTextPlugin').then((module) => ({
+    default: module.BuilderRichTextPlugin,
+  })),
+);
+
 // Only components that accept `{ block?: LessonBlockLoaderReturnType }`
 const pluginComponentMap: Record<
   PluginTypeId,
-  (props: { block?: LessonBlockLoaderReturnType }) => JSX.Element
+  | React.LazyExoticComponent<(props: { block?: LessonBlockLoaderReturnType }) => JSX.Element>
+  | (() => never)
 > = {
-  rich_text_editor: BuilderRichTextPlugin,
-  true_or_false: BuilderTrueOrFalsePlugin,
+  rich_text_editor: LazyBuilderRichTextPlugin,
+  true_or_false: LazyBuilderTrueOrFalsePlugin,
   tap_to_reveal: notImplemented,
   multiple_choice_multiple: notImplemented,
-  multiple_choice_single: BuilderMultipleChoiceSingleAnswerPlugin,
+  multiple_choice_single: LazyBuilderMultipleChoiceSingleAnswerPlugin,
   match_concepts: notImplemented,
   sequence_ordering: notImplemented,
   categorization: notImplemented,
@@ -43,6 +61,18 @@ const pluginComponentMap: Record<
   motion_simulation: notImplemented,
   gravity_simulation: notImplemented,
 };
+
+function PluginLoadingFallback() {
+  return (
+    <Modal open>
+      <Modal.Content size='sm'>
+        <Modal.Body>
+          <Spinner />
+        </Modal.Body>
+      </Modal.Content>
+    </Modal>
+  );
+}
 
 function UnsupportedPluginMessage({ pluginTypeId }: { pluginTypeId: PluginTypeId }) {
   return (
@@ -70,5 +100,21 @@ export default function BuilderPluginRenderer({
     return <UnsupportedPluginMessage pluginTypeId={pluginTypeId} />;
   }
 
-  return <PluginComponent block={block} />;
+  // Check if it's a lazy component or the notImplemented function
+  const isLazyComponent = 'render' in PluginComponent || '$$typeof' in PluginComponent;
+
+  if (isLazyComponent) {
+    const LazyComponent = PluginComponent as React.LazyExoticComponent<
+      (props: { block?: LessonBlockLoaderReturnType }) => JSX.Element
+    >;
+    return (
+      <Suspense fallback={<PluginLoadingFallback />}>
+        <LazyComponent block={block} />
+      </Suspense>
+    );
+  }
+
+  // For notImplemented functions - this will throw an error
+  const NotImplementedComponent = PluginComponent as () => never;
+  return <NotImplementedComponent />;
 }

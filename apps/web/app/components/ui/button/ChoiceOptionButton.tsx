@@ -18,6 +18,7 @@ interface ChoiceOptionButtonProps {
   isSelected: boolean;
   isDisabled?: boolean;
   onClick: () => void;
+  layoutStyle?: 'single' | 'double'; // Add layout prop to determine height strategy
 }
 
 export function ChoiceOptionButton({
@@ -25,6 +26,7 @@ export function ChoiceOptionButton({
   isSelected,
   isDisabled = false,
   onClick,
+  layoutStyle = 'single',
 }: ChoiceOptionButtonProps) {
   const { isSoundEnabled } = useStore();
 
@@ -38,14 +40,22 @@ export function ChoiceOptionButton({
   return (
     <OutlineButton
       onClick={handleClick}
-      className={cn('relative h-fit w-full justify-start text-left md:max-h-50', {
+      className={cn('relative m-0 h-full w-full justify-start p-0 text-left', {
+        'md:max-h-100': layoutStyle === 'single',
+        'min-h-[4rem] md:min-h-[5rem]': layoutStyle === 'double',
         'border-secondary bg-secondary/20 hover:bg-secondary-10 hover:border-secondary/80':
           isSelected,
       })}
       disabled={isDisabled}
     >
-      <div className='flex items-start'>
-        <RichTextRenderer editorState={choiceState} className='max-h-30 md:max-h-40' />
+      <div className='flex h-full items-start'>
+        <RichTextRenderer
+          editorState={choiceState}
+          className={cn('max-h-30 md:max-h-80', {
+            // Center content vertically in double layout for better visual balance
+            'flex min-h-[3rem] items-center md:min-h-[4rem]': layoutStyle === 'double',
+          })}
+        />
       </div>
     </OutlineButton>
   );
