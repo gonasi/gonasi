@@ -2,11 +2,7 @@ import { useEffect, useMemo } from 'react';
 import { useParams } from 'react-router';
 import { Check, PartyPopper, X, XCircle } from 'lucide-react';
 
-import type {
-  MultipleChoiceSingleAnswerContentSchemaType,
-  MultipleChoiceSingleAnswerInteractionSchemaType,
-  MultipleChoiceSingleAnswerSettingsSchemaType,
-} from '@gonasi/schemas/plugins';
+import type { BlockInteractionSchemaTypes, BuilderSchemaTypes } from '@gonasi/schemas/plugins';
 
 import { useMultipleChoiceSingleAnswerInteraction } from './hooks/useMultipleChoiceSingleAnswerInteraction';
 import { PlayPluginWrapper } from '../../common/PlayPluginWrapper';
@@ -29,35 +25,91 @@ import {
 import { cn } from '~/lib/utils';
 import { useStore } from '~/store/index.tsx';
 
-/**
- * ViewMultipleChoiceSingleAnswerPlugin - Renders a multiple choice quiz interaction
- *
- * Features:
- * - Single answer selection from multiple options
- * - Answer validation with feedback
- * - Retry mechanism after wrong answers
- * - Score tracking and attempt counting
- * - Optional answer shuffling
- * - Rich text support for questions and answers
- */
-export function ViewMultipleChoiceSingleAnswerPlugin({ block, mode }: ViewPluginComponentProps) {
+type MultipleChoiceSinglePluginType = Extract<
+  BuilderSchemaTypes,
+  { plugin_type: 'multiple_choice_single' }
+>;
+
+type MultipleChoiceSingleInteractionType = Extract<
+  BlockInteractionSchemaTypes,
+  { plugin_type: 'multiple_choice_single' }
+>;
+
+function isMultipleChoiceSingleInteraction(
+  data: unknown,
+): data is MultipleChoiceSingleInteractionType {
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    'plugin_type' in data &&
+    (data as any).plugin_type === 'multiple_choice_single'
+  );
+}
+
+export function ViewMultipleChoiceSingleAnswerPlugin({
+  blockWithProgress,
+}: ViewPluginComponentProps) {
   const params = useParams();
 
-  // Extract configuration from block settings
-  const { playbackMode, layoutStyle, randomization } =
-    block.settings as MultipleChoiceSingleAnswerSettingsSchemaType;
+  const {
+    settings: { playbackMode, layoutStyle, randomization, weight },
+    content: { questionState, correctAnswer, explanationState, hint },
+  } = blockWithProgress.block as MultipleChoiceSinglePluginType;
 
-  // Extract content data from block
-  const { questionState, correctAnswer, explanationState, hint, choices } =
-    block.content as MultipleChoiceSingleAnswerContentSchemaType;
+  const { is_last_block } = blockWithProgress;
 
-  // Global app state for explanations and navigation
-  const { isExplanationBottomSheetOpen, setExplanationState, isLastBlock } = useStore();
+  const { isExplanationBottomSheetOpen, setExplanationState, mode } = useStore();
 
-  // Core plugin functionality - handles data persistence and navigation
-  const { loading, payload, handleContinue, updatePayload } = useViewPluginCore(
-    mode === 'play' ? block.id : null,
+  const {
+    loading,
+    payload,
+    handleContinue,
+    updateInteractionData,
+    updateEarnedScore,
+    updateAttemptsCount,
+  } = useViewPluginCore(
+    mode === 'play' ? { progress: blockWithProgress.block_progress, blockWithProgress } : null,
   );
+
+  // Extract interaction data from DB - this is the key change
+  const initialInteractionData: MultipleChoiceSingleInteractionType | null = useMemo(() => {
+    if (mode === 'preview') return null;
+
+    // Get interaction data from the database via block progress
+    const dbInteractionData = blockWithProgress.block_progress?.interaction_data;
+
+    console.log('DB Interaction Data:', dbInteractionData); // Debug log
+
+    return isMultipleChoiceSingleInteraction(dbInteractionData) ? dbInteractionData : null;
+  }, [blockWithProgress.block_progress?.interaction_data, mode]);
+
+  // Also get the current selected option from payload if available
+  const parsedPayloadData: MultipleChoiceSingleInteractionType | null = useMemo(() => {
+    const data = payload?.interaction_data;
+    return isMultipleChoiceSingleInteraction(data) ? data : null;
+  }, [payload?.interaction_data]);
+
+  // Use the most recent data (payload takes precedence over initial DB data)
+  const currentInteractionData = parsedPayloadData || initialInteractionData;
+
+  const {
+    state,
+    selectedOption,
+    selectOption,
+    checkAnswer,
+    revealCorrectAnswer,
+    isCompleted,
+    tryAgain,
+    canInteract,
+    score,
+    reset,
+    attemptsCount,
+  } = useMultipleChoiceSingleAnswerInteraction(currentInteractionData, correctAnswer);
+
+  const answerOptions = useMemo(() => {
+    const options = [true, false];
+    return randomization === 'shuffle' ? shuffleArray(options) : options;
+  }, [randomization]);
 
   // Multiple choice interaction state management
   const {

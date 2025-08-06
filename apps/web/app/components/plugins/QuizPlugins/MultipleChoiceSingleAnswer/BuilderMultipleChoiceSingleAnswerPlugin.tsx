@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { useParams } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Save, Settings } from 'lucide-react';
@@ -22,6 +23,7 @@ import { LayoutStyleField } from '../../common/settings/LayoutStyleField';
 import { PlaybackModeField } from '../../common/settings/PlaybackModeField';
 import { RandomizationModeField } from '../../common/settings/RandomizationModeField';
 
+import { Spinner } from '~/components/loaders';
 import { BackArrowNavLink, Button } from '~/components/ui/button';
 import {
   GoChoiceField,
@@ -53,16 +55,18 @@ const defaultSettings: MultipleChoiceSingleAnswerSettingsSchemaTypes = {
   randomization: 'none',
 };
 
-export function BuilderMultipleChoiceSingleAnswerPlugin({
+// Form Content Component (lazy-loaded)
+function MultipleChoiceFormContent({
   block,
-}: BuilderMultipleChoiceSingleAnswerPluginProps) {
+  lessonPath,
+}: {
+  block?: LessonBlockLoaderReturnType;
+  lessonPath: string;
+}) {
   const params = useParams();
   const isPending = useIsPending();
 
-  const { organizationId, courseId, chapterId, lessonId, pluginGroupId } = params;
-
-  const lessonPath = `/${organizationId}/builder/${courseId}/content/${chapterId}/${lessonId}/lesson-blocks`;
-  const backRoute = `${lessonPath}/plugins/${pluginGroupId}`;
+  const { organizationId, courseId, chapterId, lessonId } = params;
 
   const methods = useRemixForm<MultipleChoiceSingleAnswerSchemaTypes>({
     mode: 'onBlur',
@@ -105,93 +109,108 @@ export function BuilderMultipleChoiceSingleAnswerPlugin({
   const watchRandomization = methods.watch('settings.randomization');
 
   return (
+    <RemixFormProvider {...methods}>
+      <form onSubmit={methods.handleSubmit} method='POST' action={actionUrl}>
+        <Modal.Header
+          leadingIcon={
+            block?.id ? null : (
+              <BackArrowNavLink to={`${lessonPath}/plugins/${params.pluginGroupId}`} />
+            )
+          }
+          title={block?.id ? 'Edit Multiple Choice' : 'Add Multiple Choice'}
+          closeRoute={lessonPath}
+          settingsPopover={
+            <Popover>
+              <PopoverTrigger asChild>
+                <Settings
+                  className='transition-transform duration-200 hover:scale-105 hover:rotate-15 hover:cursor-pointer'
+                  size={20}
+                />
+              </PopoverTrigger>
+              <PopoverContent className='w-full max-w-md'>
+                <div className='grid gap-4'>
+                  <div className='space-y-2'>
+                    <h4 className='leading-none font-medium'>Block settings</h4>
+                    <p className='text-muted-foreground text-sm'>
+                      Tweak how this block behaves, your rules, your way!
+                    </p>
+                  </div>
+                  <div className='grid gap-2'>
+                    <BlockWeightField name='settings.weight' />
+                    <PlaybackModeField
+                      name='settings.playbackMode'
+                      watchValue={watchPlaybackMode}
+                    />
+                    <LayoutStyleField name='settings.layoutStyle' watchValue={watchLayoutStyle} />
+                    <RandomizationModeField
+                      name='settings.randomization'
+                      watchValue={watchRandomization}
+                    />
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
+          }
+        />
+        <Modal.Body>
+          <HoneypotInputs />
+
+          <GoRichTextInputField
+            name='content.questionState'
+            labelProps={{ children: 'Question', required: true }}
+            placeholder='Ask a challenging question...'
+            description='Make learners think deeply about this one!'
+          />
+
+          <GoChoiceField
+            name='content.choices'
+            labelProps={{ children: 'Choices', required: true }}
+          />
+
+          <GoRichTextInputField
+            name='content.explanationState'
+            labelProps={{ children: 'Why is that the answer?', required: true }}
+            placeholder='Give a short explanation...'
+            description='Briefly explain the reasoning behind the correct answer. This helps learners build deeper understanding, especially if they got it wrong.'
+          />
+
+          <GoTextAreaField
+            name='content.hint'
+            labelProps={{ children: 'Hint (optional)' }}
+            textareaProps={{ disabled: isDisabled }}
+            description='Provide a subtle clue to help learners.'
+          />
+        </Modal.Body>
+        <div className='bg-background/90 border-t-border/20 sticky right-0 bottom-0 left-0 z-10 flex justify-end space-x-2 border-t p-4'>
+          <div className='flex w-full'>
+            <Button
+              type='submit'
+              rightIcon={<Save />}
+              disabled={isDisabled || !methods.formState.isDirty}
+              isLoading={isDisabled}
+            >
+              Save
+            </Button>
+          </div>
+        </div>
+      </form>
+    </RemixFormProvider>
+  );
+}
+
+export function BuilderMultipleChoiceSingleAnswerPlugin({
+  block,
+}: BuilderMultipleChoiceSingleAnswerPluginProps) {
+  const params = useParams();
+  const { organizationId, courseId, chapterId, lessonId } = params;
+  const lessonPath = `/${organizationId}/builder/${courseId}/content/${chapterId}/${lessonId}/lesson-blocks`;
+
+  return (
     <Modal open>
       <Modal.Content size='md'>
-        <RemixFormProvider {...methods}>
-          <form onSubmit={methods.handleSubmit} method='POST' action={actionUrl}>
-            <Modal.Header
-              leadingIcon={block?.id ? null : <BackArrowNavLink to={backRoute} />}
-              title={block?.id ? 'Edit Multiple Choice' : 'Add Multiple Choice'}
-              closeRoute={lessonPath}
-              settingsPopover={
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Settings
-                      className='transition-transform duration-200 hover:scale-105 hover:rotate-15 hover:cursor-pointer'
-                      size={20}
-                    />
-                  </PopoverTrigger>
-                  <PopoverContent className='w-full max-w-md'>
-                    <div className='grid gap-4'>
-                      <div className='space-y-2'>
-                        <h4 className='leading-none font-medium'>Block settings</h4>
-                        <p className='text-muted-foreground text-sm'>
-                          Tweak how this block behaves, your rules, your way!
-                        </p>
-                      </div>
-                      <div className='grid gap-2'>
-                        <BlockWeightField name='settings.weight' />
-                        <PlaybackModeField
-                          name='settings.playbackMode'
-                          watchValue={watchPlaybackMode}
-                        />
-                        <LayoutStyleField
-                          name='settings.layoutStyle'
-                          watchValue={watchLayoutStyle}
-                        />
-                        <RandomizationModeField
-                          name='settings.randomization'
-                          watchValue={watchRandomization}
-                        />
-                      </div>
-                    </div>
-                  </PopoverContent>
-                </Popover>
-              }
-            />
-            <Modal.Body>
-              <HoneypotInputs />
-
-              <GoRichTextInputField
-                name='content.questionState'
-                labelProps={{ children: 'Question', required: true }}
-                placeholder='Ask a challenging question...'
-                description='Make learners think deeply about this one!'
-              />
-
-              <GoChoiceField
-                name='content.choices'
-                labelProps={{ children: 'Choices', required: true }}
-              />
-
-              <GoRichTextInputField
-                name='content.explanationState'
-                labelProps={{ children: 'Why is that the answer?', required: true }}
-                placeholder='Give a short explanation...'
-                description='Briefly explain the reasoning behind the correct answer. This helps learners build deeper understanding, especially if they got it wrong.'
-              />
-
-              <GoTextAreaField
-                name='content.hint'
-                labelProps={{ children: 'Hint (optional)' }}
-                textareaProps={{ disabled: isDisabled }}
-                description='Provide a subtle clue to help learners.'
-              />
-            </Modal.Body>
-            <div className='bg-background/90 border-t-border/20 sticky right-0 bottom-0 left-0 z-10 flex justify-end space-x-2 border-t p-4'>
-              <div className='flex w-full'>
-                <Button
-                  type='submit'
-                  rightIcon={<Save />}
-                  disabled={isDisabled || !methods.formState.isDirty}
-                  isLoading={isDisabled}
-                >
-                  Save
-                </Button>
-              </div>
-            </div>
-          </form>
-        </RemixFormProvider>
+        <Suspense fallback={<Spinner />}>
+          <MultipleChoiceFormContent block={block} lessonPath={lessonPath} />
+        </Suspense>
       </Modal.Content>
     </Modal>
   );
