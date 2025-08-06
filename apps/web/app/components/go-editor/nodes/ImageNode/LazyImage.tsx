@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Image } from '@unpic/react';
 
 import { calculateDimensions } from './utils/calculateDimensions';
 
@@ -47,46 +48,78 @@ export function LazyImage({
     }
   }, [imageRef, isSVGImage]);
 
-  const imageStyle = calculateDimensions({
+  const { width: calculatedWidth, height: calculatedHeight } = calculateDimensions({
     width,
     height,
     dimensions,
     maxWidth,
   });
 
+  // Create a wrapper that maintains the image's natural positioning for the resizer
   return (
-    <>
-      {!src && !hasError && (
+    <div style={{ position: 'relative', display: 'inline-block' }}>
+      {/* Background blur/placeholder - positioned behind */}
+      {!hasError && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: placeholder,
+            opacity: isLoaded ? 0 : 1,
+            transition: 'opacity 0.3s ease-in-out',
+            zIndex: 0,
+            pointerEvents: 'none',
+          }}
+        />
+      )}
+
+      {/* The actual image - positioned normally for resizer compatibility */}
+      {src && !hasError ? (
+        <div
+          style={{
+            opacity: isLoaded ? 1 : 0,
+            transition: 'opacity 0.3s ease-in-out',
+            position: 'relative',
+            zIndex: 1,
+          }}
+        >
+          <Image
+            className={className || undefined}
+            src={src}
+            alt={altText}
+            ref={imageRef}
+            width={calculatedWidth}
+            height={calculatedHeight}
+            onError={onError}
+            draggable='false'
+            onLoad={(e) => {
+              if (isSVGImage) {
+                const img = e.currentTarget;
+                setDimensions({
+                  height: img.naturalHeight,
+                  width: img.naturalWidth,
+                });
+              }
+              onLoad();
+            }}
+          />
+        </div>
+      ) : (
+        // Fallback placeholder when no src or error
         <div
           className={className || undefined}
           style={{
+            width: calculatedWidth,
+            height: calculatedHeight,
             background: placeholder,
-            opacity: isLoaded ? 0 : 1,
-            ...imageStyle,
+            position: 'relative',
+            zIndex: 1,
           }}
         />
       )}
-      {src && !hasError && (
-        <img
-          className={className || undefined}
-          src={src}
-          alt={altText}
-          ref={imageRef}
-          style={imageStyle}
-          onError={onError}
-          draggable='false'
-          onLoad={(e) => {
-            if (isSVGImage) {
-              const img = e.currentTarget;
-              setDimensions({
-                height: img.naturalHeight,
-                width: img.naturalWidth,
-              });
-            }
-            onLoad();
-          }}
-        />
-      )}
-    </>
+    </div>
   );
 }

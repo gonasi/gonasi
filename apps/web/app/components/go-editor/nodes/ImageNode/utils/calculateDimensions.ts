@@ -12,7 +12,10 @@ interface CalculateDimensionsArgs {
   fallbackHeight?: number;
 }
 
-type CSSStyleDimensions = React.CSSProperties;
+interface DimensionsResult {
+  width: number;
+  height: number;
+}
 
 export function calculateDimensions({
   width,
@@ -21,16 +24,16 @@ export function calculateDimensions({
   maxWidth,
   fallbackWidth = 200,
   fallbackHeight = 200,
-}: CalculateDimensionsArgs): CSSStyleDimensions {
+}: CalculateDimensionsArgs): DimensionsResult {
   // CASE A: Explicit width + height passed
   if (typeof width === 'number' && typeof height === 'number') {
     const aspectRatio = width / height;
+    const finalWidth = Math.min(width, maxWidth);
+    const finalHeight = finalWidth / aspectRatio;
 
     return {
-      width: '100%',
-      maxWidth: `${Math.min(width, maxWidth)}px`,
-      height: 'auto',
-      aspectRatio: aspectRatio.toString(),
+      width: finalWidth,
+      height: finalHeight,
     };
   }
 
@@ -38,11 +41,11 @@ export function calculateDimensions({
   const naturalWidth = dimensions?.width ?? fallbackWidth;
   const naturalHeight = dimensions?.height ?? fallbackHeight;
   const aspectRatio = naturalWidth / naturalHeight;
+  const finalWidth = Math.min(naturalWidth, maxWidth);
+  const finalHeight = finalWidth / aspectRatio;
 
   return {
-    width: '100%',
-    maxWidth: `${Math.min(naturalWidth, maxWidth)}px`,
-    height: 'auto',
-    aspectRatio: aspectRatio.toString(),
+    width: finalWidth,
+    height: finalHeight,
   };
 }

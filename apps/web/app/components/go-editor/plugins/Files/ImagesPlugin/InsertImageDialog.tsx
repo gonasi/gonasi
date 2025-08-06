@@ -59,24 +59,45 @@ export default function InsertImageDialog({
   // Show spinner during initial load or when there's no data yet
   const isInitialLoading = !initialLoadRef.current || (fetcher.state !== 'idle' && !fetcher.data);
 
-  const getImageDimensions = (file: any): Promise<{ width: number; height: number }> => {
+  const getImageDimensions = (file: {
+    signed_url: string;
+    name?: string;
+  }): Promise<{ width: number; height: number }> => {
+    // Internal defaults, matching calculateDimensions
+    const fallbackWidth = 200;
+    const fallbackHeight = 200;
+    const maxWidth = 800;
+
     return new Promise((resolve) => {
       const img = new Image();
 
       img.onload = () => {
+        const naturalWidth = img.naturalWidth || fallbackWidth;
+        const naturalHeight = img.naturalHeight || fallbackHeight;
+        const aspectRatio = naturalWidth / naturalHeight;
+
+        const finalWidth = Math.min(naturalWidth, maxWidth);
+        const finalHeight = finalWidth / aspectRatio;
+
         resolve({
-          width: img.naturalWidth,
-          height: img.naturalHeight,
+          width: Math.round(finalWidth),
+          height: Math.round(finalHeight),
         });
       };
 
       img.onerror = () => {
-        // Fallback to default dimensions if image fails to load
         console.warn(`Failed to load dimensions for image: ${file.name}`);
-        resolve({ width: 300, height: 200 });
+
+        const aspectRatio = fallbackWidth / fallbackHeight;
+        const finalWidth = Math.min(fallbackWidth, maxWidth);
+        const finalHeight = finalWidth / aspectRatio;
+
+        resolve({
+          width: Math.round(finalWidth),
+          height: Math.round(finalHeight),
+        });
       };
 
-      // Use the signed_url from the file object
       img.src = file.signed_url;
     });
   };
