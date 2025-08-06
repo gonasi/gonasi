@@ -2,6 +2,7 @@ import type { JSX } from 'react';
 
 import type { PluginTypeId } from '@gonasi/schemas/plugins';
 
+import { BuilderMultipleChoiceSingleAnswerPlugin } from '../QuizPlugins/MultipleChoiceSingleAnswer/BuilderMultipleChoiceSingleAnswerPlugin';
 import { BuilderTrueOrFalsePlugin } from '../QuizPlugins/TrueOrFalsePlugin/BuilderTrueOrFalsePlugin';
 import { BuilderRichTextPlugin } from '../RichTextPlugins/RichTextPlugin/BuilderRichTextPlugin';
 
@@ -26,7 +27,7 @@ const pluginComponentMap: Record<
   true_or_false: BuilderTrueOrFalsePlugin,
   tap_to_reveal: notImplemented,
   multiple_choice_multiple: notImplemented,
-  multiple_choice_single: notImplemented,
+  multiple_choice_single: BuilderMultipleChoiceSingleAnswerPlugin,
   match_concepts: notImplemented,
   sequence_ordering: notImplemented,
   categorization: notImplemented,

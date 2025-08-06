@@ -12,3 +12,4 @@ export * from './GoSwitchField';
 export * from './GoCalendar26';
 export * from './GoValidationCheckField';
 export * from './GoLexicalInputField';
+export * from './GoChoiceField';

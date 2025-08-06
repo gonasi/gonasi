@@ -186,7 +186,7 @@ export default function ImageComponent({
 
   return (
     <Suspense fallback={null}>
-      <div className='relative inline-block' draggable={draggable}>
+      <div className='relative inline-block overflow-hidden' draggable={draggable}>
         <LazyImage
           className={
             isFocused

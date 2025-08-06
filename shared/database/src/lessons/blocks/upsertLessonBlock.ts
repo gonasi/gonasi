@@ -22,7 +22,7 @@ export const upsertLessonBlock = async ({ supabase, blockData }: UpsertLessonBlo
     blockData;
 
   try {
-    const { error } = await supabase.from('lesson_blocks').upsert({
+    const upsertPayload = {
       id: id === 'create-new' ? undefined : id,
       organization_id,
       course_id,
@@ -33,9 +33,17 @@ export const upsertLessonBlock = async ({ supabase, blockData }: UpsertLessonBlo
       settings,
       created_by: userId,
       updated_by: userId,
-    });
+    };
+
+    const { error } = await supabase.from('lesson_blocks').upsert(upsertPayload);
 
     if (error) {
+      console.error('[upsertLessonBlock] Supabase upsert error:', {
+        error,
+        payload: upsertPayload,
+        userId,
+      });
+
       return {
         success: false,
         message: 'Failed to save the block. Please try again.',
@@ -47,7 +55,12 @@ export const upsertLessonBlock = async ({ supabase, blockData }: UpsertLessonBlo
       message: id === 'create-new' ? 'Block created successfully.' : 'Block updated successfully.',
     };
   } catch (err) {
-    console.error('Unexpected error in upsertLessonBlock:', err);
+    console.error('[upsertLessonBlock] Unexpected error:', {
+      error: err,
+      blockData,
+      userId,
+    });
+
     return {
       success: false,
       message: 'An unexpected error occurred while saving the block. Please try again later.',

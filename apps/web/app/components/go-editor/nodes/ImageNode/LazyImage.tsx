@@ -30,7 +30,7 @@ export function LazyImage({
   isLoaded: boolean;
   onLoad: () => void;
   hasError: boolean;
-}): JSX.Element {
+}) {
   const [dimensions, setDimensions] = useState<{
     width: number;
     height: number;
