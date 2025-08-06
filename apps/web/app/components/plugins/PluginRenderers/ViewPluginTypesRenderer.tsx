@@ -3,6 +3,7 @@ import type { JSX } from 'react';
 import type { PluginTypeId } from '@gonasi/schemas/plugins';
 import type { BlockWithProgressSchemaTypes } from '@gonasi/schemas/publish/progressiveReveal';
 
+import { ViewMultipleChoiceMultipleAnswersPlugin } from '../QuizPlugins/MultipleChoiceMultipleAnswers/ViewMultipleChoiceMultipleAnswersPlugin';
 import { ViewMultipleChoiceSingleAnswerPlugin } from '../QuizPlugins/MultipleChoiceSingleAnswer/ViewMultipleChoiceSingleAnswerPlugin';
 import { ViewTrueOrFalsePlugin } from '../QuizPlugins/TrueOrFalsePlugin/ViewTrueOrFalsePlugin';
 import { ViewRichTextPlugin } from '../RichTextPlugins/RichTextPlugin/ViewRichTextPlugin';
@@ -22,7 +23,7 @@ const viewPluginComponentMap: Record<
   true_or_false: ViewTrueOrFalsePlugin,
   tap_to_reveal: unimplementedPlugin,
   rich_text_editor: ViewRichTextPlugin,
-  multiple_choice_multiple: unimplementedPlugin,
+  multiple_choice_multiple: ViewMultipleChoiceMultipleAnswersPlugin,
   multiple_choice_single: ViewMultipleChoiceSingleAnswerPlugin,
   match_concepts: unimplementedPlugin,
   sequence_ordering: unimplementedPlugin,

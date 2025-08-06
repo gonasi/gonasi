@@ -1,13 +1,8 @@
 import { useEffect, useMemo } from 'react';
-import { useParams } from 'react-router';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Check, PartyPopper, X, XCircle } from 'lucide-react';
 
-import type {
-  MultipleChoiceMultipleAnswersContentSchemaType,
-  MultipleChoiceMultipleAnswersInteractionSchemaType,
-  MultipleChoiceMultipleAnswersSettingsSchemaType,
-} from '@gonasi/schemas/plugins';
+import type { BlockInteractionSchemaTypes, BuilderSchemaTypes } from '@gonasi/schemas/plugins';
 
 import { useMultipleChoiceMultipleAnswersInteraction } from './hooks/useMultipleChoiceMultipleAnswersInteraction';
 import { PlayPluginWrapper } from '../../common/PlayPluginWrapper';
@@ -30,6 +25,27 @@ import {
 import { cn } from '~/lib/utils';
 import { useStore } from '~/store/index.tsx';
 
+type MultipleChoiceMultiplePluginType = Extract<
+  BuilderSchemaTypes,
+  { plugin_type: 'multiple_choice_multiple' }
+>;
+
+type MultipleChoiceMultipleInteractionType = Extract<
+  BlockInteractionSchemaTypes,
+  { plugin_type: 'multiple_choice_multiple' }
+>;
+
+function isMultipleChoiceMultipleInteraction(
+  data: unknown,
+): data is MultipleChoiceMultipleInteractionType {
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    'plugin_type' in data &&
+    (data as any).plugin_type === 'multiple_choice_multiple'
+  );
+}
+
 /**
  * ViewMultipleChoiceMultipleAnswersPlugin - Renders a multiple choice multiple answers quiz interaction
  *
@@ -41,24 +57,54 @@ import { useStore } from '~/store/index.tsx';
  * - Optional answer shuffling
  * - Rich text support for questions and answers
  */
-export function ViewMultipleChoiceMultipleAnswersPlugin({ block, mode }: ViewPluginComponentProps) {
-  const params = useParams();
+export function ViewMultipleChoiceMultipleAnswersPlugin({
+  blockWithProgress,
+}: ViewPluginComponentProps) {
+  const {
+    settings: { playbackMode, layoutStyle, randomization, weight },
+    content: { questionState, explanationState, hint, choices },
+  } = blockWithProgress.block as MultipleChoiceMultiplePluginType;
 
-  // Extract configuration from block settings
-  const { playbackMode, layoutStyle, randomization } =
-    block.settings as MultipleChoiceMultipleAnswersSettingsSchemaType;
+  const { is_last_block } = blockWithProgress;
 
-  // Extract content data from block
-  const { questionState, choices, correctAnswers, explanationState, hint } =
-    block.content as MultipleChoiceMultipleAnswersContentSchemaType;
+  const { isExplanationBottomSheetOpen, setExplanationState, mode } = useStore();
 
-  // Global app state for explanations and navigation
-  const { isExplanationBottomSheetOpen, setExplanationState, isLastBlock } = useStore();
-
-  // Core plugin functionality - handles data persistence and navigation
-  const { loading, payload, handleContinue, updatePayload } = useViewPluginCore(
-    mode === 'play' ? block.id : null,
+  const {
+    loading,
+    payload,
+    handleContinue,
+    updateInteractionData,
+    updateEarnedScore,
+    updateAttemptsCount,
+  } = useViewPluginCore(
+    mode === 'play' ? { progress: blockWithProgress.block_progress, blockWithProgress } : null,
   );
+
+  // Extract interaction data from DB - following the TrueOrFalse pattern
+  const initialInteractionData: MultipleChoiceMultipleInteractionType | null = useMemo(() => {
+    if (mode === 'preview') return null;
+
+    // Get interaction data from the database via block progress
+    const dbInteractionData = blockWithProgress.block_progress?.interaction_data;
+
+    console.log('DB Interaction Data:', dbInteractionData); // Debug log
+
+    return isMultipleChoiceMultipleInteraction(dbInteractionData) ? dbInteractionData : null;
+  }, [blockWithProgress.block_progress?.interaction_data, mode]);
+
+  // Also get the current selected option from payload if available
+  const parsedPayloadData: MultipleChoiceMultipleInteractionType | null = useMemo(() => {
+    const data = payload?.interaction_data;
+    return isMultipleChoiceMultipleInteraction(data) ? data : null;
+  }, [payload?.interaction_data]);
+
+  // Use the most recent data (payload takes precedence over initial DB data)
+  const currentInteractionData = parsedPayloadData || initialInteractionData;
+
+  // Extract correct answers from choices
+  const correctAnswers = useMemo(() => {
+    return choices.filter((choice) => choice.isCorrect).map((choice) => choice.id);
+  }, [choices]);
 
   // Multiple choice multiple answers interaction state management
   const {
@@ -76,7 +122,7 @@ export function ViewMultipleChoiceMultipleAnswersPlugin({ block, mode }: ViewPlu
     remainingCorrectToSelect,
     canSelectMore,
   } = useMultipleChoiceMultipleAnswersInteraction(
-    payload?.state as MultipleChoiceMultipleAnswersInteractionSchemaType,
+    currentInteractionData,
     correctAnswers,
     choices.length,
   );
@@ -92,26 +138,56 @@ export function ViewMultipleChoiceMultipleAnswersPlugin({ block, mode }: ViewPlu
     return state.isCorrect === false && state.showTryAgainButton;
   }, [state.isCorrect, state.showTryAgainButton]);
 
-  // Sync interaction state with backend when in play mode
+  // Update interaction data when state changes - following TrueOrFalse pattern
   useEffect(() => {
-    if (mode === 'play' && updatePayload) {
-      updatePayload({
-        plugin_type: 'multiple_choice_multiple',
-        block_id: block.id,
-        lesson_id: params.lessonId ?? '',
-        score,
-        attempts: attemptsCount,
-        state: { ...state },
-      });
+    if (mode === 'play') {
+      console.log('Updating interaction data:', state); // Debug log
+      updateInteractionData({ ...state });
     }
-  }, [state, isCompleted, mode, updatePayload, block.id, params.lessonId, score, attemptsCount]);
+  }, [mode, state, updateInteractionData]);
+
+  useEffect(() => {
+    if (mode === 'play') {
+      console.log('Updating earned score:', score); // Debug log
+      updateEarnedScore(score);
+    }
+  }, [mode, score, updateEarnedScore]);
+
+  useEffect(() => {
+    if (mode === 'play') {
+      console.log('Updating attempts count:', attemptsCount); // Debug log
+      updateAttemptsCount(attemptsCount);
+    }
+  }, [mode, attemptsCount, updateAttemptsCount]);
+
+  // Debug log for component state
+  useEffect(() => {
+    console.log('ViewMultipleChoiceMultipleAnswersPlugin State:', {
+      mode,
+      isCompleted,
+      blockProgress: blockWithProgress.block_progress,
+      state,
+      selectedOptionsUuids,
+      score,
+      attemptsCount,
+    });
+  }, [
+    mode,
+    isCompleted,
+    blockWithProgress.block_progress,
+    state,
+    selectedOptionsUuids,
+    score,
+    attemptsCount,
+  ]);
 
   return (
     <ViewPluginWrapper
-      isComplete={mode === 'play' ? payload?.is_complete : isCompleted}
+      isComplete={mode === 'preview' ? isCompleted : blockWithProgress.block_progress?.is_completed}
       playbackMode={playbackMode}
       mode={mode}
       reset={reset}
+      weight={weight}
     >
       <PlayPluginWrapper hint={hint}>
         {/* Question Section */}
@@ -125,18 +201,18 @@ export function ViewMultipleChoiceMultipleAnswersPlugin({ block, mode }: ViewPlu
           })}
         >
           {answerOptions.map((option) => {
-            const optionUuid = option.uuid;
+            const optionId = option.id;
 
             // Determine option state for styling and behavior
-            const isSelected = selectedOptionsUuids?.includes(optionUuid) ?? false;
+            const isSelected = selectedOptionsUuids?.includes(optionId) ?? false;
 
             // Check if this option was the correct answer in a previous attempt
             const isCorrectAttempt =
-              !!state.correctAttempt && state.correctAttempt.selected.includes(optionUuid);
+              !!state.correctAttempt && state.correctAttempt.selected.includes(optionId);
 
             // Check if this option was selected incorrectly in a previous attempt
             const isWrongAttempt = !!state.wrongAttempts?.some((attempt) =>
-              attempt.selected.includes(optionUuid),
+              attempt.selected.includes(optionId),
             );
 
             // Disable interaction for completed attempts, wrong attempts, or when interaction is locked
@@ -148,13 +224,13 @@ export function ViewMultipleChoiceMultipleAnswersPlugin({ block, mode }: ViewPlu
               lockSelectionsUntilTryAgain;
 
             return (
-              <div key={optionUuid} className='relative w-full'>
+              <div key={optionId} className='relative w-full'>
                 {/* Option Button */}
                 <ChoiceOptionButton
-                  choiceState={option.choiceState}
+                  choiceState={option.content}
                   isSelected={isSelected}
                   isDisabled={isDisabled}
-                  onClick={() => selectOption(optionUuid)}
+                  onClick={() => selectOption(optionId)}
                 />
 
                 {/* Status Indicators */}
@@ -254,33 +330,30 @@ export function ViewMultipleChoiceMultipleAnswersPlugin({ block, mode }: ViewPlu
               icon={<PartyPopper />}
               label={state.hasRevealedCorrectAnswer ? 'Answer Revealed' : 'Correct!'}
               score={score}
-              hasBeenPlayed={payload?.is_complete}
+              hasBeenPlayed={blockWithProgress.block_progress?.is_completed}
               actions={
                 <div className='flex'>
                   {/* Continue/Next Button */}
-                  <div>
-                    {!payload?.is_complete && (
-                      <BlockActionButton
-                        onClick={handleContinue}
-                        loading={loading}
-                        isLastBlock={isLastBlock}
-                        disabled={mode === 'preview'}
-                      />
-                    )}
-                  </div>
+                  {!blockWithProgress.block_progress?.is_completed && (
+                    <BlockActionButton
+                      onClick={handleContinue}
+                      loading={loading}
+                      isLastBlock={is_last_block}
+                      disabled={mode === 'preview'}
+                    />
+                  )}
+
                   {/* Optional Explanation Button */}
-                  <div>
-                    {!isExplanationBottomSheetOpen && state.canShowExplanationButton && (
-                      <AnimateInButtonWrapper>
-                        <OutlineButton
-                          className='ml-4 rounded-full'
-                          onClick={() => setExplanationState(explanationState)}
-                        >
-                          Why?
-                        </OutlineButton>
-                      </AnimateInButtonWrapper>
-                    )}
-                  </div>
+                  {!isExplanationBottomSheetOpen && state.canShowExplanationButton && (
+                    <AnimateInButtonWrapper>
+                      <OutlineButton
+                        className='ml-4 rounded-full'
+                        onClick={() => setExplanationState(explanationState)}
+                      >
+                        Why?
+                      </OutlineButton>
+                    </AnimateInButtonWrapper>
+                  )}
                 </div>
               }
             />
@@ -292,7 +365,7 @@ export function ViewMultipleChoiceMultipleAnswersPlugin({ block, mode }: ViewPlu
               color='destructive'
               icon={<XCircle />}
               label='Incorrect!'
-              hasBeenPlayed={payload?.is_complete}
+              hasBeenPlayed={blockWithProgress.block_progress?.is_completed}
               actions={
                 <div className='flex items-center space-x-4'>
                   {/* Retry Button */}

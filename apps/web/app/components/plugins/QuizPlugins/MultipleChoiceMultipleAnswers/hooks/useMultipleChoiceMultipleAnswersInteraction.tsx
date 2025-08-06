@@ -2,7 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 
 import {
   MultipleChoiceMultipleAnswersInteractionSchema,
-  type MultipleChoiceMultipleAnswersInteractionSchemaType,
+  type MultipleChoiceMultipleAnswersInteractionSchemaTypes,
 } from '@gonasi/schemas/plugins';
 
 import { calculateMultipleChoiceMultipleAnswersScore } from '../utils';
@@ -16,33 +16,33 @@ const getTimestamp = () => Date.now();
  * Custom React hook to manage the state and logic for a "Multiple Choice Multiple Answers" quiz interaction.
  *
  * @param initial - The initial state for the interaction (can be null)
- * @param correctAnswerUuids - Array of UUIDs representing the correct answer options
+ * @param correctAnswerIds - Array of IDs representing the correct answer options
  * @param choiceCount - Total number of available choices
  */
 export function useMultipleChoiceMultipleAnswersInteraction(
-  initial: MultipleChoiceMultipleAnswersInteractionSchemaType | null,
-  correctAnswerUuids: string[],
+  initial: MultipleChoiceMultipleAnswersInteractionSchemaTypes | null,
+  correctAnswerIds: string[],
   choiceCount: number,
 ) {
   // Fallback state used if `initial` is null
-  const defaultState: MultipleChoiceMultipleAnswersInteractionSchemaType = schema.parse({
-    interactionType: 'multiple_choice_multiple',
+  const defaultState: MultipleChoiceMultipleAnswersInteractionSchemaTypes = schema.parse({
+    plugin_type: 'multiple_choice_multiple',
   });
 
   // Main interaction state validated by schema (parsed from initial or fallback)
-  const [state, setState] = useState<MultipleChoiceMultipleAnswersInteractionSchemaType>(() =>
-    schema.parse(initial ?? defaultState),
+  const [state, setState] = useState<MultipleChoiceMultipleAnswersInteractionSchemaTypes>(() =>
+    schema.parse(initial ?? { plugin_type: 'multiple_choice_multiple' }),
   );
 
-  // Tracks which option UUIDs the user has selected; null means no selections
+  // Tracks which option IDs the user has selected; null means no selections
   const [selectedOptionsUuids, setSelectedOptionsUuids] = useState<string[] | null>(null);
 
   // Derived state - compute these from the main state instead of maintaining separate state
   const isCompleted = useMemo(() => {
-    const allChoicesSelected = state.correctAttempt?.selected.length === correctAnswerUuids.length;
+    const allChoicesSelected = state.correctAttempt?.selected.length === correctAnswerIds.length;
     return allChoicesSelected || state.hasRevealedCorrectAnswer;
   }, [
-    correctAnswerUuids.length,
+    correctAnswerIds.length,
     state.correctAttempt?.selected.length,
     state.hasRevealedCorrectAnswer,
   ]);
@@ -61,7 +61,7 @@ export function useMultipleChoiceMultipleAnswersInteraction(
 
     // Only count correct attempt if it wasn't revealed
     if (
-      state.correctAttempt?.selected.length === correctAnswerUuids.length &&
+      state.correctAttempt?.selected.length === correctAnswerIds.length &&
       !state.hasRevealedCorrectAnswer
     ) {
       count += 1;
@@ -72,14 +72,14 @@ export function useMultipleChoiceMultipleAnswersInteraction(
     state.wrongAttempts.length,
     state.correctAttempt?.selected.length,
     state.hasRevealedCorrectAnswer,
-    correctAnswerUuids.length,
+    correctAnswerIds.length,
   ]);
 
   // Calculate remaining correct answers to select
   const remainingCorrectToSelect = useMemo(() => {
     const alreadyFoundCorrect = state.correctAttempt?.selected?.length || 0;
-    return Math.max(0, correctAnswerUuids.length - alreadyFoundCorrect);
-  }, [correctAnswerUuids.length, state.correctAttempt?.selected?.length]);
+    return Math.max(0, correctAnswerIds.length - alreadyFoundCorrect);
+  }, [correctAnswerIds.length, state.correctAttempt?.selected?.length]);
 
   // Check if user can select more options
   const canSelectMore = useMemo(() => {
@@ -96,7 +96,7 @@ export function useMultipleChoiceMultipleAnswersInteraction(
 
       // Answer analysis
       correctAnswersSelected: state.correctAttempt?.selected.length ?? 0,
-      totalCorrectAnswers: correctAnswerUuids.length,
+      totalCorrectAnswers: correctAnswerIds.length,
       wrongAnswersSelected: state.wrongAttempts.length,
       totalChoicesAvailable: choiceCount,
 
@@ -104,7 +104,7 @@ export function useMultipleChoiceMultipleAnswersInteraction(
       attemptsCount,
       wrongAttempts: state.wrongAttempts,
     });
-  }, [state, correctAnswerUuids.length, choiceCount, attemptsCount]);
+  }, [state, correctAnswerIds.length, choiceCount, attemptsCount]);
 
   /**
    * Compares two arrays regardless of order for equality checking.
@@ -117,24 +117,24 @@ export function useMultipleChoiceMultipleAnswersInteraction(
   }, []);
 
   /**
-   * Allows the user to select or toggle options by UUID.
+   * Allows the user to select or toggle options by ID.
    * Selection is disabled if the interaction is completed.
    * Limits selections to match the number of remaining correct answers.
    */
   const selectOption = useCallback(
-    (uuid: string) => {
+    (id: string) => {
       if (!canInteract) return;
 
       setSelectedOptionsUuids((prev) => {
         const prevSet = new Set(prev ?? []);
 
         // If already selected, remove it
-        if (prevSet.has(uuid)) {
-          prevSet.delete(uuid);
+        if (prevSet.has(id)) {
+          prevSet.delete(id);
         }
         // Only add if we haven't reached the limit
         else if (prevSet.size < remainingCorrectToSelect) {
-          prevSet.add(uuid);
+          prevSet.add(id);
         }
 
         const updated = Array.from(prevSet);
@@ -158,13 +158,9 @@ export function useMultipleChoiceMultipleAnswersInteraction(
 
     setState((prev) => {
       // Separate selected options into correct and wrong
-      const correctSelectedThisRound = selectedValues.filter((uuid) =>
-        correctAnswerUuids.includes(uuid),
-      );
+      const correctSelectedThisRound = selectedValues.filter((id) => correctAnswerIds.includes(id));
 
-      const wrongSelectedThisRound = selectedValues.filter(
-        (uuid) => !correctAnswerUuids.includes(uuid),
-      );
+      const wrongSelectedThisRound = selectedValues.filter((id) => !correctAnswerIds.includes(id));
 
       // Track all correct options selected across attempts
       const previousCorrectSelected = prev.correctAttempt?.selected ?? [];
@@ -179,7 +175,7 @@ export function useMultipleChoiceMultipleAnswersInteraction(
       // correct selections with all required correct answers
       const isFullyCorrect = areArraysEqual(
         updatedCorrectSelected.slice().sort(),
-        correctAnswerUuids.slice().sort(),
+        correctAnswerIds.slice().sort(),
       );
 
       // Determine if this specific selection contains any wrong answers
@@ -187,9 +183,7 @@ export function useMultipleChoiceMultipleAnswersInteraction(
 
       const newState = {
         ...prev,
-        selectedOptions: selectedValues, // Update to match schema
         isCorrect: isFullyCorrect,
-        continue: isFullyCorrect,
         showCheckIfAnswerIsCorrectButton: false,
         showTryAgainButton: false,
         showShowAnswerButton: false,
@@ -233,7 +227,7 @@ export function useMultipleChoiceMultipleAnswersInteraction(
 
     // Clear selections after processing
     setSelectedOptionsUuids(null);
-  }, [correctAnswerUuids, selectedOptionsUuids, canInteract, areArraysEqual]);
+  }, [correctAnswerIds, selectedOptionsUuids, canInteract, areArraysEqual]);
 
   /**
    * Allows the user to retry the interaction after a wrong attempt.
@@ -269,20 +263,18 @@ export function useMultipleChoiceMultipleAnswersInteraction(
 
     setState((prev) => ({
       ...prev,
-      selectedOptions: correctAnswerUuids, // Update to match schema
       isCorrect: true,
-      continue: true,
       showCheckIfAnswerIsCorrectButton: false,
       showTryAgainButton: false,
       showShowAnswerButton: false,
       showContinueButton: true,
       canShowExplanationButton: true,
       hasRevealedCorrectAnswer: true,
-      correctAttempt: { selected: correctAnswerUuids, timestamp },
+      correctAttempt: { selected: correctAnswerIds, timestamp },
     }));
 
     setSelectedOptionsUuids(null);
-  }, [correctAnswerUuids, isCompleted]);
+  }, [correctAnswerIds, isCompleted]);
 
   /**
    * Reset the entire interaction to its initial state.

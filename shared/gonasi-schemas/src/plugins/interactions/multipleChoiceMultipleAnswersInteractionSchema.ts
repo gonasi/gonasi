@@ -28,6 +28,7 @@ export const MultipleChoiceMultipleAnswersInteractionSchema = z.object({
   showScore: z.boolean().default(false),
   canShowExplanationButton: z.boolean().default(false),
   hasRevealedCorrectAnswer: z.boolean().default(false),
+  isCorrect: z.boolean().default(false),
 });
 
 export type MultipleChoiceMultipleAnswersInteractionSchemaTypes = z.infer<
