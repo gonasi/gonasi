@@ -1,3 +1,4 @@
 export * from './richTextInteractionSchema';
 export * from './trueOrFalseInteractionSchema';
 export * from './multipleChoiceSingleAnswerInteractionSchema';
+export * from './multipleChoiceMultipleAnswersInteractionSchema';

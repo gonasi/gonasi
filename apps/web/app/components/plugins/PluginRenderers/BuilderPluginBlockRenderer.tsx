@@ -23,6 +23,12 @@ const LazyBuilderMultipleChoiceSingleAnswerPlugin = lazy(() =>
   ),
 );
 
+const LazyBuilderMultipleChoiceMultipleAnswersPlugin = lazy(() =>
+  import(
+    '../QuizPlugins/MultipleChoiceMultipleAnswers/BuilderMultipleChoiceMultipleAnswersPlugin'
+  ).then((module) => ({ default: module.BuilderMultipleChoiceMultipleAnswersPlugin })),
+);
+
 const LazyBuilderTrueOrFalsePlugin = lazy(() =>
   import('../QuizPlugins/TrueOrFalsePlugin/BuilderTrueOrFalsePlugin').then((module) => ({
     default: module.BuilderTrueOrFalsePlugin,
@@ -44,7 +50,7 @@ const pluginComponentMap: Record<
   rich_text_editor: LazyBuilderRichTextPlugin,
   true_or_false: LazyBuilderTrueOrFalsePlugin,
   tap_to_reveal: notImplemented,
-  multiple_choice_multiple: notImplemented,
+  multiple_choice_multiple: LazyBuilderMultipleChoiceMultipleAnswersPlugin,
   multiple_choice_single: LazyBuilderMultipleChoiceSingleAnswerPlugin,
   match_concepts: notImplemented,
   sequence_ordering: notImplemented,

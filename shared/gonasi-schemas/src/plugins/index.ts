@@ -1,7 +1,6 @@
 export * from './pluginData';
 export * from './pluginSettings';
 export * from './blocksPositioning';
-export * from './multipleChoiceMultipleAnswersSchema';
 export * from './tapToRevealSchema';
 
 // redo

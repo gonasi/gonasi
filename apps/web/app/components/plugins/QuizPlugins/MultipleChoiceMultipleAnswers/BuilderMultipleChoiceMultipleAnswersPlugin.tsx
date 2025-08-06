@@ -6,15 +6,15 @@ import { RemixFormProvider, useRemixForm } from 'remix-hook-form';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
 
 import type {
-  MultipleChoiceSingleAnswerContentSchemaTypes,
-  MultipleChoiceSingleAnswerSchemaTypes,
-  MultipleChoiceSingleAnswerSettingsSchemaTypes,
+  MultipleChoiceMultipleAnswersContentSchemaTypes,
+  MultipleChoiceMultipleAnswersSchemaTypes,
+  MultipleChoiceMultipleAnswersSettingsSchemaTypes,
 } from '@gonasi/schemas/plugins';
 import {
   EMPTY_LEXICAL_STATE,
-  MultipleChoiceSingleAnswerContentSchema,
-  MultipleChoiceSingleAnswerSchema,
-  MultipleChoiceSingleAnswerSettingsSchema,
+  MultipleChoiceMultipleAnswersContentSchema,
+  MultipleChoiceMultipleAnswersSchema,
+  MultipleChoiceMultipleAnswersSettingsSchema,
 } from '@gonasi/schemas/plugins';
 
 import { BlockWeightField } from '../../common/settings/BlockWeightField';
@@ -35,26 +35,25 @@ import type { LessonBlockLoaderReturnType } from '~/routes/organizations/builder
 import { getActionUrl } from '~/utils/get-action-url';
 import { useIsPending } from '~/utils/misc';
 
-const resolver = zodResolver(MultipleChoiceSingleAnswerSchema);
+const resolver = zodResolver(MultipleChoiceMultipleAnswersSchema);
 
-interface BuilderMultipleChoiceSingleAnswerPluginProps {
+interface BuilderMultipleChoiceMultipleAnswersPluginProps {
   block?: LessonBlockLoaderReturnType;
 }
 
-const defaultContent: MultipleChoiceSingleAnswerContentSchemaTypes = {
+const defaultContent: MultipleChoiceMultipleAnswersContentSchemaTypes = {
   questionState: EMPTY_LEXICAL_STATE,
   choices: [],
   explanationState: EMPTY_LEXICAL_STATE,
 };
 
-const defaultSettings: MultipleChoiceSingleAnswerSettingsSchemaTypes = {
+const defaultSettings: MultipleChoiceMultipleAnswersSettingsSchemaTypes = {
   playbackMode: 'inline',
   weight: 1,
   layoutStyle: 'double',
   randomization: 'none',
 };
 
-// Form Content Component (lazy-loaded)
 function MultipleChoiceFormContent({
   block,
   lessonPath,
@@ -64,10 +63,9 @@ function MultipleChoiceFormContent({
 }) {
   const params = useParams();
   const isPending = useIsPending();
-
   const { organizationId, courseId, chapterId, lessonId } = params;
 
-  const methods = useRemixForm<MultipleChoiceSingleAnswerSchemaTypes>({
+  const methods = useRemixForm<MultipleChoiceMultipleAnswersSchemaTypes>({
     mode: 'onBlur',
     resolver,
     defaultValues: block
@@ -77,12 +75,12 @@ function MultipleChoiceFormContent({
           course_id: courseId!,
           chapter_id: chapterId!,
           lesson_id: lessonId!,
-          plugin_type: 'multiple_choice_single',
-          content: MultipleChoiceSingleAnswerContentSchema.safeParse(block.content).success
-            ? MultipleChoiceSingleAnswerContentSchema.parse(block.content)
+          plugin_type: 'multiple_choice_multiple',
+          content: MultipleChoiceMultipleAnswersContentSchema.safeParse(block.content).success
+            ? MultipleChoiceMultipleAnswersContentSchema.parse(block.content)
             : defaultContent,
-          settings: MultipleChoiceSingleAnswerSettingsSchema.safeParse(block.settings).success
-            ? MultipleChoiceSingleAnswerSettingsSchema.parse(block.settings)
+          settings: MultipleChoiceMultipleAnswersSettingsSchema.safeParse(block.settings).success
+            ? MultipleChoiceMultipleAnswersSettingsSchema.parse(block.settings)
             : defaultSettings,
         }
       : {
@@ -90,7 +88,7 @@ function MultipleChoiceFormContent({
           course_id: courseId!,
           chapter_id: chapterId!,
           lesson_id: lessonId!,
-          plugin_type: 'multiple_choice_single',
+          plugin_type: 'multiple_choice_multiple',
           content: defaultContent,
           settings: defaultSettings,
         },
@@ -116,7 +114,7 @@ function MultipleChoiceFormContent({
               <BackArrowNavLink to={`${lessonPath}/plugins/${params.pluginGroupId}`} />
             )
           }
-          title={block?.id ? 'Edit Multiple Choice' : 'Add Multiple Choice'}
+          title={block?.id ? 'Edit Multiple Answers' : 'Add Multiple Answers'}
           closeRoute={lessonPath}
           settingsPopover={
             <Popover>
@@ -157,27 +155,29 @@ function MultipleChoiceFormContent({
           <GoRichTextInputField
             name='content.questionState'
             labelProps={{ children: 'Question', required: true }}
-            placeholder='Ask a challenging question...'
-            description='Make learners think deeply about this one!'
+            placeholder='Pose a challenging question...'
+            description='Learners may need to select more than one correct answer.'
           />
 
           <GoChoiceField
             name='content.choices'
-            labelProps={{ children: 'Choices', required: true }}
+            labelProps={{ children: 'Choices (select all that apply)', required: true }}
+            minChoices={3}
+            maxChoices={10}
           />
 
           <GoRichTextInputField
             name='content.explanationState'
-            labelProps={{ children: 'Why is that the answer?', required: true }}
-            placeholder='Give a short explanation...'
-            description='Briefly explain the reasoning behind the correct answer. This helps learners build deeper understanding, especially if they got it wrong.'
+            labelProps={{ children: 'Explanation', required: true }}
+            placeholder='Provide your reasoning...'
+            description='Explain why the correct answers are correct and others are not.'
           />
 
           <GoTextAreaField
             name='content.hint'
             labelProps={{ children: 'Hint (optional)' }}
             textareaProps={{ disabled: isDisabled }}
-            description='Provide a subtle clue to help learners.'
+            description='Offer a clue to guide learners without giving away the answer.'
           />
         </Modal.Body>
         <div className='bg-background/90 border-t-border/20 sticky right-0 bottom-0 left-0 z-10 flex justify-end space-x-2 border-t p-4'>
@@ -197,9 +197,9 @@ function MultipleChoiceFormContent({
   );
 }
 
-export function BuilderMultipleChoiceSingleAnswerPlugin({
+export function BuilderMultipleChoiceMultipleAnswersPlugin({
   block,
-}: BuilderMultipleChoiceSingleAnswerPluginProps) {
+}: BuilderMultipleChoiceMultipleAnswersPluginProps) {
   const params = useParams();
   const { organizationId, courseId, chapterId, lessonId } = params;
   const lessonPath = `/${organizationId}/builder/${courseId}/content/${chapterId}/${lessonId}/lesson-blocks`;

@@ -22,17 +22,25 @@ interface GoChoiceFieldProps {
   description?: string;
   className?: string;
   labelProps: Omit<LabelProps, 'htmlFor' | 'error'>;
+  maxChoices?: number;
+  minChoices?: number;
 }
 
-export function GoChoiceField({ name, description, className, labelProps }: GoChoiceFieldProps) {
+export function GoChoiceField({
+  name,
+  description,
+  className,
+  labelProps,
+  minChoices = 2,
+  maxChoices = 6,
+}: GoChoiceFieldProps) {
   const {
     control,
     formState: { errors },
-    setValue,
     watch,
   } = useRemixFormContext();
 
-  const { fields, append, remove, update } = useFieldArray({
+  const { append, remove, update } = useFieldArray({
     control,
     name,
   });
@@ -169,7 +177,7 @@ export function GoChoiceField({ name, description, className, labelProps }: GoCh
               <Button
                 type='button'
                 onClick={() => addChoice()}
-                disabled={choices.length >= 6}
+                disabled={choices.length >= maxChoices}
                 leftIcon={<Plus />}
                 variant='secondary'
                 size='sm'
@@ -186,14 +194,16 @@ export function GoChoiceField({ name, description, className, labelProps }: GoCh
             {choices.length === 0 && (
               <div className='text-muted-foreground rounded-lg border-2 border-dashed border-gray-300 py-8 text-center'>
                 <p className='text-sm'>No choices added yet.</p>
-                <p className='text-xs'>Add at least 2 choices to get started.</p>
+                <p className='text-xs'>Add at least {minChoices} choices to get started.</p>
               </div>
             )}
 
             {/* Constraints Info */}
             <div className='text-muted-foreground flex justify-between text-xs'>
-              <span>Choices: {choices.length}/6</span>
-              <span>Minimum: 2 required</span>
+              <span>
+                Choices: {choices.length}/{maxChoices}
+              </span>
+              <span>Minimum: {minChoices} required</span>
             </div>
           </div>
 
