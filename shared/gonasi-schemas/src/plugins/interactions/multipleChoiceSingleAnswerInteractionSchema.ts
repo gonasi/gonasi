@@ -1,10 +1,10 @@
 import { z } from 'zod';
 
-export const MultipleChoiceSingleAnswerStateInteractionSchema = z.object({
+export const MultipleChoiceSingleAnswerInteractionSchema = z.object({
   plugin_type: z.literal('multiple_choice_single'),
   correctAttempt: z
     .object({
-      selected: z.boolean(),
+      selected: z.string(),
       timestamp: z.number(),
       wasRevealed: z.boolean().optional(),
     })
@@ -14,7 +14,7 @@ export const MultipleChoiceSingleAnswerStateInteractionSchema = z.object({
   wrongAttempts: z
     .array(
       z.object({
-        selected: z.boolean(),
+        selected: z.string(),
         timestamp: z.number(),
       }),
     )
@@ -29,6 +29,6 @@ export const MultipleChoiceSingleAnswerStateInteractionSchema = z.object({
   hasRevealedCorrectAnswer: z.boolean().default(false),
 });
 
-export type MultipleChoiceSingleAnswerStateInteractionSchemaTypes = z.infer<
-  typeof MultipleChoiceSingleAnswerStateInteractionSchema
+export type MultipleChoiceSingleAnswerInteractionSchemaTypes = z.infer<
+  typeof MultipleChoiceSingleAnswerInteractionSchema
 >;

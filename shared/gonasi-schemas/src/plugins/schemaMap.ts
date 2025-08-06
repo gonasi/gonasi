@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { MultipleChoiceSingleAnswerStateInteractionSchema } from './interactions/multipleChoiceSingleAnswerInteractionSchema';
+import { MultipleChoiceSingleAnswerInteractionSchema } from './interactions/multipleChoiceSingleAnswerInteractionSchema';
 import { RichTextStateInteractionSchema } from './interactions/richTextInteractionSchema';
 import { TrueOrFalseStateInteractionSchema } from './interactions';
 import { MultipleChoiceSingleAnswerSchema, RichTextSchema, TrueOrFalseSchema } from './schemas';
@@ -19,7 +19,7 @@ export type BuilderSchemaTypes = z.infer<typeof BuilderSchema>;
 export const BlockInteractionSchema = z.discriminatedUnion('plugin_type', [
   RichTextStateInteractionSchema,
   TrueOrFalseStateInteractionSchema,
-  MultipleChoiceSingleAnswerStateInteractionSchema,
+  MultipleChoiceSingleAnswerInteractionSchema,
 ]);
 export type BlockInteractionSchemaTypes = z.infer<typeof BlockInteractionSchema>;
 

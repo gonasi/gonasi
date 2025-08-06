@@ -1,5 +1,4 @@
 import { useEffect, useMemo } from 'react';
-import { useParams } from 'react-router';
 import { Check, PartyPopper, X, XCircle } from 'lucide-react';
 
 import type { BlockInteractionSchemaTypes, BuilderSchemaTypes } from '@gonasi/schemas/plugins';
@@ -49,11 +48,9 @@ function isMultipleChoiceSingleInteraction(
 export function ViewMultipleChoiceSingleAnswerPlugin({
   blockWithProgress,
 }: ViewPluginComponentProps) {
-  const params = useParams();
-
   const {
     settings: { playbackMode, layoutStyle, randomization, weight },
-    content: { questionState, correctAnswer, explanationState, hint },
+    content: { questionState, explanationState, hint, choices },
   } = blockWithProgress.block as MultipleChoiceSinglePluginType;
 
   const { is_last_block } = blockWithProgress;
@@ -71,7 +68,7 @@ export function ViewMultipleChoiceSingleAnswerPlugin({
     mode === 'play' ? { progress: blockWithProgress.block_progress, blockWithProgress } : null,
   );
 
-  // Extract interaction data from DB - this is the key change
+  // Extract interaction data from DB - following the TrueOrFalse pattern
   const initialInteractionData: MultipleChoiceSingleInteractionType | null = useMemo(() => {
     if (mode === 'preview') return null;
 
@@ -91,6 +88,7 @@ export function ViewMultipleChoiceSingleAnswerPlugin({
 
   // Use the most recent data (payload takes precedence over initial DB data)
   const currentInteractionData = parsedPayloadData || initialInteractionData;
+  const correctChoiceId = choices.find((choice) => choice.isCorrect)?.id ?? '';
 
   const {
     state,
@@ -104,57 +102,63 @@ export function ViewMultipleChoiceSingleAnswerPlugin({
     score,
     reset,
     attemptsCount,
-  } = useMultipleChoiceSingleAnswerInteraction(currentInteractionData, correctAnswer);
-
-  const answerOptions = useMemo(() => {
-    const options = [true, false];
-    return randomization === 'shuffle' ? shuffleArray(options) : options;
-  }, [randomization]);
-
-  // Multiple choice interaction state management
-  const {
-    state, // Full interaction state (attempts, UI flags, etc.)
-    selectedOptionUuid, // Currently selected option ID
-    selectOption, // Function to select/deselect options
-    checkAnswer, // Function to validate the selected answer
-    revealCorrectAnswer, // Function to show the correct answer
-    isCompleted, // Whether interaction is finished
-    tryAgain, // Function to retry after wrong answer
-    canInteract, // Whether user can currently interact
-    score, // Calculated score based on attempts
-    reset, // Function to reset the entire interaction
-    attemptsCount,
-  } = useMultipleChoiceSingleAnswerInteraction(
-    payload?.state as MultipleChoiceSingleAnswerInteractionSchemaType,
-    correctAnswer,
-    choices.length,
-  );
+  } = useMultipleChoiceSingleAnswerInteraction(currentInteractionData, correctChoiceId);
 
   // Prepare answer options (shuffle if randomization is enabled)
   const answerOptions = useMemo(() => {
     return randomization === 'shuffle' ? shuffleArray(choices) : choices;
   }, [choices, randomization]);
 
-  // Sync interaction state with backend when in play mode
+  // Update interaction data when state changes - following TrueOrFalse pattern
   useEffect(() => {
-    if (mode === 'play' && updatePayload) {
-      updatePayload({
-        plugin_type: 'multiple_choice_single',
-        block_id: block.id,
-        lesson_id: params.lessonId ?? '',
-        score,
-        attempts: attemptsCount,
-        state: { ...state },
-      });
+    if (mode === 'play') {
+      console.log('Updating interaction data:', state); // Debug log
+      updateInteractionData({ ...state });
     }
-  }, [state, isCompleted, mode, updatePayload, block.id, params.lessonId, score, attemptsCount]);
+  }, [mode, state, updateInteractionData]);
+
+  useEffect(() => {
+    if (mode === 'play') {
+      console.log('Updating earned score:', score); // Debug log
+      updateEarnedScore(score);
+    }
+  }, [mode, score, updateEarnedScore]);
+
+  useEffect(() => {
+    if (mode === 'play') {
+      console.log('Updating attempts count:', attemptsCount); // Debug log
+      updateAttemptsCount(attemptsCount);
+    }
+  }, [mode, attemptsCount, updateAttemptsCount]);
+
+  // Debug log for component state
+  useEffect(() => {
+    console.log('ViewMultipleChoiceSingleAnswerPlugin State:', {
+      mode,
+      isCompleted,
+      blockProgress: blockWithProgress.block_progress,
+      state,
+      selectedOption,
+      score,
+      attemptsCount,
+    });
+  }, [
+    mode,
+    isCompleted,
+    blockWithProgress.block_progress,
+    state,
+    selectedOption,
+    score,
+    attemptsCount,
+  ]);
 
   return (
     <ViewPluginWrapper
-      isComplete={mode === 'play' ? payload?.is_complete : isCompleted}
+      isComplete={mode === 'preview' ? isCompleted : blockWithProgress.block_progress?.is_completed}
       playbackMode={playbackMode}
       mode={mode}
       reset={reset}
+      weight={weight}
     >
       <PlayPluginWrapper hint={hint}>
         {/* Question Section */}
@@ -168,29 +172,37 @@ export function ViewMultipleChoiceSingleAnswerPlugin({
           })}
         >
           {answerOptions.map((option) => {
+            // Use the option ID as the value instead of converting to boolean
+            const optionValue = option.id;
+
             // Determine option state for styling and behavior
-            const isSelected = selectedOptionUuid === option.uuid;
+            const isSelected = selectedOption === optionValue;
 
             // Check if this option was the correct answer in a previous attempt
             const isCorrectAttempt =
-              !!state.correctAttempt && state.correctAttempt.selected === option.uuid;
+              state.correctAttempt?.selected === optionValue && !state.correctAttempt?.wasRevealed;
+
+            // Check if this option was revealed as correct
+            const isRevealedCorrect =
+              state.correctAttempt?.selected === optionValue && state.correctAttempt?.wasRevealed;
 
             // Check if this option was selected incorrectly in a previous attempt
-            const isWrongAttempt = !!state.wrongAttempts?.some(
-              (attempt) => attempt.selected === option.uuid,
+            const isWrongAttempt = state.wrongAttempts.some(
+              (attempt) => attempt.selected === optionValue,
             );
 
             // Disable interaction for completed attempts or when interaction is locked
-            const isDisabled = !canInteract || isWrongAttempt || isCorrectAttempt;
+            const isDisabled =
+              !canInteract || isWrongAttempt || isCorrectAttempt || isRevealedCorrect;
 
             return (
-              <div key={option.uuid} className='relative w-full'>
+              <div key={option.id} className='relative w-full'>
                 {/* Option Button */}
                 <ChoiceOptionButton
-                  choiceState={option.choiceState}
+                  choiceState={option.content}
                   isSelected={isSelected}
                   isDisabled={isDisabled}
-                  onClick={() => selectOption(option.uuid)}
+                  onClick={() => selectOption(optionValue)}
                 />
 
                 {/* Status Indicators */}
@@ -200,6 +212,13 @@ export function ViewMultipleChoiceSingleAnswerPlugin({
                     <Check
                       size={14}
                       className='text-success-foreground bg-success rounded-full p-0.5'
+                    />
+                  )}
+                  {/* Muted checkmark for revealed correct answers */}
+                  {isRevealedCorrect && (
+                    <Check
+                      size={14}
+                      className='text-muted-foreground bg-muted rounded-full p-0.5'
                     />
                   )}
                   {/* Red X for wrong answers */}
@@ -221,7 +240,7 @@ export function ViewMultipleChoiceSingleAnswerPlugin({
         <div className='w-full pb-4'>
           {/* Initial State: Check Answer Button */}
           {state.showCheckIfAnswerIsCorrectButton && (
-            <CheckAnswerButton disabled={selectedOptionUuid === null} onClick={checkAnswer} />
+            <CheckAnswerButton disabled={selectedOption === null} onClick={checkAnswer} />
           )}
 
           {/* Success State: Correct Answer Feedback */}
@@ -231,33 +250,30 @@ export function ViewMultipleChoiceSingleAnswerPlugin({
               icon={<PartyPopper />}
               label={state.hasRevealedCorrectAnswer ? 'Answer Revealed' : 'Correct!'}
               score={score}
-              hasBeenPlayed={payload?.is_complete}
+              hasBeenPlayed={blockWithProgress.block_progress?.is_completed}
               actions={
                 <div className='flex'>
                   {/* Continue/Next Button */}
-                  <div>
-                    {!payload?.is_complete && (
-                      <BlockActionButton
-                        onClick={handleContinue}
-                        loading={loading}
-                        isLastBlock={isLastBlock}
-                        disabled={mode === 'preview'}
-                      />
-                    )}
-                  </div>
+                  {!blockWithProgress.block_progress?.is_completed && (
+                    <BlockActionButton
+                      onClick={handleContinue}
+                      loading={loading}
+                      isLastBlock={is_last_block}
+                      disabled={mode === 'preview'}
+                    />
+                  )}
+
                   {/* Optional Explanation Button */}
-                  <div>
-                    {!isExplanationBottomSheetOpen && state.canShowExplanationButton && (
-                      <AnimateInButtonWrapper>
-                        <OutlineButton
-                          className='ml-4 rounded-full'
-                          onClick={() => setExplanationState(explanationState)}
-                        >
-                          Why?
-                        </OutlineButton>
-                      </AnimateInButtonWrapper>
-                    )}
-                  </div>
+                  {!isExplanationBottomSheetOpen && state.canShowExplanationButton && (
+                    <AnimateInButtonWrapper>
+                      <OutlineButton
+                        className='ml-4 rounded-full'
+                        onClick={() => setExplanationState(explanationState)}
+                      >
+                        Why?
+                      </OutlineButton>
+                    </AnimateInButtonWrapper>
+                  )}
                 </div>
               }
             />
@@ -269,7 +285,7 @@ export function ViewMultipleChoiceSingleAnswerPlugin({
               color='destructive'
               icon={<XCircle />}
               label='Incorrect!'
-              hasBeenPlayed={payload?.is_complete}
+              hasBeenPlayed={blockWithProgress.block_progress?.is_completed}
               actions={
                 <div className='flex items-center space-x-4'>
                   {/* Retry Button */}
