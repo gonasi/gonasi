@@ -5,27 +5,27 @@
 --   - The enrollment is not expired.
 -- ============================================================================
 
-create policy "Select: Enrolled users or org members can view published files"
+create policy "select: enrolled users or org members can view published files"
 on storage.objects
 for select
 to authenticated
 using (
   bucket_id = 'published_files'
   and (
-    -- Option 1: Actively enrolled user
+    -- Option 1: actively enrolled user in the course
     exists (
       select 1
       from public.course_enrollments ce
       join public.published_courses pc on pc.id = ce.published_course_id
-      join public.courses c on c.id = pc.id
-      where c.id = (split_part(storage.objects.name, '/', 2))::uuid
-        and c.organization_id = (split_part(storage.objects.name, '/', 1))::uuid
+      where
+        pc.organization_id = (split_part(storage.objects.name, '/', 1))::uuid
+        and pc.id = (split_part(storage.objects.name, '/', 2))::uuid
         and pc.is_active
         and ce.user_id = (select auth.uid())
         and ce.is_active = true
         and (ce.expires_at is null or ce.expires_at > now())
     )
-    -- Option 2: Org member (any role)
+    -- Option 2: organization member (any role)
     or (
       public.get_user_org_role((split_part(storage.objects.name, '/', 1))::uuid, (select auth.uid())) is not null
     )

@@ -14,11 +14,15 @@ export async function fetchFileById({
   supabase,
   fileId,
   expirySeconds = 3600,
-  mode = 'preview',
+  mode = 'play',
 }: FetchFileByIdArgs) {
   try {
+    const isPreview = mode === 'preview';
+    const table = isPreview ? 'file_library' : 'published_file_library';
+    const bucket = isPreview ? FILE_LIBRARY_BUCKET : PUBLISHED_FILE_LIBRARY_BUCKET;
+
     const { data, error } = await supabase
-      .from('file_library')
+      .from(table)
       .select(
         `
           id,
@@ -41,7 +45,7 @@ export async function fetchFileById({
       .single();
 
     if (error || !data) {
-      console.error('[fetchFileById] Error fetching file_library:', error, 'fileId:', fileId);
+      console.error(`[fetchFileById] Error fetching ${table}:`, error, 'fileId:', fileId);
       return {
         success: false,
         message: 'File not found or failed to fetch from database',
@@ -49,14 +53,12 @@ export async function fetchFileById({
       };
     }
 
-    const bucket = mode === 'preview' ? FILE_LIBRARY_BUCKET : PUBLISHED_FILE_LIBRARY_BUCKET;
-
     const { data: signedUrlData, error: signedUrlError } = await supabase.storage
       .from(bucket)
       .createSignedUrl(data.path, expirySeconds);
 
     if (signedUrlError) {
-      console.error('[fetchFileById] Error creating signed URL:', signedUrlError);
+      console.error('[fetchFileById] Error creating signed URL:', signedUrlError, data.path, mode);
       return {
         success: false,
         message: 'Failed to generate signed URL',

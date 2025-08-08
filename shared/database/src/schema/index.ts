@@ -1889,6 +1889,86 @@ export type Database = {
           },
         ]
       }
+      published_file_library: {
+        Row: {
+          blur_preview: string | null
+          course_id: string
+          created_at: string
+          created_by: string | null
+          extension: string
+          file_type: Database["public"]["Enums"]["file_type"]
+          id: string
+          mime_type: string
+          name: string
+          organization_id: string
+          path: string
+          size: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          blur_preview?: string | null
+          course_id: string
+          created_at?: string
+          created_by?: string | null
+          extension: string
+          file_type?: Database["public"]["Enums"]["file_type"]
+          id?: string
+          mime_type: string
+          name: string
+          organization_id: string
+          path: string
+          size: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          blur_preview?: string | null
+          course_id?: string
+          created_at?: string
+          created_by?: string | null
+          extension?: string
+          file_type?: Database["public"]["Enums"]["file_type"]
+          id?: string
+          mime_type?: string
+          name?: string
+          organization_id?: string
+          path?: string
+          size?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "published_file_library_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "published_file_library_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "published_file_library_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "published_file_library_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       role_permissions: {
         Row: {
           id: string

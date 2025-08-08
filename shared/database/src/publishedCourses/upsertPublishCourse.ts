@@ -84,6 +84,12 @@ export const upsertPublishCourse = async ({
       };
     }
 
+    // Delete from published_file_library
+    await supabase.from('published_file_library').delete().match({
+      course_id: courseId,
+      organization_id: organizationId,
+    });
+
     const { error: deleteError } = await deleteAllPublishedFilesInFolder({
       supabase,
       organizationId,
@@ -95,7 +101,7 @@ export const upsertPublishCourse = async ({
     // Fetch all files for this course
     const { data: fileData, error: fileError } = await supabase
       .from('file_library')
-      .select('id, path')
+      .select('*') // Select all columns to copy the complete record
       .match({
         course_id: courseId,
         organization_id: organizationId,
@@ -149,6 +155,22 @@ export const upsertPublishCourse = async ({
           return {
             success: false,
             message: 'Course published but all files failed to copy. Please try again.',
+          };
+        }
+      }
+
+      // Insert successfully copied files into published_file_library
+      if (fileData.length > 0) {
+        const { error: insertError } = await supabase
+          .from('published_file_library')
+          .insert(fileData);
+
+        if (insertError) {
+          console.error('[upsertPublishCourse] Failed to insert file records:', insertError);
+          return {
+            success: false,
+            message:
+              'Files copied successfully but failed to create published file records. Please try again.',
           };
         }
       }

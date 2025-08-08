@@ -554,6 +554,26 @@ create table "public"."published_courses" (
 
 alter table "public"."published_courses" enable row level security;
 
+create table "public"."published_file_library" (
+    "id" uuid not null default uuid_generate_v4(),
+    "course_id" uuid not null,
+    "organization_id" uuid not null,
+    "created_by" uuid,
+    "updated_by" uuid,
+    "name" text not null,
+    "path" text not null,
+    "size" bigint not null,
+    "mime_type" text not null,
+    "extension" text not null,
+    "file_type" file_type not null default 'other'::file_type,
+    "blur_preview" text,
+    "created_at" timestamp with time zone not null default timezone('utc'::text, now()),
+    "updated_at" timestamp with time zone not null default timezone('utc'::text, now())
+);
+
+
+alter table "public"."published_file_library" enable row level security;
+
 create table "public"."role_permissions" (
     "id" uuid not null default uuid_generate_v4(),
     "role" app_role not null,
@@ -937,6 +957,26 @@ CREATE INDEX idx_published_courses_subcategory_id ON public.published_courses US
 
 CREATE INDEX idx_published_courses_visibility ON public.published_courses USING btree (visibility);
 
+CREATE INDEX idx_published_file_library_course_id ON public.published_file_library USING btree (course_id);
+
+CREATE INDEX idx_published_file_library_created_by ON public.published_file_library USING btree (created_by);
+
+CREATE INDEX idx_published_file_library_created_by_org ON public.published_file_library USING btree (created_by, organization_id);
+
+CREATE INDEX idx_published_file_library_org_course ON public.published_file_library USING btree (organization_id, course_id);
+
+CREATE INDEX idx_published_file_library_org_created_at_desc ON public.published_file_library USING btree (organization_id, created_at DESC);
+
+CREATE INDEX idx_published_file_library_org_extension ON public.published_file_library USING btree (organization_id, extension);
+
+CREATE INDEX idx_published_file_library_org_file_type ON public.published_file_library USING btree (organization_id, file_type);
+
+CREATE INDEX idx_published_file_library_organization_id ON public.published_file_library USING btree (organization_id);
+
+CREATE INDEX idx_published_file_library_updated_by ON public.published_file_library USING btree (updated_by);
+
+CREATE INDEX idx_published_file_library_updated_by_org ON public.published_file_library USING btree (updated_by, organization_id);
+
 CREATE INDEX idx_user_roles_user_id ON public.user_roles USING btree (user_id);
 
 CREATE INDEX idx_wallet_transactions_course_payment_id ON public.wallet_transactions USING btree (course_payment_id);
@@ -999,6 +1039,8 @@ CREATE UNIQUE INDEX published_course_structure_content_pkey ON public.published_
 
 CREATE UNIQUE INDEX published_courses_pkey ON public.published_courses USING btree (id);
 
+CREATE UNIQUE INDEX published_file_library_pkey ON public.published_file_library USING btree (id);
+
 CREATE UNIQUE INDEX role_permissions_pkey ON public.role_permissions USING btree (id);
 
 CREATE UNIQUE INDEX role_permissions_role_permission_key ON public.role_permissions USING btree (role, permission);
@@ -1016,6 +1058,8 @@ CREATE UNIQUE INDEX unique_lesson_block_position_per_lesson ON public.lesson_blo
 CREATE UNIQUE INDEX unique_lesson_position_per_chapter ON public.lessons USING btree (chapter_id, "position");
 
 CREATE UNIQUE INDEX unique_pending_invite_per_user ON public.organization_invites USING btree (organization_id, email) WHERE ((accepted_at IS NULL) AND (revoked_at IS NULL));
+
+CREATE UNIQUE INDEX unique_published_file_path_per_course ON public.published_file_library USING btree (course_id, path);
 
 CREATE UNIQUE INDEX uq_one_active_published_course ON public.published_courses USING btree (id, is_active);
 
@@ -1080,6 +1124,8 @@ alter table "public"."profiles" add constraint "profiles_pkey" PRIMARY KEY using
 alter table "public"."published_course_structure_content" add constraint "published_course_structure_content_pkey" PRIMARY KEY using index "published_course_structure_content_pkey";
 
 alter table "public"."published_courses" add constraint "published_courses_pkey" PRIMARY KEY using index "published_courses_pkey";
+
+alter table "public"."published_file_library" add constraint "published_file_library_pkey" PRIMARY KEY using index "published_file_library_pkey";
 
 alter table "public"."role_permissions" add constraint "role_permissions_pkey" PRIMARY KEY using index "role_permissions_pkey";
 
@@ -1782,6 +1828,28 @@ alter table "public"."published_courses" add constraint "published_courses_total
 alter table "public"."published_courses" validate constraint "published_courses_total_lessons_check";
 
 alter table "public"."published_courses" add constraint "uq_one_active_published_course" UNIQUE using index "uq_one_active_published_course" DEFERRABLE INITIALLY DEFERRED;
+
+alter table "public"."published_file_library" add constraint "published_file_library_course_id_fkey" FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE not valid;
+
+alter table "public"."published_file_library" validate constraint "published_file_library_course_id_fkey";
+
+alter table "public"."published_file_library" add constraint "published_file_library_created_by_fkey" FOREIGN KEY (created_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
+
+alter table "public"."published_file_library" validate constraint "published_file_library_created_by_fkey";
+
+alter table "public"."published_file_library" add constraint "published_file_library_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE not valid;
+
+alter table "public"."published_file_library" validate constraint "published_file_library_organization_id_fkey";
+
+alter table "public"."published_file_library" add constraint "published_file_library_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
+
+alter table "public"."published_file_library" validate constraint "published_file_library_updated_by_fkey";
+
+alter table "public"."published_file_library" add constraint "unique_published_file_path_per_course" UNIQUE using index "unique_published_file_path_per_course";
+
+alter table "public"."published_file_library" add constraint "valid_file_extension" CHECK ((((file_type = 'image'::file_type) AND (lower(extension) = ANY (ARRAY['jpg'::text, 'jpeg'::text, 'png'::text, 'gif'::text, 'webp'::text, 'svg'::text, 'bmp'::text, 'tif'::text, 'tiff'::text, 'heic'::text]))) OR ((file_type = 'audio'::file_type) AND (lower(extension) = ANY (ARRAY['mp3'::text, 'wav'::text, 'aac'::text, 'flac'::text, 'ogg'::text, 'm4a'::text, 'aiff'::text, 'aif'::text]))) OR ((file_type = 'video'::file_type) AND (lower(extension) = ANY (ARRAY['mp4'::text, 'webm'::text, 'mov'::text, 'avi'::text, 'mkv'::text, 'flv'::text, 'wmv'::text]))) OR ((file_type = 'model3d'::file_type) AND (lower(extension) = ANY (ARRAY['gltf'::text, 'glb'::text, 'obj'::text, 'fbx'::text, 'stl'::text, 'dae'::text, '3ds'::text, 'usdz'::text]))) OR ((file_type = 'document'::file_type) AND (lower(extension) = ANY (ARRAY['pdf'::text, 'doc'::text, 'docx'::text, 'xls'::text, 'xlsx'::text, 'ppt'::text, 'pptx'::text, 'txt'::text]))) OR (file_type = 'other'::file_type))) not valid;
+
+alter table "public"."published_file_library" validate constraint "valid_file_extension";
 
 alter table "public"."role_permissions" add constraint "role_permissions_role_permission_key" UNIQUE using index "role_permissions_role_permission_key";
 
@@ -8341,6 +8409,48 @@ grant truncate on table "public"."published_courses" to "service_role";
 
 grant update on table "public"."published_courses" to "service_role";
 
+grant delete on table "public"."published_file_library" to "anon";
+
+grant insert on table "public"."published_file_library" to "anon";
+
+grant references on table "public"."published_file_library" to "anon";
+
+grant select on table "public"."published_file_library" to "anon";
+
+grant trigger on table "public"."published_file_library" to "anon";
+
+grant truncate on table "public"."published_file_library" to "anon";
+
+grant update on table "public"."published_file_library" to "anon";
+
+grant delete on table "public"."published_file_library" to "authenticated";
+
+grant insert on table "public"."published_file_library" to "authenticated";
+
+grant references on table "public"."published_file_library" to "authenticated";
+
+grant select on table "public"."published_file_library" to "authenticated";
+
+grant trigger on table "public"."published_file_library" to "authenticated";
+
+grant truncate on table "public"."published_file_library" to "authenticated";
+
+grant update on table "public"."published_file_library" to "authenticated";
+
+grant delete on table "public"."published_file_library" to "service_role";
+
+grant insert on table "public"."published_file_library" to "service_role";
+
+grant references on table "public"."published_file_library" to "service_role";
+
+grant select on table "public"."published_file_library" to "service_role";
+
+grant trigger on table "public"."published_file_library" to "service_role";
+
+grant truncate on table "public"."published_file_library" to "service_role";
+
+grant update on table "public"."published_file_library" to "service_role";
+
 grant delete on table "public"."role_permissions" to "anon";
 
 grant insert on table "public"."role_permissions" to "anon";
@@ -9328,6 +9438,49 @@ to authenticated
 using (((get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (published_by = ( SELECT auth.uid() AS uid)))));
 
 
+create policy "delete_if_owner_admin_or_course_creator"
+on "public"."published_file_library"
+as permissive
+for delete
+to authenticated
+using ((EXISTS ( SELECT 1
+   FROM courses c
+  WHERE ((c.id = published_file_library.course_id) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.created_by = ( SELECT auth.uid() AS uid))))))));
+
+
+create policy "insert_if_owner_admin_or_course_creator"
+on "public"."published_file_library"
+as permissive
+for insert
+to authenticated
+with check ((EXISTS ( SELECT 1
+   FROM courses c
+  WHERE ((c.id = published_file_library.course_id) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.created_by = ( SELECT auth.uid() AS uid))))))));
+
+
+create policy "select_if_org_member_or_enrolled_user"
+on "public"."published_file_library"
+as permissive
+for select
+to authenticated
+using (((get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) IS NOT NULL) OR (EXISTS ( SELECT 1
+   FROM course_enrollments ce
+  WHERE ((ce.published_course_id = published_file_library.course_id) AND (ce.user_id = ( SELECT auth.uid() AS uid)) AND (ce.is_active = true) AND ((ce.expires_at IS NULL) OR (ce.expires_at > now())))))));
+
+
+create policy "update_if_owner_admin_or_course_creator"
+on "public"."published_file_library"
+as permissive
+for update
+to authenticated
+using ((EXISTS ( SELECT 1
+   FROM courses c
+  WHERE ((c.id = published_file_library.course_id) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.created_by = ( SELECT auth.uid() AS uid))))))))
+with check ((EXISTS ( SELECT 1
+   FROM courses c
+  WHERE ((c.id = published_file_library.course_id) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.created_by = ( SELECT auth.uid() AS uid))))))));
+
+
 create policy "role_permissions_delete_policy"
 on "public"."role_permissions"
 as permissive
@@ -9497,6 +9650,10 @@ CREATE TRIGGER trg_set_published_course_version BEFORE INSERT ON public.publishe
 
 CREATE TRIGGER trg_update_published_course_version BEFORE UPDATE ON public.published_courses FOR EACH ROW EXECUTE FUNCTION ensure_incremented_course_version();
 
+CREATE TRIGGER trg_set_file_type BEFORE INSERT OR UPDATE ON public.published_file_library FOR EACH ROW EXECUTE FUNCTION set_file_type_from_extension();
+
+CREATE TRIGGER trg_update_timestamp BEFORE UPDATE ON public.published_file_library FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
 
 CREATE TRIGGER on_auth_user_created AFTER INSERT ON auth.users FOR EACH ROW EXECUTE FUNCTION handle_new_user();
 
@@ -9559,18 +9716,6 @@ to authenticated
 with check (((bucket_id = 'published_files'::text) AND (EXISTS ( SELECT 1
    FROM courses c
   WHERE ((c.id = (split_part(objects.name, '/'::text, 2))::uuid) AND (c.organization_id = (split_part(objects.name, '/'::text, 1))::uuid) AND (get_user_org_role(c.organization_id, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text, 'editor'::text])))))));
-
-
-create policy "Select: Enrolled users or org members can view published files"
-on "storage"."objects"
-as permissive
-for select
-to authenticated
-using (((bucket_id = 'published_files'::text) AND ((EXISTS ( SELECT 1
-   FROM ((course_enrollments ce
-     JOIN published_courses pc ON ((pc.id = ce.published_course_id)))
-     JOIN courses c ON ((c.id = pc.id)))
-  WHERE ((c.id = (split_part(objects.name, '/'::text, 2))::uuid) AND (c.organization_id = (split_part(objects.name, '/'::text, 1))::uuid) AND pc.is_active AND (ce.user_id = ( SELECT auth.uid() AS uid)) AND (ce.is_active = true) AND ((ce.expires_at IS NULL) OR (ce.expires_at > now()))))) OR (get_user_org_role((split_part(name, '/'::text, 1))::uuid, ( SELECT auth.uid() AS uid)) IS NOT NULL))));
 
 
 create policy "Select: Org members can view thumbnails"
@@ -9712,6 +9857,17 @@ to authenticated
 with check (((bucket_id = 'organization_profile_photos'::text) AND (EXISTS ( SELECT 1
    FROM organizations o
   WHERE ((o.id = (split_part(objects.name, '/'::text, 1))::uuid) AND (get_user_org_role(o.id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])))))));
+
+
+create policy "select: enrolled users or org members can view published files"
+on "storage"."objects"
+as permissive
+for select
+to authenticated
+using (((bucket_id = 'published_files'::text) AND ((EXISTS ( SELECT 1
+   FROM (course_enrollments ce
+     JOIN published_courses pc ON ((pc.id = ce.published_course_id)))
+  WHERE ((pc.organization_id = (split_part(objects.name, '/'::text, 1))::uuid) AND (pc.id = (split_part(objects.name, '/'::text, 2))::uuid) AND pc.is_active AND (ce.user_id = ( SELECT auth.uid() AS uid)) AND (ce.is_active = true) AND ((ce.expires_at IS NULL) OR (ce.expires_at > now()))))) OR (get_user_org_role((split_part(name, '/'::text, 1))::uuid, ( SELECT auth.uid() AS uid)) IS NOT NULL))));
 
 
 create policy "select: org members can view files"
