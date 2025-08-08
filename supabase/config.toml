@@ -197,7 +197,6 @@ schema_paths = [
   './schemas/publishedCourses/published_courses_rls.sql',
   './schemas/publishedCourses/published_course_structure_content_rls.sql',
   './schemas/publishedCourses/published_thumbnails_bucket_rls.sql',
-  './schemas/publishedCourses/published_files_bucket_rls.sql',
 
   # gonasi wallet
   './schemas/gonasiWallets/gonasi_wallet_transactions_schema_indexes.sql',
@@ -220,6 +219,8 @@ schema_paths = [
 
   './schemas/fileLibrary/published_file_library_schema_indexes.sql',
   './schemas/fileLibrary/published_file_library_rls.sql',
+  './schemas/fileLibrary/published_files_bucket_rls.sql',
+
 
   # progress
   './schemas/progress/course_progress_schema_indexes.sql',
