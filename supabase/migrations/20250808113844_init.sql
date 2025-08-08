@@ -9501,6 +9501,16 @@ CREATE TRIGGER trg_update_published_course_version BEFORE UPDATE ON public.publi
 CREATE TRIGGER on_auth_user_created AFTER INSERT ON auth.users FOR EACH ROW EXECUTE FUNCTION handle_new_user();
 
 
+create policy "Delete: Admins or owning editors can delete published files"
+on "storage"."objects"
+as permissive
+for delete
+to authenticated
+using (((bucket_id = 'published_files'::text) AND (EXISTS ( SELECT 1
+   FROM courses c
+  WHERE ((c.id = (split_part(objects.name, '/'::text, 2))::uuid) AND (c.organization_id = (split_part(objects.name, '/'::text, 1))::uuid) AND ((get_user_org_role(c.organization_id, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, auth.uid()) = 'editor'::text) AND (c.owned_by = auth.uid()))))))));
+
+
 create policy "Delete: Admins or owning editors can delete published_thumbnail"
 on "storage"."objects"
 as permissive
@@ -9541,6 +9551,28 @@ with check (((bucket_id = 'thumbnails'::text) AND (EXISTS ( SELECT 1
   WHERE ((c.id = (split_part(objects.name, '/'::text, 1))::uuid) AND (get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text, 'editor'::text])))))));
 
 
+create policy "Insert: Org members with elevated roles can upload published fi"
+on "storage"."objects"
+as permissive
+for insert
+to authenticated
+with check (((bucket_id = 'published_files'::text) AND (EXISTS ( SELECT 1
+   FROM courses c
+  WHERE ((c.id = (split_part(objects.name, '/'::text, 2))::uuid) AND (c.organization_id = (split_part(objects.name, '/'::text, 1))::uuid) AND (get_user_org_role(c.organization_id, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text, 'editor'::text])))))));
+
+
+create policy "Select: Enrolled users or org members can view published files"
+on "storage"."objects"
+as permissive
+for select
+to authenticated
+using (((bucket_id = 'published_files'::text) AND ((EXISTS ( SELECT 1
+   FROM ((course_enrollments ce
+     JOIN published_courses pc ON ((pc.id = ce.published_course_id)))
+     JOIN courses c ON ((c.id = pc.id)))
+  WHERE ((c.id = (split_part(objects.name, '/'::text, 2))::uuid) AND (c.organization_id = (split_part(objects.name, '/'::text, 1))::uuid) AND pc.is_active AND (ce.user_id = ( SELECT auth.uid() AS uid)) AND (ce.is_active = true) AND ((ce.expires_at IS NULL) OR (ce.expires_at > now()))))) OR (get_user_org_role((split_part(name, '/'::text, 1))::uuid, ( SELECT auth.uid() AS uid)) IS NOT NULL))));
+
+
 create policy "Select: Org members can view thumbnails"
 on "storage"."objects"
 as permissive
@@ -9564,6 +9596,19 @@ using (((bucket_id = 'published_thumbnails'::text) AND ((EXISTS ( SELECT 1
    FROM (course_enrollments ce
      JOIN published_courses pc ON ((pc.id = ce.published_course_id)))
   WHERE ((pc.id = (split_part(objects.name, '/'::text, 1))::uuid) AND pc.is_active AND (ce.user_id = auth.uid()) AND (ce.is_active = true) AND ((ce.expires_at IS NULL) OR (ce.expires_at > now()))))))));
+
+
+create policy "Update: Admins or owning editors can update published files"
+on "storage"."objects"
+as permissive
+for update
+to authenticated
+using (((bucket_id = 'published_files'::text) AND (EXISTS ( SELECT 1
+   FROM courses c
+  WHERE ((c.id = (split_part(objects.name, '/'::text, 2))::uuid) AND (c.organization_id = (split_part(objects.name, '/'::text, 1))::uuid) AND ((get_user_org_role(c.organization_id, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, auth.uid()) = 'editor'::text) AND (c.owned_by = auth.uid()))))))))
+with check (((bucket_id = 'published_files'::text) AND (EXISTS ( SELECT 1
+   FROM courses c
+  WHERE ((c.id = (split_part(objects.name, '/'::text, 2))::uuid) AND (c.organization_id = (split_part(objects.name, '/'::text, 1))::uuid) AND ((get_user_org_role(c.organization_id, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, auth.uid()) = 'editor'::text) AND (c.owned_by = auth.uid()))))))));
 
 
 create policy "Update: Admins or owning editors can update published_thumbnail"
@@ -9631,16 +9676,6 @@ using (((bucket_id = 'organization_profile_photos'::text) AND (EXISTS ( SELECT 1
   WHERE ((o.id = (split_part(objects.name, '/'::text, 1))::uuid) AND (get_user_org_role(o.id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])))))));
 
 
-create policy "delete_published_files_if_admin_or_owning_editor"
-on "storage"."objects"
-as permissive
-for delete
-to authenticated
-using (((bucket_id = 'published_files'::text) AND (EXISTS ( SELECT 1
-   FROM courses c
-  WHERE ((c.id = (split_part(objects.name, '/'::text, 1))::uuid) AND ((get_user_org_role(c.organization_id, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, auth.uid()) = 'editor'::text) AND (c.owned_by = auth.uid()))))))));
-
-
 create policy "insert: org owner/admin or course creator with storage limit"
 on "storage"."objects"
 as permissive
@@ -9677,16 +9712,6 @@ to authenticated
 with check (((bucket_id = 'organization_profile_photos'::text) AND (EXISTS ( SELECT 1
    FROM organizations o
   WHERE ((o.id = (split_part(objects.name, '/'::text, 1))::uuid) AND (get_user_org_role(o.id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])))))));
-
-
-create policy "insert_published_files_if_org_member"
-on "storage"."objects"
-as permissive
-for insert
-to authenticated
-with check (((bucket_id = 'published_files'::text) AND (EXISTS ( SELECT 1
-   FROM courses c
-  WHERE ((c.id = (split_part(objects.name, '/'::text, 1))::uuid) AND (get_user_org_role(c.organization_id, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text, 'editor'::text])))))));
 
 
 create policy "select: org members can view files"
@@ -9727,17 +9752,6 @@ to authenticated, anon
 using (((bucket_id = 'organization_profile_photos'::text) AND (EXISTS ( SELECT 1
    FROM organizations o
   WHERE ((o.id = (split_part(objects.name, '/'::text, 1))::uuid) AND (o.is_public = true))))));
-
-
-create policy "select_published_files_if_actively_enrolled"
-on "storage"."objects"
-as permissive
-for select
-to public
-using (((bucket_id = 'published_files'::text) AND (EXISTS ( SELECT 1
-   FROM (course_enrollments ce
-     JOIN published_courses pc ON ((pc.id = ce.published_course_id)))
-  WHERE ((pc.id = (split_part(objects.name, '/'::text, 1))::uuid) AND pc.is_active AND (ce.user_id = auth.uid()) AND (ce.is_active = true) AND ((ce.expires_at IS NULL) OR (ce.expires_at > now())))))));
 
 
 create policy "update: org owner/admin or course creator"
@@ -9788,19 +9802,6 @@ using (((bucket_id = 'organization_profile_photos'::text) AND (EXISTS ( SELECT 1
 with check (((bucket_id = 'organization_profile_photos'::text) AND (EXISTS ( SELECT 1
    FROM organizations o
   WHERE ((o.id = (split_part(objects.name, '/'::text, 1))::uuid) AND (get_user_org_role(o.id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])))))));
-
-
-create policy "update_published_files_if_admin_or_owning_editor"
-on "storage"."objects"
-as permissive
-for update
-to authenticated
-using (((bucket_id = 'published_files'::text) AND (EXISTS ( SELECT 1
-   FROM courses c
-  WHERE ((c.id = (split_part(objects.name, '/'::text, 1))::uuid) AND ((get_user_org_role(c.organization_id, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, auth.uid()) = 'editor'::text) AND (c.owned_by = auth.uid()))))))))
-with check (((bucket_id = 'published_files'::text) AND (EXISTS ( SELECT 1
-   FROM courses c
-  WHERE ((c.id = (split_part(objects.name, '/'::text, 1))::uuid) AND ((get_user_org_role(c.organization_id, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, auth.uid()) = 'editor'::text) AND (c.owned_by = auth.uid()))))))));
 
 
 

@@ -2,7 +2,7 @@ import { faker } from '@faker-js/faker';
 
 import { getUserId } from '@gonasi/database/auth';
 import { createCourseChapter } from '@gonasi/database/courseChapters';
-import { createLessonDetails, upsertRichTextBlock } from '@gonasi/database/lessons';
+import { createLessonDetails, upsertLessonBlock } from '@gonasi/database/lessons';
 import { fetchAllLessonTypes } from '@gonasi/database/lessonTypes';
 import { getUserProfile } from '@gonasi/database/profile';
 
@@ -278,10 +278,10 @@ export async function seedCreateCourse() {
                 organization_id: org.id,
               };
 
-              const { success: blockSuccess, message: blockMessage } = await upsertRichTextBlock(
+              const { success: blockSuccess, message: blockMessage } = await upsertLessonBlock({
                 supabase,
-                richTextSchema,
-              );
+                blockData: richTextSchema,
+              });
 
               if (!blockSuccess) {
                 console.error(`❌ Failed to create block: ${blockMessage}`);

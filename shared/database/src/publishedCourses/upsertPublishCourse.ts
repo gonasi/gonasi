@@ -1,6 +1,12 @@
 import { getUserId } from '../auth';
 import type { TypedSupabaseClient } from '../client';
-import { PUBLISHED_THUMBNAILS, THUMBNAILS_BUCKET } from '../constants';
+import {
+  FILE_LIBRARY_BUCKET,
+  PUBLISHED_FILE_LIBRARY_BUCKET,
+  PUBLISHED_THUMBNAILS,
+  THUMBNAILS_BUCKET,
+} from '../constants';
+import { deleteAllPublishedFilesInFolder } from '../files/deleteAllPublishedFilesInFolder';
 import type { ApiResponse } from '../types';
 import { getTransformedDataToPublish } from './getTransformedDataToPublish';
 
@@ -76,6 +82,78 @@ export const upsertPublishCourse = async ({
         success: false,
         message: 'Failed to publish the course. Please try again.',
       };
+    }
+
+    const { error: deleteError } = await deleteAllPublishedFilesInFolder({
+      supabase,
+      organizationId,
+      courseId,
+    });
+
+    console.error('[upsertPublishCourse] Failed to delete course files:', deleteError);
+
+    // Fetch all files for this course
+    const { data: fileData, error: fileError } = await supabase
+      .from('file_library')
+      .select('id, path')
+      .match({
+        course_id: courseId,
+        organization_id: organizationId,
+      });
+
+    if (fileError) {
+      console.error('[upsertPublishCourse] Failed to fetch course files:', fileError);
+      return {
+        success: false,
+        message: 'Failed to fetch course files.',
+      };
+    }
+
+    // Handle file copying if there are files to copy
+    if (fileData && fileData.length > 0) {
+      const copyResults = [];
+      const failedCopies = [];
+
+      // Loop through each file and copy it
+      for (const file of fileData) {
+        if (!file.path) {
+          console.warn('[upsertPublishCourse] Skipping file with empty path:', file.id);
+          continue;
+        }
+
+        const { error: copyFileError } = await supabase.storage
+          .from(FILE_LIBRARY_BUCKET)
+          .copy(file.path, file.path, {
+            destinationBucket: PUBLISHED_FILE_LIBRARY_BUCKET,
+          });
+
+        if (copyFileError) {
+          console.error('[upsertPublishCourse] File copy error for', file.path, ':', copyFileError);
+          failedCopies.push({ id: file.id, path: file.path, error: copyFileError });
+        } else {
+          copyResults.push({ id: file.id, path: file.path });
+        }
+      }
+
+      // Check if any copies failed
+      if (failedCopies.length > 0) {
+        console.error('[upsertPublishCourse] Failed to copy files:', failedCopies);
+
+        // Return partial success message if some files copied successfully
+        if (copyResults.length > 0) {
+          return {
+            success: false,
+            message: `Course published but ${failedCopies.length} of ${fileData.length} files failed to copy. Successfully copied: ${copyResults.length} files.`,
+          };
+        } else {
+          return {
+            success: false,
+            message: 'Course published but all files failed to copy. Please try again.',
+          };
+        }
+      }
+
+      console.log(`[upsertPublishCourse] Successfully copied ${copyResults.length} files`);
     }
 
     return {

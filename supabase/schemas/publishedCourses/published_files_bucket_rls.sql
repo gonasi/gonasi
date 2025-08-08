@@ -1,36 +1,45 @@
 -- ============================================================================
--- SELECT POLICY
--- Allow viewing of files in the 'published_files' bucket by:
---   - Users who are actively enrolled in the course (regardless of visibility),
---   - Must be currently active and not expired.
+-- SELECT POLICY: Allow users to view published course files if:
+--   - The file is in the 'published_files' bucket, AND
+--   - The user is actively enrolled in the associated published course, AND
+--   - The enrollment is not expired.
 -- ============================================================================
 
-create policy "select_published_files_if_actively_enrolled"
+create policy "Select: Enrolled users or org members can view published files"
 on storage.objects
 for select
-to public
+to authenticated
 using (
   bucket_id = 'published_files'
-  and exists (
-    select 1
-    from public.course_enrollments ce
-    join public.published_courses pc on pc.id = ce.published_course_id
-    where pc.id = (split_part(storage.objects.name, '/', 1))::uuid
-      and pc.is_active
-      and ce.user_id = auth.uid())
-      and ce.is_active = true
-      and (ce.expires_at is null or ce.expires_at > now())
+  and (
+    -- Option 1: Actively enrolled user
+    exists (
+      select 1
+      from public.course_enrollments ce
+      join public.published_courses pc on pc.id = ce.published_course_id
+      join public.courses c on c.id = pc.id
+      where c.id = (split_part(storage.objects.name, '/', 2))::uuid
+        and c.organization_id = (split_part(storage.objects.name, '/', 1))::uuid
+        and pc.is_active
+        and ce.user_id = (select auth.uid())
+        and ce.is_active = true
+        and (ce.expires_at is null or ce.expires_at > now())
+    )
+    -- Option 2: Org member (any role)
+    or (
+      public.get_user_org_role((split_part(storage.objects.name, '/', 1))::uuid, (select auth.uid())) is not null
+    )
   )
 );
 
 
+
 -- ============================================================================
--- INSERT POLICY
--- Allow uploads to the 'published_files' bucket by:
---   - Org members with role 'owner', 'admin', or 'editor'.
+-- INSERT POLICY: Allow uploading published files if:
+--   - The user is an authenticated org member with role 'owner', 'admin', or 'editor'.
 -- ============================================================================
 
-create policy "insert_published_files_if_org_member"
+create policy "Insert: Org members with elevated roles can upload published files"
 on storage.objects
 for insert
 to authenticated
@@ -39,19 +48,19 @@ with check (
   and exists (
     select 1
     from public.courses c
-    where c.id = (split_part(storage.objects.name, '/', 1))::uuid
-      and public.get_user_org_role(c.organization_id, auth.uid())) in ('owner', 'admin', 'editor')
+    where c.id = (split_part(storage.objects.name, '/', 2))::uuid
+      and c.organization_id = (split_part(storage.objects.name, '/', 1))::uuid
+      and public.get_user_org_role(c.organization_id, auth.uid()) in ('owner', 'admin', 'editor')
   )
 );
 
 -- ============================================================================
--- UPDATE POLICY
--- Allow updates to the 'published_files' bucket by:
---   - Org owners or admins,
---   - Editors who personally own the course.
+-- UPDATE POLICY: Allow updates to published files if:
+--   - The user is an org owner or admin, OR
+--   - The user is an editor who owns the course.
 -- ============================================================================
 
-create policy "update_published_files_if_admin_or_owning_editor"
+create policy "Update: Admins or owning editors can update published files"
 on storage.objects
 for update
 to authenticated
@@ -60,12 +69,13 @@ using (
   and exists (
     select 1
     from public.courses c
-    where c.id = (split_part(storage.objects.name, '/', 1))::uuid
+    where c.id = (split_part(storage.objects.name, '/', 2))::uuid
+      and c.organization_id = (split_part(storage.objects.name, '/', 1))::uuid
       and (
-        public.get_user_org_role(c.organization_id, auth.uid())) in ('owner', 'admin')
+        public.get_user_org_role(c.organization_id, auth.uid()) in ('owner', 'admin')
         or (
-          public.get_user_org_role(c.organization_id, auth.uid())) = 'editor'
-          and c.owned_by = auth.uid())
+          public.get_user_org_role(c.organization_id, auth.uid()) = 'editor'
+          and c.owned_by = auth.uid()
         )
       )
   )
@@ -75,25 +85,25 @@ with check (
   and exists (
     select 1
     from public.courses c
-    where c.id = (split_part(storage.objects.name, '/', 1))::uuid
+    where c.id = (split_part(storage.objects.name, '/', 2))::uuid
+      and c.organization_id = (split_part(storage.objects.name, '/', 1))::uuid
       and (
-        public.get_user_org_role(c.organization_id, auth.uid())) in ('owner', 'admin')
+        public.get_user_org_role(c.organization_id, auth.uid()) in ('owner', 'admin')
         or (
-          public.get_user_org_role(c.organization_id, auth.uid())) = 'editor'
-          and c.owned_by = auth.uid())
+          public.get_user_org_role(c.organization_id, auth.uid()) = 'editor'
+          and c.owned_by = auth.uid()
         )
       )
   )
 );
 
 -- ============================================================================
--- DELETE POLICY
--- Allow deletions from the 'published_files' bucket by:
---   - Org owners or admins,
---   - Editors who personally own the course.
+-- DELETE POLICY: Allow deletion of published files if:
+--   - The user is an org owner or admin, OR
+--   - The user is an editor who owns the course.
 -- ============================================================================
 
-create policy "delete_published_files_if_admin_or_owning_editor"
+create policy "Delete: Admins or owning editors can delete published files"
 on storage.objects
 for delete
 to authenticated
@@ -102,12 +112,13 @@ using (
   and exists (
     select 1
     from public.courses c
-    where c.id = (split_part(storage.objects.name, '/', 1))::uuid
+    where c.id = (split_part(storage.objects.name, '/', 2))::uuid
+      and c.organization_id = (split_part(storage.objects.name, '/', 1))::uuid
       and (
-        public.get_user_org_role(c.organization_id, auth.uid())) in ('owner', 'admin')
+        public.get_user_org_role(c.organization_id, auth.uid()) in ('owner', 'admin')
         or (
-          public.get_user_org_role(c.organization_id, auth.uid())) = 'editor'
-          and c.owned_by = auth.uid())
+          public.get_user_org_role(c.organization_id, auth.uid()) = 'editor'
+          and c.owned_by = auth.uid()
         )
       )
   )
