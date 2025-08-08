@@ -1,23 +1,27 @@
 -- ============================================================================
--- SELECT: Allow any member of the organization that owns the course
+-- SELECT POLICY
+-- Allow viewing of images in the 'published_thumbnails' bucket by:
+--   - Any member of the organization that owns the course,
+--   - Any user enrolled in the course (even if it's private),
+--   - Anyone if the course is published and publicly visible.
 -- ============================================================================
 
--- TODO: Enrolled users view
-create policy "Select: Org members or public can view published_thumbnails"
+create policy "Select: Org members, enrolled users, or public can view published_thumbnails"
 on storage.objects
 for select
 to public
 using (
   bucket_id = 'published_thumbnails'
   and (
-    -- Org members can view
+    -- 1. Org members can view
     exists (
       select 1
       from public.courses c
       where c.id = (split_part(storage.objects.name, '/', 1))::uuid
         and public.get_user_org_role(c.organization_id, auth.uid()) is not null
     )
-    -- OR public course viewers can view
+
+    -- 2. Public users can view public, published courses
     or exists (
       select 1
       from public.published_courses pc
@@ -25,13 +29,27 @@ using (
         and pc.is_active
         and pc.visibility = 'public'
     )
+
+    -- 3. Enrolled users can view the course (regardless of visibility)
+    or exists (
+      select 1
+      from public.course_enrollments ce
+      join public.published_courses pc on pc.id = ce.published_course_id
+      where pc.id = (split_part(storage.objects.name, '/', 1))::uuid
+        and pc.is_active
+        and ce.user_id = auth.uid()
+        and ce.is_active = true
+        and (ce.expires_at is null or ce.expires_at > now())
+    )
   )
 );
 
+-- ============================================================================
+-- INSERT POLICY
+-- Allow uploading to 'published_thumbnails' only by:
+--   - Organization members with the role 'owner', 'admin', or 'editor'
+-- ============================================================================
 
--- ============================================================================
--- INSERT: Allow any org member (owner, admin, editor) to upload published_thumbnails
--- ============================================================================
 create policy "Insert: Org members can upload published_thumbnails"
 on storage.objects
 for insert
@@ -42,15 +60,17 @@ with check (
     select 1
     from public.courses c
     where c.id = (split_part(storage.objects.name, '/', 1))::uuid
-      and public.get_user_org_role(c.organization_id, (select auth.uid())) in ('owner', 'admin', 'editor')
+      and public.get_user_org_role(c.organization_id, auth.uid()) in ('owner', 'admin', 'editor')
   )
 );
 
 -- ============================================================================
--- UPDATE: Allow only:
---   - org owner/admins, OR
---   - editors who personally own the course
+-- UPDATE POLICY
+-- Allow updating 'published_thumbnails' only by:
+--   - Organization owners or admins,
+--   - Editors who also personally own the course
 -- ============================================================================
+
 create policy "Update: Admins or owning editors can update published_thumbnails"
 on storage.objects
 for update
@@ -62,10 +82,10 @@ using (
     from public.courses c
     where c.id = (split_part(storage.objects.name, '/', 1))::uuid
       and (
-        public.get_user_org_role(c.organization_id, (select auth.uid())) in ('owner', 'admin')
+        public.get_user_org_role(c.organization_id, auth.uid()) in ('owner', 'admin')
         or (
-          public.get_user_org_role(c.organization_id, (select auth.uid())) = 'editor'
-          and c.owned_by = (select auth.uid())
+          public.get_user_org_role(c.organization_id, auth.uid()) = 'editor'
+          and c.owned_by = auth.uid()
         )
       )
   )
@@ -77,18 +97,22 @@ with check (
     from public.courses c
     where c.id = (split_part(storage.objects.name, '/', 1))::uuid
       and (
-        public.get_user_org_role(c.organization_id, (select auth.uid())) in ('owner', 'admin')
+        public.get_user_org_role(c.organization_id, auth.uid()) in ('owner', 'admin')
         or (
-          public.get_user_org_role(c.organization_id, (select auth.uid())) = 'editor'
-          and c.owned_by = (select auth.uid())
+          public.get_user_org_role(c.organization_id, auth.uid()) = 'editor'
+          and c.owned_by = auth.uid()
         )
       )
   )
 );
 
 -- ============================================================================
--- DELETE: Same as UPDATE — admins or owning editors
+-- DELETE POLICY
+-- Same access as UPDATE:
+--   - Organization owners or admins,
+--   - Editors who also personally own the course
 -- ============================================================================
+
 create policy "Delete: Admins or owning editors can delete published_thumbnails"
 on storage.objects
 for delete
@@ -100,10 +124,10 @@ using (
     from public.courses c
     where c.id = (split_part(storage.objects.name, '/', 1))::uuid
       and (
-        public.get_user_org_role(c.organization_id, (select auth.uid())) in ('owner', 'admin')
+        public.get_user_org_role(c.organization_id, auth.uid()) in ('owner', 'admin')
         or (
-          public.get_user_org_role(c.organization_id, (select auth.uid())) = 'editor'
-          and c.owned_by = (select auth.uid())
+          public.get_user_org_role(c.organization_id, auth.uid()) = 'editor'
+          and c.owned_by = auth.uid()
         )
       )
   )

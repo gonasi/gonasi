@@ -3,6 +3,6 @@ select pgmq.create('delete_course_progress_queue');
 
 select cron.schedule(
   'process-delete-course-progress',
-  '*/2 * * * *',
+  '*/1 * * * *',
   $$ select process_delete_course_progress(); $$
 );

@@ -175,8 +175,6 @@ schema_paths = [
   './schemas/publishedCourses/published_course_structure_content_schema_and_indexes.sql',
 
 
-  './schemas/publishedCourses/published_thumbnails_bucket_rls.sql',
-
   './schemas/publishedCourses/utils/chk_pricing_tiers_valid_constraint.sql',
   './schemas/publishedCourses/utils/chk_course_structure_overview_valid_constraint.sql',
   './schemas/publishedCourses/utils/chk_course_structure_content_valid_constraint.sql',
@@ -198,6 +196,8 @@ schema_paths = [
 
   './schemas/publishedCourses/published_courses_rls.sql',
   './schemas/publishedCourses/published_course_structure_content_rls.sql',
+  './schemas/publishedCourses/published_thumbnails_bucket_rls.sql',
+  './schemas/publishedCourses/published_files_bucket_rls.sql',
 
   # gonasi wallet
   './schemas/gonasiWallets/gonasi_wallet_transactions_schema_indexes.sql',

@@ -40,7 +40,7 @@ export function ChoiceOptionButton({
   return (
     <OutlineButton
       onClick={handleClick}
-      className={cn('relative m-0 h-full w-full justify-start p-0 text-left', {
+      className={cn('relative m-0 h-full w-full justify-start p-0', {
         'md:max-h-100': layoutStyle === 'single',
         'min-h-[4rem] md:min-h-[5rem]': layoutStyle === 'double',
         'border-secondary bg-secondary/20 hover:bg-secondary-10 hover:border-secondary/80':
