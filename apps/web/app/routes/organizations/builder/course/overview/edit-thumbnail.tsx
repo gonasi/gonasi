@@ -1,6 +1,5 @@
-import { useEffect, useState } from 'react';
+import { lazy, useEffect, useState } from 'react';
 import type { Area, Point } from 'react-easy-crop';
-import Cropper from 'react-easy-crop';
 import { Form, useParams } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -26,6 +25,8 @@ import { Slider } from '~/components/ui/slider';
 import { createClient } from '~/lib/supabase/supabase.server';
 import { checkHoneypot } from '~/utils/honeypot.server';
 import { useIsPending } from '~/utils/misc';
+
+const Cropper = lazy(() => import('react-easy-crop'));
 
 // Page metadata
 export function meta() {

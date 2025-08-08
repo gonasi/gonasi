@@ -1,6 +1,5 @@
-import { useState } from 'react';
+import { lazy, useState } from 'react';
 import type { Area, Point } from 'react-easy-crop';
-import Cropper from 'react-easy-crop';
 import { Form, useFetcher } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { CircleX, Crop, Upload } from 'lucide-react';
@@ -21,6 +20,8 @@ import { Label } from '~/components/ui/label';
 import { Modal } from '~/components/ui/modal';
 import { Slider } from '~/components/ui/slider';
 import { useIsPending } from '~/utils/misc';
+
+const Cropper = lazy(() => import('react-easy-crop'));
 
 export function meta() {
   return [

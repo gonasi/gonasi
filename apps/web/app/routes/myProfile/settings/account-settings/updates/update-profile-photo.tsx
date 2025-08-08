@@ -1,6 +1,5 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import type { Area, Point } from 'react-easy-crop';
-import Cropper from 'react-easy-crop';
 import { Form, useFetcher } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -24,6 +23,9 @@ import { Label } from '~/components/ui/label';
 import { Modal } from '~/components/ui/modal';
 import { Slider } from '~/components/ui/slider';
 import { useIsPending } from '~/utils/misc';
+
+// Lazy load the Cropper component to avoid SSR issues
+const Cropper = lazy(() => import('react-easy-crop'));
 
 // Page metadata
 export function meta() {
@@ -176,15 +178,23 @@ export default function UpdateProfilePhoto({ params }: Route.ComponentProps) {
           {showCropper && selectedImage ? (
             <div className='h-full space-y-4'>
               <div className='bg-card relative h-[50vh] w-full'>
-                <Cropper
-                  image={selectedImage}
-                  crop={crop}
-                  zoom={zoom}
-                  aspect={1} // Square crop for profile photos
-                  onCropChange={setCrop}
-                  onCropComplete={onCropComplete}
-                  onZoomChange={setZoom}
-                />
+                <Suspense
+                  fallback={
+                    <div className='flex h-full items-center justify-center'>
+                      <LoaderCircle className='animate-spin' />
+                    </div>
+                  }
+                >
+                  <Cropper
+                    image={selectedImage}
+                    crop={crop}
+                    zoom={zoom}
+                    aspect={1} // Square crop for profile photos
+                    onCropChange={setCrop}
+                    onCropComplete={onCropComplete}
+                    onZoomChange={setZoom}
+                  />
+                </Suspense>
               </div>
 
               <div className='space-y-2'>
