@@ -19,7 +19,6 @@ import {
 } from 'lexical';
 
 import type { ImagePayload } from '.';
-import ImageResizer from './ImageResizer';
 import { LazyImage } from './LazyImage';
 import { $isImageNode } from '.';
 
@@ -186,7 +185,7 @@ export default function ImageComponent({
 
   return (
     <Suspense fallback={null}>
-      <div className='relative inline-block overflow-hidden' draggable={draggable}>
+      <div className='relative inline-block' draggable={draggable}>
         <LazyImage
           className={
             isFocused
@@ -205,16 +204,13 @@ export default function ImageComponent({
           onLoad={handleImageLoad}
           isSVGImage={isSVGImage}
           hasError={hasError}
+          showResizer={$isNodeSelection(selection) && isFocused}
+          resizerProps={{
+            editor,
+            onResizeStart,
+            onResizeEnd,
+          }}
         />
-
-        {$isNodeSelection(selection) && isFocused && (
-          <ImageResizer
-            editor={editor}
-            imageRef={imageRef}
-            onResizeEnd={onResizeEnd}
-            onResizeStart={onResizeStart}
-          />
-        )}
       </div>
     </Suspense>
   );

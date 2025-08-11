@@ -1,7 +1,14 @@
 import { useEffect, useState } from 'react';
-import { Image } from '@unpic/react';
+import type { LexicalEditor } from 'lexical';
 
 import { calculateDimensions } from './utils/calculateDimensions';
+import ImageResizer from './ImageResizer';
+
+interface ResizerProps {
+  editor: LexicalEditor;
+  onResizeStart: () => void;
+  onResizeEnd: (width: 'inherit' | number, height: 'inherit' | number) => void;
+}
 
 export function LazyImage({
   altText,
@@ -17,6 +24,8 @@ export function LazyImage({
   isLoaded,
   onLoad,
   hasError,
+  showResizer = false,
+  resizerProps,
 }: {
   altText: string;
   className: string | null;
@@ -31,20 +40,16 @@ export function LazyImage({
   isLoaded: boolean;
   onLoad: () => void;
   hasError: boolean;
+  showResizer?: boolean;
+  resizerProps?: ResizerProps;
 }) {
-  const [dimensions, setDimensions] = useState<{
-    width: number;
-    height: number;
-  } | null>(null);
+  const [dimensions, setDimensions] = useState<{ width: number; height: number } | null>(null);
 
   // Set initial dimensions for SVG images
   useEffect(() => {
     if (imageRef.current && isSVGImage) {
       const { naturalWidth, naturalHeight } = imageRef.current;
-      setDimensions({
-        height: naturalHeight,
-        width: naturalWidth,
-      });
+      setDimensions({ height: naturalHeight, width: naturalWidth });
     }
   }, [imageRef, isSVGImage]);
 
@@ -55,18 +60,19 @@ export function LazyImage({
     maxWidth,
   });
 
-  // Create a wrapper that maintains the image's natural positioning for the resizer
+  const initialStyle = {
+    width: typeof calculatedWidth === 'number' ? `${calculatedWidth}px` : 'auto',
+    height: typeof calculatedHeight === 'number' ? `${calculatedHeight}px` : 'auto',
+  };
+
   return (
     <div style={{ position: 'relative', display: 'inline-block' }}>
-      {/* Background blur/placeholder - positioned behind */}
+      {/* Background blur/placeholder */}
       {!hasError && (
         <div
           style={{
             position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
+            inset: 0,
             background: placeholder,
             opacity: isLoaded ? 0 : 1,
             transition: 'opacity 0.3s ease-in-out',
@@ -76,7 +82,6 @@ export function LazyImage({
         />
       )}
 
-      {/* The actual image - positioned normally for resizer compatibility */}
       {src && !hasError ? (
         <div
           style={{
@@ -86,38 +91,42 @@ export function LazyImage({
             zIndex: 1,
           }}
         >
-          <Image
+          <img
             className={className || undefined}
             src={src}
             alt={altText}
             ref={imageRef}
-            width={calculatedWidth}
-            height={calculatedHeight}
-            onError={onError}
             draggable='false'
+            style={initialStyle}
+            onError={onError}
             onLoad={(e) => {
               if (isSVGImage) {
                 const img = e.currentTarget;
-                setDimensions({
-                  height: img.naturalHeight,
-                  width: img.naturalWidth,
-                });
+                setDimensions({ height: img.naturalHeight, width: img.naturalWidth });
               }
               onLoad();
             }}
           />
         </div>
       ) : (
-        // Fallback placeholder when no src or error
         <div
           className={className || undefined}
           style={{
-            width: calculatedWidth,
-            height: calculatedHeight,
+            ...initialStyle,
             background: placeholder,
             position: 'relative',
             zIndex: 1,
           }}
+        />
+      )}
+
+      {/* Inline resizer */}
+      {showResizer && resizerProps && (
+        <ImageResizer
+          editor={resizerProps.editor}
+          imageRef={imageRef}
+          onResizeStart={resizerProps.onResizeStart}
+          onResizeEnd={resizerProps.onResizeEnd}
         />
       )}
     </div>
