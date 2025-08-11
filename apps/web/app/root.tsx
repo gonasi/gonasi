@@ -15,6 +15,7 @@ import { SpeedInsights } from '@vercel/speed-insights/react';
 import { parse } from 'cookie';
 import type { JwtPayload } from 'jwt-decode';
 import { jwtDecode } from 'jwt-decode';
+import { PostHogProvider } from 'posthog-js/react';
 import { getToast } from 'remix-toast';
 import { HoneypotProvider } from 'remix-utils/honeypot/react';
 import { Toaster } from 'sonner';
@@ -32,12 +33,10 @@ import { useToast } from '~/components/ui/toast';
 import { createClient } from '~/lib/supabase/supabase.server';
 import { honeypot } from '~/utils/honeypot.server';
 import { combineHeaders } from '~/utils/misc';
-import { PostHogProvider } from 'posthog-js/react'
 
 const options = {
   api_host: import.meta.env.VITE_PUBLIC_POSTHOG_HOST,
-  defaults: '2025-05-24',
-}
+};
 
 // --- Types ---
 export interface GoJwtPayload extends JwtPayload {
@@ -223,11 +222,10 @@ function AppWithProviders() {
   const { honeyProps } = useLoaderData<typeof loader>();
   return (
     <PostHogProvider apiKey={import.meta.env.VITE_PUBLIC_POSTHOG_KEY} options={options}>
-    <HoneypotProvider {...honeyProps}>
-      <App />
-    </HoneypotProvider>
+      <HoneypotProvider {...honeyProps}>
+        <App />
+      </HoneypotProvider>
     </PostHogProvider>
- 
   );
 }
 
@@ -237,7 +235,7 @@ export default AppWithProviders;
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   let message = 'Oops!';
   let details = 'An unexpected error occurred.';
-  let stack: string | undefined; 
+  let stack: string | undefined;
 
   if (isRouteErrorResponse(error)) {
     message = error.status === 404 ? '404' : 'Error';
