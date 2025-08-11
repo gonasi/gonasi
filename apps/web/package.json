@@ -75,6 +75,7 @@
     "lodash.debounce": "^4.0.8",
     "lowlight": "^3.3.0",
     "lucide-react": "^0.476.0",
+    "posthog-js": "^1.259.0",
     "prettier-plugin-tailwindcss": "^0.6.11",
     "react": "^19.0.0",
     "react-confetti": "^6.4.0",
