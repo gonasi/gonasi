@@ -1,5 +1,18 @@
 import { Link } from 'react-router';
 
+export function meta() {
+  return [
+    {
+      title: 'Gonasi • Privacy Policy',
+    },
+    {
+      name: 'description',
+      content:
+        'Read Gonasi’s Privacy Policy • Learn how we collect, use, and protect your personal information • Your privacy matters to us.',
+    },
+  ];
+}
+
 export default function PrivacyPolicy() {
   return (
     <div className='leading-relaxed'>

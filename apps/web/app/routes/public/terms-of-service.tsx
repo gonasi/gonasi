@@ -1,5 +1,18 @@
 import { Link } from 'react-router';
 
+export function meta() {
+  return [
+    {
+      title: 'Gonasi • Terms of Service',
+    },
+    {
+      name: 'description',
+      content:
+        'Read Gonasi’s Terms of Service • Understand your rights, responsibilities, and the rules for using our platform.',
+    },
+  ];
+}
+
 export default function TermsOfService() {
   return (
     <div className='leading-relaxed'>
