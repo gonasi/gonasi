@@ -97,7 +97,7 @@ export function LazyImage({
             alt={altText}
             ref={imageRef}
             draggable='false'
-            style={initialStyle}
+            style={{ ...initialStyle, objectFit: 'contain' }}
             onError={onError}
             onLoad={(e) => {
               if (isSVGImage) {
