@@ -1,5 +1,3 @@
-import { Link } from 'react-router';
-
 export function meta() {
   return [
     {
@@ -15,122 +13,67 @@ export function meta() {
 
 export default function PrivacyPolicy() {
   return (
-    <div className='leading-relaxed'>
-      <header>
-        <div className='mx-auto flex max-w-5xl items-center justify-between px-6 py-6'>
-          <nav className='flex w-full justify-end space-x-4 text-sm'>
-            <Link to='/go/privacy' className='text-secondary font-medium'>
-              Privacy Policy
-            </Link>
-            <Link to='/go/terms-of-service' className=''>
-              Terms
-            </Link>
-          </nav>
-        </div>
-      </header>
+    <div className='mx-auto max-w-4xl px-6 py-12 leading-relaxed'>
+      <h1 className='mb-6 text-3xl font-bold'>Privacy Policy</h1>
+      <p className='mb-4'>Last updated: 11 August 2025</p>
 
-      <main className='mx-auto max-w-5xl px-6 py-12'>
-        <article className='rounded-2xl p-8'>
-          <h1 className='mb-2 text-3xl font-bold'>Privacy Policy</h1>
-          <p className='mb-6 text-sm'>
-            Effective date: <strong>August 11, 2025</strong>
-          </p>
+      <p className='mb-4'>
+        This Privacy Policy explains how Gonasi ("we", "our", or "us") collects, uses, and protects
+        your personal information when you use our platform. By using Gonasi, you agree to the terms
+        of this policy.
+      </p>
 
-          <div className='prose text-muted-foreground font-secondary max-w-none'>
-            <h2 className='font-primary text-foreground'>1. Who we are</h2>
-            <p>
-              Gonasi (“we”, “us”, or “Gonasi”) operates{' '}
-              <a
-                href='https://www.gonasi.com'
-                target='_blank'
-                rel='noopener noreferrer'
-                className='text-secondary'
-              >
-                https://www.gonasi.com
-              </a>{' '}
-              (the “Service”). This Privacy Policy explains how we collect, use, disclose, and
-              protect personal information when you visit or use the Service.
-            </p>
+      <h2 className='mt-8 mb-2 text-xl font-semibold'>1. Information We Collect</h2>
+      <ul className='list-disc space-y-1 pl-6'>
+        <li>Account information you provide (name, email, password)</li>
+        <li>Profile details (bio, profile picture, preferences)</li>
+        <li>Course activity and progress</li>
+        <li>Payment and billing details (handled securely via third-party providers)</li>
+        <li>Technical data such as device type, browser, IP address</li>
+      </ul>
 
-            <h2 className='font-primary text-foreground'>2. Data controller / contact</h2>
-            <p>
-              If you have questions about this policy or your personal data, contact us at{' '}
-              <a href='mailto:support@gonasi.com' className='text-secondary'>
-                support@gonasi.com
-              </a>
-              .
-            </p>
+      <h2 className='mt-8 mb-2 text-xl font-semibold'>2. How We Use Your Information</h2>
+      <ul className='list-disc space-y-1 pl-6'>
+        <li>To operate and improve our platform</li>
+        <li>To process transactions and send payment receipts</li>
+        <li>To provide customer support</li>
+        <li>To communicate updates, offers, and announcements (with your consent)</li>
+        <li>To comply with legal obligations</li>
+      </ul>
 
-            <h2 className='font-primary text-foreground'>3. Information we collect</h2>
-            <ul>
-              <li>Account & profile data: name, email, username, profile photo, biography.</li>
-              <li>
-                Content you create: course content, quizzes, messages, uploaded files and media.
-              </li>
-              <li>Payment & billing info: billing address and transaction records.</li>
-              <li>Communications: support messages, emails, and other communications.</li>
-              <li>
-                Usage & technical data: IP address, device and browser info, logs, performance and
-                diagnostic data.
-              </li>
-              <li>Cookies & tracking technologies for analytics and service operation.</li>
-            </ul>
+      <h2 className='mt-8 mb-2 text-xl font-semibold'>3. Sharing of Information</h2>
+      <p className='mb-4'>We do not sell your personal data. We may share your information with:</p>
+      <ul className='list-disc space-y-1 pl-6'>
+        <li>Service providers (e.g., payment processors, hosting providers)</li>
+        <li>Legal authorities when required by law</li>
+        <li>Other users, when you choose to share content publicly</li>
+      </ul>
 
-            <h2 className='font-primary text-foreground'>4. Google user data</h2>
-            <p>
-              If you sign in with Google or connect your Google account, we may access the following
-              Google user data (with your consent via OAuth): name, email address, and profile
-              picture. This information is used solely to:
-            </p>
-            <ul>
-              <li>Authenticate your account and allow you to log in.</li>
-              <li>Display your profile information in the Service.</li>
-              <li>Communicate with you regarding your account.</li>
-            </ul>
-            <p>
-              We do <strong>not</strong> use Google user data for advertising purposes, and we do{' '}
-              <strong>not</strong> share it with third parties except as required to provide the
-              Service (e.g., authentication services). Any stored Google user data is kept securely
-              and deleted if you disconnect your Google account or delete your profile.
-            </p>
-            <p>
-              Our use of information received from Google APIs will adhere to the{' '}
-              <a
-                href='https://developers.google.com/terms/api-services-user-data-policy'
-                target='_blank'
-                rel='noopener noreferrer'
-                className='text-secondary'
-              >
-                Google API Services User Data Policy
-              </a>
-              , including the Limited Use requirements.
-            </p>
+      <h2 className='mt-8 mb-2 text-xl font-semibold'>4. Your Rights</h2>
+      <p className='mb-4'>
+        You may request access to, correction of, or deletion of your personal data by contacting
+        us. You can also update your account information directly in your profile settings.
+      </p>
 
-            <h2 className='font-primary text-foreground'>5. How we use your information</h2>
-            <p>We use your information to:</p>
-            <ul>
-              <li>Provide, operate, and improve the Service.</li>
-              <li>Process payments and send transactional communications.</li>
-              <li>Respond to support requests and inquiries.</li>
-              <li>Comply with legal obligations.</li>
-            </ul>
+      <h2 className='mt-8 mb-2 text-xl font-semibold'>5. Security</h2>
+      <p className='mb-4'>
+        We implement security measures to protect your information. However, no online service is
+        completely secure, so we cannot guarantee absolute protection.
+      </p>
 
-            <h2 className='font-primary text-foreground'>6. Sharing of information</h2>
-            <p>
-              We do not sell your personal information. We may share your information with
-              third-party service providers (such as payment processors, hosting providers) who help
-              us operate the Service, subject to strict confidentiality agreements.
-            </p>
+      <h2 className='mt-8 mb-2 text-xl font-semibold'>6. Changes to This Policy</h2>
+      <p className='mb-4'>
+        We may update this policy from time to time. If we make significant changes, we will notify
+        you via email or in-app notification.
+      </p>
 
-            <h2 className='font-primary text-foreground'>7. Changes to this policy</h2>
-            <p>
-              We may update this Privacy Policy from time to time. We will notify you of any
-              material changes by posting the new policy on this page and updating the effective
-              date above.
-            </p>
-          </div>
-        </article>
-      </main>
+      <h2 className='mt-8 mb-2 text-xl font-semibold'>7. Contact Us</h2>
+      <p>
+        If you have any questions, contact us at:{' '}
+        <a href='mailto:support@gonasi.com' className='text-blue-600 hover:underline'>
+          support@gonasi.com
+        </a>
+      </p>
     </div>
   );
 }

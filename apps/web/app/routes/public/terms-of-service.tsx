@@ -1,5 +1,3 @@
-import { Link } from 'react-router';
-
 export function meta() {
   return [
     {
@@ -15,152 +13,66 @@ export function meta() {
 
 export default function TermsOfService() {
   return (
-    <div className='leading-relaxed'>
-      <header>
-        <div className='mx-auto flex max-w-5xl items-center justify-between px-6 py-6'>
-          <nav className='flex w-full justify-end space-x-4 text-sm'>
-            <Link to='/go/privacy' className='text-secondary font-medium'>
-              Privacy Policy
-            </Link>
-            <Link to='/go/terms-of-service' className=''>
-              Terms
-            </Link>
-          </nav>
-        </div>
-      </header>
+    <div className='mx-auto max-w-4xl px-6 py-12 leading-relaxed'>
+      <h1 className='mb-6 text-3xl font-bold'>Terms of Service</h1>
+      <p className='mb-4'>Last updated: 11 August 2025</p>
 
-      <main className='mx-auto max-w-5xl px-6 py-12'>
-        <article className='rounded-2xl p-8'>
-          <h1 className='mb-2 text-3xl font-bold'>Terms of Service</h1>
-          <p className='mb-6 text-sm'>
-            Effective date: <strong>August 11, 2025</strong>
-          </p>
+      <p className='mb-4'>
+        These Terms of Service ("Terms") govern your use of Gonasi ("we", "our", or "us") and its
+        services. By accessing or using Gonasi, you agree to these Terms.
+      </p>
 
-          <div className='prose text-muted-foreground font-secondary max-w-none'>
-            <h2 className='font-primary text-foreground'>1. Acceptance of terms</h2>
-            <p>
-              These Terms of Service (“Terms”) govern your access to and use of Gonasi’s website,
-              platform, and related services (collectively, the “Service”). By accessing or using
-              the Service, you agree to be bound by these Terms and our Privacy Policy. If you do
-              not agree, you must not use the Service.
-            </p>
+      <h2 className='mt-8 mb-2 text-xl font-semibold'>1. Using Gonasi</h2>
+      <ul className='list-disc space-y-1 pl-6'>
+        <li>You must be at least 13 years old (or the age of digital consent in your country)</li>
+        <li>You are responsible for the accuracy of the information you provide</li>
+        <li>You agree not to misuse the platform or interfere with its operation</li>
+      </ul>
 
-            <h2 className='font-primary text-foreground'>2. Eligibility</h2>
-            <p>
-              You must be at least the minimum age of majority in your country or region to use the
-              Service. By creating an account, you represent and warrant that you meet this
-              requirement and have the legal capacity to enter into a binding agreement.
-            </p>
+      <h2 className='mt-8 mb-2 text-xl font-semibold'>2. Accounts</h2>
+      <p className='mb-4'>
+        You are responsible for maintaining the confidentiality of your account and password. You
+        must notify us immediately if you suspect unauthorized use of your account.
+      </p>
 
-            <h2 className='font-primary text-foreground'>3. Accounts and access</h2>
-            <ul>
-              <li>
-                You are responsible for maintaining the confidentiality of your login details.
-              </li>
-              <li>
-                You agree to provide accurate, current, and complete account information at all
-                times.
-              </li>
-              <li>
-                You must not share your account or allow others to access it without our written
-                consent.
-              </li>
-              <li>
-                We may suspend or terminate your account if we reasonably believe you have violated
-                these Terms.
-              </li>
-            </ul>
+      <h2 className='mt-8 mb-2 text-xl font-semibold'>3. Content</h2>
+      <ul className='list-disc space-y-1 pl-6'>
+        <li>You retain ownership of content you create and upload</li>
+        <li>You grant us a license to display and distribute your content within the platform</li>
+        <li>You must not post content that is unlawful, harmful, or infringes on others’ rights</li>
+      </ul>
 
-            <h2 className='font-primary text-foreground'>4. Use of the service</h2>
-            <ul>
-              <li>
-                You may use the Service only for lawful purposes and in accordance with these Terms.
-              </li>
-              <li>
-                You must not use the Service to post or transmit any harmful, unlawful, infringing,
-                or otherwise objectionable content.
-              </li>
-              <li>
-                We reserve the right to remove any content that violates these Terms or our
-                policies.
-              </li>
-            </ul>
+      <h2 className='mt-8 mb-2 text-xl font-semibold'>4. Payments</h2>
+      <p className='mb-4'>
+        Paid services are billed according to the plan you choose. Prices and features are subject
+        to change, but we will notify you before any significant changes.
+      </p>
 
-            <h2 className='font-primary text-foreground'>5. Intellectual property</h2>
-            <p>
-              All content, features, and functionality of the Service (including but not limited to
-              text, graphics, logos, icons, images, software, and audio) are the exclusive property
-              of Gonasi or its licensors and are protected by copyright, trademark, and other
-              intellectual property laws.
-            </p>
+      <h2 className='mt-8 mb-2 text-xl font-semibold'>5. Termination</h2>
+      <p className='mb-4'>
+        We may suspend or terminate your account if you violate these Terms or misuse the service.
+        You can close your account at any time.
+      </p>
 
-            <h2 className='font-primary text-foreground'>6. User-generated content</h2>
-            <ul>
-              <li>
-                You retain ownership of any content you submit, post, or display on or through the
-                Service (“User Content”).
-              </li>
-              <li>
-                By posting User Content, you grant Gonasi a worldwide, non-exclusive, royalty-free
-                license to use, reproduce, modify, and display such content solely for the purpose
-                of operating and improving the Service.
-              </li>
-              <li>
-                You represent and warrant that you have the necessary rights to grant us this
-                license.
-              </li>
-            </ul>
+      <h2 className='mt-8 mb-2 text-xl font-semibold'>6. Disclaimer</h2>
+      <p className='mb-4'>
+        Gonasi is provided "as is" without warranties of any kind. We are not liable for damages
+        arising from the use or inability to use the platform.
+      </p>
 
-            <h2 className='font-primary text-foreground'>7. Payments and refunds</h2>
-            <p>
-              If you purchase any paid Service, you agree to pay all applicable fees as described at
-              the time of purchase. Except as required by law or stated otherwise, all payments are
-              non-refundable.
-            </p>
+      <h2 className='mt-8 mb-2 text-xl font-semibold'>7. Changes to These Terms</h2>
+      <p className='mb-4'>
+        We may update these Terms periodically. Continued use of the platform after changes means
+        you accept the new Terms.
+      </p>
 
-            <h2 className='font-primary text-foreground'>8. Third-party services</h2>
-            <p>
-              The Service may contain links to or integrations with third-party services. We do not
-              control and are not responsible for the content, privacy policies, or practices of any
-              third-party services.
-            </p>
-
-            <h2 className='font-primary text-foreground'>9. Disclaimers</h2>
-            <p>
-              The Service is provided “as is” and “as available” without warranties of any kind,
-              whether express or implied, including but not limited to implied warranties of
-              merchantability, fitness for a particular purpose, and non-infringement.
-            </p>
-
-            <h2 className='font-primary text-foreground'>10. Limitation of liability</h2>
-            <p>
-              To the fullest extent permitted by law, Gonasi shall not be liable for any indirect,
-              incidental, special, consequential, or punitive damages, or any loss of profits or
-              revenues, whether incurred directly or indirectly, or any loss of data, use, goodwill,
-              or other intangible losses, resulting from (a) your use or inability to use the
-              Service; (b) any unauthorized access to or use of our servers; or (c) any other matter
-              relating to the Service.
-            </p>
-
-            <h2 className='font-primary text-foreground'>11. Changes to these terms</h2>
-            <p>
-              We may update these Terms from time to time. If we make material changes, we will
-              notify you by posting the updated Terms on this page and updating the “Effective date”
-              above. Your continued use of the Service after such changes constitutes acceptance of
-              the new Terms.
-            </p>
-
-            <h2 className='font-primary text-foreground'>12. Contact us</h2>
-            <p>
-              If you have any questions about these Terms, please contact us at{' '}
-              <a href='mailto:support@gonasi.com' className='text-secondary'>
-                support@gonasi.com
-              </a>
-              .
-            </p>
-          </div>
-        </article>
-      </main>
+      <h2 className='mt-8 mb-2 text-xl font-semibold'>8. Contact Us</h2>
+      <p>
+        If you have questions about these Terms, contact us at:{' '}
+        <a href='mailto:support@gonasi.com' className='text-blue-600 hover:underline'>
+          support@gonasi.com
+        </a>
+      </p>
     </div>
   );
 }
