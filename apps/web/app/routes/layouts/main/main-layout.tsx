@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Outlet, useNavigate } from 'react-router';
 
+import { Footer } from '~/components/footer';
 import { Spinner } from '~/components/loaders';
 import { BottomNav } from '~/components/navigation/bottom-nav/bottom-nav';
 import { TopNav } from '~/components/navigation/top-nav';
@@ -31,6 +32,7 @@ export default function MainLayout() {
       <section className='container mx-auto min-h-screen'>
         <Outlet />
       </section>
+      <Footer />
       <BottomNav user={activeUserProfile} />
     </div>
   );

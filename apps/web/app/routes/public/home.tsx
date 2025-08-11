@@ -20,10 +20,10 @@ export function headers(_: Route.HeadersArgs) {
 }
 
 // ✅ Home page component
-export default function Home({ loaderData }: Route.ComponentProps) {
+export default function Home() {
   return (
     <div>
-      <h2 className='mb-4 text-xl font-bold'> Home</h2>
+      <h2 className='mb-4 text-xl font-bold'>Home Page</h2>
     </div>
   );
 }

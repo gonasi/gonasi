@@ -41,7 +41,8 @@ export function AuthFormLayout(props: AuthFormLayoutProps) {
       <div className='flex items-center justify-center'>
         <h2 className='text-2xl'>{title}</h2>
       </div>
-      <div className='font-secondary pb-4 text-center text-sm'>{description}</div>
+      <div className='font-secondary text-center text-sm'>{description}</div>
+      <div className='pb-4' />
       <div>{children}</div>
     </div>
   );
