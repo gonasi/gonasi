@@ -1,0 +1,169 @@
+import { useParams } from 'react-router';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Edit, Plus, Save, Settings } from 'lucide-react';
+import { RemixFormProvider, useRemixForm } from 'remix-hook-form';
+import { HoneypotInputs } from 'remix-utils/honeypot/react';
+
+import type {
+  GuidedImageHotspotSchemaSettingsTypes,
+  GuidedImageHotspotSchemaTypes,
+} from '@gonasi/schemas/plugins';
+import {
+  GuidedImageHotspotContentSchema,
+  GuidedImageHotspotSchema,
+  GuidedImageHotspotSchemaSettings,
+} from '@gonasi/schemas/plugins';
+
+import { BlockWeightField } from '../../common/settings/BlockWeightField';
+import { PlaybackModeField } from '../../common/settings/PlaybackModeField';
+
+import { BackArrowNavLink, Button } from '~/components/ui/button';
+import { Modal } from '~/components/ui/modal';
+import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover';
+import { IconTooltipButton } from '~/components/ui/tooltip';
+import type { LessonBlockLoaderReturnType } from '~/routes/organizations/builder/course/content/chapterId/lessonId/lesson-blocks/plugins/edit-plugin-modal';
+import { getActionUrl } from '~/utils/get-action-url';
+import { useIsPending } from '~/utils/misc';
+
+const resolver = zodResolver(GuidedImageHotspotSchema);
+
+interface BuilderGuidedImageHotspotsPluginProps {
+  block?: LessonBlockLoaderReturnType;
+}
+
+const defaultContent: GuidedImageHotspotSchemaTypes['content'] = {
+  image_id: '',
+  hotspots: [],
+};
+
+const defaultSettings: GuidedImageHotspotSchemaSettingsTypes = {
+  playbackMode: 'inline',
+  weight: 1,
+};
+
+export function BuilderGuidedImageHotspotsPlugin({ block }: BuilderGuidedImageHotspotsPluginProps) {
+  const params = useParams();
+  const isPending = useIsPending();
+
+  const { organizationId, courseId, chapterId, lessonId, pluginGroupId } = params;
+
+  const lessonPath = `/${organizationId}/builder/${courseId}/content/${chapterId}/${lessonId}/lesson-blocks`;
+  const backRoute = `${lessonPath}/plugins/${pluginGroupId}`;
+
+  const methods = useRemixForm<GuidedImageHotspotSchemaTypes>({
+    mode: 'onBlur',
+    resolver,
+    defaultValues: block
+      ? {
+          id: block.id,
+          organization_id: organizationId!,
+          course_id: courseId!,
+          chapter_id: chapterId!,
+          lesson_id: lessonId!,
+          plugin_type: 'guided_image_hotspots',
+          content: GuidedImageHotspotContentSchema.safeParse(block.content).success
+            ? GuidedImageHotspotContentSchema.parse(block.content)
+            : defaultContent,
+          settings: GuidedImageHotspotSchemaSettings.safeParse(block.settings).success
+            ? GuidedImageHotspotSchemaSettings.parse(block.settings)
+            : defaultSettings,
+        }
+      : {
+          organization_id: organizationId!,
+          course_id: courseId!,
+          chapter_id: chapterId!,
+          lesson_id: lessonId!,
+          plugin_type: 'guided_image_hotspots',
+          content: defaultContent,
+          settings: defaultSettings,
+        },
+  });
+
+  const actionUrl = getActionUrl(
+    {
+      organizationId,
+      courseId,
+      chapterId,
+      lessonId,
+    },
+    { id: block?.id },
+  );
+
+  const isDisabled = isPending || methods.formState.isSubmitting;
+  const watchPlaybackMode = methods.watch('settings.playbackMode');
+  const watchImageSelection = methods.watch('content.image_id');
+
+  return (
+    <Modal open>
+      <Modal.Content size='md'>
+        <RemixFormProvider {...methods}>
+          <form onSubmit={methods.handleSubmit} method='POST' action={actionUrl}>
+            <Modal.Header
+              leadingIcon={block?.id ? null : <BackArrowNavLink to={backRoute} />}
+              title={block?.id ? 'Edit Guided Image Hotspots' : 'Add Guided Image Hotspots'}
+              closeRoute={lessonPath}
+              settingsPopover={
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Settings
+                      className='transition-transform duration-200 hover:scale-105 hover:rotate-15 hover:cursor-pointer'
+                      size={20}
+                    />
+                  </PopoverTrigger>
+                  <PopoverContent className='w-full max-w-md'>
+                    <div className='grid gap-4'>
+                      <div className='space-y-2'>
+                        <h4 className='leading-none font-medium'>Block settings</h4>
+                        <p className='text-muted-foreground text-sm'>
+                          Tweak how this block behaves, your rules, your way!
+                        </p>
+                      </div>
+                      <div className='grid gap-2'>
+                        <BlockWeightField name='settings.weight' />
+                        <PlaybackModeField
+                          name='settings.playbackMode'
+                          watchValue={watchPlaybackMode}
+                        />
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              }
+            />
+            <Modal.Body>
+              <HoneypotInputs />
+              <div className='relative'>
+                {/* Top-right icon button */}
+                <div className='absolute top-2 right-2 z-10'>
+                  <IconTooltipButton
+                    variant='secondary'
+                    title={watchImageSelection ? 'Edit image' : 'Add image'}
+                    icon={watchImageSelection ? Edit : Plus}
+                    onClick={() => {}}
+                  />
+                </div>
+
+                {/* Content based on watchImageSelection */}
+                <div className='min-h-20 w-full border'>
+                  {watchImageSelection ? <div>image found</div> : <div>No image</div>}
+                </div>
+              </div>
+            </Modal.Body>
+            <div className='bg-background/90 border-t-border/20 sticky right-0 bottom-0 left-0 z-10 flex justify-end space-x-2 border-t p-4'>
+              <div className='flex w-full'>
+                <Button
+                  type='submit'
+                  rightIcon={<Save />}
+                  disabled={isDisabled || !methods.formState.isDirty}
+                  isLoading={isDisabled}
+                >
+                  Save
+                </Button>
+              </div>
+            </div>
+          </form>
+        </RemixFormProvider>
+      </Modal.Content>
+    </Modal>
+  );
+}

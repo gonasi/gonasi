@@ -39,6 +39,9 @@ export type GuidedImageHotspotContentSchemaTypes = z.infer<typeof GuidedImageHot
 // Settings Schema
 //
 export const GuidedImageHotspotSchemaSettings = BasePluginSettingsSchema;
+export type GuidedImageHotspotSchemaSettingsTypes = z.infer<
+  typeof GuidedImageHotspotSchemaSettings
+>;
 
 //
 // Main Schema

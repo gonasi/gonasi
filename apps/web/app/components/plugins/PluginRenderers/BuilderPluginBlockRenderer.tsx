@@ -41,6 +41,14 @@ const LazyBuilderRichTextPlugin = lazy(() =>
   })),
 );
 
+const LazyBuilderGuidedImageHotspotsPlugin = lazy(() =>
+  import('../MediaInteraction/GuidedImageHotspots/BuilderGuidedImageHotspotsPlugin').then(
+    (module) => ({
+      default: module.BuilderGuidedImageHotspotsPlugin,
+    }),
+  ),
+);
+
 // Only components that accept `{ block?: LessonBlockLoaderReturnType }`
 const pluginComponentMap: Record<
   PluginTypeId,
@@ -52,6 +60,8 @@ const pluginComponentMap: Record<
   tap_to_reveal: notImplemented,
   multiple_choice_multiple: LazyBuilderMultipleChoiceMultipleAnswersPlugin,
   multiple_choice_single: LazyBuilderMultipleChoiceSingleAnswerPlugin,
+  guided_image_hotspots: LazyBuilderGuidedImageHotspotsPlugin,
+  hotspot_identification_question: notImplemented,
   match_concepts: notImplemented,
   sequence_ordering: notImplemented,
   categorization: notImplemented,

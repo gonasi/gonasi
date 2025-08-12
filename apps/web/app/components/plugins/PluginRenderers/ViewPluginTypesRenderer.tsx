@@ -25,6 +25,8 @@ const viewPluginComponentMap: Record<
   rich_text_editor: ViewRichTextPlugin,
   multiple_choice_multiple: ViewMultipleChoiceMultipleAnswersPlugin,
   multiple_choice_single: ViewMultipleChoiceSingleAnswerPlugin,
+  guided_image_hotspots: unimplementedPlugin,
+  hotspot_identification_question: unimplementedPlugin,
   match_concepts: unimplementedPlugin,
   sequence_ordering: unimplementedPlugin,
   categorization: unimplementedPlugin,
