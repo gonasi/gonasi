@@ -1,6 +1,7 @@
+import { lazy, Suspense } from 'react';
 import { useParams } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Edit, Plus, Save, Settings } from 'lucide-react';
+import { Edit, File, Plus, Save, Settings } from 'lucide-react';
 import { RemixFormProvider, useRemixForm } from 'remix-hook-form';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
 
@@ -16,14 +17,20 @@ import {
 
 import { BlockWeightField } from '../../common/settings/BlockWeightField';
 import { PlaybackModeField } from '../../common/settings/PlaybackModeField';
+import MediaInteractionImage from '../common/MediaInteractionImage';
 
+import useModal from '~/components/go-editor/hooks/useModal';
+import { Spinner } from '~/components/loaders';
 import { BackArrowNavLink, Button } from '~/components/ui/button';
 import { Modal } from '~/components/ui/modal';
 import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover';
 import { IconTooltipButton } from '~/components/ui/tooltip';
+import type { SearchFileResult } from '~/routes/api/search-files';
 import type { LessonBlockLoaderReturnType } from '~/routes/organizations/builder/course/content/chapterId/lessonId/lesson-blocks/plugins/edit-plugin-modal';
 import { getActionUrl } from '~/utils/get-action-url';
 import { useIsPending } from '~/utils/misc';
+
+const InsertMediaDialog = lazy(() => import('../common/InsertMediaDialog'));
 
 const resolver = zodResolver(GuidedImageHotspotSchema);
 
@@ -37,13 +44,14 @@ const defaultContent: GuidedImageHotspotSchemaTypes['content'] = {
 };
 
 const defaultSettings: GuidedImageHotspotSchemaSettingsTypes = {
-  playbackMode: 'inline',
-  weight: 1,
+  playbackMode: 'standalone',
+  weight: 5,
 };
 
 export function BuilderGuidedImageHotspotsPlugin({ block }: BuilderGuidedImageHotspotsPluginProps) {
   const params = useParams();
   const isPending = useIsPending();
+  const [modal, showModal] = useModal();
 
   const { organizationId, courseId, chapterId, lessonId, pluginGroupId } = params;
 
@@ -92,6 +100,7 @@ export function BuilderGuidedImageHotspotsPlugin({ block }: BuilderGuidedImageHo
   const isDisabled = isPending || methods.formState.isSubmitting;
   const watchPlaybackMode = methods.watch('settings.playbackMode');
   const watchImageSelection = methods.watch('content.image_id');
+  const getImageId = methods.getValues('content.image_id');
 
   return (
     <Modal open>
@@ -139,15 +148,37 @@ export function BuilderGuidedImageHotspotsPlugin({ block }: BuilderGuidedImageHo
                     variant='secondary'
                     title={watchImageSelection ? 'Edit image' : 'Add image'}
                     icon={watchImageSelection ? Edit : Plus}
-                    onClick={() => {}}
+                    onClick={() => {
+                      showModal(
+                        'Insert Image', // title
+                        (onClose) => (
+                          <Suspense fallback={<Spinner />}>
+                            <InsertMediaDialog
+                              handleImageInsert={(file: SearchFileResult) => {
+                                methods.setValue('content.image_id', file.id);
+                                onClose();
+                              }}
+                            />
+                          </Suspense>
+                        ),
+                        '', // className (empty string is fine)
+                        <File />, // leadingIcon (null is valid)
+                        'lg', // size (valid value from 'sm' | 'md' | 'lg' | 'full')
+                      );
+                    }}
                   />
                 </div>
 
                 {/* Content based on watchImageSelection */}
                 <div className='min-h-20 w-full border'>
-                  {watchImageSelection ? <div>image found</div> : <div>No image</div>}
+                  {watchImageSelection ? (
+                    <MediaInteractionImage imageId={getImageId} />
+                  ) : (
+                    <div>No image</div>
+                  )}
                 </div>
               </div>
+              {modal}
             </Modal.Body>
             <div className='bg-background/90 border-t-border/20 sticky right-0 bottom-0 left-0 z-10 flex justify-end space-x-2 border-t p-4'>
               <div className='flex w-full'>
