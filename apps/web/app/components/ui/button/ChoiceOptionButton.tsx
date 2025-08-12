@@ -1,6 +1,5 @@
+import { motion } from 'framer-motion';
 import { Howl } from 'howler';
-
-import { OutlineButton } from './OutlineButton';
 
 import optionTapSound from '/assets/sounds/options-button.wav';
 import RichTextRenderer from '~/components/go-editor/ui/RichTextRenderer';
@@ -18,7 +17,7 @@ interface ChoiceOptionButtonProps {
   isSelected: boolean;
   isDisabled?: boolean;
   onClick: () => void;
-  layoutStyle?: 'single' | 'double'; // Add layout prop to determine height strategy
+  layoutStyle?: 'single' | 'double';
 }
 
 export function ChoiceOptionButton({
@@ -31,32 +30,45 @@ export function ChoiceOptionButton({
   const { isSoundEnabled } = useStore();
 
   const handleClick = () => {
+    if (isDisabled) return;
     onClick();
-    if (!isDisabled && isSoundEnabled) {
+    if (isSoundEnabled) {
       tapHowl.play();
     }
   };
 
   return (
-    <OutlineButton
+    <motion.button
       onClick={handleClick}
-      className={cn('relative m-0 h-full w-full justify-start p-0', {
-        'md:max-h-100': layoutStyle === 'single',
-        'min-h-[4rem] md:min-h-[5rem]': layoutStyle === 'double',
-        'border-secondary bg-secondary/20 hover:bg-secondary-10 hover:border-secondary/80':
-          isSelected,
-      })}
+      aria-label='choice'
       disabled={isDisabled}
+      className={cn(
+        'border-border bg-background/40 w-full rounded-md border p-1 transition-colors duration-200',
+        'hover:cursor-pointer',
+        {
+          'max-h-30 md:max-h-80': layoutStyle === 'single',
+          'min-h-[4rem] md:min-h-[5rem]': layoutStyle === 'double',
+          'border-secondary bg-secondary/20 hover:bg-secondary-10 hover:border-secondary/80':
+            isSelected && !isDisabled,
+          'cursor-not-allowed opacity-50 hover:cursor-not-allowed': isDisabled,
+        },
+      )}
+      whileHover={
+        !isDisabled
+          ? {
+              scale: 1.02,
+              boxShadow: '0 2px 6px rgba(0, 0, 0, 0.05)',
+            }
+          : {}
+      }
+      whileTap={!isDisabled ? { scale: 0.98 } : {}}
+      transition={{
+        type: 'spring',
+        stiffness: 250,
+        damping: 20,
+      }}
     >
-      <div className='flex h-full items-start'>
-        <RichTextRenderer
-          editorState={choiceState}
-          className={cn('max-h-30 md:max-h-80', {
-            // Center content vertically in double layout for better visual balance
-            'flex min-h-[3rem] items-center md:min-h-[4rem]': layoutStyle === 'double',
-          })}
-        />
-      </div>
-    </OutlineButton>
+      <RichTextRenderer editorState={choiceState} className='max-h-30 md:max-h-80' />
+    </motion.button>
   );
 }
