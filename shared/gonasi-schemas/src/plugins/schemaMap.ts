@@ -1,12 +1,14 @@
 import { z } from 'zod';
 
-import { MultipleChoiceSingleAnswerInteractionSchema } from './interactions/multipleChoiceSingleAnswerInteractionSchema';
-import { RichTextStateInteractionSchema } from './interactions/richTextInteractionSchema';
 import {
+  GuidedImageHotspotsInteractionSchema,
   MultipleChoiceMultipleAnswersInteractionSchema,
+  MultipleChoiceSingleAnswerInteractionSchema,
+  RichTextStateInteractionSchema,
   TrueOrFalseStateInteractionSchema,
 } from './interactions';
 import {
+  GuidedImageHotspotSchema,
   MultipleChoiceMultipleAnswersSchema,
   MultipleChoiceSingleAnswerSchema,
   RichTextSchema,
@@ -21,6 +23,7 @@ export const BuilderSchema = z.discriminatedUnion('plugin_type', [
   TrueOrFalseSchema,
   MultipleChoiceSingleAnswerSchema,
   MultipleChoiceMultipleAnswersSchema,
+  GuidedImageHotspotSchema,
 ]);
 export type BuilderSchemaTypes = z.infer<typeof BuilderSchema>;
 
@@ -30,6 +33,7 @@ export const BlockInteractionSchema = z.discriminatedUnion('plugin_type', [
   TrueOrFalseStateInteractionSchema,
   MultipleChoiceSingleAnswerInteractionSchema,
   MultipleChoiceMultipleAnswersInteractionSchema,
+  GuidedImageHotspotsInteractionSchema,
 ]);
 export type BlockInteractionSchemaTypes = z.infer<typeof BlockInteractionSchema>;
 
@@ -45,11 +49,13 @@ const PublishedMultipleChoiceSingleAnswerSchema =
   MultipleChoiceSingleAnswerSchema.merge(PublishedFields);
 const PublishedMultipleChoiceMultipleAnswersSchema =
   MultipleChoiceMultipleAnswersSchema.merge(PublishedFields);
+const PublishedGuidedImageHotspotsSchema = GuidedImageHotspotSchema.merge(PublishedFields);
 
 export const PublishedBuilderSchema = z.discriminatedUnion('plugin_type', [
   PublishedRichTextSchema,
   PublishedTrueOrFalseSchema,
   PublishedMultipleChoiceSingleAnswerSchema,
   PublishedMultipleChoiceMultipleAnswersSchema,
+  PublishedGuidedImageHotspotsSchema,
 ]);
 export type PublishedBuilderSchemaTypes = z.infer<typeof PublishedBuilderSchema>;

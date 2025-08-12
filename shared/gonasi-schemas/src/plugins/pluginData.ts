@@ -122,6 +122,41 @@ export const ALL_PLUGINS = [
     ],
   },
   {
+    id: 'media_interaction',
+    name: 'Media Interaction',
+    description: 'Plugins for adding interactive and engaging visual elements',
+    pluginGroups: [
+      {
+        id: 'image_hotspots',
+        name: 'Image Hotspots',
+        description: 'Highlight areas of an image for exploration, guidance, or assessment',
+        icon: 'Image',
+        pluginTypes: [
+          {
+            id: 'guided_image_hotspots',
+            name: 'Guided Image Hotspots',
+            description:
+              'Lead learners through a series of highlighted areas on an image, zooming in and revealing information step-by-step.',
+            example:
+              'Step 1: Focus on the rearview mirror and learn how to adjust it. Step 2: Look at the dashboard to understand the warning lights.',
+            icon: 'Focus',
+            comingSoon: false,
+          },
+          {
+            id: 'hotspot_identification_question',
+            name: 'Hotspot Identification Question',
+            description:
+              'Ask learners to click on the correct spot(s) in an image to answer a question, with instant feedback.',
+            example:
+              'Where should you check for your seatbelt? Click the correct area on the image.',
+            icon: 'Target',
+            comingSoon: true,
+          },
+        ],
+      },
+    ],
+  },
+  {
     id: 'visualization',
     name: 'Interactive Visualization Plugins',
     description: 'Plugins for interactive visuals and exploration',
