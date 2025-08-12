@@ -43,7 +43,7 @@ export function ChoiceOptionButton({
       aria-label='choice'
       disabled={isDisabled}
       className={cn(
-        'border-border bg-background/40 w-full rounded-md border p-1 transition-colors duration-200',
+        'border-border bg-background/40 h-full w-full rounded-md border p-1 transition-colors duration-200', // <-- h-full here
         'hover:cursor-pointer',
         {
           'max-h-30 md:max-h-80': layoutStyle === 'single',
@@ -68,7 +68,9 @@ export function ChoiceOptionButton({
         damping: 20,
       }}
     >
-      <RichTextRenderer editorState={choiceState} className='max-h-30 md:max-h-80' />
+      <div className='flex h-full items-center justify-center'>
+        <RichTextRenderer editorState={choiceState} className='max-h-30 md:max-h-80' />
+      </div>
     </motion.button>
   );
 }

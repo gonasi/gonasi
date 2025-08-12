@@ -168,7 +168,7 @@ export function ViewMultipleChoiceSingleAnswerPlugin({
         <div
           className={cn('gap-4 py-6', {
             'flex flex-col': layoutStyle === 'single', // Vertical layout
-            'grid grid-cols-2': layoutStyle === 'double', // 2-column grid
+            'grid grid-cols-2 items-stretch': layoutStyle === 'double', // Equal height in double layout
           })}
         >
           {answerOptions.map((option) => {
