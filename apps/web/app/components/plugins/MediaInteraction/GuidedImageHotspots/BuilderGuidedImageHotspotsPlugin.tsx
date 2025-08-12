@@ -40,6 +40,8 @@ interface BuilderGuidedImageHotspotsPluginProps {
 
 const defaultContent: GuidedImageHotspotSchemaTypes['content'] = {
   image_id: '',
+  image_height: 600,
+  image_width: 800,
   hotspots: [],
 };
 
@@ -104,7 +106,7 @@ export function BuilderGuidedImageHotspotsPlugin({ block }: BuilderGuidedImageHo
 
   return (
     <Modal open>
-      <Modal.Content size='md'>
+      <Modal.Content size='lg'>
         <RemixFormProvider {...methods}>
           <form onSubmit={methods.handleSubmit} method='POST' action={actionUrl}>
             <Modal.Header
@@ -143,7 +145,7 @@ export function BuilderGuidedImageHotspotsPlugin({ block }: BuilderGuidedImageHo
               <HoneypotInputs />
               <div className='relative'>
                 {/* Top-right icon button */}
-                <div className='absolute top-2 right-2 z-10'>
+                <div className='absolute top-2 right-2 z-5'>
                   <IconTooltipButton
                     variant='secondary'
                     title={watchImageSelection ? 'Edit image' : 'Add image'}
@@ -170,9 +172,9 @@ export function BuilderGuidedImageHotspotsPlugin({ block }: BuilderGuidedImageHo
                 </div>
 
                 {/* Content based on watchImageSelection */}
-                <div className='min-h-20 w-full border'>
+                <div className='border-border/20 min-h-20 w-full border'>
                   {watchImageSelection ? (
-                    <MediaInteractionImage imageId={getImageId} />
+                    <MediaInteractionImage imageId={getImageId} name='content.hotspots' />
                   ) : (
                     <div>No image</div>
                   )}

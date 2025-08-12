@@ -88,6 +88,7 @@
     "react-scroll": "^1.9.3",
     "react-use": "^17.6.0",
     "react-virtuoso": "^4.13.0",
+    "react-zoom-pan-pinch": "^3.7.0",
     "remix-hook-form": "^7.0.1",
     "remix-toast": "^3.1.0",
     "remix-utils": "^8.5.0",
