@@ -7,7 +7,7 @@ import {
   TransformWrapper,
 } from 'react-zoom-pan-pinch';
 import { Image } from '@unpic/react';
-import { RefreshCcw, ZoomIn, ZoomOut } from 'lucide-react';
+import { RefreshCcw, X, ZoomIn, ZoomOut } from 'lucide-react';
 import { useRemixFormContext } from 'remix-hook-form';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -129,6 +129,15 @@ export default function MediaInteractionImage({ imageId, name }: MediaInteractio
     setIsModalOpen(true);
   };
 
+  const editHotSpot = (hotSpot: GuidedImageHotspotTypes, index: number) => {
+    setCurrentHotSpot({ hotSpot, index });
+    setIsModalOpen(true);
+  };
+
+  const deleteHotSpot = (index: number) => {
+    remove(index);
+  };
+
   const closeModal = () => {
     setIsModalOpen(false);
     setCurrentHotSpot(null);
@@ -194,7 +203,10 @@ export default function MediaInteractionImage({ imageId, name }: MediaInteractio
                     tabIndex: 0,
                     onClick: handleClick,
                   }}
-                  wrapperClass={cn('shadow', isPanning ? 'cursor-grabbing' : 'cursor-default')}
+                  wrapperClass={cn(
+                    'shadow relative',
+                    isPanning ? 'cursor-grabbing' : 'cursor-default',
+                  )}
                 >
                   <Image
                     src={fileData.signed_url}
@@ -204,22 +216,62 @@ export default function MediaInteractionImage({ imageId, name }: MediaInteractio
                     alt=''
                     className='h-auto w-full'
                   />
+
+                  {/* Render Hotspots */}
+                  {hotSpots.map((hotSpot, index) => (
+                    <div
+                      key={hotSpot.id}
+                      className='group absolute'
+                      style={{
+                        left: hotSpot.x,
+                        top: hotSpot.y,
+                        transform: 'translate(-50%, -50%)',
+                      }}
+                    >
+                      {/* Hotspot Marker */}
+                      <div
+                        className='relative flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-blue-500 text-white shadow-lg transition-all hover:scale-110 hover:bg-blue-600'
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          editHotSpot(hotSpot, index);
+                        }}
+                      >
+                        <span className='text-sm font-medium'>{index + 1}</span>
+
+                        {/* Delete Button (appears on hover) */}
+                        <button
+                          className='absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-red-600'
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteHotSpot(index);
+                          }}
+                          title='Delete hotspot'
+                        >
+                          <X className='h-3 w-3' />
+                        </button>
+                      </div>
+
+                      {/* Pulse Animation */}
+                      <div className='absolute inset-0 animate-ping rounded-full bg-blue-500 opacity-30' />
+                    </div>
+                  ))}
                 </TransformComponent>
               </>
             )}
           </TransformWrapper>
+
           {/* Choice Editor Modal */}
           <Modal open={isModalOpen} onOpenChange={closeModal}>
             <Modal.Content size='sm' className=''>
-              <Modal.Header title='Create Hot Spot' />
+              <Modal.Header title={currentHotSpot ? 'Edit Hot Spot' : 'Create Hot Spot'} />
               <Modal.Body>
                 {currentHotSpot && (
                   <div className='space-y-4'>
-                    <p>{`${name}.${currentHotSpot.index}.message`}</p>
+                    <p className='text-sm text-gray-600'>{`${name}.${currentHotSpot.index}.message`}</p>
                     <GoRichTextInputField
                       name={`${name}.${currentHotSpot.index}.message`}
-                      labelProps={{ children: 'Choice', required: true }}
-                      placeholder='Message...'
+                      labelProps={{ children: 'Message', required: true }}
+                      placeholder='Enter hotspot message...'
                     />
 
                     {/* Action Buttons */}
@@ -227,8 +279,8 @@ export default function MediaInteractionImage({ imageId, name }: MediaInteractio
                       <Button type='button' onClick={closeModal} variant='ghost'>
                         Cancel
                       </Button>
-                      <Button type='submit' onClick={closeModal} variant='secondary'>
-                        Create Hotspot
+                      <Button type='button' onClick={closeModal} variant='secondary'>
+                        Save Hotspot
                       </Button>
                     </div>
                   </div>
