@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { Controller, get, useFieldArray } from 'react-hook-form';
 import { useFetcher } from 'react-router';
 import {
+  KeepScale,
   type ReactZoomPanPinchRef,
   TransformComponent,
   TransformWrapper,
@@ -203,10 +204,10 @@ export default function MediaInteractionImage({ imageId, name }: MediaInteractio
                     tabIndex: 0,
                     onClick: handleClick,
                   }}
-                  wrapperClass={cn(
-                    'shadow relative',
-                    isPanning ? 'cursor-grabbing' : 'cursor-default',
-                  )}
+                  wrapperClass={cn('shadow', isPanning ? 'cursor-grabbing' : 'cursor-default')}
+                  wrapperStyle={{
+                    position: 'relative',
+                  }}
                 >
                   <Image
                     src={fileData.signed_url}
@@ -221,38 +222,60 @@ export default function MediaInteractionImage({ imageId, name }: MediaInteractio
                   {hotSpots.map((hotSpot, index) => (
                     <div
                       key={hotSpot.id}
-                      className='group absolute'
+                      className='absolute'
                       style={{
                         left: hotSpot.x,
                         top: hotSpot.y,
                         transform: 'translate(-50%, -50%)',
+                        zIndex: 2,
                       }}
                     >
-                      {/* Hotspot Marker */}
-                      <div
-                        className='relative flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-blue-500 text-white shadow-lg transition-all hover:scale-110 hover:bg-blue-600'
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          editHotSpot(hotSpot, index);
-                        }}
-                      >
-                        <span className='text-sm font-medium'>{index + 1}</span>
+                      <KeepScale>
+                        <div className='group relative'>
+                          {/* Hotspot Marker */}
+                          <button
+                            className='relative flex h-8 w-8 items-center justify-center rounded-full bg-blue-500 text-white shadow-lg transition-all hover:scale-110 hover:bg-blue-600 focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:outline-none'
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              editHotSpot(hotSpot, index);
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                editHotSpot(hotSpot, index);
+                              }
+                            }}
+                            aria-label={`Edit hotspot ${index + 1}`}
+                            title={`Edit hotspot ${index + 1}`}
+                          >
+                            <span className='text-sm font-medium'>{index + 1}</span>
 
-                        {/* Delete Button (appears on hover) */}
-                        <button
-                          className='absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-red-600'
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            deleteHotSpot(index);
-                          }}
-                          title='Delete hotspot'
-                        >
-                          <X className='h-3 w-3' />
-                        </button>
-                      </div>
+                            {/* Delete Button (appears on hover) */}
+                            <button
+                              className='absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-red-600 focus:opacity-100 focus:ring-2 focus:ring-red-400 focus:ring-offset-1 focus:outline-none'
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                deleteHotSpot(index);
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  deleteHotSpot(index);
+                                }
+                              }}
+                              aria-label={`Delete hotspot ${index + 1}`}
+                              title={`Delete hotspot ${index + 1}`}
+                            >
+                              <X className='h-3 w-3' />
+                            </button>
+                          </button>
 
-                      {/* Pulse Animation */}
-                      <div className='absolute inset-0 animate-ping rounded-full bg-blue-500 opacity-30' />
+                          {/* Pulse Animation */}
+                          <div className='pointer-events-none absolute inset-0 animate-ping rounded-full bg-blue-500 opacity-30' />
+                        </div>
+                      </KeepScale>
                     </div>
                   ))}
                 </TransformComponent>
