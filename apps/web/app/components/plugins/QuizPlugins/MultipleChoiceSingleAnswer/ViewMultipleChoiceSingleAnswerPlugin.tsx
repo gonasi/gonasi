@@ -88,7 +88,6 @@ export function ViewMultipleChoiceSingleAnswerPlugin({
 
   // Use the most recent data (payload takes precedence over initial DB data)
   const currentInteractionData = parsedPayloadData || initialInteractionData;
-  const correctChoiceId = choices.find((choice) => choice.isCorrect)?.id ?? '';
 
   const {
     state,
@@ -102,7 +101,7 @@ export function ViewMultipleChoiceSingleAnswerPlugin({
     score,
     reset,
     attemptsCount,
-  } = useMultipleChoiceSingleAnswerInteraction(currentInteractionData, correctChoiceId);
+  } = useMultipleChoiceSingleAnswerInteraction(currentInteractionData, choices);
 
   // Prepare answer options (shuffle if randomization is enabled)
   const answerOptions = useMemo(() => {

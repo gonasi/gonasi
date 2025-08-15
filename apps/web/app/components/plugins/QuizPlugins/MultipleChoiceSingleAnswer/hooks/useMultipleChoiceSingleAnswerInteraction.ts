@@ -4,6 +4,7 @@ import {
   MultipleChoiceSingleAnswerInteractionSchema,
   type MultipleChoiceSingleAnswerInteractionSchemaTypes,
 } from '@gonasi/schemas/plugins';
+import type { ChoiceSchemaTypes } from '@gonasi/schemas/plugins/schemas/choiceSchema';
 
 import { calculateMultipleChoiceSingleAnswerScore } from '../utils';
 
@@ -14,8 +15,10 @@ const getTimestamp = () => Date.now();
 
 export function useMultipleChoiceSingleAnswerInteraction(
   initial: MultipleChoiceSingleAnswerInteractionSchemaTypes | null,
-  correctChoiceId: string,
+  choices: ChoiceSchemaTypes[],
 ) {
+  const correctChoiceId = choices.find((choice) => choice.isCorrect)?.id ?? '';
+
   // Fallback state used if `initial` is null
   const defaultState: MultipleChoiceSingleAnswerInteractionSchemaTypes = schema.parse({
     plugin_type: 'multiple_choice_single',
@@ -50,9 +53,9 @@ export function useMultipleChoiceSingleAnswerInteraction(
     return calculateMultipleChoiceSingleAnswerScore({
       correctAnswerRevealed: state.hasRevealedCorrectAnswer,
       wrongAttemptsCount: state.wrongAttempts.length,
-      numberOfOptions: 2, // Multiple choice single answer typically has 2 options
+      numberOfOptions: choices.length,
     });
-  }, [state.hasRevealedCorrectAnswer, state.wrongAttempts.length]);
+  }, [choices.length, state.hasRevealedCorrectAnswer, state.wrongAttempts.length]);
 
   /**
    * Allows the user to select or toggle an option.
