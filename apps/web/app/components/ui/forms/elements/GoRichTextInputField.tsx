@@ -1,4 +1,6 @@
+import { useRef, useState } from 'react';
 import { Controller, get } from 'react-hook-form';
+import debounce from 'lodash.debounce';
 import { useRemixFormContext } from 'remix-hook-form';
 
 import { Label, type LabelProps } from '../../label';
@@ -25,7 +27,17 @@ export function GoRichTextInputField({
     control,
     formState: { errors },
     setValue,
+    trigger,
   } = useRemixFormContext();
+
+  const [hasBlurred, setHasBlurred] = useState(false);
+
+  // Debounced validator — triggers after 500ms of no changes
+  const debouncedTrigger = useRef(
+    debounce((fieldName: string) => {
+      trigger(fieldName);
+    }, 500),
+  ).current;
 
   const id = name;
   const descriptionId = `${id}-description`;
@@ -41,24 +53,38 @@ export function GoRichTextInputField({
         <div className={className}>
           <Label htmlFor={id} error={hasError} {...labelProps} />
 
-          <GoEditor
-            editorState={field.value}
-            setEditorState={(value) => {
-              // This is debounced - use for final state persistence
-              field.onChange(value);
+          {/* Wrapper div to catch blur */}
+          <div
+            onBlur={() => {
+              if (!hasBlurred) {
+                setHasBlurred(true);
+                trigger(name); // validate immediately on first blur
+              }
             }}
-            onImmediateChange={(value) => {
-              // This fires immediately on any change - use for form state
-              setValue(name, value, {
-                shouldDirty: true,
-                shouldValidate: false, // Don't validate immediately to avoid performance issues
-                shouldTouch: true,
-              });
-            }}
-            loading={false}
-            placeholder={placeholder}
-            hasError={hasError}
-          />
+          >
+            <GoEditor
+              editorState={field.value}
+              setEditorState={(value) => {
+                field.onChange(value);
+              }}
+              onImmediateChange={(value) => {
+                // Always update form state
+                setValue(name, value, {
+                  shouldDirty: true,
+                  shouldValidate: false,
+                  shouldTouch: true,
+                });
+
+                if (hasBlurred) {
+                  // Only run live validation after first blur
+                  debouncedTrigger(name);
+                }
+              }}
+              loading={false}
+              placeholder={placeholder}
+              hasError={hasError}
+            />
+          </div>
 
           <div className='min-h-[32px] pt-1 pb-3'>
             {hasError && errorMessage && <ErrorDisplay error={errorMessage} />}

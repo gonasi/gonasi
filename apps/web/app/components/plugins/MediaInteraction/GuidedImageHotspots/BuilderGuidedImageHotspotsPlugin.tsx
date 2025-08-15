@@ -61,7 +61,7 @@ export function BuilderGuidedImageHotspotsPlugin({ block }: BuilderGuidedImageHo
   const backRoute = `${lessonPath}/plugins/${pluginGroupId}`;
 
   const methods = useRemixForm<GuidedImageHotspotSchemaTypes>({
-    mode: 'onBlur',
+    mode: 'all',
     resolver,
     defaultValues: block
       ? {
@@ -103,10 +103,14 @@ export function BuilderGuidedImageHotspotsPlugin({ block }: BuilderGuidedImageHo
   const watchPlaybackMode = methods.watch('settings.playbackMode');
   const watchImageSelection = methods.watch('content.image_id');
   const getImageId = methods.getValues('content.image_id');
+  const getHotspots = methods.getValues('content.hotspots');
+
+  console.log('getHotspots: ', getHotspots);
+  console.log('errors: ', methods.formState.errors);
 
   return (
     <Modal open>
-      <Modal.Content size='lg'>
+      <Modal.Content size='full'>
         <RemixFormProvider {...methods}>
           <form onSubmit={methods.handleSubmit} method='POST' action={actionUrl}>
             <Modal.Header

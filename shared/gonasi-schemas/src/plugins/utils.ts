@@ -41,11 +41,9 @@ export const NonEmptyLexicalState = z.string({ required_error: 'Please add some 
       if (!result.success) return false;
 
       const children = result.data.root.children;
-      // Consider the state empty if all child nodes are empty paragraphs
-      return children.some((child) => {
-        const isEmptyParagraph = child.type === 'paragraph' && child.children.length === 0;
-        return !isEmptyParagraph;
-      });
+
+      // Non-empty if at least one child is not an empty paragraph
+      return children.some((child) => !(child.type === 'paragraph' && child.children.length === 0));
     } catch {
       return false;
     }

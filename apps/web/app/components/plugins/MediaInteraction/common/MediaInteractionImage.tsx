@@ -18,6 +18,7 @@ import { Button } from '~/components/ui/button';
 import { GoRichTextInputField } from '~/components/ui/forms/elements';
 import { Modal } from '~/components/ui/modal';
 import { IconTooltipButton } from '~/components/ui/tooltip';
+import { cn } from '~/lib/utils';
 import type { loader } from '~/routes/api/get-signed-url';
 import { useStore } from '~/store';
 
@@ -34,7 +35,7 @@ export default function MediaInteractionImage({ imageId, name }: MediaInteractio
     watch,
   } = useRemixFormContext();
 
-  const { append, remove, update } = useFieldArray({
+  const { append, remove } = useFieldArray({
     control,
     name,
   });
@@ -55,7 +56,6 @@ export default function MediaInteractionImage({ imageId, name }: MediaInteractio
   const [currentHotSpot, setCurrentHotSpot] = useState<{
     hotSpot: GuidedImageHotspotTypes;
     index: number;
-    isNew: boolean;
   } | null>(null);
 
   const transformRef = useRef<ReactZoomPanPinchRef>(null);
@@ -121,7 +121,6 @@ export default function MediaInteractionImage({ imageId, name }: MediaInteractio
     setCurrentHotSpot({
       hotSpot: newHotSpot as GuidedImageHotspotTypes,
       index: newIndex,
-      isNew: true,
     });
     setIsModalOpen(true);
   };
@@ -147,7 +146,7 @@ export default function MediaInteractionImage({ imageId, name }: MediaInteractio
       name={name}
       control={control}
       render={() => (
-        <div className='mx-auto max-w-lg'>
+        <div className='mx-auto max-w-sm md:max-w-lg'>
           <TransformWrapper
             ref={transformRef}
             onPanningStart={handlePanningStart}
@@ -156,7 +155,7 @@ export default function MediaInteractionImage({ imageId, name }: MediaInteractio
           >
             {({ zoomIn, zoomOut, resetTransform }) => (
               <>
-                <div className='fixed top-26 z-10 mt-1 flex space-x-1 rounded-md'>
+                <div className='fixed top-1/3 left-4 z-10 mt-1 flex flex-col space-y-1 rounded-md'>
                   <IconTooltipButton
                     onClick={() => zoomIn()}
                     title='Zoom in closer'
@@ -182,13 +181,13 @@ export default function MediaInteractionImage({ imageId, name }: MediaInteractio
                     tabIndex: 0,
                     onClick: handleClick,
                   }}
-                  wrapperClass={isPanning ? 'cursor-grabbing' : 'cursor-default'}
+                  wrapperClass={cn('shadow', isPanning ? 'cursor-grabbing' : 'cursor-default')}
                 >
                   <Image
                     src={fileData.signed_url}
                     layout='constrained'
                     width={800}
-                    height={800}
+                    height={200}
                     alt=''
                     className='h-auto w-full'
                   />
@@ -199,10 +198,11 @@ export default function MediaInteractionImage({ imageId, name }: MediaInteractio
           {/* Choice Editor Modal */}
           <Modal open={isModalOpen} onOpenChange={closeModal}>
             <Modal.Content size='sm' className=''>
-              <Modal.Header title={`${currentHotSpot?.isNew ? 'Create' : 'Edit'} Hot Spot`} />
+              <Modal.Header title='Create Hot Spot' />
               <Modal.Body>
                 {currentHotSpot && (
                   <div className='space-y-4'>
+                    <p>{`${name}.${currentHotSpot.index}.message`}</p>
                     <GoRichTextInputField
                       name={`${name}.${currentHotSpot.index}.message`}
                       labelProps={{ children: 'Choice', required: true }}
@@ -214,8 +214,8 @@ export default function MediaInteractionImage({ imageId, name }: MediaInteractio
                       <Button type='button' onClick={closeModal} variant='ghost'>
                         Cancel
                       </Button>
-                      <Button type='button' onClick={closeModal} variant='secondary'>
-                        {currentHotSpot.isNew ? 'Create Choice' : 'Save Changes'}
+                      <Button type='submit' onClick={closeModal} variant='secondary'>
+                        Create Hotspot
                       </Button>
                     </div>
                   </div>

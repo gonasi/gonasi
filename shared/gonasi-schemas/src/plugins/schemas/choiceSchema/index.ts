@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { NonEmptyLexicalState } from '../../utils';
+
 //
 // Base Choice Schema
 //
@@ -18,10 +20,7 @@ export type BaseChoiceSchemaTypes = z.infer<typeof BaseChoiceSchema>;
 // Text Choice Schema
 //
 export const ChoiceSchema = BaseChoiceSchema.extend({
-  content: z.string({
-    required_error: `Add <span class="go-title">content</span> for this text choice.`,
-    invalid_type_error: `<span class="go-title">Content</span> must be a string <lucide name="Text" size="12" />.`,
-  }),
+  content: NonEmptyLexicalState,
 });
 export type ChoiceSchemaTypes = z.infer<typeof ChoiceSchema>;
 

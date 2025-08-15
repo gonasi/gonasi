@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { BasePluginSettingsSchema } from '../../pluginSettings';
+import { NonEmptyLexicalState } from '../../utils';
 
 //
 // Hotspot Schema
@@ -15,9 +16,7 @@ export const GuidedImageHotspot = z.object({
     .number({ required_error: 'Y position is required.' })
     .min(0, { message: 'Y position must be at least 0%.' })
     .max(100, { message: 'Y position cannot exceed 100%.' }),
-  message: z
-    .string({ required_error: 'Hotspot message is required.' })
-    .min(1, { message: 'Hotspot message cannot be empty.' }),
+  message: NonEmptyLexicalState,
   scale: z
     .number({ required_error: 'Zoom level is required.' })
     .min(0.1, { message: 'Zoom level must be at least 0.1x.' })

@@ -152,13 +152,9 @@ export function GoChoiceField({
             <RichTextRenderer editorState={choice.content} />
           </div>
         </div>
-
-        {/* Display other field errors */}
-        <ErrorMessage
-          errors={errors}
-          name={`${name}.${index}`}
-          render={({ message }) => <p>{message}</p>}
-        />
+        <p className='text-danger font-secondary text-xs'>
+          <ErrorMessage errors={errors} name={`${name}.${index}.content`} />
+        </p>
       </div>
     );
   };
