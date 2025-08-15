@@ -104,17 +104,22 @@ export default function MediaInteractionImage({ imageId, name }: MediaInteractio
   const addHotSpot = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!transformRef.current) return;
 
-    const { scale } = transformRef.current.instance.transformState;
+    const { scale, positionX, positionY } = transformRef.current.instance.transformState;
 
     const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const clickX = e.clientX - rect.left;
+    const clickY = e.clientY - rect.top;
+
+    // Convert click coordinates to original image coordinates
+    // Account for both zoom (scale) and pan (position) transformations
+    const originalX = (clickX - positionX) / scale;
+    const originalY = (clickY - positionY) / scale;
 
     const newHotSpot: GuidedImageHotspotTypes = {
       id: uuidv4(),
-      x,
-      y,
-      scale,
+      x: originalX,
+      y: originalY,
+      scale: 1, // Store at scale 1 since we're now using original coordinates
       message: EMPTY_LEXICAL_STATE,
     };
 
@@ -234,7 +239,7 @@ export default function MediaInteractionImage({ imageId, name }: MediaInteractio
                         <div className='group relative'>
                           {/* Hotspot Marker */}
                           <button
-                            className='relative flex h-8 w-8 items-center justify-center rounded-full bg-blue-500 text-white shadow-lg transition-all hover:scale-110 hover:bg-blue-600 focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:outline-none'
+                            className='bg-secondary text-secondary-foreground hover:bg-secondary/90 relative flex h-8 w-8 items-center justify-center rounded-full shadow-lg transition-all hover:scale-110 focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:outline-none'
                             onClick={(e) => {
                               e.stopPropagation();
                               editHotSpot(hotSpot, index);
@@ -253,7 +258,7 @@ export default function MediaInteractionImage({ imageId, name }: MediaInteractio
 
                             {/* Delete Button (appears on hover) */}
                             <button
-                              className='absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-red-600 focus:opacity-100 focus:ring-2 focus:ring-red-400 focus:ring-offset-1 focus:outline-none'
+                              className='text-secondary-foreground bg-danger hover:bg-danger/80 focus:ring-danger/90 absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100 focus:ring-2 focus:ring-offset-1 focus:outline-none'
                               onClick={(e) => {
                                 e.stopPropagation();
                                 deleteHotSpot(index);
@@ -273,7 +278,7 @@ export default function MediaInteractionImage({ imageId, name }: MediaInteractio
                           </button>
 
                           {/* Pulse Animation */}
-                          <div className='pointer-events-none absolute inset-0 animate-ping rounded-full bg-blue-500 opacity-30' />
+                          <div className='bg-secondary pointer-events-none absolute inset-0 animate-ping rounded-full opacity-30' />
                         </div>
                       </KeepScale>
                     </div>
