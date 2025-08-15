@@ -1,13 +1,8 @@
 import { useState } from 'react';
 import { motion, type Transition } from 'framer-motion';
-import { MoveLeft, MoveRight } from 'lucide-react';
+import { Menu, MoveLeft, MoveRight } from 'lucide-react';
 
-import type { PricingSchemaTypes } from '@gonasi/schemas/publish/course-pricing';
-
-import { PricingDisplay } from './PricingDisplay';
-import { PricingOptionCard } from './PricingOptionCard';
-
-import { Button } from '~/components/ui/button';
+import { IconTooltipButton } from '~/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '~/components/ui/sheet';
 import { cn } from '~/lib/utils';
 
@@ -33,26 +28,18 @@ export function AnimatedChevronLeft() {
     </motion.div>
   );
 }
-interface GoPricingSheetProps {
-  pricingData: PricingSchemaTypes;
-  className?: string;
+interface MediaInteractionSheetProps {
+  title: string;
   side?: 'left' | 'right' | 'top' | 'bottom';
-  variant?: 'primary' | 'default';
+  children: React.ReactNode;
 }
 
-export function GoPricingSheet({
-  pricingData,
-  className,
+export function MediaInteractionSheet({
+  title,
   side = 'right',
-  variant = 'default',
-}: GoPricingSheetProps) {
+  children,
+}: MediaInteractionSheetProps) {
   const [open, setOpen] = useState(false);
-  const defaultPricing = pricingData[0];
-
-  if (!defaultPricing) return <p>No pricing</p>;
-
-  const finalPrice = defaultPricing.promotional_price ?? defaultPricing.price;
-  const showOriginalPrice = defaultPricing.promotional_price != null;
 
   return (
     <div
@@ -81,29 +68,17 @@ export function GoPricingSheet({
         }}
       >
         <SheetTrigger asChild>
-          <Button
+          <IconTooltipButton
+            variant='default'
             type='button'
-            variant={variant === 'default' ? 'ghost' : 'default'}
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
               setOpen(true);
             }}
-            className={cn('h-14', className)}
-            rightIcon={side === 'right' ? <AnimatedChevronRight /> : undefined}
-            leftIcon={side === 'left' ? <AnimatedChevronLeft /> : undefined}
-            rightIconAtEdge
-          >
-            <PricingDisplay
-              finalPrice={finalPrice}
-              price={defaultPricing.price}
-              currency_code={defaultPricing.currency_code}
-              payment_frequency={defaultPricing.payment_frequency}
-              showOriginalPrice={showOriginalPrice}
-              size='sm'
-              variant={variant}
-            />
-          </Button>
+            title={title}
+            icon={Menu}
+          />
         </SheetTrigger>
         <SheetContent
           side={side}
@@ -112,10 +87,8 @@ export function GoPricingSheet({
         >
           <div className='p-4'>
             <div className='space-y-2'>
-              <h4 className='py-2 text-lg leading-none'>Pricing Tiers</h4>
-              {pricingData.map((pricingData) => (
-                <PricingOptionCard key={pricingData.id} pricingData={pricingData} />
-              ))}
+              <h4 className='py-2 text-lg leading-none'>{title}</h4>
+              <div>{children}</div>
             </div>
           </div>
         </SheetContent>

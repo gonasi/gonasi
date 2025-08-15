@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { Controller, get, useFieldArray } from 'react-hook-form';
 import { useFetcher } from 'react-router';
 import {
@@ -13,6 +13,8 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { EMPTY_LEXICAL_STATE, type GuidedImageHotspotTypes } from '@gonasi/schemas/plugins';
 
+import { MediaInteractionSheet } from '../../common/MediaInteractionSheet';
+
 import { Spinner } from '~/components/loaders';
 import { Button } from '~/components/ui/button';
 import { GoRichTextInputField } from '~/components/ui/forms/elements';
@@ -21,6 +23,8 @@ import { IconTooltipButton } from '~/components/ui/tooltip';
 import { cn } from '~/lib/utils';
 import type { loader } from '~/routes/api/get-signed-url';
 import { useStore } from '~/store';
+
+const LazyHotspotSheetDisplay = lazy(() => import('./HotspotSheetDisplay'));
 
 interface MediaInteractionImageProps {
   imageId: string;
@@ -132,7 +136,11 @@ export default function MediaInteractionImage({ imageId, name }: MediaInteractio
 
   // Show spinner while loading
   if (fetcher.state !== 'idle') {
-    return <Spinner />;
+    return (
+      <div className='flex min-h-100 items-center'>
+        <Spinner />
+      </div>
+    );
   }
 
   // Check if data exists and was successful
@@ -155,7 +163,12 @@ export default function MediaInteractionImage({ imageId, name }: MediaInteractio
           >
             {({ zoomIn, zoomOut, resetTransform }) => (
               <>
-                <div className='fixed top-1/3 left-4 z-10 mt-1 flex flex-col space-y-1 rounded-md'>
+                <div className='fixed top-16 left-4 z-10 mt-1 flex flex-col space-y-1 rounded-md'>
+                  <MediaInteractionSheet title='Guided Hotspots Order'>
+                    <Suspense fallback={<Spinner />}>
+                      <LazyHotspotSheetDisplay />
+                    </Suspense>
+                  </MediaInteractionSheet>
                   <IconTooltipButton
                     onClick={() => zoomIn()}
                     title='Zoom in closer'

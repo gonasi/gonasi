@@ -1,7 +1,7 @@
 import { lazy, Suspense } from 'react';
 import { useParams } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Edit, File, Plus, Save, Settings } from 'lucide-react';
+import { Edit, File, ImageOff, Plus, Save, Settings } from 'lucide-react';
 import { RemixFormProvider, useRemixForm } from 'remix-hook-form';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
 
@@ -17,7 +17,6 @@ import {
 
 import { BlockWeightField } from '../../common/settings/BlockWeightField';
 import { PlaybackModeField } from '../../common/settings/PlaybackModeField';
-import MediaInteractionImage from '../common/MediaInteractionImage';
 
 import useModal from '~/components/go-editor/hooks/useModal';
 import { Spinner } from '~/components/loaders';
@@ -31,6 +30,7 @@ import { getActionUrl } from '~/utils/get-action-url';
 import { useIsPending } from '~/utils/misc';
 
 const InsertMediaDialog = lazy(() => import('../common/InsertMediaDialog'));
+const LazyMediaInteractionImage = lazy(() => import('./components/MediaInteractionImage'));
 
 const resolver = zodResolver(GuidedImageHotspotSchema);
 
@@ -178,9 +178,16 @@ export function BuilderGuidedImageHotspotsPlugin({ block }: BuilderGuidedImageHo
                 {/* Content based on watchImageSelection */}
                 <div className='border-border/20 min-h-20 w-full border'>
                   {watchImageSelection ? (
-                    <MediaInteractionImage imageId={getImageId} name='content.hotspots' />
+                    <Suspense fallback={<Spinner />}>
+                      <LazyMediaInteractionImage imageId={getImageId} name='content.hotspots' />
+                    </Suspense>
                   ) : (
-                    <div>No image</div>
+                    <div className='max-w-ms mx-auto flex min-h-100 items-center justify-center md:max-w-lg'>
+                      <div className='text-muted-foreground flex flex-col items-center'>
+                        <ImageOff size={40} />
+                        <p className='font-secondary py-2 text-xs'>No image</p>
+                      </div>
+                    </div>
                   )}
                 </div>
               </div>
