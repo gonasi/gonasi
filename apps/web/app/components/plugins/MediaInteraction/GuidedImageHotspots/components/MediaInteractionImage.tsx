@@ -8,7 +8,7 @@ import {
   TransformWrapper,
 } from 'react-zoom-pan-pinch';
 import { Image } from '@unpic/react';
-import { RefreshCcw, X, ZoomIn, ZoomOut } from 'lucide-react';
+import { RefreshCcw, Trash, ZoomIn, ZoomOut } from 'lucide-react';
 import { useRemixFormContext } from 'remix-hook-form';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -19,7 +19,7 @@ import { MediaInteractionSheet } from '../../common/MediaInteractionSheet';
 import { Spinner } from '~/components/loaders';
 import { Button } from '~/components/ui/button';
 import { GoRichTextInputField } from '~/components/ui/forms/elements';
-import { Modal } from '~/components/ui/modal';
+import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover';
 import { IconTooltipButton } from '~/components/ui/tooltip';
 import { cn } from '~/lib/utils';
 import type { loader } from '~/routes/api/get-signed-url';
@@ -32,15 +32,25 @@ interface MediaInteractionImageProps {
   name: string;
 }
 
+interface DragState {
+  isDragging: boolean;
+  hotspotIndex: number;
+  startX: number;
+  startY: number;
+  initialHotspotX: number;
+  initialHotspotY: number;
+}
+
 export default function MediaInteractionImage({ imageId, name }: MediaInteractionImageProps) {
   const fetcher = useFetcher<typeof loader>();
   const {
     control,
     formState: { errors },
     watch,
+    setValue,
   } = useRemixFormContext();
 
-  const { append, remove } = useFieldArray({
+  const { append, remove, update } = useFieldArray({
     control,
     name,
   });
@@ -56,8 +66,8 @@ export default function MediaInteractionImage({ imageId, name }: MediaInteractio
 
   const hotSpots = (watch(name) as GuidedImageHotspotTypes[]) || [];
 
-  // Modal state
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  // Popover state
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const [currentHotSpot, setCurrentHotSpot] = useState<{
     hotSpot: GuidedImageHotspotTypes;
     index: number;
@@ -70,6 +80,9 @@ export default function MediaInteractionImage({ imageId, name }: MediaInteractio
   // Track panning state for cursor styling
   const [isPanning, setIsPanning] = useState(false);
 
+  // Drag state
+  const [dragState, setDragState] = useState<DragState | null>(null);
+
   const id = name;
   const descriptionId = `${id}-description`;
   const error = get(errors, name);
@@ -77,8 +90,8 @@ export default function MediaInteractionImage({ imageId, name }: MediaInteractio
   const errorMessage = error?.message?.toString() || 'This field has an error';
 
   const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    // Only add hotspot if user didn't actually pan
-    if (!hasPannedRef.current) {
+    // Only add hotspot if user didn't actually pan and isn't dragging
+    if (!hasPannedRef.current && !dragState?.isDragging) {
       addHotSpot(e);
     }
     // Reset the flag for next interaction
@@ -86,18 +99,15 @@ export default function MediaInteractionImage({ imageId, name }: MediaInteractio
   };
 
   const handlePanningStart = () => {
-    // Don't set flag here - wait for actual panning
     hasPannedRef.current = false;
     setIsPanning(true);
   };
 
   const handlePanning = () => {
-    // This fires when actual panning movement occurs
     hasPannedRef.current = true;
   };
 
   const handlePanningStop = () => {
-    // Keep the flag set until after the potential click event
     setIsPanning(false);
   };
 
@@ -111,7 +121,6 @@ export default function MediaInteractionImage({ imageId, name }: MediaInteractio
     const clickY = e.clientY - rect.top;
 
     // Convert click coordinates to original image coordinates
-    // Account for both zoom (scale) and pan (position) transformations
     const originalX = (clickX - positionX) / scale;
     const originalY = (clickY - positionY) / scale;
 
@@ -119,35 +128,132 @@ export default function MediaInteractionImage({ imageId, name }: MediaInteractio
       id: uuidv4(),
       x: originalX,
       y: originalY,
-      scale: 1, // Store at scale 1 since we're now using original coordinates
+      scale: 1, // Always store in original image coordinates
       message: EMPTY_LEXICAL_STATE,
     };
 
-    // Add the choice first
     append(newHotSpot);
 
-    // Open modal with the new choice data
-    const newIndex = hotSpots.length; // This will be the index after append
+    // Open popover with the new choice data
+    const newIndex = hotSpots.length; // will be index after append
     setCurrentHotSpot({
-      hotSpot: newHotSpot as GuidedImageHotspotTypes,
+      hotSpot: newHotSpot,
       index: newIndex,
     });
-    setIsModalOpen(true);
+    setIsPopoverOpen(true);
   };
 
   const editHotSpot = (hotSpot: GuidedImageHotspotTypes, index: number) => {
     setCurrentHotSpot({ hotSpot, index });
-    setIsModalOpen(true);
+    setIsPopoverOpen(true);
   };
 
   const deleteHotSpot = (index: number) => {
     remove(index);
+
+    // ✅ FIX: adjust currentHotSpot index after deletion to keep numbering in sync
+    if (currentHotSpot) {
+      if (currentHotSpot.index === index) {
+        // deleted the one currently being edited → close popover
+        setIsPopoverOpen(false);
+        setCurrentHotSpot(null);
+      } else if (currentHotSpot.index > index) {
+        // shift index down if it was after the deleted one
+        setCurrentHotSpot({
+          ...currentHotSpot,
+          index: currentHotSpot.index - 1,
+        });
+      }
+    }
   };
 
-  const closeModal = () => {
-    setIsModalOpen(false);
+  const closePopover = () => {
+    setIsPopoverOpen(false);
     setCurrentHotSpot(null);
   };
+
+  const handleZoomIn = () => {
+    transformRef.current?.zoomIn();
+  };
+
+  const handleZoomOut = () => {
+    transformRef.current?.zoomOut();
+  };
+
+  // Drag handlers
+  const handleHotspotMouseDown = (e: React.MouseEvent, hotspotIndex: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!transformRef.current) return;
+
+    const currentHotspot = hotSpots[hotspotIndex];
+    if (!currentHotspot) return;
+
+    const { scale } = transformRef.current.instance.transformState;
+
+    setDragState({
+      isDragging: true,
+      hotspotIndex,
+      startX: e.clientX,
+      startY: e.clientY,
+      initialHotspotX: currentHotspot.x,
+      initialHotspotY: currentHotspot.y,
+    });
+
+    // Temporarily disable zoom/pan while dragging
+    transformRef.current.instance.setup.disabled = true;
+  };
+
+  const handleMouseMove = (e: MouseEvent) => {
+    if (!dragState?.isDragging || !transformRef.current) return;
+
+    e.preventDefault();
+    const { scale } = transformRef.current.instance.transformState;
+
+    const deltaX = (e.clientX - dragState.startX) / scale;
+    const deltaY = (e.clientY - dragState.startY) / scale;
+
+    const newX = dragState.initialHotspotX + deltaX;
+    const newY = dragState.initialHotspotY + deltaY;
+
+    const currentHotspot = hotSpots[dragState.hotspotIndex];
+    if (currentHotspot) {
+      update(dragState.hotspotIndex, {
+        ...currentHotspot,
+        x: newX,
+        y: newY,
+      });
+    }
+  };
+
+  const handleMouseUp = () => {
+    if (dragState?.isDragging) {
+      transformRef.current!.instance.setup.disabled = false;
+      setDragState(null);
+    }
+  };
+
+  // Add global mouse listeners for dragging
+  useEffect(() => {
+    if (dragState?.isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+    return undefined;
+  }, [dragState]);
+
+  // Reset drag state if hotspots array shrinks
+  useEffect(() => {
+    if (dragState && dragState.hotspotIndex >= hotSpots.length) {
+      setDragState(null);
+    }
+  }, [hotSpots.length, dragState]);
 
   // Show spinner while loading
   if (fetcher.state !== 'idle') {
@@ -158,10 +264,9 @@ export default function MediaInteractionImage({ imageId, name }: MediaInteractio
     );
   }
 
-  // Check if data exists and was successful
   const fileData = fetcher.data?.success && fetcher.data.data ? fetcher.data.data : null;
   if (!fileData) {
-    return null; // or render an error state
+    return null; // or error state
   }
 
   return (
@@ -178,6 +283,7 @@ export default function MediaInteractionImage({ imageId, name }: MediaInteractio
           >
             {({ zoomIn, zoomOut, resetTransform }) => (
               <>
+                {/* Controls */}
                 <div className='fixed top-16 left-4 z-10 mt-1 flex flex-col space-y-1 rounded-md'>
                   <MediaInteractionSheet title='Guided Hotspots Order'>
                     <Suspense fallback={<Spinner />}>
@@ -203,16 +309,21 @@ export default function MediaInteractionImage({ imageId, name }: MediaInteractio
                     variant='secondary'
                   />
                 </div>
+
                 <TransformComponent
-                  wrapperProps={{
-                    role: 'button',
-                    tabIndex: 0,
-                    onClick: handleClick,
-                  }}
-                  wrapperClass={cn('shadow', isPanning ? 'cursor-grabbing' : 'cursor-default')}
-                  wrapperStyle={{
-                    position: 'relative',
-                  }}
+                  wrapperProps={
+                    {
+                      role: 'button',
+                      tabIndex: 0,
+                      onClick: handleClick,
+                    } as any
+                  }
+                  wrapperClass={cn(
+                    'shadow',
+                    isPanning ? 'cursor-grabbing' : 'cursor-default',
+                    dragState?.isDragging ? 'cursor-grabbing' : '',
+                  )}
+                  wrapperStyle={{ position: 'relative' }}
                 >
                   <Image
                     src={fileData.signed_url}
@@ -223,7 +334,7 @@ export default function MediaInteractionImage({ imageId, name }: MediaInteractio
                     className='h-auto w-full'
                   />
 
-                  {/* Render Hotspots */}
+                  {/* Hotspots */}
                   {hotSpots.map((hotSpot, index) => (
                     <div
                       key={hotSpot.id}
@@ -236,50 +347,123 @@ export default function MediaInteractionImage({ imageId, name }: MediaInteractio
                       }}
                     >
                       <KeepScale>
-                        <div className='group relative'>
-                          {/* Hotspot Marker */}
-                          <button
-                            className='bg-secondary text-secondary-foreground hover:bg-secondary/90 relative flex h-8 w-8 items-center justify-center rounded-full shadow-lg transition-all hover:scale-110 focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:outline-none'
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              editHotSpot(hotSpot, index);
-                            }}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter' || e.key === ' ') {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                editHotSpot(hotSpot, index);
-                              }
-                            }}
-                            aria-label={`Edit hotspot ${index + 1}`}
-                            title={`Edit hotspot ${index + 1}`}
-                          >
-                            <span className='text-sm font-medium'>{index + 1}</span>
-
-                            {/* Delete Button (appears on hover) */}
-                            <button
-                              className='text-secondary-foreground bg-danger hover:bg-danger/80 focus:ring-danger/90 absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100 focus:ring-2 focus:ring-offset-1 focus:outline-none'
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                deleteHotSpot(index);
-                              }}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter' || e.key === ' ') {
-                                  e.preventDefault();
+                        <Popover
+                          open={isPopoverOpen && currentHotSpot?.index === index}
+                          onOpenChange={(open) => {
+                            if (!open) closePopover();
+                          }}
+                        >
+                          <PopoverTrigger asChild>
+                            <div className='group relative'>
+                              {/* Marker */}
+                              <button
+                                className={cn(
+                                  'bg-secondary text-secondary-foreground hover:bg-secondary/90 relative flex h-8 w-8 items-center justify-center rounded-full shadow-lg transition-all hover:scale-110 focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:outline-none',
+                                  dragState?.isDragging && dragState.hotspotIndex === index
+                                    ? 'scale-110 cursor-grabbing'
+                                    : 'cursor-grab',
+                                )}
+                                onMouseDown={(e) => handleHotspotMouseDown(e, index)}
+                                onClick={(e) => {
                                   e.stopPropagation();
-                                  deleteHotSpot(index);
-                                }
-                              }}
-                              aria-label={`Delete hotspot ${index + 1}`}
-                              title={`Delete hotspot ${index + 1}`}
-                            >
-                              <X className='h-3 w-3' />
-                            </button>
-                          </button>
+                                  if (!dragState?.isDragging) editHotSpot(hotSpot, index);
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' || e.key === ' ') {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    editHotSpot(hotSpot, index);
+                                  }
+                                }}
+                                aria-label={`Hotspot ${index + 1} - Click to edit, drag to move`}
+                                title={`Hotspot ${index + 1} - Click to edit, drag to move`}
+                              >
+                                {/* ✅ numbering always follows array index */}
+                                <span className='text-sm font-medium'>{index + 1}</span>
+                              </button>
 
-                          {/* Pulse Animation */}
-                          <div className='bg-secondary pointer-events-none absolute inset-0 animate-ping rounded-full opacity-30' />
-                        </div>
+                              {/* Ping animation (disabled while dragging) */}
+                              {!(dragState?.isDragging && dragState.hotspotIndex === index) && (
+                                <div className='bg-secondary pointer-events-none absolute inset-0 animate-ping rounded-full opacity-30' />
+                              )}
+                            </div>
+                          </PopoverTrigger>
+
+                          <PopoverContent className='w-80 p-4 md:w-100' side='top' align='center'>
+                            {currentHotSpot && currentHotSpot.index === index && (
+                              <div className='space-y-4'>
+                                <div className='flex items-center justify-between'>
+                                  <h3 className='text-sm font-medium'>
+                                    Edit Hotspot #{currentHotSpot.index + 1}
+                                  </h3>
+                                  <div className='flex items-center'>
+                                    <IconTooltipButton
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleZoomIn();
+                                      }}
+                                      title='Zoom in'
+                                      icon={ZoomIn}
+                                      variant='ghost'
+                                      size='sm'
+                                    />
+                                    <IconTooltipButton
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleZoomOut();
+                                      }}
+                                      title='Zoom out'
+                                      icon={ZoomOut}
+                                      variant='ghost'
+                                      size='sm'
+                                    />
+                                    <IconTooltipButton
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        deleteHotSpot(currentHotSpot.index);
+                                      }}
+                                      title='Delete hotspot'
+                                      icon={Trash}
+                                      variant='ghost'
+                                      size='sm'
+                                    />
+                                  </div>
+                                </div>
+
+                                <GoRichTextInputField
+                                  name={`${name}.${currentHotSpot.index}.message`}
+                                  labelProps={{ children: 'Message', required: true }}
+                                  placeholder='Enter hotspot message...'
+                                />
+
+                                <div className='flex justify-end gap-2 border-t pt-4'>
+                                  <Button
+                                    type='button'
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      closePopover();
+                                    }}
+                                    variant='ghost'
+                                    size='sm'
+                                  >
+                                    Cancel
+                                  </Button>
+                                  <Button
+                                    type='button'
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      closePopover();
+                                    }}
+                                    variant='secondary'
+                                    size='sm'
+                                  >
+                                    Save Hotspot
+                                  </Button>
+                                </div>
+                              </div>
+                            )}
+                          </PopoverContent>
+                        </Popover>
                       </KeepScale>
                     </div>
                   ))}
@@ -287,35 +471,6 @@ export default function MediaInteractionImage({ imageId, name }: MediaInteractio
               </>
             )}
           </TransformWrapper>
-
-          {/* Choice Editor Modal */}
-          <Modal open={isModalOpen} onOpenChange={closeModal}>
-            <Modal.Content size='sm' className=''>
-              <Modal.Header title={currentHotSpot ? 'Edit Hot Spot' : 'Create Hot Spot'} />
-              <Modal.Body>
-                {currentHotSpot && (
-                  <div className='space-y-4'>
-                    <p className='text-sm text-gray-600'>{`${name}.${currentHotSpot.index}.message`}</p>
-                    <GoRichTextInputField
-                      name={`${name}.${currentHotSpot.index}.message`}
-                      labelProps={{ children: 'Message', required: true }}
-                      placeholder='Enter hotspot message...'
-                    />
-
-                    {/* Action Buttons */}
-                    <div className='flex justify-end gap-2 border-t pt-4'>
-                      <Button type='button' onClick={closeModal} variant='ghost'>
-                        Cancel
-                      </Button>
-                      <Button type='button' onClick={closeModal} variant='secondary'>
-                        Save Hotspot
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </Modal.Body>
-            </Modal.Content>
-          </Modal>
         </div>
       )}
     />
