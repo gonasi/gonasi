@@ -34,7 +34,7 @@ export default function Home() {
   return (
     <div>
       <div className='container mx-auto pt-10 pb-16 md:pt-16 md:pb-24'>
-        <div className='mx-auto max-w-3xl text-center'>
+        <div className='mx-auto max-w-3xl px-4 text-center md:px-0'>
           <h1 className='font-display animate-enter text-4xl leading-tight md:text-6xl'>
             Gonasi, Learn Smarter. Teach Better. Together.
           </h1>
