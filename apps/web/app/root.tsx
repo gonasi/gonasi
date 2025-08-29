@@ -24,6 +24,7 @@ import type { UserRole } from '@gonasi/database/client';
 import { getUserProfile } from '@gonasi/database/profile';
 
 import type { Route } from './+types/root';
+import { DevelopmentBanner } from './components/development-banner';
 import { NavigationProgressBar } from './components/progress-bar';
 import { useStore } from './store';
 import './app.css';
@@ -176,6 +177,7 @@ function App() {
   return (
     <main className='relative'>
       <NavigationProgressBar />
+      <DevelopmentBanner />
       <Outlet />
       <Toaster
         position='top-right'
