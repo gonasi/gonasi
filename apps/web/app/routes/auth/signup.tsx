@@ -15,6 +15,7 @@ import { GoLink } from '~/components/go-link';
 import { AuthFormLayout } from '~/components/layouts/auth';
 import { Button } from '~/components/ui/button';
 import { GoInputField } from '~/components/ui/forms/elements';
+import { PasswordStrengthIndicator } from '~/components/ui/password-strength-indicator';
 import { createClient } from '~/lib/supabase/supabase.server';
 import { checkHoneypot } from '~/utils/honeypot.server';
 import { useIsPending } from '~/utils/misc';
@@ -50,7 +51,7 @@ export async function action({ request }: Route.ActionArgs) {
     return dataWithError(
       null,
       error.message ||
-        'We couldn’t create your account. Please try again or use a different email.',
+        `We couldn't create your account. Please try again or use a different email.`,
     );
   }
 
@@ -73,6 +74,7 @@ export default function SignUp() {
   });
 
   const isDisabled = isPending || methods.formState.isSubmitting;
+  const passwordValue = methods.watch('password') || '';
 
   return (
     <AuthFormLayout
@@ -110,20 +112,25 @@ export default function SignUp() {
               autoComplete: 'email',
               disabled: isDisabled,
             }}
-            description='We’ll use this to keep in touch'
+            description="We'll use this to keep in touch"
           />
 
-          {/* Password input field */}
-          <GoInputField
-            labelProps={{ children: 'Choose a Password', required: true }}
-            name='password'
-            inputProps={{
-              type: 'password',
-              autoComplete: 'current-password',
-              disabled: isDisabled,
-            }}
-            description='Make it something secure (but memorable!)'
-          />
+          {/* Password input field with strength indicator */}
+          <div className='space-y-2'>
+            <GoInputField
+              labelProps={{ children: 'Choose a Password', required: true }}
+              name='password'
+              inputProps={{
+                type: 'password',
+                autoComplete: 'new-password',
+                disabled: isDisabled,
+              }}
+              description='Make it something secure (but memorable!)'
+            />
+
+            {/* Password strength indicator */}
+            {passwordValue && <PasswordStrengthIndicator password={passwordValue} />}
+          </div>
 
           {/* Submit button with loading state */}
           <Button
