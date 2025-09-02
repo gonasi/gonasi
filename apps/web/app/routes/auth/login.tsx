@@ -38,7 +38,7 @@ export async function action({ request }: Route.ActionArgs) {
 
   const { supabase, headers } = createClient(request);
   const { error } = await signInWithEmailAndPassword(supabase, data);
-  if (error) return dataWithError(null, 'Incorrect email or password.');
+  if (error) return dataWithError(null, error.message || 'Incorrect email or password.');
 
   return redirectDocument(safeRedirect(data.redirectTo ?? '/'), { headers });
 }
