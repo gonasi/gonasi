@@ -35,6 +35,8 @@ export async function action({ request }: Route.ActionArgs) {
 
   const { supabase, headers } = createClient(request);
   const { error } = await signUpWithEmailAndPassword(supabase, data);
+
+  console.error('Sign up error: ', error);
   if (error) return dataWithError(null, 'Incorrect email or password.');
 
   return redirectDocument(safeRedirect(data.redirectTo ?? '/'), { headers });
