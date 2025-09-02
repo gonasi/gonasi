@@ -49,7 +49,8 @@ export async function action({ request }: Route.ActionArgs) {
 
     return dataWithError(
       null,
-      'We couldn’t create your account. Please try again or use a different email.',
+      error.message ||
+        'We couldn’t create your account. Please try again or use a different email.',
     );
   }
 
