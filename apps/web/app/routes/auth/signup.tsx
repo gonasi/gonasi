@@ -1,12 +1,12 @@
-import { Form, redirectDocument, useSearchParams } from 'react-router';
+import { Form, useSearchParams } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Rocket } from 'lucide-react';
 import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
-import { dataWithError } from 'remix-toast';
+import { dataWithError, redirectWithSuccess } from 'remix-toast';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
-import { safeRedirect } from 'remix-utils/safe-redirect';
 
 import { signUpWithEmailAndPassword } from '@gonasi/database/auth';
+import { checkEmailExists } from '@gonasi/database/profile';
 import { SignupFormSchema, type SignupFormSchemaTypes } from '@gonasi/schemas/auth';
 
 import type { Route } from './+types/signup';
@@ -38,6 +38,19 @@ export async function action({ request }: Route.ActionArgs) {
   }
 
   const { supabase, headers } = createClient(request);
+
+  // 🔍 Check if the user already exists
+  const emailExists = await checkEmailExists(supabase, data.email);
+
+  if (emailExists) {
+    console.error('Supabase user check error:', emailExists);
+    return dataWithError(
+      null,
+      `An account with this email already exists. Please sign in instead.`,
+    );
+  }
+
+  // 🚀 Proceed with signup
   const { error } = await signUpWithEmailAndPassword(supabase, data);
 
   if (error) {
@@ -45,7 +58,7 @@ export async function action({ request }: Route.ActionArgs) {
       message: error.message,
       status: error.status,
       details: error,
-      email: data?.email, // okay to log since user just entered it
+      email: data?.email, // safe to log since just submitted
     });
 
     return dataWithError(
@@ -55,7 +68,11 @@ export async function action({ request }: Route.ActionArgs) {
     );
   }
 
-  return redirectDocument(safeRedirect(data.redirectTo ?? '/'), { headers });
+  return redirectWithSuccess(
+    data.redirectTo ?? '/',
+    'Your account has been created! Please check your email to verify it.',
+    { headers },
+  );
 }
 
 /**
