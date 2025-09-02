@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { EmailSchema, PasswordSchema } from '../userValidation';
+import { EmailSchema, PasswordSchema, SignUpPasswordSchema } from '../userValidation';
 
 export const LoginFormSchema = z.object({
   email: EmailSchema,
@@ -26,7 +26,7 @@ export const SignupFormSchema = z.object({
         '<span class="warning">That’s a long one</span> — keep it under 100 characters <lucide name="ScanLine" size="12" />',
     }),
   email: EmailSchema,
-  password: PasswordSchema,
+  password: SignUpPasswordSchema,
   redirectTo: z.string().optional().nullable(),
 });
 

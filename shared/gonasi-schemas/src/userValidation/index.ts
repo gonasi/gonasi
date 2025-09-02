@@ -33,6 +33,29 @@ export const PasswordSchema = z
     message: `<lucide name="Minimize" size="12" /> <span class="warning">Whoa, that’s a long one</span> — keep it under 40 characters`,
   });
 
+export const SignUpPasswordSchema = z
+  .string({
+    required_error: `<lucide name="Lock" size="12" /> We’ll need a <span class="go-title">password</span> to continue`,
+  })
+  .min(6, {
+    message: `<span class="warning">Too short!</span> Your <span class="go-title">password</span> must be at least 6 characters <lucide name="ArrowRight" size="12" />`,
+  })
+  .refine((val) => new TextEncoder().encode(val).length <= 40, {
+    message: `<lucide name="Minimize" size="12" /> <span class="warning">Whoa, that’s a long one</span> — keep your <span class="go-title">password</span> under 40 characters`,
+  })
+  .refine((val) => /[A-Z]/.test(val), {
+    message: `<lucide name="ArrowUpCircle" size="12" /> Your <span class="go-title">password</span> needs at least one uppercase letter`,
+  })
+  .refine((val) => /[a-z]/.test(val), {
+    message: `<lucide name="ArrowDownCircle" size="12" /> Your <span class="go-title">password</span> needs at least one lowercase letter`,
+  })
+  .refine((val) => /\d/.test(val), {
+    message: `<lucide name="Hash" size="12" /> Your <span class="go-title">password</span> must include a number`,
+  })
+  .refine((val) => /[!@#$%^&*(),.?":{}|<>]/.test(val), {
+    message: `<lucide name="Asterisk" size="12" /> Add a special character to your <span class="go-title">password</span>`,
+  });
+
 export const FullNameSchema = z
   .string({
     required_error: `<lucide name="User" size="12" /> We’ll need a name`,
