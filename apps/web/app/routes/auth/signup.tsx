@@ -31,13 +31,27 @@ export async function action({ request }: Route.ActionArgs) {
   await checkHoneypot(formData);
 
   const { errors, data } = await getValidatedFormData(formData, zodResolver(SignupFormSchema));
-  if (errors) return dataWithError(null, 'Something went wrong. Please try again.');
+  if (errors) {
+    console.error('Signup validation failed:', { errors });
+    return dataWithError(null, 'Invalid input. Please check the form and try again.');
+  }
 
   const { supabase, headers } = createClient(request);
   const { error } = await signUpWithEmailAndPassword(supabase, data);
 
-  console.error('Sign up error: ', error);
-  if (error) return dataWithError(null, 'Incorrect email or password.');
+  if (error) {
+    console.error('Supabase signup error:', {
+      message: error.message,
+      status: error.status,
+      details: error,
+      email: data?.email, // okay to log since user just entered it
+    });
+
+    return dataWithError(
+      null,
+      'We couldn’t create your account. Please try again or use a different email.',
+    );
+  }
 
   return redirectDocument(safeRedirect(data.redirectTo ?? '/'), { headers });
 }
