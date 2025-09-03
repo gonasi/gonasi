@@ -1,3 +1,4 @@
+import { Link } from 'react-router';
 import { Construction } from 'lucide-react';
 
 export function DevelopmentBanner() {
@@ -7,8 +8,11 @@ export function DevelopmentBanner() {
         <div className='flex items-center justify-center gap-2 text-sm'>
           <Construction className='h-4 w-4 animate-pulse' />
           <span className='font-medium'>
-            Gonasi is in <span className='underline'>active development</span>. Expect frequent
-            updates & improvements 🚀
+            Gonasi is in{' '}
+            <Link className='underline' to='/go/platform-features'>
+              active development
+            </Link>
+            . Expect frequent updates & improvements 🚀
           </span>
           <div className='h-2 w-2 animate-pulse rounded-full bg-amber-500' />
         </div>
