@@ -161,10 +161,10 @@ export default function FeaturesPage() {
     const allDone = group.items.every((f) => f.done);
 
     return (
-      <div className='border-border/80 bg-card rounded-sm border'>
+      <div className='border-border/80 bg-card rounded-sm border hover:cursor-pointer'>
         <button
           onClick={() => setOpen(!open)}
-          className='flex w-full items-center justify-between px-4 py-3 text-left'
+          className='flex w-full items-center justify-between px-4 py-3 text-left hover:cursor-pointer'
         >
           <span className='font-semibold'>{group.category}</span>
           <span
