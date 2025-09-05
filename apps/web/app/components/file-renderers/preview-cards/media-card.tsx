@@ -5,7 +5,7 @@ import { Pencil, Trash } from 'lucide-react';
 import { formatFileSize } from '../file-renderer-types';
 
 import { ActionDropdown } from '~/components/action-dropdown';
-import type { FileLoaderItemType } from '~/routes/dashboard/file-library/all-files';
+import type { FileLoaderItemType } from '~/routes/organizations/builder/course/file-library/file-library-index';
 
 interface MediaCardProps {
   file: FileLoaderItemType;

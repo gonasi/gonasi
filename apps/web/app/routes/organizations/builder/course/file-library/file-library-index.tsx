@@ -92,6 +92,7 @@ export default function AllFiles({ loaderData, params }: Route.ComponentProps) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2, duration: 0.3 }}
+            className='pb-8'
           >
             <PaginationBar totalItems={count ?? 0} itemsPerPage={12} />
           </motion.div>
