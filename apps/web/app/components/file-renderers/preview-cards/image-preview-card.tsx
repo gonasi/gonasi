@@ -18,7 +18,7 @@ export const ImagePreviewCard = ({ file }: { file: FileLoaderItemType }) => {
         src={file.signed_url}
         alt={`${file.name} thumbnail`}
         layout='constrained'
-        height={100}
+        height={300}
         aspectRatio={16 / 9}
         className='h-full w-full object-contain'
         background={placeholder}

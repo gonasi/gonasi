@@ -178,7 +178,9 @@ export default function InsertImageDialog({
           </motion.div>
         </div>
       ) : (
-        <div className='text-muted-foreground mt-4 text-center'>No images found</div>
+        <div className='text-muted-foreground mt-4 text-center'>
+          This course doesn’t have images yet. Add some to bring it to life.
+        </div>
       )}
     </div>
   );
