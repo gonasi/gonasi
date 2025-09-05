@@ -11,9 +11,11 @@ import { LoginFormSchema, type LoginFormSchemaTypes } from '@gonasi/schemas/auth
 import type { Route } from './+types/login';
 
 import { GoLink } from '~/components/go-link';
+import { GoogleIcon } from '~/components/icons';
 import { AuthFormLayout } from '~/components/layouts/auth';
-import { Button } from '~/components/ui/button';
+import { Button, OutlineButton } from '~/components/ui/button';
 import { GoInputField } from '~/components/ui/forms/elements';
+import { Separator } from '~/components/ui/separator';
 import { createClient } from '~/lib/supabase/supabase.server';
 import { checkHoneypot } from '~/utils/honeypot.server';
 import { useIsPending } from '~/utils/misc';
@@ -33,10 +35,37 @@ export async function action({ request }: Route.ActionArgs) {
   const formData = await request.formData();
   await checkHoneypot(formData);
 
+  const { supabase, headers } = createClient(request);
+  const intent = formData.get('intent') as string;
+
+  // Handle Google OAuth
+  if (intent === 'google') {
+    const redirectTo = formData.get('redirectTo') as string | null;
+    const origin = new URL(request.url).origin;
+
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${origin}/auth/v1/callback${redirectTo ? `?next=${encodeURIComponent(redirectTo)}` : ''}`,
+        // Enable PKCE flow
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent',
+        },
+      },
+    });
+
+    if (error) {
+      return dataWithError(null, error.message || 'Failed to authenticate with Google.');
+    }
+
+    return redirectDocument(data.url, { headers });
+  }
+
+  // Handle email/password login (existing logic)
   const { errors, data } = await getValidatedFormData(formData, zodResolver(LoginFormSchema));
   if (errors) return dataWithError(null, 'Something went wrong. Please try again.');
 
-  const { supabase, headers } = createClient(request);
   const { error } = await signInWithEmailAndPassword(supabase, data);
   if (error) return dataWithError(null, error.message || 'Incorrect email or password.');
 
@@ -66,6 +95,22 @@ export default function Login() {
       }
       leftLink='/'
     >
+      <div className='pb-8'>
+        <Form method='POST'>
+          <HoneypotInputs />
+          <input type='hidden' name='intent' value='google' />
+          <input type='hidden' name='redirectTo' value={redirectTo || ''} />
+          <OutlineButton
+            type='submit'
+            className='w-full rounded-full'
+            leftIcon={<GoogleIcon className='mb-1' />}
+            disabled={isDisabled}
+          >
+            Log in with Google
+          </OutlineButton>
+        </Form>
+      </div>
+      <Separator className='mb-4' />
       <RemixFormProvider {...methods}>
         <Form method='POST' onSubmit={methods.handleSubmit}>
           <HoneypotInputs />
@@ -92,7 +137,7 @@ export default function Login() {
               autoComplete: 'current-password',
               disabled: isDisabled,
             }}
-            description='We won’t tell anyone, promise 😊'
+            description="We won't tell anyone, promise 😊"
           />
           <Button type='submit' disabled={isDisabled} isLoading={isDisabled} className='w-full'>
             Log In

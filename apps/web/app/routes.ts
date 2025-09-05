@@ -244,6 +244,8 @@ export default [
   layout('routes/layouts/auth/auth-layout.tsx', [
     // /login
     route('login', 'routes/auth/login.tsx'),
+    route('auth/v1/callback', 'routes/auth/callback.tsx'),
+    route('auth/v1/auth-code-error', 'routes/auth/auth-code-error.tsx'),
     // /signup
     route('signup', 'routes/auth/signup.tsx'),
   ]),
