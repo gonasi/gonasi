@@ -16,7 +16,7 @@ export default function FeaturesPage() {
       items: [
         { name: 'Sign up', done: true },
         { name: 'Log in', done: true },
-        { name: 'Google Auth', done: false },
+        { name: 'Google Auth', done: true },
         { name: 'Password reset', done: false },
         { name: 'User profiles with learning progress', done: false },
         { name: 'Learner achievement badges', done: false },

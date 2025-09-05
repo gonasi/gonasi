@@ -143,7 +143,7 @@ export default function SignUp() {
             leftIcon={<GoogleIcon className='mb-1' />}
             disabled={isDisabled}
           >
-            Sign up with Google
+            Continue with Google
           </OutlineButton>
         </Form>
       </div>
