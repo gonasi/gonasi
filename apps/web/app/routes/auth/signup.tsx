@@ -1,4 +1,4 @@
-import { Form, useSearchParams } from 'react-router';
+import { Form, redirectDocument, useSearchParams } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Rocket } from 'lucide-react';
 import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
@@ -12,10 +12,12 @@ import { SignupFormSchema, type SignupFormSchemaTypes } from '@gonasi/schemas/au
 import type { Route } from './+types/signup';
 
 import { GoLink } from '~/components/go-link';
+import { GoogleIcon } from '~/components/icons';
 import { AuthFormLayout } from '~/components/layouts/auth';
-import { Button } from '~/components/ui/button';
+import { Button, OutlineButton } from '~/components/ui/button';
 import { GoInputField } from '~/components/ui/forms/elements';
 import { PasswordStrengthIndicator } from '~/components/ui/password-strength-indicator';
+import { Separator } from '~/components/ui/separator';
 import { createClient } from '~/lib/supabase/supabase.server';
 import { checkHoneypot } from '~/utils/honeypot.server';
 import { useIsPending } from '~/utils/misc';
@@ -31,13 +33,39 @@ export async function action({ request }: Route.ActionArgs) {
   const formData = await request.formData();
   await checkHoneypot(formData);
 
+  const { supabase, headers } = createClient(request);
+  const intent = formData.get('intent') as string;
+
+  // Handle Google OAuth
+  if (intent === 'google') {
+    const redirectTo = formData.get('redirectTo') as string | null;
+    const origin = new URL(request.url).origin;
+
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${origin}/auth/v1/callback${redirectTo ? `?next=${encodeURIComponent(redirectTo)}` : ''}`,
+        // Enable PKCE flow
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent',
+        },
+      },
+    });
+
+    if (error) {
+      return dataWithError(null, error.message || 'Failed to authenticate with Google.');
+    }
+
+    return redirectDocument(data.url, { headers });
+  }
+
+  // Handle email/password signup (existing logic)
   const { errors, data } = await getValidatedFormData(formData, zodResolver(SignupFormSchema));
   if (errors) {
     console.error('Signup validation failed:', { errors });
     return dataWithError(null, 'Invalid input. Please check the form and try again.');
   }
-
-  const { supabase, headers } = createClient(request);
 
   // 🔍 Check if the user already exists
   const emailExists = await checkEmailExists(supabase, data.email);
@@ -104,6 +132,22 @@ export default function SignUp() {
       leftLink='/login'
       closeLink='/'
     >
+      <div className='pb-8'>
+        <Form method='POST'>
+          <HoneypotInputs />
+          <input type='hidden' name='intent' value='google' />
+          <input type='hidden' name='redirectTo' value={redirectTo || ''} />
+          <OutlineButton
+            type='submit'
+            className='w-full rounded-full'
+            leftIcon={<GoogleIcon className='mb-1' />}
+            disabled={isDisabled}
+          >
+            Sign up with Google
+          </OutlineButton>
+        </Form>
+      </div>
+      <Separator className='mb-4' />
       <RemixFormProvider {...methods}>
         <Form method='POST' onSubmit={methods.handleSubmit}>
           {/* Anti-bot honeypot field */}
