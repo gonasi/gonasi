@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router';
 import { motion, type Transition } from 'framer-motion';
 import { MoveLeft, MoveRight } from 'lucide-react';
 
@@ -14,7 +15,7 @@ import { cn } from '~/lib/utils';
 const bounceTransition: Transition = {
   repeat: Infinity,
   duration: 0.6,
-  ease: 'easeInOut' as const, // or array / function
+  ease: 'easeInOut' as const,
   repeatType: 'reverse',
 };
 
@@ -33,6 +34,7 @@ export function AnimatedChevronLeft() {
     </motion.div>
   );
 }
+
 interface GoPricingSheetProps {
   pricingData: PricingSchemaTypes;
   className?: string;
@@ -47,8 +49,15 @@ export function GoPricingSheet({
   variant = 'default',
 }: GoPricingSheetProps) {
   const [open, setOpen] = useState(false);
-  const defaultPricing = pricingData[0];
+  const [searchParams] = useSearchParams();
 
+  useEffect(() => {
+    if (searchParams.get('pricing') === 'open') {
+      setOpen(true);
+    }
+  }, [searchParams]);
+
+  const defaultPricing = pricingData[0];
   if (!defaultPricing) return <p>No pricing</p>;
 
   const finalPrice = defaultPricing.promotional_price ?? defaultPricing.price;
@@ -62,7 +71,6 @@ export function GoPricingSheet({
         e.stopPropagation();
       }}
       onKeyDown={(e) => {
-        // Prevent default for common keys like Enter or Space
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
           e.stopPropagation();

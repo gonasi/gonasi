@@ -197,7 +197,7 @@ export default function LessonPlay({ params, loaderData }: Route.ComponentProps)
   useScrollAudio(lessonData?.metadata.active_block_id ?? null, blockRefs);
 
   if (!hasAccess) {
-    return <CourseAccessCard enrollPath={`/c/${params.publishedCourseId}`} />;
+    return <CourseAccessCard enrollPath={`/c/${params.publishedCourseId}?pricing=open`} />;
   }
 
   if (!lessonData) {

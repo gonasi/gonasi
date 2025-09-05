@@ -1,4 +1,3 @@
-// External dependencies
 import { Suspense } from 'react';
 import { Await, NavLink, Outlet } from 'react-router';
 import { motion } from 'framer-motion';
