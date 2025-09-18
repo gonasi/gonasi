@@ -122,6 +122,63 @@ export const ALL_PLUGINS = [
     ],
   },
   {
+    id: 'content_delivery',
+    name: 'Content Delivery Plugins',
+    description: 'Plugins for revealing and structuring learning material',
+    pluginGroups: [
+      {
+        id: 'reveal',
+        name: 'Reveal Plugin',
+        description: 'Progressive content disclosure and hint systems',
+        icon: 'Eye',
+        pluginTypes: [
+          {
+            id: 'step_by_step_reveal',
+            name: 'Step-by-Step Reveal',
+            description:
+              'Reveal content in one or more steps. Works as a simple tap-to-reveal card when there’s only one step, or as a guided sequence when multiple steps are added.',
+            example:
+              'Reveal an answer by tapping a card, or show a procedure step by step as the learner progresses.',
+            icon: 'ListOrdered',
+            comingSoon: false,
+          },
+        ],
+      },
+      {
+        id: 'media_player',
+        name: 'Media Player Plugin',
+        description: 'Interactive videos, audio lessons, and slideshows',
+        icon: 'PlayCircle',
+        pluginTypes: [
+          {
+            id: 'video_player',
+            name: 'Video Player',
+            description: 'Embed and play videos with interactive features.',
+            example: 'Show a tutorial video with pause and play controls.',
+            icon: 'VideoPlayer',
+            comingSoon: true,
+          },
+          {
+            id: 'audio_player',
+            name: 'Audio Player',
+            description: 'Embed and play audio lessons or podcasts.',
+            example: 'Play an audio lesson on language learning.',
+            icon: 'AudioPlayer',
+            comingSoon: true,
+          },
+          {
+            id: 'slideshow_player',
+            name: 'Slideshow Player',
+            description: 'Display slideshows with images and text.',
+            example: 'Show a presentation in a slideshow format.',
+            icon: 'SlideshowPlayer',
+            comingSoon: true,
+          },
+        ],
+      },
+    ],
+  },
+  {
     id: 'media_interaction',
     name: 'Media Interaction',
     description: 'Plugins for adding interactive and engaging visual elements',
@@ -213,69 +270,6 @@ export const ALL_PLUGINS = [
             description: 'Show project milestones and deadlines on a timeline.',
             example: 'Visualize project phases in a timeline format.',
             icon: 'TimelineProject',
-            comingSoon: true,
-          },
-        ],
-      },
-    ],
-  },
-  {
-    id: 'content_delivery',
-    name: 'Content Delivery Plugins',
-    description: 'Plugins for revealing and structuring learning material',
-    pluginGroups: [
-      {
-        id: 'reveal',
-        name: 'Reveal Plugin',
-        description: 'Progressive content disclosure and hint systems',
-        icon: 'Eye',
-        pluginTypes: [
-          {
-            id: 'tap_to_reveal',
-            name: 'Tap to Reveal',
-            description: 'Reveal content when the learner taps on a hidden element.',
-            example: 'Tap a card to reveal the answer underneath.',
-            icon: 'MousePointerClick',
-            comingSoon: false,
-          },
-          {
-            id: 'step_by_step_reveal',
-            name: 'Step-by-Step Reveal',
-            description: 'Progressively reveal content in steps.',
-            example: 'Show instructions in steps as the user progresses.',
-            icon: 'ListOrdered',
-            comingSoon: false,
-          },
-        ],
-      },
-      {
-        id: 'media_player',
-        name: 'Media Player Plugin',
-        description: 'Interactive videos, audio lessons, and slideshows',
-        icon: 'PlayCircle',
-        pluginTypes: [
-          {
-            id: 'video_player',
-            name: 'Video Player',
-            description: 'Embed and play videos with interactive features.',
-            example: 'Show a tutorial video with pause and play controls.',
-            icon: 'VideoPlayer',
-            comingSoon: true,
-          },
-          {
-            id: 'audio_player',
-            name: 'Audio Player',
-            description: 'Embed and play audio lessons or podcasts.',
-            example: 'Play an audio lesson on language learning.',
-            icon: 'AudioPlayer',
-            comingSoon: true,
-          },
-          {
-            id: 'slideshow_player',
-            name: 'Slideshow Player',
-            description: 'Display slideshows with images and text.',
-            example: 'Show a presentation in a slideshow format.',
-            icon: 'SlideshowPlayer',
             comingSoon: true,
           },
         ],
