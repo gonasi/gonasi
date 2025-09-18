@@ -3,7 +3,7 @@ import { Outlet, useLocation, useOutletContext, useParams } from 'react-router';
 import { BackArrowNavLink } from '~/components/ui/button';
 import { Modal } from '~/components/ui/modal';
 import { Stepper } from '~/components/ui/stepper';
-import type { CourseOverviewType } from '~/routes/profile/course-builder/courseId/course-id-index';
+import type { CourseOverviewType } from '~/routes/profile/builder/courseId/course-id-index';
 
 export default function UpsertCourseLayout() {
   const courseDetails = useOutletContext<CourseOverviewType>() ?? {};
@@ -28,7 +28,7 @@ export default function UpsertCourseLayout() {
     if (currentStepIndex > 0) {
       const prevStep = steps[currentStepIndex - 1];
       if (prevStep) {
-        return `/${params.username}/course-builder/${params.courseId}/overview/grouping/${prevStep.path}`;
+        return `/${params.username}/builder/${params.courseId}/overview/grouping/${prevStep.path}`;
       }
     }
     return '';
@@ -39,7 +39,7 @@ export default function UpsertCourseLayout() {
       <Modal.Content size='md'>
         <Modal.Header
           title='Let’s group your course'
-          closeRoute={`/${params.username}/course-builder/${params.courseId}/overview`}
+          closeRoute={`/${params.username}/builder/${params.courseId}/overview`}
           leadingIcon={
             currentStepIndex > 0 && <BackArrowNavLink to={getBackUrl()} className='mr-2 md:mr-4' />
           }

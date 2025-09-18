@@ -111,13 +111,12 @@ export default function EditCourseChapter({ loaderData }: Route.ComponentProps) 
 
   const isDisabled = isPending || methods.formState.isSubmitting;
 
+  const closeRoute = `/${params.organizationId}/builder/${params.courseId}/content`;
+
   return (
     <Modal open>
       <Modal.Content size='sm'>
-        <Modal.Header
-          title='Edit Chapter'
-          closeRoute={`/${params.username}/course-builder/${params.courseId}/content`}
-        />
+        <Modal.Header title='Edit Chapter' closeRoute={closeRoute} />
         <Modal.Body>
           <RemixFormProvider {...methods}>
             <Form method='POST' onSubmit={methods.handleSubmit}>

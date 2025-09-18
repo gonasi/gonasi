@@ -1,6 +1,6 @@
 import { NavLink, useParams } from 'react-router';
 import { Reorder, useDragControls, useMotionValue } from 'framer-motion';
-import { BookOpen, ChevronsUpDown, GripVerticalIcon, Pencil, Trash } from 'lucide-react';
+import { BookOpen, ChevronsUpDown, Eye, GripVerticalIcon, Pencil, Trash } from 'lucide-react';
 
 import { ActionDropdown } from '../action-dropdown';
 import { Badge } from '../ui/badge';
@@ -82,6 +82,7 @@ export default function CourseChapterItem({ chapter, loading, canEdit }: Props) 
                   {canEdit ? (
                     <ActionDropdown
                       items={[
+                        { title: 'View Lessons', icon: Eye, to: `${basePath}/lessons` },
                         { title: 'Edit chapter', icon: Pencil, to: `${basePath}/edit` },
                         { title: 'Delete chapter', icon: Trash, to: `${basePath}/delete` },
                       ]}

@@ -89,19 +89,19 @@ export default [
 
         route('content', 'routes/organizations/builder/course/content/content-index.tsx', [
           ...prefix('chapter', [
-            // /:username/course-builder/:courseId/content/chapter/new
+            // /:username/builder/:courseId/content/chapter/new
             route(
               'new',
               'routes/organizations/builder/course/content/chapter/new-course-chapter.tsx',
             ),
           ]),
           ...prefix(':chapterId', [
-            // /:username/course-builder/:courseId/content/:chapterId/edit-chapter
+            // /:username/builder/:courseId/content/:chapterId/edit-chapter
             route(
               'edit',
               'routes/organizations/builder/course/content/chapterId/edit-course-chapter.tsx',
             ),
-            // /:username/course-builder/:courseId/content/:chapterId/delete-chapter
+            // /:username/builder/:courseId/content/:chapterId/delete-chapter
             route(
               'delete',
               'routes/organizations/builder/course/content/chapterId/delete-course-chapter.tsx',
@@ -111,17 +111,17 @@ export default [
               'lessons',
               'routes/organizations/builder/course/content/chapterId/lessonId/lessons-index.tsx',
               [
-                // /:username/course-builder/:courseId/content/:chapterId/new-lesson-details
+                // /:username/builder/:courseId/content/:chapterId/new-lesson-details
                 route(
                   'new-lesson-details',
                   'routes/organizations/builder/course/content/chapterId/new-lesson-details.tsx',
                 ),
-                // /:username/course-builder/:courseId/content/:chapterId/:lessonId/edit-lesson-details
+                // /:username/builder/:courseId/content/:chapterId/:lessonId/edit-lesson-details
                 route(
                   ':lessonId/edit-lesson-details',
                   'routes/organizations/builder/course/content/chapterId/lessonId/edit-lesson-details.tsx',
                 ),
-                // /:username/course-builder/:courseId/content/:chapterId/:lessonId/delete
+                // /:username/builder/:courseId/content/:chapterId/:lessonId/delete
                 route(
                   ':lessonId/delete',
                   'routes/organizations/builder/course/content/chapterId/lessonId/delete-lesson.tsx',
@@ -129,22 +129,22 @@ export default [
               ],
             ),
 
-            // /:username/course-builder/:courseId/content/:chapterId/:lessonId
+            // /:username/builder/:courseId/content/:chapterId/:lessonId
             route(
               ':lessonId/lesson-blocks',
               'routes/organizations/builder/course/content/chapterId/lessonId/lesson-blocks/lesson-blocks-index.tsx',
               [
-                // /:username/course-builder/:courseId/content/:chapterId/:lessonId/plugins
+                // /:username/builder/:courseId/content/:chapterId/:lessonId/plugins
                 route(
                   'plugins',
                   'routes/organizations/builder/course/content/chapterId/lessonId/lesson-blocks/plugins/plugin-index.tsx',
                   [
-                    // /:username/course-builder/:courseId/content/:chapterId/:lessonId/plugins/:pluginGroupId
+                    // /:username/builder/:courseId/content/:chapterId/:lessonId/plugins/:pluginGroupId
                     route(
                       ':pluginGroupId',
                       'routes/organizations/builder/course/content/chapterId/lessonId/lesson-blocks/plugins/view-plugins-by-plugin-group-id-modal.tsx',
                       [
-                        // /:username/course-builder/:courseId/content/:chapterId/:lessonId/plugins/:pluginGroupId/:pluginTypeId/create
+                        // /:username/builder/:courseId/content/:chapterId/:lessonId/plugins/:pluginGroupId/:pluginTypeId/create
                         route(
                           ':pluginTypeId/create',
                           'routes/organizations/builder/course/content/chapterId/lessonId/lesson-blocks/plugins/create-block-by-plugin-id-modal.tsx',
@@ -163,7 +163,7 @@ export default [
                   'routes/organizations/builder/course/content/chapterId/lessonId/lesson-blocks/plugins/upsert-plugin-api.tsx',
                 ),
 
-                // /:username/course-builder/:courseId/content/:chapterId/:lessonId/:blockId/delete
+                // /:username/builder/:courseId/content/:chapterId/:lessonId/:blockId/delete
                 route(
                   ':blockId/delete',
                   'routes/organizations/builder/course/content/chapterId/lessonId/lesson-blocks/plugins/delete-plugin-modal.tsx',
