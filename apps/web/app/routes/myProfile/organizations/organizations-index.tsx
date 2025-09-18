@@ -67,6 +67,8 @@ export async function loader({ request }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
   const result = await fetchUsersOrganizations(supabase);
 
+  console.log('organizations: ', result.data);
+
   return {
     organizations: result.success ? result.data : [],
     total: result.total ?? 0,
