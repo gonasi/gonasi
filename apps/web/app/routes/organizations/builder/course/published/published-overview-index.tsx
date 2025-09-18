@@ -5,6 +5,7 @@ import { fetchPublishedCourseDetails } from '@gonasi/database/courses';
 
 import type { Route } from './+types/published-overview-index';
 
+import { BannerCard } from '~/components/cards';
 import { createClient } from '~/lib/supabase/supabase.server';
 
 export function meta() {
@@ -45,9 +46,23 @@ export default function CourseOverview({ loaderData, params }: Route.ComponentPr
           variants={fadeInUp}
           transition={{ duration: 0.3 }}
         >
-          <pre className='bg-muted text-muted-foreground rounded-lg p-4 text-sm break-words whitespace-pre-wrap shadow-sm'>
-            {JSON.stringify(loaderData, null, 2)}
-          </pre>
+          {!loaderData ? (
+            <BannerCard
+              message='Course Unpublished'
+              description='Publish your course to unlock student progress tracking, insights, and performance stats.'
+              variant='tip'
+              className='mb-10'
+              showCloseIcon={false}
+              cta={{
+                link: `/${params.organizationId}/builder/${params.courseId}/overview/publish`,
+                title: 'Publish Course',
+              }}
+            />
+          ) : (
+            <pre className='bg-muted text-muted-foreground rounded-lg p-4 text-sm break-words whitespace-pre-wrap shadow-sm'>
+              {JSON.stringify(loaderData, null, 2)}
+            </pre>
+          )}
         </motion.div>
       </section>
       <Outlet />

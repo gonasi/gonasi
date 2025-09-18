@@ -2,12 +2,18 @@ import { useState } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { AlertOctagon, AlertTriangle, CheckCircle, Info, Lightbulb, X } from 'lucide-react';
 
+import { NavLinkButton } from '../ui/button';
+
 interface BannerCardProps {
   message: string;
   description?: string;
   variant?: 'info' | 'success' | 'warning' | 'error' | 'tip';
   className?: string;
   showCloseIcon?: boolean;
+  cta?: {
+    link: string;
+    title: string;
+  };
 }
 
 const variantStyles: Record<
@@ -51,6 +57,7 @@ export function BannerCard({
   variant = 'info',
   showCloseIcon = true,
   className,
+  cta,
 }: BannerCardProps) {
   const [closing, setClosing] = useState(false);
   const [visible, setVisible] = useState(true);
@@ -90,6 +97,11 @@ export function BannerCard({
         {description ? (
           <div className='py-4'>
             <p className={`${textColor} font-secondary text-sm`}>{description}</p>
+          </div>
+        ) : null}
+        {cta ? (
+          <div>
+            <NavLinkButton to={cta.link}>{cta.title}</NavLinkButton>
           </div>
         ) : null}
       </div>
