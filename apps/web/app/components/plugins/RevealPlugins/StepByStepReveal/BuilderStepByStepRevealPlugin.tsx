@@ -4,7 +4,10 @@ import { Save, Settings } from 'lucide-react';
 import { RemixFormProvider, useRemixForm } from 'remix-hook-form';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
 
-import type { StepByStepRevealSchemaTypes } from '@gonasi/schemas/plugins';
+import type {
+  StepByStepRevealSchemaTypes,
+  StepByStepRevealSettingsSchemaTypes,
+} from '@gonasi/schemas/plugins';
 import {
   EMPTY_LEXICAL_STATE,
   StepByStepRevealContentSchema,
@@ -13,7 +16,9 @@ import {
 } from '@gonasi/schemas/plugins';
 
 import { BlockWeightField } from '../../common/settings/BlockWeightField';
+import { LayoutStyleField } from '../../common/settings/LayoutStyleField';
 import { PlaybackModeField } from '../../common/settings/PlaybackModeField';
+import { RandomizationModeField } from '../../common/settings/RandomizationModeField';
 
 import { BackArrowNavLink, Button } from '~/components/ui/button';
 import { GoRichTextInputField } from '~/components/ui/forms/elements';
@@ -30,6 +35,13 @@ const resolver = zodResolver(StepByStepRevealSchema);
 interface BuilderStepByStepRevealPluginProps {
   block?: LessonBlockLoaderReturnType;
 }
+
+const defaultSettings: StepByStepRevealSettingsSchemaTypes = {
+  playbackMode: 'inline',
+  weight: 1,
+  layoutStyle: 'double',
+  randomization: 'none',
+};
 
 export function BuilderStepByStepRevealPlugin({ block }: BuilderStepByStepRevealPluginProps) {
   const params = useParams();
@@ -56,7 +68,7 @@ export function BuilderStepByStepRevealPlugin({ block }: BuilderStepByStepReveal
             : { id: crypto.randomUUID(), title: EMPTY_LEXICAL_STATE, cards: [] },
           settings: StepByStepRevealSettingsSchema.safeParse(block.settings).success
             ? StepByStepRevealSettingsSchema.parse(block.settings)
-            : { playbackMode: 'inline', weight: 1 },
+            : defaultSettings,
         }
       : {
           organization_id: params.organizationId!,
@@ -65,7 +77,7 @@ export function BuilderStepByStepRevealPlugin({ block }: BuilderStepByStepReveal
           lesson_id: params.lessonId!,
           plugin_type: 'step_by_step_reveal',
           content: { id: crypto.randomUUID(), title: EMPTY_LEXICAL_STATE, cards: [] },
-          settings: { playbackMode: 'inline', weight: 1 },
+          settings: defaultSettings,
         },
   });
 
@@ -82,6 +94,8 @@ export function BuilderStepByStepRevealPlugin({ block }: BuilderStepByStepReveal
   const isDisabled = isPending || methods.formState.isSubmitting;
 
   const watchPlaybackMode = methods.watch('settings.playbackMode');
+  const watchLayoutStyle = methods.watch('settings.layoutStyle');
+  const watchRandomization = methods.watch('settings.randomization');
 
   return (
     <Modal open>
@@ -115,6 +129,14 @@ export function BuilderStepByStepRevealPlugin({ block }: BuilderStepByStepReveal
                         <PlaybackModeField
                           name='settings.playbackMode'
                           watchValue={watchPlaybackMode}
+                        />
+                        <LayoutStyleField
+                          name='settings.layoutStyle'
+                          watchValue={watchLayoutStyle}
+                        />
+                        <RandomizationModeField
+                          name='settings.randomization'
+                          watchValue={watchRandomization}
                         />
                       </div>
                     </div>

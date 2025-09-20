@@ -6,6 +6,7 @@ import type { BlockWithProgressSchemaTypes } from '@gonasi/schemas/publish/progr
 import { ViewMultipleChoiceMultipleAnswersPlugin } from '../QuizPlugins/MultipleChoiceMultipleAnswers/ViewMultipleChoiceMultipleAnswersPlugin';
 import { ViewMultipleChoiceSingleAnswerPlugin } from '../QuizPlugins/MultipleChoiceSingleAnswer/ViewMultipleChoiceSingleAnswerPlugin';
 import { ViewTrueOrFalsePlugin } from '../QuizPlugins/TrueOrFalsePlugin/ViewTrueOrFalsePlugin';
+import { ViewStepByStepRevealPlugin } from '../RevealPlugins/StepByStepReveal/ViewStepByStepRevealPlugin';
 import { ViewRichTextPlugin } from '../RichTextPlugins/RichTextPlugin/ViewRichTextPlugin';
 
 export interface ViewPluginComponentProps {
@@ -34,7 +35,7 @@ const viewPluginComponentMap: Record<
   pie_chart: unimplementedPlugin,
   historical_events: unimplementedPlugin,
   project_milestones: unimplementedPlugin,
-  step_by_step_reveal: unimplementedPlugin,
+  step_by_step_reveal: ViewStepByStepRevealPlugin,
   video_player: unimplementedPlugin,
   audio_player: unimplementedPlugin,
   slideshow_player: unimplementedPlugin,

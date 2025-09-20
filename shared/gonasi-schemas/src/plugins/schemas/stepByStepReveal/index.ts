@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { BasePluginSettingsSchema } from '../../pluginSettings';
+import { BasePluginSettingsSchema, LayoutPluginSettingsSchema } from '../../pluginSettings';
 import { NonEmptyLexicalState } from '../../utils';
 
 export const StepByStepRevealCardSchema = z.object({
@@ -30,7 +30,10 @@ export const StepByStepRevealContentSchema = z.object({
     ),
 });
 
-export const StepByStepRevealSettingsSchema = BasePluginSettingsSchema.extend({});
+export const StepByStepRevealSettingsSchema = BasePluginSettingsSchema.merge(
+  LayoutPluginSettingsSchema,
+).extend({});
+export type StepByStepRevealSettingsSchemaTypes = z.infer<typeof StepByStepRevealSettingsSchema>;
 
 export const StepByStepRevealSchema = z.object({
   id: z.string().optional(),
