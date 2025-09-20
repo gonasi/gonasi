@@ -16,7 +16,7 @@ import {
 } from '@gonasi/schemas/plugins';
 
 import { BlockWeightField } from '../../common/settings/BlockWeightField';
-import { LayoutStyleField } from '../../common/settings/LayoutStyleField';
+import { CarouselLayoutField } from '../../common/settings/CarouselLayoutField';
 import { PlaybackModeField } from '../../common/settings/PlaybackModeField';
 import { RandomizationModeField } from '../../common/settings/RandomizationModeField';
 
@@ -130,7 +130,7 @@ export function BuilderStepByStepRevealPlugin({ block }: BuilderStepByStepReveal
                           name='settings.playbackMode'
                           watchValue={watchPlaybackMode}
                         />
-                        <LayoutStyleField
+                        <CarouselLayoutField
                           name='settings.layoutStyle'
                           watchValue={watchLayoutStyle}
                         />
