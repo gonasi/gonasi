@@ -136,7 +136,7 @@ export function GoStepByStepRevealField({
               <Label className='text-muted-foreground mb-1 block text-xs font-medium'>
                 Front Content
               </Label>
-              <div className='border-border/80 bg-border/50 h-70 w-60 rounded border p-2'>
+              <div className='border-border/80 bg-border/50 flex h-70 w-60 items-center justify-center rounded border p-2'>
                 <RichTextRenderer editorState={card.frontContent} />
               </div>
               <div className='space-y-1'>
@@ -153,7 +153,7 @@ export function GoStepByStepRevealField({
               <Label className='text-muted-foreground mb-1 block text-xs font-medium'>
                 Revealed Content
               </Label>
-              <div className='border-border/80 bg-border/50 h-70 w-60 rounded border p-2'>
+              <div className='border-border/80 bg-border/50 flex h-70 w-60 items-center justify-center rounded border p-2'>
                 <RichTextRenderer editorState={card.backContent} />
               </div>
               <div className='space-y-1'>

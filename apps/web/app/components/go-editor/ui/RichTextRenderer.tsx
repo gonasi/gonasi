@@ -52,12 +52,12 @@ export default function RichTextRenderer({ editorState, className }: RichTextRen
     <Suspense fallback={<Spinner />}>
       <LexicalComposer initialConfig={initialConfig}>
         <EditorStateUpdater editorState={editorState} />
-        <div className={cn('h-fit w-full')}>
+        <div className={cn('h-full w-full overflow-auto')}>
           <div className='editor-inner'>
             <RichTextPlugin
               contentEditable={
                 <ContentEditable
-                  className={`editor-input ${className}`}
+                  className={cn('editor-input min-h-0 break-words whitespace-pre-wrap', className)}
                   aria-placeholder='placeholder'
                   placeholder={<div className='editor-placeholder'>placeholder</div>}
                 />
