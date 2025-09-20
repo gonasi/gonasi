@@ -1,3 +1,5 @@
+// TODO: DELETE ONCE IMPLEMENTATION IS COMPLETE
+
 import { z } from 'zod';
 
 import { BaseInteractionSchema } from './baseInteractionSchema';
