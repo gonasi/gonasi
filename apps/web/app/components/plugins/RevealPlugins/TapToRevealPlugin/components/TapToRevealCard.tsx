@@ -46,7 +46,7 @@ export function TapToRevealCard({
       <motion.div
         data-side='front'
         className={cn(
-          'border-input bg-card absolute inset-0 flex h-full w-full flex-col rounded-xl border p-3 shadow-sm',
+          'border-input bg-card absolute inset-0 flex h-full w-full flex-col rounded-xl border p-2',
           hiddenClassName,
         )}
         animate={{
@@ -71,7 +71,7 @@ export function TapToRevealCard({
       <motion.div
         data-side='back'
         className={cn(
-          'border-input bg-background absolute inset-0 flex h-full w-full flex-col rounded-xl border p-3 shadow-md',
+          'border-input bg-background absolute inset-0 flex h-full w-full flex-col rounded-xl border p-2',
           revealedClassName,
         )}
         animate={{

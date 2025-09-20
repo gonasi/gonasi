@@ -86,13 +86,15 @@ export function ViewStepByStepRevealPlugin({ blockWithProgress }: ViewPluginComp
             <p>No cards found</p>
           ) : cards.length === 1 && cards[0] ? (
             // 👇 Single card
-            <TapToRevealCard
-              key={cards[0].id}
-              front={<RichTextRenderer editorState={cards[0].frontContent} />}
-              back={<RichTextRenderer editorState={cards[0].backContent} />}
-              revealed
-              onToggle={() => {}}
-            />
+            <div className='flex w-full items-center justify-center'>
+              <TapToRevealCard
+                key={cards[0].id}
+                front={<RichTextRenderer editorState={cards[0].frontContent} />}
+                back={<RichTextRenderer editorState={cards[0].backContent} />}
+                revealed
+                onToggle={() => {}}
+              />
+            </div>
           ) : (
             // 👇 Multiple cards (wrap in a carousel, grid, etc.)
             <Carousel>
