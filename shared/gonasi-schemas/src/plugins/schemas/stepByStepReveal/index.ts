@@ -7,10 +7,11 @@ export const StepByStepRevealCardSchema = z.object({
   id: z.string().uuid({
     message: `<lucide name="AlertCircle" size="12" /> Invalid <span class="go-title">id</span>; must be a valid UUID.`,
   }),
-  position: z.number(),
   frontContent: NonEmptyLexicalState,
   backContent: NonEmptyLexicalState,
 });
+
+export type StepByStepRevealCardSchemaTypes = z.infer<typeof StepByStepRevealCardSchema>;
 
 export const StepByStepRevealContentSchema = z.object({
   id: z.string().uuid({

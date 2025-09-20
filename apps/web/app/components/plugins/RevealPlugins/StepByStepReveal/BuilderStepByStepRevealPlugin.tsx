@@ -16,6 +16,8 @@ import { BlockWeightField } from '../../common/settings/BlockWeightField';
 import { PlaybackModeField } from '../../common/settings/PlaybackModeField';
 
 import { BackArrowNavLink, Button } from '~/components/ui/button';
+import { GoRichTextInputField } from '~/components/ui/forms/elements';
+import { GoStepByStepRevealField } from '~/components/ui/forms/elements/GoStepByStepRevealField';
 // import { GoStepByStepRevealInputField } from '~/components/ui/forms/elements';
 import { Modal } from '~/components/ui/modal';
 import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover';
@@ -83,7 +85,7 @@ export function BuilderStepByStepRevealPlugin({ block }: BuilderStepByStepReveal
 
   return (
     <Modal open>
-      <Modal.Content size='lg'>
+      <Modal.Content size='md'>
         <RemixFormProvider {...methods}>
           <form
             onSubmit={methods.handleSubmit}
@@ -93,7 +95,7 @@ export function BuilderStepByStepRevealPlugin({ block }: BuilderStepByStepReveal
           >
             <Modal.Header
               leadingIcon={block && block.id ? null : <BackArrowNavLink to={backRoute} />}
-              title={block && block.id ? 'Edit Step-by-step Reveal' : 'Add Step-by-step Reveal'}
+              title={block && block.id ? 'Edit Step By Step Reveal' : 'Add Step By Step Reveal'}
               closeRoute={lessonPath}
               settingsPopover={
                 <Popover>
@@ -122,11 +124,18 @@ export function BuilderStepByStepRevealPlugin({ block }: BuilderStepByStepReveal
             />
             <Modal.Body className='flex-1 overflow-auto'>
               <HoneypotInputs />
-              {/* <GoStepByStepRevealInputField
-                name='content'
-                labelProps={{ children: 'Step-by-step Reveal', required: true }}
+              <GoRichTextInputField
+                name='content.title'
+                labelProps={{ children: 'Title', required: false }}
+                placeholder='Title displayed above the card(s)'
+                description='Add a title that will appear above the step-by-step reveal card(s).'
+              />
+
+              <GoStepByStepRevealField
+                name='content.cards'
+                labelProps={{ children: 'Reveal Cards', required: true }}
                 description='Add a title and cards for your step-by-step reveal.'
-              /> */}
+              />
               <h2>hello there component goes here</h2>
             </Modal.Body>
             <div className='bg-background/90 border-t-border/20 sticky right-0 bottom-0 left-0 z-10 flex justify-end space-x-2 border-t p-4'>
