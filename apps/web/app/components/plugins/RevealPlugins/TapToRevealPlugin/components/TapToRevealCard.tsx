@@ -29,7 +29,8 @@ export function TapToRevealCard({
 
   return (
     <div
-      className={cn('flex h-64 w-52 cursor-pointer items-center perspective-[1200px]', className)}
+      className={cn('relative h-64 w-52 cursor-pointer', className)}
+      style={{ perspective: '1200px' }}
       onClick={toggleReveal}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
@@ -41,16 +42,15 @@ export function TapToRevealCard({
       tabIndex={0}
       aria-pressed={revealed}
     >
+      {/* Front side */}
       <motion.div
         data-side='front'
         className={cn(
-          'bg-card border-input absolute inset-0 flex h-full w-full flex-col justify-between rounded-xl border p-3 shadow-sm backface-hidden',
+          'border-input bg-card absolute inset-0 flex h-full w-full flex-col rounded-xl border p-3 shadow-sm',
           hiddenClassName,
         )}
         animate={{
           rotateY: revealed ? 180 : 0,
-          opacity: revealed ? 0 : 1,
-          zIndex: revealed ? 0 : 1,
         }}
         transition={{
           type: 'spring',
@@ -59,25 +59,23 @@ export function TapToRevealCard({
         }}
         style={{
           transformStyle: 'preserve-3d',
-          pointerEvents: revealed ? 'none' : 'auto',
+          backfaceVisibility: 'hidden',
         }}
       >
-        <div className='flex justify-end'>
-          <EyeOff className='text-muted-foreground h-5 w-5' />
-        </div>
-        <div className='flex flex-1 items-center justify-center'>{front}</div>
+        <EyeOff className='text-muted-foreground bg-background/50 absolute -top-2 -right-2 h-6 w-6 rounded-full border p-1' />
+
+        <div className='flex flex-1 items-center justify-center overflow-y-auto'>{front}</div>
       </motion.div>
 
+      {/* Back side */}
       <motion.div
         data-side='back'
         className={cn(
-          'bg-background border-input absolute inset-0 flex h-full w-full rotate-y-180 flex-col justify-between rounded-xl border p-3 shadow-md backface-hidden',
+          'border-input bg-background absolute inset-0 flex h-full w-full flex-col rounded-xl border p-3 shadow-md',
           revealedClassName,
         )}
         animate={{
           rotateY: revealed ? 360 : 180,
-          opacity: revealed ? 1 : 0,
-          zIndex: revealed ? 1 : 0,
         }}
         transition={{
           type: 'spring',
@@ -86,13 +84,13 @@ export function TapToRevealCard({
         }}
         style={{
           transformStyle: 'preserve-3d',
-          pointerEvents: revealed ? 'auto' : 'none',
+          backfaceVisibility: 'hidden',
+          transform: 'rotateY(180deg)',
         }}
       >
-        <div className='flex justify-end'>
-          <Eye className='text-foreground h-5 w-5' />
-        </div>
-        <div className='flex flex-1 items-center justify-center'>{back}</div>
+        <Eye className='text-foreground bg-background/50 absolute -top-2 -right-2 h-6 w-6 rounded-full border p-1' />
+
+        <div className='flex flex-1 items-center justify-center overflow-y-auto'>{back}</div>
       </motion.div>
     </div>
   );

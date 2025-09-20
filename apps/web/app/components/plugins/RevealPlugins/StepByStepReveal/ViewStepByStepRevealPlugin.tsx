@@ -6,8 +6,10 @@ import { PlayPluginWrapper } from '../../common/PlayPluginWrapper';
 import { ViewPluginWrapper } from '../../common/ViewPluginWrapper';
 import { useViewPluginCore } from '../../hooks/useViewPluginCore';
 import type { ViewPluginComponentProps } from '../../PluginRenderers/ViewPluginTypesRenderer';
+import { TapToRevealCard } from '../TapToRevealPlugin/components/TapToRevealCard';
 
 import RichTextRenderer from '~/components/go-editor/ui/RichTextRenderer';
+import { Carousel } from '~/components/ui/carousel';
 import { useStore } from '~/store';
 
 type StepByStepRevealPluginType = Extract<
@@ -77,13 +79,35 @@ export function ViewStepByStepRevealPlugin({ blockWithProgress }: ViewPluginComp
       <PlayPluginWrapper>
         <div className='mb-4'>
           <RichTextRenderer editorState={title} />
-          {cards.length > 0 && (
-            <div className='mt-1 text-sm text-gray-500'>
-              Progress: {1}/{20} cards revealed
-            </div>
+        </div>
+
+        <div>
+          {!cards || cards.length === 0 ? (
+            <p>No cards found</p>
+          ) : cards.length === 1 && cards[0] ? (
+            // 👇 Single card
+            <TapToRevealCard
+              key={cards[0].id}
+              front={<RichTextRenderer editorState={cards[0].frontContent} />}
+              back={<RichTextRenderer editorState={cards[0].backContent} />}
+              revealed
+              onToggle={() => {}}
+            />
+          ) : (
+            // 👇 Multiple cards (wrap in a carousel, grid, etc.)
+            <Carousel>
+              {cards.map((card) => (
+                <TapToRevealCard
+                  key={card.id}
+                  front={<RichTextRenderer editorState={card.frontContent} />}
+                  back={<RichTextRenderer editorState={card.backContent} />}
+                  revealed
+                  onToggle={() => {}}
+                />
+              ))}
+            </Carousel>
           )}
         </div>
-        <div>{JSON.stringify(cards)}</div>
       </PlayPluginWrapper>
     </ViewPluginWrapper>
   );

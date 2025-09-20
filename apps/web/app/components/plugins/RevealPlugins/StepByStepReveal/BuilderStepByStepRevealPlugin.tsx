@@ -158,7 +158,6 @@ export function BuilderStepByStepRevealPlugin({ block }: BuilderStepByStepReveal
                 labelProps={{ children: 'Reveal Cards', required: true }}
                 description='Add a title and cards for your step-by-step reveal.'
               />
-              <h2>hello there component goes here</h2>
             </Modal.Body>
             <div className='bg-background/90 border-t-border/20 sticky right-0 bottom-0 left-0 z-10 flex justify-end space-x-2 border-t p-4'>
               <div className='flex w-full'>
