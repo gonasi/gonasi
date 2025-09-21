@@ -11,6 +11,7 @@ export const StepByStepRevealInteractionSchema = z.object({
       }),
     )
     .default([]),
+  showRevealNextButton: z.boolean().default(false),
   showContinueButton: z.boolean().default(false),
 });
 

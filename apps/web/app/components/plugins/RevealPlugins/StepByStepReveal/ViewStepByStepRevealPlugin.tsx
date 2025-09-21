@@ -1,15 +1,21 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 
-import type { BlockInteractionSchemaTypes, BuilderSchemaTypes } from '@gonasi/schemas/plugins';
+import type {
+  BlockInteractionSchemaTypes,
+  BuilderSchemaTypes,
+  StepByStepRevealCardSchemaTypes,
+} from '@gonasi/schemas/plugins';
 
+import { useStepByStepRevealInteraction } from './hooks/useStepByStepRevealInteraction';
 import { PlayPluginWrapper } from '../../common/PlayPluginWrapper';
 import { ViewPluginWrapper } from '../../common/ViewPluginWrapper';
 import { useViewPluginCore } from '../../hooks/useViewPluginCore';
 import type { ViewPluginComponentProps } from '../../PluginRenderers/ViewPluginTypesRenderer';
+import { shuffleArray } from '../../utils';
 import { TapToRevealCard } from '../TapToRevealPlugin/components/TapToRevealCard';
 
+import { NotFoundCard } from '~/components/cards';
 import RichTextRenderer from '~/components/go-editor/ui/RichTextRenderer';
-import { Carousel } from '~/components/ui/carousel';
 import { useStore } from '~/store';
 
 type StepByStepRevealPluginType = Extract<
@@ -41,14 +47,7 @@ export function ViewStepByStepRevealPlugin({ blockWithProgress }: ViewPluginComp
 
   const { mode } = useStore();
 
-  const {
-    loading,
-    payload,
-    handleContinue,
-    updateInteractionData,
-    updateEarnedScore,
-    updateAttemptsCount,
-  } = useViewPluginCore(
+  const { loading, payload, handleContinue, updateInteractionData } = useViewPluginCore(
     mode === 'play' ? { progress: blockWithProgress.block_progress, blockWithProgress } : null,
   );
 
@@ -68,12 +67,81 @@ export function ViewStepByStepRevealPlugin({ blockWithProgress }: ViewPluginComp
     return isStepByStepRevealInteraction(data) ? data : null;
   }, [payload?.interaction_data]);
 
+  // Use the most recent data (payload takes precedence over initial DB data)
+  const currentInteractionData = parsedPayloadData || initialInteractionData;
+
+  const cardsOptions = useMemo(() => {
+    return randomization === 'shuffle' ? shuffleArray(cards) : cards;
+  }, [cards, randomization]);
+
+  const {
+    state,
+    enabledState,
+
+    // ===== DERIVED STATE =====
+    isCompleted,
+    currentCardIndex,
+    currentCard,
+    nextCard,
+    previousCard,
+    progress,
+    revealedCardIds,
+    canRevealNext,
+    canGoBack,
+    enabledStats,
+
+    // ===== ACTIONS =====
+    revealCard, // Reveal specific card (if next in sequence)
+    revealNext, // Reveal next card in sequence
+    toggleCard, // Toggle enabled/disabled state
+    enableCard, // Set card to enabled
+    disableCard, // Set card to disabled
+    reset, // Reset to initial state
+
+    // ===== HELPERS =====
+    isCardRevealed, // Has been revealed at least once
+    isCardEnabled, // Is currently enabled/active
+    isCardDisabled, // Is currently disabled/inactive
+    getCardRevealTime, // When was card first revealed
+    getRevealedCards, // All revealed cards with state
+    getEnabledCards, // Only enabled revealed cards
+    getDisabledCards, // Only disabled revealed cards
+  } = useStepByStepRevealInteraction(currentInteractionData, cardsOptions);
+
+  useEffect(() => {
+    if (mode === 'play') {
+      console.log('Updating interaction data:', state); // Debug log
+      updateInteractionData({ ...state });
+    }
+  }, [mode, state, updateInteractionData]);
+
+  const renderCard = (card: StepByStepRevealCardSchemaTypes) => (
+    <TapToRevealCard
+      key={card.id}
+      cardId={card.id}
+      isRevealed={isCardRevealed(card.id)}
+      isEnabled={isCardEnabled(card.id)}
+      canReveal={currentCard?.id === card.id}
+      onReveal={revealCard}
+      onToggle={toggleCard}
+      front={<RichTextRenderer editorState={card.frontContent} />}
+      back={<RichTextRenderer editorState={card.backContent} />}
+      className={
+        mode === 'preview'
+          ? 'opacity-75' // Preview mode styling
+          : currentCard?.id === card.id
+            ? 'shadow-lg ring-2 ring-blue-400 ring-offset-2 transition-all duration-300' // Highlight next card
+            : 'transition-all duration-300'
+      }
+    />
+  );
+
   return (
     <ViewPluginWrapper
-      isComplete={mode === 'preview' ? true : blockWithProgress.block_progress?.is_completed}
+      isComplete={mode === 'preview' ? isCompleted : blockWithProgress.block_progress?.is_completed}
       playbackMode={playbackMode}
       mode={mode}
-      reset={() => {}}
+      reset={reset}
       weight={weight}
     >
       <PlayPluginWrapper>
@@ -82,32 +150,15 @@ export function ViewStepByStepRevealPlugin({ blockWithProgress }: ViewPluginComp
         </div>
 
         <div>
-          {!cards || cards.length === 0 ? (
-            <p>No cards found</p>
-          ) : cards.length === 1 && cards[0] ? (
-            // 👇 Single card
+          {!cardsOptions || cardsOptions.length === 0 ? (
+            <NotFoundCard message='No cards found' />
+          ) : cardsOptions.length === 1 && cardsOptions[0] ? (
+            // Single card - use same hook-based approach
             <div className='flex w-full items-center justify-center'>
-              <TapToRevealCard
-                key={cards[0].id}
-                front={<RichTextRenderer editorState={cards[0].frontContent} />}
-                back={<RichTextRenderer editorState={cards[0].backContent} />}
-                revealed
-                onToggle={() => {}}
-              />
+              {renderCard(cardsOptions[0])}
             </div>
           ) : (
-            // 👇 Multiple cards (wrap in a carousel, grid, etc.)
-            <Carousel>
-              {cards.map((card) => (
-                <TapToRevealCard
-                  key={card.id}
-                  front={<RichTextRenderer editorState={card.frontContent} />}
-                  back={<RichTextRenderer editorState={card.backContent} />}
-                  revealed
-                  onToggle={() => {}}
-                />
-              ))}
-            </Carousel>
+            <div>{cardsOptions.map((card) => renderCard(card))}</div>
           )}
         </div>
       </PlayPluginWrapper>
