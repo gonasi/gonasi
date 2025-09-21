@@ -49,6 +49,12 @@ const LazyBuilderGuidedImageHotspotsPlugin = lazy(() =>
   ),
 );
 
+const LazyBuilderStepByStepRevealPluginPlugin = lazy(() =>
+  import('../RevealPlugins/StepByStepReveal/BuilderStepByStepRevealPlugin').then((module) => ({
+    default: module.BuilderStepByStepRevealPlugin,
+  })),
+);
+
 // Only components that accept `{ block?: LessonBlockLoaderReturnType }`
 const pluginComponentMap: Record<
   PluginTypeId,
@@ -60,7 +66,7 @@ const pluginComponentMap: Record<
   multiple_choice_multiple: LazyBuilderMultipleChoiceMultipleAnswersPlugin,
   multiple_choice_single: LazyBuilderMultipleChoiceSingleAnswerPlugin,
   guided_image_hotspots: LazyBuilderGuidedImageHotspotsPlugin,
-  step_by_step_reveal: notImplemented,
+  step_by_step_reveal: LazyBuilderStepByStepRevealPluginPlugin,
   hotspot_identification_question: notImplemented,
   match_concepts: notImplemented,
   sequence_ordering: notImplemented,

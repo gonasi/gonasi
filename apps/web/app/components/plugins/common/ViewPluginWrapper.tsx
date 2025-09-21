@@ -1,6 +1,6 @@
 import { type ReactNode, useState } from 'react';
 import { motion } from 'framer-motion';
-import { LayoutPanelTop, RotateCcw, SquareStack, Weight } from 'lucide-react';
+import { Info, LayoutPanelTop, RotateCcw, SquareStack, Weight } from 'lucide-react';
 
 import RichTextRenderer from '~/components/go-editor/ui/RichTextRenderer';
 import { Badge } from '~/components/ui/badge';
@@ -22,6 +22,7 @@ export interface ViewPluginWrapperProps {
   playbackMode?: 'inline' | 'standalone';
   weight: number;
   mode: 'preview' | 'play';
+  infoText?: string;
   reset?: () => void;
 }
 
@@ -31,6 +32,7 @@ export function ViewPluginWrapper({
   playbackMode = 'inline',
   weight,
   mode,
+  infoText,
   reset = () => {},
 }: ViewPluginWrapperProps) {
   const [open, setOpen] = useState(true);
@@ -88,6 +90,15 @@ export function ViewPluginWrapper({
 
   return (
     <div>
+      {infoText ? (
+        <div className='relative'>
+          <div className='absolute top-0 right-0'>
+            <Badge variant='tip'>
+              <Info /> {infoText}
+            </Badge>
+          </div>
+        </div>
+      ) : null}
       {content}
       <Sheet open={isExplanationBottomSheetOpen} onOpenChange={() => closeExplanation()}>
         <SheetContent

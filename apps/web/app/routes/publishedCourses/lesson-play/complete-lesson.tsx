@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import Confetti from 'react-confetti-boom';
 import { redirect } from 'react-router';
 import { differenceInMinutes } from 'date-fns';
@@ -12,9 +13,11 @@ import {
 import type { Route } from './+types/complete-lesson';
 import { confettiColors } from '../complete-course';
 
+import lessonCompleteSound from '/assets/sounds/lesson-complete.mp3';
 import { NavLinkButton } from '~/components/ui/button';
 import { Modal } from '~/components/ui/modal';
 import { createClient } from '~/lib/supabase/supabase.server';
+import { useStore } from '~/store';
 
 export function meta({ data }: Route.MetaArgs) {
   const lesson = data?.overviewData?.lesson;
@@ -94,8 +97,16 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   }
 }
 
+// Create Howl instance outside component to avoid recreation on every render
+const lessonCompleteHowl = new Howl({
+  src: [lessonCompleteSound],
+  volume: 0.5,
+  preload: true, // Preload for better performance
+});
+
 export default function CompleteLesson({ loaderData, params }: Route.ComponentProps) {
   const { navigationData, overviewData } = loaderData;
+  const { isSoundEnabled } = useStore();
 
   const lessonName = overviewData?.lesson?.name ?? 'this lesson';
   const chapterName = overviewData?.chapter?.name ?? 'this chapter';
@@ -114,6 +125,12 @@ export default function CompleteLesson({ loaderData, params }: Route.ComponentPr
     : `/c/${courseId}`;
 
   const sameContinueTarget = continueLessonPath === continueBlockPath;
+
+  useEffect(() => {
+    if (isSoundEnabled) {
+      lessonCompleteHowl.play();
+    }
+  }, [isSoundEnabled]);
 
   return (
     <Modal open>

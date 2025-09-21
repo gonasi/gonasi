@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import Confetti from 'react-confetti-boom';
 import { redirect } from 'react-router';
 import { differenceInMinutes } from 'date-fns';
@@ -12,10 +13,12 @@ import {
 import type { Route } from './+types/complete-chapter';
 import { confettiColors } from './complete-course';
 
+import chapterCompleteSound from '/assets/sounds/chapter-complete.mp3';
 import { LucideIconRenderer } from '~/components/cards';
 import { NavLinkButton } from '~/components/ui/button';
 import { Modal } from '~/components/ui/modal';
 import { createClient } from '~/lib/supabase/supabase.server';
+import { useStore } from '~/store';
 
 export function meta({ data }: Route.MetaArgs) {
   const chapter = data?.overviewData?.chapter;
@@ -77,11 +80,26 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   };
 }
 
+// Create Howl instance outside component to avoid recreation on every render
+const chapterCompleteHowl = new Howl({
+  src: [chapterCompleteSound],
+  volume: 0.5,
+  preload: true, // Preload for better performance
+});
+
 export default function CompleteChapter({ loaderData, params }: Route.ComponentProps) {
   const { overviewData } = loaderData;
+  const { isSoundEnabled } = useStore();
+
   const chapterName = overviewData?.chapter?.name ?? 'this chapter';
   const chapterProgress = Math.round(overviewData?.progress?.progress_percentage ?? 0);
   const courseId = params.publishedCourseId;
+
+  useEffect(() => {
+    if (isSoundEnabled) {
+      chapterCompleteHowl.play();
+    }
+  }, [isSoundEnabled]);
 
   return (
     <Modal open>

@@ -5,7 +5,7 @@ import type {
   TapToRevealInteractionType,
 } from '@gonasi/schemas/plugins';
 
-import { TapToRevealCard } from './components/TapToRevealCard';
+import { TapToRevealCard } from '../StepByStepReveal/components/TapToRevealCard';
 import { useTapToRevealInteraction } from './hooks/useTapToRevealInteraction';
 import { PlayPluginWrapper } from '../../common/PlayPluginWrapper';
 import { ViewPluginWrapper } from '../../common/ViewPluginWrapper';
