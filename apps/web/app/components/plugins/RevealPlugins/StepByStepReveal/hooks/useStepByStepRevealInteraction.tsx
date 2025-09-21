@@ -11,13 +11,13 @@ const schema = StepByStepRevealInteractionSchema;
 const getTimestamp = () => Date.now();
 
 /**
- * Hook for managing step-by-step card reveals with toggle functionality
+ * Hook for managing a sequential "step-by-step reveal" card flow.
  *
- * Flow:
- * 1. Cards can only be revealed in sequential order (0, 1, 2, ...)
- * 2. Once a card is revealed for the first time, it can be toggled enabled/disabled
- * 3. Disabled cards are still "revealed" but appear inactive/grayed out
- * 4. The next card in sequence can always be revealed regardless of toggle states
+ * Behavior:
+ * - Cards must be revealed in order (0 → 1 → 2 → ...).
+ * - A card becomes "revealed" the first time it’s shown and stays revealed thereafter.
+ * - Once revealed, a card may be toggled active/inactive, but it never becomes "unrevealed".
+ * - The next card in sequence can always be revealed, regardless of toggle state.
  */
 export function useStepByStepRevealInteraction(
   initial: StepByStepRevealInteractionSchemaTypes | null,
@@ -27,56 +27,39 @@ export function useStepByStepRevealInteraction(
     plugin_type: 'step_by_step_reveal',
   });
 
-  // Persistent state - tracks which cards have been revealed (ever)
+  // State: validated interaction state (revealed cards with metadata)
   const [state, setState] = useState<StepByStepRevealInteractionSchemaTypes>(() =>
     schema.parse(initial ?? { plugin_type: 'step_by_step_reveal' }),
   );
 
-  // Toggle state - tracks enabled/disabled for revealed cards
-  // true = enabled (default when first revealed), false = disabled
-  const [enabledState, setEnabledState] = useState<Record<string, boolean>>(() => {
-    const initialEnabledState: Record<string, boolean> = {};
-    if (initial?.revealedCards) {
-      initial.revealedCards.forEach((card) => {
-        initialEnabledState[card.id] = true; // All revealed cards start enabled
-      });
-    }
-    return initialEnabledState;
-  });
-
-  // Set of all card IDs that have been revealed at least once
+  // Set of IDs for all cards revealed at least once
   const revealedCardIds = useMemo(
     () => new Set(state.revealedCards.map((card) => card.id)),
     [state.revealedCards],
   );
 
-  // True when all cards have been revealed (regardless of enabled/disabled state)
-  const isCompleted = useMemo(() => {
-    return state.revealedCards.length === cards.length;
-  }, [cards.length, state.revealedCards.length]);
+  // True if every card in the list has been revealed
+  const isCompleted = useMemo(
+    () => state.revealedCards.length === cards.length,
+    [cards.length, state.revealedCards.length],
+  );
 
-  // Index of the next card to be revealed (0-based)
-  const currentCardIndex = useMemo(() => {
-    return state.revealedCards.length;
-  }, [state.revealedCards.length]);
+  // Index of the next unrevealed card
+  const currentCardIndex = useMemo(() => state.revealedCards.length, [state.revealedCards.length]);
 
-  // The next card that can be revealed (null if all revealed)
-  const currentCard = useMemo(() => {
-    return cards[currentCardIndex] ?? null;
-  }, [cards, currentCardIndex]);
+  // The next unrevealed card (or null if all revealed)
+  const currentCard = useMemo(() => cards[currentCardIndex] ?? null, [cards, currentCardIndex]);
 
-  // The card that would come after the current card (for lookahead)
-  const nextCard = useMemo(() => {
-    return cards[currentCardIndex + 1] ?? null;
-  }, [cards, currentCardIndex]);
+  // Lookahead: the card after the current card (or null if none)
+  const nextCard = useMemo(() => cards[currentCardIndex + 1] ?? null, [cards, currentCardIndex]);
 
-  // The most recently revealed card (null if none revealed)
-  const previousCard = useMemo(() => {
-    if (currentCardIndex === 0) return null;
-    return cards[currentCardIndex - 1] ?? null;
-  }, [cards, currentCardIndex]);
+  // The most recently revealed card (or null if none yet revealed)
+  const previousCard = useMemo(
+    () => (currentCardIndex > 0 ? (cards[currentCardIndex - 1] ?? null) : null),
+    [cards, currentCardIndex],
+  );
 
-  // Progress statistics
+  // Progress stats for UI display
   const progress = useMemo(
     () => ({
       current: state.revealedCards.length,
@@ -87,8 +70,8 @@ export function useStepByStepRevealInteraction(
   );
 
   /**
-   * Reveals a card for the first time (must be next in sequence)
-   * Card will be enabled by default when first revealed
+   * Reveal a specific card by ID (must be the next in sequence).
+   * Assigns a reveal timestamp and marks the card as revealed.
    */
   const revealCard = useCallback(
     (cardId: string) => {
@@ -97,28 +80,16 @@ export function useStepByStepRevealInteraction(
         setState((prev) =>
           schema.parse({
             ...prev,
-            revealedCards: [
-              ...prev.revealedCards,
-              {
-                id: cardId,
-                timestamp: getTimestamp(),
-              },
-            ],
+            revealedCards: [...prev.revealedCards, { id: cardId, timestamp: getTimestamp() }],
           }),
         );
-
-        // New cards start enabled
-        setEnabledState((prev) => ({
-          ...prev,
-          [cardId]: true,
-        }));
       }
     },
     [cards, revealedCardIds],
   );
 
   /**
-   * Convenience method to reveal the next card in sequence
+   * Reveal the next unrevealed card in sequence.
    */
   const revealNext = useCallback(() => {
     if (currentCard) {
@@ -127,166 +98,53 @@ export function useStepByStepRevealInteraction(
   }, [currentCard, revealCard]);
 
   /**
-   * Toggles the enabled/disabled state of a revealed card
-   * Only works on cards that have been revealed at least once
-   */
-  const toggleCard = useCallback(
-    (cardId: string) => {
-      if (revealedCardIds.has(cardId)) {
-        setEnabledState((prev) => ({
-          ...prev,
-          [cardId]: !prev[cardId],
-        }));
-      }
-    },
-    [revealedCardIds],
-  );
-
-  /**
-   * Enables a revealed card (makes it active)
-   */
-  const enableCard = useCallback(
-    (cardId: string) => {
-      if (revealedCardIds.has(cardId)) {
-        setEnabledState((prev) => ({
-          ...prev,
-          [cardId]: true,
-        }));
-      }
-    },
-    [revealedCardIds],
-  );
-
-  /**
-   * Disables a revealed card (makes it inactive/grayed)
-   */
-  const disableCard = useCallback(
-    (cardId: string) => {
-      if (revealedCardIds.has(cardId)) {
-        setEnabledState((prev) => ({
-          ...prev,
-          [cardId]: false,
-        }));
-      }
-    },
-    [revealedCardIds],
-  );
-
-  /**
-   * Resets everything to initial state
+   * Reset the interaction back to its default state.
    */
   const reset = useCallback(() => {
     setState(defaultState);
-    setEnabledState({});
   }, [defaultState]);
 
-  // ===== CARD STATE HELPERS =====
+  // ----- Helpers -----
 
-  /**
-   * Checks if a card has been revealed at least once
-   */
+  /** Check if a card has ever been revealed */
   const isCardRevealed = useCallback(
-    (cardId: string) => {
-      return revealedCardIds.has(cardId);
-    },
+    (cardId: string) => revealedCardIds.has(cardId),
     [revealedCardIds],
   );
 
-  /**
-   * Checks if a revealed card is currently enabled (active)
-   * Returns false for unrevealed cards
-   */
-  const isCardEnabled = useCallback(
-    (cardId: string) => {
-      return revealedCardIds.has(cardId) && (enabledState[cardId] ?? true);
-    },
-    [revealedCardIds, enabledState],
-  );
-
-  /**
-   * Checks if a revealed card is currently disabled (inactive)
-   * Returns false for unrevealed cards
-   */
-  const isCardDisabled = useCallback(
-    (cardId: string) => {
-      return revealedCardIds.has(cardId) && !(enabledState[cardId] ?? true);
-    },
-    [revealedCardIds, enabledState],
-  );
-
-  /**
-   * Gets the timestamp when a card was first revealed
-   */
+  /** Get the timestamp when a card was first revealed (null if never) */
   const getCardRevealTime = useCallback(
-    (cardId: string) => {
-      return state.revealedCards.find((card) => card.id === cardId)?.timestamp ?? null;
-    },
+    (cardId: string) => state.revealedCards.find((card) => card.id === cardId)?.timestamp ?? null,
     [state.revealedCards],
   );
 
-  /**
-   * Gets all revealed cards with their enabled/disabled state
-   */
+  /** Get all revealed cards with their metadata and reveal timestamps */
   const getRevealedCards = useCallback(() => {
     return state.revealedCards
-      .map((revealedCard) => ({
-        ...revealedCard,
-        card: cards.find((card) => card.id === revealedCard.id),
+      .map((revealed) => ({
+        ...revealed,
+        card: cards.find((c) => c.id === revealed.id),
       }))
-      .filter((item) => item.card)
-      .map((item) => ({
-        ...item.card!,
-        timestamp: item.timestamp,
-        isEnabled: enabledState[item.card!.id] ?? true,
-        isDisabled: !(enabledState[item.card!.id] ?? true),
+      .filter((entry) => entry.card)
+      .map((entry) => ({
+        ...entry.card!,
+        timestamp: entry.timestamp,
       }));
-  }, [state.revealedCards, cards, enabledState]);
+  }, [state.revealedCards, cards]);
 
-  /**
-   * Gets only the enabled (active) revealed cards
-   */
-  const getEnabledCards = useCallback(() => {
-    return getRevealedCards().filter((card) => card.isEnabled);
-  }, [getRevealedCards]);
+  // Derived booleans for navigation / UI
+  const canRevealNext = useMemo(
+    () => currentCard !== null && !isCompleted,
+    [currentCard, isCompleted],
+  );
 
-  /**
-   * Gets only the disabled (inactive) revealed cards
-   */
-  const getDisabledCards = useCallback(() => {
-    return getRevealedCards().filter((card) => card.isDisabled);
-  }, [getRevealedCards]);
-
-  // True if there's a next card that can be revealed
-  const canRevealNext = useMemo(() => {
-    return currentCard !== null && !isCompleted;
-  }, [currentCard, isCompleted]);
-
-  // True if we've revealed at least one card
-  const canGoBack = useMemo(() => {
-    return currentCardIndex > 0;
-  }, [currentCardIndex]);
-
-  // Statistics about enabled/disabled cards
-  const enabledStats = useMemo(() => {
-    const revealed = state.revealedCards.length;
-    const enabled = Object.values(enabledState).filter(Boolean).length;
-    const disabled = revealed - enabled;
-
-    return {
-      revealed,
-      enabled,
-      disabled,
-      allEnabled: revealed > 0 && enabled === revealed,
-      allDisabled: revealed > 0 && disabled === revealed,
-    };
-  }, [state.revealedCards.length, enabledState]);
+  const canGoBack = useMemo(() => currentCardIndex > 0, [currentCardIndex]);
 
   return {
-    // ===== STATE =====
+    // State
     state,
-    enabledState,
 
-    // ===== DERIVED STATE =====
+    // Derived state
     isCompleted,
     currentCardIndex,
     currentCard,
@@ -296,24 +154,16 @@ export function useStepByStepRevealInteraction(
     revealedCardIds,
     canRevealNext,
     canGoBack,
-    enabledStats,
 
-    // ===== ACTIONS =====
-    revealCard, // Reveal specific card (if next in sequence)
-    revealNext, // Reveal next card in sequence
-    toggleCard, // Toggle enabled/disabled state
-    enableCard, // Set card to enabled
-    disableCard, // Set card to disabled
-    reset, // Reset to initial state
+    // Actions
+    revealCard,
+    revealNext,
+    reset,
 
-    // ===== HELPERS =====
-    isCardRevealed, // Has been revealed at least once
-    isCardEnabled, // Is currently enabled/active
-    isCardDisabled, // Is currently disabled/inactive
-    getCardRevealTime, // When was card first revealed
-    getRevealedCards, // All revealed cards with state
-    getEnabledCards, // Only enabled revealed cards
-    getDisabledCards, // Only disabled revealed cards
+    // Helpers
+    isCardRevealed,
+    getCardRevealTime,
+    getRevealedCards,
   };
 }
 

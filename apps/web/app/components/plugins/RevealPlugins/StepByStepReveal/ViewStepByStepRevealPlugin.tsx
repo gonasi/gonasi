@@ -76,9 +76,8 @@ export function ViewStepByStepRevealPlugin({ blockWithProgress }: ViewPluginComp
 
   const {
     state,
-    enabledState,
 
-    // ===== DERIVED STATE =====
+    // Derived state
     isCompleted,
     currentCardIndex,
     currentCard,
@@ -88,24 +87,16 @@ export function ViewStepByStepRevealPlugin({ blockWithProgress }: ViewPluginComp
     revealedCardIds,
     canRevealNext,
     canGoBack,
-    enabledStats,
 
-    // ===== ACTIONS =====
-    revealCard, // Reveal specific card (if next in sequence)
-    revealNext, // Reveal next card in sequence
-    toggleCard, // Toggle enabled/disabled state
-    enableCard, // Set card to enabled
-    disableCard, // Set card to disabled
-    reset, // Reset to initial state
+    // Actions
+    revealCard,
+    revealNext,
+    reset,
 
-    // ===== HELPERS =====
-    isCardRevealed, // Has been revealed at least once
-    isCardEnabled, // Is currently enabled/active
-    isCardDisabled, // Is currently disabled/inactive
-    getCardRevealTime, // When was card first revealed
-    getRevealedCards, // All revealed cards with state
-    getEnabledCards, // Only enabled revealed cards
-    getDisabledCards, // Only disabled revealed cards
+    // Helpers
+    isCardRevealed,
+    getCardRevealTime,
+    getRevealedCards,
   } = useStepByStepRevealInteraction(currentInteractionData, cardsOptions);
 
   useEffect(() => {
@@ -120,19 +111,10 @@ export function ViewStepByStepRevealPlugin({ blockWithProgress }: ViewPluginComp
       key={card.id}
       cardId={card.id}
       isRevealed={isCardRevealed(card.id)}
-      isEnabled={isCardEnabled(card.id)}
       canReveal={currentCard?.id === card.id}
       onReveal={revealCard}
-      onToggle={toggleCard}
       front={<RichTextRenderer editorState={card.frontContent} />}
       back={<RichTextRenderer editorState={card.backContent} />}
-      className={
-        mode === 'preview'
-          ? 'opacity-75' // Preview mode styling
-          : currentCard?.id === card.id
-            ? 'shadow-lg ring-2 ring-blue-400 ring-offset-2 transition-all duration-300' // Highlight next card
-            : 'transition-all duration-300'
-      }
     />
   );
 

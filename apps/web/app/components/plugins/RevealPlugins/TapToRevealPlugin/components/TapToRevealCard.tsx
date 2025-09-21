@@ -1,4 +1,5 @@
 import type React from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff } from 'lucide-react';
 
@@ -8,100 +9,70 @@ interface TapToRevealProps {
   cardId: string;
   front: React.ReactNode;
   back: React.ReactNode;
-  className?: string;
-  revealedClassName?: string;
-  hiddenClassName?: string;
-  disabledClassName?: string;
+
   // Hook integration props
   isRevealed: boolean;
-  isEnabled: boolean;
   canReveal: boolean; // Can this card be revealed right now?
   onReveal: (cardId: string) => void;
-  onToggle: (cardId: string) => void;
-  // Legacy support
-  disabled?: boolean;
 }
 
 export function TapToRevealCard({
   cardId,
   front,
   back,
-  className,
-  revealedClassName,
-  hiddenClassName,
-  disabledClassName,
   isRevealed,
-  isEnabled,
   canReveal,
   onReveal,
-  onToggle,
-  disabled = false,
 }: TapToRevealProps) {
-  const handleClick = () => {
-    if (disabled) return;
+  const [isFlipped, setIsFlipped] = useState(false);
 
+  const handleClick = () => {
+    // Can't interact if not revealed and can't reveal
+    if (!isRevealed && !canReveal) return;
+
+    // Always toggle the flip state
+    setIsFlipped(!isFlipped);
+
+    // If not revealed yet, notify parent on first flip
     if (!isRevealed) {
-      // Card hasn't been revealed yet
-      if (canReveal) {
-        onReveal(cardId);
-      }
-    } else {
-      // Card has been revealed, can toggle enabled/disabled
-      onToggle(cardId);
+      onReveal(cardId);
     }
   };
 
-  // Determine interaction state
-  const canInteract = !disabled && (canReveal || isRevealed);
-  const showAsRevealed = isRevealed && isEnabled;
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      handleClick();
+    }
+  };
+
+  const isInteractive = isRevealed || canReveal;
+  const isDisabled = !isRevealed && !canReveal;
 
   return (
     <div
       className={cn(
-        'relative h-64 w-52 select-none',
-        !canInteract ? 'cursor-not-allowed opacity-60' : 'cursor-pointer',
-        // Special styling for disabled revealed cards
-        isRevealed && !isEnabled && 'opacity-50 grayscale',
-        className,
+        'relative h-64 w-52 transition-all duration-200 select-none',
+        isInteractive ? 'cursor-pointer' : 'cursor-not-allowed',
+        isDisabled && 'opacity-50',
       )}
       style={{ perspective: '1200px' }}
-      onClick={canInteract ? handleClick : undefined}
-      onKeyDown={
-        canInteract
-          ? (e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                handleClick();
-              }
-            }
-          : undefined
-      }
+      onClick={handleClick}
+      onKeyDown={isInteractive ? handleKeyDown : undefined}
       role='button'
-      tabIndex={canInteract ? 0 : -1}
-      aria-pressed={showAsRevealed}
-      aria-disabled={!canInteract}
-      aria-label={
-        !isRevealed
-          ? canReveal
-            ? 'Tap to reveal card'
-            : 'Card locked - complete previous cards first'
-          : isEnabled
-            ? 'Tap to disable card'
-            : 'Tap to enable card'
-      }
+      tabIndex={isInteractive ? 0 : -1}
+      aria-disabled={isDisabled}
+      aria-label={isFlipped ? 'Hide card back' : 'Reveal card'}
     >
       {/* Front side */}
       <motion.div
-        data-side='front'
         className={cn(
-          'border-input from-background to-muted/30 absolute inset-0 flex h-full w-full flex-col rounded-xl border bg-gradient-to-br p-2',
-          // Apply disabled styling to front when card is revealed but disabled
-          isRevealed && !isEnabled && (disabledClassName || 'opacity-75 grayscale'),
-          hiddenClassName,
+          'absolute inset-0 flex h-full w-full flex-col rounded-xl border p-2',
+          isRevealed
+            ? 'border-success/20 from-success/5 to-muted/20 bg-gradient-to-br'
+            : 'border-input from-background to-muted/30 bg-gradient-to-br',
         )}
-        animate={{
-          rotateY: showAsRevealed ? 180 : 0,
-        }}
+        animate={{ rotateY: isFlipped ? 180 : 0 }}
         transition={{
           type: 'spring',
           stiffness: 200,
@@ -115,11 +86,10 @@ export function TapToRevealCard({
         <EyeOff
           className={cn(
             'absolute -top-2 -right-2 h-6 w-6 rounded-full border p-1',
-            !canInteract
-              ? 'text-muted-foreground opacity-40'
-              : isRevealed && !isEnabled
-                ? 'text-muted-foreground bg-background/50 opacity-60'
-                : 'text-muted-foreground bg-background/50',
+            isRevealed
+              ? 'border-success/30 bg-success/10 text-success/60'
+              : 'border-input bg-background/80 text-muted-foreground',
+            isDisabled && 'opacity-40',
           )}
         />
 
@@ -128,16 +98,13 @@ export function TapToRevealCard({
 
       {/* Back side */}
       <motion.div
-        data-side='back'
         className={cn(
-          'border-input from-background to-muted/20 absolute inset-0 flex h-full w-full flex-col rounded-xl border bg-gradient-to-br p-2',
-          // Apply disabled styling when card is revealed but disabled
-          isRevealed && !isEnabled && (disabledClassName || 'opacity-95'),
-          revealedClassName,
+          'absolute inset-0 flex h-full w-full flex-col rounded-xl border p-2',
+          isRevealed
+            ? 'border-success/50 from-success/20 to-muted/45 bg-gradient-to-br'
+            : 'border-input from-background to-muted/20 bg-gradient-to-br',
         )}
-        animate={{
-          rotateY: showAsRevealed ? 360 : 180,
-        }}
+        animate={{ rotateY: isFlipped ? 360 : 180 }}
         transition={{
           type: 'spring',
           stiffness: 200,
@@ -152,11 +119,10 @@ export function TapToRevealCard({
         <Eye
           className={cn(
             'absolute -top-2 -right-2 h-6 w-6 rounded-full border p-1',
-            !canInteract
-              ? 'text-muted-foreground opacity-40'
-              : isRevealed && !isEnabled
-                ? 'text-foreground bg-background/50 opacity-60'
-                : 'text-foreground bg-background/50',
+            isRevealed
+              ? 'border-success/50 bg-success/20 text-success'
+              : 'border-input bg-background/80 text-foreground',
+            isDisabled && 'opacity-40',
           )}
         />
 
