@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import type {
   BlockInteractionSchemaTypes,
@@ -6,17 +6,25 @@ import type {
   StepByStepRevealCardSchemaTypes,
 } from '@gonasi/schemas/plugins';
 
+import { TapToRevealCard } from './components/TapToRevealCard';
 import { useStepByStepRevealInteraction } from './hooks/useStepByStepRevealInteraction';
 import { PlayPluginWrapper } from '../../common/PlayPluginWrapper';
 import { ViewPluginWrapper } from '../../common/ViewPluginWrapper';
 import { useViewPluginCore } from '../../hooks/useViewPluginCore';
 import type { ViewPluginComponentProps } from '../../PluginRenderers/ViewPluginTypesRenderer';
 import { shuffleArray } from '../../utils';
-import { TapToRevealCard } from '../TapToRevealPlugin/components/TapToRevealCard';
 
 import { NotFoundCard } from '~/components/cards';
 import RichTextRenderer from '~/components/go-editor/ui/RichTextRenderer';
 import { BlockActionButton } from '~/components/ui/button';
+import {
+  Carousel,
+  type CarouselApi,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from '~/components/ui/carousel';
 import { useStore } from '~/store';
 
 type StepByStepRevealPluginType = Extract<
@@ -107,6 +115,23 @@ export function ViewStepByStepRevealPlugin({ blockWithProgress }: ViewPluginComp
     }
   }, [mode, state, updateInteractionData]);
 
+  const [api, setApi] = useState<CarouselApi>();
+  const [current, setCurrent] = useState(0);
+  const [count, setCount] = useState(0);
+
+  const itemsPerSlide = layoutStyle === 'single' ? 1 : 2;
+
+  useEffect(() => {
+    if (!api) {
+      return;
+    }
+    setCount(api.scrollSnapList().length);
+    setCurrent(api.selectedScrollSnap() + 1);
+    api.on('select', () => {
+      setCurrent(api.selectedScrollSnap() + 1);
+    });
+  }, [api]);
+
   const renderCard = (card: StepByStepRevealCardSchemaTypes) => (
     <TapToRevealCard
       key={card.id}
@@ -126,6 +151,7 @@ export function ViewStepByStepRevealPlugin({ blockWithProgress }: ViewPluginComp
       mode={mode}
       reset={reset}
       weight={weight}
+      infoText='Tap To Reveal'
     >
       <PlayPluginWrapper>
         <div className='mb-4'>
@@ -141,7 +167,38 @@ export function ViewStepByStepRevealPlugin({ blockWithProgress }: ViewPluginComp
               {renderCard(cardsOptions[0])}
             </div>
           ) : (
-            <div>{cardsOptions.map((card) => renderCard(card))}</div>
+            <div>
+              <Carousel
+                setApi={setApi}
+                key={`carousel-${itemsPerSlide}`}
+                opts={{
+                  align: 'start',
+                  slidesToScroll: itemsPerSlide,
+                  containScroll: 'trimSnaps',
+                }}
+                className='mx-auto w-full'
+              >
+                <CarouselContent className='py-4'>
+                  {cardsOptions.map((card) => {
+                    return (
+                      <CarouselItem
+                        key={card.id}
+                        className={`pl-4 ${itemsPerSlide === 2 ? 'basis-1/2' : 'basis-full'}`}
+                      >
+                        <div className='flex w-full items-center justify-center'>
+                          {renderCard(card)}
+                        </div>
+                      </CarouselItem>
+                    );
+                  })}
+                </CarouselContent>
+                <CarouselPrevious />
+                <CarouselNext />
+              </Carousel>
+              <div className='text-muted-foreground py-2 text-center text-sm'>
+                Slide {current} of {count}
+              </div>
+            </div>
           )}
         </div>
         <div className='flex w-full justify-end py-4'>

@@ -3,7 +3,16 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff } from 'lucide-react';
 
+import flipSound from '/assets/sounds/flipcard.mp3';
 import { cn } from '~/lib/utils';
+import { useStore } from '~/store';
+
+// Create Howl instance outside component to avoid recreation on every render
+const flipHowl = new Howl({
+  src: [flipSound],
+  volume: 0.5,
+  preload: true, // Preload for better performance
+});
 
 interface TapToRevealProps {
   cardId: string;
@@ -26,10 +35,20 @@ export function TapToRevealCard({
 }: TapToRevealProps) {
   const [isFlipped, setIsFlipped] = useState(false);
 
+  const { isSoundEnabled } = useStore();
+
   const handleClick = () => {
     if (!isRevealed && !canReveal) return;
 
-    setIsFlipped(!isFlipped);
+    // Play sound immediately when clicked
+    if (isSoundEnabled) {
+      flipHowl.play();
+    }
+
+    // Delay the flip animation slightly to sync with sound
+    setTimeout(() => {
+      setIsFlipped(!isFlipped);
+    }, 50); // Small delay to let sound start
 
     if (!isRevealed) {
       onReveal(cardId);
@@ -90,8 +109,8 @@ export function TapToRevealCard({
         animate={{ rotateY: isFlipped ? 180 : 0 }}
         transition={{
           type: 'spring',
-          stiffness: 200,
-          damping: 20,
+          stiffness: 120, // Reduced from 200 for slower animation
+          damping: 25, // Increased from 20 for smoother motion
         }}
         style={{
           transformStyle: 'preserve-3d',
@@ -122,8 +141,8 @@ export function TapToRevealCard({
         animate={{ rotateY: isFlipped ? 360 : 180 }}
         transition={{
           type: 'spring',
-          stiffness: 200,
-          damping: 20,
+          stiffness: 120, // Reduced from 200 for slower animation
+          damping: 25, // Increased from 20 for smoother motion
         }}
         style={{
           transformStyle: 'preserve-3d',
@@ -133,7 +152,7 @@ export function TapToRevealCard({
       >
         <Eye
           className={cn(
-            'absolute -top-2 -right-2 h-6 w-6 rounded-full border p-1',
+            'absolute -top-2 -left-2 h-6 w-6 rounded-full border p-1',
             isRevealed
               ? 'border-success/50 bg-success/20 text-success'
               : 'border-input bg-background/80 text-foreground',
