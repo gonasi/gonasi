@@ -12,9 +12,11 @@ import {
 
 import type { Route } from './+types/complete-course';
 
+import courseCompleteSound from '/assets/sounds/course-complete.mp3';
 import { NavLinkButton } from '~/components/ui/button';
 import { Modal } from '~/components/ui/modal';
 import { createClient } from '~/lib/supabase/supabase.server';
+import { useStore } from '~/store';
 
 export function meta({ data }: Route.MetaArgs) {
   const course = data?.overviewData?.course;
@@ -88,8 +90,17 @@ export const confettiColors = [
   '#f472b6', // rose-400
 ];
 
+// Create Howl instance outside component to avoid recreation on every render
+const courseCompleteHowl = new Howl({
+  src: [courseCompleteSound],
+  volume: 0.5,
+  preload: true, // Preload for better performance
+});
+
 export default function CompleteCourse({ loaderData, params }: Route.ComponentProps) {
   const { overviewData } = loaderData;
+  const { isSoundEnabled } = useStore();
+
   const courseName = overviewData?.course?.name ?? 'this course';
   const courseId = params.publishedCourseId;
 
@@ -106,6 +117,12 @@ export default function CompleteCourse({ loaderData, params }: Route.ComponentPr
       createdAt: number;
     }[]
   >([]);
+
+  useEffect(() => {
+    if (isSoundEnabled) {
+      courseCompleteHowl.play();
+    }
+  }, [isSoundEnabled]);
 
   useEffect(() => {
     const interval = setInterval(() => {
