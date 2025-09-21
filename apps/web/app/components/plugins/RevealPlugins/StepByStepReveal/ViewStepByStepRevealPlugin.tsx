@@ -16,6 +16,7 @@ import { TapToRevealCard } from '../TapToRevealPlugin/components/TapToRevealCard
 
 import { NotFoundCard } from '~/components/cards';
 import RichTextRenderer from '~/components/go-editor/ui/RichTextRenderer';
+import { BlockActionButton } from '~/components/ui/button';
 import { useStore } from '~/store';
 
 type StepByStepRevealPluginType = Extract<
@@ -141,6 +142,16 @@ export function ViewStepByStepRevealPlugin({ blockWithProgress }: ViewPluginComp
             </div>
           ) : (
             <div>{cardsOptions.map((card) => renderCard(card))}</div>
+          )}
+        </div>
+        <div className='flex w-full justify-end py-4'>
+          {isCompleted && !blockWithProgress.block_progress?.is_completed && (
+            <BlockActionButton
+              onClick={handleContinue}
+              loading={loading}
+              isLastBlock={is_last_block}
+              disabled={mode === 'preview'}
+            />
           )}
         </div>
       </PlayPluginWrapper>
