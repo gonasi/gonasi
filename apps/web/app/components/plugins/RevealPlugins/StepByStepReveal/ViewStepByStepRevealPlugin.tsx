@@ -6,6 +6,7 @@ import type {
   StepByStepRevealCardSchemaTypes,
 } from '@gonasi/schemas/plugins';
 
+import { SlideIndicator } from './components/SlideIndicator';
 import { TapToRevealCard } from './components/TapToRevealCard';
 import { useStepByStepRevealInteraction } from './hooks/useStepByStepRevealInteraction';
 import { PlayPluginWrapper } from '../../common/PlayPluginWrapper';
@@ -49,7 +50,7 @@ function isStepByStepRevealInteraction(data: unknown): data is StepByStepRevealI
 export function ViewStepByStepRevealPlugin({ blockWithProgress }: ViewPluginComponentProps) {
   const {
     settings: { playbackMode, layoutStyle, randomization, weight },
-    content: { id, title, cards },
+    content: { title, cards },
   } = blockWithProgress.block as StepByStepRevealPluginType;
 
   const { is_last_block } = blockWithProgress;
@@ -195,9 +196,7 @@ export function ViewStepByStepRevealPlugin({ blockWithProgress }: ViewPluginComp
                 <CarouselPrevious />
                 <CarouselNext />
               </Carousel>
-              <div className='text-muted-foreground py-2 text-center text-sm'>
-                Slide {current} of {count}
-              </div>
+              <SlideIndicator current={current} count={count} />
             </div>
           )}
         </div>
