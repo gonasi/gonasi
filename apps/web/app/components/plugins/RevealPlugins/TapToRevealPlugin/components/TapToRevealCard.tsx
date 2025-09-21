@@ -27,13 +27,10 @@ export function TapToRevealCard({
   const [isFlipped, setIsFlipped] = useState(false);
 
   const handleClick = () => {
-    // Can't interact if not revealed and can't reveal
     if (!isRevealed && !canReveal) return;
 
-    // Always toggle the flip state
     setIsFlipped(!isFlipped);
 
-    // If not revealed yet, notify parent on first flip
     if (!isRevealed) {
       onReveal(cardId);
     }
@@ -50,7 +47,7 @@ export function TapToRevealCard({
   const isDisabled = !isRevealed && !canReveal;
 
   return (
-    <div
+    <motion.div
       className={cn(
         'relative h-64 w-52 transition-all duration-200 select-none',
         isInteractive ? 'cursor-pointer' : 'cursor-not-allowed',
@@ -63,6 +60,24 @@ export function TapToRevealCard({
       tabIndex={isInteractive ? 0 : -1}
       aria-disabled={isDisabled}
       aria-label={isFlipped ? 'Hide card back' : 'Reveal card'}
+      animate={
+        canReveal && !isRevealed
+          ? {
+              scale: [1, 1.05, 1],
+              rotate: [0, -2, 2, 0],
+            }
+          : {}
+      }
+      transition={
+        canReveal && !isRevealed
+          ? {
+              duration: 0.6,
+              repeat: Infinity,
+              repeatDelay: 2, // wait 2s before next nudge
+              ease: 'easeInOut',
+            }
+          : {}
+      }
     >
       {/* Front side */}
       <motion.div
@@ -128,6 +143,6 @@ export function TapToRevealCard({
 
         <div className='flex flex-1 items-center justify-center overflow-y-auto'>{back}</div>
       </motion.div>
-    </div>
+    </motion.div>
   );
 }
