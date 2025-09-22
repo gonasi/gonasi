@@ -17,6 +17,7 @@ export async function fetchFileById({
   mode = 'play',
 }: FetchFileByIdArgs) {
   try {
+    console.log('******** mode: ', mode);
     const isPreview = mode === 'preview';
     const table = isPreview ? 'file_library' : 'published_file_library';
     const bucket = isPreview ? FILE_LIBRARY_BUCKET : PUBLISHED_FILE_LIBRARY_BUCKET;
@@ -45,7 +46,12 @@ export async function fetchFileById({
       .single();
 
     if (error || !data) {
-      console.error(`[fetchFileById] Error fetching ${table}:`, error, 'fileId:', fileId);
+      console.error(
+        `[fetchFileById] Error fetching mode: ${mode}, table: ${table}, File Id: ${fileId}:`,
+        error,
+        'fileId:',
+        fileId,
+      );
       return {
         success: false,
         message: 'File not found or failed to fetch from database',
