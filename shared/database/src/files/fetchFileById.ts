@@ -17,7 +17,6 @@ export async function fetchFileById({
   mode = 'play',
 }: FetchFileByIdArgs) {
   try {
-    console.log('******** mode: ', mode);
     const isPreview = mode === 'preview';
     const table = isPreview ? 'file_library' : 'published_file_library';
     const bucket = isPreview ? FILE_LIBRARY_BUCKET : PUBLISHED_FILE_LIBRARY_BUCKET;
