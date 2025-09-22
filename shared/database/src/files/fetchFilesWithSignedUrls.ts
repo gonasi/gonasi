@@ -7,30 +7,29 @@ import type { FetchDataParams } from '../types';
 interface FetchFilesParams extends FetchDataParams {
   courseId: string;
   fileType?: FileType;
-  transformOptions?: { width?: number; height?: number }; // optional for images
+  transformOptions?: { width?: number; height?: number; quality?: number }; // optional for images
 }
 
 // Helper to batch sign files with optional transform and default aspect ratio
 async function signFiles(
   supabase: any,
   paths: string[],
-  transform?: { width?: number; height?: number },
+  transform?: { width?: number; height?: number; quality?: number },
 ) {
   if (paths.length === 0) return [];
 
-  // Default transform: width = 200px, height undefined = preserve aspect ratio
+  // Default transform: width = 200px, height undefined preserves aspect ratio, quality default 80
   const defaultTransform = {
     width: transform?.width ?? 200,
-    height: transform?.height, // undefined keeps original aspect ratio
+    height: transform?.height,
+    quality: transform?.quality ?? 70,
   };
 
-  const { data, error } = await supabase.storage
-    .from(FILE_LIBRARY_BUCKET)
-    .createSignedUrls(
-      paths,
-      3600,
-      transform ? ({ transform: defaultTransform, format: 'webp' } as any) : undefined,
-    );
+  const { data, error } = await supabase.storage.from(FILE_LIBRARY_BUCKET).createSignedUrls(
+    paths,
+    3600,
+    { transform: defaultTransform, format: 'webp' } as any, // TS workaround
+  );
 
   if (error) {
     console.error('Error signing URLs', error);
