@@ -28,6 +28,9 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     fetchFilesWithSignedUrls({
       supabase,
       courseId: params.courseId,
+      transformOptions: {
+        width: 150,
+      },
       searchQuery,
       limit,
       page,
