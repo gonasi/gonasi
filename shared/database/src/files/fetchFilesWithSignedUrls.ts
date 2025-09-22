@@ -45,26 +45,27 @@ export async function fetchFilesWithSignedUrls({
     };
   }
 
-  const files = await Promise.all(
-    data.map(async (file) => {
-      const { data: signedUrlData, error: signedUrlError } = await supabase.storage
-        .from(FILE_LIBRARY_BUCKET)
-        .createSignedUrl(file.path, 3600);
+  // Extract all file paths
+  const filePaths = data.map((file) => file.path);
 
-      if (signedUrlError) {
-        throw new Error(`Signed URL error: ${signedUrlError.message}`);
-      }
+  // Get signed URLs in a single batch
+  const { data: signedUrlsData, error: signedUrlsError } = await supabase.storage
+    .from(FILE_LIBRARY_BUCKET)
+    .createSignedUrls(filePaths, 3600);
 
-      return {
-        ...file,
-        file_type: file.file_type as FileType,
-        signed_url: signedUrlData?.signedUrl ?? null,
-      };
-    }),
-  );
+  if (signedUrlsError) {
+    throw new Error(`Signed URLs error: ${signedUrlsError.message}`);
+  }
+
+  // Map signed URLs back to file objects
+  const filesWithUrls = data.map((file, index) => ({
+    ...file,
+    file_type: file.file_type as FileType,
+    signed_url: signedUrlsData?.[index]?.signedUrl ?? null,
+  }));
 
   return {
     count: count || 0,
-    data: files,
+    data: filesWithUrls,
   };
 }
