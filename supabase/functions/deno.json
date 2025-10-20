@@ -23,7 +23,6 @@
   },
 
   "tasks": {
-    "serve": "supabase functions serve new-course-file --no-verify-jwt",
-    "check": "deno check ./_shared/*.ts ./new-course-file/index.ts"
+    "serve": "supabase functions serve new-course-file --no-verify-jwt"
   }
 }

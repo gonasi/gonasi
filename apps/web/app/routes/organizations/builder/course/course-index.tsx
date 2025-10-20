@@ -61,15 +61,9 @@ export default function CoursesIndex({ params, loaderData }: Route.ComponentProp
         name: 'Content',
         icon: BookType,
       },
-      // TODO: Delete old implementation
       {
         to: `${basePath}/file-library`,
         name: 'Files',
-        icon: FileStack,
-      },
-      {
-        to: `${basePath}/course-files`,
-        name: 'Course Files',
         icon: FileStack,
       },
     ],

@@ -206,24 +206,6 @@ export default [
             ]),
           ],
         ),
-
-        route(
-          'course-files',
-          'routes/organizations/builder/course/course-files/course-files-index.tsx',
-          [
-            route('new', 'routes/organizations/builder/course/course-files/new-file.tsx'),
-            ...prefix(':fileId', [
-              route('edit', 'routes/organizations/builder/course/course-files/edit-file-name.tsx'),
-
-              route(
-                'edit/image',
-                'routes/organizations/builder/course/course-files/edit-file-image.tsx',
-              ),
-
-              route('delete', 'routes/organizations/builder/course/course-files/delete-file.tsx'),
-            ]),
-          ],
-        ),
       ],
     ),
 

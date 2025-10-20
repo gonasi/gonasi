@@ -27,9 +27,4 @@ export const ENV = {
   // 🪩 Frontend or app configuration
   FRONTEND_URL: requireEnv('FRONTEND_URL'),
   APP_ENV: Deno.env.get('APP_ENV') ?? 'development',
-
-  // ☁️ Cloudinary configuration for media uploads
-  CLOUDINARY_CLOUD_NAME: requireEnv('CLOUDINARY_CLOUD_NAME'),
-  CLOUDINARY_API_KEY: requireEnv('CLOUDINARY_API_KEY'),
-  CLOUDINARY_API_SECRET: requireEnv('CLOUDINARY_API_SECRET'),
 };
