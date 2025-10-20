@@ -1,0 +1,7 @@
+{
+  "imports": {
+    "@shared/": "./_shared/",
+    "@supabase/supabase-js": "npm:@supabase/supabase-js@2",
+    "zod": "https://deno.land/x/zod@v3.23.8/mod.ts"
+  }
+}

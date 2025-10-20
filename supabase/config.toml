@@ -166,9 +166,14 @@ schema_paths = [
   './schemas/lessons/lessons_rpc_reorder_delete.sql',
   './schemas/blocks/lesson_blocks_rpc_reorder_delete.sql',
 
+  # TODO: DELETE
   './schemas/fileLibrary/file_utils.sql',
   './schemas/fileLibrary/file_library_schema_indexes.sql',
   './schemas/fileLibrary/file_library_rls.sql',
+
+  './schemas/courseFiles/course_files_utils.sql',
+  './schemas/courseFiles/course_files_schema_indexes.sql',
+  './schemas/courseFiles/course_files_rls.sql',
 
   # # published
   './schemas/publishedCourses/published_courses_schema_and_indexes.sql',
@@ -593,3 +598,15 @@ entrypoint = "./functions/send-org-invite/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/send-org-invite/*.html" ]
+
+
+[functions.new-course-file]
+enabled = true
+verify_jwt = true
+import_map = "./functions/import_map.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/new-course-file/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/new-course-file/*.html" ]

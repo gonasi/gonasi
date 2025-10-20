@@ -17,10 +17,10 @@ export type Database = {
     Functions: {
       graphql: {
         Args: {
+          extensions?: Json
           operationName?: string
           query?: string
           variables?: Json
-          extensions?: Json
         }
         Returns: Json
       }
@@ -454,6 +454,95 @@ export type Database = {
           {
             foreignKeyName: "course_enrollments_user_id_fkey"
             columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      course_files: {
+        Row: {
+          access_mode: string
+          bytes: number
+          course_id: string | null
+          created_at: string
+          created_by: string | null
+          file_type: Database["public"]["Enums"]["file_type"]
+          format: string
+          id: string
+          metadata: Json
+          mime_type: string
+          name: string
+          organization_id: string
+          public_id: string
+          resource_type: Database["public"]["Enums"]["resource_type"]
+          updated_at: string
+          updated_by: string | null
+          url: string | null
+        }
+        Insert: {
+          access_mode?: string
+          bytes: number
+          course_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          file_type?: Database["public"]["Enums"]["file_type"]
+          format: string
+          id?: string
+          metadata?: Json
+          mime_type: string
+          name: string
+          organization_id: string
+          public_id: string
+          resource_type?: Database["public"]["Enums"]["resource_type"]
+          updated_at?: string
+          updated_by?: string | null
+          url?: string | null
+        }
+        Update: {
+          access_mode?: string
+          bytes?: number
+          course_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          file_type?: Database["public"]["Enums"]["file_type"]
+          format?: string
+          id?: string
+          metadata?: Json
+          mime_type?: string
+          name?: string
+          organization_id?: string
+          public_id?: string
+          resource_type?: Database["public"]["Enums"]["resource_type"]
+          updated_at?: string
+          updated_by?: string | null
+          url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_files_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_files_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_files_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_files_updated_by_fkey"
+            columns: ["updated_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -2134,7 +2223,7 @@ export type Database = {
     }
     Functions: {
       accept_organization_invite: {
-        Args: { invite_token: string; user_id: string; user_email: string }
+        Args: { invite_token: string; user_email: string; user_id: string }
         Returns: Json
       }
       authorize: {
@@ -2145,8 +2234,8 @@ export type Database = {
       }
       calculate_access_end_date: {
         Args: {
-          start_date: string
           frequency: Database["public"]["Enums"]["payment_frequency"]
+          start_date: string
         }
         Returns: string
       }
@@ -2155,7 +2244,7 @@ export type Database = {
         Returns: boolean
       }
       can_create_organization: {
-        Args: { tier_name: string; arg_user_id: string }
+        Args: { arg_user_id: string; tier_name: string }
         Returns: boolean
       }
       can_user_edit_course: {
@@ -2164,22 +2253,22 @@ export type Database = {
       }
       check_storage_limit: {
         Args: {
-          p_organization_id: string
-          p_new_file_size: number
           p_exclude_file_path?: string
+          p_new_file_size: number
+          p_organization_id: string
         }
         Returns: boolean
       }
       complete_block: {
         Args: {
-          p_published_course_id: string
-          p_chapter_id: string
-          p_lesson_id: string
           p_block_id: string
+          p_chapter_id: string
           p_earned_score?: number
-          p_time_spent_seconds?: number
           p_interaction_data?: Json
           p_last_response?: Json
+          p_lesson_id: string
+          p_published_course_id: string
+          p_time_spent_seconds?: number
         }
         Returns: Json
       }
@@ -2192,7 +2281,7 @@ export type Database = {
         Returns: undefined
       }
       delete_lesson: {
-        Args: { p_lesson_id: string; p_deleted_by: string }
+        Args: { p_deleted_by: string; p_lesson_id: string }
         Returns: undefined
       }
       delete_lesson_block: {
@@ -2200,7 +2289,7 @@ export type Database = {
         Returns: undefined
       }
       delete_pricing_tier: {
-        Args: { p_tier_id: string; p_deleted_by: string }
+        Args: { p_deleted_by: string; p_tier_id: string }
         Returns: undefined
       }
       determine_file_type: {
@@ -2213,23 +2302,23 @@ export type Database = {
       }
       enroll_user_in_published_course: {
         Args: {
-          p_user_id: string
-          p_published_course_id: string
-          p_tier_id: string
-          p_tier_name: string
-          p_tier_description: string
-          p_payment_frequency: string
+          p_created_by?: string
           p_currency_code: string
-          p_is_free: boolean
           p_effective_price: number
-          p_organization_id: string
-          p_promotional_price?: number
+          p_is_free: boolean
           p_is_promotional?: boolean
-          p_payment_processor_id?: string
+          p_organization_id: string
           p_payment_amount?: number
+          p_payment_frequency: string
           p_payment_method?: string
           p_payment_processor_fee?: number
-          p_created_by?: string
+          p_payment_processor_id?: string
+          p_promotional_price?: number
+          p_published_course_id: string
+          p_tier_description: string
+          p_tier_id: string
+          p_tier_name: string
+          p_user_id: string
         }
         Returns: Json
       }
@@ -2243,27 +2332,27 @@ export type Database = {
       }
       get_completion_navigation_state: {
         Args: {
-          p_user_id: string
-          p_published_course_id: string
           course_structure: Json
           current_context: Record<string, unknown>
+          p_published_course_id: string
+          p_user_id: string
         }
         Returns: Json
       }
       get_continue_navigation_state: {
         Args: {
-          p_user_id: string
-          p_published_course_id: string
           course_structure: Json
           current_context: Record<string, unknown>
+          p_published_course_id: string
+          p_user_id: string
         }
         Returns: Json
       }
       get_course_navigation_info: {
         Args: {
-          p_user_id: string
-          p_published_course_id: string
           course_structure: Json
+          p_published_course_id: string
+          p_user_id: string
         }
         Returns: Json
       }
@@ -2273,10 +2362,10 @@ export type Database = {
       }
       get_current_navigation_state: {
         Args: {
-          p_user_id: string
-          p_published_course_id: string
           course_structure: Json
           current_context: Record<string, unknown>
+          p_published_course_id: string
+          p_user_id: string
         }
         Returns: Json
       }
@@ -2289,55 +2378,55 @@ export type Database = {
         }[]
       }
       get_enrollment_status: {
-        Args: { p_user_id: string; p_published_course_id: string }
+        Args: { p_published_course_id: string; p_user_id: string }
         Returns: {
-          enrollment_id: string
-          is_enrolled: boolean
-          is_active: boolean
-          expires_at: string
           days_remaining: number
+          enrollment_id: string
+          expires_at: string
+          is_active: boolean
+          is_enrolled: boolean
           latest_activity_id: string
         }[]
       }
       get_next_navigation_state: {
         Args: {
-          p_user_id: string
-          p_published_course_id: string
           course_structure: Json
           current_context: Record<string, unknown>
+          p_published_course_id: string
+          p_user_id: string
         }
         Returns: Json
       }
       get_previous_navigation_state: {
         Args: {
-          p_user_id: string
-          p_published_course_id: string
           course_structure: Json
           current_context: Record<string, unknown>
+          p_published_course_id: string
+          p_user_id: string
         }
         Returns: Json
       }
       get_published_course_pricing_tier: {
         Args: { p_published_course_id: string; p_tier_id: string }
         Returns: {
-          tier_id: string
-          payment_frequency: Database["public"]["Enums"]["payment_frequency"]
-          is_free: boolean
-          price: number
           currency_code: string
-          promotional_price: number
-          promotion_start_date: string
-          promotion_end_date: string
-          tier_name: string
-          tier_description: string
           is_active: boolean
-          position: number
+          is_free: boolean
           is_popular: boolean
           is_recommended: boolean
+          payment_frequency: Database["public"]["Enums"]["payment_frequency"]
+          position: number
+          price: number
+          promotion_end_date: string
+          promotion_start_date: string
+          promotional_price: number
+          tier_description: string
+          tier_id: string
+          tier_name: string
         }[]
       }
       get_published_lesson_blocks: {
-        Args: { p_course_id: string; p_chapter_id: string; p_lesson_id: string }
+        Args: { p_chapter_id: string; p_course_id: string; p_lesson_id: string }
         Returns: Json
       }
       get_tier_limits_for_org: {
@@ -2346,16 +2435,16 @@ export type Database = {
       }
       get_unified_navigation: {
         Args: {
-          p_user_id: string
-          p_published_course_id: string
           p_current_block_id?: string
-          p_current_lesson_id?: string
           p_current_chapter_id?: string
+          p_current_lesson_id?: string
+          p_published_course_id: string
+          p_user_id: string
         }
         Returns: Json
       }
       get_user_lesson_blocks_progress: {
-        Args: { p_course_id: string; p_chapter_id: string; p_lesson_id: string }
+        Args: { p_chapter_id: string; p_course_id: string; p_lesson_id: string }
         Returns: Json
       }
       get_user_org_role: {
@@ -2363,7 +2452,7 @@ export type Database = {
         Returns: string
       }
       has_org_role: {
-        Args: { arg_org_id: string; required_role: string; arg_user_id: string }
+        Args: { arg_org_id: string; arg_user_id: string; required_role: string }
         Returns: boolean
       }
       has_pending_invite: {
@@ -2376,18 +2465,18 @@ export type Database = {
       }
       process_course_payment_to_wallets: {
         Args: {
-          p_payment_id: string
-          p_organization_id: string
-          p_published_course_id: string
-          p_user_id: string
-          p_tier_name: string
+          p_created_by?: string
           p_currency_code: string
           p_gross_amount: number
+          p_org_payout: number
+          p_organization_id: string
+          p_payment_id: string
           p_payment_processor_fee: number
           p_platform_fee_from_gross: number
-          p_org_payout: number
           p_platform_fee_percent: number
-          p_created_by?: string
+          p_published_course_id: string
+          p_tier_name: string
+          p_user_id: string
         }
         Returns: Json
       }
@@ -2397,22 +2486,22 @@ export type Database = {
       }
       reorder_chapters: {
         Args: {
-          p_course_id: string
           chapter_positions: Json
+          p_course_id: string
           p_updated_by: string
         }
         Returns: undefined
       }
       reorder_lesson_blocks: {
         Args:
+          | { block_positions: Json; p_lesson_id: string; p_updated_by: string }
           | { blocks: Json }
-          | { p_lesson_id: string; block_positions: Json; p_updated_by: string }
         Returns: undefined
       }
       reorder_lessons: {
         Args: {
-          p_chapter_id: string
           lesson_positions: Json
+          p_chapter_id: string
           p_updated_by: string
         }
         Returns: undefined
@@ -2420,8 +2509,8 @@ export type Database = {
       reorder_pricing_tiers: {
         Args: {
           p_course_id: string
-          tier_positions: Json
           p_updated_by: string
+          tier_positions: Json
         }
         Returns: undefined
       }
@@ -2429,16 +2518,16 @@ export type Database = {
         Args: {
           course_structure: Json
           p_block_id?: string
-          p_lesson_id?: string
           p_chapter_id?: string
+          p_lesson_id?: string
         }
         Returns: {
-          block_id: string
-          lesson_id: string
-          chapter_id: string
           block_global_order: number
-          lesson_global_order: number
+          block_id: string
           chapter_global_order: number
+          chapter_id: string
+          lesson_global_order: number
+          lesson_id: string
         }[]
       }
       rpc_verify_and_set_active_organization: {
@@ -2454,27 +2543,27 @@ export type Database = {
         Returns: undefined
       }
       switch_course_pricing_model: {
-        Args: { p_course_id: string; p_user_id: string; p_target_model: string }
+        Args: { p_course_id: string; p_target_model: string; p_user_id: string }
         Returns: undefined
       }
       update_chapter_progress_for_user: {
         Args: {
-          p_user_id: string
-          p_published_course_id: string
           p_chapter_id: string
           p_course_progress_id: string
+          p_published_course_id: string
+          p_user_id: string
         }
         Returns: undefined
       }
       update_course_progress_for_user: {
-        Args: { p_user_id: string; p_published_course_id: string }
+        Args: { p_published_course_id: string; p_user_id: string }
         Returns: undefined
       }
       update_lesson_progress_for_user: {
         Args: {
-          p_user_id: string
-          p_published_course_id: string
           p_lesson_id: string
+          p_published_course_id: string
+          p_user_id: string
         }
         Returns: undefined
       }
@@ -2483,7 +2572,7 @@ export type Database = {
         Returns: undefined
       }
       user_has_active_access: {
-        Args: { p_user_id: string; p_published_course_id: string }
+        Args: { p_published_course_id: string; p_user_id: string }
         Returns: boolean
       }
     }
@@ -2518,6 +2607,13 @@ export type Database = {
         | "semi_annual"
         | "annual"
       profile_mode: "personal" | "organization"
+      resource_type:
+        | "image"
+        | "video"
+        | "audio"
+        | "document"
+        | "model3d"
+        | "raw"
       subscription_status:
         | "active"
         | "canceled"
@@ -2688,6 +2784,7 @@ export const Constants = {
         "annual",
       ],
       profile_mode: ["personal", "organization"],
+      resource_type: ["image", "video", "audio", "document", "model3d", "raw"],
       subscription_status: [
         "active",
         "canceled",

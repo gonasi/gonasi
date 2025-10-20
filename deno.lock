@@ -1,0 +1,236 @@
+{
+  "version": "5",
+  "specifiers": {
+    "jsr:@supabase/functions-js@*": "2.4.4"
+  },
+  "jsr": {
+    "@supabase/functions-js@2.4.4": {
+      "integrity": "38456509a6e22fb116b118464cbb36357256f9048d3580632b63af91f63769f7"
+    }
+  },
+  "remote": {
+    "https://deno.land/x/zod@v3.22.4/ZodError.ts": "4de18ff525e75a0315f2c12066b77b5c2ae18c7c15ef7df7e165d63536fdf2ea",
+    "https://deno.land/x/zod@v3.22.4/errors.ts": "5285922d2be9700cc0c70c95e4858952b07ae193aa0224be3cbd5cd5567eabef",
+    "https://deno.land/x/zod@v3.22.4/external.ts": "a6cfbd61e9e097d5f42f8a7ed6f92f93f51ff927d29c9fbaec04f03cbce130fe",
+    "https://deno.land/x/zod@v3.22.4/helpers/enumUtil.ts": "54efc393cc9860e687d8b81ff52e980def00fa67377ad0bf8b3104f8a5bf698c",
+    "https://deno.land/x/zod@v3.22.4/helpers/errorUtil.ts": "7a77328240be7b847af6de9189963bd9f79cab32bbc61502a9db4fe6683e2ea7",
+    "https://deno.land/x/zod@v3.22.4/helpers/parseUtil.ts": "f791e6e65a0340d85ad37d26cd7a3ba67126cd9957eac2b7163162155283abb1",
+    "https://deno.land/x/zod@v3.22.4/helpers/partialUtil.ts": "998c2fe79795257d4d1cf10361e74492f3b7d852f61057c7c08ac0a46488b7e7",
+    "https://deno.land/x/zod@v3.22.4/helpers/typeAliases.ts": "0fda31a063c6736fc3cf9090dd94865c811dfff4f3cb8707b932bf937c6f2c3e",
+    "https://deno.land/x/zod@v3.22.4/helpers/util.ts": "8baf19b19b2fca8424380367b90364b32503b6b71780269a6e3e67700bb02774",
+    "https://deno.land/x/zod@v3.22.4/index.ts": "d27aabd973613985574bc31f39e45cb5d856aa122ef094a9f38a463b8ef1a268",
+    "https://deno.land/x/zod@v3.22.4/locales/en.ts": "a7a25cd23563ccb5e0eed214d9b31846305ddbcdb9c5c8f508b108943366ab4c",
+    "https://deno.land/x/zod@v3.22.4/mod.ts": "64e55237cb4410e17d968cd08975566059f27638ebb0b86048031b987ba251c4",
+    "https://deno.land/x/zod@v3.22.4/types.ts": "724185522fafe43ee56a52333958764c8c8cd6ad4effa27b42651df873fc151e"
+  },
+  "workspace": {
+    "packageJson": {
+      "dependencies": [
+        "npm:cmdk@^1.0.4",
+        "npm:prettier@^3.2.5",
+        "npm:syncpack@12.3.1",
+        "npm:turbo@^2.4.1",
+        "npm:zod@^3.25.67"
+      ]
+    },
+    "members": {
+      "apps/web": {
+        "packageJson": {
+          "dependencies": [
+            "npm:@conform-to/react@1.4.0",
+            "npm:@conform-to/zod@1.4.0",
+            "npm:@dnd-kit/core@6.3.1",
+            "npm:@dnd-kit/modifiers@9.0.0",
+            "npm:@dnd-kit/sortable@10.0.0",
+            "npm:@gonasi/database@*",
+            "npm:@gonasi/eslint-config@*",
+            "npm:@gonasi/schemas@*",
+            "npm:@gonasi/typescript-config@*",
+            "npm:@gonasi/utils@*",
+            "npm:@hookform/error-message@^2.0.1",
+            "npm:@hookform/resolvers@^5.0.1",
+            "npm:@lexical/react@~0.33.1",
+            "npm:@mjackson/form-data-parser@0.7.0",
+            "npm:@oslojs/crypto@1.0.1",
+            "npm:@paralleldrive/cuid2@2.2.2",
+            "npm:@radix-ui/react-accordion@1.2.7",
+            "npm:@radix-ui/react-aspect-ratio@1.1.2",
+            "npm:@radix-ui/react-avatar@1.1.7",
+            "npm:@radix-ui/react-checkbox@1.2.3",
+            "npm:@radix-ui/react-collapsible@1.1.8",
+            "npm:@radix-ui/react-context@^1.1.2",
+            "npm:@radix-ui/react-dialog@^1.1.13",
+            "npm:@radix-ui/react-dropdown-menu@^2.1.6",
+            "npm:@radix-ui/react-hover-card@^1.1.6",
+            "npm:@radix-ui/react-label@^2.1.7",
+            "npm:@radix-ui/react-navigation-menu@^1.2.5",
+            "npm:@radix-ui/react-popover@^1.1.14",
+            "npm:@radix-ui/react-progress@^1.1.2",
+            "npm:@radix-ui/react-radio-group@^1.2.4",
+            "npm:@radix-ui/react-scroll-area@^1.2.3",
+            "npm:@radix-ui/react-select@^2.2.5",
+            "npm:@radix-ui/react-separator@^1.1.2",
+            "npm:@radix-ui/react-slider@^1.3.2",
+            "npm:@radix-ui/react-slot@^1.2.3",
+            "npm:@radix-ui/react-switch@^1.1.3",
+            "npm:@radix-ui/react-tabs@^1.1.3",
+            "npm:@radix-ui/react-tooltip@^1.1.8",
+            "npm:@react-router/dev@^7.5.3",
+            "npm:@react-router/node@^7.5.3",
+            "npm:@react-router/serve@^7.5.3",
+            "npm:@react-three/fiber@^9.1.2",
+            "npm:@storybook/react@^8.6.12",
+            "npm:@supabase/ssr@~0.5.2",
+            "npm:@supabase/supabase-js@^2.48.1",
+            "npm:@tailwindcss/cli@^4.0.6",
+            "npm:@tailwindcss/typography@~0.5.16",
+            "npm:@tailwindcss/vite@^4.1.4",
+            "npm:@types/howler@^2.2.12",
+            "npm:@types/lodash.debounce@^4.0.9",
+            "npm:@types/node@20",
+            "npm:@types/react-dom@^19.0.1",
+            "npm:@types/react@^19.0.1",
+            "npm:@types/three@0.176",
+            "npm:@unpic/pixels@^1.3.0",
+            "npm:@unpic/placeholder@~0.1.2",
+            "npm:@unpic/react@^1.0.1",
+            "npm:@vercel/analytics@^1.5.0",
+            "npm:@vercel/react-router@^1.1.0",
+            "npm:@vercel/speed-insights@^1.2.0",
+            "npm:@vitejs/plugin-react@^4.3.4",
+            "npm:autoprefixer@^10.4.20",
+            "npm:axios@^1.7.9",
+            "npm:blurhash@^2.0.5",
+            "npm:class-variance-authority@~0.7.1",
+            "npm:clsx@^2.1.1",
+            "npm:cmdk@^1.0.4",
+            "npm:date-fns@^4.1.0",
+            "npm:embla-carousel-react@^8.5.2",
+            "npm:fast-deep-equal@^3.1.3",
+            "npm:howler@^2.2.4",
+            "npm:html-react-parser@^5.2.5",
+            "npm:isbot@^5.1.17",
+            "npm:jwt-decode@4",
+            "npm:lexical@~0.33.1",
+            "npm:lodash.debounce@^4.0.8",
+            "npm:lowlight@^3.3.0",
+            "npm:lucide-react@0.476",
+            "npm:postcss@^8.5.2",
+            "npm:posthog-js@^1.259.0",
+            "npm:prettier-plugin-tailwindcss@~0.6.11",
+            "npm:react-confetti-boom@^2.0.1",
+            "npm:react-confetti@^6.4.0",
+            "npm:react-day-picker@^9.7.0",
+            "npm:react-dom@19",
+            "npm:react-easy-crop@^5.4.2",
+            "npm:react-hook-form@^7.56.4",
+            "npm:react-router-devtools@^1.1.10",
+            "npm:react-router@^7.5.3",
+            "npm:react-scroll@^1.9.3",
+            "npm:react-share@^5.0.2",
+            "npm:react-use@^17.6.0",
+            "npm:react-virtuoso@^4.13.0",
+            "npm:react-zoom-pan-pinch@^3.7.0",
+            "npm:react@19",
+            "npm:remix-hook-form@^7.0.1",
+            "npm:remix-toast@^3.1.0",
+            "npm:remix-utils@^8.5.0",
+            "npm:sonner@^2.0.3",
+            "npm:spin-delay@^2.0.1",
+            "npm:tailwind-merge@^3.3.0",
+            "npm:tailwindcss-animate@^1.0.7",
+            "npm:tailwindcss@^4.1.4",
+            "npm:three@0.176",
+            "npm:tw-animate-css@^1.3.0",
+            "npm:typescript@^5.7.2",
+            "npm:use-debounce@^10.0.4",
+            "npm:vite-tsconfig-paths@^5.1.4",
+            "npm:vite@^5.4.11",
+            "npm:vitest@1.6.1",
+            "npm:y-websocket@^2.1.0",
+            "npm:yjs@^13.6.24",
+            "npm:zod@^3.25.28",
+            "npm:zustand@^5.0.3"
+          ]
+        }
+      },
+      "shared/database": {
+        "packageJson": {
+          "dependencies": [
+            "npm:@gonasi/eslint-config@*",
+            "npm:@gonasi/schemas@*",
+            "npm:@gonasi/typescript-config@*",
+            "npm:@gonasi/utils@*",
+            "npm:@snaplet/copycat@6",
+            "npm:@supabase/supabase-js@^2.48.1",
+            "npm:date-fns@^4.1.0",
+            "npm:jwt-decode@4"
+          ]
+        }
+      },
+      "shared/gonasi-schemas": {
+        "packageJson": {
+          "dependencies": [
+            "npm:@gonasi/eslint-config@*",
+            "npm:@gonasi/typescript-config@*",
+            "npm:@gonasi/utils@*",
+            "npm:zod@^3.23.8"
+          ]
+        }
+      },
+      "shared/gonasi-utils": {
+        "packageJson": {
+          "dependencies": [
+            "npm:@gonasi/eslint-config@*",
+            "npm:@gonasi/typescript-config@*",
+            "npm:dayjs@^1.11.13"
+          ]
+        }
+      },
+      "tooling/db-seed": {
+        "packageJson": {
+          "dependencies": [
+            "npm:@gonasi/database@*",
+            "npm:@gonasi/eslint-config@*",
+            "npm:@gonasi/typescript-config@*",
+            "npm:@snaplet/copycat@6",
+            "npm:@snaplet/seed@0.98",
+            "npm:@supabase/supabase-js@^2.49.1",
+            "npm:postgres@^3.4.5"
+          ]
+        }
+      },
+      "tooling/eslint-config": {
+        "packageJson": {
+          "dependencies": [
+            "npm:@react-native/eslint-config@0.74.84",
+            "npm:@react-three/eslint-plugin@~0.1.2",
+            "npm:@tanstack/eslint-plugin-query@5.28.11",
+            "npm:eslint-config-prettier@^10.1.1",
+            "npm:eslint-config-universe@12.0.1",
+            "npm:eslint-import-resolver-typescript@3.6.1",
+            "npm:eslint-plugin-jsx-a11y@6.8.0",
+            "npm:eslint-plugin-prettier@^5.1.3",
+            "npm:eslint-plugin-react-refresh@0.4.6",
+            "npm:eslint-plugin-simple-import-sort@12.1.0",
+            "npm:eslint-plugin-storybook@0.8.0",
+            "npm:eslint-plugin-testing-library@6.2.2",
+            "npm:eslint-plugin-unused-imports@^4.1.4",
+            "npm:eslint@8.57.0",
+            "npm:prettier@^3.5.3"
+          ]
+        }
+      },
+      "tooling/gonasi-vitest": {
+        "packageJson": {
+          "dependencies": [
+            "npm:@gonasi/eslint-config@*",
+            "npm:@gonasi/typescript-config@*",
+            "npm:eslint@8.57.0",
+            "npm:vitest@^1.6.1"
+          ]
+        }
+      }
+    }
+  }
+}
