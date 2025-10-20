@@ -76,7 +76,7 @@ create table if not exists public.course_files (
   mime_type text not null,                                   -- mime type (e.g., 'image/png')
   bytes bigint not null,                                     -- file size in bytes
   file_type public.file_type not null default 'other',       -- logical file classification
-  url text not null,                                         -- secure delivery url
+  url text,                                                  -- secure delivery url
   metadata jsonb not null default '{}'::jsonb,               -- structured metadata (dimensions, duration, etc.)
 
   -- -------------------------------------------------------------------
@@ -84,6 +84,8 @@ create table if not exists public.course_files (
   -- -------------------------------------------------------------------
   created_at timestamptz not null default timezone('utc', now()),
   updated_at timestamptz not null default timezone('utc', now()),
+
+  access_mode text not null default 'public' check (access_mode in ('public', 'authenticated')),
 
   -- -------------------------------------------------------------------
   -- constraints
@@ -172,10 +174,10 @@ create index if not exists idx_course_files_metadata_gin on public.course_files 
 -- =====================================================================
 
 -- normalize format + infer file_type before insert/update
-create trigger trg_set_file_type
+create trigger trg_set_format_type
 before insert or update on public.course_files
 for each row
-execute function public.set_file_type_from_extension();
+execute function public.set_format_type_from_extension();
 
 -- automatically update updated_at on modification
 create trigger trg_update_timestamp
