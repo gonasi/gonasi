@@ -74,6 +74,7 @@ Deno.serve(async (req) => {
         organization_id: body.organization_id,
         course_id: body.course_id,
         created_by: user.id,
+        updated_by: user.id,
         name: body.file_name,
         file_type: body.file_type,
         public_id: cloudRes.public_id,
