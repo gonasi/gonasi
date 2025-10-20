@@ -1,0 +1,29 @@
+{
+  "importMap": "./import_map.json",
+
+  "include": ["./**/*.ts"],
+
+  "compilerOptions": {
+    "strict": true,
+    "lib": ["deno.window", "deno.ns"],
+    "types": ["jsr:@supabase/functions-js/edge-runtime.d.ts"]
+  },
+
+  "lint": {
+    "rules": {
+      "tags": ["recommended"]
+    }
+  },
+
+  "fmt": {
+    "lineWidth": 100,
+    "indentWidth": 2,
+    "useTabs": false,
+    "semiColons": true
+  },
+
+  "tasks": {
+    "serve": "supabase functions serve new-course-file --no-verify-jwt",
+    "check": "deno check ./_shared/*.ts ./new-course-file/index.ts"
+  }
+}
