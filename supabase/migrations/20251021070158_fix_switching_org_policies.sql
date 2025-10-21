@@ -1,4 +1,12 @@
 -- ============================================================
+-- Drop existing policies first
+-- ============================================================
+drop policy if exists "Allow SELECT on own or public profiles" on public.profiles;
+drop policy if exists "Allow INSERT of own profile by authenticated users" on public.profiles;
+drop policy if exists "Allow UPDATE of own profile by authenticated users" on public.profiles;
+drop policy if exists "Allow DELETE of own profile by authenticated users" on public.profiles;
+
+-- ============================================================
 -- ✅ Enable Row-Level Security on the profiles table
 -- ============================================================
 alter table public.profiles enable row level security;
@@ -6,7 +14,6 @@ alter table public.profiles enable row level security;
 -- ============================================================
 -- 🔓 SELECT POLICY (combined)
 -- ============================================================
--- Allow users to SELECT their own profile or any public profile
 create policy "Allow SELECT on own or public profiles"
 on public.profiles
 for select
@@ -26,10 +33,11 @@ to authenticated
 with check (
   (select auth.uid()) = id
   and (
-    -- Must satisfy mode_organization_consistency constraint
+    -- Personal mode: no organization
     (mode = 'personal' and active_organization_id is null) 
     or 
-    (mode = 'organization' and active_organization_id is not null and exists (
+    -- Organization mode: must be member
+    (mode = 'organization' and exists (
       select 1
       from public.organization_members m
       where m.user_id = (select auth.uid())
@@ -39,7 +47,7 @@ with check (
 );
 
 -- ============================================================
--- ✏️ UPDATE POLICY
+-- ✏️ UPDATE POLICY (SIMPLIFIED)
 -- ============================================================
 create policy "Allow UPDATE of own profile by authenticated users"
 on public.profiles
@@ -49,10 +57,11 @@ using ((select auth.uid()) = id)
 with check (
   (select auth.uid()) = id
   and (
-    -- Must satisfy mode_organization_consistency constraint
+    -- Switching to personal mode (organization_id will be NULL)
     (mode = 'personal' and active_organization_id is null)
     or
-    (mode = 'organization' and active_organization_id is not null and exists (
+    -- Switching to organization mode (must be member of that org)
+    (mode = 'organization' and exists (
       select 1
       from public.organization_members m
       where m.user_id = (select auth.uid())
@@ -60,6 +69,25 @@ with check (
     ))
   )
 );
+
+-- ============================================================
+-- 🔐 COLUMN-LEVEL PERMISSIONS
+-- ============================================================
+revoke update on public.profiles from authenticated;
+
+grant update (
+  username,
+  full_name,
+  avatar_url,
+  blur_hash,
+  phone_number,
+  is_public,
+  country_code,
+  preferred_language,
+  notifications_enabled,
+  mode,
+  active_organization_id
+) on public.profiles to authenticated;
 
 -- ============================================================
 -- ❌ DELETE POLICY
