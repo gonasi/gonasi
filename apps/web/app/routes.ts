@@ -23,6 +23,10 @@ export default [
 
     route('api/check-username-exists', 'routes/api/check-username-exists.ts'),
     route('api/check-handle-exists/:organizationId', 'routes/api/check-handle-exists.ts'),
+    route(
+      'api/fetch-organization-available-credits/:organizationId',
+      'routes/api/fetch-organization-available-credits.ts',
+    ),
   ]),
 
   route(

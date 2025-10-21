@@ -34,6 +34,38 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_usage_log: {
+        Row: {
+          created_at: string | null
+          credits_used: number
+          id: string
+          org_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          credits_used: number
+          id?: string
+          org_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          credits_used?: number
+          id?: string
+          org_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_usage_log_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       block_progress: {
         Row: {
           attempt_count: number | null
@@ -454,95 +486,6 @@ export type Database = {
           {
             foreignKeyName: "course_enrollments_user_id_fkey"
             columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      course_files: {
-        Row: {
-          access_mode: string
-          bytes: number
-          course_id: string | null
-          created_at: string
-          created_by: string | null
-          file_type: Database["public"]["Enums"]["file_type"]
-          format: string
-          id: string
-          metadata: Json
-          mime_type: string
-          name: string
-          organization_id: string
-          public_id: string
-          resource_type: Database["public"]["Enums"]["resource_type"]
-          updated_at: string
-          updated_by: string | null
-          url: string | null
-        }
-        Insert: {
-          access_mode?: string
-          bytes: number
-          course_id?: string | null
-          created_at?: string
-          created_by?: string | null
-          file_type?: Database["public"]["Enums"]["file_type"]
-          format: string
-          id?: string
-          metadata?: Json
-          mime_type: string
-          name: string
-          organization_id: string
-          public_id: string
-          resource_type?: Database["public"]["Enums"]["resource_type"]
-          updated_at?: string
-          updated_by?: string | null
-          url?: string | null
-        }
-        Update: {
-          access_mode?: string
-          bytes?: number
-          course_id?: string | null
-          created_at?: string
-          created_by?: string | null
-          file_type?: Database["public"]["Enums"]["file_type"]
-          format?: string
-          id?: string
-          metadata?: Json
-          mime_type?: string
-          name?: string
-          organization_id?: string
-          public_id?: string
-          resource_type?: Database["public"]["Enums"]["resource_type"]
-          updated_at?: string
-          updated_by?: string | null
-          url?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "course_files_course_id_fkey"
-            columns: ["course_id"]
-            isOneToOne: false
-            referencedRelation: "courses"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "course_files_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "course_files_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "course_files_updated_by_fkey"
-            columns: ["updated_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -1752,6 +1695,47 @@ export type Database = {
           },
         ]
       }
+      organizations_ai_credits: {
+        Row: {
+          base_credits_remaining: number
+          base_credits_total: number
+          last_reset_at: string
+          next_reset_at: string
+          org_id: string
+          purchased_credits_remaining: number
+          purchased_credits_total: number
+          updated_at: string
+        }
+        Insert: {
+          base_credits_remaining?: number
+          base_credits_total?: number
+          last_reset_at?: string
+          next_reset_at?: string
+          org_id: string
+          purchased_credits_remaining?: number
+          purchased_credits_total?: number
+          updated_at?: string
+        }
+        Update: {
+          base_credits_remaining?: number
+          base_credits_total?: number
+          last_reset_at?: string
+          next_reset_at?: string
+          org_id?: string
+          purchased_credits_remaining?: number
+          purchased_credits_total?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organizations_ai_credits_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           account_verified: boolean
@@ -2219,7 +2203,41 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      v_organizations_ai_available_credits: {
+        Row: {
+          base_credits_remaining: number | null
+          last_reset_at: string | null
+          next_reset_at: string | null
+          org_id: string | null
+          purchased_credits_remaining: number | null
+          total_available_credits: number | null
+        }
+        Insert: {
+          base_credits_remaining?: number | null
+          last_reset_at?: string | null
+          next_reset_at?: string | null
+          org_id?: string | null
+          purchased_credits_remaining?: number | null
+          total_available_credits?: never
+        }
+        Update: {
+          base_credits_remaining?: number | null
+          last_reset_at?: string | null
+          next_reset_at?: string | null
+          org_id?: string | null
+          purchased_credits_remaining?: number | null
+          total_available_credits?: never
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organizations_ai_credits_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       accept_organization_invite: {
@@ -2514,6 +2532,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      reset_org_ai_base_credits_when_due: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       resolve_current_context: {
         Args: {
           course_structure: Json
@@ -2607,13 +2629,6 @@ export type Database = {
         | "semi_annual"
         | "annual"
       profile_mode: "personal" | "organization"
-      resource_type:
-        | "image"
-        | "video"
-        | "audio"
-        | "document"
-        | "model3d"
-        | "raw"
       subscription_status:
         | "active"
         | "canceled"
@@ -2784,7 +2799,6 @@ export const Constants = {
         "annual",
       ],
       profile_mode: ["personal", "organization"],
-      resource_type: ["image", "video", "audio", "document", "model3d", "raw"],
       subscription_status: [
         "active",
         "canceled",

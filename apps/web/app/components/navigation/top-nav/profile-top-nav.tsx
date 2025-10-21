@@ -61,7 +61,7 @@ export function ProfileTopNav({
                       ) : undefined
                     }
                   />
-                  <AICreditsBadge to='' />
+                  {user?.mode === 'organization' ? <AICreditsBadge to='' /> : null}
                 </div>
               )}
               {loading && (
