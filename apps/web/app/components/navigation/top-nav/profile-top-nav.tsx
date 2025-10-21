@@ -4,6 +4,7 @@ import { ProfileDropdown } from '../../profile-dropdown';
 import { OrganizationSelectorButton } from './organization-selector';
 
 import { PlainAvatar } from '~/components/avatars';
+import { AICreditsBadge } from '~/components/badges';
 import { BackArrowNavLink } from '~/components/ui/button';
 import { useDashboardLinks } from '~/hooks/useDashboardLinks';
 import { cn } from '~/lib/utils';
@@ -43,22 +44,25 @@ export function ProfileTopNav({
             <div className='flex h-full items-center space-x-4 md:space-x-8'>
               {showBackArrow && user?.mode === 'personal' ? <BackArrowNavLink to='/' /> : null}
               {user && !loading && (
-                <OrganizationSelectorButton
-                  to={`/go/${user.username}/organizations`}
-                  organizationLabel={
-                    showOrgLabel ? (
-                      <div className='flex max-w-46 items-center space-x-2 md:max-w-60'>
-                        <PlainAvatar
-                          username={organization.name}
-                          imageUrl={organization.avatar_url}
-                          isActive
-                          size='xs'
-                        />
-                        <span className='w-fit truncate'>{organization.name}</span>
-                      </div>
-                    ) : undefined
-                  }
-                />
+                <div className='flex items-center justify-center gap-4'>
+                  <OrganizationSelectorButton
+                    to={`/go/${user.username}/organizations`}
+                    organizationLabel={
+                      showOrgLabel ? (
+                        <div className='flex max-w-46 items-center space-x-2 md:max-w-60'>
+                          <PlainAvatar
+                            username={organization.name}
+                            imageUrl={organization.avatar_url}
+                            isActive
+                            size='xs'
+                          />
+                          <span className='w-fit truncate'>{organization.name}</span>
+                        </div>
+                      ) : undefined
+                    }
+                  />
+                  <AICreditsBadge to='' />
+                </div>
               )}
               {loading && (
                 <span

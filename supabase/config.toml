@@ -256,6 +256,15 @@ schema_paths = [
   './schemas/progress/utils/update_course_progress_for_user.sql',
   './schemas/progress/utils/complete_block.sql',
 
+  # AI
+  './schemas/ai/organizations_ai_credits_schema_and_indexes.sql',
+  './schemas/ai/organizations_ai_credits_rls.sql',
+  './schemas/ai/ai_usage_log_schema_and_indexes.sql',
+  './schemas/ai/ai_usage_log_rls.sql',
+
+  './schemas/ai/utils/handle_new_organization_ai_credits.sql',
+  './schemas/ai/utils/reset_org_ai_base_credits_when_due.sql',
+
 
 
 
