@@ -65,7 +65,7 @@ create table tier_limits (
   max_free_courses_per_org integer not null,  -- Paid courses are unlimited
 
   -- AI tooling
-  ai_tools_enabled boolean not null default false,
+  ai_tools_enabled boolean not null default true,
   ai_usage_limit_monthly integer,             -- Null means unlimited
 
   -- Custom domains
