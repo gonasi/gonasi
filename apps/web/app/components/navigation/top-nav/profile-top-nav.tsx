@@ -4,7 +4,6 @@ import { ProfileDropdown } from '../../profile-dropdown';
 import { OrganizationSelectorButton } from './organization-selector';
 
 import { PlainAvatar } from '~/components/avatars';
-import { AICreditsBadge } from '~/components/badges';
 import { BackArrowNavLink } from '~/components/ui/button';
 import { useDashboardLinks } from '~/hooks/useDashboardLinks';
 import { cn } from '~/lib/utils';
@@ -61,7 +60,6 @@ export function ProfileTopNav({
                       ) : undefined
                     }
                   />
-                  {user?.mode === 'organization' ? <AICreditsBadge to='' /> : null}
                 </div>
               )}
               {loading && (
