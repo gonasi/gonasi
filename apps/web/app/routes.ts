@@ -57,6 +57,11 @@ export default [
   layout('routes/layouts/organizations/organizations-layout.tsx', [
     route(':organizationId/dashboard', 'routes/organizations/dashboard/dashboard-index.tsx'),
 
+    route(
+      'api/dashboard/fetch-total-courses-stats/:organizationId',
+      'routes/api/dashboard/fetch-total-courses-stats.ts',
+    ),
+
     route(':organizationId/members', 'routes/organizations/members/members-index.tsx', [
       route('active-members', 'routes/organizations/members/active-members.tsx', [
         route(':memberId/delete', 'routes/organizations/members/delete-member.tsx'),

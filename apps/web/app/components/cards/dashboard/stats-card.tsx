@@ -1,4 +1,7 @@
 import type { LucideIcon } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
+
+import { StatsCardSkeleton } from './stats-card-skeleton';
 
 import { Card, CardContent } from '~/components/ui/card';
 
@@ -11,11 +14,43 @@ interface StatsCardProps {
     value: string;
     positive: boolean;
   };
+  isLoading?: boolean;
+  error?: string | null;
 }
 
-export function StatsCard({ title, value, description, icon: Icon, trend }: StatsCardProps) {
+export function StatsCard({
+  title,
+  value,
+  description,
+  icon: Icon,
+  trend,
+  isLoading = false,
+  error = null,
+}: StatsCardProps) {
+  if (isLoading) {
+    return <StatsCardSkeleton />;
+  }
+
+  if (error) {
+    return (
+      <Card className='border-destructive/50 rounded-none border'>
+        <CardContent className='p-6'>
+          <div className='flex items-start justify-between'>
+            <div className='flex-1'>
+              <p className='text-destructive mb-1 text-sm font-semibold'>Error loading {title}</p>
+              <p className='text-muted-foreground text-sm'>{error}</p>
+            </div>
+            <div className='bg-destructive/10 flex h-12 w-12 items-center justify-center rounded-lg'>
+              <AlertTriangle className='text-destructive h-6 w-6' />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
-    <Card className='transition-smooth border-input'>
+    <Card className='border-input rounded-none'>
       <CardContent className='p-6'>
         <div className='flex items-start justify-between'>
           <div className='flex-1'>

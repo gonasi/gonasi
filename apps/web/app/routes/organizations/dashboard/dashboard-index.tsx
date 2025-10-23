@@ -1,18 +1,14 @@
-import { Award, BookOpen, TrendingUp, Users } from 'lucide-react';
+import { Award, TrendingUp, Users } from 'lucide-react';
+
+import { TotalCoursesCard } from './components/TotalCoursesCard';
 
 import { EarningsCard, PlanCard, StatsCard, StorageCard } from '~/components/cards';
 
 export default function DashboardIndex() {
   return (
-    <section className='space-y-4 p-4'>
-      <div className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4'>
-        <StatsCard
-          title='Total Courses'
-          value={24}
-          description='4 drafts, 20 published'
-          icon={BookOpen}
-          trend={{ value: '12%', positive: true }}
-        />
+    <section className='mx-auto space-y-4 p-4'>
+      <div className='grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-4'>
+        <TotalCoursesCard />
         <StatsCard
           title='Total Students'
           value={1248}
@@ -21,12 +17,13 @@ export default function DashboardIndex() {
           trend={{ value: '8%', positive: true }}
         />
         <StatsCard
-          title='Active Users'
+          title='Active Enrollments'
           value={892}
-          description='Last 30 days'
+          description='Students currently enrolled in courses'
           icon={TrendingUp}
           trend={{ value: '5%', positive: false }}
         />
+
         <EarningsCard />
       </div>
 

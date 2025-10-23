@@ -63,7 +63,7 @@ export default function BuilderIndex({ params, loaderData }: Route.ComponentProp
 
   return (
     <>
-      <div className='container mx-auto pt-4'>
+      <div className='mx-auto pt-4'>
         <div className='flex items-center justify-between px-4'>
           <h2 className='text-lg md:text-2xl'>Manage Courses</h2>
           <IconNavLink

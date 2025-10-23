@@ -4,7 +4,7 @@ import { Card, CardContent } from '~/components/ui/card';
 
 export function EarningsCard() {
   return (
-    <Card className='shadow-card hover:shadow-card-hover transition-smooth border-border/50'>
+    <Card className='border-border/50 rounded-none'>
       <CardContent className='p-6'>
         <div className='flex items-start justify-between'>
           <div className='flex-1'>
