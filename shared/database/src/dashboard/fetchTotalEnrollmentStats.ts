@@ -12,7 +12,7 @@ export interface FetchTotalEnrollmentStatsArgs {
  * Represents enrollment statistics for an organization.
  */
 export interface EnrollmentStats {
-  /** Total number of enrollment activities ever made to courses owned by the organization */
+  /** Total number of unique enrollments (user-course pairs, excluding re-enrollments) */
   total_enrollments: number;
 
   /** Number of currently active enrollments (unique user-course pairs) */
@@ -41,8 +41,8 @@ export type FetchTotalEnrollmentStatsResult = Result<EnrollmentStats>;
 
 /**
  * Fetches enrollment statistics for a given organization.
- * Calculates total enrollment activities (including re-enrollments),
- * active unique enrollments, and MoM growth of activities.
+ * Calculates total unique enrollments (excluding re-enrollments),
+ * active enrollments, and MoM growth of new enrollments.
  */
 export async function fetchTotalEnrollmentStats({
   supabase,
@@ -61,11 +61,11 @@ export async function fetchTotalEnrollmentStats({
   const safe = (n?: number | null): number => (n && !isNaN(n) ? n : 0);
 
   try {
-    // === TOTAL ENROLLMENT ACTIVITIES (including re-enrollments) ===
+    // === TOTAL UNIQUE ENROLLMENTS (excluding re-enrollments) ===
     const { count: totalEnrollments, error: totalError } = await supabase
-      .from('course_enrollment_activities')
-      .select('id, enrollment_id!inner(organization_id)', { count: 'exact', head: true })
-      .eq('enrollment_id.organization_id', organizationId);
+      .from('course_enrollments')
+      .select('id', { count: 'exact', head: true })
+      .eq('organization_id', organizationId);
 
     if (totalError) throw new Error(`total enrollments: ${totalError.message}`);
 
@@ -78,24 +78,24 @@ export async function fetchTotalEnrollmentStats({
 
     if (activeError) throw new Error(`active enrollments: ${activeError.message}`);
 
-    // === LAST MONTH NEW ENROLLMENT ACTIVITIES ===
-    // Count activities where access_start is in last month
+    // === LAST MONTH NEW ENROLLMENTS (first-time only) ===
+    // Count enrollments where enrolled_at is in last month
     const { count: lastMonthCount, error: lastMonthError } = await supabase
-      .from('course_enrollment_activities')
-      .select('id, enrollment_id!inner(organization_id)', { count: 'exact', head: true })
-      .eq('enrollment_id.organization_id', organizationId)
-      .gte('access_start', startOfLastMonth)
-      .lt('access_start', startOfThisMonth);
+      .from('course_enrollments')
+      .select('id', { count: 'exact', head: true })
+      .eq('organization_id', organizationId)
+      .gte('enrolled_at', startOfLastMonth)
+      .lt('enrolled_at', startOfThisMonth);
 
     if (lastMonthError) throw new Error(`last month enrollments: ${lastMonthError.message}`);
 
-    // === THIS MONTH NEW ENROLLMENT ACTIVITIES ===
-    // Count activities where access_start is in this month
+    // === THIS MONTH NEW ENROLLMENTS (first-time only) ===
+    // Count enrollments where enrolled_at is in this month
     const { count: thisMonthCount, error: thisMonthError } = await supabase
-      .from('course_enrollment_activities')
-      .select('id, enrollment_id!inner(organization_id)', { count: 'exact', head: true })
-      .eq('enrollment_id.organization_id', organizationId)
-      .gte('access_start', startOfThisMonth);
+      .from('course_enrollments')
+      .select('id', { count: 'exact', head: true })
+      .eq('organization_id', organizationId)
+      .gte('enrolled_at', startOfThisMonth);
 
     if (thisMonthError) throw new Error(`this month enrollments: ${thisMonthError.message}`);
 
