@@ -3,7 +3,7 @@ import { Skeleton } from '~/components/ui/skeleton';
 
 export function StatsCardSkeleton() {
   return (
-    <Card className='border-input rounded-none'>
+    <Card className='border-input min-h-80 rounded-none'>
       <CardContent className='p-6'>
         <div className='flex items-start justify-between'>
           <div className='flex-1'>

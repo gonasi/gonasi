@@ -9,10 +9,12 @@ interface StatsCardProps {
   title: string;
   value: string | number;
   description?: string;
+  displayUi?: React.ReactNode;
   trendExplanation?: string;
   icon: LucideIcon;
   trend?: {
-    value: string;
+    value: string; // e.g., "25%"
+    difference?: number; // raw number difference (this - last)
     positive: boolean;
   };
   isLoading?: boolean;
@@ -23,6 +25,7 @@ export function StatsCard({
   title,
   value,
   description,
+  displayUi,
   icon: Icon,
   trend,
   trendExplanation,
@@ -35,7 +38,7 @@ export function StatsCard({
 
   if (error) {
     return (
-      <Card className='border-destructive/50 rounded-none border'>
+      <Card className='border-destructive/50 min-h-80 rounded-none border'>
         <CardContent className='p-6'>
           <div className='flex items-start justify-between'>
             <div className='flex-1'>
@@ -52,12 +55,13 @@ export function StatsCard({
   }
 
   return (
-    <Card className='border-input rounded-none'>
+    <Card className='border-input min-h-80 rounded-none'>
       <CardContent className='p-6'>
         <div className='flex items-start justify-between'>
           <div className='flex-1'>
             <p className='text-muted-foreground mb-1 text-sm font-medium'>{title}</p>
             <h3 className='text-foreground mb-2 text-3xl font-bold'>{value}</h3>
+            {displayUi}
             {description && <p className='text-muted-foreground text-sm'>{description}</p>}
             {trend && (
               <div className='mt-2 flex items-center gap-1'>
@@ -67,6 +71,12 @@ export function StatsCard({
                   }`}
                 >
                   {trend.positive ? '↑' : '↓'} {trend.value}
+                  {typeof trend.difference === 'number' && (
+                    <span className='ml-1'>
+                      ({trend.positive ? '+' : '−'}
+                      {Math.abs(trend.difference)})
+                    </span>
+                  )}
                 </span>
                 <span className='text-muted-foreground text-xs'>
                   vs last month {trendExplanation}
