@@ -1,6 +1,7 @@
-import { Award, TrendingUp, Users } from 'lucide-react';
+import { Award, TrendingUp } from 'lucide-react';
 
 import { TotalCoursesCard } from './components/TotalCoursesCard';
+import { TotalStudentsCard } from './components/TotalStudentsCard';
 
 import { EarningsCard, PlanCard, StatsCard, StorageCard } from '~/components/cards';
 
@@ -9,13 +10,7 @@ export default function DashboardIndex() {
     <section className='mx-auto space-y-4 p-4'>
       <div className='grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-4'>
         <TotalCoursesCard />
-        <StatsCard
-          title='Total Students'
-          value={1248}
-          description='Across all courses'
-          icon={Users}
-          trend={{ value: '8%', positive: true }}
-        />
+        <TotalStudentsCard />
         <StatsCard
           title='Active Enrollments'
           value={892}
