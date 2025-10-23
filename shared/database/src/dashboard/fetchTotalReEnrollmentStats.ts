@@ -10,7 +10,6 @@ export interface FetchReEnrollmentStatsArgs {
 
 /**
  * Represents re-enrollment statistics for an organization.
- * A re-enrollment occurs when a user has multiple activity records for the same enrollment.
  */
 export interface ReEnrollmentStats {
   /** Total number of re-enrollments across all enrollments */
@@ -21,6 +20,9 @@ export interface ReEnrollmentStats {
 
   /** Re-enrollments that occurred this month */
   this_month_re_enrollments: number;
+
+  /** Percent growth from last month to this month (can be negative) */
+  percent_growth: number | null;
 }
 
 /**
@@ -36,8 +38,6 @@ export type FetchReEnrollmentStatsResult = Result<ReEnrollmentStats>;
 
 /**
  * Fetches re-enrollment statistics for a given organization.
- * A re-enrollment is counted when a user has multiple activity records for the same enrollment_id.
- * This indicates they renewed or re-subscribed to a course they were previously enrolled in.
  */
 export async function fetchTotalReEnrollmentStats({
   supabase,
@@ -50,7 +50,6 @@ export async function fetchTotalReEnrollmentStats({
 
   try {
     // === TOTAL RE-ENROLLMENTS ===
-    // Get all activities for the organization, grouped by enrollment_id
     const { data: allActivities, error: totalError } = await supabase
       .from('course_enrollment_activities')
       .select('enrollment_id, course_enrollments!inner(organization_id)')
@@ -71,7 +70,6 @@ export async function fetchTotalReEnrollmentStats({
       activityCounts.set(activity.enrollment_id, count + 1);
     });
 
-    // Total re-enrollments = sum of (activity_count - 1) for each enrollment with multiple activities
     const totalReEnrollments = Array.from(activityCounts.values())
       .filter((count) => count > 1)
       .reduce((sum, count) => sum + (count - 1), 0);
@@ -82,9 +80,7 @@ export async function fetchTotalReEnrollmentStats({
       .select('enrollment_id, access_start, course_enrollments!inner(organization_id)')
       .eq('course_enrollments.organization_id', organizationId)
       .gte('access_start', startOfLastMonth)
-      .lte('access_start', endOfLastMonth)
-      .order('enrollment_id')
-      .order('access_start');
+      .lte('access_start', endOfLastMonth);
 
     if (lastMonthError) {
       return {
@@ -94,8 +90,7 @@ export async function fetchTotalReEnrollmentStats({
       };
     }
 
-    // For each enrollment_id in last month, check if it's a re-enrollment
-    // (i.e., there's an earlier activity for the same enrollment)
+    // Fetch all prior activities before last month
     const { data: allPriorActivities, error: priorError } = await supabase
       .from('course_enrollment_activities')
       .select('enrollment_id, access_start, course_enrollments!inner(organization_id)')
@@ -111,19 +106,15 @@ export async function fetchTotalReEnrollmentStats({
     }
 
     const priorEnrollments = new Set(allPriorActivities?.map((a) => a.enrollment_id) || []);
-
     const lastMonthReEnrollments =
-      lastMonthActivities?.filter((activity) => priorEnrollments.has(activity.enrollment_id))
-        .length || 0;
+      lastMonthActivities?.filter((a) => priorEnrollments.has(a.enrollment_id)).length || 0;
 
     // === THIS MONTH RE-ENROLLMENTS ===
     const { data: thisMonthActivities, error: thisMonthError } = await supabase
       .from('course_enrollment_activities')
       .select('enrollment_id, access_start, course_enrollments!inner(organization_id)')
       .eq('course_enrollments.organization_id', organizationId)
-      .gte('access_start', startOfThisMonth)
-      .order('enrollment_id')
-      .order('access_start');
+      .gte('access_start', startOfThisMonth);
 
     if (thisMonthError) {
       return {
@@ -133,7 +124,6 @@ export async function fetchTotalReEnrollmentStats({
       };
     }
 
-    // Check if each activity this month is a re-enrollment
     const priorToThisMonth = new Set(
       allPriorActivities
         ?.map((a) => a.enrollment_id)
@@ -141,16 +131,28 @@ export async function fetchTotalReEnrollmentStats({
     );
 
     const thisMonthReEnrollments =
-      thisMonthActivities?.filter((activity) => priorToThisMonth.has(activity.enrollment_id))
-        .length || 0;
+      thisMonthActivities?.filter((a) => priorToThisMonth.has(a.enrollment_id)).length || 0;
+
+    // === PERCENT GROWTH CALCULATION ===
+    const lastCount = lastMonthReEnrollments;
+    const thisCount = thisMonthReEnrollments;
+    let percentGrowth: number;
+
+    if (lastCount > 0) {
+      percentGrowth = ((thisCount - lastCount) / lastCount) * 100;
+    } else {
+      // If last month had 0 re-enrollments, any new ones count as strong growth
+      percentGrowth = thisCount > 0 ? thisCount * 100 : 0;
+    }
 
     return {
       success: true,
       message: 'Successfully fetched re-enrollment statistics',
       data: {
         total_re_enrollments: totalReEnrollments,
-        last_month_re_enrollments: lastMonthReEnrollments,
-        this_month_re_enrollments: thisMonthReEnrollments,
+        last_month_re_enrollments: lastCount,
+        this_month_re_enrollments: thisCount,
+        percent_growth: Number(percentGrowth.toFixed(2)),
       },
     };
   } catch (error) {
