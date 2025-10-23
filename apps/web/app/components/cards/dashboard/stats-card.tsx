@@ -84,8 +84,8 @@ export function StatsCard({
               </div>
             )}
           </div>
-          <div className='bg-primary/10 flex h-12 w-12 items-center justify-center rounded-lg'>
-            <Icon className='text-primary h-6 w-6' />
+          <div className='bg-background/20 flex h-12 w-12 items-center justify-center rounded-lg'>
+            <Icon className='h-6 w-6' />
           </div>
         </div>
       </CardContent>

@@ -5,6 +5,7 @@ import { TrendingDown, TrendingUp, Users } from 'lucide-react';
 import type { FetchTotalStudentsStatsResult } from '@gonasi/database/dashboard';
 
 import { StatsCard } from '~/components/cards';
+import { cn } from '~/lib/utils';
 import { useIsPending } from '~/utils/misc';
 
 export function TotalStudentsCard() {
@@ -43,7 +44,16 @@ export function TotalStudentsCard() {
       title='Total Students'
       value={formatNumber(data?.total_unique_students)}
       displayUi={
-        <div className='bg-primary/5 flex items-center gap-4 rounded-lg p-2'>
+        <div
+          className={cn(
+            'flex items-center gap-4 rounded-lg p-2',
+            data
+              ? data.this_month_enrollments > data.last_month_enrollments
+                ? 'bg-success/10'
+                : 'bg-danger/10'
+              : '',
+          )}
+        >
           {/* Active students */}
           <div>
             <p className='text-foreground text-2xl font-bold'>
