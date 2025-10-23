@@ -72,10 +72,10 @@ export async function fetchTotalStudentsStats({
     // ═══════════════════════════════════════════════════════════════
     // TOTAL UNIQUE STUDENTS
     // ═══════════════════════════════════════════════════════════════
-    const { count: totalUniqueStudents, error: uniqueError } = await supabase
-      .from('course_enrollments')
-      .select('user_id', { count: 'exact', head: true })
-      .eq('organization_id', organizationId);
+    const { data: totalUniqueStudents, error: uniqueError } = await supabase.rpc(
+      'count_total_unique_students',
+      { org_id: organizationId },
+    );
 
     if (uniqueError) throw new Error(`unique students: ${uniqueError.message}`);
 
@@ -92,11 +92,10 @@ export async function fetchTotalStudentsStats({
     // ═══════════════════════════════════════════════════════════════
     // ACTIVE STUDENTS (distinct user_ids where is_active = true)
     // ═══════════════════════════════════════════════════════════════
-    const { count: activeStudents, error: activeError } = await supabase
-      .from('course_enrollments')
-      .select('user_id', { count: 'exact', head: true })
-      .eq('organization_id', organizationId)
-      .eq('is_active', true);
+    const { data: activeStudents, error: activeError } = await supabase.rpc(
+      'count_active_students',
+      { org_id: organizationId },
+    );
 
     if (activeError) throw new Error(`active students: ${activeError.message}`);
 

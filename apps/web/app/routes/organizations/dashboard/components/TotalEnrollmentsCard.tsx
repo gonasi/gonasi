@@ -36,12 +36,12 @@ export function TotalEnrollmentsCard() {
   };
 
   if (isLoading || !result) {
-    return <StatsCard title='Total Course Enrollments' value='—' icon={TrendingUp} isLoading />;
+    return <StatsCard title='Total Course New Enrollments' value='—' icon={TrendingUp} isLoading />;
   }
 
   return (
     <StatsCard
-      title='Total Course Enrollments'
+      title='Total Course New Enrollments'
       value={formatNumber(data?.total_enrollments)}
       displayUi={
         <div

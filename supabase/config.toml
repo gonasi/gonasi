@@ -216,6 +216,9 @@ schema_paths = [
   './schemas/enrollments/utils/enroll_user_in_published_course.sql',
   './schemas/enrollments/utils/user_has_active_access.sql',
   './schemas/enrollments/utils/get_enrollment_status.sql',
+  './schemas/enrollments/utils/count_active_students.sql',
+  './schemas/enrollments/utils/count_total_unique_students.sql',
+
 
   './schemas/fileLibrary/published_file_library_schema_indexes.sql',
   './schemas/fileLibrary/published_file_library_rls.sql',

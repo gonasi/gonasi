@@ -2290,6 +2290,14 @@ export type Database = {
         }
         Returns: Json
       }
+      count_active_students: {
+        Args: { org_id: string }
+        Returns: number
+      }
+      count_total_unique_students: {
+        Args: { org_id: string }
+        Returns: number
+      }
       custom_access_token_hook: {
         Args: { event: Json }
         Returns: Json
