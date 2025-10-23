@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useFetcher, useParams } from 'react-router';
-import { TrendingDown, TrendingUp, Users } from 'lucide-react';
+import { TrendingDown, TrendingUp } from 'lucide-react';
 
 import type { FetchTotalEnrollmentStatsResult } from '@gonasi/database/dashboard';
 
@@ -36,7 +36,7 @@ export function TotalEnrollmentsCard() {
   };
 
   if (isLoading || !result) {
-    return <StatsCard title='Total Course Enrollments' value='—' icon={Users} isLoading />;
+    return <StatsCard title='Total Course Enrollments' value='—' icon={TrendingUp} isLoading />;
   }
 
   return (
@@ -86,7 +86,7 @@ export function TotalEnrollmentsCard() {
           </div>
         </div>
       }
-      icon={Users}
+      icon={TrendingUp}
       trend={{
         value: `${data?.percent_growth ?? 0}%`,
         positive: (data?.percent_growth ?? 0) >= 0,
