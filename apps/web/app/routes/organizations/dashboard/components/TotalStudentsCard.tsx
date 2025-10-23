@@ -36,12 +36,12 @@ export function TotalStudentsCard() {
   };
 
   if (isLoading || !result) {
-    return <StatsCard title='Total Students' value='—' icon={Users} isLoading />;
+    return <StatsCard title='Total Unique Course Students' value='—' icon={Users} isLoading />;
   }
 
   return (
     <StatsCard
-      title='Total Students'
+      title='Total Unique Course Students'
       value={formatNumber(data?.total_unique_students)}
       displayUi={
         <div
