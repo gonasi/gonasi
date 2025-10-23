@@ -44,6 +44,7 @@ export function TotalCoursesCard() {
         value: `${data?.percent_growth ?? 0}%`,
         positive: (data?.percent_growth ?? 0) >= 0,
       }}
+      trendExplanation='(Published)'
       isLoading={isLoading}
       error={hasError ? result?.message : null}
     />

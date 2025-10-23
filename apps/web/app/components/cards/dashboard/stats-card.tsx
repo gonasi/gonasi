@@ -9,6 +9,7 @@ interface StatsCardProps {
   title: string;
   value: string | number;
   description?: string;
+  trendExplanation?: string;
   icon: LucideIcon;
   trend?: {
     value: string;
@@ -24,6 +25,7 @@ export function StatsCard({
   description,
   icon: Icon,
   trend,
+  trendExplanation,
   isLoading = false,
   error = null,
 }: StatsCardProps) {
@@ -66,7 +68,9 @@ export function StatsCard({
                 >
                   {trend.positive ? '↑' : '↓'} {trend.value}
                 </span>
-                <span className='text-muted-foreground text-xs'>vs last month</span>
+                <span className='text-muted-foreground text-xs'>
+                  vs last month {trendExplanation}
+                </span>
               </div>
             )}
           </div>
