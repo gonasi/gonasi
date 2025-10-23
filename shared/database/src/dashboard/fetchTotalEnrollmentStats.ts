@@ -1,18 +1,36 @@
 import type { TypedSupabaseClient } from '../client';
 
+/**
+ * Arguments required to fetch enrollment statistics.
+ */
 export interface FetchTotalEnrollmentStatsArgs {
   supabase: TypedSupabaseClient;
   organizationId: string;
 }
 
+/**
+ * Represents enrollment statistics for an organization.
+ */
 export interface EnrollmentStats {
-  total_enrollments: string;
-  active_enrollments: string;
-  percent_growth: number; // MoM growth of new enrollments (based on access_start)
-  last_month_new_enrollments: string; // Formatted count of new enrollments last month
-  this_month_new_enrollments: string; // Formatted count of new enrollments this month
+  /** Total number of enrollments in the organization */
+  total_enrollments: number;
+
+  /** Number of currently active enrollments */
+  active_enrollments: number;
+
+  /** Month-over-month growth of new enrollments (%) */
+  percent_growth: number;
+
+  /** New enrollments last month (based on access_start) */
+  last_month_new_enrollments: number;
+
+  /** New enrollments this month (based on access_start) */
+  this_month_new_enrollments: number;
 }
 
+/**
+ * Standardized result type for API calls
+ */
 interface Result<T> {
   success: boolean;
   message: string;
@@ -22,18 +40,9 @@ interface Result<T> {
 export type FetchTotalEnrollmentStatsResult = Result<EnrollmentStats>;
 
 /**
- * Formats a number to compact notation (e.g., 1.5k, 2.3m)
+ * Fetches enrollment statistics for a given organization.
+ * Calculates total enrollments, active enrollments, and MoM growth.
  */
-function formatCompactNumber(value: number): string {
-  if (value >= 1_000_000) {
-    return `${(value / 1_000_000).toFixed(1).replace(/\.0$/, '')}m`;
-  }
-  if (value >= 1_000) {
-    return `${(value / 1_000).toFixed(1).replace(/\.0$/, '')}k`;
-  }
-  return value.toString();
-}
-
 export async function fetchTotalEnrollmentStats({
   supabase,
   organizationId,
@@ -44,7 +53,9 @@ export async function fetchTotalEnrollmentStats({
   const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString();
   const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0).toISOString();
 
-  // TOTAL ENROLLMENTS (count rows in course_enrollments)
+  const safe = (n?: number | null): number => (n && !isNaN(n) ? n : 0);
+
+  // === TOTAL ENROLLMENTS ===
   const { count: totalEnrollments, error: totalError } = await supabase
     .from('course_enrollments')
     .select('id', { count: 'exact', head: true })
@@ -58,15 +69,13 @@ export async function fetchTotalEnrollmentStats({
     };
   }
 
-  // ACTIVE ENROLLMENTS
+  // === ACTIVE ENROLLMENTS ===
+  // An enrollment is active if is_active = true or expires_at is in the future or null
   const { count: activeEnrollments, error: activeError } = await supabase
     .from('course_enrollments')
     .select('id', { count: 'exact', head: true })
     .eq('organization_id', organizationId)
-    .eq('is_active', true)
-    .or(
-      `and(expires_at.is.null,expires_at.gt.${nowIso}),expires_at.gt.${nowIso},expires_at.is.null`,
-    );
+    .or(`is_active.eq.true,expires_at.gt.${nowIso},expires_at.is.null`);
 
   if (activeError) {
     return {
@@ -76,7 +85,7 @@ export async function fetchTotalEnrollmentStats({
     };
   }
 
-  // LAST MONTH NEW ENROLLMENTS (based on course_enrollment_activities.access_start)
+  // === LAST MONTH NEW ENROLLMENTS ===
   const { count: lastMonthCount, error: lastMonthError } = await supabase
     .from('course_enrollment_activities')
     .select('id, course_enrollments!inner(organization_id)', { count: 'exact', head: true })
@@ -92,7 +101,7 @@ export async function fetchTotalEnrollmentStats({
     };
   }
 
-  // THIS MONTH NEW ENROLLMENTS (based on access_start)
+  // === THIS MONTH NEW ENROLLMENTS ===
   const { count: thisMonthCount, error: thisMonthError } = await supabase
     .from('course_enrollment_activities')
     .select('id, course_enrollments!inner(organization_id)', { count: 'exact', head: true })
@@ -108,30 +117,30 @@ export async function fetchTotalEnrollmentStats({
     };
   }
 
-  // CALCULATE GROWTH (MoM new enrollments based on access_start)
-  const totalEnroll = totalEnrollments ?? 0;
-  const activeEnroll = activeEnrollments ?? 0;
-  const lastCount = lastMonthCount ?? 0;
-  const thisCount = thisMonthCount ?? 0;
+  // === CALCULATE MOM GROWTH ===
+  const totalEnroll = safe(totalEnrollments);
+  const activeEnroll = safe(activeEnrollments);
+  const lastCount = safe(lastMonthCount);
+  const thisCount = safe(thisMonthCount);
 
   let percentGrowth: number;
+
   if (lastCount > 0) {
     percentGrowth = ((thisCount - lastCount) / lastCount) * 100;
-  } else if (thisCount > 0) {
-    percentGrowth = 100;
   } else {
-    percentGrowth = 0;
+    // If last month had 0 enrollments, any new enrollments counts as growth
+    percentGrowth = thisCount > 0 ? thisCount * 100 : 0;
   }
 
   return {
     success: true,
     message: 'Successfully fetched enrollment statistics',
     data: {
-      total_enrollments: formatCompactNumber(totalEnroll),
-      active_enrollments: formatCompactNumber(activeEnroll),
-      percent_growth: Number(percentGrowth.toFixed(2)),
-      last_month_new_enrollments: formatCompactNumber(lastCount),
-      this_month_new_enrollments: formatCompactNumber(thisCount),
+      total_enrollments: totalEnroll,
+      active_enrollments: activeEnroll,
+      percent_growth: Math.round(percentGrowth), // 0 decimal places
+      last_month_new_enrollments: lastCount,
+      this_month_new_enrollments: thisCount,
     },
   };
 }

@@ -59,7 +59,7 @@ export function StatsCard({
       <CardContent className='p-6'>
         <div className='flex items-start justify-between'>
           <div className='flex-1'>
-            <p className='text-muted-foreground mb-1 text-sm font-medium'>{title}</p>
+            <p className='text-muted-foreground mb-1 h-10 text-sm leading-5 font-medium'>{title}</p>
             <h3 className='text-foreground mb-2 text-3xl font-bold'>{value}</h3>
             {displayUi}
             {description && <p className='text-muted-foreground text-sm'>{description}</p>}

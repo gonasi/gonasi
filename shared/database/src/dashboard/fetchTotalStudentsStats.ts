@@ -20,7 +20,7 @@ export interface StudentStats {
   total_enrollments: number;
   /** Total number of active students (distinct user_ids where is_active = true). */
   active_students: number;
-  /** Month-over-month percent growth in enrollments. */
+  /** Month-over-month percent growth in enrollments. Can be negative or >100. */
   percent_growth: number;
   /** Total number of enrollments created this month. */
   this_month_enrollments: number;
@@ -129,7 +129,13 @@ export async function fetchTotalStudentsStats({
     const last = safe(lastMonthCount);
     const current = safe(thisMonthCount);
 
-    const percentGrowth = last > 0 ? ((current - last) / last) * 100 : current > 0 ? 100 : 0;
+    let percentGrowth: number;
+
+    if (last > 0) {
+      percentGrowth = ((current - last) / last) * 100;
+    } else {
+      percentGrowth = current > 0 ? current * 100 : 0;
+    }
 
     // ═══════════════════════════════════════════════════════════════
     // RETURN SUCCESS
@@ -141,7 +147,7 @@ export async function fetchTotalStudentsStats({
         total_unique_students: safe(totalUniqueStudents),
         total_enrollments: safe(totalEnrollments),
         active_students: safe(activeStudents),
-        percent_growth: Number(percentGrowth.toFixed(2)),
+        percent_growth: Math.round(percentGrowth), // 0 decimal places
         this_month_enrollments: current,
         last_month_enrollments: last,
       },
