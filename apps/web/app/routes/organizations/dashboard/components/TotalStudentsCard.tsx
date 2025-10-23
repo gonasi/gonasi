@@ -24,7 +24,7 @@ export function TotalStudentsCard() {
   const hasError = result && !result.success;
   const data = result?.data;
 
-  // Avoid showing stale/default data before fetch completes
+  // Avoid showing placeholder before fetch completes
   if (isLoading || !result) {
     return <StatsCard title='Total Students' value='—' icon={Users} isLoading />;
   }
@@ -32,8 +32,8 @@ export function TotalStudentsCard() {
   return (
     <StatsCard
       title='Total Students'
-      value={data?.total_students ?? 0}
-      description='Across all courses'
+      value={data?.total_unique_students ?? 0}
+      description={`Across ${data?.total_enrollments ?? 0} total enrollments`}
       icon={Users}
       trend={{
         value: `${data?.percent_growth ?? 0}%`,

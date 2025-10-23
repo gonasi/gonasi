@@ -6,7 +6,8 @@ export interface FetchTotalStudentsStatsArgs {
 }
 
 export interface StudentStats {
-  total_students: number;
+  total_unique_students: number;
+  total_enrollments: number;
   percent_growth: number;
 }
 
@@ -19,10 +20,12 @@ export interface Result<T> {
 export type FetchTotalStudentsStatsResult = Result<StudentStats>;
 
 /**
- * Fetches total student enrollments and month-over-month growth for an organization.
+ * Fetches total unique students, total enrollments, and month-over-month
+ * growth in enrollments for an organization.
  *
- * - total_students: count of all rows in course_enrollments for the org
- * - percent_growth: growth of new enrollments this month vs last month
+ * - total_unique_students: count of distinct user_ids in course_enrollments
+ * - total_enrollments: count of all enrollment rows
+ * - percent_growth: growth of new enrollments (rows) this month vs last month
  */
 export async function fetchTotalStudentsStats({
   supabase,
@@ -34,9 +37,25 @@ export async function fetchTotalStudentsStats({
   const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
 
   // ═══════════════════════════════════════════════════════════════
-  // TOTAL ENROLLMENTS
+  // TOTAL UNIQUE STUDENTS
   // ═══════════════════════════════════════════════════════════════
-  const { count: totalStudents, error: totalError } = await supabase
+  const { count: totalUniqueStudents, error: uniqueError } = await supabase
+    .from('course_enrollments')
+    .select('user_id', { count: 'exact', head: true })
+    .eq('organization_id', organizationId);
+
+  if (uniqueError) {
+    return {
+      success: false,
+      message: `Failed to fetch unique students: ${uniqueError.message}`,
+      data: null,
+    };
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // TOTAL ENROLLMENTS (including duplicates)
+  // ═══════════════════════════════════════════════════════════════
+  const { count: totalEnrollments, error: totalError } = await supabase
     .from('course_enrollments')
     .select('id', { count: 'exact', head: true })
     .eq('organization_id', organizationId);
@@ -44,7 +63,7 @@ export async function fetchTotalStudentsStats({
   if (totalError) {
     return {
       success: false,
-      message: `Failed to fetch total students: ${totalError.message}`,
+      message: `Failed to fetch total enrollments: ${totalError.message}`,
       data: null,
     };
   }
@@ -85,9 +104,10 @@ export async function fetchTotalStudentsStats({
   }
 
   // ═══════════════════════════════════════════════════════════════
-  // CALCULATE GROWTH
+  // CALCULATE GROWTH (based on total enrollments)
   // ═══════════════════════════════════════════════════════════════
-  const total = totalStudents ?? 0;
+  const totalEnroll = totalEnrollments ?? 0;
+  const uniqueStudents = totalUniqueStudents ?? 0;
   const lastMonthCount = lastMonthCountRaw ?? 0;
   const thisMonthCount = thisMonthCountRaw ?? 0;
 
@@ -107,7 +127,8 @@ export async function fetchTotalStudentsStats({
     success: true,
     message: 'Successfully fetched student enrollment statistics',
     data: {
-      total_students: total,
+      total_unique_students: uniqueStudents,
+      total_enrollments: totalEnroll,
       percent_growth: Number(percentGrowth.toFixed(2)),
     },
   };
