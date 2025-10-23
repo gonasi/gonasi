@@ -36,12 +36,19 @@ export function TotalReEnrollmentsCard() {
   };
 
   if (isLoading || !result) {
-    return <StatsCard title='Total Course Re-Enrollments' value='—' icon={RefreshCw} isLoading />;
+    return (
+      <StatsCard
+        title='Total Enrollments (Incl. Re-Enrollments)'
+        value='—'
+        icon={RefreshCw}
+        isLoading
+      />
+    );
   }
 
   return (
     <StatsCard
-      title='Total Course Re-Enrollments'
+      title='Total Enrollments (Incl. Re-Enrollments)'
       value={formatNumber(data?.total_re_enrollments)}
       displayUi={
         <div
