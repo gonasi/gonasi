@@ -18,17 +18,39 @@ interface Result<T> {
   data: T | null;
 }
 
+/**
+ * Fetches comprehensive course statistics for an organization
+ *
+ * Calculates:
+ * - Total courses (all courses regardless of status)
+ * - Published courses (courses that are live/available)
+ * - Unpublished courses (difference between total and published)
+ * - Growth percentage (based on published courses month-over-month)
+ *
+ * @param supabase - Typed Supabase client instance
+ * @param organizationId - UUID of the organization to fetch stats for
+ * @returns Result object containing course statistics or error details
+ */
 export async function fetchTotalCoursesStats({
   supabase,
   organizationId,
 }: FetchTotalCoursesStatsArgs): Promise<Result<CourseStats>> {
-  // Get date boundaries for this month and last month
+  // ═══════════════════════════════════════════════════════════════
+  // DATE RANGE CALCULATION
+  // ═══════════════════════════════════════════════════════════════
+  // Calculate month boundaries for growth comparison
+  // This month: From 1st of current month to now
+  // Last month: From 1st to last day of previous month
   const now = new Date();
   const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
   const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
 
-  // 1️⃣ Fetch total courses for the organization
+  // ═══════════════════════════════════════════════════════════════
+  // FETCH TOTAL COURSES
+  // ═══════════════════════════════════════════════════════════════
+  // Get count of all courses for this organization (published + unpublished)
+  // Using head: true for performance since we only need the count
   const { count: totalCourses, error: totalError } = await supabase
     .from('courses')
     .select('id', { count: 'exact', head: true })
@@ -42,7 +64,10 @@ export async function fetchTotalCoursesStats({
     };
   }
 
-  // 2️⃣ Fetch published courses count
+  // ═══════════════════════════════════════════════════════════════
+  // FETCH PUBLISHED COURSES
+  // ═══════════════════════════════════════════════════════════════
+  // Get count of only published courses (courses available to learners)
   const { count: publishedCourses, error: publishedError } = await supabase
     .from('published_courses')
     .select('id', { count: 'exact', head: true })
@@ -56,9 +81,13 @@ export async function fetchTotalCoursesStats({
     };
   }
 
-  // 3️⃣ Count total courses created last month and this month
-  const { count: lastMonthCount, error: lastMonthError } = await supabase
-    .from('courses')
+  // ═══════════════════════════════════════════════════════════════
+  // FETCH LAST MONTH'S PUBLISHED COURSES
+  // ═══════════════════════════════════════════════════════════════
+  // Count published courses created in the previous month
+  // Used as baseline for calculating growth percentage
+  const { count: lastMonthPublished, error: lastMonthError } = await supabase
+    .from('published_courses')
     .select('id', { count: 'exact', head: true })
     .eq('organization_id', organizationId)
     .gte('created_at', startOfLastMonth.toISOString())
@@ -67,13 +96,18 @@ export async function fetchTotalCoursesStats({
   if (lastMonthError) {
     return {
       success: false,
-      message: `Failed to fetch last month courses: ${lastMonthError.message}`,
+      message: `Failed to fetch last month published courses: ${lastMonthError.message}`,
       data: null,
     };
   }
 
-  const { count: thisMonthCount, error: thisMonthError } = await supabase
-    .from('courses')
+  // ═══════════════════════════════════════════════════════════════
+  // FETCH THIS MONTH'S PUBLISHED COURSES
+  // ═══════════════════════════════════════════════════════════════
+  // Count published courses created in the current month
+  // Used to compare against last month for growth calculation
+  const { count: thisMonthPublished, error: thisMonthError } = await supabase
+    .from('published_courses')
     .select('id', { count: 'exact', head: true })
     .eq('organization_id', organizationId)
     .gte('created_at', startOfThisMonth.toISOString());
@@ -81,18 +115,41 @@ export async function fetchTotalCoursesStats({
   if (thisMonthError) {
     return {
       success: false,
-      message: `Failed to fetch this month courses: ${thisMonthError.message}`,
+      message: `Failed to fetch this month published courses: ${thisMonthError.message}`,
       data: null,
     };
   }
 
-  // 4️⃣ Compute unpublished & growth %
-  const unpublished = (totalCourses ?? 0) - (publishedCourses ?? 0);
-  const percentGrowth =
-    lastMonthCount && lastMonthCount > 0
-      ? (((thisMonthCount ?? 0) - lastMonthCount) / lastMonthCount) * 100
-      : 100; // if last month was 0, treat as 100% growth
+  // ═══════════════════════════════════════════════════════════════
+  // CALCULATE METRICS
+  // ═══════════════════════════════════════════════════════════════
 
+  // Calculate unpublished courses (draft or in-progress courses)
+  const unpublished = (totalCourses ?? 0) - (publishedCourses ?? 0);
+
+  // Calculate month-over-month growth for published courses
+  // Growth = ((This Month - Last Month) / Last Month) × 100
+  // Special cases:
+  // - If last month had 0 courses but this month has some: 100% growth
+  // - If both months have 0 courses: 0% growth
+  const lastMonthCount = lastMonthPublished ?? 0;
+  const thisMonthCount = thisMonthPublished ?? 0;
+
+  let percentGrowth: number;
+  if (lastMonthCount > 0) {
+    // Standard growth calculation
+    percentGrowth = ((thisMonthCount - lastMonthCount) / lastMonthCount) * 100;
+  } else if (thisMonthCount > 0) {
+    // First published courses this month - show 100% growth
+    percentGrowth = 100;
+  } else {
+    // No courses in either month - 0% growth
+    percentGrowth = 0;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // RETURN RESULTS
+  // ═══════════════════════════════════════════════════════════════
   return {
     success: true,
     message: 'Successfully fetched course statistics',
