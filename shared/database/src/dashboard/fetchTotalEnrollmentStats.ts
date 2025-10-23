@@ -70,12 +70,13 @@ export async function fetchTotalEnrollmentStats({
   }
 
   // === ACTIVE ENROLLMENTS ===
-  // An enrollment is active if is_active = true or expires_at is in the future or null
+  // An enrollment is active if is_active = true AND (expires_at is in the future OR null)
   const { count: activeEnrollments, error: activeError } = await supabase
     .from('course_enrollments')
     .select('id', { count: 'exact', head: true })
     .eq('organization_id', organizationId)
-    .or(`is_active.eq.true,expires_at.gt.${nowIso},expires_at.is.null`);
+    .eq('is_active', true)
+    .or(`expires_at.gt.${nowIso},expires_at.is.null`);
 
   if (activeError) {
     return {
