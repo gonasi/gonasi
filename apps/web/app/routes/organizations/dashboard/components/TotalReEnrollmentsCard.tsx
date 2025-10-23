@@ -46,7 +46,7 @@ export function TotalReEnrollmentsCard() {
       displayUi={
         <div
           className={cn(
-            'flex items-center gap-4 rounded-lg p-2',
+            'flex items-center gap-4 rounded-lg px-2 py-4',
             data
               ? data.this_month_re_enrollments > data.last_month_re_enrollments
                 ? 'bg-success/10'
