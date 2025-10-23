@@ -1,48 +1,61 @@
 import type { TypedSupabaseClient } from '../client';
 
+/**
+ * Arguments for fetching total student statistics.
+ */
 export interface FetchTotalStudentsStatsArgs {
+  /** Supabase client instance (typed wrapper). */
   supabase: TypedSupabaseClient;
+  /** Organization ID to filter course enrollments by. */
   organizationId: string;
 }
 
+/**
+ * Student statistics for a given organization.
+ */
 export interface StudentStats {
-  total_unique_students: string;
-  total_enrollments: string;
-  active_students: string;
+  /** Total number of unique students (distinct user_ids) enrolled. */
+  total_unique_students: number;
+  /** Total number of enrollment records. */
+  total_enrollments: number;
+  /** Total number of active students (distinct user_ids where is_active = true). */
+  active_students: number;
+  /** Month-over-month percent growth in enrollments. */
   percent_growth: number;
-  this_month_enrollments: string;
-  last_month_enrollments: string;
+  /** Total number of enrollments created this month. */
+  this_month_enrollments: number;
+  /** Total number of enrollments created last month. */
+  last_month_enrollments: number;
 }
 
+/**
+ * Generic result shape returned by data-fetching utilities.
+ */
 export interface Result<T> {
+  /** Indicates if the operation succeeded. */
   success: boolean;
+  /** Human-readable message describing the result. */
   message: string;
+  /** The data payload (or null on failure). */
   data: T | null;
 }
 
-export type FetchTotalStudentsStatsResult = Result<StudentStats>;
-
 /**
- * Formats a number to compact notation (e.g., 1.5k, 2.3m)
+ * The result type for `fetchTotalStudentsStats`.
  */
-function formatCompactNumber(value: number): string {
-  if (value >= 1_000_000) {
-    return `${(value / 1_000_000).toFixed(1).replace(/\.0$/, '')}m`;
-  }
-  if (value >= 1_000) {
-    return `${(value / 1_000).toFixed(1).replace(/\.0$/, '')}k`;
-  }
-  return value.toString();
-}
+export type FetchTotalStudentsStatsResult = Result<StudentStats>;
 
 /**
  * Fetches total unique students, total enrollments, active students,
  * and month-over-month growth in enrollments for an organization.
  *
- * - total_unique_students: distinct user_ids in course_enrollments
- * - total_enrollments: count of all enrollment rows
- * - active_students: count of distinct user_ids where is_active = true
- * - percent_growth: growth of new enrollments this month vs last month
+ * **Returned fields:**
+ * - `total_unique_students`: count of distinct `user_id` in `course_enrollments`
+ * - `total_enrollments`: total number of enrollment rows
+ * - `active_students`: count of distinct `user_id` where `is_active = true`
+ * - `percent_growth`: growth of new enrollments this month vs last month
+ * - `this_month_enrollments`: enrollments created since start of current month
+ * - `last_month_enrollments`: enrollments created in previous month
  */
 export async function fetchTotalStudentsStats({
   supabase,
@@ -53,7 +66,7 @@ export async function fetchTotalStudentsStats({
   const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
   const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
 
-  const safe = (n?: number) => (n && !isNaN(n) ? n : 0);
+  const safe = (n?: number | null): number => (n && !isNaN(n) ? n : 0);
 
   try {
     // ═══════════════════════════════════════════════════════════════
@@ -113,24 +126,24 @@ export async function fetchTotalStudentsStats({
     // ═══════════════════════════════════════════════════════════════
     // CALCULATE GROWTH
     // ═══════════════════════════════════════════════════════════════
-    const last = safe(lastMonthCount ?? 0);
-    const current = safe(thisMonthCount ?? 0);
+    const last = safe(lastMonthCount);
+    const current = safe(thisMonthCount);
 
     const percentGrowth = last > 0 ? ((current - last) / last) * 100 : current > 0 ? 100 : 0;
 
     // ═══════════════════════════════════════════════════════════════
-    // RETURN SUCCESS WITH FORMATTED VALUES
+    // RETURN SUCCESS
     // ═══════════════════════════════════════════════════════════════
     return {
       success: true,
       message: 'Successfully fetched student enrollment statistics',
       data: {
-        total_unique_students: formatCompactNumber(safe(totalUniqueStudents ?? 0)),
-        total_enrollments: formatCompactNumber(safe(totalEnrollments ?? 0)),
-        active_students: formatCompactNumber(safe(activeStudents ?? 0)),
+        total_unique_students: safe(totalUniqueStudents),
+        total_enrollments: safe(totalEnrollments),
+        active_students: safe(activeStudents),
         percent_growth: Number(percentGrowth.toFixed(2)),
-        this_month_enrollments: formatCompactNumber(current),
-        last_month_enrollments: formatCompactNumber(last),
+        this_month_enrollments: current,
+        last_month_enrollments: last,
       },
     };
   } catch (err) {

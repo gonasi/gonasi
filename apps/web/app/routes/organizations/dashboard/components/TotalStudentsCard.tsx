@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useFetcher, useParams } from 'react-router';
-import { Users } from 'lucide-react';
+import { TrendingDown, TrendingUp, Users } from 'lucide-react';
 
 import type { FetchTotalStudentsStatsResult } from '@gonasi/database/dashboard';
 
@@ -24,6 +24,16 @@ export function TotalStudentsCard() {
   const hasError = result && !result.success;
   const data = result?.data;
 
+  // Create a compact number formatter for counts (K, M, etc.)
+  const formatNumber = (num?: number | string) => {
+    if (num == null || isNaN(Number(num))) return '—';
+    return new Intl.NumberFormat('en', {
+      notation: 'compact',
+      compactDisplay: 'short',
+      maximumFractionDigits: 1,
+    }).format(Number(num));
+  };
+
   if (isLoading || !result) {
     return <StatsCard title='Total Students' value='—' icon={Users} isLoading />;
   }
@@ -31,20 +41,38 @@ export function TotalStudentsCard() {
   return (
     <StatsCard
       title='Total Students'
-      value={data?.total_unique_students ?? 0}
+      value={formatNumber(data?.total_unique_students)}
       displayUi={
-        <div className='bg-primary/10 flex gap-4 rounded-sm p-2'>
+        <div className='bg-primary/5 flex items-center gap-4 rounded-lg p-2'>
+          {/* Active students */}
           <div>
-            <p className='text-foreground text-2xl font-bold'>{data?.active_students}</p>
-            <p className='text-muted-foreground text-xs'>active</p>
+            <p className='text-foreground text-2xl font-bold'>
+              {formatNumber(data?.active_students)}
+            </p>
+            <p className='text-muted-foreground font-secondary text-xs'>Active</p>
           </div>
-          <div>
-            <p className='text-muted-foreground text-sm'>This month</p>
-            <p className='text-foreground text-xl font-semibold'>{data?.this_month_enrollments}</p>
+
+          {/* This month enrollments */}
+          <div className='flex items-center gap-1'>
+            <div>
+              <p className='text-muted-foreground font-secondary text-xs'>This month</p>
+              <p className='text-foreground text-xl font-semibold'>
+                {formatNumber(data?.this_month_enrollments)}
+              </p>
+            </div>
+            {data && data.this_month_enrollments > data.last_month_enrollments ? (
+              <TrendingUp className='text-success h-4 w-4' />
+            ) : data && data.this_month_enrollments < data.last_month_enrollments ? (
+              <TrendingDown className='text-danger h-4 w-4' />
+            ) : null}
           </div>
+
+          {/* Last month enrollments */}
           <div>
-            <p className='text-muted-foreground text-sm'>Last month</p>
-            <p className='text-foreground text-xl font-semibold'>{data?.last_month_enrollments}</p>
+            <p className='text-muted-foreground font-secondary text-xs'>Last month</p>
+            <p className='text-foreground text-xl font-semibold'>
+              {formatNumber(data?.last_month_enrollments)}
+            </p>
           </div>
         </div>
       }
