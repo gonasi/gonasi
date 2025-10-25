@@ -8,7 +8,6 @@ export default [
     route('go/explore', 'routes/public/explore.tsx'),
     route('go/pricing', 'routes/public/pricing.tsx'),
     route('go/privacy', 'routes/public/privacy.tsx'),
-    route('go/platform-features', 'routes/public/platform-features.tsx'),
     route('go/terms-of-service', 'routes/public/terms-of-service.tsx'),
 
     route('c/:publishedCourseId', 'routes/public/published-course-id-index.tsx', [
@@ -23,6 +22,10 @@ export default [
 
     route('api/check-username-exists', 'routes/api/check-username-exists.ts'),
     route('api/check-handle-exists/:organizationId', 'routes/api/check-handle-exists.ts'),
+    route(
+      'api/fetch-organization-available-credits/:organizationId',
+      'routes/api/fetch-organization-available-credits.ts',
+    ),
   ]),
 
   route(
@@ -52,6 +55,23 @@ export default [
 
   layout('routes/layouts/organizations/organizations-layout.tsx', [
     route(':organizationId/dashboard', 'routes/organizations/dashboard/dashboard-index.tsx'),
+
+    route(
+      'api/dashboard/fetch-total-courses-stats/:organizationId',
+      'routes/api/dashboard/fetch-total-courses-stats.ts',
+    ),
+    route(
+      'api/dashboard/fetch-total-students-stats/:organizationId',
+      'routes/api/dashboard/fetch-total-students-stats.ts',
+    ),
+    route(
+      'api/dashboard/fetch-total-course-enrollment-stats/:organizationId',
+      'routes/api/dashboard/fetch-total-course-enrollment-stats.ts',
+    ),
+    route(
+      'api/dashboard/fetch-total-course-re-enrollment-stats/:organizationId',
+      'routes/api/dashboard/fetch-total-course-re-enrollment-stats.ts',
+    ),
 
     route(':organizationId/members', 'routes/organizations/members/members-index.tsx', [
       route('active-members', 'routes/organizations/members/active-members.tsx', [

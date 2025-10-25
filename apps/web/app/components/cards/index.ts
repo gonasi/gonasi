@@ -5,3 +5,4 @@ export * from './banner-card';
 export * from './pathways-card';
 export * from './lesson-type-card';
 export * from './lucide-icon-renderer';
+export * from './dashboard';
