@@ -10,7 +10,7 @@ import { EarningsCard, StatsCard, StorageCard } from '~/components/cards';
 
 export default function DashboardIndex() {
   return (
-    <section className='mx-auto space-y-4 p-4'>
+    <section className='mx-auto space-y-2 p-4'>
       <div className='grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-4'>
         <TotalCoursesCard />
         <TotalStudentsCard />
