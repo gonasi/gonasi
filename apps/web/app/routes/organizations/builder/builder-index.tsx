@@ -74,7 +74,7 @@ export default function BuilderIndex({ params, loaderData }: Route.ComponentProp
         </div>
         <section className='px-0 py-4 md:px-4'>
           {data && data.length ? (
-            <div className='grid grid-cols-1 gap-0 md:grid-cols-2 md:gap-2 lg:grid-cols-3'>
+            <div className='grid grid-cols-1 gap-0 md:grid-cols-2 md:gap-4 lg:grid-cols-3'>
               {data.map(({ id, name, signed_url, blur_hash, owned_by }, index) => {
                 const canEdit =
                   ['owner', 'admin'].includes(outletData.member.role) || owned_by === userId;
