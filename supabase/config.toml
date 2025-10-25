@@ -186,6 +186,17 @@ schema_paths = [
   './schemas/publishedCourses/utils/upsert_published_course_with_content.sql',
   './schemas/publishedCourses/utils/get_course_progress_overview.sql',
 
+  # wallets
+  './schemas/wallets/utils/transaction_status.sql',
+
+  './schemas/wallets/org_wallets_schema_and_indexes.sql',
+  './schemas/wallets/platform_wallets_schema_and_indexes.sql',
+  './schemas/wallets/user_wallets_schema_and_indexes.sql',
+  './schemas/wallets/wallet_ledger_entries_schema_and_indexes.sql',
+
+  './schemas/wallets/utils/create_user_wallets.sql',
+  './schemas/wallets/utils/create_org_wallets.sql',
+
   # enrollment related tables
   './schemas/enrollments/course_enrollments_schema_and_indexes.sql',
   './schemas/enrollments/course_enrollments_rls.sql',
