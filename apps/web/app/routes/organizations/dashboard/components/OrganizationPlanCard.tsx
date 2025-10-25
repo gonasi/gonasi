@@ -108,7 +108,7 @@ export function OrganizationPlanCard() {
             <div className='mb-1 flex items-center gap-2'>
               <p className='text-muted-foreground text-sm font-medium'>Current Plan</p>
               {subscription.status === 'active' ? (
-                <Badge variant='tip'>Active</Badge>
+                <Badge variant='success'>Active</Badge>
               ) : (
                 <Badge variant='secondary' className='bg-muted text-foreground'>
                   {subscription.status}
