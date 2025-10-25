@@ -9,20 +9,6 @@ create type subscription_tier as enum (
 );
 
 -- ===================================================
--- TYPE: public.subscription_status
--- ===================================================
--- Represents the current billing state of an organization's subscription.
--- Typically used in subscription tracking (e.g., organization_plans table).
--- ===================================================
-create type subscription_status as enum (
-  'active',      -- Fully paid or in good standing
-  'canceled',    -- Canceled but still in access period
-  'past_due',    -- Payment failure
-  'trialing',    -- Trial period active
-  'incomplete'   -- Failed setup or pending payment method
-);
-
--- ===================================================
 -- TYPE: public.analytics_level
 -- ===================================================
 -- Defines depth of analytics & reporting features available on a tier.
