@@ -1,11 +1,12 @@
-import { Award, TrendingUp } from 'lucide-react';
+import { Award } from 'lucide-react';
 
+import { OrganizationPlanCard } from './components/OrganizationPlanCard';
 import { TotalCoursesCard } from './components/TotalCoursesCard';
 import { TotalEnrollmentsCard } from './components/TotalEnrollmentsCard';
 import { TotalReEnrollmentsCard } from './components/TotalReEnrollmentsCard';
 import { TotalStudentsCard } from './components/TotalStudentsCard';
 
-import { EarningsCard, PlanCard, StatsCard, StorageCard } from '~/components/cards';
+import { EarningsCard, StatsCard, StorageCard } from '~/components/cards';
 
 export default function DashboardIndex() {
   return (
@@ -15,20 +16,11 @@ export default function DashboardIndex() {
         <TotalStudentsCard />
         <TotalEnrollmentsCard />
         <TotalReEnrollmentsCard />
-        <StatsCard
-          title='Active Enrollments'
-          value={892}
-          description='Students currently enrolled in courses'
-          icon={TrendingUp}
-          trend={{ value: '5%', positive: false }}
-        />
-
-        <EarningsCard />
       </div>
 
       {/* Plan, Storage, and Completion */}
       <div className='grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3'>
-        <PlanCard />
+        <OrganizationPlanCard />
         <StorageCard />
         <StatsCard
           title='Avg. Completion'
@@ -37,6 +29,9 @@ export default function DashboardIndex() {
           icon={Award}
           trend={{ value: '3%', positive: true }}
         />
+      </div>
+      <div>
+        <EarningsCard />
       </div>
     </section>
   );

@@ -1430,6 +1430,44 @@ export type Database = {
           },
         ]
       }
+      org_wallets: {
+        Row: {
+          balance_reserved: number
+          balance_total: number
+          created_at: string
+          currency_code: Database["public"]["Enums"]["currency_code"]
+          id: string
+          organization_id: string
+          updated_at: string
+        }
+        Insert: {
+          balance_reserved?: number
+          balance_total?: number
+          created_at?: string
+          currency_code: Database["public"]["Enums"]["currency_code"]
+          id?: string
+          organization_id: string
+          updated_at?: string
+        }
+        Update: {
+          balance_reserved?: number
+          balance_total?: number
+          created_at?: string
+          currency_code?: Database["public"]["Enums"]["currency_code"]
+          id?: string
+          organization_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_wallets_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organization_invites: {
         Row: {
           accepted_at: string | null
@@ -1537,6 +1575,66 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      organization_subscriptions: {
+        Row: {
+          cancel_at_period_end: boolean
+          created_at: string
+          created_by: string | null
+          current_period_end: string | null
+          current_period_start: string
+          id: string
+          organization_id: string
+          start_date: string
+          status: Database["public"]["Enums"]["subscription_status"]
+          tier: Database["public"]["Enums"]["subscription_tier"]
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          cancel_at_period_end?: boolean
+          created_at?: string
+          created_by?: string | null
+          current_period_end?: string | null
+          current_period_start?: string
+          id?: string
+          organization_id: string
+          start_date?: string
+          status?: Database["public"]["Enums"]["subscription_status"]
+          tier?: Database["public"]["Enums"]["subscription_tier"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          cancel_at_period_end?: boolean
+          created_at?: string
+          created_by?: string | null
+          current_period_end?: string | null
+          current_period_start?: string
+          id?: string
+          organization_id?: string
+          start_date?: string
+          status?: Database["public"]["Enums"]["subscription_status"]
+          tier?: Database["public"]["Enums"]["subscription_tier"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_subscriptions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organization_subscriptions_tier_fkey"
+            columns: ["tier"]
+            isOneToOne: false
+            referencedRelation: "tier_limits"
+            referencedColumns: ["tier"]
           },
         ]
       }
@@ -1735,6 +1833,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      platform_wallets: {
+        Row: {
+          balance_reserved: number
+          balance_total: number
+          created_at: string
+          currency_code: Database["public"]["Enums"]["currency_code"]
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          balance_reserved?: number
+          balance_total?: number
+          created_at?: string
+          currency_code: Database["public"]["Enums"]["currency_code"]
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          balance_reserved?: number
+          balance_total?: number
+          created_at?: string
+          currency_code?: Database["public"]["Enums"]["currency_code"]
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -2139,6 +2264,87 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_wallets: {
+        Row: {
+          balance_reserved: number
+          balance_total: number
+          created_at: string
+          currency_code: Database["public"]["Enums"]["currency_code"]
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          balance_reserved?: number
+          balance_total?: number
+          created_at?: string
+          currency_code: Database["public"]["Enums"]["currency_code"]
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          balance_reserved?: number
+          balance_total?: number
+          created_at?: string
+          currency_code?: Database["public"]["Enums"]["currency_code"]
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      wallet_ledger_entries: {
+        Row: {
+          amount: number
+          created_at: string
+          currency_code: Database["public"]["Enums"]["currency_code"]
+          destination_wallet_id: string | null
+          destination_wallet_type: string | null
+          direction: string
+          id: string
+          metadata: Json
+          related_entity_id: string | null
+          related_entity_type: string | null
+          source_wallet_id: string | null
+          source_wallet_type: string | null
+          status: Database["public"]["Enums"]["transaction_status"]
+          type: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency_code: Database["public"]["Enums"]["currency_code"]
+          destination_wallet_id?: string | null
+          destination_wallet_type?: string | null
+          direction: string
+          id?: string
+          metadata?: Json
+          related_entity_id?: string | null
+          related_entity_type?: string | null
+          source_wallet_id?: string | null
+          source_wallet_type?: string | null
+          status?: Database["public"]["Enums"]["transaction_status"]
+          type: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency_code?: Database["public"]["Enums"]["currency_code"]
+          destination_wallet_id?: string | null
+          destination_wallet_type?: string | null
+          direction?: string
+          id?: string
+          metadata?: Json
+          related_entity_id?: string | null
+          related_entity_type?: string | null
+          source_wallet_id?: string | null
+          source_wallet_type?: string | null
+          status?: Database["public"]["Enums"]["transaction_status"]
+          type?: string
+        }
+        Relationships: []
       }
       wallet_transactions: {
         Row: {
@@ -2645,6 +2851,7 @@ export type Database = {
         | "incomplete"
       subscription_tier: "launch" | "scale" | "impact" | "enterprise"
       support_level: "community" | "email" | "priority" | "dedicated"
+      transaction_status: "pending" | "completed" | "failed" | "reversed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2816,6 +3023,7 @@ export const Constants = {
       ],
       subscription_tier: ["launch", "scale", "impact", "enterprise"],
       support_level: ["community", "email", "priority", "dedicated"],
+      transaction_status: ["pending", "completed", "failed", "reversed"],
     },
   },
 } as const

@@ -72,6 +72,10 @@ export default [
       'api/dashboard/fetch-total-course-re-enrollment-stats/:organizationId',
       'routes/api/dashboard/fetch-total-course-re-enrollment-stats.ts',
     ),
+    route(
+      'api/dashboard/fetch-organization-subscription-status/:organizationId',
+      'routes/api/dashboard/fetch-organization-subscription-status.ts',
+    ),
 
     route(':organizationId/members', 'routes/organizations/members/members-index.tsx', [
       route('active-members', 'routes/organizations/members/active-members.tsx', [
