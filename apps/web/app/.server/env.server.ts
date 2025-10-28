@@ -5,10 +5,10 @@ const envSchema = z.object({
   BASE_URL: z.string().min(1),
 
   VITE_PUBLIC_SUPABASE_URL: z.string().min(1),
-  VITE_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
+  VITE_PUBLIC_SUPABASE_PUBLISHABLE_KEY: z.string().min(1),
 
   SUPABASE_URL: z.string().min(1),
-  SUPABASE_ANON_KEY: z.string().min(1),
+  SUPABASE_PUBLISHABLE_KEY: z.string().min(1),
   HONEYPOT_SECRET: z.string().min(1),
   SESSION_SECRET: z.string().min(1),
 });

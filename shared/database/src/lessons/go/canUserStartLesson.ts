@@ -1,7 +1,7 @@
 // import { createClient } from '@supabase/supabase-js';
 
 // // Initialize Supabase client
-// const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_ANON_KEY!);
+// const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_PUBLISHABLE_KEY!);
 
 // export async function canUserStartLesson(userId: string, lessonId: string): Promise<boolean> {
 //   const { data, error } = await supabase

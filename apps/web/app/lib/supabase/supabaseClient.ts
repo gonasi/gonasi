@@ -18,7 +18,7 @@ export const createBrowserClient = (accessToken: UserActiveSessionLoaderReturnTy
 
     supabaseClient = createClient<Database>(
       import.meta.env.VITE_PUBLIC_SUPABASE_URL,
-      import.meta.env.VITE_PUBLIC_SUPABASE_ANON_KEY,
+      import.meta.env.VITE_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
       {
         global: {
           headers: accessToken

@@ -1,7 +1,7 @@
 -- ===================================================
 -- TYPE: public.subscription_tier
 -- ===================================================
-create type subscription_tier as enum (
+create type public.subscription_tier as enum (
   'launch',
   'scale',
   'impact',
@@ -14,7 +14,7 @@ create type subscription_tier as enum (
 -- Defines depth of analytics & reporting features available on a tier.
 -- Used by the platform to gate insights or dashboards.
 -- ===================================================
-create type analytics_level as enum (
+create type public.analytics_level as enum (
   'basic',
   'intermediate',
   'advanced',
@@ -27,7 +27,7 @@ create type analytics_level as enum (
 -- Defines the level of support available to a given subscription tier.
 -- Can be used to route support requests or prioritize SLAs.
 -- ===================================================
-create type support_level as enum (
+create type public.support_level as enum (
   'community',
   'email',
   'priority',
@@ -37,7 +37,7 @@ create type support_level as enum (
 -- ===================================================
 -- TABLE: public.tier_limits
 -- ===================================================
-create table tier_limits (
+create table public.tier_limits (
   tier subscription_tier primary key,
 
   -- Organizational limits

@@ -6,7 +6,7 @@ import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 console.log('[initialize-paystack-transaction]');
 
 // Load required environment variables
-const BASE_URL = Deno.env.get('BASE_URL');
+const FRONTEND_URL = Deno.env.get('FRONTEND_URL');
 const PAYSTACK_SECRET_KEY = Deno.env.get('PAYSTACK_SECRET_KEY');
 
 // Zod schema for request body validation
@@ -25,9 +25,9 @@ Deno.serve(async (req) => {
     return new Response('Method not allowed', { status: 405 });
   }
 
-  if (!BASE_URL || !PAYSTACK_SECRET_KEY) {
+  if (!FRONTEND_URL || !PAYSTACK_SECRET_KEY) {
     console.error('Missing required environment variables', {
-      BASE_URL,
+      FRONTEND_URL,
       PAYSTACK_SECRET_KEY_EXISTS: !!PAYSTACK_SECRET_KEY,
     });
     return new Response(JSON.stringify({ error: 'Missing environment configuration' }), {
@@ -68,9 +68,9 @@ Deno.serve(async (req) => {
         amount,
         currency: currencyCode.toUpperCase(),
         reference,
-        callback_url: `${BASE_URL}/c/${metadata.publishedCourseId}/enroll/status`,
+        callback_url: `${FRONTEND_URL}/c/${metadata.publishedCourseId}/enroll/status`,
         metadata: {
-          cancel_action: `${BASE_URL}/c/${metadata.publishedCourseId}/enroll/${metadata.pricingTierId}/cancel`,
+          cancel_action: `${FRONTEND_URL}/c/${metadata.publishedCourseId}/enroll/${metadata.pricingTierId}/cancel`,
           transaction_type: 'COURSE_ENROLLMENT',
           ...metadata,
         },

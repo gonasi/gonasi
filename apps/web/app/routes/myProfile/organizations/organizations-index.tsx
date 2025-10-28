@@ -1,7 +1,7 @@
 import { Outlet, useFetcher } from 'react-router';
 import { motion } from 'framer-motion';
 import { Check, Plus } from 'lucide-react';
-import { dataWithError, redirectWithSuccess } from 'remix-toast';
+import { dataWithError, redirectWithError, redirectWithSuccess } from 'remix-toast';
 
 import {
   fetchUsersOrganizations,
@@ -67,7 +67,9 @@ export async function loader({ request }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
   const result = await fetchUsersOrganizations(supabase);
 
-  console.log('organizations: ', result.data);
+  if (!result.userId) {
+    return redirectWithError('/', 'No account found');
+  }
 
   return {
     organizations: result.success ? result.data : [],

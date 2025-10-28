@@ -3,46 +3,48 @@
 -- PURPOSE:
 --   For every newly inserted user (auth.users), initialize a
 --   user_wallets row for each supported currency.
---
--- BEHAVIOR / SAFETY:
---   - Uses `set search_path = ''` so all object names below are
---     schema-qualified and resolved deterministically.
---   - Idempotent: inserts use ON CONFLICT DO NOTHING.
---   - Returns NEW so this is safe as an AFTER INSERT trigger.
+-- SECURITY:
+--   - SECURITY DEFINER ensures inserts succeed regardless of caller.
+--   - search_path is emptied for safety against search_path injection.
+--   - Function should be owned by a privileged role (e.g. postgres).
 -- ===========================================================
 create or replace function public.create_user_wallets()
 returns trigger
 language plpgsql
+security definer
 set search_path = ''
 as $$
 declare
-  -- iterate over the enum values; type is fully qualified
   currency public.currency_code;
 begin
-  -- Loop through every currency defined in public.currency_code
-  for currency in select unnest(enum_range(null::public.currency_code)) loop
-    -- Insert a wallet row for this user + currency.
-    -- All object names are schema-qualified to work with empty search_path.
-    insert into public.user_wallets (id, user_id, currency_code, balance_total, balance_reserved, created_at, updated_at)
+  for currency in select unnest(enum_range(null::public.currency_code)) 
+  loop
+    -- Log which wallet is being created
+    raise notice 'Creating user wallet in % for org %', currency, new.id;
+
+    insert into public.user_wallets (
+      user_id,
+      currency_code
+    )
     values (
-      public.uuid_generate_v4(),      -- id
-      new.id,                         -- user_id (from auth.users)
-      currency,                       -- currency_code
-      0::numeric(19,4),               -- balance_total default
-      0::numeric(19,4),               -- balance_reserved default
-      timezone('utc', now()),         -- created_at
-      timezone('utc', now())          -- updated_at
+      new.id,
+      currency
     )
     on conflict (user_id, currency_code) do nothing;
   end loop;
 
-  -- Return the inserted user record (standard for AFTER INSERT triggers)
   return new;
 end;
 $$;
 
--- Create trigger (drop existing first for safe re-deploy)
+-- Ensure ownership and permissions
+alter function public.create_user_wallets() owner to postgres;
+revoke all on function public.create_user_wallets() from public;
+grant execute on function public.create_user_wallets() to postgres; -- only trigger will use it
+
+-- Drop and recreate trigger
 drop trigger if exists trg_create_user_wallets on auth.users;
+
 create trigger trg_create_user_wallets
 after insert on auth.users
 for each row

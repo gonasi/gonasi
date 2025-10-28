@@ -47,3 +47,10 @@ create index idx_user_wallets_currency_code
 -- Useful for time-based queries or sorting
 create index idx_user_wallets_created_at
   on public.user_wallets (created_at);
+
+
+-- Automatically refresh updated_at on modification
+create or replace trigger trg_user_wallets_updated_at
+before update on public.user_wallets
+for each row
+execute function public.update_updated_at_column();

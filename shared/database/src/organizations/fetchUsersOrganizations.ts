@@ -41,6 +41,7 @@ export const fetchUsersOrganizations = async (supabase: TypedSupabaseClient) => 
         total: 0,
         owned_count: 0,
         can_create_more: true,
+        userId,
       };
     }
 
@@ -107,6 +108,7 @@ export const fetchUsersOrganizations = async (supabase: TypedSupabaseClient) => 
       total,
       owned_count,
       can_create_more,
+      userId,
     };
   } catch (err) {
     console.error('fetchUsersOrganizations error:', err);
@@ -117,6 +119,7 @@ export const fetchUsersOrganizations = async (supabase: TypedSupabaseClient) => 
       total: 0,
       owned_count: 0,
       can_create_more: true,
+      userId: '',
     };
   }
 };

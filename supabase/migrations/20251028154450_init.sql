@@ -24,8 +24,23 @@ create type "public"."subscription_tier" as enum ('launch', 'scale', 'impact', '
 
 create type "public"."support_level" as enum ('community', 'email', 'priority', 'dedicated');
 
-create table "public"."block_progress" (
-    "id" uuid not null default uuid_generate_v4(),
+create type "public"."transaction_status" as enum ('pending', 'completed', 'failed', 'reversed');
+
+
+  create table "public"."ai_usage_log" (
+    "id" uuid not null default gen_random_uuid(),
+    "org_id" uuid not null,
+    "user_id" uuid not null,
+    "credits_used" integer not null,
+    "created_at" timestamp with time zone default now()
+      );
+
+
+alter table "public"."ai_usage_log" enable row level security;
+
+
+  create table "public"."block_progress" (
+    "id" uuid not null default extensions.uuid_generate_v4(),
     "lesson_progress_id" uuid not null,
     "organization_id" uuid not null,
     "published_course_id" uuid not null,
@@ -49,13 +64,14 @@ END) stored,
     "user_id" uuid not null,
     "created_at" timestamp with time zone not null default timezone('utc'::text, now()),
     "updated_at" timestamp with time zone not null default timezone('utc'::text, now())
-);
+      );
 
 
 alter table "public"."block_progress" enable row level security;
 
-create table "public"."chapter_progress" (
-    "id" uuid not null default uuid_generate_v4(),
+
+  create table "public"."chapter_progress" (
+    "id" uuid not null default extensions.uuid_generate_v4(),
     "course_progress_id" uuid not null,
     "user_id" uuid not null,
     "published_course_id" uuid not null,
@@ -82,13 +98,14 @@ END) stored,
     "completed_at" timestamp with time zone,
     "updated_at" timestamp with time zone not null default timezone('utc'::text, now()),
     "created_at" timestamp with time zone not null default timezone('utc'::text, now())
-);
+      );
 
 
 alter table "public"."chapter_progress" enable row level security;
 
-create table "public"."chapters" (
-    "id" uuid not null default uuid_generate_v4(),
+
+  create table "public"."chapters" (
+    "id" uuid not null default extensions.uuid_generate_v4(),
     "organization_id" uuid not null,
     "course_id" uuid not null,
     "name" text not null,
@@ -98,13 +115,14 @@ create table "public"."chapters" (
     "updated_at" timestamp with time zone not null default timezone('utc'::text, now()),
     "created_by" uuid,
     "updated_by" uuid
-);
+      );
 
 
 alter table "public"."chapters" enable row level security;
 
-create table "public"."course_categories" (
-    "id" uuid not null default uuid_generate_v4(),
+
+  create table "public"."course_categories" (
+    "id" uuid not null default extensions.uuid_generate_v4(),
     "name" text not null,
     "description" text not null,
     "course_count" bigint not null default 0,
@@ -112,18 +130,19 @@ create table "public"."course_categories" (
     "updated_at" timestamp with time zone not null default timezone('utc'::text, now()),
     "created_by" uuid,
     "updated_by" uuid
-);
+      );
 
 
 alter table "public"."course_categories" enable row level security;
 
-create table "public"."course_enrollment_activities" (
-    "id" uuid not null default uuid_generate_v4(),
+
+  create table "public"."course_enrollment_activities" (
+    "id" uuid not null default extensions.uuid_generate_v4(),
     "enrollment_id" uuid not null,
     "tier_name" text,
     "tier_description" text,
-    "payment_frequency" payment_frequency not null,
-    "currency_code" currency_code not null,
+    "payment_frequency" public.payment_frequency not null,
+    "currency_code" public.currency_code not null,
     "is_free" boolean not null,
     "price_paid" numeric(19,4) not null default 0,
     "promotional_price" numeric(19,4),
@@ -132,12 +151,13 @@ create table "public"."course_enrollment_activities" (
     "access_end" timestamp with time zone not null,
     "created_at" timestamp with time zone not null default timezone('utc'::text, now()),
     "created_by" uuid not null
-);
+      );
 
 
 alter table "public"."course_enrollment_activities" enable row level security;
 
-create table "public"."course_enrollments" (
+
+  create table "public"."course_enrollments" (
     "id" uuid not null default gen_random_uuid(),
     "user_id" uuid not null,
     "published_course_id" uuid not null,
@@ -147,17 +167,18 @@ create table "public"."course_enrollments" (
     "completed_at" timestamp with time zone,
     "is_active" boolean not null default true,
     "created_at" timestamp with time zone not null default timezone('utc'::text, now())
-);
+      );
 
 
 alter table "public"."course_enrollments" enable row level security;
 
-create table "public"."course_payments" (
-    "id" uuid not null default uuid_generate_v4(),
+
+  create table "public"."course_payments" (
+    "id" uuid not null default extensions.uuid_generate_v4(),
     "enrollment_id" uuid not null,
     "enrollment_activity_id" uuid not null,
     "amount_paid" numeric(19,4) not null,
-    "currency_code" currency_code not null,
+    "currency_code" public.currency_code not null,
     "payment_method" text not null,
     "payment_processor_id" text,
     "payment_processor_fee" numeric(19,4),
@@ -174,19 +195,20 @@ create table "public"."course_payments" (
     "created_at" timestamp with time zone not null default timezone('utc'::text, now()),
     "updated_at" timestamp with time zone not null default timezone('utc'::text, now()),
     "created_by" uuid not null
-);
+      );
 
 
 alter table "public"."course_payments" enable row level security;
 
-create table "public"."course_pricing_tiers" (
-    "id" uuid not null default uuid_generate_v4(),
+
+  create table "public"."course_pricing_tiers" (
+    "id" uuid not null default extensions.uuid_generate_v4(),
     "organization_id" uuid not null,
     "course_id" uuid not null,
-    "payment_frequency" payment_frequency not null,
+    "payment_frequency" public.payment_frequency not null,
     "is_free" boolean not null default true,
     "price" numeric(19,4) not null,
-    "currency_code" currency_code not null default 'KES'::currency_code,
+    "currency_code" public.currency_code not null default 'KES'::public.currency_code,
     "promotional_price" numeric(19,4),
     "promotion_start_date" timestamp with time zone,
     "promotion_end_date" timestamp with time zone,
@@ -200,13 +222,14 @@ create table "public"."course_pricing_tiers" (
     "updated_at" timestamp with time zone not null default timezone('utc'::text, now()),
     "created_by" uuid not null,
     "updated_by" uuid not null
-);
+      );
 
 
 alter table "public"."course_pricing_tiers" enable row level security;
 
-create table "public"."course_progress" (
-    "id" uuid not null default uuid_generate_v4(),
+
+  create table "public"."course_progress" (
+    "id" uuid not null default extensions.uuid_generate_v4(),
     "user_id" uuid not null,
     "published_course_id" uuid not null,
     "total_blocks" integer not null,
@@ -233,13 +256,14 @@ END) stored,
     "completed_at" timestamp with time zone,
     "updated_at" timestamp with time zone not null default timezone('utc'::text, now()),
     "created_at" timestamp with time zone not null default timezone('utc'::text, now())
-);
+      );
 
 
 alter table "public"."course_progress" enable row level security;
 
-create table "public"."course_sub_categories" (
-    "id" uuid not null default uuid_generate_v4(),
+
+  create table "public"."course_sub_categories" (
+    "id" uuid not null default extensions.uuid_generate_v4(),
     "category_id" uuid not null,
     "name" text not null,
     "course_count" bigint not null default 0,
@@ -247,13 +271,14 @@ create table "public"."course_sub_categories" (
     "updated_at" timestamp with time zone not null default timezone('utc'::text, now()),
     "created_by" uuid,
     "updated_by" uuid
-);
+      );
 
 
 alter table "public"."course_sub_categories" enable row level security;
 
-create table "public"."courses" (
-    "id" uuid not null default uuid_generate_v4(),
+
+  create table "public"."courses" (
+    "id" uuid not null default extensions.uuid_generate_v4(),
     "category_id" uuid,
     "subcategory_id" uuid,
     "organization_id" uuid,
@@ -262,19 +287,20 @@ create table "public"."courses" (
     "description" text,
     "image_url" text,
     "blur_hash" text,
-    "visibility" course_access not null default 'public'::course_access,
+    "visibility" public.course_access not null default 'public'::public.course_access,
     "created_at" timestamp with time zone not null default timezone('utc'::text, now()),
     "updated_at" timestamp with time zone not null default timezone('utc'::text, now()),
     "last_published" timestamp with time zone,
     "created_by" uuid,
     "updated_by" uuid
-);
+      );
 
 
 alter table "public"."courses" enable row level security;
 
-create table "public"."file_library" (
-    "id" uuid not null default uuid_generate_v4(),
+
+  create table "public"."file_library" (
+    "id" uuid not null default extensions.uuid_generate_v4(),
     "course_id" uuid not null,
     "organization_id" uuid not null,
     "created_by" uuid,
@@ -284,17 +310,18 @@ create table "public"."file_library" (
     "size" bigint not null,
     "mime_type" text not null,
     "extension" text not null,
-    "file_type" file_type not null default 'other'::file_type,
+    "file_type" public.file_type not null default 'other'::public.file_type,
     "blur_preview" text,
     "created_at" timestamp with time zone not null default timezone('utc'::text, now()),
     "updated_at" timestamp with time zone not null default timezone('utc'::text, now())
-);
+      );
 
 
 alter table "public"."file_library" enable row level security;
 
-create table "public"."gonasi_wallet_transactions" (
-    "id" uuid not null default uuid_generate_v4(),
+
+  create table "public"."gonasi_wallet_transactions" (
+    "id" uuid not null default extensions.uuid_generate_v4(),
     "wallet_id" uuid not null,
     "type" text not null,
     "direction" text not null,
@@ -303,25 +330,27 @@ create table "public"."gonasi_wallet_transactions" (
     "metadata" jsonb,
     "created_at" timestamp with time zone not null default timezone('utc'::text, now()),
     "updated_at" timestamp with time zone not null default timezone('utc'::text, now())
-);
+      );
 
 
 alter table "public"."gonasi_wallet_transactions" enable row level security;
 
-create table "public"."gonasi_wallets" (
-    "id" uuid not null default uuid_generate_v4(),
-    "currency_code" currency_code not null,
-    "available_balance" numeric(19,4) not null default 0,
-    "pending_balance" numeric(19,4) not null default 0,
+
+  create table "public"."gonasi_wallets" (
+    "id" uuid not null default extensions.uuid_generate_v4(),
+    "currency_code" public.currency_code not null,
+    "balance_total" numeric(19,4) not null default 0,
+    "balance_reserved" numeric(19,4) not null default 0,
     "created_at" timestamp with time zone not null default timezone('utc'::text, now()),
     "updated_at" timestamp with time zone not null default timezone('utc'::text, now())
-);
+      );
 
 
 alter table "public"."gonasi_wallets" enable row level security;
 
-create table "public"."lesson_blocks" (
-    "id" uuid not null default uuid_generate_v4(),
+
+  create table "public"."lesson_blocks" (
+    "id" uuid not null default extensions.uuid_generate_v4(),
     "lesson_id" uuid not null,
     "course_id" uuid not null,
     "chapter_id" uuid not null,
@@ -334,13 +363,14 @@ create table "public"."lesson_blocks" (
     "updated_at" timestamp with time zone not null default timezone('utc'::text, now()),
     "created_by" uuid,
     "updated_by" uuid
-);
+      );
 
 
 alter table "public"."lesson_blocks" enable row level security;
 
-create table "public"."lesson_progress" (
-    "id" uuid not null default uuid_generate_v4(),
+
+  create table "public"."lesson_progress" (
+    "id" uuid not null default extensions.uuid_generate_v4(),
     "chapter_progress_id" uuid not null,
     "user_id" uuid not null,
     "published_course_id" uuid not null,
@@ -358,26 +388,28 @@ END) stored,
     "completed_at" timestamp with time zone,
     "updated_at" timestamp with time zone not null default timezone('utc'::text, now()),
     "created_at" timestamp with time zone not null default timezone('utc'::text, now())
-);
+      );
 
 
 alter table "public"."lesson_progress" enable row level security;
 
-create table "public"."lesson_reset_count" (
-    "id" uuid not null default uuid_generate_v4(),
+
+  create table "public"."lesson_reset_count" (
+    "id" uuid not null default extensions.uuid_generate_v4(),
     "user_id" uuid not null,
     "published_course_id" uuid not null,
     "lesson_id" uuid not null,
     "reset_count" integer not null default 0,
     "updated_at" timestamp with time zone not null default timezone('utc'::text, now()),
     "created_at" timestamp with time zone not null default timezone('utc'::text, now())
-);
+      );
 
 
 alter table "public"."lesson_reset_count" enable row level security;
 
-create table "public"."lesson_types" (
-    "id" uuid not null default uuid_generate_v4(),
+
+  create table "public"."lesson_types" (
+    "id" uuid not null default extensions.uuid_generate_v4(),
     "name" text not null,
     "description" text not null,
     "lucide_icon" text not null,
@@ -386,13 +418,14 @@ create table "public"."lesson_types" (
     "updated_at" timestamp with time zone not null default timezone('utc'::text, now()),
     "created_by" uuid,
     "updated_by" uuid
-);
+      );
 
 
 alter table "public"."lesson_types" enable row level security;
 
-create table "public"."lessons" (
-    "id" uuid not null default uuid_generate_v4(),
+
+  create table "public"."lessons" (
+    "id" uuid not null default extensions.uuid_generate_v4(),
     "course_id" uuid not null,
     "organization_id" uuid not null,
     "chapter_id" uuid not null,
@@ -404,16 +437,17 @@ create table "public"."lessons" (
     "updated_at" timestamp with time zone not null default timezone('utc'::text, now()),
     "created_by" uuid,
     "updated_by" uuid
-);
+      );
 
 
 alter table "public"."lessons" enable row level security;
 
-create table "public"."organization_invites" (
+
+  create table "public"."organization_invites" (
     "id" uuid not null default gen_random_uuid(),
     "organization_id" uuid not null,
     "email" text not null,
-    "role" org_role not null,
+    "role" public.org_role not null,
     "invited_by" uuid not null,
     "token" text not null,
     "resend_count" integer not null default 0,
@@ -422,43 +456,65 @@ create table "public"."organization_invites" (
     "accepted_at" timestamp with time zone,
     "accepted_by" uuid,
     "revoked_at" timestamp with time zone,
-    "delivery_status" invite_delivery_status not null default 'pending'::invite_delivery_status,
+    "delivery_status" public.invite_delivery_status not null default 'pending'::public.invite_delivery_status,
     "delivery_logs" jsonb not null default '[]'::jsonb,
     "created_at" timestamp with time zone not null default now(),
     "updated_at" timestamp with time zone not null default now()
-);
+      );
 
 
 alter table "public"."organization_invites" enable row level security;
 
-create table "public"."organization_members" (
+
+  create table "public"."organization_members" (
     "id" uuid not null default gen_random_uuid(),
     "organization_id" uuid not null,
     "user_id" uuid not null,
-    "role" org_role not null,
+    "role" public.org_role not null,
     "invited_by" uuid,
     "created_at" timestamp with time zone not null default timezone('utc'::text, now()),
     "updated_at" timestamp with time zone not null default timezone('utc'::text, now())
-);
+      );
 
 
 alter table "public"."organization_members" enable row level security;
 
-create table "public"."organization_wallets" (
-    "id" uuid not null default uuid_generate_v4(),
+
+  create table "public"."organization_subscriptions" (
+    "id" uuid not null default extensions.uuid_generate_v4(),
     "organization_id" uuid not null,
-    "currency_code" currency_code not null,
-    "available_balance" numeric(19,4) not null default 0,
-    "pending_balance" numeric(19,4) not null default 0,
+    "tier" public.subscription_tier not null default 'launch'::public.subscription_tier,
+    "status" public.subscription_status not null default 'active'::public.subscription_status,
+    "start_date" timestamp with time zone not null default timezone('utc'::text, now()),
+    "current_period_start" timestamp with time zone not null default timezone('utc'::text, now()),
+    "current_period_end" timestamp with time zone,
+    "cancel_at_period_end" boolean not null default false,
+    "created_at" timestamp with time zone not null default timezone('utc'::text, now()),
+    "updated_at" timestamp with time zone not null default timezone('utc'::text, now()),
+    "created_by" uuid,
+    "updated_by" uuid
+      );
+
+
+alter table "public"."organization_subscriptions" enable row level security;
+
+
+  create table "public"."organization_wallets" (
+    "id" uuid not null default extensions.uuid_generate_v4(),
+    "organization_id" uuid not null,
+    "currency_code" public.currency_code not null,
+    "balance_total" numeric(19,4) not null default 0,
+    "balance_reserved" numeric(19,4) not null default 0,
     "created_at" timestamp with time zone not null default timezone('utc'::text, now()),
     "updated_at" timestamp with time zone not null default timezone('utc'::text, now())
-);
+      );
 
 
 alter table "public"."organization_wallets" enable row level security;
 
-create table "public"."organizations" (
-    "id" uuid not null default uuid_generate_v4(),
+
+  create table "public"."organizations" (
+    "id" uuid not null default extensions.uuid_generate_v4(),
     "name" text not null,
     "handle" text not null,
     "description" text,
@@ -475,19 +531,35 @@ create table "public"."organizations" (
     "email_verified" boolean not null default false,
     "whatsapp_number" text,
     "location" text,
-    "tier" subscription_tier not null default 'launch'::subscription_tier,
+    "tier" public.subscription_tier not null default 'launch'::public.subscription_tier,
     "created_at" timestamp with time zone not null default timezone('utc'::text, now()),
     "updated_at" timestamp with time zone not null default timezone('utc'::text, now()),
     "created_by" uuid,
     "owned_by" uuid,
     "updated_by" uuid,
     "deleted_by" uuid
-);
+      );
 
 
 alter table "public"."organizations" enable row level security;
 
-create table "public"."profiles" (
+
+  create table "public"."organizations_ai_credits" (
+    "org_id" uuid not null,
+    "base_credits_total" integer not null default 100,
+    "base_credits_remaining" integer not null default 100,
+    "purchased_credits_total" integer not null default 0,
+    "purchased_credits_remaining" integer not null default 0,
+    "last_reset_at" timestamp with time zone not null default now(),
+    "next_reset_at" timestamp with time zone not null default (now() + '1 mon'::interval),
+    "updated_at" timestamp with time zone not null default now()
+      );
+
+
+alter table "public"."organizations_ai_credits" enable row level security;
+
+
+  create table "public"."profiles" (
     "id" uuid not null,
     "username" text,
     "email" text not null,
@@ -502,26 +574,28 @@ create table "public"."profiles" (
     "preferred_language" character(2) default 'en'::bpchar,
     "account_verified" boolean not null default false,
     "notifications_enabled" boolean not null default true,
-    "mode" profile_mode not null default 'personal'::profile_mode,
+    "mode" public.profile_mode not null default 'personal'::public.profile_mode,
     "active_organization_id" uuid,
     "created_at" timestamp with time zone not null default timezone('utc'::text, now()),
     "updated_at" timestamp with time zone not null default timezone('utc'::text, now())
-);
+      );
 
 
 alter table "public"."profiles" enable row level security;
 
-create table "public"."published_course_structure_content" (
+
+  create table "public"."published_course_structure_content" (
     "id" uuid not null,
     "course_structure_content" jsonb not null,
     "created_at" timestamp with time zone not null default timezone('utc'::text, now()),
     "updated_at" timestamp with time zone not null default timezone('utc'::text, now())
-);
+      );
 
 
 alter table "public"."published_course_structure_content" enable row level security;
 
-create table "public"."published_courses" (
+
+  create table "public"."published_courses" (
     "id" uuid not null,
     "organization_id" uuid not null,
     "category_id" uuid,
@@ -532,7 +606,7 @@ create table "public"."published_courses" (
     "description" text not null,
     "image_url" text not null,
     "blur_hash" text,
-    "visibility" course_access not null default 'public'::course_access,
+    "visibility" public.course_access not null default 'public'::public.course_access,
     "course_structure_overview" jsonb not null,
     "total_chapters" integer not null,
     "total_lessons" integer not null,
@@ -549,13 +623,14 @@ create table "public"."published_courses" (
     "total_reviews" integer not null default 0,
     "created_at" timestamp with time zone not null default timezone('utc'::text, now()),
     "updated_at" timestamp with time zone not null default timezone('utc'::text, now())
-);
+      );
 
 
 alter table "public"."published_courses" enable row level security;
 
-create table "public"."published_file_library" (
-    "id" uuid not null default uuid_generate_v4(),
+
+  create table "public"."published_file_library" (
+    "id" uuid not null default extensions.uuid_generate_v4(),
     "course_id" uuid not null,
     "organization_id" uuid not null,
     "created_by" uuid,
@@ -565,56 +640,93 @@ create table "public"."published_file_library" (
     "size" bigint not null,
     "mime_type" text not null,
     "extension" text not null,
-    "file_type" file_type not null default 'other'::file_type,
+    "file_type" public.file_type not null default 'other'::public.file_type,
     "blur_preview" text,
     "created_at" timestamp with time zone not null default timezone('utc'::text, now()),
     "updated_at" timestamp with time zone not null default timezone('utc'::text, now())
-);
+      );
 
 
 alter table "public"."published_file_library" enable row level security;
 
-create table "public"."role_permissions" (
-    "id" uuid not null default uuid_generate_v4(),
-    "role" app_role not null,
-    "permission" app_permission not null
-);
+
+  create table "public"."role_permissions" (
+    "id" uuid not null default extensions.uuid_generate_v4(),
+    "role" public.app_role not null,
+    "permission" public.app_permission not null
+      );
 
 
 alter table "public"."role_permissions" enable row level security;
 
-create table "public"."tier_limits" (
-    "tier" subscription_tier not null,
+
+  create table "public"."tier_limits" (
+    "tier" public.subscription_tier not null,
     "max_organizations_per_user" integer not null,
     "storage_limit_mb_per_org" integer not null,
     "max_members_per_org" integer not null,
     "max_free_courses_per_org" integer not null,
-    "ai_tools_enabled" boolean not null default false,
+    "ai_tools_enabled" boolean not null default true,
     "ai_usage_limit_monthly" integer,
     "custom_domains_enabled" boolean not null default false,
     "max_custom_domains" integer,
-    "analytics_level" analytics_level not null,
-    "support_level" support_level not null,
+    "analytics_level" public.analytics_level not null,
+    "support_level" public.support_level not null,
     "platform_fee_percentage" numeric(5,2) not null default 15.00,
     "white_label_enabled" boolean not null default false,
     "price_monthly_usd" numeric(10,2) not null default 0.00,
     "price_yearly_usd" numeric(10,2) not null default 0.00
-);
+      );
 
 
 alter table "public"."tier_limits" enable row level security;
 
-create table "public"."user_roles" (
-    "id" uuid not null default uuid_generate_v4(),
+
+  create table "public"."user_roles" (
+    "id" uuid not null default extensions.uuid_generate_v4(),
     "user_id" uuid not null,
-    "role" app_role not null
-);
+    "role" public.app_role not null
+      );
 
 
 alter table "public"."user_roles" enable row level security;
 
-create table "public"."wallet_transactions" (
-    "id" uuid not null default uuid_generate_v4(),
+
+  create table "public"."user_wallets" (
+    "id" uuid not null default extensions.uuid_generate_v4(),
+    "user_id" uuid not null,
+    "currency_code" public.currency_code not null,
+    "balance_total" numeric(19,4) not null default 0,
+    "balance_reserved" numeric(19,4) not null default 0,
+    "created_at" timestamp with time zone not null default timezone('utc'::text, now()),
+    "updated_at" timestamp with time zone not null default timezone('utc'::text, now())
+      );
+
+
+alter table "public"."user_wallets" enable row level security;
+
+
+  create table "public"."wallet_ledger_entries" (
+    "id" uuid not null default extensions.uuid_generate_v4(),
+    "source_wallet_id" uuid,
+    "source_wallet_type" text,
+    "destination_wallet_id" uuid,
+    "destination_wallet_type" text,
+    "currency_code" public.currency_code not null,
+    "amount" numeric(19,4) not null,
+    "direction" text not null,
+    "type" text not null,
+    "status" public.transaction_status not null default 'completed'::public.transaction_status,
+    "related_entity_type" text,
+    "related_entity_id" uuid,
+    "metadata" jsonb not null default '{}'::jsonb,
+    "created_at" timestamp with time zone not null default timezone('utc'::text, now())
+      );
+
+
+
+  create table "public"."wallet_transactions" (
+    "id" uuid not null default extensions.uuid_generate_v4(),
     "wallet_id" uuid not null,
     "type" text not null,
     "amount" numeric(19,4) not null,
@@ -624,10 +736,12 @@ create table "public"."wallet_transactions" (
     "metadata" jsonb,
     "created_at" timestamp with time zone not null default timezone('utc'::text, now()),
     "created_by" uuid
-);
+      );
 
 
 alter table "public"."wallet_transactions" enable row level security;
+
+CREATE UNIQUE INDEX ai_usage_log_pkey ON public.ai_usage_log USING btree (id);
 
 CREATE UNIQUE INDEX block_progress_lesson_progress_id_block_id_key ON public.block_progress USING btree (lesson_progress_id, block_id);
 
@@ -670,6 +784,14 @@ CREATE UNIQUE INDEX gonasi_wallet_transactions_pkey ON public.gonasi_wallet_tran
 CREATE UNIQUE INDEX gonasi_wallets_currency_code_key ON public.gonasi_wallets USING btree (currency_code);
 
 CREATE UNIQUE INDEX gonasi_wallets_pkey ON public.gonasi_wallets USING btree (id);
+
+CREATE INDEX idx_ai_usage_log_created_at ON public.ai_usage_log USING btree (created_at DESC);
+
+CREATE INDEX idx_ai_usage_log_org_created ON public.ai_usage_log USING btree (org_id, created_at DESC);
+
+CREATE INDEX idx_ai_usage_log_org_id ON public.ai_usage_log USING btree (org_id);
+
+CREATE INDEX idx_ai_usage_log_user_id ON public.ai_usage_log USING btree (user_id);
 
 CREATE INDEX idx_block_progress_completed_at ON public.block_progress USING btree (completed_at);
 
@@ -833,6 +955,10 @@ CREATE INDEX idx_gonasi_wallet_transactions_type ON public.gonasi_wallet_transac
 
 CREATE INDEX idx_gonasi_wallet_transactions_wallet_id ON public.gonasi_wallet_transactions USING btree (wallet_id);
 
+CREATE INDEX idx_gonasi_wallets_created_at ON public.gonasi_wallets USING btree (created_at);
+
+CREATE INDEX idx_gonasi_wallets_currency_code ON public.gonasi_wallets USING btree (currency_code);
+
 CREATE INDEX idx_lesson_blocks_chapter_id ON public.lesson_blocks USING btree (chapter_id);
 
 CREATE INDEX idx_lesson_blocks_course_id ON public.lesson_blocks USING btree (course_id);
@@ -895,17 +1021,23 @@ CREATE INDEX idx_org_invites__organization_id ON public.organization_invites USI
 
 CREATE INDEX idx_org_invites__token ON public.organization_invites USING btree (token);
 
+CREATE INDEX idx_org_subscriptions_active_period ON public.organization_subscriptions USING btree (status, current_period_end);
+
+CREATE INDEX idx_org_subscriptions_org_id ON public.organization_subscriptions USING btree (organization_id);
+
+CREATE INDEX idx_org_subscriptions_status ON public.organization_subscriptions USING btree (status);
+
+CREATE INDEX idx_org_subscriptions_tier ON public.organization_subscriptions USING btree (tier);
+
 CREATE INDEX idx_organization_members_invited_by ON public.organization_members USING btree (invited_by);
 
 CREATE INDEX idx_organization_members_org_id ON public.organization_members USING btree (organization_id);
 
 CREATE INDEX idx_organization_members_user_id ON public.organization_members USING btree (user_id);
 
-CREATE INDEX idx_organization_wallets_currency_code ON public.organization_wallets USING btree (currency_code);
+CREATE INDEX idx_organizations_ai_credits_next_reset_at ON public.organizations_ai_credits USING btree (next_reset_at);
 
-CREATE INDEX idx_organization_wallets_organization_id ON public.organization_wallets USING btree (organization_id);
-
-CREATE INDEX idx_organization_wallets_updated_at ON public.organization_wallets USING btree (updated_at);
+CREATE INDEX idx_organizations_ai_credits_org_id ON public.organizations_ai_credits USING btree (org_id);
 
 CREATE INDEX idx_organizations_created_at ON public.organizations USING btree (created_at);
 
@@ -918,6 +1050,12 @@ CREATE INDEX idx_organizations_owned_by ON public.organizations USING btree (own
 CREATE INDEX idx_organizations_tier ON public.organizations USING btree (tier);
 
 CREATE INDEX idx_organizations_updated_by ON public.organizations USING btree (updated_by);
+
+CREATE INDEX idx_organizations_wallets_created_at ON public.organization_wallets USING btree (created_at);
+
+CREATE INDEX idx_organizations_wallets_currency_code ON public.organization_wallets USING btree (currency_code);
+
+CREATE INDEX idx_organizations_wallets_organization_id ON public.organization_wallets USING btree (organization_id);
 
 CREATE INDEX idx_profiles_active_organization_id ON public.profiles USING btree (active_organization_id);
 
@@ -979,6 +1117,12 @@ CREATE INDEX idx_published_file_library_updated_by_org ON public.published_file_
 
 CREATE INDEX idx_user_roles_user_id ON public.user_roles USING btree (user_id);
 
+CREATE INDEX idx_user_wallets_created_at ON public.user_wallets USING btree (created_at);
+
+CREATE INDEX idx_user_wallets_currency_code ON public.user_wallets USING btree (currency_code);
+
+CREATE INDEX idx_user_wallets_user_id ON public.user_wallets USING btree (user_id);
+
 CREATE INDEX idx_wallet_transactions_course_payment_id ON public.wallet_transactions USING btree (course_payment_id);
 
 CREATE INDEX idx_wallet_transactions_created_by ON public.wallet_transactions USING btree (created_by);
@@ -990,6 +1134,16 @@ CREATE INDEX idx_wallet_transactions_type ON public.wallet_transactions USING bt
 CREATE INDEX idx_wallet_transactions_wallet_id ON public.wallet_transactions USING btree (wallet_id);
 
 CREATE INDEX idx_wallet_transactions_withdrawal_request_id ON public.wallet_transactions USING btree (withdrawal_request_id);
+
+CREATE INDEX idx_wallet_tx_created_at ON public.wallet_ledger_entries USING btree (created_at);
+
+CREATE INDEX idx_wallet_tx_currency ON public.wallet_ledger_entries USING btree (currency_code);
+
+CREATE INDEX idx_wallet_tx_destination_wallet ON public.wallet_ledger_entries USING btree (destination_wallet_id, destination_wallet_type);
+
+CREATE INDEX idx_wallet_tx_related_entity ON public.wallet_ledger_entries USING btree (related_entity_type, related_entity_id);
+
+CREATE INDEX idx_wallet_tx_source_wallet ON public.wallet_ledger_entries USING btree (source_wallet_id, source_wallet_type);
 
 CREATE UNIQUE INDEX lesson_blocks_pkey ON public.lesson_blocks USING btree (id);
 
@@ -1011,7 +1165,9 @@ CREATE UNIQUE INDEX lesson_types_pkey ON public.lesson_types USING btree (id);
 
 CREATE UNIQUE INDEX lessons_pkey ON public.lessons USING btree (id);
 
-CREATE UNIQUE INDEX one_owner_per_organization ON public.organization_members USING btree (organization_id) WHERE (role = 'owner'::org_role);
+CREATE UNIQUE INDEX one_active_subscription_per_org ON public.organization_subscriptions USING btree (organization_id, status);
+
+CREATE UNIQUE INDEX one_owner_per_organization ON public.organization_members USING btree (organization_id) WHERE (role = 'owner'::public.org_role);
 
 CREATE UNIQUE INDEX organization_invites_pkey ON public.organization_invites USING btree (id);
 
@@ -1021,9 +1177,13 @@ CREATE UNIQUE INDEX organization_members_organization_id_user_id_key ON public.o
 
 CREATE UNIQUE INDEX organization_members_pkey ON public.organization_members USING btree (id);
 
+CREATE UNIQUE INDEX organization_subscriptions_pkey ON public.organization_subscriptions USING btree (id);
+
 CREATE UNIQUE INDEX organization_wallets_organization_id_currency_code_key ON public.organization_wallets USING btree (organization_id, currency_code);
 
 CREATE UNIQUE INDEX organization_wallets_pkey ON public.organization_wallets USING btree (id);
+
+CREATE UNIQUE INDEX organizations_ai_credits_pkey ON public.organizations_ai_credits USING btree (org_id);
 
 CREATE UNIQUE INDEX organizations_handle_key ON public.organizations USING btree (handle);
 
@@ -1071,7 +1231,15 @@ CREATE UNIQUE INDEX user_roles_pkey ON public.user_roles USING btree (id);
 
 CREATE UNIQUE INDEX user_roles_user_id_role_key ON public.user_roles USING btree (user_id, role);
 
+CREATE UNIQUE INDEX user_wallets_pkey ON public.user_wallets USING btree (id);
+
+CREATE UNIQUE INDEX user_wallets_user_id_currency_code_key ON public.user_wallets USING btree (user_id, currency_code);
+
+CREATE UNIQUE INDEX wallet_ledger_entries_pkey ON public.wallet_ledger_entries USING btree (id);
+
 CREATE UNIQUE INDEX wallet_transactions_pkey ON public.wallet_transactions USING btree (id);
+
+alter table "public"."ai_usage_log" add constraint "ai_usage_log_pkey" PRIMARY KEY using index "ai_usage_log_pkey";
 
 alter table "public"."block_progress" add constraint "block_progress_pkey" PRIMARY KEY using index "block_progress_pkey";
 
@@ -1115,9 +1283,13 @@ alter table "public"."organization_invites" add constraint "organization_invites
 
 alter table "public"."organization_members" add constraint "organization_members_pkey" PRIMARY KEY using index "organization_members_pkey";
 
+alter table "public"."organization_subscriptions" add constraint "organization_subscriptions_pkey" PRIMARY KEY using index "organization_subscriptions_pkey";
+
 alter table "public"."organization_wallets" add constraint "organization_wallets_pkey" PRIMARY KEY using index "organization_wallets_pkey";
 
 alter table "public"."organizations" add constraint "organizations_pkey" PRIMARY KEY using index "organizations_pkey";
+
+alter table "public"."organizations_ai_credits" add constraint "organizations_ai_credits_pkey" PRIMARY KEY using index "organizations_ai_credits_pkey";
 
 alter table "public"."profiles" add constraint "profiles_pkey" PRIMARY KEY using index "profiles_pkey";
 
@@ -1133,23 +1305,35 @@ alter table "public"."tier_limits" add constraint "tier_limits_pkey" PRIMARY KEY
 
 alter table "public"."user_roles" add constraint "user_roles_pkey" PRIMARY KEY using index "user_roles_pkey";
 
+alter table "public"."user_wallets" add constraint "user_wallets_pkey" PRIMARY KEY using index "user_wallets_pkey";
+
+alter table "public"."wallet_ledger_entries" add constraint "wallet_ledger_entries_pkey" PRIMARY KEY using index "wallet_ledger_entries_pkey";
+
 alter table "public"."wallet_transactions" add constraint "wallet_transactions_pkey" PRIMARY KEY using index "wallet_transactions_pkey";
+
+alter table "public"."ai_usage_log" add constraint "ai_usage_log_org_id_fkey" FOREIGN KEY (org_id) REFERENCES public.organizations(id) ON DELETE CASCADE not valid;
+
+alter table "public"."ai_usage_log" validate constraint "ai_usage_log_org_id_fkey";
+
+alter table "public"."ai_usage_log" add constraint "ai_usage_log_user_id_fkey" FOREIGN KEY (user_id) REFERENCES auth.users(id) not valid;
+
+alter table "public"."ai_usage_log" validate constraint "ai_usage_log_user_id_fkey";
 
 alter table "public"."block_progress" add constraint "block_progress_lesson_progress_id_block_id_key" UNIQUE using index "block_progress_lesson_progress_id_block_id_key";
 
-alter table "public"."block_progress" add constraint "block_progress_lesson_progress_id_fkey" FOREIGN KEY (lesson_progress_id) REFERENCES lesson_progress(id) ON DELETE CASCADE not valid;
+alter table "public"."block_progress" add constraint "block_progress_lesson_progress_id_fkey" FOREIGN KEY (lesson_progress_id) REFERENCES public.lesson_progress(id) ON DELETE CASCADE not valid;
 
 alter table "public"."block_progress" validate constraint "block_progress_lesson_progress_id_fkey";
 
-alter table "public"."block_progress" add constraint "block_progress_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE not valid;
+alter table "public"."block_progress" add constraint "block_progress_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE not valid;
 
 alter table "public"."block_progress" validate constraint "block_progress_organization_id_fkey";
 
-alter table "public"."block_progress" add constraint "block_progress_published_course_id_fkey" FOREIGN KEY (published_course_id) REFERENCES published_courses(id) ON DELETE CASCADE not valid;
+alter table "public"."block_progress" add constraint "block_progress_published_course_id_fkey" FOREIGN KEY (published_course_id) REFERENCES public.published_courses(id) ON DELETE CASCADE not valid;
 
 alter table "public"."block_progress" validate constraint "block_progress_published_course_id_fkey";
 
-alter table "public"."block_progress" add constraint "block_progress_user_id_fkey" FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE not valid;
+alter table "public"."block_progress" add constraint "block_progress_user_id_fkey" FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE not valid;
 
 alter table "public"."block_progress" validate constraint "block_progress_user_id_fkey";
 
@@ -1157,39 +1341,39 @@ alter table "public"."block_progress" add constraint "block_progress_user_id_pub
 
 alter table "public"."chapter_progress" add constraint "chapter_progress_course_progress_id_chapter_id_key" UNIQUE using index "chapter_progress_course_progress_id_chapter_id_key";
 
-alter table "public"."chapter_progress" add constraint "chapter_progress_course_progress_id_fkey" FOREIGN KEY (course_progress_id) REFERENCES course_progress(id) ON DELETE CASCADE not valid;
+alter table "public"."chapter_progress" add constraint "chapter_progress_course_progress_id_fkey" FOREIGN KEY (course_progress_id) REFERENCES public.course_progress(id) ON DELETE CASCADE not valid;
 
 alter table "public"."chapter_progress" validate constraint "chapter_progress_course_progress_id_fkey";
 
-alter table "public"."chapter_progress" add constraint "chapter_progress_published_course_id_fkey" FOREIGN KEY (published_course_id) REFERENCES published_courses(id) ON DELETE CASCADE not valid;
+alter table "public"."chapter_progress" add constraint "chapter_progress_published_course_id_fkey" FOREIGN KEY (published_course_id) REFERENCES public.published_courses(id) ON DELETE CASCADE not valid;
 
 alter table "public"."chapter_progress" validate constraint "chapter_progress_published_course_id_fkey";
 
-alter table "public"."chapter_progress" add constraint "chapter_progress_user_id_fkey" FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE not valid;
+alter table "public"."chapter_progress" add constraint "chapter_progress_user_id_fkey" FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE not valid;
 
 alter table "public"."chapter_progress" validate constraint "chapter_progress_user_id_fkey";
 
 alter table "public"."chapter_progress" add constraint "chapter_progress_user_id_published_course_id_chapter_id_key" UNIQUE using index "chapter_progress_user_id_published_course_id_chapter_id_key";
 
-alter table "public"."chapters" add constraint "chapters_course_id_fkey" FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE not valid;
+alter table "public"."chapters" add constraint "chapters_course_id_fkey" FOREIGN KEY (course_id) REFERENCES public.courses(id) ON DELETE CASCADE not valid;
 
 alter table "public"."chapters" validate constraint "chapters_course_id_fkey";
 
-alter table "public"."chapters" add constraint "chapters_created_by_fkey" FOREIGN KEY (created_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
+alter table "public"."chapters" add constraint "chapters_created_by_fkey" FOREIGN KEY (created_by) REFERENCES public.profiles(id) ON DELETE SET NULL not valid;
 
 alter table "public"."chapters" validate constraint "chapters_created_by_fkey";
 
-alter table "public"."chapters" add constraint "chapters_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE not valid;
+alter table "public"."chapters" add constraint "chapters_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE not valid;
 
 alter table "public"."chapters" validate constraint "chapters_organization_id_fkey";
 
-alter table "public"."chapters" add constraint "chapters_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
+alter table "public"."chapters" add constraint "chapters_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES public.profiles(id) ON DELETE SET NULL not valid;
 
 alter table "public"."chapters" validate constraint "chapters_updated_by_fkey";
 
 alter table "public"."chapters" add constraint "unique_chapter_position_per_course" UNIQUE using index "unique_chapter_position_per_course";
 
-alter table "public"."course_categories" add constraint "course_categories_created_by_fkey" FOREIGN KEY (created_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
+alter table "public"."course_categories" add constraint "course_categories_created_by_fkey" FOREIGN KEY (created_by) REFERENCES public.profiles(id) ON DELETE SET NULL not valid;
 
 alter table "public"."course_categories" validate constraint "course_categories_created_by_fkey";
 
@@ -1201,27 +1385,27 @@ alter table "public"."course_categories" add constraint "course_categories_name_
 
 alter table "public"."course_categories" validate constraint "course_categories_name_check";
 
-alter table "public"."course_categories" add constraint "course_categories_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
+alter table "public"."course_categories" add constraint "course_categories_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES public.profiles(id) ON DELETE SET NULL not valid;
 
 alter table "public"."course_categories" validate constraint "course_categories_updated_by_fkey";
 
-alter table "public"."course_enrollment_activities" add constraint "course_enrollment_activities_created_by_fkey" FOREIGN KEY (created_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
+alter table "public"."course_enrollment_activities" add constraint "course_enrollment_activities_created_by_fkey" FOREIGN KEY (created_by) REFERENCES public.profiles(id) ON DELETE SET NULL not valid;
 
 alter table "public"."course_enrollment_activities" validate constraint "course_enrollment_activities_created_by_fkey";
 
-alter table "public"."course_enrollment_activities" add constraint "course_enrollment_activities_enrollment_id_fkey" FOREIGN KEY (enrollment_id) REFERENCES course_enrollments(id) ON DELETE CASCADE not valid;
+alter table "public"."course_enrollment_activities" add constraint "course_enrollment_activities_enrollment_id_fkey" FOREIGN KEY (enrollment_id) REFERENCES public.course_enrollments(id) ON DELETE CASCADE not valid;
 
 alter table "public"."course_enrollment_activities" validate constraint "course_enrollment_activities_enrollment_id_fkey";
 
-alter table "public"."course_enrollments" add constraint "course_enrollments_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE not valid;
+alter table "public"."course_enrollments" add constraint "course_enrollments_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE not valid;
 
 alter table "public"."course_enrollments" validate constraint "course_enrollments_organization_id_fkey";
 
-alter table "public"."course_enrollments" add constraint "course_enrollments_published_course_id_fkey" FOREIGN KEY (published_course_id) REFERENCES published_courses(id) ON DELETE CASCADE not valid;
+alter table "public"."course_enrollments" add constraint "course_enrollments_published_course_id_fkey" FOREIGN KEY (published_course_id) REFERENCES public.published_courses(id) ON DELETE CASCADE not valid;
 
 alter table "public"."course_enrollments" validate constraint "course_enrollments_published_course_id_fkey";
 
-alter table "public"."course_enrollments" add constraint "course_enrollments_user_id_fkey" FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE not valid;
+alter table "public"."course_enrollments" add constraint "course_enrollments_user_id_fkey" FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE not valid;
 
 alter table "public"."course_enrollments" validate constraint "course_enrollments_user_id_fkey";
 
@@ -1239,19 +1423,19 @@ alter table "public"."course_payments" add constraint "chk_refund_amount" CHECK 
 
 alter table "public"."course_payments" validate constraint "chk_refund_amount";
 
-alter table "public"."course_payments" add constraint "course_payments_created_by_fkey" FOREIGN KEY (created_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
+alter table "public"."course_payments" add constraint "course_payments_created_by_fkey" FOREIGN KEY (created_by) REFERENCES public.profiles(id) ON DELETE SET NULL not valid;
 
 alter table "public"."course_payments" validate constraint "course_payments_created_by_fkey";
 
-alter table "public"."course_payments" add constraint "course_payments_enrollment_activity_id_fkey" FOREIGN KEY (enrollment_activity_id) REFERENCES course_enrollment_activities(id) ON DELETE CASCADE not valid;
+alter table "public"."course_payments" add constraint "course_payments_enrollment_activity_id_fkey" FOREIGN KEY (enrollment_activity_id) REFERENCES public.course_enrollment_activities(id) ON DELETE CASCADE not valid;
 
 alter table "public"."course_payments" validate constraint "course_payments_enrollment_activity_id_fkey";
 
-alter table "public"."course_payments" add constraint "course_payments_enrollment_id_fkey" FOREIGN KEY (enrollment_id) REFERENCES course_enrollments(id) ON DELETE CASCADE not valid;
+alter table "public"."course_payments" add constraint "course_payments_enrollment_id_fkey" FOREIGN KEY (enrollment_id) REFERENCES public.course_enrollments(id) ON DELETE CASCADE not valid;
 
 alter table "public"."course_payments" validate constraint "course_payments_enrollment_id_fkey";
 
-alter table "public"."course_payments" add constraint "course_payments_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE not valid;
+alter table "public"."course_payments" add constraint "course_payments_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE not valid;
 
 alter table "public"."course_payments" validate constraint "course_payments_organization_id_fkey";
 
@@ -1271,15 +1455,15 @@ alter table "public"."course_pricing_tiers" add constraint "chk_promotional_pric
 
 alter table "public"."course_pricing_tiers" validate constraint "chk_promotional_price";
 
-alter table "public"."course_pricing_tiers" add constraint "course_pricing_tiers_course_id_fkey" FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE not valid;
+alter table "public"."course_pricing_tiers" add constraint "course_pricing_tiers_course_id_fkey" FOREIGN KEY (course_id) REFERENCES public.courses(id) ON DELETE CASCADE not valid;
 
 alter table "public"."course_pricing_tiers" validate constraint "course_pricing_tiers_course_id_fkey";
 
-alter table "public"."course_pricing_tiers" add constraint "course_pricing_tiers_created_by_fkey" FOREIGN KEY (created_by) REFERENCES profiles(id) ON DELETE CASCADE not valid;
+alter table "public"."course_pricing_tiers" add constraint "course_pricing_tiers_created_by_fkey" FOREIGN KEY (created_by) REFERENCES public.profiles(id) ON DELETE CASCADE not valid;
 
 alter table "public"."course_pricing_tiers" validate constraint "course_pricing_tiers_created_by_fkey";
 
-alter table "public"."course_pricing_tiers" add constraint "course_pricing_tiers_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE not valid;
+alter table "public"."course_pricing_tiers" add constraint "course_pricing_tiers_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE not valid;
 
 alter table "public"."course_pricing_tiers" validate constraint "course_pricing_tiers_organization_id_fkey";
 
@@ -1291,27 +1475,27 @@ alter table "public"."course_pricing_tiers" add constraint "course_pricing_tiers
 
 alter table "public"."course_pricing_tiers" validate constraint "course_pricing_tiers_promotional_price_check";
 
-alter table "public"."course_pricing_tiers" add constraint "course_pricing_tiers_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES profiles(id) ON DELETE CASCADE not valid;
+alter table "public"."course_pricing_tiers" add constraint "course_pricing_tiers_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES public.profiles(id) ON DELETE CASCADE not valid;
 
 alter table "public"."course_pricing_tiers" validate constraint "course_pricing_tiers_updated_by_fkey";
 
 alter table "public"."course_pricing_tiers" add constraint "uq_one_active_tier_per_frequency" UNIQUE using index "uq_one_active_tier_per_frequency" DEFERRABLE INITIALLY DEFERRED;
 
-alter table "public"."course_progress" add constraint "course_progress_published_course_id_fkey" FOREIGN KEY (published_course_id) REFERENCES published_courses(id) ON DELETE CASCADE not valid;
+alter table "public"."course_progress" add constraint "course_progress_published_course_id_fkey" FOREIGN KEY (published_course_id) REFERENCES public.published_courses(id) ON DELETE CASCADE not valid;
 
 alter table "public"."course_progress" validate constraint "course_progress_published_course_id_fkey";
 
-alter table "public"."course_progress" add constraint "course_progress_user_id_fkey" FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE not valid;
+alter table "public"."course_progress" add constraint "course_progress_user_id_fkey" FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE not valid;
 
 alter table "public"."course_progress" validate constraint "course_progress_user_id_fkey";
 
 alter table "public"."course_progress" add constraint "course_progress_user_id_published_course_id_key" UNIQUE using index "course_progress_user_id_published_course_id_key";
 
-alter table "public"."course_sub_categories" add constraint "course_sub_categories_category_id_fkey" FOREIGN KEY (category_id) REFERENCES course_categories(id) ON DELETE CASCADE not valid;
+alter table "public"."course_sub_categories" add constraint "course_sub_categories_category_id_fkey" FOREIGN KEY (category_id) REFERENCES public.course_categories(id) ON DELETE CASCADE not valid;
 
 alter table "public"."course_sub_categories" validate constraint "course_sub_categories_category_id_fkey";
 
-alter table "public"."course_sub_categories" add constraint "course_sub_categories_created_by_fkey" FOREIGN KEY (created_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
+alter table "public"."course_sub_categories" add constraint "course_sub_categories_created_by_fkey" FOREIGN KEY (created_by) REFERENCES public.profiles(id) ON DELETE SET NULL not valid;
 
 alter table "public"."course_sub_categories" validate constraint "course_sub_categories_created_by_fkey";
 
@@ -1319,7 +1503,7 @@ alter table "public"."course_sub_categories" add constraint "course_sub_categori
 
 alter table "public"."course_sub_categories" validate constraint "course_sub_categories_name_check";
 
-alter table "public"."course_sub_categories" add constraint "course_sub_categories_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
+alter table "public"."course_sub_categories" add constraint "course_sub_categories_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES public.profiles(id) ON DELETE SET NULL not valid;
 
 alter table "public"."course_sub_categories" validate constraint "course_sub_categories_updated_by_fkey";
 
@@ -1327,51 +1511,51 @@ alter table "public"."courses" add constraint "chk_course_owner" CHECK (((organi
 
 alter table "public"."courses" validate constraint "chk_course_owner";
 
-alter table "public"."courses" add constraint "courses_category_id_fkey" FOREIGN KEY (category_id) REFERENCES course_categories(id) ON DELETE SET NULL not valid;
+alter table "public"."courses" add constraint "courses_category_id_fkey" FOREIGN KEY (category_id) REFERENCES public.course_categories(id) ON DELETE SET NULL not valid;
 
 alter table "public"."courses" validate constraint "courses_category_id_fkey";
 
-alter table "public"."courses" add constraint "courses_created_by_fkey" FOREIGN KEY (created_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
+alter table "public"."courses" add constraint "courses_created_by_fkey" FOREIGN KEY (created_by) REFERENCES public.profiles(id) ON DELETE SET NULL not valid;
 
 alter table "public"."courses" validate constraint "courses_created_by_fkey";
 
-alter table "public"."courses" add constraint "courses_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE not valid;
+alter table "public"."courses" add constraint "courses_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE not valid;
 
 alter table "public"."courses" validate constraint "courses_organization_id_fkey";
 
 alter table "public"."courses" add constraint "courses_organization_id_name_key" UNIQUE using index "courses_organization_id_name_key";
 
-alter table "public"."courses" add constraint "courses_owned_by_fkey" FOREIGN KEY (owned_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
+alter table "public"."courses" add constraint "courses_owned_by_fkey" FOREIGN KEY (owned_by) REFERENCES public.profiles(id) ON DELETE SET NULL not valid;
 
 alter table "public"."courses" validate constraint "courses_owned_by_fkey";
 
-alter table "public"."courses" add constraint "courses_subcategory_id_fkey" FOREIGN KEY (subcategory_id) REFERENCES course_sub_categories(id) ON DELETE SET NULL not valid;
+alter table "public"."courses" add constraint "courses_subcategory_id_fkey" FOREIGN KEY (subcategory_id) REFERENCES public.course_sub_categories(id) ON DELETE SET NULL not valid;
 
 alter table "public"."courses" validate constraint "courses_subcategory_id_fkey";
 
-alter table "public"."courses" add constraint "courses_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
+alter table "public"."courses" add constraint "courses_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES public.profiles(id) ON DELETE SET NULL not valid;
 
 alter table "public"."courses" validate constraint "courses_updated_by_fkey";
 
-alter table "public"."file_library" add constraint "file_library_course_id_fkey" FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE not valid;
+alter table "public"."file_library" add constraint "file_library_course_id_fkey" FOREIGN KEY (course_id) REFERENCES public.courses(id) ON DELETE CASCADE not valid;
 
 alter table "public"."file_library" validate constraint "file_library_course_id_fkey";
 
-alter table "public"."file_library" add constraint "file_library_created_by_fkey" FOREIGN KEY (created_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
+alter table "public"."file_library" add constraint "file_library_created_by_fkey" FOREIGN KEY (created_by) REFERENCES public.profiles(id) ON DELETE SET NULL not valid;
 
 alter table "public"."file_library" validate constraint "file_library_created_by_fkey";
 
-alter table "public"."file_library" add constraint "file_library_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE not valid;
+alter table "public"."file_library" add constraint "file_library_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE not valid;
 
 alter table "public"."file_library" validate constraint "file_library_organization_id_fkey";
 
-alter table "public"."file_library" add constraint "file_library_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
+alter table "public"."file_library" add constraint "file_library_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES public.profiles(id) ON DELETE SET NULL not valid;
 
 alter table "public"."file_library" validate constraint "file_library_updated_by_fkey";
 
 alter table "public"."file_library" add constraint "unique_file_path_per_course" UNIQUE using index "unique_file_path_per_course";
 
-alter table "public"."file_library" add constraint "valid_file_extension" CHECK ((((file_type = 'image'::file_type) AND (lower(extension) = ANY (ARRAY['jpg'::text, 'jpeg'::text, 'png'::text, 'gif'::text, 'webp'::text, 'svg'::text, 'bmp'::text, 'tif'::text, 'tiff'::text, 'heic'::text]))) OR ((file_type = 'audio'::file_type) AND (lower(extension) = ANY (ARRAY['mp3'::text, 'wav'::text, 'aac'::text, 'flac'::text, 'ogg'::text, 'm4a'::text, 'aiff'::text, 'aif'::text]))) OR ((file_type = 'video'::file_type) AND (lower(extension) = ANY (ARRAY['mp4'::text, 'webm'::text, 'mov'::text, 'avi'::text, 'mkv'::text, 'flv'::text, 'wmv'::text]))) OR ((file_type = 'model3d'::file_type) AND (lower(extension) = ANY (ARRAY['gltf'::text, 'glb'::text, 'obj'::text, 'fbx'::text, 'stl'::text, 'dae'::text, '3ds'::text, 'usdz'::text]))) OR ((file_type = 'document'::file_type) AND (lower(extension) = ANY (ARRAY['pdf'::text, 'doc'::text, 'docx'::text, 'xls'::text, 'xlsx'::text, 'ppt'::text, 'pptx'::text, 'txt'::text]))) OR (file_type = 'other'::file_type))) not valid;
+alter table "public"."file_library" add constraint "valid_file_extension" CHECK ((((file_type = 'image'::public.file_type) AND (lower(extension) = ANY (ARRAY['jpg'::text, 'jpeg'::text, 'png'::text, 'gif'::text, 'webp'::text, 'svg'::text, 'bmp'::text, 'tif'::text, 'tiff'::text, 'heic'::text]))) OR ((file_type = 'audio'::public.file_type) AND (lower(extension) = ANY (ARRAY['mp3'::text, 'wav'::text, 'aac'::text, 'flac'::text, 'ogg'::text, 'm4a'::text, 'aiff'::text, 'aif'::text]))) OR ((file_type = 'video'::public.file_type) AND (lower(extension) = ANY (ARRAY['mp4'::text, 'webm'::text, 'mov'::text, 'avi'::text, 'mkv'::text, 'flv'::text, 'wmv'::text]))) OR ((file_type = 'model3d'::public.file_type) AND (lower(extension) = ANY (ARRAY['gltf'::text, 'glb'::text, 'obj'::text, 'fbx'::text, 'stl'::text, 'dae'::text, '3ds'::text, 'usdz'::text]))) OR ((file_type = 'document'::public.file_type) AND (lower(extension) = ANY (ARRAY['pdf'::text, 'doc'::text, 'docx'::text, 'xls'::text, 'xlsx'::text, 'ppt'::text, 'pptx'::text, 'txt'::text]))) OR (file_type = 'other'::public.file_type))) not valid;
 
 alter table "public"."file_library" validate constraint "valid_file_extension";
 
@@ -1379,7 +1563,7 @@ alter table "public"."gonasi_wallet_transactions" add constraint "gonasi_wallet_
 
 alter table "public"."gonasi_wallet_transactions" validate constraint "gonasi_wallet_transactions_amount_check";
 
-alter table "public"."gonasi_wallet_transactions" add constraint "gonasi_wallet_transactions_course_payment_id_fkey" FOREIGN KEY (course_payment_id) REFERENCES course_payments(id) ON DELETE SET NULL not valid;
+alter table "public"."gonasi_wallet_transactions" add constraint "gonasi_wallet_transactions_course_payment_id_fkey" FOREIGN KEY (course_payment_id) REFERENCES public.course_payments(id) ON DELETE SET NULL not valid;
 
 alter table "public"."gonasi_wallet_transactions" validate constraint "gonasi_wallet_transactions_course_payment_id_fkey";
 
@@ -1391,57 +1575,57 @@ alter table "public"."gonasi_wallet_transactions" add constraint "gonasi_wallet_
 
 alter table "public"."gonasi_wallet_transactions" validate constraint "gonasi_wallet_transactions_type_check";
 
-alter table "public"."gonasi_wallet_transactions" add constraint "gonasi_wallet_transactions_wallet_id_fkey" FOREIGN KEY (wallet_id) REFERENCES gonasi_wallets(id) ON DELETE RESTRICT not valid;
+alter table "public"."gonasi_wallet_transactions" add constraint "gonasi_wallet_transactions_wallet_id_fkey" FOREIGN KEY (wallet_id) REFERENCES public.gonasi_wallets(id) ON DELETE RESTRICT not valid;
 
 alter table "public"."gonasi_wallet_transactions" validate constraint "gonasi_wallet_transactions_wallet_id_fkey";
 
 alter table "public"."gonasi_wallets" add constraint "gonasi_wallets_currency_code_key" UNIQUE using index "gonasi_wallets_currency_code_key";
 
-alter table "public"."lesson_blocks" add constraint "lesson_blocks_chapter_id_fkey" FOREIGN KEY (chapter_id) REFERENCES chapters(id) ON DELETE CASCADE not valid;
+alter table "public"."lesson_blocks" add constraint "lesson_blocks_chapter_id_fkey" FOREIGN KEY (chapter_id) REFERENCES public.chapters(id) ON DELETE CASCADE not valid;
 
 alter table "public"."lesson_blocks" validate constraint "lesson_blocks_chapter_id_fkey";
 
-alter table "public"."lesson_blocks" add constraint "lesson_blocks_course_id_fkey" FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE not valid;
+alter table "public"."lesson_blocks" add constraint "lesson_blocks_course_id_fkey" FOREIGN KEY (course_id) REFERENCES public.courses(id) ON DELETE CASCADE not valid;
 
 alter table "public"."lesson_blocks" validate constraint "lesson_blocks_course_id_fkey";
 
-alter table "public"."lesson_blocks" add constraint "lesson_blocks_created_by_fkey" FOREIGN KEY (created_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
+alter table "public"."lesson_blocks" add constraint "lesson_blocks_created_by_fkey" FOREIGN KEY (created_by) REFERENCES public.profiles(id) ON DELETE SET NULL not valid;
 
 alter table "public"."lesson_blocks" validate constraint "lesson_blocks_created_by_fkey";
 
-alter table "public"."lesson_blocks" add constraint "lesson_blocks_lesson_id_fkey" FOREIGN KEY (lesson_id) REFERENCES lessons(id) ON DELETE CASCADE not valid;
+alter table "public"."lesson_blocks" add constraint "lesson_blocks_lesson_id_fkey" FOREIGN KEY (lesson_id) REFERENCES public.lessons(id) ON DELETE CASCADE not valid;
 
 alter table "public"."lesson_blocks" validate constraint "lesson_blocks_lesson_id_fkey";
 
-alter table "public"."lesson_blocks" add constraint "lesson_blocks_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE not valid;
+alter table "public"."lesson_blocks" add constraint "lesson_blocks_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE not valid;
 
 alter table "public"."lesson_blocks" validate constraint "lesson_blocks_organization_id_fkey";
 
-alter table "public"."lesson_blocks" add constraint "lesson_blocks_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
+alter table "public"."lesson_blocks" add constraint "lesson_blocks_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES public.profiles(id) ON DELETE SET NULL not valid;
 
 alter table "public"."lesson_blocks" validate constraint "lesson_blocks_updated_by_fkey";
 
-alter table "public"."lesson_progress" add constraint "lesson_progress_chapter_progress_id_fkey" FOREIGN KEY (chapter_progress_id) REFERENCES chapter_progress(id) ON DELETE CASCADE not valid;
+alter table "public"."lesson_progress" add constraint "lesson_progress_chapter_progress_id_fkey" FOREIGN KEY (chapter_progress_id) REFERENCES public.chapter_progress(id) ON DELETE CASCADE not valid;
 
 alter table "public"."lesson_progress" validate constraint "lesson_progress_chapter_progress_id_fkey";
 
 alter table "public"."lesson_progress" add constraint "lesson_progress_chapter_progress_id_lesson_id_key" UNIQUE using index "lesson_progress_chapter_progress_id_lesson_id_key";
 
-alter table "public"."lesson_progress" add constraint "lesson_progress_published_course_id_fkey" FOREIGN KEY (published_course_id) REFERENCES published_courses(id) ON DELETE CASCADE not valid;
+alter table "public"."lesson_progress" add constraint "lesson_progress_published_course_id_fkey" FOREIGN KEY (published_course_id) REFERENCES public.published_courses(id) ON DELETE CASCADE not valid;
 
 alter table "public"."lesson_progress" validate constraint "lesson_progress_published_course_id_fkey";
 
-alter table "public"."lesson_progress" add constraint "lesson_progress_user_id_fkey" FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE not valid;
+alter table "public"."lesson_progress" add constraint "lesson_progress_user_id_fkey" FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE not valid;
 
 alter table "public"."lesson_progress" validate constraint "lesson_progress_user_id_fkey";
 
 alter table "public"."lesson_progress" add constraint "lesson_progress_user_id_published_course_id_lesson_id_key" UNIQUE using index "lesson_progress_user_id_published_course_id_lesson_id_key";
 
-alter table "public"."lesson_reset_count" add constraint "lesson_reset_count_published_course_id_fkey" FOREIGN KEY (published_course_id) REFERENCES published_courses(id) ON DELETE CASCADE not valid;
+alter table "public"."lesson_reset_count" add constraint "lesson_reset_count_published_course_id_fkey" FOREIGN KEY (published_course_id) REFERENCES public.published_courses(id) ON DELETE CASCADE not valid;
 
 alter table "public"."lesson_reset_count" validate constraint "lesson_reset_count_published_course_id_fkey";
 
-alter table "public"."lesson_reset_count" add constraint "lesson_reset_count_user_id_fkey" FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE not valid;
+alter table "public"."lesson_reset_count" add constraint "lesson_reset_count_user_id_fkey" FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE not valid;
 
 alter table "public"."lesson_reset_count" validate constraint "lesson_reset_count_user_id_fkey";
 
@@ -1449,37 +1633,37 @@ alter table "public"."lesson_reset_count" add constraint "lesson_reset_count_use
 
 alter table "public"."lesson_types" add constraint "lesson_types_bg_color_key" UNIQUE using index "lesson_types_bg_color_key";
 
-alter table "public"."lesson_types" add constraint "lesson_types_created_by_fkey" FOREIGN KEY (created_by) REFERENCES profiles(id) ON DELETE CASCADE not valid;
+alter table "public"."lesson_types" add constraint "lesson_types_created_by_fkey" FOREIGN KEY (created_by) REFERENCES public.profiles(id) ON DELETE CASCADE not valid;
 
 alter table "public"."lesson_types" validate constraint "lesson_types_created_by_fkey";
 
 alter table "public"."lesson_types" add constraint "lesson_types_name_key" UNIQUE using index "lesson_types_name_key";
 
-alter table "public"."lesson_types" add constraint "lesson_types_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
+alter table "public"."lesson_types" add constraint "lesson_types_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES public.profiles(id) ON DELETE SET NULL not valid;
 
 alter table "public"."lesson_types" validate constraint "lesson_types_updated_by_fkey";
 
-alter table "public"."lessons" add constraint "lessons_chapter_id_fkey" FOREIGN KEY (chapter_id) REFERENCES chapters(id) ON DELETE CASCADE not valid;
+alter table "public"."lessons" add constraint "lessons_chapter_id_fkey" FOREIGN KEY (chapter_id) REFERENCES public.chapters(id) ON DELETE CASCADE not valid;
 
 alter table "public"."lessons" validate constraint "lessons_chapter_id_fkey";
 
-alter table "public"."lessons" add constraint "lessons_course_id_fkey" FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE not valid;
+alter table "public"."lessons" add constraint "lessons_course_id_fkey" FOREIGN KEY (course_id) REFERENCES public.courses(id) ON DELETE CASCADE not valid;
 
 alter table "public"."lessons" validate constraint "lessons_course_id_fkey";
 
-alter table "public"."lessons" add constraint "lessons_created_by_fkey" FOREIGN KEY (created_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
+alter table "public"."lessons" add constraint "lessons_created_by_fkey" FOREIGN KEY (created_by) REFERENCES public.profiles(id) ON DELETE SET NULL not valid;
 
 alter table "public"."lessons" validate constraint "lessons_created_by_fkey";
 
-alter table "public"."lessons" add constraint "lessons_lesson_type_id_fkey" FOREIGN KEY (lesson_type_id) REFERENCES lesson_types(id) ON DELETE SET NULL not valid;
+alter table "public"."lessons" add constraint "lessons_lesson_type_id_fkey" FOREIGN KEY (lesson_type_id) REFERENCES public.lesson_types(id) ON DELETE SET NULL not valid;
 
 alter table "public"."lessons" validate constraint "lessons_lesson_type_id_fkey";
 
-alter table "public"."lessons" add constraint "lessons_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE not valid;
+alter table "public"."lessons" add constraint "lessons_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE not valid;
 
 alter table "public"."lessons" validate constraint "lessons_organization_id_fkey";
 
-alter table "public"."lessons" add constraint "lessons_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
+alter table "public"."lessons" add constraint "lessons_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES public.profiles(id) ON DELETE SET NULL not valid;
 
 alter table "public"."lessons" validate constraint "lessons_updated_by_fkey";
 
@@ -1491,7 +1675,7 @@ alter table "public"."organization_invites" add constraint "organization_invites
 
 alter table "public"."organization_invites" validate constraint "organization_invites_invited_by_fkey";
 
-alter table "public"."organization_invites" add constraint "organization_invites_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE not valid;
+alter table "public"."organization_invites" add constraint "organization_invites_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE not valid;
 
 alter table "public"."organization_invites" validate constraint "organization_invites_organization_id_fkey";
 
@@ -1501,7 +1685,7 @@ alter table "public"."organization_members" add constraint "organization_members
 
 alter table "public"."organization_members" validate constraint "organization_members_invited_by_fkey";
 
-alter table "public"."organization_members" add constraint "organization_members_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE not valid;
+alter table "public"."organization_members" add constraint "organization_members_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE not valid;
 
 alter table "public"."organization_members" validate constraint "organization_members_organization_id_fkey";
 
@@ -1511,13 +1695,31 @@ alter table "public"."organization_members" add constraint "organization_members
 
 alter table "public"."organization_members" validate constraint "organization_members_user_id_fkey";
 
-alter table "public"."organization_members" add constraint "organization_members_user_id_fkey_profiles" FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE not valid;
+alter table "public"."organization_members" add constraint "organization_members_user_id_fkey_profiles" FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE not valid;
 
 alter table "public"."organization_members" validate constraint "organization_members_user_id_fkey_profiles";
 
+alter table "public"."organization_subscriptions" add constraint "one_active_subscription_per_org" UNIQUE using index "one_active_subscription_per_org" DEFERRABLE INITIALLY DEFERRED;
+
+alter table "public"."organization_subscriptions" add constraint "organization_subscriptions_created_by_fkey" FOREIGN KEY (created_by) REFERENCES auth.users(id) ON DELETE SET NULL not valid;
+
+alter table "public"."organization_subscriptions" validate constraint "organization_subscriptions_created_by_fkey";
+
+alter table "public"."organization_subscriptions" add constraint "organization_subscriptions_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE not valid;
+
+alter table "public"."organization_subscriptions" validate constraint "organization_subscriptions_organization_id_fkey";
+
+alter table "public"."organization_subscriptions" add constraint "organization_subscriptions_tier_fkey" FOREIGN KEY (tier) REFERENCES public.tier_limits(tier) ON UPDATE CASCADE ON DELETE RESTRICT not valid;
+
+alter table "public"."organization_subscriptions" validate constraint "organization_subscriptions_tier_fkey";
+
+alter table "public"."organization_subscriptions" add constraint "organization_subscriptions_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES auth.users(id) ON DELETE SET NULL not valid;
+
+alter table "public"."organization_subscriptions" validate constraint "organization_subscriptions_updated_by_fkey";
+
 alter table "public"."organization_wallets" add constraint "organization_wallets_organization_id_currency_code_key" UNIQUE using index "organization_wallets_organization_id_currency_code_key";
 
-alter table "public"."organization_wallets" add constraint "organization_wallets_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE not valid;
+alter table "public"."organization_wallets" add constraint "organization_wallets_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE not valid;
 
 alter table "public"."organization_wallets" validate constraint "organization_wallets_organization_id_fkey";
 
@@ -1529,37 +1731,41 @@ alter table "public"."organizations" add constraint "handle_lowercase" CHECK ((h
 
 alter table "public"."organizations" validate constraint "handle_lowercase";
 
-alter table "public"."organizations" add constraint "organizations_created_by_fkey" FOREIGN KEY (created_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
+alter table "public"."organizations" add constraint "organizations_created_by_fkey" FOREIGN KEY (created_by) REFERENCES public.profiles(id) ON DELETE SET NULL not valid;
 
 alter table "public"."organizations" validate constraint "organizations_created_by_fkey";
 
-alter table "public"."organizations" add constraint "organizations_deleted_by_fkey" FOREIGN KEY (deleted_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
+alter table "public"."organizations" add constraint "organizations_deleted_by_fkey" FOREIGN KEY (deleted_by) REFERENCES public.profiles(id) ON DELETE SET NULL not valid;
 
 alter table "public"."organizations" validate constraint "organizations_deleted_by_fkey";
 
 alter table "public"."organizations" add constraint "organizations_handle_key" UNIQUE using index "organizations_handle_key";
 
-alter table "public"."organizations" add constraint "organizations_owned_by_fkey" FOREIGN KEY (owned_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
+alter table "public"."organizations" add constraint "organizations_owned_by_fkey" FOREIGN KEY (owned_by) REFERENCES public.profiles(id) ON DELETE SET NULL not valid;
 
 alter table "public"."organizations" validate constraint "organizations_owned_by_fkey";
 
-alter table "public"."organizations" add constraint "organizations_tier_fkey" FOREIGN KEY (tier) REFERENCES tier_limits(tier) not valid;
+alter table "public"."organizations" add constraint "organizations_tier_fkey" FOREIGN KEY (tier) REFERENCES public.tier_limits(tier) not valid;
 
 alter table "public"."organizations" validate constraint "organizations_tier_fkey";
 
-alter table "public"."organizations" add constraint "organizations_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
+alter table "public"."organizations" add constraint "organizations_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES public.profiles(id) ON DELETE SET NULL not valid;
 
 alter table "public"."organizations" validate constraint "organizations_updated_by_fkey";
+
+alter table "public"."organizations_ai_credits" add constraint "organizations_ai_credits_org_id_fkey" FOREIGN KEY (org_id) REFERENCES public.organizations(id) ON DELETE CASCADE not valid;
+
+alter table "public"."organizations_ai_credits" validate constraint "organizations_ai_credits_org_id_fkey";
 
 alter table "public"."profiles" add constraint "email_valid" CHECK ((email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'::text)) not valid;
 
 alter table "public"."profiles" validate constraint "email_valid";
 
-alter table "public"."profiles" add constraint "mode_organization_consistency" CHECK ((((mode = 'personal'::profile_mode) AND (active_organization_id IS NULL)) OR ((mode = 'organization'::profile_mode) AND (active_organization_id IS NOT NULL)))) not valid;
+alter table "public"."profiles" add constraint "mode_organization_consistency" CHECK ((((mode = 'personal'::public.profile_mode) AND (active_organization_id IS NULL)) OR ((mode = 'organization'::public.profile_mode) AND (active_organization_id IS NOT NULL)))) not valid;
 
 alter table "public"."profiles" validate constraint "mode_organization_consistency";
 
-alter table "public"."profiles" add constraint "profiles_active_organization_id_fkey" FOREIGN KEY (active_organization_id) REFERENCES organizations(id) ON DELETE SET NULL not valid;
+alter table "public"."profiles" add constraint "profiles_active_organization_id_fkey" FOREIGN KEY (active_organization_id) REFERENCES public.organizations(id) ON DELETE SET NULL not valid;
 
 alter table "public"."profiles" validate constraint "profiles_active_organization_id_fkey";
 
@@ -1587,7 +1793,7 @@ alter table "public"."profiles" add constraint "username_lowercase" CHECK ((user
 
 alter table "public"."profiles" validate constraint "username_lowercase";
 
-alter table "public"."published_course_structure_content" add constraint "chk_course_structure_content_valid" CHECK (jsonb_matches_schema('{
+alter table "public"."published_course_structure_content" add constraint "chk_course_structure_content_valid" CHECK (extensions.jsonb_matches_schema('{
       "type": "object",
       "required": ["total_chapters", "total_lessons", "total_blocks", "chapters"],
       "properties": {
@@ -1670,7 +1876,7 @@ alter table "public"."published_course_structure_content" add constraint "chk_co
 
 alter table "public"."published_course_structure_content" validate constraint "chk_course_structure_content_valid";
 
-alter table "public"."published_course_structure_content" add constraint "published_course_structure_content_id_fkey" FOREIGN KEY (id) REFERENCES published_courses(id) ON DELETE CASCADE not valid;
+alter table "public"."published_course_structure_content" add constraint "published_course_structure_content_id_fkey" FOREIGN KEY (id) REFERENCES public.published_courses(id) ON DELETE CASCADE not valid;
 
 alter table "public"."published_course_structure_content" validate constraint "published_course_structure_content_id_fkey";
 
@@ -1682,7 +1888,7 @@ alter table "public"."published_courses" add constraint "chk_completion_rate" CH
 
 alter table "public"."published_courses" validate constraint "chk_completion_rate";
 
-alter table "public"."published_courses" add constraint "chk_course_structure_overview_valid" CHECK (jsonb_matches_schema('{
+alter table "public"."published_courses" add constraint "chk_course_structure_overview_valid" CHECK (extensions.jsonb_matches_schema('{
       "type": "object",
       "required": ["total_chapters", "total_lessons", "total_blocks", "chapters"],
       "properties": {
@@ -1738,7 +1944,7 @@ alter table "public"."published_courses" add constraint "chk_course_structure_ov
 
 alter table "public"."published_courses" validate constraint "chk_course_structure_overview_valid";
 
-alter table "public"."published_courses" add constraint "chk_pricing_tiers_valid" CHECK (jsonb_matches_schema('{
+alter table "public"."published_courses" add constraint "chk_pricing_tiers_valid" CHECK (extensions.jsonb_matches_schema('{
       "type": "array",
       "items": {
         "type": "object",
@@ -1795,23 +2001,23 @@ alter table "public"."published_courses" add constraint "chk_version_positive" C
 
 alter table "public"."published_courses" validate constraint "chk_version_positive";
 
-alter table "public"."published_courses" add constraint "published_courses_category_id_fkey" FOREIGN KEY (category_id) REFERENCES course_categories(id) ON DELETE SET NULL not valid;
+alter table "public"."published_courses" add constraint "published_courses_category_id_fkey" FOREIGN KEY (category_id) REFERENCES public.course_categories(id) ON DELETE SET NULL not valid;
 
 alter table "public"."published_courses" validate constraint "published_courses_category_id_fkey";
 
-alter table "public"."published_courses" add constraint "published_courses_id_fkey" FOREIGN KEY (id) REFERENCES courses(id) ON DELETE CASCADE not valid;
+alter table "public"."published_courses" add constraint "published_courses_id_fkey" FOREIGN KEY (id) REFERENCES public.courses(id) ON DELETE CASCADE not valid;
 
 alter table "public"."published_courses" validate constraint "published_courses_id_fkey";
 
-alter table "public"."published_courses" add constraint "published_courses_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE not valid;
+alter table "public"."published_courses" add constraint "published_courses_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE not valid;
 
 alter table "public"."published_courses" validate constraint "published_courses_organization_id_fkey";
 
-alter table "public"."published_courses" add constraint "published_courses_published_by_fkey" FOREIGN KEY (published_by) REFERENCES profiles(id) ON DELETE CASCADE not valid;
+alter table "public"."published_courses" add constraint "published_courses_published_by_fkey" FOREIGN KEY (published_by) REFERENCES public.profiles(id) ON DELETE CASCADE not valid;
 
 alter table "public"."published_courses" validate constraint "published_courses_published_by_fkey";
 
-alter table "public"."published_courses" add constraint "published_courses_subcategory_id_fkey" FOREIGN KEY (subcategory_id) REFERENCES course_sub_categories(id) ON DELETE SET NULL not valid;
+alter table "public"."published_courses" add constraint "published_courses_subcategory_id_fkey" FOREIGN KEY (subcategory_id) REFERENCES public.course_sub_categories(id) ON DELETE SET NULL not valid;
 
 alter table "public"."published_courses" validate constraint "published_courses_subcategory_id_fkey";
 
@@ -1829,45 +2035,83 @@ alter table "public"."published_courses" validate constraint "published_courses_
 
 alter table "public"."published_courses" add constraint "uq_one_active_published_course" UNIQUE using index "uq_one_active_published_course" DEFERRABLE INITIALLY DEFERRED;
 
-alter table "public"."published_file_library" add constraint "published_file_library_course_id_fkey" FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE not valid;
+alter table "public"."published_file_library" add constraint "published_file_library_course_id_fkey" FOREIGN KEY (course_id) REFERENCES public.courses(id) ON DELETE CASCADE not valid;
 
 alter table "public"."published_file_library" validate constraint "published_file_library_course_id_fkey";
 
-alter table "public"."published_file_library" add constraint "published_file_library_created_by_fkey" FOREIGN KEY (created_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
+alter table "public"."published_file_library" add constraint "published_file_library_created_by_fkey" FOREIGN KEY (created_by) REFERENCES public.profiles(id) ON DELETE SET NULL not valid;
 
 alter table "public"."published_file_library" validate constraint "published_file_library_created_by_fkey";
 
-alter table "public"."published_file_library" add constraint "published_file_library_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE not valid;
+alter table "public"."published_file_library" add constraint "published_file_library_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE not valid;
 
 alter table "public"."published_file_library" validate constraint "published_file_library_organization_id_fkey";
 
-alter table "public"."published_file_library" add constraint "published_file_library_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
+alter table "public"."published_file_library" add constraint "published_file_library_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES public.profiles(id) ON DELETE SET NULL not valid;
 
 alter table "public"."published_file_library" validate constraint "published_file_library_updated_by_fkey";
 
 alter table "public"."published_file_library" add constraint "unique_published_file_path_per_course" UNIQUE using index "unique_published_file_path_per_course";
 
-alter table "public"."published_file_library" add constraint "valid_file_extension" CHECK ((((file_type = 'image'::file_type) AND (lower(extension) = ANY (ARRAY['jpg'::text, 'jpeg'::text, 'png'::text, 'gif'::text, 'webp'::text, 'svg'::text, 'bmp'::text, 'tif'::text, 'tiff'::text, 'heic'::text]))) OR ((file_type = 'audio'::file_type) AND (lower(extension) = ANY (ARRAY['mp3'::text, 'wav'::text, 'aac'::text, 'flac'::text, 'ogg'::text, 'm4a'::text, 'aiff'::text, 'aif'::text]))) OR ((file_type = 'video'::file_type) AND (lower(extension) = ANY (ARRAY['mp4'::text, 'webm'::text, 'mov'::text, 'avi'::text, 'mkv'::text, 'flv'::text, 'wmv'::text]))) OR ((file_type = 'model3d'::file_type) AND (lower(extension) = ANY (ARRAY['gltf'::text, 'glb'::text, 'obj'::text, 'fbx'::text, 'stl'::text, 'dae'::text, '3ds'::text, 'usdz'::text]))) OR ((file_type = 'document'::file_type) AND (lower(extension) = ANY (ARRAY['pdf'::text, 'doc'::text, 'docx'::text, 'xls'::text, 'xlsx'::text, 'ppt'::text, 'pptx'::text, 'txt'::text]))) OR (file_type = 'other'::file_type))) not valid;
+alter table "public"."published_file_library" add constraint "valid_file_extension" CHECK ((((file_type = 'image'::public.file_type) AND (lower(extension) = ANY (ARRAY['jpg'::text, 'jpeg'::text, 'png'::text, 'gif'::text, 'webp'::text, 'svg'::text, 'bmp'::text, 'tif'::text, 'tiff'::text, 'heic'::text]))) OR ((file_type = 'audio'::public.file_type) AND (lower(extension) = ANY (ARRAY['mp3'::text, 'wav'::text, 'aac'::text, 'flac'::text, 'ogg'::text, 'm4a'::text, 'aiff'::text, 'aif'::text]))) OR ((file_type = 'video'::public.file_type) AND (lower(extension) = ANY (ARRAY['mp4'::text, 'webm'::text, 'mov'::text, 'avi'::text, 'mkv'::text, 'flv'::text, 'wmv'::text]))) OR ((file_type = 'model3d'::public.file_type) AND (lower(extension) = ANY (ARRAY['gltf'::text, 'glb'::text, 'obj'::text, 'fbx'::text, 'stl'::text, 'dae'::text, '3ds'::text, 'usdz'::text]))) OR ((file_type = 'document'::public.file_type) AND (lower(extension) = ANY (ARRAY['pdf'::text, 'doc'::text, 'docx'::text, 'xls'::text, 'xlsx'::text, 'ppt'::text, 'pptx'::text, 'txt'::text]))) OR (file_type = 'other'::public.file_type))) not valid;
 
 alter table "public"."published_file_library" validate constraint "valid_file_extension";
 
 alter table "public"."role_permissions" add constraint "role_permissions_role_permission_key" UNIQUE using index "role_permissions_role_permission_key";
 
-alter table "public"."user_roles" add constraint "user_roles_user_id_fkey" FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE not valid;
+alter table "public"."user_roles" add constraint "user_roles_user_id_fkey" FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE not valid;
 
 alter table "public"."user_roles" validate constraint "user_roles_user_id_fkey";
 
 alter table "public"."user_roles" add constraint "user_roles_user_id_role_key" UNIQUE using index "user_roles_user_id_role_key";
 
+alter table "public"."user_wallets" add constraint "user_wallets_user_id_currency_code_key" UNIQUE using index "user_wallets_user_id_currency_code_key";
+
+alter table "public"."user_wallets" add constraint "user_wallets_user_id_fkey" FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE not valid;
+
+alter table "public"."user_wallets" validate constraint "user_wallets_user_id_fkey";
+
+alter table "public"."wallet_ledger_entries" add constraint "wallet_ledger_entries_amount_check" CHECK ((amount > (0)::numeric)) not valid;
+
+alter table "public"."wallet_ledger_entries" validate constraint "wallet_ledger_entries_amount_check";
+
+alter table "public"."wallet_ledger_entries" add constraint "wallet_ledger_entries_currency_not_null" CHECK ((currency_code IS NOT NULL)) not valid;
+
+alter table "public"."wallet_ledger_entries" validate constraint "wallet_ledger_entries_currency_not_null";
+
+alter table "public"."wallet_ledger_entries" add constraint "wallet_ledger_entries_destination_wallet_type_check" CHECK ((destination_wallet_type = ANY (ARRAY['platform'::text, 'organization'::text, 'user'::text, 'external'::text]))) not valid;
+
+alter table "public"."wallet_ledger_entries" validate constraint "wallet_ledger_entries_destination_wallet_type_check";
+
+alter table "public"."wallet_ledger_entries" add constraint "wallet_ledger_entries_direction_check" CHECK ((direction = ANY (ARRAY['credit'::text, 'debit'::text]))) not valid;
+
+alter table "public"."wallet_ledger_entries" validate constraint "wallet_ledger_entries_direction_check";
+
+alter table "public"."wallet_ledger_entries" add constraint "wallet_ledger_entries_source_wallet_type_check" CHECK ((source_wallet_type = ANY (ARRAY['platform'::text, 'organization'::text, 'user'::text, 'external'::text]))) not valid;
+
+alter table "public"."wallet_ledger_entries" validate constraint "wallet_ledger_entries_source_wallet_type_check";
+
+alter table "public"."wallet_ledger_entries" add constraint "wallet_ledger_entries_type_check" CHECK ((type = ANY (ARRAY['course_sale'::text, 'course_sale_payout'::text, 'subscription_payment'::text, 'ai_credit_purchase'::text, 'sponsorship_payment'::text, 'funds_hold'::text, 'funds_release'::text, 'reward_payout'::text, 'withdrawal_request'::text, 'withdrawal_complete'::text, 'withdrawal_revert'::text, 'platform_fee'::text, 'paystack_fee'::text]))) not valid;
+
+alter table "public"."wallet_ledger_entries" validate constraint "wallet_ledger_entries_type_check";
+
+alter table "public"."wallet_ledger_entries" add constraint "wallet_tx_external_dest_id_null" CHECK ((((destination_wallet_type = 'external'::text) AND (destination_wallet_id IS NULL)) OR (destination_wallet_type <> 'external'::text))) not valid;
+
+alter table "public"."wallet_ledger_entries" validate constraint "wallet_tx_external_dest_id_null";
+
+alter table "public"."wallet_ledger_entries" add constraint "wallet_tx_external_id_null" CHECK ((((source_wallet_type = 'external'::text) AND (source_wallet_id IS NULL)) OR (source_wallet_type <> 'external'::text))) not valid;
+
+alter table "public"."wallet_ledger_entries" validate constraint "wallet_tx_external_id_null";
+
 alter table "public"."wallet_transactions" add constraint "wallet_transactions_amount_check" CHECK ((amount >= (0)::numeric)) not valid;
 
 alter table "public"."wallet_transactions" validate constraint "wallet_transactions_amount_check";
 
-alter table "public"."wallet_transactions" add constraint "wallet_transactions_course_payment_id_fkey" FOREIGN KEY (course_payment_id) REFERENCES course_payments(id) ON DELETE SET NULL not valid;
+alter table "public"."wallet_transactions" add constraint "wallet_transactions_course_payment_id_fkey" FOREIGN KEY (course_payment_id) REFERENCES public.course_payments(id) ON DELETE SET NULL not valid;
 
 alter table "public"."wallet_transactions" validate constraint "wallet_transactions_course_payment_id_fkey";
 
-alter table "public"."wallet_transactions" add constraint "wallet_transactions_created_by_fkey" FOREIGN KEY (created_by) REFERENCES profiles(id) ON DELETE SET NULL not valid;
+alter table "public"."wallet_transactions" add constraint "wallet_transactions_created_by_fkey" FOREIGN KEY (created_by) REFERENCES public.profiles(id) ON DELETE SET NULL not valid;
 
 alter table "public"."wallet_transactions" validate constraint "wallet_transactions_created_by_fkey";
 
@@ -1879,7 +2123,7 @@ alter table "public"."wallet_transactions" add constraint "wallet_transactions_t
 
 alter table "public"."wallet_transactions" validate constraint "wallet_transactions_type_check";
 
-alter table "public"."wallet_transactions" add constraint "wallet_transactions_wallet_id_fkey" FOREIGN KEY (wallet_id) REFERENCES organization_wallets(id) ON DELETE CASCADE not valid;
+alter table "public"."wallet_transactions" add constraint "wallet_transactions_wallet_id_fkey" FOREIGN KEY (wallet_id) REFERENCES public.organization_wallets(id) ON DELETE CASCADE not valid;
 
 alter table "public"."wallet_transactions" validate constraint "wallet_transactions_wallet_id_fkey";
 
@@ -2165,7 +2409,50 @@ end;
 $function$
 ;
 
-CREATE OR REPLACE FUNCTION public.authorize(requested_permission app_permission)
+CREATE OR REPLACE FUNCTION public.assign_launch_subscription_to_new_org()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+begin
+  -- Skip if this organization already has a subscription (safety check)
+  if exists (
+    select 1
+    from public.organization_subscriptions s
+    where s.organization_id = new.id
+  ) then
+    return new;
+  end if;
+
+  -- Insert default subscription record
+  insert into public.organization_subscriptions (
+    organization_id,
+    tier,
+    status,
+    start_date,
+    current_period_start,
+    current_period_end,
+    created_by,
+    updated_by
+  )
+  values (
+    new.id,                 -- new organization ID
+    'launch',               -- default free tier
+    'active',               -- active subscription
+    timezone('utc', now()), -- subscription start date
+    timezone('utc', now()), -- current period start
+    null,                   -- 'launch' tier has no expiry
+    new.created_by,         -- who created the organization (if tracked)
+    new.created_by
+  );
+
+  return new;
+end;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.authorize(requested_permission public.app_permission)
  RETURNS boolean
  LANGUAGE plpgsql
  STABLE SECURITY DEFINER
@@ -2191,7 +2478,7 @@ end;
 $function$
 ;
 
-CREATE OR REPLACE FUNCTION public.calculate_access_end_date(start_date timestamp with time zone, frequency payment_frequency)
+CREATE OR REPLACE FUNCTION public.calculate_access_end_date(start_date timestamp with time zone, frequency public.payment_frequency)
  RETURNS timestamp with time zone
  LANGUAGE plpgsql
  IMMUTABLE
@@ -2652,6 +2939,31 @@ end;
 $function$
 ;
 
+CREATE OR REPLACE FUNCTION public.count_active_students(org_id uuid)
+ RETURNS bigint
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+  select count(distinct user_id)
+  from public.course_enrollments
+  where organization_id = org_id
+    and is_active = true;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.count_total_unique_students(org_id uuid)
+ RETURNS bigint
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+  select count(distinct user_id)
+  from public.course_enrollments
+  where organization_id = org_id;
+$function$
+;
+
 CREATE OR REPLACE FUNCTION public.create_organization_wallets()
  RETURNS trigger
  LANGUAGE plpgsql
@@ -2661,20 +2973,51 @@ AS $function$
 declare
   currency public.currency_code;
 begin
-  -- Loop through all currency codes defined in the enum
-  for currency in select unnest(enum_range(null::public.currency_code))
+  -- For each defined currency, create a wallet for the new organization
+  for currency in select unnest(enum_range(null::public.currency_code)) 
   loop
     -- Log which wallet is being created
     raise notice 'Creating wallet in % for org %', currency, new.id;
 
-    -- Insert wallet row
     insert into public.organization_wallets (
       organization_id,
       currency_code
-    ) values (
+    )
+    values (
+      new.id,                     -- organization_id
+      currency                    -- currency_code
+    )
+    on conflict (organization_id, currency_code) do nothing;
+  end loop;
+
+  return new;
+end;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.create_user_wallets()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+declare
+  currency public.currency_code;
+begin
+  for currency in select unnest(enum_range(null::public.currency_code)) 
+  loop
+    -- Log which wallet is being created
+    raise notice 'Creating user wallet in % for org %', currency, new.id;
+
+    insert into public.user_wallets (
+      user_id,
+      currency_code
+    )
+    values (
       new.id,
       currency
-    );
+    )
+    on conflict (user_id, currency_code) do nothing;
   end loop;
 
   return new;
@@ -2961,7 +3304,7 @@ $function$
 ;
 
 CREATE OR REPLACE FUNCTION public.determine_file_type(extension text)
- RETURNS file_type
+ RETURNS public.file_type
  LANGUAGE plpgsql
  IMMUTABLE SECURITY DEFINER
  SET search_path TO ''
@@ -3362,7 +3705,7 @@ $function$
 ;
 
 CREATE OR REPLACE FUNCTION public.get_available_payment_frequencies(p_course_id uuid)
- RETURNS payment_frequency[]
+ RETURNS public.payment_frequency[]
  LANGUAGE plpgsql
  SET search_path TO ''
 AS $function$
@@ -4625,7 +4968,7 @@ $function$
 ;
 
 CREATE OR REPLACE FUNCTION public.get_published_course_pricing_tier(p_published_course_id uuid, p_tier_id uuid)
- RETURNS TABLE(tier_id uuid, payment_frequency payment_frequency, is_free boolean, price numeric, currency_code text, promotional_price numeric, promotion_start_date timestamp with time zone, promotion_end_date timestamp with time zone, tier_name text, tier_description text, is_active boolean, "position" integer, is_popular boolean, is_recommended boolean)
+ RETURNS TABLE(tier_id uuid, payment_frequency public.payment_frequency, is_free boolean, price numeric, currency_code text, promotional_price numeric, promotion_start_date timestamp with time zone, promotion_end_date timestamp with time zone, tier_name text, tier_description text, is_active boolean, "position" integer, is_popular boolean, is_recommended boolean)
  LANGUAGE plpgsql
  SET search_path TO ''
 AS $function$
@@ -5058,6 +5401,54 @@ begin
     and owned_by = old.user_id;
 
   return old;
+end;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.handle_new_organization_ai_credits()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+declare
+  monthly_limit int;
+begin
+  -- Get monthly AI credit limit based on tier
+  select public.tier_limits.ai_usage_limit_monthly
+  into monthly_limit
+  from public.tier_limits
+  where public.tier_limits.tier = new.tier;
+
+  -- Fallback to 100 if tier not found or has null limit
+  if monthly_limit is null then
+    monthly_limit := 100;
+  end if;
+
+  -- Insert the org’s initial AI credit record
+  insert into public.organizations_ai_credits (
+    org_id,
+    base_credits_total,
+    base_credits_remaining,
+    purchased_credits_total,
+    purchased_credits_remaining,
+    last_reset_at,
+    next_reset_at,
+    updated_at
+  )
+  values (
+    new.id,
+    monthly_limit,
+    monthly_limit,
+    0,
+    0,
+    now(),
+    now() + interval '1 month',
+    now()
+  )
+  on conflict (org_id) do nothing;  -- Prevent duplicates
+
+  return new;
 end;
 $function$
 ;
@@ -5857,6 +6248,30 @@ begin
   ) as new_positions
   where public.course_pricing_tiers.id = new_positions.id
     and course_id = p_course_id;
+end;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.reset_org_ai_base_credits_when_due()
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+begin
+  update public.organizations_ai_credits as oac
+  set
+    base_credits_total = coalesce(t.ai_usage_limit_monthly, 100),
+    base_credits_remaining = coalesce(t.ai_usage_limit_monthly, 100),
+    last_reset_at = now(),
+    next_reset_at = now() + interval '1 month',
+    updated_at = now()
+  from public.organizations as org
+  left join public.tier_limits as t
+    on org.tier = t.tier
+  where
+    oac.org_id = org.id
+    and oac.next_reset_at <= now();
 end;
 $function$
 ;
@@ -7118,6 +7533,252 @@ end;
 $function$
 ;
 
+CREATE OR REPLACE FUNCTION public.update_wallet_balance()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+declare
+  -- Variables for balance validation
+  v_current_total numeric(19,4);
+  v_current_reserved numeric(19,4);
+  v_wallet_owner text;
+  v_is_reserved_transaction boolean;
+begin
+  -- Only process completed transactions
+  if new.status != 'completed' then
+    return new;
+  end if;
+
+  -- Determine if this transaction affects reserved balance
+  v_is_reserved_transaction := new.type in ('funds_hold', 'funds_release', 'reward_payout');
+
+  -- ===========================================================
+  -- PROCESS DESTINATION WALLET (CREDITS)
+  -- ===========================================================
+  if new.destination_wallet_type != 'external' and new.destination_wallet_id is not null then
+    
+    if v_is_reserved_transaction then
+      -- Credit to balance_reserved
+      case new.destination_wallet_type
+        when 'platform' then
+          update public.platform_wallets
+          set balance_reserved = balance_reserved + new.amount,
+              updated_at = timezone('utc', now())
+          where id = new.destination_wallet_id;
+          
+          if not found then
+            raise exception 'Platform wallet % not found', new.destination_wallet_id;
+          end if;
+
+        when 'organization' then
+          update public.gonasi_wallets
+          set balance_reserved = balance_reserved + new.amount,
+              updated_at = timezone('utc', now())
+          where id = new.destination_wallet_id;
+          
+          if not found then
+            raise exception 'Organization wallet % not found', new.destination_wallet_id;
+          end if;
+
+        when 'user' then
+          update public.user_wallets
+          set balance_reserved = balance_reserved + new.amount,
+              updated_at = timezone('utc', now())
+          where id = new.destination_wallet_id;
+          
+          if not found then
+            raise exception 'User wallet % not found', new.destination_wallet_id;
+          end if;
+      end case;
+
+    else
+      -- Credit to balance_total
+      case new.destination_wallet_type
+        when 'platform' then
+          update public.platform_wallets
+          set balance_total = balance_total + new.amount,
+              updated_at = timezone('utc', now())
+          where id = new.destination_wallet_id;
+          
+          if not found then
+            raise exception 'Platform wallet % not found', new.destination_wallet_id;
+          end if;
+
+        when 'organization' then
+          update public.gonasi_wallets
+          set balance_total = balance_total + new.amount,
+              updated_at = timezone('utc', now())
+          where id = new.destination_wallet_id;
+          
+          if not found then
+            raise exception 'Organization wallet % not found', new.destination_wallet_id;
+          end if;
+
+        when 'user' then
+          update public.user_wallets
+          set balance_total = balance_total + new.amount,
+              updated_at = timezone('utc', now())
+          where id = new.destination_wallet_id;
+          
+          if not found then
+            raise exception 'User wallet % not found', new.destination_wallet_id;
+          end if;
+      end case;
+    end if;
+  end if;
+
+  -- ===========================================================
+  -- PROCESS SOURCE WALLET (DEBITS)
+  -- ===========================================================
+  if new.source_wallet_type != 'external' and new.source_wallet_id is not null then
+    
+    if v_is_reserved_transaction then
+      -- Debit from balance_reserved (with validation)
+      case new.source_wallet_type
+        when 'platform' then
+          -- Check sufficient reserved balance
+          select balance_reserved, 'platform-' || currency_code::text
+          into v_current_reserved, v_wallet_owner
+          from public.platform_wallets
+          where id = new.source_wallet_id;
+          
+          if not found then
+            raise exception 'Platform wallet % not found', new.source_wallet_id;
+          end if;
+          
+          if v_current_reserved < new.amount then
+            raise exception 'Insufficient reserved balance in % wallet. Required: %, Available: %',
+              v_wallet_owner, new.amount, v_current_reserved;
+          end if;
+          
+          update public.platform_wallets
+          set balance_reserved = balance_reserved - new.amount,
+              updated_at = timezone('utc', now())
+          where id = new.source_wallet_id;
+
+        when 'organization' then
+          -- Check sufficient reserved balance
+          select balance_reserved, 'org-' || organization_id::text
+          into v_current_reserved, v_wallet_owner
+          from public.gonasi_wallets
+          where id = new.source_wallet_id;
+          
+          if not found then
+            raise exception 'Organization wallet % not found', new.source_wallet_id;
+          end if;
+          
+          if v_current_reserved < new.amount then
+            raise exception 'Insufficient reserved balance in % wallet. Required: %, Available: %',
+              v_wallet_owner, new.amount, v_current_reserved;
+          end if;
+          
+          update public.gonasi_wallets
+          set balance_reserved = balance_reserved - new.amount,
+              updated_at = timezone('utc', now())
+          where id = new.source_wallet_id;
+
+        when 'user' then
+          -- Check sufficient reserved balance
+          select balance_reserved, 'user-' || user_id::text
+          into v_current_reserved, v_wallet_owner
+          from public.user_wallets
+          where id = new.source_wallet_id;
+          
+          if not found then
+            raise exception 'User wallet % not found', new.source_wallet_id;
+          end if;
+          
+          if v_current_reserved < new.amount then
+            raise exception 'Insufficient reserved balance in % wallet. Required: %, Available: %',
+              v_wallet_owner, new.amount, v_current_reserved;
+          end if;
+          
+          update public.user_wallets
+          set balance_reserved = balance_reserved - new.amount,
+              updated_at = timezone('utc', now())
+          where id = new.source_wallet_id;
+      end case;
+
+    else
+      -- Debit from balance_total (with validation)
+      case new.source_wallet_type
+        when 'platform' then
+          -- Check sufficient total balance
+          select balance_total, 'platform-' || currency_code::text
+          into v_current_total, v_wallet_owner
+          from public.platform_wallets
+          where id = new.source_wallet_id;
+          
+          if not found then
+            raise exception 'Platform wallet % not found', new.source_wallet_id;
+          end if;
+          
+          if v_current_total < new.amount then
+            raise exception 'Insufficient balance in % wallet. Required: %, Available: %',
+              v_wallet_owner, new.amount, v_current_total;
+          end if;
+          
+          update public.platform_wallets
+          set balance_total = balance_total - new.amount,
+              updated_at = timezone('utc', now())
+          where id = new.source_wallet_id;
+
+        when 'organization' then
+          -- Check sufficient total balance
+          select balance_total, 'org-' || organization_id::text
+          into v_current_total, v_wallet_owner
+          from public.gonasi_wallets
+          where id = new.source_wallet_id;
+          
+          if not found then
+            raise exception 'Organization wallet % not found', new.source_wallet_id;
+          end if;
+          
+          if v_current_total < new.amount then
+            raise exception 'Insufficient balance in % wallet. Required: %, Available: %',
+              v_wallet_owner, new.amount, v_current_total;
+          end if;
+          
+          update public.gonasi_wallets
+          set balance_total = balance_total - new.amount,
+              updated_at = timezone('utc', now())
+          where id = new.source_wallet_id;
+
+        when 'user' then
+          -- Check sufficient total balance
+          select balance_total, 'user-' || user_id::text
+          into v_current_total, v_wallet_owner
+          from public.user_wallets
+          where id = new.source_wallet_id;
+          
+          if not found then
+            raise exception 'User wallet % not found', new.source_wallet_id;
+          end if;
+          
+          if v_current_total < new.amount then
+            raise exception 'Insufficient balance in % wallet. Required: %, Available: %',
+              v_wallet_owner, new.amount, v_current_total;
+          end if;
+          
+          update public.user_wallets
+          set balance_total = balance_total - new.amount,
+              updated_at = timezone('utc', now())
+          where id = new.source_wallet_id;
+      end case;
+    end if;
+  end if;
+
+  return new;
+exception
+  when others then
+    -- Re-raise with context for debugging
+    raise exception 'Wallet balance update failed for ledger entry %: %', new.id, sqlerrm;
+end;
+$function$
+;
+
 CREATE OR REPLACE FUNCTION public.upsert_published_course_with_content(course_data jsonb, structure_content jsonb)
  RETURNS void
  LANGUAGE plpgsql
@@ -7277,6 +7938,15 @@ end;
 $function$
 ;
 
+create or replace view "public"."v_organizations_ai_available_credits" as  SELECT org_id,
+    (base_credits_remaining + purchased_credits_remaining) AS total_available_credits,
+    base_credits_remaining,
+    purchased_credits_remaining,
+    last_reset_at,
+    next_reset_at
+   FROM public.organizations_ai_credits;
+
+
 CREATE OR REPLACE FUNCTION public.validate_course_owner_in_org()
  RETURNS trigger
  LANGUAGE plpgsql
@@ -7318,6 +7988,48 @@ begin
 end;
 $function$
 ;
+
+grant delete on table "public"."ai_usage_log" to "anon";
+
+grant insert on table "public"."ai_usage_log" to "anon";
+
+grant references on table "public"."ai_usage_log" to "anon";
+
+grant select on table "public"."ai_usage_log" to "anon";
+
+grant trigger on table "public"."ai_usage_log" to "anon";
+
+grant truncate on table "public"."ai_usage_log" to "anon";
+
+grant update on table "public"."ai_usage_log" to "anon";
+
+grant delete on table "public"."ai_usage_log" to "authenticated";
+
+grant insert on table "public"."ai_usage_log" to "authenticated";
+
+grant references on table "public"."ai_usage_log" to "authenticated";
+
+grant select on table "public"."ai_usage_log" to "authenticated";
+
+grant trigger on table "public"."ai_usage_log" to "authenticated";
+
+grant truncate on table "public"."ai_usage_log" to "authenticated";
+
+grant update on table "public"."ai_usage_log" to "authenticated";
+
+grant delete on table "public"."ai_usage_log" to "service_role";
+
+grant insert on table "public"."ai_usage_log" to "service_role";
+
+grant references on table "public"."ai_usage_log" to "service_role";
+
+grant select on table "public"."ai_usage_log" to "service_role";
+
+grant trigger on table "public"."ai_usage_log" to "service_role";
+
+grant truncate on table "public"."ai_usage_log" to "service_role";
+
+grant update on table "public"."ai_usage_log" to "service_role";
 
 grant delete on table "public"."block_progress" to "anon";
 
@@ -8201,6 +8913,48 @@ grant truncate on table "public"."organization_members" to "service_role";
 
 grant update on table "public"."organization_members" to "service_role";
 
+grant delete on table "public"."organization_subscriptions" to "anon";
+
+grant insert on table "public"."organization_subscriptions" to "anon";
+
+grant references on table "public"."organization_subscriptions" to "anon";
+
+grant select on table "public"."organization_subscriptions" to "anon";
+
+grant trigger on table "public"."organization_subscriptions" to "anon";
+
+grant truncate on table "public"."organization_subscriptions" to "anon";
+
+grant update on table "public"."organization_subscriptions" to "anon";
+
+grant delete on table "public"."organization_subscriptions" to "authenticated";
+
+grant insert on table "public"."organization_subscriptions" to "authenticated";
+
+grant references on table "public"."organization_subscriptions" to "authenticated";
+
+grant select on table "public"."organization_subscriptions" to "authenticated";
+
+grant trigger on table "public"."organization_subscriptions" to "authenticated";
+
+grant truncate on table "public"."organization_subscriptions" to "authenticated";
+
+grant update on table "public"."organization_subscriptions" to "authenticated";
+
+grant delete on table "public"."organization_subscriptions" to "service_role";
+
+grant insert on table "public"."organization_subscriptions" to "service_role";
+
+grant references on table "public"."organization_subscriptions" to "service_role";
+
+grant select on table "public"."organization_subscriptions" to "service_role";
+
+grant trigger on table "public"."organization_subscriptions" to "service_role";
+
+grant truncate on table "public"."organization_subscriptions" to "service_role";
+
+grant update on table "public"."organization_subscriptions" to "service_role";
+
 grant delete on table "public"."organization_wallets" to "anon";
 
 grant insert on table "public"."organization_wallets" to "anon";
@@ -8285,6 +9039,48 @@ grant truncate on table "public"."organizations" to "service_role";
 
 grant update on table "public"."organizations" to "service_role";
 
+grant delete on table "public"."organizations_ai_credits" to "anon";
+
+grant insert on table "public"."organizations_ai_credits" to "anon";
+
+grant references on table "public"."organizations_ai_credits" to "anon";
+
+grant select on table "public"."organizations_ai_credits" to "anon";
+
+grant trigger on table "public"."organizations_ai_credits" to "anon";
+
+grant truncate on table "public"."organizations_ai_credits" to "anon";
+
+grant update on table "public"."organizations_ai_credits" to "anon";
+
+grant delete on table "public"."organizations_ai_credits" to "authenticated";
+
+grant insert on table "public"."organizations_ai_credits" to "authenticated";
+
+grant references on table "public"."organizations_ai_credits" to "authenticated";
+
+grant select on table "public"."organizations_ai_credits" to "authenticated";
+
+grant trigger on table "public"."organizations_ai_credits" to "authenticated";
+
+grant truncate on table "public"."organizations_ai_credits" to "authenticated";
+
+grant update on table "public"."organizations_ai_credits" to "authenticated";
+
+grant delete on table "public"."organizations_ai_credits" to "service_role";
+
+grant insert on table "public"."organizations_ai_credits" to "service_role";
+
+grant references on table "public"."organizations_ai_credits" to "service_role";
+
+grant select on table "public"."organizations_ai_credits" to "service_role";
+
+grant trigger on table "public"."organizations_ai_credits" to "service_role";
+
+grant truncate on table "public"."organizations_ai_credits" to "service_role";
+
+grant update on table "public"."organizations_ai_credits" to "service_role";
+
 grant delete on table "public"."profiles" to "anon";
 
 grant insert on table "public"."profiles" to "anon";
@@ -8310,6 +9106,8 @@ grant select on table "public"."profiles" to "authenticated";
 grant trigger on table "public"."profiles" to "authenticated";
 
 grant truncate on table "public"."profiles" to "authenticated";
+
+grant update on table "public"."profiles" to "authenticated";
 
 grant delete on table "public"."profiles" to "service_role";
 
@@ -8563,6 +9361,90 @@ grant truncate on table "public"."user_roles" to "supabase_auth_admin";
 
 grant update on table "public"."user_roles" to "supabase_auth_admin";
 
+grant delete on table "public"."user_wallets" to "anon";
+
+grant insert on table "public"."user_wallets" to "anon";
+
+grant references on table "public"."user_wallets" to "anon";
+
+grant select on table "public"."user_wallets" to "anon";
+
+grant trigger on table "public"."user_wallets" to "anon";
+
+grant truncate on table "public"."user_wallets" to "anon";
+
+grant update on table "public"."user_wallets" to "anon";
+
+grant delete on table "public"."user_wallets" to "authenticated";
+
+grant insert on table "public"."user_wallets" to "authenticated";
+
+grant references on table "public"."user_wallets" to "authenticated";
+
+grant select on table "public"."user_wallets" to "authenticated";
+
+grant trigger on table "public"."user_wallets" to "authenticated";
+
+grant truncate on table "public"."user_wallets" to "authenticated";
+
+grant update on table "public"."user_wallets" to "authenticated";
+
+grant delete on table "public"."user_wallets" to "service_role";
+
+grant insert on table "public"."user_wallets" to "service_role";
+
+grant references on table "public"."user_wallets" to "service_role";
+
+grant select on table "public"."user_wallets" to "service_role";
+
+grant trigger on table "public"."user_wallets" to "service_role";
+
+grant truncate on table "public"."user_wallets" to "service_role";
+
+grant update on table "public"."user_wallets" to "service_role";
+
+grant delete on table "public"."wallet_ledger_entries" to "anon";
+
+grant insert on table "public"."wallet_ledger_entries" to "anon";
+
+grant references on table "public"."wallet_ledger_entries" to "anon";
+
+grant select on table "public"."wallet_ledger_entries" to "anon";
+
+grant trigger on table "public"."wallet_ledger_entries" to "anon";
+
+grant truncate on table "public"."wallet_ledger_entries" to "anon";
+
+grant update on table "public"."wallet_ledger_entries" to "anon";
+
+grant delete on table "public"."wallet_ledger_entries" to "authenticated";
+
+grant insert on table "public"."wallet_ledger_entries" to "authenticated";
+
+grant references on table "public"."wallet_ledger_entries" to "authenticated";
+
+grant select on table "public"."wallet_ledger_entries" to "authenticated";
+
+grant trigger on table "public"."wallet_ledger_entries" to "authenticated";
+
+grant truncate on table "public"."wallet_ledger_entries" to "authenticated";
+
+grant update on table "public"."wallet_ledger_entries" to "authenticated";
+
+grant delete on table "public"."wallet_ledger_entries" to "service_role";
+
+grant insert on table "public"."wallet_ledger_entries" to "service_role";
+
+grant references on table "public"."wallet_ledger_entries" to "service_role";
+
+grant select on table "public"."wallet_ledger_entries" to "service_role";
+
+grant trigger on table "public"."wallet_ledger_entries" to "service_role";
+
+grant truncate on table "public"."wallet_ledger_entries" to "service_role";
+
+grant update on table "public"."wallet_ledger_entries" to "service_role";
+
 grant delete on table "public"."wallet_transactions" to "anon";
 
 grant insert on table "public"."wallet_transactions" to "anon";
@@ -8605,1364 +9487,1638 @@ grant truncate on table "public"."wallet_transactions" to "service_role";
 
 grant update on table "public"."wallet_transactions" to "service_role";
 
-create policy "delete: user can delete their own progress"
-on "public"."block_progress"
-as permissive
-for delete
-to authenticated
+
+  create policy "Allow org members to view ai_usage_log"
+  on "public"."ai_usage_log"
+  as permissive
+  for select
+  to authenticated
+using (((EXISTS ( SELECT 1
+   FROM public.organization_members om
+  WHERE ((om.organization_id = ai_usage_log.org_id) AND (om.user_id = ( SELECT auth.uid() AS uid))))) OR (( SELECT o.owned_by
+   FROM public.organizations o
+  WHERE (o.id = ai_usage_log.org_id)) = ( SELECT auth.uid() AS uid))));
+
+
+
+  create policy "Restrict ai_usage_log modifications to service role (delete)"
+  on "public"."ai_usage_log"
+  as permissive
+  for delete
+  to authenticated
+using (false);
+
+
+
+  create policy "Restrict ai_usage_log modifications to service role (insert)"
+  on "public"."ai_usage_log"
+  as permissive
+  for insert
+  to authenticated
+with check (false);
+
+
+
+  create policy "Restrict ai_usage_log modifications to service role (update)"
+  on "public"."ai_usage_log"
+  as permissive
+  for update
+  to authenticated
+using (false)
+with check (false);
+
+
+
+  create policy "delete: user can delete their own progress"
+  on "public"."block_progress"
+  as permissive
+  for delete
+  to authenticated
 using ((user_id = ( SELECT auth.uid() AS uid)));
 
 
-create policy "insert: user can create their own progress"
-on "public"."block_progress"
-as permissive
-for insert
-to authenticated
+
+  create policy "insert: user can create their own progress"
+  on "public"."block_progress"
+  as permissive
+  for insert
+  to authenticated
 with check ((user_id = ( SELECT auth.uid() AS uid)));
 
 
-create policy "select: anon users can view public progress"
-on "public"."block_progress"
-as permissive
-for select
-to anon
+
+  create policy "select: anon users can view public progress"
+  on "public"."block_progress"
+  as permissive
+  for select
+  to anon
 using ((EXISTS ( SELECT 1
-   FROM profiles p
+   FROM public.profiles p
   WHERE ((p.id = block_progress.user_id) AND (p.is_public = true)))));
 
 
-create policy "select: auth users can view public or same-org progress"
-on "public"."block_progress"
-as permissive
-for select
-to authenticated
+
+  create policy "select: auth users can view public or same-org progress"
+  on "public"."block_progress"
+  as permissive
+  for select
+  to authenticated
 using ((EXISTS ( SELECT 1
-   FROM profiles p
+   FROM public.profiles p
   WHERE ((p.id = block_progress.user_id) AND ((p.is_public = true) OR (EXISTS ( SELECT 1
-           FROM (organization_members m1
-             JOIN organization_members m2 ON ((m1.organization_id = m2.organization_id)))
+           FROM (public.organization_members m1
+             JOIN public.organization_members m2 ON ((m1.organization_id = m2.organization_id)))
           WHERE ((m1.user_id = block_progress.user_id) AND (m2.user_id = ( SELECT auth.uid() AS uid))))))))));
 
 
-create policy "update: user can update their own progress"
-on "public"."block_progress"
-as permissive
-for update
-to authenticated
+
+  create policy "update: user can update their own progress"
+  on "public"."block_progress"
+  as permissive
+  for update
+  to authenticated
 using ((user_id = ( SELECT auth.uid() AS uid)));
 
 
-create policy "delete: user can delete their own progress"
-on "public"."chapter_progress"
-as permissive
-for delete
-to authenticated
+
+  create policy "delete: user can delete their own progress"
+  on "public"."chapter_progress"
+  as permissive
+  for delete
+  to authenticated
 using ((user_id = ( SELECT auth.uid() AS uid)));
 
 
-create policy "insert: user can create their own progress"
-on "public"."chapter_progress"
-as permissive
-for insert
-to authenticated
+
+  create policy "insert: user can create their own progress"
+  on "public"."chapter_progress"
+  as permissive
+  for insert
+  to authenticated
 with check ((user_id = ( SELECT auth.uid() AS uid)));
 
 
-create policy "select: anon users can view public progress"
-on "public"."chapter_progress"
-as permissive
-for select
-to anon
+
+  create policy "select: anon users can view public progress"
+  on "public"."chapter_progress"
+  as permissive
+  for select
+  to anon
 using ((EXISTS ( SELECT 1
-   FROM profiles p
+   FROM public.profiles p
   WHERE ((p.id = chapter_progress.user_id) AND (p.is_public = true)))));
 
 
-create policy "select: auth users can view public or same-org progress"
-on "public"."chapter_progress"
-as permissive
-for select
-to authenticated
+
+  create policy "select: auth users can view public or same-org progress"
+  on "public"."chapter_progress"
+  as permissive
+  for select
+  to authenticated
 using ((EXISTS ( SELECT 1
-   FROM profiles p
+   FROM public.profiles p
   WHERE ((p.id = chapter_progress.user_id) AND ((p.is_public = true) OR (EXISTS ( SELECT 1
-           FROM (organization_members m1
-             JOIN organization_members m2 ON ((m1.organization_id = m2.organization_id)))
+           FROM (public.organization_members m1
+             JOIN public.organization_members m2 ON ((m1.organization_id = m2.organization_id)))
           WHERE ((m1.user_id = chapter_progress.user_id) AND (m2.user_id = ( SELECT auth.uid() AS uid))))))))));
 
 
-create policy "update: user can update their own progress"
-on "public"."chapter_progress"
-as permissive
-for update
-to authenticated
+
+  create policy "update: user can update their own progress"
+  on "public"."chapter_progress"
+  as permissive
+  for update
+  to authenticated
 using ((user_id = ( SELECT auth.uid() AS uid)));
 
 
-create policy "delete: can_user_edit_course allows deleting chapters"
-on "public"."chapters"
-as permissive
-for delete
-to authenticated
-using (can_user_edit_course(course_id));
+
+  create policy "delete: can_user_edit_course allows deleting chapters"
+  on "public"."chapters"
+  as permissive
+  for delete
+  to authenticated
+using (public.can_user_edit_course(course_id));
 
 
-create policy "insert: can_user_edit_course allows inserting chapters"
-on "public"."chapters"
-as permissive
-for insert
-to authenticated
-with check (can_user_edit_course(course_id));
+
+  create policy "insert: can_user_edit_course allows inserting chapters"
+  on "public"."chapters"
+  as permissive
+  for insert
+  to authenticated
+with check (public.can_user_edit_course(course_id));
 
 
-create policy "select: org members can view chapters"
-on "public"."chapters"
-as permissive
-for select
-to authenticated
+
+  create policy "select: org members can view chapters"
+  on "public"."chapters"
+  as permissive
+  for select
+  to authenticated
 using ((EXISTS ( SELECT 1
-   FROM courses c
-  WHERE ((c.id = chapters.course_id) AND (get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) IS NOT NULL)))));
+   FROM public.courses c
+  WHERE ((c.id = chapters.course_id) AND (public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) IS NOT NULL)))));
 
 
-create policy "update: can_user_edit_course allows updating chapters"
-on "public"."chapters"
-as permissive
-for update
-to authenticated
-using (can_user_edit_course(course_id))
-with check (can_user_edit_course(course_id));
+
+  create policy "update: can_user_edit_course allows updating chapters"
+  on "public"."chapters"
+  as permissive
+  for update
+  to authenticated
+using (public.can_user_edit_course(course_id))
+with check (public.can_user_edit_course(course_id));
 
 
-create policy "course_categories_delete_authenticated"
-on "public"."course_categories"
-as permissive
-for delete
-to authenticated
-using (authorize('course_categories.delete'::app_permission));
+
+  create policy "course_categories_delete_authenticated"
+  on "public"."course_categories"
+  as permissive
+  for delete
+  to authenticated
+using (public.authorize('course_categories.delete'::public.app_permission));
 
 
-create policy "course_categories_insert_authenticated"
-on "public"."course_categories"
-as permissive
-for insert
-to authenticated
-with check (( SELECT authorize('course_categories.insert'::app_permission) AS authorize));
+
+  create policy "course_categories_insert_authenticated"
+  on "public"."course_categories"
+  as permissive
+  for insert
+  to authenticated
+with check (( SELECT public.authorize('course_categories.insert'::public.app_permission) AS authorize));
 
 
-create policy "course_categories_select_public"
-on "public"."course_categories"
-as permissive
-for select
-to authenticated, anon
+
+  create policy "course_categories_select_public"
+  on "public"."course_categories"
+  as permissive
+  for select
+  to authenticated, anon
 using (true);
 
 
-create policy "course_categories_update_authenticated"
-on "public"."course_categories"
-as permissive
-for update
-to authenticated
-using (authorize('course_categories.update'::app_permission));
+
+  create policy "course_categories_update_authenticated"
+  on "public"."course_categories"
+  as permissive
+  for update
+  to authenticated
+using (public.authorize('course_categories.update'::public.app_permission));
 
 
-create policy "select: allowed org roles or course enrollment owner"
-on "public"."course_enrollment_activities"
-as permissive
-for select
-to authenticated
+
+  create policy "select: allowed org roles or course enrollment owner"
+  on "public"."course_enrollment_activities"
+  as permissive
+  for select
+  to authenticated
 using ((EXISTS ( SELECT 1
-   FROM (course_enrollments ce
-     JOIN courses pc ON ((pc.id = ce.published_course_id)))
-  WHERE ((ce.id = course_enrollment_activities.enrollment_id) AND ((get_user_org_role(pc.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(pc.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (pc.owned_by = ( SELECT auth.uid() AS uid))) OR (ce.user_id = ( SELECT auth.uid() AS uid)))))));
+   FROM (public.course_enrollments ce
+     JOIN public.courses pc ON ((pc.id = ce.published_course_id)))
+  WHERE ((ce.id = course_enrollment_activities.enrollment_id) AND ((public.get_user_org_role(pc.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((public.get_user_org_role(pc.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (pc.owned_by = ( SELECT auth.uid() AS uid))) OR (ce.user_id = ( SELECT auth.uid() AS uid)))))));
 
 
-create policy "select: org roles or own enrollment"
-on "public"."course_enrollments"
-as permissive
-for select
-to authenticated
+
+  create policy "select: org roles or own enrollment"
+  on "public"."course_enrollments"
+  as permissive
+  for select
+  to authenticated
 using (((user_id = ( SELECT auth.uid() AS uid)) OR (EXISTS ( SELECT 1
-   FROM courses pc
-  WHERE ((pc.id = course_enrollments.published_course_id) AND (get_user_org_role(pc.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text]))))) OR (EXISTS ( SELECT 1
-   FROM courses pc
-  WHERE ((pc.id = course_enrollments.published_course_id) AND (get_user_org_role(pc.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (pc.owned_by = ( SELECT auth.uid() AS uid)))))));
+   FROM public.courses pc
+  WHERE ((pc.id = course_enrollments.published_course_id) AND (public.get_user_org_role(pc.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text]))))) OR (EXISTS ( SELECT 1
+   FROM public.courses pc
+  WHERE ((pc.id = course_enrollments.published_course_id) AND (public.get_user_org_role(pc.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (pc.owned_by = ( SELECT auth.uid() AS uid)))))));
 
 
-create policy "select: only owners and admins can view course payments"
-on "public"."course_payments"
-as permissive
-for select
-to authenticated
-using ((get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])));
+
+  create policy "select: only owners and admins can view course payments"
+  on "public"."course_payments"
+  as permissive
+  for select
+  to authenticated
+using ((public.get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])));
 
 
-create policy "delete: can_user_edit_course allows deleting pricing tiers"
-on "public"."course_pricing_tiers"
-as permissive
-for delete
-to authenticated
-using (can_user_edit_course(course_id));
+
+  create policy "delete: can_user_edit_course allows deleting pricing tiers"
+  on "public"."course_pricing_tiers"
+  as permissive
+  for delete
+  to authenticated
+using (public.can_user_edit_course(course_id));
 
 
-create policy "insert: can_user_edit_course allows adding pricing tiers"
-on "public"."course_pricing_tiers"
-as permissive
-for insert
-to authenticated
-with check (can_user_edit_course(course_id));
+
+  create policy "insert: can_user_edit_course allows adding pricing tiers"
+  on "public"."course_pricing_tiers"
+  as permissive
+  for insert
+  to authenticated
+with check (public.can_user_edit_course(course_id));
 
 
-create policy "select: org members can view pricing tiers"
-on "public"."course_pricing_tiers"
-as permissive
-for select
-to authenticated
+
+  create policy "select: org members can view pricing tiers"
+  on "public"."course_pricing_tiers"
+  as permissive
+  for select
+  to authenticated
 using ((EXISTS ( SELECT 1
-   FROM courses c
-  WHERE ((c.id = course_pricing_tiers.course_id) AND (get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) IS NOT NULL)))));
+   FROM public.courses c
+  WHERE ((c.id = course_pricing_tiers.course_id) AND (public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) IS NOT NULL)))));
 
 
-create policy "update: can_user_edit_course allows updating pricing tiers"
-on "public"."course_pricing_tiers"
-as permissive
-for update
-to authenticated
-using (can_user_edit_course(course_id))
-with check (can_user_edit_course(course_id));
+
+  create policy "update: can_user_edit_course allows updating pricing tiers"
+  on "public"."course_pricing_tiers"
+  as permissive
+  for update
+  to authenticated
+using (public.can_user_edit_course(course_id))
+with check (public.can_user_edit_course(course_id));
 
 
-create policy "delete: user can delete their own progress"
-on "public"."course_progress"
-as permissive
-for delete
-to authenticated
+
+  create policy "delete: user can delete their own progress"
+  on "public"."course_progress"
+  as permissive
+  for delete
+  to authenticated
 using ((user_id = ( SELECT auth.uid() AS uid)));
 
 
-create policy "insert: user can create their own progress"
-on "public"."course_progress"
-as permissive
-for insert
-to authenticated
+
+  create policy "insert: user can create their own progress"
+  on "public"."course_progress"
+  as permissive
+  for insert
+  to authenticated
 with check ((user_id = ( SELECT auth.uid() AS uid)));
 
 
-create policy "select: anon users can view public progress"
-on "public"."course_progress"
-as permissive
-for select
-to anon
+
+  create policy "select: anon users can view public progress"
+  on "public"."course_progress"
+  as permissive
+  for select
+  to anon
 using ((EXISTS ( SELECT 1
-   FROM profiles p
+   FROM public.profiles p
   WHERE ((p.id = course_progress.user_id) AND (p.is_public = true)))));
 
 
-create policy "select: auth users can view public or same-org progress"
-on "public"."course_progress"
-as permissive
-for select
-to authenticated
+
+  create policy "select: auth users can view public or same-org progress"
+  on "public"."course_progress"
+  as permissive
+  for select
+  to authenticated
 using ((EXISTS ( SELECT 1
-   FROM profiles p
+   FROM public.profiles p
   WHERE ((p.id = course_progress.user_id) AND ((p.is_public = true) OR (EXISTS ( SELECT 1
-           FROM (organization_members m1
-             JOIN organization_members m2 ON ((m1.organization_id = m2.organization_id)))
+           FROM (public.organization_members m1
+             JOIN public.organization_members m2 ON ((m1.organization_id = m2.organization_id)))
           WHERE ((m1.user_id = course_progress.user_id) AND (m2.user_id = ( SELECT auth.uid() AS uid))))))))));
 
 
-create policy "update: user can update their own progress"
-on "public"."course_progress"
-as permissive
-for update
-to authenticated
+
+  create policy "update: user can update their own progress"
+  on "public"."course_progress"
+  as permissive
+  for update
+  to authenticated
 using ((user_id = ( SELECT auth.uid() AS uid)));
 
 
-create policy "course_sub_categories_delete_authenticated"
-on "public"."course_sub_categories"
-as permissive
-for delete
-to authenticated
-using (authorize('course_sub_categories.delete'::app_permission));
+
+  create policy "course_sub_categories_delete_authenticated"
+  on "public"."course_sub_categories"
+  as permissive
+  for delete
+  to authenticated
+using (public.authorize('course_sub_categories.delete'::public.app_permission));
 
 
-create policy "course_sub_categories_insert_authenticated"
-on "public"."course_sub_categories"
-as permissive
-for insert
-to authenticated
-with check (( SELECT authorize('course_sub_categories.insert'::app_permission) AS authorize));
+
+  create policy "course_sub_categories_insert_authenticated"
+  on "public"."course_sub_categories"
+  as permissive
+  for insert
+  to authenticated
+with check (( SELECT public.authorize('course_sub_categories.insert'::public.app_permission) AS authorize));
 
 
-create policy "course_sub_categories_select_public"
-on "public"."course_sub_categories"
-as permissive
-for select
-to authenticated, anon
+
+  create policy "course_sub_categories_select_public"
+  on "public"."course_sub_categories"
+  as permissive
+  for select
+  to authenticated, anon
 using (true);
 
 
-create policy "course_sub_categories_update_authenticated"
-on "public"."course_sub_categories"
-as permissive
-for update
-to authenticated
-using (authorize('course_sub_categories.update'::app_permission));
+
+  create policy "course_sub_categories_update_authenticated"
+  on "public"."course_sub_categories"
+  as permissive
+  for update
+  to authenticated
+using (public.authorize('course_sub_categories.update'::public.app_permission));
 
 
-create policy "Delete: Admins or owning editors can delete courses"
-on "public"."courses"
-as permissive
-for delete
-to public
-using (((get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (owned_by = ( SELECT auth.uid() AS uid)))));
+
+  create policy "Delete: Admins or owning editors can delete courses"
+  on "public"."courses"
+  as permissive
+  for delete
+  to public
+using (((public.get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((public.get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (owned_by = ( SELECT auth.uid() AS uid)))));
 
 
-create policy "Insert: Org members can create courses"
-on "public"."courses"
-as permissive
-for insert
-to public
-with check ((get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text, 'editor'::text])));
+
+  create policy "Insert: Org members can create courses"
+  on "public"."courses"
+  as permissive
+  for insert
+  to public
+with check ((public.get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text, 'editor'::text])));
 
 
-create policy "Select: Org members can view courses"
-on "public"."courses"
-as permissive
-for select
-to authenticated
-using ((get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) IS NOT NULL));
+
+  create policy "Select: Org members can view courses"
+  on "public"."courses"
+  as permissive
+  for select
+  to authenticated
+using ((public.get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) IS NOT NULL));
 
 
-create policy "Update: Admins or owning editors can update courses"
-on "public"."courses"
-as permissive
-for update
-to public
-using (((get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (owned_by = ( SELECT auth.uid() AS uid)))));
+
+  create policy "Update: Admins or owning editors can update courses"
+  on "public"."courses"
+  as permissive
+  for update
+  to public
+using (((public.get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((public.get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (owned_by = ( SELECT auth.uid() AS uid)))));
 
 
-create policy "delete: org owner/admin or course creator"
-on "public"."file_library"
-as permissive
-for delete
-to authenticated
+
+  create policy "delete: org owner/admin or course creator"
+  on "public"."file_library"
+  as permissive
+  for delete
+  to authenticated
 using ((EXISTS ( SELECT 1
-   FROM courses c
-  WHERE ((c.id = file_library.course_id) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.created_by = ( SELECT auth.uid() AS uid))))))));
+   FROM public.courses c
+  WHERE ((c.id = file_library.course_id) AND ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.created_by = ( SELECT auth.uid() AS uid))))))));
 
 
-create policy "insert: org owner/admin or course creator"
-on "public"."file_library"
-as permissive
-for insert
-to authenticated
+
+  create policy "insert: org owner/admin or course creator"
+  on "public"."file_library"
+  as permissive
+  for insert
+  to authenticated
 with check ((EXISTS ( SELECT 1
-   FROM courses c
-  WHERE ((c.id = file_library.course_id) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.created_by = ( SELECT auth.uid() AS uid))))))));
+   FROM public.courses c
+  WHERE ((c.id = file_library.course_id) AND ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.created_by = ( SELECT auth.uid() AS uid))))))));
 
 
-create policy "select: org members can view file_library"
-on "public"."file_library"
-as permissive
-for select
-to authenticated
-using ((get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) IS NOT NULL));
+
+  create policy "select: org members can view file_library"
+  on "public"."file_library"
+  as permissive
+  for select
+  to authenticated
+using ((public.get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) IS NOT NULL));
 
 
-create policy "update: org owner/admin or course creator"
-on "public"."file_library"
-as permissive
-for update
-to authenticated
+
+  create policy "update: org owner/admin or course creator"
+  on "public"."file_library"
+  as permissive
+  for update
+  to authenticated
 using ((EXISTS ( SELECT 1
-   FROM courses c
-  WHERE ((c.id = file_library.course_id) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.created_by = ( SELECT auth.uid() AS uid))))))))
+   FROM public.courses c
+  WHERE ((c.id = file_library.course_id) AND ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.created_by = ( SELECT auth.uid() AS uid))))))))
 with check ((EXISTS ( SELECT 1
-   FROM courses c
-  WHERE ((c.id = file_library.course_id) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.created_by = ( SELECT auth.uid() AS uid))))))));
+   FROM public.courses c
+  WHERE ((c.id = file_library.course_id) AND ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.created_by = ( SELECT auth.uid() AS uid))))))));
 
 
-create policy "gonasi_wallet_transactions_select_with_permission"
-on "public"."gonasi_wallet_transactions"
-as permissive
-for select
-to authenticated
-using (( SELECT authorize('go_wallet.view'::app_permission) AS authorize));
+
+  create policy "gonasi_wallet_transactions_select_with_permission"
+  on "public"."gonasi_wallet_transactions"
+  as permissive
+  for select
+  to authenticated
+using (( SELECT public.authorize('go_wallet.view'::public.app_permission) AS authorize));
 
 
-create policy "gonasi_wallet_transactions_update_with_permission"
-on "public"."gonasi_wallet_transactions"
-as permissive
-for update
-to authenticated
-using (( SELECT authorize('go_wallet.withdraw'::app_permission) AS authorize))
-with check (( SELECT authorize('go_wallet.withdraw'::app_permission) AS authorize));
+
+  create policy "gonasi_wallet_transactions_update_with_permission"
+  on "public"."gonasi_wallet_transactions"
+  as permissive
+  for update
+  to authenticated
+using (( SELECT public.authorize('go_wallet.withdraw'::public.app_permission) AS authorize))
+with check (( SELECT public.authorize('go_wallet.withdraw'::public.app_permission) AS authorize));
 
 
-create policy "gonasi_wallets_select_with_permission"
-on "public"."gonasi_wallets"
-as permissive
-for select
-to authenticated
-using (( SELECT authorize('go_wallet.view'::app_permission) AS authorize));
+
+  create policy "gonasi_wallets_select_with_permission"
+  on "public"."gonasi_wallets"
+  as permissive
+  for select
+  to authenticated
+using (( SELECT public.authorize('go_wallet.view'::public.app_permission) AS authorize));
 
 
-create policy "delete: can_user_edit_course allows deleting lesson blocks"
-on "public"."lesson_blocks"
-as permissive
-for delete
-to authenticated
+
+  create policy "delete: can_user_edit_course allows deleting lesson blocks"
+  on "public"."lesson_blocks"
+  as permissive
+  for delete
+  to authenticated
 using ((EXISTS ( SELECT 1
-   FROM lessons l
-  WHERE ((l.id = lesson_blocks.lesson_id) AND can_user_edit_course(l.course_id)))));
+   FROM public.lessons l
+  WHERE ((l.id = lesson_blocks.lesson_id) AND public.can_user_edit_course(l.course_id)))));
 
 
-create policy "insert: can_user_edit_course allows adding lesson blocks"
-on "public"."lesson_blocks"
-as permissive
-for insert
-to authenticated
+
+  create policy "insert: can_user_edit_course allows adding lesson blocks"
+  on "public"."lesson_blocks"
+  as permissive
+  for insert
+  to authenticated
 with check ((EXISTS ( SELECT 1
-   FROM lessons l
-  WHERE ((l.id = lesson_blocks.lesson_id) AND can_user_edit_course(l.course_id)))));
+   FROM public.lessons l
+  WHERE ((l.id = lesson_blocks.lesson_id) AND public.can_user_edit_course(l.course_id)))));
 
 
-create policy "select: org members can view lesson blocks"
-on "public"."lesson_blocks"
-as permissive
-for select
-to authenticated
+
+  create policy "select: org members can view lesson blocks"
+  on "public"."lesson_blocks"
+  as permissive
+  for select
+  to authenticated
 using ((EXISTS ( SELECT 1
-   FROM (courses c
-     JOIN lessons l ON ((l.course_id = c.id)))
-  WHERE ((l.id = lesson_blocks.lesson_id) AND (get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) IS NOT NULL)))));
+   FROM (public.courses c
+     JOIN public.lessons l ON ((l.course_id = c.id)))
+  WHERE ((l.id = lesson_blocks.lesson_id) AND (public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) IS NOT NULL)))));
 
 
-create policy "update: can_user_edit_course allows modifying lesson blocks"
-on "public"."lesson_blocks"
-as permissive
-for update
-to authenticated
+
+  create policy "update: can_user_edit_course allows modifying lesson blocks"
+  on "public"."lesson_blocks"
+  as permissive
+  for update
+  to authenticated
 using ((EXISTS ( SELECT 1
-   FROM lessons l
-  WHERE ((l.id = lesson_blocks.lesson_id) AND can_user_edit_course(l.course_id)))))
+   FROM public.lessons l
+  WHERE ((l.id = lesson_blocks.lesson_id) AND public.can_user_edit_course(l.course_id)))))
 with check ((EXISTS ( SELECT 1
-   FROM lessons l
-  WHERE ((l.id = lesson_blocks.lesson_id) AND can_user_edit_course(l.course_id)))));
+   FROM public.lessons l
+  WHERE ((l.id = lesson_blocks.lesson_id) AND public.can_user_edit_course(l.course_id)))));
 
 
-create policy "delete: user can delete their own progress"
-on "public"."lesson_progress"
-as permissive
-for delete
-to authenticated
+
+  create policy "delete: user can delete their own progress"
+  on "public"."lesson_progress"
+  as permissive
+  for delete
+  to authenticated
 using ((user_id = ( SELECT auth.uid() AS uid)));
 
 
-create policy "insert: user can create their own progress"
-on "public"."lesson_progress"
-as permissive
-for insert
-to authenticated
+
+  create policy "insert: user can create their own progress"
+  on "public"."lesson_progress"
+  as permissive
+  for insert
+  to authenticated
 with check ((user_id = ( SELECT auth.uid() AS uid)));
 
 
-create policy "select: anon users can view public progress"
-on "public"."lesson_progress"
-as permissive
-for select
-to anon
+
+  create policy "select: anon users can view public progress"
+  on "public"."lesson_progress"
+  as permissive
+  for select
+  to anon
 using ((EXISTS ( SELECT 1
-   FROM profiles p
+   FROM public.profiles p
   WHERE ((p.id = lesson_progress.user_id) AND (p.is_public = true)))));
 
 
-create policy "select: auth users can view public or same-org progress"
-on "public"."lesson_progress"
-as permissive
-for select
-to authenticated
+
+  create policy "select: auth users can view public or same-org progress"
+  on "public"."lesson_progress"
+  as permissive
+  for select
+  to authenticated
 using ((EXISTS ( SELECT 1
-   FROM profiles p
+   FROM public.profiles p
   WHERE ((p.id = lesson_progress.user_id) AND ((p.is_public = true) OR (EXISTS ( SELECT 1
-           FROM (organization_members m1
-             JOIN organization_members m2 ON ((m1.organization_id = m2.organization_id)))
+           FROM (public.organization_members m1
+             JOIN public.organization_members m2 ON ((m1.organization_id = m2.organization_id)))
           WHERE ((m1.user_id = lesson_progress.user_id) AND (m2.user_id = ( SELECT auth.uid() AS uid))))))))));
 
 
-create policy "update: user can update their own progress"
-on "public"."lesson_progress"
-as permissive
-for update
-to authenticated
+
+  create policy "update: user can update their own progress"
+  on "public"."lesson_progress"
+  as permissive
+  for update
+  to authenticated
 using ((user_id = ( SELECT auth.uid() AS uid)));
 
 
-create policy "delete: user can delete their own reset count"
-on "public"."lesson_reset_count"
-as permissive
-for delete
-to authenticated
+
+  create policy "delete: user can delete their own reset count"
+  on "public"."lesson_reset_count"
+  as permissive
+  for delete
+  to authenticated
 using ((user_id = ( SELECT auth.uid() AS uid)));
 
 
-create policy "insert: user can create their own reset count"
-on "public"."lesson_reset_count"
-as permissive
-for insert
-to authenticated
+
+  create policy "insert: user can create their own reset count"
+  on "public"."lesson_reset_count"
+  as permissive
+  for insert
+  to authenticated
 with check ((user_id = ( SELECT auth.uid() AS uid)));
 
 
-create policy "select: anon users can view public resets"
-on "public"."lesson_reset_count"
-as permissive
-for select
-to anon
+
+  create policy "select: anon users can view public resets"
+  on "public"."lesson_reset_count"
+  as permissive
+  for select
+  to anon
 using ((EXISTS ( SELECT 1
-   FROM profiles p
+   FROM public.profiles p
   WHERE ((p.id = lesson_reset_count.user_id) AND (p.is_public = true)))));
 
 
-create policy "select: auth users can view public or same-org resets"
-on "public"."lesson_reset_count"
-as permissive
-for select
-to authenticated
+
+  create policy "select: auth users can view public or same-org resets"
+  on "public"."lesson_reset_count"
+  as permissive
+  for select
+  to authenticated
 using ((EXISTS ( SELECT 1
-   FROM profiles p
+   FROM public.profiles p
   WHERE ((p.id = lesson_reset_count.user_id) AND ((p.is_public = true) OR (EXISTS ( SELECT 1
-           FROM (organization_members m1
-             JOIN organization_members m2 ON ((m1.organization_id = m2.organization_id)))
+           FROM (public.organization_members m1
+             JOIN public.organization_members m2 ON ((m1.organization_id = m2.organization_id)))
           WHERE ((m1.user_id = lesson_reset_count.user_id) AND (m2.user_id = ( SELECT auth.uid() AS uid))))))))));
 
 
-create policy "update: user can update their own reset count"
-on "public"."lesson_reset_count"
-as permissive
-for update
-to authenticated
+
+  create policy "update: user can update their own reset count"
+  on "public"."lesson_reset_count"
+  as permissive
+  for update
+  to authenticated
 using ((user_id = ( SELECT auth.uid() AS uid)));
 
 
-create policy "Authenticated users can delete lesson types"
-on "public"."lesson_types"
-as permissive
-for delete
-to authenticated
-using (( SELECT authorize('lesson_types.delete'::app_permission) AS authorize));
+
+  create policy "Authenticated users can delete lesson types"
+  on "public"."lesson_types"
+  as permissive
+  for delete
+  to authenticated
+using (( SELECT public.authorize('lesson_types.delete'::public.app_permission) AS authorize));
 
 
-create policy "Authenticated users can insert lesson types"
-on "public"."lesson_types"
-as permissive
-for insert
-to authenticated
-with check (( SELECT authorize('lesson_types.insert'::app_permission) AS authorize));
+
+  create policy "Authenticated users can insert lesson types"
+  on "public"."lesson_types"
+  as permissive
+  for insert
+  to authenticated
+with check (( SELECT public.authorize('lesson_types.insert'::public.app_permission) AS authorize));
 
 
-create policy "Authenticated users can update lesson types"
-on "public"."lesson_types"
-as permissive
-for update
-to authenticated
-using (( SELECT authorize('lesson_types.update'::app_permission) AS authorize));
+
+  create policy "Authenticated users can update lesson types"
+  on "public"."lesson_types"
+  as permissive
+  for update
+  to authenticated
+using (( SELECT public.authorize('lesson_types.update'::public.app_permission) AS authorize));
 
 
-create policy "Public can read lesson types"
-on "public"."lesson_types"
-as permissive
-for select
-to authenticated, anon
+
+  create policy "Public can read lesson types"
+  on "public"."lesson_types"
+  as permissive
+  for select
+  to authenticated, anon
 using (true);
 
 
-create policy "delete: can_user_edit_course allows deleting lessons"
-on "public"."lessons"
-as permissive
-for delete
-to authenticated
-using (can_user_edit_course(course_id));
+
+  create policy "delete: can_user_edit_course allows deleting lessons"
+  on "public"."lessons"
+  as permissive
+  for delete
+  to authenticated
+using (public.can_user_edit_course(course_id));
 
 
-create policy "insert: can_user_edit_course allows adding lessons"
-on "public"."lessons"
-as permissive
-for insert
-to authenticated
-with check (can_user_edit_course(course_id));
+
+  create policy "insert: can_user_edit_course allows adding lessons"
+  on "public"."lessons"
+  as permissive
+  for insert
+  to authenticated
+with check (public.can_user_edit_course(course_id));
 
 
-create policy "select: org members can view lessons"
-on "public"."lessons"
-as permissive
-for select
-to authenticated
+
+  create policy "select: org members can view lessons"
+  on "public"."lessons"
+  as permissive
+  for select
+  to authenticated
 using ((EXISTS ( SELECT 1
-   FROM courses c
-  WHERE ((c.id = lessons.course_id) AND (get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) IS NOT NULL)))));
+   FROM public.courses c
+  WHERE ((c.id = lessons.course_id) AND (public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) IS NOT NULL)))));
 
 
-create policy "update: can_user_edit_course allows updating lessons"
-on "public"."lessons"
-as permissive
-for update
-to authenticated
-using (can_user_edit_course(course_id))
-with check (can_user_edit_course(course_id));
+
+  create policy "update: can_user_edit_course allows updating lessons"
+  on "public"."lessons"
+  as permissive
+  for update
+  to authenticated
+using (public.can_user_edit_course(course_id))
+with check (public.can_user_edit_course(course_id));
 
 
-create policy "organization_invites_delete"
-on "public"."organization_invites"
-as permissive
-for delete
-to authenticated
-using (has_org_role(organization_id, 'owner'::text, ( SELECT auth.uid() AS uid)));
+
+  create policy "organization_invites_delete"
+  on "public"."organization_invites"
+  as permissive
+  for delete
+  to authenticated
+using (public.has_org_role(organization_id, 'owner'::text, ( SELECT auth.uid() AS uid)));
 
 
-create policy "organization_invites_insert"
-on "public"."organization_invites"
-as permissive
-for insert
-to authenticated
-with check ((has_org_role(organization_id, 'admin'::text, ( SELECT auth.uid() AS uid)) AND (invited_by = ( SELECT auth.uid() AS uid)) AND can_accept_new_member(organization_id) AND ((role <> 'admin'::org_role) OR has_org_role(organization_id, 'owner'::text, ( SELECT auth.uid() AS uid))) AND (email <> ( SELECT profiles.email
-   FROM profiles
-  WHERE (profiles.id = ( SELECT auth.uid() AS uid)))) AND (NOT is_user_already_member(organization_id, email))));
+
+  create policy "organization_invites_insert"
+  on "public"."organization_invites"
+  as permissive
+  for insert
+  to authenticated
+with check ((public.has_org_role(organization_id, 'admin'::text, ( SELECT auth.uid() AS uid)) AND (invited_by = ( SELECT auth.uid() AS uid)) AND public.can_accept_new_member(organization_id) AND ((role <> 'admin'::public.org_role) OR public.has_org_role(organization_id, 'owner'::text, ( SELECT auth.uid() AS uid))) AND (email <> ( SELECT profiles.email
+   FROM public.profiles
+  WHERE (profiles.id = ( SELECT auth.uid() AS uid)))) AND (NOT public.is_user_already_member(organization_id, email))));
 
 
-create policy "organization_invites_select_authenticated"
-on "public"."organization_invites"
-as permissive
-for select
-to authenticated
-using ((has_org_role(organization_id, 'admin'::text, ( SELECT auth.uid() AS uid)) OR ((email = ( SELECT profiles.email
-   FROM profiles
+
+  create policy "organization_invites_select_authenticated"
+  on "public"."organization_invites"
+  as permissive
+  for select
+  to authenticated
+using ((public.has_org_role(organization_id, 'admin'::text, ( SELECT auth.uid() AS uid)) OR ((email = ( SELECT profiles.email
+   FROM public.profiles
   WHERE (profiles.id = ( SELECT auth.uid() AS uid)))) AND (accepted_at IS NULL) AND (revoked_at IS NULL) AND (expires_at > now()))));
 
 
-create policy "organization_invites_update"
-on "public"."organization_invites"
-as permissive
-for update
-to authenticated
-using ((has_org_role(organization_id, 'admin'::text, ( SELECT auth.uid() AS uid)) OR ((email = ( SELECT profiles.email
-   FROM profiles
+
+  create policy "organization_invites_update"
+  on "public"."organization_invites"
+  as permissive
+  for update
+  to authenticated
+using ((public.has_org_role(organization_id, 'admin'::text, ( SELECT auth.uid() AS uid)) OR ((email = ( SELECT profiles.email
+   FROM public.profiles
   WHERE (profiles.id = ( SELECT auth.uid() AS uid)))) AND (accepted_at IS NULL) AND (revoked_at IS NULL) AND (expires_at > now()))))
-with check ((((role <> 'admin'::org_role) OR has_org_role(organization_id, 'owner'::text, ( SELECT auth.uid() AS uid))) AND ((accepted_by IS NULL) OR (accepted_by = ( SELECT auth.uid() AS uid))) AND ((accepted_at IS NULL) OR can_accept_new_member(organization_id)) AND ((revoked_at IS NULL) OR has_org_role(organization_id, 'admin'::text, ( SELECT auth.uid() AS uid)))));
+with check ((((role <> 'admin'::public.org_role) OR public.has_org_role(organization_id, 'owner'::text, ( SELECT auth.uid() AS uid))) AND ((accepted_by IS NULL) OR (accepted_by = ( SELECT auth.uid() AS uid))) AND ((accepted_at IS NULL) OR public.can_accept_new_member(organization_id)) AND ((revoked_at IS NULL) OR public.has_org_role(organization_id, 'admin'::text, ( SELECT auth.uid() AS uid)))));
 
 
-create policy "organization_members_delete"
-on "public"."organization_members"
-as permissive
-for delete
-to authenticated
-using ((((user_id = ( SELECT auth.uid() AS uid)) AND (role <> 'owner'::org_role)) OR ((role = 'editor'::org_role) AND (user_id <> ( SELECT auth.uid() AS uid)) AND has_org_role(organization_id, 'admin'::text, ( SELECT auth.uid() AS uid))) OR ((user_id <> ( SELECT auth.uid() AS uid)) AND has_org_role(organization_id, 'owner'::text, ( SELECT auth.uid() AS uid)))));
+
+  create policy "organization_members_delete"
+  on "public"."organization_members"
+  as permissive
+  for delete
+  to authenticated
+using ((((user_id = ( SELECT auth.uid() AS uid)) AND (role <> 'owner'::public.org_role)) OR ((role = 'editor'::public.org_role) AND (user_id <> ( SELECT auth.uid() AS uid)) AND public.has_org_role(organization_id, 'admin'::text, ( SELECT auth.uid() AS uid))) OR ((user_id <> ( SELECT auth.uid() AS uid)) AND public.has_org_role(organization_id, 'owner'::text, ( SELECT auth.uid() AS uid)))));
 
 
-create policy "organization_members_insert"
-on "public"."organization_members"
-as permissive
-for insert
-to authenticated
-with check ((((user_id = ( SELECT auth.uid() AS uid)) AND (role = 'owner'::org_role)) OR (has_org_role(organization_id, 'admin'::text, ( SELECT auth.uid() AS uid)) AND can_accept_new_member(organization_id) AND ((role <> 'admin'::org_role) OR has_org_role(organization_id, 'owner'::text, ( SELECT auth.uid() AS uid))))));
+
+  create policy "organization_members_insert"
+  on "public"."organization_members"
+  as permissive
+  for insert
+  to authenticated
+with check ((((user_id = ( SELECT auth.uid() AS uid)) AND (role = 'owner'::public.org_role)) OR (public.has_org_role(organization_id, 'admin'::text, ( SELECT auth.uid() AS uid)) AND public.can_accept_new_member(organization_id) AND ((role <> 'admin'::public.org_role) OR public.has_org_role(organization_id, 'owner'::text, ( SELECT auth.uid() AS uid))))));
 
 
-create policy "organization_members_select"
-on "public"."organization_members"
-as permissive
-for select
-to authenticated
-using (((user_id = ( SELECT auth.uid() AS uid)) OR has_org_role(organization_id, 'admin'::text, ( SELECT auth.uid() AS uid))));
+
+  create policy "organization_members_select"
+  on "public"."organization_members"
+  as permissive
+  for select
+  to authenticated
+using (((user_id = ( SELECT auth.uid() AS uid)) OR public.has_org_role(organization_id, 'admin'::text, ( SELECT auth.uid() AS uid))));
 
 
-create policy "organization_members_update"
-on "public"."organization_members"
-as permissive
-for update
-to authenticated
-using (has_org_role(organization_id, 'owner'::text, ( SELECT auth.uid() AS uid)))
-with check (((user_id <> ( SELECT auth.uid() AS uid)) AND (role = ANY (ARRAY['admin'::org_role, 'editor'::org_role]))));
+
+  create policy "organization_members_update"
+  on "public"."organization_members"
+  as permissive
+  for update
+  to authenticated
+using (public.has_org_role(organization_id, 'owner'::text, ( SELECT auth.uid() AS uid)))
+with check (((user_id <> ( SELECT auth.uid() AS uid)) AND (role = ANY (ARRAY['admin'::public.org_role, 'editor'::public.org_role]))));
 
 
-create policy "Select: Only admins and owners can view wallets"
-on "public"."organization_wallets"
-as permissive
-for select
-to authenticated
-using ((get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])));
+
+  create policy "organization_subscriptions_delete"
+  on "public"."organization_subscriptions"
+  as permissive
+  for delete
+  to service_role
+using (true);
 
 
-create policy "organizations_delete"
-on "public"."organizations"
-as permissive
-for delete
-to authenticated
+
+  create policy "organization_subscriptions_insert"
+  on "public"."organization_subscriptions"
+  as permissive
+  for insert
+  to service_role
+with check (true);
+
+
+
+  create policy "organization_subscriptions_select"
+  on "public"."organization_subscriptions"
+  as permissive
+  for select
+  to authenticated
+using ((EXISTS ( SELECT 1
+   FROM public.organizations o
+  WHERE ((o.id = organization_subscriptions.organization_id) AND ((o.owned_by = ( SELECT auth.uid() AS uid)) OR public.has_org_role(o.id, 'admin'::text, ( SELECT auth.uid() AS uid)) OR (EXISTS ( SELECT 1
+           FROM public.organization_members om
+          WHERE ((om.organization_id = o.id) AND (om.user_id = ( SELECT auth.uid() AS uid))))))))));
+
+
+
+  create policy "organization_subscriptions_update"
+  on "public"."organization_subscriptions"
+  as permissive
+  for update
+  to service_role
+using (true)
+with check (true);
+
+
+
+  create policy "Select: Only admins and owners can view wallets"
+  on "public"."organization_wallets"
+  as permissive
+  for select
+  to authenticated
+using ((public.get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])));
+
+
+
+  create policy "organizations_delete"
+  on "public"."organizations"
+  as permissive
+  for delete
+  to authenticated
 using ((owned_by = ( SELECT auth.uid() AS uid)));
 
 
-create policy "organizations_insert"
-on "public"."organizations"
-as permissive
-for insert
-to authenticated
-with check (((owned_by = ( SELECT auth.uid() AS uid)) AND can_create_organization((tier)::text, ( SELECT auth.uid() AS uid))));
+
+  create policy "organizations_insert"
+  on "public"."organizations"
+  as permissive
+  for insert
+  to authenticated
+with check (((owned_by = ( SELECT auth.uid() AS uid)) AND public.can_create_organization((tier)::text, ( SELECT auth.uid() AS uid))));
 
 
-create policy "organizations_select"
-on "public"."organizations"
-as permissive
-for select
-to public
+
+  create policy "organizations_select"
+  on "public"."organizations"
+  as permissive
+  for select
+  to public
 using (((is_public = true) OR (owned_by = ( SELECT auth.uid() AS uid)) OR (EXISTS ( SELECT 1
-   FROM organization_members om
+   FROM public.organization_members om
   WHERE ((om.organization_id = organizations.id) AND (om.user_id = ( SELECT auth.uid() AS uid)))))));
 
 
-create policy "organizations_update"
-on "public"."organizations"
-as permissive
-for update
-to authenticated
-using (((owned_by = ( SELECT auth.uid() AS uid)) OR has_org_role(id, 'admin'::text, ( SELECT auth.uid() AS uid))))
-with check ((((owned_by = ( SELECT auth.uid() AS uid)) OR has_org_role(id, 'admin'::text, owned_by)) AND ((owned_by = ( SELECT auth.uid() AS uid)) OR has_org_role(id, 'admin'::text, ( SELECT auth.uid() AS uid)))));
+
+  create policy "organizations_update"
+  on "public"."organizations"
+  as permissive
+  for update
+  to authenticated
+using (((owned_by = ( SELECT auth.uid() AS uid)) OR public.has_org_role(id, 'admin'::text, ( SELECT auth.uid() AS uid))))
+with check ((((owned_by = ( SELECT auth.uid() AS uid)) OR public.has_org_role(id, 'admin'::text, owned_by)) AND ((owned_by = ( SELECT auth.uid() AS uid)) OR public.has_org_role(id, 'admin'::text, ( SELECT auth.uid() AS uid)))));
 
 
-create policy "Allow DELETE of own profile by authenticated users"
-on "public"."profiles"
-as permissive
-for delete
-to authenticated
+
+  create policy "Allow organization members to view organizations_ai_credits"
+  on "public"."organizations_ai_credits"
+  as permissive
+  for select
+  to authenticated
+using (((EXISTS ( SELECT 1
+   FROM public.organization_members om
+  WHERE ((om.organization_id = organizations_ai_credits.org_id) AND (om.user_id = ( SELECT auth.uid() AS uid))))) OR (( SELECT o.owned_by
+   FROM public.organizations o
+  WHERE (o.id = organizations_ai_credits.org_id)) = ( SELECT auth.uid() AS uid))));
+
+
+
+  create policy "Restrict organizations_ai_credits delete to service role"
+  on "public"."organizations_ai_credits"
+  as permissive
+  for delete
+  to authenticated
+using (false);
+
+
+
+  create policy "Restrict organizations_ai_credits insert to service role"
+  on "public"."organizations_ai_credits"
+  as permissive
+  for insert
+  to authenticated
+with check (false);
+
+
+
+  create policy "Restrict organizations_ai_credits update to service role"
+  on "public"."organizations_ai_credits"
+  as permissive
+  for update
+  to authenticated
+using (false)
+with check (false);
+
+
+
+  create policy "Allow DELETE of own profile by authenticated users"
+  on "public"."profiles"
+  as permissive
+  for delete
+  to authenticated
 using ((( SELECT auth.uid() AS uid) = id));
 
 
-create policy "Allow INSERT of own profile by authenticated users"
-on "public"."profiles"
-as permissive
-for insert
-to authenticated
-with check (((( SELECT auth.uid() AS uid) = id) AND ((active_organization_id IS NULL) OR (EXISTS ( SELECT 1
-   FROM organization_members m
-  WHERE ((m.user_id = ( SELECT auth.uid() AS uid)) AND (m.organization_id = profiles.active_organization_id)))))));
+
+  create policy "Allow INSERT of own profile by authenticated users"
+  on "public"."profiles"
+  as permissive
+  for insert
+  to authenticated
+with check (((( SELECT auth.uid() AS uid) = id) AND (((mode = 'personal'::public.profile_mode) AND (active_organization_id IS NULL)) OR ((mode = 'organization'::public.profile_mode) AND (active_organization_id IS NOT NULL) AND (EXISTS ( SELECT 1
+   FROM public.organization_members m
+  WHERE ((m.user_id = ( SELECT auth.uid() AS uid)) AND (m.organization_id = profiles.active_organization_id))))))));
 
 
-create policy "Allow SELECT on own or public profiles"
-on "public"."profiles"
-as permissive
-for select
-to public
+
+  create policy "Allow SELECT on own or public profiles"
+  on "public"."profiles"
+  as permissive
+  for select
+  to public
 using (((is_public = true) OR (( SELECT auth.uid() AS uid) = id)));
 
 
-create policy "Allow UPDATE of own profile by authenticated users"
-on "public"."profiles"
-as permissive
-for update
-to authenticated
+
+  create policy "Allow UPDATE of own profile by authenticated users"
+  on "public"."profiles"
+  as permissive
+  for update
+  to authenticated
 using ((( SELECT auth.uid() AS uid) = id))
-with check ((( SELECT auth.uid() AS uid) = id));
+with check (((( SELECT auth.uid() AS uid) = id) AND (((mode = 'personal'::public.profile_mode) AND (active_organization_id IS NULL)) OR ((mode = 'organization'::public.profile_mode) AND (active_organization_id IS NOT NULL) AND (EXISTS ( SELECT 1
+   FROM public.organization_members m
+  WHERE ((m.user_id = ( SELECT auth.uid() AS uid)) AND (m.organization_id = profiles.active_organization_id))))))));
 
 
-create policy "delete_org_admins_or_editor"
-on "public"."published_course_structure_content"
-as permissive
-for delete
-to authenticated
+
+  create policy "delete_org_admins_or_editor"
+  on "public"."published_course_structure_content"
+  as permissive
+  for delete
+  to authenticated
 using ((EXISTS ( SELECT 1
-   FROM courses c
-  WHERE ((c.id = published_course_structure_content.id) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.owned_by = ( SELECT auth.uid() AS uid))))))));
+   FROM public.courses c
+  WHERE ((c.id = published_course_structure_content.id) AND ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.owned_by = ( SELECT auth.uid() AS uid))))))));
 
 
-create policy "insert_org_members"
-on "public"."published_course_structure_content"
-as permissive
-for insert
-to authenticated
+
+  create policy "insert_org_members"
+  on "public"."published_course_structure_content"
+  as permissive
+  for insert
+  to authenticated
 with check ((EXISTS ( SELECT 1
-   FROM courses c
-  WHERE ((c.id = published_course_structure_content.id) AND (get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) IS NOT NULL)))));
+   FROM public.courses c
+  WHERE ((c.id = published_course_structure_content.id) AND (public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) IS NOT NULL)))));
 
 
-create policy "select_enrolled_users"
-on "public"."published_course_structure_content"
-as permissive
-for select
-to authenticated
+
+  create policy "select_enrolled_users"
+  on "public"."published_course_structure_content"
+  as permissive
+  for select
+  to authenticated
 using ((EXISTS ( SELECT 1
-   FROM course_enrollments ce
+   FROM public.course_enrollments ce
   WHERE ((ce.published_course_id = published_course_structure_content.id) AND (ce.user_id = ( SELECT auth.uid() AS uid)) AND (ce.is_active = true) AND ((ce.expires_at IS NULL) OR (ce.expires_at > now()))))));
 
 
-create policy "update_org_admins_or_editor"
-on "public"."published_course_structure_content"
-as permissive
-for update
-to authenticated
+
+  create policy "update_org_admins_or_editor"
+  on "public"."published_course_structure_content"
+  as permissive
+  for update
+  to authenticated
 using ((EXISTS ( SELECT 1
-   FROM courses c
-  WHERE ((c.id = published_course_structure_content.id) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.owned_by = ( SELECT auth.uid() AS uid))))))));
+   FROM public.courses c
+  WHERE ((c.id = published_course_structure_content.id) AND ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.owned_by = ( SELECT auth.uid() AS uid))))))));
 
 
-create policy "delete: only org owners/admins"
-on "public"."published_courses"
-as permissive
-for delete
-to authenticated
-using ((get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])));
+
+  create policy "delete: only org owners/admins"
+  on "public"."published_courses"
+  as permissive
+  for delete
+  to authenticated
+using ((public.get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])));
 
 
-create policy "insert: org members can publish"
-on "public"."published_courses"
-as permissive
-for insert
-to authenticated
-with check ((get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) IS NOT NULL));
+
+  create policy "insert: org members can publish"
+  on "public"."published_courses"
+  as permissive
+  for insert
+  to authenticated
+with check ((public.get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) IS NOT NULL));
 
 
-create policy "select: public, enrolled, or org member"
-on "public"."published_courses"
-as permissive
-for select
-to public
-using (((visibility = 'public'::course_access) OR ((( SELECT auth.role() AS role) = 'authenticated'::text) AND ((EXISTS ( SELECT 1
-   FROM course_enrollments ce
-  WHERE ((ce.published_course_id = published_courses.id) AND (ce.user_id = ( SELECT auth.uid() AS uid)) AND (ce.is_active = true) AND ((ce.expires_at IS NULL) OR (ce.expires_at > now()))))) OR (get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) IS NOT NULL)))));
+
+  create policy "select: public, enrolled, or org member"
+  on "public"."published_courses"
+  as permissive
+  for select
+  to public
+using (((visibility = 'public'::public.course_access) OR ((( SELECT auth.role() AS role) = 'authenticated'::text) AND ((EXISTS ( SELECT 1
+   FROM public.course_enrollments ce
+  WHERE ((ce.published_course_id = published_courses.id) AND (ce.user_id = ( SELECT auth.uid() AS uid)) AND (ce.is_active = true) AND ((ce.expires_at IS NULL) OR (ce.expires_at > now()))))) OR (public.get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) IS NOT NULL)))));
 
 
-create policy "update: org admins or publishing editors"
-on "public"."published_courses"
-as permissive
-for update
-to authenticated
-using (((get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (published_by = ( SELECT auth.uid() AS uid)))));
+
+  create policy "update: org admins or publishing editors"
+  on "public"."published_courses"
+  as permissive
+  for update
+  to authenticated
+using (((public.get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((public.get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (published_by = ( SELECT auth.uid() AS uid)))));
 
 
-create policy "delete_if_owner_admin_or_course_creator"
-on "public"."published_file_library"
-as permissive
-for delete
-to authenticated
+
+  create policy "delete_if_owner_admin_or_course_creator"
+  on "public"."published_file_library"
+  as permissive
+  for delete
+  to authenticated
 using ((EXISTS ( SELECT 1
-   FROM courses c
-  WHERE ((c.id = published_file_library.course_id) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.created_by = ( SELECT auth.uid() AS uid))))))));
+   FROM public.courses c
+  WHERE ((c.id = published_file_library.course_id) AND ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.created_by = ( SELECT auth.uid() AS uid))))))));
 
 
-create policy "insert_if_owner_admin_or_course_creator"
-on "public"."published_file_library"
-as permissive
-for insert
-to authenticated
+
+  create policy "insert_if_owner_admin_or_course_creator"
+  on "public"."published_file_library"
+  as permissive
+  for insert
+  to authenticated
 with check ((EXISTS ( SELECT 1
-   FROM courses c
-  WHERE ((c.id = published_file_library.course_id) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.created_by = ( SELECT auth.uid() AS uid))))))));
+   FROM public.courses c
+  WHERE ((c.id = published_file_library.course_id) AND ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.created_by = ( SELECT auth.uid() AS uid))))))));
 
 
-create policy "select_if_org_member_or_enrolled_user"
-on "public"."published_file_library"
-as permissive
-for select
-to authenticated
-using (((get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) IS NOT NULL) OR (EXISTS ( SELECT 1
-   FROM course_enrollments ce
+
+  create policy "select_if_org_member_or_enrolled_user"
+  on "public"."published_file_library"
+  as permissive
+  for select
+  to authenticated
+using (((public.get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) IS NOT NULL) OR (EXISTS ( SELECT 1
+   FROM public.course_enrollments ce
   WHERE ((ce.published_course_id = published_file_library.course_id) AND (ce.user_id = ( SELECT auth.uid() AS uid)) AND (ce.is_active = true) AND ((ce.expires_at IS NULL) OR (ce.expires_at > now())))))));
 
 
-create policy "update_if_owner_admin_or_course_creator"
-on "public"."published_file_library"
-as permissive
-for update
-to authenticated
+
+  create policy "update_if_owner_admin_or_course_creator"
+  on "public"."published_file_library"
+  as permissive
+  for update
+  to authenticated
 using ((EXISTS ( SELECT 1
-   FROM courses c
-  WHERE ((c.id = published_file_library.course_id) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.created_by = ( SELECT auth.uid() AS uid))))))))
+   FROM public.courses c
+  WHERE ((c.id = published_file_library.course_id) AND ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.created_by = ( SELECT auth.uid() AS uid))))))))
 with check ((EXISTS ( SELECT 1
-   FROM courses c
-  WHERE ((c.id = published_file_library.course_id) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.created_by = ( SELECT auth.uid() AS uid))))))));
+   FROM public.courses c
+  WHERE ((c.id = published_file_library.course_id) AND ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.created_by = ( SELECT auth.uid() AS uid))))))));
 
 
-create policy "role_permissions_delete_policy"
-on "public"."role_permissions"
-as permissive
-for delete
-to authenticated
+
+  create policy "role_permissions_delete_policy"
+  on "public"."role_permissions"
+  as permissive
+  for delete
+  to authenticated
 using ((EXISTS ( SELECT 1
-   FROM user_roles ur
-  WHERE ((ur.user_id = ( SELECT auth.uid() AS uid)) AND (ur.role = 'go_su'::app_role)))));
+   FROM public.user_roles ur
+  WHERE ((ur.user_id = ( SELECT auth.uid() AS uid)) AND (ur.role = 'go_su'::public.app_role)))));
 
 
-create policy "role_permissions_insert_policy"
-on "public"."role_permissions"
-as permissive
-for insert
-to authenticated
+
+  create policy "role_permissions_insert_policy"
+  on "public"."role_permissions"
+  as permissive
+  for insert
+  to authenticated
 with check ((EXISTS ( SELECT 1
-   FROM user_roles ur
-  WHERE ((ur.user_id = ( SELECT auth.uid() AS uid)) AND (ur.role = 'go_su'::app_role)))));
+   FROM public.user_roles ur
+  WHERE ((ur.user_id = ( SELECT auth.uid() AS uid)) AND (ur.role = 'go_su'::public.app_role)))));
 
 
-create policy "role_permissions_select_policy"
-on "public"."role_permissions"
-as permissive
-for select
-to authenticated
+
+  create policy "role_permissions_select_policy"
+  on "public"."role_permissions"
+  as permissive
+  for select
+  to authenticated
 using (true);
 
 
-create policy "role_permissions_update_policy"
-on "public"."role_permissions"
-as permissive
-for update
-to authenticated
+
+  create policy "role_permissions_update_policy"
+  on "public"."role_permissions"
+  as permissive
+  for update
+  to authenticated
 using ((EXISTS ( SELECT 1
-   FROM user_roles ur
-  WHERE ((ur.user_id = ( SELECT auth.uid() AS uid)) AND (ur.role = 'go_su'::app_role)))))
+   FROM public.user_roles ur
+  WHERE ((ur.user_id = ( SELECT auth.uid() AS uid)) AND (ur.role = 'go_su'::public.app_role)))))
 with check ((EXISTS ( SELECT 1
-   FROM user_roles ur
-  WHERE ((ur.user_id = ( SELECT auth.uid() AS uid)) AND (ur.role = 'go_su'::app_role)))));
+   FROM public.user_roles ur
+  WHERE ((ur.user_id = ( SELECT auth.uid() AS uid)) AND (ur.role = 'go_su'::public.app_role)))));
 
 
-create policy "Authorized users can delete tier limits"
-on "public"."tier_limits"
-as permissive
-for delete
-to authenticated
-using (( SELECT authorize('pricing_tier.crud'::app_permission) AS authorize));
+
+  create policy "Authorized users can delete tier limits"
+  on "public"."tier_limits"
+  as permissive
+  for delete
+  to authenticated
+using (( SELECT public.authorize('pricing_tier.crud'::public.app_permission) AS authorize));
 
 
-create policy "Authorized users can insert tier limits"
-on "public"."tier_limits"
-as permissive
-for insert
-to authenticated
-with check (( SELECT authorize('pricing_tier.crud'::app_permission) AS authorize));
+
+  create policy "Authorized users can insert tier limits"
+  on "public"."tier_limits"
+  as permissive
+  for insert
+  to authenticated
+with check (( SELECT public.authorize('pricing_tier.crud'::public.app_permission) AS authorize));
 
 
-create policy "Authorized users can update tier limits"
-on "public"."tier_limits"
-as permissive
-for update
-to authenticated
-using (( SELECT authorize('pricing_tier.crud'::app_permission) AS authorize));
+
+  create policy "Authorized users can update tier limits"
+  on "public"."tier_limits"
+  as permissive
+  for update
+  to authenticated
+using (( SELECT public.authorize('pricing_tier.crud'::public.app_permission) AS authorize));
 
 
-create policy "Public can read tier limits"
-on "public"."tier_limits"
-as permissive
-for select
-to authenticated, anon
+
+  create policy "Public can read tier limits"
+  on "public"."tier_limits"
+  as permissive
+  for select
+  to authenticated, anon
 using (true);
 
 
-create policy "Allow auth admin to read user roles"
-on "public"."user_roles"
-as permissive
-for select
-to supabase_auth_admin
+
+  create policy "Allow auth admin to read user roles"
+  on "public"."user_roles"
+  as permissive
+  for select
+  to supabase_auth_admin
 using (true);
 
 
-create policy "Insert: Only org owners/admins can insert transactions"
-on "public"."wallet_transactions"
-as permissive
-for insert
-to authenticated
+
+  create policy "user_wallets_select_own"
+  on "public"."user_wallets"
+  as permissive
+  for select
+  to authenticated
+using ((user_id = ( SELECT auth.uid() AS uid)));
+
+
+
+  create policy "Insert: Only org owners/admins can insert transactions"
+  on "public"."wallet_transactions"
+  as permissive
+  for insert
+  to authenticated
 with check ((EXISTS ( SELECT 1
-   FROM organization_wallets w
-  WHERE ((w.id = wallet_transactions.wallet_id) AND (get_user_org_role(w.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text]))))));
+   FROM public.organization_wallets w
+  WHERE ((w.id = wallet_transactions.wallet_id) AND (public.get_user_org_role(w.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text]))))));
 
 
-create policy "Select: Only org owners/admins can view transactions"
-on "public"."wallet_transactions"
-as permissive
-for select
-to authenticated
+
+  create policy "Select: Only org owners/admins can view transactions"
+  on "public"."wallet_transactions"
+  as permissive
+  for select
+  to authenticated
 using ((EXISTS ( SELECT 1
-   FROM organization_wallets w
-  WHERE ((w.id = wallet_transactions.wallet_id) AND (get_user_org_role(w.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text]))))));
+   FROM public.organization_wallets w
+  WHERE ((w.id = wallet_transactions.wallet_id) AND (public.get_user_org_role(w.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text]))))));
 
 
-CREATE TRIGGER trg_block_progress_set_updated_at BEFORE UPDATE ON public.block_progress FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER trg_block_progress_set_updated_at BEFORE UPDATE ON public.block_progress FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
-CREATE TRIGGER trg_chapter_progress_set_updated_at BEFORE UPDATE ON public.chapter_progress FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER trg_chapter_progress_set_updated_at BEFORE UPDATE ON public.chapter_progress FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
-CREATE TRIGGER trg_set_chapter_position BEFORE INSERT ON public.chapters FOR EACH ROW EXECUTE FUNCTION set_chapter_position();
+CREATE TRIGGER trg_set_chapter_position BEFORE INSERT ON public.chapters FOR EACH ROW EXECUTE FUNCTION public.set_chapter_position();
 
-CREATE TRIGGER trg_course_categories_set_updated_at BEFORE UPDATE ON public.course_categories FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER trg_course_categories_set_updated_at BEFORE UPDATE ON public.course_categories FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
-CREATE TRIGGER trg_enforce_at_least_one_active_tier BEFORE UPDATE ON public.course_pricing_tiers FOR EACH ROW EXECUTE FUNCTION enforce_at_least_one_active_pricing_tier();
+CREATE TRIGGER trg_enforce_at_least_one_active_tier BEFORE UPDATE ON public.course_pricing_tiers FOR EACH ROW EXECUTE FUNCTION public.enforce_at_least_one_active_pricing_tier();
 
-CREATE TRIGGER trg_handle_free_tier AFTER INSERT OR UPDATE ON public.course_pricing_tiers FOR EACH ROW EXECUTE FUNCTION trg_delete_other_tiers_if_free();
+CREATE TRIGGER trg_handle_free_tier AFTER INSERT OR UPDATE ON public.course_pricing_tiers FOR EACH ROW EXECUTE FUNCTION public.trg_delete_other_tiers_if_free();
 
-CREATE TRIGGER trg_prevent_deactivating_last_free_tier BEFORE UPDATE ON public.course_pricing_tiers FOR EACH ROW WHEN (((old.is_active = true) AND (new.is_active = false))) EXECUTE FUNCTION trg_prevent_deactivating_last_free_tier();
+CREATE TRIGGER trg_prevent_deactivating_last_free_tier BEFORE UPDATE ON public.course_pricing_tiers FOR EACH ROW WHEN (((old.is_active = true) AND (new.is_active = false))) EXECUTE FUNCTION public.trg_prevent_deactivating_last_free_tier();
 
-CREATE TRIGGER trg_prevent_deleting_last_free_tier BEFORE DELETE ON public.course_pricing_tiers FOR EACH ROW EXECUTE FUNCTION trg_prevent_deleting_last_free_tier();
+CREATE TRIGGER trg_prevent_deleting_last_free_tier BEFORE DELETE ON public.course_pricing_tiers FOR EACH ROW EXECUTE FUNCTION public.trg_prevent_deleting_last_free_tier();
 
-CREATE TRIGGER trg_prevent_last_paid_tier_deletion BEFORE DELETE ON public.course_pricing_tiers FOR EACH ROW EXECUTE FUNCTION trg_prevent_deleting_last_paid_tier();
+CREATE TRIGGER trg_prevent_last_paid_tier_deletion BEFORE DELETE ON public.course_pricing_tiers FOR EACH ROW EXECUTE FUNCTION public.trg_prevent_deleting_last_paid_tier();
 
-CREATE TRIGGER trg_set_course_pricing_tier_position BEFORE INSERT ON public.course_pricing_tiers FOR EACH ROW EXECUTE FUNCTION set_course_pricing_tier_position();
+CREATE TRIGGER trg_set_course_pricing_tier_position BEFORE INSERT ON public.course_pricing_tiers FOR EACH ROW EXECUTE FUNCTION public.set_course_pricing_tier_position();
 
-CREATE TRIGGER trg_course_progress_set_updated_at BEFORE UPDATE ON public.course_progress FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER trg_course_progress_set_updated_at BEFORE UPDATE ON public.course_progress FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
-CREATE TRIGGER trg_course_sub_categories_set_updated_at BEFORE UPDATE ON public.course_sub_categories FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER trg_course_sub_categories_set_updated_at BEFORE UPDATE ON public.course_sub_categories FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
-CREATE TRIGGER trg_add_default_free_pricing_tier AFTER INSERT ON public.courses FOR EACH ROW EXECUTE FUNCTION add_default_free_pricing_tier();
+CREATE TRIGGER trg_add_default_free_pricing_tier AFTER INSERT ON public.courses FOR EACH ROW EXECUTE FUNCTION public.add_default_free_pricing_tier();
 
-CREATE TRIGGER trg_validate_course_owner BEFORE INSERT OR UPDATE ON public.courses FOR EACH ROW EXECUTE FUNCTION validate_course_owner_in_org();
+CREATE TRIGGER trg_validate_course_owner BEFORE INSERT OR UPDATE ON public.courses FOR EACH ROW EXECUTE FUNCTION public.validate_course_owner_in_org();
 
-CREATE TRIGGER trg_validate_subcategory BEFORE INSERT OR UPDATE ON public.courses FOR EACH ROW EXECUTE FUNCTION validate_subcategory_belongs_to_category();
+CREATE TRIGGER trg_validate_subcategory BEFORE INSERT OR UPDATE ON public.courses FOR EACH ROW EXECUTE FUNCTION public.validate_subcategory_belongs_to_category();
 
-CREATE TRIGGER trg_set_file_type BEFORE INSERT OR UPDATE ON public.file_library FOR EACH ROW EXECUTE FUNCTION set_file_type_from_extension();
+CREATE TRIGGER trg_set_file_type BEFORE INSERT OR UPDATE ON public.file_library FOR EACH ROW EXECUTE FUNCTION public.set_file_type_from_extension();
 
-CREATE TRIGGER trg_update_timestamp BEFORE UPDATE ON public.file_library FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER trg_update_timestamp BEFORE UPDATE ON public.file_library FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
-CREATE TRIGGER set_updated_at_gonasi_wallet_transactions BEFORE UPDATE ON public.gonasi_wallet_transactions FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER set_updated_at_gonasi_wallet_transactions BEFORE UPDATE ON public.gonasi_wallet_transactions FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
-CREATE TRIGGER set_updated_at_gonasi_wallets BEFORE UPDATE ON public.gonasi_wallets FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER trg_gonasi_wallets_updated_at BEFORE UPDATE ON public.gonasi_wallets FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
-CREATE TRIGGER trg_set_lesson_block_position BEFORE INSERT ON public.lesson_blocks FOR EACH ROW EXECUTE FUNCTION set_lesson_block_position();
+CREATE TRIGGER trg_set_lesson_block_position BEFORE INSERT ON public.lesson_blocks FOR EACH ROW EXECUTE FUNCTION public.set_lesson_block_position();
 
-CREATE TRIGGER trg_increment_lesson_reset_count AFTER DELETE ON public.lesson_progress FOR EACH ROW EXECUTE FUNCTION increment_lesson_reset_count();
+CREATE TRIGGER trg_increment_lesson_reset_count AFTER DELETE ON public.lesson_progress FOR EACH ROW EXECUTE FUNCTION public.increment_lesson_reset_count();
 
-CREATE TRIGGER trg_lesson_progress_set_updated_at BEFORE UPDATE ON public.lesson_progress FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER trg_lesson_progress_set_updated_at BEFORE UPDATE ON public.lesson_progress FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
-CREATE TRIGGER trg_lesson_reset_set_updated_at BEFORE UPDATE ON public.lesson_reset_count FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER trg_lesson_reset_set_updated_at BEFORE UPDATE ON public.lesson_reset_count FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
-CREATE TRIGGER trg_lesson_types_set_updated_at BEFORE UPDATE ON public.lesson_types FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER trg_lesson_types_set_updated_at BEFORE UPDATE ON public.lesson_types FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
-CREATE TRIGGER trg_set_lesson_position BEFORE INSERT ON public.lessons FOR EACH ROW EXECUTE FUNCTION set_lesson_position();
+CREATE TRIGGER trg_set_lesson_position BEFORE INSERT ON public.lessons FOR EACH ROW EXECUTE FUNCTION public.set_lesson_position();
 
-CREATE TRIGGER create_wallets_on_org_creation AFTER INSERT ON public.organizations FOR EACH ROW EXECUTE FUNCTION create_organization_wallets();
+CREATE TRIGGER trg_organizations_wallets_updated_at BEFORE UPDATE ON public.organization_wallets FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
-CREATE TRIGGER trg_insert_owner_into_organization_members AFTER INSERT ON public.organizations FOR EACH ROW EXECUTE FUNCTION add_or_update_owner_in_organization_members();
+CREATE TRIGGER trg_assign_launch_subscription AFTER INSERT ON public.organizations FOR EACH ROW EXECUTE FUNCTION public.assign_launch_subscription_to_new_org();
 
-CREATE TRIGGER trg_organizations_set_updated_at BEFORE UPDATE ON public.organizations FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER trg_create_org_ai_credits AFTER INSERT ON public.organizations FOR EACH ROW EXECUTE FUNCTION public.handle_new_organization_ai_credits();
 
-CREATE TRIGGER trg_update_owner_into_organization_members AFTER UPDATE ON public.organizations FOR EACH ROW WHEN ((old.owned_by IS DISTINCT FROM new.owned_by)) EXECUTE FUNCTION add_or_update_owner_in_organization_members();
+CREATE TRIGGER trg_create_organization_wallets AFTER INSERT ON public.organizations FOR EACH ROW EXECUTE FUNCTION public.create_organization_wallets();
 
-CREATE TRIGGER set_updated_at BEFORE UPDATE ON public.profiles FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER trg_insert_owner_into_organization_members AFTER INSERT ON public.organizations FOR EACH ROW EXECUTE FUNCTION public.add_or_update_owner_in_organization_members();
 
-CREATE TRIGGER trg_course_structure_content_updated_at BEFORE UPDATE ON public.published_course_structure_content FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER trg_organizations_set_updated_at BEFORE UPDATE ON public.organizations FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
-CREATE TRIGGER trg_published_courses_set_updated_at BEFORE UPDATE ON public.published_courses FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER trg_update_owner_into_organization_members AFTER UPDATE ON public.organizations FOR EACH ROW WHEN ((old.owned_by IS DISTINCT FROM new.owned_by)) EXECUTE FUNCTION public.add_or_update_owner_in_organization_members();
 
-CREATE TRIGGER trg_set_published_course_version BEFORE INSERT ON public.published_courses FOR EACH ROW EXECUTE FUNCTION ensure_incremented_course_version();
+CREATE TRIGGER set_updated_at BEFORE UPDATE ON public.profiles FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
-CREATE TRIGGER trg_update_published_course_version BEFORE UPDATE ON public.published_courses FOR EACH ROW EXECUTE FUNCTION ensure_incremented_course_version();
+CREATE TRIGGER trg_course_structure_content_updated_at BEFORE UPDATE ON public.published_course_structure_content FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
-CREATE TRIGGER trg_set_file_type BEFORE INSERT OR UPDATE ON public.published_file_library FOR EACH ROW EXECUTE FUNCTION set_file_type_from_extension();
+CREATE TRIGGER trg_published_courses_set_updated_at BEFORE UPDATE ON public.published_courses FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
-CREATE TRIGGER trg_update_timestamp BEFORE UPDATE ON public.published_file_library FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER trg_set_published_course_version BEFORE INSERT ON public.published_courses FOR EACH ROW EXECUTE FUNCTION public.ensure_incremented_course_version();
+
+CREATE TRIGGER trg_update_published_course_version BEFORE UPDATE ON public.published_courses FOR EACH ROW EXECUTE FUNCTION public.ensure_incremented_course_version();
+
+CREATE TRIGGER trg_set_file_type BEFORE INSERT OR UPDATE ON public.published_file_library FOR EACH ROW EXECUTE FUNCTION public.set_file_type_from_extension();
+
+CREATE TRIGGER trg_update_timestamp BEFORE UPDATE ON public.published_file_library FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+CREATE TRIGGER trg_user_wallets_updated_at BEFORE UPDATE ON public.user_wallets FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+CREATE TRIGGER trg_wallet_balance_update AFTER INSERT ON public.wallet_ledger_entries FOR EACH ROW EXECUTE FUNCTION public.update_wallet_balance();
+
+CREATE TRIGGER on_auth_user_created AFTER INSERT ON auth.users FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+CREATE TRIGGER trg_create_user_wallets AFTER INSERT ON auth.users FOR EACH ROW EXECUTE FUNCTION public.create_user_wallets();
 
 
-CREATE TRIGGER on_auth_user_created AFTER INSERT ON auth.users FOR EACH ROW EXECUTE FUNCTION handle_new_user();
-
-
-create policy "Delete: Admins or owning editors can delete published files"
-on "storage"."objects"
-as permissive
-for delete
-to authenticated
+  create policy "Delete: Admins or owning editors can delete published files"
+  on "storage"."objects"
+  as permissive
+  for delete
+  to authenticated
 using (((bucket_id = 'published_files'::text) AND (EXISTS ( SELECT 1
-   FROM courses c
-  WHERE ((c.id = (split_part(objects.name, '/'::text, 2))::uuid) AND (c.organization_id = (split_part(objects.name, '/'::text, 1))::uuid) AND ((get_user_org_role(c.organization_id, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, auth.uid()) = 'editor'::text) AND (c.owned_by = auth.uid()))))))));
+   FROM public.courses c
+  WHERE ((c.id = (split_part(objects.name, '/'::text, 2))::uuid) AND (c.organization_id = (split_part(objects.name, '/'::text, 1))::uuid) AND ((public.get_user_org_role(c.organization_id, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((public.get_user_org_role(c.organization_id, auth.uid()) = 'editor'::text) AND (c.owned_by = auth.uid()))))))));
 
 
-create policy "Delete: Admins or owning editors can delete published_thumbnail"
-on "storage"."objects"
-as permissive
-for delete
-to authenticated
+
+  create policy "Delete: Admins or owning editors can delete published_thumbnail"
+  on "storage"."objects"
+  as permissive
+  for delete
+  to authenticated
 using (((bucket_id = 'published_thumbnails'::text) AND (EXISTS ( SELECT 1
-   FROM courses c
-  WHERE ((c.id = (split_part(objects.name, '/'::text, 1))::uuid) AND ((get_user_org_role(c.organization_id, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, auth.uid()) = 'editor'::text) AND (c.owned_by = auth.uid()))))))));
+   FROM public.courses c
+  WHERE ((c.id = (split_part(objects.name, '/'::text, 1))::uuid) AND ((public.get_user_org_role(c.organization_id, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((public.get_user_org_role(c.organization_id, auth.uid()) = 'editor'::text) AND (c.owned_by = auth.uid()))))))));
 
 
-create policy "Delete: Admins or owning editors can delete thumbnails"
-on "storage"."objects"
-as permissive
-for delete
-to authenticated
+
+  create policy "Delete: Admins or owning editors can delete thumbnails"
+  on "storage"."objects"
+  as permissive
+  for delete
+  to authenticated
 using (((bucket_id = 'thumbnails'::text) AND (EXISTS ( SELECT 1
-   FROM courses c
-  WHERE ((c.id = (split_part(objects.name, '/'::text, 1))::uuid) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.owned_by = ( SELECT auth.uid() AS uid)))))))));
+   FROM public.courses c
+  WHERE ((c.id = (split_part(objects.name, '/'::text, 1))::uuid) AND ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.owned_by = ( SELECT auth.uid() AS uid)))))))));
 
 
-create policy "Insert: Org members can upload published_thumbnails"
-on "storage"."objects"
-as permissive
-for insert
-to authenticated
+
+  create policy "Insert: Org members can upload published_thumbnails"
+  on "storage"."objects"
+  as permissive
+  for insert
+  to authenticated
 with check (((bucket_id = 'published_thumbnails'::text) AND (EXISTS ( SELECT 1
-   FROM courses c
-  WHERE ((c.id = (split_part(objects.name, '/'::text, 1))::uuid) AND (get_user_org_role(c.organization_id, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text, 'editor'::text])))))));
+   FROM public.courses c
+  WHERE ((c.id = (split_part(objects.name, '/'::text, 1))::uuid) AND (public.get_user_org_role(c.organization_id, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text, 'editor'::text])))))));
 
 
-create policy "Insert: Org members can upload thumbnails"
-on "storage"."objects"
-as permissive
-for insert
-to authenticated
+
+  create policy "Insert: Org members can upload thumbnails"
+  on "storage"."objects"
+  as permissive
+  for insert
+  to authenticated
 with check (((bucket_id = 'thumbnails'::text) AND (EXISTS ( SELECT 1
-   FROM courses c
-  WHERE ((c.id = (split_part(objects.name, '/'::text, 1))::uuid) AND (get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text, 'editor'::text])))))));
+   FROM public.courses c
+  WHERE ((c.id = (split_part(objects.name, '/'::text, 1))::uuid) AND (public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text, 'editor'::text])))))));
 
 
-create policy "Insert: Org members with elevated roles can upload published fi"
-on "storage"."objects"
-as permissive
-for insert
-to authenticated
+
+  create policy "Insert: Org members with elevated roles can upload published fi"
+  on "storage"."objects"
+  as permissive
+  for insert
+  to authenticated
 with check (((bucket_id = 'published_files'::text) AND (EXISTS ( SELECT 1
-   FROM courses c
-  WHERE ((c.id = (split_part(objects.name, '/'::text, 2))::uuid) AND (c.organization_id = (split_part(objects.name, '/'::text, 1))::uuid) AND (get_user_org_role(c.organization_id, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text, 'editor'::text])))))));
+   FROM public.courses c
+  WHERE ((c.id = (split_part(objects.name, '/'::text, 2))::uuid) AND (c.organization_id = (split_part(objects.name, '/'::text, 1))::uuid) AND (public.get_user_org_role(c.organization_id, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text, 'editor'::text])))))));
 
 
-create policy "Select: Org members can view thumbnails"
-on "storage"."objects"
-as permissive
-for select
-to authenticated
+
+  create policy "Select: Org members can view thumbnails"
+  on "storage"."objects"
+  as permissive
+  for select
+  to authenticated
 using (((bucket_id = 'thumbnails'::text) AND (EXISTS ( SELECT 1
-   FROM courses c
-  WHERE ((c.id = (split_part(objects.name, '/'::text, 1))::uuid) AND (get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) IS NOT NULL))))));
+   FROM public.courses c
+  WHERE ((c.id = (split_part(objects.name, '/'::text, 1))::uuid) AND (public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) IS NOT NULL))))));
 
 
-create policy "Select: Org members, enrolled users, or public can view publish"
-on "storage"."objects"
-as permissive
-for select
-to public
+
+  create policy "Select: Org members, enrolled users, or public can view publish"
+  on "storage"."objects"
+  as permissive
+  for select
+  to public
 using (((bucket_id = 'published_thumbnails'::text) AND ((EXISTS ( SELECT 1
-   FROM courses c
-  WHERE ((c.id = (split_part(objects.name, '/'::text, 1))::uuid) AND (get_user_org_role(c.organization_id, auth.uid()) IS NOT NULL)))) OR (EXISTS ( SELECT 1
-   FROM published_courses pc
-  WHERE ((pc.id = (split_part(objects.name, '/'::text, 1))::uuid) AND pc.is_active AND (pc.visibility = 'public'::course_access)))) OR (EXISTS ( SELECT 1
-   FROM (course_enrollments ce
-     JOIN published_courses pc ON ((pc.id = ce.published_course_id)))
+   FROM public.courses c
+  WHERE ((c.id = (split_part(objects.name, '/'::text, 1))::uuid) AND (public.get_user_org_role(c.organization_id, auth.uid()) IS NOT NULL)))) OR (EXISTS ( SELECT 1
+   FROM public.published_courses pc
+  WHERE ((pc.id = (split_part(objects.name, '/'::text, 1))::uuid) AND pc.is_active AND (pc.visibility = 'public'::public.course_access)))) OR (EXISTS ( SELECT 1
+   FROM (public.course_enrollments ce
+     JOIN public.published_courses pc ON ((pc.id = ce.published_course_id)))
   WHERE ((pc.id = (split_part(objects.name, '/'::text, 1))::uuid) AND pc.is_active AND (ce.user_id = auth.uid()) AND (ce.is_active = true) AND ((ce.expires_at IS NULL) OR (ce.expires_at > now()))))))));
 
 
-create policy "Update: Admins or owning editors can update published files"
-on "storage"."objects"
-as permissive
-for update
-to authenticated
+
+  create policy "Update: Admins or owning editors can update published files"
+  on "storage"."objects"
+  as permissive
+  for update
+  to authenticated
 using (((bucket_id = 'published_files'::text) AND (EXISTS ( SELECT 1
-   FROM courses c
-  WHERE ((c.id = (split_part(objects.name, '/'::text, 2))::uuid) AND (c.organization_id = (split_part(objects.name, '/'::text, 1))::uuid) AND ((get_user_org_role(c.organization_id, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, auth.uid()) = 'editor'::text) AND (c.owned_by = auth.uid()))))))))
+   FROM public.courses c
+  WHERE ((c.id = (split_part(objects.name, '/'::text, 2))::uuid) AND (c.organization_id = (split_part(objects.name, '/'::text, 1))::uuid) AND ((public.get_user_org_role(c.organization_id, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((public.get_user_org_role(c.organization_id, auth.uid()) = 'editor'::text) AND (c.owned_by = auth.uid()))))))))
 with check (((bucket_id = 'published_files'::text) AND (EXISTS ( SELECT 1
-   FROM courses c
-  WHERE ((c.id = (split_part(objects.name, '/'::text, 2))::uuid) AND (c.organization_id = (split_part(objects.name, '/'::text, 1))::uuid) AND ((get_user_org_role(c.organization_id, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, auth.uid()) = 'editor'::text) AND (c.owned_by = auth.uid()))))))));
+   FROM public.courses c
+  WHERE ((c.id = (split_part(objects.name, '/'::text, 2))::uuid) AND (c.organization_id = (split_part(objects.name, '/'::text, 1))::uuid) AND ((public.get_user_org_role(c.organization_id, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((public.get_user_org_role(c.organization_id, auth.uid()) = 'editor'::text) AND (c.owned_by = auth.uid()))))))));
 
 
-create policy "Update: Admins or owning editors can update published_thumbnail"
-on "storage"."objects"
-as permissive
-for update
-to authenticated
+
+  create policy "Update: Admins or owning editors can update published_thumbnail"
+  on "storage"."objects"
+  as permissive
+  for update
+  to authenticated
 using (((bucket_id = 'published_thumbnails'::text) AND (EXISTS ( SELECT 1
-   FROM courses c
-  WHERE ((c.id = (split_part(objects.name, '/'::text, 1))::uuid) AND ((get_user_org_role(c.organization_id, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, auth.uid()) = 'editor'::text) AND (c.owned_by = auth.uid()))))))))
+   FROM public.courses c
+  WHERE ((c.id = (split_part(objects.name, '/'::text, 1))::uuid) AND ((public.get_user_org_role(c.organization_id, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((public.get_user_org_role(c.organization_id, auth.uid()) = 'editor'::text) AND (c.owned_by = auth.uid()))))))))
 with check (((bucket_id = 'published_thumbnails'::text) AND (EXISTS ( SELECT 1
-   FROM courses c
-  WHERE ((c.id = (split_part(objects.name, '/'::text, 1))::uuid) AND ((get_user_org_role(c.organization_id, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, auth.uid()) = 'editor'::text) AND (c.owned_by = auth.uid()))))))));
+   FROM public.courses c
+  WHERE ((c.id = (split_part(objects.name, '/'::text, 1))::uuid) AND ((public.get_user_org_role(c.organization_id, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((public.get_user_org_role(c.organization_id, auth.uid()) = 'editor'::text) AND (c.owned_by = auth.uid()))))))));
 
 
-create policy "Update: Admins or owning editors can update thumbnails"
-on "storage"."objects"
-as permissive
-for update
-to authenticated
+
+  create policy "Update: Admins or owning editors can update thumbnails"
+  on "storage"."objects"
+  as permissive
+  for update
+  to authenticated
 using (((bucket_id = 'thumbnails'::text) AND (EXISTS ( SELECT 1
-   FROM courses c
-  WHERE ((c.id = (split_part(objects.name, '/'::text, 1))::uuid) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.owned_by = ( SELECT auth.uid() AS uid)))))))))
+   FROM public.courses c
+  WHERE ((c.id = (split_part(objects.name, '/'::text, 1))::uuid) AND ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.owned_by = ( SELECT auth.uid() AS uid)))))))))
 with check (((bucket_id = 'thumbnails'::text) AND (EXISTS ( SELECT 1
-   FROM courses c
-  WHERE ((c.id = (split_part(objects.name, '/'::text, 1))::uuid) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.owned_by = ( SELECT auth.uid() AS uid)))))))));
+   FROM public.courses c
+  WHERE ((c.id = (split_part(objects.name, '/'::text, 1))::uuid) AND ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.owned_by = ( SELECT auth.uid() AS uid)))))))));
 
 
-create policy "delete: org owner/admin or course creator"
-on "storage"."objects"
-as permissive
-for delete
-to authenticated
+
+  create policy "delete: org owner/admin or course creator"
+  on "storage"."objects"
+  as permissive
+  for delete
+  to authenticated
 using (((bucket_id = 'files'::text) AND (EXISTS ( SELECT 1
-   FROM (file_library fl
-     JOIN courses c ON ((c.id = fl.course_id)))
-  WHERE ((fl.path = objects.name) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.created_by = ( SELECT auth.uid() AS uid)))))))));
+   FROM (public.file_library fl
+     JOIN public.courses c ON ((c.id = fl.course_id)))
+  WHERE ((fl.path = objects.name) AND ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.created_by = ( SELECT auth.uid() AS uid)))))))));
 
 
-create policy "delete_avatar: only user can delete"
-on "storage"."objects"
-as permissive
-for delete
-to authenticated
+
+  create policy "delete_avatar: only user can delete"
+  on "storage"."objects"
+  as permissive
+  for delete
+  to authenticated
 using (((bucket_id = 'profile_photos'::text) AND (split_part(name, '/'::text, 1) = (auth.uid())::text)));
 
 
-create policy "delete_banner: only org owner/admin"
-on "storage"."objects"
-as permissive
-for delete
-to authenticated
+
+  create policy "delete_banner: only org owner/admin"
+  on "storage"."objects"
+  as permissive
+  for delete
+  to authenticated
 using (((bucket_id = 'organization_banner_photos'::text) AND (EXISTS ( SELECT 1
-   FROM organizations o
-  WHERE ((o.id = (split_part(objects.name, '/'::text, 1))::uuid) AND (get_user_org_role(o.id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])))))));
+   FROM public.organizations o
+  WHERE ((o.id = (split_part(objects.name, '/'::text, 1))::uuid) AND (public.get_user_org_role(o.id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])))))));
 
 
-create policy "delete_profile: only org owner/admin"
-on "storage"."objects"
-as permissive
-for delete
-to authenticated
+
+  create policy "delete_profile: only org owner/admin"
+  on "storage"."objects"
+  as permissive
+  for delete
+  to authenticated
 using (((bucket_id = 'organization_profile_photos'::text) AND (EXISTS ( SELECT 1
-   FROM organizations o
-  WHERE ((o.id = (split_part(objects.name, '/'::text, 1))::uuid) AND (get_user_org_role(o.id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])))))));
+   FROM public.organizations o
+  WHERE ((o.id = (split_part(objects.name, '/'::text, 1))::uuid) AND (public.get_user_org_role(o.id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])))))));
 
 
-create policy "insert: org owner/admin or course creator with storage limit"
-on "storage"."objects"
-as permissive
-for insert
-to authenticated
+
+  create policy "insert: org owner/admin or course creator with storage limit"
+  on "storage"."objects"
+  as permissive
+  for insert
+  to authenticated
 with check (((bucket_id = 'files'::text) AND (EXISTS ( SELECT 1
-   FROM courses c
-  WHERE ((c.id = (split_part(objects.name, '/'::text, 2))::uuid) AND (c.organization_id = (split_part(objects.name, '/'::text, 1))::uuid) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.created_by = ( SELECT auth.uid() AS uid)))) AND (check_storage_limit(c.organization_id, COALESCE(((objects.metadata ->> 'size'::text))::bigint, (0)::bigint)) = true))))));
+   FROM public.courses c
+  WHERE ((c.id = (split_part(objects.name, '/'::text, 2))::uuid) AND (c.organization_id = (split_part(objects.name, '/'::text, 1))::uuid) AND ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.created_by = ( SELECT auth.uid() AS uid)))) AND (public.check_storage_limit(c.organization_id, COALESCE(((objects.metadata ->> 'size'::text))::bigint, (0)::bigint)) = true))))));
 
 
-create policy "insert_avatar: only user can upload"
-on "storage"."objects"
-as permissive
-for insert
-to authenticated
+
+  create policy "insert_avatar: only user can upload"
+  on "storage"."objects"
+  as permissive
+  for insert
+  to authenticated
 with check (((bucket_id = 'profile_photos'::text) AND (split_part(name, '/'::text, 1) = (auth.uid())::text)));
 
 
-create policy "insert_banner: only org owner/admin can upload"
-on "storage"."objects"
-as permissive
-for insert
-to authenticated
+
+  create policy "insert_banner: only org owner/admin can upload"
+  on "storage"."objects"
+  as permissive
+  for insert
+  to authenticated
 with check (((bucket_id = 'organization_banner_photos'::text) AND (EXISTS ( SELECT 1
-   FROM organizations o
-  WHERE ((o.id = (split_part(objects.name, '/'::text, 1))::uuid) AND (get_user_org_role(o.id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])))))));
+   FROM public.organizations o
+  WHERE ((o.id = (split_part(objects.name, '/'::text, 1))::uuid) AND (public.get_user_org_role(o.id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])))))));
 
 
-create policy "insert_profile: only org owner/admin can upload"
-on "storage"."objects"
-as permissive
-for insert
-to authenticated
+
+  create policy "insert_profile: only org owner/admin can upload"
+  on "storage"."objects"
+  as permissive
+  for insert
+  to authenticated
 with check (((bucket_id = 'organization_profile_photos'::text) AND (EXISTS ( SELECT 1
-   FROM organizations o
-  WHERE ((o.id = (split_part(objects.name, '/'::text, 1))::uuid) AND (get_user_org_role(o.id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])))))));
+   FROM public.organizations o
+  WHERE ((o.id = (split_part(objects.name, '/'::text, 1))::uuid) AND (public.get_user_org_role(o.id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])))))));
 
 
-create policy "select: enrolled users or org members can view published files"
-on "storage"."objects"
-as permissive
-for select
-to authenticated
+
+  create policy "select: enrolled users or org members can view published files"
+  on "storage"."objects"
+  as permissive
+  for select
+  to authenticated
 using (((bucket_id = 'published_files'::text) AND ((EXISTS ( SELECT 1
-   FROM (course_enrollments ce
-     JOIN published_courses pc ON ((pc.id = ce.published_course_id)))
-  WHERE ((pc.organization_id = (split_part(objects.name, '/'::text, 1))::uuid) AND (pc.id = (split_part(objects.name, '/'::text, 2))::uuid) AND pc.is_active AND (ce.user_id = ( SELECT auth.uid() AS uid)) AND (ce.is_active = true) AND ((ce.expires_at IS NULL) OR (ce.expires_at > now()))))) OR (get_user_org_role((split_part(name, '/'::text, 1))::uuid, ( SELECT auth.uid() AS uid)) IS NOT NULL))));
+   FROM (public.course_enrollments ce
+     JOIN public.published_courses pc ON ((pc.id = ce.published_course_id)))
+  WHERE ((pc.organization_id = (split_part(objects.name, '/'::text, 1))::uuid) AND (pc.id = (split_part(objects.name, '/'::text, 2))::uuid) AND pc.is_active AND (ce.user_id = ( SELECT auth.uid() AS uid)) AND (ce.is_active = true) AND ((ce.expires_at IS NULL) OR (ce.expires_at > now()))))) OR (public.get_user_org_role((split_part(name, '/'::text, 1))::uuid, ( SELECT auth.uid() AS uid)) IS NOT NULL))));
 
 
-create policy "select: org members can view files"
-on "storage"."objects"
-as permissive
-for select
-to authenticated
+
+  create policy "select: org members can view files"
+  on "storage"."objects"
+  as permissive
+  for select
+  to authenticated
 using (((bucket_id = 'files'::text) AND (EXISTS ( SELECT 1
-   FROM file_library fl
-  WHERE ((fl.path = objects.name) AND (get_user_org_role(fl.organization_id, ( SELECT auth.uid() AS uid)) IS NOT NULL))))));
+   FROM public.file_library fl
+  WHERE ((fl.path = objects.name) AND (public.get_user_org_role(fl.organization_id, ( SELECT auth.uid() AS uid)) IS NOT NULL))))));
 
 
-create policy "select_avatar: public if profile is public"
-on "storage"."objects"
-as permissive
-for select
-to authenticated, anon
+
+  create policy "select_avatar: public if profile is public"
+  on "storage"."objects"
+  as permissive
+  for select
+  to authenticated, anon
 using (((bucket_id = 'profile_photos'::text) AND ((split_part(name, '/'::text, 1) = (auth.uid())::text) OR (EXISTS ( SELECT 1
-   FROM profiles p
+   FROM public.profiles p
   WHERE ((p.id)::text = split_part(objects.name, '/'::text, 1)))))));
 
 
-create policy "select_banner: public if org is public"
-on "storage"."objects"
-as permissive
-for select
-to authenticated, anon
+
+  create policy "select_banner: public if org is public"
+  on "storage"."objects"
+  as permissive
+  for select
+  to authenticated, anon
 using (((bucket_id = 'organization_banner_photos'::text) AND (EXISTS ( SELECT 1
-   FROM organizations o
+   FROM public.organizations o
   WHERE ((o.id = (split_part(objects.name, '/'::text, 1))::uuid) AND (o.is_public = true))))));
 
 
-create policy "select_profile: public if org is public"
-on "storage"."objects"
-as permissive
-for select
-to authenticated, anon
+
+  create policy "select_profile: public if org is public"
+  on "storage"."objects"
+  as permissive
+  for select
+  to authenticated, anon
 using (((bucket_id = 'organization_profile_photos'::text) AND (EXISTS ( SELECT 1
-   FROM organizations o
+   FROM public.organizations o
   WHERE ((o.id = (split_part(objects.name, '/'::text, 1))::uuid) AND (o.is_public = true))))));
 
 
-create policy "update: org owner/admin or course creator"
-on "storage"."objects"
-as permissive
-for update
-to authenticated
+
+  create policy "update: org owner/admin or course creator"
+  on "storage"."objects"
+  as permissive
+  for update
+  to authenticated
 using (((bucket_id = 'files'::text) AND (EXISTS ( SELECT 1
-   FROM (file_library fl
-     JOIN courses c ON ((c.id = fl.course_id)))
-  WHERE ((fl.path = objects.name) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.created_by = ( SELECT auth.uid() AS uid)))))))))
+   FROM (public.file_library fl
+     JOIN public.courses c ON ((c.id = fl.course_id)))
+  WHERE ((fl.path = objects.name) AND ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.created_by = ( SELECT auth.uid() AS uid)))))))))
 with check (((bucket_id = 'files'::text) AND (EXISTS ( SELECT 1
-   FROM (file_library fl
-     JOIN courses c ON ((c.id = fl.course_id)))
-  WHERE ((fl.path = objects.name) AND ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.created_by = ( SELECT auth.uid() AS uid)))))))));
+   FROM (public.file_library fl
+     JOIN public.courses c ON ((c.id = fl.course_id)))
+  WHERE ((fl.path = objects.name) AND ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.created_by = ( SELECT auth.uid() AS uid)))))))));
 
 
-create policy "update_avatar: only user can update"
-on "storage"."objects"
-as permissive
-for update
-to authenticated
+
+  create policy "update_avatar: only user can update"
+  on "storage"."objects"
+  as permissive
+  for update
+  to authenticated
 using (((bucket_id = 'profile_photos'::text) AND (split_part(name, '/'::text, 1) = (auth.uid())::text)))
 with check (((bucket_id = 'profile_photos'::text) AND (split_part(name, '/'::text, 1) = (auth.uid())::text)));
 
 
-create policy "update_banner: only org owner/admin"
-on "storage"."objects"
-as permissive
-for update
-to authenticated
+
+  create policy "update_banner: only org owner/admin"
+  on "storage"."objects"
+  as permissive
+  for update
+  to authenticated
 using (((bucket_id = 'organization_banner_photos'::text) AND (EXISTS ( SELECT 1
-   FROM organizations o
-  WHERE ((o.id = (split_part(objects.name, '/'::text, 1))::uuid) AND (get_user_org_role(o.id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])))))))
+   FROM public.organizations o
+  WHERE ((o.id = (split_part(objects.name, '/'::text, 1))::uuid) AND (public.get_user_org_role(o.id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])))))))
 with check (((bucket_id = 'organization_banner_photos'::text) AND (EXISTS ( SELECT 1
-   FROM organizations o
-  WHERE ((o.id = (split_part(objects.name, '/'::text, 1))::uuid) AND (get_user_org_role(o.id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])))))));
+   FROM public.organizations o
+  WHERE ((o.id = (split_part(objects.name, '/'::text, 1))::uuid) AND (public.get_user_org_role(o.id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])))))));
 
 
-create policy "update_profile: only org owner/admin"
-on "storage"."objects"
-as permissive
-for update
-to authenticated
+
+  create policy "update_profile: only org owner/admin"
+  on "storage"."objects"
+  as permissive
+  for update
+  to authenticated
 using (((bucket_id = 'organization_profile_photos'::text) AND (EXISTS ( SELECT 1
-   FROM organizations o
-  WHERE ((o.id = (split_part(objects.name, '/'::text, 1))::uuid) AND (get_user_org_role(o.id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])))))))
+   FROM public.organizations o
+  WHERE ((o.id = (split_part(objects.name, '/'::text, 1))::uuid) AND (public.get_user_org_role(o.id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])))))))
 with check (((bucket_id = 'organization_profile_photos'::text) AND (EXISTS ( SELECT 1
-   FROM organizations o
-  WHERE ((o.id = (split_part(objects.name, '/'::text, 1))::uuid) AND (get_user_org_role(o.id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])))))));
+   FROM public.organizations o
+  WHERE ((o.id = (split_part(objects.name, '/'::text, 1))::uuid) AND (public.get_user_org_role(o.id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])))))));
 
-
-
-revoke select on table "pgmq"."a_delete_course_progress_queue" from "pg_monitor";
-
-revoke select on table "pgmq"."q_delete_course_progress_queue" from "pg_monitor";
 
 

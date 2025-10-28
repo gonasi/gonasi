@@ -1057,27 +1057,27 @@ export type Database = {
       }
       gonasi_wallets: {
         Row: {
-          available_balance: number
+          balance_reserved: number
+          balance_total: number
           created_at: string
           currency_code: Database["public"]["Enums"]["currency_code"]
           id: string
-          pending_balance: number
           updated_at: string
         }
         Insert: {
-          available_balance?: number
+          balance_reserved?: number
+          balance_total?: number
           created_at?: string
           currency_code: Database["public"]["Enums"]["currency_code"]
           id?: string
-          pending_balance?: number
           updated_at?: string
         }
         Update: {
-          available_balance?: number
+          balance_reserved?: number
+          balance_total?: number
           created_at?: string
           currency_code?: Database["public"]["Enums"]["currency_code"]
           id?: string
-          pending_balance?: number
           updated_at?: string
         }
         Relationships: []
@@ -1430,44 +1430,6 @@ export type Database = {
           },
         ]
       }
-      org_wallets: {
-        Row: {
-          balance_reserved: number
-          balance_total: number
-          created_at: string
-          currency_code: Database["public"]["Enums"]["currency_code"]
-          id: string
-          organization_id: string
-          updated_at: string
-        }
-        Insert: {
-          balance_reserved?: number
-          balance_total?: number
-          created_at?: string
-          currency_code: Database["public"]["Enums"]["currency_code"]
-          id?: string
-          organization_id: string
-          updated_at?: string
-        }
-        Update: {
-          balance_reserved?: number
-          balance_total?: number
-          created_at?: string
-          currency_code?: Database["public"]["Enums"]["currency_code"]
-          id?: string
-          organization_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "org_wallets_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       organization_invites: {
         Row: {
           accepted_at: string | null
@@ -1640,30 +1602,30 @@ export type Database = {
       }
       organization_wallets: {
         Row: {
-          available_balance: number
+          balance_reserved: number
+          balance_total: number
           created_at: string
           currency_code: Database["public"]["Enums"]["currency_code"]
           id: string
           organization_id: string
-          pending_balance: number
           updated_at: string
         }
         Insert: {
-          available_balance?: number
+          balance_reserved?: number
+          balance_total?: number
           created_at?: string
           currency_code: Database["public"]["Enums"]["currency_code"]
           id?: string
           organization_id: string
-          pending_balance?: number
           updated_at?: string
         }
         Update: {
-          available_balance?: number
+          balance_reserved?: number
+          balance_total?: number
           created_at?: string
           currency_code?: Database["public"]["Enums"]["currency_code"]
           id?: string
           organization_id?: string
-          pending_balance?: number
           updated_at?: string
         }
         Relationships: [
@@ -1833,33 +1795,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      platform_wallets: {
-        Row: {
-          balance_reserved: number
-          balance_total: number
-          created_at: string
-          currency_code: Database["public"]["Enums"]["currency_code"]
-          id: string
-          updated_at: string
-        }
-        Insert: {
-          balance_reserved?: number
-          balance_total?: number
-          created_at?: string
-          currency_code: Database["public"]["Enums"]["currency_code"]
-          id?: string
-          updated_at?: string
-        }
-        Update: {
-          balance_reserved?: number
-          balance_total?: number
-          created_at?: string
-          currency_code?: Database["public"]["Enums"]["currency_code"]
-          id?: string
-          updated_at?: string
-        }
-        Relationships: []
       }
       profiles: {
         Row: {
@@ -2463,10 +2398,7 @@ export type Database = {
         }
         Returns: string
       }
-      can_accept_new_member: {
-        Args: { arg_org_id: string }
-        Returns: boolean
-      }
+      can_accept_new_member: { Args: { arg_org_id: string }; Returns: boolean }
       can_create_organization: {
         Args: { arg_user_id: string; tier_name: string }
         Returns: boolean
@@ -2496,18 +2428,9 @@ export type Database = {
         }
         Returns: Json
       }
-      count_active_students: {
-        Args: { org_id: string }
-        Returns: number
-      }
-      count_total_unique_students: {
-        Args: { org_id: string }
-        Returns: number
-      }
-      custom_access_token_hook: {
-        Args: { event: Json }
-        Returns: Json
-      }
+      count_active_students: { Args: { org_id: string }; Returns: number }
+      count_total_unique_students: { Args: { org_id: string }; Returns: number }
+      custom_access_token_hook: { Args: { event: Json }; Returns: Json }
       delete_chapter: {
         Args: { p_chapter_id: string; p_deleted_by: string }
         Returns: undefined
@@ -2661,10 +2584,7 @@ export type Database = {
         Args: { p_chapter_id: string; p_course_id: string; p_lesson_id: string }
         Returns: Json
       }
-      get_tier_limits_for_org: {
-        Args: { org_id: string }
-        Returns: Json
-      }
+      get_tier_limits_for_org: { Args: { org_id: string }; Returns: Json }
       get_unified_navigation: {
         Args: {
           p_current_block_id?: string
@@ -2712,10 +2632,7 @@ export type Database = {
         }
         Returns: Json
       }
-      process_delete_course_progress: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      process_delete_course_progress: { Args: never; Returns: undefined }
       reorder_chapters: {
         Args: {
           chapter_positions: Json
@@ -2724,12 +2641,16 @@ export type Database = {
         }
         Returns: undefined
       }
-      reorder_lesson_blocks: {
-        Args:
-          | { block_positions: Json; p_lesson_id: string; p_updated_by: string }
-          | { blocks: Json }
-        Returns: undefined
-      }
+      reorder_lesson_blocks:
+        | {
+            Args: {
+              block_positions: Json
+              p_lesson_id: string
+              p_updated_by: string
+            }
+            Returns: undefined
+          }
+        | { Args: { blocks: Json }; Returns: undefined }
       reorder_lessons: {
         Args: {
           lesson_positions: Json
@@ -2746,10 +2667,7 @@ export type Database = {
         }
         Returns: undefined
       }
-      reset_org_ai_base_credits_when_due: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      reset_org_ai_base_credits_when_due: { Args: never; Returns: undefined }
       resolve_current_context: {
         Args: {
           course_structure: Json

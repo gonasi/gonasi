@@ -4,22 +4,36 @@ import postgres from 'postgres';
 
 export default defineConfig({
   adapter: () => {
+    // Connect to your local Supabase Postgres instance
     const client = postgres('postgresql://postgres:postgres@127.0.0.1:54322/postgres');
     return new SeedPostgres(client);
   },
   alias: {
-    // We want inflections name on our fields see: https://docs.snaplet.dev/seed/core-concepts#inflection
+    // Use inflected names for fields (camelCase)
     inflection: true,
   },
   select: [
-    // We don't alter any extensions tables that might be owned by extensions
+    // Exclude everything by default
     '!*',
-    // We want to alter all the tables under public schema
+
+    // Include only your app schema
     'public*',
-    // We also want to alter some of the tables under the auth schema
+
+    // Include essential auth tables (safe ones)
     'auth.users',
     'auth.identities',
-    'auth.sessions',
+
+    // Explicitly exclude problematic or system tables
+    '!auth.sessions',
+    '!auth.oauth_clients',
+    '!auth.refresh_tokens',
+    '!auth.mfa_factors',
+
+    // Exclude internal extension-owned tables
+    '!extensions*',
+    '!storage*',
+
+    // Exclude specific app tables you don’t want seeded
     '!public.role_permissions',
   ],
 });

@@ -15,7 +15,7 @@ export const ENV = {
   // 🌐 Supabase configuration
   SUPABASE_URL: requireEnv('SUPABASE_URL'),
   SUPABASE_SERVICE_ROLE_KEY: requireEnv('SUPABASE_SERVICE_ROLE_KEY'),
-  SUPABASE_ANON_KEY: requireEnv('SUPABASE_ANON_KEY'),
+  SUPABASE_PUBLISHABLE_KEY: requireEnv('SUPABASE_PUBLISHABLE_KEY'),
 
   // 💳 Payment and external integrations
   PAYSTACK_SECRET_KEY: requireEnv('PAYSTACK_SECRET_KEY'),

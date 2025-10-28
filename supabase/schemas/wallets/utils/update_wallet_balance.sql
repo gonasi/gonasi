@@ -57,7 +57,7 @@ begin
       -- Credit to balance_reserved
       case new.destination_wallet_type
         when 'platform' then
-          update public.platform_wallets
+          update public.gonasi_wallets
           set balance_reserved = balance_reserved + new.amount,
               updated_at = timezone('utc', now())
           where id = new.destination_wallet_id;
@@ -67,7 +67,7 @@ begin
           end if;
 
         when 'organization' then
-          update public.org_wallets
+          update public.organization_wallets
           set balance_reserved = balance_reserved + new.amount,
               updated_at = timezone('utc', now())
           where id = new.destination_wallet_id;
@@ -91,7 +91,7 @@ begin
       -- Credit to balance_total
       case new.destination_wallet_type
         when 'platform' then
-          update public.platform_wallets
+          update public.gonasi_wallets
           set balance_total = balance_total + new.amount,
               updated_at = timezone('utc', now())
           where id = new.destination_wallet_id;
@@ -101,7 +101,7 @@ begin
           end if;
 
         when 'organization' then
-          update public.org_wallets
+          update public.organization_wallets
           set balance_total = balance_total + new.amount,
               updated_at = timezone('utc', now())
           where id = new.destination_wallet_id;
@@ -135,7 +135,7 @@ begin
           -- Check sufficient reserved balance
           select balance_reserved, 'platform-' || currency_code::text
           into v_current_reserved, v_wallet_owner
-          from public.platform_wallets
+          from public.gonasi_wallets
           where id = new.source_wallet_id;
           
           if not found then
@@ -147,7 +147,7 @@ begin
               v_wallet_owner, new.amount, v_current_reserved;
           end if;
           
-          update public.platform_wallets
+          update public.gonasi_wallets
           set balance_reserved = balance_reserved - new.amount,
               updated_at = timezone('utc', now())
           where id = new.source_wallet_id;
@@ -156,7 +156,7 @@ begin
           -- Check sufficient reserved balance
           select balance_reserved, 'org-' || organization_id::text
           into v_current_reserved, v_wallet_owner
-          from public.org_wallets
+          from public.organization_wallets
           where id = new.source_wallet_id;
           
           if not found then
@@ -168,7 +168,7 @@ begin
               v_wallet_owner, new.amount, v_current_reserved;
           end if;
           
-          update public.org_wallets
+          update public.organization_wallets
           set balance_reserved = balance_reserved - new.amount,
               updated_at = timezone('utc', now())
           where id = new.source_wallet_id;
@@ -202,7 +202,7 @@ begin
           -- Check sufficient total balance
           select balance_total, 'platform-' || currency_code::text
           into v_current_total, v_wallet_owner
-          from public.platform_wallets
+          from public.gonasi_wallets
           where id = new.source_wallet_id;
           
           if not found then
@@ -214,7 +214,7 @@ begin
               v_wallet_owner, new.amount, v_current_total;
           end if;
           
-          update public.platform_wallets
+          update public.gonasi_wallets
           set balance_total = balance_total - new.amount,
               updated_at = timezone('utc', now())
           where id = new.source_wallet_id;
@@ -223,7 +223,7 @@ begin
           -- Check sufficient total balance
           select balance_total, 'org-' || organization_id::text
           into v_current_total, v_wallet_owner
-          from public.org_wallets
+          from public.organization_wallets
           where id = new.source_wallet_id;
           
           if not found then
@@ -235,7 +235,7 @@ begin
               v_wallet_owner, new.amount, v_current_total;
           end if;
           
-          update public.org_wallets
+          update public.organization_wallets
           set balance_total = balance_total - new.amount,
               updated_at = timezone('utc', now())
           where id = new.source_wallet_id;

@@ -5,7 +5,7 @@ import type { Route } from './+types/callback';
 
 import { getServerEnv } from '~/.server/env.server';
 
-const { SUPABASE_URL, SUPABASE_ANON_KEY } = getServerEnv();
+const { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } = getServerEnv();
 
 export async function loader({ request }: Route.LoaderArgs) {
   const requestUrl = new URL(request.url);
@@ -15,7 +15,7 @@ export async function loader({ request }: Route.LoaderArgs) {
   const cookies = parseCookieHeader(request.headers.get('Cookie') ?? '');
 
   if (code) {
-    const supabase = createServerClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    const supabase = createServerClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
       cookies: {
         getAll() {
           return cookies;

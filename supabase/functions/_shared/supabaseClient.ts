@@ -14,7 +14,7 @@ export const supabaseAdmin = createClient(ENV.SUPABASE_URL, ENV.SUPABASE_SERVICE
 //   - For cases where you need to act as the user who triggered a webhook or request
 //   - Example: verifying RLS-accessible data in functions
 export function createUserClient(accessToken: string) {
-  return createClient(ENV.SUPABASE_URL, ENV.SUPABASE_ANON_KEY, {
+  return createClient(ENV.SUPABASE_URL, ENV.SUPABASE_PUBLISHABLE_KEY, {
     global: {
       headers: {
         Authorization: `Bearer ${accessToken}`,

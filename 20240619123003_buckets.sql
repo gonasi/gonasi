@@ -5,13 +5,6 @@ insert into storage.buckets (id, name, public)
 values ('profile_photos', 'profile_photos', false)
 on conflict (id) do nothing;
 
--- =================================================
--- set up public storage bucket for learning paths
--- =================================================
-insert into storage.buckets (id, name, public)
-values ('pathways', 'pathways', false)
-on conflict (id) do nothing;
-
 -- ====================================================
 -- ensure private storage bucket exists for general files
 -- ====================================================
