@@ -49,19 +49,158 @@ create table public.wallet_ledger_entries (
   -- ==========================================================================
   type text not null check (
     type in (
-      'course_sale',
-      'course_sale_payout',
+      -- ======================================================================
+      -- PAYMENT INFLOWS (Money coming into the platform)
+      -- ======================================================================
+      'payment_inflow',
+      -- Money received from external payment gateway (net of gateway fees)
+      -- Direction: credit to platform wallet
+      -- Example: Customer pays 100 KES, Paystack deducts 1.5 KES, 
+      --          platform receives 98.5 KES
+      -- Source: external → Destination: platform
+
+      -- ======================================================================
+      -- REVENUE DISTRIBUTION (How money is split internally)
+      -- ======================================================================
+      'org_payout',
+      -- Payment from platform to organization for their share of a sale
+      -- Direction: debit from platform, credit to organization
+      -- Example: Of the 100 KES sale, organization gets 80 KES
+      -- Source: platform → Destination: organization
+
+      'platform_revenue',
+      -- Platform's earned revenue recognition (net of all fees)
+      -- Direction: credit to platform (internal accounting entry)
+      -- Example: Platform keeps 18.5 KES (20 KES fee - 1.5 KES gateway cost)
+      -- Source: platform → Destination: platform
+
+      -- ======================================================================
+      -- EXPENSE TRACKING (Costs incurred by the platform)
+      -- ======================================================================
+      'payment_gateway_fee',
+      -- Fee paid to payment gateway (Paystack, Stripe, etc.)
+      -- Direction: debit from platform
+      -- Example: 1.5 KES deducted by Paystack
+      -- Source: platform → Destination: external
+
+      -- ======================================================================
+      -- SUBSCRIPTIONS (Recurring payments)
+      -- ======================================================================
       'subscription_payment',
+      -- Monthly/annual subscription payment received
+      -- Direction: credit to platform or organization wallet
+      -- Example: User pays for monthly platform subscription
+      -- Source: external → Destination: platform/organization
+
+      -- ======================================================================
+      -- DIGITAL PRODUCTS (One-time purchases)
+      -- ======================================================================
       'ai_credit_purchase',
+      -- Purchase of AI credits/tokens by users
+      -- Direction: credit to platform wallet
+      -- Example: User buys 1000 AI credits for 50 KES
+      -- Source: external → Destination: platform
+
+      -- ======================================================================
+      -- SPONSORSHIPS & PARTNERSHIPS
+      -- ======================================================================
       'sponsorship_payment',
+      -- Payment received from sponsors or partners
+      -- Direction: credit to organization wallet
+      -- Example: Company sponsors a course for 5000 KES
+      -- Source: external → Destination: organization
+
+      -- ======================================================================
+      -- FUNDS MANAGEMENT (Temporary holds & releases)
+      -- ======================================================================
       'funds_hold',
+      -- Temporary hold on funds (escrow, pending verification)
+      -- Direction: debit from available balance, credit to held balance
+      -- Example: Hold 1000 KES pending payout approval
+      -- Source: organization → Destination: platform (held)
+
       'funds_release',
-      'reward_payout',
+      -- Release of previously held funds
+      -- Direction: debit from held balance, credit to available balance
+      -- Example: Release 1000 KES after verification complete
+      -- Source: platform (held) → Destination: organization
+
+      -- ======================================================================
+      -- PAYOUTS & WITHDRAWALS (Money leaving the platform)
+      -- ======================================================================
       'withdrawal_request',
+      -- Organization requests to withdraw funds to their bank
+      -- Direction: debit from organization available balance
+      -- Status: pending
+      -- Example: Organization requests 50,000 KES withdrawal
+      -- Source: organization → Destination: external (pending)
+
       'withdrawal_complete',
-      'withdrawal_revert',
-      'platform_fee',
-      'paystack_fee'
+      -- Withdrawal successfully sent to bank account
+      -- Direction: Updates status of withdrawal_request to completed
+      -- Example: Bank confirms 50,000 KES received
+      -- Updates existing withdrawal_request entry
+
+      'withdrawal_failed',
+      -- Withdrawal failed (bank rejected, invalid account, etc.)
+      -- Direction: credit back to organization available balance
+      -- Example: Bank rejects transfer, refund 50,000 KES to wallet
+      -- Source: external → Destination: organization
+
+      -- ======================================================================
+      -- INCENTIVES & REWARDS
+      -- ======================================================================
+      'reward_payout',
+      -- Rewards, bonuses, or incentive payments to users/organizations
+      -- Direction: debit from platform, credit to user/organization
+      -- Example: 500 KES referral bonus paid to user
+      -- Source: platform → Destination: user/organization
+
+      -- ======================================================================
+      -- REFUNDS & REVERSALS
+      -- ======================================================================
+      'refund',
+      -- Full or partial refund of a previous payment
+      -- Direction: debit from organization, credit to platform → external
+      -- Example: Course refund of 100 KES to customer
+      -- Source: organization → Destination: external
+
+      'chargeback',
+      -- Payment reversed due to dispute/fraud
+      -- Direction: debit from organization wallet
+      -- Example: Customer disputes 100 KES charge, bank reverses it
+      -- Source: organization → Destination: external
+
+      -- ======================================================================
+      -- ADJUSTMENTS & CORRECTIONS
+      -- ======================================================================
+      'manual_adjustment',
+      -- Manual correction by admin (positive or negative)
+      -- Direction: varies (must include reason in metadata)
+      -- Example: Correct accounting error, add/subtract from wallet
+      -- Source: varies → Destination: varies
+      -- ⚠️ Requires admin approval and detailed audit trail
+
+      'currency_conversion',
+      -- Exchange rate adjustment when converting between currencies
+      -- Direction: debit one currency, credit another
+      -- Example: Convert 100 USD to 13,000 KES
+      -- Source: wallet (USD) → Destination: wallet (KES)
+
+      -- ======================================================================
+      -- COMPLIANCE & LEGAL
+      -- ======================================================================
+      'tax_withholding',
+      -- Tax withheld from payout (required in some jurisdictions)
+      -- Direction: debit from organization payout
+      -- Example: Withhold 16% VAT from 10,000 KES payout
+      -- Source: organization → Destination: platform (tax holding)
+
+      'tax_remittance'
+      -- Tax paid to tax authority
+      -- Direction: debit from platform tax holding account
+      -- Example: Remit 1,600 KES VAT to Kenya Revenue Authority
+      -- Source: platform (tax holding) → Destination: external
     )
   ),
 

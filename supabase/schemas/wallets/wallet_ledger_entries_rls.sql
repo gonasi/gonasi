@@ -27,6 +27,6 @@ using (
           where ow.id = wallet_ledger_entries.destination_wallet_id
           limit 1)
       ),
-      auth.uid()
+      (select auth.uid())
     ) in ('owner', 'admin')
 );
