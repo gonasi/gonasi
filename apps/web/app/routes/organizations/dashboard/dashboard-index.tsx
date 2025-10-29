@@ -2,11 +2,12 @@ import { Award } from 'lucide-react';
 
 import { OrganizationPlanCard } from './components/OrganizationPlanCard';
 import { TotalCoursesCard } from './components/TotalCoursesCard';
+import { TotalEarningsCard } from './components/TotalEarningsCard';
 import { TotalEnrollmentsCard } from './components/TotalEnrollmentsCard';
 import { TotalReEnrollmentsCard } from './components/TotalReEnrollmentsCard';
 import { TotalStudentsCard } from './components/TotalStudentsCard';
 
-import { EarningsCard, StatsCard, StorageCard } from '~/components/cards';
+import { StatsCard, StorageCard } from '~/components/cards';
 
 export default function DashboardIndex() {
   return (
@@ -16,6 +17,10 @@ export default function DashboardIndex() {
         <TotalStudentsCard />
         <TotalEnrollmentsCard />
         <TotalReEnrollmentsCard />
+      </div>
+
+      <div>
+        <TotalEarningsCard />
       </div>
 
       {/* Plan, Storage, and Completion */}
@@ -29,9 +34,6 @@ export default function DashboardIndex() {
           icon={Award}
           trend={{ value: '3%', positive: true }}
         />
-      </div>
-      <div>
-        <EarningsCard />
       </div>
     </section>
   );
