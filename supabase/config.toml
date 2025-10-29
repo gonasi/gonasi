@@ -84,9 +84,16 @@ schema_paths = [
 
   './schemas/pricing/utils/payment_frequency.sql',
   './schemas/pricing/utils/currency_code.sql',
+  
 
   # organizations
   './schemas/organizations/organizations_schema_and_indexes.sql',
+  # members schema
+  './schemas/organizations/organization_members_schema_indexes.sql',
+  './schemas/organizations/organization_invites_schema_and_indexes.sql',
+
+
+  './schemas/organizations/utils.sql',
 
   # gonasi wallets
   './schemas/wallets/gonasi_wallets_schema_and_indexes.sql',
@@ -98,21 +105,18 @@ schema_paths = [
   './schemas/wallets/user_wallets_rls.sql',
   './schemas/wallets/utils/create_user_wallets.sql',
 
-
-  # user
+  # org wallet
+  './schemas/wallets/organization_wallets_schema_and_indexes.sql',
+  './schemas/wallets/organization_wallets_rls.sql',
 
   # wallets
   './schemas/wallets/utils/transaction_status.sql',
   './schemas/wallets/wallet_ledger_entries_schema_and_indexes.sql',
+  './schemas/wallets/wallet_ledger_entries_rls.sql',
   './schemas/wallets/utils/update_wallet_balance.sql',
 
 
-  # members schema
-  './schemas/organizations/organization_members_schema_indexes.sql',
-  
-  './schemas/organizations/organization_invites_schema_and_indexes.sql',
-
-
+ 
   # add modes profile migration
   './schemas/profiles_add_modes_migration.sql',
 
@@ -127,8 +131,6 @@ schema_paths = [
   # members rls
   './schemas/organizations/organizations_functions_triggers.sql',
 
-
-  './schemas/organizations/utils.sql',
 
   './schemas/organizations/organizations_rls.sql',
   './schemas/organizations/organization_members_rls.sql',
@@ -216,17 +218,6 @@ schema_paths = [
   './schemas/publishedCourses/published_courses_rls.sql',
   './schemas/publishedCourses/published_course_structure_content_rls.sql',
   './schemas/publishedCourses/published_thumbnails_bucket_rls.sql',
-
-  # gonasi wallet
-  './schemas/gonasiWallets/gonasi_wallet_transactions_schema_indexes.sql',
-  './schemas/gonasiWallets/gonasi_wallet_transactions_rls.sql',
-
-      # org wallet
-  './schemas/wallets/organization_wallets_schema_and_indexes.sql',
-  './schemas/wallets/organization_wallets_rls.sql',
-
-  './schemas/organizationWallets/wallet_transactions_schema_indexes.sql',
-  './schemas/organizationWallets/wallet_transactions_rls.sql',
 
   # enrollments functions utils
   './schemas/enrollments/utils/calculate_access_end_date.sql',

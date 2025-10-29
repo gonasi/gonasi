@@ -1004,57 +1004,6 @@ export type Database = {
           },
         ]
       }
-      gonasi_wallet_transactions: {
-        Row: {
-          amount: number
-          course_payment_id: string | null
-          created_at: string
-          direction: string
-          id: string
-          metadata: Json | null
-          type: string
-          updated_at: string
-          wallet_id: string
-        }
-        Insert: {
-          amount: number
-          course_payment_id?: string | null
-          created_at?: string
-          direction: string
-          id?: string
-          metadata?: Json | null
-          type: string
-          updated_at?: string
-          wallet_id: string
-        }
-        Update: {
-          amount?: number
-          course_payment_id?: string | null
-          created_at?: string
-          direction?: string
-          id?: string
-          metadata?: Json | null
-          type?: string
-          updated_at?: string
-          wallet_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "gonasi_wallet_transactions_course_payment_id_fkey"
-            columns: ["course_payment_id"]
-            isOneToOne: false
-            referencedRelation: "course_payments"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "gonasi_wallet_transactions_wallet_id_fkey"
-            columns: ["wallet_id"]
-            isOneToOne: false
-            referencedRelation: "gonasi_wallets"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       gonasi_wallets: {
         Row: {
           balance_reserved: number
@@ -2284,67 +2233,6 @@ export type Database = {
         }
         Relationships: []
       }
-      wallet_transactions: {
-        Row: {
-          amount: number
-          course_payment_id: string | null
-          created_at: string
-          created_by: string | null
-          direction: string
-          id: string
-          metadata: Json | null
-          type: string
-          wallet_id: string
-          withdrawal_request_id: string | null
-        }
-        Insert: {
-          amount: number
-          course_payment_id?: string | null
-          created_at?: string
-          created_by?: string | null
-          direction: string
-          id?: string
-          metadata?: Json | null
-          type: string
-          wallet_id: string
-          withdrawal_request_id?: string | null
-        }
-        Update: {
-          amount?: number
-          course_payment_id?: string | null
-          created_at?: string
-          created_by?: string | null
-          direction?: string
-          id?: string
-          metadata?: Json | null
-          type?: string
-          wallet_id?: string
-          withdrawal_request_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "wallet_transactions_course_payment_id_fkey"
-            columns: ["course_payment_id"]
-            isOneToOne: false
-            referencedRelation: "course_payments"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "wallet_transactions_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "wallet_transactions_wallet_id_fkey"
-            columns: ["wallet_id"]
-            isOneToOne: false
-            referencedRelation: "organization_wallets"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
     }
     Views: {
       v_organizations_ai_available_credits: {
@@ -2727,6 +2615,18 @@ export type Database = {
         | "pricing_tier.crud"
         | "go_wallet.view"
         | "go_wallet.withdraw"
+        | "go_su_create"
+        | "go_su_read"
+        | "go_su_update"
+        | "go_su_delete"
+        | "go_admin_create"
+        | "go_admin_read"
+        | "go_admin_update"
+        | "go_admin_delete"
+        | "go_staff_create"
+        | "go_staff_read"
+        | "go_staff_update"
+        | "go_staff_delete"
       app_role: "go_su" | "go_admin" | "go_staff" | "user"
       course_access: "public" | "private"
       currency_code: "KES" | "USD"
@@ -2896,6 +2796,18 @@ export const Constants = {
         "pricing_tier.crud",
         "go_wallet.view",
         "go_wallet.withdraw",
+        "go_su_create",
+        "go_su_read",
+        "go_su_update",
+        "go_su_delete",
+        "go_admin_create",
+        "go_admin_read",
+        "go_admin_update",
+        "go_admin_delete",
+        "go_staff_create",
+        "go_staff_read",
+        "go_staff_update",
+        "go_staff_delete",
       ],
       app_role: ["go_su", "go_admin", "go_staff", "user"],
       course_access: ["public", "private"],

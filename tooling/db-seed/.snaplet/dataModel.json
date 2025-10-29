@@ -2852,34 +2852,6 @@
           "isGenerated": false,
           "sequence": false,
           "hasDefaultValue": false
-        },
-        {
-          "name": "gonasi_wallet_transactions",
-          "type": "gonasi_wallet_transactions",
-          "isRequired": false,
-          "kind": "object",
-          "relationName": "gonasi_wallet_transactionsTocourse_payments",
-          "relationFromFields": [],
-          "relationToFields": [],
-          "isList": true,
-          "isId": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false
-        },
-        {
-          "name": "wallet_transactions",
-          "type": "wallet_transactions",
-          "isRequired": false,
-          "kind": "object",
-          "relationName": "wallet_transactionsTocourse_payments",
-          "relationFromFields": [],
-          "relationToFields": [],
-          "isList": true,
-          "isId": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false
         }
       ],
       "uniqueConstraints": [
@@ -4868,184 +4840,6 @@
       ],
       "uniqueConstraints": []
     },
-    "gonasi_wallet_transactions": {
-      "id": "public.gonasi_wallet_transactions",
-      "schemaName": "public",
-      "tableName": "gonasi_wallet_transactions",
-      "fields": [
-        {
-          "id": "public.gonasi_wallet_transactions.id",
-          "name": "id",
-          "columnName": "id",
-          "type": "uuid",
-          "isRequired": true,
-          "kind": "scalar",
-          "isList": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": true,
-          "isId": true,
-          "maxLength": null
-        },
-        {
-          "id": "public.gonasi_wallet_transactions.wallet_id",
-          "name": "wallet_id",
-          "columnName": "wallet_id",
-          "type": "uuid",
-          "isRequired": true,
-          "kind": "scalar",
-          "isList": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false,
-          "isId": false,
-          "maxLength": null
-        },
-        {
-          "id": "public.gonasi_wallet_transactions.type",
-          "name": "type",
-          "columnName": "type",
-          "type": "text",
-          "isRequired": true,
-          "kind": "scalar",
-          "isList": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false,
-          "isId": false,
-          "maxLength": null
-        },
-        {
-          "id": "public.gonasi_wallet_transactions.direction",
-          "name": "direction",
-          "columnName": "direction",
-          "type": "text",
-          "isRequired": true,
-          "kind": "scalar",
-          "isList": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false,
-          "isId": false,
-          "maxLength": null
-        },
-        {
-          "id": "public.gonasi_wallet_transactions.amount",
-          "name": "amount",
-          "columnName": "amount",
-          "type": "numeric",
-          "isRequired": true,
-          "kind": "scalar",
-          "isList": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false,
-          "isId": false,
-          "maxLength": null
-        },
-        {
-          "id": "public.gonasi_wallet_transactions.course_payment_id",
-          "name": "course_payment_id",
-          "columnName": "course_payment_id",
-          "type": "uuid",
-          "isRequired": false,
-          "kind": "scalar",
-          "isList": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false,
-          "isId": false,
-          "maxLength": null
-        },
-        {
-          "id": "public.gonasi_wallet_transactions.metadata",
-          "name": "metadata",
-          "columnName": "metadata",
-          "type": "jsonb",
-          "isRequired": false,
-          "kind": "scalar",
-          "isList": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false,
-          "isId": false,
-          "maxLength": null
-        },
-        {
-          "id": "public.gonasi_wallet_transactions.created_at",
-          "name": "created_at",
-          "columnName": "created_at",
-          "type": "timestamptz",
-          "isRequired": true,
-          "kind": "scalar",
-          "isList": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": true,
-          "isId": false,
-          "maxLength": null
-        },
-        {
-          "id": "public.gonasi_wallet_transactions.updated_at",
-          "name": "updated_at",
-          "columnName": "updated_at",
-          "type": "timestamptz",
-          "isRequired": true,
-          "kind": "scalar",
-          "isList": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": true,
-          "isId": false,
-          "maxLength": null
-        },
-        {
-          "name": "course_payments",
-          "type": "course_payments",
-          "isRequired": false,
-          "kind": "object",
-          "relationName": "gonasi_wallet_transactionsTocourse_payments",
-          "relationFromFields": [
-            "course_payment_id"
-          ],
-          "relationToFields": [
-            "id"
-          ],
-          "isList": false,
-          "isId": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false
-        },
-        {
-          "name": "gonasi_wallets",
-          "type": "gonasi_wallets",
-          "isRequired": true,
-          "kind": "object",
-          "relationName": "gonasi_wallet_transactionsTogonasi_wallets",
-          "relationFromFields": [
-            "wallet_id"
-          ],
-          "relationToFields": [
-            "id"
-          ],
-          "isList": false,
-          "isId": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false
-        }
-      ],
-      "uniqueConstraints": [
-        {
-          "name": "gonasi_wallet_transactions_pkey",
-          "fields": [
-            "id"
-          ],
-          "nullNotDistinct": false
-        }
-      ]
-    },
     "gonasi_wallets": {
       "id": "public.gonasi_wallets",
       "schemaName": "public",
@@ -5134,20 +4928,6 @@
           "hasDefaultValue": true,
           "isId": false,
           "maxLength": null
-        },
-        {
-          "name": "gonasi_wallet_transactions",
-          "type": "gonasi_wallet_transactions",
-          "isRequired": false,
-          "kind": "object",
-          "relationName": "gonasi_wallet_transactionsTogonasi_wallets",
-          "relationFromFields": [],
-          "relationToFields": [],
-          "isList": true,
-          "isId": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false
         }
       ],
       "uniqueConstraints": [
@@ -10129,20 +9909,6 @@
           "isGenerated": false,
           "sequence": false,
           "hasDefaultValue": false
-        },
-        {
-          "name": "wallet_transactions",
-          "type": "wallet_transactions",
-          "isRequired": false,
-          "kind": "object",
-          "relationName": "wallet_transactionsToorganization_wallets",
-          "relationFromFields": [],
-          "relationToFields": [],
-          "isList": true,
-          "isId": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false
         }
       ],
       "uniqueConstraints": [
@@ -11895,20 +11661,6 @@
           "isRequired": false,
           "kind": "object",
           "relationName": "user_rolesToprofiles",
-          "relationFromFields": [],
-          "relationToFields": [],
-          "isList": true,
-          "isId": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false
-        },
-        {
-          "name": "wallet_transactions",
-          "type": "wallet_transactions",
-          "isRequired": false,
-          "kind": "object",
-          "relationName": "wallet_transactionsToprofiles",
           "relationFromFields": [],
           "relationToFields": [],
           "isList": true,
@@ -16585,216 +16337,6 @@
           "nullNotDistinct": false
         }
       ]
-    },
-    "wallet_transactions": {
-      "id": "public.wallet_transactions",
-      "schemaName": "public",
-      "tableName": "wallet_transactions",
-      "fields": [
-        {
-          "id": "public.wallet_transactions.id",
-          "name": "id",
-          "columnName": "id",
-          "type": "uuid",
-          "isRequired": true,
-          "kind": "scalar",
-          "isList": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": true,
-          "isId": true,
-          "maxLength": null
-        },
-        {
-          "id": "public.wallet_transactions.wallet_id",
-          "name": "wallet_id",
-          "columnName": "wallet_id",
-          "type": "uuid",
-          "isRequired": true,
-          "kind": "scalar",
-          "isList": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false,
-          "isId": false,
-          "maxLength": null
-        },
-        {
-          "id": "public.wallet_transactions.type",
-          "name": "type",
-          "columnName": "type",
-          "type": "text",
-          "isRequired": true,
-          "kind": "scalar",
-          "isList": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false,
-          "isId": false,
-          "maxLength": null
-        },
-        {
-          "id": "public.wallet_transactions.amount",
-          "name": "amount",
-          "columnName": "amount",
-          "type": "numeric",
-          "isRequired": true,
-          "kind": "scalar",
-          "isList": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false,
-          "isId": false,
-          "maxLength": null
-        },
-        {
-          "id": "public.wallet_transactions.direction",
-          "name": "direction",
-          "columnName": "direction",
-          "type": "text",
-          "isRequired": true,
-          "kind": "scalar",
-          "isList": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false,
-          "isId": false,
-          "maxLength": null
-        },
-        {
-          "id": "public.wallet_transactions.course_payment_id",
-          "name": "course_payment_id",
-          "columnName": "course_payment_id",
-          "type": "uuid",
-          "isRequired": false,
-          "kind": "scalar",
-          "isList": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false,
-          "isId": false,
-          "maxLength": null
-        },
-        {
-          "id": "public.wallet_transactions.withdrawal_request_id",
-          "name": "withdrawal_request_id",
-          "columnName": "withdrawal_request_id",
-          "type": "uuid",
-          "isRequired": false,
-          "kind": "scalar",
-          "isList": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false,
-          "isId": false,
-          "maxLength": null
-        },
-        {
-          "id": "public.wallet_transactions.metadata",
-          "name": "metadata",
-          "columnName": "metadata",
-          "type": "jsonb",
-          "isRequired": false,
-          "kind": "scalar",
-          "isList": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false,
-          "isId": false,
-          "maxLength": null
-        },
-        {
-          "id": "public.wallet_transactions.created_at",
-          "name": "created_at",
-          "columnName": "created_at",
-          "type": "timestamptz",
-          "isRequired": true,
-          "kind": "scalar",
-          "isList": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": true,
-          "isId": false,
-          "maxLength": null
-        },
-        {
-          "id": "public.wallet_transactions.created_by",
-          "name": "created_by",
-          "columnName": "created_by",
-          "type": "uuid",
-          "isRequired": false,
-          "kind": "scalar",
-          "isList": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false,
-          "isId": false,
-          "maxLength": null
-        },
-        {
-          "name": "course_payments",
-          "type": "course_payments",
-          "isRequired": false,
-          "kind": "object",
-          "relationName": "wallet_transactionsTocourse_payments",
-          "relationFromFields": [
-            "course_payment_id"
-          ],
-          "relationToFields": [
-            "id"
-          ],
-          "isList": false,
-          "isId": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false
-        },
-        {
-          "name": "organization_wallets",
-          "type": "organization_wallets",
-          "isRequired": true,
-          "kind": "object",
-          "relationName": "wallet_transactionsToorganization_wallets",
-          "relationFromFields": [
-            "wallet_id"
-          ],
-          "relationToFields": [
-            "id"
-          ],
-          "isList": false,
-          "isId": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false
-        },
-        {
-          "name": "profiles",
-          "type": "profiles",
-          "isRequired": false,
-          "kind": "object",
-          "relationName": "wallet_transactionsToprofiles",
-          "relationFromFields": [
-            "created_by"
-          ],
-          "relationToFields": [
-            "id"
-          ],
-          "isList": false,
-          "isId": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false
-        }
-      ],
-      "uniqueConstraints": [
-        {
-          "name": "wallet_transactions_pkey",
-          "fields": [
-            "id"
-          ],
-          "nullNotDistinct": false
-        }
-      ]
     }
   },
   "enums": {
@@ -16978,6 +16520,42 @@
         },
         {
           "name": "featured_courses_pricing.update"
+        },
+        {
+          "name": "go_admin_create"
+        },
+        {
+          "name": "go_admin_delete"
+        },
+        {
+          "name": "go_admin_read"
+        },
+        {
+          "name": "go_admin_update"
+        },
+        {
+          "name": "go_staff_create"
+        },
+        {
+          "name": "go_staff_delete"
+        },
+        {
+          "name": "go_staff_read"
+        },
+        {
+          "name": "go_staff_update"
+        },
+        {
+          "name": "go_su_create"
+        },
+        {
+          "name": "go_su_delete"
+        },
+        {
+          "name": "go_su_read"
+        },
+        {
+          "name": "go_su_update"
         },
         {
           "name": "go_wallet.view"

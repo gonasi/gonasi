@@ -1,6 +1,6 @@
 create type "public"."analytics_level" as enum ('basic', 'intermediate', 'advanced', 'enterprise');
 
-create type "public"."app_permission" as enum ('course_categories.insert', 'course_categories.update', 'course_categories.delete', 'course_sub_categories.insert', 'course_sub_categories.update', 'course_sub_categories.delete', 'featured_courses_pricing.insert', 'featured_courses_pricing.update', 'featured_courses_pricing.delete', 'lesson_types.insert', 'lesson_types.update', 'lesson_types.delete', 'pricing_tier.crud', 'go_wallet.view', 'go_wallet.withdraw');
+create type "public"."app_permission" as enum ('course_categories.insert', 'course_categories.update', 'course_categories.delete', 'course_sub_categories.insert', 'course_sub_categories.update', 'course_sub_categories.delete', 'featured_courses_pricing.insert', 'featured_courses_pricing.update', 'featured_courses_pricing.delete', 'lesson_types.insert', 'lesson_types.update', 'lesson_types.delete', 'pricing_tier.crud', 'go_wallet.view', 'go_wallet.withdraw', 'go_su_create', 'go_su_read', 'go_su_update', 'go_su_delete', 'go_admin_create', 'go_admin_read', 'go_admin_update', 'go_admin_delete', 'go_staff_create', 'go_staff_read', 'go_staff_update', 'go_staff_delete');
 
 create type "public"."app_role" as enum ('go_su', 'go_admin', 'go_staff', 'user');
 
@@ -318,22 +318,6 @@ alter table "public"."courses" enable row level security;
 
 
 alter table "public"."file_library" enable row level security;
-
-
-  create table "public"."gonasi_wallet_transactions" (
-    "id" uuid not null default extensions.uuid_generate_v4(),
-    "wallet_id" uuid not null,
-    "type" text not null,
-    "direction" text not null,
-    "amount" numeric(19,4) not null,
-    "course_payment_id" uuid,
-    "metadata" jsonb,
-    "created_at" timestamp with time zone not null default timezone('utc'::text, now()),
-    "updated_at" timestamp with time zone not null default timezone('utc'::text, now())
-      );
-
-
-alter table "public"."gonasi_wallet_transactions" enable row level security;
 
 
   create table "public"."gonasi_wallets" (
@@ -725,22 +709,7 @@ alter table "public"."user_wallets" enable row level security;
       );
 
 
-
-  create table "public"."wallet_transactions" (
-    "id" uuid not null default extensions.uuid_generate_v4(),
-    "wallet_id" uuid not null,
-    "type" text not null,
-    "amount" numeric(19,4) not null,
-    "direction" text not null,
-    "course_payment_id" uuid,
-    "withdrawal_request_id" uuid,
-    "metadata" jsonb,
-    "created_at" timestamp with time zone not null default timezone('utc'::text, now()),
-    "created_by" uuid
-      );
-
-
-alter table "public"."wallet_transactions" enable row level security;
+alter table "public"."wallet_ledger_entries" enable row level security;
 
 CREATE UNIQUE INDEX ai_usage_log_pkey ON public.ai_usage_log USING btree (id);
 
@@ -779,8 +748,6 @@ CREATE UNIQUE INDEX courses_organization_id_name_key ON public.courses USING btr
 CREATE UNIQUE INDEX courses_pkey ON public.courses USING btree (id);
 
 CREATE UNIQUE INDEX file_library_pkey ON public.file_library USING btree (id);
-
-CREATE UNIQUE INDEX gonasi_wallet_transactions_pkey ON public.gonasi_wallet_transactions USING btree (id);
 
 CREATE UNIQUE INDEX gonasi_wallets_currency_code_key ON public.gonasi_wallets USING btree (currency_code);
 
@@ -945,16 +912,6 @@ CREATE INDEX idx_file_library_organization_id ON public.file_library USING btree
 CREATE INDEX idx_file_library_updated_by ON public.file_library USING btree (updated_by);
 
 CREATE INDEX idx_file_library_updated_by_org ON public.file_library USING btree (updated_by, organization_id);
-
-CREATE INDEX idx_gonasi_wallet_transactions_course_payment_id ON public.gonasi_wallet_transactions USING btree (course_payment_id);
-
-CREATE INDEX idx_gonasi_wallet_transactions_created_at ON public.gonasi_wallet_transactions USING btree (created_at DESC);
-
-CREATE INDEX idx_gonasi_wallet_transactions_direction ON public.gonasi_wallet_transactions USING btree (direction);
-
-CREATE INDEX idx_gonasi_wallet_transactions_type ON public.gonasi_wallet_transactions USING btree (type);
-
-CREATE INDEX idx_gonasi_wallet_transactions_wallet_id ON public.gonasi_wallet_transactions USING btree (wallet_id);
 
 CREATE INDEX idx_gonasi_wallets_created_at ON public.gonasi_wallets USING btree (created_at);
 
@@ -1124,18 +1081,6 @@ CREATE INDEX idx_user_wallets_currency_code ON public.user_wallets USING btree (
 
 CREATE INDEX idx_user_wallets_user_id ON public.user_wallets USING btree (user_id);
 
-CREATE INDEX idx_wallet_transactions_course_payment_id ON public.wallet_transactions USING btree (course_payment_id);
-
-CREATE INDEX idx_wallet_transactions_created_by ON public.wallet_transactions USING btree (created_by);
-
-CREATE INDEX idx_wallet_transactions_direction ON public.wallet_transactions USING btree (direction);
-
-CREATE INDEX idx_wallet_transactions_type ON public.wallet_transactions USING btree (type);
-
-CREATE INDEX idx_wallet_transactions_wallet_id ON public.wallet_transactions USING btree (wallet_id);
-
-CREATE INDEX idx_wallet_transactions_withdrawal_request_id ON public.wallet_transactions USING btree (withdrawal_request_id);
-
 CREATE INDEX idx_wallet_tx_created_at ON public.wallet_ledger_entries USING btree (created_at);
 
 CREATE INDEX idx_wallet_tx_currency ON public.wallet_ledger_entries USING btree (currency_code);
@@ -1242,8 +1187,6 @@ CREATE UNIQUE INDEX user_wallets_user_id_currency_code_key ON public.user_wallet
 
 CREATE UNIQUE INDEX wallet_ledger_entries_pkey ON public.wallet_ledger_entries USING btree (id);
 
-CREATE UNIQUE INDEX wallet_transactions_pkey ON public.wallet_transactions USING btree (id);
-
 alter table "public"."ai_usage_log" add constraint "ai_usage_log_pkey" PRIMARY KEY using index "ai_usage_log_pkey";
 
 alter table "public"."block_progress" add constraint "block_progress_pkey" PRIMARY KEY using index "block_progress_pkey";
@@ -1269,8 +1212,6 @@ alter table "public"."course_sub_categories" add constraint "course_sub_categori
 alter table "public"."courses" add constraint "courses_pkey" PRIMARY KEY using index "courses_pkey";
 
 alter table "public"."file_library" add constraint "file_library_pkey" PRIMARY KEY using index "file_library_pkey";
-
-alter table "public"."gonasi_wallet_transactions" add constraint "gonasi_wallet_transactions_pkey" PRIMARY KEY using index "gonasi_wallet_transactions_pkey";
 
 alter table "public"."gonasi_wallets" add constraint "gonasi_wallets_pkey" PRIMARY KEY using index "gonasi_wallets_pkey";
 
@@ -1313,8 +1254,6 @@ alter table "public"."user_roles" add constraint "user_roles_pkey" PRIMARY KEY u
 alter table "public"."user_wallets" add constraint "user_wallets_pkey" PRIMARY KEY using index "user_wallets_pkey";
 
 alter table "public"."wallet_ledger_entries" add constraint "wallet_ledger_entries_pkey" PRIMARY KEY using index "wallet_ledger_entries_pkey";
-
-alter table "public"."wallet_transactions" add constraint "wallet_transactions_pkey" PRIMARY KEY using index "wallet_transactions_pkey";
 
 alter table "public"."ai_usage_log" add constraint "ai_usage_log_org_id_fkey" FOREIGN KEY (org_id) REFERENCES public.organizations(id) ON DELETE CASCADE not valid;
 
@@ -1563,26 +1502,6 @@ alter table "public"."file_library" add constraint "unique_file_path_per_course"
 alter table "public"."file_library" add constraint "valid_file_extension" CHECK ((((file_type = 'image'::public.file_type) AND (lower(extension) = ANY (ARRAY['jpg'::text, 'jpeg'::text, 'png'::text, 'gif'::text, 'webp'::text, 'svg'::text, 'bmp'::text, 'tif'::text, 'tiff'::text, 'heic'::text]))) OR ((file_type = 'audio'::public.file_type) AND (lower(extension) = ANY (ARRAY['mp3'::text, 'wav'::text, 'aac'::text, 'flac'::text, 'ogg'::text, 'm4a'::text, 'aiff'::text, 'aif'::text]))) OR ((file_type = 'video'::public.file_type) AND (lower(extension) = ANY (ARRAY['mp4'::text, 'webm'::text, 'mov'::text, 'avi'::text, 'mkv'::text, 'flv'::text, 'wmv'::text]))) OR ((file_type = 'model3d'::public.file_type) AND (lower(extension) = ANY (ARRAY['gltf'::text, 'glb'::text, 'obj'::text, 'fbx'::text, 'stl'::text, 'dae'::text, '3ds'::text, 'usdz'::text]))) OR ((file_type = 'document'::public.file_type) AND (lower(extension) = ANY (ARRAY['pdf'::text, 'doc'::text, 'docx'::text, 'xls'::text, 'xlsx'::text, 'ppt'::text, 'pptx'::text, 'txt'::text]))) OR (file_type = 'other'::public.file_type))) not valid;
 
 alter table "public"."file_library" validate constraint "valid_file_extension";
-
-alter table "public"."gonasi_wallet_transactions" add constraint "gonasi_wallet_transactions_amount_check" CHECK ((amount >= (0)::numeric)) not valid;
-
-alter table "public"."gonasi_wallet_transactions" validate constraint "gonasi_wallet_transactions_amount_check";
-
-alter table "public"."gonasi_wallet_transactions" add constraint "gonasi_wallet_transactions_course_payment_id_fkey" FOREIGN KEY (course_payment_id) REFERENCES public.course_payments(id) ON DELETE SET NULL not valid;
-
-alter table "public"."gonasi_wallet_transactions" validate constraint "gonasi_wallet_transactions_course_payment_id_fkey";
-
-alter table "public"."gonasi_wallet_transactions" add constraint "gonasi_wallet_transactions_direction_check" CHECK ((direction = ANY (ARRAY['credit'::text, 'debit'::text]))) not valid;
-
-alter table "public"."gonasi_wallet_transactions" validate constraint "gonasi_wallet_transactions_direction_check";
-
-alter table "public"."gonasi_wallet_transactions" add constraint "gonasi_wallet_transactions_type_check" CHECK ((type = ANY (ARRAY['platform_fee'::text, 'withdrawal'::text, 'adjustment'::text]))) not valid;
-
-alter table "public"."gonasi_wallet_transactions" validate constraint "gonasi_wallet_transactions_type_check";
-
-alter table "public"."gonasi_wallet_transactions" add constraint "gonasi_wallet_transactions_wallet_id_fkey" FOREIGN KEY (wallet_id) REFERENCES public.gonasi_wallets(id) ON DELETE RESTRICT not valid;
-
-alter table "public"."gonasi_wallet_transactions" validate constraint "gonasi_wallet_transactions_wallet_id_fkey";
 
 alter table "public"."gonasi_wallets" add constraint "gonasi_wallets_currency_code_key" UNIQUE using index "gonasi_wallets_currency_code_key";
 
@@ -2107,30 +2026,6 @@ alter table "public"."wallet_ledger_entries" validate constraint "wallet_tx_exte
 alter table "public"."wallet_ledger_entries" add constraint "wallet_tx_external_id_null" CHECK ((((source_wallet_type = 'external'::text) AND (source_wallet_id IS NULL)) OR (source_wallet_type <> 'external'::text))) not valid;
 
 alter table "public"."wallet_ledger_entries" validate constraint "wallet_tx_external_id_null";
-
-alter table "public"."wallet_transactions" add constraint "wallet_transactions_amount_check" CHECK ((amount >= (0)::numeric)) not valid;
-
-alter table "public"."wallet_transactions" validate constraint "wallet_transactions_amount_check";
-
-alter table "public"."wallet_transactions" add constraint "wallet_transactions_course_payment_id_fkey" FOREIGN KEY (course_payment_id) REFERENCES public.course_payments(id) ON DELETE SET NULL not valid;
-
-alter table "public"."wallet_transactions" validate constraint "wallet_transactions_course_payment_id_fkey";
-
-alter table "public"."wallet_transactions" add constraint "wallet_transactions_created_by_fkey" FOREIGN KEY (created_by) REFERENCES public.profiles(id) ON DELETE SET NULL not valid;
-
-alter table "public"."wallet_transactions" validate constraint "wallet_transactions_created_by_fkey";
-
-alter table "public"."wallet_transactions" add constraint "wallet_transactions_direction_check" CHECK ((direction = ANY (ARRAY['credit'::text, 'debit'::text]))) not valid;
-
-alter table "public"."wallet_transactions" validate constraint "wallet_transactions_direction_check";
-
-alter table "public"."wallet_transactions" add constraint "wallet_transactions_type_check" CHECK ((type = ANY (ARRAY['payout'::text, 'withdrawal'::text, 'refund'::text, 'adjustment'::text]))) not valid;
-
-alter table "public"."wallet_transactions" validate constraint "wallet_transactions_type_check";
-
-alter table "public"."wallet_transactions" add constraint "wallet_transactions_wallet_id_fkey" FOREIGN KEY (wallet_id) REFERENCES public.organization_wallets(id) ON DELETE CASCADE not valid;
-
-alter table "public"."wallet_transactions" validate constraint "wallet_transactions_wallet_id_fkey";
 
 set check_function_bodies = off;
 
@@ -5513,6 +5408,8 @@ begin
     -- =============================================================
     -- 7. Ledger entries (wallet updates handled by trigger)
     -- =============================================================
+
+    -- (1) External → Platform (customer payment)
     insert into public.wallet_ledger_entries(
         source_wallet_type, source_wallet_id,
         destination_wallet_type, destination_wallet_id,
@@ -5542,6 +5439,7 @@ begin
         )
     ) returning id into v_ledger_platform_receives_payment;
 
+    -- (2) Platform → External (Paystack fee)
     insert into public.wallet_ledger_entries(
         source_wallet_type, source_wallet_id,
         destination_wallet_type, destination_wallet_id,
@@ -5558,6 +5456,8 @@ begin
         )
     ) returning id into v_ledger_platform_pays_paystack;
 
+    -- (3) Platform → Organization (org payout)
+    -- FIXED: Use 'credit' for organization inflows instead of 'debit'
     insert into public.wallet_ledger_entries(
         source_wallet_type, source_wallet_id,
         destination_wallet_type, destination_wallet_id,
@@ -5567,7 +5467,7 @@ begin
     ) values (
         'platform', v_platform_wallet_id,
         'organization', v_org_wallet_id,
-        v_tier_currency, v_org_net_amount, 'debit', 'course_sale_payout', 'completed',
+        v_tier_currency, v_org_net_amount, 'credit', 'course_sale_payout', 'completed',
         'course', p_published_course_id, p_paystack_reference,
         jsonb_build_object(
             'platform_fee_percent', v_platform_fee_percent,
@@ -8349,48 +8249,6 @@ grant truncate on table "public"."file_library" to "service_role";
 
 grant update on table "public"."file_library" to "service_role";
 
-grant delete on table "public"."gonasi_wallet_transactions" to "anon";
-
-grant insert on table "public"."gonasi_wallet_transactions" to "anon";
-
-grant references on table "public"."gonasi_wallet_transactions" to "anon";
-
-grant select on table "public"."gonasi_wallet_transactions" to "anon";
-
-grant trigger on table "public"."gonasi_wallet_transactions" to "anon";
-
-grant truncate on table "public"."gonasi_wallet_transactions" to "anon";
-
-grant update on table "public"."gonasi_wallet_transactions" to "anon";
-
-grant delete on table "public"."gonasi_wallet_transactions" to "authenticated";
-
-grant insert on table "public"."gonasi_wallet_transactions" to "authenticated";
-
-grant references on table "public"."gonasi_wallet_transactions" to "authenticated";
-
-grant select on table "public"."gonasi_wallet_transactions" to "authenticated";
-
-grant trigger on table "public"."gonasi_wallet_transactions" to "authenticated";
-
-grant truncate on table "public"."gonasi_wallet_transactions" to "authenticated";
-
-grant update on table "public"."gonasi_wallet_transactions" to "authenticated";
-
-grant delete on table "public"."gonasi_wallet_transactions" to "service_role";
-
-grant insert on table "public"."gonasi_wallet_transactions" to "service_role";
-
-grant references on table "public"."gonasi_wallet_transactions" to "service_role";
-
-grant select on table "public"."gonasi_wallet_transactions" to "service_role";
-
-grant trigger on table "public"."gonasi_wallet_transactions" to "service_role";
-
-grant truncate on table "public"."gonasi_wallet_transactions" to "service_role";
-
-grant update on table "public"."gonasi_wallet_transactions" to "service_role";
-
 grant delete on table "public"."gonasi_wallets" to "anon";
 
 grant insert on table "public"."gonasi_wallets" to "anon";
@@ -9259,48 +9117,6 @@ grant truncate on table "public"."wallet_ledger_entries" to "service_role";
 
 grant update on table "public"."wallet_ledger_entries" to "service_role";
 
-grant delete on table "public"."wallet_transactions" to "anon";
-
-grant insert on table "public"."wallet_transactions" to "anon";
-
-grant references on table "public"."wallet_transactions" to "anon";
-
-grant select on table "public"."wallet_transactions" to "anon";
-
-grant trigger on table "public"."wallet_transactions" to "anon";
-
-grant truncate on table "public"."wallet_transactions" to "anon";
-
-grant update on table "public"."wallet_transactions" to "anon";
-
-grant delete on table "public"."wallet_transactions" to "authenticated";
-
-grant insert on table "public"."wallet_transactions" to "authenticated";
-
-grant references on table "public"."wallet_transactions" to "authenticated";
-
-grant select on table "public"."wallet_transactions" to "authenticated";
-
-grant trigger on table "public"."wallet_transactions" to "authenticated";
-
-grant truncate on table "public"."wallet_transactions" to "authenticated";
-
-grant update on table "public"."wallet_transactions" to "authenticated";
-
-grant delete on table "public"."wallet_transactions" to "service_role";
-
-grant insert on table "public"."wallet_transactions" to "service_role";
-
-grant references on table "public"."wallet_transactions" to "service_role";
-
-grant select on table "public"."wallet_transactions" to "service_role";
-
-grant trigger on table "public"."wallet_transactions" to "service_role";
-
-grant truncate on table "public"."wallet_transactions" to "service_role";
-
-grant update on table "public"."wallet_transactions" to "service_role";
-
 
   create policy "Allow org members to view ai_usage_log"
   on "public"."ai_usage_log"
@@ -9761,25 +9577,6 @@ using ((EXISTS ( SELECT 1
 with check ((EXISTS ( SELECT 1
    FROM public.courses c
   WHERE ((c.id = file_library.course_id) AND ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.created_by = ( SELECT auth.uid() AS uid))))))));
-
-
-
-  create policy "gonasi_wallet_transactions_select_with_permission"
-  on "public"."gonasi_wallet_transactions"
-  as permissive
-  for select
-  to authenticated
-using (( SELECT public.authorize('go_wallet.view'::public.app_permission) AS authorize));
-
-
-
-  create policy "gonasi_wallet_transactions_update_with_permission"
-  on "public"."gonasi_wallet_transactions"
-  as permissive
-  for update
-  to authenticated
-using (( SELECT public.authorize('go_wallet.withdraw'::public.app_permission) AS authorize))
-with check (( SELECT public.authorize('go_wallet.withdraw'::public.app_permission) AS authorize));
 
 
 
@@ -10498,25 +10295,18 @@ using ((user_id = ( SELECT auth.uid() AS uid)));
 
 
 
-  create policy "Insert: Only org owners/admins can insert transactions"
-  on "public"."wallet_transactions"
-  as permissive
-  for insert
-  to authenticated
-with check ((EXISTS ( SELECT 1
-   FROM public.organization_wallets w
-  WHERE ((w.id = wallet_transactions.wallet_id) AND (public.get_user_org_role(w.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text]))))));
-
-
-
-  create policy "Select: Only org owners/admins can view transactions"
-  on "public"."wallet_transactions"
+  create policy "Select: go_su, go_admin, or org owner/admin can read wallet_led"
+  on "public"."wallet_ledger_entries"
   as permissive
   for select
   to authenticated
-using ((EXISTS ( SELECT 1
-   FROM public.organization_wallets w
-  WHERE ((w.id = wallet_transactions.wallet_id) AND (public.get_user_org_role(w.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text]))))));
+using ((public.authorize('go_su_read'::public.app_permission) OR public.authorize('go_admin_read'::public.app_permission) OR (public.get_user_org_role(COALESCE(( SELECT ow.organization_id
+   FROM public.organization_wallets ow
+  WHERE (ow.id = wallet_ledger_entries.source_wallet_id)
+ LIMIT 1), ( SELECT ow.organization_id
+   FROM public.organization_wallets ow
+  WHERE (ow.id = wallet_ledger_entries.destination_wallet_id)
+ LIMIT 1)), auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text]))));
 
 
 CREATE TRIGGER trg_block_progress_set_updated_at BEFORE UPDATE ON public.block_progress FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
@@ -10552,8 +10342,6 @@ CREATE TRIGGER trg_validate_subcategory BEFORE INSERT OR UPDATE ON public.course
 CREATE TRIGGER trg_set_file_type BEFORE INSERT OR UPDATE ON public.file_library FOR EACH ROW EXECUTE FUNCTION public.set_file_type_from_extension();
 
 CREATE TRIGGER trg_update_timestamp BEFORE UPDATE ON public.file_library FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
-
-CREATE TRIGGER set_updated_at_gonasi_wallet_transactions BEFORE UPDATE ON public.gonasi_wallet_transactions FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
 CREATE TRIGGER trg_gonasi_wallets_updated_at BEFORE UPDATE ON public.gonasi_wallets FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
