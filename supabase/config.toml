@@ -103,9 +103,7 @@ schema_paths = [
 
   # wallets
   './schemas/wallets/utils/transaction_status.sql',
-
   './schemas/wallets/wallet_ledger_entries_schema_and_indexes.sql',
-
   './schemas/wallets/utils/update_wallet_balance.sql',
 
 
@@ -234,8 +232,7 @@ schema_paths = [
   './schemas/enrollments/utils/calculate_access_end_date.sql',
   './schemas/enrollments/utils/get_published_course_pricing_tier.sql',
   './schemas/enrollments/utils/get_effective_pricing_for_published_tier.sql',
-  './schemas/enrollments/utils/process_course_payment_to_wallets.sql',
-  './schemas/enrollments/utils/enroll_user_in_published_course.sql',
+  './schemas/enrollments/utils/process_course_payment_from_paystack.sql',
   './schemas/enrollments/utils/user_has_active_access.sql',
   './schemas/enrollments/utils/get_enrollment_status.sql',
   './schemas/enrollments/utils/count_active_students.sql',
@@ -627,3 +624,13 @@ entrypoint = "./functions/send-org-invite/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/send-org-invite/*.html" ]
+[functions.verify-paystack-transaction]
+enabled = true
+verify_jwt = true
+import_map = "./functions/verify-paystack-transaction/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/verify-paystack-transaction/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/verify-paystack-transaction/*.html" ]

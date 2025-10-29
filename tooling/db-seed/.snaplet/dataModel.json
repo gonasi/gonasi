@@ -16478,6 +16478,20 @@
           "maxLength": null
         },
         {
+          "id": "public.wallet_ledger_entries.paystack_reference",
+          "name": "paystack_reference",
+          "columnName": "paystack_reference",
+          "type": "text",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
           "id": "public.wallet_ledger_entries.type",
           "name": "type",
           "columnName": "type",

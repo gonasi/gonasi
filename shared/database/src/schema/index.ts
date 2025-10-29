@@ -2240,6 +2240,7 @@ export type Database = {
           direction: string
           id: string
           metadata: Json
+          paystack_reference: string
           related_entity_id: string | null
           related_entity_type: string | null
           source_wallet_id: string | null
@@ -2256,6 +2257,7 @@ export type Database = {
           direction: string
           id?: string
           metadata?: Json
+          paystack_reference: string
           related_entity_id?: string | null
           related_entity_type?: string | null
           source_wallet_id?: string | null
@@ -2272,6 +2274,7 @@ export type Database = {
           direction?: string
           id?: string
           metadata?: Json
+          paystack_reference?: string
           related_entity_id?: string | null
           related_entity_type?: string | null
           source_wallet_id?: string | null
@@ -2455,28 +2458,6 @@ export type Database = {
         Args: { course_id: string }
         Returns: undefined
       }
-      enroll_user_in_published_course: {
-        Args: {
-          p_created_by?: string
-          p_currency_code: string
-          p_effective_price: number
-          p_is_free: boolean
-          p_is_promotional?: boolean
-          p_organization_id: string
-          p_payment_amount?: number
-          p_payment_frequency: string
-          p_payment_method?: string
-          p_payment_processor_fee?: number
-          p_payment_processor_id?: string
-          p_promotional_price?: number
-          p_published_course_id: string
-          p_tier_description: string
-          p_tier_id: string
-          p_tier_name: string
-          p_user_id: string
-        }
-        Returns: Json
-      }
       get_active_organization_members: {
         Args: { _organization_id: string; _user_id: string }
         Returns: Json
@@ -2615,19 +2596,17 @@ export type Database = {
         Args: { arg_org_id: string; user_email: string }
         Returns: boolean
       }
-      process_course_payment_to_wallets: {
+      process_course_payment_from_paystack: {
         Args: {
-          p_created_by?: string
+          p_amount_paid: number
           p_currency_code: string
-          p_gross_amount: number
-          p_org_payout: number
-          p_organization_id: string
-          p_payment_id: string
-          p_payment_processor_fee: number
-          p_platform_fee_from_gross: number
-          p_platform_fee_percent: number
+          p_metadata?: Json
+          p_payment_method?: string
+          p_paystack_fee?: number
+          p_paystack_reference: string
+          p_paystack_transaction_id: string
           p_published_course_id: string
-          p_tier_name: string
+          p_tier_id: string
           p_user_id: string
         }
         Returns: Json

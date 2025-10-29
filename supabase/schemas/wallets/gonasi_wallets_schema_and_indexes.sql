@@ -11,7 +11,7 @@
 --     (e.g., cents, kobo) using numeric(19,4) for precision.
 --   - Typically updated by internal financial or payout processes.
 -- ===========================================================
-
+-- former platform_wallets
 create table public.gonasi_wallets (
   -- Unique identifier for each Gonasi wallet entry
   id uuid primary key default uuid_generate_v4(),

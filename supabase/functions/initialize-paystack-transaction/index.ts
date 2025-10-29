@@ -71,7 +71,7 @@ Deno.serve(async (req) => {
         callback_url: `${FRONTEND_URL}/c/${metadata.publishedCourseId}/enroll/status`,
         metadata: {
           cancel_action: `${FRONTEND_URL}/c/${metadata.publishedCourseId}/enroll/${metadata.pricingTierId}/cancel`,
-          transaction_type: 'COURSE_ENROLLMENT',
+          transaction_type: 'course_sale',
           ...metadata,
         },
       }),

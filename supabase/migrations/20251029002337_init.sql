@@ -715,6 +715,7 @@ alter table "public"."user_wallets" enable row level security;
     "currency_code" public.currency_code not null,
     "amount" numeric(19,4) not null,
     "direction" text not null,
+    "paystack_reference" text not null,
     "type" text not null,
     "status" public.transaction_status not null default 'completed'::public.transaction_status,
     "related_entity_type" text,
@@ -1140,6 +1141,10 @@ CREATE INDEX idx_wallet_tx_created_at ON public.wallet_ledger_entries USING btre
 CREATE INDEX idx_wallet_tx_currency ON public.wallet_ledger_entries USING btree (currency_code);
 
 CREATE INDEX idx_wallet_tx_destination_wallet ON public.wallet_ledger_entries USING btree (destination_wallet_id, destination_wallet_type);
+
+CREATE INDEX idx_wallet_tx_paystack_reference ON public.wallet_ledger_entries USING btree (paystack_reference) WHERE (paystack_reference IS NOT NULL);
+
+CREATE INDEX idx_wallet_tx_paystack_reference_type ON public.wallet_ledger_entries USING btree (paystack_reference, type) WHERE (paystack_reference IS NOT NULL);
 
 CREATE INDEX idx_wallet_tx_related_entity ON public.wallet_ledger_entries USING btree (related_entity_type, related_entity_id);
 
@@ -3374,233 +3379,6 @@ AS $function$
 $function$
 ;
 
-CREATE OR REPLACE FUNCTION public.enroll_user_in_published_course(p_user_id uuid, p_published_course_id uuid, p_tier_id uuid, p_tier_name text, p_tier_description text, p_payment_frequency text, p_currency_code text, p_is_free boolean, p_effective_price numeric, p_organization_id uuid, p_promotional_price numeric DEFAULT NULL::numeric, p_is_promotional boolean DEFAULT false, p_payment_processor_id text DEFAULT NULL::text, p_payment_amount numeric DEFAULT NULL::numeric, p_payment_method text DEFAULT NULL::text, p_payment_processor_fee numeric DEFAULT NULL::numeric, p_created_by uuid DEFAULT NULL::uuid)
- RETURNS jsonb
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO ''
-AS $function$
-declare
-  -- Output IDs
-  enrollment_id uuid;
-  activity_id uuid;
-  payment_id uuid;
-  
-  -- Other variables (same as before)
-  existing_enrollment_record record;
-  organization_tier_record record;
-  access_start timestamptz := timezone('utc', now());
-  access_end timestamptz;
-  platform_fee_percent numeric(5,2);
-  processor_fee numeric(19,4) := 0;
-  net_payment numeric(19,4);
-  platform_fee_from_gross numeric(19,4);
-  org_payout numeric(19,4);
-  gonasi_actual_income numeric(19,4);
-  result jsonb;
-  wallet_result jsonb;
-begin
-  -- Start explicit transaction
-  begin
-    -- All your existing validation and logic here...
-    -- (keeping the same logic but wrapping in transaction)
-    
-    -- Sanity check: created_by must match user (or be null)
-    if p_created_by is not null and p_created_by != p_user_id then
-      raise exception 'Invalid created_by: must be null or match p_user_id';
-    end if;
-
-    -- Validate published course belongs to org and is published
-    if not exists (
-      select 1
-      from public.published_courses pc
-      where pc.id = p_published_course_id
-        and pc.organization_id = p_organization_id
-    ) then
-      raise exception 'Invalid course or course does not belong to organization';
-    end if;
-
-    -- STEP 1: Check for active enrollment
-    select * into existing_enrollment_record
-    from public.course_enrollments
-    where user_id = p_user_id 
-      and published_course_id = p_published_course_id
-      and is_active = true
-      and (expires_at is null or expires_at > timezone('utc', now()));
-
-    -- STEP 2: Get org's platform fee percentage
-    select o.tier, tl.platform_fee_percentage
-    into organization_tier_record
-    from public.organizations o
-    join public.tier_limits tl on tl.tier = o.tier
-    where o.id = p_organization_id;
-
-    if not found then
-      raise exception 'Organization not found or tier limits not configured';
-    end if;
-
-    platform_fee_percent := organization_tier_record.platform_fee_percentage;
-
-    -- STEP 3: Prevent repeated free enrollments
-    if found and p_is_free then
-      if exists (
-        select 1 
-        from public.course_enrollment_activities cea
-        where cea.enrollment_id = existing_enrollment_record.id
-          and cea.is_free = true
-        limit 1
-      ) then
-        result := jsonb_build_object(
-          'success', false,
-          'message', 'You already have free access to this course. You can re-enroll when your current access expires.',
-          'enrollment_id', null,
-          'activity_id', null,
-          'payment_id', null,
-          'is_free', true,
-          'access_granted', false,
-          'expires_at', existing_enrollment_record.expires_at
-        );
-        return result;
-      end if;
-    end if;
-
-    -- STEP 4: Calculate access window
-    if found and not p_is_free then
-      access_end := public.calculate_access_end_date(
-        greatest(existing_enrollment_record.expires_at, timezone('utc', now())), 
-        p_payment_frequency::public.payment_frequency
-      );
-    else
-      access_end := public.calculate_access_end_date(
-        access_start, 
-        p_payment_frequency::public.payment_frequency
-      );
-    end if;
-
-    -- STEP 5: Create or update enrollment
-    insert into public.course_enrollments (
-      user_id, published_course_id, organization_id,
-      enrolled_at, expires_at, is_active
-    ) values (
-      p_user_id, p_published_course_id, p_organization_id,
-      access_start, access_end, true
-    )
-    on conflict (user_id, published_course_id)
-    do update set
-      expires_at = excluded.expires_at,
-      is_active = true,
-      enrolled_at = case 
-        when public.course_enrollments.is_active = false then excluded.enrolled_at
-        else public.course_enrollments.enrolled_at
-      end
-    returning id into enrollment_id;
-
-    -- STEP 6: Log enrollment activity
-    insert into public.course_enrollment_activities (
-      enrollment_id, tier_name, tier_description,
-      payment_frequency, currency_code, is_free,
-      price_paid, promotional_price, was_promotional,
-      access_start, access_end, created_by
-    ) values (
-      enrollment_id, p_tier_name, p_tier_description,
-      p_payment_frequency::public.payment_frequency, p_currency_code::public.currency_code, p_is_free,
-      p_effective_price, p_promotional_price, p_is_promotional,
-      access_start, access_end, coalesce(p_created_by, p_user_id)
-    ) returning id into activity_id;
-
-    -- STEP 7: Handle payment (if not free)
-    if not p_is_free then
-      if p_payment_processor_id is null or p_payment_amount is null then
-        raise exception 'Payment information required for paid enrollment';
-      end if;
-
-      if p_payment_amount != p_effective_price then
-        raise exception 'Payment amount does not match tier price';
-      end if;
-
-      processor_fee := coalesce(p_payment_processor_fee, 0);
-      net_payment := p_payment_amount - processor_fee;
-      platform_fee_from_gross := p_payment_amount * (platform_fee_percent / 100);
-      org_payout := p_payment_amount - platform_fee_from_gross;
-      gonasi_actual_income := platform_fee_from_gross - processor_fee;
-
-      insert into public.course_payments (
-        enrollment_id, enrollment_activity_id, amount_paid, currency_code,
-        payment_method, payment_processor_id, payment_processor_fee,
-        net_amount, platform_fee, platform_fee_percent,
-        org_payout_amount, organization_id, created_by
-      ) values (
-        enrollment_id, activity_id, p_payment_amount, p_currency_code::public.currency_code,
-        p_payment_method, p_payment_processor_id, processor_fee,
-        net_payment, platform_fee_from_gross, platform_fee_percent,
-        org_payout, p_organization_id, coalesce(p_created_by, p_user_id)
-      ) returning id into payment_id;
-
-      -- CRITICAL: Process wallets within the same transaction
-      wallet_result := public.process_course_payment_to_wallets(
-        payment_id, p_organization_id, p_published_course_id,
-        p_user_id, p_tier_name, p_currency_code,
-        p_payment_amount, processor_fee, platform_fee_from_gross, 
-        org_payout, platform_fee_percent, p_created_by
-      );
-      
-      -- If we get here, wallet processing succeeded
-      result := result || jsonb_build_object('wallet_processing', wallet_result);
-    end if;
-
-    -- STEP 8: Update course stats
-    update public.published_courses 
-    set 
-      total_enrollments = total_enrollments + 1,
-      active_enrollments = (
-        select count(*)
-        from public.course_enrollments ce
-        where ce.published_course_id = p_published_course_id
-          and ce.is_active = true
-          and (ce.expires_at is null or ce.expires_at > timezone('utc', now()))
-      ),
-      updated_at = timezone('utc', now())
-    where id = p_published_course_id;
-
-    -- STEP 9: Build final result
-    result := jsonb_build_object(
-      'success', true,
-      'message', case 
-        when p_is_free then 'Successfully enrolled in free course access.'
-        else 'Successfully enrolled with paid access. Payment processed.'
-      end,
-      'enrollment_id', enrollment_id,
-      'activity_id', activity_id,
-      'payment_id', case when p_is_free then null else payment_id end,
-      'is_free', p_is_free,
-      'access_granted', true,
-      'expires_at', access_end,
-      'payment_breakdown', case 
-        when p_is_free then null
-        else jsonb_build_object(
-          'gross_amount', p_payment_amount,
-          'processor_fee', processor_fee,
-          'net_amount', net_payment,
-          'platform_fee_percent', platform_fee_percent,
-          'platform_fee_from_gross', platform_fee_from_gross,
-          'gonasi_actual_income', gonasi_actual_income,
-          'org_payout', org_payout
-        )
-      end
-    );
-
-    -- If we reach here, commit the transaction
-    return result;
-
-  exception
-    when others then
-      -- This will automatically rollback the transaction
-      raise exception 'Enrollment failed: %', SQLERRM;
-  end;
-end;
-$function$
-;
-
 CREATE OR REPLACE FUNCTION public.ensure_incremented_course_version()
  RETURNS trigger
  LANGUAGE plpgsql
@@ -5586,202 +5364,300 @@ AS $function$
 $function$
 ;
 
-CREATE OR REPLACE FUNCTION public.process_course_payment_to_wallets(p_payment_id uuid, p_organization_id uuid, p_published_course_id uuid, p_user_id uuid, p_tier_name text, p_currency_code text, p_gross_amount numeric, p_payment_processor_fee numeric, p_platform_fee_from_gross numeric, p_org_payout numeric, p_platform_fee_percent numeric, p_created_by uuid DEFAULT NULL::uuid)
+CREATE OR REPLACE FUNCTION public.process_course_payment_from_paystack(p_paystack_reference text, p_paystack_transaction_id text, p_user_id uuid, p_published_course_id uuid, p_tier_id uuid, p_amount_paid numeric, p_currency_code text, p_payment_method text DEFAULT 'card'::text, p_paystack_fee numeric DEFAULT 0, p_metadata jsonb DEFAULT '{}'::jsonb)
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
  SET search_path TO ''
 AS $function$
 declare
-  org_wallet_id uuid;
-  gonasi_wallet_id uuid;
-  org_transaction_id uuid;
-  gonasi_transaction_id uuid;
-  org_wallet_existed boolean := false;
-  gonasi_wallet_existed boolean := false;
-  net_payment numeric(19,4);
-  gonasi_actual_income numeric(19,4);
-  platform_fee_calculated numeric(19,4);
+    -- Course & org info
+    v_course_title text;
+    v_organization_id uuid;
+    v_org_tier public.subscription_tier;
+    v_platform_fee_percent numeric(5,2);
+
+    -- Tier info
+    v_tier_name text;
+    v_tier_description text;
+    v_tier_price numeric(19,4);
+    v_tier_promotional_price numeric(19,4);
+    v_tier_frequency public.payment_frequency;
+    v_tier_is_free boolean;
+    v_tier_currency public.currency_code;
+
+    -- Amount calculations
+    v_final_amount numeric(19,4);
+    v_platform_fee_amount numeric(19,4);
+    v_org_net_amount numeric(19,4);
+    v_platform_net_income numeric(19,4);
+
+    -- Wallets
+    v_platform_wallet_id uuid;
+    v_org_wallet_id uuid;
+
+    -- Ledger entries
+    v_ledger_platform_receives_payment uuid;
+    v_ledger_platform_pays_paystack uuid;
+    v_ledger_platform_pays_org uuid;
+
+    -- Enrollment
+    v_enrollment_id uuid;
+    v_access_start timestamptz := timezone('utc', now());
+    v_access_end timestamptz;
+    v_activity_id uuid;
 begin
-  -- STEP 0: Validate that the payment exists
-  if not exists (
-    select 1 from public.course_payments 
-    where id = p_payment_id
-  ) then
-    raise exception 'Payment ID % not found', p_payment_id;
-  end if;
+    raise notice '========================================';
+    raise notice 'Processing payment from Paystack: %', p_paystack_reference;
 
-  -- STEP 1: Derive key amounts
-  net_payment := p_gross_amount - p_payment_processor_fee;
-  platform_fee_calculated := p_gross_amount * (p_platform_fee_percent / 100);
-  gonasi_actual_income := p_platform_fee_from_gross - p_payment_processor_fee;
+    -- =============================================================
+    -- 1. Idempotency check
+    -- =============================================================
+    perform 1 from public.wallet_ledger_entries
+    where paystack_reference = p_paystack_reference
+    limit 1;
 
-  -- STEP 2: Validate internal consistency
-  if abs((p_platform_fee_from_gross + p_org_payout) - p_gross_amount) > 0.01 then
-    raise exception 'Amount validation failed: gross_amount (%) != platform_fee_from_gross (%) + org_payout (%)', 
-      p_gross_amount, p_platform_fee_from_gross, p_org_payout;
-  end if;
+    if found then
+        return jsonb_build_object(
+            'success', false,
+            'message', 'Payment already processed',
+            'paystack_reference', p_paystack_reference
+        );
+    end if;
 
-  if abs(p_platform_fee_from_gross - platform_fee_calculated) > 0.01 then
-    raise exception 'Platform fee validation failed: declared platform fee (%) != calculated fee (%)',
-      p_platform_fee_from_gross, platform_fee_calculated;
-  end if;
+    -- =============================================================
+    -- 2. Validate course & organization
+    -- =============================================================
+    select pc.name, pc.organization_id
+    into v_course_title, v_organization_id
+    from public.published_courses pc
+    where pc.id = p_published_course_id
+      and pc.is_active = true;
 
-  -- STEP 3: Fetch or create wallets
-  select id into org_wallet_id
-  from public.organization_wallets
-  where organization_id = p_organization_id 
-    and currency_code = p_currency_code::public.currency_code;
+    if not found then
+        raise exception 'Published course not found or inactive: %', p_published_course_id;
+    end if;
 
-  if found then
-    org_wallet_existed := true;
-  end if;
+    select o.tier
+    into v_org_tier
+    from public.organizations o
+    where o.id = v_organization_id;
 
-  select id into gonasi_wallet_id
-  from public.gonasi_wallets
-  where currency_code = p_currency_code::public.currency_code;
+    select tl.platform_fee_percentage
+    into v_platform_fee_percent
+    from public.tier_limits tl
+    where tl.tier = v_org_tier;
 
-  if found then
-    gonasi_wallet_existed := true;
-  end if;
+    -- =============================================================
+    -- 3. Get pricing tier
+    -- =============================================================
+    select 
+        pt.tier_name,
+        pt.tier_description,
+        pt.price,
+        pt.promotional_price,
+        pt.payment_frequency::public.payment_frequency,
+        pt.is_free,
+        pt.currency_code::public.currency_code
+    into
+        v_tier_name,
+        v_tier_description,
+        v_tier_price,
+        v_tier_promotional_price,
+        v_tier_frequency,
+        v_tier_is_free,
+        v_tier_currency
+    from public.course_pricing_tiers pt
+    where pt.course_id = p_published_course_id
+      and pt.id = p_tier_id
+      and pt.is_active = true;
 
-  -- STEP 4: Update Organization Wallet
-  insert into public.organization_wallets (
-    organization_id,
-    currency_code,
-    available_balance
-  ) values (
-    p_organization_id,
-    p_currency_code::public.currency_code,
-    p_org_payout
-  )
-  on conflict (organization_id, currency_code)
-  do update set
-    available_balance = public.organization_wallets.available_balance + excluded.available_balance,
-    updated_at = timezone('utc', now())
-  returning id into org_wallet_id;
+    if not found then
+        raise exception 'Pricing tier not found or inactive - course: %, tier: %', p_published_course_id, p_tier_id;
+    end if;
 
-  -- STEP 5: Update Gonasi Wallet (with actual income after transaction fees)
-  insert into public.gonasi_wallets (
-    currency_code,
-    available_balance
-  ) values (
-    p_currency_code::public.currency_code,
-    gonasi_actual_income
-  )
-  on conflict (currency_code)
-  do update set
-    available_balance = public.gonasi_wallets.available_balance + excluded.available_balance,
-    updated_at = timezone('utc', now())
-  returning id into gonasi_wallet_id;
+    -- =============================================================
+    -- 4. Determine final price
+    -- =============================================================
+    if v_tier_promotional_price is not null and v_tier_promotional_price < v_tier_price then
+        v_final_amount := v_tier_promotional_price;
+    else
+        v_final_amount := v_tier_price;
+    end if;
 
-  -- STEP 6: Log Organization Wallet Transaction
-  insert into public.wallet_transactions (
-    wallet_id,
-    type,
-    amount,
-    direction,
-    course_payment_id,
-    metadata,
-    created_by
-  ) values (
-    org_wallet_id,
-    'payout',
-    p_org_payout,
-    'credit',
-    p_payment_id,
-    jsonb_build_object(
-      'course_id', p_published_course_id,
-      'user_id', p_user_id,
-      'tier_name', p_tier_name,
-      'gross_payment', p_gross_amount,
-      'processor_fee', p_payment_processor_fee,
-      'net_payment', net_payment,
-      'platform_fee_calculated', platform_fee_calculated,
-      'platform_fee_from_gross', p_platform_fee_from_gross,
-      'fee_percentage', p_platform_fee_percent,
-      'gonasi_actual_income', gonasi_actual_income,
-      'wallet_existed_before', org_wallet_existed,
-      'note', 'Organization payout = gross_payment - platform_fee% (transaction fees absorbed by Gonasi)'
-    ),
-    coalesce(p_created_by, p_user_id)
-  ) returning id into org_transaction_id;
+    if p_amount_paid != v_final_amount then
+        raise exception 'Payment amount (%) does not match expected tier price (%)', p_amount_paid, v_final_amount;
+    end if;
 
-  -- STEP 7: Log Gonasi Wallet Transaction (actual income after transaction fees)
-  insert into public.gonasi_wallet_transactions (
-    wallet_id,
-    type,
-    direction,
-    amount,
-    course_payment_id,
-    metadata
-  ) values (
-    gonasi_wallet_id,
-    'platform_fee',
-    'credit',
-    gonasi_actual_income,
-    p_payment_id,
-    jsonb_build_object(
-      'organization_id', p_organization_id,
-      'course_id', p_published_course_id,
-      'user_id', p_user_id,
-      'tier_name', p_tier_name,
-      'fee_percentage', p_platform_fee_percent,
-      'gross_payment', p_gross_amount,
-      'processor_fee', p_payment_processor_fee,
-      'net_payment', net_payment,
-      'platform_fee_calculated', platform_fee_calculated,
-      'platform_fee_from_gross', p_platform_fee_from_gross,
-      'gonasi_actual_income', gonasi_actual_income,
-      'org_payout', p_org_payout,
-      'wallet_existed_before', gonasi_wallet_existed,
-      'note', 'Platform fee after absorbing transaction fees = platform_fee_from_gross - processor_fee'
-    )
-  ) returning id into gonasi_transaction_id;
+    -- =============================================================
+    -- 5. Get wallets
+    -- =============================================================
+    select gw.id
+    into v_platform_wallet_id
+    from public.gonasi_wallets gw
+    where gw.currency_code = v_tier_currency;
 
-  -- STEP 8: Return summary
-  return jsonb_build_object(
-    'success', true,
-    'message', 'Wallet balances updated successfully with new calculation model',
-    'payment_id', p_payment_id,
-    'wallets_updated', jsonb_build_object(
-      'organization', jsonb_build_object(
-        'wallet_id', org_wallet_id,
-        'amount_added', p_org_payout,
-        'currency', p_currency_code,
-        'existed_before', org_wallet_existed,
-        'calculation', format('gross_payment - platform_fee%% = %s - %s = %s', 
-          p_gross_amount, p_platform_fee_from_gross, p_org_payout)
-      ),
-      'gonasi', jsonb_build_object(
-        'wallet_id', gonasi_wallet_id,
-        'amount_added', gonasi_actual_income,
-        'currency', p_currency_code,
-        'existed_before', gonasi_wallet_existed,
-        'calculation', format('platform_fee - processor_fee = %s - %s = %s', 
-          p_platform_fee_from_gross, p_payment_processor_fee, gonasi_actual_income)
-      )
-    ),
-    'transactions_created', jsonb_build_object(
-      'organization_transaction_id', org_transaction_id,
-      'gonasi_transaction_id', gonasi_transaction_id
-    ),
-    'fee_breakdown', jsonb_build_object(
-      'gross_amount', p_gross_amount,
-      'processor_fee', p_payment_processor_fee,
-      'net_payment', net_payment,
-      'platform_fee_percent', p_platform_fee_percent,
-      'platform_fee_from_gross', p_platform_fee_from_gross,
-      'org_payout', p_org_payout,
-      'gonasi_actual_income', gonasi_actual_income,
-      'calculation_model', 'org_payout = gross - platform_fee%, gonasi = platform_fee% - processor_fee'
-    )
-  );
+    select ow.id
+    into v_org_wallet_id
+    from public.organization_wallets ow
+    where ow.organization_id = v_organization_id
+      and ow.currency_code = v_tier_currency;
+
+    -- =============================================================
+    -- 6. Calculate distribution
+    -- =============================================================
+    v_platform_fee_amount := round(v_final_amount * (v_platform_fee_percent / 100), 4);
+    v_org_net_amount := v_final_amount - v_platform_fee_amount;
+    v_platform_net_income := v_platform_fee_amount - p_paystack_fee;
+
+    -- =============================================================
+    -- 7. Ledger entries (wallet updates handled by trigger)
+    -- =============================================================
+    insert into public.wallet_ledger_entries(
+        source_wallet_type, source_wallet_id,
+        destination_wallet_type, destination_wallet_id,
+        currency_code, amount, direction, type, status,
+        related_entity_type, related_entity_id, paystack_reference,
+        metadata
+    ) values (
+        'external', null,
+        'platform', v_platform_wallet_id,
+        v_tier_currency, v_final_amount, 'credit', 'course_sale', 'completed',
+        'course', p_published_course_id, p_paystack_reference,
+        jsonb_build_object(
+            'paystack_transaction_id', p_paystack_transaction_id,
+            'user_id', p_user_id,
+            'organization_id', v_organization_id,
+            'course_title', v_course_title,
+            'tier_name', v_tier_name,
+            'tier_id', p_tier_id,
+            'payment_method', p_payment_method,
+            'gross_amount', v_final_amount,
+            'org_payout_amount', v_org_net_amount,
+            'platform_fee_amount', v_platform_fee_amount,
+            'platform_fee_percent', v_platform_fee_percent,
+            'paystack_fee_amount', p_paystack_fee,
+            'platform_net_income', v_platform_net_income,
+            'paystack_metadata', p_metadata
+        )
+    ) returning id into v_ledger_platform_receives_payment;
+
+    insert into public.wallet_ledger_entries(
+        source_wallet_type, source_wallet_id,
+        destination_wallet_type, destination_wallet_id,
+        currency_code, amount, direction, type, status,
+        related_entity_type, related_entity_id, paystack_reference,
+        metadata
+    ) values (
+        'platform', v_platform_wallet_id,
+        'external', null,
+        v_tier_currency, p_paystack_fee, 'debit', 'paystack_fee', 'completed',
+        'course', p_published_course_id, p_paystack_reference,
+        jsonb_build_object(
+            'source_ledger_entry', v_ledger_platform_receives_payment
+        )
+    ) returning id into v_ledger_platform_pays_paystack;
+
+    insert into public.wallet_ledger_entries(
+        source_wallet_type, source_wallet_id,
+        destination_wallet_type, destination_wallet_id,
+        currency_code, amount, direction, type, status,
+        related_entity_type, related_entity_id, paystack_reference,
+        metadata
+    ) values (
+        'platform', v_platform_wallet_id,
+        'organization', v_org_wallet_id,
+        v_tier_currency, v_org_net_amount, 'debit', 'course_sale_payout', 'completed',
+        'course', p_published_course_id, p_paystack_reference,
+        jsonb_build_object(
+            'platform_fee_percent', v_platform_fee_percent,
+            'course_sale_amount', v_final_amount,
+            'organization_id', v_organization_id,
+            'paystack_fee_paid', p_paystack_fee,
+            'platform_net_income', v_platform_net_income,
+            'source_ledger_entry', v_ledger_platform_receives_payment,
+            'paystack_fee_ledger_entry', v_ledger_platform_pays_paystack
+        )
+    ) returning id into v_ledger_platform_pays_org;
+
+    -- =============================================================
+    -- 8. Enrollment: create or update
+    -- =============================================================
+    select id
+    into v_enrollment_id
+    from public.course_enrollments
+    where user_id = p_user_id
+      and published_course_id = p_published_course_id
+    for update;
+
+    if found then
+        update public.course_enrollments
+        set expires_at = v_access_start + interval '1 month',
+            is_active = true
+        where id = v_enrollment_id;
+    else
+        insert into public.course_enrollments(
+            user_id, published_course_id, organization_id,
+            enrolled_at, expires_at, is_active
+        ) values (
+            p_user_id, p_published_course_id, v_organization_id,
+            v_access_start, v_access_start + interval '1 month', true
+        ) returning id into v_enrollment_id;
+    end if;
+
+    -- Always log a new enrollment activity
+    insert into public.course_enrollment_activities(
+        enrollment_id, tier_name, tier_description, payment_frequency, currency_code,
+        is_free, price_paid, promotional_price, was_promotional,
+        access_start, access_end, created_by
+    ) values (
+        v_enrollment_id, v_tier_name, v_tier_description, v_tier_frequency, v_tier_currency,
+        v_tier_is_free, v_final_amount, v_tier_promotional_price,
+        (v_tier_promotional_price is not null),
+        v_access_start, v_access_start + interval '1 month', p_user_id
+    ) returning id into v_activity_id;
+
+    -- =============================================================
+    -- 9. Return detailed summary
+    -- =============================================================
+    return jsonb_build_object(
+        'success', true,
+        'message', 'Course payment processed successfully',
+        'enrollment', jsonb_build_object(
+            'enrollment_id', v_enrollment_id,
+            'enrollment_activity_id', v_activity_id,
+            'user_id', p_user_id,
+            'course_id', p_published_course_id,
+            'course_title', v_course_title,
+            'tier_name', v_tier_name,
+            'access_start', v_access_start,
+            'access_end', v_access_start + interval '1 month'
+        ),
+        'payment', jsonb_build_object(
+            'paystack_reference', p_paystack_reference,
+            'paystack_transaction_id', p_paystack_transaction_id,
+            'amount_paid', v_final_amount,
+            'currency', v_tier_currency,
+            'payment_method', p_payment_method
+        ),
+        'distribution', jsonb_build_object(
+            'gross_amount', v_final_amount,
+            'platform_fee_percent', v_platform_fee_percent,
+            'platform_fee_amount', v_platform_fee_amount,
+            'paystack_fee', p_paystack_fee,
+            'platform_net_income', v_platform_net_income,
+            'organization_payout', v_org_net_amount
+        ),
+        'ledger_entries', jsonb_build_object(
+            'platform_receives_payment', v_ledger_platform_receives_payment,
+            'platform_pays_paystack', v_ledger_platform_pays_paystack,
+            'platform_pays_organization', v_ledger_platform_pays_org
+        )
+    );
 
 exception
-  when others then
-    raise exception 'Failed to process payment to wallets for payment_id %: %', 
-      p_payment_id, SQLERRM;
+    when others then
+        raise exception 'Course payment processing failed: %', sqlerrm;
 end;
 $function$
 ;
@@ -7540,161 +7416,119 @@ CREATE OR REPLACE FUNCTION public.update_wallet_balance()
  SET search_path TO ''
 AS $function$
 declare
-  -- Variables for balance validation
   v_current_total numeric(19,4);
   v_current_reserved numeric(19,4);
   v_wallet_owner text;
   v_is_reserved_transaction boolean;
 begin
-  -- Only process completed transactions
+  -- Only act on completed ledger entries
   if new.status != 'completed' then
     return new;
   end if;
 
-  -- Determine if this transaction affects reserved balance
+  -- Determine whether the transaction affects reserved balance
   v_is_reserved_transaction := new.type in ('funds_hold', 'funds_release', 'reward_payout');
 
-  -- ===========================================================
-  -- PROCESS DESTINATION WALLET (CREDITS)
-  -- ===========================================================
+  ------------------------------------------------------------
+  -- 1. CREDIT DESTINATION WALLET
+  ------------------------------------------------------------
   if new.destination_wallet_type != 'external' and new.destination_wallet_id is not null then
-    
     if v_is_reserved_transaction then
-      -- Credit to balance_reserved
       case new.destination_wallet_type
         when 'platform' then
-          update public.platform_wallets
-          set balance_reserved = balance_reserved + new.amount,
-              updated_at = timezone('utc', now())
-          where id = new.destination_wallet_id;
-          
-          if not found then
-            raise exception 'Platform wallet % not found', new.destination_wallet_id;
-          end if;
-
-        when 'organization' then
           update public.gonasi_wallets
           set balance_reserved = balance_reserved + new.amount,
               updated_at = timezone('utc', now())
           where id = new.destination_wallet_id;
-          
-          if not found then
-            raise exception 'Organization wallet % not found', new.destination_wallet_id;
-          end if;
+          if not found then raise exception 'Platform wallet % not found', new.destination_wallet_id; end if;
+
+        when 'organization' then
+          update public.organization_wallets
+          set balance_reserved = balance_reserved + new.amount,
+              updated_at = timezone('utc', now())
+          where id = new.destination_wallet_id;
+          if not found then raise exception 'Organization wallet % not found', new.destination_wallet_id; end if;
 
         when 'user' then
           update public.user_wallets
           set balance_reserved = balance_reserved + new.amount,
               updated_at = timezone('utc', now())
           where id = new.destination_wallet_id;
-          
-          if not found then
-            raise exception 'User wallet % not found', new.destination_wallet_id;
-          end if;
+          if not found then raise exception 'User wallet % not found', new.destination_wallet_id; end if;
       end case;
-
     else
-      -- Credit to balance_total
+      -- Credit total balance
       case new.destination_wallet_type
         when 'platform' then
-          update public.platform_wallets
-          set balance_total = balance_total + new.amount,
-              updated_at = timezone('utc', now())
-          where id = new.destination_wallet_id;
-          
-          if not found then
-            raise exception 'Platform wallet % not found', new.destination_wallet_id;
-          end if;
-
-        when 'organization' then
           update public.gonasi_wallets
           set balance_total = balance_total + new.amount,
               updated_at = timezone('utc', now())
           where id = new.destination_wallet_id;
-          
-          if not found then
-            raise exception 'Organization wallet % not found', new.destination_wallet_id;
-          end if;
+          if not found then raise exception 'Platform wallet % not found', new.destination_wallet_id; end if;
+
+        when 'organization' then
+          update public.organization_wallets
+          set balance_total = balance_total + new.amount,
+              updated_at = timezone('utc', now())
+          where id = new.destination_wallet_id;
+          if not found then raise exception 'Organization wallet % not found', new.destination_wallet_id; end if;
 
         when 'user' then
           update public.user_wallets
           set balance_total = balance_total + new.amount,
               updated_at = timezone('utc', now())
           where id = new.destination_wallet_id;
-          
-          if not found then
-            raise exception 'User wallet % not found', new.destination_wallet_id;
-          end if;
+          if not found then raise exception 'User wallet % not found', new.destination_wallet_id; end if;
       end case;
     end if;
   end if;
 
-  -- ===========================================================
-  -- PROCESS SOURCE WALLET (DEBITS)
-  -- ===========================================================
+  ------------------------------------------------------------
+  -- 2. DEBIT SOURCE WALLET
+  ------------------------------------------------------------
   if new.source_wallet_type != 'external' and new.source_wallet_id is not null then
-    
     if v_is_reserved_transaction then
-      -- Debit from balance_reserved (with validation)
       case new.source_wallet_type
         when 'platform' then
-          -- Check sufficient reserved balance
           select balance_reserved, 'platform-' || currency_code::text
           into v_current_reserved, v_wallet_owner
-          from public.platform_wallets
-          where id = new.source_wallet_id;
-          
-          if not found then
-            raise exception 'Platform wallet % not found', new.source_wallet_id;
-          end if;
-          
-          if v_current_reserved < new.amount then
-            raise exception 'Insufficient reserved balance in % wallet. Required: %, Available: %',
-              v_wallet_owner, new.amount, v_current_reserved;
-          end if;
-          
-          update public.platform_wallets
-          set balance_reserved = balance_reserved - new.amount,
-              updated_at = timezone('utc', now())
-          where id = new.source_wallet_id;
+          from public.gonasi_wallets where id = new.source_wallet_id;
 
-        when 'organization' then
-          -- Check sufficient reserved balance
-          select balance_reserved, 'org-' || organization_id::text
-          into v_current_reserved, v_wallet_owner
-          from public.gonasi_wallets
-          where id = new.source_wallet_id;
-          
-          if not found then
-            raise exception 'Organization wallet % not found', new.source_wallet_id;
-          end if;
-          
+          if not found then raise exception 'Platform wallet % not found', new.source_wallet_id; end if;
           if v_current_reserved < new.amount then
-            raise exception 'Insufficient reserved balance in % wallet. Required: %, Available: %',
-              v_wallet_owner, new.amount, v_current_reserved;
+            raise exception 'Insufficient reserved balance in % wallet. Required: %, Available: %', v_wallet_owner, new.amount, v_current_reserved;
           end if;
-          
+
           update public.gonasi_wallets
           set balance_reserved = balance_reserved - new.amount,
               updated_at = timezone('utc', now())
           where id = new.source_wallet_id;
 
+        when 'organization' then
+          select balance_reserved, 'org-' || organization_id::text
+          into v_current_reserved, v_wallet_owner
+          from public.organization_wallets where id = new.source_wallet_id;
+
+          if not found then raise exception 'Organization wallet % not found', new.source_wallet_id; end if;
+          if v_current_reserved < new.amount then
+            raise exception 'Insufficient reserved balance in % wallet. Required: %, Available: %', v_wallet_owner, new.amount, v_current_reserved;
+          end if;
+
+          update public.organization_wallets
+          set balance_reserved = balance_reserved - new.amount,
+              updated_at = timezone('utc', now())
+          where id = new.source_wallet_id;
+
         when 'user' then
-          -- Check sufficient reserved balance
           select balance_reserved, 'user-' || user_id::text
           into v_current_reserved, v_wallet_owner
-          from public.user_wallets
-          where id = new.source_wallet_id;
-          
-          if not found then
-            raise exception 'User wallet % not found', new.source_wallet_id;
-          end if;
-          
+          from public.user_wallets where id = new.source_wallet_id;
+
+          if not found then raise exception 'User wallet % not found', new.source_wallet_id; end if;
           if v_current_reserved < new.amount then
-            raise exception 'Insufficient reserved balance in % wallet. Required: %, Available: %',
-              v_wallet_owner, new.amount, v_current_reserved;
+            raise exception 'Insufficient reserved balance in % wallet. Required: %, Available: %', v_wallet_owner, new.amount, v_current_reserved;
           end if;
-          
+
           update public.user_wallets
           set balance_reserved = balance_reserved - new.amount,
               updated_at = timezone('utc', now())
@@ -7702,66 +7536,47 @@ begin
       end case;
 
     else
-      -- Debit from balance_total (with validation)
       case new.source_wallet_type
         when 'platform' then
-          -- Check sufficient total balance
           select balance_total, 'platform-' || currency_code::text
           into v_current_total, v_wallet_owner
-          from public.platform_wallets
-          where id = new.source_wallet_id;
-          
-          if not found then
-            raise exception 'Platform wallet % not found', new.source_wallet_id;
-          end if;
-          
-          if v_current_total < new.amount then
-            raise exception 'Insufficient balance in % wallet. Required: %, Available: %',
-              v_wallet_owner, new.amount, v_current_total;
-          end if;
-          
-          update public.platform_wallets
-          set balance_total = balance_total - new.amount,
-              updated_at = timezone('utc', now())
-          where id = new.source_wallet_id;
+          from public.gonasi_wallets where id = new.source_wallet_id;
 
-        when 'organization' then
-          -- Check sufficient total balance
-          select balance_total, 'org-' || organization_id::text
-          into v_current_total, v_wallet_owner
-          from public.gonasi_wallets
-          where id = new.source_wallet_id;
-          
-          if not found then
-            raise exception 'Organization wallet % not found', new.source_wallet_id;
-          end if;
-          
+          if not found then raise exception 'Platform wallet % not found', new.source_wallet_id; end if;
           if v_current_total < new.amount then
-            raise exception 'Insufficient balance in % wallet. Required: %, Available: %',
-              v_wallet_owner, new.amount, v_current_total;
+            raise exception 'Insufficient balance in % wallet. Required: %, Available: %', v_wallet_owner, new.amount, v_current_total;
           end if;
-          
+
           update public.gonasi_wallets
           set balance_total = balance_total - new.amount,
               updated_at = timezone('utc', now())
           where id = new.source_wallet_id;
 
+        when 'organization' then
+          select balance_total, 'org-' || organization_id::text
+          into v_current_total, v_wallet_owner
+          from public.organization_wallets where id = new.source_wallet_id;
+
+          if not found then raise exception 'Organization wallet % not found', new.source_wallet_id; end if;
+          if v_current_total < new.amount then
+            raise exception 'Insufficient balance in % wallet. Required: %, Available: %', v_wallet_owner, new.amount, v_current_total;
+          end if;
+
+          update public.organization_wallets
+          set balance_total = balance_total - new.amount,
+              updated_at = timezone('utc', now())
+          where id = new.source_wallet_id;
+
         when 'user' then
-          -- Check sufficient total balance
           select balance_total, 'user-' || user_id::text
           into v_current_total, v_wallet_owner
-          from public.user_wallets
-          where id = new.source_wallet_id;
-          
-          if not found then
-            raise exception 'User wallet % not found', new.source_wallet_id;
-          end if;
-          
+          from public.user_wallets where id = new.source_wallet_id;
+
+          if not found then raise exception 'User wallet % not found', new.source_wallet_id; end if;
           if v_current_total < new.amount then
-            raise exception 'Insufficient balance in % wallet. Required: %, Available: %',
-              v_wallet_owner, new.amount, v_current_total;
+            raise exception 'Insufficient balance in % wallet. Required: %, Available: %', v_wallet_owner, new.amount, v_current_total;
           end if;
-          
+
           update public.user_wallets
           set balance_total = balance_total - new.amount,
               updated_at = timezone('utc', now())
@@ -7773,7 +7588,6 @@ begin
   return new;
 exception
   when others then
-    -- Re-raise with context for debugging
     raise exception 'Wallet balance update failed for ledger entry %: %', new.id, sqlerrm;
 end;
 $function$
@@ -10785,7 +10599,7 @@ CREATE TRIGGER trg_update_timestamp BEFORE UPDATE ON public.published_file_libra
 
 CREATE TRIGGER trg_user_wallets_updated_at BEFORE UPDATE ON public.user_wallets FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
-CREATE TRIGGER trg_wallet_balance_update AFTER INSERT ON public.wallet_ledger_entries FOR EACH ROW EXECUTE FUNCTION public.update_wallet_balance();
+CREATE TRIGGER trg_wallet_ledger_after_insert AFTER INSERT ON public.wallet_ledger_entries FOR EACH ROW EXECUTE FUNCTION public.update_wallet_balance();
 
 CREATE TRIGGER on_auth_user_created AFTER INSERT ON auth.users FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
