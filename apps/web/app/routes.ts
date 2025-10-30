@@ -76,6 +76,10 @@ export default [
       'api/dashboard/fetch-organization-subscription-status/:organizationId',
       'routes/api/dashboard/fetch-organization-subscription-status.ts',
     ),
+    route(
+      'api/dashboard/fetch-organization-wallet-balance/:organizationId',
+      'routes/api/dashboard/fetch-organization-wallet-balance.ts',
+    ),
 
     route(':organizationId/members', 'routes/organizations/members/members-index.tsx', [
       route('active-members', 'routes/organizations/members/active-members.tsx', [

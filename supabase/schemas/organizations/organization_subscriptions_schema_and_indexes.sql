@@ -118,6 +118,11 @@ create index idx_org_subscriptions_status
 create index idx_org_subscriptions_tier
   on public.organization_subscriptions (tier);
 
--- Helps efficiently find active subscriptions nearing renewal
 create index idx_org_subscriptions_active_period
   on public.organization_subscriptions (status, current_period_end);
+
+create index idx_org_subscriptions_created_by
+  on public.organization_subscriptions (created_by);
+
+create index idx_org_subscriptions_updated_by
+  on public.organization_subscriptions (updated_by);

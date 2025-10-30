@@ -981,11 +981,15 @@ CREATE INDEX idx_org_invites__token ON public.organization_invites USING btree (
 
 CREATE INDEX idx_org_subscriptions_active_period ON public.organization_subscriptions USING btree (status, current_period_end);
 
+CREATE INDEX idx_org_subscriptions_created_by ON public.organization_subscriptions USING btree (created_by);
+
 CREATE INDEX idx_org_subscriptions_org_id ON public.organization_subscriptions USING btree (organization_id);
 
 CREATE INDEX idx_org_subscriptions_status ON public.organization_subscriptions USING btree (status);
 
 CREATE INDEX idx_org_subscriptions_tier ON public.organization_subscriptions USING btree (tier);
+
+CREATE INDEX idx_org_subscriptions_updated_by ON public.organization_subscriptions USING btree (updated_by);
 
 CREATE INDEX idx_organization_members_invited_by ON public.organization_members USING btree (invited_by);
 
@@ -4455,6 +4459,83 @@ begin
 
   -- Fallback (should not reach here)
   return jsonb_build_object('block', null, 'lesson', null, 'chapter', null);
+end;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.get_organization_earnings_summary(p_org_id uuid)
+ RETURNS TABLE(organization_id uuid, wallet_id uuid, currency_code public.currency_code, balance_total numeric, balance_reserved numeric, balance_available numeric, total_earnings numeric, current_month_earnings numeric, previous_month_earnings numeric, month_over_month_change numeric, month_over_month_percentage_change numeric, trend text)
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+begin
+  return query
+  with wallets as (
+    select 
+      ow.id as w_id, 
+      ow.currency_code as w_currency,
+      ow.balance_total as w_balance_total,
+      ow.balance_reserved as w_balance_reserved
+    from public.organization_wallets ow
+    where ow.organization_id = p_org_id
+  ),
+  earnings as (
+    select
+      w.w_id,
+      w.w_currency,
+      date_trunc('month', e.created_at) as month,
+      sum(e.amount) as total
+    from wallets w
+    inner join public.wallet_ledger_entries e
+      on e.destination_wallet_id = w.w_id
+      and e.destination_wallet_type = 'organization'
+      and e.status = 'completed'
+      and e.type in ('org_payout', 'reward_payout', 'funds_release', 'withdrawal_failed')
+    group by w.w_id, w.w_currency, date_trunc('month', e.created_at)
+  ),
+  this_month as (
+    select w_id, sum(total) as total
+    from earnings
+    where month = date_trunc('month', now())
+    group by w_id
+  ),
+  last_month as (
+    select w_id, sum(total) as total
+    from earnings
+    where month = date_trunc('month', now() - interval '1 month')
+    group by w_id
+  ),
+  lifetime as (
+    select w_id, sum(total) as total
+    from earnings
+    group by w_id
+  )
+  select
+    p_org_id,
+    w.w_id,
+    w.w_currency,
+    w.w_balance_total,
+    w.w_balance_reserved,
+    w.w_balance_total - w.w_balance_reserved as balance_available,
+    coalesce(l.total, 0),
+    coalesce(tm.total, 0),
+    coalesce(lm.total, 0),
+    coalesce(tm.total, 0) - coalesce(lm.total, 0),
+    case
+      when coalesce(lm.total, 0) = 0 then
+        case when coalesce(tm.total, 0) > 0 then 100.0 else 0.0 end
+      else round(((coalesce(tm.total, 0) - coalesce(lm.total, 0)) / lm.total) * 100.0, 2)
+    end,
+    case
+      when coalesce(tm.total, 0) > coalesce(lm.total, 0) then 'increased'
+      when coalesce(tm.total, 0) < coalesce(lm.total, 0) then 'decreased'
+      else 'no_change'
+    end
+  from wallets w
+  left join lifetime l on l.w_id = w.w_id
+  left join this_month tm on tm.w_id = w.w_id
+  left join last_month lm on lm.w_id = w.w_id;
 end;
 $function$
 ;

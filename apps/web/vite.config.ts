@@ -10,7 +10,7 @@ export default defineConfig({
     host: '0.0.0.0',
     port: 5173,
     strictPort: true,
-    allowedHosts: ['5ecfaa3485a2.ngrok-free.app'],
+    allowedHosts: ['unicorn-pleased-merely.ngrok-free.app'],
   },
   ssr: {
     noExternal: ['posthog-js', 'posthog-js/react'],

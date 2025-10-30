@@ -2421,6 +2421,23 @@ export type Database = {
         }
         Returns: Json
       }
+      get_organization_earnings_summary: {
+        Args: { p_org_id: string }
+        Returns: {
+          balance_available: number
+          balance_reserved: number
+          balance_total: number
+          currency_code: Database["public"]["Enums"]["currency_code"]
+          current_month_earnings: number
+          month_over_month_change: number
+          month_over_month_percentage_change: number
+          organization_id: string
+          previous_month_earnings: number
+          total_earnings: number
+          trend: string
+          wallet_id: string
+        }[]
+      }
       get_previous_navigation_state: {
         Args: {
           course_structure: Json
