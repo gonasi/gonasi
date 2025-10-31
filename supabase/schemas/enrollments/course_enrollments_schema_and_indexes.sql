@@ -15,6 +15,7 @@ create table public.course_enrollments (
   is_active boolean not null default true,                         -- Logical flag for active enrollment
 
   created_at timestamptz not null default timezone('utc', now()),  -- Record creation time (UTC)
+  updated_at timestamptz not null default timezone('utc', now()),  -- Record creation time (UTC)
 
   -- Constraints
   constraint uq_user_course unique (user_id, published_course_id), -- Prevent duplicate enrollments per course

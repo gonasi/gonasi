@@ -4,12 +4,6 @@
 -- PURPOSE:
 --   Returns a row per organization wallet (currency), including lifetime
 --   totals, month-over-month comparisons, and current balances.
---
--- CALL EXAMPLE:
---   select * from public.get_organization_earnings_summary('org-uuid');
---
--- SUPABASE RPC EXAMPLE:
---   supabase.rpc('get_organization_earnings_summary', { p_org_id: 'org-uuid' })
 -- ========================================================================
 create or replace function public.get_organization_earnings_summary(
   p_org_id uuid
@@ -46,7 +40,6 @@ begin
     where ow.organization_id = p_org_id
   ),
 
-  -- Separate inflows and deductions for clarity
   inflows as (
     select
       e.destination_wallet_id as w_id,
@@ -75,6 +68,7 @@ begin
     where e.status = 'completed'
       and e.direction = 'debit'
       and e.type in (
+        'platform_revenue',
         'payment_gateway_fee',
         'refund',
         'chargeback',
@@ -103,12 +97,14 @@ begin
     where month = date_trunc('month', now())
     group by w_id
   ),
+
   last_month as (
     select w_id, sum(net) as total
     from monthly
     where month = date_trunc('month', now() - interval '1 month')
     group by w_id
   ),
+
   lifetime as (
     select w_id, sum(gross) as gross, sum(fees) as fees, sum(net) as net
     from monthly

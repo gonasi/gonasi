@@ -2,7 +2,7 @@ import type { Route } from './+types/paystack-webhook';
 
 import { createClient } from '~/lib/supabase/supabase.server';
 
-// Paystack webhook IPs (for reference, but we'll use signature verification instead)
+// Paystack webhook IPs (for reference; we still rely on signature verification)
 const PAYSTACK_IPS = new Set(['52.31.139.75', '52.49.173.169', '52.214.14.220']);
 
 function getClientIp(request: Request): string | null {
@@ -11,6 +11,7 @@ function getClientIp(request: Request): string | null {
     const ips = forwardedFor.split(',').map((ip) => ip.trim());
     return ips[0] ?? null;
   }
+  // Edge runtimes sometimes surface the raw ip on request.ip
   const rawIp = (request as any).ip as string | undefined;
   return rawIp ?? null;
 }
@@ -22,26 +23,19 @@ export async function action({ request }: Route.ActionArgs) {
     const clientIp = getClientIp(request);
     const paystackSignature = request.headers.get('x-paystack-signature');
 
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('🔔 PAYSTACK WEBHOOK RECEIVED');
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('━━━━━━━━ PAYSTACK WEBHOOK ━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('  Client IP:', clientIp);
     console.log('  Signature:', paystackSignature ? '✓ Present' : '✗ Missing');
     console.log('  Timestamp:', new Date().toISOString());
 
-    // IP whitelist check (warning only, not blocking)
+    // IP whitelist check (warning only)
     if (clientIp && !PAYSTACK_IPS.has(clientIp)) {
       console.warn('⚠️  Warning: Request from non-whitelisted IP:', clientIp);
-      console.warn('   Expected IPs:', Array.from(PAYSTACK_IPS).join(', '));
-      // Continue processing - rely on signature verification instead
     }
 
-    // TODO: Implement signature verification for production
-    // const isValidSignature = verifyPaystackSignature(request, paystackSignature);
-    // if (!isValidSignature) {
-    //   console.error('❌ Invalid Paystack signature');
-    //   return new Response('Forbidden', { status: 403 });
-    // }
+    // TODO: implement verifyPaystackSignature(request, paystackSignature) for production
+    // const isValid = verifyPaystackSignature(request, paystackSignature);
+    // if (!isValid) return new Response('Forbidden', { status: 403 });
 
     const { supabase } = createClient(request);
     const payload = await request.json();
@@ -50,222 +44,156 @@ export async function action({ request }: Route.ActionArgs) {
     console.log('  Reference:', payload.data?.reference);
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
-    // =========================================================================
-    // HANDLE: charge.success
-    // =========================================================================
+    // Only handle charge.success for course purchases
     if (payload.event === 'charge.success') {
       const tx = payload.data;
       const metadata = tx.metadata ?? {};
 
-      console.log('💳 Processing successful charge...');
+      console.log('💳 Processing charge.success...');
 
-      // Validate transaction type
+      // Only process course sales
       if (metadata.transaction_type !== 'course_sale') {
-        console.warn('⚠️  Skipped: Non-course transaction');
-        console.warn('   Transaction type:', metadata.transaction_type);
+        console.warn(
+          '⚠️ Skipped: not a course transaction. transaction_type=',
+          metadata.transaction_type,
+        );
         return new Response('Ignored non-course transaction', { status: 200 });
       }
 
-      // Validate required metadata
-      const requiredFields = ['userId', 'publishedCourseId', 'pricingTierId'];
-      const missingFields = requiredFields.filter((field) => !metadata[field]);
-
-      if (missingFields.length > 0) {
-        console.error('❌ Missing required metadata fields:', missingFields);
+      // Required metadata fields (these should be UUID strings)
+      const required = ['userId', 'publishedCourseId', 'pricingTierId'];
+      const missing = required.filter((f) => !metadata[f]);
+      if (missing.length > 0) {
+        console.error('❌ Missing required metadata fields:', missing);
         return new Response('Missing required metadata', { status: 400 });
       }
 
-      // Validate payment reference
       if (!tx.reference) {
         console.error('❌ Missing payment reference');
         return new Response('Missing payment reference', { status: 400 });
       }
 
-      // -----------------------------------------------------------------------
-      // Convert amounts from smallest currency unit to major units
-      // Paystack sends amounts in kobo (KES) or cents (USD)
-      // -----------------------------------------------------------------------
+      // Convert amounts from smallest currency unit to major unit (kobo/cents)
       const rawAmount = typeof tx.amount === 'number' ? tx.amount : parseFloat(String(tx.amount));
-      const rawFees = typeof tx.fees === 'number' ? tx.fees : parseFloat(String(tx.fees || 0));
+      const rawFees = typeof tx.fees === 'number' ? tx.fees : parseFloat(String(tx.fees ?? 0));
 
-      const amountPaid = rawAmount / 100;
-      const paystackFee = rawFees / 100;
+      // Protect against NaN
+      if (Number.isNaN(rawAmount)) {
+        console.error('❌ Invalid amount from Paystack:', tx.amount);
+        return new Response('Invalid amount', { status: 400 });
+      }
 
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.log('💰 PAYMENT DETAILS:');
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.log('  Raw amount (kobo):', rawAmount);
-      console.log('  Raw fees (kobo):', rawFees);
-      console.log('  ─────────────────────────────────────────────────');
-      console.log('  Amount paid:', amountPaid, tx.currency);
-      console.log('  Paystack fee:', paystackFee, tx.currency);
-      console.log('  Net settlement:', amountPaid - paystackFee, tx.currency);
-      console.log('  Currency:', tx.currency);
-      console.log('  Payment method:', tx.channel);
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      const amountPaid = Number((rawAmount / 100).toFixed(4)); // match numeric(19,4)
+      const paystackFee = Number((rawFees / 100).toFixed(4));
+      const currency = (tx.currency ?? 'KES').toString().toUpperCase();
 
-      // Build comprehensive metadata
+      console.log('  Amount paid:', amountPaid, currency);
+      console.log('  Paystack fee:', paystackFee, currency);
+
+      // Build rich metadata object to pass to RPC
       const rpcMetadata = {
         webhook_received_at: new Date().toISOString(),
         webhook_event: payload.event,
         webhook_processing_time_ms: Date.now() - startTime,
         clientIp,
-
-        // Paystack transaction details
         paystack_transaction_id: String(tx.id),
         paystack_domain: tx.domain,
         paystack_status: tx.status,
         paystack_gateway_response: tx.gateway_response,
         paid_at: tx.paid_at,
         created_at: tx.created_at,
-
-        // Payment method
         channel: tx.channel,
         authorization: tx.authorization,
-
-        // Customer
         customer: {
           id: tx.customer?.id,
           email: tx.customer?.email,
           customer_code: tx.customer?.customer_code,
         },
-
-        // Amounts
         raw_amount_kobo: rawAmount,
         raw_fees_kobo: rawFees,
         amount_paid: amountPaid,
         paystack_fee: paystackFee,
-        net_settlement: amountPaid - paystackFee,
-
-        // Original metadata
+        net_settlement: Number((amountPaid - paystackFee).toFixed(4)),
         original_metadata: metadata,
-
-        // Source
         source: tx.source,
         ip_address: tx.ip_address,
+        // keep original tx object for debugging (optional)
+        // raw_tx: tx
       };
 
-      // Prepare RPC parameters
+      // Prepare RPC parameters using the exact names your SQL function expects
       const rpcParams = {
-        p_paystack_reference: tx.reference,
+        p_paystack_reference: String(tx.reference),
         p_paystack_transaction_id: String(tx.id),
-        p_user_id: metadata.userId,
-        p_published_course_id: metadata.publishedCourseId,
-        p_tier_id: metadata.pricingTierId,
+        p_user_id: String(metadata.userId),
+        p_published_course_id: String(metadata.publishedCourseId),
+        p_tier_id: String(metadata.pricingTierId),
         p_amount_paid: amountPaid,
-        p_currency_code: (tx.currency ?? 'KES').toUpperCase(),
+        p_currency_code: currency,
         p_payment_method: tx.channel ?? 'card',
         p_paystack_fee: paystackFee,
         p_metadata: rpcMetadata,
       };
 
-      console.log('📞 Calling process_course_payment_from_paystack...');
-      console.log('   Reference:', rpcParams.p_paystack_reference);
-      console.log('   User:', rpcParams.p_user_id);
-      console.log('   Course:', rpcParams.p_published_course_id);
-      console.log('   Tier:', rpcParams.p_tier_id);
-      console.log('   Amount:', rpcParams.p_amount_paid, rpcParams.p_currency_code);
-      console.log('   Paystack fee:', rpcParams.p_paystack_fee, rpcParams.p_currency_code);
+      console.log('📞 Calling RPC process_course_payment_from_paystack with:');
+      console.log('   reference:', rpcParams.p_paystack_reference);
+      console.log('   user_id:', rpcParams.p_user_id);
+      console.log('   published_course_id:', rpcParams.p_published_course_id);
+      console.log('   tier_id:', rpcParams.p_tier_id);
+      console.log('   amount:', rpcParams.p_amount_paid, rpcParams.p_currency_code);
+      console.log('   paystack_fee:', rpcParams.p_paystack_fee);
 
-      // Call RPC to process payment
       const { data: result, error: rpcError } = await supabase.rpc(
         'process_course_payment_from_paystack',
         rpcParams,
       );
 
       if (rpcError) {
-        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-        console.error('❌ RPC CALL FAILED');
-        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-        console.error('  Error code:', rpcError.code);
-        console.error('  Message:', rpcError.message);
-        console.error('  Details:', rpcError.details);
-        console.error('  Hint:', rpcError.hint);
-        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-
+        console.error('❌ RPC ERROR:', rpcError);
         return new Response(
           JSON.stringify({
             error: 'Payment processing failed',
             message: rpcError.message,
             code: rpcError.code,
+            details: rpcError.details,
           }),
           { status: 500, headers: { 'Content-Type': 'application/json' } },
         );
       }
 
-      // Check RPC result
+      // supabase.rpc returns the value of the function. Make sure it returned success.
       if (!result?.success) {
-        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-        console.error('❌ RPC RETURNED FAILURE');
-        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-        console.error('  Message:', result?.message);
-        console.error('  Result:', JSON.stringify(result, null, 2));
-        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-
+        console.error('❌ RPC returned failure:', JSON.stringify(result, null, 2));
         return new Response(
           JSON.stringify({
             error: 'Payment processing failed',
-            message: result?.message ?? 'Unknown error',
+            message: result?.message ?? 'Unknown error from RPC',
             result,
           }),
           { status: 500, headers: { 'Content-Type': 'application/json' } },
         );
       }
 
-      // Success!
       const processingTime = Date.now() - startTime;
 
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.log('✅ PAYMENT PROCESSED SUCCESSFULLY');
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.log('  Processing time:', processingTime, 'ms');
+      console.log('✅ PAYMENT PROCESSED');
+      console.log('  Processing time (ms):', processingTime);
       console.log('  Enrollment ID:', result.enrollment?.enrollment_id);
-      console.log('  User:', result.enrollment?.user_id);
-      console.log('  Course:', result.enrollment?.course_title);
-      console.log('  Tier:', result.enrollment?.tier_name);
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.log('💰 FINANCIAL BREAKDOWN:');
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.log('  Gross amount:', result.distribution?.gross_amount, result.payment?.currency);
-      console.log('  Paystack fee:', result.distribution?.paystack_fee, result.payment?.currency);
-      console.log(
-        '  Net settlement:',
-        result.distribution?.net_settlement,
-        result.payment?.currency,
-      );
-      console.log('  ─────────────────────────────────────────────────');
-      console.log(
-        '  Platform fee (',
-        result.distribution?.platform_fee_percent,
-        '%):',
-        result.distribution?.platform_fee_amount,
-        result.payment?.currency,
-      );
-      console.log(
-        '  Organization payout:',
-        result.distribution?.organization_payout,
-        result.payment?.currency,
-      );
-      console.log(
-        '  Platform net revenue:',
-        result.distribution?.platform_net_revenue,
-        result.payment?.currency,
-      );
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.log('📒 LEDGER ENTRIES CREATED:');
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.log('  1. Payment inflow:', result.ledger_entries?.payment_inflow);
-      console.log('  1. Course Purchase:', result.ledger_entries?.course_purchase);
-      console.log('  2. Org payout:', result.ledger_entries?.org_payout);
-      console.log('  3. Platform revenue:', result.ledger_entries?.platform_revenue);
-      console.log('  4. Gateway fee:', result.ledger_entries?.gateway_fee);
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('  Purchase ID:', result.purchase?.purchase_id);
+      console.log('  Financials:', JSON.stringify(result.distribution ?? {}, null, 2));
+      console.log('  Ledger entries:', {
+        payment_inflow: result.ledger_entries?.payment_inflow,
+        org_payout: result.ledger_entries?.org_payout,
+        platform_revenue: result.ledger_entries?.platform_revenue,
+        gateway_fee: result.ledger_entries?.gateway_fee,
+      });
 
       return new Response(
         JSON.stringify({
           success: true,
           message: 'Payment processed and user enrolled',
           enrollment_id: result.enrollment?.enrollment_id,
+          purchase_id: result.purchase?.purchase_id,
           paystack_reference: tx.reference,
           processing_time_ms: processingTime,
         }),
@@ -273,63 +201,33 @@ export async function action({ request }: Route.ActionArgs) {
       );
     }
 
-    // =========================================================================
-    // HANDLE: charge.failed
-    // =========================================================================
+    // charge.failed
     if (payload.event === 'charge.failed') {
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.log('❌ PAYMENT FAILED');
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.log('  Reference:', payload.data.reference);
-      console.log('  Amount:', payload.data.amount / 100, payload.data.currency);
-      console.log('  Customer:', payload.data.customer?.email);
-      console.log('  Status:', payload.data.status);
-      console.log('  Gateway response:', payload.data.gateway_response);
-      console.log('  Message:', payload.data.message);
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-
-      // TODO: Consider implementing:
-      // - Update enrollment status to 'payment_failed'
-      // - Send notification to user about failed payment
-      // - Log failed payment attempt for fraud detection
-
-      return Response.json({
-        message: 'Payment failure recorded',
-        event: payload.event,
-      });
+      console.log('❌ charge.failed:', payload.data?.reference);
+      // Optionally record failure in DB / notify user
+      return new Response(
+        JSON.stringify({ message: 'Payment failure recorded', event: payload.event }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } },
+      );
     }
 
-    // =========================================================================
-    // HANDLE: Other webhook events
-    // =========================================================================
-    console.log('ℹ️  Unhandled webhook event:', payload.event);
-
-    return Response.json({
-      message: 'Webhook received',
-      event: payload.event,
+    // Unhandled events
+    console.log('ℹ️ Unhandled webhook event:', payload.event);
+    return new Response(JSON.stringify({ message: 'Webhook received', event: payload.event }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
     });
-  } catch (error) {
+  } catch (err) {
     const processingTime = Date.now() - startTime;
-
-    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.error('💥 WEBHOOK PROCESSING ERROR');
-    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.error('  Processing time:', processingTime, 'ms');
-    console.error('  Error:', error);
-
-    if (error instanceof Error) {
-      console.error('  Message:', error.message);
-      console.error('  Stack:', error.stack);
-    }
-    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-
-    return Response.json(
-      {
+    console.error('💥 WEBHOOK PROCESSING ERROR:', err);
+    return new Response(
+      JSON.stringify({
         success: false,
         message: 'Error processing webhook',
-        error: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 },
+        error: err instanceof Error ? err.message : String(err),
+        processing_time_ms: processingTime,
+      }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } },
     );
   }
 }

@@ -17,7 +17,7 @@ import {
 
 import type { OrganizationWalletBalancesResult } from '@gonasi/database/dashboard';
 
-import { Button } from '~/components/ui/button';
+import { Button, NavLinkButton } from '~/components/ui/button';
 import { Card, CardContent } from '~/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
 import { cn } from '~/lib/utils';
@@ -274,18 +274,16 @@ export function TotalEarningsCard() {
                 </div>
 
                 <div className='flex items-center justify-end gap-3'>
-                  <Button
-                    variant='outline'
-                    size='sm'
-                    onClick={() =>
-                      navigate(
-                        `/dashboard/${organizationId}/ledger?currency=${wallet.currency_code}`,
-                      )
-                    }
-                  >
-                    <Receipt className='mr-1.5 h-4 w-4' />
-                    View Full Ledger
-                  </Button>
+                  <div>
+                    <NavLinkButton
+                      variant='ghost'
+                      size='sm'
+                      to={`/${organizationId}/financial-activity`}
+                      leftIcon={<Receipt />}
+                    >
+                      View Full Ledger
+                    </NavLinkButton>
+                  </div>
 
                   {wallet.balance_available > 0 && (
                     <Button
