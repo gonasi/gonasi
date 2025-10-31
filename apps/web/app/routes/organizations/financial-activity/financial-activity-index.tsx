@@ -4,6 +4,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { fetchOrganizationFinancialActivity } from '@gonasi/database/financialActivity';
 
 import type { Route } from './+types/financial-activity-index';
+import { FinancialSummary } from './components/FinancialSummary';
 import { LedgerTable } from './components/LedgerTable';
 
 import { NotFoundCard } from '~/components/cards';
@@ -45,8 +46,27 @@ export default function FinancialActivityIndex({ loaderData }: Route.ComponentPr
       animate={shouldReduceMotion ? false : { opacity: 1, y: 0 }}
       transition={{ duration: 0.35, ease: 'easeOut' }}
     >
-      {/* header/search omitted for brevity — keep your existing markup */}
-      <div className='pb-4'>
+      <div className='flex flex-col items-start justify-between space-y-4 pb-4 md:flex-row md:items-center md:space-y-0'>
+        <div className='flex flex-col gap-1'>
+          <h1 className='text-2xl font-bold'>Financial Activity</h1>
+          <p className='text-muted-foreground font-secondary text-sm'>
+            Track and manage all financial transactions
+          </p>
+        </div>
+        <div />
+      </div>
+
+      <div className='py-4'>
+        <FinancialSummary />
+      </div>
+
+      <div className='py-4'>
+        <div className='py-4'>
+          <h2 className='text-lg font-semibold'>Detailed Breakdown</h2>
+          <p className='text-muted-foreground font-secondary text-sm'>
+            Complete view of your wallet metrics
+          </p>
+        </div>
         <SearchInput placeholder='Search by reference, id or metadata...' />
       </div>
 
