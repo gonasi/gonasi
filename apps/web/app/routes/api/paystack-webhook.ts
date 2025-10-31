@@ -255,6 +255,7 @@ export async function action({ request }: Route.ActionArgs) {
       console.log('📒 LEDGER ENTRIES CREATED:');
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       console.log('  1. Payment inflow:', result.ledger_entries?.payment_inflow);
+      console.log('  1. Course Purchase:', result.ledger_entries?.course_purchase);
       console.log('  2. Org payout:', result.ledger_entries?.org_payout);
       console.log('  3. Platform revenue:', result.ledger_entries?.platform_revenue);
       console.log('  4. Gateway fee:', result.ledger_entries?.gateway_fee);

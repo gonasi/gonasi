@@ -2123,6 +2123,56 @@ export type Database = {
         }
         Relationships: []
       }
+      user_purchases: {
+        Row: {
+          amount_paid: number
+          created_at: string
+          currency_code: Database["public"]["Enums"]["currency_code"]
+          id: string
+          metadata: Json
+          paystack_reference: string
+          published_course_id: string | null
+          purchased_at: string
+          status: Database["public"]["Enums"]["transaction_status"]
+          transaction_type: Database["public"]["Enums"]["ledger_transaction_type"]
+          user_id: string
+        }
+        Insert: {
+          amount_paid: number
+          created_at?: string
+          currency_code: Database["public"]["Enums"]["currency_code"]
+          id?: string
+          metadata?: Json
+          paystack_reference: string
+          published_course_id?: string | null
+          purchased_at?: string
+          status?: Database["public"]["Enums"]["transaction_status"]
+          transaction_type?: Database["public"]["Enums"]["ledger_transaction_type"]
+          user_id: string
+        }
+        Update: {
+          amount_paid?: number
+          created_at?: string
+          currency_code?: Database["public"]["Enums"]["currency_code"]
+          id?: string
+          metadata?: Json
+          paystack_reference?: string
+          published_course_id?: string | null
+          purchased_at?: string
+          status?: Database["public"]["Enums"]["transaction_status"]
+          transaction_type?: Database["public"]["Enums"]["ledger_transaction_type"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_purchases_published_course_id_fkey"
+            columns: ["published_course_id"]
+            isOneToOne: false
+            referencedRelation: "published_courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           id: string
@@ -2185,51 +2235,51 @@ export type Database = {
           created_at: string
           currency_code: Database["public"]["Enums"]["currency_code"]
           destination_wallet_id: string | null
-          destination_wallet_type: string | null
-          direction: string
+          destination_wallet_type: Database["public"]["Enums"]["wallet_type"]
+          direction: Database["public"]["Enums"]["transaction_direction"]
           id: string
           metadata: Json
           paystack_reference: string
           related_entity_id: string | null
           related_entity_type: string | null
           source_wallet_id: string | null
-          source_wallet_type: string | null
+          source_wallet_type: Database["public"]["Enums"]["wallet_type"]
           status: Database["public"]["Enums"]["transaction_status"]
-          type: string
+          type: Database["public"]["Enums"]["ledger_transaction_type"]
         }
         Insert: {
           amount: number
           created_at?: string
           currency_code: Database["public"]["Enums"]["currency_code"]
           destination_wallet_id?: string | null
-          destination_wallet_type?: string | null
-          direction: string
+          destination_wallet_type: Database["public"]["Enums"]["wallet_type"]
+          direction: Database["public"]["Enums"]["transaction_direction"]
           id?: string
           metadata?: Json
           paystack_reference: string
           related_entity_id?: string | null
           related_entity_type?: string | null
           source_wallet_id?: string | null
-          source_wallet_type?: string | null
+          source_wallet_type: Database["public"]["Enums"]["wallet_type"]
           status?: Database["public"]["Enums"]["transaction_status"]
-          type: string
+          type: Database["public"]["Enums"]["ledger_transaction_type"]
         }
         Update: {
           amount?: number
           created_at?: string
           currency_code?: Database["public"]["Enums"]["currency_code"]
           destination_wallet_id?: string | null
-          destination_wallet_type?: string | null
-          direction?: string
+          destination_wallet_type?: Database["public"]["Enums"]["wallet_type"]
+          direction?: Database["public"]["Enums"]["transaction_direction"]
           id?: string
           metadata?: Json
           paystack_reference?: string
           related_entity_id?: string | null
           related_entity_type?: string | null
           source_wallet_id?: string | null
-          source_wallet_type?: string | null
+          source_wallet_type?: Database["public"]["Enums"]["wallet_type"]
           status?: Database["public"]["Enums"]["transaction_status"]
-          type?: string
+          type?: Database["public"]["Enums"]["ledger_transaction_type"]
         }
         Relationships: []
       }
@@ -2429,11 +2479,13 @@ export type Database = {
           balance_total: number
           currency_code: Database["public"]["Enums"]["currency_code"]
           current_month_earnings: number
+          gross_earnings: number
           month_over_month_change: number
           month_over_month_percentage_change: number
+          net_earnings: number
           organization_id: string
           previous_month_earnings: number
-          total_earnings: number
+          total_fees: number
           trend: string
           wallet_id: string
         }[]
@@ -2649,6 +2701,27 @@ export type Database = {
       currency_code: "KES" | "USD"
       file_type: "image" | "audio" | "video" | "model3d" | "document" | "other"
       invite_delivery_status: "pending" | "sent" | "failed"
+      ledger_transaction_type:
+        | "course_purchase"
+        | "payment_inflow"
+        | "org_payout"
+        | "platform_revenue"
+        | "payment_gateway_fee"
+        | "subscription_payment"
+        | "ai_credit_purchase"
+        | "sponsorship_payment"
+        | "funds_hold"
+        | "funds_release"
+        | "withdrawal_request"
+        | "withdrawal_complete"
+        | "withdrawal_failed"
+        | "reward_payout"
+        | "refund"
+        | "chargeback"
+        | "manual_adjustment"
+        | "currency_conversion"
+        | "tax_withholding"
+        | "tax_remittance"
       org_role: "owner" | "admin" | "editor"
       payment_frequency:
         | "monthly"
@@ -2665,7 +2738,14 @@ export type Database = {
         | "incomplete"
       subscription_tier: "launch" | "scale" | "impact" | "enterprise"
       support_level: "community" | "email" | "priority" | "dedicated"
-      transaction_status: "pending" | "completed" | "failed" | "reversed"
+      transaction_direction: "credit" | "debit"
+      transaction_status:
+        | "pending"
+        | "completed"
+        | "failed"
+        | "cancelled"
+        | "reversed"
+      wallet_type: "platform" | "organization" | "user" | "external"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2831,6 +2911,28 @@ export const Constants = {
       currency_code: ["KES", "USD"],
       file_type: ["image", "audio", "video", "model3d", "document", "other"],
       invite_delivery_status: ["pending", "sent", "failed"],
+      ledger_transaction_type: [
+        "course_purchase",
+        "payment_inflow",
+        "org_payout",
+        "platform_revenue",
+        "payment_gateway_fee",
+        "subscription_payment",
+        "ai_credit_purchase",
+        "sponsorship_payment",
+        "funds_hold",
+        "funds_release",
+        "withdrawal_request",
+        "withdrawal_complete",
+        "withdrawal_failed",
+        "reward_payout",
+        "refund",
+        "chargeback",
+        "manual_adjustment",
+        "currency_conversion",
+        "tax_withholding",
+        "tax_remittance",
+      ],
       org_role: ["owner", "admin", "editor"],
       payment_frequency: [
         "monthly",
@@ -2849,7 +2951,15 @@ export const Constants = {
       ],
       subscription_tier: ["launch", "scale", "impact", "enterprise"],
       support_level: ["community", "email", "priority", "dedicated"],
-      transaction_status: ["pending", "completed", "failed", "reversed"],
+      transaction_direction: ["credit", "debit"],
+      transaction_status: [
+        "pending",
+        "completed",
+        "failed",
+        "cancelled",
+        "reversed",
+      ],
+      wallet_type: ["platform", "organization", "user", "external"],
     },
   },
 } as const

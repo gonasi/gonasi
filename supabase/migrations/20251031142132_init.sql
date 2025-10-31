@@ -12,6 +12,8 @@ create type "public"."file_type" as enum ('image', 'audio', 'video', 'model3d', 
 
 create type "public"."invite_delivery_status" as enum ('pending', 'sent', 'failed');
 
+create type "public"."ledger_transaction_type" as enum ('course_purchase', 'payment_inflow', 'org_payout', 'platform_revenue', 'payment_gateway_fee', 'subscription_payment', 'ai_credit_purchase', 'sponsorship_payment', 'funds_hold', 'funds_release', 'withdrawal_request', 'withdrawal_complete', 'withdrawal_failed', 'reward_payout', 'refund', 'chargeback', 'manual_adjustment', 'currency_conversion', 'tax_withholding', 'tax_remittance');
+
 create type "public"."org_role" as enum ('owner', 'admin', 'editor');
 
 create type "public"."payment_frequency" as enum ('monthly', 'bi_monthly', 'quarterly', 'semi_annual', 'annual');
@@ -24,7 +26,11 @@ create type "public"."subscription_tier" as enum ('launch', 'scale', 'impact', '
 
 create type "public"."support_level" as enum ('community', 'email', 'priority', 'dedicated');
 
-create type "public"."transaction_status" as enum ('pending', 'completed', 'failed', 'reversed');
+create type "public"."transaction_direction" as enum ('credit', 'debit');
+
+create type "public"."transaction_status" as enum ('pending', 'completed', 'failed', 'cancelled', 'reversed');
+
+create type "public"."wallet_type" as enum ('platform', 'organization', 'user', 'external');
 
 
   create table "public"."ai_usage_log" (
@@ -666,6 +672,22 @@ alter table "public"."role_permissions" enable row level security;
 alter table "public"."tier_limits" enable row level security;
 
 
+  create table "public"."user_purchases" (
+    "id" uuid not null default extensions.uuid_generate_v4(),
+    "user_id" uuid not null,
+    "published_course_id" uuid,
+    "amount_paid" numeric(19,4) not null,
+    "currency_code" public.currency_code not null,
+    "transaction_type" public.ledger_transaction_type not null default 'payment_inflow'::public.ledger_transaction_type,
+    "paystack_reference" text not null,
+    "status" public.transaction_status not null default 'completed'::public.transaction_status,
+    "metadata" jsonb not null default '{}'::jsonb,
+    "purchased_at" timestamp with time zone not null default timezone('utc'::text, now()),
+    "created_at" timestamp with time zone not null default timezone('utc'::text, now())
+      );
+
+
+
   create table "public"."user_roles" (
     "id" uuid not null default extensions.uuid_generate_v4(),
     "user_id" uuid not null,
@@ -693,14 +715,14 @@ alter table "public"."user_wallets" enable row level security;
   create table "public"."wallet_ledger_entries" (
     "id" uuid not null default extensions.uuid_generate_v4(),
     "source_wallet_id" uuid,
-    "source_wallet_type" text,
+    "source_wallet_type" public.wallet_type not null,
     "destination_wallet_id" uuid,
-    "destination_wallet_type" text,
+    "destination_wallet_type" public.wallet_type not null,
     "currency_code" public.currency_code not null,
     "amount" numeric(19,4) not null,
-    "direction" text not null,
+    "direction" public.transaction_direction not null,
     "paystack_reference" text not null,
-    "type" text not null,
+    "type" public.ledger_transaction_type not null,
     "status" public.transaction_status not null default 'completed'::public.transaction_status,
     "related_entity_type" text,
     "related_entity_id" uuid,
@@ -1077,6 +1099,10 @@ CREATE INDEX idx_published_file_library_updated_by ON public.published_file_libr
 
 CREATE INDEX idx_published_file_library_updated_by_org ON public.published_file_library USING btree (updated_by, organization_id);
 
+CREATE INDEX idx_user_purchases_course_id ON public.user_purchases USING btree (published_course_id);
+
+CREATE INDEX idx_user_purchases_user_id ON public.user_purchases USING btree (user_id);
+
 CREATE INDEX idx_user_roles_user_id ON public.user_roles USING btree (user_id);
 
 CREATE INDEX idx_user_wallets_created_at ON public.user_wallets USING btree (created_at);
@@ -1085,19 +1111,17 @@ CREATE INDEX idx_user_wallets_currency_code ON public.user_wallets USING btree (
 
 CREATE INDEX idx_user_wallets_user_id ON public.user_wallets USING btree (user_id);
 
-CREATE INDEX idx_wallet_tx_created_at ON public.wallet_ledger_entries USING btree (created_at);
+CREATE INDEX idx_wallet_ledger_destination_wallet ON public.wallet_ledger_entries USING btree (destination_wallet_id, created_at DESC);
 
-CREATE INDEX idx_wallet_tx_currency ON public.wallet_ledger_entries USING btree (currency_code);
+CREATE INDEX idx_wallet_ledger_metadata ON public.wallet_ledger_entries USING gin (metadata);
 
-CREATE INDEX idx_wallet_tx_destination_wallet ON public.wallet_ledger_entries USING btree (destination_wallet_id, destination_wallet_type);
+CREATE INDEX idx_wallet_ledger_paystack_reference ON public.wallet_ledger_entries USING btree (paystack_reference);
 
-CREATE INDEX idx_wallet_tx_paystack_reference ON public.wallet_ledger_entries USING btree (paystack_reference) WHERE (paystack_reference IS NOT NULL);
+CREATE INDEX idx_wallet_ledger_related_entity ON public.wallet_ledger_entries USING btree (related_entity_type, related_entity_id);
 
-CREATE INDEX idx_wallet_tx_paystack_reference_type ON public.wallet_ledger_entries USING btree (paystack_reference, type) WHERE (paystack_reference IS NOT NULL);
+CREATE INDEX idx_wallet_ledger_source_wallet ON public.wallet_ledger_entries USING btree (source_wallet_id, created_at DESC);
 
-CREATE INDEX idx_wallet_tx_related_entity ON public.wallet_ledger_entries USING btree (related_entity_type, related_entity_id);
-
-CREATE INDEX idx_wallet_tx_source_wallet ON public.wallet_ledger_entries USING btree (source_wallet_id, source_wallet_type);
+CREATE INDEX idx_wallet_ledger_type_status ON public.wallet_ledger_entries USING btree (type, status, created_at DESC);
 
 CREATE UNIQUE INDEX lesson_blocks_pkey ON public.lesson_blocks USING btree (id);
 
@@ -1181,6 +1205,10 @@ CREATE UNIQUE INDEX uq_one_active_tier_per_frequency ON public.course_pricing_ti
 
 CREATE UNIQUE INDEX uq_user_course ON public.course_enrollments USING btree (user_id, published_course_id);
 
+CREATE UNIQUE INDEX user_purchases_paystack_reference_key ON public.user_purchases USING btree (paystack_reference);
+
+CREATE UNIQUE INDEX user_purchases_pkey ON public.user_purchases USING btree (id);
+
 CREATE UNIQUE INDEX user_roles_pkey ON public.user_roles USING btree (id);
 
 CREATE UNIQUE INDEX user_roles_user_id_role_key ON public.user_roles USING btree (user_id, role);
@@ -1252,6 +1280,8 @@ alter table "public"."published_file_library" add constraint "published_file_lib
 alter table "public"."role_permissions" add constraint "role_permissions_pkey" PRIMARY KEY using index "role_permissions_pkey";
 
 alter table "public"."tier_limits" add constraint "tier_limits_pkey" PRIMARY KEY using index "tier_limits_pkey";
+
+alter table "public"."user_purchases" add constraint "user_purchases_pkey" PRIMARY KEY using index "user_purchases_pkey";
 
 alter table "public"."user_roles" add constraint "user_roles_pkey" PRIMARY KEY using index "user_roles_pkey";
 
@@ -1987,6 +2017,20 @@ alter table "public"."published_file_library" validate constraint "valid_file_ex
 
 alter table "public"."role_permissions" add constraint "role_permissions_role_permission_key" UNIQUE using index "role_permissions_role_permission_key";
 
+alter table "public"."user_purchases" add constraint "user_purchases_amount_paid_check" CHECK ((amount_paid > (0)::numeric)) not valid;
+
+alter table "public"."user_purchases" validate constraint "user_purchases_amount_paid_check";
+
+alter table "public"."user_purchases" add constraint "user_purchases_paystack_reference_key" UNIQUE using index "user_purchases_paystack_reference_key";
+
+alter table "public"."user_purchases" add constraint "user_purchases_published_course_id_fkey" FOREIGN KEY (published_course_id) REFERENCES public.published_courses(id) ON DELETE SET NULL not valid;
+
+alter table "public"."user_purchases" validate constraint "user_purchases_published_course_id_fkey";
+
+alter table "public"."user_purchases" add constraint "user_purchases_user_id_fkey" FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE not valid;
+
+alter table "public"."user_purchases" validate constraint "user_purchases_user_id_fkey";
+
 alter table "public"."user_roles" add constraint "user_roles_user_id_fkey" FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE not valid;
 
 alter table "public"."user_roles" validate constraint "user_roles_user_id_fkey";
@@ -2003,33 +2047,13 @@ alter table "public"."wallet_ledger_entries" add constraint "wallet_ledger_entri
 
 alter table "public"."wallet_ledger_entries" validate constraint "wallet_ledger_entries_amount_check";
 
-alter table "public"."wallet_ledger_entries" add constraint "wallet_ledger_entries_currency_not_null" CHECK ((currency_code IS NOT NULL)) not valid;
-
-alter table "public"."wallet_ledger_entries" validate constraint "wallet_ledger_entries_currency_not_null";
-
-alter table "public"."wallet_ledger_entries" add constraint "wallet_ledger_entries_destination_wallet_type_check" CHECK ((destination_wallet_type = ANY (ARRAY['platform'::text, 'organization'::text, 'user'::text, 'external'::text]))) not valid;
-
-alter table "public"."wallet_ledger_entries" validate constraint "wallet_ledger_entries_destination_wallet_type_check";
-
-alter table "public"."wallet_ledger_entries" add constraint "wallet_ledger_entries_direction_check" CHECK ((direction = ANY (ARRAY['credit'::text, 'debit'::text]))) not valid;
-
-alter table "public"."wallet_ledger_entries" validate constraint "wallet_ledger_entries_direction_check";
-
-alter table "public"."wallet_ledger_entries" add constraint "wallet_ledger_entries_source_wallet_type_check" CHECK ((source_wallet_type = ANY (ARRAY['platform'::text, 'organization'::text, 'user'::text, 'external'::text]))) not valid;
-
-alter table "public"."wallet_ledger_entries" validate constraint "wallet_ledger_entries_source_wallet_type_check";
-
-alter table "public"."wallet_ledger_entries" add constraint "wallet_ledger_entries_type_check" CHECK ((type = ANY (ARRAY['payment_inflow'::text, 'org_payout'::text, 'platform_revenue'::text, 'payment_gateway_fee'::text, 'subscription_payment'::text, 'ai_credit_purchase'::text, 'sponsorship_payment'::text, 'funds_hold'::text, 'funds_release'::text, 'withdrawal_request'::text, 'withdrawal_complete'::text, 'withdrawal_failed'::text, 'reward_payout'::text, 'refund'::text, 'chargeback'::text, 'manual_adjustment'::text, 'currency_conversion'::text, 'tax_withholding'::text, 'tax_remittance'::text]))) not valid;
-
-alter table "public"."wallet_ledger_entries" validate constraint "wallet_ledger_entries_type_check";
-
-alter table "public"."wallet_ledger_entries" add constraint "wallet_tx_external_dest_id_null" CHECK ((((destination_wallet_type = 'external'::text) AND (destination_wallet_id IS NULL)) OR (destination_wallet_type <> 'external'::text))) not valid;
+alter table "public"."wallet_ledger_entries" add constraint "wallet_tx_external_dest_id_null" CHECK ((((destination_wallet_type = 'external'::public.wallet_type) AND (destination_wallet_id IS NULL)) OR (destination_wallet_type <> 'external'::public.wallet_type))) not valid;
 
 alter table "public"."wallet_ledger_entries" validate constraint "wallet_tx_external_dest_id_null";
 
-alter table "public"."wallet_ledger_entries" add constraint "wallet_tx_external_id_null" CHECK ((((source_wallet_type = 'external'::text) AND (source_wallet_id IS NULL)) OR (source_wallet_type <> 'external'::text))) not valid;
+alter table "public"."wallet_ledger_entries" add constraint "wallet_tx_external_source_id_null" CHECK ((((source_wallet_type = 'external'::public.wallet_type) AND (source_wallet_id IS NULL)) OR (source_wallet_type <> 'external'::public.wallet_type))) not valid;
 
-alter table "public"."wallet_ledger_entries" validate constraint "wallet_tx_external_id_null";
+alter table "public"."wallet_ledger_entries" validate constraint "wallet_tx_external_source_id_null";
 
 set check_function_bodies = off;
 
@@ -4464,7 +4488,7 @@ $function$
 ;
 
 CREATE OR REPLACE FUNCTION public.get_organization_earnings_summary(p_org_id uuid)
- RETURNS TABLE(organization_id uuid, wallet_id uuid, currency_code public.currency_code, balance_total numeric, balance_reserved numeric, balance_available numeric, total_earnings numeric, current_month_earnings numeric, previous_month_earnings numeric, month_over_month_change numeric, month_over_month_percentage_change numeric, trend text)
+ RETURNS TABLE(organization_id uuid, wallet_id uuid, currency_code public.currency_code, balance_total numeric, balance_reserved numeric, balance_available numeric, gross_earnings numeric, total_fees numeric, net_earnings numeric, current_month_earnings numeric, previous_month_earnings numeric, month_over_month_change numeric, month_over_month_percentage_change numeric, trend text)
  LANGUAGE plpgsql
  SECURITY DEFINER
  SET search_path TO ''
@@ -4480,58 +4504,99 @@ begin
     from public.organization_wallets ow
     where ow.organization_id = p_org_id
   ),
-  earnings as (
+
+  -- Separate inflows and deductions for clarity
+  inflows as (
+    select
+      e.destination_wallet_id as w_id,
+      date_trunc('month', e.created_at) as month,
+      sum(e.amount) as amount
+    from public.wallet_ledger_entries e
+    where e.status = 'completed'
+      and e.direction = 'credit'
+      and e.type in (
+        'course_purchase',
+        'payment_inflow',
+        'funds_release',
+        'reward_payout',
+        'org_payout',
+        'sponsorship_payment'
+      )
+    group by e.destination_wallet_id, date_trunc('month', e.created_at)
+  ),
+
+  deductions as (
+    select
+      e.source_wallet_id as w_id,
+      date_trunc('month', e.created_at) as month,
+      sum(e.amount) as amount
+    from public.wallet_ledger_entries e
+    where e.status = 'completed'
+      and e.direction = 'debit'
+      and e.type in (
+        'payment_gateway_fee',
+        'refund',
+        'chargeback',
+        'tax_withholding',
+        'tax_remittance'
+      )
+    group by e.source_wallet_id, date_trunc('month', e.created_at)
+  ),
+
+  monthly as (
     select
       w.w_id,
       w.w_currency,
-      date_trunc('month', e.created_at) as month,
-      sum(e.amount) as total
+      coalesce(i.month, d.month) as month,
+      coalesce(i.amount, 0) as gross,
+      coalesce(d.amount, 0) as fees,
+      coalesce(i.amount, 0) - coalesce(d.amount, 0) as net
     from wallets w
-    inner join public.wallet_ledger_entries e
-      on e.destination_wallet_id = w.w_id
-      and e.destination_wallet_type = 'organization'
-      and e.status = 'completed'
-      and e.type in ('org_payout', 'reward_payout', 'funds_release', 'withdrawal_failed')
-    group by w.w_id, w.w_currency, date_trunc('month', e.created_at)
+    left join inflows i on i.w_id = w.w_id
+    full join deductions d on d.w_id = w.w_id and d.month = i.month
   ),
+
   this_month as (
-    select w_id, sum(total) as total
-    from earnings
+    select w_id, sum(net) as total
+    from monthly
     where month = date_trunc('month', now())
     group by w_id
   ),
   last_month as (
-    select w_id, sum(total) as total
-    from earnings
+    select w_id, sum(net) as total
+    from monthly
     where month = date_trunc('month', now() - interval '1 month')
     group by w_id
   ),
   lifetime as (
-    select w_id, sum(total) as total
-    from earnings
+    select w_id, sum(gross) as gross, sum(fees) as fees, sum(net) as net
+    from monthly
     group by w_id
   )
+
   select
-    p_org_id,
-    w.w_id,
-    w.w_currency,
-    w.w_balance_total,
-    w.w_balance_reserved,
-    w.w_balance_total - w.w_balance_reserved as balance_available,
-    coalesce(l.total, 0),
-    coalesce(tm.total, 0),
-    coalesce(lm.total, 0),
-    coalesce(tm.total, 0) - coalesce(lm.total, 0),
+    p_org_id as organization_id,
+    w.w_id as wallet_id,
+    w.w_currency as currency_code,
+    w.w_balance_total as balance_total,
+    w.w_balance_reserved as balance_reserved,
+    (w.w_balance_total - w.w_balance_reserved) as balance_available,
+    coalesce(l.gross, 0) as gross_earnings,
+    coalesce(l.fees, 0) as total_fees,
+    coalesce(l.net, 0) as net_earnings,
+    coalesce(tm.total, 0) as current_month_earnings,
+    coalesce(lm.total, 0) as previous_month_earnings,
+    coalesce(tm.total, 0) - coalesce(lm.total, 0) as month_over_month_change,
     case
       when coalesce(lm.total, 0) = 0 then
         case when coalesce(tm.total, 0) > 0 then 100.0 else 0.0 end
       else round(((coalesce(tm.total, 0) - coalesce(lm.total, 0)) / lm.total) * 100.0, 2)
-    end,
+    end as month_over_month_percentage_change,
     case
       when coalesce(tm.total, 0) > coalesce(lm.total, 0) then 'increased'
       when coalesce(tm.total, 0) < coalesce(lm.total, 0) then 'decreased'
       else 'no_change'
-    end
+    end as trend
   from wallets w
   left join lifetime l on l.w_id = w.w_id
   left join this_month tm on tm.w_id = w.w_id
@@ -5364,18 +5429,18 @@ declare
 
     -- Amount calculations
     v_gross_amount numeric(19,4);
-    v_net_settlement numeric(19,4);  -- What platform actually receives from Paystack
     v_platform_fee_amount numeric(19,4);
     v_org_payout numeric(19,4);
     v_platform_net_revenue numeric(19,4);
 
     -- Wallets
-    v_platform_wallet_id uuid;
+    v_user_wallet_id uuid;
     v_org_wallet_id uuid;
+    v_platform_wallet_id uuid;
 
     -- Ledger entries
-    v_ledger_payment_inflow uuid;
-    v_ledger_org_payout uuid;
+    v_ledger_user_to_org uuid;
+    v_ledger_org_to_platform uuid;
     v_ledger_platform_revenue uuid;
     v_ledger_gateway_fee uuid;
 
@@ -5383,19 +5448,19 @@ declare
     v_enrollment_id uuid;
     v_access_start timestamptz := timezone('utc', now());
     v_activity_id uuid;
-begin
-    raise notice '========================================';
-    raise notice '[PAYMENT] Processing Paystack payment: %', p_paystack_reference;
 
-    -- =============================================================
-    -- 1. Idempotency check
-    -- =============================================================
-    perform 1 from public.wallet_ledger_entries
+    -- Purchase history
+    v_purchase_id uuid;
+begin
+    ---------------------------------------------------------------
+    -- Idempotency: already processed?
+    ---------------------------------------------------------------
+    perform 1
+    from public.wallet_ledger_entries
     where paystack_reference = p_paystack_reference
     limit 1;
 
     if found then
-        raise notice '[PAYMENT] ⚠️  Payment already processed: %', p_paystack_reference;
         return jsonb_build_object(
             'success', false,
             'message', 'Payment already processed',
@@ -5403,9 +5468,9 @@ begin
         );
     end if;
 
-    -- =============================================================
-    -- 2. Validate course & organization
-    -- =============================================================
+    ---------------------------------------------------------------
+    -- Validate course & organization
+    ---------------------------------------------------------------
     select pc.name, pc.organization_id
     into v_course_title, v_organization_id
     from public.published_courses pc
@@ -5413,23 +5478,21 @@ begin
       and pc.is_active = true;
 
     if not found then
-        raise exception '[PAYMENT] Published course not found or inactive: %', p_published_course_id;
+        raise exception 'Published course not found or inactive: %', p_published_course_id;
     end if;
 
     select o.tier into v_org_tier
     from public.organizations o
     where o.id = v_organization_id;
 
-    select tl.platform_fee_percentage into v_platform_fee_percent
+    select tl.platform_fee_percentage
+    into v_platform_fee_percent
     from public.tier_limits tl
     where tl.tier = v_org_tier;
 
-    raise notice '[PAYMENT] Organization: % (tier: %, platform fee: % %%)', 
-        v_organization_id, v_org_tier, v_platform_fee_percent;
-
-    -- =============================================================
-    -- 3. Get pricing tier
-    -- =============================================================
+    ---------------------------------------------------------------
+    -- Get pricing tier
+    ---------------------------------------------------------------
     select 
         pt.tier_name,
         pt.tier_description,
@@ -5452,36 +5515,43 @@ begin
       and pt.is_active = true;
 
     if not found then
-        raise exception '[PAYMENT] Pricing tier not found - course: %, tier: %', 
-            p_published_course_id, p_tier_id;
+        raise exception 'Pricing tier not found: %', p_tier_id;
     end if;
 
-    -- =============================================================
-    -- 4. Determine final price
-    -- =============================================================
-    if v_tier_promotional_price is not null and v_tier_promotional_price < v_tier_price then
+    ---------------------------------------------------------------
+    -- Determine sale price
+    ---------------------------------------------------------------
+    if v_tier_promotional_price is not null
+       and v_tier_promotional_price < v_tier_price then
         v_gross_amount := v_tier_promotional_price;
     else
         v_gross_amount := v_tier_price;
     end if;
 
     if p_amount_paid != v_gross_amount then
-        raise exception '[PAYMENT] Amount mismatch - expected: %, received: %', 
+        raise exception 'Amount mismatch. Expected %, received %',
             v_gross_amount, p_amount_paid;
     end if;
 
-    -- =============================================================
-    -- 5. Get or create wallets
-    -- =============================================================
-    select gw.id into v_platform_wallet_id
-    from public.gonasi_wallets gw
-    where gw.currency_code = v_tier_currency;
+    ---------------------------------------------------------------
+    -- Ensure wallets exist
+    ---------------------------------------------------------------
+    -- User wallet
+    select uw.id
+    into v_user_wallet_id
+    from public.user_wallets uw
+    where uw.user_id = p_user_id
+      and uw.currency_code = v_tier_currency;
 
     if not found then
-        raise exception '[PAYMENT] Platform wallet not found for currency: %', v_tier_currency;
+        insert into public.user_wallets (user_id, currency_code)
+        values (p_user_id, v_tier_currency)
+        returning id into v_user_wallet_id;
     end if;
 
-    select ow.id into v_org_wallet_id
+    -- Org wallet
+    select ow.id
+    into v_org_wallet_id
     from public.organization_wallets ow
     where ow.organization_id = v_organization_id
       and ow.currency_code = v_tier_currency;
@@ -5490,164 +5560,135 @@ begin
         insert into public.organization_wallets (organization_id, currency_code)
         values (v_organization_id, v_tier_currency)
         returning id into v_org_wallet_id;
-        
-        raise notice '[PAYMENT] Created organization wallet: %', v_org_wallet_id;
     end if;
 
-    -- =============================================================
-    -- 6. Calculate distribution
-    -- =============================================================
+    -- Platform wallet
+    select gw.id
+    into v_platform_wallet_id
+    from public.gonasi_wallets gw
+    where gw.currency_code = v_tier_currency;
+
+    if not found then
+        raise exception 'Platform wallet missing for currency: %', v_tier_currency;
+    end if;
+
+    ---------------------------------------------------------------
+    -- Compute distribution
+    ---------------------------------------------------------------
     v_platform_fee_amount := round(v_gross_amount * (v_platform_fee_percent / 100), 4);
     v_org_payout := v_gross_amount - v_platform_fee_amount;
-    v_net_settlement := v_gross_amount - p_paystack_fee;
     v_platform_net_revenue := v_platform_fee_amount - p_paystack_fee;
 
-    raise notice '[PAYMENT] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━';
-    raise notice '[PAYMENT] 💰 PAYMENT BREAKDOWN:';
-    raise notice '[PAYMENT] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━';
-    raise notice '[PAYMENT]   Gross amount:          % %', v_gross_amount, v_tier_currency;
-    raise notice '[PAYMENT]   Paystack fee:          -% %', p_paystack_fee, v_tier_currency;
-    raise notice '[PAYMENT]   Net settlement:        % % (received by platform)', 
-        v_net_settlement, v_tier_currency;
-    raise notice '[PAYMENT] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━';
-    raise notice '[PAYMENT]   Platform fee (% %%):   % %', 
-        v_platform_fee_percent, v_platform_fee_amount, v_tier_currency;
-    raise notice '[PAYMENT]   Organization payout:   % %', v_org_payout, v_tier_currency;
-    raise notice '[PAYMENT]   Platform net revenue:  % %', v_platform_net_revenue, v_tier_currency;
-    raise notice '[PAYMENT] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━';
-
-    -- Validation: Platform balance change should equal net revenue
-    if (v_net_settlement - v_org_payout) != v_platform_net_revenue then
-        raise exception '[PAYMENT] Balance calculation error: % - % != %',
-            v_net_settlement, v_org_payout, v_platform_net_revenue;
-    end if;
-
-    -- =============================================================
-    -- 7. Create ledger entries (4 entries for complete audit)
-    -- =============================================================
-    
-    -- ENTRY 1: External → Platform (net settlement after Paystack fee)
-    raise notice '[PAYMENT] 📝 Creating ledger entry 1/4: Payment inflow';
+    ---------------------------------------------------------------
+    -- LEDGER ENTRY 1: User → Organization (gross payment)
+    ---------------------------------------------------------------
     insert into public.wallet_ledger_entries(
         source_wallet_type, source_wallet_id,
         destination_wallet_type, destination_wallet_id,
         currency_code, amount, direction, type, status,
-        related_entity_type, related_entity_id, paystack_reference,
-        metadata
+        related_entity_type, related_entity_id,
+        paystack_reference, metadata
     ) values (
-        'external', null,
-        'platform', v_platform_wallet_id,
-        v_tier_currency, v_net_settlement, 'credit', 'payment_inflow', 'completed',
-        'course', p_published_course_id, p_paystack_reference,
-        jsonb_build_object(
-            'description', 'Net payment received from Paystack (after gateway fee deduction)',
-            'gross_amount', v_gross_amount,
-            'paystack_fee_deducted', p_paystack_fee,
-            'net_settlement', v_net_settlement,
-            'paystack_transaction_id', p_paystack_transaction_id,
-            'user_id', p_user_id,
-            'organization_id', v_organization_id,
-            'course_title', v_course_title,
-            'tier_name', v_tier_name,
-            'tier_id', p_tier_id,
-            'payment_method', p_payment_method,
-            'webhook_metadata', p_metadata
-        )
-    ) returning id into v_ledger_payment_inflow;
-
-    -- ENTRY 2: Platform → Organization (org's share of sale)
-    raise notice '[PAYMENT] 📝 Creating ledger entry 2/4: Organization payout';
-    insert into public.wallet_ledger_entries(
-        source_wallet_type, source_wallet_id,
-        destination_wallet_type, destination_wallet_id,
-        currency_code, amount, direction, type, status,
-        related_entity_type, related_entity_id, paystack_reference,
-        metadata
-    ) values (
-        'platform', v_platform_wallet_id,
+        'user', v_user_wallet_id,
         'organization', v_org_wallet_id,
-        v_tier_currency, v_org_payout, 'debit', 'org_payout', 'completed',
-        'course', p_published_course_id, p_paystack_reference,
+        v_tier_currency, v_gross_amount, 'debit', 'course_purchase', 'completed',
+        'course', p_published_course_id,
+        p_paystack_reference,
         jsonb_build_object(
-            'description', 'Course sale payout to organization',
-            'organization_id', v_organization_id,
+            'description', 'User purchased course via Paystack',
+            'user_id', p_user_id,
             'course_title', v_course_title,
             'tier_name', v_tier_name,
-            'gross_sale_amount', v_gross_amount,
-            'platform_fee_percent', v_platform_fee_percent,
-            'platform_fee_deducted', v_platform_fee_amount,
-            'payout_amount', v_org_payout,
-            'source_ledger_entry', v_ledger_payment_inflow
+            'payment_method', p_payment_method,
+            'gross_amount', v_gross_amount
         )
-    ) returning id into v_ledger_org_payout;
+    ) returning id into v_ledger_user_to_org;
 
-    -- ENTRY 3: Platform → Platform (revenue recognition)
-    raise notice '[PAYMENT] 📝 Creating ledger entry 3/4: Platform revenue';
+    ---------------------------------------------------------------
+    -- LEDGER ENTRY 2: Organization → Platform (platform fee)
+    ---------------------------------------------------------------
     insert into public.wallet_ledger_entries(
         source_wallet_type, source_wallet_id,
         destination_wallet_type, destination_wallet_id,
         currency_code, amount, direction, type, status,
-        related_entity_type, related_entity_id, paystack_reference,
-        metadata
+        related_entity_type, related_entity_id,
+        paystack_reference, metadata
+    ) values (
+        'organization', v_org_wallet_id,
+        'platform', v_platform_wallet_id,
+        v_tier_currency, v_platform_fee_amount, 'debit', 'platform_revenue', 'completed',
+        'course', p_published_course_id,
+        p_paystack_reference,
+        jsonb_build_object(
+            'description', 'Platform fee deducted from organization payout',
+            'platform_fee_percent', v_platform_fee_percent,
+            'platform_fee_amount', v_platform_fee_amount,
+            'gross_amount', v_gross_amount
+        )
+    ) returning id into v_ledger_org_to_platform;
+
+    ---------------------------------------------------------------
+    -- LEDGER ENTRY 3: Platform → Platform (net revenue)
+    ---------------------------------------------------------------
+    insert into public.wallet_ledger_entries(
+        source_wallet_type, source_wallet_id,
+        destination_wallet_type, destination_wallet_id,
+        currency_code, amount, direction, type, status,
+        related_entity_type, related_entity_id,
+        paystack_reference, metadata
     ) values (
         'platform', v_platform_wallet_id,
         'platform', v_platform_wallet_id,
         v_tier_currency, v_platform_net_revenue, 'credit', 'platform_revenue', 'completed',
-        'course', p_published_course_id, p_paystack_reference,
+        'course', p_published_course_id,
+        p_paystack_reference,
         jsonb_build_object(
-            'description', 'Platform net revenue from course sale',
-            'gross_amount', v_gross_amount,
-            'platform_fee_amount', v_platform_fee_amount,
-            'paystack_fee_amount', p_paystack_fee,
+            'description', 'Platform net revenue after gateway fees',
             'net_revenue', v_platform_net_revenue,
-            'source_ledger_entry', v_ledger_payment_inflow
+            'platform_fee_amount', v_platform_fee_amount,
+            'paystack_fee', p_paystack_fee
         )
     ) returning id into v_ledger_platform_revenue;
 
-    -- ENTRY 4: Platform → Expense (Paystack fee expense tracking)
-    raise notice '[PAYMENT] 📝 Creating ledger entry 4/4: Payment gateway fee';
+    ---------------------------------------------------------------
+    -- LEDGER ENTRY 4: Platform → External (Paystack fee)
+    ---------------------------------------------------------------
     insert into public.wallet_ledger_entries(
         source_wallet_type, source_wallet_id,
         destination_wallet_type, destination_wallet_id,
         currency_code, amount, direction, type, status,
-        related_entity_type, related_entity_id, paystack_reference,
-        metadata
+        related_entity_type, related_entity_id,
+        paystack_reference, metadata
     ) values (
         'platform', v_platform_wallet_id,
         'external', null,
         v_tier_currency, p_paystack_fee, 'debit', 'payment_gateway_fee', 'completed',
-        'course', p_published_course_id, p_paystack_reference,
+        'course', p_published_course_id,
+        p_paystack_reference,
         jsonb_build_object(
-            'description', 'Payment gateway transaction fee (Paystack)',
-            'paystack_transaction_id', p_paystack_transaction_id,
+            'description', 'Payment gateway fee paid to Paystack',
             'gateway', 'Paystack',
-            'payment_method', p_payment_method,
-            'source_ledger_entry', v_ledger_payment_inflow
+            'payment_method', p_payment_method
         )
     ) returning id into v_ledger_gateway_fee;
 
-    raise notice '[PAYMENT] ✅ All ledger entries created successfully';
-
-    -- =============================================================
-    -- 8. Enrollment: create or update
-    -- =============================================================
-    raise notice '[PAYMENT] 📚 Processing enrollment...';
-    
-    select id into v_enrollment_id
+    ---------------------------------------------------------------
+    -- Enrollment: grant or update access
+    ---------------------------------------------------------------
+    select id
+    into v_enrollment_id
     from public.course_enrollments
     where user_id = p_user_id
       and published_course_id = p_published_course_id
     for update;
 
     if found then
-        raise notice '[PAYMENT] Updating existing enrollment: %', v_enrollment_id;
         update public.course_enrollments
         set expires_at = v_access_start + interval '1 month',
             is_active = true,
             updated_at = timezone('utc', now())
         where id = v_enrollment_id;
     else
-        raise notice '[PAYMENT] Creating new enrollment';
         insert into public.course_enrollments(
             user_id, published_course_id, organization_id,
             enrolled_at, expires_at, is_active
@@ -5657,68 +5698,69 @@ begin
         ) returning id into v_enrollment_id;
     end if;
 
-    -- Log enrollment activity
     insert into public.course_enrollment_activities(
-        enrollment_id, tier_name, tier_description, payment_frequency, currency_code,
-        is_free, price_paid, promotional_price, was_promotional,
+        enrollment_id, tier_name, tier_description, payment_frequency,
+        currency_code, is_free, price_paid, promotional_price, was_promotional,
         access_start, access_end, created_by
     ) values (
-        v_enrollment_id, v_tier_name, v_tier_description, v_tier_frequency, v_tier_currency,
-        v_tier_is_free, v_gross_amount, v_tier_promotional_price,
+        v_enrollment_id, v_tier_name, v_tier_description, v_tier_frequency,
+        v_tier_currency, v_tier_is_free, v_gross_amount, v_tier_promotional_price,
         (v_tier_promotional_price is not null),
         v_access_start, v_access_start + interval '1 month', p_user_id
     ) returning id into v_activity_id;
 
-    raise notice '[PAYMENT] ✅ Enrollment completed: %', v_enrollment_id;
+    ---------------------------------------------------------------
+    -- Purchase History (for profile view & analytics)
+    ---------------------------------------------------------------
+    insert into public.user_purchases (
+        user_id, published_course_id, amount_paid, currency_code,
+        paystack_reference, purchased_at
+    ) values (
+        p_user_id, p_published_course_id, v_gross_amount, v_tier_currency,
+        p_paystack_reference,
+        timezone('utc', now())
+    ) returning id into v_purchase_id;
 
-    -- =============================================================
-    -- 9. Return detailed summary
-    -- =============================================================
-    raise notice '[PAYMENT] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━';
-    raise notice '[PAYMENT] ✅ PAYMENT PROCESSING COMPLETE';
-    raise notice '[PAYMENT] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━';
-    
+    ---------------------------------------------------------------
+    -- Return summary
+    ---------------------------------------------------------------
     return jsonb_build_object(
         'success', true,
         'message', 'Course payment processed successfully',
         'enrollment', jsonb_build_object(
             'enrollment_id', v_enrollment_id,
-            'enrollment_activity_id', v_activity_id,
-            'user_id', p_user_id,
-            'course_id', p_published_course_id,
+            'activity_id', v_activity_id,
             'course_title', v_course_title,
             'tier_name', v_tier_name,
             'access_start', v_access_start,
             'access_end', v_access_start + interval '1 month'
         ),
         'payment', jsonb_build_object(
-            'paystack_reference', p_paystack_reference,
-            'paystack_transaction_id', p_paystack_transaction_id,
+            'reference', p_paystack_reference,
+            'transaction_id', p_paystack_transaction_id,
             'gross_amount', v_gross_amount,
-            'net_settlement', v_net_settlement,
-            'currency', v_tier_currency,
-            'payment_method', p_payment_method
+            'currency', v_tier_currency
         ),
         'distribution', jsonb_build_object(
-            'gross_amount', v_gross_amount,
-            'platform_fee_percent', v_platform_fee_percent,
             'platform_fee_amount', v_platform_fee_amount,
             'paystack_fee', p_paystack_fee,
-            'net_settlement', v_net_settlement,
-            'organization_payout', v_org_payout,
+            'org_payout', v_org_payout,
             'platform_net_revenue', v_platform_net_revenue
         ),
         'ledger_entries', jsonb_build_object(
-            'payment_inflow', v_ledger_payment_inflow,
-            'org_payout', v_ledger_org_payout,
+            'user_to_org', v_ledger_user_to_org,
+            'org_to_platform', v_ledger_org_to_platform,
             'platform_revenue', v_ledger_platform_revenue,
             'gateway_fee', v_ledger_gateway_fee
+        ),
+        'purchase', jsonb_build_object(
+            'purchase_id', v_purchase_id
         )
     );
 
 exception
     when others then
-        raise exception '[PAYMENT] ❌ Payment processing failed: %', sqlerrm;
+        raise exception 'Payment processing failed: %', sqlerrm;
 end;
 $function$
 ;
@@ -7470,190 +7512,6 @@ end;
 $function$
 ;
 
-CREATE OR REPLACE FUNCTION public.update_wallet_balance()
- RETURNS trigger
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO ''
-AS $function$
-declare
-  v_current_total numeric(19,4);
-  v_current_reserved numeric(19,4);
-  v_wallet_owner text;
-  v_is_reserved_transaction boolean;
-begin
-  -- Only act on completed ledger entries
-  if new.status != 'completed' then
-    return new;
-  end if;
-
-  -- Determine whether the transaction affects reserved balance
-  v_is_reserved_transaction := new.type in ('funds_hold', 'funds_release', 'reward_payout');
-
-  ------------------------------------------------------------
-  -- 1. CREDIT DESTINATION WALLET
-  ------------------------------------------------------------
-  if new.destination_wallet_type != 'external' and new.destination_wallet_id is not null then
-    if v_is_reserved_transaction then
-      case new.destination_wallet_type
-        when 'platform' then
-          update public.gonasi_wallets
-          set balance_reserved = balance_reserved + new.amount,
-              updated_at = timezone('utc', now())
-          where id = new.destination_wallet_id;
-          if not found then raise exception 'Platform wallet % not found', new.destination_wallet_id; end if;
-
-        when 'organization' then
-          update public.organization_wallets
-          set balance_reserved = balance_reserved + new.amount,
-              updated_at = timezone('utc', now())
-          where id = new.destination_wallet_id;
-          if not found then raise exception 'Organization wallet % not found', new.destination_wallet_id; end if;
-
-        when 'user' then
-          update public.user_wallets
-          set balance_reserved = balance_reserved + new.amount,
-              updated_at = timezone('utc', now())
-          where id = new.destination_wallet_id;
-          if not found then raise exception 'User wallet % not found', new.destination_wallet_id; end if;
-      end case;
-    else
-      -- Credit total balance
-      case new.destination_wallet_type
-        when 'platform' then
-          update public.gonasi_wallets
-          set balance_total = balance_total + new.amount,
-              updated_at = timezone('utc', now())
-          where id = new.destination_wallet_id;
-          if not found then raise exception 'Platform wallet % not found', new.destination_wallet_id; end if;
-
-        when 'organization' then
-          update public.organization_wallets
-          set balance_total = balance_total + new.amount,
-              updated_at = timezone('utc', now())
-          where id = new.destination_wallet_id;
-          if not found then raise exception 'Organization wallet % not found', new.destination_wallet_id; end if;
-
-        when 'user' then
-          update public.user_wallets
-          set balance_total = balance_total + new.amount,
-              updated_at = timezone('utc', now())
-          where id = new.destination_wallet_id;
-          if not found then raise exception 'User wallet % not found', new.destination_wallet_id; end if;
-      end case;
-    end if;
-  end if;
-
-  ------------------------------------------------------------
-  -- 2. DEBIT SOURCE WALLET
-  ------------------------------------------------------------
-  if new.source_wallet_type != 'external' and new.source_wallet_id is not null then
-    if v_is_reserved_transaction then
-      case new.source_wallet_type
-        when 'platform' then
-          select balance_reserved, 'platform-' || currency_code::text
-          into v_current_reserved, v_wallet_owner
-          from public.gonasi_wallets where id = new.source_wallet_id;
-
-          if not found then raise exception 'Platform wallet % not found', new.source_wallet_id; end if;
-          if v_current_reserved < new.amount then
-            raise exception 'Insufficient reserved balance in % wallet. Required: %, Available: %', v_wallet_owner, new.amount, v_current_reserved;
-          end if;
-
-          update public.gonasi_wallets
-          set balance_reserved = balance_reserved - new.amount,
-              updated_at = timezone('utc', now())
-          where id = new.source_wallet_id;
-
-        when 'organization' then
-          select balance_reserved, 'org-' || organization_id::text
-          into v_current_reserved, v_wallet_owner
-          from public.organization_wallets where id = new.source_wallet_id;
-
-          if not found then raise exception 'Organization wallet % not found', new.source_wallet_id; end if;
-          if v_current_reserved < new.amount then
-            raise exception 'Insufficient reserved balance in % wallet. Required: %, Available: %', v_wallet_owner, new.amount, v_current_reserved;
-          end if;
-
-          update public.organization_wallets
-          set balance_reserved = balance_reserved - new.amount,
-              updated_at = timezone('utc', now())
-          where id = new.source_wallet_id;
-
-        when 'user' then
-          select balance_reserved, 'user-' || user_id::text
-          into v_current_reserved, v_wallet_owner
-          from public.user_wallets where id = new.source_wallet_id;
-
-          if not found then raise exception 'User wallet % not found', new.source_wallet_id; end if;
-          if v_current_reserved < new.amount then
-            raise exception 'Insufficient reserved balance in % wallet. Required: %, Available: %', v_wallet_owner, new.amount, v_current_reserved;
-          end if;
-
-          update public.user_wallets
-          set balance_reserved = balance_reserved - new.amount,
-              updated_at = timezone('utc', now())
-          where id = new.source_wallet_id;
-      end case;
-
-    else
-      case new.source_wallet_type
-        when 'platform' then
-          select balance_total, 'platform-' || currency_code::text
-          into v_current_total, v_wallet_owner
-          from public.gonasi_wallets where id = new.source_wallet_id;
-
-          if not found then raise exception 'Platform wallet % not found', new.source_wallet_id; end if;
-          if v_current_total < new.amount then
-            raise exception 'Insufficient balance in % wallet. Required: %, Available: %', v_wallet_owner, new.amount, v_current_total;
-          end if;
-
-          update public.gonasi_wallets
-          set balance_total = balance_total - new.amount,
-              updated_at = timezone('utc', now())
-          where id = new.source_wallet_id;
-
-        when 'organization' then
-          select balance_total, 'org-' || organization_id::text
-          into v_current_total, v_wallet_owner
-          from public.organization_wallets where id = new.source_wallet_id;
-
-          if not found then raise exception 'Organization wallet % not found', new.source_wallet_id; end if;
-          if v_current_total < new.amount then
-            raise exception 'Insufficient balance in % wallet. Required: %, Available: %', v_wallet_owner, new.amount, v_current_total;
-          end if;
-
-          update public.organization_wallets
-          set balance_total = balance_total - new.amount,
-              updated_at = timezone('utc', now())
-          where id = new.source_wallet_id;
-
-        when 'user' then
-          select balance_total, 'user-' || user_id::text
-          into v_current_total, v_wallet_owner
-          from public.user_wallets where id = new.source_wallet_id;
-
-          if not found then raise exception 'User wallet % not found', new.source_wallet_id; end if;
-          if v_current_total < new.amount then
-            raise exception 'Insufficient balance in % wallet. Required: %, Available: %', v_wallet_owner, new.amount, v_current_total;
-          end if;
-
-          update public.user_wallets
-          set balance_total = balance_total - new.amount,
-              updated_at = timezone('utc', now())
-          where id = new.source_wallet_id;
-      end case;
-    end if;
-  end if;
-
-  return new;
-exception
-  when others then
-    raise exception 'Wallet balance update failed for ledger entry %: %', new.id, sqlerrm;
-end;
-$function$
-;
-
 CREATE OR REPLACE FUNCTION public.upsert_published_course_with_content(course_data jsonb, structure_content jsonb)
  RETURNS void
  LANGUAGE plpgsql
@@ -9166,6 +9024,48 @@ grant truncate on table "public"."tier_limits" to "service_role";
 
 grant update on table "public"."tier_limits" to "service_role";
 
+grant delete on table "public"."user_purchases" to "anon";
+
+grant insert on table "public"."user_purchases" to "anon";
+
+grant references on table "public"."user_purchases" to "anon";
+
+grant select on table "public"."user_purchases" to "anon";
+
+grant trigger on table "public"."user_purchases" to "anon";
+
+grant truncate on table "public"."user_purchases" to "anon";
+
+grant update on table "public"."user_purchases" to "anon";
+
+grant delete on table "public"."user_purchases" to "authenticated";
+
+grant insert on table "public"."user_purchases" to "authenticated";
+
+grant references on table "public"."user_purchases" to "authenticated";
+
+grant select on table "public"."user_purchases" to "authenticated";
+
+grant trigger on table "public"."user_purchases" to "authenticated";
+
+grant truncate on table "public"."user_purchases" to "authenticated";
+
+grant update on table "public"."user_purchases" to "authenticated";
+
+grant delete on table "public"."user_purchases" to "service_role";
+
+grant insert on table "public"."user_purchases" to "service_role";
+
+grant references on table "public"."user_purchases" to "service_role";
+
+grant select on table "public"."user_purchases" to "service_role";
+
+grant trigger on table "public"."user_purchases" to "service_role";
+
+grant truncate on table "public"."user_purchases" to "service_role";
+
+grant update on table "public"."user_purchases" to "service_role";
+
 grant delete on table "public"."user_roles" to "service_role";
 
 grant insert on table "public"."user_roles" to "service_role";
@@ -10547,8 +10447,6 @@ CREATE TRIGGER trg_set_file_type BEFORE INSERT OR UPDATE ON public.published_fil
 CREATE TRIGGER trg_update_timestamp BEFORE UPDATE ON public.published_file_library FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
 CREATE TRIGGER trg_user_wallets_updated_at BEFORE UPDATE ON public.user_wallets FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
-
-CREATE TRIGGER trg_wallet_ledger_after_insert AFTER INSERT ON public.wallet_ledger_entries FOR EACH ROW EXECUTE FUNCTION public.update_wallet_balance();
 
 CREATE TRIGGER on_auth_user_created AFTER INSERT ON auth.users FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 

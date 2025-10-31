@@ -93,6 +93,11 @@ export default [
       ]),
     ]),
 
+    route(
+      ':organizationId/financial-activity',
+      'routes/organizations/financial-activity/financial-activity-index.tsx',
+    ),
+
     route(':organizationId/builder', 'routes/organizations/builder/builder-index.tsx', [
       route('new-course-title', 'routes/organizations/builder/new-course-title.tsx'),
     ]),

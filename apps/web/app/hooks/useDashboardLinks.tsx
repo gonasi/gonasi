@@ -3,6 +3,7 @@ import {
   HardDrive,
   HomeIcon,
   LayoutTemplateIcon,
+  LineChart,
   type LucideIcon,
   SettingsIcon,
   ShieldIcon,
@@ -35,6 +36,12 @@ export function useDashboardLinks({
       to: `/${organizationId}/members`,
       icon: ShieldIcon,
       roles: allRoles,
+    },
+    {
+      name: 'Financial Activity',
+      to: `/${organizationId}/financial-activity`,
+      icon: LineChart,
+      roles: analyticsRoles,
     },
     {
       name: 'Builder',

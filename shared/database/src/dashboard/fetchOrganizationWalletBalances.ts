@@ -19,6 +19,7 @@ export async function fetchOrganizationWalletBalances({
 
   console.log('data: ', data);
   console.log('error: ', error);
+
   if (error || !data) {
     return {
       success: false,

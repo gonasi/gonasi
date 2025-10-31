@@ -12354,6 +12354,20 @@
           "isGenerated": false,
           "sequence": false,
           "hasDefaultValue": false
+        },
+        {
+          "name": "user_purchases",
+          "type": "user_purchases",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "user_purchasesTopublished_courses",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
         }
       ],
       "uniqueConstraints": [
@@ -15130,6 +15144,219 @@
         }
       ]
     },
+    "user_purchases": {
+      "id": "public.user_purchases",
+      "schemaName": "public",
+      "tableName": "user_purchases",
+      "fields": [
+        {
+          "id": "public.user_purchases.id",
+          "name": "id",
+          "columnName": "id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": true,
+          "maxLength": null
+        },
+        {
+          "id": "public.user_purchases.user_id",
+          "name": "user_id",
+          "columnName": "user_id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.user_purchases.published_course_id",
+          "name": "published_course_id",
+          "columnName": "published_course_id",
+          "type": "uuid",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.user_purchases.amount_paid",
+          "name": "amount_paid",
+          "columnName": "amount_paid",
+          "type": "numeric",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.user_purchases.currency_code",
+          "name": "currency_code",
+          "columnName": "currency_code",
+          "type": "currency_code",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.user_purchases.transaction_type",
+          "name": "transaction_type",
+          "columnName": "transaction_type",
+          "type": "ledger_transaction_type",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.user_purchases.paystack_reference",
+          "name": "paystack_reference",
+          "columnName": "paystack_reference",
+          "type": "text",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.user_purchases.status",
+          "name": "status",
+          "columnName": "status",
+          "type": "transaction_status",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.user_purchases.metadata",
+          "name": "metadata",
+          "columnName": "metadata",
+          "type": "jsonb",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.user_purchases.purchased_at",
+          "name": "purchased_at",
+          "columnName": "purchased_at",
+          "type": "timestamptz",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.user_purchases.created_at",
+          "name": "created_at",
+          "columnName": "created_at",
+          "type": "timestamptz",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "name": "users",
+          "type": "users",
+          "isRequired": true,
+          "kind": "object",
+          "relationName": "user_purchasesTousers",
+          "relationFromFields": [
+            "user_id"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "published_courses",
+          "type": "published_courses",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "user_purchasesTopublished_courses",
+          "relationFromFields": [
+            "published_course_id"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        }
+      ],
+      "uniqueConstraints": [
+        {
+          "name": "user_purchases_paystack_reference_key",
+          "fields": [
+            "paystack_reference"
+          ],
+          "nullNotDistinct": false
+        },
+        {
+          "name": "user_purchases_pkey",
+          "fields": [
+            "id"
+          ],
+          "nullNotDistinct": false
+        }
+      ]
+    },
     "user_roles": {
       "id": "public.user_roles",
       "schemaName": "public",
@@ -16046,6 +16273,20 @@
           "hasDefaultValue": false
         },
         {
+          "name": "user_purchases",
+          "type": "user_purchases",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "user_purchasesTousers",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
           "name": "user_wallets",
           "type": "user_wallets",
           "isRequired": false,
@@ -16149,8 +16390,8 @@
           "id": "public.wallet_ledger_entries.source_wallet_type",
           "name": "source_wallet_type",
           "columnName": "source_wallet_type",
-          "type": "text",
-          "isRequired": false,
+          "type": "wallet_type",
+          "isRequired": true,
           "kind": "scalar",
           "isList": false,
           "isGenerated": false,
@@ -16177,8 +16418,8 @@
           "id": "public.wallet_ledger_entries.destination_wallet_type",
           "name": "destination_wallet_type",
           "columnName": "destination_wallet_type",
-          "type": "text",
-          "isRequired": false,
+          "type": "wallet_type",
+          "isRequired": true,
           "kind": "scalar",
           "isList": false,
           "isGenerated": false,
@@ -16219,7 +16460,7 @@
           "id": "public.wallet_ledger_entries.direction",
           "name": "direction",
           "columnName": "direction",
-          "type": "text",
+          "type": "transaction_direction",
           "isRequired": true,
           "kind": "scalar",
           "isList": false,
@@ -16247,7 +16488,7 @@
           "id": "public.wallet_ledger_entries.type",
           "name": "type",
           "columnName": "type",
-          "type": "text",
+          "type": "ledger_transaction_type",
           "isRequired": true,
           "kind": "scalar",
           "isList": false,
@@ -16653,6 +16894,71 @@
         }
       ]
     },
+    "ledger_transaction_type": {
+      "schemaName": "public",
+      "values": [
+        {
+          "name": "ai_credit_purchase"
+        },
+        {
+          "name": "chargeback"
+        },
+        {
+          "name": "course_purchase"
+        },
+        {
+          "name": "currency_conversion"
+        },
+        {
+          "name": "funds_hold"
+        },
+        {
+          "name": "funds_release"
+        },
+        {
+          "name": "manual_adjustment"
+        },
+        {
+          "name": "org_payout"
+        },
+        {
+          "name": "payment_gateway_fee"
+        },
+        {
+          "name": "payment_inflow"
+        },
+        {
+          "name": "platform_revenue"
+        },
+        {
+          "name": "refund"
+        },
+        {
+          "name": "reward_payout"
+        },
+        {
+          "name": "sponsorship_payment"
+        },
+        {
+          "name": "subscription_payment"
+        },
+        {
+          "name": "tax_remittance"
+        },
+        {
+          "name": "tax_withholding"
+        },
+        {
+          "name": "withdrawal_complete"
+        },
+        {
+          "name": "withdrawal_failed"
+        },
+        {
+          "name": "withdrawal_request"
+        }
+      ]
+    },
     "org_role": {
       "schemaName": "public",
       "values": [
@@ -16752,9 +17058,23 @@
         }
       ]
     },
+    "transaction_direction": {
+      "schemaName": "public",
+      "values": [
+        {
+          "name": "credit"
+        },
+        {
+          "name": "debit"
+        }
+      ]
+    },
     "transaction_status": {
       "schemaName": "public",
       "values": [
+        {
+          "name": "cancelled"
+        },
         {
           "name": "completed"
         },
@@ -16766,6 +17086,23 @@
         },
         {
           "name": "reversed"
+        }
+      ]
+    },
+    "wallet_type": {
+      "schemaName": "public",
+      "values": [
+        {
+          "name": "external"
+        },
+        {
+          "name": "organization"
+        },
+        {
+          "name": "platform"
+        },
+        {
+          "name": "user"
         }
       ]
     },

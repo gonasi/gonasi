@@ -5,8 +5,10 @@ import {
   ArrowDownRight,
   ArrowUpRight,
   Banknote,
+  Coins,
   DollarSign,
   Minus,
+  Percent,
   Receipt,
   TrendingDown,
   TrendingUp,
@@ -26,26 +28,45 @@ import { useIsPending } from '~/utils/misc';
 // -----------------------------------------------------------------------------
 function EarningsSkeleton() {
   return (
-    <div className='flex animate-pulse flex-col gap-4'>
+    <div className='animate-pulse space-y-6'>
+      {/* Header Section */}
       <div className='flex items-start justify-between'>
         <div className='flex-1 space-y-2'>
-          <div className='bg-muted h-4 w-24 rounded' />
-          <div className='bg-muted h-8 w-32 rounded' />
+          <div className='bg-muted h-4 w-32 rounded' />
+          <div className='bg-muted h-8 w-44 rounded' />
           <div className='bg-muted h-3 w-28 rounded' />
+          <div className='bg-muted h-4 w-40 rounded' />
         </div>
         <div className='bg-muted h-12 w-12 rounded-lg' />
       </div>
-      <div className='grid grid-cols-3 gap-3'>
-        {[...Array(6)].map((_, i) => (
-          <div key={i} className='bg-muted h-5 rounded' />
+
+      <div className='bg-border/50 h-px w-full' />
+
+      <div className='grid grid-cols-2 gap-3 md:grid-cols-3'>
+        {[...Array(9)].map((_, i) => (
+          <div
+            key={i}
+            className='bg-card/30 flex items-center justify-between rounded-md border px-3 py-2'
+          >
+            <div className='flex items-center gap-2'>
+              <div className='bg-muted h-4 w-4 rounded' />
+              <div className='bg-muted h-3 w-20 rounded' />
+            </div>
+            <div className='bg-muted h-4 w-16 rounded' />
+          </div>
         ))}
+      </div>
+
+      <div className='flex justify-end gap-3'>
+        <div className='bg-muted h-8 w-32 rounded-md' />
+        <div className='bg-muted h-8 w-28 rounded-md' />
       </div>
     </div>
   );
 }
 
 // -----------------------------------------------------------------------------
-// Helper: Trend Icon + Color
+// Trend Indicator
 // -----------------------------------------------------------------------------
 function TrendIndicator({
   trend,
@@ -60,7 +81,6 @@ function TrendIndicator({
 }) {
   const isUp = trend === 'increased';
   const isDown = trend === 'decreased';
-
   const Icon = isUp ? ArrowUpRight : isDown ? ArrowDownRight : Minus;
   const color = isUp ? 'text-success' : isDown ? 'text-destructive' : 'text-muted-foreground';
 
@@ -78,7 +98,7 @@ function TrendIndicator({
 }
 
 // -----------------------------------------------------------------------------
-// Helper: Metric Item
+// Metric Display
 // -----------------------------------------------------------------------------
 function Metric({
   label,
@@ -133,7 +153,7 @@ export function TotalEarningsCard() {
   const wallets = result?.data ?? [];
 
   return (
-    <Card className='border-border/50 rounded-lg'>
+    <Card className='border-border/50 rounded-none'>
       <CardContent className='p-6'>
         <Tabs defaultValue={wallets[0]?.currency_code || 'USD'}>
           <div className='mb-4 flex items-center justify-between'>
@@ -147,7 +167,6 @@ export function TotalEarningsCard() {
             </TabsList>
           </div>
 
-          {/* Error State */}
           {hasError && (
             <div className='text-destructive mt-4 flex items-center gap-2 text-sm'>
               <AlertCircle className='h-4 w-4' />
@@ -155,26 +174,23 @@ export function TotalEarningsCard() {
             </div>
           )}
 
-          {/* Loading State */}
           {isLoading && !hasError && (
             <TabsContent value={wallets[0]?.currency_code || 'USD'}>
               <EarningsSkeleton />
             </TabsContent>
           )}
 
-          {/* Wallet Tabs */}
           {!isLoading &&
             !hasError &&
             wallets.map((wallet) => (
               <TabsContent key={wallet.currency_code} value={wallet.currency_code}>
                 <div className='flex items-start justify-between'>
                   <div className='flex-1'>
-                    <p className='text-muted-foreground mb-1 text-sm font-medium'>Total Earnings</p>
+                    <p className='text-muted-foreground mb-1 text-sm font-medium'>Net Earnings</p>
                     <h3 className='text-foreground mb-2 text-3xl font-bold'>
-                      {wallet.currency_code} {wallet.total_earnings.toLocaleString()}
+                      {wallet.currency_code} {wallet.net_earnings.toLocaleString()}
                     </h3>
-                    <p className='text-muted-foreground text-sm'>From all courses</p>
-
+                    <p className='text-muted-foreground text-sm'>After all fees and deductions</p>
                     <div className='mt-2'>
                       <TrendIndicator
                         trend={wallet.trend}
@@ -190,11 +206,10 @@ export function TotalEarningsCard() {
                   </div>
                 </div>
 
-                {/* Divider */}
                 <div className='border-border/50 my-4 border-t' />
 
-                {/* Grid Stats */}
-                <div className='mb-4 grid grid-cols-2 gap-3 md:grid-cols-3'>
+                <div className='mb-6 grid grid-cols-2 gap-3 md:grid-cols-3'>
+                  {/* --- Balances --- */}
                   <Metric
                     label='Available Balance'
                     value={wallet.balance_available}
@@ -214,6 +229,29 @@ export function TotalEarningsCard() {
                     currency={wallet.currency_code}
                     icon={Wallet}
                   />
+
+                  {/* --- Earnings --- */}
+                  <Metric
+                    label='Gross Earnings'
+                    value={wallet.gross_earnings}
+                    currency={wallet.currency_code}
+                    icon={Coins}
+                    highlight
+                  />
+                  <Metric
+                    label='Total Fees'
+                    value={wallet.total_fees}
+                    currency={wallet.currency_code}
+                    icon={Percent}
+                  />
+                  <Metric
+                    label='Net Earnings'
+                    value={wallet.net_earnings}
+                    currency={wallet.currency_code}
+                    icon={DollarSign}
+                  />
+
+                  {/* --- Monthly --- */}
                   <Metric
                     label='Current Month Earnings'
                     value={wallet.current_month_earnings}
@@ -231,11 +269,10 @@ export function TotalEarningsCard() {
                     label='Month-over-Month Change'
                     value={wallet.month_over_month_change}
                     currency={wallet.currency_code}
-                    icon={TrendingUp}
+                    icon={ArrowUpRight}
                   />
                 </div>
 
-                {/* CTAs */}
                 <div className='flex items-center justify-end gap-3'>
                   <Button
                     variant='outline'

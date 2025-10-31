@@ -20,6 +20,7 @@ begin
     'pending',
     'completed',
     'failed',
+    'cancelled',
     'reversed'
   );
 end

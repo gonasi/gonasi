@@ -116,8 +116,6 @@ schema_paths = [
   './schemas/wallets/utils/update_wallet_balance.sql',
   './schemas/wallets/utils/get_organization_earnings_summary.sql',
 
-
-
   # add modes profile migration
   './schemas/profiles_add_modes_migration.sql',
 
@@ -234,6 +232,9 @@ schema_paths = [
   './schemas/fileLibrary/published_file_library_schema_indexes.sql',
   './schemas/fileLibrary/published_file_library_rls.sql',
   './schemas/fileLibrary/published_files_bucket_rls.sql',
+
+    # user purchase
+  './schemas/wallets/user_purchases.sql',
 
 
   # progress
