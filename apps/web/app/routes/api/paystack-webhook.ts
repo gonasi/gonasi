@@ -123,7 +123,7 @@ export async function action({ request }: Route.ActionArgs) {
 
       // Prepare RPC parameters using the exact names your SQL function expects
       const rpcParams = {
-        p_paystack_reference: String(tx.reference),
+        p_payment_reference: String(tx.reference),
         p_paystack_transaction_id: String(tx.id),
         p_user_id: String(metadata.userId),
         p_published_course_id: String(metadata.publishedCourseId),
@@ -136,7 +136,7 @@ export async function action({ request }: Route.ActionArgs) {
       };
 
       console.log('📞 Calling RPC process_course_payment_from_paystack with:');
-      console.log('   reference:', rpcParams.p_paystack_reference);
+      console.log('   reference:', rpcParams.p_payment_reference);
       console.log('   user_id:', rpcParams.p_user_id);
       console.log('   published_course_id:', rpcParams.p_published_course_id);
       console.log('   tier_id:', rpcParams.p_tier_id);
@@ -194,7 +194,7 @@ export async function action({ request }: Route.ActionArgs) {
           message: 'Payment processed and user enrolled',
           enrollment_id: result.enrollment?.enrollment_id,
           purchase_id: result.purchase?.purchase_id,
-          paystack_reference: tx.reference,
+          payment_reference: tx.reference,
           processing_time_ms: processingTime,
         }),
         { status: 200, headers: { 'Content-Type': 'application/json' } },

@@ -17,7 +17,7 @@ create table public.user_purchases (
   amount_paid numeric(19,4) not null check (amount_paid > 0),
   currency_code public.currency_code not null,
   transaction_type public.ledger_transaction_type not null default 'payment_inflow',
-  paystack_reference text not null unique, -- e.g., Paystack reference
+  payment_reference text not null unique, -- e.g., Paystack reference
 
   -- STATUS (all completed purchases only)
   status public.transaction_status not null default 'completed',

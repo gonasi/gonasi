@@ -222,6 +222,7 @@ schema_paths = [
   './schemas/enrollments/utils/get_published_course_pricing_tier.sql',
   './schemas/enrollments/utils/get_effective_pricing_for_published_tier.sql',
   './schemas/enrollments/utils/process_course_payment_from_paystack.sql',
+  './schemas/enrollments/utils/enroll_user_in_free_course.sql',
   './schemas/enrollments/utils/user_has_active_access.sql',
   './schemas/enrollments/utils/get_enrollment_status.sql',
   './schemas/enrollments/utils/count_active_students.sql',

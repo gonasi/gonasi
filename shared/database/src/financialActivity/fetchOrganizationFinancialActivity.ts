@@ -71,7 +71,7 @@ export async function fetchOrganizationFinancialActivity({
   // 4️⃣ Text search only on text fields
   if (searchQuery) {
     const safeSearch = searchQuery.replace(/[%_]/g, '\\$&');
-    query = query.or(`paystack_reference.ilike.%${safeSearch}%`);
+    query = query.or(`payment_reference.ilike.%${safeSearch}%`);
   }
 
   query = query.range(startIndex, endIndex);

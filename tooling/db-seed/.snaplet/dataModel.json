@@ -15248,9 +15248,9 @@
           "maxLength": null
         },
         {
-          "id": "public.user_purchases.paystack_reference",
-          "name": "paystack_reference",
-          "columnName": "paystack_reference",
+          "id": "public.user_purchases.payment_reference",
+          "name": "payment_reference",
+          "columnName": "payment_reference",
           "type": "text",
           "isRequired": true,
           "kind": "scalar",
@@ -15356,9 +15356,9 @@
       ],
       "uniqueConstraints": [
         {
-          "name": "user_purchases_paystack_reference_key",
+          "name": "user_purchases_payment_reference_key",
           "fields": [
-            "paystack_reference"
+            "payment_reference"
           ],
           "nullNotDistinct": false
         },
@@ -16485,9 +16485,9 @@
           "maxLength": null
         },
         {
-          "id": "public.wallet_ledger_entries.paystack_reference",
-          "name": "paystack_reference",
-          "columnName": "paystack_reference",
+          "id": "public.wallet_ledger_entries.payment_reference",
+          "name": "payment_reference",
+          "columnName": "payment_reference",
           "type": "text",
           "isRequired": true,
           "kind": "scalar",

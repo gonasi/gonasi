@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useFetcher, useNavigate, useParams } from 'react-router';
+import { useFetcher, useParams } from 'react-router';
 import {
   AlertCircle,
   ArrowDownRight,
@@ -91,6 +91,63 @@ function StatCard({
   );
 }
 
+function FinancialSummarySkeleton() {
+  return (
+    <div className='md:bg-card mx-auto animate-pulse space-y-4 bg-transparent p-0 md:p-4'>
+      {/* Tabs Skeleton */}
+      <div className='flex gap-2 rounded-lg p-1'>
+        {Array.from({ length: 2 }).map((_, i) => (
+          <div key={i} className='bg-muted/50 h-8 w-20 rounded-md' />
+        ))}
+      </div>
+
+      {/* Wallet TabsContent Skeleton */}
+      <div className='space-y-6 pt-4'>
+        {/* Stat Cards Grid */}
+        <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div
+              key={i}
+              className='group bg-card/50 md:bg-background/50 relative overflow-hidden rounded-none border-none p-4'
+            >
+              {/* Label + Icon */}
+              <div className='flex items-start justify-between'>
+                <div className='flex-1 space-y-2'>
+                  <div className='bg-muted/50 h-3 w-24 rounded' />
+                  <div className='bg-muted/50 h-6 w-32 rounded' />
+                </div>
+                <div className='bg-muted/30 rounded-lg p-2'>
+                  <div className='bg-muted/50 h-5 w-5 rounded' />
+                </div>
+              </div>
+
+              {/* Trend badge */}
+              <div className='bg-muted/50 mt-3 h-5 w-40 rounded' />
+            </div>
+          ))}
+        </div>
+
+        {/* Metrics Section */}
+        <div className='bg-background/50 overflow-hidden rounded-none'>
+          <div className='space-y-2 p-0 md:p-4'>
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className='group flex items-center justify-between rounded-lg p-3'>
+                <div className='flex items-center gap-3'>
+                  <div className='bg-muted/30 rounded-lg p-2'>
+                    <div className='bg-muted/50 h-4 w-4 rounded' />
+                  </div>
+                  <div className='bg-muted/50 h-3 w-32 rounded' />
+                </div>
+                <div className='bg-muted/50 h-3 w-20 rounded' />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // -----------------------------------------------------------------------------
 // Metric Item
 // -----------------------------------------------------------------------------
@@ -134,7 +191,6 @@ function MetricItem({
 export function FinancialSummary() {
   const fetcher = useFetcher();
   const { organizationId } = useParams();
-  const navigate = useNavigate();
   const isPending = useIsPending();
 
   const isLoading = fetcher.state === 'loading' || fetcher.state === 'submitting' || isPending;
@@ -150,7 +206,7 @@ export function FinancialSummary() {
   const wallets = result?.data ?? [];
 
   if (isLoading) {
-    return <div className='animate-pulse space-y-4 p-6'>Loading financial data...</div>;
+    return <FinancialSummarySkeleton />;
   }
 
   if (hasError) {

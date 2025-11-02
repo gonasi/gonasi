@@ -31,14 +31,6 @@ export const LedgerTable = ({ entries }: LedgerTableProps) => {
     setExpandedRow(expandedRow === id ? null : id);
   };
 
-  const parseMetadata = (metadata: string): ParsedMetadata => {
-    try {
-      return JSON.parse(metadata);
-    } catch {
-      return {};
-    }
-  };
-
   const formatAmount = (amount: number, currency: string) => {
     return `${currency} ${amount.toLocaleString(undefined, {
       minimumFractionDigits: 2,
@@ -47,7 +39,7 @@ export const LedgerTable = ({ entries }: LedgerTableProps) => {
   };
 
   return (
-    <div className='overflow-hidden rounded-lg border'>
+    <div className='border-input overflow-hidden rounded-none border'>
       <Table>
         <TableHeader>
           <TableRow>
@@ -139,7 +131,7 @@ export const LedgerTable = ({ entries }: LedgerTableProps) => {
                           <div>
                             <span className='text-muted-foreground font-medium'>Reference</span>
                             <p className='mt-1 font-mono text-xs break-all'>
-                              {entry.paystack_reference}
+                              {entry.payment_reference}
                             </p>
                           </div>
                           <div>

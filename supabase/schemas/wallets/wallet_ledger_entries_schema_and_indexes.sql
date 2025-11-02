@@ -99,7 +99,7 @@ create table public.wallet_ledger_entries (
   direction public.transaction_direction not null,
 
   -- Paystack reference for reconciliation and idempotency
-  paystack_reference text not null,
+  payment_reference text not null,
 
   -- TRANSACTION TYPE (Business Context)
   type public.ledger_transaction_type not null,
@@ -141,8 +141,8 @@ create index idx_wallet_ledger_type_status
   on public.wallet_ledger_entries(type, status, created_at desc);
 
 -- Index for finding by reference (idempotency checks)
-create index idx_wallet_ledger_paystack_reference 
-  on public.wallet_ledger_entries(paystack_reference);
+create index idx_wallet_ledger_payment_reference 
+  on public.wallet_ledger_entries(payment_reference);
 
 -- Index for related entity lookups
 create index idx_wallet_ledger_related_entity 

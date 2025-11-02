@@ -112,21 +112,11 @@ export const initializeTransactionEnroll = async ({
     // ─────────────────────────────────────────────────────
     if (isFree) {
       const { data: enrollData, error: enrollError } = await supabase.rpc(
-        'process_course_payment_from_paystack',
+        'enroll_user_in_free_course',
         {
           p_user_id: userProfile.user.id,
           p_published_course_id: publishedCourseId,
           p_tier_id: selectedTier.id,
-          p_tier_name: selectedTier.tier_name ?? '',
-          p_tier_description: selectedTier.tier_description || '',
-          p_payment_frequency: selectedTier.payment_frequency || 'monthly',
-          p_currency_code: selectedTier.currency_code,
-          p_is_free: true,
-          p_effective_price: 0,
-          p_organization_id: organizationId,
-          p_promotional_price: hasValidPromotion ? (selectedTier.promotional_price ?? 0) : 0,
-          p_is_promotional: hasValidPromotion,
-          p_created_by: userProfile.user.id,
         },
       );
 

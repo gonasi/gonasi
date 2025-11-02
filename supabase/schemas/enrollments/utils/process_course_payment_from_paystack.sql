@@ -2,13 +2,17 @@
 -- FUNCTION: process_course_payment_from_paystack
 -- ============================================================================
 -- DESCRIPTION:
---   Handles course payments made via Paystack (card, mobile money, bank).
+--   Handles PAID course purchases made via Paystack.
 --
 --   Flow:
---   External → Organization → Platform → Paystack Fee
+--      External → Organization → Platform → Paystack Fee
+-- 
+--   NOTE:
+--      Free-course handling has been removed.
+--      Free enrollments must now be handled by a separate function.
 -- ============================================================================
 create or replace function public.process_course_payment_from_paystack(
-  p_paystack_reference text,
+  p_payment_reference text,
   p_paystack_transaction_id text,
   p_user_id uuid,
   p_published_course_id uuid,
@@ -37,7 +41,6 @@ declare
     v_tier_price numeric(19,4);
     v_tier_promotional_price numeric(19,4);
     v_tier_frequency public.payment_frequency;
-    v_tier_is_free boolean;
     v_tier_currency public.currency_code;
 
     -- Amount calculations
@@ -51,7 +54,7 @@ declare
     v_org_wallet_id uuid;
     v_platform_wallet_id uuid;
 
-    -- Ledger entries
+    -- Ledger
     v_ledger_payment_inflow uuid;
     v_ledger_org_to_platform uuid;
     v_ledger_gateway_fee uuid;
@@ -65,18 +68,18 @@ declare
     v_purchase_id uuid;
 begin
     ---------------------------------------------------------------
-    -- Idempotency: already processed?
+    -- Idempotency
     ---------------------------------------------------------------
     perform 1
     from public.wallet_ledger_entries
-    where paystack_reference = p_paystack_reference
+    where payment_reference = p_payment_reference
     limit 1;
 
     if found then
         return jsonb_build_object(
             'success', false,
             'message', 'Payment already processed',
-            'paystack_reference', p_paystack_reference
+            'payment_reference', p_payment_reference
         );
     end if;
 
@@ -103,7 +106,7 @@ begin
     where tl.tier = v_org_tier;
 
     ---------------------------------------------------------------
-    -- Get pricing tier
+    -- Get paid pricing tier
     ---------------------------------------------------------------
     select 
         pt.tier_name,
@@ -111,7 +114,6 @@ begin
         pt.price,
         pt.promotional_price,
         pt.payment_frequency::public.payment_frequency,
-        pt.is_free,
         pt.currency_code::public.currency_code
     into
         v_tier_name,
@@ -119,22 +121,22 @@ begin
         v_tier_price,
         v_tier_promotional_price,
         v_tier_frequency,
-        v_tier_is_free,
         v_tier_currency
     from public.course_pricing_tiers pt
     where pt.course_id = p_published_course_id
       and pt.id = p_tier_id
-      and pt.is_active = true;
+      and pt.is_active = true
+      and pt.is_free = false;
 
     if not found then
-        raise exception 'Pricing tier not found: %', p_tier_id;
+        raise exception 'Paid pricing tier not found: %', p_tier_id;
     end if;
 
     ---------------------------------------------------------------
-    -- Determine sale price
+    -- Determine actual price charged
     ---------------------------------------------------------------
     if v_tier_promotional_price is not null
-        and v_tier_promotional_price < v_tier_price then
+       and v_tier_promotional_price < v_tier_price then
         v_gross_amount := v_tier_promotional_price;
     else
         v_gross_amount := v_tier_price;
@@ -145,91 +147,9 @@ begin
             v_gross_amount, p_amount_paid;
     end if;
 
-
-    ---------------------------------------------------------------
-    -- If course is free, skip payment and directly enroll
-    ---------------------------------------------------------------
-    if v_tier_is_free or v_gross_amount = 0 then
-        -- Check for active enrollment
-        select id
-        into v_enrollment_id
-        from public.course_enrollments
-        where user_id = p_user_id
-          and published_course_id = p_published_course_id
-          and is_active = true
-          and expires_at > timezone('utc', now())
-        limit 1;
-
-        if found then
-            return jsonb_build_object(
-                'success', false,
-                'message', 'User already enrolled in free course. Wait until expiry to re-enroll.',
-                'enrollment_id', v_enrollment_id
-            );
-        end if;
-
-        -- Otherwise, create or renew enrollment
-        select id
-        into v_enrollment_id
-        from public.course_enrollments
-        where user_id = p_user_id
-          and published_course_id = p_published_course_id
-        for update;
-
-        if found then
-            update public.course_enrollments
-            set expires_at = v_access_start + interval '1 month',
-                is_active = true,
-                updated_at = timezone('utc', now())
-            where id = v_enrollment_id;
-        else
-            insert into public.course_enrollments(
-                user_id, published_course_id, organization_id,
-                enrolled_at, expires_at, is_active
-            ) values (
-                p_user_id, p_published_course_id, v_organization_id,
-                v_access_start, v_access_start + interval '1 month', true
-            ) returning id into v_enrollment_id;
-        end if;
-
-        insert into public.course_enrollment_activities(
-            enrollment_id, tier_name, tier_description, payment_frequency,
-            currency_code, is_free, price_paid, promotional_price, was_promotional,
-            access_start, access_end, created_by
-        ) values (
-            v_enrollment_id, v_tier_name, v_tier_description, v_tier_frequency,
-            v_tier_currency, true, 0, v_tier_promotional_price,
-            (v_tier_promotional_price is not null),
-            v_access_start, v_access_start + interval '1 month', p_user_id
-        ) returning id into v_activity_id;
-
-        return jsonb_build_object(
-            'success', true,
-            'message', 'User enrolled for free tier',
-            'enrollment', jsonb_build_object(
-                'enrollment_id', v_enrollment_id,
-                'activity_id', v_activity_id,
-                'user_id', p_user_id,
-                'course_title', v_course_title,
-                'tier_name', v_tier_name,
-                'access_start', v_access_start,
-                'access_end', v_access_start + interval '1 month'
-            ),
-            'payment', jsonb_build_object(
-                'reference', coalesce(p_paystack_reference, 'FREE'),
-                'gross_amount', 0,
-                'currency', v_tier_currency,
-                'payment_method', 'free'
-            ),
-            'purchase', jsonb_build_object('purchase_id', null)
-        );
-    end if;
-
-
     ---------------------------------------------------------------
     -- Ensure wallets exist
     ---------------------------------------------------------------
-    -- Org wallet
     select ow.id
     into v_org_wallet_id
     from public.organization_wallets ow
@@ -242,7 +162,6 @@ begin
         returning id into v_org_wallet_id;
     end if;
 
-    -- Platform wallet
     select gw.id
     into v_platform_wallet_id
     from public.gonasi_wallets gw
@@ -261,10 +180,10 @@ begin
     v_platform_net_revenue := v_platform_fee_amount - p_paystack_fee;
 
     ---------------------------------------------------------------
-    -- PAYMENT FLOW: External (Paystack)
+    -- PAYMENT FLOW
     ---------------------------------------------------------------
 
-    -- STEP 1: External → Organization
+    -- External → Organization
     update public.organization_wallets
     set balance_total = balance_total + v_gross_amount,
         updated_at = timezone('utc', now())
@@ -275,13 +194,13 @@ begin
         destination_wallet_type, destination_wallet_id,
         currency_code, amount, direction, type, status,
         related_entity_type, related_entity_id,
-        paystack_reference, metadata
+        payment_reference, metadata
     ) values (
         'external', null,
         'organization', v_org_wallet_id,
         v_tier_currency, v_gross_amount, 'credit', 'payment_inflow', 'completed',
         'course', p_published_course_id,
-        p_paystack_reference,
+        p_payment_reference,
         jsonb_build_object(
             'description', 'External payment received via Paystack',
             'user_id', p_user_id,
@@ -292,9 +211,7 @@ begin
         )
     ) returning id into v_ledger_payment_inflow;
 
-    ---------------------------------------------------------------
-    -- STEP 2: Organization → Platform
-    ---------------------------------------------------------------
+    -- Organization → Platform
     update public.organization_wallets
     set balance_total = balance_total - v_platform_fee_amount,
         updated_at = timezone('utc', now())
@@ -310,13 +227,13 @@ begin
         destination_wallet_type, destination_wallet_id,
         currency_code, amount, direction, type, status,
         related_entity_type, related_entity_id,
-        paystack_reference, metadata
+        payment_reference, metadata
     ) values (
         'organization', v_org_wallet_id,
         'platform', v_platform_wallet_id,
         v_tier_currency, v_platform_fee_amount, 'debit', 'platform_revenue', 'completed',
         'course', p_published_course_id,
-        p_paystack_reference,
+        p_payment_reference,
         jsonb_build_object(
             'description', 'Platform fee deducted from organization payout',
             'platform_fee_percent', v_platform_fee_percent,
@@ -326,9 +243,7 @@ begin
         )
     ) returning id into v_ledger_org_to_platform;
 
-    ---------------------------------------------------------------
-    -- STEP 3: Platform → Paystack (gateway fee)
-    ---------------------------------------------------------------
+    -- Platform → Paystack
     if p_paystack_fee > 0 then
         update public.gonasi_wallets
         set balance_total = balance_total - p_paystack_fee,
@@ -340,13 +255,13 @@ begin
             destination_wallet_type, destination_wallet_id,
             currency_code, amount, direction, type, status,
             related_entity_type, related_entity_id,
-            paystack_reference, metadata
+            payment_reference, metadata
         ) values (
             'platform', v_platform_wallet_id,
             'external', null,
             v_tier_currency, p_paystack_fee, 'debit', 'payment_gateway_fee', 'completed',
             'course', p_published_course_id,
-            p_paystack_reference,
+            p_payment_reference,
             jsonb_build_object(
                 'description', 'Payment gateway fee paid to Paystack',
                 'gateway', 'Paystack',
@@ -357,7 +272,7 @@ begin
     end if;
 
     ---------------------------------------------------------------
-    -- Enrollment: grant or update access
+    -- Enrollment (PAID ONLY)
     ---------------------------------------------------------------
     select id
     into v_enrollment_id
@@ -388,7 +303,7 @@ begin
         access_start, access_end, created_by
     ) values (
         v_enrollment_id, v_tier_name, v_tier_description, v_tier_frequency,
-        v_tier_currency, v_tier_is_free, v_gross_amount, v_tier_promotional_price,
+        v_tier_currency, false, v_gross_amount, v_tier_promotional_price,
         (v_tier_promotional_price is not null),
         v_access_start, v_access_start + interval '1 month', p_user_id
     ) returning id into v_activity_id;
@@ -398,10 +313,10 @@ begin
     ---------------------------------------------------------------
     insert into public.user_purchases (
         user_id, published_course_id, amount_paid, currency_code,
-        paystack_reference, transaction_type, purchased_at, metadata
+        payment_reference, transaction_type, purchased_at, metadata
     ) values (
         p_user_id, p_published_course_id, v_gross_amount, v_tier_currency,
-        p_paystack_reference, 'course_purchase', timezone('utc', now()),
+        p_payment_reference, 'course_purchase', timezone('utc', now()),
         jsonb_build_object(
             'course_title', v_course_title,
             'tier_id', p_tier_id,
@@ -411,7 +326,6 @@ begin
             'original_price', v_tier_price,
             'promotional_price', v_tier_promotional_price,
             'was_promotional', (v_tier_promotional_price is not null and v_tier_promotional_price < v_tier_price),
-            'is_free_tier', v_tier_is_free,
             'payment_method', p_payment_method,
             'paystack_transaction_id', p_paystack_transaction_id,
             'gross_amount', v_gross_amount,
@@ -435,7 +349,7 @@ begin
     ---------------------------------------------------------------
     return jsonb_build_object(
         'success', true,
-        'message', 'Course payment processed successfully',
+        'message', 'Paid course purchase processed successfully',
         'enrollment', jsonb_build_object(
             'enrollment_id', v_enrollment_id,
             'activity_id', v_activity_id,
@@ -446,7 +360,7 @@ begin
             'access_end', v_access_start + interval '1 month'
         ),
         'payment', jsonb_build_object(
-            'reference', p_paystack_reference,
+            'reference', p_payment_reference,
             'transaction_id', p_paystack_transaction_id,
             'gross_amount', v_gross_amount,
             'currency', v_tier_currency,
@@ -463,7 +377,6 @@ begin
         ),
         'ledger_entries', jsonb_build_object(
             'payment_inflow', v_ledger_payment_inflow,
-            'org_payout', v_ledger_org_to_platform,
             'platform_revenue', v_ledger_org_to_platform,
             'gateway_fee', v_ledger_gateway_fee
         ),

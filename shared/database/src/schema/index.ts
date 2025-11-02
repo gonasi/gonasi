@@ -2133,7 +2133,7 @@ export type Database = {
           currency_code: Database["public"]["Enums"]["currency_code"]
           id: string
           metadata: Json
-          paystack_reference: string
+          payment_reference: string
           published_course_id: string | null
           purchased_at: string
           status: Database["public"]["Enums"]["transaction_status"]
@@ -2146,7 +2146,7 @@ export type Database = {
           currency_code: Database["public"]["Enums"]["currency_code"]
           id?: string
           metadata?: Json
-          paystack_reference: string
+          payment_reference: string
           published_course_id?: string | null
           purchased_at?: string
           status?: Database["public"]["Enums"]["transaction_status"]
@@ -2159,7 +2159,7 @@ export type Database = {
           currency_code?: Database["public"]["Enums"]["currency_code"]
           id?: string
           metadata?: Json
-          paystack_reference?: string
+          payment_reference?: string
           published_course_id?: string | null
           purchased_at?: string
           status?: Database["public"]["Enums"]["transaction_status"]
@@ -2242,7 +2242,7 @@ export type Database = {
           direction: Database["public"]["Enums"]["transaction_direction"]
           id: string
           metadata: Json
-          paystack_reference: string
+          payment_reference: string
           related_entity_id: string | null
           related_entity_type: string | null
           source_wallet_id: string | null
@@ -2259,7 +2259,7 @@ export type Database = {
           direction: Database["public"]["Enums"]["transaction_direction"]
           id?: string
           metadata?: Json
-          paystack_reference: string
+          payment_reference: string
           related_entity_id?: string | null
           related_entity_type?: string | null
           source_wallet_id?: string | null
@@ -2276,7 +2276,7 @@ export type Database = {
           direction?: Database["public"]["Enums"]["transaction_direction"]
           id?: string
           metadata?: Json
-          paystack_reference?: string
+          payment_reference?: string
           related_entity_id?: string | null
           related_entity_type?: string | null
           source_wallet_id?: string | null
@@ -2398,6 +2398,14 @@ export type Database = {
       enqueue_delete_course_progress: {
         Args: { course_id: string }
         Returns: undefined
+      }
+      enroll_user_in_free_course: {
+        Args: {
+          p_published_course_id: string
+          p_tier_id: string
+          p_user_id: string
+        }
+        Returns: Json
       }
       get_active_organization_members: {
         Args: { _organization_id: string; _user_id: string }
@@ -2562,8 +2570,8 @@ export type Database = {
           p_currency_code: string
           p_metadata?: Json
           p_payment_method?: string
+          p_payment_reference: string
           p_paystack_fee?: number
-          p_paystack_reference: string
           p_paystack_transaction_id: string
           p_published_course_id: string
           p_tier_id: string
