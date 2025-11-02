@@ -30,7 +30,7 @@ select cron.schedule(
 -- ============================================================================
 select cron.schedule(
   'invoke-user-notifications-email-dispatch',
-  '*/2 * * * *',  -- every 2 minutes
+  '*/1 * * * *',  -- every 2 minutes
   $$
     with secrets as (
       select
