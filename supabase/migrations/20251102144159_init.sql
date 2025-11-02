@@ -5666,33 +5666,67 @@ CREATE OR REPLACE FUNCTION public.insert_user_notification(p_user_id uuid, p_typ
  SET search_path TO ''
 AS $function$
 declare
-  v_type_id uuid;
+  v_type_record record;
   v_notification_id uuid;
+  v_title text;
+  v_body text;
+  v_key text;
+  v_value text;
 begin
   -- Log input parameters
-  raise notice 'insert_user_notification called with user_id=%, type_key=%, metadata=%', p_user_id, p_type_key, p_metadata;
+  raise notice 'insert_user_notification called with user_id=%, type_key=%, metadata=%', 
+    p_user_id, p_type_key, p_metadata;
 
-  -- Resolve notification type
-  select unt.id
-    into v_type_id
+  -- Resolve notification type and get templates
+  select 
+    unt.key,
+    unt.title_template,
+    unt.body_template,
+    unt.default_in_app,
+    unt.default_email
+  into v_type_record
   from public.user_notifications_types as unt
-  where unt.key = p_type_key;
+  where unt.key = p_type_key::public.user_notification_key;
 
-  raise notice 'Resolved type_id=%', v_type_id;
-
-  if v_type_id is null then
-    raise exception 'Unknown user_notification_type key: %', p_type_key;
+  if v_type_record.key is null then
+    raise exception 'Unknown user_notification_key: %', p_type_key;
   end if;
 
-  -- Insert notification row
+  raise notice 'Resolved notification type: %', v_type_record.key;
+
+  -- Start with templates
+  v_title := v_type_record.title_template;
+  v_body := v_type_record.body_template;
+
+  -- Simple template variable replacement
+  -- Replace {{key}} with value from metadata
+  for v_key, v_value in
+    select key, value::text
+    from jsonb_each_text(p_metadata)
+  loop
+    v_title := replace(v_title, '{{' || v_key || '}}', v_value);
+    v_body := replace(v_body, '{{' || v_key || '}}', v_value);
+  end loop;
+
+  raise notice 'Rendered title=%, body=%', v_title, v_body;
+
+  -- Insert notification row with actual schema columns
   insert into public.user_notifications (
     user_id,
-    type_id,
-    metadata
+    key,
+    title,
+    body,
+    payload,
+    delivered_in_app,
+    delivered_email
   ) values (
     p_user_id,
-    v_type_id,
-    p_metadata
+    p_type_key::public.user_notification_key,
+    v_title,
+    v_body,
+    p_metadata,
+    v_type_record.default_in_app,
+    v_type_record.default_email
   )
   returning id into v_notification_id;
 
@@ -7290,26 +7324,40 @@ AS $function$
 declare
   v_type_record public.user_notifications_types;
 begin
-  -- Fetch the notification type record
+  -- Fetch the notification type record BY KEY (not by id)
   select *
   into v_type_record
   from public.user_notifications_types
-  where id = new.type_id;
+  where key = new.key;  -- ✓ FIXED: was new.type_id
 
-  -- If email is not enabled for this notification type, exit
-  if v_type_record.send_email is false then
+  if not found then
+    raise warning 'Notification type not found for key: %', new.key;
     return new;
   end if;
 
-  -- Enqueue into the PGMQ queue
-  perform public.pgmq.send(
-    'user_notifications_email_queue',
-    jsonb_build_object(
-      'user_id', new.user_id,
-      'type_key', v_type_record.key,
-      'metadata', new.metadata
-    )
-  );
+  -- If email is not enabled for this notification type, exit
+  if v_type_record.default_email is false then
+    return new;
+  end if;
+
+  -- Enqueue into the PGMQ queue (only if pgmq is installed and queue exists)
+  begin
+    perform pgmq.send(
+      'user_notifications_email_queue',
+      jsonb_build_object(
+        'notification_id', new.id,
+        'user_id', new.user_id,
+        'type_key', new.key,
+        'title', new.title,
+        'body', new.body,
+        'payload', new.payload
+      )
+    );
+  exception
+    when others then
+      -- Don't fail the insert if pgmq isn't available
+      raise warning 'Failed to enqueue email notification: %', sqlerrm;
+  end;
 
   return new;
 end;
