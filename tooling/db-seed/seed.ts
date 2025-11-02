@@ -7,6 +7,7 @@ import { seedGonasiOrgWallets } from './src/seedGonasiOrgWallets';
 import { seedLessonTypes } from './src/seedLessonTypes';
 import { seedOwnerOrganizations } from './src/seedOwnerOrganizations';
 import { seedPricingTiers } from './src/seedPricingTiers';
+import { seedUserNotificationsTypes } from './src/seedUserNotificationsTypes';
 import { signUpUsers } from './src/signUpUsers';
 
 const main = async () => {
@@ -27,6 +28,7 @@ const main = async () => {
   await seedLessonTypes();
   await seedCourseCategories();
   await seedPricingTiers();
+  await seedUserNotificationsTypes();
 
   await seedOwnerOrganizations();
 

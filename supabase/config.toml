@@ -84,6 +84,19 @@ schema_paths = [
 
   './schemas/pricing/utils/payment_frequency.sql',
   './schemas/pricing/utils/currency_code.sql',
+
+  # USER NOTIFICATIONS
+  './schemas/userNotifications/enums/user_notification_category.sql',
+  './schemas/userNotifications/enums/user_notification_key.sql',
+
+  './schemas/userNotifications/user_notifications_types_schema_and_indexes.sql',
+  './schemas/userNotifications/user_notifications_types_rls.sql',
+  './schemas/userNotifications/user_notifications_schema_and_indexes.sql',
+  './schemas/userNotifications/user_notifications_rls.sql',
+
+
+  './schemas/userNotifications/utils/insert_user_notification.sql',
+  './schemas/userNotifications/utils/trigger_user_notification_email_dispatch.sql',
   
 
   # organizations
@@ -113,6 +126,7 @@ schema_paths = [
   './schemas/wallets/utils/transaction_status.sql',
   './schemas/wallets/wallet_ledger_entries_schema_and_indexes.sql',
   './schemas/wallets/wallet_ledger_entries_rls.sql',
+  './schemas/wallets/utils/update_wallet_balance.sql',
   './schemas/wallets/utils/get_organization_earnings_summary.sql',
 
   # add modes profile migration
@@ -283,7 +297,6 @@ schema_paths = [
 
 
 
-
   # './schemas/enrollment_activities_schema_indexes_rls.sql',
 
   # './schemas/payments_schema_indexes_rls.sql',
@@ -302,6 +315,9 @@ sql_paths = [
   './seeds/user_roles_and_permissions.sql',
   './seeds/course_categories_and_sub_categories.sql',
   './seeds/tier_limits.sql',
+
+  './seeds/user_notifications_types.sql',
+
   # './seeds/lesson_types.sql'
 ]
 
@@ -628,3 +644,14 @@ entrypoint = "./functions/verify-paystack-transaction/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/verify-paystack-transaction/*.html" ]
+
+[functions.user-notifications-email-dispatch]
+enabled = true
+verify_jwt = true
+import_map = "./functions/user-notifications-email-dispatch/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/user-notifications-email-dispatch/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/user-notifications-email-dispatch/*.html" ]

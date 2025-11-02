@@ -152,6 +152,28 @@ begin
   ) returning id into v_activity_id;
 
   ---------------------------------------------------------------
+  -- Insert user notification for free enrollment success
+  ---------------------------------------------------------------
+  begin
+    perform public.insert_user_notification(
+      p_user_id := p_user_id,
+      p_type_key := 'course_enrollment_free_success',
+      p_metadata := jsonb_build_object(
+        'enrollment_id', v_enrollment_id,
+        'course_title', v_course_title,
+        'tier_name', v_tier_name,
+        'access_start', v_access_start,
+        'access_end', v_access_end
+      )
+    );
+  exception
+    when others then
+      -- Log or ignore notification errors, but don't fail the enrollment
+      raise notice 'Failed to insert user notification: %', sqlerrm;
+  end;
+
+  
+  ---------------------------------------------------------------
   -- Return success summary
   ---------------------------------------------------------------
   return jsonb_build_object(

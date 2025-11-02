@@ -2126,6 +2126,84 @@ export type Database = {
         }
         Relationships: []
       }
+      user_notifications: {
+        Row: {
+          body: string
+          created_at: string
+          deleted_at: string | null
+          delivered_email: boolean
+          delivered_in_app: boolean
+          email_job_id: string | null
+          id: string
+          key: Database["public"]["Enums"]["user_notification_key"]
+          payload: Json
+          read_at: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          deleted_at?: string | null
+          delivered_email?: boolean
+          delivered_in_app?: boolean
+          email_job_id?: string | null
+          id?: string
+          key: Database["public"]["Enums"]["user_notification_key"]
+          payload?: Json
+          read_at?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          deleted_at?: string | null
+          delivered_email?: boolean
+          delivered_in_app?: boolean
+          email_job_id?: string | null
+          id?: string
+          key?: Database["public"]["Enums"]["user_notification_key"]
+          payload?: Json
+          read_at?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_notifications_types: {
+        Row: {
+          body_template: string
+          category: Database["public"]["Enums"]["user_notification_category"]
+          created_at: string
+          default_email: boolean
+          default_in_app: boolean
+          id: string
+          key: Database["public"]["Enums"]["user_notification_key"]
+          title_template: string
+        }
+        Insert: {
+          body_template: string
+          category: Database["public"]["Enums"]["user_notification_category"]
+          created_at?: string
+          default_email?: boolean
+          default_in_app?: boolean
+          id?: string
+          key: Database["public"]["Enums"]["user_notification_key"]
+          title_template: string
+        }
+        Update: {
+          body_template?: string
+          category?: Database["public"]["Enums"]["user_notification_category"]
+          created_at?: string
+          default_email?: boolean
+          default_in_app?: boolean
+          id?: string
+          key?: Database["public"]["Enums"]["user_notification_key"]
+          title_template?: string
+        }
+        Relationships: []
+      }
       user_purchases: {
         Row: {
           amount_paid: number
@@ -2560,6 +2638,10 @@ export type Database = {
         Args: { arg_org_id: string; user_email: string }
         Returns: boolean
       }
+      insert_user_notification: {
+        Args: { p_metadata?: Json; p_type_key: string; p_user_id: string }
+        Returns: string
+      }
       is_user_already_member: {
         Args: { arg_org_id: string; user_email: string }
         Returns: boolean
@@ -2756,6 +2838,33 @@ export type Database = {
         | "failed"
         | "cancelled"
         | "reversed"
+      user_notification_category:
+        | "commerce"
+        | "learning"
+        | "billing"
+        | "social"
+        | "system"
+      user_notification_key:
+        | "course_purchase_success"
+        | "course_purchase_failed"
+        | "course_refund_processed"
+        | "course_subscription_started"
+        | "course_subscription_renewed"
+        | "course_subscription_failed"
+        | "course_subscription_expiring"
+        | "course_enrollment_free_success"
+        | "lesson_completed"
+        | "course_completed"
+        | "streak_reminder"
+        | "new_chapter_unlocked"
+        | "payment_method_expiring"
+        | "invoice_ready"
+        | "account_security_alert"
+        | "organization_invite_received"
+        | "organization_invite_accepted"
+        | "organization_role_changed"
+        | "announcement"
+        | "maintenance_notice"
       wallet_type: "platform" | "organization" | "user" | "external"
     }
     CompositeTypes: {
@@ -2969,6 +3078,35 @@ export const Constants = {
         "failed",
         "cancelled",
         "reversed",
+      ],
+      user_notification_category: [
+        "commerce",
+        "learning",
+        "billing",
+        "social",
+        "system",
+      ],
+      user_notification_key: [
+        "course_purchase_success",
+        "course_purchase_failed",
+        "course_refund_processed",
+        "course_subscription_started",
+        "course_subscription_renewed",
+        "course_subscription_failed",
+        "course_subscription_expiring",
+        "course_enrollment_free_success",
+        "lesson_completed",
+        "course_completed",
+        "streak_reminder",
+        "new_chapter_unlocked",
+        "payment_method_expiring",
+        "invoice_ready",
+        "account_security_alert",
+        "organization_invite_received",
+        "organization_invite_accepted",
+        "organization_role_changed",
+        "announcement",
+        "maintenance_notice",
       ],
       wallet_type: ["platform", "organization", "user", "external"],
     },

@@ -55,8 +55,9 @@ declare
     v_platform_wallet_id uuid;
 
     -- Ledger
-    v_ledger_payment_inflow uuid;
-    v_ledger_org_to_platform uuid;
+    v_ledger_course_purchase uuid;
+    v_ledger_org_payout uuid;
+    v_ledger_platform_revenue uuid;
     v_ledger_gateway_fee uuid;
 
     -- Enrollment
@@ -66,6 +67,9 @@ declare
 
     -- Purchase history
     v_purchase_id uuid;
+
+    -- Notification
+    v_notification_id uuid;
 begin
     ---------------------------------------------------------------
     -- Idempotency
@@ -180,15 +184,12 @@ begin
     v_platform_net_revenue := v_platform_fee_amount - p_paystack_fee;
 
     ---------------------------------------------------------------
-    -- PAYMENT FLOW
+    -- PAYMENT FLOW (Ledger entries only - trigger updates wallets)
     ---------------------------------------------------------------
 
-    -- External → Organization
-    update public.organization_wallets
-    set balance_total = balance_total + v_gross_amount,
-        updated_at = timezone('utc', now())
-    where id = v_org_wallet_id;
-
+    -- 1. External → Organization (Course Purchase)
+    -- Type: 'course_purchase' - Customer pays for course
+    -- Trigger will credit organization wallet balance_total
     insert into public.wallet_ledger_entries(
         source_wallet_type, source_wallet_id,
         destination_wallet_type, destination_wallet_id,
@@ -198,30 +199,23 @@ begin
     ) values (
         'external', null,
         'organization', v_org_wallet_id,
-        v_tier_currency, v_gross_amount, 'credit', 'payment_inflow', 'completed',
+        v_tier_currency, v_gross_amount, 'credit', 'course_purchase', 'completed',
         'course', p_published_course_id,
         p_payment_reference,
         jsonb_build_object(
-            'description', 'External payment received via Paystack',
+            'description', 'Course purchase payment received via Paystack',
             'user_id', p_user_id,
             'course_title', v_course_title,
             'tier_name', v_tier_name,
             'payment_method', p_payment_method,
-            'gross_amount', v_gross_amount
+            'gross_amount', v_gross_amount,
+            'paystack_transaction_id', p_paystack_transaction_id
         )
-    ) returning id into v_ledger_payment_inflow;
+    ) returning id into v_ledger_course_purchase;
 
-    -- Organization → Platform
-    update public.organization_wallets
-    set balance_total = balance_total - v_platform_fee_amount,
-        updated_at = timezone('utc', now())
-    where id = v_org_wallet_id;
-
-    update public.gonasi_wallets
-    set balance_total = balance_total + v_platform_fee_amount,
-        updated_at = timezone('utc', now())
-    where id = v_platform_wallet_id;
-
+    -- 2. Organization → Platform (Platform Revenue)
+    -- Type: 'platform_revenue' - Platform takes its commission
+    -- Trigger will debit organization wallet and credit platform wallet
     insert into public.wallet_ledger_entries(
         source_wallet_type, source_wallet_id,
         destination_wallet_type, destination_wallet_id,
@@ -235,21 +229,19 @@ begin
         'course', p_published_course_id,
         p_payment_reference,
         jsonb_build_object(
-            'description', 'Platform fee deducted from organization payout',
+            'description', 'Platform commission on course sale',
             'platform_fee_percent', v_platform_fee_percent,
             'platform_fee_amount', v_platform_fee_amount,
             'gross_amount', v_gross_amount,
-            'org_net_payout', v_org_payout
+            'org_payout', v_org_payout,
+            'course_purchase_ledger_id', v_ledger_course_purchase
         )
-    ) returning id into v_ledger_org_to_platform;
+    ) returning id into v_ledger_platform_revenue;
 
-    -- Platform → Paystack
+    -- 3. Platform → Paystack (Payment Gateway Fee)
+    -- Type: 'payment_gateway_fee' - Platform pays gateway processing fee
+    -- Trigger will debit platform wallet
     if p_paystack_fee > 0 then
-        update public.gonasi_wallets
-        set balance_total = balance_total - p_paystack_fee,
-            updated_at = timezone('utc', now())
-        where id = v_platform_wallet_id;
-
         insert into public.wallet_ledger_entries(
             source_wallet_type, source_wallet_id,
             destination_wallet_type, destination_wallet_id,
@@ -263,10 +255,11 @@ begin
             'course', p_published_course_id,
             p_payment_reference,
             jsonb_build_object(
-                'description', 'Payment gateway fee paid to Paystack',
+                'description', 'Payment gateway processing fee',
                 'gateway', 'Paystack',
                 'payment_method', p_payment_method,
-                'platform_net_revenue', v_platform_net_revenue
+                'platform_net_revenue', v_platform_net_revenue,
+                'course_purchase_ledger_id', v_ledger_course_purchase
             )
         ) returning id into v_ledger_gateway_fee;
     end if;
@@ -340,9 +333,42 @@ begin
             'access_start', v_access_start,
             'access_end', v_access_start + interval '1 month',
             'user_metadata', p_metadata,
-            'processed_at', timezone('utc', now())
-        )
+            'processed_at', timezone('utc', now()),
+            'ledger_entries', jsonb_build_object(
+                'course_purchase', v_ledger_course_purchase,
+                'platform_revenue', v_ledger_platform_revenue,
+                'gateway_fee', v_ledger_gateway_fee
+            )
+        ) 
     ) returning id into v_purchase_id;
+
+    ---------------------------------------------------------------
+    -- Non-fatal: create user notification for successful purchase/enrollment
+    ---------------------------------------------------------------
+    begin
+      perform public.insert_user_notification(
+        p_user_id,
+        'course_purchase_success',
+        jsonb_build_object(
+          'purchase_id', v_purchase_id,
+          'course_id', p_published_course_id,
+          'course_title', v_course_title,
+          'tier_id', p_tier_id,
+          'tier_name', v_tier_name,
+          'amount_paid', v_gross_amount,
+          'currency', v_tier_currency,
+          'access_start', v_access_start,
+          'access_end', v_access_start + interval '1 month',
+          'payment_reference', p_payment_reference,
+          'payment_transaction_id', p_paystack_transaction_id
+        )
+      );
+    exception
+      when others then
+        -- Don't fail the entire transaction if notification insertion fails.
+        -- Log the issue and continue.
+        raise warning 'insert_user_notification failed for purchase %: %', coalesce(v_purchase_id::text, 'null'), sqlerrm;
+    end;
 
     ---------------------------------------------------------------
     -- Return summary
@@ -376,8 +402,8 @@ begin
             'platform_net_revenue', v_platform_net_revenue
         ),
         'ledger_entries', jsonb_build_object(
-            'payment_inflow', v_ledger_payment_inflow,
-            'platform_revenue', v_ledger_org_to_platform,
+            'course_purchase', v_ledger_course_purchase,
+            'platform_revenue', v_ledger_platform_revenue,
             'gateway_fee', v_ledger_gateway_fee
         ),
         'purchase', jsonb_build_object('purchase_id', v_purchase_id)

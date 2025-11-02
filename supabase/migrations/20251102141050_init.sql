@@ -30,6 +30,10 @@ create type "public"."transaction_direction" as enum ('credit', 'debit');
 
 create type "public"."transaction_status" as enum ('pending', 'completed', 'failed', 'cancelled', 'reversed');
 
+create type "public"."user_notification_category" as enum ('commerce', 'learning', 'billing', 'social', 'system');
+
+create type "public"."user_notification_key" as enum ('course_purchase_success', 'course_purchase_failed', 'course_refund_processed', 'course_subscription_started', 'course_subscription_renewed', 'course_subscription_failed', 'course_subscription_expiring', 'course_enrollment_free_success', 'lesson_completed', 'course_completed', 'streak_reminder', 'new_chapter_unlocked', 'payment_method_expiring', 'invoice_ready', 'account_security_alert', 'organization_invite_received', 'organization_invite_accepted', 'organization_role_changed', 'announcement', 'maintenance_notice');
+
 create type "public"."wallet_type" as enum ('platform', 'organization', 'user', 'external');
 
 
@@ -673,6 +677,40 @@ alter table "public"."role_permissions" enable row level security;
 alter table "public"."tier_limits" enable row level security;
 
 
+  create table "public"."user_notifications" (
+    "id" uuid not null default gen_random_uuid(),
+    "user_id" uuid not null,
+    "key" public.user_notification_key not null,
+    "title" text not null,
+    "body" text not null,
+    "payload" jsonb not null default '{}'::jsonb,
+    "delivered_in_app" boolean not null default true,
+    "delivered_email" boolean not null default false,
+    "email_job_id" text,
+    "read_at" timestamp with time zone,
+    "deleted_at" timestamp with time zone,
+    "created_at" timestamp with time zone not null default timezone('utc'::text, now())
+      );
+
+
+alter table "public"."user_notifications" enable row level security;
+
+
+  create table "public"."user_notifications_types" (
+    "id" uuid not null default gen_random_uuid(),
+    "key" public.user_notification_key not null,
+    "category" public.user_notification_category not null,
+    "default_in_app" boolean not null default true,
+    "default_email" boolean not null default false,
+    "title_template" text not null,
+    "body_template" text not null,
+    "created_at" timestamp with time zone not null default timezone('utc'::text, now())
+      );
+
+
+alter table "public"."user_notifications_types" enable row level security;
+
+
   create table "public"."user_purchases" (
     "id" uuid not null default extensions.uuid_generate_v4(),
     "user_id" uuid not null,
@@ -1102,6 +1140,12 @@ CREATE INDEX idx_published_file_library_updated_by ON public.published_file_libr
 
 CREATE INDEX idx_published_file_library_updated_by_org ON public.published_file_library USING btree (updated_by, organization_id);
 
+CREATE INDEX idx_user_notifications_not_deleted ON public.user_notifications USING btree (user_id) WHERE (deleted_at IS NULL);
+
+CREATE INDEX idx_user_notifications_unread ON public.user_notifications USING btree (user_id) WHERE ((read_at IS NULL) AND (deleted_at IS NULL));
+
+CREATE INDEX idx_user_notifications_user_created_at ON public.user_notifications USING btree (user_id, created_at DESC);
+
 CREATE INDEX idx_user_purchases_course_id ON public.user_purchases USING btree (published_course_id);
 
 CREATE INDEX idx_user_purchases_user_id ON public.user_purchases USING btree (user_id);
@@ -1208,6 +1252,12 @@ CREATE UNIQUE INDEX uq_one_active_tier_per_frequency ON public.course_pricing_ti
 
 CREATE UNIQUE INDEX uq_user_course ON public.course_enrollments USING btree (user_id, published_course_id);
 
+CREATE UNIQUE INDEX user_notifications_pkey ON public.user_notifications USING btree (id);
+
+CREATE UNIQUE INDEX user_notifications_types_key_key ON public.user_notifications_types USING btree (key);
+
+CREATE UNIQUE INDEX user_notifications_types_pkey ON public.user_notifications_types USING btree (id);
+
 CREATE UNIQUE INDEX user_purchases_payment_reference_key ON public.user_purchases USING btree (payment_reference);
 
 CREATE UNIQUE INDEX user_purchases_pkey ON public.user_purchases USING btree (id);
@@ -1283,6 +1333,10 @@ alter table "public"."published_file_library" add constraint "published_file_lib
 alter table "public"."role_permissions" add constraint "role_permissions_pkey" PRIMARY KEY using index "role_permissions_pkey";
 
 alter table "public"."tier_limits" add constraint "tier_limits_pkey" PRIMARY KEY using index "tier_limits_pkey";
+
+alter table "public"."user_notifications" add constraint "user_notifications_pkey" PRIMARY KEY using index "user_notifications_pkey";
+
+alter table "public"."user_notifications_types" add constraint "user_notifications_types_pkey" PRIMARY KEY using index "user_notifications_types_pkey";
 
 alter table "public"."user_purchases" add constraint "user_purchases_pkey" PRIMARY KEY using index "user_purchases_pkey";
 
@@ -2019,6 +2073,12 @@ alter table "public"."published_file_library" add constraint "valid_file_extensi
 alter table "public"."published_file_library" validate constraint "valid_file_extension";
 
 alter table "public"."role_permissions" add constraint "role_permissions_role_permission_key" UNIQUE using index "role_permissions_role_permission_key";
+
+alter table "public"."user_notifications" add constraint "user_notifications_user_id_fkey" FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE not valid;
+
+alter table "public"."user_notifications" validate constraint "user_notifications_user_id_fkey";
+
+alter table "public"."user_notifications_types" add constraint "user_notifications_types_key_key" UNIQUE using index "user_notifications_types_key_key";
 
 alter table "public"."user_purchases" add constraint "user_purchases_amount_paid_check" CHECK ((amount_paid > (0)::numeric)) not valid;
 
@@ -3445,6 +3505,28 @@ begin
     v_access_start, v_access_end, p_user_id, v_now
   ) returning id into v_activity_id;
 
+  ---------------------------------------------------------------
+  -- Insert user notification for free enrollment success
+  ---------------------------------------------------------------
+  begin
+    perform public.insert_user_notification(
+      p_user_id := p_user_id,
+      p_type_key := 'course_enrollment_free_success',
+      p_metadata := jsonb_build_object(
+        'enrollment_id', v_enrollment_id,
+        'course_title', v_course_title,
+        'tier_name', v_tier_name,
+        'access_start', v_access_start,
+        'access_end', v_access_end
+      )
+    );
+  exception
+    when others then
+      -- Log or ignore notification errors, but don't fail the enrollment
+      raise notice 'Failed to insert user notification: %', sqlerrm;
+  end;
+
+  
   ---------------------------------------------------------------
   -- Return success summary
   ---------------------------------------------------------------
@@ -5577,6 +5659,54 @@ end;
 $function$
 ;
 
+CREATE OR REPLACE FUNCTION public.insert_user_notification(p_user_id uuid, p_type_key text, p_metadata jsonb DEFAULT '{}'::jsonb)
+ RETURNS uuid
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+declare
+  v_type_id uuid;
+  v_notification_id uuid;
+begin
+  -- Log input parameters
+  raise notice 'insert_user_notification called with user_id=%, type_key=%, metadata=%', p_user_id, p_type_key, p_metadata;
+
+  -- Resolve notification type
+  select unt.id
+    into v_type_id
+  from public.user_notifications_types as unt
+  where unt.key = p_type_key;
+
+  raise notice 'Resolved type_id=%', v_type_id;
+
+  if v_type_id is null then
+    raise exception 'Unknown user_notification_type key: %', p_type_key;
+  end if;
+
+  -- Insert notification row
+  insert into public.user_notifications (
+    user_id,
+    type_id,
+    metadata
+  ) values (
+    p_user_id,
+    v_type_id,
+    p_metadata
+  )
+  returning id into v_notification_id;
+
+  raise notice 'Inserted notification with id=%', v_notification_id;
+
+  return v_notification_id;
+exception
+  when others then
+    raise notice 'insert_user_notification failed: %', sqlerrm;
+    raise;
+end;
+$function$
+;
+
 CREATE OR REPLACE FUNCTION public.is_user_already_member(arg_org_id uuid, user_email text)
  RETURNS boolean
  LANGUAGE sql
@@ -5626,8 +5756,9 @@ declare
     v_platform_wallet_id uuid;
 
     -- Ledger
-    v_ledger_payment_inflow uuid;
-    v_ledger_org_to_platform uuid;
+    v_ledger_course_purchase uuid;
+    v_ledger_org_payout uuid;
+    v_ledger_platform_revenue uuid;
     v_ledger_gateway_fee uuid;
 
     -- Enrollment
@@ -5637,6 +5768,9 @@ declare
 
     -- Purchase history
     v_purchase_id uuid;
+
+    -- Notification
+    v_notification_id uuid;
 begin
     ---------------------------------------------------------------
     -- Idempotency
@@ -5751,15 +5885,12 @@ begin
     v_platform_net_revenue := v_platform_fee_amount - p_paystack_fee;
 
     ---------------------------------------------------------------
-    -- PAYMENT FLOW
+    -- PAYMENT FLOW (Ledger entries only - trigger updates wallets)
     ---------------------------------------------------------------
 
-    -- External → Organization
-    update public.organization_wallets
-    set balance_total = balance_total + v_gross_amount,
-        updated_at = timezone('utc', now())
-    where id = v_org_wallet_id;
-
+    -- 1. External → Organization (Course Purchase)
+    -- Type: 'course_purchase' - Customer pays for course
+    -- Trigger will credit organization wallet balance_total
     insert into public.wallet_ledger_entries(
         source_wallet_type, source_wallet_id,
         destination_wallet_type, destination_wallet_id,
@@ -5769,30 +5900,23 @@ begin
     ) values (
         'external', null,
         'organization', v_org_wallet_id,
-        v_tier_currency, v_gross_amount, 'credit', 'payment_inflow', 'completed',
+        v_tier_currency, v_gross_amount, 'credit', 'course_purchase', 'completed',
         'course', p_published_course_id,
         p_payment_reference,
         jsonb_build_object(
-            'description', 'External payment received via Paystack',
+            'description', 'Course purchase payment received via Paystack',
             'user_id', p_user_id,
             'course_title', v_course_title,
             'tier_name', v_tier_name,
             'payment_method', p_payment_method,
-            'gross_amount', v_gross_amount
+            'gross_amount', v_gross_amount,
+            'paystack_transaction_id', p_paystack_transaction_id
         )
-    ) returning id into v_ledger_payment_inflow;
+    ) returning id into v_ledger_course_purchase;
 
-    -- Organization → Platform
-    update public.organization_wallets
-    set balance_total = balance_total - v_platform_fee_amount,
-        updated_at = timezone('utc', now())
-    where id = v_org_wallet_id;
-
-    update public.gonasi_wallets
-    set balance_total = balance_total + v_platform_fee_amount,
-        updated_at = timezone('utc', now())
-    where id = v_platform_wallet_id;
-
+    -- 2. Organization → Platform (Platform Revenue)
+    -- Type: 'platform_revenue' - Platform takes its commission
+    -- Trigger will debit organization wallet and credit platform wallet
     insert into public.wallet_ledger_entries(
         source_wallet_type, source_wallet_id,
         destination_wallet_type, destination_wallet_id,
@@ -5806,21 +5930,19 @@ begin
         'course', p_published_course_id,
         p_payment_reference,
         jsonb_build_object(
-            'description', 'Platform fee deducted from organization payout',
+            'description', 'Platform commission on course sale',
             'platform_fee_percent', v_platform_fee_percent,
             'platform_fee_amount', v_platform_fee_amount,
             'gross_amount', v_gross_amount,
-            'org_net_payout', v_org_payout
+            'org_payout', v_org_payout,
+            'course_purchase_ledger_id', v_ledger_course_purchase
         )
-    ) returning id into v_ledger_org_to_platform;
+    ) returning id into v_ledger_platform_revenue;
 
-    -- Platform → Paystack
+    -- 3. Platform → Paystack (Payment Gateway Fee)
+    -- Type: 'payment_gateway_fee' - Platform pays gateway processing fee
+    -- Trigger will debit platform wallet
     if p_paystack_fee > 0 then
-        update public.gonasi_wallets
-        set balance_total = balance_total - p_paystack_fee,
-            updated_at = timezone('utc', now())
-        where id = v_platform_wallet_id;
-
         insert into public.wallet_ledger_entries(
             source_wallet_type, source_wallet_id,
             destination_wallet_type, destination_wallet_id,
@@ -5834,10 +5956,11 @@ begin
             'course', p_published_course_id,
             p_payment_reference,
             jsonb_build_object(
-                'description', 'Payment gateway fee paid to Paystack',
+                'description', 'Payment gateway processing fee',
                 'gateway', 'Paystack',
                 'payment_method', p_payment_method,
-                'platform_net_revenue', v_platform_net_revenue
+                'platform_net_revenue', v_platform_net_revenue,
+                'course_purchase_ledger_id', v_ledger_course_purchase
             )
         ) returning id into v_ledger_gateway_fee;
     end if;
@@ -5911,9 +6034,42 @@ begin
             'access_start', v_access_start,
             'access_end', v_access_start + interval '1 month',
             'user_metadata', p_metadata,
-            'processed_at', timezone('utc', now())
-        )
+            'processed_at', timezone('utc', now()),
+            'ledger_entries', jsonb_build_object(
+                'course_purchase', v_ledger_course_purchase,
+                'platform_revenue', v_ledger_platform_revenue,
+                'gateway_fee', v_ledger_gateway_fee
+            )
+        ) 
     ) returning id into v_purchase_id;
+
+    ---------------------------------------------------------------
+    -- Non-fatal: create user notification for successful purchase/enrollment
+    ---------------------------------------------------------------
+    begin
+      perform public.insert_user_notification(
+        p_user_id,
+        'course_purchase_success',
+        jsonb_build_object(
+          'purchase_id', v_purchase_id,
+          'course_id', p_published_course_id,
+          'course_title', v_course_title,
+          'tier_id', p_tier_id,
+          'tier_name', v_tier_name,
+          'amount_paid', v_gross_amount,
+          'currency', v_tier_currency,
+          'access_start', v_access_start,
+          'access_end', v_access_start + interval '1 month',
+          'payment_reference', p_payment_reference,
+          'payment_transaction_id', p_paystack_transaction_id
+        )
+      );
+    exception
+      when others then
+        -- Don't fail the entire transaction if notification insertion fails.
+        -- Log the issue and continue.
+        raise warning 'insert_user_notification failed for purchase %: %', coalesce(v_purchase_id::text, 'null'), sqlerrm;
+    end;
 
     ---------------------------------------------------------------
     -- Return summary
@@ -5947,8 +6103,8 @@ begin
             'platform_net_revenue', v_platform_net_revenue
         ),
         'ledger_entries', jsonb_build_object(
-            'payment_inflow', v_ledger_payment_inflow,
-            'platform_revenue', v_ledger_org_to_platform,
+            'course_purchase', v_ledger_course_purchase,
+            'platform_revenue', v_ledger_platform_revenue,
             'gateway_fee', v_ledger_gateway_fee
         ),
         'purchase', jsonb_build_object('purchase_id', v_purchase_id)
@@ -7125,6 +7281,41 @@ end;
 $function$
 ;
 
+CREATE OR REPLACE FUNCTION public.trigger_user_notification_email_dispatch()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+declare
+  v_type_record public.user_notifications_types;
+begin
+  -- Fetch the notification type record
+  select *
+  into v_type_record
+  from public.user_notifications_types
+  where id = new.type_id;
+
+  -- If email is not enabled for this notification type, exit
+  if v_type_record.send_email is false then
+    return new;
+  end if;
+
+  -- Enqueue into the PGMQ queue
+  perform public.pgmq.send(
+    'user_notifications_email_queue',
+    jsonb_build_object(
+      'user_id', new.user_id,
+      'type_key', v_type_record.key,
+      'metadata', new.metadata
+    )
+  );
+
+  return new;
+end;
+$function$
+;
+
 CREATE OR REPLACE FUNCTION public.update_chapter_progress_for_user(p_user_id uuid, p_published_course_id uuid, p_chapter_id uuid, p_course_progress_id uuid)
  RETURNS void
  LANGUAGE plpgsql
@@ -7704,6 +7895,255 @@ AS $function$
 begin
   new.updated_at = timezone('utc', clock_timestamp());
   return new;
+end;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.update_wallet_balance()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+declare
+  -- Variables for balance validation
+  v_current_total numeric(19,4);
+  v_current_reserved numeric(19,4);
+  v_wallet_owner text;
+  v_is_reserved_transaction boolean;
+begin
+  -- Only process completed transactions
+  if new.status != 'completed' then
+    return new;
+  end if;
+
+  -- Determine if this transaction affects reserved balance
+  -- Reserved transactions: funds_hold, funds_release, reward_payout
+  v_is_reserved_transaction := new.type in ('funds_hold', 'funds_release', 'reward_payout');
+
+  -- ===========================================================
+  -- PROCESS DESTINATION WALLET (CREDITS)
+  -- ===========================================================
+  if new.destination_wallet_type != 'external' and new.destination_wallet_id is not null then
+    
+    if v_is_reserved_transaction then
+      -- Credit to balance_reserved
+      case new.destination_wallet_type
+        when 'platform' then
+          update public.gonasi_wallets
+          set balance_reserved = balance_reserved + new.amount,
+              updated_at = timezone('utc', now())
+          where id = new.destination_wallet_id;
+          
+          if not found then
+            raise exception 'Platform wallet % not found', new.destination_wallet_id;
+          end if;
+
+        when 'organization' then
+          update public.organization_wallets
+          set balance_reserved = balance_reserved + new.amount,
+              updated_at = timezone('utc', now())
+          where id = new.destination_wallet_id;
+          
+          if not found then
+            raise exception 'Organization wallet % not found', new.destination_wallet_id;
+          end if;
+
+        when 'user' then
+          update public.user_wallets
+          set balance_reserved = balance_reserved + new.amount,
+              updated_at = timezone('utc', now())
+          where id = new.destination_wallet_id;
+          
+          if not found then
+            raise exception 'User wallet % not found', new.destination_wallet_id;
+          end if;
+      end case;
+
+    else
+      -- Credit to balance_total (includes course_purchase, payment_inflow, platform_revenue, etc.)
+      case new.destination_wallet_type
+        when 'platform' then
+          update public.gonasi_wallets
+          set balance_total = balance_total + new.amount,
+              updated_at = timezone('utc', now())
+          where id = new.destination_wallet_id;
+          
+          if not found then
+            raise exception 'Platform wallet % not found', new.destination_wallet_id;
+          end if;
+
+        when 'organization' then
+          update public.organization_wallets
+          set balance_total = balance_total + new.amount,
+              updated_at = timezone('utc', now())
+          where id = new.destination_wallet_id;
+          
+          if not found then
+            raise exception 'Organization wallet % not found', new.destination_wallet_id;
+          end if;
+
+        when 'user' then
+          update public.user_wallets
+          set balance_total = balance_total + new.amount,
+              updated_at = timezone('utc', now())
+          where id = new.destination_wallet_id;
+          
+          if not found then
+            raise exception 'User wallet % not found', new.destination_wallet_id;
+          end if;
+      end case;
+    end if;
+  end if;
+
+  -- ===========================================================
+  -- PROCESS SOURCE WALLET (DEBITS)
+  -- ===========================================================
+  if new.source_wallet_type != 'external' and new.source_wallet_id is not null then
+    
+    if v_is_reserved_transaction then
+      -- Debit from balance_reserved (with validation)
+      case new.source_wallet_type
+        when 'platform' then
+          -- Check sufficient reserved balance
+          select balance_reserved, 'platform-' || currency_code::text
+          into v_current_reserved, v_wallet_owner
+          from public.gonasi_wallets
+          where id = new.source_wallet_id;
+          
+          if not found then
+            raise exception 'Platform wallet % not found', new.source_wallet_id;
+          end if;
+          
+          if v_current_reserved < new.amount then
+            raise exception 'Insufficient reserved balance in % wallet. Required: %, Available: %',
+              v_wallet_owner, new.amount, v_current_reserved;
+          end if;
+          
+          update public.gonasi_wallets
+          set balance_reserved = balance_reserved - new.amount,
+              updated_at = timezone('utc', now())
+          where id = new.source_wallet_id;
+
+        when 'organization' then
+          -- Check sufficient reserved balance
+          select balance_reserved, 'org-' || organization_id::text
+          into v_current_reserved, v_wallet_owner
+          from public.organization_wallets
+          where id = new.source_wallet_id;
+          
+          if not found then
+            raise exception 'Organization wallet % not found', new.source_wallet_id;
+          end if;
+          
+          if v_current_reserved < new.amount then
+            raise exception 'Insufficient reserved balance in % wallet. Required: %, Available: %',
+              v_wallet_owner, new.amount, v_current_reserved;
+          end if;
+          
+          update public.organization_wallets
+          set balance_reserved = balance_reserved - new.amount,
+              updated_at = timezone('utc', now())
+          where id = new.source_wallet_id;
+
+        when 'user' then
+          -- Check sufficient reserved balance
+          select balance_reserved, 'user-' || user_id::text
+          into v_current_reserved, v_wallet_owner
+          from public.user_wallets
+          where id = new.source_wallet_id;
+          
+          if not found then
+            raise exception 'User wallet % not found', new.source_wallet_id;
+          end if;
+          
+          if v_current_reserved < new.amount then
+            raise exception 'Insufficient reserved balance in % wallet. Required: %, Available: %',
+              v_wallet_owner, new.amount, v_current_reserved;
+          end if;
+          
+          update public.user_wallets
+          set balance_reserved = balance_reserved - new.amount,
+              updated_at = timezone('utc', now())
+          where id = new.source_wallet_id;
+      end case;
+
+    else
+      -- Debit from balance_total (with validation)
+      -- Includes: platform_revenue, payment_gateway_fee, org_payout, withdrawal_complete, etc.
+      case new.source_wallet_type
+        when 'platform' then
+          -- Check sufficient total balance
+          select balance_total, 'platform-' || currency_code::text
+          into v_current_total, v_wallet_owner
+          from public.gonasi_wallets
+          where id = new.source_wallet_id;
+          
+          if not found then
+            raise exception 'Platform wallet % not found', new.source_wallet_id;
+          end if;
+          
+          if v_current_total < new.amount then
+            raise exception 'Insufficient balance in % wallet. Required: %, Available: %',
+              v_wallet_owner, new.amount, v_current_total;
+          end if;
+          
+          update public.gonasi_wallets
+          set balance_total = balance_total - new.amount,
+              updated_at = timezone('utc', now())
+          where id = new.source_wallet_id;
+
+        when 'organization' then
+          -- Check sufficient total balance
+          select balance_total, 'org-' || organization_id::text
+          into v_current_total, v_wallet_owner
+          from public.organization_wallets
+          where id = new.source_wallet_id;
+          
+          if not found then
+            raise exception 'Organization wallet % not found', new.source_wallet_id;
+          end if;
+          
+          if v_current_total < new.amount then
+            raise exception 'Insufficient balance in % wallet. Required: %, Available: %',
+              v_wallet_owner, new.amount, v_current_total;
+          end if;
+          
+          update public.organization_wallets
+          set balance_total = balance_total - new.amount,
+              updated_at = timezone('utc', now())
+          where id = new.source_wallet_id;
+
+        when 'user' then
+          -- Check sufficient total balance
+          select balance_total, 'user-' || user_id::text
+          into v_current_total, v_wallet_owner
+          from public.user_wallets
+          where id = new.source_wallet_id;
+          
+          if not found then
+            raise exception 'User wallet % not found', new.source_wallet_id;
+          end if;
+          
+          if v_current_total < new.amount then
+            raise exception 'Insufficient balance in % wallet. Required: %, Available: %',
+              v_wallet_owner, new.amount, v_current_total;
+          end if;
+          
+          update public.user_wallets
+          set balance_total = balance_total - new.amount,
+              updated_at = timezone('utc', now())
+          where id = new.source_wallet_id;
+      end case;
+    end if;
+  end if;
+
+  return new;
+exception
+  when others then
+    -- Re-raise with context for debugging
+    raise exception 'Wallet balance update failed for ledger entry % (type: %): %', 
+      new.id, new.type, sqlerrm;
 end;
 $function$
 ;
@@ -9220,6 +9660,90 @@ grant truncate on table "public"."tier_limits" to "service_role";
 
 grant update on table "public"."tier_limits" to "service_role";
 
+grant delete on table "public"."user_notifications" to "anon";
+
+grant insert on table "public"."user_notifications" to "anon";
+
+grant references on table "public"."user_notifications" to "anon";
+
+grant select on table "public"."user_notifications" to "anon";
+
+grant trigger on table "public"."user_notifications" to "anon";
+
+grant truncate on table "public"."user_notifications" to "anon";
+
+grant update on table "public"."user_notifications" to "anon";
+
+grant delete on table "public"."user_notifications" to "authenticated";
+
+grant insert on table "public"."user_notifications" to "authenticated";
+
+grant references on table "public"."user_notifications" to "authenticated";
+
+grant select on table "public"."user_notifications" to "authenticated";
+
+grant trigger on table "public"."user_notifications" to "authenticated";
+
+grant truncate on table "public"."user_notifications" to "authenticated";
+
+grant update on table "public"."user_notifications" to "authenticated";
+
+grant delete on table "public"."user_notifications" to "service_role";
+
+grant insert on table "public"."user_notifications" to "service_role";
+
+grant references on table "public"."user_notifications" to "service_role";
+
+grant select on table "public"."user_notifications" to "service_role";
+
+grant trigger on table "public"."user_notifications" to "service_role";
+
+grant truncate on table "public"."user_notifications" to "service_role";
+
+grant update on table "public"."user_notifications" to "service_role";
+
+grant delete on table "public"."user_notifications_types" to "anon";
+
+grant insert on table "public"."user_notifications_types" to "anon";
+
+grant references on table "public"."user_notifications_types" to "anon";
+
+grant select on table "public"."user_notifications_types" to "anon";
+
+grant trigger on table "public"."user_notifications_types" to "anon";
+
+grant truncate on table "public"."user_notifications_types" to "anon";
+
+grant update on table "public"."user_notifications_types" to "anon";
+
+grant delete on table "public"."user_notifications_types" to "authenticated";
+
+grant insert on table "public"."user_notifications_types" to "authenticated";
+
+grant references on table "public"."user_notifications_types" to "authenticated";
+
+grant select on table "public"."user_notifications_types" to "authenticated";
+
+grant trigger on table "public"."user_notifications_types" to "authenticated";
+
+grant truncate on table "public"."user_notifications_types" to "authenticated";
+
+grant update on table "public"."user_notifications_types" to "authenticated";
+
+grant delete on table "public"."user_notifications_types" to "service_role";
+
+grant insert on table "public"."user_notifications_types" to "service_role";
+
+grant references on table "public"."user_notifications_types" to "service_role";
+
+grant select on table "public"."user_notifications_types" to "service_role";
+
+grant trigger on table "public"."user_notifications_types" to "service_role";
+
+grant truncate on table "public"."user_notifications_types" to "service_role";
+
+grant update on table "public"."user_notifications_types" to "service_role";
+
 grant delete on table "public"."user_purchases" to "anon";
 
 grant insert on table "public"."user_purchases" to "anon";
@@ -10534,6 +11058,70 @@ using (true);
 
 
 
+  create policy "user_notifications_insert_own"
+  on "public"."user_notifications"
+  as permissive
+  for insert
+  to authenticated
+with check ((user_id = ( SELECT auth.uid() AS uid)));
+
+
+
+  create policy "user_notifications_select_own"
+  on "public"."user_notifications"
+  as permissive
+  for select
+  to authenticated
+using ((user_id = ( SELECT auth.uid() AS uid)));
+
+
+
+  create policy "user_notifications_update_own"
+  on "public"."user_notifications"
+  as permissive
+  for update
+  to authenticated
+using ((user_id = ( SELECT auth.uid() AS uid)))
+with check ((user_id = ( SELECT auth.uid() AS uid)));
+
+
+
+  create policy "user_notifications_types_delete_privileged"
+  on "public"."user_notifications_types"
+  as permissive
+  for delete
+  to authenticated
+using ((public.authorize('go_su_delete'::public.app_permission) OR public.authorize('go_admin_delete'::public.app_permission)));
+
+
+
+  create policy "user_notifications_types_insert_privileged"
+  on "public"."user_notifications_types"
+  as permissive
+  for insert
+  to authenticated
+with check ((public.authorize('go_su_create'::public.app_permission) OR public.authorize('go_admin_create'::public.app_permission)));
+
+
+
+  create policy "user_notifications_types_select_authenticated"
+  on "public"."user_notifications_types"
+  as permissive
+  for select
+  to authenticated
+using (true);
+
+
+
+  create policy "user_notifications_types_update_privileged"
+  on "public"."user_notifications_types"
+  as permissive
+  for update
+  to authenticated
+using ((public.authorize('go_su_update'::public.app_permission) OR public.authorize('go_admin_update'::public.app_permission)));
+
+
+
   create policy "Users can view their own purchases"
   on "public"."user_purchases"
   as permissive
@@ -10651,7 +11239,11 @@ CREATE TRIGGER trg_set_file_type BEFORE INSERT OR UPDATE ON public.published_fil
 
 CREATE TRIGGER trg_update_timestamp BEFORE UPDATE ON public.published_file_library FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
+CREATE TRIGGER trg_user_notification_email_dispatch AFTER INSERT ON public.user_notifications FOR EACH ROW EXECUTE FUNCTION public.trigger_user_notification_email_dispatch();
+
 CREATE TRIGGER trg_user_wallets_updated_at BEFORE UPDATE ON public.user_wallets FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+CREATE TRIGGER trg_wallet_balance_update AFTER INSERT ON public.wallet_ledger_entries FOR EACH ROW EXECUTE FUNCTION public.update_wallet_balance();
 
 CREATE TRIGGER on_auth_user_created AFTER INSERT ON auth.users FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 

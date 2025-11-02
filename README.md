@@ -17,6 +17,7 @@ mkdir migrations && \
 cp ../20240619123002_extensions.sql migrations/ && \
 cp ../20240619123003_buckets.sql migrations/ && \
 cp ../20240619123004_queues_and_crons.sql migrations/ && \
+cp ../20240619123005_vault.sql migrations/ && \
 supabase db diff --schema public --schema auth --schema extensions --schema storage -f init && \
 supabase start && \
 supabase db reset && \
