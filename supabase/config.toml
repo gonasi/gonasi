@@ -49,7 +49,8 @@ max_client_conn = 100
 # Specifies an ordered list of schema files that describe your database.
 # Supports glob patterns relative to supabase directory: "./schemas/*.sql"
 schema_paths = [
-  './migrations/20240619123002_extensions.sql',
+  './migrations/20240619123001_extensions.sql',
+  './migrations/20240619123002_vault.sql',
   './migrations/20240619123003_buckets.sql',
   './migrations/20240619123004_queues_and_crons.sql',
 
@@ -655,3 +656,14 @@ entrypoint = "./functions/user-notifications-email-dispatch/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/user-notifications-email-dispatch/*.html" ]
+
+[functions.test-default]
+enabled = true
+verify_jwt = true
+import_map = "./functions/test-default/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/test-default/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/test-default/*.html" ]

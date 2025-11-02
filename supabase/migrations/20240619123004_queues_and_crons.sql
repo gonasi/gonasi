@@ -5,7 +5,7 @@ select pgmq.create('user_notifications_email_queue');
 
 select cron.schedule(
   'process-delete-course-progress',
-  '*/1 * * * *',
+  '* * * * *', -- every minute
   $$ select process_delete_course_progress(); $$
 );
 
@@ -26,28 +26,19 @@ select cron.schedule(
 --   function itself.
 --
 -- SCHEDULE:
---   Every 2 minutes (adjust as needed)
+--   Every 1 minute
 -- ============================================================================
 select cron.schedule(
   'invoke-user-notifications-email-dispatch',
-  '*/2 * * * *',  -- every 2 minutes
+  '* * * * *',
   $$
-    with secrets as (
-      select
-        max(case when name = 'project_url' then decrypted_secret end) as project_url,
-        max(case when name = 'publishable_key' then decrypted_secret end) as publishable_key
-      from vault.decrypted_secrets
-      where name in ('project_url', 'publishable_key')
-    )
-    select
-      net.http_post(
-        url := secrets.project_url || '/functions/v1/user-notifications-email-dispatch',
-        headers := jsonb_build_object(
-          'Content-Type', 'application/json',
-          'Authorization', 'Bearer ' || secrets.publishable_key
-        ),
-        body := jsonb_build_object('triggered_at', now())
-      ) as request_id
-    from secrets;
+  select net.http_post(
+    url := (select decrypted_secret from vault.decrypted_secrets where name = 'project_url') || '/functions/v1/user-notifications-email-dispatch',
+    headers := jsonb_build_object(
+      'Content-Type', 'application/json',
+      'Authorization', 'Bearer ' || (select decrypted_secret from vault.decrypted_secrets where name = 'publishable_key')
+    ),
+    body := jsonb_build_object('time', now())
+  ) as request_id;
   $$
 );
