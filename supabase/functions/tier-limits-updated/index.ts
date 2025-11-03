@@ -166,7 +166,7 @@ async function findExistingPlansByTierAndInterval(tier: string, interval: string
     if (matchingPlans.length > 0) {
       console.log(
         `[Paystack] Found ${matchingPlans.length} existing active plan(s) for ${tier}-${interval}:`,
-        matchingPlans.map((p: any) => ({ name: p.name, code: p.plan_code })),
+        matchingPlans.map((p: any) => ({ name: p.name, code: p.plan_code, id: p.id })),
       );
     }
 
@@ -179,9 +179,9 @@ async function findExistingPlansByTierAndInterval(tier: string, interval: string
 
 /**
  * Check if a plan with the same price, currency, and interval already exists
- * This prevents duplicate plans with identical pricing
+ * Returns the matching plan or null
  */
-async function checkForDuplicatePricing(amount: number, currency: string, interval: string) {
+async function findPlanByPricing(amount: number, currency: string, interval: string) {
   if (!PAYSTACK_SECRET_KEY) {
     console.error('[Paystack] Secret key not configured');
     return null;
@@ -194,59 +194,24 @@ async function checkForDuplicatePricing(amount: number, currency: string, interv
     const amountInSubunit = Math.round(amount * 100);
 
     // Find any active plan with matching price, currency, and interval
-    const duplicatePlan = allPlans.find((plan: any) => {
+    const matchingPlan = allPlans.find((plan: any) => {
       const priceMatches = plan.amount === amountInSubunit;
       const currencyMatches = plan.currency === currency.toUpperCase();
       const intervalMatches = plan.interval === interval;
       return priceMatches && currencyMatches && intervalMatches;
     });
 
-    if (duplicatePlan) {
-      console.warn(
-        `[Paystack] DUPLICATE PRICING DETECTED: Plan "${duplicatePlan.name}" (${duplicatePlan.plan_code}) already exists with ${currency} ${amount}/${interval}`,
+    if (matchingPlan) {
+      console.log(
+        `[Paystack] Found existing plan with matching pricing: "${matchingPlan.name}" (${matchingPlan.plan_code}) - ${currency} ${amount}/${interval}`,
       );
-      return duplicatePlan;
+      return matchingPlan;
     }
 
-    console.log(
-      `[Paystack] No duplicate pricing found for ${currency} ${amount}/${interval} - safe to proceed`,
-    );
+    console.log(`[Paystack] No plan found with pricing ${currency} ${amount}/${interval}`);
     return null;
   } catch (error) {
-    console.error('[Paystack] Error checking for duplicate pricing:', error);
-    return null;
-  }
-}
-
-/**
- * Check if a plan with the same name already exists
- * This prevents duplicate plans with identical names
- */
-async function checkForDuplicateName(planName: string) {
-  if (!PAYSTACK_SECRET_KEY) {
-    console.error('[Paystack] Secret key not configured');
-    return null;
-  }
-
-  try {
-    const allPlans = await getAllPaystackPlans();
-
-    // Find any active plan with exact matching name (case-insensitive)
-    const duplicatePlan = allPlans.find(
-      (plan: any) => plan.name?.toLowerCase() === planName.toLowerCase(),
-    );
-
-    if (duplicatePlan) {
-      console.warn(
-        `[Paystack] DUPLICATE NAME DETECTED: Plan "${duplicatePlan.name}" (${duplicatePlan.plan_code}) already exists`,
-      );
-      return duplicatePlan;
-    }
-
-    console.log(`[Paystack] No duplicate name found for "${planName}" - safe to proceed`);
-    return null;
-  } catch (error) {
-    console.error('[Paystack] Error checking for duplicate name:', error);
+    console.error('[Paystack] Error searching for plan by pricing:', error);
     return null;
   }
 }
@@ -384,12 +349,21 @@ async function updatePaystackPlan(planCode: string, row: any) {
 async function updateTierLimitsWithPaystackData(tier: string, planId: number, planCode: string) {
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
     console.error('[DB] Missing Supabase configuration');
-    return;
+    return false;
   }
 
   try {
     // Initialize Supabase client with service role
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    });
+
+    console.log(
+      `[DB] Updating tier_limits for tier: ${tier} with plan_id: ${planId}, plan_code: ${planCode}`,
+    );
 
     const { data, error } = await supabase
       .from('tier_limits')
@@ -402,12 +376,20 @@ async function updateTierLimitsWithPaystackData(tier: string, planId: number, pl
 
     if (error) {
       console.error('[DB] Failed to update tier_limits:', error);
-      return;
+      console.error('[DB] Error details:', JSON.stringify(error, null, 2));
+      return false;
+    }
+
+    if (!data || data.length === 0) {
+      console.error('[DB] No rows were updated. Tier might not exist:', tier);
+      return false;
     }
 
     console.log('[DB] Successfully updated tier_limits with Paystack data:', data);
+    return true;
   } catch (error) {
     console.error('[DB] Error updating tier_limits:', error);
+    return false;
   }
 }
 
@@ -459,93 +441,197 @@ Deno.serve(async (req) => {
       // Determine amount and currency
       const amount = row.plan_interval === 'monthly' ? row.price_monthly_usd : row.price_yearly_usd;
       const currency = row.plan_currency || 'USD';
-      const planName = `${row.tier.charAt(0).toUpperCase() + row.tier.slice(1)} - ${row.plan_interval}`;
+      const interval = row.plan_interval || 'monthly';
 
-      // SAFETY CHECK 1: Verify no duplicate pricing exists
-      if (amount === null || amount === undefined) {
-        throw new Error('Plan price (amount) is missing or invalid');
-      }
-      const duplicatePricePlan = await checkForDuplicatePricing(
-        amount,
-        currency,
-        row.plan_interval as string,
-      );
-
-      if (duplicatePricePlan) {
-        console.error(
-          `[Paystack] BLOCKED: Cannot create plan - duplicate pricing detected (${duplicatePricePlan.plan_code})`,
+      // Handle free tiers (price = 0)
+      if (!amount || amount <= 0) {
+        console.log(
+          `[tier-limits-updated] Tier ${row.tier} has no price (free tier), skipping Paystack sync`,
         );
         return new Response(
           JSON.stringify({
-            error: 'Duplicate pricing detected',
-            existing_plan: duplicatePricePlan.plan_code,
-            existing_plan_name: duplicatePricePlan.name,
-            message: `A plan with ${currency} ${amount}/${row.plan_interval} already exists`,
+            ok: true,
+            event,
+            tier: row.tier,
+            note: 'Free tier, no Paystack plan needed',
           }),
           {
-            status: 409,
+            status: 200,
             headers: { 'Content-Type': 'application/json' },
           },
         );
       }
 
-      // SAFETY CHECK 2: Verify no duplicate name exists
-      const duplicateNamePlan = await checkForDuplicateName(planName);
+      // STRATEGY: Check if a plan with this exact pricing already exists
+      // If yes, link to it. If no, create a new plan.
+      const existingPlanWithPricing = await findPlanByPricing(amount, currency, interval);
 
-      if (duplicateNamePlan) {
-        console.error(
-          `[Paystack] BLOCKED: Cannot create plan - duplicate name detected (${duplicateNamePlan.plan_code})`,
+      if (existingPlanWithPricing) {
+        // Found a plan with matching pricing, link to it
+        console.log(
+          `[Paystack] Linking tier ${row.tier} to existing plan ${existingPlanWithPricing.plan_code}`,
         );
+
+        const dbUpdateSuccess = await updateTierLimitsWithPaystackData(
+          row.tier,
+          existingPlanWithPricing.id,
+          existingPlanWithPricing.plan_code,
+        );
+
+        if (!dbUpdateSuccess) {
+          console.error('[DB] Failed to link to existing plan');
+          return new Response(
+            JSON.stringify({
+              error: 'Database update failed',
+              details: 'Could not link tier to existing Paystack plan',
+            }),
+            {
+              status: 500,
+              headers: { 'Content-Type': 'application/json' },
+            },
+          );
+        }
+
         return new Response(
           JSON.stringify({
-            error: 'Duplicate name detected',
-            existing_plan: duplicateNamePlan.plan_code,
-            existing_plan_name: duplicateNamePlan.name,
-            message: `A plan named "${planName}" already exists`,
+            ok: true,
+            event,
+            tier: row.tier,
+            linked_to_existing: true,
+            plan_code: existingPlanWithPricing.plan_code,
           }),
           {
-            status: 409,
+            status: 200,
             headers: { 'Content-Type': 'application/json' },
           },
         );
       }
 
-      // Check if we already have matching plans by tier/interval
-      const existingPlans = await findExistingPlansByTierAndInterval(
-        row.tier as string,
-        row.plan_interval as string,
-      );
+      // No existing plan with this pricing, check by tier/interval
+      const existingPlansByTier = await findExistingPlansByTierAndInterval(row.tier, interval);
 
-      if (existingPlans.length > 0) {
-        // Use the first matching plan and update it
-        console.log(`[Paystack] Found ${existingPlans.length} existing plan(s), reusing first one`);
-        const existingPlan = existingPlans[0];
+      if (existingPlansByTier.length > 0) {
+        // Found plan(s) with matching tier/interval but different pricing
+        // Update the first one with new pricing
+        console.log(`[Paystack] Found existing plan for ${row.tier}-${interval}, updating pricing`);
+        const planToUpdate = existingPlansByTier[0];
 
-        const updateResult = await updatePaystackPlan(existingPlan.plan_code, row);
+        const updateResult = await updatePaystackPlan(planToUpdate.plan_code, row);
 
         if (updateResult) {
-          await updateTierLimitsWithPaystackData(
+          const dbUpdateSuccess = await updateTierLimitsWithPaystackData(
             row.tier,
             updateResult.plan_id,
             updateResult.plan_code,
           );
-        } else {
-          // Update failed, but we still want to link to the existing plan
-          console.warn('[Paystack] Update failed, but linking to existing plan anyway');
-          await updateTierLimitsWithPaystackData(row.tier, existingPlan.id, existingPlan.plan_code);
-        }
-      } else {
-        // No existing plan, create new one
-        console.log('[Paystack] No existing plan found, creating new one');
-        const paystackResult = await createPaystackPlan(row);
 
-        if (paystackResult) {
-          await updateTierLimitsWithPaystackData(
+          if (!dbUpdateSuccess) {
+            console.error('[DB] Failed to update tier_limits after Paystack update');
+            return new Response(
+              JSON.stringify({
+                error: 'Database update failed',
+                details: 'Paystack plan updated but database sync failed',
+              }),
+              {
+                status: 500,
+                headers: { 'Content-Type': 'application/json' },
+              },
+            );
+          }
+
+          return new Response(
+            JSON.stringify({
+              ok: true,
+              event,
+              tier: row.tier,
+              updated_existing: true,
+              plan_code: updateResult.plan_code,
+            }),
+            {
+              status: 200,
+              headers: { 'Content-Type': 'application/json' },
+            },
+          );
+        } else {
+          // Update failed, but still link to existing plan
+          console.warn('[Paystack] Update failed, linking to existing plan anyway');
+          const dbUpdateSuccess = await updateTierLimitsWithPaystackData(
             row.tier,
-            paystackResult.plan_id,
-            paystackResult.plan_code,
+            planToUpdate.id,
+            planToUpdate.plan_code,
+          );
+
+          if (!dbUpdateSuccess) {
+            console.error('[DB] Failed to link to existing plan');
+          }
+
+          return new Response(
+            JSON.stringify({
+              ok: true,
+              event,
+              tier: row.tier,
+              linked_to_existing: true,
+              plan_code: planToUpdate.plan_code,
+              note: 'Paystack update failed but linked to existing plan',
+            }),
+            {
+              status: 200,
+              headers: { 'Content-Type': 'application/json' },
+            },
           );
         }
+      }
+
+      // No existing plans at all, create new one
+      console.log('[Paystack] No existing plans found, creating new one');
+      const paystackResult = await createPaystackPlan(row);
+
+      if (paystackResult) {
+        const dbUpdateSuccess = await updateTierLimitsWithPaystackData(
+          row.tier,
+          paystackResult.plan_id,
+          paystackResult.plan_code,
+        );
+
+        if (!dbUpdateSuccess) {
+          console.error('[DB] Failed to update tier_limits after Paystack creation');
+          return new Response(
+            JSON.stringify({
+              error: 'Database update failed',
+              details: 'Paystack plan created but database sync failed',
+            }),
+            {
+              status: 500,
+              headers: { 'Content-Type': 'application/json' },
+            },
+          );
+        }
+
+        return new Response(
+          JSON.stringify({
+            ok: true,
+            event,
+            tier: row.tier,
+            created_new: true,
+            plan_code: paystackResult.plan_code,
+          }),
+          {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          },
+        );
+      } else {
+        console.error('[Paystack] Failed to create plan');
+        return new Response(
+          JSON.stringify({
+            error: 'Paystack plan creation failed',
+            tier: row.tier,
+          }),
+          {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' },
+          },
+        );
       }
     }
 
@@ -558,60 +644,30 @@ Deno.serve(async (req) => {
       // Determine amount and currency
       const amount = row.plan_interval === 'monthly' ? row.price_monthly_usd : row.price_yearly_usd;
       const currency = row.plan_currency || 'USD';
-      const planName = `${row.tier.charAt(0).toUpperCase() + row.tier.slice(1)} - ${row.plan_interval}`;
+      const interval = row.plan_interval || 'monthly';
 
-      // SAFETY CHECK 1: Verify no duplicate pricing exists (except for the current plan)
-      if (amount === null || amount === undefined) {
-        throw new Error('Amount is required and must be a number');
-      }
-      const duplicatePricePlan = await checkForDuplicatePricing(
-        amount,
-        currency,
-        row.plan_interval as string,
-      );
-
-      if (duplicatePricePlan && duplicatePricePlan.plan_code !== row.paystack_plan_code) {
-        console.error(
-          `[Paystack] BLOCKED: Cannot update plan - duplicate pricing detected (${duplicatePricePlan.plan_code})`,
+      // Handle free tiers (price = 0)
+      if (!amount || amount <= 0) {
+        console.log(
+          `[tier-limits-updated] Tier ${row.tier} has no price (free tier), skipping Paystack sync`,
         );
         return new Response(
           JSON.stringify({
-            error: 'Duplicate pricing detected',
-            existing_plan: duplicatePricePlan.plan_code,
-            existing_plan_name: duplicatePricePlan.name,
-            message: `A different plan with ${currency} ${amount}/${row.plan_interval} already exists`,
+            ok: true,
+            event,
+            tier: row.tier,
+            note: 'Free tier, no Paystack plan needed',
           }),
           {
-            status: 409,
+            status: 200,
             headers: { 'Content-Type': 'application/json' },
           },
         );
       }
 
-      // SAFETY CHECK 2: Verify no duplicate name exists (except for the current plan)
-      const duplicateNamePlan = await checkForDuplicateName(planName);
-
-      if (duplicateNamePlan && duplicateNamePlan.plan_code !== row.paystack_plan_code) {
-        console.error(
-          `[Paystack] BLOCKED: Cannot update plan - duplicate name detected (${duplicateNamePlan.plan_code})`,
-        );
-        return new Response(
-          JSON.stringify({
-            error: 'Duplicate name detected',
-            existing_plan: duplicateNamePlan.plan_code,
-            existing_plan_name: duplicateNamePlan.name,
-            message: `A different plan named "${planName}" already exists`,
-          }),
-          {
-            status: 409,
-            headers: { 'Content-Type': 'application/json' },
-          },
-        );
-      }
-
-      // If we have a plan_code in DB, verify it exists and update it
+      // If we have a plan_code in DB, update that plan
       if (row.paystack_plan_code) {
-        console.log('[Paystack] Plan code exists in DB, verifying in Paystack...');
+        console.log('[Paystack] Plan code exists in DB, updating it...');
 
         const existingPlan = await getPaystackPlan(row.paystack_plan_code);
 
@@ -619,92 +675,212 @@ Deno.serve(async (req) => {
           // Plan exists, update it
           const updateResult = await updatePaystackPlan(row.paystack_plan_code, row);
 
-          if (!updateResult) {
+          if (updateResult) {
+            console.log('[Paystack] Plan updated successfully');
+            return new Response(
+              JSON.stringify({
+                ok: true,
+                event,
+                tier: row.tier,
+                updated: true,
+                plan_code: updateResult.plan_code,
+              }),
+              {
+                status: 200,
+                headers: { 'Content-Type': 'application/json' },
+              },
+            );
+          } else {
             console.error('[Paystack] Failed to update existing plan');
+            return new Response(
+              JSON.stringify({
+                error: 'Paystack plan update failed',
+                tier: row.tier,
+              }),
+              {
+                status: 500,
+                headers: { 'Content-Type': 'application/json' },
+              },
+            );
           }
         } else {
-          // Plan doesn't exist in Paystack, search for matching plans
+          // Plan doesn't exist in Paystack anymore, find or create alternative
           console.warn(
             '[Paystack] Plan code in DB not found in Paystack, searching for alternatives...',
           );
-
-          const matchingPlans = await findExistingPlansByTierAndInterval(
-            row.tier,
-            row.plan_interval || 'monthly',
-          );
-
-          if (matchingPlans.length > 0) {
-            // Found matching plan(s), use the first one
-            console.log('[Paystack] Found matching plan, linking to it');
-            const plan = matchingPlans[0];
-
-            const updateResult = await updatePaystackPlan(plan.plan_code, row);
-
-            if (updateResult) {
-              await updateTierLimitsWithPaystackData(
-                row.tier,
-                updateResult.plan_id,
-                updateResult.plan_code,
-              );
-            }
-          } else {
-            // No matching plans, create new one
-            console.log('[Paystack] No matching plans found, creating new one');
-            const paystackResult = await createPaystackPlan(row);
-
-            if (paystackResult) {
-              await updateTierLimitsWithPaystackData(
-                row.tier,
-                paystackResult.plan_id,
-                paystackResult.plan_code,
-              );
-            }
-          }
         }
-      } else {
-        // No plan_code in DB, search for existing plans first
-        console.log('[Paystack] No plan code in DB, searching for existing plans...');
+      }
 
-        const matchingPlans = await findExistingPlansByTierAndInterval(
+      // No plan_code or plan not found, search by pricing first
+      const existingPlanWithPricing = await findPlanByPricing(amount, currency, interval);
+
+      if (existingPlanWithPricing) {
+        // Found a plan with matching pricing, link to it
+        console.log(`[Paystack] Linking tier ${row.tier} to existing plan with matching pricing`);
+
+        const dbUpdateSuccess = await updateTierLimitsWithPaystackData(
           row.tier,
-          row.plan_interval || 'monthly',
+          existingPlanWithPricing.id,
+          existingPlanWithPricing.plan_code,
         );
 
-        if (matchingPlans.length > 0) {
-          // Found matching plan(s), use the first one
-          console.log('[Paystack] Found matching plan, linking to it');
-          const plan = matchingPlans[0];
-
-          const updateResult = await updatePaystackPlan(plan.plan_code, row);
-
-          if (updateResult) {
-            await updateTierLimitsWithPaystackData(
-              row.tier,
-              updateResult.plan_id,
-              updateResult.plan_code,
-            );
-          } else {
-            // Update failed but link anyway
-            await updateTierLimitsWithPaystackData(row.tier, plan.id, plan.plan_code);
-          }
-        } else {
-          // No matching plans, create new one
-          console.log('[Paystack] No matching plans found, creating new one');
-          const paystackResult = await createPaystackPlan(row);
-
-          if (paystackResult) {
-            await updateTierLimitsWithPaystackData(
-              row.tier,
-              paystackResult.plan_id,
-              paystackResult.plan_code,
-            );
-          }
+        if (!dbUpdateSuccess) {
+          console.error('[DB] Failed to link to existing plan');
+          return new Response(
+            JSON.stringify({
+              error: 'Database update failed',
+              details: 'Could not link tier to existing Paystack plan',
+            }),
+            {
+              status: 500,
+              headers: { 'Content-Type': 'application/json' },
+            },
+          );
         }
+
+        return new Response(
+          JSON.stringify({
+            ok: true,
+            event,
+            tier: row.tier,
+            linked_to_existing: true,
+            plan_code: existingPlanWithPricing.plan_code,
+          }),
+          {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          },
+        );
+      }
+
+      // Search by tier/interval
+      const matchingPlans = await findExistingPlansByTierAndInterval(row.tier, interval);
+
+      if (matchingPlans.length > 0) {
+        // Found matching plan(s), update the first one
+        console.log('[Paystack] Found matching plan by tier/interval, updating it');
+        const plan = matchingPlans[0];
+
+        const updateResult = await updatePaystackPlan(plan.plan_code, row);
+
+        if (updateResult) {
+          const dbUpdateSuccess = await updateTierLimitsWithPaystackData(
+            row.tier,
+            updateResult.plan_id,
+            updateResult.plan_code,
+          );
+
+          if (!dbUpdateSuccess) {
+            console.error('[DB] Failed to update tier_limits');
+            return new Response(
+              JSON.stringify({
+                error: 'Database update failed',
+                details: 'Paystack plan updated but database sync failed',
+              }),
+              {
+                status: 500,
+                headers: { 'Content-Type': 'application/json' },
+              },
+            );
+          }
+
+          return new Response(
+            JSON.stringify({
+              ok: true,
+              event,
+              tier: row.tier,
+              updated_existing: true,
+              plan_code: updateResult.plan_code,
+            }),
+            {
+              status: 200,
+              headers: { 'Content-Type': 'application/json' },
+            },
+          );
+        } else {
+          // Update failed but link anyway
+          const dbUpdateSuccess = await updateTierLimitsWithPaystackData(
+            row.tier,
+            plan.id,
+            plan.plan_code,
+          );
+
+          if (!dbUpdateSuccess) {
+            console.error('[DB] Failed to link to existing plan');
+          }
+
+          return new Response(
+            JSON.stringify({
+              ok: true,
+              event,
+              tier: row.tier,
+              linked_to_existing: true,
+              plan_code: plan.plan_code,
+              note: 'Paystack update failed but linked to existing plan',
+            }),
+            {
+              status: 200,
+              headers: { 'Content-Type': 'application/json' },
+            },
+          );
+        }
+      }
+
+      // No matching plans, create new one
+      console.log('[Paystack] No matching plans found, creating new one');
+      const paystackResult = await createPaystackPlan(row);
+
+      if (paystackResult) {
+        const dbUpdateSuccess = await updateTierLimitsWithPaystackData(
+          row.tier,
+          paystackResult.plan_id,
+          paystackResult.plan_code,
+        );
+
+        if (!dbUpdateSuccess) {
+          console.error('[DB] Failed to update tier_limits after Paystack creation');
+          return new Response(
+            JSON.stringify({
+              error: 'Database update failed',
+              details: 'Paystack plan created but database sync failed',
+            }),
+            {
+              status: 500,
+              headers: { 'Content-Type': 'application/json' },
+            },
+          );
+        }
+
+        return new Response(
+          JSON.stringify({
+            ok: true,
+            event,
+            tier: row.tier,
+            created_new: true,
+            plan_code: paystackResult.plan_code,
+          }),
+          {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          },
+        );
+      } else {
+        console.error('[Paystack] Failed to create plan');
+        return new Response(
+          JSON.stringify({
+            error: 'Paystack plan creation failed',
+            tier: row.tier,
+          }),
+          {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' },
+          },
+        );
       }
     }
 
     // ============================================================
-    // OK RESPONSE
+    // OK RESPONSE (fallback)
     // ============================================================
     return new Response(JSON.stringify({ ok: true, event, tier: row.tier }), {
       status: 200,
@@ -712,7 +888,7 @@ Deno.serve(async (req) => {
     });
   } catch (err) {
     console.error('[tier-limits-updated] Internal error:', err);
-    return new Response(JSON.stringify({ error: 'Internal server error' }), {
+    return new Response(JSON.stringify({ error: 'Internal server error', details: String(err) }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
     });
