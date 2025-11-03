@@ -670,7 +670,13 @@ alter table "public"."role_permissions" enable row level security;
     "platform_fee_percentage" numeric(5,2) not null default 15.00,
     "white_label_enabled" boolean not null default false,
     "price_monthly_usd" numeric(10,2) not null default 0.00,
-    "price_yearly_usd" numeric(10,2) not null default 0.00
+    "price_yearly_usd" numeric(10,2) not null default 0.00,
+    "paystack_plan_id" text,
+    "paystack_plan_code" text,
+    "plan_currency" text not null default 'USD'::text,
+    "plan_interval" text not null default 'monthly'::text,
+    "created_at" timestamp with time zone not null default now(),
+    "updated_at" timestamp with time zone not null default now()
       );
 
 
@@ -1230,7 +1236,25 @@ CREATE UNIQUE INDEX role_permissions_pkey ON public.role_permissions USING btree
 
 CREATE UNIQUE INDEX role_permissions_role_permission_key ON public.role_permissions USING btree (role, permission);
 
+CREATE INDEX tier_limits_ai_tools_enabled_idx ON public.tier_limits USING btree (ai_tools_enabled);
+
+CREATE INDEX tier_limits_analytics_level_idx ON public.tier_limits USING btree (analytics_level);
+
+CREATE INDEX tier_limits_custom_domains_enabled_idx ON public.tier_limits USING btree (custom_domains_enabled);
+
+CREATE UNIQUE INDEX tier_limits_paystack_plan_code_key ON public.tier_limits USING btree (paystack_plan_code);
+
+CREATE UNIQUE INDEX tier_limits_paystack_plan_id_key ON public.tier_limits USING btree (paystack_plan_id);
+
 CREATE UNIQUE INDEX tier_limits_pkey ON public.tier_limits USING btree (tier);
+
+CREATE INDEX tier_limits_plan_interval_currency_idx ON public.tier_limits USING btree (plan_interval, plan_currency);
+
+CREATE INDEX tier_limits_price_monthly_usd_idx ON public.tier_limits USING btree (price_monthly_usd);
+
+CREATE INDEX tier_limits_price_yearly_usd_idx ON public.tier_limits USING btree (price_yearly_usd);
+
+CREATE INDEX tier_limits_support_level_idx ON public.tier_limits USING btree (support_level);
 
 CREATE UNIQUE INDEX uniq_course_sub_categories_name_per_category ON public.course_sub_categories USING btree (category_id, name);
 
@@ -2073,6 +2097,46 @@ alter table "public"."published_file_library" add constraint "valid_file_extensi
 alter table "public"."published_file_library" validate constraint "valid_file_extension";
 
 alter table "public"."role_permissions" add constraint "role_permissions_role_permission_key" UNIQUE using index "role_permissions_role_permission_key";
+
+alter table "public"."tier_limits" add constraint "tier_limits_ai_usage_limit_monthly_check" CHECK (((ai_usage_limit_monthly IS NULL) OR (ai_usage_limit_monthly >= 0))) not valid;
+
+alter table "public"."tier_limits" validate constraint "tier_limits_ai_usage_limit_monthly_check";
+
+alter table "public"."tier_limits" add constraint "tier_limits_max_custom_domains_check" CHECK (((max_custom_domains IS NULL) OR (max_custom_domains >= 0))) not valid;
+
+alter table "public"."tier_limits" validate constraint "tier_limits_max_custom_domains_check";
+
+alter table "public"."tier_limits" add constraint "tier_limits_max_free_courses_per_org_check" CHECK ((max_free_courses_per_org >= 0)) not valid;
+
+alter table "public"."tier_limits" validate constraint "tier_limits_max_free_courses_per_org_check";
+
+alter table "public"."tier_limits" add constraint "tier_limits_max_members_per_org_check" CHECK ((max_members_per_org >= 0)) not valid;
+
+alter table "public"."tier_limits" validate constraint "tier_limits_max_members_per_org_check";
+
+alter table "public"."tier_limits" add constraint "tier_limits_max_organizations_per_user_check" CHECK ((max_organizations_per_user >= 0)) not valid;
+
+alter table "public"."tier_limits" validate constraint "tier_limits_max_organizations_per_user_check";
+
+alter table "public"."tier_limits" add constraint "tier_limits_paystack_plan_code_key" UNIQUE using index "tier_limits_paystack_plan_code_key";
+
+alter table "public"."tier_limits" add constraint "tier_limits_paystack_plan_id_key" UNIQUE using index "tier_limits_paystack_plan_id_key";
+
+alter table "public"."tier_limits" add constraint "tier_limits_platform_fee_percentage_check" CHECK (((platform_fee_percentage >= (0)::numeric) AND (platform_fee_percentage <= (100)::numeric))) not valid;
+
+alter table "public"."tier_limits" validate constraint "tier_limits_platform_fee_percentage_check";
+
+alter table "public"."tier_limits" add constraint "tier_limits_price_monthly_usd_check" CHECK ((price_monthly_usd >= (0)::numeric)) not valid;
+
+alter table "public"."tier_limits" validate constraint "tier_limits_price_monthly_usd_check";
+
+alter table "public"."tier_limits" add constraint "tier_limits_price_yearly_usd_check" CHECK ((price_yearly_usd >= (0)::numeric)) not valid;
+
+alter table "public"."tier_limits" validate constraint "tier_limits_price_yearly_usd_check";
+
+alter table "public"."tier_limits" add constraint "tier_limits_storage_limit_mb_per_org_check" CHECK ((storage_limit_mb_per_org >= 0)) not valid;
+
+alter table "public"."tier_limits" validate constraint "tier_limits_storage_limit_mb_per_org_check";
 
 alter table "public"."user_notifications" add constraint "user_notifications_user_id_fkey" FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE not valid;
 
@@ -5754,6 +5818,48 @@ AS $function$
     where om.organization_id = arg_org_id
       and lower(p.email) = lower(user_email)
   )
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.notify_tier_limits_change()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+declare
+  project_url text;
+  publishable_key text;
+  endpoint text;
+begin
+  -- Fetch secrets inline from Vault (explicit schema)
+  select decrypted_secret into project_url 
+  from vault.decrypted_secrets 
+  where name = 'project_url';
+
+  select decrypted_secret into publishable_key
+  from vault.decrypted_secrets
+  where name = 'publishable_key';
+
+  -- Build Edge Function URL
+  endpoint := project_url || '/functions/v1/tier-limits-updated';
+
+  -- Call Edge Function (explicit extension schema)
+  perform net.http_post(
+    url := endpoint,
+    headers := jsonb_build_object(
+      'Content-Type', 'application/json',
+      'Authorization', 'Bearer ' || publishable_key
+    ),
+    body := jsonb_build_object(
+      'event', TG_OP,
+      'table', TG_TABLE_NAME,
+      'row', row_to_json(NEW)
+    )
+  );
+
+  return NEW;
+end;
 $function$
 ;
 
@@ -11286,6 +11392,12 @@ CREATE TRIGGER trg_update_published_course_version BEFORE UPDATE ON public.publi
 CREATE TRIGGER trg_set_file_type BEFORE INSERT OR UPDATE ON public.published_file_library FOR EACH ROW EXECUTE FUNCTION public.set_file_type_from_extension();
 
 CREATE TRIGGER trg_update_timestamp BEFORE UPDATE ON public.published_file_library FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+CREATE TRIGGER tr_after_insert_tier_limits_notify AFTER INSERT ON public.tier_limits FOR EACH ROW EXECUTE FUNCTION public.notify_tier_limits_change();
+
+CREATE TRIGGER tr_after_update_tier_limits_notify AFTER UPDATE ON public.tier_limits FOR EACH ROW EXECUTE FUNCTION public.notify_tier_limits_change();
+
+CREATE TRIGGER trg_tier_limits_updated_at BEFORE UPDATE ON public.tier_limits FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
 CREATE TRIGGER trg_user_notification_email_dispatch AFTER INSERT ON public.user_notifications FOR EACH ROW EXECUTE FUNCTION public.trigger_user_notification_email_dispatch();
 

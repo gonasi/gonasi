@@ -2033,51 +2033,69 @@ export type Database = {
           ai_tools_enabled: boolean
           ai_usage_limit_monthly: number | null
           analytics_level: Database["public"]["Enums"]["analytics_level"]
+          created_at: string
           custom_domains_enabled: boolean
           max_custom_domains: number | null
           max_free_courses_per_org: number
           max_members_per_org: number
           max_organizations_per_user: number
+          paystack_plan_code: string | null
+          paystack_plan_id: string | null
+          plan_currency: string
+          plan_interval: string
           platform_fee_percentage: number
           price_monthly_usd: number
           price_yearly_usd: number
           storage_limit_mb_per_org: number
           support_level: Database["public"]["Enums"]["support_level"]
           tier: Database["public"]["Enums"]["subscription_tier"]
+          updated_at: string
           white_label_enabled: boolean
         }
         Insert: {
           ai_tools_enabled?: boolean
           ai_usage_limit_monthly?: number | null
           analytics_level: Database["public"]["Enums"]["analytics_level"]
+          created_at?: string
           custom_domains_enabled?: boolean
           max_custom_domains?: number | null
           max_free_courses_per_org: number
           max_members_per_org: number
           max_organizations_per_user: number
+          paystack_plan_code?: string | null
+          paystack_plan_id?: string | null
+          plan_currency?: string
+          plan_interval?: string
           platform_fee_percentage?: number
           price_monthly_usd?: number
           price_yearly_usd?: number
           storage_limit_mb_per_org: number
           support_level: Database["public"]["Enums"]["support_level"]
           tier: Database["public"]["Enums"]["subscription_tier"]
+          updated_at?: string
           white_label_enabled?: boolean
         }
         Update: {
           ai_tools_enabled?: boolean
           ai_usage_limit_monthly?: number | null
           analytics_level?: Database["public"]["Enums"]["analytics_level"]
+          created_at?: string
           custom_domains_enabled?: boolean
           max_custom_domains?: number | null
           max_free_courses_per_org?: number
           max_members_per_org?: number
           max_organizations_per_user?: number
+          paystack_plan_code?: string | null
+          paystack_plan_id?: string | null
+          plan_currency?: string
+          plan_interval?: string
           platform_fee_percentage?: number
           price_monthly_usd?: number
           price_yearly_usd?: number
           storage_limit_mb_per_org?: number
           support_level?: Database["public"]["Enums"]["support_level"]
           tier?: Database["public"]["Enums"]["subscription_tier"]
+          updated_at?: string
           white_label_enabled?: boolean
         }
         Relationships: []

@@ -15198,6 +15198,90 @@
           "maxLength": null
         },
         {
+          "id": "public.tier_limits.paystack_plan_id",
+          "name": "paystack_plan_id",
+          "columnName": "paystack_plan_id",
+          "type": "text",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.tier_limits.paystack_plan_code",
+          "name": "paystack_plan_code",
+          "columnName": "paystack_plan_code",
+          "type": "text",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.tier_limits.plan_currency",
+          "name": "plan_currency",
+          "columnName": "plan_currency",
+          "type": "text",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.tier_limits.plan_interval",
+          "name": "plan_interval",
+          "columnName": "plan_interval",
+          "type": "text",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.tier_limits.created_at",
+          "name": "created_at",
+          "columnName": "created_at",
+          "type": "timestamptz",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.tier_limits.updated_at",
+          "name": "updated_at",
+          "columnName": "updated_at",
+          "type": "timestamptz",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
           "name": "organization_subscriptions",
           "type": "organization_subscriptions",
           "isRequired": false,
@@ -15227,6 +15311,20 @@
         }
       ],
       "uniqueConstraints": [
+        {
+          "name": "tier_limits_paystack_plan_code_key",
+          "fields": [
+            "paystack_plan_code"
+          ],
+          "nullNotDistinct": false
+        },
+        {
+          "name": "tier_limits_paystack_plan_id_key",
+          "fields": [
+            "paystack_plan_id"
+          ],
+          "nullNotDistinct": false
+        },
         {
           "name": "tier_limits_pkey",
           "fields": [
