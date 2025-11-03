@@ -7,13 +7,14 @@ import { buttonVariants } from '../../ui/button';
 import { TopNavLink } from './top-nav-link';
 
 import { AppLogo } from '~/components/app-logo';
-import type { UserProfileLoaderReturnType } from '~/root';
+import type { UserProfileLoaderReturnType, UserRoleLoaderReturnType } from '~/root';
 
 interface Props {
   user: UserProfileLoaderReturnType;
+  userRole: UserRoleLoaderReturnType;
 }
 
-export function TopNav({ user }: Props) {
+export function TopNav({ user, userRole }: Props) {
   return (
     <nav className='border-b-card hidden h-16 w-full items-center border-b md:flex md:h-20 md:px-4'>
       <Container className='h-full'>
@@ -30,7 +31,7 @@ export function TopNav({ user }: Props) {
           </div>
           {user ? (
             <div>
-              <ProfileDropdown user={user} />
+              <ProfileDropdown user={user} userRole={userRole} />
             </div>
           ) : (
             <div className='flex space-x-2'>

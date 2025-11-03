@@ -1,5 +1,6 @@
 import { Outlet } from 'react-router';
 
+import { getUserRole } from '@gonasi/database/auth';
 import { fetchActiveOrganizationAndMember } from '@gonasi/database/organizations';
 
 import type { Route } from './+types/profile-wrapper-layout';
@@ -11,9 +12,13 @@ import { useStore } from '~/store';
 
 export async function loader({ request }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
-  const data = await fetchActiveOrganizationAndMember(supabase);
 
-  return data; // shape: { organization, member } | null
+  const [data, userRole] = await Promise.all([
+    fetchActiveOrganizationAndMember(supabase),
+    getUserRole(supabase),
+  ]);
+
+  return { data, userRole }; // shape: { organization, member } | null
 }
 
 export default function ProfileWrapperLayout({ loaderData }: Route.ComponentProps) {
@@ -26,13 +31,14 @@ export default function ProfileWrapperLayout({ loaderData }: Route.ComponentProp
       ) : activeUserProfile ? (
         <ProfileTopNav
           user={activeUserProfile}
-          organization={loaderData?.organization}
-          member={loaderData?.member ?? undefined}
+          userRole={loaderData.userRole}
+          organization={loaderData?.data?.organization}
+          member={loaderData?.data?.member ?? undefined}
           showBackArrow
           loading={isActiveUserProfileLoading}
         />
       ) : (
-        <TopNav user={activeUserProfile} />
+        <TopNav user={activeUserProfile} userRole={loaderData.userRole} />
       )}
 
       <section className='container mx-auto min-h-screen'>

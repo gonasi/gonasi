@@ -7,7 +7,7 @@ import { PlainAvatar } from '~/components/avatars';
 import { BackArrowNavLink } from '~/components/ui/button';
 import { useDashboardLinks } from '~/hooks/useDashboardLinks';
 import { cn } from '~/lib/utils';
-import type { UserProfileLoaderReturnType } from '~/root';
+import type { UserProfileLoaderReturnType, UserRoleLoaderReturnType } from '~/root';
 import type {
   MemberLoaderData,
   OrganizationLoaderData,
@@ -15,6 +15,7 @@ import type {
 
 interface ProfileTopNavProps {
   user: UserProfileLoaderReturnType;
+  userRole: UserRoleLoaderReturnType;
   organization?: OrganizationLoaderData;
   member?: MemberLoaderData;
   showBackArrow?: boolean;
@@ -23,6 +24,7 @@ interface ProfileTopNavProps {
 
 export function ProfileTopNav({
   user,
+  userRole,
   organization,
   showBackArrow = true,
   member,
@@ -79,6 +81,7 @@ export function ProfileTopNav({
                 <div className={cn(user.mode === 'personal' ? 'block' : 'hidden md:block')}>
                   <ProfileDropdown
                     user={user}
+                    userRole={userRole}
                     size='sm'
                     organization={organization}
                     member={member}

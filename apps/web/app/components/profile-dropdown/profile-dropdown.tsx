@@ -1,6 +1,8 @@
 import { Link, useLocation } from 'react-router';
 import { ChevronsUpDown, LayoutDashboard, Settings, User } from 'lucide-react';
 
+import { isGoSuOrGoAdminOrGoStaff } from '@gonasi/utils/roleFunctions';
+
 import { type AvatarSize, UserAvatar } from '../avatars';
 import { getBadgeColorClass } from '../cards/organization-switcher';
 import { Badge } from '../ui/badge';
@@ -16,7 +18,7 @@ import {
   DropdownMenuTrigger,
 } from '~/components/ui/dropdown-menu';
 import { cn } from '~/lib/utils';
-import type { UserProfileLoaderReturnType } from '~/root';
+import type { UserProfileLoaderReturnType, UserRoleLoaderReturnType } from '~/root';
 import type {
   MemberLoaderData,
   OrganizationLoaderData,
@@ -24,6 +26,7 @@ import type {
 
 interface Props {
   user: UserProfileLoaderReturnType;
+  userRole: UserRoleLoaderReturnType;
   dropdownPosition?: 'top' | 'bottom' | 'left' | 'right';
   dropdownAlign?: 'start' | 'center' | 'end';
   size?: AvatarSize;
@@ -33,6 +36,7 @@ interface Props {
 
 export function ProfileDropdown({
   user,
+  userRole,
   dropdownPosition = 'bottom',
   dropdownAlign = 'end',
   size,
@@ -57,6 +61,14 @@ export function ProfileDropdown({
     label: 'Settings',
     icon: Settings,
   };
+
+  const gonasiLink = {
+    to: `/gonasi/dashboard`,
+    label: 'Gonasi',
+    icon: Settings,
+  };
+
+  const isGoNasi = isGoSuOrGoAdminOrGoStaff(userRole);
 
   return (
     <DropdownMenu>
@@ -103,6 +115,18 @@ export function ProfileDropdown({
           </div>
         </DropdownMenuLabel>
 
+        {isGoNasi && (
+          <>
+            <DropdownMenuSeparator />
+
+            <DropdownMenuItem asChild className='group cursor-pointer'>
+              <Link to={gonasiLink.to} className='flex items-center space-x-2'>
+                <gonasiLink.icon className='h-4 w-4 transition-transform duration-200 group-hover:scale-105' />
+                <span>{gonasiLink.label}</span>
+              </Link>
+            </DropdownMenuItem>
+          </>
+        )}
         <DropdownMenuSeparator />
 
         <DropdownMenuGroup>

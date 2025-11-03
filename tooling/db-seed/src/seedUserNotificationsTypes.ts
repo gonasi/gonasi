@@ -17,7 +17,7 @@ const user_notifications_types = [
     default_email: true,
     title_template: 'Purchase successful',
     body_template:
-      'You have successfully purchased {{course_name}}. You now have full access to the course.',
+      'You have successfully purchased {{course_title}}. You now have full access to the course.',
   },
   {
     key: 'course_purchase_failed',
@@ -26,7 +26,7 @@ const user_notifications_types = [
     default_email: true,
     title_template: 'Purchase failed',
     body_template:
-      'Your attempt to purchase {{course_name}} was unsuccessful. Reason: {{error_message}}.',
+      'Your attempt to purchase {{course_title}} was unsuccessful. Reason: {{error_message}}.',
   },
   {
     key: 'course_refund_processed',
@@ -35,7 +35,7 @@ const user_notifications_types = [
     default_email: true,
     title_template: 'Refund issued',
     body_template:
-      'A refund for {{course_name}} has been processed. Amount refunded: {{amount}} {{currency}}.',
+      'A refund for {{course_title}} has been processed. Amount refunded: {{amount}} {{currency}}.',
   },
   {
     key: 'course_subscription_started',
@@ -44,7 +44,7 @@ const user_notifications_types = [
     default_email: true,
     title_template: 'Subscription activated',
     body_template:
-      'Your subscription for {{course_name}} has started. Billing cycle: {{billing_cycle}}.',
+      'Your subscription for {{course_title}} has started. Billing cycle: {{billing_cycle}}.',
   },
   {
     key: 'course_subscription_renewed',
@@ -52,7 +52,7 @@ const user_notifications_types = [
     default_in_app: true,
     default_email: true,
     title_template: 'Subscription renewed',
-    body_template: 'Your subscription for {{course_name}} has been renewed successfully.',
+    body_template: 'Your subscription for {{course_title}} has been renewed successfully.',
   },
   {
     key: 'course_subscription_failed',
@@ -61,7 +61,7 @@ const user_notifications_types = [
     default_email: true,
     title_template: 'Subscription renewal failed',
     body_template:
-      'We were unable to renew your subscription for {{course_name}}. Reason: {{error_message}}.',
+      'We were unable to renew your subscription for {{course_title}}. Reason: {{error_message}}.',
   },
   {
     key: 'course_subscription_expiring',
@@ -69,7 +69,7 @@ const user_notifications_types = [
     default_in_app: true,
     default_email: true,
     title_template: 'Subscription expiring soon',
-    body_template: 'Your subscription for {{course_name}} will expire on {{expiry_date}}.',
+    body_template: 'Your subscription for {{course_title}} will expire on {{expiry_date}}.',
   },
   {
     key: 'course_enrollment_free_success',
@@ -78,7 +78,7 @@ const user_notifications_types = [
     default_email: true,
     title_template: 'Enrollment successful',
     body_template:
-      'You have successfully enrolled in the free course {{course_name}}. You now have full access.',
+      'You have successfully enrolled in the free course {{course_title}}. You now have full access.',
   },
 
   // ============================
@@ -90,7 +90,7 @@ const user_notifications_types = [
     default_in_app: true,
     default_email: false,
     title_template: 'Lesson completed',
-    body_template: 'You just completed {{lesson_name}} in {{course_name}}. Great job!',
+    body_template: 'You just completed {{lesson_name}} in {{course_title}}. Great job!',
   },
   {
     key: 'course_completed',
@@ -98,7 +98,7 @@ const user_notifications_types = [
     default_in_app: true,
     default_email: true,
     title_template: 'Course completed',
-    body_template: 'Congratulations! You’ve completed the entire course {{course_name}}.',
+    body_template: 'Congratulations! You’ve completed the entire course {{course_title}}.',
   },
   {
     key: 'streak_reminder',
@@ -106,7 +106,8 @@ const user_notifications_types = [
     default_in_app: true,
     default_email: true,
     title_template: 'Keep your streak alive',
-    body_template: 'You haven’t learned today. Continue {{course_name}} to keep your streak going.',
+    body_template:
+      'You haven’t learned today. Continue {{course_title}} to keep your streak going.',
   },
   {
     key: 'new_chapter_unlocked',
@@ -114,7 +115,7 @@ const user_notifications_types = [
     default_in_app: true,
     default_email: true,
     title_template: 'New chapter unlocked',
-    body_template: 'A new chapter "{{chapter_name}}" is now available in {{course_name}}.',
+    body_template: 'A new chapter "{{chapter_name}}" is now available in {{course_title}}.',
   },
 
   // ============================

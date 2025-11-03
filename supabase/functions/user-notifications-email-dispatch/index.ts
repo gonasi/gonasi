@@ -39,22 +39,25 @@ async function processMessage(
 ): Promise<{ success: boolean; error?: any }> {
   const { notification_id, user_id, title, body, payload } = message.message;
 
+  console.log('📦 Email payload:', JSON.stringify(payload, null, 2));
+
   try {
     console.log(`Processing notification ${notification_id} for user ${user_id}`);
 
     // Get user email
     const { data: userData, error: userError } = await supabase
-      .from('users')
+      .from('profiles')
       .select('email')
       .eq('id', user_id)
       .single();
 
     if (userError || !userData?.email) {
-      console.error(`⚠️ User not found or no email: ${user_id}`);
+      console.error(`⚠️ User not found or no email: userId: ${user_id}`);
+      console.error(`⚠️ Error: ${userError}`);
       // Delete message from queue (can't process without email)
       await supabase.schema('pgmq_public').rpc('delete', {
         queue_name: QUEUE_NAME,
-        msg_id: message.msg_id,
+        message_id: message.msg_id,
       });
       return { success: false, error: 'User email not found' };
     }
@@ -73,7 +76,7 @@ async function processMessage(
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: 'noreply@gonasi.com',
+        from: 'Gonasi Notifications <no-reply@mail.gonasi.com>',
         to: userData.email,
         subject: emailTitle,
         html: `
@@ -118,7 +121,7 @@ async function processMessage(
     // Delete message from queue (successfully processed)
     const { error: deleteError } = await supabase.schema('pgmq_public').rpc('delete', {
       queue_name: QUEUE_NAME,
-      msg_id: message.msg_id,
+      message_id: message.msg_id,
     });
 
     if (deleteError) {

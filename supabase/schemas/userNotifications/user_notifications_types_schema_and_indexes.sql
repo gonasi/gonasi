@@ -19,7 +19,7 @@
 --
 --   Important Notes:
 --     - Notification *behaviors* should NEVER be stored here; only metadata.
---     - Templates can use placeholders like {{course_name}} or {{amount}}.
+--     - Templates can use placeholders like {{course_title}} or {{amount}}.
 --       The backend function (e.g. insert_user_notification) is responsible
 --       for injecting variables before sending emails or storing in-app messages.
 --     - Changing a template does NOT affect previously sent notifications.

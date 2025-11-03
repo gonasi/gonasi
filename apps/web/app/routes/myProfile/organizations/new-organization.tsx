@@ -51,7 +51,7 @@ export async function action({ request }: Route.ActionArgs) {
     return dataWithError(null, result.message);
   }
 
-  return redirectWithSuccess(`/${result.data}/settings/profile`, result.message);
+  return redirectWithSuccess(`/${result.data}/dashboard`, result.message);
 }
 
 export default function NewOrganization({ params }: Route.ComponentProps) {

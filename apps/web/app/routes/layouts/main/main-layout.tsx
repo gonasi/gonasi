@@ -1,13 +1,26 @@
 import { useEffect } from 'react';
 import { Outlet, useNavigate } from 'react-router';
 
+import { getUserRole } from '@gonasi/database/auth';
+
+import type { Route } from './+types/main-layout';
+
 import { Footer } from '~/components/footer';
 import { Spinner } from '~/components/loaders';
 import { BottomNav } from '~/components/navigation/bottom-nav/bottom-nav';
 import { TopNav } from '~/components/navigation/top-nav';
+import { createClient } from '~/lib/supabase/supabase.server';
 import { useStore } from '~/store';
 
-export default function MainLayout() {
+export async function loader({ request }: Route.LoaderArgs) {
+  const { supabase } = createClient(request);
+
+  const userRole = await getUserRole(supabase);
+
+  return userRole;
+}
+
+export default function MainLayout({ loaderData }: Route.ComponentProps) {
   const navigate = useNavigate();
   const { activeUserProfile, isActiveUserProfileLoading } = useStore();
 
@@ -28,7 +41,7 @@ export default function MainLayout() {
 
   return (
     <div>
-      <TopNav user={activeUserProfile} />
+      <TopNav user={activeUserProfile} userRole={loaderData} />
       <section className='container mx-auto min-h-screen'>
         <Outlet />
       </section>

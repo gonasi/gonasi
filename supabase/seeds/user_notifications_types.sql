@@ -7,56 +7,56 @@ values
     'commerce',
     true, true,
     'Purchase successful',
-    'You have successfully purchased {{course_name}}. You now have full access to the course.'
+    'You have successfully purchased {{course_title}}. You now have full access to the course.'
   ),
   (
     'course_purchase_failed',
     'commerce',
     true, true,
     'Purchase failed',
-    'Your attempt to purchase {{course_name}} was unsuccessful. Reason: {{error_message}}.'
+    'Your attempt to purchase {{course_title}} was unsuccessful. Reason: {{error_message}}.'
   ),
   (
     'course_refund_processed',
     'commerce',
     true, true,
     'Refund issued',
-    'A refund for {{course_name}} has been processed. Amount refunded: {{amount}} {{currency}}.'
+    'A refund for {{course_title}} has been processed. Amount refunded: {{amount}} {{currency}}.'
   ),
   (
     'course_subscription_started',
     'commerce',
     true, true,
     'Subscription activated',
-    'Your subscription for {{course_name}} has started. Billing cycle: {{billing_cycle}}.'
+    'Your subscription for {{course_title}} has started. Billing cycle: {{billing_cycle}}.'
   ),
   (
     'course_subscription_renewed',
     'commerce',
     true, true,
     'Subscription renewed',
-    'Your subscription for {{course_name}} has been renewed successfully.'
+    'Your subscription for {{course_title}} has been renewed successfully.'
   ),
   (
     'course_subscription_failed',
     'commerce',
     true, true,
     'Subscription renewal failed',
-    'We were unable to renew your subscription for {{course_name}}. Reason: {{error_message}}.'
+    'We were unable to renew your subscription for {{course_title}}. Reason: {{error_message}}.'
   ),
   (
     'course_subscription_expiring',
     'commerce',
     true, true,
     'Subscription expiring soon',
-    'Your subscription for {{course_name}} will expire on {{expiry_date}}.'
+    'Your subscription for {{course_title}} will expire on {{expiry_date}}.'
   ),
-    (
+  (
     'course_enrollment_free_success',
     'commerce',
     true, true,
     'Enrollment successful',
-    'You have successfully enrolled in the free course {{course_name}}. You now have full access.'
+    'You have successfully enrolled in the free course {{course_title}}. You now have full access.'
   ),
 
 
@@ -66,28 +66,28 @@ values
     'learning',
     true, false,
     'Lesson completed',
-    'You just completed {{lesson_name}} in {{course_name}}. Great job!'
+    'You just completed {{lesson_name}} in {{course_title}}. Great job!'
   ),
   (
     'course_completed',
     'learning',
     true, true,
     'Course completed',
-    'Congratulations! You’ve completed the entire course {{course_name}}.'
+    'Congratulations! You’ve completed the entire course {{course_title}}.'
   ),
   (
     'streak_reminder',
     'learning',
     true, true,
     'Keep your streak alive',
-    'You haven’t learned today. Continue {{course_name}} to keep your streak going.'
+    'You haven’t learned today. Continue {{course_title}} to keep your streak going.'
   ),
   (
     'new_chapter_unlocked',
     'learning',
     true, true,
     'New chapter unlocked',
-    'A new chapter "{{chapter_name}}" is now available in {{course_name}}.'
+    'A new chapter "{{chapter_name}}" is now available in {{course_title}}.'
   ),
 
   -- Billing

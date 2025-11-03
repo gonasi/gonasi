@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Outlet, redirect } from 'react-router';
 import { Info } from 'lucide-react';
 
+import { getUserRole } from '@gonasi/database/auth';
 import { verifyAndSetActiveOrganization } from '@gonasi/database/organizations';
 
 import type { Route } from './+types/organizations-layout';
@@ -57,13 +58,16 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     throw new Response('Organization ID is required', { status: 400 });
   }
 
-  const result = await verifyAndSetActiveOrganization({ supabase, organizationId });
+  const [result, userRole] = await Promise.all([
+    verifyAndSetActiveOrganization({ supabase, organizationId }),
+    getUserRole(supabase),
+  ]);
 
   if (!result.success || !result.data) {
     throw redirect('/');
   }
 
-  return { ...result.data, message: result.message };
+  return { ...result.data, message: result.message, userRole };
 }
 
 export default function OrganizationsPlainLayout({ loaderData }: Route.ComponentProps) {
@@ -86,6 +90,7 @@ export default function OrganizationsPlainLayout({ loaderData }: Route.Component
       <div className='md:pl-64'>
         <ProfileTopNav
           user={activeUserProfile}
+          userRole={loaderData.userRole}
           organization={organization}
           member={member}
           loading={isActiveUserProfileLoading}

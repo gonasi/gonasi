@@ -85,7 +85,7 @@ export const createNewOrganization = async (
     return {
       success: true,
       message: '🎉 Organization created successfully!',
-      data: data.handle,
+      data: data.id,
     };
   } catch (err) {
     console.error('[createNewOrganization] Unexpected error:', err);

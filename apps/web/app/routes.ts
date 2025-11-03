@@ -28,6 +28,10 @@ export default [
     ),
   ]),
 
+  layout('routes/layouts/gonasi/gonasi-layout.tsx', [
+    route('gonasi/dashboard', 'routes/gonasi/dashboard/gonasi-dashboard-index.tsx'),
+  ]),
+
   route(
     'c/:publishedCourseId/:publishedChapterId/:publishedLessonId/play',
     'routes/publishedCourses/lesson-play/lesson-play-index.tsx',
