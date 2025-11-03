@@ -58,7 +58,9 @@ export default [
   route('i/org-invites/accept', 'routes/invites/accept-org-invite.tsx'),
 
   layout('routes/layouts/organizations/organizations-layout.tsx', [
-    route(':organizationId/dashboard', 'routes/organizations/dashboard/dashboard-index.tsx'),
+    route(':organizationId/dashboard', 'routes/organizations/dashboard/dashboard-index.tsx', [
+      route('subscriptions', 'routes/organizations/dashboard/subscriptions-index.tsx'),
+    ]),
 
     route(
       'api/dashboard/fetch-total-courses-stats/:organizationId',

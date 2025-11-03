@@ -152,11 +152,16 @@ export function OrganizationPlanCard() {
         {/* --------------------------------------------- */}
         {/* Dynamic Upgrade CTA */}
         {/* --------------------------------------------- */}
-        {nextPlan && (
-          <NavLinkButton to='' rightIcon={<ArrowUpRight />} className='w-full' variant='secondary'>
-            Upgrade to {nextPlan.charAt(0).toUpperCase() + nextPlan.slice(1)}
-          </NavLinkButton>
-        )}
+        <NavLinkButton
+          to={`/${organizationId}/dashboard/subscriptions`}
+          rightIcon={<ArrowUpRight />}
+          className='w-full'
+          variant='secondary'
+        >
+          {nextPlan
+            ? `Upgrade to ${nextPlan.charAt(0).toUpperCase() + nextPlan.slice(1)} Plan`
+            : 'Manage Subscriptions'}
+        </NavLinkButton>
       </CardContent>
     </Card>
   );
