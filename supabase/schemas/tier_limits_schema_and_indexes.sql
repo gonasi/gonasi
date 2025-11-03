@@ -91,19 +91,19 @@ create policy "Authorized users can insert tier limits"
   on public.tier_limits
   for insert
   to authenticated
-  with check ((select authorize('pricing_tier.crud')));
+  with check (authorize('go_su_create'));
 
 -- Allow authorized users to update tier limits
 create policy "Authorized users can update tier limits"
   on public.tier_limits
   for update
   to authenticated
-  using ((select authorize('pricing_tier.crud')));
+  using (authorize('go_su_update'));
 
 -- Allow authorized users to delete tier limits
 create policy "Authorized users can delete tier limits"
   on public.tier_limits
   for delete
   to authenticated
-  using ((select authorize('pricing_tier.crud')));
+  using (authorize('go_su_delete'));
 

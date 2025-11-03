@@ -1,10 +1,10 @@
 create type "public"."analytics_level" as enum ('basic', 'intermediate', 'advanced', 'enterprise');
 
-create type "public"."app_permission" as enum ('course_categories.insert', 'course_categories.update', 'course_categories.delete', 'course_sub_categories.insert', 'course_sub_categories.update', 'course_sub_categories.delete', 'featured_courses_pricing.insert', 'featured_courses_pricing.update', 'featured_courses_pricing.delete', 'lesson_types.insert', 'lesson_types.update', 'lesson_types.delete', 'pricing_tier.crud', 'go_wallet.view', 'go_wallet.withdraw', 'go_su_create', 'go_su_read', 'go_su_update', 'go_su_delete', 'go_admin_create', 'go_admin_read', 'go_admin_update', 'go_admin_delete', 'go_staff_create', 'go_staff_read', 'go_staff_update', 'go_staff_delete');
+create type "public"."app_permission" as enum ('go_su_create', 'go_su_read', 'go_su_update', 'go_su_delete', 'go_admin_create', 'go_admin_read', 'go_admin_update', 'go_admin_delete', 'go_staff_create', 'go_staff_read', 'go_staff_update', 'go_staff_delete');
 
 create type "public"."app_role" as enum ('go_su', 'go_admin', 'go_staff', 'user');
 
-create type "public"."course_access" as enum ('public', 'private');
+create type "public"."course_access" as enum ('public', 'unlisted', 'private');
 
 create type "public"."currency_code" as enum ('KES', 'USD');
 
@@ -1408,7 +1408,7 @@ alter table "public"."chapters" validate constraint "chapters_updated_by_fkey";
 
 alter table "public"."chapters" add constraint "unique_chapter_position_per_course" UNIQUE using index "unique_chapter_position_per_course";
 
-alter table "public"."course_categories" add constraint "course_categories_created_by_fkey" FOREIGN KEY (created_by) REFERENCES public.profiles(id) ON DELETE SET NULL not valid;
+alter table "public"."course_categories" add constraint "course_categories_created_by_fkey" FOREIGN KEY (created_by) REFERENCES auth.users(id) ON DELETE SET NULL not valid;
 
 alter table "public"."course_categories" validate constraint "course_categories_created_by_fkey";
 
@@ -1420,7 +1420,7 @@ alter table "public"."course_categories" add constraint "course_categories_name_
 
 alter table "public"."course_categories" validate constraint "course_categories_name_check";
 
-alter table "public"."course_categories" add constraint "course_categories_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES public.profiles(id) ON DELETE SET NULL not valid;
+alter table "public"."course_categories" add constraint "course_categories_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES auth.users(id) ON DELETE SET NULL not valid;
 
 alter table "public"."course_categories" validate constraint "course_categories_updated_by_fkey";
 
@@ -1530,7 +1530,7 @@ alter table "public"."course_sub_categories" add constraint "course_sub_categori
 
 alter table "public"."course_sub_categories" validate constraint "course_sub_categories_category_id_fkey";
 
-alter table "public"."course_sub_categories" add constraint "course_sub_categories_created_by_fkey" FOREIGN KEY (created_by) REFERENCES public.profiles(id) ON DELETE SET NULL not valid;
+alter table "public"."course_sub_categories" add constraint "course_sub_categories_created_by_fkey" FOREIGN KEY (created_by) REFERENCES auth.users(id) ON DELETE SET NULL not valid;
 
 alter table "public"."course_sub_categories" validate constraint "course_sub_categories_created_by_fkey";
 
@@ -1538,7 +1538,7 @@ alter table "public"."course_sub_categories" add constraint "course_sub_categori
 
 alter table "public"."course_sub_categories" validate constraint "course_sub_categories_name_check";
 
-alter table "public"."course_sub_categories" add constraint "course_sub_categories_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES public.profiles(id) ON DELETE SET NULL not valid;
+alter table "public"."course_sub_categories" add constraint "course_sub_categories_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES auth.users(id) ON DELETE SET NULL not valid;
 
 alter table "public"."course_sub_categories" validate constraint "course_sub_categories_updated_by_fkey";
 
@@ -1648,13 +1648,13 @@ alter table "public"."lesson_reset_count" add constraint "lesson_reset_count_use
 
 alter table "public"."lesson_types" add constraint "lesson_types_bg_color_key" UNIQUE using index "lesson_types_bg_color_key";
 
-alter table "public"."lesson_types" add constraint "lesson_types_created_by_fkey" FOREIGN KEY (created_by) REFERENCES public.profiles(id) ON DELETE CASCADE not valid;
+alter table "public"."lesson_types" add constraint "lesson_types_created_by_fkey" FOREIGN KEY (created_by) REFERENCES auth.users(id) ON DELETE SET NULL not valid;
 
 alter table "public"."lesson_types" validate constraint "lesson_types_created_by_fkey";
 
 alter table "public"."lesson_types" add constraint "lesson_types_name_key" UNIQUE using index "lesson_types_name_key";
 
-alter table "public"."lesson_types" add constraint "lesson_types_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES public.profiles(id) ON DELETE SET NULL not valid;
+alter table "public"."lesson_types" add constraint "lesson_types_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES auth.users(id) ON DELETE SET NULL not valid;
 
 alter table "public"."lesson_types" validate constraint "lesson_types_updated_by_fkey";
 
@@ -8355,12 +8355,12 @@ end;
 $function$
 ;
 
-create or replace view "public"."v_organizations_ai_available_credits" as  SELECT org_id,
-    (base_credits_remaining + purchased_credits_remaining) AS total_available_credits,
-    base_credits_remaining,
-    purchased_credits_remaining,
-    last_reset_at,
-    next_reset_at
+create or replace view "public"."v_organizations_ai_available_credits" as  SELECT organizations_ai_credits.org_id,
+    (organizations_ai_credits.base_credits_remaining + organizations_ai_credits.purchased_credits_remaining) AS total_available_credits,
+    organizations_ai_credits.base_credits_remaining,
+    organizations_ai_credits.purchased_credits_remaining,
+    organizations_ai_credits.last_reset_at,
+    organizations_ai_credits.next_reset_at
    FROM public.organizations_ai_credits;
 
 
@@ -10136,7 +10136,7 @@ with check (public.can_user_edit_course(course_id));
   as permissive
   for delete
   to authenticated
-using (public.authorize('course_categories.delete'::public.app_permission));
+using ((public.authorize('go_su_delete'::public.app_permission) OR public.authorize('go_admin_delete'::public.app_permission) OR public.authorize('go_staff_delete'::public.app_permission)));
 
 
 
@@ -10145,7 +10145,7 @@ using (public.authorize('course_categories.delete'::public.app_permission));
   as permissive
   for insert
   to authenticated
-with check (( SELECT public.authorize('course_categories.insert'::public.app_permission) AS authorize));
+with check ((public.authorize('go_su_create'::public.app_permission) OR public.authorize('go_admin_create'::public.app_permission) OR public.authorize('go_staff_create'::public.app_permission)));
 
 
 
@@ -10163,7 +10163,7 @@ using (true);
   as permissive
   for update
   to authenticated
-using (public.authorize('course_categories.update'::public.app_permission));
+using ((public.authorize('go_su_update'::public.app_permission) OR public.authorize('go_admin_update'::public.app_permission) OR public.authorize('go_staff_update'::public.app_permission)));
 
 
 
@@ -10297,7 +10297,7 @@ using ((user_id = ( SELECT auth.uid() AS uid)));
   as permissive
   for delete
   to authenticated
-using (public.authorize('course_sub_categories.delete'::public.app_permission));
+using ((public.authorize('go_su_delete'::public.app_permission) OR public.authorize('go_admin_delete'::public.app_permission) OR public.authorize('go_staff_delete'::public.app_permission)));
 
 
 
@@ -10306,7 +10306,7 @@ using (public.authorize('course_sub_categories.delete'::public.app_permission));
   as permissive
   for insert
   to authenticated
-with check (( SELECT public.authorize('course_sub_categories.insert'::public.app_permission) AS authorize));
+with check ((public.authorize('go_su_create'::public.app_permission) OR public.authorize('go_admin_create'::public.app_permission) OR public.authorize('go_staff_create'::public.app_permission)));
 
 
 
@@ -10324,7 +10324,7 @@ using (true);
   as permissive
   for update
   to authenticated
-using (public.authorize('course_sub_categories.update'::public.app_permission));
+using ((public.authorize('go_su_update'::public.app_permission) OR public.authorize('go_admin_update'::public.app_permission) OR public.authorize('go_staff_update'::public.app_permission)));
 
 
 
@@ -10414,7 +10414,7 @@ with check ((EXISTS ( SELECT 1
   as permissive
   for select
   to authenticated
-using (( SELECT public.authorize('go_wallet.view'::public.app_permission) AS authorize));
+using ((public.authorize('go_su_read'::public.app_permission) OR public.authorize('go_admin_read'::public.app_permission)));
 
 
 
@@ -10570,39 +10570,39 @@ using ((user_id = ( SELECT auth.uid() AS uid)));
 
 
 
-  create policy "Authenticated users can delete lesson types"
+  create policy "lesson_types_delete_authenticated"
   on "public"."lesson_types"
   as permissive
   for delete
   to authenticated
-using (( SELECT public.authorize('lesson_types.delete'::public.app_permission) AS authorize));
+using ((public.authorize('go_su_delete'::public.app_permission) OR public.authorize('go_admin_delete'::public.app_permission) OR public.authorize('go_staff_delete'::public.app_permission)));
 
 
 
-  create policy "Authenticated users can insert lesson types"
+  create policy "lesson_types_insert_authenticated"
   on "public"."lesson_types"
   as permissive
   for insert
   to authenticated
-with check (( SELECT public.authorize('lesson_types.insert'::public.app_permission) AS authorize));
+with check ((public.authorize('go_su_create'::public.app_permission) OR public.authorize('go_admin_create'::public.app_permission) OR public.authorize('go_staff_create'::public.app_permission)));
 
 
 
-  create policy "Authenticated users can update lesson types"
-  on "public"."lesson_types"
-  as permissive
-  for update
-  to authenticated
-using (( SELECT public.authorize('lesson_types.update'::public.app_permission) AS authorize));
-
-
-
-  create policy "Public can read lesson types"
+  create policy "lesson_types_select_public"
   on "public"."lesson_types"
   as permissive
   for select
   to authenticated, anon
 using (true);
+
+
+
+  create policy "lesson_types_update_authenticated"
+  on "public"."lesson_types"
+  as permissive
+  for update
+  to authenticated
+using ((public.authorize('go_su_update'::public.app_permission) OR public.authorize('go_admin_update'::public.app_permission) OR public.authorize('go_staff_update'::public.app_permission)));
 
 
 
@@ -11075,7 +11075,7 @@ with check ((EXISTS ( SELECT 1
   as permissive
   for delete
   to authenticated
-using (( SELECT public.authorize('pricing_tier.crud'::public.app_permission) AS authorize));
+using (public.authorize('go_su_delete'::public.app_permission));
 
 
 
@@ -11084,7 +11084,7 @@ using (( SELECT public.authorize('pricing_tier.crud'::public.app_permission) AS 
   as permissive
   for insert
   to authenticated
-with check (( SELECT public.authorize('pricing_tier.crud'::public.app_permission) AS authorize));
+with check (public.authorize('go_su_create'::public.app_permission));
 
 
 
@@ -11093,7 +11093,7 @@ with check (( SELECT public.authorize('pricing_tier.crud'::public.app_permission
   as permissive
   for update
   to authenticated
-using (( SELECT public.authorize('pricing_tier.crud'::public.app_permission) AS authorize));
+using (public.authorize('go_su_update'::public.app_permission));
 
 
 

@@ -208,20 +208,6 @@
           "hasDefaultValue": false,
           "isId": false,
           "maxLength": null
-        },
-        {
-          "id": "pgmq.a_delete_course_progress_queue.headers",
-          "name": "headers",
-          "columnName": "headers",
-          "type": "jsonb",
-          "isRequired": false,
-          "kind": "scalar",
-          "isList": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false,
-          "isId": false,
-          "maxLength": null
         }
       ],
       "uniqueConstraints": [
@@ -313,20 +299,6 @@
           "id": "pgmq.a_user_notifications_email_queue.message",
           "name": "message",
           "columnName": "message",
-          "type": "jsonb",
-          "isRequired": false,
-          "kind": "scalar",
-          "isList": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false,
-          "isId": false,
-          "maxLength": null
-        },
-        {
-          "id": "pgmq.a_user_notifications_email_queue.headers",
-          "name": "headers",
-          "columnName": "headers",
           "type": "jsonb",
           "isRequired": false,
           "kind": "scalar",
@@ -2014,11 +1986,11 @@
           "maxLength": null
         },
         {
-          "name": "profiles_course_categories_created_byToprofiles",
-          "type": "profiles",
+          "name": "users_course_categories_created_byTousers",
+          "type": "users",
           "isRequired": false,
           "kind": "object",
-          "relationName": "course_categories_created_byToprofiles",
+          "relationName": "course_categories_created_byTousers",
           "relationFromFields": [
             "created_by"
           ],
@@ -2032,11 +2004,11 @@
           "hasDefaultValue": false
         },
         {
-          "name": "profiles_course_categories_updated_byToprofiles",
-          "type": "profiles",
+          "name": "users_course_categories_updated_byTousers",
+          "type": "users",
           "isRequired": false,
           "kind": "object",
-          "relationName": "course_categories_updated_byToprofiles",
+          "relationName": "course_categories_updated_byTousers",
           "relationFromFields": [
             "updated_by"
           ],
@@ -3827,29 +3799,11 @@
           "maxLength": null
         },
         {
-          "name": "course_categories",
-          "type": "course_categories",
-          "isRequired": true,
-          "kind": "object",
-          "relationName": "course_sub_categoriesTocourse_categories",
-          "relationFromFields": [
-            "category_id"
-          ],
-          "relationToFields": [
-            "id"
-          ],
-          "isList": false,
-          "isId": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false
-        },
-        {
-          "name": "profiles_course_sub_categories_created_byToprofiles",
-          "type": "profiles",
+          "name": "users_course_sub_categories_created_byTousers",
+          "type": "users",
           "isRequired": false,
           "kind": "object",
-          "relationName": "course_sub_categories_created_byToprofiles",
+          "relationName": "course_sub_categories_created_byTousers",
           "relationFromFields": [
             "created_by"
           ],
@@ -3863,13 +3817,31 @@
           "hasDefaultValue": false
         },
         {
-          "name": "profiles_course_sub_categories_updated_byToprofiles",
-          "type": "profiles",
+          "name": "users_course_sub_categories_updated_byTousers",
+          "type": "users",
           "isRequired": false,
           "kind": "object",
-          "relationName": "course_sub_categories_updated_byToprofiles",
+          "relationName": "course_sub_categories_updated_byTousers",
           "relationFromFields": [
             "updated_by"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "course_categories",
+          "type": "course_categories",
+          "isRequired": true,
+          "kind": "object",
+          "relationName": "course_sub_categoriesTocourse_categories",
+          "relationFromFields": [
+            "category_id"
           ],
           "relationToFields": [
             "id"
@@ -5221,7 +5193,7 @@
           "name": "headers",
           "columnName": "headers",
           "type": "jsonb",
-          "isRequired": false,
+          "isRequired": true,
           "kind": "scalar",
           "isList": false,
           "isGenerated": false,
@@ -6971,11 +6943,11 @@
           "maxLength": null
         },
         {
-          "name": "profiles_lesson_types_created_byToprofiles",
-          "type": "profiles",
+          "name": "users_lesson_types_created_byTousers",
+          "type": "users",
           "isRequired": false,
           "kind": "object",
-          "relationName": "lesson_types_created_byToprofiles",
+          "relationName": "lesson_types_created_byTousers",
           "relationFromFields": [
             "created_by"
           ],
@@ -6989,11 +6961,11 @@
           "hasDefaultValue": false
         },
         {
-          "name": "profiles_lesson_types_updated_byToprofiles",
-          "type": "profiles",
+          "name": "users_lesson_types_updated_byTousers",
+          "type": "users",
           "isRequired": false,
           "kind": "object",
-          "relationName": "lesson_types_updated_byToprofiles",
+          "relationName": "lesson_types_updated_byTousers",
           "relationFromFields": [
             "updated_by"
           ],
@@ -11350,34 +11322,6 @@
           "hasDefaultValue": false
         },
         {
-          "name": "course_categories_course_categories_created_byToprofiles",
-          "type": "course_categories",
-          "isRequired": false,
-          "kind": "object",
-          "relationName": "course_categories_created_byToprofiles",
-          "relationFromFields": [],
-          "relationToFields": [],
-          "isList": true,
-          "isId": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false
-        },
-        {
-          "name": "course_categories_course_categories_updated_byToprofiles",
-          "type": "course_categories",
-          "isRequired": false,
-          "kind": "object",
-          "relationName": "course_categories_updated_byToprofiles",
-          "relationFromFields": [],
-          "relationToFields": [],
-          "isList": true,
-          "isId": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false
-        },
-        {
           "name": "course_enrollment_activities",
           "type": "course_enrollment_activities",
           "isRequired": false,
@@ -11453,34 +11397,6 @@
           "isRequired": false,
           "kind": "object",
           "relationName": "course_progressToprofiles",
-          "relationFromFields": [],
-          "relationToFields": [],
-          "isList": true,
-          "isId": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false
-        },
-        {
-          "name": "course_sub_categories_course_sub_categories_created_byToprofiles",
-          "type": "course_sub_categories",
-          "isRequired": false,
-          "kind": "object",
-          "relationName": "course_sub_categories_created_byToprofiles",
-          "relationFromFields": [],
-          "relationToFields": [],
-          "isList": true,
-          "isId": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false
-        },
-        {
-          "name": "course_sub_categories_course_sub_categories_updated_byToprofiles",
-          "type": "course_sub_categories",
-          "isRequired": false,
-          "kind": "object",
-          "relationName": "course_sub_categories_updated_byToprofiles",
           "relationFromFields": [],
           "relationToFields": [],
           "isList": true,
@@ -11607,34 +11523,6 @@
           "isRequired": false,
           "kind": "object",
           "relationName": "lesson_reset_countToprofiles",
-          "relationFromFields": [],
-          "relationToFields": [],
-          "isList": true,
-          "isId": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false
-        },
-        {
-          "name": "lesson_types_lesson_types_created_byToprofiles",
-          "type": "lesson_types",
-          "isRequired": false,
-          "kind": "object",
-          "relationName": "lesson_types_created_byToprofiles",
-          "relationFromFields": [],
-          "relationToFields": [],
-          "isList": true,
-          "isId": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false
-        },
-        {
-          "name": "lesson_types_lesson_types_updated_byToprofiles",
-          "type": "lesson_types",
-          "isRequired": false,
-          "kind": "object",
-          "relationName": "lesson_types_updated_byToprofiles",
           "relationFromFields": [],
           "relationToFields": [],
           "isList": true,
@@ -12886,20 +12774,6 @@
           "hasDefaultValue": false,
           "isId": false,
           "maxLength": null
-        },
-        {
-          "id": "pgmq.q_delete_course_progress_queue.headers",
-          "name": "headers",
-          "columnName": "headers",
-          "type": "jsonb",
-          "isRequired": false,
-          "kind": "scalar",
-          "isList": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false,
-          "isId": false,
-          "maxLength": null
         }
       ],
       "uniqueConstraints": [
@@ -12981,20 +12855,6 @@
           "id": "pgmq.q_user_notifications_email_queue.message",
           "name": "message",
           "columnName": "message",
-          "type": "jsonb",
-          "isRequired": false,
-          "kind": "scalar",
-          "isList": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false,
-          "isId": false,
-          "maxLength": null
-        },
-        {
-          "id": "pgmq.q_user_notifications_email_queue.headers",
-          "name": "headers",
-          "columnName": "headers",
           "type": "jsonb",
           "isRequired": false,
           "kind": "scalar",
@@ -16744,6 +16604,90 @@
           "hasDefaultValue": false
         },
         {
+          "name": "course_categories_course_categories_created_byTousers",
+          "type": "course_categories",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "course_categories_created_byTousers",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "course_categories_course_categories_updated_byTousers",
+          "type": "course_categories",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "course_categories_updated_byTousers",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "course_sub_categories_course_sub_categories_created_byTousers",
+          "type": "course_sub_categories",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "course_sub_categories_created_byTousers",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "course_sub_categories_course_sub_categories_updated_byTousers",
+          "type": "course_sub_categories",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "course_sub_categories_updated_byTousers",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "lesson_types_lesson_types_created_byTousers",
+          "type": "lesson_types",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "lesson_types_created_byTousers",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "lesson_types_lesson_types_updated_byTousers",
+          "type": "lesson_types",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "lesson_types_updated_byTousers",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
           "name": "organization_invites_organization_invites_accepted_byTousers",
           "type": "organization_invites",
           "isRequired": false,
@@ -17319,33 +17263,6 @@
       "schemaName": "public",
       "values": [
         {
-          "name": "course_categories.delete"
-        },
-        {
-          "name": "course_categories.insert"
-        },
-        {
-          "name": "course_categories.update"
-        },
-        {
-          "name": "course_sub_categories.delete"
-        },
-        {
-          "name": "course_sub_categories.insert"
-        },
-        {
-          "name": "course_sub_categories.update"
-        },
-        {
-          "name": "featured_courses_pricing.delete"
-        },
-        {
-          "name": "featured_courses_pricing.insert"
-        },
-        {
-          "name": "featured_courses_pricing.update"
-        },
-        {
           "name": "go_admin_create"
         },
         {
@@ -17380,24 +17297,6 @@
         },
         {
           "name": "go_su_update"
-        },
-        {
-          "name": "go_wallet.view"
-        },
-        {
-          "name": "go_wallet.withdraw"
-        },
-        {
-          "name": "lesson_types.delete"
-        },
-        {
-          "name": "lesson_types.insert"
-        },
-        {
-          "name": "lesson_types.update"
-        },
-        {
-          "name": "pricing_tier.crud"
         }
       ]
     },
@@ -17426,6 +17325,9 @@
         },
         {
           "name": "public"
+        },
+        {
+          "name": "unlisted"
         }
       ]
     },

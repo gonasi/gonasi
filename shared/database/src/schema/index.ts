@@ -351,22 +351,7 @@ export type Database = {
           updated_at?: string
           updated_by?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "course_categories_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "course_categories_updated_by_fkey"
-            columns: ["updated_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       course_enrollment_activities: {
         Row: {
@@ -812,20 +797,6 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "course_categories"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "course_sub_categories_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "course_sub_categories_updated_by_fkey"
-            columns: ["updated_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1277,22 +1248,7 @@ export type Database = {
           updated_at?: string
           updated_by?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "lesson_types_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "lesson_types_updated_by_fkey"
-            columns: ["updated_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       lessons: {
         Row: {
@@ -2762,21 +2718,6 @@ export type Database = {
     Enums: {
       analytics_level: "basic" | "intermediate" | "advanced" | "enterprise"
       app_permission:
-        | "course_categories.insert"
-        | "course_categories.update"
-        | "course_categories.delete"
-        | "course_sub_categories.insert"
-        | "course_sub_categories.update"
-        | "course_sub_categories.delete"
-        | "featured_courses_pricing.insert"
-        | "featured_courses_pricing.update"
-        | "featured_courses_pricing.delete"
-        | "lesson_types.insert"
-        | "lesson_types.update"
-        | "lesson_types.delete"
-        | "pricing_tier.crud"
-        | "go_wallet.view"
-        | "go_wallet.withdraw"
         | "go_su_create"
         | "go_su_read"
         | "go_su_update"
@@ -2790,7 +2731,7 @@ export type Database = {
         | "go_staff_update"
         | "go_staff_delete"
       app_role: "go_su" | "go_admin" | "go_staff" | "user"
-      course_access: "public" | "private"
+      course_access: "public" | "unlisted" | "private"
       currency_code: "KES" | "USD"
       file_type: "image" | "audio" | "video" | "model3d" | "document" | "other"
       invite_delivery_status: "pending" | "sent" | "failed"
@@ -2998,21 +2939,6 @@ export const Constants = {
     Enums: {
       analytics_level: ["basic", "intermediate", "advanced", "enterprise"],
       app_permission: [
-        "course_categories.insert",
-        "course_categories.update",
-        "course_categories.delete",
-        "course_sub_categories.insert",
-        "course_sub_categories.update",
-        "course_sub_categories.delete",
-        "featured_courses_pricing.insert",
-        "featured_courses_pricing.update",
-        "featured_courses_pricing.delete",
-        "lesson_types.insert",
-        "lesson_types.update",
-        "lesson_types.delete",
-        "pricing_tier.crud",
-        "go_wallet.view",
-        "go_wallet.withdraw",
         "go_su_create",
         "go_su_read",
         "go_su_update",
@@ -3027,7 +2953,7 @@ export const Constants = {
         "go_staff_delete",
       ],
       app_role: ["go_su", "go_admin", "go_staff", "user"],
-      course_access: ["public", "private"],
+      course_access: ["public", "unlisted", "private"],
       currency_code: ["KES", "USD"],
       file_type: ["image", "audio", "video", "model3d", "document", "other"],
       invite_delivery_status: ["pending", "sent", "failed"],
