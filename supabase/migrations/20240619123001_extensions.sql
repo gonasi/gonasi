@@ -1,3 +1,5 @@
+create schema if not exists pgmq_public;
+
 -- Enable the "pg_jsonschema" extension
 create extension pg_jsonschema with schema extensions;
 create extension if not exists "uuid-ossp";
