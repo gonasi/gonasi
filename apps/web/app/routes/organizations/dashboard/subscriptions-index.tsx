@@ -43,7 +43,7 @@ export default function SubscriptionsIndex({ params, loaderData }: Route.Compone
               </div>
               <div />
             </div>
-            <div className='flex flex-col space-y-4 space-x-0 border md:flex-row md:space-y-4 md:space-x-4'>
+            <div className='flex max-w-5xl flex-col space-y-4 space-x-0 md:flex-row md:space-y-4 md:space-x-4'>
               <div className='w-full md:w-2/3'>
                 <ActiveSubCard />
               </div>
