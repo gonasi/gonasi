@@ -173,7 +173,11 @@ schema_paths = [
 
   # # courses & chapters & pricing
   './schemas/courses/courses_schema_and_indexes.sql',
+  './schemas/courses/course_editors_schema_and_indexes.sql',
+  './schemas/courses/course_editors_rls.sql',
+  './schemas/courses/utils/add_creator_as_course_editor.sql',
   './schemas/courses/course_utils.sql',
+  './schemas/courses/utils/delete_course_editors_on_role_change.sql',
   # './schemas/courses_course_collaborators_schema_indexes_triggers.sql',
   './schemas/courses/courses_schema_rls.sql',
   './schemas/chapters/chapters_schema_and_indexes.sql', # chapter
