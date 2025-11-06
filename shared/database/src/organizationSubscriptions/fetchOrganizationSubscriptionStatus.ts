@@ -1,14 +1,37 @@
 import type { TypedSupabaseClient } from '../client';
+import type { Database } from '../schema';
 
 interface FetchOrganizationSubscriptionStatusParams {
   supabase: TypedSupabaseClient;
   organizationId: string;
 }
 
+// Extract base types from Supabase schema
+type OrganizationSubscriptionRow =
+  Database['public']['Tables']['organization_subscriptions']['Row'];
+type TierLimitsRow = Database['public']['Tables']['tier_limits']['Row'];
+
+// Define success and error response types
+interface SuccessResponse {
+  success: true;
+  message: string;
+  data: {
+    subscription: OrganizationSubscriptionRow;
+    tier: TierLimitsRow;
+    allTiers: TierLimitsRow[];
+  };
+}
+
+interface ErrorResponse {
+  success: false;
+  message: string;
+  data: null;
+}
+
 export const fetchOrganizationSubscriptionStatus = async ({
   supabase,
   organizationId,
-}: FetchOrganizationSubscriptionStatusParams) => {
+}: FetchOrganizationSubscriptionStatusParams): Promise<SuccessResponse | ErrorResponse> => {
   // Fetch organization
   const { data: org, error: orgError } = await supabase
     .from('organizations')
@@ -26,36 +49,20 @@ export const fetchOrganizationSubscriptionStatus = async ({
     .from('organization_subscriptions')
     .select(
       `
-      id,
-      organization_id,
-      tier,
-      status,
-      start_date,
-      current_period_start,
-      current_period_end,
-      cancel_at_period_end,
-      created_at,
-      updated_at,
-      created_by,
-      updated_by,
-      tier_limits (
+        id,
+        organization_id,
         tier,
-        max_organizations_per_user,
-        storage_limit_mb_per_org,
-        max_members_per_org,
-        max_free_courses_per_org,
-        ai_tools_enabled,
-        ai_usage_limit_monthly,
-        custom_domains_enabled,
-        max_custom_domains,
-        analytics_level,
-        support_level,
-        platform_fee_percentage,
-        white_label_enabled,
-        price_monthly_usd,
-        price_yearly_usd
-      )
-    `,
+        status,
+        start_date,
+        current_period_start,
+        current_period_end,
+        cancel_at_period_end,
+        created_at,
+        updated_at,
+        created_by,
+        updated_by,
+        tier_limits (*)
+      `,
     )
     .eq('organization_id', org.id)
     .maybeSingle();
@@ -82,6 +89,7 @@ export const fetchOrganizationSubscriptionStatus = async ({
     };
   }
 
+  console.log(subscription);
   return {
     success: true,
     message: 'Organization subscription fetched successfully',
@@ -106,6 +114,13 @@ export const fetchOrganizationSubscriptionStatus = async ({
   };
 };
 
-export type FetchOrganizationSubscriptionStatusResponse = Awaited<
-  ReturnType<typeof fetchOrganizationSubscriptionStatus>
->;
+// Export response types
+export type FetchOrganizationSubscriptionStatusResponse = SuccessResponse | ErrorResponse;
+
+// Happy path type
+export type FetchOrganizationSubscriptionStatusSuccess = SuccessResponse;
+
+// Convenience exports
+export type OrganizationSubscription = SuccessResponse['data']['subscription'];
+export type OrganizationTier = SuccessResponse['data']['tier'];
+export type AllTiers = SuccessResponse['data']['allTiers'];
