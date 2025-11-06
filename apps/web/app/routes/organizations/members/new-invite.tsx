@@ -14,7 +14,7 @@ import {
 
 import type { Route } from './+types/new-invite';
 
-import { Button } from '~/components/ui/button';
+import { Button, NavLinkButton } from '~/components/ui/button';
 import { GoInputField, GoSelectInputField } from '~/components/ui/forms/elements';
 import { Modal } from '~/components/ui/modal';
 import { createClient } from '~/lib/supabase/supabase.server';
@@ -138,8 +138,13 @@ export default function InviteMember({ params }: Route.ComponentProps) {
               <p className='font-secondary'>
                 Your current <strong>{tier}</strong> plan allows up to{' '}
                 <strong>{max_members_per_org}</strong> members per organization. Need more room?
-                Consider upgrading your plan.
               </p>
+              <NavLinkButton
+                to={`/${params.organizationId}/dashboard/subscriptions`}
+                className='mt-4'
+              >
+                Consider upgrading your plan.
+              </NavLinkButton>
             </div>
           )}
         </Modal.Body>

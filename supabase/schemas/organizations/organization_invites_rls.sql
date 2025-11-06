@@ -33,7 +33,7 @@ with check (
   and invited_by = (select auth.uid())
 
   -- Tier/member limits
-  and public.can_accept_new_member(organization_id)
+  and public.can_accept_new_member(organization_id, 'invite')
 
   -- Only owners can invite other admins
   and (role != 'admin' or public.has_org_role(organization_id, 'owner', (select auth.uid())))
@@ -79,7 +79,7 @@ using (
 with check (
   (role != 'admin' or public.has_org_role(organization_id, 'owner', (select auth.uid())))
   and (accepted_by is null or accepted_by = (select auth.uid()))
-  and (accepted_at is null or public.can_accept_new_member(organization_id))
+  and (accepted_at is null or public.can_accept_new_member(organization_id, 'invite'))
   and (revoked_at is null or public.has_org_role(organization_id, 'admin', (select auth.uid())))
 );
 

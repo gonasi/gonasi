@@ -27,7 +27,7 @@ with check (
   (user_id = (select auth.uid()) and role = 'owner')
   or (
     public.has_org_role(organization_id, 'admin', (select auth.uid()))
-    and public.can_accept_new_member(organization_id)
+    and public.can_accept_new_member(organization_id, 'accept')
     and (role != 'admin' or public.has_org_role(organization_id, 'owner', (select auth.uid())))
   )
 );

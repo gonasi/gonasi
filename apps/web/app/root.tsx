@@ -12,7 +12,6 @@ import {
 } from 'react-router';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/react';
-import { parse } from 'cookie';
 import type { JwtPayload } from 'jwt-decode';
 import { jwtDecode } from 'jwt-decode';
 import { PostHogProvider } from 'posthog-js/react';
@@ -81,10 +80,6 @@ export async function loader({ request }: Route.LoaderArgs) {
   const { toast, headers: toastHeaders } = await getToast(request);
   const honeyProps = await honeypot.getInputProps();
 
-  const cookieHeader = request.headers.get('cookie') || '';
-  const cookies = parse(cookieHeader);
-  const invite_token = cookies.organizationInviteToken;
-
   return data(
     {
       clientEnv,
@@ -93,7 +88,6 @@ export async function loader({ request }: Route.LoaderArgs) {
       toast,
       honeyProps,
       session: sessionResult.data.session,
-      orgInviteToken: invite_token,
     },
     {
       headers: combineHeaders(supabaseHeaders, toastHeaders),
@@ -147,7 +141,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 // --- App Component ---
 function App() {
   const navigate = useNavigate();
-  const { user, role, toast, session, orgInviteToken } = useLoaderData<typeof loader>();
+  const { user, role, toast, session } = useLoaderData<typeof loader>();
   const { updateActiveSession, updateActiveUserProfile, updateActiveUserRole } = useStore();
 
   useToast(toast);
@@ -166,12 +160,6 @@ function App() {
       document.body.classList.add('fonts-loaded');
     });
   }, []);
-
-  useEffect(() => {
-    if (orgInviteToken) {
-      navigate('/i/org-invites/accept');
-    }
-  }, [navigate, orgInviteToken]);
 
   return (
     <main className='relative'>

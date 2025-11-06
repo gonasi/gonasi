@@ -80,7 +80,7 @@ begin
     from public.organizations o
     where o.id = organization_id_from_url;
 
-    can_add := public.can_accept_new_member(organization_id_from_url);
+    can_add := public.can_accept_new_member(organization_id_from_url, 'invite');
     tier_limits_json := public.get_tier_limits_for_org(organization_id_from_url);
 
     return json_build_object(
@@ -111,7 +111,7 @@ begin
   where o.id = organization_id_from_url;
 
   -- Fetch permissions and tier config
-  can_add := public.can_accept_new_member(organization_id_from_url);
+  can_add := public.can_accept_new_member(organization_id_from_url, 'invite');
   tier_limits_json := public.get_tier_limits_for_org(organization_id_from_url);
 
   -- Return updated organization context

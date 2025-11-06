@@ -13,7 +13,7 @@ console.log('[paystack-create-subaccount] Function initialized');
 const PERCENT_CHARGE = 15.0; // Platform's commission (%)
 
 // Load required environment variables
-const BASE_URL = Deno.env.get('BASE_URL');
+const FRONTEND_URL = Deno.env.get('FRONTEND_URL');
 const PAYSTACK_SECRET_KEY = Deno.env.get('PAYSTACK_SECRET_KEY');
 
 // Schema for validating incoming request body
@@ -33,9 +33,9 @@ Deno.serve(async (req) => {
     return new Response('Method not allowed', { status: 405 });
   }
 
-  if (!BASE_URL || !PAYSTACK_SECRET_KEY) {
+  if (!FRONTEND_URL || !PAYSTACK_SECRET_KEY) {
     console.error('Missing required environment variables:', {
-      BASE_URL,
+      FRONTEND_URL,
       PAYSTACK_SECRET_KEY_EXISTS: !!PAYSTACK_SECRET_KEY,
     });
 

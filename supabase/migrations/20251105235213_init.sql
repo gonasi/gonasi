@@ -2317,7 +2317,7 @@ begin
   end if;
 
   -- Step 7: Check if organization can accept new members
-  if not public.can_accept_new_member(v_invite.organization_id) then
+  if not public.can_accept_new_member(v_invite.organization_id, 'accept') then
     execute format('set row_security = %L', coalesce(v_original_rls_setting, 'on'));
     return json_build_object(
       'success', false, 
@@ -2325,7 +2325,7 @@ begin
       'error_code', 'MEMBER_LIMIT_REACHED'
     );
   end if;
-
+ 
   -- Step 8: Mark invite as accepted
   update public.organization_invites
   set accepted_at = now_ts,
@@ -2552,7 +2552,7 @@ end;
 $function$
 ;
 
-CREATE OR REPLACE FUNCTION public.can_accept_new_member(arg_org_id uuid)
+CREATE OR REPLACE FUNCTION public.can_accept_new_member(arg_org_id uuid, arg_check_type text DEFAULT 'invite'::text)
  RETURNS boolean
  LANGUAGE sql
  STABLE SECURITY DEFINER
@@ -2577,7 +2577,16 @@ AS $function$
     join public.tier_limits tl on o.tier = tl.tier
     where o.id = arg_org_id
   )
-  select (counts.active_members + counts.pending_invites) < limits.max_members_per_org
+  select case 
+    when arg_check_type = 'accept' then
+      -- When accepting, only check active members
+      -- (the pending invite will become an active member)
+      counts.active_members < limits.max_members_per_org
+    else
+      -- When inviting, check both active members + pending invites
+      -- to prevent over-inviting
+      (counts.active_members + counts.pending_invites) < limits.max_members_per_org
+  end
   from counts, limits;
 $function$
 ;
@@ -6959,7 +6968,7 @@ begin
     from public.organizations o
     where o.id = organization_id_from_url;
 
-    can_add := public.can_accept_new_member(organization_id_from_url);
+    can_add := public.can_accept_new_member(organization_id_from_url, 'accept');
     tier_limits_json := public.get_tier_limits_for_org(organization_id_from_url);
 
     return json_build_object(
@@ -6990,7 +6999,7 @@ begin
   where o.id = organization_id_from_url;
 
   -- Fetch permissions and tier config
-  can_add := public.can_accept_new_member(organization_id_from_url);
+  can_add := public.can_accept_new_member(organization_id_from_url, 'accept');
   tier_limits_json := public.get_tier_limits_for_org(organization_id_from_url);
 
   -- Return updated organization context
@@ -10765,7 +10774,7 @@ using (public.has_org_role(organization_id, 'owner'::text, ( SELECT auth.uid() A
   as permissive
   for insert
   to authenticated
-with check ((public.has_org_role(organization_id, 'admin'::text, ( SELECT auth.uid() AS uid)) AND (invited_by = ( SELECT auth.uid() AS uid)) AND public.can_accept_new_member(organization_id) AND ((role <> 'admin'::public.org_role) OR public.has_org_role(organization_id, 'owner'::text, ( SELECT auth.uid() AS uid))) AND (email <> ( SELECT profiles.email
+with check ((public.has_org_role(organization_id, 'admin'::text, ( SELECT auth.uid() AS uid)) AND (invited_by = ( SELECT auth.uid() AS uid)) AND public.can_accept_new_member(organization_id, 'invite'::text) AND ((role <> 'admin'::public.org_role) OR public.has_org_role(organization_id, 'owner'::text, ( SELECT auth.uid() AS uid))) AND (email <> ( SELECT profiles.email
    FROM public.profiles
   WHERE (profiles.id = ( SELECT auth.uid() AS uid)))) AND (NOT public.is_user_already_member(organization_id, email))));
 
@@ -10790,7 +10799,7 @@ using ((public.has_org_role(organization_id, 'admin'::text, ( SELECT auth.uid() 
 using ((public.has_org_role(organization_id, 'admin'::text, ( SELECT auth.uid() AS uid)) OR ((email = ( SELECT profiles.email
    FROM public.profiles
   WHERE (profiles.id = ( SELECT auth.uid() AS uid)))) AND (accepted_at IS NULL) AND (revoked_at IS NULL) AND (expires_at > now()))))
-with check ((((role <> 'admin'::public.org_role) OR public.has_org_role(organization_id, 'owner'::text, ( SELECT auth.uid() AS uid))) AND ((accepted_by IS NULL) OR (accepted_by = ( SELECT auth.uid() AS uid))) AND ((accepted_at IS NULL) OR public.can_accept_new_member(organization_id)) AND ((revoked_at IS NULL) OR public.has_org_role(organization_id, 'admin'::text, ( SELECT auth.uid() AS uid)))));
+with check ((((role <> 'admin'::public.org_role) OR public.has_org_role(organization_id, 'owner'::text, ( SELECT auth.uid() AS uid))) AND ((accepted_by IS NULL) OR (accepted_by = ( SELECT auth.uid() AS uid))) AND ((accepted_at IS NULL) OR public.can_accept_new_member(organization_id, 'invite'::text)) AND ((revoked_at IS NULL) OR public.has_org_role(organization_id, 'admin'::text, ( SELECT auth.uid() AS uid)))));
 
 
 
@@ -10808,7 +10817,7 @@ using ((((user_id = ( SELECT auth.uid() AS uid)) AND (role <> 'owner'::public.or
   as permissive
   for insert
   to authenticated
-with check ((((user_id = ( SELECT auth.uid() AS uid)) AND (role = 'owner'::public.org_role)) OR (public.has_org_role(organization_id, 'admin'::text, ( SELECT auth.uid() AS uid)) AND public.can_accept_new_member(organization_id) AND ((role <> 'admin'::public.org_role) OR public.has_org_role(organization_id, 'owner'::text, ( SELECT auth.uid() AS uid))))));
+with check ((((user_id = ( SELECT auth.uid() AS uid)) AND (role = 'owner'::public.org_role)) OR (public.has_org_role(organization_id, 'admin'::text, ( SELECT auth.uid() AS uid)) AND public.can_accept_new_member(organization_id, 'accept'::text) AND ((role <> 'admin'::public.org_role) OR public.has_org_role(organization_id, 'owner'::text, ( SELECT auth.uid() AS uid))))));
 
 
 

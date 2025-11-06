@@ -53,9 +53,13 @@ export default function MembersInvites({ params, loaderData }: Route.ComponentPr
         <div className='px-4 pb-8'>
           <BannerCard
             message={`You're at the limit for the ${data.tier_limits.tier} plan`}
-            description={`Your current plan allows up to ${data.tier_limits.max_members_per_org} members per organization. Need more room? Consider upgrading your plan.`}
+            description={`Your current plan allows up to ${data.tier_limits.max_members_per_org} members per organization. Need more room?`}
             showCloseIcon={false}
             variant='warning'
+            cta={{
+              link: `/${params.organizationId}/dashboard/subscriptions`,
+              title: 'Consider upgrading your plan.',
+            }}
           />
         </div>
       )}

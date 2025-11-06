@@ -27,7 +27,7 @@ export default function SubscriptionsIndex({ params, loaderData }: Route.Compone
   return (
     <>
       <Modal open>
-        <Modal.Content size='full'>
+        <Modal.Content size='lg'>
           <Modal.Header
             title='SubscriptionHub'
             closeRoute={`/${params.organizationId}/dashboard`}

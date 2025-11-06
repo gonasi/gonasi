@@ -32,6 +32,23 @@ export type Database = {
       [_ in never]: never
     }
   }
+  pgmq_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      [_ in never]: never
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       ai_usage_log: {
@@ -2394,7 +2411,10 @@ export type Database = {
         }
         Returns: string
       }
-      can_accept_new_member: { Args: { arg_org_id: string }; Returns: boolean }
+      can_accept_new_member: {
+        Args: { arg_check_type?: string; arg_org_id: string }
+        Returns: boolean
+      }
       can_create_organization: {
         Args: { arg_user_id: string; tier_name: string }
         Returns: boolean
@@ -2951,6 +2971,9 @@ export type CompositeTypes<
 
 export const Constants = {
   graphql_public: {
+    Enums: {},
+  },
+  pgmq_public: {
     Enums: {},
   },
   public: {

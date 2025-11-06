@@ -148,7 +148,7 @@ begin
   end if;
 
   -- Step 7: Check if organization can accept new members
-  if not public.can_accept_new_member(v_invite.organization_id) then
+  if not public.can_accept_new_member(v_invite.organization_id, 'accept') then
     execute format('set row_security = %L', coalesce(v_original_rls_setting, 'on'));
     return json_build_object(
       'success', false, 
@@ -156,7 +156,7 @@ begin
       'error_code', 'MEMBER_LIMIT_REACHED'
     );
   end if;
-
+ 
   -- Step 8: Mark invite as accepted
   update public.organization_invites
   set accepted_at = now_ts,

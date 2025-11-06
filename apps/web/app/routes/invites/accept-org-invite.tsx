@@ -1,5 +1,4 @@
 import { data, redirect } from 'react-router';
-import { parse } from 'cookie';
 import { motion } from 'framer-motion';
 import { redirectWithError, redirectWithSuccess } from 'remix-toast';
 
@@ -30,48 +29,53 @@ function isValidUUID(str: string): boolean {
   return uuidRegex.test(str);
 }
 
-export const loader = async ({ request }: Route.LoaderArgs) => {
+export const loader = async ({ request, params }: Route.LoaderArgs) => {
   const { supabase } = createClient(request);
   const { user } = await getUserProfile(supabase);
 
-  const cookieHeader = request.headers.get('cookie') || '';
-  const cookies = parse(cookieHeader);
-  const invite_token = cookies.organizationInviteToken;
+  const token = params.token;
 
-  if (!invite_token) return redirect('/');
+  if (!token) return redirect('/');
+
+  // Clear the cookie on every response (just to avoid dangling tokens)
+  const clearCookieHeader = {
+    'Set-Cookie': 'organizationInviteToken=; Max-Age=0; Path=/',
+  };
 
   if (!user?.id || !user?.email) {
-    return redirectWithError('/login', 'You need to sign up or log in to continue.');
+    return redirectWithError('/login', 'You need to sign up or log in to continue.', {
+      headers: clearCookieHeader,
+    });
   }
 
-  if (!isValidUUID(invite_token)) {
+  if (!isValidUUID(token)) {
     return data(
       { error: { message: 'Invalid invitation token format.' } },
-      { headers: { 'Set-Cookie': 'organizationInviteToken=; Max-Age=0; Path=/' } },
+      { headers: clearCookieHeader },
     );
   }
 
   try {
     const { data: rawData, error } = await supabase.rpc('accept_organization_invite', {
-      invite_token,
+      invite_token: token,
       user_id: user.id,
       user_email: user.email,
     });
 
     const rpcData = rawData as unknown as AcceptOrgInviteResponse;
 
-    const headers = new Headers();
-    headers.append('Set-Cookie', 'organizationInviteToken=; Max-Age=0; Path=/'); // Clear the cookie
-
     if (error) {
-      return data({ error: { message: 'Server error.', details: error } }, { headers });
+      return data(
+        { error: { message: 'Server error.', details: error } },
+        { headers: clearCookieHeader },
+      );
     }
 
     if (rpcData?.success) {
       return redirectWithSuccess(
         `/${rpcData?.data?.organization_id}/dashboard`,
         rpcData.message || "You've successfully joined the organization!",
-        { headers },
+        { headers: clearCookieHeader },
       );
     }
 
@@ -82,7 +86,7 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
           details: rpcData,
         },
       },
-      { headers },
+      { headers: clearCookieHeader },
     );
   } catch (err) {
     return data(
@@ -92,11 +96,7 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
           details: err,
         },
       },
-      {
-        headers: {
-          'Set-Cookie': 'organizationInviteToken=; Max-Age=0; Path=/', // clear even on failure
-        },
-      },
+      { headers: clearCookieHeader },
     );
   }
 };

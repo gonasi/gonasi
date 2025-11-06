@@ -1,9 +1,19 @@
 import { randomUUID } from 'crypto';
 
+import type { Database } from '@gonasi/database/schema';
 import type { InviteMemberToOrganizationSchemaTypes } from '@gonasi/schemas/organizations';
 
 import type { TypedSupabaseClient } from '../../client';
 import { getUserProfile } from '../../profile';
+
+type OrgRoles = Database['public']['Enums']['org_role'];
+
+// Centralized role hierarchy (you can update only here)
+const ROLE_RANK: Record<OrgRoles, number> = {
+  owner: 3,
+  admin: 2,
+  editor: 1,
+};
 
 export const inviteOrganizationMember = async (
   supabase: TypedSupabaseClient,
@@ -13,9 +23,8 @@ export const inviteOrganizationMember = async (
     const { user } = await getUserProfile(supabase);
     const { organizationId, email, role } = formData;
 
-    const validRoles = ['owner', 'admin', 'editor'] as const;
-
-    if (!validRoles.includes(role as any)) {
+    // ✅ Validate role using enum (no hardcoded list)
+    if (!(role in ROLE_RANK)) {
       return {
         success: false,
         message: 'Invalid role provided.',
@@ -23,6 +32,7 @@ export const inviteOrganizationMember = async (
       };
     }
 
+    // Self-invite check
     if (email === user?.email) {
       return {
         success: false,
@@ -31,7 +41,7 @@ export const inviteOrganizationMember = async (
       };
     }
 
-    // 1. Check user role in org (must be admin or higher)
+    // 1. Fetch user role
     const { data: orgRoleData, error: orgRoleError } = await supabase.rpc('get_user_org_role', {
       arg_org_id: organizationId,
       arg_user_id: user?.id ?? '',
@@ -46,11 +56,11 @@ export const inviteOrganizationMember = async (
       };
     }
 
-    const userRole = orgRoleData as 'owner' | 'admin' | 'editor';
+    const userRole = orgRoleData as OrgRoles;
 
-    const canInvite = userRole === 'admin' || userRole === 'owner';
-
-    if (!canInvite) {
+    // ✅ Permission check using ranked hierarchy
+    const isAdminOrHigher = ROLE_RANK[userRole] >= ROLE_RANK['admin'];
+    if (!isAdminOrHigher) {
       return {
         success: false,
         message: 'You must be an admin to invite members.',
@@ -58,6 +68,7 @@ export const inviteOrganizationMember = async (
       };
     }
 
+    // ✅ Only owner can invite admins
     if (role === 'admin' && userRole !== 'owner') {
       return {
         success: false,
@@ -66,7 +77,7 @@ export const inviteOrganizationMember = async (
       };
     }
 
-    // 2. Check if already a member
+    // 2. Check if user already member
     const { data: isMember, error: isMemberError } = await supabase.rpc('is_user_already_member', {
       arg_org_id: organizationId,
       user_email: email,
@@ -89,7 +100,7 @@ export const inviteOrganizationMember = async (
       };
     }
 
-    // 3. Check for pending invites
+    // 3. Check pending invite
     const { data: hasPending, error: hasPendingError } = await supabase.rpc('has_pending_invite', {
       arg_org_id: organizationId,
       user_email: email,
@@ -107,12 +118,12 @@ export const inviteOrganizationMember = async (
     if (hasPending) {
       return {
         success: false,
-        message: 'This user has already been invited and has a pending invite.',
+        message: 'This user already has a pending invite.',
         data: null,
       };
     }
 
-    // 4. Check tier/member limits
+    // 4. Tier/member limits
     const { data: canAccept, error: canAcceptError } = await supabase.rpc('can_accept_new_member', {
       arg_org_id: organizationId,
     });
@@ -127,18 +138,19 @@ export const inviteOrganizationMember = async (
 
     // ✅ Passed all checks — insert invite
     const token = randomUUID();
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
     const { data, error } = await supabase
       .from('organization_invites')
       .insert({
         organization_id: organizationId,
         email,
-        role: role as (typeof validRoles)[number],
+        role: role as OrgRoles,
         invited_by: user?.id ?? '',
         token,
         resend_count: 0,
         last_sent_at: new Date().toISOString(),
-        expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days
+        expires_at: expiresAt,
       })
       .select()
       .single();
@@ -147,16 +159,13 @@ export const inviteOrganizationMember = async (
       console.error('[inviteOrganizationMember] DB insert error:', error);
       return {
         success: false,
-        message: 'Failed to send invite. Please try again.',
+        message: 'Failed to create invite. Please try again.',
         data: null,
       };
     }
 
     const { error: invokeError } = await supabase.functions.invoke('send-org-invite', {
-      body: {
-        email,
-        token,
-      },
+      body: { email, token },
     });
 
     if (invokeError) {

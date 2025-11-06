@@ -1,25 +1,50 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
-const BASE_URL = Deno.env.get('BASE_URL');
-const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+// -------------------------------------------------------------
+// Environment Variable Validation
+// -------------------------------------------------------------
+const requiredEnv = [
+  'RESEND_API_KEY',
+  'FRONTEND_URL',
+  'SUPABASE_URL',
+  'SUPABASE_SERVICE_ROLE_KEY',
+] as const;
 
+const missing = requiredEnv.filter((k) => !Deno.env.get(k));
+if (missing.length > 0) {
+  console.error('Missing required environment variables:', missing);
+  throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
+}
+
+const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')!;
+const FRONTEND_URL = Deno.env.get('FRONTEND_URL')!;
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+
+// Supabase client (service role)
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-// Background task to handle email sending and database updates
+// -------------------------------------------------------------
+// Background task: send invite email + update database
+// -------------------------------------------------------------
 async function processInviteEmail(email: string, token: string) {
   try {
     console.log('Processing invite email for:', email);
 
-    // Get organization name from the invite token
+    // Fetch invite + embedded organization
     const { data: inviteData, error: inviteError } = await supabase
       .from('organization_invites')
       .select(
         `
+        id,
         organization_id,
-        organizations!inner(name)
+        organization:organizations!organization_invites_organization_id_fkey (
+          id,
+          name,
+          handle,
+          avatar_url
+        )
       `,
       )
       .eq('token', token)
@@ -35,21 +60,53 @@ async function processInviteEmail(email: string, token: string) {
       return;
     }
 
-    const organizationName = inviteData.organizations.name ?? 'Gonasi Organizaiton';
-    const inviteUrl = `${BASE_URL}/i/org-invites/${token}`;
+    // inviteData.organization is likely an array due to the Supabase select,
+    // so use the first organization (if any).
+    const organizationArr = Array.isArray(inviteData.organization)
+      ? inviteData.organization
+      : [inviteData.organization];
+    const organizationName = organizationArr?.[0]?.name ?? 'Gonasi Organization';
 
+    const inviteUrl = `${FRONTEND_URL}/i/org-invites/${token}/accept`;
+
+    // Email content
+    // -----------------------------------------------------------
     const payload = {
-      from: 'Team at Gonasi <noreply@gonasi.com>',
+      from: 'Gonasi Team <no-reply@mail.gonasi.com>',
       to: email,
-      subject: `${organizationName} has invited you to collaborate`,
+      subject: `You're invited to collaborate with ${organizationName}`,
       html: `
-        <p>Hello,</p>
-        <p>${organizationName} has invited you to join their team.</p>
-        <p>Accept your invite here:</p>
-        <p><a href="${inviteUrl}">${inviteUrl}</a></p>
-        <p>This link will expire in 7 days.</p>
-        <p>Thanks,</p>
-        <p>The Gonasi Team</p>
+        <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #1a1a1a; max-width: 480px;">
+          <p>Hello,</p>
+    
+          <p>
+            <strong>${organizationName}</strong> has invited you to join their workspace on <strong>Gonasi</strong>.
+          </p>
+    
+          <p style="margin: 24px 0;">
+            <a href="${inviteUrl}" 
+              style="
+                background: #4f46e5;
+                color: #ffffff;
+                padding: 12px 20px;
+                border-radius: 6px;
+                text-decoration: none;
+                display: inline-block;
+                font-weight: 600;
+              ">
+              Accept Invitation
+            </a>
+          </p>
+    
+          <p>If the button above doesn't work, you can copy and paste this link into your browser:</p>
+          <p style="word-break: break-all;">
+            <a href="${inviteUrl}">${inviteUrl}</a>
+          </p>
+    
+          <p style="color: #555;">This invitation link expires in 7 days.</p>
+    
+          <p>Best regards,<br/>The Gonasi Team</p>
+        </div>
       `,
     };
 
@@ -57,7 +114,9 @@ async function processInviteEmail(email: string, token: string) {
     let deliveryStatus: 'sent' | 'failed' = 'sent';
     let deliveryLog: unknown = {};
 
+    // -----------------------------------------------------------
     // Send email via Resend
+    // -----------------------------------------------------------
     try {
       const response = await fetch('https://api.resend.com/emails', {
         method: 'POST',
@@ -96,7 +155,9 @@ async function processInviteEmail(email: string, token: string) {
       console.error('Email sending error:', error);
     }
 
+    // -----------------------------------------------------------
     // Update invite record with delivery status
+    // -----------------------------------------------------------
     await updateInviteStatus(token, deliveryStatus, deliveryLog);
   } catch (error) {
     console.error('Background task error:', error);
@@ -108,10 +169,11 @@ async function processInviteEmail(email: string, token: string) {
   }
 }
 
-// Helper function to update invite status
+// -------------------------------------------------------------
+// Update invite status + resend count
+// -------------------------------------------------------------
 async function updateInviteStatus(token: string, status: 'sent' | 'failed', deliveryLog: unknown) {
   try {
-    // Get current resend count and logs
     const { data: currentInvite, error: fetchError } = await supabase
       .from('organization_invites')
       .select('resend_count, delivery_logs')
@@ -123,15 +185,14 @@ async function updateInviteStatus(token: string, status: 'sent' | 'failed', deli
       return;
     }
 
-    const currentLogs = currentInvite?.delivery_logs || [];
-    const updatedLogs = [...currentLogs, deliveryLog];
+    const updatedLogs = [...(currentInvite?.delivery_logs ?? []), deliveryLog];
 
     const { error: updateError } = await supabase
       .from('organization_invites')
       .update({
         delivery_status: status,
         last_sent_at: new Date().toISOString(),
-        resend_count: (currentInvite?.resend_count || 0) + 1,
+        resend_count: (currentInvite?.resend_count ?? 0) + 1,
         updated_at: new Date().toISOString(),
         delivery_logs: updatedLogs,
       })
@@ -145,11 +206,15 @@ async function updateInviteStatus(token: string, status: 'sent' | 'failed', deli
   }
 }
 
-// Listen for function shutdown events
-addEventListener('beforeunload', (ev) => {
-  console.log('Function will be shutdown due to', ev.detail?.reason);
+// -------------------------------------------------------------
+// Shutdown logging
+// -------------------------------------------------------------
+addEventListener('beforeunload', (_ev) => {
+  console.log('Function shutting down');
 });
-
+// -------------------------------------------------------------
+// Main HTTP Handler
+// -------------------------------------------------------------
 Deno.serve(async (req: Request) => {
   try {
     if (req.method !== 'POST') {
@@ -162,44 +227,35 @@ Deno.serve(async (req: Request) => {
     const { email, token } = body;
 
     if (!email || !token) {
-      console.error('Missing required fields:', { email: !!email, token: !!token });
       return new Response(
         JSON.stringify({
           error: 'Missing required fields: email and token are required',
-          received: Object.keys(body),
+          received: body,
         }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        },
+        { status: 400, headers: { 'Content-Type': 'application/json' } },
       );
     }
 
-    // Start the background task - this will not block the response
+    // Fire background task without blocking response
     EdgeRuntime.waitUntil(processInviteEmail(email, token));
 
-    // Return immediately to the client
     return new Response(
       JSON.stringify({
         success: true,
         status: 'processing',
         message: 'Invite email is being processed in the background',
       }),
-      {
-        headers: { 'Content-Type': 'application/json' },
-      },
+      { headers: { 'Content-Type': 'application/json' } },
     );
   } catch (error) {
     console.error('Edge function error:', error);
+
     return new Response(
       JSON.stringify({
         error: 'Internal server error',
         details: error instanceof Error ? error.message : String(error),
       }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      },
+      { status: 500, headers: { 'Content-Type': 'application/json' } },
     );
   }
 });

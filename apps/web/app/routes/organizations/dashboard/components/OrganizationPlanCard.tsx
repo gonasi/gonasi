@@ -23,7 +23,6 @@ export function OrganizationPlanCard() {
     }
   }, [fetcher, organizationId]);
 
-  // Don't access result until fetcher.data exists
   const result = fetcher.data as FetchOrganizationSubscriptionStatusResponse | undefined;
   const hasError = result?.success === false;
   const data = result?.data;
@@ -32,7 +31,7 @@ export function OrganizationPlanCard() {
   const tier = data?.tier;
 
   // ---------------------------------------------
-  // Skeleton loading state (mimics content layout)
+  // Loading Skeleton
   // ---------------------------------------------
   if (isLoading || (!fetcher.data && !hasError)) {
     return (
@@ -40,12 +39,13 @@ export function OrganizationPlanCard() {
         <CardContent className='p-4'>
           <div className='mb-4 flex items-start justify-between'>
             <div className='flex-1 space-y-2'>
-              <Skeleton className='h-4 w-24' /> {/* Current Plan label */}
-              <Skeleton className='h-8 w-40' /> {/* Plan title */}
-              <Skeleton className='h-4 w-56' /> {/* Plan description */}
+              <Skeleton className='h-4 w-24' />
+              <Skeleton className='h-8 w-40' />
+              <Skeleton className='h-4 w-56' />
             </div>
-            <Skeleton className='h-12 w-12 rounded-lg' /> {/* Icon */}
+            <Skeleton className='h-12 w-12 rounded-lg' />
           </div>
+
           <div className='mb-4 space-y-2'>
             <div className='flex justify-between text-sm'>
               <Skeleton className='h-4 w-24' />
@@ -60,35 +60,28 @@ export function OrganizationPlanCard() {
               <Skeleton className='h-4 w-20' />
             </div>
           </div>
-          <Skeleton className='h-9 w-full' /> {/* Upgrade button */}
+
+          <Skeleton className='h-9 w-full' />
         </CardContent>
       </Card>
     );
   }
 
   // ---------------------------------------------
-  // Error or missing data
+  // Error State
   // ---------------------------------------------
   if (hasError || !subscription || !tier) {
     return (
       <Card className='border-border/50 rounded-none'>
         <CardContent className='text-muted-foreground flex items-center justify-center p-6 text-sm'>
           <AlertTriangle className='text-destructive mr-2 h-4 w-4' />
-          Failed to load organization plan
+          Unable to load your organization's current plan
         </CardContent>
       </Card>
     );
   }
 
-  // ---------------------------------------------
-  // Plan sequencing logic
-  // ---------------------------------------------
-  const plans = ['launch', 'scale', 'impact', 'enterprise'] as const;
-  const currentIndex = plans.indexOf(tier.tier as (typeof plans)[number]);
-  const nextPlan =
-    currentIndex >= 0 && currentIndex < plans.length - 1 ? plans[currentIndex + 1] : null;
-
-  // Format next renewal date if present
+  // Format renewal date
   const nextRenewal = subscription.current_period_end
     ? new Date(subscription.current_period_end).toLocaleDateString(undefined, {
         month: 'short',
@@ -98,7 +91,7 @@ export function OrganizationPlanCard() {
     : '—';
 
   // ---------------------------------------------
-  // Render actual plan info
+  // Plan Card
   // ---------------------------------------------
   return (
     <Card className='border-border/50 rounded-none'>
@@ -119,7 +112,7 @@ export function OrganizationPlanCard() {
             <h3 className='text-foreground mb-2 text-3xl font-bold capitalize'>{tier.tier}</h3>
             <p className='text-muted-foreground font-secondary text-sm'>
               {tier.support_level === 'community'
-                ? 'Community plan for small teams and creators'
+                ? 'Ideal for small teams, early creators, and pilots'
                 : `Includes ${tier.support_level} support`}
             </p>
           </div>
@@ -133,34 +126,30 @@ export function OrganizationPlanCard() {
           <div className='flex justify-between text-sm'>
             <span className='text-muted-foreground'>Members</span>
             <span className='text-foreground font-medium'>
-              {/* Replace 1 with actual org member count if available */}1 /{' '}
-              {tier.max_members_per_org ?? '—'}
+              1 / {tier.max_members_per_org ?? '—'}
             </span>
           </div>
+
           <div className='flex justify-between text-sm'>
             <span className='text-muted-foreground'>AI Credits</span>
             <span className='text-foreground font-medium'>
               {tier.ai_usage_limit_monthly?.toLocaleString() ?? 0} / month
             </span>
           </div>
+
           <div className='flex justify-between text-sm'>
             <span className='text-muted-foreground'>Next Renewal</span>
             <span className='text-foreground font-medium'>{nextRenewal}</span>
           </div>
         </div>
 
-        {/* --------------------------------------------- */}
-        {/* Dynamic Upgrade CTA */}
-        {/* --------------------------------------------- */}
         <NavLinkButton
           to={`/${organizationId}/dashboard/subscriptions`}
           rightIcon={<ArrowUpRight />}
           className='w-full'
           variant='secondary'
         >
-          {nextPlan
-            ? `Upgrade to ${nextPlan.charAt(0).toUpperCase() + nextPlan.slice(1)} Plan`
-            : 'Manage Subscriptions'}
+          Manage Subscription
         </NavLinkButton>
       </CardContent>
     </Card>
