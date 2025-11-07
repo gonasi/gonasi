@@ -2,16 +2,15 @@
 alter table public.organization_members enable row level security;
 
 -- SELECT Policy:
--- - Users can view their own membership
+-- - all org members can view
 -- - Admins can view any member in the same organization
--- NOTE: We display users on the frontend from a view so this doesn't apply to that case
 create policy "organization_members_select"                                         
 on public.organization_members                                                      
 for select                                                                          
 to authenticated                                                                    
 using (                                                                             
-  user_id = (select auth.uid())                                                     
-  or public.has_org_role(organization_id, 'admin', (select auth.uid()))                                  
+  user_id = (select auth.uid())       
+  or public.get_user_org_role(organization_id, (select auth.uid())) is not null                             
 );
 
 -- INSERT Policy:
@@ -23,7 +22,7 @@ create policy "organization_members_insert"
 on public.organization_members
 for insert
 to authenticated
-with check (
+with check ( 
   (user_id = (select auth.uid()) and role = 'owner')
   or (
     public.has_org_role(organization_id, 'admin', (select auth.uid()))

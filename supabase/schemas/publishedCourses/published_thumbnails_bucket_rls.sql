@@ -83,10 +83,7 @@ using (
     where c.id = (split_part(storage.objects.name, '/', 1))::uuid
       and (
         public.get_user_org_role(c.organization_id, auth.uid()) in ('owner', 'admin')
-        or (
-          public.get_user_org_role(c.organization_id, auth.uid()) = 'editor'
-          and c.owned_by = auth.uid()
-        )
+        or exists (select 1 from public.course_editors where course_id = c.id and user_id = auth.uid())
       )
   )
 )
@@ -98,10 +95,7 @@ with check (
     where c.id = (split_part(storage.objects.name, '/', 1))::uuid
       and (
         public.get_user_org_role(c.organization_id, auth.uid()) in ('owner', 'admin')
-        or (
-          public.get_user_org_role(c.organization_id, auth.uid()) = 'editor'
-          and c.owned_by = auth.uid()
-        )
+        or exists (select 1 from public.course_editors where course_id = c.id and user_id = auth.uid())
       )
   )
 );
@@ -125,10 +119,7 @@ using (
     where c.id = (split_part(storage.objects.name, '/', 1))::uuid
       and (
         public.get_user_org_role(c.organization_id, auth.uid()) in ('owner', 'admin')
-        or (
-          public.get_user_org_role(c.organization_id, auth.uid()) = 'editor'
-          and c.owned_by = auth.uid()
-        )
+        or exists (select 1 from public.course_editors where course_id = c.id and user_id = auth.uid())
       )
   )
 );

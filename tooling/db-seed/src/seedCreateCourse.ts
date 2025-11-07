@@ -188,7 +188,6 @@ export async function seedCreateCourse() {
           name: courseTitle,
           description: faker.lorem.paragraph(),
           organization_id: org.id,
-          owned_by: userId,
           category_id: selectedCategory.id,
           subcategory_id: selectedSubcategory?.id || null,
           visibility: faker.helpers.arrayElement(['public', 'private'] as const),

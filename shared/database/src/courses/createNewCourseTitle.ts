@@ -30,7 +30,6 @@ export const createNewCourseTitle = async ({
         created_by: userId,
         updated_by: userId,
         organization_id: organizationId,
-        owned_by: userId,
       })
       .select('id')
       .single();

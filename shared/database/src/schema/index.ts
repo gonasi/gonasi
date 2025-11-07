@@ -370,6 +370,52 @@ export type Database = {
         }
         Relationships: []
       }
+      course_editors: {
+        Row: {
+          added_at: string
+          added_by: string | null
+          course_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          added_at?: string
+          added_by?: string | null
+          course_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          added_at?: string
+          added_by?: string | null
+          course_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_editors_added_by_fkey"
+            columns: ["added_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_editors_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_editors_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       course_enrollment_activities: {
         Row: {
           access_end: string
@@ -830,7 +876,6 @@ export type Database = {
           last_published: string | null
           name: string
           organization_id: string | null
-          owned_by: string | null
           subcategory_id: string | null
           updated_at: string
           updated_by: string | null
@@ -847,7 +892,6 @@ export type Database = {
           last_published?: string | null
           name: string
           organization_id?: string | null
-          owned_by?: string | null
           subcategory_id?: string | null
           updated_at?: string
           updated_by?: string | null
@@ -864,7 +908,6 @@ export type Database = {
           last_published?: string | null
           name?: string
           organization_id?: string | null
-          owned_by?: string | null
           subcategory_id?: string | null
           updated_at?: string
           updated_by?: string | null
@@ -890,13 +933,6 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "courses_owned_by_fkey"
-            columns: ["owned_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {

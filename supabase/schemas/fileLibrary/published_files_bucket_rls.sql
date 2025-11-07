@@ -75,7 +75,12 @@ using (
         public.get_user_org_role(c.organization_id, auth.uid()) in ('owner', 'admin')
         or (
           public.get_user_org_role(c.organization_id, auth.uid()) = 'editor'
-          and c.owned_by = auth.uid()
+          and exists (
+            select 1
+            from public.course_editors ce
+            where ce.course_id = c.id
+            and ce.user_id = (select auth.uid())
+          )
         )
       )
   )
@@ -88,10 +93,15 @@ with check (
     where c.id = (split_part(storage.objects.name, '/', 2))::uuid
       and c.organization_id = (split_part(storage.objects.name, '/', 1))::uuid
       and (
-        public.get_user_org_role(c.organization_id, auth.uid()) in ('owner', 'admin')
+        public.get_user_org_role(c.organization_id, auth.uid()) in ('owner', 'admin') 
         or (
           public.get_user_org_role(c.organization_id, auth.uid()) = 'editor'
-          and c.owned_by = auth.uid()
+          and exists (
+            select 1
+            from public.course_editors ce
+            where ce.course_id = c.id
+            and ce.user_id = (select auth.uid())
+          )
         )
       )
   )
@@ -118,7 +128,12 @@ using (
         public.get_user_org_role(c.organization_id, auth.uid()) in ('owner', 'admin')
         or (
           public.get_user_org_role(c.organization_id, auth.uid()) = 'editor'
-          and c.owned_by = auth.uid()
+          and exists (
+            select 1
+            from public.course_editors ce
+            where ce.course_id = c.id
+            and ce.user_id = (select auth.uid())
+          )
         )
       )
   )

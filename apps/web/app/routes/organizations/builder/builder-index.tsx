@@ -2,7 +2,6 @@ import { NavLink, Outlet, useOutletContext } from 'react-router';
 import { motion } from 'framer-motion';
 import { Pencil, PenOff, Plus } from 'lucide-react';
 
-import { getUserId } from '@gonasi/database/auth';
 import { fetchOrganizationCourses } from '@gonasi/database/courses';
 
 import type { Route } from './+types/builder-index';
@@ -44,15 +43,14 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     organizationId: params.organizationId ?? '',
   });
 
-  const userId = await getUserId(supabase);
+  console.log('courses: ', JSON.stringify(courses, null, 2));
 
-  return { courses, userId };
+  return { courses };
 }
 
 export default function BuilderIndex({ params, loaderData }: Route.ComponentProps) {
   const {
     courses: { data },
-    userId,
   } = loaderData;
   const { data: outletData } = useOutletContext<OrganizationsOutletContextType>();
 
@@ -75,10 +73,7 @@ export default function BuilderIndex({ params, loaderData }: Route.ComponentProp
         <section className='px-0 py-4 md:px-4'>
           {data && data.length ? (
             <div className='grid grid-cols-1 gap-0 md:grid-cols-2 md:gap-4 lg:grid-cols-3'>
-              {data.map(({ id, name, signed_url, blur_hash, owned_by }, index) => {
-                const canEdit =
-                  ['owner', 'admin'].includes(outletData.member.role) || owned_by === userId;
-
+              {data.map(({ id, name, signed_url, blur_hash, canEdit }, index) => {
                 const dispBadges = canEdit ? (
                   <Badge variant='default' className='p-1 opacity-50'>
                     <Pencil />

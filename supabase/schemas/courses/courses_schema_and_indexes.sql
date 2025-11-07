@@ -70,7 +70,7 @@ set search_path = ''
 as $$
 begin
   if NEW.category_id is not null
-     and NEW.subcategory_id is not null then
+    and NEW.subcategory_id is not null then
 
     -- Check if the subcategory belongs to the declared category
     if not exists (

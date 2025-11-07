@@ -55,18 +55,16 @@ set search_path = ''
 as $$
 declare
   v_org_id uuid;
-  v_owned_by uuid;
   has_paid_tiers boolean;
 begin
-  select organization_id, owned_by
-  into v_org_id, v_owned_by
+  select organization_id into v_org_id
   from public.courses
   where id = p_course_id;
 
   if not (
     public.has_org_role(v_org_id, 'owner', p_user_id) or
     public.has_org_role(v_org_id, 'admin', p_user_id) or
-    (public.has_org_role(v_org_id, 'editor', p_user_id) and v_owned_by = p_user_id)
+    exists (select 1 from public.course_editors where course_id = p_course_id and user_id = p_user_id)
   ) then
     raise exception 'permission denied: insufficient privileges for course %', p_course_id;
   end if;
@@ -98,6 +96,7 @@ end;
 $$;
 
 
+
 -- ============================================================================
 -- FUNCTION: set_course_paid
 -- Converts a free course to a paid model
@@ -114,24 +113,21 @@ set search_path = ''
 as $$
 declare
   v_org_id uuid;
-  v_owned_by uuid;
   paid_tiers_count int;
 begin
-  select organization_id, owned_by
-  into v_org_id, v_owned_by
+  select organization_id into v_org_id
   from public.courses
   where id = p_course_id;
 
   if not (
     public.has_org_role(v_org_id, 'owner', p_user_id) or
     public.has_org_role(v_org_id, 'admin', p_user_id) or
-    (public.has_org_role(v_org_id, 'editor', p_user_id) and v_owned_by = p_user_id)
+    exists (select 1 from public.course_editors where course_id = p_course_id and user_id = p_user_id)
   ) then
     raise exception 'permission denied: insufficient privileges for course %', p_course_id;
   end if;
 
-  select count(*)
-  into paid_tiers_count
+  select count(*) into paid_tiers_count
   from public.course_pricing_tiers
   where course_id = p_course_id and organization_id = v_org_id and is_free = false;
 
@@ -214,18 +210,16 @@ set search_path = ''
 as $$
 declare
   v_org_id uuid;
-  v_owned_by uuid;
   current_model text;
 begin
-  select organization_id, owned_by
-  into v_org_id, v_owned_by
+  select organization_id into v_org_id
   from public.courses
   where id = p_course_id;
 
   if not (
     public.has_org_role(v_org_id, 'owner', p_user_id) or
     public.has_org_role(v_org_id, 'admin', p_user_id) or
-    (public.has_org_role(v_org_id, 'editor', p_user_id) and v_owned_by = p_user_id)
+    exists (select 1 from public.course_editors where course_id = p_course_id and user_id = p_user_id)
   ) then
     raise exception 'permission denied: cannot switch course pricing model';
   end if;
@@ -240,8 +234,7 @@ begin
       where course_id = p_course_id and organization_id = v_org_id and is_free = false
     ) then 'paid'
     else 'free'
-  end
-  into current_model;
+  end into current_model;
 
   if current_model = p_target_model then
     raise notice 'course already in % model', p_target_model;

@@ -16,12 +16,12 @@ using (
       and public.get_user_org_role(pc.organization_id, (select auth.uid())) in ('owner', 'admin')
   )
 
-  -- OR editors who own the course
+  -- OR assigned course editors can view enrollments
   or exists (
     select 1
     from public.courses pc
+    join public.course_editors ce on ce.course_id = pc.id
     where pc.id = course_enrollments.published_course_id
-      and public.get_user_org_role(pc.organization_id, (select auth.uid())) = 'editor'
-      and pc.owned_by = (select auth.uid())
+      and ce.user_id = (select auth.uid())
   )
 );

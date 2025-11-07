@@ -38,7 +38,7 @@ with check (
 );
 
 -- ================================================================================
--- update: allow org owners/admins or original editor
+-- update: allow org owners/admins or assigned course editors
 -- ================================================================================
 create policy update_org_admins_or_editor
 on public.published_course_structure_content
@@ -51,9 +51,11 @@ using (
     where c.id = published_course_structure_content.id
       and (
         public.get_user_org_role(c.organization_id, (select auth.uid())) in ('owner', 'admin')
-        or (
-          public.get_user_org_role(c.organization_id, (select auth.uid())) = 'editor'
-          and c.owned_by = (select auth.uid())
+        or exists (
+          select 1
+          from public.course_editors ce
+          where ce.course_id = c.id
+            and ce.user_id = (select auth.uid())
         )
       )
   )
@@ -73,9 +75,11 @@ using (
     where c.id = published_course_structure_content.id
       and (
         public.get_user_org_role(c.organization_id, (select auth.uid())) in ('owner', 'admin')
-        or (
-          public.get_user_org_role(c.organization_id, (select auth.uid())) = 'editor'
-          and c.owned_by = (select auth.uid())
+        or exists (
+          select 1
+          from public.course_editors ce
+          where ce.course_id = c.id
+            and ce.user_id = (select auth.uid())
         )
       )
   )

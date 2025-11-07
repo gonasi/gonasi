@@ -146,6 +146,18 @@ alter table "public"."chapters" enable row level security;
 alter table "public"."course_categories" enable row level security;
 
 
+  create table "public"."course_editors" (
+    "id" uuid not null default extensions.uuid_generate_v4(),
+    "course_id" uuid not null,
+    "user_id" uuid not null,
+    "added_by" uuid,
+    "added_at" timestamp with time zone not null default timezone('utc'::text, now())
+      );
+
+
+alter table "public"."course_editors" enable row level security;
+
+
   create table "public"."course_enrollment_activities" (
     "id" uuid not null default extensions.uuid_generate_v4(),
     "enrollment_id" uuid not null,
@@ -293,7 +305,6 @@ alter table "public"."course_sub_categories" enable row level security;
     "category_id" uuid,
     "subcategory_id" uuid,
     "organization_id" uuid,
-    "owned_by" uuid,
     "name" text not null,
     "description" text,
     "image_url" text,
@@ -798,6 +809,10 @@ CREATE UNIQUE INDEX chapters_pkey ON public.chapters USING btree (id);
 
 CREATE UNIQUE INDEX course_categories_pkey ON public.course_categories USING btree (id);
 
+CREATE UNIQUE INDEX course_editors_course_id_user_id_key ON public.course_editors USING btree (course_id, user_id);
+
+CREATE UNIQUE INDEX course_editors_pkey ON public.course_editors USING btree (id);
+
 CREATE UNIQUE INDEX course_enrollment_activities_pkey ON public.course_enrollment_activities USING btree (id);
 
 CREATE UNIQUE INDEX course_enrollments_pkey ON public.course_enrollments USING btree (id);
@@ -876,6 +891,12 @@ CREATE INDEX idx_course_categories_created_by ON public.course_categories USING 
 
 CREATE INDEX idx_course_categories_updated_by ON public.course_categories USING btree (updated_by);
 
+CREATE INDEX idx_course_editors_added_by ON public.course_editors USING btree (added_by);
+
+CREATE INDEX idx_course_editors_course_id ON public.course_editors USING btree (course_id);
+
+CREATE INDEX idx_course_editors_user_id ON public.course_editors USING btree (user_id);
+
 CREATE INDEX idx_course_enrollments_completed_at ON public.course_enrollments USING btree (completed_at);
 
 CREATE INDEX idx_course_enrollments_enrolled_at ON public.course_enrollments USING btree (enrolled_at);
@@ -945,8 +966,6 @@ CREATE INDEX idx_courses_category_id ON public.courses USING btree (category_id)
 CREATE INDEX idx_courses_created_by ON public.courses USING btree (created_by);
 
 CREATE INDEX idx_courses_organization_id ON public.courses USING btree (organization_id);
-
-CREATE INDEX idx_courses_owned_by ON public.courses USING btree (owned_by);
 
 CREATE INDEX idx_courses_subcategory_id ON public.courses USING btree (subcategory_id);
 
@@ -1306,6 +1325,8 @@ alter table "public"."chapters" add constraint "chapters_pkey" PRIMARY KEY using
 
 alter table "public"."course_categories" add constraint "course_categories_pkey" PRIMARY KEY using index "course_categories_pkey";
 
+alter table "public"."course_editors" add constraint "course_editors_pkey" PRIMARY KEY using index "course_editors_pkey";
+
 alter table "public"."course_enrollment_activities" add constraint "course_enrollment_activities_pkey" PRIMARY KEY using index "course_enrollment_activities_pkey";
 
 alter table "public"."course_enrollments" add constraint "course_enrollments_pkey" PRIMARY KEY using index "course_enrollments_pkey";
@@ -1448,6 +1469,20 @@ alter table "public"."course_categories" add constraint "course_categories_updat
 
 alter table "public"."course_categories" validate constraint "course_categories_updated_by_fkey";
 
+alter table "public"."course_editors" add constraint "course_editors_added_by_fkey" FOREIGN KEY (added_by) REFERENCES public.profiles(id) ON DELETE SET NULL not valid;
+
+alter table "public"."course_editors" validate constraint "course_editors_added_by_fkey";
+
+alter table "public"."course_editors" add constraint "course_editors_course_id_fkey" FOREIGN KEY (course_id) REFERENCES public.courses(id) ON DELETE CASCADE not valid;
+
+alter table "public"."course_editors" validate constraint "course_editors_course_id_fkey";
+
+alter table "public"."course_editors" add constraint "course_editors_course_id_user_id_key" UNIQUE using index "course_editors_course_id_user_id_key";
+
+alter table "public"."course_editors" add constraint "course_editors_user_id_fkey" FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE not valid;
+
+alter table "public"."course_editors" validate constraint "course_editors_user_id_fkey";
+
 alter table "public"."course_enrollment_activities" add constraint "course_enrollment_activities_created_by_fkey" FOREIGN KEY (created_by) REFERENCES public.profiles(id) ON DELETE SET NULL not valid;
 
 alter table "public"."course_enrollment_activities" validate constraint "course_enrollment_activities_created_by_fkey";
@@ -1566,10 +1601,6 @@ alter table "public"."course_sub_categories" add constraint "course_sub_categori
 
 alter table "public"."course_sub_categories" validate constraint "course_sub_categories_updated_by_fkey";
 
-alter table "public"."courses" add constraint "chk_course_owner" CHECK (((organization_id IS NOT NULL) OR (owned_by IS NOT NULL))) not valid;
-
-alter table "public"."courses" validate constraint "chk_course_owner";
-
 alter table "public"."courses" add constraint "courses_category_id_fkey" FOREIGN KEY (category_id) REFERENCES public.course_categories(id) ON DELETE SET NULL not valid;
 
 alter table "public"."courses" validate constraint "courses_category_id_fkey";
@@ -1583,10 +1614,6 @@ alter table "public"."courses" add constraint "courses_organization_id_fkey" FOR
 alter table "public"."courses" validate constraint "courses_organization_id_fkey";
 
 alter table "public"."courses" add constraint "courses_organization_id_name_key" UNIQUE using index "courses_organization_id_name_key";
-
-alter table "public"."courses" add constraint "courses_owned_by_fkey" FOREIGN KEY (owned_by) REFERENCES public.profiles(id) ON DELETE SET NULL not valid;
-
-alter table "public"."courses" validate constraint "courses_owned_by_fkey";
 
 alter table "public"."courses" add constraint "courses_subcategory_id_fkey" FOREIGN KEY (subcategory_id) REFERENCES public.course_sub_categories(id) ON DELETE SET NULL not valid;
 
@@ -2385,6 +2412,32 @@ end;
 $function$
 ;
 
+CREATE OR REPLACE FUNCTION public.add_creator_as_course_editor()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+declare
+  v_role text;
+  v_user uuid := (select auth.uid()); -- Authenticated user performing the insert
+begin
+  -- Fetch user's role within the course's organization
+  select public.get_user_org_role(NEW.organization_id, v_user)
+    into v_role;
+
+  -- Only auto-add if user is an editor
+  if v_role = 'editor' then
+    insert into public.course_editors (course_id, user_id, added_by)
+    values (NEW.id, v_user, v_user)
+    on conflict (course_id, user_id) do nothing;
+  end if;
+
+  return NEW;
+end;
+$function$
+;
+
 CREATE OR REPLACE FUNCTION public.add_default_free_pricing_tier()
  RETURNS trigger
  LANGUAGE plpgsql
@@ -2623,12 +2676,14 @@ AS $function$
   select coalesce(
     (
       -- User is an owner or admin in the course's organization
-      public.get_user_org_role(c.organization_id, auth.uid()) in ('owner', 'admin')
+      public.get_user_org_role(c.organization_id, (select auth.uid())) in ('owner', 'admin')
 
-      -- OR user is an editor and also owns the course
-      or (
-        public.get_user_org_role(c.organization_id, auth.uid()) = 'editor'
-        and c.owned_by = auth.uid()
+      -- OR user is an assigned course editor
+      or exists (
+        select 1
+        from public.course_editors ce
+        where ce.course_id = c.id
+          and ce.user_id = (select auth.uid())
       )
     ),
     false  -- Default to false if no course or permission
@@ -3178,6 +3233,27 @@ end;
 $function$
 ;
 
+CREATE OR REPLACE FUNCTION public.delete_course_editors_on_role_change()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+begin
+  -- Only act if the role changed from 'editor' to something else
+  if old.role = 'editor' and new.role <> 'editor' then
+    delete from public.course_editors
+    using public.courses c
+    where course_editors.user_id = old.user_id
+      and course_editors.course_id = c.id
+      and c.organization_id = old.organization_id;
+  end if;
+
+  return new;
+end;
+$function$
+;
+
 CREATE OR REPLACE FUNCTION public.delete_lesson(p_lesson_id uuid, p_deleted_by uuid)
  RETURNS void
  LANGUAGE plpgsql
@@ -3326,12 +3402,10 @@ AS $function$
 declare
   v_course_id uuid;
   v_org_id uuid;
-  v_owned_by uuid;
   v_position int;
 begin
-  -- Fetch course, org, owner, and tier position
-  select t.course_id, c.organization_id, c.owned_by, t.position
-  into v_course_id, v_org_id, v_owned_by, v_position
+  select t.course_id, c.organization_id, t.position
+  into v_course_id, v_org_id, v_position
   from public.course_pricing_tiers t
   join public.courses c on c.id = t.course_id
   where t.id = p_tier_id;
@@ -3340,23 +3414,17 @@ begin
     raise exception 'Pricing tier not found';
   end if;
 
-  -- Permission check using organization roles
   if not (
     public.has_org_role(v_org_id, 'owner', p_deleted_by)
     or public.has_org_role(v_org_id, 'admin', p_deleted_by)
-    or (
-      public.has_org_role(v_org_id, 'editor', p_deleted_by)
-      and v_owned_by = p_deleted_by
-    )
+    or exists (select 1 from public.course_editors where course_id = v_course_id and user_id = p_deleted_by)
   ) then
     raise exception 'Insufficient permissions to delete pricing tiers in this course';
   end if;
 
-  -- Delete the tier
   delete from public.course_pricing_tiers
   where id = p_tier_id;
 
-  -- Reorder remaining tiers (shift down positions > deleted tier)
   update public.course_pricing_tiers
   set 
     position = position - 1,
@@ -3639,6 +3707,32 @@ exception
 
   when others then
     raise exception 'Free enrollment failed: %', sqlerrm;
+end;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.ensure_editor_is_org_member()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+begin
+  if not exists (
+    select 1
+    from public.courses c
+    join public.organization_members m
+      on m.organization_id = c.organization_id
+      and m.user_id = new.user_id
+    where c.id = new.course_id
+  ) then
+    raise exception
+      'User % is not a member of the organization that owns course %',
+      new.user_id, new.course_id
+      using errcode = 'P0001';
+  end if;
+
+  return new;
 end;
 $function$
 ;
@@ -6645,17 +6739,13 @@ CREATE OR REPLACE FUNCTION public.reorder_pricing_tiers(p_course_id uuid, tier_p
 AS $function$
 declare
   v_org_id uuid;
-  v_owned_by uuid;
   temp_offset int := 1000000;
 begin
-  -- Ensure input is not null or empty
   if tier_positions is null or jsonb_array_length(tier_positions) = 0 then
     raise exception 'tier_positions array cannot be null or empty';
   end if;
 
-  -- Retrieve course organization and creator
-  select organization_id, owned_by
-  into v_org_id, v_owned_by
+  select organization_id into v_org_id
   from public.courses
   where id = p_course_id;
 
@@ -6663,19 +6753,14 @@ begin
     raise exception 'Course not found';
   end if;
 
-  -- Enforce permission check using organization roles
   if not (
     public.has_org_role(v_org_id, 'owner', p_updated_by)
     or public.has_org_role(v_org_id, 'admin', p_updated_by)
-    or (
-      public.has_org_role(v_org_id, 'editor', p_updated_by)
-      and v_owned_by = p_updated_by
-    )
+    or exists (select 1 from public.course_editors where course_id = p_course_id and user_id = p_updated_by)
   ) then
     raise exception 'Insufficient permissions to reorder pricing tiers in this course';
   end if;
 
-  -- Ensure all provided tier IDs are valid and belong to the course
   if exists (
     select 1 
     from jsonb_array_elements(tier_positions) as tp
@@ -6685,7 +6770,6 @@ begin
     raise exception 'One or more pricing tier IDs do not exist or do not belong to the specified course';
   end if;
 
-  -- Validate that all positions are positive integers
   if exists (
     select 1 from jsonb_array_elements(tier_positions) as tp
     where (tp->>'position')::int <= 0
@@ -6693,7 +6777,6 @@ begin
     raise exception 'All position values must be positive integers';
   end if;
 
-  -- Ensure every tier for this course is included exactly once
   if (
     select count(*) from public.course_pricing_tiers
     where course_id = p_course_id
@@ -6701,7 +6784,6 @@ begin
     raise exception 'All tiers for the course must be included in the reorder operation';
   end if;
 
-  -- Ensure there are no duplicate positions
   if (
     select count(distinct (tp->>'position')::int)
     from jsonb_array_elements(tier_positions) as tp
@@ -6709,12 +6791,10 @@ begin
     raise exception 'Duplicate position values are not allowed';
   end if;
 
-  -- Temporarily shift all positions to prevent conflicts
   update public.course_pricing_tiers
   set position = position + temp_offset
   where course_id = p_course_id;
 
-  -- Apply new positions in the desired order
   update public.course_pricing_tiers
   set 
     position = new_positions.position,
@@ -6968,7 +7048,7 @@ begin
     from public.organizations o
     where o.id = organization_id_from_url;
 
-    can_add := public.can_accept_new_member(organization_id_from_url, 'accept');
+    can_add := public.can_accept_new_member(organization_id_from_url, 'invite');
     tier_limits_json := public.get_tier_limits_for_org(organization_id_from_url);
 
     return json_build_object(
@@ -6999,7 +7079,7 @@ begin
   where o.id = organization_id_from_url;
 
   -- Fetch permissions and tier config
-  can_add := public.can_accept_new_member(organization_id_from_url, 'accept');
+  can_add := public.can_accept_new_member(organization_id_from_url, 'invite');
   tier_limits_json := public.get_tier_limits_for_org(organization_id_from_url);
 
   -- Return updated organization context
@@ -7044,18 +7124,16 @@ CREATE OR REPLACE FUNCTION public.set_course_free(p_course_id uuid, p_user_id uu
 AS $function$
 declare
   v_org_id uuid;
-  v_owned_by uuid;
   has_paid_tiers boolean;
 begin
-  select organization_id, owned_by
-  into v_org_id, v_owned_by
+  select organization_id into v_org_id
   from public.courses
   where id = p_course_id;
 
   if not (
     public.has_org_role(v_org_id, 'owner', p_user_id) or
     public.has_org_role(v_org_id, 'admin', p_user_id) or
-    (public.has_org_role(v_org_id, 'editor', p_user_id) and v_owned_by = p_user_id)
+    exists (select 1 from public.course_editors where course_id = p_course_id and user_id = p_user_id)
   ) then
     raise exception 'permission denied: insufficient privileges for course %', p_course_id;
   end if;
@@ -7095,24 +7173,21 @@ CREATE OR REPLACE FUNCTION public.set_course_paid(p_course_id uuid, p_user_id uu
 AS $function$
 declare
   v_org_id uuid;
-  v_owned_by uuid;
   paid_tiers_count int;
 begin
-  select organization_id, owned_by
-  into v_org_id, v_owned_by
+  select organization_id into v_org_id
   from public.courses
   where id = p_course_id;
 
   if not (
     public.has_org_role(v_org_id, 'owner', p_user_id) or
     public.has_org_role(v_org_id, 'admin', p_user_id) or
-    (public.has_org_role(v_org_id, 'editor', p_user_id) and v_owned_by = p_user_id)
+    exists (select 1 from public.course_editors where course_id = p_course_id and user_id = p_user_id)
   ) then
     raise exception 'permission denied: insufficient privileges for course %', p_course_id;
   end if;
 
-  select count(*)
-  into paid_tiers_count
+  select count(*) into paid_tiers_count
   from public.course_pricing_tiers
   where course_id = p_course_id and organization_id = v_org_id and is_free = false;
 
@@ -7223,18 +7298,16 @@ CREATE OR REPLACE FUNCTION public.switch_course_pricing_model(p_course_id uuid, 
 AS $function$
 declare
   v_org_id uuid;
-  v_owned_by uuid;
   current_model text;
 begin
-  select organization_id, owned_by
-  into v_org_id, v_owned_by
+  select organization_id into v_org_id
   from public.courses
   where id = p_course_id;
 
   if not (
     public.has_org_role(v_org_id, 'owner', p_user_id) or
     public.has_org_role(v_org_id, 'admin', p_user_id) or
-    (public.has_org_role(v_org_id, 'editor', p_user_id) and v_owned_by = p_user_id)
+    exists (select 1 from public.course_editors where course_id = p_course_id and user_id = p_user_id)
   ) then
     raise exception 'permission denied: cannot switch course pricing model';
   end if;
@@ -7249,8 +7322,7 @@ begin
       where course_id = p_course_id and organization_id = v_org_id and is_free = false
     ) then 'paid'
     else 'free'
-  end
-  into current_model;
+  end into current_model;
 
   if current_model = p_target_model then
     raise notice 'course already in % model', p_target_model;
@@ -8479,43 +8551,30 @@ create or replace view "public"."v_organizations_ai_available_credits" as  SELEC
    FROM public.organizations_ai_credits;
 
 
-CREATE OR REPLACE FUNCTION public.validate_course_owner_in_org()
- RETURNS trigger
- LANGUAGE plpgsql
- SET search_path TO ''
-AS $function$
-begin
-  if NEW.organization_id is not null and NEW.owned_by is not null then
-    if not exists (
-      select 1
-      from public.organization_members
-      where organization_id = NEW.organization_id
-        and user_id = NEW.owned_by
-    ) then
-      raise exception 'User % must be a member of organization %', NEW.owned_by, NEW.organization_id;
-    end if;
-  end if;
-  return NEW;
-end;
-$function$
-;
-
 CREATE OR REPLACE FUNCTION public.validate_subcategory_belongs_to_category()
  RETURNS trigger
  LANGUAGE plpgsql
  SET search_path TO ''
 AS $function$
 begin
-  if NEW.category_id is not null and NEW.subcategory_id is not null then
+  if NEW.category_id is not null
+    and NEW.subcategory_id is not null then
+
+    -- Check if the subcategory belongs to the declared category
     if not exists (
       select 1
       from public.course_sub_categories
       where id = NEW.subcategory_id
         and category_id = NEW.category_id
     ) then
-      raise exception 'Subcategory % does not belong to category %', NEW.subcategory_id, NEW.category_id;
+      raise exception
+        'Subcategory % does not belong to category %',
+        NEW.subcategory_id,
+        NEW.category_id;
     end if;
+
   end if;
+
   return NEW;
 end;
 $function$
@@ -8730,6 +8789,48 @@ grant trigger on table "public"."course_categories" to "service_role";
 grant truncate on table "public"."course_categories" to "service_role";
 
 grant update on table "public"."course_categories" to "service_role";
+
+grant delete on table "public"."course_editors" to "anon";
+
+grant insert on table "public"."course_editors" to "anon";
+
+grant references on table "public"."course_editors" to "anon";
+
+grant select on table "public"."course_editors" to "anon";
+
+grant trigger on table "public"."course_editors" to "anon";
+
+grant truncate on table "public"."course_editors" to "anon";
+
+grant update on table "public"."course_editors" to "anon";
+
+grant delete on table "public"."course_editors" to "authenticated";
+
+grant insert on table "public"."course_editors" to "authenticated";
+
+grant references on table "public"."course_editors" to "authenticated";
+
+grant select on table "public"."course_editors" to "authenticated";
+
+grant trigger on table "public"."course_editors" to "authenticated";
+
+grant truncate on table "public"."course_editors" to "authenticated";
+
+grant update on table "public"."course_editors" to "authenticated";
+
+grant delete on table "public"."course_editors" to "service_role";
+
+grant insert on table "public"."course_editors" to "service_role";
+
+grant references on table "public"."course_editors" to "service_role";
+
+grant select on table "public"."course_editors" to "service_role";
+
+grant trigger on table "public"."course_editors" to "service_role";
+
+grant truncate on table "public"."course_editors" to "service_role";
+
+grant update on table "public"."course_editors" to "service_role";
 
 grant delete on table "public"."course_enrollment_activities" to "anon";
 
@@ -10282,7 +10383,43 @@ using ((public.authorize('go_su_update'::public.app_permission) OR public.author
 
 
 
-  create policy "select: allowed org roles or course enrollment owner"
+  create policy "course-editors-delete-admins"
+  on "public"."course_editors"
+  as permissive
+  for delete
+  to public
+using (public.has_org_role(( SELECT c.organization_id
+   FROM public.courses c
+  WHERE (c.id = course_editors.course_id)), 'admin'::text, ( SELECT auth.uid() AS uid)));
+
+
+
+  create policy "course-editors-insert-admins"
+  on "public"."course_editors"
+  as permissive
+  for insert
+  to public
+with check ((public.has_org_role(( SELECT c.organization_id
+   FROM public.courses c
+  WHERE (c.id = course_editors.course_id)), 'admin'::text, ( SELECT auth.uid() AS uid)) AND (EXISTS ( SELECT 1
+   FROM (public.organization_members m
+     JOIN public.courses c ON ((c.organization_id = m.organization_id)))
+  WHERE ((c.id = course_editors.course_id) AND (m.user_id = m.user_id))))));
+
+
+
+  create policy "course-editors-select-org-members"
+  on "public"."course_editors"
+  as permissive
+  for select
+  to authenticated
+using (public.has_org_role(( SELECT c.organization_id
+   FROM public.courses c
+  WHERE (c.id = course_editors.course_id)), 'editor'::text, ( SELECT auth.uid() AS uid)));
+
+
+
+  create policy "select_enrollment_activities"
   on "public"."course_enrollment_activities"
   as permissive
   for select
@@ -10290,7 +10427,9 @@ using ((public.authorize('go_su_update'::public.app_permission) OR public.author
 using ((EXISTS ( SELECT 1
    FROM (public.course_enrollments ce
      JOIN public.courses pc ON ((pc.id = ce.published_course_id)))
-  WHERE ((ce.id = course_enrollment_activities.enrollment_id) AND ((public.get_user_org_role(pc.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((public.get_user_org_role(pc.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (pc.owned_by = ( SELECT auth.uid() AS uid))) OR (ce.user_id = ( SELECT auth.uid() AS uid)))))));
+  WHERE ((ce.id = course_enrollment_activities.enrollment_id) AND ((public.get_user_org_role(pc.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR (EXISTS ( SELECT 1
+           FROM public.course_editors ce_ed
+          WHERE ((ce_ed.course_id = pc.id) AND (ce_ed.user_id = ( SELECT auth.uid() AS uid))))) OR (ce.user_id = ( SELECT auth.uid() AS uid)))))));
 
 
 
@@ -10302,8 +10441,9 @@ using ((EXISTS ( SELECT 1
 using (((user_id = ( SELECT auth.uid() AS uid)) OR (EXISTS ( SELECT 1
    FROM public.courses pc
   WHERE ((pc.id = course_enrollments.published_course_id) AND (public.get_user_org_role(pc.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text]))))) OR (EXISTS ( SELECT 1
-   FROM public.courses pc
-  WHERE ((pc.id = course_enrollments.published_course_id) AND (public.get_user_org_role(pc.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (pc.owned_by = ( SELECT auth.uid() AS uid)))))));
+   FROM (public.courses pc
+     JOIN public.course_editors ce ON ((ce.course_id = pc.id)))
+  WHERE ((pc.id = course_enrollments.published_course_id) AND (ce.user_id = ( SELECT auth.uid() AS uid)))))));
 
 
 
@@ -10443,25 +10583,27 @@ using ((public.authorize('go_su_update'::public.app_permission) OR public.author
 
 
 
-  create policy "Delete: Admins or owning editors can delete courses"
+  create policy "courses_delete_admins_or_editors"
   on "public"."courses"
   as permissive
   for delete
-  to public
-using (((public.get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((public.get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (owned_by = ( SELECT auth.uid() AS uid)))));
+  to authenticated
+using ((public.has_org_role(organization_id, 'admin'::text, ( SELECT auth.uid() AS uid)) OR (EXISTS ( SELECT 1
+   FROM public.course_editors ce
+  WHERE ((ce.course_id = courses.id) AND (ce.user_id = ( SELECT auth.uid() AS uid)))))));
 
 
 
-  create policy "Insert: Org members can create courses"
+  create policy "courses_insert_org_members"
   on "public"."courses"
   as permissive
   for insert
-  to public
-with check ((public.get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text, 'editor'::text])));
+  to authenticated
+with check ((public.get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) IS NOT NULL));
 
 
 
-  create policy "Select: Org members can view courses"
+  create policy "courses_select_org_members"
   on "public"."courses"
   as permissive
   for select
@@ -10470,12 +10612,17 @@ using ((public.get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) I
 
 
 
-  create policy "Update: Admins or owning editors can update courses"
+  create policy "courses_update_admins_or_editors"
   on "public"."courses"
   as permissive
   for update
-  to public
-using (((public.get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((public.get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (owned_by = ( SELECT auth.uid() AS uid)))));
+  to authenticated
+using ((public.has_org_role(organization_id, 'admin'::text, ( SELECT auth.uid() AS uid)) OR (EXISTS ( SELECT 1
+   FROM public.course_editors ce
+  WHERE ((ce.course_id = courses.id) AND (ce.user_id = ( SELECT auth.uid() AS uid)))))))
+with check ((public.has_org_role(organization_id, 'admin'::text, ( SELECT auth.uid() AS uid)) OR (EXISTS ( SELECT 1
+   FROM public.course_editors ce
+  WHERE ((ce.course_id = courses.id) AND (ce.user_id = ( SELECT auth.uid() AS uid)))))));
 
 
 
@@ -10826,7 +10973,7 @@ with check ((((user_id = ( SELECT auth.uid() AS uid)) AND (role = 'owner'::publi
   as permissive
   for select
   to authenticated
-using (((user_id = ( SELECT auth.uid() AS uid)) OR public.has_org_role(organization_id, 'admin'::text, ( SELECT auth.uid() AS uid))));
+using (((user_id = ( SELECT auth.uid() AS uid)) OR (public.get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) IS NOT NULL)));
 
 
 
@@ -11018,7 +11165,9 @@ with check (((( SELECT auth.uid() AS uid) = id) AND (((mode = 'personal'::public
   to authenticated
 using ((EXISTS ( SELECT 1
    FROM public.courses c
-  WHERE ((c.id = published_course_structure_content.id) AND ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.owned_by = ( SELECT auth.uid() AS uid))))))));
+  WHERE ((c.id = published_course_structure_content.id) AND ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR (EXISTS ( SELECT 1
+           FROM public.course_editors ce
+          WHERE ((ce.course_id = c.id) AND (ce.user_id = ( SELECT auth.uid() AS uid))))))))));
 
 
 
@@ -11051,7 +11200,9 @@ using ((EXISTS ( SELECT 1
   to authenticated
 using ((EXISTS ( SELECT 1
    FROM public.courses c
-  WHERE ((c.id = published_course_structure_content.id) AND ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.owned_by = ( SELECT auth.uid() AS uid))))))));
+  WHERE ((c.id = published_course_structure_content.id) AND ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR (EXISTS ( SELECT 1
+           FROM public.course_editors ce
+          WHERE ((ce.course_id = c.id) AND (ce.user_id = ( SELECT auth.uid() AS uid))))))))));
 
 
 
@@ -11334,6 +11485,8 @@ CREATE TRIGGER trg_set_chapter_position BEFORE INSERT ON public.chapters FOR EAC
 
 CREATE TRIGGER trg_course_categories_set_updated_at BEFORE UPDATE ON public.course_categories FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
+CREATE TRIGGER trg_ensure_editor_is_org_member BEFORE INSERT OR UPDATE ON public.course_editors FOR EACH ROW EXECUTE FUNCTION public.ensure_editor_is_org_member();
+
 CREATE TRIGGER trg_enforce_at_least_one_active_tier BEFORE UPDATE ON public.course_pricing_tiers FOR EACH ROW EXECUTE FUNCTION public.enforce_at_least_one_active_pricing_tier();
 
 CREATE TRIGGER trg_handle_free_tier AFTER INSERT OR UPDATE ON public.course_pricing_tiers FOR EACH ROW EXECUTE FUNCTION public.trg_delete_other_tiers_if_free();
@@ -11350,9 +11503,9 @@ CREATE TRIGGER trg_course_progress_set_updated_at BEFORE UPDATE ON public.course
 
 CREATE TRIGGER trg_course_sub_categories_set_updated_at BEFORE UPDATE ON public.course_sub_categories FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
-CREATE TRIGGER trg_add_default_free_pricing_tier AFTER INSERT ON public.courses FOR EACH ROW EXECUTE FUNCTION public.add_default_free_pricing_tier();
+CREATE TRIGGER trg_add_creator_as_course_editor AFTER INSERT ON public.courses FOR EACH ROW EXECUTE FUNCTION public.add_creator_as_course_editor();
 
-CREATE TRIGGER trg_validate_course_owner BEFORE INSERT OR UPDATE ON public.courses FOR EACH ROW EXECUTE FUNCTION public.validate_course_owner_in_org();
+CREATE TRIGGER trg_add_default_free_pricing_tier AFTER INSERT ON public.courses FOR EACH ROW EXECUTE FUNCTION public.add_default_free_pricing_tier();
 
 CREATE TRIGGER trg_validate_subcategory BEFORE INSERT OR UPDATE ON public.courses FOR EACH ROW EXECUTE FUNCTION public.validate_subcategory_belongs_to_category();
 
@@ -11373,6 +11526,8 @@ CREATE TRIGGER trg_lesson_reset_set_updated_at BEFORE UPDATE ON public.lesson_re
 CREATE TRIGGER trg_lesson_types_set_updated_at BEFORE UPDATE ON public.lesson_types FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
 CREATE TRIGGER trg_set_lesson_position BEFORE INSERT ON public.lessons FOR EACH ROW EXECUTE FUNCTION public.set_lesson_position();
+
+CREATE TRIGGER after_update_role_on_org_members AFTER UPDATE OF role ON public.organization_members FOR EACH ROW EXECUTE FUNCTION public.delete_course_editors_on_role_change();
 
 CREATE TRIGGER trg_organizations_wallets_updated_at BEFORE UPDATE ON public.organization_wallets FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
@@ -11426,7 +11581,9 @@ CREATE TRIGGER trg_create_user_wallets AFTER INSERT ON auth.users FOR EACH ROW E
   to authenticated
 using (((bucket_id = 'published_files'::text) AND (EXISTS ( SELECT 1
    FROM public.courses c
-  WHERE ((c.id = (split_part(objects.name, '/'::text, 2))::uuid) AND (c.organization_id = (split_part(objects.name, '/'::text, 1))::uuid) AND ((public.get_user_org_role(c.organization_id, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((public.get_user_org_role(c.organization_id, auth.uid()) = 'editor'::text) AND (c.owned_by = auth.uid()))))))));
+  WHERE ((c.id = (split_part(objects.name, '/'::text, 2))::uuid) AND (c.organization_id = (split_part(objects.name, '/'::text, 1))::uuid) AND ((public.get_user_org_role(c.organization_id, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((public.get_user_org_role(c.organization_id, auth.uid()) = 'editor'::text) AND (EXISTS ( SELECT 1
+           FROM public.course_editors ce
+          WHERE ((ce.course_id = c.id) AND (ce.user_id = ( SELECT auth.uid() AS uid))))))))))));
 
 
 
@@ -11437,18 +11594,9 @@ using (((bucket_id = 'published_files'::text) AND (EXISTS ( SELECT 1
   to authenticated
 using (((bucket_id = 'published_thumbnails'::text) AND (EXISTS ( SELECT 1
    FROM public.courses c
-  WHERE ((c.id = (split_part(objects.name, '/'::text, 1))::uuid) AND ((public.get_user_org_role(c.organization_id, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((public.get_user_org_role(c.organization_id, auth.uid()) = 'editor'::text) AND (c.owned_by = auth.uid()))))))));
-
-
-
-  create policy "Delete: Admins or owning editors can delete thumbnails"
-  on "storage"."objects"
-  as permissive
-  for delete
-  to authenticated
-using (((bucket_id = 'thumbnails'::text) AND (EXISTS ( SELECT 1
-   FROM public.courses c
-  WHERE ((c.id = (split_part(objects.name, '/'::text, 1))::uuid) AND ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.owned_by = ( SELECT auth.uid() AS uid)))))))));
+  WHERE ((c.id = (split_part(objects.name, '/'::text, 1))::uuid) AND ((public.get_user_org_role(c.organization_id, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text])) OR (EXISTS ( SELECT 1
+           FROM public.course_editors
+          WHERE ((course_editors.course_id = c.id) AND (course_editors.user_id = auth.uid()))))))))));
 
 
 
@@ -11463,17 +11611,6 @@ with check (((bucket_id = 'published_thumbnails'::text) AND (EXISTS ( SELECT 1
 
 
 
-  create policy "Insert: Org members can upload thumbnails"
-  on "storage"."objects"
-  as permissive
-  for insert
-  to authenticated
-with check (((bucket_id = 'thumbnails'::text) AND (EXISTS ( SELECT 1
-   FROM public.courses c
-  WHERE ((c.id = (split_part(objects.name, '/'::text, 1))::uuid) AND (public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text, 'editor'::text])))))));
-
-
-
   create policy "Insert: Org members with elevated roles can upload published fi"
   on "storage"."objects"
   as permissive
@@ -11482,17 +11619,6 @@ with check (((bucket_id = 'thumbnails'::text) AND (EXISTS ( SELECT 1
 with check (((bucket_id = 'published_files'::text) AND (EXISTS ( SELECT 1
    FROM public.courses c
   WHERE ((c.id = (split_part(objects.name, '/'::text, 2))::uuid) AND (c.organization_id = (split_part(objects.name, '/'::text, 1))::uuid) AND (public.get_user_org_role(c.organization_id, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text, 'editor'::text])))))));
-
-
-
-  create policy "Select: Org members can view thumbnails"
-  on "storage"."objects"
-  as permissive
-  for select
-  to authenticated
-using (((bucket_id = 'thumbnails'::text) AND (EXISTS ( SELECT 1
-   FROM public.courses c
-  WHERE ((c.id = (split_part(objects.name, '/'::text, 1))::uuid) AND (public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) IS NOT NULL))))));
 
 
 
@@ -11519,10 +11645,14 @@ using (((bucket_id = 'published_thumbnails'::text) AND ((EXISTS ( SELECT 1
   to authenticated
 using (((bucket_id = 'published_files'::text) AND (EXISTS ( SELECT 1
    FROM public.courses c
-  WHERE ((c.id = (split_part(objects.name, '/'::text, 2))::uuid) AND (c.organization_id = (split_part(objects.name, '/'::text, 1))::uuid) AND ((public.get_user_org_role(c.organization_id, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((public.get_user_org_role(c.organization_id, auth.uid()) = 'editor'::text) AND (c.owned_by = auth.uid()))))))))
+  WHERE ((c.id = (split_part(objects.name, '/'::text, 2))::uuid) AND (c.organization_id = (split_part(objects.name, '/'::text, 1))::uuid) AND ((public.get_user_org_role(c.organization_id, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((public.get_user_org_role(c.organization_id, auth.uid()) = 'editor'::text) AND (EXISTS ( SELECT 1
+           FROM public.course_editors ce
+          WHERE ((ce.course_id = c.id) AND (ce.user_id = ( SELECT auth.uid() AS uid))))))))))))
 with check (((bucket_id = 'published_files'::text) AND (EXISTS ( SELECT 1
    FROM public.courses c
-  WHERE ((c.id = (split_part(objects.name, '/'::text, 2))::uuid) AND (c.organization_id = (split_part(objects.name, '/'::text, 1))::uuid) AND ((public.get_user_org_role(c.organization_id, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((public.get_user_org_role(c.organization_id, auth.uid()) = 'editor'::text) AND (c.owned_by = auth.uid()))))))));
+  WHERE ((c.id = (split_part(objects.name, '/'::text, 2))::uuid) AND (c.organization_id = (split_part(objects.name, '/'::text, 1))::uuid) AND ((public.get_user_org_role(c.organization_id, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((public.get_user_org_role(c.organization_id, auth.uid()) = 'editor'::text) AND (EXISTS ( SELECT 1
+           FROM public.course_editors ce
+          WHERE ((ce.course_id = c.id) AND (ce.user_id = ( SELECT auth.uid() AS uid))))))))))));
 
 
 
@@ -11533,24 +11663,14 @@ with check (((bucket_id = 'published_files'::text) AND (EXISTS ( SELECT 1
   to authenticated
 using (((bucket_id = 'published_thumbnails'::text) AND (EXISTS ( SELECT 1
    FROM public.courses c
-  WHERE ((c.id = (split_part(objects.name, '/'::text, 1))::uuid) AND ((public.get_user_org_role(c.organization_id, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((public.get_user_org_role(c.organization_id, auth.uid()) = 'editor'::text) AND (c.owned_by = auth.uid()))))))))
+  WHERE ((c.id = (split_part(objects.name, '/'::text, 1))::uuid) AND ((public.get_user_org_role(c.organization_id, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text])) OR (EXISTS ( SELECT 1
+           FROM public.course_editors
+          WHERE ((course_editors.course_id = c.id) AND (course_editors.user_id = auth.uid()))))))))))
 with check (((bucket_id = 'published_thumbnails'::text) AND (EXISTS ( SELECT 1
    FROM public.courses c
-  WHERE ((c.id = (split_part(objects.name, '/'::text, 1))::uuid) AND ((public.get_user_org_role(c.organization_id, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((public.get_user_org_role(c.organization_id, auth.uid()) = 'editor'::text) AND (c.owned_by = auth.uid()))))))));
-
-
-
-  create policy "Update: Admins or owning editors can update thumbnails"
-  on "storage"."objects"
-  as permissive
-  for update
-  to authenticated
-using (((bucket_id = 'thumbnails'::text) AND (EXISTS ( SELECT 1
-   FROM public.courses c
-  WHERE ((c.id = (split_part(objects.name, '/'::text, 1))::uuid) AND ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.owned_by = ( SELECT auth.uid() AS uid)))))))))
-with check (((bucket_id = 'thumbnails'::text) AND (EXISTS ( SELECT 1
-   FROM public.courses c
-  WHERE ((c.id = (split_part(objects.name, '/'::text, 1))::uuid) AND ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.owned_by = ( SELECT auth.uid() AS uid)))))))));
+  WHERE ((c.id = (split_part(objects.name, '/'::text, 1))::uuid) AND ((public.get_user_org_role(c.organization_id, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text])) OR (EXISTS ( SELECT 1
+           FROM public.course_editors
+          WHERE ((course_editors.course_id = c.id) AND (course_editors.user_id = auth.uid()))))))))));
 
 
 
@@ -11692,6 +11812,59 @@ using (((bucket_id = 'organization_banner_photos'::text) AND (EXISTS ( SELECT 1
 using (((bucket_id = 'organization_profile_photos'::text) AND (EXISTS ( SELECT 1
    FROM public.organizations o
   WHERE ((o.id = (split_part(objects.name, '/'::text, 1))::uuid) AND (o.is_public = true))))));
+
+
+
+  create policy "thumbnails_delete_admins_or_editors"
+  on "storage"."objects"
+  as permissive
+  for delete
+  to authenticated
+using (((bucket_id = 'thumbnails'::text) AND (EXISTS ( SELECT 1
+   FROM public.courses c
+  WHERE ((c.id = (split_part(c.name, '/'::text, 1))::uuid) AND (public.has_org_role(c.organization_id, 'admin'::text, ( SELECT auth.uid() AS uid)) OR (EXISTS ( SELECT 1
+           FROM public.course_editors ce
+          WHERE ((ce.course_id = c.id) AND (ce.user_id = ( SELECT auth.uid() AS uid)))))))))));
+
+
+
+  create policy "thumbnails_insert_org_members"
+  on "storage"."objects"
+  as permissive
+  for insert
+  to authenticated
+with check (((bucket_id = 'thumbnails'::text) AND (EXISTS ( SELECT 1
+   FROM public.courses c
+  WHERE ((c.id = (split_part(c.name, '/'::text, 1))::uuid) AND (public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) IS NOT NULL))))));
+
+
+
+  create policy "thumbnails_select_org_members"
+  on "storage"."objects"
+  as permissive
+  for select
+  to authenticated
+using (((bucket_id = 'thumbnails'::text) AND (EXISTS ( SELECT 1
+   FROM public.courses c
+  WHERE ((c.id = (split_part(c.name, '/'::text, 1))::uuid) AND (public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) IS NOT NULL))))));
+
+
+
+  create policy "thumbnails_update_admins_or_editors"
+  on "storage"."objects"
+  as permissive
+  for update
+  to authenticated
+using (((bucket_id = 'thumbnails'::text) AND (EXISTS ( SELECT 1
+   FROM public.courses c
+  WHERE ((c.id = (split_part(c.name, '/'::text, 1))::uuid) AND (public.has_org_role(c.organization_id, 'admin'::text, ( SELECT auth.uid() AS uid)) OR (EXISTS ( SELECT 1
+           FROM public.course_editors ce
+          WHERE ((ce.course_id = c.id) AND (ce.user_id = ( SELECT auth.uid() AS uid)))))))))))
+with check (((bucket_id = 'thumbnails'::text) AND (EXISTS ( SELECT 1
+   FROM public.courses c
+  WHERE ((c.id = (split_part(c.name, '/'::text, 1))::uuid) AND (public.has_org_role(c.organization_id, 'admin'::text, ( SELECT auth.uid() AS uid)) OR (EXISTS ( SELECT 1
+           FROM public.course_editors ce
+          WHERE ((ce.course_id = c.id) AND (ce.user_id = ( SELECT auth.uid() AS uid)))))))))));
 
 
 

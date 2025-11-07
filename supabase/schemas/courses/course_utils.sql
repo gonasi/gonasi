@@ -2,12 +2,12 @@
 -- FUNCTION: can_user_edit_course
 -- DESCRIPTION:
 --   Returns TRUE if the currently authenticated user has permission to edit
---   the given course, based on their organization role and course ownership.
+--   the given course, based on their organization role and course editor status.
 --
 --   Editing rights are granted to:
 --     - Organization 'owner'
 --     - Organization 'admin'
---     - Organization 'editor' *only if they personally own the course*
+--     - Assigned course editors (via course_editors table)
 --
 -- USAGE:
 --   select public.can_user_edit_course('course-uuid-here');
@@ -26,12 +26,14 @@ as $$
   select coalesce(
     (
       -- User is an owner or admin in the course's organization
-      public.get_user_org_role(c.organization_id, auth.uid()) in ('owner', 'admin')
+      public.get_user_org_role(c.organization_id, (select auth.uid())) in ('owner', 'admin')
 
-      -- OR user is an editor and also owns the course
-      or (
-        public.get_user_org_role(c.organization_id, auth.uid()) = 'editor'
-        and c.owned_by = auth.uid()
+      -- OR user is an assigned course editor
+      or exists (
+        select 1
+        from public.course_editors ce
+        where ce.course_id = c.id
+          and ce.user_id = (select auth.uid())
       )
     ),
     false  -- Default to false if no course or permission
