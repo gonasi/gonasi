@@ -2,8 +2,9 @@ import { Outlet, useOutletContext } from 'react-router';
 import { formatDistanceToNow } from 'date-fns';
 import { motion } from 'framer-motion';
 import { UserRoundPen, X } from 'lucide-react';
+import { redirectWithError } from 'remix-toast';
 
-import { fetchOrganizationMembers } from '@gonasi/database/organizations';
+import { fetchOrganizationMembers, getUserOrgRole } from '@gonasi/database/organizations';
 
 import type { Route } from './+types/active-members';
 
@@ -25,7 +26,18 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
   const { organizationId } = params;
 
-  const members = await fetchOrganizationMembers({ supabase, organizationId });
+  const [members, userOrgRole] = await Promise.all([
+    fetchOrganizationMembers({ supabase, organizationId }),
+    getUserOrgRole({ supabase, organizationId }),
+  ]);
+
+  // Block editor and null (non-members)
+  if (userOrgRole === 'editor' || userOrgRole === null) {
+    return redirectWithError(
+      `/${organizationId}/builder`,
+      'You are not authorized to view this page.',
+    );
+  }
 
   return members;
 }
@@ -54,7 +66,7 @@ export default function ActiveMembers({ params, loaderData }: Route.ComponentPro
         <h2 className='mb-4 text-lg md:text-2xl'>Active Members</h2>
 
         {members.length === 0 ? (
-          <p className='text-muted-foreground'>No active members found.</p>
+          <p className='text-muted-foreground'>There are no active members yet.</p>
         ) : (
           <Table>
             <TableHeader>

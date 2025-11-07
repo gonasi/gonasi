@@ -1,4 +1,5 @@
 import type { TypedSupabaseClient } from '../client';
+import { getUserOrgRole } from '../organizations';
 
 /**
  * Arguments required to fetch enrollment statistics.
@@ -48,6 +49,16 @@ export async function fetchTotalEnrollmentStats({
   supabase,
   organizationId,
 }: FetchTotalEnrollmentStatsArgs): Promise<FetchTotalEnrollmentStatsResult> {
+  const role = await getUserOrgRole({ supabase, organizationId });
+
+  if (!role || role === 'editor') {
+    return {
+      success: false,
+      message: 'You do not have permission to view this content.',
+      data: null,
+    };
+  }
+
   const now = new Date();
 
   // Use UTC to match the database timezone

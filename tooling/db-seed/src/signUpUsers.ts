@@ -5,6 +5,8 @@ export const SIGNED_UP_EMAILS = [
   // 'mcdalinoluoch@gmail.com',
   // ...Array.from({ length: TOTAL_USERS }, (_, i) => copycat.email(i).toLowerCase()),
   'mcdalinoluoch@gmail.com',
+  'dalaineme@gmail.com',
+  'dalopunkc@gmail.com',
 ];
 
 export async function signUpUsers() {

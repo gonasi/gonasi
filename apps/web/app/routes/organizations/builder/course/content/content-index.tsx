@@ -115,8 +115,20 @@ export async function action({ request, params }: Route.ActionArgs) {
   throw new Response('Unknown intent', { status: 400 });
 }
 
-export default function CourseOverview({ loaderData, params }: Route.ComponentProps) {
+export default function CourseContent({ loaderData, params }: Route.ComponentProps) {
   const { chapters, canEdit } = loaderData;
+
+  if (!canEdit) {
+    return (
+      <BannerCard
+        showCloseIcon={false}
+        variant='restricted'
+        message='Course Content'
+        description={`You don't have permission to view or edit this course's content. Please contact an administrator for access.`}
+        className='mt-4 md:mt-0'
+      />
+    );
+  }
 
   return (
     <>

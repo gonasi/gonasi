@@ -6,7 +6,7 @@ import { fetchFilesWithSignedUrls } from '@gonasi/database/files';
 
 import type { Route } from './+types/file-library-index';
 
-import { NotFoundCard } from '~/components/cards';
+import { BannerCard, NotFoundCard } from '~/components/cards';
 import FileRenderer from '~/components/file-renderers/file-renderer';
 import { PaginationBar } from '~/components/search-params/pagination-bar';
 import { SearchInput } from '~/components/search-params/search-input';
@@ -48,6 +48,18 @@ export default function AllFiles({ loaderData, params }: Route.ComponentProps) {
     data: { data, count },
     canEdit,
   } = loaderData;
+
+  if (!canEdit) {
+    return (
+      <BannerCard
+        showCloseIcon={false}
+        variant='restricted'
+        message='Files Library'
+        description={`You don't have permission to view or manage this course's files. Please contact an administrator for access.`}
+        className='mt-4 md:mt-0'
+      />
+    );
+  }
 
   return (
     <div>

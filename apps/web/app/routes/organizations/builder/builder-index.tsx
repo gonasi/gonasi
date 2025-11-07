@@ -17,9 +17,7 @@ import { cn } from '~/lib/utils';
 // Metadata for SEO
 export function meta() {
   return [
-    {
-      title: 'Organization Courses • Gonasi',
-    },
+    { title: 'Organization Courses • Gonasi' },
     {
       name: 'description',
       content:
@@ -43,14 +41,12 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     organizationId: params.organizationId ?? '',
   });
 
-  console.log('courses: ', JSON.stringify(courses, null, 2));
-
   return { courses };
 }
 
 export default function BuilderIndex({ params, loaderData }: Route.ComponentProps) {
   const {
-    courses: { data },
+    courses: { data, count, organizationRole },
   } = loaderData;
 
   const fadeInUp = {
@@ -69,24 +65,17 @@ export default function BuilderIndex({ params, loaderData }: Route.ComponentProp
             className='rounded-lg border p-2'
           />
         </div>
+
         <section className='px-0 py-4 md:px-4'>
           {data && data.length ? (
             <div className='grid grid-cols-1 gap-0 md:grid-cols-2 md:gap-4 lg:grid-cols-3'>
               {data.map(({ id, name, signed_url, blur_hash, canEdit, editors, userId }, index) => {
-                const dispBadges = (
+                const badges = (
                   <div className='flex items-center gap-2'>
-                    {/* Badge */}
-                    {canEdit ? (
-                      <Badge variant='default' className='p-1 opacity-50'>
-                        <Pencil />
-                      </Badge>
-                    ) : (
-                      <Badge variant='secondary' className='p-1 opacity-50'>
-                        <PenOff />
-                      </Badge>
-                    )}
+                    <Badge variant={canEdit ? 'default' : 'secondary'} className='p-1 opacity-50'>
+                      {canEdit ? <Pencil /> : <PenOff />}
+                    </Badge>
 
-                    {/* Avatars */}
                     <div className='*:data-[slot=avatar]:ring-background flex -space-x-2 *:data-[slot=avatar]:ring-2 *:data-[slot=avatar]:grayscale'>
                       {editors.map((editor) => (
                         <PlainAvatar
@@ -126,7 +115,7 @@ export default function BuilderIndex({ params, loaderData }: Route.ComponentProp
                             blurHash={blur_hash}
                             name={name}
                             className='rounded-t-none'
-                            badges={[dispBadges]}
+                            badges={[badges]}
                           />
                           <GoCardContent>
                             <GoCourseHeader className='line-clamp-1 text-sm' name={name} />
@@ -140,11 +129,18 @@ export default function BuilderIndex({ params, loaderData }: Route.ComponentProp
             </div>
           ) : (
             <div className='max-w-md'>
-              <NotFoundCard message='No courses found' />
+              <NotFoundCard
+                message={
+                  organizationRole === 'editor'
+                    ? 'Not assigned any courses yet. You can create one though.'
+                    : 'No courses found.'
+                }
+              />
             </div>
           )}
         </section>
       </div>
+
       <Outlet />
     </>
   );

@@ -33,22 +33,10 @@ create policy "Update: Admins or course editors can update courses"
 on public.courses
 for update
 using (
-  public.get_user_org_role(organization_id, (select auth.uid())) in ('owner', 'admin')
-  or exists (
-    select 1
-    from public.course_editors ce
-    where ce.course_id = courses.id
-      and ce.user_id = (select auth.uid())
-  )
+  public.can_user_edit_course(id)
 )
 with check (
-  public.get_user_org_role(organization_id, (select auth.uid())) in ('owner', 'admin')
-  or exists (
-    select 1
-    from public.course_editors ce
-    where ce.course_id = courses.id
-      and ce.user_id = (select auth.uid())
-  )
+  public.can_user_edit_course(id)
 );
 
 -- ============================================================================
@@ -62,10 +50,6 @@ to authenticated
 using (
   public.get_user_org_role(organization_id, (select auth.uid())) in ('owner', 'admin')
 );
-
-
-
-
 
 -- ============================================================================
 -- RLS: storage.objects (thumbnails bucket)
@@ -99,19 +83,11 @@ for insert
 to authenticated
 with check (
   bucket_id = 'thumbnails'
-  and exists (
-    select 1
-    from public.courses c
-    where c.id = (split_part(storage.objects.name, '/', 1))::uuid
-      and public.get_user_org_role(c.organization_id, (select auth.uid())) in ('owner', 'admin', 'editor')
-  )
+  and public.can_user_edit_course((split_part(name, '/', 1))::uuid)
 );
 
 -- ============================================================================
 -- UPDATE: Admins OR designated course editors
---
--- ✅ Both USING and WITH CHECK are allowed here
--- ✅ This does NOT cause recursion because storage RLS is separate
 -- ============================================================================
 create policy "Update: Admins or owning editors can update thumbnails"
 on storage.objects
@@ -119,37 +95,11 @@ for update
 to authenticated
 using (
   bucket_id = 'thumbnails'
-  and exists (
-    select 1
-    from public.courses c
-    where c.id = (split_part(storage.objects.name, '/', 1))::uuid
-      and (
-        public.get_user_org_role(c.organization_id, (select auth.uid())) in ('owner', 'admin')
-        or exists (
-          select 1
-          from public.course_editors ce
-          where ce.course_id = c.id
-            and ce.user_id = (select auth.uid())
-        )
-      )
-  )
+  and public.can_user_edit_course((split_part(name, '/', 1))::uuid)
 )
 with check (
   bucket_id = 'thumbnails'
-  and exists (
-    select 1
-    from public.courses c
-    where c.id = (split_part(storage.objects.name, '/', 1))::uuid
-      and (
-        public.get_user_org_role(c.organization_id, (select auth.uid())) in ('owner', 'admin')
-        or exists (
-          select 1
-          from public.course_editors ce
-          where ce.course_id = c.id
-            and ce.user_id = (select auth.uid())
-        )
-      )
-  )
+  and public.can_user_edit_course((split_part(name, '/', 1))::uuid)
 );
 
 -- ============================================================================
@@ -161,18 +111,5 @@ for delete
 to authenticated
 using (
   bucket_id = 'thumbnails'
-  and exists (
-    select 1
-    from public.courses c
-    where c.id = (split_part(storage.objects.name, '/', 1))::uuid
-      and (
-        public.get_user_org_role(c.organization_id, (select auth.uid())) in ('owner', 'admin')
-        or exists (
-          select 1
-          from public.course_editors ce
-          where ce.course_id = c.id
-            and ce.user_id = (select auth.uid())
-        )
-      )
-  )
+  and public.can_user_edit_course((split_part(name, '/', 1))::uuid)
 );

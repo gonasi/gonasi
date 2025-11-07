@@ -6,16 +6,12 @@ alter table public.chapters enable row level security;
 -- ============================================================================
 -- SELECT: Allow org members with any course role to view chapters
 -- ============================================================================
-create policy "select: org members can view chapters"
+create policy "select: org members or editors can view chapters"
 on public.chapters
 for select
 to authenticated
 using (
-  exists (
-    select 1 from public.courses c
-    where c.id = chapters.course_id
-      and public.get_user_org_role(c.organization_id, (select auth.uid())) is not null
-  )
+  public.can_user_edit_course(chapters.course_id)
 );
 
 

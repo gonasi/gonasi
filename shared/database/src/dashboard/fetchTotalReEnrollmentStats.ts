@@ -1,4 +1,5 @@
 import type { TypedSupabaseClient } from '../client';
+import { getUserOrgRole } from '../organizations';
 
 /**
  * Arguments required to fetch re-enrollment statistics.
@@ -43,6 +44,16 @@ export async function fetchTotalReEnrollmentStats({
   supabase,
   organizationId,
 }: FetchReEnrollmentStatsArgs): Promise<FetchReEnrollmentStatsResult> {
+  const role = await getUserOrgRole({ supabase, organizationId });
+
+  if (!role || role === 'editor') {
+    return {
+      success: false,
+      message: 'You do not have permission to view this content.',
+      data: null,
+    };
+  }
+
   const now = new Date();
   const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
   const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString();

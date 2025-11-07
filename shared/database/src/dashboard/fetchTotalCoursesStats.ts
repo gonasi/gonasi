@@ -1,4 +1,5 @@
 import type { TypedSupabaseClient } from '../client';
+import { getUserOrgRole } from '../organizations';
 
 interface FetchTotalCoursesStatsArgs {
   supabase: TypedSupabaseClient;
@@ -35,6 +36,16 @@ export async function fetchTotalCoursesStats({
   supabase,
   organizationId,
 }: FetchTotalCoursesStatsArgs): Promise<Result<CourseStats>> {
+  const role = await getUserOrgRole({ supabase, organizationId });
+
+  if (!role || role === 'editor') {
+    return {
+      success: false,
+      message: 'You do not have permission to view this content.',
+      data: null,
+    };
+  }
+
   // ═══════════════════════════════════════════════════════════════
   // DATE RANGE CALCULATION
   // ═══════════════════════════════════════════════════════════════

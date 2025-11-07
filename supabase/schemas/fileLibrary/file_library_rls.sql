@@ -8,26 +8,15 @@ on public.file_library
 for select
 to authenticated
 using (
-  public.get_user_org_role(file_library.organization_id, (select auth.uid())) is not null
+  public.can_user_edit_course(file_library.course_id)
 );
 
 create policy "insert: org owner/admin or course creator"
 on public.file_library
 for insert
 to authenticated
-with check (
-  exists (
-    select 1
-    from public.courses c
-    where c.id = file_library.course_id
-      and (
-        public.get_user_org_role(c.organization_id, (select auth.uid())) in ('owner', 'admin')
-        or (
-          public.get_user_org_role(c.organization_id, (select auth.uid())) = 'editor'
-          and c.created_by = (select auth.uid())
-        )
-      )
-  )
+with check ( 
+  public.can_user_edit_course(file_library.course_id)
 );
 
 create policy "update: org owner/admin or course creator"
@@ -35,56 +24,27 @@ on public.file_library
 for update
 to authenticated
 using (
-  exists (
-    select 1
-    from public.courses c
-    where c.id = file_library.course_id
-      and (
-        public.get_user_org_role(c.organization_id, (select auth.uid())) in ('owner', 'admin')
-        or (
-          public.get_user_org_role(c.organization_id, (select auth.uid())) = 'editor'
-          and c.created_by = (select auth.uid())
-        )
-      )
-  )
+  public.can_user_edit_course(file_library.course_id)
 )
 with check (
-  exists (
-    select 1
-    from public.courses c
-    where c.id = file_library.course_id
-      and (
-        public.get_user_org_role(c.organization_id, (select auth.uid())) in ('owner', 'admin')
-        or (
-          public.get_user_org_role(c.organization_id, (select auth.uid())) = 'editor'
-          and c.created_by = (select auth.uid())
-        )
-      )
-  )
+  public.can_user_edit_course(file_library.course_id)
 );
+
 
 create policy "delete: org owner/admin or course creator"
 on public.file_library
 for delete
 to authenticated
 using (
-  exists (
-    select 1
-    from public.courses c
-    where c.id = file_library.course_id
-      and (
-        public.get_user_org_role(c.organization_id, (select auth.uid())) in ('owner', 'admin')
-        or (
-          public.get_user_org_role(c.organization_id, (select auth.uid())) = 'editor'
-          and c.created_by = (select auth.uid())
-        )
-      )
-  )
+  public.can_user_edit_course(file_library.course_id)
 );
 
 
+-- =======================================
+-- STORAGE.OBJECTS (FILES BUCKET) POLICIES
+-- =======================================
 
--- SELECT: Check if user has access to the file via file_library using path
+-- SELECT: Check if user has access to the file via file_library
 create policy "select: org members can view files"
 on storage.objects
 for select
@@ -94,7 +54,7 @@ using (
   and exists (
     select 1 from public.file_library fl
     where fl.path = storage.objects.name
-      and public.get_user_org_role(fl.organization_id, (select auth.uid())) is not null
+      and public.can_user_edit_course(fl.course_id)
   )
 );
 
@@ -109,13 +69,7 @@ with check (
     select 1 from public.courses c
     where c.id = (split_part(storage.objects.name, '/', 2))::uuid
       and c.organization_id = (split_part(storage.objects.name, '/', 1))::uuid
-      and (
-        public.get_user_org_role(c.organization_id, (select auth.uid())) in ('owner', 'admin')
-        or (
-          public.get_user_org_role(c.organization_id, (select auth.uid())) = 'editor'
-          and c.created_by = (select auth.uid())
-        )
-      )
+      and public.can_user_edit_course(c.id)
       -- Check storage limit using the helper function
       and public.check_storage_limit(
         c.organization_id,
@@ -124,7 +78,7 @@ with check (
   )
 );
 
--- UPDATE: Same logic as SELECT - use path to match file_library
+-- UPDATE: Use path to match file_library
 create policy "update: org owner/admin or course creator"
 on storage.objects
 for update
@@ -133,30 +87,16 @@ using (
   bucket_id = 'files'
   and exists (
     select 1 from public.file_library fl
-    join public.courses c on c.id = fl.course_id
     where fl.path = storage.objects.name
-      and (
-        public.get_user_org_role(c.organization_id, (select auth.uid())) in ('owner', 'admin')
-        or (
-          public.get_user_org_role(c.organization_id, (select auth.uid())) = 'editor'
-          and c.created_by = (select auth.uid())
-        )
-      )
+      and public.can_user_edit_course(fl.course_id)
   )
 )
 with check (
   bucket_id = 'files'
   and exists (
     select 1 from public.file_library fl
-    join public.courses c on c.id = fl.course_id
     where fl.path = storage.objects.name
-      and (
-        public.get_user_org_role(c.organization_id, (select auth.uid())) in ('owner', 'admin')
-        or (
-          public.get_user_org_role(c.organization_id, (select auth.uid())) = 'editor'
-          and c.created_by = (select auth.uid())
-        )
-      )
+      and public.can_user_edit_course(fl.course_id)
   )
 );
 
@@ -169,14 +109,7 @@ using (
   bucket_id = 'files'
   and exists (
     select 1 from public.file_library fl
-    join public.courses c on c.id = fl.course_id
     where fl.path = storage.objects.name
-      and (
-        public.get_user_org_role(c.organization_id, (select auth.uid())) in ('owner', 'admin')
-        or (
-          public.get_user_org_role(c.organization_id, (select auth.uid())) = 'editor'
-          and c.created_by = (select auth.uid())
-        )
-      )
+      and public.can_user_edit_course(fl.course_id)
   )
 );

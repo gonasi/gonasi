@@ -75,7 +75,7 @@ export function OrganizationPlanCard() {
       <Card className='border-border/50 rounded-none'>
         <CardContent className='text-muted-foreground flex items-center justify-center p-6 text-sm'>
           <AlertTriangle className='text-destructive mr-2 h-4 w-4' />
-          Unable to load your organization's current plan
+          {result?.message || 'Unable to load your organization’s current plan'}
         </CardContent>
       </Card>
     );

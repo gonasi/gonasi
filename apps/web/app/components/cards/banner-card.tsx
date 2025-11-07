@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import type { LucideIcon } from 'lucide-react';
-import { AlertOctagon, AlertTriangle, CheckCircle, Info, Lightbulb, X } from 'lucide-react';
+import { AlertOctagon, AlertTriangle, CheckCircle, Info, Lightbulb, Lock, X } from 'lucide-react';
 
 import { NavLinkButton } from '../ui/button';
 
 interface BannerCardProps {
   message: string;
   description?: string;
-  variant?: 'info' | 'success' | 'warning' | 'error' | 'tip';
+  variant?: 'info' | 'success' | 'warning' | 'error' | 'tip' | 'restricted';
   className?: string;
   showCloseIcon?: boolean;
   cta?: {
@@ -49,6 +49,11 @@ const variantStyles: Record<
     textColor: 'text-tip-foreground',
     bgColor: 'bg-tip',
   },
+  restricted: {
+    icon: Lock,
+    textColor: 'text-warning-foreground',
+    bgColor: 'bg-warning/90 border-warning',
+  },
 };
 
 export function BannerCard({
@@ -73,7 +78,7 @@ export function BannerCard({
 
   return (
     <div
-      className={`flex transform justify-between space-x-4 rounded-md p-4 transition-opacity duration-200 ease-in-out ${closing ? 'scale-95 opacity-0' : 'scale-100 opacity-100'} ${bgColor} ${className ?? ''} `}
+      className={`flex transform justify-between space-x-4 rounded-md p-4 transition-opacity duration-200 ease-in-out ${closing ? 'scale-95 opacity-0' : 'scale-100 opacity-100'} ${bgColor} ${className ?? ''}`}
     >
       <div className='w-full'>
         <div className='relative w-full justify-between'>

@@ -40,7 +40,7 @@ with check (
 -- DELETE: Only org admins (or higher) may remove editors
 create policy "course-editors-delete-admins"
 on public.course_editors
-for delete
+for delete 
 using (
     has_org_role(
         organization_id,  -- No subquery needed!

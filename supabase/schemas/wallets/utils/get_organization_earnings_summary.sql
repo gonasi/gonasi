@@ -4,6 +4,7 @@
 -- PURPOSE:
 --   Returns a row per organization wallet (currency), including lifetime
 --   totals, month-over-month comparisons, and current balances.
+--   Only accessible to organization admins and owners.
 -- ========================================================================
 create or replace function public.get_organization_earnings_summary(
   p_org_id uuid
@@ -29,6 +30,13 @@ security definer
 set search_path = ''
 as $$
 begin
+  -- ============================================================
+  -- ✅ Permission check: allow only admin or owner
+  -- ============================================================
+  if not public.has_org_role(p_org_id, 'admin', auth.uid()) then
+    raise exception 'You do not have permission to view organization earnings.';
+  end if;
+
   return query
   with wallets as (
     select 

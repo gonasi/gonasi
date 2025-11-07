@@ -4977,6 +4977,13 @@ CREATE OR REPLACE FUNCTION public.get_organization_earnings_summary(p_org_id uui
  SET search_path TO ''
 AS $function$
 begin
+  -- ============================================================
+  -- ✅ Permission check: allow only admin or owner
+  -- ============================================================
+  if not public.has_org_role(p_org_id, 'admin', auth.uid()) then
+    raise exception 'You do not have permission to view organization earnings.';
+  end if;
+
   return query
   with wallets as (
     select 
@@ -10357,14 +10364,12 @@ with check (public.can_user_edit_course(course_id));
 
 
 
-  create policy "select: org members can view chapters"
+  create policy "select: org members or editors can view chapters"
   on "public"."chapters"
   as permissive
   for select
   to authenticated
-using ((EXISTS ( SELECT 1
-   FROM public.courses c
-  WHERE ((c.id = chapters.course_id) AND (public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) IS NOT NULL)))));
+using (public.can_user_edit_course(course_id));
 
 
 
@@ -10503,9 +10508,7 @@ with check (public.can_user_edit_course(course_id));
   as permissive
   for select
   to authenticated
-using ((EXISTS ( SELECT 1
-   FROM public.courses c
-  WHERE ((c.id = course_pricing_tiers.course_id) AND (public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) IS NOT NULL)))));
+using (public.can_user_edit_course(course_id));
 
 
 
@@ -10639,12 +10642,8 @@ using ((public.get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) I
   as permissive
   for update
   to public
-using (((public.get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR (EXISTS ( SELECT 1
-   FROM public.course_editors ce
-  WHERE ((ce.course_id = courses.id) AND (ce.user_id = ( SELECT auth.uid() AS uid)))))))
-with check (((public.get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR (EXISTS ( SELECT 1
-   FROM public.course_editors ce
-  WHERE ((ce.course_id = courses.id) AND (ce.user_id = ( SELECT auth.uid() AS uid)))))));
+using (public.can_user_edit_course(id))
+with check (public.can_user_edit_course(id));
 
 
 
@@ -10653,9 +10652,7 @@ with check (((public.get_user_org_role(organization_id, ( SELECT auth.uid() AS u
   as permissive
   for delete
   to authenticated
-using ((EXISTS ( SELECT 1
-   FROM public.courses c
-  WHERE ((c.id = file_library.course_id) AND ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.created_by = ( SELECT auth.uid() AS uid))))))));
+using (public.can_user_edit_course(course_id));
 
 
 
@@ -10664,9 +10661,7 @@ using ((EXISTS ( SELECT 1
   as permissive
   for insert
   to authenticated
-with check ((EXISTS ( SELECT 1
-   FROM public.courses c
-  WHERE ((c.id = file_library.course_id) AND ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.created_by = ( SELECT auth.uid() AS uid))))))));
+with check (public.can_user_edit_course(course_id));
 
 
 
@@ -10675,7 +10670,7 @@ with check ((EXISTS ( SELECT 1
   as permissive
   for select
   to authenticated
-using ((public.get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) IS NOT NULL));
+using (public.can_user_edit_course(course_id));
 
 
 
@@ -10684,12 +10679,8 @@ using ((public.get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) I
   as permissive
   for update
   to authenticated
-using ((EXISTS ( SELECT 1
-   FROM public.courses c
-  WHERE ((c.id = file_library.course_id) AND ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.created_by = ( SELECT auth.uid() AS uid))))))))
-with check ((EXISTS ( SELECT 1
-   FROM public.courses c
-  WHERE ((c.id = file_library.course_id) AND ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.created_by = ( SELECT auth.uid() AS uid))))))));
+using (public.can_user_edit_course(course_id))
+with check (public.can_user_edit_course(course_id));
 
 
 
@@ -10730,9 +10721,8 @@ with check ((EXISTS ( SELECT 1
   for select
   to authenticated
 using ((EXISTS ( SELECT 1
-   FROM (public.courses c
-     JOIN public.lessons l ON ((l.course_id = c.id)))
-  WHERE ((l.id = lesson_blocks.lesson_id) AND (public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) IS NOT NULL)))));
+   FROM public.lessons l
+  WHERE ((l.id = lesson_blocks.lesson_id) AND public.can_user_edit_course(l.course_id)))));
 
 
 
@@ -10913,9 +10903,7 @@ with check (public.can_user_edit_course(course_id));
   as permissive
   for select
   to authenticated
-using ((EXISTS ( SELECT 1
-   FROM public.courses c
-  WHERE ((c.id = lessons.course_id) AND (public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) IS NOT NULL)))));
+using (public.can_user_edit_course(course_id));
 
 
 
@@ -11009,24 +10997,6 @@ with check (((user_id <> ( SELECT auth.uid() AS uid)) AND (role = ANY (ARRAY['ad
 
 
 
-  create policy "organization_subscriptions_delete"
-  on "public"."organization_subscriptions"
-  as permissive
-  for delete
-  to service_role
-using (true);
-
-
-
-  create policy "organization_subscriptions_insert"
-  on "public"."organization_subscriptions"
-  as permissive
-  for insert
-  to service_role
-with check (true);
-
-
-
   create policy "organization_subscriptions_select"
   on "public"."organization_subscriptions"
   as permissive
@@ -11034,19 +11004,7 @@ with check (true);
   to authenticated
 using ((EXISTS ( SELECT 1
    FROM public.organizations o
-  WHERE ((o.id = organization_subscriptions.organization_id) AND ((o.owned_by = ( SELECT auth.uid() AS uid)) OR public.has_org_role(o.id, 'admin'::text, ( SELECT auth.uid() AS uid)) OR (EXISTS ( SELECT 1
-           FROM public.organization_members om
-          WHERE ((om.organization_id = o.id) AND (om.user_id = ( SELECT auth.uid() AS uid))))))))));
-
-
-
-  create policy "organization_subscriptions_update"
-  on "public"."organization_subscriptions"
-  as permissive
-  for update
-  to service_role
-using (true)
-with check (true);
+  WHERE ((o.id = organization_subscriptions.organization_id) AND ((o.owned_by = ( SELECT auth.uid() AS uid)) OR public.has_org_role(o.id, 'admin'::text, ( SELECT auth.uid() AS uid)))))));
 
 
 
@@ -11627,11 +11585,7 @@ using (((bucket_id = 'published_thumbnails'::text) AND (EXISTS ( SELECT 1
   as permissive
   for delete
   to authenticated
-using (((bucket_id = 'thumbnails'::text) AND (EXISTS ( SELECT 1
-   FROM public.courses c
-  WHERE ((c.id = (split_part(objects.name, '/'::text, 1))::uuid) AND ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR (EXISTS ( SELECT 1
-           FROM public.course_editors ce
-          WHERE ((ce.course_id = c.id) AND (ce.user_id = ( SELECT auth.uid() AS uid)))))))))));
+using (((bucket_id = 'thumbnails'::text) AND public.can_user_edit_course((split_part(name, '/'::text, 1))::uuid)));
 
 
 
@@ -11651,9 +11605,7 @@ with check (((bucket_id = 'published_thumbnails'::text) AND (EXISTS ( SELECT 1
   as permissive
   for insert
   to authenticated
-with check (((bucket_id = 'thumbnails'::text) AND (EXISTS ( SELECT 1
-   FROM public.courses c
-  WHERE ((c.id = (split_part(objects.name, '/'::text, 1))::uuid) AND (public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text, 'editor'::text])))))));
+with check (((bucket_id = 'thumbnails'::text) AND public.can_user_edit_course((split_part(name, '/'::text, 1))::uuid)));
 
 
 
@@ -11736,16 +11688,8 @@ with check (((bucket_id = 'published_thumbnails'::text) AND (EXISTS ( SELECT 1
   as permissive
   for update
   to authenticated
-using (((bucket_id = 'thumbnails'::text) AND (EXISTS ( SELECT 1
-   FROM public.courses c
-  WHERE ((c.id = (split_part(objects.name, '/'::text, 1))::uuid) AND ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR (EXISTS ( SELECT 1
-           FROM public.course_editors ce
-          WHERE ((ce.course_id = c.id) AND (ce.user_id = ( SELECT auth.uid() AS uid)))))))))))
-with check (((bucket_id = 'thumbnails'::text) AND (EXISTS ( SELECT 1
-   FROM public.courses c
-  WHERE ((c.id = (split_part(objects.name, '/'::text, 1))::uuid) AND ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR (EXISTS ( SELECT 1
-           FROM public.course_editors ce
-          WHERE ((ce.course_id = c.id) AND (ce.user_id = ( SELECT auth.uid() AS uid)))))))))));
+using (((bucket_id = 'thumbnails'::text) AND public.can_user_edit_course((split_part(name, '/'::text, 1))::uuid)))
+with check (((bucket_id = 'thumbnails'::text) AND public.can_user_edit_course((split_part(name, '/'::text, 1))::uuid)));
 
 
 
@@ -11755,9 +11699,8 @@ with check (((bucket_id = 'thumbnails'::text) AND (EXISTS ( SELECT 1
   for delete
   to authenticated
 using (((bucket_id = 'files'::text) AND (EXISTS ( SELECT 1
-   FROM (public.file_library fl
-     JOIN public.courses c ON ((c.id = fl.course_id)))
-  WHERE ((fl.path = objects.name) AND ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.created_by = ( SELECT auth.uid() AS uid)))))))));
+   FROM public.file_library fl
+  WHERE ((fl.path = objects.name) AND public.can_user_edit_course(fl.course_id))))));
 
 
 
@@ -11799,7 +11742,7 @@ using (((bucket_id = 'organization_profile_photos'::text) AND (EXISTS ( SELECT 1
   to authenticated
 with check (((bucket_id = 'files'::text) AND (EXISTS ( SELECT 1
    FROM public.courses c
-  WHERE ((c.id = (split_part(objects.name, '/'::text, 2))::uuid) AND (c.organization_id = (split_part(objects.name, '/'::text, 1))::uuid) AND ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.created_by = ( SELECT auth.uid() AS uid)))) AND (public.check_storage_limit(c.organization_id, COALESCE(((objects.metadata ->> 'size'::text))::bigint, (0)::bigint)) = true))))));
+  WHERE ((c.id = (split_part(objects.name, '/'::text, 2))::uuid) AND (c.organization_id = (split_part(objects.name, '/'::text, 1))::uuid) AND public.can_user_edit_course(c.id) AND (public.check_storage_limit(c.organization_id, COALESCE(((objects.metadata ->> 'size'::text))::bigint, (0)::bigint)) = true))))));
 
 
 
@@ -11853,7 +11796,7 @@ using (((bucket_id = 'published_files'::text) AND ((EXISTS ( SELECT 1
   to authenticated
 using (((bucket_id = 'files'::text) AND (EXISTS ( SELECT 1
    FROM public.file_library fl
-  WHERE ((fl.path = objects.name) AND (public.get_user_org_role(fl.organization_id, ( SELECT auth.uid() AS uid)) IS NOT NULL))))));
+  WHERE ((fl.path = objects.name) AND public.can_user_edit_course(fl.course_id))))));
 
 
 
@@ -11896,13 +11839,11 @@ using (((bucket_id = 'organization_profile_photos'::text) AND (EXISTS ( SELECT 1
   for update
   to authenticated
 using (((bucket_id = 'files'::text) AND (EXISTS ( SELECT 1
-   FROM (public.file_library fl
-     JOIN public.courses c ON ((c.id = fl.course_id)))
-  WHERE ((fl.path = objects.name) AND ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.created_by = ( SELECT auth.uid() AS uid)))))))))
+   FROM public.file_library fl
+  WHERE ((fl.path = objects.name) AND public.can_user_edit_course(fl.course_id))))))
 with check (((bucket_id = 'files'::text) AND (EXISTS ( SELECT 1
-   FROM (public.file_library fl
-     JOIN public.courses c ON ((c.id = fl.course_id)))
-  WHERE ((fl.path = objects.name) AND ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = 'editor'::text) AND (c.created_by = ( SELECT auth.uid() AS uid)))))))));
+   FROM public.file_library fl
+  WHERE ((fl.path = objects.name) AND public.can_user_edit_course(fl.course_id))))));
 
 
 

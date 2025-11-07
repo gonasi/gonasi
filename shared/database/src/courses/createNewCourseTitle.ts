@@ -35,7 +35,7 @@ export const createNewCourseTitle = async ({
       .single();
 
     if (error || !data) {
-      console.error('Supabase insert error:', error);
+      console.error('[createNewCourseTitle] error:', error);
       return {
         success: false,
         message: error.message || 'Couldn’t add the course title.',

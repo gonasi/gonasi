@@ -1,4 +1,5 @@
 import type { TypedSupabaseClient } from '../client';
+import { getUserOrgRole } from '../organizations/getUserOrgRole';
 import type { Database } from '../schema';
 
 interface FetchOrganizationSubscriptionStatusParams {
@@ -32,6 +33,16 @@ export const fetchOrganizationSubscriptionStatus = async ({
   supabase,
   organizationId,
 }: FetchOrganizationSubscriptionStatusParams): Promise<SuccessResponse | ErrorResponse> => {
+  const role = await getUserOrgRole({ supabase, organizationId });
+
+  if (!role || role === 'editor') {
+    return {
+      success: false,
+      message: 'You do not have permission to view this content.',
+      data: null,
+    };
+  }
+
   // Fetch organization
   const { data: org, error: orgError } = await supabase
     .from('organizations')

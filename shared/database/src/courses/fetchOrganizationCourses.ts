@@ -27,8 +27,8 @@ export async function fetchOrganizationCourses({
     .eq('user_id', userId)
     .single();
 
-  const userRole = memberData?.role;
-  const isAdminOrOwner = userRole === 'owner' || userRole === 'admin';
+  const organizationRole = memberData?.role;
+  const isAdminOrOwner = organizationRole === 'owner' || organizationRole === 'admin';
 
   // ---------------------------------------------------------
   // FETCH ADMINS + OWNERS
@@ -86,7 +86,7 @@ export async function fetchOrganizationCourses({
   const { data: courses, error, count } = await query;
 
   if (error || !courses?.length) {
-    return { count: 0, data: [] };
+    return { count: 0, data: [], organizationRole };
   }
 
   // ---------------------------------------------------------
@@ -199,5 +199,5 @@ export async function fetchOrganizationCourses({
     }),
   );
 
-  return { count, data: dataWithSignedUrls };
+  return { count, data: dataWithSignedUrls, organizationRole };
 }

@@ -147,6 +147,18 @@ export default function CoursePricing({ loaderData, params }: Route.ComponentPro
     fetcher.submit(formData, { method: 'post' });
   }
 
+  if (!canEdit) {
+    return (
+      <BannerCard
+        showCloseIcon={false}
+        variant='restricted'
+        message='Course Pricing'
+        description={`You don't have permission to view course pricing. Please contact an administrator for access.`}
+        className='mt-4 md:mt-0'
+      />
+    );
+  }
+
   if (!pricingData?.length) {
     return (
       <div className='mx-auto max-w-3xl'>

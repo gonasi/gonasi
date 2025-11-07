@@ -1,4 +1,5 @@
 import type { TypedSupabaseClient } from '../client';
+import { getUserOrgRole } from '../organizations';
 
 /**
  * Arguments for fetching total student statistics.
@@ -69,6 +70,16 @@ export async function fetchTotalStudentsStats({
   const safe = (n?: number | null): number => (n && !isNaN(n) ? n : 0);
 
   try {
+    const role = await getUserOrgRole({ supabase, organizationId });
+
+    if (!role || role === 'editor') {
+      return {
+        success: false,
+        message: 'You do not have permission to view this content.',
+        data: null,
+      };
+    }
+
     // ═══════════════════════════════════════════════════════════════
     // TOTAL UNIQUE STUDENTS
     // ═══════════════════════════════════════════════════════════════

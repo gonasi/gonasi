@@ -17,13 +17,10 @@ export async function fetchOrganizationWalletBalances({
     p_org_id: organizationId,
   });
 
-  console.log('data: ', data);
-  console.log('error: ', error);
-
   if (error || !data) {
     return {
       success: false,
-      message: 'Could not fetch',
+      message: error.message || 'Could not fetch',
       data: null,
     } as const;
   }

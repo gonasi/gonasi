@@ -11,12 +11,7 @@ on public.course_pricing_tiers
 for select
 to authenticated
 using (
-  exists (
-    select 1
-    from public.courses c
-    where c.id = course_pricing_tiers.course_id
-      and public.get_user_org_role(c.organization_id, (select auth.uid())) is not null
-  )
+  public.can_user_edit_course(course_pricing_tiers.course_id)
 );
 
 -- ============================================================================
