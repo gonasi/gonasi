@@ -149,6 +149,7 @@ alter table "public"."course_categories" enable row level security;
   create table "public"."course_editors" (
     "id" uuid not null default extensions.uuid_generate_v4(),
     "course_id" uuid not null,
+    "organization_id" uuid not null,
     "user_id" uuid not null,
     "added_by" uuid,
     "added_at" timestamp with time zone not null default timezone('utc'::text, now())
@@ -895,6 +896,12 @@ CREATE INDEX idx_course_editors_added_by ON public.course_editors USING btree (a
 
 CREATE INDEX idx_course_editors_course_id ON public.course_editors USING btree (course_id);
 
+CREATE INDEX idx_course_editors_course_user ON public.course_editors USING btree (course_id, user_id);
+
+CREATE INDEX idx_course_editors_org_user ON public.course_editors USING btree (organization_id, user_id);
+
+CREATE INDEX idx_course_editors_organization_id ON public.course_editors USING btree (organization_id);
+
 CREATE INDEX idx_course_editors_user_id ON public.course_editors USING btree (user_id);
 
 CREATE INDEX idx_course_enrollments_completed_at ON public.course_enrollments USING btree (completed_at);
@@ -1478,6 +1485,10 @@ alter table "public"."course_editors" add constraint "course_editors_course_id_f
 alter table "public"."course_editors" validate constraint "course_editors_course_id_fkey";
 
 alter table "public"."course_editors" add constraint "course_editors_course_id_user_id_key" UNIQUE using index "course_editors_course_id_user_id_key";
+
+alter table "public"."course_editors" add constraint "course_editors_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE not valid;
+
+alter table "public"."course_editors" validate constraint "course_editors_organization_id_fkey";
 
 alter table "public"."course_editors" add constraint "course_editors_user_id_fkey" FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE not valid;
 
@@ -2428,8 +2439,8 @@ begin
 
   -- Only auto-add if user is an editor
   if v_role = 'editor' then
-    insert into public.course_editors (course_id, user_id, added_by)
-    values (NEW.id, v_user, v_user)
+    insert into public.course_editors (course_id, user_id, organization_id, added_by)
+    values (NEW.id, v_user, NEW.organization_id, v_user)
     on conflict (course_id, user_id) do nothing;
   end if;
 
@@ -3711,24 +3722,44 @@ end;
 $function$
 ;
 
-CREATE OR REPLACE FUNCTION public.ensure_editor_is_org_member()
+CREATE OR REPLACE FUNCTION public.ensure_editor_is_valid()
  RETURNS trigger
  LANGUAGE plpgsql
  SECURITY DEFINER
  SET search_path TO ''
 AS $function$
+declare
+  course_org uuid;
 begin
+  -- ✅ Fetch course organization_id (and confirm course exists)
+  select c.organization_id into course_org
+  from public.courses c
+  where c.id = new.course_id;
+
+  if course_org is null then
+    raise exception
+      'Invalid course_id: course % does not exist', new.course_id
+      using errcode = 'P0001';
+  end if;
+
+  -- ✅ Ensure the editor's organization_id matches the course's org
+  if new.organization_id <> course_org then
+    raise exception
+      'organization_id % does not match course''s organization_id % for course %',
+      new.organization_id, course_org, new.course_id
+      using errcode = 'P0001';
+  end if;
+
+  -- ✅ Ensure the user is a member of this organization
   if not exists (
     select 1
-    from public.courses c
-    join public.organization_members m
-      on m.organization_id = c.organization_id
+    from public.organization_members m
+    where m.organization_id = course_org
       and m.user_id = new.user_id
-    where c.id = new.course_id
   ) then
     raise exception
-      'User % is not a member of the organization that owns course %',
-      new.user_id, new.course_id
+      'User % is not a member of organization % (course %)',
+      new.user_id, course_org, new.course_id
       using errcode = 'P0001';
   end if;
 
@@ -10388,9 +10419,7 @@ using ((public.authorize('go_su_update'::public.app_permission) OR public.author
   as permissive
   for delete
   to public
-using (public.has_org_role(( SELECT c.organization_id
-   FROM public.courses c
-  WHERE (c.id = course_editors.course_id)), 'admin'::text, ( SELECT auth.uid() AS uid)));
+using (public.has_org_role(organization_id, 'admin'::text, ( SELECT auth.uid() AS uid)));
 
 
 
@@ -10399,12 +10428,9 @@ using (public.has_org_role(( SELECT c.organization_id
   as permissive
   for insert
   to public
-with check ((public.has_org_role(( SELECT c.organization_id
-   FROM public.courses c
-  WHERE (c.id = course_editors.course_id)), 'admin'::text, ( SELECT auth.uid() AS uid)) AND (EXISTS ( SELECT 1
-   FROM (public.organization_members m
-     JOIN public.courses c ON ((c.organization_id = m.organization_id)))
-  WHERE ((c.id = course_editors.course_id) AND (m.user_id = m.user_id))))));
+with check ((public.has_org_role(organization_id, 'admin'::text, ( SELECT auth.uid() AS uid)) AND (EXISTS ( SELECT 1
+   FROM public.organization_members m
+  WHERE ((m.organization_id = course_editors.organization_id) AND (m.user_id = course_editors.user_id))))));
 
 
 
@@ -10413,9 +10439,7 @@ with check ((public.has_org_role(( SELECT c.organization_id
   as permissive
   for select
   to authenticated
-using (public.has_org_role(( SELECT c.organization_id
-   FROM public.courses c
-  WHERE (c.id = course_editors.course_id)), 'editor'::text, ( SELECT auth.uid() AS uid)));
+using (public.has_org_role(organization_id, 'editor'::text, ( SELECT auth.uid() AS uid)));
 
 
 
@@ -10583,27 +10607,25 @@ using ((public.authorize('go_su_update'::public.app_permission) OR public.author
 
 
 
-  create policy "courses_delete_admins_or_editors"
+  create policy "Delete: Admins can delete courses"
   on "public"."courses"
   as permissive
   for delete
   to authenticated
-using ((public.has_org_role(organization_id, 'admin'::text, ( SELECT auth.uid() AS uid)) OR (EXISTS ( SELECT 1
-   FROM public.course_editors ce
-  WHERE ((ce.course_id = courses.id) AND (ce.user_id = ( SELECT auth.uid() AS uid)))))));
+using ((public.get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])));
 
 
 
-  create policy "courses_insert_org_members"
+  create policy "Insert: Org members can create courses"
   on "public"."courses"
   as permissive
   for insert
   to authenticated
-with check ((public.get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) IS NOT NULL));
+with check ((public.get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text, 'editor'::text])));
 
 
 
-  create policy "courses_select_org_members"
+  create policy "Select: Org members can view courses"
   on "public"."courses"
   as permissive
   for select
@@ -10612,17 +10634,17 @@ using ((public.get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) I
 
 
 
-  create policy "courses_update_admins_or_editors"
+  create policy "Update: Admins or course editors can update courses"
   on "public"."courses"
   as permissive
   for update
-  to authenticated
-using ((public.has_org_role(organization_id, 'admin'::text, ( SELECT auth.uid() AS uid)) OR (EXISTS ( SELECT 1
+  to public
+using (((public.get_user_org_role(organization_id, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text])) OR (EXISTS ( SELECT 1
    FROM public.course_editors ce
-  WHERE ((ce.course_id = courses.id) AND (ce.user_id = ( SELECT auth.uid() AS uid)))))))
-with check ((public.has_org_role(organization_id, 'admin'::text, ( SELECT auth.uid() AS uid)) OR (EXISTS ( SELECT 1
+  WHERE ((ce.course_id = courses.id) AND (ce.user_id = auth.uid()))))))
+with check (((public.get_user_org_role(organization_id, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text])) OR (EXISTS ( SELECT 1
    FROM public.course_editors ce
-  WHERE ((ce.course_id = courses.id) AND (ce.user_id = ( SELECT auth.uid() AS uid)))))));
+  WHERE ((ce.course_id = courses.id) AND (ce.user_id = auth.uid()))))));
 
 
 
@@ -11485,7 +11507,7 @@ CREATE TRIGGER trg_set_chapter_position BEFORE INSERT ON public.chapters FOR EAC
 
 CREATE TRIGGER trg_course_categories_set_updated_at BEFORE UPDATE ON public.course_categories FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
-CREATE TRIGGER trg_ensure_editor_is_org_member BEFORE INSERT OR UPDATE ON public.course_editors FOR EACH ROW EXECUTE FUNCTION public.ensure_editor_is_org_member();
+CREATE TRIGGER trg_ensure_editor_is_valid BEFORE INSERT OR UPDATE ON public.course_editors FOR EACH ROW EXECUTE FUNCTION public.ensure_editor_is_valid();
 
 CREATE TRIGGER trg_enforce_at_least_one_active_tier BEFORE UPDATE ON public.course_pricing_tiers FOR EACH ROW EXECUTE FUNCTION public.enforce_at_least_one_active_pricing_tier();
 
@@ -11600,6 +11622,19 @@ using (((bucket_id = 'published_thumbnails'::text) AND (EXISTS ( SELECT 1
 
 
 
+  create policy "Delete: Admins or owning editors can delete thumbnails"
+  on "storage"."objects"
+  as permissive
+  for delete
+  to authenticated
+using (((bucket_id = 'thumbnails'::text) AND (EXISTS ( SELECT 1
+   FROM public.courses c
+  WHERE ((c.id = (split_part(objects.name, '/'::text, 1))::uuid) AND ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR (EXISTS ( SELECT 1
+           FROM public.course_editors ce
+          WHERE ((ce.course_id = c.id) AND (ce.user_id = ( SELECT auth.uid() AS uid)))))))))));
+
+
+
   create policy "Insert: Org members can upload published_thumbnails"
   on "storage"."objects"
   as permissive
@@ -11611,6 +11646,17 @@ with check (((bucket_id = 'published_thumbnails'::text) AND (EXISTS ( SELECT 1
 
 
 
+  create policy "Insert: Org members can upload thumbnails"
+  on "storage"."objects"
+  as permissive
+  for insert
+  to authenticated
+with check (((bucket_id = 'thumbnails'::text) AND (EXISTS ( SELECT 1
+   FROM public.courses c
+  WHERE ((c.id = (split_part(objects.name, '/'::text, 1))::uuid) AND (public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text, 'editor'::text])))))));
+
+
+
   create policy "Insert: Org members with elevated roles can upload published fi"
   on "storage"."objects"
   as permissive
@@ -11619,6 +11665,17 @@ with check (((bucket_id = 'published_thumbnails'::text) AND (EXISTS ( SELECT 1
 with check (((bucket_id = 'published_files'::text) AND (EXISTS ( SELECT 1
    FROM public.courses c
   WHERE ((c.id = (split_part(objects.name, '/'::text, 2))::uuid) AND (c.organization_id = (split_part(objects.name, '/'::text, 1))::uuid) AND (public.get_user_org_role(c.organization_id, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text, 'editor'::text])))))));
+
+
+
+  create policy "Select: Org members can view thumbnails"
+  on "storage"."objects"
+  as permissive
+  for select
+  to authenticated
+using (((bucket_id = 'thumbnails'::text) AND (EXISTS ( SELECT 1
+   FROM public.courses c
+  WHERE ((c.id = (split_part(objects.name, '/'::text, 1))::uuid) AND (public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) IS NOT NULL))))));
 
 
 
@@ -11671,6 +11728,24 @@ with check (((bucket_id = 'published_thumbnails'::text) AND (EXISTS ( SELECT 1
   WHERE ((c.id = (split_part(objects.name, '/'::text, 1))::uuid) AND ((public.get_user_org_role(c.organization_id, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text])) OR (EXISTS ( SELECT 1
            FROM public.course_editors
           WHERE ((course_editors.course_id = c.id) AND (course_editors.user_id = auth.uid()))))))))));
+
+
+
+  create policy "Update: Admins or owning editors can update thumbnails"
+  on "storage"."objects"
+  as permissive
+  for update
+  to authenticated
+using (((bucket_id = 'thumbnails'::text) AND (EXISTS ( SELECT 1
+   FROM public.courses c
+  WHERE ((c.id = (split_part(objects.name, '/'::text, 1))::uuid) AND ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR (EXISTS ( SELECT 1
+           FROM public.course_editors ce
+          WHERE ((ce.course_id = c.id) AND (ce.user_id = ( SELECT auth.uid() AS uid)))))))))))
+with check (((bucket_id = 'thumbnails'::text) AND (EXISTS ( SELECT 1
+   FROM public.courses c
+  WHERE ((c.id = (split_part(objects.name, '/'::text, 1))::uuid) AND ((public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR (EXISTS ( SELECT 1
+           FROM public.course_editors ce
+          WHERE ((ce.course_id = c.id) AND (ce.user_id = ( SELECT auth.uid() AS uid)))))))))));
 
 
 
@@ -11812,59 +11887,6 @@ using (((bucket_id = 'organization_banner_photos'::text) AND (EXISTS ( SELECT 1
 using (((bucket_id = 'organization_profile_photos'::text) AND (EXISTS ( SELECT 1
    FROM public.organizations o
   WHERE ((o.id = (split_part(objects.name, '/'::text, 1))::uuid) AND (o.is_public = true))))));
-
-
-
-  create policy "thumbnails_delete_admins_or_editors"
-  on "storage"."objects"
-  as permissive
-  for delete
-  to authenticated
-using (((bucket_id = 'thumbnails'::text) AND (EXISTS ( SELECT 1
-   FROM public.courses c
-  WHERE ((c.id = (split_part(c.name, '/'::text, 1))::uuid) AND (public.has_org_role(c.organization_id, 'admin'::text, ( SELECT auth.uid() AS uid)) OR (EXISTS ( SELECT 1
-           FROM public.course_editors ce
-          WHERE ((ce.course_id = c.id) AND (ce.user_id = ( SELECT auth.uid() AS uid)))))))))));
-
-
-
-  create policy "thumbnails_insert_org_members"
-  on "storage"."objects"
-  as permissive
-  for insert
-  to authenticated
-with check (((bucket_id = 'thumbnails'::text) AND (EXISTS ( SELECT 1
-   FROM public.courses c
-  WHERE ((c.id = (split_part(c.name, '/'::text, 1))::uuid) AND (public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) IS NOT NULL))))));
-
-
-
-  create policy "thumbnails_select_org_members"
-  on "storage"."objects"
-  as permissive
-  for select
-  to authenticated
-using (((bucket_id = 'thumbnails'::text) AND (EXISTS ( SELECT 1
-   FROM public.courses c
-  WHERE ((c.id = (split_part(c.name, '/'::text, 1))::uuid) AND (public.get_user_org_role(c.organization_id, ( SELECT auth.uid() AS uid)) IS NOT NULL))))));
-
-
-
-  create policy "thumbnails_update_admins_or_editors"
-  on "storage"."objects"
-  as permissive
-  for update
-  to authenticated
-using (((bucket_id = 'thumbnails'::text) AND (EXISTS ( SELECT 1
-   FROM public.courses c
-  WHERE ((c.id = (split_part(c.name, '/'::text, 1))::uuid) AND (public.has_org_role(c.organization_id, 'admin'::text, ( SELECT auth.uid() AS uid)) OR (EXISTS ( SELECT 1
-           FROM public.course_editors ce
-          WHERE ((ce.course_id = c.id) AND (ce.user_id = ( SELECT auth.uid() AS uid)))))))))))
-with check (((bucket_id = 'thumbnails'::text) AND (EXISTS ( SELECT 1
-   FROM public.courses c
-  WHERE ((c.id = (split_part(c.name, '/'::text, 1))::uuid) AND (public.has_org_role(c.organization_id, 'admin'::text, ( SELECT auth.uid() AS uid)) OR (EXISTS ( SELECT 1
-           FROM public.course_editors ce
-          WHERE ((ce.course_id = c.id) AND (ce.user_id = ( SELECT auth.uid() AS uid)))))))))));
 
 
 

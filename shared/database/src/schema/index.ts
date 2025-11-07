@@ -376,6 +376,7 @@ export type Database = {
           added_by: string | null
           course_id: string
           id: string
+          organization_id: string
           user_id: string
         }
         Insert: {
@@ -383,6 +384,7 @@ export type Database = {
           added_by?: string | null
           course_id: string
           id?: string
+          organization_id: string
           user_id: string
         }
         Update: {
@@ -390,6 +392,7 @@ export type Database = {
           added_by?: string | null
           course_id?: string
           id?: string
+          organization_id?: string
           user_id?: string
         }
         Relationships: [
@@ -405,6 +408,13 @@ export type Database = {
             columns: ["course_id"]
             isOneToOne: false
             referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_editors_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
           {

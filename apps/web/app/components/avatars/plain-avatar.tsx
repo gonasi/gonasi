@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 
 import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '~/components/ui/tooltip';
 import { cn } from '~/lib/utils';
 
 interface UserAvatarProps {
@@ -10,6 +11,7 @@ interface UserAvatarProps {
   isActive?: boolean;
   isPending?: boolean;
   className?: string;
+  showTooltip?: boolean;
 }
 
 const sizeClasses = {
@@ -35,6 +37,7 @@ export function PlainAvatar({
   isActive = false,
   isPending = false,
   className,
+  showTooltip = false,
 }: UserAvatarProps) {
   const initials = username
     ? username
@@ -46,13 +49,13 @@ export function PlainAvatar({
     : '';
 
   const avatar = (
-    <Avatar className={`${sizeClasses[size]}`}>
+    <Avatar className={sizeClasses[size]}>
       <AvatarImage src={imageUrl || undefined} alt={username ?? ''} />
       <AvatarFallback className='bg-primary/10 text-primary'>{initials}</AvatarFallback>
     </Avatar>
   );
 
-  return (
+  const avatarWithRing = (
     <div className={cn('text-foreground relative flex items-center justify-center', className)}>
       {isPending ? (
         <motion.div
@@ -70,4 +73,19 @@ export function PlainAvatar({
       {avatar}
     </div>
   );
+
+  // ✅ If tooltip is enabled
+  if (showTooltip && username) {
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>{avatarWithRing}</TooltipTrigger>
+          <TooltipContent>{username}</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  }
+
+  // ✅ Normal render
+  return avatarWithRing;
 }

@@ -1,13 +1,13 @@
--- =====================================================================
--- ENABLE RLS ON COURSES
--- =====================================================================
+-- ============================================================================
+-- RLS: public.courses
+-- ============================================================================
+
 alter table public.courses enable row level security;
 
-
--- =====================================================================
+-- ============================================================================
 -- SELECT: Any organization member can view courses
--- =====================================================================
-create policy "courses_select_org_members"
+-- ============================================================================
+create policy "Select: Org members can view courses"
 on public.courses
 for select
 to authenticated
@@ -15,108 +15,119 @@ using (
   public.get_user_org_role(organization_id, (select auth.uid())) is not null
 );
 
-
--- =====================================================================
--- INSERT: Any organization member can create a course
--- =====================================================================
-create policy "courses_insert_org_members"
+-- ============================================================================
+-- INSERT: Org members (owner/admin/editor) can create courses
+-- ============================================================================
+create policy "Insert: Org members can create courses"
 on public.courses
 for insert
 to authenticated
 with check (
-  public.get_user_org_role(organization_id, (select auth.uid())) is not null
+  public.get_user_org_role(organization_id, (select auth.uid())) in ('owner', 'admin', 'editor')
 );
 
-
--- =====================================================================
--- UPDATE: Single unified policy (admins OR course editors)
--- =====================================================================
-create policy "courses_update_admins_or_editors"
+-- ============================================================================
+-- UPDATE: Admins OR designated course editors
+-- ============================================================================
+create policy "Update: Admins or course editors can update courses"
 on public.courses
 for update
-to authenticated
 using (
-  public.has_org_role(organization_id, 'admin', (select auth.uid()))
-  OR exists (
-    select 1 from public.course_editors ce
+  public.get_user_org_role(organization_id, (select auth.uid())) in ('owner', 'admin')
+  or exists (
+    select 1
+    from public.course_editors ce
     where ce.course_id = courses.id
       and ce.user_id = (select auth.uid())
   )
 )
 with check (
-  public.has_org_role(organization_id, 'admin', (select auth.uid()))
-  OR exists (
-    select 1 from public.course_editors ce
+  public.get_user_org_role(organization_id, (select auth.uid())) in ('owner', 'admin')
+  or exists (
+    select 1
+    from public.course_editors ce
     where ce.course_id = courses.id
       and ce.user_id = (select auth.uid())
   )
 );
 
--- =====================================================================
--- DELETE: Same logic as UPDATE, but separate policy is required
--- =====================================================================
-create policy "courses_delete_admins_or_editors"
+-- ============================================================================
+-- DELETE: Only admins/owners may delete courses
+--    → Editors CANNOT delete courses.
+-- ============================================================================
+create policy "Delete: Admins can delete courses"
 on public.courses
 for delete
 to authenticated
 using (
-  public.has_org_role(organization_id, 'admin', (select auth.uid()))
-  OR exists (
-    select 1 from public.course_editors ce
-    where ce.course_id = courses.id
-      and ce.user_id = (select auth.uid())
-  )
+  public.get_user_org_role(organization_id, (select auth.uid())) in ('owner', 'admin')
 );
 
 
--- =====================================================================
--- STORAGE POLICIES FOR THUMBNAILS
--- =====================================================================
 
--- SELECT
-create policy "thumbnails_select_org_members"
+
+
+-- ============================================================================
+-- RLS: storage.objects (thumbnails bucket)
+-- ============================================================================
+-- Thumbnail path format: "<course_id>/<filename>"
+-- ============================================================================
+
+-- ============================================================================
+-- SELECT: Org members can view thumbnails
+-- ============================================================================
+create policy "Select: Org members can view thumbnails"
 on storage.objects
-for select to authenticated
+for select
+to authenticated
 using (
   bucket_id = 'thumbnails'
-  AND exists (
+  and exists (
     select 1
     from public.courses c
-    where c.id = (split_part(name, '/', 1))::uuid
+    where c.id = (split_part(storage.objects.name, '/', 1))::uuid
       and public.get_user_org_role(c.organization_id, (select auth.uid())) is not null
   )
 );
 
-
--- INSERT
-create policy "thumbnails_insert_org_members"
+-- ============================================================================
+-- INSERT: Org members (owner/admin/editor) can upload thumbnails
+-- ============================================================================
+create policy "Insert: Org members can upload thumbnails"
 on storage.objects
-for insert to authenticated
+for insert
+to authenticated
 with check (
   bucket_id = 'thumbnails'
-  AND exists (
+  and exists (
     select 1
     from public.courses c
-    where c.id = (split_part(name, '/', 1))::uuid
-      and public.get_user_org_role(c.organization_id, (select auth.uid())) is not null
+    where c.id = (split_part(storage.objects.name, '/', 1))::uuid
+      and public.get_user_org_role(c.organization_id, (select auth.uid())) in ('owner', 'admin', 'editor')
   )
 );
 
-
--- UPDATE
-create policy "thumbnails_update_admins_or_editors"
+-- ============================================================================
+-- UPDATE: Admins OR designated course editors
+--
+-- ✅ Both USING and WITH CHECK are allowed here
+-- ✅ This does NOT cause recursion because storage RLS is separate
+-- ============================================================================
+create policy "Update: Admins or owning editors can update thumbnails"
 on storage.objects
-for update to authenticated
+for update
+to authenticated
 using (
   bucket_id = 'thumbnails'
-  AND exists (
+  and exists (
     select 1
     from public.courses c
-    where c.id = (split_part(name, '/', 1))::uuid
+    where c.id = (split_part(storage.objects.name, '/', 1))::uuid
       and (
-        public.has_org_role(c.organization_id, 'admin', (select auth.uid()))
-        OR exists (
-          select 1 from public.course_editors ce
+        public.get_user_org_role(c.organization_id, (select auth.uid())) in ('owner', 'admin')
+        or exists (
+          select 1
+          from public.course_editors ce
           where ce.course_id = c.id
             and ce.user_id = (select auth.uid())
         )
@@ -125,14 +136,15 @@ using (
 )
 with check (
   bucket_id = 'thumbnails'
-  AND exists (
+  and exists (
     select 1
     from public.courses c
-    where c.id = (split_part(name, '/', 1))::uuid
+    where c.id = (split_part(storage.objects.name, '/', 1))::uuid
       and (
-        public.has_org_role(c.organization_id, 'admin', (select auth.uid()))
-        OR exists (
-          select 1 from public.course_editors ce
+        public.get_user_org_role(c.organization_id, (select auth.uid())) in ('owner', 'admin')
+        or exists (
+          select 1
+          from public.course_editors ce
           where ce.course_id = c.id
             and ce.user_id = (select auth.uid())
         )
@@ -140,21 +152,24 @@ with check (
   )
 );
 
-
--- DELETE
-create policy "thumbnails_delete_admins_or_editors"
+-- ============================================================================
+-- DELETE: Same permissions as UPDATE (admin or editor)
+-- ============================================================================
+create policy "Delete: Admins or owning editors can delete thumbnails"
 on storage.objects
-for delete to authenticated
+for delete
+to authenticated
 using (
   bucket_id = 'thumbnails'
-  AND exists (
+  and exists (
     select 1
     from public.courses c
-    where c.id = (split_part(name, '/', 1))::uuid
+    where c.id = (split_part(storage.objects.name, '/', 1))::uuid
       and (
-        public.has_org_role(c.organization_id, 'admin', (select auth.uid()))
-        OR exists (
-          select 1 from public.course_editors ce
+        public.get_user_org_role(c.organization_id, (select auth.uid())) in ('owner', 'admin')
+        or exists (
+          select 1
+          from public.course_editors ce
           where ce.course_id = c.id
             and ce.user_id = (select auth.uid())
         )

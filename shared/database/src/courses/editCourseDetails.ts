@@ -38,6 +38,7 @@ export const editCourseDetails = async ({
       });
 
     if (updateError) {
+      console.log('[updateError]: ', updateError);
       return {
         success: false,
         message: 'Failed to update course details. Please check the provided data and try again.',

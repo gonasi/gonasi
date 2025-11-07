@@ -17,7 +17,9 @@ export async function fetchOrganizationCourses({
   const { startIndex, endIndex } = getPaginationRange(page, limit);
   const userId = await getUserId(supabase);
 
-  // Get user role
+  // ---------------------------------------------------------
+  // USER ROLE
+  // ---------------------------------------------------------
   const { data: memberData } = await supabase
     .from('organization_members')
     .select('role')
@@ -28,7 +30,9 @@ export async function fetchOrganizationCourses({
   const userRole = memberData?.role;
   const isAdminOrOwner = userRole === 'owner' || userRole === 'admin';
 
-  // Fetch all admins + owners
+  // ---------------------------------------------------------
+  // FETCH ADMINS + OWNERS
+  // ---------------------------------------------------------
   const { data: orgAdminsAndOwners } = await supabase
     .from('organization_members')
     .select(
@@ -47,7 +51,9 @@ export async function fetchOrganizationCourses({
     .eq('organization_id', organizationId)
     .in('role', ['owner', 'admin']);
 
-  // Base course query
+  // ---------------------------------------------------------
+  // BASE COURSE QUERY
+  // ---------------------------------------------------------
   let query = supabase
     .from('courses')
     .select(
@@ -58,7 +64,7 @@ export async function fetchOrganizationCourses({
       blur_hash,
       course_editors(
         user_id,
-        profiles:user_id(
+        profiles!user_id(
           id,
           username,
           full_name,
@@ -73,7 +79,6 @@ export async function fetchOrganizationCourses({
     .order('created_at', { ascending: false })
     .range(startIndex, endIndex);
 
-  // Optional search
   if (searchQuery) {
     query = query.or(`name.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`);
   }
@@ -84,86 +89,102 @@ export async function fetchOrganizationCourses({
     return { count: 0, data: [] };
   }
 
-  // Process courses
+  // ---------------------------------------------------------
+  // PROCESS EACH COURSE
+  // ---------------------------------------------------------
   const dataWithSignedUrls = await Promise.all(
     courses.map(async (course) => {
-      // Course-specific editors
+      // -----------------------------------------------------
+      // COURSE-SPECIFIC EDITORS
+      // -----------------------------------------------------
       const courseSpecificEditors = await Promise.all(
-        (course.course_editors || [])
-          .filter((ce: any) => ce.profiles)
-          .map(async (ce: any) => {
-            let avatar_signed_url = null;
+        (course.course_editors ?? [])
+          .filter((ce) => ce.profiles)
+          .map(async (ce) => {
+            const p = ce.profiles!;
+            let avatar_signed_url: string | null = null;
 
-            if (ce.profiles?.avatar_url) {
+            if (p.avatar_url) {
               const { data } = await supabase.storage
                 .from(PROFILE_PHOTOS)
-                .createSignedUrl(ce.profiles.avatar_url, 3600);
-
-              avatar_signed_url = data?.signedUrl || null;
+                .createSignedUrl(p.avatar_url, 3600);
+              avatar_signed_url = data?.signedUrl ?? null;
             }
 
             return {
-              id: ce.profiles.id,
-              username: ce.profiles.username,
-              full_name: ce.profiles.full_name,
-              avatar_url: ce.profiles.avatar_url,
+              id: p.id,
+              username: p.username,
+              full_name: p.full_name,
+              avatar_url: p.avatar_url,
               avatar_signed_url,
-              email: ce.profiles.email,
-              role: 'editor',
+              email: p.email,
+              role: 'editor' as const,
             };
           }),
       );
 
-      // Admins + owners (always editors)
+      // -----------------------------------------------------
+      // ADMINS + OWNERS (ALSO EDITORS)
+      // -----------------------------------------------------
       const adminsAndOwnersEditors = await Promise.all(
-        (orgAdminsAndOwners || [])
-          .filter((member: any) => member.profiles)
-          .map(async (member: any) => {
-            let avatar_signed_url = null;
+        (orgAdminsAndOwners ?? [])
+          .filter((m) => m.profiles)
+          .map(async (m) => {
+            const p = m.profiles!;
+            let avatar_signed_url: string | null = null;
 
-            if (member.profiles?.avatar_url) {
+            if (p.avatar_url) {
               const { data } = await supabase.storage
                 .from(PROFILE_PHOTOS)
-                .createSignedUrl(member.profiles.avatar_url, 3600);
-
-              avatar_signed_url = data?.signedUrl || null;
+                .createSignedUrl(p.avatar_url, 3600);
+              avatar_signed_url = data?.signedUrl ?? null;
             }
 
             return {
-              id: member.profiles.id,
-              username: member.profiles.username,
-              full_name: member.profiles.full_name,
-              avatar_url: member.profiles.avatar_url,
+              id: p.id,
+              username: p.username,
+              full_name: p.full_name,
+              avatar_url: p.avatar_url,
               avatar_signed_url,
-              email: member.profiles.email,
-              role: member.role,
+              email: p.email,
+              role: m.role, // "owner" | "admin"
             };
           }),
       );
 
-      // Merge editors, prioritizing owner/admin roles
-      const allEditorsMap = new Map();
-      adminsAndOwnersEditors.forEach((editor: any) => allEditorsMap.set(editor.id, editor));
-      courseSpecificEditors.forEach((editor: any) => {
-        if (!allEditorsMap.has(editor.id)) allEditorsMap.set(editor.id, editor);
+      // -----------------------------------------------------
+      // MERGE EDITORS (INFERRED)
+      // -----------------------------------------------------
+      const allEditorsMap = new Map(adminsAndOwnersEditors.map((e) => [e.id, e] as const));
+
+      courseSpecificEditors.forEach((editor) => {
+        if (!allEditorsMap.has(editor.id)) {
+          allEditorsMap.set(editor.id, editor);
+        }
       });
 
       const editors = Array.from(allEditorsMap.values());
 
-      // Permission logic
-      const canEdit =
-        isAdminOrOwner || editors.some((e: any) => e.id === userId && e.role === 'editor');
+      // -----------------------------------------------------
+      // PERMISSIONS
+      // -----------------------------------------------------
+      const canEdit = isAdminOrOwner || editors.some((e) => e.id === userId && e.role === 'editor');
 
-      // Signed URL for course thumbnail
-      let signed_url = null;
+      // -----------------------------------------------------
+      // SIGNED THUMBNAIL URL
+      // -----------------------------------------------------
+      let signed_url: string | null = null;
+
       if (course.image_url) {
         const { data } = await supabase.storage
           .from(THUMBNAILS_BUCKET)
           .createSignedUrl(course.image_url, 3600);
-
-        signed_url = data?.signedUrl || null;
+        signed_url = data?.signedUrl ?? null;
       }
 
+      // -----------------------------------------------------
+      // FINAL RESULT PER COURSE
+      // -----------------------------------------------------
       return {
         id: course.id,
         name: course.name,

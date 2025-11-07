@@ -19,8 +19,8 @@ begin
 
   -- Only auto-add if user is an editor
   if v_role = 'editor' then
-    insert into public.course_editors (course_id, user_id, added_by)
-    values (NEW.id, v_user, v_user)
+    insert into public.course_editors (course_id, user_id, organization_id, added_by)
+    values (NEW.id, v_user, NEW.organization_id, v_user)
     on conflict (course_id, user_id) do nothing;
   end if;
 
