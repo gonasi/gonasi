@@ -2465,6 +2465,10 @@ export type Database = {
         Args: { arg_user_id: string; tier_name: string }
         Returns: boolean
       }
+      can_publish_course: {
+        Args: { course_id: string; org_id: string; user_id: string }
+        Returns: boolean
+      }
       can_user_edit_course: {
         Args: { arg_course_id: string }
         Returns: boolean

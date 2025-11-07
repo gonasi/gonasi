@@ -2677,6 +2677,23 @@ AS $function$
 $function$
 ;
 
+CREATE OR REPLACE FUNCTION public.can_publish_course(course_id uuid, org_id uuid, user_id uuid)
+ RETURNS boolean
+ LANGUAGE sql
+ STABLE
+ SET search_path TO ''
+AS $function$
+  select 
+    public.get_user_org_role(org_id, user_id) in ('owner', 'admin')
+    or exists (
+      select 1
+      from public.course_editors ce
+      where ce.course_id = course_id
+        and ce.user_id = user_id
+    );
+$function$
+;
+
 CREATE OR REPLACE FUNCTION public.can_user_edit_course(arg_course_id uuid)
  RETURNS boolean
  LANGUAGE sql
@@ -8422,51 +8439,37 @@ CREATE OR REPLACE FUNCTION public.upsert_published_course_with_content(course_da
 AS $function$
 declare
   course_uuid uuid;
+  org_id uuid;
 begin
-  -- Extract course ID for progress reset
+  -- Extract IDs
   course_uuid := (course_data->>'id')::uuid;
-  
   if course_uuid is null then
     raise exception 'course_data must contain a valid id field';
   end if;
 
+  org_id := (course_data->>'organization_id')::uuid;
+
+  -- Permission check using helper function
+  if not public.can_publish_course(course_uuid, org_id, auth.uid()) then
+    raise exception 'You do not have permission to publish this course';
+  end if;
+
   -- Upsert into published_courses
   insert into public.published_courses (
-    id,
-    organization_id,
-    category_id,
-    subcategory_id,
-    is_active,
-    name,
-    description,
-    image_url,
-    blur_hash,
-    visibility,
-    course_structure_overview,
-    total_chapters,
-    total_lessons,
-    total_blocks,
-    pricing_tiers,
-    has_free_tier,
-    min_price,
-    total_enrollments,
-    active_enrollments,
-    completion_rate,
-    average_rating,
-    total_reviews,
-    published_by,
-    published_at
+    id, organization_id, category_id, subcategory_id, is_active,
+    name, description, image_url, blur_hash, visibility,
+    course_structure_overview, total_chapters, total_lessons, total_blocks,
+    pricing_tiers, has_free_tier, min_price, total_enrollments,
+    active_enrollments, completion_rate, average_rating, total_reviews,
+    published_by, published_at
   )
   values (
-    course_uuid,
-    (course_data->>'organization_id')::uuid,
+    course_uuid, org_id,
     (course_data->>'category_id')::uuid,
     (course_data->>'subcategory_id')::uuid,
     (course_data->>'is_active')::boolean,
-    course_data->>'name',
-    course_data->>'description',
-    course_data->>'image_url',
-    course_data->>'blur_hash',
+    course_data->>'name', course_data->>'description',
+    course_data->>'image_url', course_data->>'blur_hash',
     (course_data->>'visibility')::public.course_access,
     course_data->'course_structure_overview',
     (course_data->>'total_chapters')::integer,
@@ -8511,21 +8514,18 @@ begin
 
   -- Upsert into published_course_structure_content
   insert into public.published_course_structure_content (
-    id,
-    course_structure_content
+    id, course_structure_content
   )
   values (
-    course_uuid,
-    structure_content
+    course_uuid, structure_content
   )
   on conflict (id) do update set
     course_structure_content = excluded.course_structure_content,
     updated_at = timezone('utc', now());
 
-  -- Enqueue progress deletion for this course
-  -- This will reset all user progress when the course is published/updated
+  -- Enqueue progress deletion
   perform public.enqueue_delete_course_progress(course_uuid);
-  
+
   raise notice 'Course % published and progress reset queued', course_uuid;
 end;
 $function$
@@ -10639,12 +10639,12 @@ using ((public.get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) I
   as permissive
   for update
   to public
-using (((public.get_user_org_role(organization_id, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text])) OR (EXISTS ( SELECT 1
+using (((public.get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR (EXISTS ( SELECT 1
    FROM public.course_editors ce
-  WHERE ((ce.course_id = courses.id) AND (ce.user_id = auth.uid()))))))
-with check (((public.get_user_org_role(organization_id, auth.uid()) = ANY (ARRAY['owner'::text, 'admin'::text])) OR (EXISTS ( SELECT 1
+  WHERE ((ce.course_id = courses.id) AND (ce.user_id = ( SELECT auth.uid() AS uid)))))))
+with check (((public.get_user_org_role(organization_id, ( SELECT auth.uid() AS uid)) = ANY (ARRAY['owner'::text, 'admin'::text])) OR (EXISTS ( SELECT 1
    FROM public.course_editors ce
-  WHERE ((ce.course_id = courses.id) AND (ce.user_id = auth.uid()))))));
+  WHERE ((ce.course_id = courses.id) AND (ce.user_id = ( SELECT auth.uid() AS uid)))))));
 
 
 

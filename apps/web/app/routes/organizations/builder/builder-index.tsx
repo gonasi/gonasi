@@ -72,7 +72,7 @@ export default function BuilderIndex({ params, loaderData }: Route.ComponentProp
         <section className='px-0 py-4 md:px-4'>
           {data && data.length ? (
             <div className='grid grid-cols-1 gap-0 md:grid-cols-2 md:gap-4 lg:grid-cols-3'>
-              {data.map(({ id, name, signed_url, blur_hash, canEdit, editors }, index) => {
+              {data.map(({ id, name, signed_url, blur_hash, canEdit, editors, userId }, index) => {
                 const dispBadges = (
                   <div className='flex items-center gap-2'>
                     {/* Badge */}
@@ -95,6 +95,7 @@ export default function BuilderIndex({ params, loaderData }: Route.ComponentProp
                           imageUrl={editor.avatar_signed_url ?? ''}
                           size='sm'
                           showTooltip
+                          isActive={userId === editor.id}
                         />
                       ))}
                     </div>

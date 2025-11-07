@@ -224,6 +224,7 @@ schema_paths = [
   './schemas/publishedCourses/utils/queues/process_delete_course_progress.sql',
   './schemas/publishedCourses/utils/queues/enqueue_delete_course_progress.sql',
 
+  './schemas/publishedCourses/utils/can_publish_course.sql',
   './schemas/publishedCourses/utils/upsert_published_course_with_content.sql',
   './schemas/publishedCourses/utils/get_course_progress_overview.sql',
 

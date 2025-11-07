@@ -193,6 +193,8 @@ export async function fetchOrganizationCourses({
         signed_url,
         editors,
         canEdit,
+        canDelete: isAdminOrOwner,
+        userId,
       };
     }),
   );

@@ -14,51 +14,37 @@ set search_path = ''
 as $$
 declare
   course_uuid uuid;
+  org_id uuid;
 begin
-  -- Extract course ID for progress reset
+  -- Extract IDs
   course_uuid := (course_data->>'id')::uuid;
-  
   if course_uuid is null then
     raise exception 'course_data must contain a valid id field';
   end if;
 
+  org_id := (course_data->>'organization_id')::uuid;
+
+  -- Permission check using helper function
+  if not public.can_publish_course(course_uuid, org_id, auth.uid()) then
+    raise exception 'You do not have permission to publish this course';
+  end if;
+
   -- Upsert into published_courses
   insert into public.published_courses (
-    id,
-    organization_id,
-    category_id,
-    subcategory_id,
-    is_active,
-    name,
-    description,
-    image_url,
-    blur_hash,
-    visibility,
-    course_structure_overview,
-    total_chapters,
-    total_lessons,
-    total_blocks,
-    pricing_tiers,
-    has_free_tier,
-    min_price,
-    total_enrollments,
-    active_enrollments,
-    completion_rate,
-    average_rating,
-    total_reviews,
-    published_by,
-    published_at
+    id, organization_id, category_id, subcategory_id, is_active,
+    name, description, image_url, blur_hash, visibility,
+    course_structure_overview, total_chapters, total_lessons, total_blocks,
+    pricing_tiers, has_free_tier, min_price, total_enrollments,
+    active_enrollments, completion_rate, average_rating, total_reviews,
+    published_by, published_at
   )
   values (
-    course_uuid,
-    (course_data->>'organization_id')::uuid,
+    course_uuid, org_id,
     (course_data->>'category_id')::uuid,
     (course_data->>'subcategory_id')::uuid,
     (course_data->>'is_active')::boolean,
-    course_data->>'name',
-    course_data->>'description',
-    course_data->>'image_url',
-    course_data->>'blur_hash',
+    course_data->>'name', course_data->>'description',
+    course_data->>'image_url', course_data->>'blur_hash',
     (course_data->>'visibility')::public.course_access,
     course_data->'course_structure_overview',
     (course_data->>'total_chapters')::integer,
@@ -103,21 +89,18 @@ begin
 
   -- Upsert into published_course_structure_content
   insert into public.published_course_structure_content (
-    id,
-    course_structure_content
+    id, course_structure_content
   )
   values (
-    course_uuid,
-    structure_content
+    course_uuid, structure_content
   )
   on conflict (id) do update set
     course_structure_content = excluded.course_structure_content,
     updated_at = timezone('utc', now());
 
-  -- Enqueue progress deletion for this course
-  -- This will reset all user progress when the course is published/updated
+  -- Enqueue progress deletion
   perform public.enqueue_delete_course_progress(course_uuid);
-  
+
   raise notice 'Course % published and progress reset queued', course_uuid;
 end;
 $$;
