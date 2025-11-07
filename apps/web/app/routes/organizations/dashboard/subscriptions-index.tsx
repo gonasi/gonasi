@@ -1,5 +1,6 @@
 import { Outlet } from 'react-router';
 import { Package } from 'lucide-react';
+import { redirectWithError } from 'remix-toast';
 
 import { fetchOrganizationSubscriptionStatus } from '@gonasi/database/organizationSubscriptions';
 
@@ -7,7 +8,6 @@ import type { Route } from './+types/subscriptions-index';
 import { ActiveSubCard } from './components/ActiveSubCard';
 import { PricingComparisonTable } from './components/PricingComparisonTable';
 
-import { NotFoundCard } from '~/components/cards';
 import { Modal } from '~/components/ui/modal';
 import { createClient } from '~/lib/supabase/supabase.server';
 
@@ -17,14 +17,17 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 
   const sub = await fetchOrganizationSubscriptionStatus({ supabase, organizationId });
 
+  if (!sub.success) {
+    return redirectWithError(
+      `/${params.organizationId}/builder`,
+      sub.message || 'You do not have permission',
+    );
+  }
+
   return sub;
 }
 
 export default function SubscriptionsIndex({ params, loaderData }: Route.ComponentProps) {
-  if (loaderData?.success === false) {
-    return <NotFoundCard message='Subscription not found' />;
-  }
-
   return (
     <>
       <Modal open>
