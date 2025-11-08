@@ -5,8 +5,8 @@ import { redirectWithError } from 'remix-toast';
 import { fetchOrganizationSubscriptionStatus } from '@gonasi/database/organizationSubscriptions';
 
 import type { Route } from './+types/subscriptions-index';
-import { ActiveSubCard } from './components/ActiveSubCard';
-import { PricingComparisonTable } from './components/PricingComparisonTable';
+import { ActiveSubCard } from '../components/ActiveSubCard';
+import { PricingComparisonTable } from '../components/PricingComparisonTable';
 
 import { Modal } from '~/components/ui/modal';
 import { createClient } from '~/lib/supabase/supabase.server';
@@ -33,7 +33,7 @@ export default function SubscriptionsIndex({ params, loaderData }: Route.Compone
       <Modal open>
         <Modal.Content size='full'>
           <Modal.Header
-            title='SubscriptionHub'
+            title='Subscription Hub'
             closeRoute={`/${params.organizationId}/dashboard`}
             leadingIcon={<Package />}
           />

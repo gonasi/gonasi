@@ -13,7 +13,7 @@ type OrganizationSubscriptionRow =
 type TierLimitsRow = Database['public']['Tables']['tier_limits']['Row'];
 
 // Define success and error response types
-interface SuccessResponse {
+export interface OrganizationSubscriptionSuccessResponse {
   success: true;
   message: string;
   data: {
@@ -32,7 +32,9 @@ interface ErrorResponse {
 export const fetchOrganizationSubscriptionStatus = async ({
   supabase,
   organizationId,
-}: FetchOrganizationSubscriptionStatusParams): Promise<SuccessResponse | ErrorResponse> => {
+}: FetchOrganizationSubscriptionStatusParams): Promise<
+  OrganizationSubscriptionSuccessResponse | ErrorResponse
+> => {
   const role = await getUserOrgRole({ supabase, organizationId });
 
   if (!role || role === 'editor') {
@@ -126,12 +128,15 @@ export const fetchOrganizationSubscriptionStatus = async ({
 };
 
 // Export response types
-export type FetchOrganizationSubscriptionStatusResponse = SuccessResponse | ErrorResponse;
+export type FetchOrganizationSubscriptionStatusResponse =
+  | OrganizationSubscriptionSuccessResponse
+  | ErrorResponse;
 
 // Happy path type
-export type FetchOrganizationSubscriptionStatusSuccess = SuccessResponse;
+export type FetchOrganizationSubscriptionStatusSuccess = OrganizationSubscriptionSuccessResponse;
 
 // Convenience exports
-export type OrganizationSubscription = SuccessResponse['data']['subscription'];
-export type OrganizationTier = SuccessResponse['data']['tier'];
-export type AllTiers = SuccessResponse['data']['allTiers'];
+export type OrganizationSubscription =
+  OrganizationSubscriptionSuccessResponse['data']['subscription'];
+export type OrganizationTier = OrganizationSubscriptionSuccessResponse['data']['tier'];
+export type AllTiers = OrganizationSubscriptionSuccessResponse['data']['allTiers'];

@@ -58,7 +58,11 @@ export default [
 
   layout('routes/layouts/organizations/organizations-layout.tsx', [
     route(':organizationId/dashboard', 'routes/organizations/dashboard/dashboard-index.tsx', [
-      route('subscriptions', 'routes/organizations/dashboard/subscriptions-index.tsx'),
+      route(
+        'subscriptions',
+        'routes/organizations/dashboard/subscriptions/subscriptions-index.tsx',
+        [route(':tier', 'routes/organizations/dashboard/subscriptions/subscribe-to-tier.tsx')],
+      ),
     ]),
 
     route(

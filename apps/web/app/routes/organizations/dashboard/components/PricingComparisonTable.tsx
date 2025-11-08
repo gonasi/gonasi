@@ -1,5 +1,6 @@
+import { useParams } from 'react-router';
 import { motion } from 'framer-motion';
-import { Check } from 'lucide-react';
+import { ArrowRightLeft, Check, MessagesSquare } from 'lucide-react';
 
 import type { AllTiers, OrganizationTier } from '@gonasi/database/organizationSubscriptions';
 
@@ -24,6 +25,7 @@ const FEATURES = [
   { key: 'analytics_level', name: 'Analytics', type: 'text' },
   { key: 'support_level', name: 'Support', type: 'text' },
   { key: 'white_label_enabled', name: 'White Label', type: 'boolean' },
+  { key: 'platform_fee_percentage', name: 'Platform Fee', type: 'percent' },
 ] as const;
 
 function formatValue(value: any, type: string) {
@@ -32,15 +34,14 @@ function formatValue(value: any, type: string) {
   switch (type) {
     case 'boolean':
       return value ? <Check className='text-primary mx-auto h-5 w-5' /> : '—';
-
     case 'storage':
       return value >= 1024 ? `${(value / 1024).toFixed(1)} GB` : `${value} MB`;
-
     case 'text': {
       const str = String(value || '');
       return str ? str.charAt(0).toUpperCase() + str.slice(1) : '—';
     }
-
+    case 'percent':
+      return `${value}%`;
     default:
       return String(value ?? '—');
   }
@@ -75,40 +76,55 @@ export function PricingComparisonTable({ allTiers, activeTier }: PricingComparis
 
       {/* Desktop */}
       <motion.div
-        className='border-input hidden overflow-x-auto rounded-none border shadow-none md:block'
+        className='hidden overflow-x-auto md:block'
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1, duration: 0.35, ease: 'easeOut' }}
       >
-        <table className='w-full text-sm'>
+        <table className='border-border w-full overflow-hidden border text-sm shadow-sm'>
           <thead>
             <tr className='border-border bg-muted/40 border-b'>
               <th className='px-6 py-4 text-left font-semibold'>Features</th>
 
-              {sortedTiers.map((plan, i) => (
-                <motion.th
-                  key={plan.tier}
-                  className='px-6 py-4 text-center'
-                  initial={{ opacity: 0, y: -8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.05 * i, duration: 0.25 }}
-                >
-                  <div className='flex flex-col items-center gap-3'>
-                    <h3 className='text-lg font-bold'>
-                      {plan.tier.charAt(0).toUpperCase() + plan.tier.slice(1)}
-                    </h3>
-
-                    <div className='text-2xl font-bold'>
-                      ${plan.price_monthly_usd}
-                      <span className='text-muted-foreground text-xs'>/mo</span>
-                    </div>
-
-                    {plan.price_monthly_usd > 0 && (
-                      <PlanCTA isActive={plan.tier === activeTier.tier} tier={plan.tier} />
+              {sortedTiers.map((plan, i) => {
+                const isActive = plan.tier === activeTier.tier;
+                return (
+                  <motion.th
+                    key={plan.tier}
+                    className={cn(
+                      'px-6 py-4 text-center align-top transition-all',
+                      isActive && 'bg-primary/5 border-primary relative border-2 shadow-md',
                     )}
-                  </div>
-                </motion.th>
-              ))}
+                    initial={{ opacity: 0, y: -8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.05 * i, duration: 0.25 }}
+                  >
+                    <div className='flex flex-col items-center gap-3'>
+                      {/* Plan title + Active badge */}
+                      <div className='flex items-center justify-center gap-2'>
+                        <h3 className='text-lg font-bold'>
+                          {plan.tier.charAt(0).toUpperCase() + plan.tier.slice(1)}
+                        </h3>
+
+                        {isActive && (
+                          <span className='bg-primary text-primary-foreground rounded-full px-2.5 py-0.5 text-[10px] font-medium tracking-wide uppercase'>
+                            Active
+                          </span>
+                        )}
+                      </div>
+
+                      <div className='text-2xl font-bold'>
+                        ${plan.price_monthly_usd}
+                        <span className='text-muted-foreground text-xs'>/mo</span>
+                      </div>
+
+                      {plan.price_monthly_usd > 0 && (
+                        <PlanCTA isActive={isActive} tier={plan.tier} />
+                      )}
+                    </div>
+                  </motion.th>
+                );
+              })}
             </tr>
           </thead>
 
@@ -126,14 +142,39 @@ export function PricingComparisonTable({ allTiers, activeTier }: PricingComparis
               >
                 <td className='px-6 py-4 font-medium'>{f.name}</td>
 
-                {sortedTiers.map((plan) => (
-                  <td key={plan.tier + f.key} className='px-6 py-4 text-center'>
-                    {formatValue((plan as any)[f.key], f.type)}
-                  </td>
-                ))}
+                {sortedTiers.map((plan) => {
+                  const isActive = plan.tier === activeTier.tier;
+                  return (
+                    <td
+                      key={plan.tier + f.key}
+                      className={cn(
+                        'px-6 py-4 text-center transition-all',
+                        isActive && 'bg-primary/5 border-primary border-x-2 shadow-inner',
+                      )}
+                    >
+                      {formatValue((plan as any)[f.key], f.type)}
+                    </td>
+                  );
+                })}
               </motion.tr>
             ))}
           </tbody>
+
+          {/* Bottom row border for active column */}
+          <tfoot>
+            <tr>
+              <td />
+              {sortedTiers.map((plan) => {
+                const isActive = plan.tier === activeTier.tier;
+                return (
+                  <td
+                    key={`${plan.tier}-bottom`}
+                    className={cn('', isActive && 'border-primary rounded-b-xl border-b-2')}
+                  />
+                );
+              })}
+            </tr>
+          </tfoot>
         </table>
       </motion.div>
     </motion.div>
@@ -141,9 +182,17 @@ export function PricingComparisonTable({ allTiers, activeTier }: PricingComparis
 }
 
 function PlanCTA({ isActive, tier }: { isActive: boolean; tier: string }) {
+  const params = useParams();
+
   if (tier === 'enterprise') {
     return (
-      <NavLinkButton to='/contact' variant='secondary' size='sm' className='rounded-full'>
+      <NavLinkButton
+        to={`/${params.organizationId}/dashboard/subscriptions/${tier}`}
+        variant='secondary'
+        size='sm'
+        className='rounded-full'
+        leftIcon={<MessagesSquare />}
+      >
         Contact Sales
       </NavLinkButton>
     );
@@ -163,9 +212,10 @@ function PlanCTA({ isActive, tier }: { isActive: boolean; tier: string }) {
 
   return (
     <NavLinkButton
-      to='/organizations/dashboard/subscriptions/manage'
+      to={`/${params.organizationId}/dashboard/subscriptions/${tier}`}
       size='sm'
       className='rounded-full'
+      leftIcon={<ArrowRightLeft />}
     >
       Change Plan
     </NavLinkButton>
@@ -185,7 +235,7 @@ function MobilePlanCard({
     <motion.div
       className={cn(
         'space-y-6 rounded-2xl border p-6 shadow-sm backdrop-blur-sm',
-        isActive ? 'border-primary bg-primary/5' : 'bg-card border-border',
+        isActive ? 'border-primary bg-primary/5 shadow-md' : 'bg-card border-border',
       )}
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
