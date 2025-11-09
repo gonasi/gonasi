@@ -102,7 +102,6 @@ export const fetchOrganizationSubscriptionStatus = async ({
     };
   }
 
-  console.log(subscription);
   return {
     success: true,
     message: 'Organization subscription fetched successfully',

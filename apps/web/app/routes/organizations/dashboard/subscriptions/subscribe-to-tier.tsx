@@ -1,3 +1,5 @@
+import { Form } from 'react-router';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { motion } from 'framer-motion';
 import {
   AlertTriangle,
@@ -7,14 +9,21 @@ import {
   CircleX,
   Info,
 } from 'lucide-react';
-import { redirectWithError } from 'remix-toast';
+import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
+import { dataWithError, redirectWithError, redirectWithSuccess } from 'remix-toast';
+import { HoneypotInputs } from 'remix-utils/honeypot/react';
 
 import {
+  initializeOrganizationTierSubscription,
   type OrganizationTierChangeRequestSuccessResponse,
   type TierLimitsRow,
   VALID_TIER_ORDER,
   validateTierChangeRequest,
 } from '@gonasi/database/organizationSubscriptions';
+import {
+  OrganizationTierChangeSchema,
+  type OrganizationTierChangeSchemaTypes,
+} from '@gonasi/schemas/subscriptions';
 
 import type { Route } from './+types/subscribe-to-tier';
 
@@ -23,6 +32,45 @@ import { Button, NavLinkButton } from '~/components/ui/button';
 import { Modal } from '~/components/ui/modal';
 import { createClient } from '~/lib/supabase/supabase.server';
 import { cn } from '~/lib/utils';
+import { checkHoneypot } from '~/utils/honeypot.server';
+import { useIsPending } from '~/utils/misc';
+
+const resolver = zodResolver(OrganizationTierChangeSchema);
+
+export async function action({ request, params }: Route.ActionArgs) {
+  const formData = await request.formData();
+  await checkHoneypot(formData);
+
+  // Initialize Supabase and headers for redirect
+  const { supabase } = createClient(request);
+
+  // Validate and parse form data with Zod
+  const {
+    errors,
+    data,
+    receivedValues: defaultValues,
+  } = await getValidatedFormData<OrganizationTierChangeSchemaTypes>(formData, resolver);
+
+  // Return validation errors, if any
+  if (errors) {
+    return { errors, defaultValues };
+  }
+
+  const {
+    success,
+    message,
+    data: successData,
+  } = await initializeOrganizationTierSubscription({ supabase, data });
+
+  return success
+    ? redirectWithSuccess(
+        successData
+          ? `${successData?.data.authorization_url}`
+          : `/${params.organizationId}/dashboard/subscriptions/${data.tier}`,
+        message,
+      )
+    : dataWithError(null, message);
+}
 
 export async function loader({ params, request }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
@@ -55,6 +103,18 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 export default function SubscribeToTier({ params, loaderData }: Route.ComponentProps) {
   const data = loaderData as OrganizationTierChangeRequestSuccessResponse;
   const { currentTier, targetTier, isUpgrade, isDowngrade, canProceed, warnings } = data;
+
+  const form = useRemixForm<OrganizationTierChangeSchemaTypes>({
+    mode: 'all',
+    resolver: zodResolver(OrganizationTierChangeSchema),
+    defaultValues: {
+      organizationId: params.organizationId,
+      tier: params.tier as TierLimitsRow,
+    },
+  });
+
+  const isPending = useIsPending();
+  const isDisabled = isPending || form.formState.isSubmitting;
 
   const title = isUpgrade
     ? `Upgrade from ${currentTier} → ${targetTier}`
@@ -156,25 +216,31 @@ export default function SubscribeToTier({ params, loaderData }: Route.ComponentP
               );
             })}
           </div>
-
-          <div className='flex justify-end gap-3 border-t pt-4'>
-            <div>
-              <NavLinkButton
-                to={`/${params.organizationId}/dashboard/subscriptions`}
-                variant='ghost'
-                leftIcon={<CircleX />}
-              >
-                Cancel
-              </NavLinkButton>
-            </div>
-            <Button
-              variant={isUpgrade ? 'success' : 'danger'}
-              disabled={!canProceed}
-              rightIcon={isUpgrade ? <ArrowUpRight /> : <ArrowDownLeft />}
-            >
-              {isUpgrade ? 'Confirm Upgrade' : 'Confirm Downgrade'}
-            </Button>
-          </div>
+          <RemixFormProvider {...form}>
+            <Form method='POST' onSubmit={form.handleSubmit}>
+              <HoneypotInputs />
+              <div className='flex justify-end gap-3 border-t pt-4'>
+                <div>
+                  <NavLinkButton
+                    to={`/${params.organizationId}/dashboard/subscriptions`}
+                    variant='ghost'
+                    leftIcon={<CircleX />}
+                  >
+                    Cancel
+                  </NavLinkButton>
+                </div>
+                <Button
+                  variant={isUpgrade ? 'success' : 'danger'}
+                  type='submit'
+                  disabled={!canProceed || isDisabled}
+                  isLoading={isDisabled}
+                  rightIcon={isUpgrade ? <ArrowUpRight /> : <ArrowDownLeft />}
+                >
+                  {isUpgrade ? 'Confirm Upgrade' : 'Confirm Downgrade'}
+                </Button>
+              </div>
+            </Form>
+          </RemixFormProvider>
         </Modal.Body>
       </Modal.Content>
     </Modal>
