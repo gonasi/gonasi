@@ -19,11 +19,22 @@ export function ActiveSubCard({ subscription, tier }: ActiveSubCardProps) {
 
   const isFreePlan = tier.price_monthly_usd === 0;
 
-  const startDate = new Date(subscription.start_date).toLocaleDateString();
+  const startDateRaw = subscription.start_date;
+  const startDate = new Date(startDateRaw).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
 
-  const nextBillingDate = subscription.current_period_end
-    ? new Date(subscription.current_period_end).toLocaleDateString()
-    : 'N/A';
+  const rawDate = subscription.initial_next_payment_date ?? subscription.current_period_end;
+  const nextBillingDate =
+    rawDate != null
+      ? new Date(rawDate).toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        })
+      : 'Unknown';
 
   const monthlyPrice = tier.price_monthly_usd;
   const currency = tier.plan_currency?.toUpperCase() || 'USD';

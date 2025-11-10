@@ -9905,6 +9905,20 @@
           "maxLength": null
         },
         {
+          "id": "public.organization_subscriptions.initial_next_payment_date",
+          "name": "initial_next_payment_date",
+          "columnName": "initial_next_payment_date",
+          "type": "timestamptz",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
           "id": "public.organization_subscriptions.created_at",
           "name": "created_at",
           "columnName": "created_at",

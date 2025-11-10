@@ -122,7 +122,6 @@ async function handleSubscriptionCreate(
   console.log('📝 Creating new subscription:', data.subscription_code);
   console.log('📝 all data:', data);
 
-  // Extract organization_id from customer email (format: org_id@gonasi.com)
   const customerEmail = data.customer.email;
   const organizationId = customerEmail.split('@')[0];
 
@@ -133,9 +132,8 @@ async function handleSubscriptionCreate(
 
   console.log('🏢 Extracted organization_id:', organizationId);
 
-  // Determine tier from plan name
+  // Map Paystack plan → your tier enum
   const planName = data.plan.name.toLowerCase();
-
   let tier: 'launch' | 'scale' | 'impact' | 'enterprise' = 'launch';
   if (planName.includes('scale')) tier = 'scale';
   else if (planName.includes('impact')) tier = 'impact';
@@ -143,17 +141,23 @@ async function handleSubscriptionCreate(
 
   console.log('📊 Determined tier:', tier);
 
-  // Create or update organization subscription via RPC
+  // ✅ CALL THE UPDATED FUNCTION
   const { data: subscription, error: subError } = await supabase.rpc(
     'subscription_upsert_webhook',
     {
       org_id: organizationId,
       new_tier: tier,
       new_status: data.status,
+
+      // Paystack timestamps
       start_ts: data.createdAt,
       period_start: data.createdAt,
       period_end: data.next_payment_date,
+
       cancel_at_period_end: false,
+
+      // ✅ SEND THE PAYSTACK NEXT PAYMENT DATE
+      initial_next_payment_date: data.next_payment_date,
     },
   );
 
@@ -415,7 +419,6 @@ async function handleSubscriptionNotRenew(
     .update({
       cancel_at_period_end: true,
       status: 'canceled', // Use 'canceled' status from the enum
-      updated_at: new Date().toISOString(),
     })
     .eq('organization_id', organizationId);
 

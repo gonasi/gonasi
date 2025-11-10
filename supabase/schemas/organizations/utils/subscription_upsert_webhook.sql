@@ -5,7 +5,8 @@ create or replace function public.subscription_upsert_webhook(
   start_ts timestamptz,
   period_start timestamptz,
   period_end timestamptz,
-  cancel_at_period_end boolean default false
+  cancel_at_period_end boolean default false,
+  initial_next_payment_date timestamptz default null  
 )
 returns public.organization_subscriptions
 language plpgsql
@@ -22,16 +23,18 @@ begin
     start_date,
     current_period_start,
     current_period_end,
-    cancel_at_period_end
+    cancel_at_period_end,
+    initial_next_payment_date
   )
   values (
     org_id,
-    new_tier::public.subscription_tier,          -- ✅ tier enum cast
-    new_status::public.subscription_status,      -- ✅ status enum cast
+    new_tier::public.subscription_tier,
+    new_status::public.subscription_status,
     start_ts,
     period_start,
     period_end,
-    cancel_at_period_end
+    cancel_at_period_end,
+    coalesce(initial_next_payment_date, period_end)  -- use Paystack date if provided
   )
   on conflict (organization_id)
   do update set

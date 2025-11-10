@@ -1519,6 +1519,7 @@ export type Database = {
           current_period_end: string | null
           current_period_start: string
           id: string
+          initial_next_payment_date: string | null
           organization_id: string
           start_date: string
           status: Database["public"]["Enums"]["subscription_status"]
@@ -1533,6 +1534,7 @@ export type Database = {
           current_period_end?: string | null
           current_period_start?: string
           id?: string
+          initial_next_payment_date?: string | null
           organization_id: string
           start_date?: string
           status?: Database["public"]["Enums"]["subscription_status"]
@@ -1547,6 +1549,7 @@ export type Database = {
           current_period_end?: string | null
           current_period_start?: string
           id?: string
+          initial_next_payment_date?: string | null
           organization_id?: string
           start_date?: string
           status?: Database["public"]["Enums"]["subscription_status"]
@@ -2783,6 +2786,7 @@ export type Database = {
       subscription_upsert_webhook: {
         Args: {
           cancel_at_period_end?: boolean
+          initial_next_payment_date?: string
           new_status: string
           new_tier: string
           org_id: string
@@ -2797,6 +2801,7 @@ export type Database = {
           current_period_end: string | null
           current_period_start: string
           id: string
+          initial_next_payment_date: string | null
           organization_id: string
           start_date: string
           status: Database["public"]["Enums"]["subscription_status"]

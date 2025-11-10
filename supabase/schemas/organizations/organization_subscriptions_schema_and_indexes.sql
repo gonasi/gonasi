@@ -42,6 +42,7 @@ create table public.organization_subscriptions (
   current_period_start timestamptz not null default timezone('utc', now()),
   current_period_end timestamptz default null,
   cancel_at_period_end boolean not null default false,
+  initial_next_payment_date timestamptz default null,
 
   -- Audit Fields
   created_at timestamptz not null default timezone('utc', now()),

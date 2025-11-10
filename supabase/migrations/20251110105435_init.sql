@@ -496,6 +496,7 @@ alter table "public"."organization_members" enable row level security;
     "current_period_start" timestamp with time zone not null default timezone('utc'::text, now()),
     "current_period_end" timestamp with time zone,
     "cancel_at_period_end" boolean not null default false,
+    "initial_next_payment_date" timestamp with time zone,
     "created_at" timestamp with time zone not null default timezone('utc'::text, now()),
     "updated_at" timestamp with time zone not null default timezone('utc'::text, now()),
     "created_by" uuid,
@@ -7519,7 +7520,7 @@ end;
 $function$
 ;
 
-CREATE OR REPLACE FUNCTION public.subscription_upsert_webhook(org_id uuid, new_tier text, new_status text, start_ts timestamp with time zone, period_start timestamp with time zone, period_end timestamp with time zone, cancel_at_period_end boolean DEFAULT false)
+CREATE OR REPLACE FUNCTION public.subscription_upsert_webhook(org_id uuid, new_tier text, new_status text, start_ts timestamp with time zone, period_start timestamp with time zone, period_end timestamp with time zone, cancel_at_period_end boolean DEFAULT false, initial_next_payment_date timestamp with time zone DEFAULT NULL::timestamp with time zone)
  RETURNS public.organization_subscriptions
  LANGUAGE plpgsql
  SECURITY DEFINER
@@ -7535,16 +7536,18 @@ begin
     start_date,
     current_period_start,
     current_period_end,
-    cancel_at_period_end
+    cancel_at_period_end,
+    initial_next_payment_date
   )
   values (
     org_id,
-    new_tier::public.subscription_tier,          -- ✅ tier enum cast
-    new_status::public.subscription_status,      -- ✅ status enum cast
+    new_tier::public.subscription_tier,
+    new_status::public.subscription_status,
     start_ts,
     period_start,
     period_end,
-    cancel_at_period_end
+    cancel_at_period_end,
+    coalesce(initial_next_payment_date, period_end)  -- use Paystack date if provided
   )
   on conflict (organization_id)
   do update set
