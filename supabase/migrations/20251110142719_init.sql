@@ -6506,21 +6506,7 @@ begin
   end if;
 
   -- =====================================================
-  -- STEP 2: Validate organization subscription
-  -- =====================================================
-  select id
-  into v_subscription_id
-  from public.organization_subscriptions
-  where organization_id = p_organization_id
-    and status in ('active','attention')
-  limit 1;
-
-  if v_subscription_id is null then
-    raise exception 'No active subscription found for organization: %', p_organization_id;
-  end if;
-
-  -- =====================================================
-  -- STEP 3: Ensure platform wallet exists
+  -- STEP 2: Ensure platform wallet exists
   -- =====================================================
   insert into public.gonasi_wallets(currency_code)
   values (p_currency_code)
@@ -6536,11 +6522,9 @@ begin
   end if;
 
   -- =====================================================
-  -- STEP 4: Create Ledger Entries
+  -- STEP 3: Ledger entry: subscription_payment (credit)
   -- =====================================================
-
-  -- Subscription payment (gross inflow)
-  insert into public.wallet_ledger_entries(
+  insert into public.wallet_ledger_entries (
     source_wallet_type,
     source_wallet_id,
     destination_wallet_type,
@@ -6554,7 +6538,8 @@ begin
     related_entity_type,
     related_entity_id,
     metadata
-  ) values (
+  )
+  values (
     'external',
     null,
     'platform',
@@ -6565,20 +6550,21 @@ begin
     p_payment_reference,
     'subscription_payment',
     'completed',
-    'organization_subscription',
-    v_subscription_id,
+    'organization',
+    p_organization_id,
     jsonb_build_object(
       'source', 'paystack',
       'organization_id', p_organization_id,
-      'subscription_id', v_subscription_id,
       'gross_amount', p_amount_paid,
       'webhook_metadata', p_metadata
     )
   );
 
-  -- Paystack fee deduction (debit)
+  -- =====================================================
+  -- STEP 4: Ledger entry: payment_gateway_fee (debit)
+  -- =====================================================
   if p_paystack_fee > 0 then
-    insert into public.wallet_ledger_entries(
+    insert into public.wallet_ledger_entries (
       source_wallet_type,
       source_wallet_id,
       destination_wallet_type,
@@ -6592,7 +6578,8 @@ begin
       related_entity_type,
       related_entity_id,
       metadata
-    ) values (
+    )
+    values (
       'platform',
       v_platform_wallet_id,
       'external',
@@ -6603,8 +6590,8 @@ begin
       p_payment_reference,
       'payment_gateway_fee',
       'completed',
-      'organization_subscription',
-      v_subscription_id,
+      'organization',
+      p_organization_id,
       jsonb_build_object(
         'destination', 'paystack',
         'fee_type', 'subscription_payment',
@@ -6617,31 +6604,17 @@ begin
   end if;
 
   -- =====================================================
-  -- STEP 5: Update subscription period (monthly)
-  -- =====================================================
-  update public.organization_subscriptions
-  set
-    status = 'active',
-    current_period_start = coalesce(current_period_end, now()),
-    current_period_end = coalesce(current_period_end, now()) + interval '1 month',
-    updated_at = now()
-  where id = v_subscription_id;
-
-  -- =====================================================
-  -- STEP 6: Return Success Response
+  -- STEP 5: Return response
   -- =====================================================
   return jsonb_build_object(
     'success', true,
-    'message', 'Subscription payment processed successfully',
-    'subscription_id', v_subscription_id,
-    'organization_id', p_organization_id,
+    'message', 'Subscription payment recorded',
     'payment_reference', p_payment_reference,
+    'organization_id', p_organization_id,
     'gross_amount', p_amount_paid,
     'paystack_fee', p_paystack_fee,
     'net_platform_revenue', v_net,
-    'currency_code', p_currency_code,
-    'ledger_entries_created', 1 + (case when p_paystack_fee>0 then 1 else 0 end),
-    'platform_wallet', v_platform_wallet_id
+    'currency_code', p_currency_code
   );
 
 exception

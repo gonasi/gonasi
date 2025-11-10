@@ -120,7 +120,6 @@ async function handleSubscriptionCreate(
   startTime: number,
 ) {
   console.log('📝 Creating new subscription:', data.subscription_code);
-  console.log('📝 all data:', data);
 
   const customerEmail = data.customer.email;
   const organizationId = customerEmail.split('@')[0];
@@ -232,14 +231,12 @@ async function handleSubscriptionPaymentSuccess(
   console.log('💰 Processing subscription payment:', tx.reference);
 
   const metadata = tx.metadata ?? {};
-  const organizationId = metadata.organizationId; // Note: using organizationId from charge metadata
+  const organizationId = metadata.organizationId;
 
   if (!organizationId) {
     console.error('❌ Missing organizationId in payment metadata');
     return new Response('Missing organizationId', { status: 400 });
   }
-
-  console.log('🏢 Organization ID from metadata:', organizationId);
 
   // Normalize amounts
   const rawAmount = typeof tx.amount === 'number' ? tx.amount : parseFloat(String(tx.amount));
@@ -250,39 +247,54 @@ async function handleSubscriptionPaymentSuccess(
   const netRevenue = Number((amountPaid - paystackFee).toFixed(4));
   const currency = (tx.currency ?? 'KES').toString().toUpperCase();
 
-  console.log(`  Gross: ${amountPaid} ${currency}, Fee: ${paystackFee}, Net: ${netRevenue}`);
+  console.log(`  💵 Gross: ${amountPaid} ${currency}, Fee: ${paystackFee}, Net: ${netRevenue}`);
 
-  // Call RPC to process subscription payment
+  const subscriptionCode =
+    tx.plan?.plan_code || tx.subscription?.subscription_code || tx.subscription_code || null;
+
+  const paymentMetadata = {
+    webhook_received_at: new Date().toISOString(),
+    webhook_event: 'charge.success',
+    paystack_transaction_id: String(tx.id),
+    subscription_code: subscriptionCode,
+    tier: metadata.targetTier || null,
+    clientIp,
+    raw_paystack_payload: {
+      id: tx.id,
+      reference: tx.reference,
+      status: tx.status,
+      paid_at: tx.paid_at ?? tx.paidAt,
+      plan: tx.plan,
+      metadata: tx.metadata ?? null,
+    },
+  };
+
   const { data: result, error: rpcError } = await supabase.rpc('process_subscription_payment', {
     p_payment_reference: String(tx.reference),
     p_organization_id: organizationId,
     p_amount_paid: amountPaid,
     p_currency_code: currency,
     p_paystack_fee: paystackFee,
-    p_metadata: {
-      webhook_received_at: new Date().toISOString(),
-      webhook_event: 'charge.success',
-      paystack_transaction_id: String(tx.id),
-      subscription_code: tx.plan?.plan_code,
-      tier: metadata.targetTier,
-      clientIp,
-    },
+    p_metadata: paymentMetadata,
   });
 
   if (rpcError) {
     console.error('❌ RPC ERROR:', rpcError);
     return new Response(
-      JSON.stringify({ error: 'Payment processing failed', message: rpcError.message }),
+      JSON.stringify({
+        error: 'Payment processing failed',
+        message: rpcError.message,
+      }),
       { status: 500, headers: { 'Content-Type': 'application/json' } },
     );
   }
 
-  console.log('✅ Subscription payment processed:', result);
+  console.log('✅ Subscription payment recorded:', result);
 
   return new Response(
     JSON.stringify({
       success: true,
-      message: 'Subscription payment processed',
+      message: 'Subscription payment processed (ledger only)',
       payment_reference: tx.reference,
       net_platform_revenue: netRevenue,
       processing_time_ms: Date.now() - startTime,
@@ -355,6 +367,7 @@ async function handleInvoiceUpdate(
   console.log('🔄 Invoice updated:', data.invoice_code);
   console.log('  Final status:', data.status);
   console.log('  Paid:', data.paid);
+  console.log('**************************** handleInvoiceUpdate: ', data);
 
   // Update subscription based on invoice status
   if (data.paid && data.status === 'success') {
