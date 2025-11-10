@@ -10035,17 +10035,16 @@
       ],
       "uniqueConstraints": [
         {
-          "name": "one_active_subscription_per_org",
+          "name": "organization_subscriptions_pkey",
           "fields": [
-            "organization_id",
-            "status"
+            "id"
           ],
           "nullNotDistinct": false
         },
         {
-          "name": "organization_subscriptions_pkey",
+          "name": "unique_subscription_per_org",
           "fields": [
-            "id"
+            "organization_id"
           ],
           "nullNotDistinct": false
         }
@@ -17784,16 +17783,16 @@
           "name": "active"
         },
         {
-          "name": "canceled"
+          "name": "attention"
         },
         {
-          "name": "incomplete"
+          "name": "cancelled"
         },
         {
-          "name": "past_due"
+          "name": "completed"
         },
         {
-          "name": "trialing"
+          "name": "non-renewing"
         }
       ]
     },

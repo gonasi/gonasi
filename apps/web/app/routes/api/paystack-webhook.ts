@@ -1,4 +1,5 @@
 import type { Route } from './+types/paystack-webhook';
+import { handleOrganizationSubscription } from './paystack/handleOrganizationSubscription';
 
 import { createClient } from '~/lib/supabase/supabase.server';
 
@@ -50,7 +51,23 @@ export async function action({ request }: Route.ActionArgs) {
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
     // ─────────────────────────────────────────────
-    // ④ HANDLE charge.success (multiple transaction types)
+    // ④ HANDLE SUBSCRIPTION EVENTS
+    // ─────────────────────────────────────────────
+    const subscriptionEvents = [
+      'subscription.create',
+      'subscription.disable',
+      'subscription.not_renew',
+      'invoice.create',
+      'invoice.update',
+      'invoice.payment_failed',
+    ];
+
+    if (subscriptionEvents.includes(payload.event)) {
+      return await handleOrganizationSubscription(supabase, payload, clientIp, startTime);
+    }
+
+    // ─────────────────────────────────────────────
+    // ⑤ HANDLE charge.success (multiple transaction types)
     // ─────────────────────────────────────────────
     if (payload.event === 'charge.success') {
       const tx = payload.data;
@@ -66,10 +83,8 @@ export async function action({ request }: Route.ActionArgs) {
           return await handleCourseSale(supabase, tx, metadata, clientIp, startTime);
 
         case 'organization_subscription':
-          // Handle recurring organization subscription (future)
-          // return await handleOrganizationSubscription(...);
-          console.log('🏢 Skipped organization_subscription (TODO)');
-          return new Response('Pending org subscription handler', { status: 200 });
+          // Handle recurring organization subscription
+          return await handleOrganizationSubscription(supabase, payload, clientIp, startTime);
 
         default:
           console.warn('⚠️ Unrecognized transaction_type:', transactionType);
@@ -78,7 +93,7 @@ export async function action({ request }: Route.ActionArgs) {
     }
 
     // ─────────────────────────────────────────────
-    // ⑤ HANDLE charge.failed
+    // ⑥ HANDLE charge.failed
     // ─────────────────────────────────────────────
     if (payload.event === 'charge.failed') {
       console.log('❌ charge.failed:', payload.data?.reference);
@@ -90,7 +105,7 @@ export async function action({ request }: Route.ActionArgs) {
     }
 
     // ─────────────────────────────────────────────
-    // ⑥ HANDLE UNRECOGNIZED EVENTS
+    // ⑦ HANDLE UNRECOGNIZED EVENTS
     // ─────────────────────────────────────────────
     console.log('ℹ️ Unhandled webhook event:', payload.event);
     return new Response(JSON.stringify({ message: 'Webhook received', event: payload.event }), {
@@ -99,7 +114,7 @@ export async function action({ request }: Route.ActionArgs) {
     });
   } catch (err) {
     // ─────────────────────────────────────────────
-    // ⑦ ERROR HANDLING
+    // ⑧ ERROR HANDLING
     // ─────────────────────────────────────────────
     const processingTime = Date.now() - startTime;
     console.error('💥 WEBHOOK PROCESSING ERROR:', err);
@@ -116,7 +131,7 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 // ─────────────────────────────────────────────
-// ⑧ COURSE SALE HANDLER
+// ⑨ COURSE SALE HANDLER (unchanged)
 // ─────────────────────────────────────────────
 async function handleCourseSale(
   supabase: ReturnType<typeof createClient>['supabase'],

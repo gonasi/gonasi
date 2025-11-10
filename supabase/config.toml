@@ -132,6 +132,7 @@ schema_paths = [
   './schemas/wallets/wallet_ledger_entries_rls.sql',
   './schemas/wallets/utils/update_wallet_balance.sql',
   './schemas/wallets/utils/get_organization_earnings_summary.sql',
+  './schemas/wallets/utils/process_subscription_payment.sql',
 
   # add modes profile migration
   './schemas/profiles_add_modes_migration.sql',
@@ -161,6 +162,7 @@ schema_paths = [
   './schemas/organizations/organization_subscriptions_schema_and_indexes.sql',
   './schemas/organizations/organization_subscriptions_rls.sql',
   './schemas/organizations/utils/assign_launch_subscription_to_new_org.sql',
+  './schemas/organizations/utils/subscription_upsert_webhook.sql',
 
 
 

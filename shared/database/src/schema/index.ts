@@ -40,42 +40,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      archive: {
-        Args: { message_id: number; queue_name: string }
-        Returns: boolean
-      }
-      delete: {
-        Args: { message_id: number; queue_name: string }
-        Returns: boolean
-      }
-      pop: {
-        Args: { queue_name: string }
-        Returns: unknown[]
-        SetofOptions: {
-          from: "*"
-          to: "message_record"
-          isOneToOne: false
-          isSetofReturn: true
-        }
-      }
-      read: {
-        Args: { n: number; queue_name: string; sleep_seconds: number }
-        Returns: unknown[]
-        SetofOptions: {
-          from: "*"
-          to: "message_record"
-          isOneToOne: false
-          isSetofReturn: true
-        }
-      }
-      send: {
-        Args: { message: Json; queue_name: string; sleep_seconds?: number }
-        Returns: number[]
-      }
-      send_batch: {
-        Args: { messages: Json[]; queue_name: string; sleep_seconds?: number }
-        Returns: number[]
-      }
+      [_ in never]: never
     }
     Enums: {
       [_ in never]: never
@@ -1593,7 +1558,7 @@ export type Database = {
           {
             foreignKeyName: "organization_subscriptions_organization_id_fkey"
             columns: ["organization_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
@@ -2741,6 +2706,17 @@ export type Database = {
         Returns: Json
       }
       process_delete_course_progress: { Args: never; Returns: undefined }
+      process_subscription_payment: {
+        Args: {
+          p_amount_paid: number
+          p_currency_code: Database["public"]["Enums"]["currency_code"]
+          p_metadata?: Json
+          p_organization_id: string
+          p_payment_reference: string
+          p_paystack_fee: number
+        }
+        Returns: Json
+      }
       reorder_chapters: {
         Args: {
           chapter_positions: Json
@@ -2803,6 +2779,37 @@ export type Database = {
       set_course_paid: {
         Args: { p_course_id: string; p_user_id: string }
         Returns: undefined
+      }
+      subscription_upsert_webhook: {
+        Args: {
+          cancel_at_period_end?: boolean
+          new_status: string
+          new_tier: string
+          org_id: string
+          period_end: string
+          period_start: string
+          start_ts: string
+        }
+        Returns: {
+          cancel_at_period_end: boolean
+          created_at: string
+          created_by: string | null
+          current_period_end: string | null
+          current_period_start: string
+          id: string
+          organization_id: string
+          start_date: string
+          status: Database["public"]["Enums"]["subscription_status"]
+          tier: Database["public"]["Enums"]["subscription_tier"]
+          updated_at: string
+          updated_by: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "organization_subscriptions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       switch_course_pricing_model: {
         Args: { p_course_id: string; p_target_model: string; p_user_id: string }
@@ -2889,10 +2896,10 @@ export type Database = {
       profile_mode: "personal" | "organization"
       subscription_status:
         | "active"
-        | "canceled"
-        | "past_due"
-        | "trialing"
-        | "incomplete"
+        | "non-renewing"
+        | "attention"
+        | "completed"
+        | "cancelled"
       subscription_tier: "launch" | "scale" | "impact" | "enterprise"
       support_level: "community" | "email" | "priority" | "dedicated"
       transaction_direction: "credit" | "debit"
@@ -3116,10 +3123,10 @@ export const Constants = {
       profile_mode: ["personal", "organization"],
       subscription_status: [
         "active",
-        "canceled",
-        "past_due",
-        "trialing",
-        "incomplete",
+        "non-renewing",
+        "attention",
+        "completed",
+        "cancelled",
       ],
       subscription_tier: ["launch", "scale", "impact", "enterprise"],
       support_level: ["community", "email", "priority", "dedicated"],

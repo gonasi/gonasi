@@ -205,6 +205,7 @@ function PlanCTA({ isActive, tier }: { isActive: boolean; tier: string }) {
         variant='success'
         disabled
         className='rounded-full'
+        size='sm'
       >
         Current Plan
       </NavLinkButton>
