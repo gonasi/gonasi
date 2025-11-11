@@ -9,8 +9,12 @@ const envSchema = z.object({
 
   SUPABASE_URL: z.string().min(1),
   SUPABASE_PUBLISHABLE_KEY: z.string().min(1),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
   HONEYPOT_SECRET: z.string().min(1),
   SESSION_SECRET: z.string().min(1),
+
+  PAYSTACK_SECRET_KEY: z.string().min(1),
+  PAYSTACK_PUBLIC_KEY: z.string().min(1),
 });
 
 export const initEnv = () => {

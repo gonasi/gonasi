@@ -17729,6 +17729,9 @@
           "name": "subscription_payment"
         },
         {
+          "name": "subscription_upgrade_payment"
+        },
+        {
           "name": "tax_remittance"
         },
         {

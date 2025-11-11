@@ -11,7 +11,7 @@
 // - subscription.disable
 // ─────────────────────────────────────────────────────────────────
 
-import type { SupabaseClient } from '@supabase/supabase-js';
+import type { TypedSupabaseClient } from '@gonasi/database/client';
 
 interface PaystackSubscriptionData {
   subscription_code: string;
@@ -64,7 +64,7 @@ interface PaystackInvoiceData {
 // MAIN HANDLER: Route subscription events to appropriate handlers
 // ─────────────────────────────────────────────────────────────────
 export async function handleOrganizationSubscription(
-  supabase: SupabaseClient,
+  supabase: TypedSupabaseClient,
   payload: any,
   clientIp: string | null,
   startTime: number,
@@ -114,7 +114,7 @@ export async function handleOrganizationSubscription(
 // 1. SUBSCRIPTION CREATE
 // ─────────────────────────────────────────────────────────────────
 async function handleSubscriptionCreate(
-  supabase: SupabaseClient,
+  supabase: TypedSupabaseClient,
   data: PaystackSubscriptionData,
   clientIp: string | null,
   startTime: number,
@@ -188,7 +188,7 @@ async function handleSubscriptionCreate(
 // 2. INVOICE CREATE (3 days before payment)
 // ─────────────────────────────────────────────────────────────────
 async function handleInvoiceCreate(
-  supabase: SupabaseClient,
+  supabase: TypedSupabaseClient,
   data: PaystackInvoiceData,
   clientIp: string | null,
   startTime: number,
@@ -223,7 +223,7 @@ async function handleInvoiceCreate(
 // - No revenue distribution to organizations
 // ─────────────────────────────────────────────────────────────────
 async function handleSubscriptionPaymentSuccess(
-  supabase: SupabaseClient,
+  supabase: TypedSupabaseClient,
   tx: any,
   clientIp: string | null,
   startTime: number,
@@ -307,7 +307,7 @@ async function handleSubscriptionPaymentSuccess(
 // 4. INVOICE PAYMENT FAILED
 // ─────────────────────────────────────────────────────────────────
 async function handleInvoicePaymentFailed(
-  supabase: SupabaseClient,
+  supabase: TypedSupabaseClient,
   data: PaystackInvoiceData,
   clientIp: string | null,
   startTime: number,
@@ -359,7 +359,7 @@ async function handleInvoicePaymentFailed(
 // 5. INVOICE UPDATE (final status after payment attempt)
 // ─────────────────────────────────────────────────────────────────
 async function handleInvoiceUpdate(
-  supabase: SupabaseClient,
+  supabase: TypedSupabaseClient,
   data: PaystackInvoiceData,
   clientIp: string | null,
   startTime: number,
@@ -408,7 +408,7 @@ async function handleInvoiceUpdate(
 // 6. SUBSCRIPTION NOT RENEWING
 // ─────────────────────────────────────────────────────────────────
 async function handleSubscriptionNotRenew(
-  supabase: SupabaseClient,
+  supabase: TypedSupabaseClient,
   data: PaystackSubscriptionData,
   clientIp: string | null,
   startTime: number,
@@ -459,7 +459,7 @@ async function handleSubscriptionNotRenew(
 // 7. SUBSCRIPTION DISABLED
 // ─────────────────────────────────────────────────────────────────
 async function handleSubscriptionDisable(
-  supabase: SupabaseClient,
+  supabase: TypedSupabaseClient,
   data: PaystackSubscriptionData,
   clientIp: string | null,
   startTime: number,

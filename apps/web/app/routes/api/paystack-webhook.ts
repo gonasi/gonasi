@@ -1,7 +1,8 @@
 import type { Route } from './+types/paystack-webhook';
 import { handleOrganizationSubscription } from './paystack/handleOrganizationSubscription';
+import { handleOrganizationSubscriptionUpgrade } from './paystack/handleOrganizationSubscriptionUpgrade';
 
-import { createClient } from '~/lib/supabase/supabase.server';
+import createClient from '~/lib/supabase/supabase.server';
 
 // Reference Paystack IPs (for logs only — signature is the real security)
 const PAYSTACK_IPS = new Set(['52.31.139.75', '52.49.173.169', '52.214.14.220']);
@@ -44,7 +45,7 @@ export async function action({ request }: Route.ActionArgs) {
     // ③ PARSE PAYLOAD & PREPARE SUPABASE CLIENT
     // ─────────────────────────────────────────────
     const payload = await request.json();
-    const { supabase } = createClient(request);
+    const { supabaseAdmin } = createClient(request);
 
     console.log('  Event type:', payload.event);
     console.log('  Reference:', payload.data?.reference);
@@ -63,12 +64,12 @@ export async function action({ request }: Route.ActionArgs) {
     ];
 
     if (subscriptionEvents.includes(payload.event)) {
-      return await handleOrganizationSubscription(supabase, payload, clientIp, startTime);
+      return await handleOrganizationSubscription(supabaseAdmin, payload, clientIp, startTime);
     }
 
-    // ─────────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────────────
     // ⑤ HANDLE charge.success (multiple transaction types)
-    // ─────────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────────────
     if (payload.event === 'charge.success') {
       const tx = payload.data;
       const metadata = tx.metadata ?? {};
@@ -80,11 +81,21 @@ export async function action({ request }: Route.ActionArgs) {
       switch (transactionType) {
         case 'course_sale':
           // Handle single course purchase
-          return await handleCourseSale(supabase, tx, metadata, clientIp, startTime);
+          return await handleCourseSale(supabaseAdmin, tx, metadata, clientIp, startTime);
 
         case 'organization_subscription':
-          // Handle recurring organization subscription
-          return await handleOrganizationSubscription(supabase, payload, clientIp, startTime);
+          // Handle recurring organization subscription payment
+          return await handleOrganizationSubscription(supabaseAdmin, payload, clientIp, startTime);
+
+        case 'organization_subscription_upgrade':
+          // Handle one-time prorated upgrade charge
+          return await handleOrganizationSubscriptionUpgrade(
+            supabaseAdmin,
+            tx,
+            metadata,
+            clientIp,
+            startTime,
+          );
 
         default:
           console.warn('⚠️ Unrecognized transaction_type:', transactionType);
@@ -134,7 +145,7 @@ export async function action({ request }: Route.ActionArgs) {
 // ⑨ COURSE SALE HANDLER (unchanged)
 // ─────────────────────────────────────────────
 async function handleCourseSale(
-  supabase: ReturnType<typeof createClient>['supabase'],
+  supabaseAdmin: ReturnType<typeof createClient>['supabaseAdmin'],
   tx: any,
   metadata: any,
   clientIp: string | null,
@@ -210,7 +221,7 @@ async function handleCourseSale(
   };
 
   console.log('📞 Calling process_course_payment_from_paystack RPC...');
-  const { data: result, error: rpcError } = await supabase.rpc(
+  const { data: result, error: rpcError } = await supabaseAdmin.rpc(
     'process_course_payment_from_paystack',
     rpcParams,
   );

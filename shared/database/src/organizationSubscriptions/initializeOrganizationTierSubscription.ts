@@ -6,9 +6,12 @@ import type { ProfileWithSignedUrl } from '../profile';
 import { getUserProfile } from '../profile';
 import type { Database } from '../schema';
 import type { PaystackSubscriptionResponse } from './organizationSubscriptionsTypes';
+import type { TierLimitsRow } from './validateTierChangeRequest';
 import { VALID_TIER_ORDER } from './validateTierChangeRequest';
 
-type Tier = (typeof VALID_TIER_ORDER)[number];
+const VALID_UPGRADE_TIER_ORDER: TierLimitsRow[] = ['scale', 'impact', 'enterprise'];
+
+type Tier = (typeof VALID_UPGRADE_TIER_ORDER)[number];
 type ChangeType = 'upgrade' | 'downgrade' | 'reactivation' | 'new' | 'same';
 type SubscriptionStatus = Database['public']['Enums']['subscription_status'];
 
@@ -17,7 +20,8 @@ const determineChangeType = (
   currentStatus: SubscriptionStatus | null,
   targetTier: Tier,
 ): ChangeType => {
-  if (!currentTier) return 'new';
+  // NOTE: Always check 'launch' or it will go to upgrade flow
+  if (!currentTier || currentTier === 'launch') return 'new';
 
   // Payment issues block changes
   if (currentStatus === 'attention') return 'same';
@@ -44,17 +48,44 @@ const determineChangeType = (
 // Dummy placeholders
 // -------------------------
 async function handleUpgrade({
+  supabase,
   organizationId,
   targetTier,
 }: {
+  supabase: TypedSupabaseClient;
   organizationId: string;
   targetTier: Tier;
-}) {
-  console.log('🚀 Upgrade logic placeholder', {
+}): Promise<InitializeOrgTierSubSuccess | InitializeOrgTierSubError> {
+  console.log('🚀 Upgrade logic', {
     organizationId,
     targetTier,
   });
-  // TODO: cancel current sub at period end if non-renewing, schedule new tier, notify user
+
+  const payload = {
+    organizationId,
+    targetTier,
+  };
+
+  const { data: txResponse, error: txError } =
+    await supabase.functions.invoke<PaystackSubscriptionResponse>(
+      'initialize-paystack-subscription-upgrade-transaction',
+      { body: payload },
+    );
+
+  if (txError || !txResponse || !txResponse.success) {
+    return {
+      success: false,
+      message: 'Failed to initialize upgrade payment. Please try again.',
+      data: null,
+    };
+  }
+
+  return {
+    success: true,
+    message: 'Upgrade payment initialized successfully.',
+    data: txResponse.data,
+    changeType: 'upgrade',
+  };
 }
 
 async function handleDowngrade({
@@ -235,6 +266,16 @@ export const initializeOrganizationTierSubscription = async ({
     const currentStatus = (currentSub?.status ?? null) as SubscriptionStatus | null;
     const currentPeriodEnd = currentSub?.current_period_end ?? null;
 
+    // 🚫 Prevent moving to "launch" — handled only via unsubscribe flow
+    if (targetTier === 'launch') {
+      return {
+        success: false,
+        message:
+          'You cannot switch to the Launch (free) tier directly. Please unsubscribe instead.',
+        data: null,
+      };
+    }
+
     // 4️⃣ Determine change type
     const changeType = determineChangeType(currentTier, currentStatus, targetTier as Tier);
 
@@ -267,11 +308,11 @@ export const initializeOrganizationTierSubscription = async ({
       }
 
       case 'upgrade': {
-        await handleUpgrade({
+        return await handleUpgrade({
+          supabase,
           organizationId,
           targetTier: targetTier as Tier,
         });
-        break;
       }
 
       case 'downgrade': {
@@ -296,7 +337,7 @@ export const initializeOrganizationTierSubscription = async ({
       }
     }
 
-    // Placeholder response for non-new flows
+    // ✅ Placeholder response for non-new flows
     return {
       success: true,
       message: `Subscription ${changeType} flow initiated successfully.`,

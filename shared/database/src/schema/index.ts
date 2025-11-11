@@ -2720,6 +2720,17 @@ export type Database = {
         }
         Returns: Json
       }
+      process_subscription_upgrade_payment: {
+        Args: {
+          p_amount_paid: number
+          p_currency_code: Database["public"]["Enums"]["currency_code"]
+          p_metadata?: Json
+          p_organization_id: string
+          p_payment_reference: string
+          p_paystack_fee: number
+        }
+        Returns: Json
+      }
       reorder_chapters: {
         Args: {
           chapter_positions: Json
@@ -2782,6 +2793,30 @@ export type Database = {
       set_course_paid: {
         Args: { p_course_id: string; p_user_id: string }
         Returns: undefined
+      }
+      subscription_update_tier: {
+        Args: { new_tier: string; org_id: string }
+        Returns: {
+          cancel_at_period_end: boolean
+          created_at: string
+          created_by: string | null
+          current_period_end: string | null
+          current_period_start: string
+          id: string
+          initial_next_payment_date: string | null
+          organization_id: string
+          start_date: string
+          status: Database["public"]["Enums"]["subscription_status"]
+          tier: Database["public"]["Enums"]["subscription_tier"]
+          updated_at: string
+          updated_by: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "organization_subscriptions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       subscription_upsert_webhook: {
         Args: {
@@ -2877,6 +2912,7 @@ export type Database = {
         | "platform_revenue"
         | "payment_gateway_fee"
         | "subscription_payment"
+        | "subscription_upgrade_payment"
         | "ai_credit_purchase"
         | "sponsorship_payment"
         | "funds_hold"
@@ -3102,6 +3138,7 @@ export const Constants = {
         "platform_revenue",
         "payment_gateway_fee",
         "subscription_payment",
+        "subscription_upgrade_payment",
         "ai_credit_purchase",
         "sponsorship_payment",
         "funds_hold",

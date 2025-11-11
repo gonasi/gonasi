@@ -3,7 +3,7 @@ import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 
-console.log('[initialize-paystack-subscription-transaction]');
+console.log('[initialize-paystack-subscription-upgrade-transaction]');
 
 const PAYSTACK_SECRET_KEY = Deno.env.get('PAYSTACK_SECRET_KEY');
 const FRONTEND_URL = Deno.env.get('FRONTEND_URL');
@@ -141,13 +141,17 @@ Deno.serve(async (req) => {
     const body = {
       email: `${organizationId}@gonasi.com`,
       amount: proratedAmount,
+      currency: planCurrency,
       callback_url: `${FRONTEND_URL}/${organizationId}/dashboard/subscriptions`,
       metadata: {
         transaction_type: 'organization_subscription_upgrade',
-        organizationId,
-        cancel_action: `${FRONTEND_URL}/${organizationId}/dashboard/subscriptions/${currentTierLimits.tier}`,
-        plan_tier: targetTierLimits.tier,
-        plan_currency: planCurrency,
+        organization_id: organizationId,
+        cancel_action: `${FRONTEND_URL}/${organizationId}/dashboard/subscriptions/${targetTierLimits.tier}`,
+        current_plan_tier: currentTierLimits.tier,
+        target_plan_tier: targetTierLimits.tier,
+        target_plan_code: targetTierLimits.paystack_plan_code,
+        target_plan_currency: planCurrency,
+        organization_email: `${organizationId}@gonasi.com`,
       },
     };
 
@@ -176,17 +180,27 @@ Deno.serve(async (req) => {
     }
 
     //
-    // ✅ Success — return redirect URL
+    // ✅ SUCCESS — Return in PaystackSubscriptionResponse format
     //
     return new Response(
       JSON.stringify({
         success: true,
-        data: paystackData,
+        data: paystackData, // This is already in the correct format from Paystack
       }),
-      { headers: { 'Content-Type': 'application/json' } },
+      {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      },
     );
   } catch (err) {
     console.error('Unexpected error initializing subscription:', err);
-    return new Response(JSON.stringify({ error: 'Unexpected server error' }), { status: 500 });
+    return new Response(
+      JSON.stringify({
+        success: false,
+        data: null,
+        error: 'Unexpected server error',
+      }),
+      { status: 500 },
+    );
   }
 });
