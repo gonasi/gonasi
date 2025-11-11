@@ -55,7 +55,7 @@ Deno.serve(async (req) => {
     //
     const { data: targetTierLimits, error: targetTierErr } = await supabase
       .from('tier_limits')
-      .select('tier, paystack_plan_code, price_monthly_usd')
+      .select('tier, paystack_plan_code, plan_currency, price_monthly_usd')
       .eq('tier', targetTier)
       .single();
 
@@ -84,7 +84,7 @@ Deno.serve(async (req) => {
     //
     const { data: currentTierLimits, error: currentTierErr } = await supabase
       .from('tier_limits')
-      .select('tier, paystack_plan_code, price_monthly_usd')
+      .select('tier, paystack_plan_code, plan_currency, price_monthly_usd')
       .eq('tier', currentSub.tier)
       .single();
 
@@ -126,11 +126,13 @@ Deno.serve(async (req) => {
     const priceDifference = targetPrice - currentPrice;
     const proratedAmount = Math.round(((priceDifference * daysRemaining) / totalDays) * 100);
 
+    const planCurrency = targetTierLimits.plan_currency || 'USD';
+
     console.log(`📊 Upgrade details:
-    Current: ${currentTierLimits.tier} ($${currentPrice})
-    Target:  ${targetTierLimits.tier} ($${targetPrice})
-    Days remaining: ${daysRemaining}/${totalDays}
-    Prorated charge: ${proratedAmount / 100} KES
+      Current: ${currentTierLimits.tier} ($${currentPrice})
+      Target:  ${targetTierLimits.tier} ($${targetPrice})
+      Days remaining: ${daysRemaining}/${totalDays}
+      Prorated charge: ${proratedAmount / 100} ${planCurrency}
     `);
 
     //
@@ -144,6 +146,8 @@ Deno.serve(async (req) => {
         transaction_type: 'organization_subscription_upgrade',
         organizationId,
         cancel_action: `${FRONTEND_URL}/${organizationId}/dashboard/subscriptions/${currentTierLimits.tier}`,
+        plan_tier: targetTierLimits.tier,
+        plan_currency: planCurrency,
       },
     };
 
