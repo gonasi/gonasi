@@ -8,7 +8,7 @@ type Profile = Database['public']['Tables']['profiles']['Row'];
 /**
  * Extends the default `profiles` row with an optional signed avatar URL.
  */
-type ProfileWithSignedUrl = Profile & {
+export type ProfileWithSignedUrl = Profile & {
   signed_url?: string;
 };
 

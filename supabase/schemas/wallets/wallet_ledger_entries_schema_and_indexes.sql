@@ -45,6 +45,7 @@ create type public.ledger_transaction_type as enum (
   
   -- SUBSCRIPTIONS
   'subscription_payment',
+  'subscription_upgrade_payment',
   
   -- DIGITAL PRODUCTS
   'ai_credit_purchase',
