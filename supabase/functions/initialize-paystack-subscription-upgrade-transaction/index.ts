@@ -58,7 +58,7 @@ Deno.serve(async (req) => {
       amount,
       callback_url: `${FRONTEND_URL}/${organizationId}/dashboard/subscriptions`,
       metadata: {
-        transaction_type: 'organization_subscription',
+        transaction_type: 'organization_subscription_upgrade',
         organizationId,
         // ✅ cancel link for the UI
         cancel_action: `${FRONTEND_URL}/${organizationId}/dashboard/subscriptions/${tier}`,
