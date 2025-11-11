@@ -220,6 +220,106 @@
         }
       ]
     },
+    "a_org_notifications_email_queue": {
+      "id": "pgmq.a_org_notifications_email_queue",
+      "schemaName": "pgmq",
+      "tableName": "a_org_notifications_email_queue",
+      "fields": [
+        {
+          "id": "pgmq.a_org_notifications_email_queue.msg_id",
+          "name": "msg_id",
+          "columnName": "msg_id",
+          "type": "int8",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": true,
+          "maxLength": null
+        },
+        {
+          "id": "pgmq.a_org_notifications_email_queue.read_ct",
+          "name": "read_ct",
+          "columnName": "read_ct",
+          "type": "int4",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "pgmq.a_org_notifications_email_queue.enqueued_at",
+          "name": "enqueued_at",
+          "columnName": "enqueued_at",
+          "type": "timestamptz",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "pgmq.a_org_notifications_email_queue.archived_at",
+          "name": "archived_at",
+          "columnName": "archived_at",
+          "type": "timestamptz",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "pgmq.a_org_notifications_email_queue.vt",
+          "name": "vt",
+          "columnName": "vt",
+          "type": "timestamptz",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "pgmq.a_org_notifications_email_queue.message",
+          "name": "message",
+          "columnName": "message",
+          "type": "jsonb",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        }
+      ],
+      "uniqueConstraints": [
+        {
+          "name": "a_org_notifications_email_queue_pkey",
+          "fields": [
+            "msg_id"
+          ],
+          "nullNotDistinct": false
+        }
+      ]
+    },
     "a_user_notifications_email_queue": {
       "id": "pgmq.a_user_notifications_email_queue",
       "schemaName": "pgmq",
@@ -9277,6 +9377,529 @@
         }
       ]
     },
+    "org_notification_reads": {
+      "id": "public.org_notification_reads",
+      "schemaName": "public",
+      "tableName": "org_notification_reads",
+      "fields": [
+        {
+          "id": "public.org_notification_reads.id",
+          "name": "id",
+          "columnName": "id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": true,
+          "maxLength": null
+        },
+        {
+          "id": "public.org_notification_reads.notification_id",
+          "name": "notification_id",
+          "columnName": "notification_id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.org_notification_reads.user_id",
+          "name": "user_id",
+          "columnName": "user_id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.org_notification_reads.read_at",
+          "name": "read_at",
+          "columnName": "read_at",
+          "type": "timestamptz",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.org_notification_reads.dismissed_at",
+          "name": "dismissed_at",
+          "columnName": "dismissed_at",
+          "type": "timestamptz",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "name": "org_notifications",
+          "type": "org_notifications",
+          "isRequired": true,
+          "kind": "object",
+          "relationName": "org_notification_readsToorg_notifications",
+          "relationFromFields": [
+            "notification_id"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "profiles",
+          "type": "profiles",
+          "isRequired": true,
+          "kind": "object",
+          "relationName": "org_notification_readsToprofiles",
+          "relationFromFields": [
+            "user_id"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        }
+      ],
+      "uniqueConstraints": [
+        {
+          "name": "org_notification_reads_notification_id_user_id_key",
+          "fields": [
+            "notification_id",
+            "user_id"
+          ],
+          "nullNotDistinct": false
+        },
+        {
+          "name": "org_notification_reads_pkey",
+          "fields": [
+            "id"
+          ],
+          "nullNotDistinct": false
+        }
+      ]
+    },
+    "org_notifications": {
+      "id": "public.org_notifications",
+      "schemaName": "public",
+      "tableName": "org_notifications",
+      "fields": [
+        {
+          "id": "public.org_notifications.id",
+          "name": "id",
+          "columnName": "id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": true,
+          "maxLength": null
+        },
+        {
+          "id": "public.org_notifications.organization_id",
+          "name": "organization_id",
+          "columnName": "organization_id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.org_notifications.key",
+          "name": "key",
+          "columnName": "key",
+          "type": "org_notification_key",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.org_notifications.title",
+          "name": "title",
+          "columnName": "title",
+          "type": "text",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.org_notifications.body",
+          "name": "body",
+          "columnName": "body",
+          "type": "text",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.org_notifications.link",
+          "name": "link",
+          "columnName": "link",
+          "type": "text",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.org_notifications.payload",
+          "name": "payload",
+          "columnName": "payload",
+          "type": "jsonb",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.org_notifications.delivered_in_app",
+          "name": "delivered_in_app",
+          "columnName": "delivered_in_app",
+          "type": "bool",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.org_notifications.delivered_email",
+          "name": "delivered_email",
+          "columnName": "delivered_email",
+          "type": "bool",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.org_notifications.email_job_id",
+          "name": "email_job_id",
+          "columnName": "email_job_id",
+          "type": "text",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.org_notifications.deleted_at",
+          "name": "deleted_at",
+          "columnName": "deleted_at",
+          "type": "timestamptz",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.org_notifications.created_at",
+          "name": "created_at",
+          "columnName": "created_at",
+          "type": "timestamptz",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "name": "organizations",
+          "type": "organizations",
+          "isRequired": true,
+          "kind": "object",
+          "relationName": "org_notificationsToorganizations",
+          "relationFromFields": [
+            "organization_id"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "org_notification_reads",
+          "type": "org_notification_reads",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "org_notification_readsToorg_notifications",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        }
+      ],
+      "uniqueConstraints": [
+        {
+          "name": "org_notifications_pkey",
+          "fields": [
+            "id"
+          ],
+          "nullNotDistinct": false
+        }
+      ]
+    },
+    "org_notifications_types": {
+      "id": "public.org_notifications_types",
+      "schemaName": "public",
+      "tableName": "org_notifications_types",
+      "fields": [
+        {
+          "id": "public.org_notifications_types.id",
+          "name": "id",
+          "columnName": "id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": true,
+          "maxLength": null
+        },
+        {
+          "id": "public.org_notifications_types.key",
+          "name": "key",
+          "columnName": "key",
+          "type": "org_notification_key",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.org_notifications_types.category",
+          "name": "category",
+          "columnName": "category",
+          "type": "org_notification_category",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.org_notifications_types.default_in_app",
+          "name": "default_in_app",
+          "columnName": "default_in_app",
+          "type": "bool",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.org_notifications_types.default_email",
+          "name": "default_email",
+          "columnName": "default_email",
+          "type": "bool",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.org_notifications_types.visible_to_owner",
+          "name": "visible_to_owner",
+          "columnName": "visible_to_owner",
+          "type": "bool",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.org_notifications_types.visible_to_admin",
+          "name": "visible_to_admin",
+          "columnName": "visible_to_admin",
+          "type": "bool",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.org_notifications_types.visible_to_editor",
+          "name": "visible_to_editor",
+          "columnName": "visible_to_editor",
+          "type": "bool",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.org_notifications_types.title_template",
+          "name": "title_template",
+          "columnName": "title_template",
+          "type": "text",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.org_notifications_types.body_template",
+          "name": "body_template",
+          "columnName": "body_template",
+          "type": "text",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.org_notifications_types.created_at",
+          "name": "created_at",
+          "columnName": "created_at",
+          "type": "timestamptz",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        }
+      ],
+      "uniqueConstraints": [
+        {
+          "name": "org_notifications_types_key_key",
+          "fields": [
+            "key"
+          ],
+          "nullNotDistinct": false
+        },
+        {
+          "name": "org_notifications_types_pkey",
+          "fields": [
+            "id"
+          ],
+          "nullNotDistinct": false
+        }
+      ]
+    },
     "organization_invites": {
       "id": "public.organization_invites",
       "schemaName": "public",
@@ -10790,6 +11413,20 @@
           "hasDefaultValue": false
         },
         {
+          "name": "org_notifications",
+          "type": "org_notifications",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "org_notificationsToorganizations",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
           "name": "organization_invites",
           "type": "organization_invites",
           "isRequired": false,
@@ -11754,6 +12391,20 @@
           "isRequired": false,
           "kind": "object",
           "relationName": "lessons_updated_byToprofiles",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "org_notification_reads",
+          "type": "org_notification_reads",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "org_notification_readsToprofiles",
           "relationFromFields": [],
           "relationToFields": [],
           "isList": true,
@@ -12982,6 +13633,96 @@
       "uniqueConstraints": [
         {
           "name": "q_delete_course_progress_queue_pkey",
+          "fields": [
+            "msg_id"
+          ],
+          "nullNotDistinct": false
+        }
+      ]
+    },
+    "q_org_notifications_email_queue": {
+      "id": "pgmq.q_org_notifications_email_queue",
+      "schemaName": "pgmq",
+      "tableName": "q_org_notifications_email_queue",
+      "fields": [
+        {
+          "id": "pgmq.q_org_notifications_email_queue.msg_id",
+          "name": "msg_id",
+          "columnName": "msg_id",
+          "type": "int8",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": true,
+          "sequence": {
+            "identifier": "\"pgmq\".\"pgmq.q_org_notifications_email_queue_msg_id_seq\"",
+            "increment": 1,
+            "start": 1
+          },
+          "hasDefaultValue": false,
+          "isId": true,
+          "maxLength": null
+        },
+        {
+          "id": "pgmq.q_org_notifications_email_queue.read_ct",
+          "name": "read_ct",
+          "columnName": "read_ct",
+          "type": "int4",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "pgmq.q_org_notifications_email_queue.enqueued_at",
+          "name": "enqueued_at",
+          "columnName": "enqueued_at",
+          "type": "timestamptz",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "pgmq.q_org_notifications_email_queue.vt",
+          "name": "vt",
+          "columnName": "vt",
+          "type": "timestamptz",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "pgmq.q_org_notifications_email_queue.message",
+          "name": "message",
+          "columnName": "message",
+          "type": "jsonb",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        }
+      ],
+      "uniqueConstraints": [
+        {
+          "name": "q_org_notifications_email_queue_pkey",
           "fields": [
             "msg_id"
           ],
@@ -17745,6 +18486,97 @@
         },
         {
           "name": "withdrawal_request"
+        }
+      ]
+    },
+    "org_notification_category": {
+      "schemaName": "public",
+      "values": [
+        {
+          "name": "billing"
+        },
+        {
+          "name": "compliance"
+        },
+        {
+          "name": "content"
+        },
+        {
+          "name": "members"
+        },
+        {
+          "name": "system"
+        }
+      ]
+    },
+    "org_notification_key": {
+      "schemaName": "public",
+      "values": [
+        {
+          "name": "org_announcement"
+        },
+        {
+          "name": "org_content_flagged"
+        },
+        {
+          "name": "org_course_milestone_reached"
+        },
+        {
+          "name": "org_course_published"
+        },
+        {
+          "name": "org_invoice_ready"
+        },
+        {
+          "name": "org_maintenance_notice"
+        },
+        {
+          "name": "org_member_invited"
+        },
+        {
+          "name": "org_member_joined"
+        },
+        {
+          "name": "org_member_left"
+        },
+        {
+          "name": "org_member_removed"
+        },
+        {
+          "name": "org_member_role_changed"
+        },
+        {
+          "name": "org_ownership_transferred"
+        },
+        {
+          "name": "org_payment_method_expiring"
+        },
+        {
+          "name": "org_policy_update_required"
+        },
+        {
+          "name": "org_subscription_expiring"
+        },
+        {
+          "name": "org_subscription_failed"
+        },
+        {
+          "name": "org_subscription_renewed"
+        },
+        {
+          "name": "org_subscription_started"
+        },
+        {
+          "name": "org_tier_downgraded"
+        },
+        {
+          "name": "org_tier_upgraded"
+        },
+        {
+          "name": "org_verification_approved"
+        },
+        {
+          "name": "org_verification_rejected"
         }
       ]
     },

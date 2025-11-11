@@ -1401,6 +1401,140 @@ export type Database = {
           },
         ]
       }
+      org_notification_reads: {
+        Row: {
+          dismissed_at: string | null
+          id: string
+          notification_id: string
+          read_at: string | null
+          user_id: string
+        }
+        Insert: {
+          dismissed_at?: string | null
+          id?: string
+          notification_id: string
+          read_at?: string | null
+          user_id: string
+        }
+        Update: {
+          dismissed_at?: string | null
+          id?: string
+          notification_id?: string
+          read_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_notification_reads_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: false
+            referencedRelation: "org_notifications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_notification_reads_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_notifications: {
+        Row: {
+          body: string
+          created_at: string
+          deleted_at: string | null
+          delivered_email: boolean
+          delivered_in_app: boolean
+          email_job_id: string | null
+          id: string
+          key: Database["public"]["Enums"]["org_notification_key"]
+          link: string | null
+          organization_id: string
+          payload: Json
+          title: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          deleted_at?: string | null
+          delivered_email?: boolean
+          delivered_in_app?: boolean
+          email_job_id?: string | null
+          id?: string
+          key: Database["public"]["Enums"]["org_notification_key"]
+          link?: string | null
+          organization_id: string
+          payload?: Json
+          title: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          deleted_at?: string | null
+          delivered_email?: boolean
+          delivered_in_app?: boolean
+          email_job_id?: string | null
+          id?: string
+          key?: Database["public"]["Enums"]["org_notification_key"]
+          link?: string | null
+          organization_id?: string
+          payload?: Json
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_notifications_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_notifications_types: {
+        Row: {
+          body_template: string
+          category: Database["public"]["Enums"]["org_notification_category"]
+          created_at: string
+          default_email: boolean
+          default_in_app: boolean
+          id: string
+          key: Database["public"]["Enums"]["org_notification_key"]
+          title_template: string
+          visible_to_admin: boolean
+          visible_to_editor: boolean
+          visible_to_owner: boolean
+        }
+        Insert: {
+          body_template: string
+          category: Database["public"]["Enums"]["org_notification_category"]
+          created_at?: string
+          default_email?: boolean
+          default_in_app?: boolean
+          id?: string
+          key: Database["public"]["Enums"]["org_notification_key"]
+          title_template: string
+          visible_to_admin?: boolean
+          visible_to_editor?: boolean
+          visible_to_owner?: boolean
+        }
+        Update: {
+          body_template?: string
+          category?: Database["public"]["Enums"]["org_notification_category"]
+          created_at?: string
+          default_email?: boolean
+          default_in_app?: boolean
+          id?: string
+          key?: Database["public"]["Enums"]["org_notification_key"]
+          title_template?: string
+          visible_to_admin?: boolean
+          visible_to_editor?: boolean
+          visible_to_owner?: boolean
+        }
+        Relationships: []
+      }
       organization_invites: {
         Row: {
           accepted_at: string | null
@@ -2520,6 +2654,10 @@ export type Database = {
         Args: { extension: string }
         Returns: Database["public"]["Enums"]["file_type"]
       }
+      dismiss_org_notification: {
+        Args: { p_notification_id: string; p_user_id: string }
+        Returns: undefined
+      }
       enqueue_delete_course_progress: {
         Args: { course_id: string }
         Returns: undefined
@@ -2607,6 +2745,30 @@ export type Database = {
         }
         Returns: Json
       }
+      get_org_notifications_for_member: {
+        Args: {
+          p_limit?: number
+          p_offset?: number
+          p_organization_id: string
+          p_user_id: string
+        }
+        Returns: {
+          body: string
+          created_at: string
+          dismissed_at: string
+          id: string
+          is_dismissed: boolean
+          is_read: boolean
+          key: Database["public"]["Enums"]["org_notification_key"]
+          payload: Json
+          read_at: string
+          title: string
+        }[]
+      }
+      get_org_unread_count: {
+        Args: { p_organization_id: string; p_user_id: string }
+        Returns: number
+      }
       get_organization_earnings_summary: {
         Args: { p_org_id: string }
         Returns: {
@@ -2685,6 +2847,15 @@ export type Database = {
         Args: { arg_org_id: string; user_email: string }
         Returns: boolean
       }
+      insert_org_notification: {
+        Args: {
+          p_link?: string
+          p_metadata?: Json
+          p_organization_id: string
+          p_type_key: string
+        }
+        Returns: string
+      }
       insert_user_notification: {
         Args: { p_metadata?: Json; p_type_key: string; p_user_id: string }
         Returns: string
@@ -2692,6 +2863,10 @@ export type Database = {
       is_user_already_member: {
         Args: { arg_org_id: string; user_email: string }
         Returns: boolean
+      }
+      mark_org_notification_read: {
+        Args: { p_notification_id: string; p_user_id: string }
+        Returns: undefined
       }
       process_course_payment_from_paystack: {
         Args: {
@@ -2927,6 +3102,35 @@ export type Database = {
         | "currency_conversion"
         | "tax_withholding"
         | "tax_remittance"
+      org_notification_category:
+        | "billing"
+        | "members"
+        | "content"
+        | "compliance"
+        | "system"
+      org_notification_key:
+        | "org_subscription_started"
+        | "org_subscription_renewed"
+        | "org_subscription_failed"
+        | "org_subscription_expiring"
+        | "org_payment_method_expiring"
+        | "org_invoice_ready"
+        | "org_tier_upgraded"
+        | "org_tier_downgraded"
+        | "org_member_invited"
+        | "org_member_joined"
+        | "org_member_left"
+        | "org_member_role_changed"
+        | "org_member_removed"
+        | "org_ownership_transferred"
+        | "org_course_published"
+        | "org_course_milestone_reached"
+        | "org_content_flagged"
+        | "org_verification_approved"
+        | "org_verification_rejected"
+        | "org_policy_update_required"
+        | "org_announcement"
+        | "org_maintenance_notice"
       org_role: "owner" | "admin" | "editor"
       payment_frequency:
         | "monthly"
@@ -3153,6 +3357,37 @@ export const Constants = {
         "currency_conversion",
         "tax_withholding",
         "tax_remittance",
+      ],
+      org_notification_category: [
+        "billing",
+        "members",
+        "content",
+        "compliance",
+        "system",
+      ],
+      org_notification_key: [
+        "org_subscription_started",
+        "org_subscription_renewed",
+        "org_subscription_failed",
+        "org_subscription_expiring",
+        "org_payment_method_expiring",
+        "org_invoice_ready",
+        "org_tier_upgraded",
+        "org_tier_downgraded",
+        "org_member_invited",
+        "org_member_joined",
+        "org_member_left",
+        "org_member_role_changed",
+        "org_member_removed",
+        "org_ownership_transferred",
+        "org_course_published",
+        "org_course_milestone_reached",
+        "org_content_flagged",
+        "org_verification_approved",
+        "org_verification_rejected",
+        "org_policy_update_required",
+        "org_announcement",
+        "org_maintenance_notice",
       ],
       org_role: ["owner", "admin", "editor"],
       payment_frequency: [

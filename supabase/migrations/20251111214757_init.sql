@@ -14,6 +14,10 @@ create type "public"."invite_delivery_status" as enum ('pending', 'sent', 'faile
 
 create type "public"."ledger_transaction_type" as enum ('course_purchase', 'payment_inflow', 'org_payout', 'platform_revenue', 'payment_gateway_fee', 'subscription_payment', 'subscription_upgrade_payment', 'ai_credit_purchase', 'sponsorship_payment', 'funds_hold', 'funds_release', 'withdrawal_request', 'withdrawal_complete', 'withdrawal_failed', 'reward_payout', 'refund', 'chargeback', 'manual_adjustment', 'currency_conversion', 'tax_withholding', 'tax_remittance');
 
+create type "public"."org_notification_category" as enum ('billing', 'members', 'content', 'compliance', 'system');
+
+create type "public"."org_notification_key" as enum ('org_subscription_started', 'org_subscription_renewed', 'org_subscription_failed', 'org_subscription_expiring', 'org_payment_method_expiring', 'org_invoice_ready', 'org_tier_upgraded', 'org_tier_downgraded', 'org_member_invited', 'org_member_joined', 'org_member_left', 'org_member_role_changed', 'org_member_removed', 'org_ownership_transferred', 'org_course_published', 'org_course_milestone_reached', 'org_content_flagged', 'org_verification_approved', 'org_verification_rejected', 'org_policy_update_required', 'org_announcement', 'org_maintenance_notice');
+
 create type "public"."org_role" as enum ('owner', 'admin', 'editor');
 
 create type "public"."payment_frequency" as enum ('monthly', 'bi_monthly', 'quarterly', 'semi_annual', 'annual');
@@ -448,6 +452,55 @@ alter table "public"."lesson_types" enable row level security;
 
 
 alter table "public"."lessons" enable row level security;
+
+
+  create table "public"."org_notification_reads" (
+    "id" uuid not null default gen_random_uuid(),
+    "notification_id" uuid not null,
+    "user_id" uuid not null,
+    "read_at" timestamp with time zone,
+    "dismissed_at" timestamp with time zone
+      );
+
+
+alter table "public"."org_notification_reads" enable row level security;
+
+
+  create table "public"."org_notifications" (
+    "id" uuid not null default gen_random_uuid(),
+    "organization_id" uuid not null,
+    "key" public.org_notification_key not null,
+    "title" text not null,
+    "body" text not null,
+    "link" text,
+    "payload" jsonb not null default '{}'::jsonb,
+    "delivered_in_app" boolean not null default true,
+    "delivered_email" boolean not null default false,
+    "email_job_id" text,
+    "deleted_at" timestamp with time zone,
+    "created_at" timestamp with time zone not null default timezone('utc'::text, now())
+      );
+
+
+alter table "public"."org_notifications" enable row level security;
+
+
+  create table "public"."org_notifications_types" (
+    "id" uuid not null default gen_random_uuid(),
+    "key" public.org_notification_key not null,
+    "category" public.org_notification_category not null,
+    "default_in_app" boolean not null default true,
+    "default_email" boolean not null default false,
+    "visible_to_owner" boolean not null default true,
+    "visible_to_admin" boolean not null default true,
+    "visible_to_editor" boolean not null default false,
+    "title_template" text not null,
+    "body_template" text not null,
+    "created_at" timestamp with time zone not null default timezone('utc'::text, now())
+      );
+
+
+alter table "public"."org_notifications_types" enable row level security;
 
 
   create table "public"."organization_invites" (
@@ -1075,6 +1128,20 @@ CREATE INDEX idx_org_invites__organization_id ON public.organization_invites USI
 
 CREATE INDEX idx_org_invites__token ON public.organization_invites USING btree (token);
 
+CREATE INDEX idx_org_notification_reads_not_dismissed ON public.org_notification_reads USING btree (user_id, notification_id) WHERE (dismissed_at IS NULL);
+
+CREATE INDEX idx_org_notification_reads_notification ON public.org_notification_reads USING btree (notification_id);
+
+CREATE INDEX idx_org_notification_reads_unread ON public.org_notification_reads USING btree (user_id, notification_id) WHERE (read_at IS NULL);
+
+CREATE INDEX idx_org_notification_reads_user ON public.org_notification_reads USING btree (user_id);
+
+CREATE INDEX idx_org_notifications_key ON public.org_notifications USING btree (key);
+
+CREATE INDEX idx_org_notifications_not_deleted ON public.org_notifications USING btree (organization_id) WHERE (deleted_at IS NULL);
+
+CREATE INDEX idx_org_notifications_org_created ON public.org_notifications USING btree (organization_id, created_at DESC);
+
 CREATE INDEX idx_org_subscriptions_active_period ON public.organization_subscriptions USING btree (status, current_period_end);
 
 CREATE INDEX idx_org_subscriptions_created_by ON public.organization_subscriptions USING btree (created_by);
@@ -1225,6 +1292,16 @@ CREATE UNIQUE INDEX lessons_pkey ON public.lessons USING btree (id);
 
 CREATE UNIQUE INDEX one_owner_per_organization ON public.organization_members USING btree (organization_id) WHERE (role = 'owner'::public.org_role);
 
+CREATE UNIQUE INDEX org_notification_reads_notification_id_user_id_key ON public.org_notification_reads USING btree (notification_id, user_id);
+
+CREATE UNIQUE INDEX org_notification_reads_pkey ON public.org_notification_reads USING btree (id);
+
+CREATE UNIQUE INDEX org_notifications_pkey ON public.org_notifications USING btree (id);
+
+CREATE UNIQUE INDEX org_notifications_types_key_key ON public.org_notifications_types USING btree (key);
+
+CREATE UNIQUE INDEX org_notifications_types_pkey ON public.org_notifications_types USING btree (id);
+
 CREATE UNIQUE INDEX organization_invites_pkey ON public.organization_invites USING btree (id);
 
 CREATE UNIQUE INDEX organization_invites_token_key ON public.organization_invites USING btree (token);
@@ -1362,6 +1439,12 @@ alter table "public"."lesson_reset_count" add constraint "lesson_reset_count_pke
 alter table "public"."lesson_types" add constraint "lesson_types_pkey" PRIMARY KEY using index "lesson_types_pkey";
 
 alter table "public"."lessons" add constraint "lessons_pkey" PRIMARY KEY using index "lessons_pkey";
+
+alter table "public"."org_notification_reads" add constraint "org_notification_reads_pkey" PRIMARY KEY using index "org_notification_reads_pkey";
+
+alter table "public"."org_notifications" add constraint "org_notifications_pkey" PRIMARY KEY using index "org_notifications_pkey";
+
+alter table "public"."org_notifications_types" add constraint "org_notifications_types_pkey" PRIMARY KEY using index "org_notifications_types_pkey";
 
 alter table "public"."organization_invites" add constraint "organization_invites_pkey" PRIMARY KEY using index "organization_invites_pkey";
 
@@ -1744,6 +1827,22 @@ alter table "public"."lessons" validate constraint "lessons_organization_id_fkey
 alter table "public"."lessons" add constraint "lessons_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES public.profiles(id) ON DELETE SET NULL not valid;
 
 alter table "public"."lessons" validate constraint "lessons_updated_by_fkey";
+
+alter table "public"."org_notification_reads" add constraint "org_notification_reads_notification_id_fkey" FOREIGN KEY (notification_id) REFERENCES public.org_notifications(id) ON DELETE CASCADE not valid;
+
+alter table "public"."org_notification_reads" validate constraint "org_notification_reads_notification_id_fkey";
+
+alter table "public"."org_notification_reads" add constraint "org_notification_reads_notification_id_user_id_key" UNIQUE using index "org_notification_reads_notification_id_user_id_key";
+
+alter table "public"."org_notification_reads" add constraint "org_notification_reads_user_id_fkey" FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE not valid;
+
+alter table "public"."org_notification_reads" validate constraint "org_notification_reads_user_id_fkey";
+
+alter table "public"."org_notifications" add constraint "org_notifications_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE not valid;
+
+alter table "public"."org_notifications" validate constraint "org_notifications_organization_id_fkey";
+
+alter table "public"."org_notifications_types" add constraint "org_notifications_types_key_key" UNIQUE using index "org_notifications_types_key_key";
 
 alter table "public"."organization_invites" add constraint "organization_invites_accepted_by_fkey" FOREIGN KEY (accepted_by) REFERENCES auth.users(id) not valid;
 
@@ -3483,6 +3582,32 @@ end;
 $function$
 ;
 
+CREATE OR REPLACE FUNCTION public.dismiss_org_notification(p_notification_id uuid, p_user_id uuid)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+begin
+  insert into public.org_notification_reads (
+    notification_id,
+    user_id,
+    read_at,
+    dismissed_at
+  ) values (
+    p_notification_id,
+    p_user_id,
+    timezone('utc', now()),
+    timezone('utc', now())
+  )
+  on conflict (notification_id, user_id)
+  do update set 
+    dismissed_at = timezone('utc', now()),
+    read_at = coalesce(org_notification_reads.read_at, timezone('utc', now()));
+end;
+$function$
+;
+
 CREATE OR REPLACE FUNCTION public.enforce_at_least_one_active_pricing_tier()
  RETURNS trigger
  LANGUAGE plpgsql
@@ -4971,6 +5096,94 @@ end;
 $function$
 ;
 
+CREATE OR REPLACE FUNCTION public.get_org_notifications_for_member(p_organization_id uuid, p_user_id uuid, p_limit integer DEFAULT 50, p_offset integer DEFAULT 0)
+ RETURNS TABLE(id uuid, key public.org_notification_key, title text, body text, payload jsonb, created_at timestamp with time zone, read_at timestamp with time zone, dismissed_at timestamp with time zone, is_read boolean, is_dismissed boolean)
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+declare
+  v_member_role public.org_role;
+begin
+  select role into v_member_role
+  from public.organization_members
+  where organization_id = p_organization_id
+    and user_id = p_user_id;
+
+  if v_member_role is null then
+    raise exception 'User % is not a member of organization %', p_user_id, p_organization_id;
+  end if;
+
+  return query
+  select
+    n.id,
+    n.key,
+    n.title,
+    n.body,
+    n.payload,
+    n.created_at,
+    r.read_at,
+    r.dismissed_at,
+    (r.read_at is not null) as is_read,
+    (r.dismissed_at is not null) as is_dismissed
+  from public.org_notifications n
+  inner join public.org_notifications_types nt on nt.key = n.key
+  left join public.org_notification_reads r 
+    on r.notification_id = n.id and r.user_id = p_user_id
+  where n.organization_id = p_organization_id
+    and n.deleted_at is null
+    and (r.dismissed_at is null)
+    and (
+      (v_member_role = 'owner' and nt.visible_to_owner) or
+      (v_member_role = 'admin' and nt.visible_to_admin) or
+      (v_member_role = 'editor' and nt.visible_to_editor)
+    )
+  order by n.created_at desc
+  limit p_limit
+  offset p_offset;
+end;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.get_org_unread_count(p_organization_id uuid, p_user_id uuid)
+ RETURNS integer
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+declare
+  v_member_role public.org_role;
+  v_count int;
+begin
+  select role into v_member_role
+  from public.organization_members
+  where organization_id = p_organization_id
+    and user_id = p_user_id;
+
+  if v_member_role is null then
+    return 0;
+  end if;
+
+  select count(*)::int into v_count
+  from public.org_notifications n
+  inner join public.org_notifications_types nt on nt.key = n.key
+  left join public.org_notification_reads r 
+    on r.notification_id = n.id and r.user_id = p_user_id
+  where n.organization_id = p_organization_id
+    and n.deleted_at is null
+    and (r.read_at is null)
+    and (r.dismissed_at is null)
+    and (
+      (v_member_role = 'owner' and nt.visible_to_owner) or
+      (v_member_role = 'admin' and nt.visible_to_admin) or
+      (v_member_role = 'editor' and nt.visible_to_editor)
+    );
+
+  return v_count;
+end;
+$function$
+;
+
 CREATE OR REPLACE FUNCTION public.get_organization_earnings_summary(p_org_id uuid)
  RETURNS TABLE(organization_id uuid, wallet_id uuid, currency_code public.currency_code, balance_total numeric, balance_reserved numeric, balance_available numeric, gross_earnings numeric, total_fees numeric, net_earnings numeric, current_month_earnings numeric, previous_month_earnings numeric, month_over_month_change numeric, month_over_month_percentage_change numeric, trend text)
  LANGUAGE plpgsql
@@ -5882,6 +6095,87 @@ end;
 $function$
 ;
 
+CREATE OR REPLACE FUNCTION public.insert_org_notification(p_organization_id uuid, p_type_key text, p_metadata jsonb DEFAULT '{}'::jsonb, p_link text DEFAULT NULL::text)
+ RETURNS uuid
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+declare
+  v_type_record record;
+  v_notification_id uuid;
+  v_title text;
+  v_body text;
+  v_key text;
+  v_value text;
+begin
+  raise notice 'insert_org_notification called with org_id=%, type_key=%, metadata=%, link=%', 
+    p_organization_id, p_type_key, p_metadata, p_link;
+
+  -- Get notification type
+  select 
+    ont.key,
+    ont.title_template,
+    ont.body_template,
+    ont.default_in_app,
+    ont.default_email
+  into v_type_record
+  from public.org_notifications_types as ont
+  where ont.key = p_type_key::public.org_notification_key;
+
+  if v_type_record.key is null then
+    raise exception 'Unknown org_notification_key: %', p_type_key;
+  end if;
+
+  raise notice 'Resolved org notification type: %', v_type_record.key;
+
+  -- Render title and body templates
+  v_title := v_type_record.title_template;
+  v_body := v_type_record.body_template;
+
+  for v_key, v_value in
+    select key, value::text
+    from jsonb_each_text(p_metadata)
+  loop
+    v_title := replace(v_title, '{{' || v_key || '}}', v_value);
+    v_body := replace(v_body, '{{' || v_key || '}}', v_value);
+  end loop;
+
+  raise notice 'Rendered title=%, body=%', v_title, v_body;
+
+  -- Insert notification
+  insert into public.org_notifications (
+    organization_id,
+    key,
+    title,
+    body,
+    link,
+    payload,
+    delivered_in_app,
+    delivered_email
+  ) values (
+    p_organization_id,
+    p_type_key::public.org_notification_key,
+    v_title,
+    v_body,
+    p_link,
+    p_metadata,
+    v_type_record.default_in_app,
+    v_type_record.default_email
+  )
+  returning id into v_notification_id;
+
+  raise notice 'Inserted org notification with id=%', v_notification_id;
+
+  return v_notification_id;
+exception
+  when others then
+    raise notice 'insert_org_notification failed: %', sqlerrm;
+    raise;
+end;
+$function$
+;
+
 CREATE OR REPLACE FUNCTION public.insert_user_notification(p_user_id uuid, p_type_key text, p_metadata jsonb DEFAULT '{}'::jsonb)
  RETURNS uuid
  LANGUAGE plpgsql
@@ -5977,6 +6271,30 @@ AS $function$
     where om.organization_id = arg_org_id
       and lower(p.email) = lower(user_email)
   )
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.mark_org_notification_read(p_notification_id uuid, p_user_id uuid)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+begin
+  insert into public.org_notification_reads (
+    notification_id,
+    user_id,
+    read_at
+  ) values (
+    p_notification_id,
+    p_user_id,
+    timezone('utc', now())
+  )
+  on conflict (notification_id, user_id)
+  do update set 
+    read_at = timezone('utc', now())
+  where org_notification_reads.read_at is null;
+end;
 $function$
 ;
 
@@ -7921,6 +8239,74 @@ end;
 $function$
 ;
 
+CREATE OR REPLACE FUNCTION public.trigger_org_notification_email_dispatch()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+declare
+  v_type_record public.org_notifications_types;
+  v_recipient_emails text[];
+begin
+  -- Fetch the notification type record BY KEY (not id)
+  select *
+  into v_type_record
+  from public.org_notifications_types
+  where key = new.key;
+
+  if not found then
+    raise warning 'Org notification type not found for key: %', new.key;
+    return new;
+  end if;
+
+  -- If email delivery is not enabled for this notification type, skip enqueue
+  if v_type_record.default_email is false then
+    return new;
+  end if;
+
+  -- Build recipient email array based on org members and role visibility
+  select array_agg(u.email)
+  into v_recipient_emails
+  from public.organization_members m
+  join auth.users u on u.id = m.user_id
+  where m.organization_id = new.organization_id
+    and (
+      (m.role = 'owner' and v_type_record.visible_to_owner) or
+      (m.role = 'admin' and v_type_record.visible_to_admin) or
+      (m.role = 'editor' and v_type_record.visible_to_editor)
+    );
+
+  if v_recipient_emails is null or array_length(v_recipient_emails, 1) = 0 then
+    raise notice 'No matching org members to send email for notification: %', new.id;
+    return new;
+  end if;
+
+  -- Enqueue into PGMQ queue for async email delivery
+  begin
+    perform pgmq.send(
+      'org_notifications_email_queue',
+      jsonb_build_object(
+        'notification_id', new.id,
+        'organization_id', new.organization_id,
+        'type_key', new.key,
+        'title', new.title,
+        'body', new.body,
+        'payload', new.payload,
+        'emails', v_recipient_emails
+      )
+    );
+  exception
+    when others then
+      -- Do not interrupt insert if pgmq or queue is unavailable
+      raise warning 'Failed to enqueue org email notification: %', sqlerrm;
+  end;
+
+  return new;
+end;
+$function$
+;
+
 CREATE OR REPLACE FUNCTION public.trigger_user_notification_email_dispatch()
  RETURNS trigger
  LANGUAGE plpgsql
@@ -9822,6 +10208,132 @@ grant truncate on table "public"."lessons" to "service_role";
 
 grant update on table "public"."lessons" to "service_role";
 
+grant delete on table "public"."org_notification_reads" to "anon";
+
+grant insert on table "public"."org_notification_reads" to "anon";
+
+grant references on table "public"."org_notification_reads" to "anon";
+
+grant select on table "public"."org_notification_reads" to "anon";
+
+grant trigger on table "public"."org_notification_reads" to "anon";
+
+grant truncate on table "public"."org_notification_reads" to "anon";
+
+grant update on table "public"."org_notification_reads" to "anon";
+
+grant delete on table "public"."org_notification_reads" to "authenticated";
+
+grant insert on table "public"."org_notification_reads" to "authenticated";
+
+grant references on table "public"."org_notification_reads" to "authenticated";
+
+grant select on table "public"."org_notification_reads" to "authenticated";
+
+grant trigger on table "public"."org_notification_reads" to "authenticated";
+
+grant truncate on table "public"."org_notification_reads" to "authenticated";
+
+grant update on table "public"."org_notification_reads" to "authenticated";
+
+grant delete on table "public"."org_notification_reads" to "service_role";
+
+grant insert on table "public"."org_notification_reads" to "service_role";
+
+grant references on table "public"."org_notification_reads" to "service_role";
+
+grant select on table "public"."org_notification_reads" to "service_role";
+
+grant trigger on table "public"."org_notification_reads" to "service_role";
+
+grant truncate on table "public"."org_notification_reads" to "service_role";
+
+grant update on table "public"."org_notification_reads" to "service_role";
+
+grant delete on table "public"."org_notifications" to "anon";
+
+grant insert on table "public"."org_notifications" to "anon";
+
+grant references on table "public"."org_notifications" to "anon";
+
+grant select on table "public"."org_notifications" to "anon";
+
+grant trigger on table "public"."org_notifications" to "anon";
+
+grant truncate on table "public"."org_notifications" to "anon";
+
+grant update on table "public"."org_notifications" to "anon";
+
+grant delete on table "public"."org_notifications" to "authenticated";
+
+grant insert on table "public"."org_notifications" to "authenticated";
+
+grant references on table "public"."org_notifications" to "authenticated";
+
+grant select on table "public"."org_notifications" to "authenticated";
+
+grant trigger on table "public"."org_notifications" to "authenticated";
+
+grant truncate on table "public"."org_notifications" to "authenticated";
+
+grant update on table "public"."org_notifications" to "authenticated";
+
+grant delete on table "public"."org_notifications" to "service_role";
+
+grant insert on table "public"."org_notifications" to "service_role";
+
+grant references on table "public"."org_notifications" to "service_role";
+
+grant select on table "public"."org_notifications" to "service_role";
+
+grant trigger on table "public"."org_notifications" to "service_role";
+
+grant truncate on table "public"."org_notifications" to "service_role";
+
+grant update on table "public"."org_notifications" to "service_role";
+
+grant delete on table "public"."org_notifications_types" to "anon";
+
+grant insert on table "public"."org_notifications_types" to "anon";
+
+grant references on table "public"."org_notifications_types" to "anon";
+
+grant select on table "public"."org_notifications_types" to "anon";
+
+grant trigger on table "public"."org_notifications_types" to "anon";
+
+grant truncate on table "public"."org_notifications_types" to "anon";
+
+grant update on table "public"."org_notifications_types" to "anon";
+
+grant delete on table "public"."org_notifications_types" to "authenticated";
+
+grant insert on table "public"."org_notifications_types" to "authenticated";
+
+grant references on table "public"."org_notifications_types" to "authenticated";
+
+grant select on table "public"."org_notifications_types" to "authenticated";
+
+grant trigger on table "public"."org_notifications_types" to "authenticated";
+
+grant truncate on table "public"."org_notifications_types" to "authenticated";
+
+grant update on table "public"."org_notifications_types" to "authenticated";
+
+grant delete on table "public"."org_notifications_types" to "service_role";
+
+grant insert on table "public"."org_notifications_types" to "service_role";
+
+grant references on table "public"."org_notifications_types" to "service_role";
+
+grant select on table "public"."org_notifications_types" to "service_role";
+
+grant trigger on table "public"."org_notifications_types" to "service_role";
+
+grant truncate on table "public"."org_notifications_types" to "service_role";
+
+grant update on table "public"."org_notifications_types" to "service_role";
+
 grant delete on table "public"."organization_invites" to "anon";
 
 grant insert on table "public"."organization_invites" to "anon";
@@ -11278,6 +11790,90 @@ using (public.can_user_edit_course(course_id));
   to authenticated
 using (public.can_user_edit_course(course_id))
 with check (public.can_user_edit_course(course_id));
+
+
+
+  create policy "org_notification_reads_delete_own"
+  on "public"."org_notification_reads"
+  as permissive
+  for delete
+  to authenticated
+using ((user_id = ( SELECT auth.uid() AS uid)));
+
+
+
+  create policy "org_notification_reads_insert_own"
+  on "public"."org_notification_reads"
+  as permissive
+  for insert
+  to authenticated
+with check ((user_id = ( SELECT auth.uid() AS uid)));
+
+
+
+  create policy "org_notification_reads_select_own"
+  on "public"."org_notification_reads"
+  as permissive
+  for select
+  to authenticated
+using ((user_id = ( SELECT auth.uid() AS uid)));
+
+
+
+  create policy "org_notification_reads_update_own"
+  on "public"."org_notification_reads"
+  as permissive
+  for update
+  to authenticated
+using ((user_id = ( SELECT auth.uid() AS uid)))
+with check ((user_id = ( SELECT auth.uid() AS uid)));
+
+
+
+  create policy "org_notifications_select_member"
+  on "public"."org_notifications"
+  as permissive
+  for select
+  to authenticated
+using ((EXISTS ( SELECT 1
+   FROM public.organization_members om
+  WHERE ((om.organization_id = org_notifications.organization_id) AND (om.user_id = ( SELECT auth.uid() AS uid))))));
+
+
+
+  create policy "org_notifications_types_delete_privileged"
+  on "public"."org_notifications_types"
+  as permissive
+  for delete
+  to authenticated
+using ((public.authorize('go_su_delete'::public.app_permission) OR public.authorize('go_admin_delete'::public.app_permission)));
+
+
+
+  create policy "org_notifications_types_insert_privileged"
+  on "public"."org_notifications_types"
+  as permissive
+  for insert
+  to authenticated
+with check ((public.authorize('go_su_create'::public.app_permission) OR public.authorize('go_admin_create'::public.app_permission)));
+
+
+
+  create policy "org_notifications_types_select_authenticated"
+  on "public"."org_notifications_types"
+  as permissive
+  for select
+  to authenticated
+using (true);
+
+
+
+  create policy "org_notifications_types_update_privileged"
+  on "public"."org_notifications_types"
+  as permissive
+  for update
+  to authenticated
+using ((public.authorize('go_su_update'::public.app_permission) OR public.authorize('go_admin_update'::public.app_permission)));
 
 
 

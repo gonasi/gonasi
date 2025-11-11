@@ -1,6 +1,7 @@
 -- Create PGMQ queue
 select pgmq.create('delete_course_progress_queue');
 select pgmq.create('user_notifications_email_queue');
+select pgmq.create('org_notifications_email_queue');
 
 
 select cron.schedule(
@@ -34,6 +35,21 @@ select cron.schedule(
   $$
   select net.http_post(
     url := (select decrypted_secret from vault.decrypted_secrets where name = 'project_url') || '/functions/v1/user-notifications-email-dispatch',
+    headers := jsonb_build_object(
+      'Content-Type', 'application/json',
+      'Authorization', 'Bearer ' || (select decrypted_secret from vault.decrypted_secrets where name = 'publishable_key')
+    ),
+    body := jsonb_build_object('time', now())
+  ) as request_id;
+  $$
+);
+
+select cron.schedule(
+  'invoke-org-notifications-email-dispatch',
+  '* * * * *',
+  $$
+  select net.http_post(
+    url := (select decrypted_secret from vault.decrypted_secrets where name = 'project_url') || '/functions/v1/org-notifications-email-dispatch',
     headers := jsonb_build_object(
       'Content-Type', 'application/json',
       'Authorization', 'Bearer ' || (select decrypted_secret from vault.decrypted_secrets where name = 'publishable_key')

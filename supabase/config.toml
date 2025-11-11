@@ -101,8 +101,6 @@ schema_paths = [
 
   './schemas/userNotifications/utils/insert_user_notification.sql',
   './schemas/userNotifications/utils/trigger_user_notification_email_dispatch.sql',
-  
-
   # organizations
   './schemas/organizations/organizations_schema_and_indexes.sql',
   # members schema
@@ -165,6 +163,24 @@ schema_paths = [
   './schemas/organizations/utils/assign_launch_subscription_to_new_org.sql',
   './schemas/organizations/utils/subscription_upsert_webhook.sql',
   './schemas/organizations/utils/subscription_update_tier.sql',
+
+  # ORG NOTIFICATIONS
+  './schemas/organizationNotifications/enums/org_notification_category.sql',
+  './schemas/organizationNotifications/enums/org_notification_key.sql',
+
+  './schemas/organizationNotifications/org_notifications_types_schema_and_indexes.sql',
+  './schemas/organizationNotifications/org_notifications_schema_and_indexes.sql',
+  './schemas/organizationNotifications/org_notification_reads_schema_and_indexes.sql',
+  './schemas/organizationNotifications/org_notifications_types_rls.sql',
+  './schemas/organizationNotifications/org_notifications_rls.sql',
+  './schemas/organizationNotifications/org_notification_reads_rls.sql',
+
+  './schemas/organizationNotifications/utils/insert_org_notification.sql',
+  './schemas/organizationNotifications/utils/get_org_notifications_for_member.sql',
+  './schemas/organizationNotifications/utils/mark_org_notification_read.sql',
+  './schemas/organizationNotifications/utils/dismiss_org_notification.sql',
+  './schemas/organizationNotifications/utils/get_org_unread_count.sql',
+  './schemas/organizationNotifications/utils/trigger_org_notification_email_dispatch.sql',
 
 
   # rpc profiles, orgs
@@ -329,6 +345,7 @@ sql_paths = [
   './seeds/tier_limits.sql',
 
   './seeds/user_notifications_types.sql',
+  './seeds/org_notifications_types.sql',
 
   # './seeds/lesson_types.sql'
 ]
@@ -700,3 +717,14 @@ entrypoint = "./functions/initialize-paystack-subscription-upgrade-transaction/i
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/initialize-paystack-subscription-upgrade-transaction/*.html" ]
+
+[functions.org-notifications-email-dispatch]
+enabled = true
+verify_jwt = true
+import_map = "./functions/org-notifications-email-dispatch/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/org-notifications-email-dispatch/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/org-notifications-email-dispatch/*.html" ]
