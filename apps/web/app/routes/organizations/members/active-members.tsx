@@ -62,12 +62,14 @@ export default function ActiveMembers({ params, loaderData }: Route.ComponentPro
 
   return (
     <>
-      <div className='px-0 py-4 md:px-4'>
-        <h2 className='mb-4 text-lg md:text-2xl'>Active Members</h2>
+      <div className='flex items-center justify-between px-0 md:px-4'>
+        <h2 className='text-lg md:text-2xl'>Active Members</h2>
+      </div>
 
-        {members.length === 0 ? (
-          <p className='text-muted-foreground'>There are no active members yet.</p>
-        ) : (
+      {members.length === 0 ? (
+        <p className='text-muted-foreground'>There are no active members yet.</p>
+      ) : (
+        <div className='px-0 py-4 md:px-4'>
           <Table>
             <TableHeader>
               <TableRow>
@@ -162,8 +164,9 @@ export default function ActiveMembers({ params, loaderData }: Route.ComponentPro
               })}
             </TableBody>
           </Table>
-        )}
-      </div>
+        </div>
+      )}
+
       <Outlet />
     </>
   );

@@ -10,4 +10,4 @@ create policy org_notifications_select_member
       where om.organization_id = org_notifications.organization_id
         and om.user_id = (select auth.uid())
     )
-  );
+  ); 
