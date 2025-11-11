@@ -1,20 +1,19 @@
 // Setup type definitions for built-in Supabase Runtime APIs
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
-
+import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 
 console.log('[initialize-paystack-subscription-transaction]');
 
 const PAYSTACK_SECRET_KEY = Deno.env.get('PAYSTACK_SECRET_KEY');
 const FRONTEND_URL = Deno.env.get('FRONTEND_URL');
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
-// ✅ Correct schema based on Paystack docs
+// Validate request body
 const InitializeSubscriptionSchema = z.object({
   organizationId: z.string().min(1, { message: 'Organization id required' }),
-  plan: z.string().min(1, { message: 'Plan code is required' }),
-  tier: z.string().min(1, { message: 'Tier is required' }),
-  amount: z.number().min(1, { message: 'Amount is required' }),
-  metadata: z.record(z.any()).optional(),
+  targetTier: z.string().min(1, { message: 'Target tier is required' }),
 });
 
 Deno.serve(async (req) => {
@@ -22,12 +21,13 @@ Deno.serve(async (req) => {
     return new Response('Method not allowed', { status: 405 });
   }
 
-  if (!PAYSTACK_SECRET_KEY || !FRONTEND_URL) {
+  if (!PAYSTACK_SECRET_KEY || !FRONTEND_URL || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
     return new Response(JSON.stringify({ error: 'Missing environment configuration' }), {
       status: 500,
     });
   }
 
+  // Parse JSON
   let json: unknown;
   try {
     json = await req.json();
@@ -42,33 +42,113 @@ Deno.serve(async (req) => {
         error: 'Validation failed',
         details: parsed.error.flatten().fieldErrors,
       }),
-      {
-        status: 400,
-      },
+      { status: 400 },
     );
   }
 
-  const { organizationId, plan, amount, metadata, tier } = parsed.data;
+  const { organizationId, targetTier } = parsed.data;
+  const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
 
   try {
+    //
+    // ✅ Fetch target tier limits
+    //
+    const { data: targetTierLimits, error: targetTierErr } = await supabase
+      .from('tier_limits')
+      .select('tier, paystack_plan_code, price_monthly_usd')
+      .eq('tier', targetTier)
+      .single();
+
+    if (targetTierErr || !targetTierLimits) {
+      return new Response(
+        JSON.stringify({ error: `Invalid or unavailable tier selected: ${targetTier}` }),
+        { status: 400 },
+      );
+    }
+
+    //
+    // ✅ Fetch current subscription
+    //
+    const { data: currentSub, error: fetchSubErr } = await supabase
+      .from('organization_subscriptions')
+      .select('tier, current_period_start, current_period_end')
+      .eq('organization_id', organizationId)
+      .single();
+
+    if (fetchSubErr || !currentSub) {
+      return new Response(JSON.stringify({ error: 'Subscription not found' }), { status: 404 });
+    }
+
+    //
+    // ✅ Fetch current tier limits
+    //
+    const { data: currentTierLimits, error: currentTierErr } = await supabase
+      .from('tier_limits')
+      .select('tier, paystack_plan_code, price_monthly_usd')
+      .eq('tier', currentSub.tier)
+      .single();
+
+    if (currentTierErr || !currentTierLimits) {
+      return new Response(JSON.stringify({ error: `Invalid current tier: ${currentSub.tier}` }), {
+        status: 400,
+      });
+    }
+
+    //
+    // ✅ Prevent downgrade or lateral move
+    //
+    if (targetTierLimits.tier === currentTierLimits.tier) {
+      return new Response(JSON.stringify({ error: 'Cannot upgrade to the same tier' }), {
+        status: 400,
+      });
+    }
+
+    const currentPrice = currentTierLimits.price_monthly_usd;
+    const targetPrice = targetTierLimits.price_monthly_usd;
+
+    if (targetPrice < currentPrice) {
+      return new Response(
+        JSON.stringify({ error: 'New tier price is lower — downgrade not allowed' }),
+        { status: 400 },
+      );
+    }
+
+    //
+    // ✅ Calculate prorated upgrade charge
+    //
+    const periodStart = new Date(currentSub.current_period_start);
+    const periodEnd = new Date(currentSub.current_period_end);
+    const now = new Date();
+
+    const totalDays = Math.ceil((periodEnd.getTime() - periodStart.getTime()) / 86400000);
+    const daysRemaining = Math.ceil((periodEnd.getTime() - now.getTime()) / 86400000);
+
+    const priceDifference = targetPrice - currentPrice;
+    const proratedAmount = Math.round(((priceDifference * daysRemaining) / totalDays) * 100);
+
+    console.log(`📊 Upgrade details:
+    Current: ${currentTierLimits.tier} ($${currentPrice})
+    Target:  ${targetTierLimits.tier} ($${targetPrice})
+    Days remaining: ${daysRemaining}/${totalDays}
+    Prorated charge: ${proratedAmount / 100} KES
+    `);
+
+    //
+    // ✅ Initialize Paystack transaction
+    //
     const body = {
       email: `${organizationId}@gonasi.com`,
-      // ✅ plan automatically overrides amount
-      plan,
-      amount,
+      amount: proratedAmount,
       callback_url: `${FRONTEND_URL}/${organizationId}/dashboard/subscriptions`,
       metadata: {
         transaction_type: 'organization_subscription_upgrade',
         organizationId,
-        // ✅ cancel link for the UI
-        cancel_action: `${FRONTEND_URL}/${organizationId}/dashboard/subscriptions/${tier}`,
-        ...metadata,
+        cancel_action: `${FRONTEND_URL}/${organizationId}/dashboard/subscriptions/${currentTierLimits.tier}`,
       },
     };
 
-    console.log('Initializing subscription transaction:', body);
+    console.log('Initializing Paystack subscription transaction:', body);
 
-    // ✅ Correct endpoint
     const paystackRes = await fetch('https://api.paystack.co/transaction/initialize', {
       method: 'POST',
       headers: {
@@ -79,8 +159,7 @@ Deno.serve(async (req) => {
     });
 
     const paystackData = await paystackRes.json();
-
-    console.log('📥 Paystack raw response:', paystackData);
+    console.log('📥 Paystack response:', paystackData);
 
     if (!paystackRes.ok) {
       return new Response(
@@ -92,20 +171,18 @@ Deno.serve(async (req) => {
       );
     }
 
-    // ✅ Return Paystack "authorization_url" for frontend redirect
+    //
+    // ✅ Success — return redirect URL
+    //
     return new Response(
       JSON.stringify({
         success: true,
         data: paystackData,
       }),
-      {
-        headers: { 'Content-Type': 'application/json' },
-      },
+      { headers: { 'Content-Type': 'application/json' } },
     );
-  } catch (error) {
-    console.error('Unexpected error initializing subscription:', error);
-    return new Response(JSON.stringify({ error: 'Unexpected error occurred' }), {
-      status: 500,
-    });
+  } catch (err) {
+    console.error('Unexpected error initializing subscription:', err);
+    return new Response(JSON.stringify({ error: 'Unexpected server error' }), { status: 500 });
   }
 });

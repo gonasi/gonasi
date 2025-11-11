@@ -44,26 +44,15 @@ const determineChangeType = (
 // Dummy placeholders
 // -------------------------
 async function handleUpgrade({
-  supabase,
   organizationId,
   targetTier,
-  currentTier,
-  currentStatus,
-  currentPeriodEnd,
 }: {
-  supabase: TypedSupabaseClient;
   organizationId: string;
   targetTier: Tier;
-  currentTier: Tier;
-  currentStatus: SubscriptionStatus | null;
-  currentPeriodEnd: string | null;
 }) {
   console.log('🚀 Upgrade logic placeholder', {
     organizationId,
     targetTier,
-    currentTier,
-    currentStatus,
-    currentPeriodEnd,
   });
   // TODO: cancel current sub at period end if non-renewing, schedule new tier, notify user
 }
@@ -279,12 +268,8 @@ export const initializeOrganizationTierSubscription = async ({
 
       case 'upgrade': {
         await handleUpgrade({
-          supabase,
           organizationId,
           targetTier: targetTier as Tier,
-          currentTier: currentTier!,
-          currentStatus,
-          currentPeriodEnd,
         });
         break;
       }
