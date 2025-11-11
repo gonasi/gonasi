@@ -22,8 +22,9 @@ set search_path = ''
 as $$
 declare
   v_member_role public.org_role;
+  v_member_updated_at timestamptz;
 begin
-  select role into v_member_role
+  select role, updated_at into v_member_role, v_member_updated_at
   from public.organization_members
   where organization_id = p_organization_id
     and user_id = p_user_id;
@@ -51,6 +52,7 @@ begin
   where n.organization_id = p_organization_id
     and n.deleted_at is null
     and (r.dismissed_at is null)
+    and n.created_at >= v_member_updated_at          -- <-- Only after member joined/updated
     and (
       (v_member_role = 'owner' and nt.visible_to_owner) or
       (v_member_role = 'admin' and nt.visible_to_admin) or

@@ -2463,7 +2463,7 @@ begin
       'error_code', 'MEMBER_LIMIT_REACHED'
     );
   end if;
- 
+
   -- Step 8: Mark invite as accepted
   update public.organization_invites
   set accepted_at = now_ts,
@@ -5104,8 +5104,9 @@ CREATE OR REPLACE FUNCTION public.get_org_notifications_for_member(p_organizatio
 AS $function$
 declare
   v_member_role public.org_role;
+  v_member_updated_at timestamptz;
 begin
-  select role into v_member_role
+  select role, updated_at into v_member_role, v_member_updated_at
   from public.organization_members
   where organization_id = p_organization_id
     and user_id = p_user_id;
@@ -5133,6 +5134,7 @@ begin
   where n.organization_id = p_organization_id
     and n.deleted_at is null
     and (r.dismissed_at is null)
+    and n.created_at >= v_member_updated_at          -- <-- Only after member joined/updated
     and (
       (v_member_role = 'owner' and nt.visible_to_owner) or
       (v_member_role = 'admin' and nt.visible_to_admin) or
@@ -5153,9 +5155,10 @@ CREATE OR REPLACE FUNCTION public.get_org_unread_count(p_organization_id uuid, p
 AS $function$
 declare
   v_member_role public.org_role;
+  v_member_updated_at timestamptz;
   v_count int;
 begin
-  select role into v_member_role
+  select role, updated_at into v_member_role, v_member_updated_at
   from public.organization_members
   where organization_id = p_organization_id
     and user_id = p_user_id;
@@ -5173,6 +5176,7 @@ begin
     and n.deleted_at is null
     and (r.read_at is null)
     and (r.dismissed_at is null)
+    and n.created_at >= v_member_updated_at         -- <-- Only after member joined/updated
     and (
       (v_member_role = 'owner' and nt.visible_to_owner) or
       (v_member_role = 'admin' and nt.visible_to_admin) or
@@ -12468,6 +12472,8 @@ CREATE TRIGGER trg_lesson_types_set_updated_at BEFORE UPDATE ON public.lesson_ty
 CREATE TRIGGER trg_set_lesson_position BEFORE INSERT ON public.lessons FOR EACH ROW EXECUTE FUNCTION public.set_lesson_position();
 
 CREATE TRIGGER after_update_role_on_org_members AFTER UPDATE OF role ON public.organization_members FOR EACH ROW EXECUTE FUNCTION public.delete_course_editors_on_role_change();
+
+CREATE TRIGGER trg_organization_members_set_updated_at BEFORE UPDATE ON public.organization_members FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
 CREATE TRIGGER trg_organizations_wallets_updated_at BEFORE UPDATE ON public.organization_wallets FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 

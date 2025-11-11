@@ -45,6 +45,12 @@ foreign key (user_id)
 references public.profiles(id)
 on delete cascade;
 
+-- Auto-update updated_at timestamp on row updates
+create or replace trigger trg_organization_members_set_updated_at
+before update on public.organization_members
+for each row
+execute function update_updated_at_column();
+
 -- ================================================
 -- INDEXES: Foreign keys
 -- ================================================
