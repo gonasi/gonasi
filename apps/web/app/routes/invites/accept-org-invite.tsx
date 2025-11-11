@@ -6,14 +6,17 @@ import { getUserProfile } from '@gonasi/database/profile';
 
 import type { Route } from './+types/accept-org-invite';
 
+import { getServerEnv } from '~/.server/env.server';
 import { AppLogo } from '~/components/app-logo';
 import { NavLinkButton } from '~/components/ui/button';
 import { createClient } from '~/lib/supabase/supabase.server';
 
+const { BASE_URL } = getServerEnv();
+
 interface AcceptOrgInviteResponse {
   success: boolean;
   message: string;
-  data?: {
+  data: {
     organization_id: string;
     organization_name?: string;
     role: string;
@@ -72,6 +75,17 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
     }
 
     if (rpcData?.success) {
+      // send notif to org
+      await supabase.rpc('insert_org_notification', {
+        p_organization_id: rpcData.data.organization_id,
+        p_type_key: 'org_member_joined',
+        p_metadata: {
+          member_name: user.full_name,
+          role: rpcData.data.role,
+        },
+        p_link: `${BASE_URL}/${rpcData.data.organization_id}/members/active-members`,
+      });
+
       return redirectWithSuccess(
         `/${rpcData?.data?.organization_id}/dashboard`,
         rpcData.message || "You've successfully joined the organization!",

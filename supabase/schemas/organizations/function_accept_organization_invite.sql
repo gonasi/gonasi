@@ -156,7 +156,7 @@ begin
       'error_code', 'MEMBER_LIMIT_REACHED'
     );
   end if;
- 
+
   -- Step 8: Mark invite as accepted
   update public.organization_invites
   set accepted_at = now_ts,
