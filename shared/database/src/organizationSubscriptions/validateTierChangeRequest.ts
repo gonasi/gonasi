@@ -4,7 +4,7 @@ import type { Database } from '../schema';
 
 export type TierLimitsRow = Database['public']['Enums']['subscription_tier'];
 
-export const VALID_TIER_ORDER: TierLimitsRow[] = ['launch', 'scale', 'impact'];
+export const VALID_TIER_ORDER: TierLimitsRow[] = ['launch', 'scale', 'impact', 'enterprise'];
 
 interface ValidateOrganizationChangeRequestParams {
   supabase: TypedSupabaseClient;

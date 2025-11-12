@@ -1,6 +1,6 @@
 import { useParams } from 'react-router';
 import { motion } from 'framer-motion';
-import { ArrowRightLeft, Check, MessagesSquare } from 'lucide-react';
+import { ArrowRightLeft, Check } from 'lucide-react';
 
 import type { AllTiers, OrganizationTier } from '@gonasi/database/organizationSubscriptions';
 
@@ -183,20 +183,6 @@ export function PricingComparisonTable({ allTiers, activeTier }: PricingComparis
 
 function PlanCTA({ isActive, tier }: { isActive: boolean; tier: string }) {
   const params = useParams();
-
-  if (tier === 'enterprise') {
-    return (
-      <NavLinkButton
-        to={`/${params.organizationId}/dashboard/subscriptions/${tier}`}
-        variant='secondary'
-        size='sm'
-        className='rounded-full'
-        leftIcon={<MessagesSquare />}
-      >
-        Contact Sales
-      </NavLinkButton>
-    );
-  }
 
   if (isActive)
     return (
