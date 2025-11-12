@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
       // ✅ plan automatically overrides amount
       plan,
       amount,
-      callback_url: `${FRONTEND_URL}/${organizationId}/dashboard/subscriptions`,
+      callback_url: `${FRONTEND_URL}/${organizationId}/dashboard/subscriptions/status`,
       metadata: {
         transaction_type: 'organization_subscription',
         organizationId,

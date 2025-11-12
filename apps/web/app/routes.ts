@@ -63,7 +63,7 @@ export default [
         'routes/organizations/dashboard/subscriptions/subscriptions-index.tsx',
         [
           route(':tier', 'routes/organizations/dashboard/subscriptions/subscribe-to-tier.tsx'),
-          // route(':tier/', 'routes/organizations/dashboard/subscriptions/subscribe-to-tier.tsx'),
+          route('status', 'routes/organizations/dashboard/subscriptions/subscription-status.tsx'),
         ],
       ),
     ]),

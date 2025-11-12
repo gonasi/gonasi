@@ -142,7 +142,7 @@ Deno.serve(async (req) => {
       email: `${organizationId}@gonasi.com`,
       amount: proratedAmount,
       currency: planCurrency,
-      callback_url: `${FRONTEND_URL}/${organizationId}/dashboard/subscriptions`,
+      callback_url: `${FRONTEND_URL}/${organizationId}/dashboard/subscriptions/status`,
       metadata: {
         transaction_type: 'organization_subscription_upgrade',
         organization_id: organizationId,
