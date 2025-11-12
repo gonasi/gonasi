@@ -53,7 +53,7 @@ export const initializeTransactionEnroll = async ({
     // Step 2: Fetch published course and its pricing tiers
     const { data: course, error: courseFetchError } = await supabase
       .from('published_courses')
-      .select('id, pricing_tiers')
+      .select('id, pricing_tiers, name')
       .match({ id: publishedCourseId, organization_id: organizationId })
       .single();
 
@@ -165,6 +165,7 @@ export const initializeTransactionEnroll = async ({
       isPromotional: hasValidPromotion,
       promotionalPrice: selectedTier.promotional_price ?? null,
       effectivePrice,
+      courseTitle: course.name,
     });
 
     const { data: transactionData, error: transactionError } = await supabase.functions.invoke(

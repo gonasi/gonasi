@@ -178,11 +178,33 @@ const org_notifications_types = [
   },
 
   // ============================
-  // CONTENT
+  // COURSES
   // ============================
   {
+    key: 'org_course_created',
+    category: 'courses',
+    visible_to_owner: true,
+    visible_to_admin: true,
+    visible_to_editor: true,
+    default_in_app: true,
+    default_email: false,
+    title_template: 'New course created',
+    body_template: '{{created_by_name}} created a new course: "{{course_title}}".',
+  },
+  {
+    key: 'org_course_updated',
+    category: 'courses',
+    visible_to_owner: true,
+    visible_to_admin: true,
+    visible_to_editor: true,
+    default_in_app: true,
+    default_email: false,
+    title_template: 'Course updated',
+    body_template: '{{updated_by_name}} updated the course "{{course_title}}".',
+  },
+  {
     key: 'org_course_published',
-    category: 'content',
+    category: 'courses',
     visible_to_owner: true,
     visible_to_admin: true,
     visible_to_editor: true,
@@ -192,8 +214,41 @@ const org_notifications_types = [
     body_template: '{{course_title}} has been published by {{published_by_name}}.',
   },
   {
+    key: 'org_course_unpublished',
+    category: 'courses',
+    visible_to_owner: true,
+    visible_to_admin: true,
+    visible_to_editor: true,
+    default_in_app: true,
+    default_email: false,
+    title_template: 'Course unpublished',
+    body_template: '{{course_title}} has been unpublished by {{unpublished_by_name}}.',
+  },
+  {
+    key: 'org_course_archived',
+    category: 'courses',
+    visible_to_owner: true,
+    visible_to_admin: true,
+    visible_to_editor: true,
+    default_in_app: true,
+    default_email: false,
+    title_template: 'Course archived',
+    body_template: '{{course_title}} has been archived.',
+  },
+  {
+    key: 'org_course_deleted',
+    category: 'courses',
+    visible_to_owner: true,
+    visible_to_admin: true,
+    visible_to_editor: true,
+    default_in_app: true,
+    default_email: false,
+    title_template: 'Course deleted',
+    body_template: '{{course_title}} has been permanently deleted.',
+  },
+  {
     key: 'org_course_milestone_reached',
-    category: 'content',
+    category: 'courses',
     visible_to_owner: true,
     visible_to_admin: true,
     visible_to_editor: true,
@@ -203,8 +258,30 @@ const org_notifications_types = [
     body_template: '{{course_title}} has reached {{milestone_count}} {{milestone_type}}!',
   },
   {
+    key: 'org_course_review_posted',
+    category: 'courses',
+    visible_to_owner: true,
+    visible_to_admin: true,
+    visible_to_editor: true,
+    default_in_app: true,
+    default_email: false,
+    title_template: 'New course review',
+    body_template: '{{reviewer_name}} rated "{{course_title}}" {{rating}}★: "{{review_excerpt}}".',
+  },
+  {
+    key: 'org_course_review_flagged',
+    category: 'courses',
+    visible_to_owner: true,
+    visible_to_admin: true,
+    visible_to_editor: false,
+    default_in_app: true,
+    default_email: true,
+    title_template: 'Course review flagged',
+    body_template: 'A review for "{{course_title}}" was flagged for {{reason}}. Please review.',
+  },
+  {
     key: 'org_content_flagged',
-    category: 'content',
+    category: 'courses',
     visible_to_owner: true,
     visible_to_admin: true,
     visible_to_editor: false,
@@ -213,6 +290,78 @@ const org_notifications_types = [
     title_template: 'Content flagged for review',
     body_template:
       '{{content_type}} "{{content_title}}" has been flagged for {{reason}}. Please review.',
+  },
+
+  // ============================
+  // PURCHASES
+  // ============================
+  {
+    key: 'org_course_purchase_completed',
+    category: 'purchases',
+    visible_to_owner: true,
+    visible_to_admin: true,
+    visible_to_editor: true,
+    default_in_app: true,
+    default_email: true,
+    title_template: 'Course purchase completed 💰',
+    body_template: '{{buyer_name}} purchased "{{course_title}}" for {{amount}}.',
+  },
+  {
+    key: 'org_course_purchase_refunded',
+    category: 'purchases',
+    visible_to_owner: true,
+    visible_to_admin: true,
+    visible_to_editor: true,
+    default_in_app: true,
+    default_email: true,
+    title_template: 'Course refunded',
+    body_template: 'A refund was issued for "{{course_title}}" ({{amount}}) to {{buyer_name}}.',
+  },
+  {
+    key: 'org_course_purchase_failed',
+    category: 'purchases',
+    visible_to_owner: true,
+    visible_to_admin: true,
+    visible_to_editor: true,
+    default_in_app: true,
+    default_email: true,
+    title_template: 'Course purchase failed',
+    body_template:
+      'Purchase attempt for "{{course_title}}" by {{buyer_name}} failed. Reason: {{failure_reason}}.',
+  },
+  {
+    key: 'org_course_subscription_started',
+    category: 'purchases',
+    visible_to_owner: true,
+    visible_to_admin: true,
+    visible_to_editor: true,
+    default_in_app: true,
+    default_email: true,
+    title_template: 'Course subscription started',
+    body_template: '{{buyer_name}} subscribed to "{{course_title}}" ({{plan_name}} plan).',
+  },
+  {
+    key: 'org_course_subscription_renewed',
+    category: 'purchases',
+    visible_to_owner: true,
+    visible_to_admin: true,
+    visible_to_editor: true,
+    default_in_app: true,
+    default_email: true,
+    title_template: 'Course subscription renewed',
+    body_template:
+      '{{buyer_name}}\'s subscription for "{{course_title}}" has renewed successfully.',
+  },
+  {
+    key: 'org_course_subscription_canceled',
+    category: 'purchases',
+    visible_to_owner: true,
+    visible_to_admin: true,
+    visible_to_editor: true,
+    default_in_app: true,
+    default_email: true,
+    title_template: 'Course subscription canceled',
+    body_template: '{{buyer_name}} canceled their subscription for "{{course_title}}".',
   },
 
   // ============================
@@ -286,7 +435,6 @@ const org_notifications_types = [
 // ============================================================================
 // Seed Function
 // ============================================================================
-
 export async function seedOrgNotificationsTypes() {
   console.log('🌱 Seeding org_notifications_types...');
 
@@ -302,7 +450,6 @@ export async function seedOrgNotificationsTypes() {
 
   for (const nt of org_notifications_types) {
     const { key } = nt;
-
     const { error } = await supabase.from('org_notifications_types').insert(nt);
 
     if (error) {

@@ -2,7 +2,10 @@ import type { Route } from './+types/paystack-webhook';
 import { handleOrganizationSubscription } from './paystack/handleOrganizationSubscription';
 import { handleOrganizationSubscriptionUpgrade } from './paystack/handleOrganizationSubscriptionUpgrade';
 
+import { getServerEnv } from '~/.server/env.server';
 import createClient from '~/lib/supabase/supabase.server';
+
+const { BASE_URL } = getServerEnv();
 
 // Reference Paystack IPs (for logs only — signature is the real security)
 const PAYSTACK_IPS = new Set(['52.31.139.75', '52.49.173.169', '52.214.14.220']);
@@ -152,7 +155,14 @@ async function handleCourseSale(
   startTime: number,
 ) {
   // ✅ Validate required metadata
-  const required = ['userId', 'publishedCourseId', 'pricingTierId'];
+  const required = [
+    'userId',
+    'publishedCourseId',
+    'pricingTierId',
+    'organizationId',
+    'userName',
+    'courseTitle',
+  ];
   const missing = required.filter((f) => !metadata[f]);
   if (missing.length > 0) {
     console.error('❌ Missing required metadata fields:', missing);
@@ -251,6 +261,18 @@ async function handleCourseSale(
 
   const processingTime = Date.now() - startTime;
   console.log('✅ COURSE PAYMENT PROCESSED:', result);
+
+  // send notif to org
+  await supabaseAdmin.rpc('insert_org_notification', {
+    p_organization_id: metadata.organizationId,
+    p_type_key: 'org_course_purchase_completed',
+    p_metadata: {
+      buyer_name: metadata.userName,
+      amount: `${currency} ${amountPaid}`,
+      course_title: metadata.courseTitle,
+    },
+    p_link: `${BASE_URL}/${metadata.organizationId}/builder/${metadata.publishedCourseId}/published`,
+  });
 
   return new Response(
     JSON.stringify({

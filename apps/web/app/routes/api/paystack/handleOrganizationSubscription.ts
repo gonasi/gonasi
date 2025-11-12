@@ -13,6 +13,10 @@
 
 import type { TypedSupabaseClient } from '@gonasi/database/client';
 
+import { getServerEnv } from '~/.server/env.server';
+
+const { BASE_URL } = getServerEnv();
+
 interface PaystackSubscriptionData {
   subscription_code: string;
   status: 'active' | 'non-renewing' | 'attention' | 'completed' | 'cancelled';
@@ -173,6 +177,19 @@ async function handleSubscriptionCreate(
 
   console.log('✅ Subscription created:', subscription.id);
 
+  // send notif to org
+  await supabase.rpc('insert_org_notification', {
+    p_organization_id: organizationId,
+    p_type_key: 'org_subscription_started',
+    p_metadata: {
+      tier_name: tier,
+      amount: `${data.plan.currency} ${data.plan.amount / 100}`, // amount in kobo convert to normal
+      clientIp,
+      interval: 'month',
+    },
+    p_link: `${BASE_URL}/${organizationId}/dashboard/subscriptions`,
+  });
+
   return new Response(
     JSON.stringify({
       success: true,
@@ -330,7 +347,7 @@ async function handleInvoicePaymentFailed(
   const { error: updateError } = await supabase
     .from('organization_subscriptions')
     .update({
-      status: 'past_due',
+      status: 'non-renewing',
       updated_at: new Date().toISOString(),
     })
     .eq('organization_id', organizationId);
@@ -431,7 +448,7 @@ async function handleSubscriptionNotRenew(
     .from('organization_subscriptions')
     .update({
       cancel_at_period_end: true,
-      status: 'canceled', // Use 'canceled' status from the enum
+      status: 'cancelled', // Use 'canceled' status from the enum
     })
     .eq('organization_id', organizationId);
 
@@ -478,7 +495,7 @@ async function handleSubscriptionDisable(
   console.log('🏢 Extracted organization_id:', organizationId);
 
   // Determine final status based on Paystack status
-  const finalStatus = data.status === 'completed' ? 'canceled' : 'canceled';
+  const finalStatus = data.status === 'completed' ? 'completed' : 'cancelled';
 
   // Update subscription to canceled/completed
   const { error } = await supabase

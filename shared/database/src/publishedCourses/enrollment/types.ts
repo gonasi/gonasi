@@ -35,6 +35,8 @@ export const InitializeEnrollMetadataSchema = z.object({
   userEmail: z.string().email(),
   userName: z.string(),
 
+  courseTitle: z.string(),
+
   tierName: z.string().optional(),
   tierDescription: z.string().optional(),
 

@@ -28,7 +28,7 @@ import { refundSubscriptionUpgrade } from './refundSubscriptionUpgrade';
 
 import { getServerEnv } from '~/.server/env.server';
 
-const { PAYSTACK_SECRET_KEY } = getServerEnv();
+const { PAYSTACK_SECRET_KEY, BASE_URL } = getServerEnv();
 
 export async function handleOrganizationSubscriptionUpgrade(
   supabaseAdmin: TypedSupabaseClient,
@@ -267,7 +267,16 @@ export async function handleOrganizationSubscriptionUpgrade(
   // ────────────────────────────────────────────────────────────────────────────────
   // ⑦ SUCCESS RESPONSE
   // ────────────────────────────────────────────────────────────────────────────────
-  console.log('⚠️ TODO: Send upgrade confirmation email & analytics event');
+
+  // send notif to org
+  await supabaseAdmin.rpc('insert_org_notification', {
+    p_organization_id: organizationId,
+    p_type_key: 'org_tier_upgraded',
+    p_metadata: {
+      tier_name: targetTier,
+    },
+    p_link: `${BASE_URL}/${organizationId}/dashboard/subscriptions`,
+  });
 
   return new Response(
     JSON.stringify({

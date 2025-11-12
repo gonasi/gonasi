@@ -18783,7 +18783,13 @@
           "name": "content"
         },
         {
+          "name": "courses"
+        },
+        {
           "name": "members"
+        },
+        {
+          "name": "purchases"
         },
         {
           "name": "system"
@@ -18800,10 +18806,55 @@
           "name": "org_content_flagged"
         },
         {
+          "name": "org_course_archived"
+        },
+        {
+          "name": "org_course_created"
+        },
+        {
+          "name": "org_course_deleted"
+        },
+        {
+          "name": "org_course_enrollment_closed"
+        },
+        {
+          "name": "org_course_enrollment_opened"
+        },
+        {
           "name": "org_course_milestone_reached"
         },
         {
           "name": "org_course_published"
+        },
+        {
+          "name": "org_course_purchase_completed"
+        },
+        {
+          "name": "org_course_purchase_failed"
+        },
+        {
+          "name": "org_course_purchase_refunded"
+        },
+        {
+          "name": "org_course_review_flagged"
+        },
+        {
+          "name": "org_course_review_posted"
+        },
+        {
+          "name": "org_course_subscription_canceled"
+        },
+        {
+          "name": "org_course_subscription_renewed"
+        },
+        {
+          "name": "org_course_subscription_started"
+        },
+        {
+          "name": "org_course_unpublished"
+        },
+        {
+          "name": "org_course_updated"
         },
         {
           "name": "org_invoice_ready"

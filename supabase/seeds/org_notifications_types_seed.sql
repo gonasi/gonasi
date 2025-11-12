@@ -9,7 +9,9 @@ insert into public.org_notifications_types (
   title_template,
   body_template
 ) values
+-- ============================================================================
 -- Billing
+-- ============================================================================
 ('org_subscription_started', 'billing', true, true, false, true, true,
  'Subscription activated',
  'Your organization is now subscribed to the {{tier_name}} plan at {{amount}}/{{interval}}.'),
@@ -34,7 +36,10 @@ insert into public.org_notifications_types (
 ('org_tier_downgraded', 'billing', true, true, false, true, true,
  'Plan changed',
  'Your organization has been moved to the {{tier_name}} plan. Changes take effect on {{effective_date}}.'),
+
+-- ============================================================================
 -- Members
+-- ============================================================================
 ('org_member_invited', 'members', true, true, false, true, false,
  'Member invited',
  '{{invited_by_name}} invited {{member_email}} to join as {{role}}.'),
@@ -53,17 +58,72 @@ insert into public.org_notifications_types (
 ('org_ownership_transferred', 'members', true, true, true, true, true,
  'Ownership transferred',
  'Organization ownership has been transferred from {{previous_owner_name}} to {{new_owner_name}}.'),
--- Content
-('org_course_published', 'content', true, true, true, true, false,
+
+-- ============================================================================
+-- Courses & Content
+-- ============================================================================
+('org_course_created', 'courses', true, true, true, true, false,
+ 'New course created',
+ '{{created_by_name}} created a new course: "{{course_title}}".'),
+('org_course_updated', 'courses', true, true, true, true, false,
+ 'Course updated',
+ '{{updated_by_name}} updated the course "{{course_title}}".'),
+('org_course_published', 'courses', true, true, true, true, false,
  'Course published',
  '{{course_title}} has been published by {{published_by_name}}.'),
-('org_course_milestone_reached', 'content', true, true, true, true, false,
+('org_course_unpublished', 'courses', true, true, true, true, false,
+ 'Course unpublished',
+ '{{course_title}} has been unpublished by {{unpublished_by_name}}.'),
+('org_course_archived', 'courses', true, true, true, true, false,
+ 'Course archived',
+ '{{course_title}} has been archived.'),
+('org_course_deleted', 'courses', true, true, true, true, false,
+ 'Course deleted',
+ '{{course_title}} has been permanently deleted.'),
+('org_course_milestone_reached', 'courses', true, true, true, true, false,
  'Milestone reached! 🎯',
  '{{course_title}} has reached {{milestone_count}} {{milestone_type}}!'),
-('org_content_flagged', 'content', true, true, false, true, true,
+('org_course_enrollment_opened', 'courses', true, true, true, true, false,
+ 'Enrollments opened',
+ 'Enrollments for "{{course_title}}" are now open.'),
+('org_course_enrollment_closed', 'courses', true, true, true, true, false,
+ 'Enrollments closed',
+ 'Enrollments for "{{course_title}}" have been closed.'),
+('org_course_review_posted', 'courses', true, true, true, true, false,
+ 'New course review',
+ '{{reviewer_name}} rated "{{course_title}}" {{rating}}★: "{{review_excerpt}}".'),
+('org_course_review_flagged', 'courses', true, true, false, true, true,
+ 'Course review flagged',
+ 'A review for "{{course_title}}" was flagged for {{reason}}. Please review.'),
+('org_content_flagged', 'courses', true, true, false, true, true,
  'Content flagged for review',
  '{{content_type}} "{{content_title}}" has been flagged for {{reason}}. Please review.'),
+
+-- ============================================================================
+-- Purchases & Transactions
+-- ============================================================================
+('org_course_purchase_completed', 'purchases', true, true, true, true, true,
+ 'Course purchase completed 💰',
+ '{{buyer_name}} purchased "{{course_title}}" for {{amount}}.'),
+('org_course_purchase_refunded', 'purchases', true, true, true, true, true,
+ 'Course refunded',
+ 'A refund was issued for "{{course_title}}" ({{amount}}) to {{buyer_name}}.'),
+('org_course_purchase_failed', 'purchases', true, true, true, true, true,
+ 'Course purchase failed',
+ 'Purchase attempt for "{{course_title}}" by {{buyer_name}} failed. Reason: {{failure_reason}}.'),
+('org_course_subscription_started', 'purchases', true, true, true, true, true,
+ 'Course subscription started',
+ '{{buyer_name}} subscribed to "{{course_title}}" ({{plan_name}} plan).'),
+('org_course_subscription_renewed', 'purchases', true, true, true, true, true,
+ 'Course subscription renewed',
+ '{{buyer_name}}''s subscription for "{{course_title}}" has renewed successfully.'),
+('org_course_subscription_canceled', 'purchases', true, true, true, true, true,
+ 'Course subscription canceled',
+ '{{buyer_name}} canceled their subscription for "{{course_title}}".'),
+
+-- ============================================================================
 -- Compliance
+-- ============================================================================
 ('org_verification_approved', 'compliance', true, true, false, true, true,
  'Organization verified ✓',
  'Congratulations! Your organization has been verified. You now have access to verified features.'),
@@ -73,7 +133,10 @@ insert into public.org_notifications_types (
 ('org_policy_update_required', 'compliance', true, true, false, true, true,
  'Action required: Policy update',
  'Our {{policy_name}} has been updated. Please review and accept the changes by {{deadline}}.'),
+
+-- ============================================================================
 -- System
+-- ============================================================================
 ('org_announcement', 'system', true, true, true, true, false,
  '{{announcement_title}}',
  '{{announcement_body}}'),

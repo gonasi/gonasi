@@ -3109,6 +3109,8 @@ export type Database = {
       org_notification_category:
         | "billing"
         | "members"
+        | "courses"
+        | "purchases"
         | "content"
         | "compliance"
         | "system"
@@ -3127,9 +3129,24 @@ export type Database = {
         | "org_member_role_changed"
         | "org_member_removed"
         | "org_ownership_transferred"
+        | "org_course_created"
+        | "org_course_updated"
         | "org_course_published"
+        | "org_course_unpublished"
+        | "org_course_archived"
+        | "org_course_deleted"
         | "org_course_milestone_reached"
+        | "org_course_enrollment_opened"
+        | "org_course_enrollment_closed"
+        | "org_course_review_posted"
+        | "org_course_review_flagged"
         | "org_content_flagged"
+        | "org_course_purchase_completed"
+        | "org_course_purchase_refunded"
+        | "org_course_purchase_failed"
+        | "org_course_subscription_started"
+        | "org_course_subscription_renewed"
+        | "org_course_subscription_canceled"
         | "org_verification_approved"
         | "org_verification_rejected"
         | "org_policy_update_required"
@@ -3365,6 +3382,8 @@ export const Constants = {
       org_notification_category: [
         "billing",
         "members",
+        "courses",
+        "purchases",
         "content",
         "compliance",
         "system",
@@ -3384,9 +3403,24 @@ export const Constants = {
         "org_member_role_changed",
         "org_member_removed",
         "org_ownership_transferred",
+        "org_course_created",
+        "org_course_updated",
         "org_course_published",
+        "org_course_unpublished",
+        "org_course_archived",
+        "org_course_deleted",
         "org_course_milestone_reached",
+        "org_course_enrollment_opened",
+        "org_course_enrollment_closed",
+        "org_course_review_posted",
+        "org_course_review_flagged",
         "org_content_flagged",
+        "org_course_purchase_completed",
+        "org_course_purchase_refunded",
+        "org_course_purchase_failed",
+        "org_course_subscription_started",
+        "org_course_subscription_renewed",
+        "org_course_subscription_canceled",
         "org_verification_approved",
         "org_verification_rejected",
         "org_policy_update_required",
