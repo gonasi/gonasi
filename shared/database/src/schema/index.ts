@@ -1659,6 +1659,8 @@ export type Database = {
           initial_next_payment_date: string | null
           next_tier: Database["public"]["Enums"]["subscription_tier"] | null
           organization_id: string
+          paystack_customer_code: string | null
+          paystack_subscription_code: string | null
           start_date: string
           status: Database["public"]["Enums"]["subscription_status"]
           tier: Database["public"]["Enums"]["subscription_tier"]
@@ -1678,6 +1680,8 @@ export type Database = {
           initial_next_payment_date?: string | null
           next_tier?: Database["public"]["Enums"]["subscription_tier"] | null
           organization_id: string
+          paystack_customer_code?: string | null
+          paystack_subscription_code?: string | null
           start_date?: string
           status?: Database["public"]["Enums"]["subscription_status"]
           tier?: Database["public"]["Enums"]["subscription_tier"]
@@ -1697,6 +1701,8 @@ export type Database = {
           initial_next_payment_date?: string | null
           next_tier?: Database["public"]["Enums"]["subscription_tier"] | null
           organization_id?: string
+          paystack_customer_code?: string | null
+          paystack_subscription_code?: string | null
           start_date?: string
           status?: Database["public"]["Enums"]["subscription_status"]
           tier?: Database["public"]["Enums"]["subscription_tier"]
@@ -3007,6 +3013,8 @@ export type Database = {
           initial_next_payment_date: string | null
           next_tier: Database["public"]["Enums"]["subscription_tier"] | null
           organization_id: string
+          paystack_customer_code: string | null
+          paystack_subscription_code: string | null
           start_date: string
           status: Database["public"]["Enums"]["subscription_status"]
           tier: Database["public"]["Enums"]["subscription_tier"]
@@ -3027,6 +3035,8 @@ export type Database = {
           new_status: string
           new_tier: string
           org_id: string
+          paystack_customer_code?: string
+          paystack_subscription_code?: string
           period_end: string
           period_start: string
           start_ts: string
@@ -3044,6 +3054,8 @@ export type Database = {
           initial_next_payment_date: string | null
           next_tier: Database["public"]["Enums"]["subscription_tier"] | null
           organization_id: string
+          paystack_customer_code: string | null
+          paystack_subscription_code: string | null
           start_date: string
           status: Database["public"]["Enums"]["subscription_status"]
           tier: Database["public"]["Enums"]["subscription_tier"]

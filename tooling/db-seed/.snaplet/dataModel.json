@@ -10606,6 +10606,34 @@
           "maxLength": null
         },
         {
+          "id": "public.organization_subscriptions.paystack_customer_code",
+          "name": "paystack_customer_code",
+          "columnName": "paystack_customer_code",
+          "type": "text",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.organization_subscriptions.paystack_subscription_code",
+          "name": "paystack_subscription_code",
+          "columnName": "paystack_subscription_code",
+          "type": "text",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
           "id": "public.organization_subscriptions.status",
           "name": "status",
           "columnName": "status",
@@ -10855,6 +10883,20 @@
         }
       ],
       "uniqueConstraints": [
+        {
+          "name": "organization_subscriptions_paystack_customer_code_key",
+          "fields": [
+            "paystack_customer_code"
+          ],
+          "nullNotDistinct": false
+        },
+        {
+          "name": "organization_subscriptions_paystack_subscription_code_key",
+          "fields": [
+            "paystack_subscription_code"
+          ],
+          "nullNotDistinct": false
+        },
         {
           "name": "organization_subscriptions_pkey",
           "fields": [

@@ -61,25 +61,27 @@ export const fetchOrganizationSubscriptionStatus = async ({
     .from('organization_subscriptions')
     .select(
       `
-        id,
-        organization_id,
-        tier,
-        status,
-        start_date,
-        current_period_start,
-        current_period_end,
-        initial_next_payment_date,
-        cancel_at_period_end,
-        created_at,
-        updated_at,
-        created_by,
-        updated_by,
-        tier_limits: tier ( * ),
-        next_tier_limits: next_tier ( * )
-      `,
+      id,
+      organization_id,
+      tier,
+      status,
+      start_date,
+      current_period_start,
+      current_period_end,
+      initial_next_payment_date,
+      cancel_at_period_end,
+      created_at,
+      updated_at,
+      created_by,
+      updated_by,
+      tier_limits:tier_limits!organization_subscriptions_tier_fkey ( * ),
+      next_tier_limits:tier_limits!organization_subscriptions_next_tier_fkey ( * )
+    `,
     )
     .eq('organization_id', org.id)
     .maybeSingle();
+
+  console.log(subError);
 
   if (subError) {
     return {

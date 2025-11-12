@@ -1,26 +1,6 @@
 // ────────────────────────────────────────────────────────────────────────────────
-// ORGANIZATION SUBSCRIPTION UPGRADE HANDLER
+// ORGANIZATION SUBSCRIPTION UPGRADE HANDLER (Paystack-compliant disable)
 // ────────────────────────────────────────────────────────────────────────────────
-// Handles one-time prorated upgrade payments for organization subscriptions.
-//
-// Triggered by: Paystack webhook event `charge.success`
-// Applies when:  `transaction_type = 'organization_subscription_upgrade'`
-//
-// Flow:
-//  1. User initiates upgrade to a higher tier
-//  2. Edge function calculates prorated charge for remaining period
-//  3. User completes payment via Paystack
-//  4. This webhook handles the successful payment event
-//  5. Records payment in wallet ledger
-//  6. Creates a new Paystack subscription for the new tier
-//  7. Updates the local subscription tier immediately
-//
-// Notes:
-//  - This handler does *not* affect existing organization_subscriptions rows directly;
-//    instead, it calls an RPC function to update the tier.
-//  - Errors in ledger recording are logged but non-fatal.
-// ────────────────────────────────────────────────────────────────────────────────
-
 import type { TypedSupabaseClient } from '@gonasi/database/client';
 import type { Database } from '@gonasi/database/schema';
 
@@ -30,6 +10,53 @@ import { getServerEnv } from '~/.server/env.server';
 
 const { PAYSTACK_SECRET_KEY, BASE_URL } = getServerEnv();
 
+// ────────────────────────────────────────────────
+// Helper: Fetch Paystack subscription details
+// ────────────────────────────────────────────────
+async function fetchPaystackSubscription(subscriptionCode: string) {
+  const res = await fetch(`https://api.paystack.co/subscription/${subscriptionCode}`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  const data = await res.json();
+  if (!res.ok || !data.status) {
+    throw new Error(`Failed to fetch Paystack subscription: ${data.message}`);
+  }
+
+  return data.data;
+}
+
+// ────────────────────────────────────────────────
+// Helper: Disable Paystack subscription
+// ────────────────────────────────────────────────
+async function disablePaystackSubscription(subscriptionCode: string, emailToken: string) {
+  const res = await fetch('https://api.paystack.co/subscription/disable', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      code: subscriptionCode,
+      token: emailToken,
+    }),
+  });
+
+  const data = await res.json();
+  if (!res.ok || !data.status) {
+    throw new Error(`Failed to disable subscription: ${data.message}`);
+  }
+
+  console.log('✅ Subscription disabled:', subscriptionCode);
+}
+
+// ────────────────────────────────────────────────
+// Main Handler
+// ────────────────────────────────────────────────
 export async function handleOrganizationSubscriptionUpgrade(
   supabaseAdmin: TypedSupabaseClient,
   tx: any,
@@ -40,30 +67,22 @@ export async function handleOrganizationSubscriptionUpgrade(
   console.log('⬆️ Processing subscription upgrade payment:', tx.reference);
   console.log('  ↳ Metadata:', JSON.stringify(metadata, null, 2));
 
-  // ────────────────────────────────────────────────────────────────────────────────
   // ① VALIDATE METADATA
-  // ────────────────────────────────────────────────────────────────────────────────
   const {
     organization_id: organizationId,
     current_plan_tier: currentTier,
     target_plan_tier: targetTier,
-    target_plan_code: targetPlanCode,
     organization_email: organizationEmail,
   } = metadata;
 
-  if (!organizationId) return new Response('Missing organizationId', { status: 400 });
-  if (!currentTier) return new Response('Missing currentTier', { status: 400 });
-  if (!targetTier) return new Response('Missing targetTier', { status: 400 });
-  if (!targetPlanCode) return new Response('Missing targetPlanCode', { status: 400 });
-  if (!organizationEmail) return new Response('Missing organizationEmail', { status: 400 });
+  if (!organizationId || !currentTier || !targetTier || !organizationEmail) {
+    return new Response('Missing required metadata', { status: 400 });
+  }
 
-  console.log(`  🏢 Organization: ${organizationId}`);
-  console.log(`  🎯 Upgrading to tier: ${targetTier}`);
-  console.log(`  targetPlanCode: ${targetPlanCode}`);
+  console.log(`🏢 Organization: ${organizationId}`);
+  console.log(`🎯 Upgrading from tier: ${currentTier} → ${targetTier}`);
 
-  // ────────────────────────────────────────────────────────────────────────────────
   // ② NORMALIZE PAYMENT AMOUNTS
-  // ────────────────────────────────────────────────────────────────────────────────
   const rawAmount = Number(tx.amount);
   const rawFees = Number(tx.fees ?? 0);
 
@@ -79,13 +98,11 @@ export async function handleOrganizationSubscriptionUpgrade(
     tx.currency ?? 'USD',
   ).toUpperCase() as Database['public']['Enums']['currency_code'];
 
-  console.log(`  💵 Prorated Charge: ${amountPaid} ${currency}`);
-  console.log(`  💸 Paystack Fee: ${paystackFee} ${currency}`);
-  console.log(`  💰 Net Revenue: ${netRevenue} ${currency}`);
+  console.log(`💵 Prorated Charge: ${amountPaid} ${currency}`);
+  console.log(`💸 Paystack Fee: ${paystackFee} ${currency}`);
+  console.log(`💰 Net Revenue: ${netRevenue} ${currency}`);
 
-  // ────────────────────────────────────────────────────────────────────────────────
-  // ③ RECORD UPGRADE PAYMENT IN WALLET LEDGER
-  // ────────────────────────────────────────────────────────────────────────────────
+  // ③ RECORD PAYMENT IN WALLET LEDGER
   const paymentMetadata = {
     webhook_received_at: new Date().toISOString(),
     webhook_event: 'charge.success',
@@ -95,37 +112,21 @@ export async function handleOrganizationSubscriptionUpgrade(
     new_tier: targetTier,
     clientIp,
     is_prorated_charge: true,
-    raw_paystack_payload: {
-      id: tx.id,
-      reference: tx.reference,
-      status: tx.status,
-      paid_at: tx.paid_at ?? tx.paidAt,
-      metadata: tx.metadata ?? null,
-    },
+    raw_paystack_payload: tx,
   };
 
-  const { data: paymentResult, error: paymentError } = await supabaseAdmin.rpc(
-    'process_subscription_upgrade_payment',
-    {
-      p_payment_reference: String(tx.reference),
-      p_organization_id: organizationId,
-      p_amount_paid: amountPaid,
-      p_currency_code: currency,
-      p_paystack_fee: paystackFee,
-      p_metadata: paymentMetadata,
-    },
-  );
+  const { error: paymentError } = await supabaseAdmin.rpc('process_subscription_upgrade_payment', {
+    p_payment_reference: String(tx.reference),
+    p_organization_id: organizationId,
+    p_amount_paid: amountPaid,
+    p_currency_code: currency,
+    p_paystack_fee: paystackFee,
+    p_metadata: paymentMetadata,
+  });
 
-  if (paymentError) {
-    console.error('❌ Failed to record upgrade payment:', paymentError);
-    console.warn('⚠️ Continuing upgrade despite payment recording failure');
-  } else {
-    console.log('✅ Upgrade payment recorded successfully:', paymentResult);
-  }
+  if (paymentError) console.warn('⚠️ Failed to record payment, continuing upgrade:', paymentError);
 
-  // ────────────────────────────────────────────────────────────────────────────────
   // ④ FETCH TARGET TIER PLAN CODE
-  // ────────────────────────────────────────────────────────────────────────────────
   const { data: targetTierData, error: tierError } = await supabaseAdmin
     .from('tier_limits')
     .select('paystack_plan_code')
@@ -138,14 +139,50 @@ export async function handleOrganizationSubscriptionUpgrade(
   }
 
   const newPlanCode = targetTierData.paystack_plan_code;
-  console.log(`  📋 New Paystack Plan Code: ${newPlanCode}`);
+  console.log(`📋 New Paystack Plan Code: ${newPlanCode}`);
 
-  // ────────────────────────────────────────────────────────────────────────────────
-  // ⑤ CREATE NEW PAYSTACK SUBSCRIPTION
-  // ────────────────────────────────────────────────────────────────────────────────
-  // Replace section ⑤ (CREATE NEW PAYSTACK SUBSCRIPTION)
-  console.log('🆕 Creating new Paystack subscription...');
+  // ⑤ FETCH CURRENT SUBSCRIPTION
+  let authorizationToken: string | undefined;
 
+  try {
+    const { data: currentSubData } = await supabaseAdmin
+      .from('organization_subscriptions')
+      .select('paystack_subscription_code, paystack_customer_code')
+      .eq('organization_id', organizationId)
+      .eq('tier', currentTier)
+      .single();
+
+    if (currentSubData?.paystack_subscription_code) {
+      const currentSub = await fetchPaystackSubscription(currentSubData.paystack_subscription_code);
+      authorizationToken = currentSub.authorization?.authorization_code ?? currentSub.email_token;
+
+      // Disable the old subscription properly
+      await disablePaystackSubscription(
+        currentSubData.paystack_subscription_code,
+        currentSub.email_token,
+      );
+    } else {
+      console.warn('⚠️ No current subscription found to disable.');
+    }
+  } catch (err) {
+    console.error('❌ Failed to fetch or disable current subscription:', err);
+    await refundSubscriptionUpgrade(
+      supabaseAdmin,
+      organizationId,
+      tx.reference,
+      'disable_current_subscription_failed',
+      `Failed to disable current subscription: ${String(err)}`,
+    );
+    return new Response(
+      JSON.stringify({
+        error: 'Failed to disable current subscription - refund initiated',
+        refund_status: 'pending',
+      }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } },
+    );
+  }
+
+  // ⑥ CREATE NEW PAYSTACK SUBSCRIPTION
   let paystackSubscriptionCode: string | null = null;
 
   try {
@@ -153,10 +190,7 @@ export async function handleOrganizationSubscriptionUpgrade(
       customer: tx.customer.customer_code,
       plan: newPlanCode,
     };
-
-    if (tx.authorization?.authorization_code) {
-      createBody.authorization = tx.authorization.authorization_code;
-    }
+    if (authorizationToken) createBody.authorization = authorizationToken;
 
     const createRes = await fetch('https://api.paystack.co/subscription', {
       method: 'POST',
@@ -168,11 +202,8 @@ export async function handleOrganizationSubscriptionUpgrade(
     });
 
     const createData = await createRes.json();
-
     if (!createRes.ok || !createData.status) {
       console.error('❌ Paystack subscription creation failed:', createData);
-
-      // 🔴 REFUND: Subscription creation failed
       await refundSubscriptionUpgrade(
         supabaseAdmin,
         organizationId,
@@ -180,7 +211,6 @@ export async function handleOrganizationSubscriptionUpgrade(
         'subscription_creation_failed',
         `Failed to create Paystack subscription: ${createData.message}`,
       );
-
       return new Response(
         JSON.stringify({
           error: 'Subscription creation failed - refund initiated',
@@ -194,8 +224,6 @@ export async function handleOrganizationSubscriptionUpgrade(
     console.log('✅ Paystack subscription created:', paystackSubscriptionCode);
   } catch (err) {
     console.error('❌ Exception during subscription creation:', err);
-
-    // 🔴 REFUND: Exception occurred
     await refundSubscriptionUpgrade(
       supabaseAdmin,
       organizationId,
@@ -203,7 +231,6 @@ export async function handleOrganizationSubscriptionUpgrade(
       'subscription_creation_failed',
       `Exception during subscription creation: ${String(err)}`,
     );
-
     return new Response(
       JSON.stringify({
         error: 'Subscription creation error - refund initiated',
@@ -213,7 +240,7 @@ export async function handleOrganizationSubscriptionUpgrade(
     );
   }
 
-  // Replace section ⑥ (UPDATE LOCAL SUBSCRIPTION TIER)
+  // ⑦ UPDATE LOCAL SUBSCRIPTION TIER
   const { data: subscription, error: subError } = await supabaseAdmin.rpc(
     'subscription_update_tier',
     {
@@ -225,24 +252,14 @@ export async function handleOrganizationSubscriptionUpgrade(
   if (subError || !subscription) {
     console.error('❌ Failed to update local subscription:', subError);
 
-    // 🔴 REFUND: Local tier update failed
-    // Also need to cancel the Paystack subscription we just created
     if (paystackSubscriptionCode) {
       try {
-        await fetch(`https://api.paystack.co/subscription/disable`, {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            code: paystackSubscriptionCode,
-            token: tx.customer.email,
-          }),
-        });
-        console.log('✅ Cancelled Paystack subscription');
-      } catch (cancelErr) {
-        console.error('❌ Failed to cancel Paystack subscription:', cancelErr);
+        await disablePaystackSubscription(paystackSubscriptionCode, organizationEmail);
+      } catch (disableErr) {
+        console.error(
+          '❌ Failed to disable new subscription after local update failure:',
+          disableErr,
+        );
       }
     }
 
@@ -264,17 +281,11 @@ export async function handleOrganizationSubscriptionUpgrade(
     );
   }
 
-  // ────────────────────────────────────────────────────────────────────────────────
-  // ⑦ SUCCESS RESPONSE
-  // ────────────────────────────────────────────────────────────────────────────────
-
-  // send notif to org
+  // ⑧ SUCCESS RESPONSE & NOTIFICATION
   await supabaseAdmin.rpc('insert_org_notification', {
     p_organization_id: organizationId,
     p_type_key: 'org_tier_upgraded',
-    p_metadata: {
-      tier_name: targetTier,
-    },
+    p_metadata: { tier_name: targetTier },
     p_link: `${BASE_URL}/${organizationId}/dashboard/subscriptions`,
   });
 

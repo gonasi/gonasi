@@ -6,7 +6,9 @@ create or replace function public.subscription_upsert_webhook(
   period_start timestamptz,
   period_end timestamptz,
   cancel_at_period_end boolean default false,
-  initial_next_payment_date timestamptz default null  
+  initial_next_payment_date timestamptz default null,
+  paystack_customer_code text default null,
+  paystack_subscription_code text default null
 )
 returns public.organization_subscriptions
 language plpgsql
@@ -24,7 +26,9 @@ begin
     current_period_start,
     current_period_end,
     cancel_at_period_end,
-    initial_next_payment_date
+    initial_next_payment_date,
+    paystack_customer_code,
+    paystack_subscription_code
   )
   values (
     org_id,
@@ -34,7 +38,9 @@ begin
     period_start,
     period_end,
     cancel_at_period_end,
-    coalesce(initial_next_payment_date, period_end)  -- use Paystack date if provided
+    coalesce(initial_next_payment_date, period_end),
+    paystack_customer_code,
+    paystack_subscription_code
   )
   on conflict (organization_id)
   do update set
@@ -43,7 +49,9 @@ begin
     start_date            = excluded.start_date,
     current_period_start  = excluded.current_period_start,
     current_period_end    = excluded.current_period_end,
-    cancel_at_period_end  = excluded.cancel_at_period_end
+    cancel_at_period_end  = excluded.cancel_at_period_end,
+    paystack_customer_code= excluded.paystack_customer_code,
+    paystack_subscription_code= excluded.paystack_subscription_code
   returning * into result;
 
   return result;

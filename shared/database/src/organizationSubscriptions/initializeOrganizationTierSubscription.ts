@@ -95,6 +95,7 @@ async function handleDowngrade({
   currentTier,
   currentStatus,
   currentPeriodEnd,
+  userId,
 }: {
   supabase: TypedSupabaseClient;
   organizationId: string;
@@ -102,15 +103,73 @@ async function handleDowngrade({
   currentTier: Tier;
   currentStatus: SubscriptionStatus | null;
   currentPeriodEnd: string | null;
-}) {
-  console.log('⚠️ Downgrade logic placeholder', {
+  userId: string;
+}): Promise<InitializeOrgTierSubSuccess | InitializeOrgTierSubError> {
+  console.log('⚠️ Downgrade logic', {
     organizationId,
     targetTier,
     currentTier,
     currentStatus,
     currentPeriodEnd,
+    userId,
   });
-  // TODO: schedule downgrade at period end
+
+  // Fetch target tier plan code (only needed for paid downgrades)
+  let newPlanCode: string | undefined;
+
+  if (targetTier !== 'launch') {
+    const { data: targetTierRow, error: tierError } = await supabase
+      .from('tier_limits')
+      .select('paystack_plan_code')
+      .eq('tier', targetTier)
+      .single();
+
+    if (tierError || !targetTierRow?.paystack_plan_code) {
+      return {
+        success: false,
+        message: `Target tier ${targetTier} is missing Paystack plan configuration.`,
+        data: null,
+      };
+    }
+
+    newPlanCode = targetTierRow.paystack_plan_code;
+  }
+
+  // Call the downgrade edge function
+  const payload = {
+    organizationId,
+    targetTier,
+    newPlanCode,
+    userId,
+  };
+
+  console.log('****************************************************');
+  console.log(payload);
+  const { data: downgradeResponse, error: downgradeError } = await supabase.functions.invoke<{
+    success: boolean;
+    message: string;
+    data: {
+      targetTier: string;
+      status: string;
+      effectiveDate?: string;
+    };
+  }>('org-subscriptions-downgrade', { body: payload });
+
+  if (downgradeError || !downgradeResponse?.success) {
+    console.error('Downgrade failed:', downgradeError || downgradeResponse);
+    return {
+      success: false,
+      message: downgradeResponse?.message || 'Failed to process downgrade. Please try again.',
+      data: null,
+    };
+  }
+
+  return {
+    success: true,
+    message: downgradeResponse.message,
+    data: downgradeResponse.data as any,
+    changeType: 'downgrade',
+  };
 }
 
 async function handleReactivation({
@@ -258,7 +317,15 @@ export const initializeOrganizationTierSubscription = async ({
     // 3️⃣ Fetch current subscription
     const { data: currentSub } = await supabase
       .from('organization_subscriptions')
-      .select('tier, status, current_period_end')
+      .select(
+        `
+          tier, 
+          status,
+          current_period_end, 
+          tier_limits:tier_limits!organization_subscriptions_tier_fkey ( * ),
+          next_tier_limits:tier_limits!organization_subscriptions_next_tier_fkey ( * )
+        `,
+      )
       .eq('organization_id', organizationId)
       .maybeSingle();
 
@@ -331,6 +398,7 @@ export const initializeOrganizationTierSubscription = async ({
           currentTier: currentTier!,
           currentStatus,
           currentPeriodEnd,
+          userId: userProfile.id,
         });
         break;
       }

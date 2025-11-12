@@ -36,6 +36,9 @@ create table public.organization_subscriptions (
   downgrade_effective_at timestamptz default null,
   downgrade_requested_by uuid references auth.users(id) on delete set null,
 
+  paystack_customer_code text unique,
+  paystack_subscription_code text unique,
+
   -- Subscription Status
   status subscription_status not null default 'active',
 

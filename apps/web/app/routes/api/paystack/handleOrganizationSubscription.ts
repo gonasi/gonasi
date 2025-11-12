@@ -72,11 +72,11 @@ export async function handleOrganizationSubscription(
   payload: any,
   clientIp: string | null,
   startTime: number,
-) {
+): Promise<Response> {
+  // explicitly Promise<Response>
   const event = payload.event;
 
   console.log(JSON.stringify(payload, null, 2));
-
   console.log('🏢 Processing organization subscription event:', event);
 
   switch (event) {
@@ -91,6 +91,7 @@ export async function handleOrganizationSubscription(
       if (payload.data?.metadata?.transaction_type === 'organization_subscription') {
         return await handleSubscriptionPaymentSuccess(supabase, payload.data, clientIp, startTime);
       }
+      // If not, fallthrough to default handling
       break;
 
     case 'invoice.payment_failed':
@@ -104,14 +105,14 @@ export async function handleOrganizationSubscription(
 
     case 'subscription.disable':
       return await handleSubscriptionDisable(supabase, payload.data, clientIp, startTime);
-
-    default:
-      console.log('ℹ️ Unhandled subscription event:', event);
-      return new Response(JSON.stringify({ message: 'Event acknowledged', event }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      });
   }
+
+  // Default return for unhandled events or if 'charge.success' doesn't match transaction_type
+  console.log('ℹ️ Unhandled subscription event:', event);
+  return new Response(JSON.stringify({ message: 'Event acknowledged', event }), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' },
+  });
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -126,9 +127,16 @@ async function handleSubscriptionCreate(
   console.log('📝 Creating new subscription:', data.subscription_code);
 
   const customerEmail = data.customer.email;
+  const customerCode = data.customer.customer_code;
+  const subscriptionCode = data.subscription_code;
   const organizationId = customerEmail.split('@')[0];
 
-  if (!organizationId || !customerEmail.includes('@gonasi.com')) {
+  if (
+    !organizationId ||
+    !customerEmail.includes('@gonasi.com') ||
+    !customerCode ||
+    !subscriptionCode
+  ) {
     console.error('❌ Invalid customer email format:', customerEmail);
     return new Response('Invalid customer email format', { status: 400 });
   }
@@ -158,6 +166,9 @@ async function handleSubscriptionCreate(
       period_end: data.next_payment_date,
 
       cancel_at_period_end: false,
+
+      paystack_customer_code: customerCode,
+      paystack_subscription_code: subscriptionCode,
 
       // ✅ SEND THE PAYSTACK NEXT PAYMENT DATE
       initial_next_payment_date: data.next_payment_date,

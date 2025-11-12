@@ -64,19 +64,19 @@ export const validateTierChangeRequest = async ({
     .from('organization_subscriptions')
     .select(
       `
-        id,
-        organization_id,
-        tier,
-        status,
-        start_date,
-        current_period_start,
-        current_period_end,
-        cancel_at_period_end,
-        created_at,
-        updated_at,
-        tier_limits: tier ( * ),
-        next_tier_limits: next_tier ( * )
-      `,
+      id,
+      organization_id,
+      tier,
+      status,
+      start_date,
+      current_period_start,
+      current_period_end,
+      cancel_at_period_end,
+      created_at,
+      updated_at,
+      tier_limits:tier_limits!organization_subscriptions_tier_fkey ( * ),
+      next_tier_limits:tier_limits!organization_subscriptions_next_tier_fkey ( * )
+    `,
     )
     .eq('organization_id', organizationId)
     .maybeSingle();

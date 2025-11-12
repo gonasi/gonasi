@@ -548,6 +548,8 @@ alter table "public"."organization_members" enable row level security;
     "downgrade_requested_at" timestamp with time zone,
     "downgrade_effective_at" timestamp with time zone,
     "downgrade_requested_by" uuid,
+    "paystack_customer_code" text,
+    "paystack_subscription_code" text,
     "status" public.subscription_status not null default 'active'::public.subscription_status,
     "start_date" timestamp with time zone not null default timezone('utc'::text, now()),
     "current_period_start" timestamp with time zone not null default timezone('utc'::text, now()),
@@ -1314,6 +1316,10 @@ CREATE UNIQUE INDEX organization_members_organization_id_user_id_key ON public.o
 
 CREATE UNIQUE INDEX organization_members_pkey ON public.organization_members USING btree (id);
 
+CREATE UNIQUE INDEX organization_subscriptions_paystack_customer_code_key ON public.organization_subscriptions USING btree (paystack_customer_code);
+
+CREATE UNIQUE INDEX organization_subscriptions_paystack_subscription_code_key ON public.organization_subscriptions USING btree (paystack_subscription_code);
+
 CREATE UNIQUE INDEX organization_subscriptions_pkey ON public.organization_subscriptions USING btree (id);
 
 CREATE UNIQUE INDEX organization_wallets_organization_id_currency_code_key ON public.organization_wallets USING btree (organization_id, currency_code);
@@ -1895,6 +1901,10 @@ alter table "public"."organization_subscriptions" validate constraint "organizat
 alter table "public"."organization_subscriptions" add constraint "organization_subscriptions_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE not valid;
 
 alter table "public"."organization_subscriptions" validate constraint "organization_subscriptions_organization_id_fkey";
+
+alter table "public"."organization_subscriptions" add constraint "organization_subscriptions_paystack_customer_code_key" UNIQUE using index "organization_subscriptions_paystack_customer_code_key";
+
+alter table "public"."organization_subscriptions" add constraint "organization_subscriptions_paystack_subscription_code_key" UNIQUE using index "organization_subscriptions_paystack_subscription_code_key";
 
 alter table "public"."organization_subscriptions" add constraint "organization_subscriptions_tier_fkey" FOREIGN KEY (tier) REFERENCES public.tier_limits(tier) ON UPDATE CASCADE ON DELETE RESTRICT not valid;
 
@@ -8072,7 +8082,7 @@ end;
 $function$
 ;
 
-CREATE OR REPLACE FUNCTION public.subscription_upsert_webhook(org_id uuid, new_tier text, new_status text, start_ts timestamp with time zone, period_start timestamp with time zone, period_end timestamp with time zone, cancel_at_period_end boolean DEFAULT false, initial_next_payment_date timestamp with time zone DEFAULT NULL::timestamp with time zone)
+CREATE OR REPLACE FUNCTION public.subscription_upsert_webhook(org_id uuid, new_tier text, new_status text, start_ts timestamp with time zone, period_start timestamp with time zone, period_end timestamp with time zone, cancel_at_period_end boolean DEFAULT false, initial_next_payment_date timestamp with time zone DEFAULT NULL::timestamp with time zone, paystack_customer_code text DEFAULT NULL::text, paystack_subscription_code text DEFAULT NULL::text)
  RETURNS public.organization_subscriptions
  LANGUAGE plpgsql
  SECURITY DEFINER
@@ -8089,7 +8099,9 @@ begin
     current_period_start,
     current_period_end,
     cancel_at_period_end,
-    initial_next_payment_date
+    initial_next_payment_date,
+    paystack_customer_code,
+    paystack_subscription_code
   )
   values (
     org_id,
@@ -8099,7 +8111,9 @@ begin
     period_start,
     period_end,
     cancel_at_period_end,
-    coalesce(initial_next_payment_date, period_end)  -- use Paystack date if provided
+    coalesce(initial_next_payment_date, period_end),
+    paystack_customer_code,
+    paystack_subscription_code
   )
   on conflict (organization_id)
   do update set
@@ -8108,7 +8122,9 @@ begin
     start_date            = excluded.start_date,
     current_period_start  = excluded.current_period_start,
     current_period_end    = excluded.current_period_end,
-    cancel_at_period_end  = excluded.cancel_at_period_end
+    cancel_at_period_end  = excluded.cancel_at_period_end,
+    paystack_customer_code= excluded.paystack_customer_code,
+    paystack_subscription_code= excluded.paystack_subscription_code
   returning * into result;
 
   return result;
