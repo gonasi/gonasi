@@ -36,12 +36,11 @@
 
 //   return supabaseClient;
 // };
-
 import { createBrowserClient } from '@supabase/ssr';
 
-export function createClient() {
-  return createBrowserClient(
-    import.meta.env.VITE_SUPABASE_URL!,
-    import.meta.env.VITE_SUPABASE_PUBLISHABLE_OR_ANON_KEY!,
-  );
-}
+import type { Database } from '@gonasi/database/schema';
+
+export const supabaseClient = createBrowserClient<Database>(
+  import.meta.env.VITE_PUBLIC_SUPABASE_URL!,
+  import.meta.env.VITE_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+);

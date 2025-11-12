@@ -78,7 +78,7 @@ export function ProfileTopNav({
               <>
                 <div className={cn(user.mode === 'personal' ? 'hidden' : 'md:hidden')}>
                   <div>
-                    <OrganizationNotifications />
+                    <OrganizationNotifications organizationId='' memberRole='owner' />
                     <MobileNav links={filteredLinks} />
                   </div>
                 </div>

@@ -1,5 +1,9 @@
 import { Bell, Clock } from 'lucide-react';
 
+import type { Database } from '@gonasi/database/schema';
+
+import { useOrgNotifications } from './useOrgNotifications';
+
 import { Button } from '~/components/ui/button';
 import {
   DropdownMenu,
@@ -10,69 +14,17 @@ import {
   DropdownMenuTrigger,
 } from '~/components/ui/dropdown-menu';
 
-export function OrganizationNotifications() {
-  const notifications = [
-    {
-      id: 1,
-      title: 'New course enrollment',
-      description: 'Alice joined your Driving Basics course',
-      time: '2h ago',
-    },
-    {
-      id: 2,
-      title: 'Subscription renewed',
-      description: 'Gonasi Pro plan renewed successfully',
-      time: '4h ago',
-    },
-    {
-      id: 3,
-      title: 'New comment',
-      description: 'John commented on your lesson "Parallel Parking"',
-      time: '6h ago',
-    },
-    {
-      id: 4,
-      title: 'Invite accepted',
-      description: 'Mark joined your organization as an editor',
-      time: '1d ago',
-    },
-    {
-      id: 5,
-      title: 'Payment received',
-      description: 'You earned $25 from a course sale',
-      time: '2d ago',
-    },
-    {
-      id: 6,
-      title: 'AI credits low',
-      description: 'Only 10 AI credits remaining — top up soon',
-      time: '3d ago',
-    },
-    {
-      id: 7,
-      title: 'Lesson published',
-      description: 'Your lesson "Defensive Driving" is live',
-      time: '4d ago',
-    },
-    {
-      id: 8,
-      title: 'Collaborator added',
-      description: 'Sarah was added as a co-creator',
-      time: '5d ago',
-    },
-    {
-      id: 9,
-      title: 'Feedback received',
-      description: 'New student feedback available',
-      time: '1w ago',
-    },
-    {
-      id: 10,
-      title: 'New follower',
-      description: 'Tom started following your organization',
-      time: '1w ago',
-    },
-  ];
+export function OrganizationNotifications({
+  organizationId,
+  memberRole = 'owner',
+}: {
+  organizationId: string;
+  memberRole?: Database['public']['Enums']['org_role'];
+}) {
+  // Assuming you have a hook to get current member role
+
+  // Fetch notifications & unread count
+  const { notifications } = useOrgNotifications(organizationId, memberRole);
 
   return (
     <DropdownMenu modal={false}>
@@ -80,10 +32,12 @@ export function OrganizationNotifications() {
         <Button
           aria-label='Open notifications'
           size='sm'
-          className='hover:bg-muted relative bg-transparent'
+          className='hover:bg-muted bg-muted/20 relative'
         >
           <Bell />
-          <span className='bg-primary absolute top-1 -right-1.5 h-2 w-2 rounded-full' />
+          {notifications.length > 0 && (
+            <span className='bg-primary absolute top-1 -right-1.5 h-2 w-2 rounded-full' />
+          )}
         </Button>
       </DropdownMenuTrigger>
 
@@ -97,17 +51,26 @@ export function OrganizationNotifications() {
           </div>
         </DropdownMenuLabel>
 
-        <DropdownMenuGroup className='divide-muted-foreground/10 divide-y'>
+        <DropdownMenuGroup className='divide-muted-foreground/10 divide-y shadow-none'>
+          {notifications.length === 0 && (
+            <DropdownMenuItem className='text-muted-foreground flex cursor-default flex-col items-start px-4 py-2'>
+              No notifications
+            </DropdownMenuItem>
+          )}
+
           {notifications.map((notif) => (
             <DropdownMenuItem
               key={notif.id}
               className='hover:bg-muted/60 flex cursor-pointer flex-col items-start px-4 py-2'
             >
               <span className='text-foreground/90 text-sm font-medium'>{notif.title}</span>
-              <span className='text-muted-foreground text-xs'>{notif.description}</span>
+              <span className='text-muted-foreground text-xs'>{notif.body}</span>
               <div className='text-muted-foreground mt-1 flex items-center text-[11px]'>
                 <Clock className='mr-1 h-3 w-3 opacity-70' />
-                {notif.time}
+                {new Date(notif.created_at).toLocaleTimeString([], {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
               </div>
             </DropdownMenuItem>
           ))}

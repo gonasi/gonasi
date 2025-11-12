@@ -2754,15 +2754,19 @@ export type Database = {
         }
         Returns: {
           body: string
+          category: Database["public"]["Enums"]["org_notification_category"]
           created_at: string
           dismissed_at: string
           id: string
           is_dismissed: boolean
           is_read: boolean
           key: Database["public"]["Enums"]["org_notification_key"]
+          link: string
+          organization_id: string
           payload: Json
           read_at: string
           title: string
+          visibility: Json
         }[]
       }
       get_org_unread_count: {

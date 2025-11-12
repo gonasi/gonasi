@@ -182,7 +182,7 @@ schema_paths = [
   './schemas/organizationNotifications/utils/get_org_unread_count.sql',
   './schemas/organizationNotifications/utils/trigger_org_notification_email_dispatch.sql',
   './schemas/organizationNotifications/utils/broadcast_org_notification.sql',
-  './schemas/organizationNotifications/utils/org_notifications_broadcast.sql',
+  './schemas/organizationNotifications/org_notifications_broadcast_rls.sql',
 
   # rpc profiles, orgs
   './schemas/get_tier_limits_for_org_functions.sql',

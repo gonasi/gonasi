@@ -35,9 +35,7 @@ create index if not exists idx_organizations_ai_credits_next_reset_at
 -- ------------------------------------------------------------
 -- View: Total Available Credits
 -- ------------------------------------------------------------
-create or replace view public.v_organizations_ai_available_credits
-security invoker
-as
+create or replace view public.v_organizations_ai_available_credits as
 select
   org_id,
   base_credits_remaining + purchased_credits_remaining as total_available_credits,

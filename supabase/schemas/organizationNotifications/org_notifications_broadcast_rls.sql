@@ -36,7 +36,5 @@ with check (
     from public.organization_members om
     where om.user_id = (select auth.uid())
       and (select realtime.topic()) = 'org-notifications:' || om.organization_id::text
-      -- Only owners/admins can broadcast (optional - adjust as needed)
-      and om.role in ('owner', 'admin')
   )
 );
