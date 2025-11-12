@@ -2697,6 +2697,66 @@ end;
 $function$
 ;
 
+CREATE OR REPLACE FUNCTION public.broadcast_org_notification()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+declare
+  v_type_record record;
+  v_payload jsonb;
+begin
+  -- Get notification type info for visibility rules
+  select 
+    nt.visible_to_owner,
+    nt.visible_to_admin,
+    nt.visible_to_editor,
+    nt.category
+  into v_type_record
+  from public.org_notifications_types nt
+  where nt.key = new.key;
+
+  if not found then
+    raise warning 'Notification type not found for key: %', new.key;
+    return new;
+  end if;
+
+  -- Build payload with notification data and visibility info
+  v_payload := jsonb_build_object(
+    'id', new.id,
+    'organization_id', new.organization_id,
+    'key', new.key,
+    'title', new.title,
+    'body', new.body,
+    'link', new.link,
+    'payload', new.payload,
+    'created_at', new.created_at,
+    'visibility', jsonb_build_object(
+      'owner', v_type_record.visible_to_owner,
+      'admin', v_type_record.visible_to_admin,
+      'editor', v_type_record.visible_to_editor
+    ),
+    'category', v_type_record.category
+  );
+
+  -- Broadcast to organization channel
+  -- Topic format: 'org-notifications:{organization_id}'
+  perform pg_notify(
+    'org-notifications:' || new.organization_id::text,
+    v_payload::text
+  );
+
+  return new;
+exception
+  when others then
+    -- Don't fail the insert if broadcast fails
+    raise warning 'Failed to broadcast org notification: %', sqlerrm;
+    return new;
+end;
+$function$
+;
+
 CREATE OR REPLACE FUNCTION public.calculate_access_end_date(start_date timestamp with time zone, frequency public.payment_frequency)
  RETURNS timestamp with time zone
  LANGUAGE plpgsql
@@ -11834,14 +11894,15 @@ with check ((user_id = ( SELECT auth.uid() AS uid)));
 
 
 
-  create policy "org_notifications_select_member"
+  create policy "org_notifications_select_member_with_role_check"
   on "public"."org_notifications"
   as permissive
   for select
   to authenticated
 using ((EXISTS ( SELECT 1
-   FROM public.organization_members om
-  WHERE ((om.organization_id = org_notifications.organization_id) AND (om.user_id = ( SELECT auth.uid() AS uid))))));
+   FROM (public.organization_members om
+     JOIN public.org_notifications_types nt ON ((nt.key = org_notifications.key)))
+  WHERE ((om.organization_id = org_notifications.organization_id) AND (om.user_id = ( SELECT auth.uid() AS uid)) AND (org_notifications.deleted_at IS NULL) AND (org_notifications.created_at >= om.updated_at) AND (((om.role = 'owner'::public.org_role) AND nt.visible_to_owner) OR ((om.role = 'admin'::public.org_role) AND nt.visible_to_admin) OR ((om.role = 'editor'::public.org_role) AND nt.visible_to_editor))))));
 
 
 
@@ -12470,6 +12531,8 @@ CREATE TRIGGER trg_lesson_reset_set_updated_at BEFORE UPDATE ON public.lesson_re
 CREATE TRIGGER trg_lesson_types_set_updated_at BEFORE UPDATE ON public.lesson_types FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
 CREATE TRIGGER trg_set_lesson_position BEFORE INSERT ON public.lessons FOR EACH ROW EXECUTE FUNCTION public.set_lesson_position();
+
+CREATE TRIGGER trg_broadcast_org_notification AFTER INSERT ON public.org_notifications FOR EACH ROW EXECUTE FUNCTION public.broadcast_org_notification();
 
 CREATE TRIGGER after_update_role_on_org_members AFTER UPDATE OF role ON public.organization_members FOR EACH ROW EXECUTE FUNCTION public.delete_course_editors_on_role_change();
 

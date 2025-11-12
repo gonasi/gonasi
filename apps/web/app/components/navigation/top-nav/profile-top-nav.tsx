@@ -2,6 +2,7 @@ import { MobileNav } from './responsive-nav/mobile-nav';
 import { Container } from '../../layouts/container';
 import { ProfileDropdown } from '../../profile-dropdown';
 import { OrganizationSelectorButton } from './organization-selector';
+import { OrganizationNotifications } from './organizationNotifications';
 
 import { PlainAvatar } from '~/components/avatars';
 import { BackArrowNavLink } from '~/components/ui/button';
@@ -76,16 +77,22 @@ export function ProfileTopNav({
             {!loading && user && (
               <>
                 <div className={cn(user.mode === 'personal' ? 'hidden' : 'md:hidden')}>
-                  <MobileNav links={filteredLinks} />
+                  <div>
+                    <OrganizationNotifications />
+                    <MobileNav links={filteredLinks} />
+                  </div>
                 </div>
                 <div className={cn(user.mode === 'personal' ? 'block' : 'hidden md:block')}>
-                  <ProfileDropdown
-                    user={user}
-                    userRole={userRole}
-                    size='sm'
-                    organization={organization}
-                    member={member}
-                  />
+                  <div className='flex items-center justify-center space-x-4'>
+                    <OrganizationNotifications />
+                    <ProfileDropdown
+                      user={user}
+                      userRole={userRole}
+                      size='sm'
+                      organization={organization}
+                      member={member}
+                    />
+                  </div>
                 </div>
               </>
             )}

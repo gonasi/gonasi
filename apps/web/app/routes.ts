@@ -61,7 +61,10 @@ export default [
       route(
         'subscriptions',
         'routes/organizations/dashboard/subscriptions/subscriptions-index.tsx',
-        [route(':tier', 'routes/organizations/dashboard/subscriptions/subscribe-to-tier.tsx')],
+        [
+          route(':tier', 'routes/organizations/dashboard/subscriptions/subscribe-to-tier.tsx'),
+          // route(':tier/', 'routes/organizations/dashboard/subscriptions/subscribe-to-tier.tsx'),
+        ],
       ),
     ]),
 
