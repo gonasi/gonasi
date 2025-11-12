@@ -49,6 +49,8 @@ async function processMessage(
   message: QueueMessage,
   supabase: any,
 ): Promise<{ success: boolean; error?: any }> {
+  console.log(`📦 QueueMessage ${message}`);
+
   const { notification_id, title, body, payload, emails, link } = message.message;
 
   console.log(`📦 Processing org notification ${notification_id}`);

@@ -8326,7 +8326,7 @@ declare
   v_type_record public.org_notifications_types;
   v_recipient_emails text[];
 begin
-  -- Fetch the notification type record BY KEY (not id)
+  -- Fetch the notification type record by key
   select *
   into v_type_record
   from public.org_notifications_types
@@ -8337,7 +8337,7 @@ begin
     return new;
   end if;
 
-  -- If email delivery is not enabled for this notification type, skip enqueue
+  -- Skip if email delivery not enabled
   if v_type_record.default_email is false then
     return new;
   end if;
@@ -8370,12 +8370,12 @@ begin
         'title', new.title,
         'body', new.body,
         'payload', new.payload,
+        'link', new.link,  -- ✅ Include optional link
         'emails', v_recipient_emails
       )
     );
   exception
     when others then
-      -- Do not interrupt insert if pgmq or queue is unavailable
       raise warning 'Failed to enqueue org email notification: %', sqlerrm;
   end;
 
@@ -12544,6 +12544,8 @@ CREATE TRIGGER trg_lesson_reset_set_updated_at BEFORE UPDATE ON public.lesson_re
 CREATE TRIGGER trg_lesson_types_set_updated_at BEFORE UPDATE ON public.lesson_types FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
 CREATE TRIGGER trg_set_lesson_position BEFORE INSERT ON public.lessons FOR EACH ROW EXECUTE FUNCTION public.set_lesson_position();
+
+CREATE TRIGGER org_notifications_email_dispatch_trigger AFTER INSERT ON public.org_notifications FOR EACH ROW EXECUTE FUNCTION public.trigger_org_notification_email_dispatch();
 
 CREATE TRIGGER trg_broadcast_org_notification AFTER INSERT ON public.org_notifications FOR EACH ROW EXECUTE FUNCTION public.broadcast_org_notification();
 

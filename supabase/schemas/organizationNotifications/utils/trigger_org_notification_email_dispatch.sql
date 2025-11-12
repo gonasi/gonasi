@@ -9,6 +9,7 @@
 --   Key behaviors:
 --     - Only sends emails if the notification type has default_email = true.
 --     - Only sends emails to members whose role is allowed by visible_to_* flags.
+--     - Includes optional `link` field if provided.
 --     - Fails gracefully if notification type or queue is missing.
 --
 -- SECURITY:
@@ -28,7 +29,7 @@ declare
   v_type_record public.org_notifications_types;
   v_recipient_emails text[];
 begin
-  -- Fetch the notification type record BY KEY (not id)
+  -- Fetch the notification type record by key
   select *
   into v_type_record
   from public.org_notifications_types
@@ -39,7 +40,7 @@ begin
     return new;
   end if;
 
-  -- If email delivery is not enabled for this notification type, skip enqueue
+  -- Skip if email delivery not enabled
   if v_type_record.default_email is false then
     return new;
   end if;
@@ -72,15 +73,26 @@ begin
         'title', new.title,
         'body', new.body,
         'payload', new.payload,
+        'link', new.link,  -- ✅ Include optional link
         'emails', v_recipient_emails
       )
     );
   exception
     when others then
-      -- Do not interrupt insert if pgmq or queue is unavailable
       raise warning 'Failed to enqueue org email notification: %', sqlerrm;
   end;
 
   return new;
 end;
 $$;
+
+-- =============================================================================
+-- TRIGGER: org_notifications_email_dispatch_trigger
+-- =============================================================================
+drop trigger if exists org_notifications_email_dispatch_trigger on public.org_notifications;
+
+create trigger org_notifications_email_dispatch_trigger
+after insert
+on public.org_notifications
+for each row
+execute function public.trigger_org_notification_email_dispatch();
