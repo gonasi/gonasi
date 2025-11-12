@@ -1652,8 +1652,12 @@ export type Database = {
           created_by: string | null
           current_period_end: string | null
           current_period_start: string
+          downgrade_effective_at: string | null
+          downgrade_requested_at: string | null
+          downgrade_requested_by: string | null
           id: string
           initial_next_payment_date: string | null
+          next_tier: Database["public"]["Enums"]["subscription_tier"] | null
           organization_id: string
           start_date: string
           status: Database["public"]["Enums"]["subscription_status"]
@@ -1667,8 +1671,12 @@ export type Database = {
           created_by?: string | null
           current_period_end?: string | null
           current_period_start?: string
+          downgrade_effective_at?: string | null
+          downgrade_requested_at?: string | null
+          downgrade_requested_by?: string | null
           id?: string
           initial_next_payment_date?: string | null
+          next_tier?: Database["public"]["Enums"]["subscription_tier"] | null
           organization_id: string
           start_date?: string
           status?: Database["public"]["Enums"]["subscription_status"]
@@ -1682,8 +1690,12 @@ export type Database = {
           created_by?: string | null
           current_period_end?: string | null
           current_period_start?: string
+          downgrade_effective_at?: string | null
+          downgrade_requested_at?: string | null
+          downgrade_requested_by?: string | null
           id?: string
           initial_next_payment_date?: string | null
+          next_tier?: Database["public"]["Enums"]["subscription_tier"] | null
           organization_id?: string
           start_date?: string
           status?: Database["public"]["Enums"]["subscription_status"]
@@ -1692,6 +1704,13 @@ export type Database = {
           updated_by?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "organization_subscriptions_next_tier_fkey"
+            columns: ["next_tier"]
+            isOneToOne: false
+            referencedRelation: "tier_limits"
+            referencedColumns: ["tier"]
+          },
           {
             foreignKeyName: "organization_subscriptions_organization_id_fkey"
             columns: ["organization_id"]
@@ -2981,8 +3000,12 @@ export type Database = {
           created_by: string | null
           current_period_end: string | null
           current_period_start: string
+          downgrade_effective_at: string | null
+          downgrade_requested_at: string | null
+          downgrade_requested_by: string | null
           id: string
           initial_next_payment_date: string | null
+          next_tier: Database["public"]["Enums"]["subscription_tier"] | null
           organization_id: string
           start_date: string
           status: Database["public"]["Enums"]["subscription_status"]
@@ -3014,8 +3037,12 @@ export type Database = {
           created_by: string | null
           current_period_end: string | null
           current_period_start: string
+          downgrade_effective_at: string | null
+          downgrade_requested_at: string | null
+          downgrade_requested_by: string | null
           id: string
           initial_next_payment_date: string | null
+          next_tier: Database["public"]["Enums"]["subscription_tier"] | null
           organization_id: string
           start_date: string
           status: Database["public"]["Enums"]["subscription_status"]

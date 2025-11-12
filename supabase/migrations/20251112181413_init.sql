@@ -544,6 +544,10 @@ alter table "public"."organization_members" enable row level security;
     "id" uuid not null default extensions.uuid_generate_v4(),
     "organization_id" uuid not null,
     "tier" public.subscription_tier not null default 'launch'::public.subscription_tier,
+    "next_tier" public.subscription_tier,
+    "downgrade_requested_at" timestamp with time zone,
+    "downgrade_effective_at" timestamp with time zone,
+    "downgrade_requested_by" uuid,
     "status" public.subscription_status not null default 'active'::public.subscription_status,
     "start_date" timestamp with time zone not null default timezone('utc'::text, now()),
     "current_period_start" timestamp with time zone not null default timezone('utc'::text, now()),
@@ -1879,6 +1883,14 @@ alter table "public"."organization_members" validate constraint "organization_me
 alter table "public"."organization_subscriptions" add constraint "organization_subscriptions_created_by_fkey" FOREIGN KEY (created_by) REFERENCES auth.users(id) ON DELETE SET NULL not valid;
 
 alter table "public"."organization_subscriptions" validate constraint "organization_subscriptions_created_by_fkey";
+
+alter table "public"."organization_subscriptions" add constraint "organization_subscriptions_downgrade_requested_by_fkey" FOREIGN KEY (downgrade_requested_by) REFERENCES auth.users(id) ON DELETE SET NULL not valid;
+
+alter table "public"."organization_subscriptions" validate constraint "organization_subscriptions_downgrade_requested_by_fkey";
+
+alter table "public"."organization_subscriptions" add constraint "organization_subscriptions_next_tier_fkey" FOREIGN KEY (next_tier) REFERENCES public.tier_limits(tier) ON UPDATE CASCADE ON DELETE RESTRICT not valid;
+
+alter table "public"."organization_subscriptions" validate constraint "organization_subscriptions_next_tier_fkey";
 
 alter table "public"."organization_subscriptions" add constraint "organization_subscriptions_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE not valid;
 

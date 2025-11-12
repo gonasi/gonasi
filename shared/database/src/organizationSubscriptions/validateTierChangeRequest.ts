@@ -74,7 +74,8 @@ export const validateTierChangeRequest = async ({
         cancel_at_period_end,
         created_at,
         updated_at,
-        tier_limits: tier_limits!inner (*)
+        tier_limits: tier ( * ),
+        next_tier_limits: next_tier ( * )
       `,
     )
     .eq('organization_id', organizationId)

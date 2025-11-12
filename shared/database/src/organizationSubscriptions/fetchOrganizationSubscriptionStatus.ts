@@ -57,7 +57,6 @@ export const fetchOrganizationSubscriptionStatus = async ({
     return { success: false, message: 'Organization not found', data: null };
   }
 
-  // Fetch subscription with tier limits
   const { data: subscription, error: subError } = await supabase
     .from('organization_subscriptions')
     .select(
@@ -75,7 +74,8 @@ export const fetchOrganizationSubscriptionStatus = async ({
         updated_at,
         created_by,
         updated_by,
-        tier_limits (*)
+        tier_limits: tier ( * ),
+        next_tier_limits: next_tier ( * )
       `,
     )
     .eq('organization_id', org.id)

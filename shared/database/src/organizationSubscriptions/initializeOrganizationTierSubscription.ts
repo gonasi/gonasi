@@ -266,12 +266,20 @@ export const initializeOrganizationTierSubscription = async ({
     const currentStatus = (currentSub?.status ?? null) as SubscriptionStatus | null;
     const currentPeriodEnd = currentSub?.current_period_end ?? null;
 
-    // 🚫 Prevent moving to "launch" — handled only via unsubscribe flow
     if (targetTier === 'launch') {
       return {
         success: false,
         message:
           'You cannot switch to the Launch (free) tier directly. Please unsubscribe instead.',
+        data: null,
+      };
+    }
+
+    // 🚫 Prevent switching to the same tier
+    if (currentTier && targetTier === currentTier) {
+      return {
+        success: false,
+        message: 'You are already on this tier.',
         data: null,
       };
     }
