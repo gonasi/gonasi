@@ -1,13 +1,6 @@
 -- ==========================================================
 -- ENUM TYPE: subscription_status
 -- ==========================================================
--- This enum defines the possible billing states of an organization's subscription.
--- It is used to track the lifecycle of a subscription — from trial to active, 
--- to cancellation or payment issues.
--- ==========================================================
--- ==========================================================
--- ENUM TYPE: subscription_status
--- ==========================================================
 create type public.subscription_status as enum (
   'active',       -- Billing or trialing normally
   'non-renewing', -- Cancelled but active until period end
@@ -34,6 +27,15 @@ create table public.organization_subscriptions (
     on update cascade
     on delete restrict,
 
+  -- Scheduled Downgrade
+  next_tier subscription_tier
+    references public.tier_limits(tier)
+    on update cascade
+    on delete restrict,
+  downgrade_requested_at timestamptz default null,
+  downgrade_effective_at timestamptz default null,
+  downgrade_requested_by uuid references auth.users(id) on delete set null,
+
   -- Subscription Status
   status subscription_status not null default 'active',
 
@@ -55,7 +57,9 @@ create table public.organization_subscriptions (
     unique (organization_id)
 );
 
--- Indexes
+-- ==========================================================
+-- INDEXES
+-- ==========================================================
 create index idx_org_subscriptions_org_id
   on public.organization_subscriptions (organization_id);
 
