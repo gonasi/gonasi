@@ -49,16 +49,13 @@ async function processMessage(
   message: QueueMessage,
   supabase: any,
 ): Promise<{ success: boolean; error?: any }> {
-  console.log(`📦 QueueMessage ${message}`);
+  console.log(`📦 Processing org notification ${message.message.notification_id}`);
 
   const { notification_id, title, body, payload, emails, link } = message.message;
-
-  console.log(`📦 Processing org notification ${notification_id}`);
 
   try {
     if (!emails || emails.length === 0) {
       console.warn(`⚠️ No recipients found for notification ${notification_id}`);
-      // Delete message (no one to send to)
       await supabase.schema('pgmq_public').rpc('delete', {
         queue_name: QUEUE_NAME,
         message_id: message.msg_id,
@@ -66,12 +63,23 @@ async function processMessage(
       return { success: false, error: 'No recipients' };
     }
 
-    const emailBody = payload ? templateReplace(body, payload) : body;
-    const emailTitle = payload ? templateReplace(title, payload) : title;
+    // Interpolate template placeholders
+    const emailBody = templateReplace(body, payload || {});
+    const emailTitle = templateReplace(title, payload || {});
 
-    // Wrap the entire body in a clickable link if available
+    // Wrap the body with clickable link if available
     const emailBodyContent = link
-      ? `<a href="${link}" style="color: inherit; text-decoration: none; display: block;">${emailBody}</a>`
+      ? `
+        <a href="${link}"
+          style="color: inherit; text-decoration: none; display: block; padding: 12px 0;">
+          <p style="color: #555; line-height: 1.6; margin: 0;">
+            ${emailBody}
+          </p>
+          <p style="color: #007BFF; margin-top: 8px; font-size: 14px;">
+            View details →
+          </p>
+        </a>
+      `
       : `<p style="color: #555; line-height: 1.6;">${emailBody}</p>`;
 
     // Send email via Resend
@@ -109,7 +117,7 @@ async function processMessage(
       `✅ Email sent for notification ${notification_id}, resend_id: ${emailResponse.id}`,
     );
 
-    // Update notification as delivered
+    // Update DB as delivered
     const { error: updateError } = await supabase
       .from('org_notifications')
       .update({
@@ -155,6 +163,8 @@ Deno.serve(async (req) => {
       sleep_seconds: 0,
       n: BATCH_SIZE,
     });
+
+    console.log('messages: ', JSON.stringify(messages));
 
     if (readError) {
       console.error(`❌ Error reading from queue:`, readError);
