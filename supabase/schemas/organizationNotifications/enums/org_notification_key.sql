@@ -14,6 +14,7 @@ create type public.org_notification_key as enum (
   'org_tier_upgraded',
   'org_tier_downgraded',
   'org_downgrade_cancelled',
+  'org_tier_downgrade_activated',
 
   -- ============================================================================
   -- Member management

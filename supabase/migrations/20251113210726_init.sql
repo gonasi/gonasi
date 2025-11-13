@@ -16,7 +16,7 @@ create type "public"."ledger_transaction_type" as enum ('course_purchase', 'paym
 
 create type "public"."org_notification_category" as enum ('billing', 'members', 'courses', 'purchases', 'content', 'compliance', 'system');
 
-create type "public"."org_notification_key" as enum ('org_subscription_started', 'org_subscription_renewed', 'org_subscription_failed', 'org_subscription_expiring', 'org_payment_method_expiring', 'org_invoice_ready', 'org_tier_upgraded', 'org_tier_downgraded', 'org_downgrade_cancelled', 'org_member_invited', 'org_member_joined', 'org_member_left', 'org_member_role_changed', 'org_member_removed', 'org_ownership_transferred', 'org_course_created', 'org_course_updated', 'org_course_published', 'org_course_unpublished', 'org_course_archived', 'org_course_deleted', 'org_course_milestone_reached', 'org_course_enrollment_opened', 'org_course_enrollment_closed', 'org_course_review_posted', 'org_course_review_flagged', 'org_content_flagged', 'org_course_purchase_completed', 'org_course_purchase_refunded', 'org_course_purchase_failed', 'org_course_subscription_started', 'org_course_subscription_renewed', 'org_course_subscription_canceled', 'org_verification_approved', 'org_verification_rejected', 'org_policy_update_required', 'org_announcement', 'org_maintenance_notice');
+create type "public"."org_notification_key" as enum ('org_subscription_started', 'org_subscription_renewed', 'org_subscription_failed', 'org_subscription_expiring', 'org_payment_method_expiring', 'org_invoice_ready', 'org_tier_upgraded', 'org_tier_downgraded', 'org_downgrade_cancelled', 'org_tier_downgrade_activated', 'org_member_invited', 'org_member_joined', 'org_member_left', 'org_member_role_changed', 'org_member_removed', 'org_ownership_transferred', 'org_course_created', 'org_course_updated', 'org_course_published', 'org_course_unpublished', 'org_course_archived', 'org_course_deleted', 'org_course_milestone_reached', 'org_course_enrollment_opened', 'org_course_enrollment_closed', 'org_course_review_posted', 'org_course_review_flagged', 'org_content_flagged', 'org_course_purchase_completed', 'org_course_purchase_refunded', 'org_course_purchase_failed', 'org_course_subscription_started', 'org_course_subscription_renewed', 'org_course_subscription_canceled', 'org_verification_approved', 'org_verification_rejected', 'org_policy_update_required', 'org_announcement', 'org_maintenance_notice');
 
 create type "public"."org_role" as enum ('owner', 'admin', 'editor');
 
@@ -324,6 +324,28 @@ alter table "public"."course_sub_categories" enable row level security;
 
 
 alter table "public"."courses" enable row level security;
+
+
+  create table "public"."failed_downgrade_attempts" (
+    "id" uuid not null default extensions.uuid_generate_v4(),
+    "organization_id" uuid not null,
+    "failure_type" text not null,
+    "metadata" jsonb not null default '{}'::jsonb,
+    "attempted_at" timestamp with time zone not null default timezone('utc'::text, now()),
+    "resolved_at" timestamp with time zone,
+    "resolved_by" uuid,
+    "resolution_notes" text,
+    "resolution_action" text,
+    "retry_count" integer not null default 0,
+    "last_retry_at" timestamp with time zone,
+    "next_retry_at" timestamp with time zone,
+    "severity" text not null default 'medium'::text,
+    "created_at" timestamp with time zone not null default timezone('utc'::text, now()),
+    "updated_at" timestamp with time zone not null default timezone('utc'::text, now())
+      );
+
+
+alter table "public"."failed_downgrade_attempts" enable row level security;
 
 
   create table "public"."file_library" (
@@ -896,6 +918,8 @@ CREATE UNIQUE INDEX courses_organization_id_name_key ON public.courses USING btr
 
 CREATE UNIQUE INDEX courses_pkey ON public.courses USING btree (id);
 
+CREATE UNIQUE INDEX failed_downgrade_attempts_pkey ON public.failed_downgrade_attempts USING btree (id);
+
 CREATE UNIQUE INDEX file_library_pkey ON public.file_library USING btree (id);
 
 CREATE UNIQUE INDEX gonasi_wallets_currency_code_key ON public.gonasi_wallets USING btree (currency_code);
@@ -1051,6 +1075,18 @@ CREATE INDEX idx_enrollment_activities_created_at ON public.course_enrollment_ac
 CREATE INDEX idx_enrollment_activities_created_by ON public.course_enrollment_activities USING btree (created_by);
 
 CREATE INDEX idx_enrollment_activities_enrollment_id ON public.course_enrollment_activities USING btree (enrollment_id);
+
+CREATE INDEX idx_failed_downgrades_critical ON public.failed_downgrade_attempts USING btree (attempted_at DESC) WHERE ((severity = 'critical'::text) AND (resolved_at IS NULL));
+
+CREATE INDEX idx_failed_downgrades_org_id ON public.failed_downgrade_attempts USING btree (organization_id);
+
+CREATE INDEX idx_failed_downgrades_retry ON public.failed_downgrade_attempts USING btree (next_retry_at) WHERE ((next_retry_at IS NOT NULL) AND (resolved_at IS NULL));
+
+CREATE INDEX idx_failed_downgrades_severity ON public.failed_downgrade_attempts USING btree (severity, attempted_at DESC) WHERE (resolved_at IS NULL);
+
+CREATE INDEX idx_failed_downgrades_type ON public.failed_downgrade_attempts USING btree (failure_type);
+
+CREATE INDEX idx_failed_downgrades_unresolved ON public.failed_downgrade_attempts USING btree (attempted_at DESC) WHERE (resolved_at IS NULL);
 
 CREATE INDEX idx_file_library_course_id ON public.file_library USING btree (course_id);
 
@@ -1446,6 +1482,8 @@ alter table "public"."course_sub_categories" add constraint "course_sub_categori
 
 alter table "public"."courses" add constraint "courses_pkey" PRIMARY KEY using index "courses_pkey";
 
+alter table "public"."failed_downgrade_attempts" add constraint "failed_downgrade_attempts_pkey" PRIMARY KEY using index "failed_downgrade_attempts_pkey";
+
 alter table "public"."file_library" add constraint "file_library_pkey" PRIMARY KEY using index "file_library_pkey";
 
 alter table "public"."gonasi_wallets" add constraint "gonasi_wallets_pkey" PRIMARY KEY using index "gonasi_wallets_pkey";
@@ -1737,6 +1775,26 @@ alter table "public"."courses" validate constraint "courses_subcategory_id_fkey"
 alter table "public"."courses" add constraint "courses_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES public.profiles(id) ON DELETE SET NULL not valid;
 
 alter table "public"."courses" validate constraint "courses_updated_by_fkey";
+
+alter table "public"."failed_downgrade_attempts" add constraint "failed_downgrade_attempts_failure_type_check" CHECK ((failure_type = ANY (ARRAY['processing_error'::text, 'db_update_failed'::text, 'paystack_disable_failed'::text, 'paystack_create_failed'::text, 'rollback_failed'::text, 'validation_error'::text]))) not valid;
+
+alter table "public"."failed_downgrade_attempts" validate constraint "failed_downgrade_attempts_failure_type_check";
+
+alter table "public"."failed_downgrade_attempts" add constraint "failed_downgrade_attempts_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE not valid;
+
+alter table "public"."failed_downgrade_attempts" validate constraint "failed_downgrade_attempts_organization_id_fkey";
+
+alter table "public"."failed_downgrade_attempts" add constraint "failed_downgrade_attempts_resolution_action_check" CHECK (((resolution_action IS NULL) OR (resolution_action = ANY (ARRAY['manual_sync'::text, 'paystack_refund'::text, 'retry_succeeded'::text, 'customer_contacted'::text, 'no_action_needed'::text])))) not valid;
+
+alter table "public"."failed_downgrade_attempts" validate constraint "failed_downgrade_attempts_resolution_action_check";
+
+alter table "public"."failed_downgrade_attempts" add constraint "failed_downgrade_attempts_resolved_by_fkey" FOREIGN KEY (resolved_by) REFERENCES auth.users(id) ON DELETE SET NULL not valid;
+
+alter table "public"."failed_downgrade_attempts" validate constraint "failed_downgrade_attempts_resolved_by_fkey";
+
+alter table "public"."failed_downgrade_attempts" add constraint "failed_downgrade_attempts_severity_check" CHECK ((severity = ANY (ARRAY['low'::text, 'medium'::text, 'high'::text, 'critical'::text]))) not valid;
+
+alter table "public"."failed_downgrade_attempts" validate constraint "failed_downgrade_attempts_severity_check";
 
 alter table "public"."file_library" add constraint "file_library_course_id_fkey" FOREIGN KEY (course_id) REFERENCES public.courses(id) ON DELETE CASCADE not valid;
 
@@ -4055,6 +4113,18 @@ begin
 end;
 $function$
 ;
+
+create or replace view "public"."failed_downgrades_summary" as  SELECT failed_downgrade_attempts.failure_type,
+    failed_downgrade_attempts.severity,
+    count(*) AS failure_count,
+    min(failed_downgrade_attempts.attempted_at) AS oldest_failure,
+    max(failed_downgrade_attempts.attempted_at) AS latest_failure,
+    count(*) FILTER (WHERE (failed_downgrade_attempts.severity = 'critical'::text)) AS critical_count
+   FROM public.failed_downgrade_attempts
+  WHERE (failed_downgrade_attempts.resolved_at IS NULL)
+  GROUP BY failed_downgrade_attempts.failure_type, failed_downgrade_attempts.severity
+  ORDER BY (count(*) FILTER (WHERE (failed_downgrade_attempts.severity = 'critical'::text))) DESC, (count(*)) DESC;
+
 
 CREATE OR REPLACE FUNCTION public.get_active_organization_members(_organization_id uuid, _user_id uuid)
  RETURNS jsonb
@@ -6393,6 +6463,46 @@ AS $function$
 $function$
 ;
 
+CREATE OR REPLACE FUNCTION public.log_failed_downgrade(p_organization_id uuid, p_failure_type text, p_metadata jsonb, p_severity text DEFAULT 'medium'::text)
+ RETURNS uuid
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+declare
+  v_attempt_id uuid;
+begin
+  insert into public.failed_downgrade_attempts (
+    organization_id,
+    failure_type,
+    metadata,
+    severity
+  )
+  values (
+    p_organization_id,
+    p_failure_type,
+    p_metadata,
+    p_severity
+  )
+  returning id into v_attempt_id;
+
+  -- Log critical failures to a monitoring table or send alert
+  if p_severity = 'critical' then
+    -- Could trigger webhook to Slack/PagerDuty here
+    perform pg_notify(
+      'critical_downgrade_failure',
+      json_build_object(
+        'organization_id', p_organization_id,
+        'failure_type', p_failure_type,
+        'attempt_id', v_attempt_id
+      )::text
+    );
+  end if;
+
+  return v_attempt_id;
+end;
+$function$
+;
+
 CREATE OR REPLACE FUNCTION public.mark_org_notification_read(p_notification_id uuid, p_user_id uuid)
  RETURNS void
  LANGUAGE plpgsql
@@ -7207,6 +7317,25 @@ end;
 $function$
 ;
 
+create or replace view "public"."recent_failed_downgrades" as  SELECT fda.id,
+    fda.organization_id,
+    o.name AS organization_name,
+    fda.failure_type,
+    fda.severity,
+    (fda.metadata ->> 'target_tier'::text) AS target_tier,
+    (fda.metadata ->> 'current_tier'::text) AS current_tier,
+    (fda.metadata ->> 'error'::text) AS error_message,
+    fda.retry_count,
+    fda.attempted_at,
+    fda.next_retry_at,
+    age(now(), fda.attempted_at) AS time_since_failure
+   FROM (public.failed_downgrade_attempts fda
+     JOIN public.organizations o ON ((o.id = fda.organization_id)))
+  WHERE (fda.resolved_at IS NULL)
+  ORDER BY fda.severity DESC, fda.attempted_at DESC
+ LIMIT 100;
+
+
 CREATE OR REPLACE FUNCTION public.reorder_chapters(p_course_id uuid, chapter_positions jsonb, p_updated_by uuid)
  RETURNS void
  LANGUAGE plpgsql
@@ -7775,6 +7904,28 @@ end;
 $function$
 ;
 
+CREATE OR REPLACE FUNCTION public.resolve_failed_downgrade(p_attempt_id uuid, p_resolution_action text, p_resolution_notes text DEFAULT NULL::text)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+begin
+  update public.failed_downgrade_attempts
+  set
+    resolved_at = timezone('utc', now()),
+    resolved_by = auth.uid(),
+    resolution_action = p_resolution_action,
+    resolution_notes = p_resolution_notes,
+    updated_at = timezone('utc', now())
+  where id = p_attempt_id;
+
+  if not found then
+    raise exception 'Failed downgrade attempt not found: %', p_attempt_id;
+  end if;
+end;
+$function$
+;
+
 CREATE OR REPLACE FUNCTION public.rpc_verify_and_set_active_organization(organization_id_from_url uuid)
  RETURNS json
  LANGUAGE plpgsql
@@ -7881,6 +8032,27 @@ begin
       'tier_limits', tier_limits_json
     )
   );
+end;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.schedule_downgrade_retry(p_attempt_id uuid, p_retry_delay_minutes integer DEFAULT 60)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+begin
+  update public.failed_downgrade_attempts
+  set
+    retry_count = retry_count + 1,
+    last_retry_at = timezone('utc', now()),
+    next_retry_at = timezone('utc', now()) + (p_retry_delay_minutes || ' minutes')::interval,
+    updated_at = timezone('utc', now())
+  where id = p_attempt_id;
+
+  if not found then
+    raise exception 'Failed downgrade attempt not found: %', p_attempt_id;
+  end if;
 end;
 $function$
 ;
@@ -10013,6 +10185,48 @@ grant truncate on table "public"."courses" to "service_role";
 
 grant update on table "public"."courses" to "service_role";
 
+grant delete on table "public"."failed_downgrade_attempts" to "anon";
+
+grant insert on table "public"."failed_downgrade_attempts" to "anon";
+
+grant references on table "public"."failed_downgrade_attempts" to "anon";
+
+grant select on table "public"."failed_downgrade_attempts" to "anon";
+
+grant trigger on table "public"."failed_downgrade_attempts" to "anon";
+
+grant truncate on table "public"."failed_downgrade_attempts" to "anon";
+
+grant update on table "public"."failed_downgrade_attempts" to "anon";
+
+grant delete on table "public"."failed_downgrade_attempts" to "authenticated";
+
+grant insert on table "public"."failed_downgrade_attempts" to "authenticated";
+
+grant references on table "public"."failed_downgrade_attempts" to "authenticated";
+
+grant select on table "public"."failed_downgrade_attempts" to "authenticated";
+
+grant trigger on table "public"."failed_downgrade_attempts" to "authenticated";
+
+grant truncate on table "public"."failed_downgrade_attempts" to "authenticated";
+
+grant update on table "public"."failed_downgrade_attempts" to "authenticated";
+
+grant delete on table "public"."failed_downgrade_attempts" to "service_role";
+
+grant insert on table "public"."failed_downgrade_attempts" to "service_role";
+
+grant references on table "public"."failed_downgrade_attempts" to "service_role";
+
+grant select on table "public"."failed_downgrade_attempts" to "service_role";
+
+grant trigger on table "public"."failed_downgrade_attempts" to "service_role";
+
+grant truncate on table "public"."failed_downgrade_attempts" to "service_role";
+
+grant update on table "public"."failed_downgrade_attempts" to "service_role";
+
 grant delete on table "public"."file_library" to "anon";
 
 grant insert on table "public"."file_library" to "anon";
@@ -11622,6 +11836,33 @@ with check (public.can_user_edit_course(id));
 
 
 
+  create policy "Service role can insert failed attempts"
+  on "public"."failed_downgrade_attempts"
+  as permissive
+  for insert
+  to service_role
+with check (true);
+
+
+
+  create policy "Super admins can resolve failed attempts"
+  on "public"."failed_downgrade_attempts"
+  as permissive
+  for update
+  to public
+using (public.authorize('go_su_update'::public.app_permission));
+
+
+
+  create policy "Super admins can view all failed attempts"
+  on "public"."failed_downgrade_attempts"
+  as permissive
+  for select
+  to public
+using (public.authorize('go_su_read'::public.app_permission));
+
+
+
   create policy "delete: org owner/admin or course creator"
   on "public"."file_library"
   as permissive
@@ -12548,6 +12789,8 @@ CREATE TRIGGER trg_add_creator_as_course_editor AFTER INSERT ON public.courses F
 CREATE TRIGGER trg_add_default_free_pricing_tier AFTER INSERT ON public.courses FOR EACH ROW EXECUTE FUNCTION public.add_default_free_pricing_tier();
 
 CREATE TRIGGER trg_validate_subcategory BEFORE INSERT OR UPDATE ON public.courses FOR EACH ROW EXECUTE FUNCTION public.validate_subcategory_belongs_to_category();
+
+CREATE TRIGGER set_failed_downgrades_updated_at BEFORE UPDATE ON public.failed_downgrade_attempts FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
 CREATE TRIGGER trg_set_file_type BEFORE INSERT OR UPDATE ON public.file_library FOR EACH ROW EXECUTE FUNCTION public.set_file_type_from_extension();
 

@@ -162,6 +162,7 @@ schema_paths = [
   './schemas/organizations/organization_subscriptions_rls.sql',
   './schemas/organizations/utils/assign_launch_subscription_to_new_org.sql',
   './schemas/organizations/utils/subscription_upsert_webhook.sql',
+  './schemas/organizations/failed_downgrade_attempts_schema_and_indexes.sql',
 
   # ORG NOTIFICATIONS
   './schemas/organizationNotifications/enums/org_notification_category.sql',

@@ -961,6 +961,68 @@ export type Database = {
           },
         ]
       }
+      failed_downgrade_attempts: {
+        Row: {
+          attempted_at: string
+          created_at: string
+          failure_type: string
+          id: string
+          last_retry_at: string | null
+          metadata: Json
+          next_retry_at: string | null
+          organization_id: string
+          resolution_action: string | null
+          resolution_notes: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          retry_count: number
+          severity: string
+          updated_at: string
+        }
+        Insert: {
+          attempted_at?: string
+          created_at?: string
+          failure_type: string
+          id?: string
+          last_retry_at?: string | null
+          metadata?: Json
+          next_retry_at?: string | null
+          organization_id: string
+          resolution_action?: string | null
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          retry_count?: number
+          severity?: string
+          updated_at?: string
+        }
+        Update: {
+          attempted_at?: string
+          created_at?: string
+          failure_type?: string
+          id?: string
+          last_retry_at?: string | null
+          metadata?: Json
+          next_retry_at?: string | null
+          organization_id?: string
+          resolution_action?: string | null
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          retry_count?: number
+          severity?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "failed_downgrade_attempts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       file_library: {
         Row: {
           blur_preview: string | null
@@ -2591,6 +2653,42 @@ export type Database = {
       }
     }
     Views: {
+      failed_downgrades_summary: {
+        Row: {
+          critical_count: number | null
+          failure_count: number | null
+          failure_type: string | null
+          latest_failure: string | null
+          oldest_failure: string | null
+          severity: string | null
+        }
+        Relationships: []
+      }
+      recent_failed_downgrades: {
+        Row: {
+          attempted_at: string | null
+          current_tier: string | null
+          error_message: string | null
+          failure_type: string | null
+          id: string | null
+          next_retry_at: string | null
+          organization_id: string | null
+          organization_name: string | null
+          retry_count: number | null
+          severity: string | null
+          target_tier: string | null
+          time_since_failure: unknown
+        }
+        Relationships: [
+          {
+            foreignKeyName: "failed_downgrade_attempts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       v_organizations_ai_available_credits: {
         Row: {
           base_credits_remaining: number | null
@@ -2920,6 +3018,15 @@ export type Database = {
         Args: { arg_org_id: string; user_email: string }
         Returns: boolean
       }
+      log_failed_downgrade: {
+        Args: {
+          p_failure_type: string
+          p_metadata: Json
+          p_organization_id: string
+          p_severity?: string
+        }
+        Returns: string
+      }
       mark_org_notification_read: {
         Args: { p_notification_id: string; p_user_id: string }
         Returns: undefined
@@ -3013,9 +3120,21 @@ export type Database = {
           lesson_id: string
         }[]
       }
+      resolve_failed_downgrade: {
+        Args: {
+          p_attempt_id: string
+          p_resolution_action: string
+          p_resolution_notes?: string
+        }
+        Returns: undefined
+      }
       rpc_verify_and_set_active_organization: {
         Args: { organization_id_from_url: string }
         Returns: Json
+      }
+      schedule_downgrade_retry: {
+        Args: { p_attempt_id: string; p_retry_delay_minutes?: number }
+        Returns: undefined
       }
       set_course_free: {
         Args: { p_course_id: string; p_user_id: string }
@@ -3163,6 +3282,7 @@ export type Database = {
         | "org_tier_upgraded"
         | "org_tier_downgraded"
         | "org_downgrade_cancelled"
+        | "org_tier_downgrade_activated"
         | "org_member_invited"
         | "org_member_joined"
         | "org_member_left"
@@ -3438,6 +3558,7 @@ export const Constants = {
         "org_tier_upgraded",
         "org_tier_downgraded",
         "org_downgrade_cancelled",
+        "org_tier_downgrade_activated",
         "org_member_invited",
         "org_member_joined",
         "org_member_left",

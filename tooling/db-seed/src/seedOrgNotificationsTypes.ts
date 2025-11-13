@@ -105,6 +105,18 @@ const org_notifications_types = [
       'Your organization has been moved to the {{tier_name}} plan. Changes take effect on {{effective_date}}.',
   },
   {
+    key: 'org_tier_downgrade_activated',
+    category: 'billing',
+    visible_to_owner: true,
+    visible_to_admin: true,
+    visible_to_editor: false,
+    default_in_app: true,
+    default_email: true,
+    title_template: 'Downgrade completed',
+    body_template:
+      'Your organization is now on the {{tier_name}} plan. The downgrade took effect on {{effective_date}}.',
+  },
+  {
     key: 'org_downgrade_cancelled',
     category: 'billing',
     visible_to_owner: true,

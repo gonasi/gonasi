@@ -36,6 +36,13 @@ insert into public.org_notifications_types (
 ('org_downgrade_cancelled', 'billing', true, true, false, true, true,
  'Downgrade cancelled',
  'Your scheduled downgrade to the {{tier_name}} plan has been cancelled. Your organization will remain on the {{current_tier_name}} plan.'),
+('org_tier_downgraded', 'billing', true, true, false, true, true,
+ 'Plan change scheduled',
+ 'Your organization will move to the {{tier_name}} plan on {{effective_date}}.'),
+('org_tier_downgrade_activated', 'billing', true, true, false, true, true,
+ 'Downgrade completed',
+ 'Your organization is now on the {{tier_name}} plan. The downgrade took effect on {{effective_date}}.')
+
 
 -- ============================================================================
 -- Members
