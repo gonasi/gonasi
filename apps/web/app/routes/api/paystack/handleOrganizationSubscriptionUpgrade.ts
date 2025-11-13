@@ -240,16 +240,28 @@ export async function handleOrganizationSubscriptionUpgrade(
     );
   }
 
-  // ⑦ UPDATE LOCAL SUBSCRIPTION TIER
-  const { data: subscription, error: subError } = await supabaseAdmin.rpc(
-    'subscription_update_tier',
-    {
-      org_id: organizationId,
-      new_tier: targetTier,
-    },
-  );
+  // ⑦ UPDATE LOCAL SUBSCRIPTION TIER (Direct Supabase Update + Clear Downgrade Fields)
+  const now = new Date().toISOString();
 
-  if (subError || !subscription) {
+  const { error: subError } = await supabaseAdmin
+    .from('organization_subscriptions')
+    .update({
+      tier: targetTier,
+      paystack_subscription_code: paystackSubscriptionCode,
+      updated_at: now,
+      updated_by: organizationId, // or use tx.customer.email if you track user actions
+      cancel_at_period_end: false,
+      downgrade_requested_at: null,
+      downgrade_effective_at: null,
+      downgrade_requested_by: null,
+      next_tier: null,
+      next_plan_code: null,
+      next_payment_date: null,
+      status: 'active',
+    })
+    .eq('organization_id', organizationId);
+
+  if (subError) {
     console.error('❌ Failed to update local subscription:', subError);
 
     if (paystackSubscriptionCode) {
@@ -268,7 +280,7 @@ export async function handleOrganizationSubscriptionUpgrade(
       organizationId,
       tx.reference,
       'tier_update_failed',
-      `Failed to update local subscription tier: ${subError?.message}`,
+      `Failed to update local subscription tier: ${subError.message}`,
     );
 
     return new Response(

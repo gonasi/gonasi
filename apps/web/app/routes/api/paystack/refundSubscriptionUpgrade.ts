@@ -11,7 +11,11 @@ export async function refundSubscriptionUpgrade(
   supabaseAdmin: TypedSupabaseClient,
   organizationId: string,
   transactionReference: string,
-  reason: 'subscription_creation_failed' | 'tier_update_failed' | 'manual_refund',
+  reason:
+    | 'subscription_creation_failed'
+    | 'tier_update_failed'
+    | 'manual_refund'
+    | 'disable_current_subscription_failed',
   merchantNote?: string,
 ) {
   console.log(`💸 Initiating refund for transaction ${transactionReference}`);

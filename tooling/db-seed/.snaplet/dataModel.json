@@ -10564,6 +10564,20 @@
           "maxLength": null
         },
         {
+          "id": "public.organization_subscriptions.next_plan_code",
+          "name": "next_plan_code",
+          "columnName": "next_plan_code",
+          "type": "text",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
           "id": "public.organization_subscriptions.downgrade_requested_at",
           "name": "downgrade_requested_at",
           "columnName": "downgrade_requested_at",
@@ -10581,6 +10595,20 @@
           "id": "public.organization_subscriptions.downgrade_effective_at",
           "name": "downgrade_effective_at",
           "columnName": "downgrade_effective_at",
+          "type": "timestamptz",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.organization_subscriptions.downgrade_executed_at",
+          "name": "downgrade_executed_at",
+          "columnName": "downgrade_executed_at",
           "type": "timestamptz",
           "isRequired": false,
           "kind": "scalar",
@@ -10708,6 +10736,20 @@
           "name": "initial_next_payment_date",
           "columnName": "initial_next_payment_date",
           "type": "timestamptz",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.organization_subscriptions.revert_tier",
+          "name": "revert_tier",
+          "columnName": "revert_tier",
+          "type": "subscription_tier",
           "isRequired": false,
           "kind": "scalar",
           "isList": false,
@@ -10853,6 +10895,24 @@
           "relationName": "organization_subscriptions_next_tierTotier_limits",
           "relationFromFields": [
             "next_tier"
+          ],
+          "relationToFields": [
+            "tier"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "tier_limits_organization_subscriptions_revert_tierTotier_limits",
+          "type": "tier_limits",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "organization_subscriptions_revert_tierTotier_limits",
+          "relationFromFields": [
+            "revert_tier"
           ],
           "relationToFields": [
             "tier"
@@ -16485,6 +16545,20 @@
           "isRequired": false,
           "kind": "object",
           "relationName": "organization_subscriptions_next_tierTotier_limits",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "organization_subscriptions_organization_subscriptions_revert_tierTotier_limits",
+          "type": "organization_subscriptions",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "organization_subscriptions_revert_tierTotier_limits",
           "relationFromFields": [],
           "relationToFields": [],
           "isList": true,

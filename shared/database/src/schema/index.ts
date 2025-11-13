@@ -1653,14 +1653,17 @@ export type Database = {
           current_period_end: string | null
           current_period_start: string
           downgrade_effective_at: string | null
+          downgrade_executed_at: string | null
           downgrade_requested_at: string | null
           downgrade_requested_by: string | null
           id: string
           initial_next_payment_date: string | null
+          next_plan_code: string | null
           next_tier: Database["public"]["Enums"]["subscription_tier"] | null
           organization_id: string
           paystack_customer_code: string | null
           paystack_subscription_code: string | null
+          revert_tier: Database["public"]["Enums"]["subscription_tier"] | null
           start_date: string
           status: Database["public"]["Enums"]["subscription_status"]
           tier: Database["public"]["Enums"]["subscription_tier"]
@@ -1674,14 +1677,17 @@ export type Database = {
           current_period_end?: string | null
           current_period_start?: string
           downgrade_effective_at?: string | null
+          downgrade_executed_at?: string | null
           downgrade_requested_at?: string | null
           downgrade_requested_by?: string | null
           id?: string
           initial_next_payment_date?: string | null
+          next_plan_code?: string | null
           next_tier?: Database["public"]["Enums"]["subscription_tier"] | null
           organization_id: string
           paystack_customer_code?: string | null
           paystack_subscription_code?: string | null
+          revert_tier?: Database["public"]["Enums"]["subscription_tier"] | null
           start_date?: string
           status?: Database["public"]["Enums"]["subscription_status"]
           tier?: Database["public"]["Enums"]["subscription_tier"]
@@ -1695,14 +1701,17 @@ export type Database = {
           current_period_end?: string | null
           current_period_start?: string
           downgrade_effective_at?: string | null
+          downgrade_executed_at?: string | null
           downgrade_requested_at?: string | null
           downgrade_requested_by?: string | null
           id?: string
           initial_next_payment_date?: string | null
+          next_plan_code?: string | null
           next_tier?: Database["public"]["Enums"]["subscription_tier"] | null
           organization_id?: string
           paystack_customer_code?: string | null
           paystack_subscription_code?: string | null
+          revert_tier?: Database["public"]["Enums"]["subscription_tier"] | null
           start_date?: string
           status?: Database["public"]["Enums"]["subscription_status"]
           tier?: Database["public"]["Enums"]["subscription_tier"]
@@ -1723,6 +1732,13 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "organizations"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organization_subscriptions_revert_tier_fkey"
+            columns: ["revert_tier"]
+            isOneToOne: false
+            referencedRelation: "tier_limits"
+            referencedColumns: ["tier"]
           },
           {
             foreignKeyName: "organization_subscriptions_tier_fkey"
@@ -2998,36 +3014,6 @@ export type Database = {
         Args: { p_course_id: string; p_user_id: string }
         Returns: undefined
       }
-      subscription_update_tier: {
-        Args: { new_tier: string; org_id: string }
-        Returns: {
-          cancel_at_period_end: boolean
-          created_at: string
-          created_by: string | null
-          current_period_end: string | null
-          current_period_start: string
-          downgrade_effective_at: string | null
-          downgrade_requested_at: string | null
-          downgrade_requested_by: string | null
-          id: string
-          initial_next_payment_date: string | null
-          next_tier: Database["public"]["Enums"]["subscription_tier"] | null
-          organization_id: string
-          paystack_customer_code: string | null
-          paystack_subscription_code: string | null
-          start_date: string
-          status: Database["public"]["Enums"]["subscription_status"]
-          tier: Database["public"]["Enums"]["subscription_tier"]
-          updated_at: string
-          updated_by: string | null
-        }
-        SetofOptions: {
-          from: "*"
-          to: "organization_subscriptions"
-          isOneToOne: true
-          isSetofReturn: false
-        }
-      }
       subscription_upsert_webhook: {
         Args: {
           cancel_at_period_end?: boolean
@@ -3048,14 +3034,17 @@ export type Database = {
           current_period_end: string | null
           current_period_start: string
           downgrade_effective_at: string | null
+          downgrade_executed_at: string | null
           downgrade_requested_at: string | null
           downgrade_requested_by: string | null
           id: string
           initial_next_payment_date: string | null
+          next_plan_code: string | null
           next_tier: Database["public"]["Enums"]["subscription_tier"] | null
           organization_id: string
           paystack_customer_code: string | null
           paystack_subscription_code: string | null
+          revert_tier: Database["public"]["Enums"]["subscription_tier"] | null
           start_date: string
           status: Database["public"]["Enums"]["subscription_status"]
           tier: Database["public"]["Enums"]["subscription_tier"]

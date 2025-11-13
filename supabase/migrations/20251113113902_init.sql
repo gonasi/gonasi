@@ -545,8 +545,10 @@ alter table "public"."organization_members" enable row level security;
     "organization_id" uuid not null,
     "tier" public.subscription_tier not null default 'launch'::public.subscription_tier,
     "next_tier" public.subscription_tier,
+    "next_plan_code" text,
     "downgrade_requested_at" timestamp with time zone,
     "downgrade_effective_at" timestamp with time zone,
+    "downgrade_executed_at" timestamp with time zone,
     "downgrade_requested_by" uuid,
     "paystack_customer_code" text,
     "paystack_subscription_code" text,
@@ -556,6 +558,7 @@ alter table "public"."organization_members" enable row level security;
     "current_period_end" timestamp with time zone,
     "cancel_at_period_end" boolean not null default false,
     "initial_next_payment_date" timestamp with time zone,
+    "revert_tier" public.subscription_tier,
     "created_at" timestamp with time zone not null default timezone('utc'::text, now()),
     "updated_at" timestamp with time zone not null default timezone('utc'::text, now()),
     "created_by" uuid,
@@ -1150,7 +1153,13 @@ CREATE INDEX idx_org_notifications_org_created ON public.org_notifications USING
 
 CREATE INDEX idx_org_subscriptions_active_period ON public.organization_subscriptions USING btree (status, current_period_end);
 
+CREATE INDEX idx_org_subscriptions_cancel_at_period_end ON public.organization_subscriptions USING btree (cancel_at_period_end) WHERE (cancel_at_period_end = true);
+
 CREATE INDEX idx_org_subscriptions_created_by ON public.organization_subscriptions USING btree (created_by);
+
+CREATE INDEX idx_org_subscriptions_downgrade_due ON public.organization_subscriptions USING btree (downgrade_effective_at) WHERE ((cancel_at_period_end = true) AND (next_tier IS NOT NULL));
+
+CREATE INDEX idx_org_subscriptions_next_tier ON public.organization_subscriptions USING btree (next_tier);
 
 CREATE INDEX idx_org_subscriptions_org_id ON public.organization_subscriptions USING btree (organization_id);
 
@@ -1905,6 +1914,10 @@ alter table "public"."organization_subscriptions" validate constraint "organizat
 alter table "public"."organization_subscriptions" add constraint "organization_subscriptions_paystack_customer_code_key" UNIQUE using index "organization_subscriptions_paystack_customer_code_key";
 
 alter table "public"."organization_subscriptions" add constraint "organization_subscriptions_paystack_subscription_code_key" UNIQUE using index "organization_subscriptions_paystack_subscription_code_key";
+
+alter table "public"."organization_subscriptions" add constraint "organization_subscriptions_revert_tier_fkey" FOREIGN KEY (revert_tier) REFERENCES public.tier_limits(tier) ON UPDATE CASCADE ON DELETE SET NULL not valid;
+
+alter table "public"."organization_subscriptions" validate constraint "organization_subscriptions_revert_tier_fkey";
 
 alter table "public"."organization_subscriptions" add constraint "organization_subscriptions_tier_fkey" FOREIGN KEY (tier) REFERENCES public.tier_limits(tier) ON UPDATE CASCADE ON DELETE RESTRICT not valid;
 
@@ -8052,32 +8065,6 @@ begin
     where chapter_id = new.chapter_id;  -- Fixed: changed from course_id to chapter_id
   end if;
   return new;
-end;
-$function$
-;
-
-CREATE OR REPLACE FUNCTION public.subscription_update_tier(org_id uuid, new_tier text)
- RETURNS public.organization_subscriptions
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO ''
-AS $function$
-declare
-  result public.organization_subscriptions;
-begin
-  update public.organization_subscriptions
-  set
-    tier = new_tier::public.subscription_tier,
-    updated_at = now()
-  where organization_id = org_id
-  returning * into result;
-
-  if not found then
-    raise exception 'No subscription found for organization_id: %', org_id
-      using errcode = 'P0002'; -- no_data_found
-  end if;
-
-  return result;
 end;
 $function$
 ;
