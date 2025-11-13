@@ -6,7 +6,7 @@ import { fetchActiveOrganizationAndMember } from '@gonasi/database/organizations
 import type { Route } from './+types/profile-wrapper-layout';
 
 import { TopNav } from '~/components/navigation/top-nav';
-import { ProfileTopNav } from '~/components/navigation/top-nav/profile-top-nav';
+import { PersonalTopNav } from '~/components/navigation/top-nav/personal-top-nav';
 import { createClient } from '~/lib/supabase/supabase.server';
 import { useStore } from '~/store';
 
@@ -29,14 +29,7 @@ export default function ProfileWrapperLayout({ loaderData }: Route.ComponentProp
       {isActiveUserProfileLoading ? (
         <nav className='border-b-card hidden h-16 w-full animate-pulse items-center border-b md:flex md:h-20 md:px-4' />
       ) : activeUserProfile ? (
-        <ProfileTopNav
-          user={activeUserProfile}
-          userRole={loaderData.userRole}
-          organization={loaderData?.data?.organization}
-          member={loaderData?.data?.member ?? undefined}
-          showBackArrow
-          loading={isActiveUserProfileLoading}
-        />
+        <PersonalTopNav user={activeUserProfile} userRole={loaderData.userRole} showBackArrow />
       ) : (
         <TopNav user={activeUserProfile} userRole={loaderData.userRole} />
       )}

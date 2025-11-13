@@ -12,6 +12,41 @@ export const switchToPersonalMode = async ({ supabase }: UpdateActiveOrganizatio
   try {
     const userId = await getUserId(supabase);
 
+    // ─────────────────────────────────────────────────────────────
+    // 1. Fetch current profile to check if already in personal mode
+    // ─────────────────────────────────────────────────────────────
+    const { data: profile, error: fetchError } = await supabase
+      .from('profiles')
+      .select('id, active_organization_id, mode, username')
+      .eq('id', userId)
+      .single();
+
+    if (fetchError || !profile) {
+      console.error('Failed to fetch profile:', fetchError);
+      return {
+        success: false,
+        message: 'Unable to verify your current mode. Please try again shortly.',
+        data: null,
+      };
+    }
+
+    const alreadyPersonal = profile.active_organization_id === null && profile.mode === 'personal';
+
+    if (alreadyPersonal) {
+      return {
+        success: false,
+        message: 'You are already in personal mode.',
+        data: {
+          id: profile.id,
+          active_organization_id: profile.active_organization_id,
+          username: profile.username,
+        },
+      };
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // 2. Update to personal mode
+    // ─────────────────────────────────────────────────────────────
     const { data, error } = await supabase
       .from('profiles')
       .update({ active_organization_id: null, mode: 'personal' })

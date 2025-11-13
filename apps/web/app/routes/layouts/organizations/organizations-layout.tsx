@@ -7,7 +7,7 @@ import { verifyAndSetActiveOrganization } from '@gonasi/database/organizations';
 
 import type { Route } from './+types/organizations-layout';
 
-import { ProfileTopNav } from '~/components/navigation/top-nav/profile-top-nav';
+import { OrganizationTopNav } from '~/components/navigation/top-nav/organization-top-nav';
 import { DesktopNav } from '~/components/navigation/top-nav/responsive-nav/desktop-nav';
 import { Button } from '~/components/ui/button';
 import { Modal } from '~/components/ui/modal';
@@ -88,7 +88,7 @@ export default function OrganizationsPlainLayout({ loaderData }: Route.Component
     <div className='min-h-screen'>
       <DesktopNav links={filteredLinks} />
       <div className='md:pl-64'>
-        <ProfileTopNav
+        <OrganizationTopNav
           user={activeUserProfile}
           userRole={loaderData.userRole}
           organization={organization}
