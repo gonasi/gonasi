@@ -4,8 +4,6 @@
 import type { TypedSupabaseClient } from '@gonasi/database/client';
 import type { Database } from '@gonasi/database/schema';
 
-import { refundSubscriptionUpgrade } from './refundSubscriptionUpgrade';
-
 import { getServerEnv } from '~/.server/env.server';
 
 const { PAYSTACK_SECRET_KEY, BASE_URL } = getServerEnv();
@@ -166,13 +164,7 @@ export async function handleOrganizationSubscriptionUpgrade(
     }
   } catch (err) {
     console.error('❌ Failed to fetch or disable current subscription:', err);
-    await refundSubscriptionUpgrade(
-      supabaseAdmin,
-      organizationId,
-      tx.reference,
-      'disable_current_subscription_failed',
-      `Failed to disable current subscription: ${String(err)}`,
-    );
+
     return new Response(
       JSON.stringify({
         error: 'Failed to disable current subscription - refund initiated',
@@ -204,13 +196,7 @@ export async function handleOrganizationSubscriptionUpgrade(
     const createData = await createRes.json();
     if (!createRes.ok || !createData.status) {
       console.error('❌ Paystack subscription creation failed:', createData);
-      await refundSubscriptionUpgrade(
-        supabaseAdmin,
-        organizationId,
-        tx.reference,
-        'subscription_creation_failed',
-        `Failed to create Paystack subscription: ${createData.message}`,
-      );
+
       return new Response(
         JSON.stringify({
           error: 'Subscription creation failed - refund initiated',
@@ -224,13 +210,7 @@ export async function handleOrganizationSubscriptionUpgrade(
     console.log('✅ Paystack subscription created:', paystackSubscriptionCode);
   } catch (err) {
     console.error('❌ Exception during subscription creation:', err);
-    await refundSubscriptionUpgrade(
-      supabaseAdmin,
-      organizationId,
-      tx.reference,
-      'subscription_creation_failed',
-      `Exception during subscription creation: ${String(err)}`,
-    );
+
     return new Response(
       JSON.stringify({
         error: 'Subscription creation error - refund initiated',
@@ -274,14 +254,6 @@ export async function handleOrganizationSubscriptionUpgrade(
         );
       }
     }
-
-    await refundSubscriptionUpgrade(
-      supabaseAdmin,
-      organizationId,
-      tx.reference,
-      'tier_update_failed',
-      `Failed to update local subscription tier: ${subError.message}`,
-    );
 
     return new Response(
       JSON.stringify({

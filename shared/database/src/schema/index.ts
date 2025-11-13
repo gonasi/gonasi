@@ -1453,6 +1453,7 @@ export type Database = {
           link: string | null
           organization_id: string
           payload: Json
+          performed_by: string | null
           title: string
         }
         Insert: {
@@ -1467,6 +1468,7 @@ export type Database = {
           link?: string | null
           organization_id: string
           payload?: Json
+          performed_by?: string | null
           title: string
         }
         Update: {
@@ -1481,12 +1483,20 @@ export type Database = {
           link?: string | null
           organization_id?: string
           payload?: Json
+          performed_by?: string | null
           title?: string
         }
         Relationships: [
           {
             foreignKeyName: "org_notifications_organization_id_fkey"
             columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_notifications_performed_by_fkey"
+            columns: ["performed_by"]
             isOneToOne: false
             referencedRelation: "organizations"
             referencedColumns: ["id"]
@@ -2897,6 +2907,7 @@ export type Database = {
           p_link?: string
           p_metadata?: Json
           p_organization_id: string
+          p_performed_by?: string
           p_type_key: string
         }
         Returns: string
@@ -3151,6 +3162,7 @@ export type Database = {
         | "org_invoice_ready"
         | "org_tier_upgraded"
         | "org_tier_downgraded"
+        | "org_downgrade_cancelled"
         | "org_member_invited"
         | "org_member_joined"
         | "org_member_left"
@@ -3425,6 +3437,7 @@ export const Constants = {
         "org_invoice_ready",
         "org_tier_upgraded",
         "org_tier_downgraded",
+        "org_downgrade_cancelled",
         "org_member_invited",
         "org_member_joined",
         "org_member_left",

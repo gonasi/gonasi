@@ -16,7 +16,7 @@ create type "public"."ledger_transaction_type" as enum ('course_purchase', 'paym
 
 create type "public"."org_notification_category" as enum ('billing', 'members', 'courses', 'purchases', 'content', 'compliance', 'system');
 
-create type "public"."org_notification_key" as enum ('org_subscription_started', 'org_subscription_renewed', 'org_subscription_failed', 'org_subscription_expiring', 'org_payment_method_expiring', 'org_invoice_ready', 'org_tier_upgraded', 'org_tier_downgraded', 'org_member_invited', 'org_member_joined', 'org_member_left', 'org_member_role_changed', 'org_member_removed', 'org_ownership_transferred', 'org_course_created', 'org_course_updated', 'org_course_published', 'org_course_unpublished', 'org_course_archived', 'org_course_deleted', 'org_course_milestone_reached', 'org_course_enrollment_opened', 'org_course_enrollment_closed', 'org_course_review_posted', 'org_course_review_flagged', 'org_content_flagged', 'org_course_purchase_completed', 'org_course_purchase_refunded', 'org_course_purchase_failed', 'org_course_subscription_started', 'org_course_subscription_renewed', 'org_course_subscription_canceled', 'org_verification_approved', 'org_verification_rejected', 'org_policy_update_required', 'org_announcement', 'org_maintenance_notice');
+create type "public"."org_notification_key" as enum ('org_subscription_started', 'org_subscription_renewed', 'org_subscription_failed', 'org_subscription_expiring', 'org_payment_method_expiring', 'org_invoice_ready', 'org_tier_upgraded', 'org_tier_downgraded', 'org_downgrade_cancelled', 'org_member_invited', 'org_member_joined', 'org_member_left', 'org_member_role_changed', 'org_member_removed', 'org_ownership_transferred', 'org_course_created', 'org_course_updated', 'org_course_published', 'org_course_unpublished', 'org_course_archived', 'org_course_deleted', 'org_course_milestone_reached', 'org_course_enrollment_opened', 'org_course_enrollment_closed', 'org_course_review_posted', 'org_course_review_flagged', 'org_content_flagged', 'org_course_purchase_completed', 'org_course_purchase_refunded', 'org_course_purchase_failed', 'org_course_subscription_started', 'org_course_subscription_renewed', 'org_course_subscription_canceled', 'org_verification_approved', 'org_verification_rejected', 'org_policy_update_required', 'org_announcement', 'org_maintenance_notice');
 
 create type "public"."org_role" as enum ('owner', 'admin', 'editor');
 
@@ -473,6 +473,7 @@ alter table "public"."org_notification_reads" enable row level security;
     "title" text not null,
     "body" text not null,
     "link" text,
+    "performed_by" uuid,
     "payload" jsonb not null default '{}'::jsonb,
     "delivered_in_app" boolean not null default true,
     "delivered_email" boolean not null default false,
@@ -1860,6 +1861,10 @@ alter table "public"."org_notification_reads" validate constraint "org_notificat
 alter table "public"."org_notifications" add constraint "org_notifications_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE not valid;
 
 alter table "public"."org_notifications" validate constraint "org_notifications_organization_id_fkey";
+
+alter table "public"."org_notifications" add constraint "org_notifications_performed_by_fkey" FOREIGN KEY (performed_by) REFERENCES public.organizations(id) ON DELETE CASCADE not valid;
+
+alter table "public"."org_notifications" validate constraint "org_notifications_performed_by_fkey";
 
 alter table "public"."org_notifications_types" add constraint "org_notifications_types_key_key" UNIQUE using index "org_notifications_types_key_key";
 
@@ -6207,7 +6212,7 @@ end;
 $function$
 ;
 
-CREATE OR REPLACE FUNCTION public.insert_org_notification(p_organization_id uuid, p_type_key text, p_metadata jsonb DEFAULT '{}'::jsonb, p_link text DEFAULT NULL::text)
+CREATE OR REPLACE FUNCTION public.insert_org_notification(p_organization_id uuid, p_type_key text, p_metadata jsonb DEFAULT '{}'::jsonb, p_link text DEFAULT NULL::text, p_performed_by uuid DEFAULT NULL::uuid)
  RETURNS uuid
  LANGUAGE plpgsql
  SECURITY DEFINER
@@ -6221,13 +6226,13 @@ declare
   v_key text;
   v_value text;
 begin
-  raise notice 'insert_org_notification called with org_id=%, type_key=%, metadata=%, link=%', 
-    p_organization_id, p_type_key, p_metadata, p_link;
+  raise notice 'insert_org_notification called with org_id=%, type_key=%, metadata=%, link=%, performed_by=%', 
+    p_organization_id, p_type_key, p_metadata, p_link, p_performed_by;
 
   -- Get notification type
   select 
     ont.key,
-    ont.title_template,
+    ont.title_template, 
     ont.body_template,
     ont.default_in_app,
     ont.default_email
@@ -6262,6 +6267,7 @@ begin
     title,
     body,
     link,
+    performed_by,
     payload,
     delivered_in_app,
     delivered_email
@@ -6271,6 +6277,7 @@ begin
     v_title,
     v_body,
     p_link,
+    p_performed_by,
     p_metadata,
     v_type_record.default_in_app,
     v_type_record.default_email

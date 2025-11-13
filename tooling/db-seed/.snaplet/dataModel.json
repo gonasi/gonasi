@@ -9689,6 +9689,20 @@
           "maxLength": null
         },
         {
+          "id": "public.org_notifications.performed_by",
+          "name": "performed_by",
+          "columnName": "performed_by",
+          "type": "uuid",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
           "id": "public.org_notifications.payload",
           "name": "payload",
           "columnName": "payload",
@@ -9773,13 +9787,31 @@
           "maxLength": null
         },
         {
-          "name": "organizations",
+          "name": "organizations_org_notifications_organization_idToorganizations",
           "type": "organizations",
           "isRequired": true,
           "kind": "object",
-          "relationName": "org_notificationsToorganizations",
+          "relationName": "org_notifications_organization_idToorganizations",
           "relationFromFields": [
             "organization_id"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "organizations_org_notifications_performed_byToorganizations",
+          "type": "organizations",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "org_notifications_performed_byToorganizations",
+          "relationFromFields": [
+            "performed_by"
           ],
           "relationToFields": [
             "id"
@@ -11699,11 +11731,25 @@
           "hasDefaultValue": false
         },
         {
-          "name": "org_notifications",
+          "name": "org_notifications_org_notifications_organization_idToorganizations",
           "type": "org_notifications",
           "isRequired": false,
           "kind": "object",
-          "relationName": "org_notificationsToorganizations",
+          "relationName": "org_notifications_organization_idToorganizations",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "org_notifications_org_notifications_performed_byToorganizations",
+          "type": "org_notifications",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "org_notifications_performed_byToorganizations",
           "relationFromFields": [],
           "relationToFields": [],
           "isList": true,
@@ -19091,6 +19137,9 @@
         },
         {
           "name": "org_course_updated"
+        },
+        {
+          "name": "org_downgrade_cancelled"
         },
         {
           "name": "org_invoice_ready"

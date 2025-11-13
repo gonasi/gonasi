@@ -14,6 +14,9 @@ create table if not exists public.org_notifications (
 
   link text,
 
+  performed_by uuid null
+    references public.organizations (id) on delete cascade,
+
   payload jsonb not null default '{}'::jsonb,
 
   delivered_in_app boolean not null default true,

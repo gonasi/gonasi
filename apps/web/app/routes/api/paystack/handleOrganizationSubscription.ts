@@ -438,8 +438,6 @@ async function handleInvoiceUpdate(
 async function handleSubscriptionNotRenew(
   supabase: TypedSupabaseClient,
   data: PaystackSubscriptionData,
-  clientIp: string | null,
-  startTime: number,
 ) {
   console.log('⚠️ Subscription set to not renew:', data.subscription_code);
 
@@ -459,7 +457,7 @@ async function handleSubscriptionNotRenew(
     .from('organization_subscriptions')
     .update({
       cancel_at_period_end: true,
-      status: 'cancelled', // Use 'canceled' status from the enum
+      status: 'non-renewing',
     })
     .eq('organization_id', organizationId);
 

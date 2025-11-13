@@ -84,6 +84,7 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
           role: rpcData.data.role,
         },
         p_link: `${BASE_URL}/${rpcData.data.organization_id}/members/active-members`,
+        p_performed_by: user.id,
       });
 
       return redirectWithSuccess(

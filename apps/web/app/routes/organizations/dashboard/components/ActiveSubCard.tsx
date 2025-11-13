@@ -89,6 +89,7 @@ export function ActiveSubCard({ subscription, tier }: ActiveSubCardProps) {
                   : isCanceled
                     ? 'Your subscription will end on the next billing date.'
                     : 'Your current subscription is active.'}
+              a sdf asd fasd f
             </p>
           </div>
 
@@ -134,15 +135,15 @@ export function ActiveSubCard({ subscription, tier }: ActiveSubCardProps) {
               <NavLinkButton
                 to='/organizations/dashboard/subscriptions/manage'
                 className='w-full'
-                variant={hasScheduledDowngrade ? 'outline' : 'danger'}
+                variant={hasScheduledDowngrade ? 'ghost' : 'danger'}
                 leftIcon={hasScheduledDowngrade ? <Clock /> : <Ban />}
-                disabled={isCanceled || hasScheduledDowngrade}
+                disabled={Boolean(isCanceled) || Boolean(hasScheduledDowngrade)}
               >
                 {hasScheduledDowngrade
                   ? 'Downgrade Scheduled'
                   : isCanceled
                     ? 'Already Canceling'
-                    : 'Cancel or Downgrade'}
+                    : 'Cancel'}
               </NavLinkButton>
             </div>
           )}

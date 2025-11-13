@@ -13,6 +13,7 @@ create type public.org_notification_key as enum (
   'org_invoice_ready',
   'org_tier_upgraded',
   'org_tier_downgraded',
+  'org_downgrade_cancelled',
 
   -- ============================================================================
   -- Member management

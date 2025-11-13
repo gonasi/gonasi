@@ -2,7 +2,8 @@ create or replace function public.insert_org_notification(
   p_organization_id uuid,
   p_type_key text,
   p_metadata jsonb default '{}'::jsonb,
-  p_link text default null
+  p_link text default null,
+  p_performed_by uuid default null
 )
 returns uuid
 language plpgsql
@@ -17,13 +18,13 @@ declare
   v_key text;
   v_value text;
 begin
-  raise notice 'insert_org_notification called with org_id=%, type_key=%, metadata=%, link=%', 
-    p_organization_id, p_type_key, p_metadata, p_link;
+  raise notice 'insert_org_notification called with org_id=%, type_key=%, metadata=%, link=%, performed_by=%', 
+    p_organization_id, p_type_key, p_metadata, p_link, p_performed_by;
 
   -- Get notification type
   select 
     ont.key,
-    ont.title_template,
+    ont.title_template, 
     ont.body_template,
     ont.default_in_app,
     ont.default_email
@@ -58,6 +59,7 @@ begin
     title,
     body,
     link,
+    performed_by,
     payload,
     delivered_in_app,
     delivered_email
@@ -67,6 +69,7 @@ begin
     v_title,
     v_body,
     p_link,
+    p_performed_by,
     p_metadata,
     v_type_record.default_in_app,
     v_type_record.default_email

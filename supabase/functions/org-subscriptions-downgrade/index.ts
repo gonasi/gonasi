@@ -7,6 +7,7 @@
 // The local record is marked as `non-renewing` and scheduled for downgrade.
 // A scheduled job (org-subscriptions-downgrade-trigger.ts) later activates
 // the new tier and creates a new Paystack subscription after expiry.
+// Downgrades to "launch" (free tier) skip Paystack requests entirely.
 // ────────────────────────────────────────────────────────────────────────────────
 
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
@@ -26,7 +27,7 @@ const FRONTEND_URL = Deno.env.get('FRONTEND_URL');
 const DowngradeRequest = z.object({
   organizationId: z.string().uuid(),
   targetTier: z.string(),
-  newPlanCode: z.string().optional(),
+  newPlanCode: z.string().optional().nullable(), // ✅ allow null or undefined
   userId: z.string().uuid(),
 });
 
@@ -64,6 +65,7 @@ Deno.serve(async (req) => {
 
   const parsed = DowngradeRequest.safeParse(body);
   if (!parsed.success) {
+    console.error('❌ Validation failed', parsed.error.flatten().fieldErrors);
     return new Response(
       JSON.stringify({
         error: 'Validation failed',
@@ -77,7 +79,7 @@ Deno.serve(async (req) => {
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
   const nowIso = new Date().toISOString();
 
-  console.log('📦 Parsed Request', { organizationId, targetTier, userId });
+  console.log('📦 Parsed Request', { organizationId, targetTier, userId, newPlanCode });
 
   // ──────────────────────────────────────────────────────────────────────────────
   // STEP 1: Fetch Current Subscription
@@ -115,7 +117,7 @@ Deno.serve(async (req) => {
   // ──────────────────────────────────────────────────────────────────────────────
   // STEP 2: Check for existing scheduled downgrade
   // ──────────────────────────────────────────────────────────────────────────────
-  if (status === 'non-renewing' && nextTier === targetTier) {
+  if (status === 'non-renewing' && nextTier === targetTier && targetTier !== 'launch') {
     console.log('⚠️ Downgrade to the same tier already scheduled, skipping duplicate.');
     return new Response(
       JSON.stringify({
@@ -127,12 +129,15 @@ Deno.serve(async (req) => {
   }
 
   // ──────────────────────────────────────────────────────────────────────────────
-  // STEP 3: Fetch Subscription Details from Paystack
+  // STEP 3: Determine Effective Downgrade Date
   // ──────────────────────────────────────────────────────────────────────────────
-  let emailToken: string | null = null;
   let nextPaymentDate: string | null = null;
 
-  if (paystackCode) {
+  // Skip Paystack call entirely for free ("launch") downgrades
+  if (targetTier === 'launch') {
+    console.log('🪶 Downgrade to free tier — skipping Paystack API call.');
+    nextPaymentDate = currentPeriodEnd;
+  } else if (paystackCode) {
     const paystackRes = await fetch(`https://api.paystack.co/subscription/${paystackCode}`, {
       method: 'GET',
       headers: {
@@ -155,7 +160,6 @@ Deno.serve(async (req) => {
     }
 
     const paystackSub = paystackJson.data;
-    emailToken = paystackSub?.email_token ?? null;
     nextPaymentDate = paystackSub?.next_payment_date ?? currentPeriodEnd;
 
     console.log('📬 Paystack subscription data', {
@@ -163,43 +167,13 @@ Deno.serve(async (req) => {
       status: paystackSub.status,
       next_payment_date: nextPaymentDate,
     });
-  }
-
-  // ──────────────────────────────────────────────────────────────────────────────
-  // STEP 4: Disable Auto-Renew on Paystack
-  // ──────────────────────────────────────────────────────────────────────────────
-  if (paystackCode && emailToken) {
-    console.log(`🔻 Disabling Paystack subscription [${paystackCode}]`);
-
-    const disableRes = await fetch('https://api.paystack.co/subscription/disable', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ code: paystackCode, token: emailToken }),
-    });
-
-    const disableJson = await disableRes.json();
-
-    if (!disableRes.ok || !disableJson.status) {
-      console.error('❌ Failed to disable Paystack subscription', disableJson);
-      return new Response(
-        JSON.stringify({
-          error: 'Failed to disable Paystack subscription',
-          details: disableJson,
-        }),
-        { status: 502, headers: { 'Content-Type': 'application/json' } },
-      );
-    }
-
-    console.log('✅ Paystack subscription disabled successfully');
   } else {
-    console.log('⚠️ Skipping disable: no valid Paystack subscription or email token found.');
+    console.log('⚙️ No Paystack subscription found; using current_period_end.');
+    nextPaymentDate = currentPeriodEnd;
   }
 
   // ──────────────────────────────────────────────────────────────────────────────
-  // STEP 5: Schedule Downgrade Locally
+  // STEP 4: Schedule Downgrade Locally
   // ──────────────────────────────────────────────────────────────────────────────
   const effectiveDate = nextPaymentDate || currentPeriodEnd || nowIso;
 
@@ -237,16 +211,26 @@ Deno.serve(async (req) => {
     `✅ Downgrade scheduled: Org ${organizationId} will move from ${currentTier} → ${targetTier} after ${effectiveDate}.`,
   );
 
-  // Send notification with human-readable date
+  // ──────────────────────────────────────────────────────────────────────────────
+  // STEP 5: Notify Organization
+  // ──────────────────────────────────────────────────────────────────────────────
   await supabase.rpc('insert_org_notification', {
     p_organization_id: organizationId,
     p_type_key: 'org_tier_downgraded',
     p_metadata: {
       tier_name: targetTier,
       effective_date: effectiveDate,
-      human_readable_date: humanReadableDate,
+      human_readable_date: new Date(effectiveDate).toLocaleString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZone: 'UTC',
+      }),
     },
     p_link: `${FRONTEND_URL}/${organizationId}/dashboard/subscriptions`,
+    p_performed_by: userId,
   });
 
   // ──────────────────────────────────────────────────────────────────────────────

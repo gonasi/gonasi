@@ -1,3 +1,16 @@
+/**
+ * initializeOrganizationTierSubscription.ts
+ *
+ * Handles organization subscription tier changes (upgrade, downgrade, reactivation, or new subscription)
+ * with Paystack and Supabase integration.
+ *
+ * Fully supports:
+ *  - Scheduled downgrades (non-renewing flow)
+ *  - Reactivation by canceling a scheduled downgrade
+ *  - Downgrade to free tier ("launch")
+ *  - Preventing invalid transitions
+ */
+
 import type { OrganizationTierChangeSchemaTypes } from '@gonasi/schemas/subscriptions';
 
 import type { TypedSupabaseClient } from '../client';
@@ -9,44 +22,68 @@ import type { PaystackSubscriptionResponse } from './organizationSubscriptionsTy
 import type { TierLimitsRow } from './validateTierChangeRequest';
 import { VALID_TIER_ORDER } from './validateTierChangeRequest';
 
+// ---------------------------------------------------------------------------
+// Tier constants & types
+// ---------------------------------------------------------------------------
 const VALID_UPGRADE_TIER_ORDER: TierLimitsRow[] = ['scale', 'impact', 'enterprise'];
 
-type Tier = (typeof VALID_UPGRADE_TIER_ORDER)[number];
+type Tier = (typeof VALID_UPGRADE_TIER_ORDER)[number] | 'launch';
 type ChangeType = 'upgrade' | 'downgrade' | 'reactivation' | 'new' | 'same';
 type SubscriptionStatus = Database['public']['Enums']['subscription_status'];
 
+// ---------------------------------------------------------------------------
+// Utility: Determine change type
+// ---------------------------------------------------------------------------
+/**
+ * Determine the kind of subscription change the user is attempting.
+ * Handles active, non-renewing (scheduled downgrade), cancelled, completed, and free (launch) cases.
+ */
 const determineChangeType = (
   currentTier: Tier | null,
   currentStatus: SubscriptionStatus | null,
   targetTier: Tier,
+  nextTier: Tier | null = null,
+  downgradeRequestedAt: string | null = null,
 ): ChangeType => {
-  // NOTE: Always check 'launch' or it will go to upgrade flow
+  // No subscription or on free tier → new
   if (!currentTier || currentTier === 'launch') return 'new';
 
-  // Payment issues block changes
+  // Block payment issues
   if (currentStatus === 'attention') return 'same';
 
-  // Reactivation for cancelled, completed, or non-renewing
-  if (
-    currentStatus === 'cancelled' ||
-    currentStatus === 'completed' ||
-    currentStatus === 'non-renewing'
-  ) {
-    return 'reactivation';
-  }
+  // Reactivation after full termination
+  if (currentStatus === 'cancelled' || currentStatus === 'completed') return 'reactivation';
 
-  // Compare tier order
   const currentIndex = VALID_TIER_ORDER.indexOf(currentTier);
   const targetIndex = VALID_TIER_ORDER.indexOf(targetTier);
 
+  // Non-renewing state: has scheduled downgrade
+  if (currentStatus === 'non-renewing') {
+    if (nextTier) {
+      if (targetTier === nextTier) return 'same'; // already scheduled
+      if (targetTier === currentTier) return 'reactivation'; // cancel downgrade
+      if (targetIndex > currentIndex) return 'upgrade'; // cancel downgrade + upgrade
+      if (targetIndex < currentIndex) return 'downgrade'; // reschedule different downgrade
+      return 'same';
+    }
+
+    // Non-renewing but no scheduled downgrade → treat like active
+    if (targetTier === currentTier) return 'reactivation';
+    if (targetIndex > currentIndex) return 'upgrade';
+    if (targetIndex < currentIndex) return 'downgrade';
+    return 'same';
+  }
+
+  // Active (normal flow)
   if (targetIndex > currentIndex) return 'upgrade';
   if (targetIndex < currentIndex) return 'downgrade';
   return 'same';
 };
 
-// -------------------------
-// Dummy placeholders
-// -------------------------
+// ---------------------------------------------------------------------------
+// Handlers for each change type
+// ---------------------------------------------------------------------------
+
 async function handleUpgrade({
   supabase,
   organizationId,
@@ -56,15 +93,9 @@ async function handleUpgrade({
   organizationId: string;
   targetTier: Tier;
 }): Promise<InitializeOrgTierSubSuccess | InitializeOrgTierSubError> {
-  console.log('🚀 Upgrade logic', {
-    organizationId,
-    targetTier,
-  });
+  console.log('🚀 Upgrade logic', { organizationId, targetTier });
 
-  const payload = {
-    organizationId,
-    targetTier,
-  };
+  const payload = { organizationId, targetTier };
 
   const { data: txResponse, error: txError } =
     await supabase.functions.invoke<PaystackSubscriptionResponse>(
@@ -72,12 +103,8 @@ async function handleUpgrade({
       { body: payload },
     );
 
-  if (txError || !txResponse || !txResponse.success) {
-    return {
-      success: false,
-      message: 'Failed to initialize upgrade payment. Please try again.',
-      data: null,
-    };
+  if (txError || !txResponse?.success) {
+    return { success: false, message: 'Failed to initialize upgrade payment.', data: null };
   }
 
   return {
@@ -88,6 +115,11 @@ async function handleUpgrade({
   };
 }
 
+/**
+ * Handles downgrade requests.
+ * - Paid → Paid: schedules downgrade (non-renewing)
+ * - Paid → Free (launch): immediately downgrades to free plan and cancels Paystack sub
+ */
 async function handleDowngrade({
   supabase,
   organizationId,
@@ -114,52 +146,39 @@ async function handleDowngrade({
     userId,
   });
 
-  // Fetch target tier plan code (only needed for paid downgrades)
-  let newPlanCode: string | undefined;
+  // Paid downgrade (schedule for next cycle)
+  const { data: tierRow, error: tierErr } = await supabase
+    .from('tier_limits')
+    .select('tier, paystack_plan_code')
+    .eq('tier', targetTier)
+    .single();
 
-  if (targetTier !== 'launch') {
-    const { data: targetTierRow, error: tierError } = await supabase
-      .from('tier_limits')
-      .select('paystack_plan_code')
-      .eq('tier', targetTier)
-      .single();
-
-    if (tierError || !targetTierRow?.paystack_plan_code) {
-      return {
-        success: false,
-        message: `Target tier ${targetTier} is missing Paystack plan configuration.`,
-        data: null,
-      };
-    }
-
-    newPlanCode = targetTierRow.paystack_plan_code;
+  if (tierErr || (!tierRow?.paystack_plan_code && tierRow.tier !== 'launch')) {
+    return {
+      success: false,
+      message: `Target tier ${targetTier} is missing Paystack configuration.`,
+      data: null,
+    };
   }
 
-  // Call the downgrade edge function
   const payload = {
     organizationId,
     targetTier,
-    newPlanCode,
+    newPlanCode: tierRow.paystack_plan_code,
     userId,
   };
 
-  console.log('****************************************************');
-  console.log(payload);
   const { data: downgradeResponse, error: downgradeError } = await supabase.functions.invoke<{
     success: boolean;
     message: string;
-    data: {
-      targetTier: string;
-      status: string;
-      effectiveDate?: string;
-    };
+    data: { targetTier: string; status: string; effectiveDate?: string };
   }>('org-subscriptions-downgrade', { body: payload });
 
   if (downgradeError || !downgradeResponse?.success) {
     console.error('Downgrade failed:', downgradeError || downgradeResponse);
     return {
       success: false,
-      message: downgradeResponse?.message || 'Failed to process downgrade. Please try again.',
+      message: downgradeResponse?.message || 'Failed to process downgrade.',
       data: null,
     };
   }
@@ -167,27 +186,80 @@ async function handleDowngrade({
   return {
     success: true,
     message: downgradeResponse.message,
-    data: downgradeResponse.data as any,
+    data: null,
     changeType: 'downgrade',
   };
 }
 
-async function handleReactivation({
-  supabase,
+/**
+ * Reactivation handler:
+ * 1. If subscription was cancelled/completed → create new Paystack sub
+ * 2. If scheduled downgrade existed → cancel it and resume renewal
+ */
+export async function handleReactivation({
+  supabaseAdmin,
   organizationId,
   targetTier,
+  currentTier,
+  userId,
+  cancelScheduledDowngrade = false,
 }: {
-  supabase: TypedSupabaseClient;
+  supabaseAdmin: TypedSupabaseClient;
   organizationId: string;
   targetTier: Tier;
-}) {
-  console.log('🔁 Reactivation logic placeholder', { organizationId, targetTier });
-  // TODO: reactivate cancelled, completed, or non-renewing subscription
+  currentTier: Tier;
+  userId: string;
+  cancelScheduledDowngrade?: boolean;
+}): Promise<InitializeOrgTierSubSuccess | InitializeOrgTierSubError> {
+  console.log('🔁 Reactivation logic (via Edge Function)', {
+    organizationId,
+    targetTier,
+    cancelScheduledDowngrade,
+  });
+
+  try {
+    // Call the reactivation Edge Function
+    const { data, error } = await supabaseAdmin.functions.invoke('org-subscriptions-reactivate', {
+      body: JSON.stringify({
+        organizationId,
+        targetTier,
+        currentTier,
+        userId,
+        cancelScheduledDowngrade,
+      }),
+    });
+
+    if (error) {
+      console.error('❌ Edge function invocation failed', error);
+      return {
+        success: false,
+        message: 'Failed to invoke reactivation function',
+        data: null,
+      };
+    }
+
+    // The Edge Function returns JSON in `data`
+    const result = typeof data === 'string' ? JSON.parse(data) : data;
+
+    return {
+      success: result.success ?? false,
+      message: result.message ?? 'No message returned',
+      data: result.data ?? null,
+      changeType: result.changeType,
+    };
+  } catch (err) {
+    console.error('❌ Exception calling reactivation Edge Function', err);
+    return {
+      success: false,
+      message: 'Unexpected error calling reactivation function',
+      data: null,
+    };
+  }
 }
 
-// -------------------------
-// New subscription handler
-// -------------------------
+/**
+ * Creates a new Paystack subscription (used for first-time or reactivation payments)
+ */
 async function handleNewSubscription({
   supabase,
   organizationId,
@@ -247,12 +319,8 @@ async function handleNewSubscription({
       { body: payload },
     );
 
-  if (txError || !txResponse || !txResponse.success) {
-    return {
-      success: false,
-      message: 'Failed to initialize payment. Please try again.',
-      data: null,
-    };
+  if (txError || !txResponse?.success) {
+    return { success: false, message: 'Failed to initialize payment.', data: null };
   }
 
   return {
@@ -263,13 +331,13 @@ async function handleNewSubscription({
   };
 }
 
-// -------------------------
-// Main function
-// -------------------------
+// ---------------------------------------------------------------------------
+// Main orchestrator function
+// ---------------------------------------------------------------------------
 interface InitializeOrgTierSubSuccess {
   success: true;
   message: string;
-  data: PaystackSubscriptionResponse['data'];
+  data: PaystackSubscriptionResponse['data'] | null;
   changeType: ChangeType;
 }
 
@@ -283,10 +351,16 @@ export type InitializeOrganizationTierSubscriptionResult =
   | InitializeOrgTierSubSuccess
   | InitializeOrgTierSubError;
 
+/**
+ * Entry point: Initializes a subscription change for an organization.
+ * Handles permission checks, determines change type, and delegates to the right handler.
+ */
 export const initializeOrganizationTierSubscription = async ({
   supabase,
+  supabaseAdmin,
   data,
 }: {
+  supabaseAdmin: TypedSupabaseClient;
   supabase: TypedSupabaseClient;
   data: OrganizationTierChangeSchemaTypes;
 }): Promise<InitializeOrganizationTierSubscriptionResult> => {
@@ -296,11 +370,7 @@ export const initializeOrganizationTierSubscription = async ({
     // 1️⃣ Auth check
     const userProfileResp = await getUserProfile(supabase);
     if (!userProfileResp?.user) {
-      return {
-        success: false,
-        message: 'You need to be logged in to manage this subscription.',
-        data: null,
-      };
+      return { success: false, message: 'Please log in to manage subscriptions.', data: null };
     }
     const userProfile = userProfileResp.user;
 
@@ -319,11 +389,13 @@ export const initializeOrganizationTierSubscription = async ({
       .from('organization_subscriptions')
       .select(
         `
-          tier, 
+          tier,
           status,
-          current_period_end, 
-          tier_limits:tier_limits!organization_subscriptions_tier_fkey ( * ),
-          next_tier_limits:tier_limits!organization_subscriptions_next_tier_fkey ( * )
+          current_period_end,
+          next_tier,
+          downgrade_requested_at,
+          tier_limits:tier_limits!organization_subscriptions_tier_fkey (*),
+          next_tier_limits:tier_limits!organization_subscriptions_next_tier_fkey (*)
         `,
       )
       .eq('organization_id', organizationId)
@@ -332,47 +404,31 @@ export const initializeOrganizationTierSubscription = async ({
     const currentTier = (currentSub?.tier ?? null) as Tier | null;
     const currentStatus = (currentSub?.status ?? null) as SubscriptionStatus | null;
     const currentPeriodEnd = currentSub?.current_period_end ?? null;
-
-    if (targetTier === 'launch') {
-      return {
-        success: false,
-        message:
-          'You cannot switch to the Launch (free) tier directly. Please unsubscribe instead.',
-        data: null,
-      };
-    }
-
-    // 🚫 Prevent switching to the same tier
-    if (currentTier && targetTier === currentTier) {
-      return {
-        success: false,
-        message: 'You are already on this tier.',
-        data: null,
-      };
-    }
+    const scheduledNextTier = (currentSub?.next_tier ?? null) as Tier | null;
+    const downgradeRequestedAt = currentSub?.downgrade_requested_at ?? null;
 
     // 4️⃣ Determine change type
-    const changeType = determineChangeType(currentTier, currentStatus, targetTier as Tier);
+    const changeType = determineChangeType(
+      currentTier,
+      currentStatus,
+      targetTier as Tier,
+      scheduledNextTier,
+      downgradeRequestedAt,
+    );
 
     // 5️⃣ Handle each change type
     switch (changeType) {
-      case 'same': {
-        if (currentStatus === 'attention') {
-          return {
-            success: false,
-            message:
-              'Your subscription has a payment issue. Please resolve it before changing tiers.',
-            data: null,
-          };
-        }
+      case 'same':
         return {
           success: false,
-          message: 'You are already on this tier.',
+          message:
+            currentStatus === 'attention'
+              ? 'Your subscription has a payment issue. Please resolve it first.'
+              : 'You are already on this tier.',
           data: null,
         };
-      }
 
-      case 'new': {
+      case 'new':
         return await handleNewSubscription({
           supabase,
           organizationId,
@@ -380,18 +436,12 @@ export const initializeOrganizationTierSubscription = async ({
           userProfile,
           currentPeriodEnd,
         });
-      }
 
-      case 'upgrade': {
-        return await handleUpgrade({
-          supabase,
-          organizationId,
-          targetTier: targetTier as Tier,
-        });
-      }
+      case 'upgrade':
+        return await handleUpgrade({ supabase, organizationId, targetTier: targetTier as Tier });
 
-      case 'downgrade': {
-        await handleDowngrade({
+      case 'downgrade':
+        return await handleDowngrade({
           supabase,
           organizationId,
           targetTier: targetTier as Tier,
@@ -400,20 +450,22 @@ export const initializeOrganizationTierSubscription = async ({
           currentPeriodEnd,
           userId: userProfile.id,
         });
-        break;
-      }
 
       case 'reactivation': {
-        await handleReactivation({
-          supabase,
+        // Reactivation may come from scheduled downgrade or cancelled/completed subscription
+        const cancelScheduled = Boolean(scheduledNextTier && currentStatus === 'non-renewing');
+
+        return await handleReactivation({
+          supabaseAdmin,
           organizationId,
+          currentTier: currentTier!,
           targetTier: targetTier as Tier,
+          userId: userProfile.id,
+          cancelScheduledDowngrade: cancelScheduled,
         });
-        break;
       }
     }
 
-    // ✅ Placeholder response for non-new flows
     return {
       success: true,
       message: `Subscription ${changeType} flow initiated successfully.`,

@@ -42,7 +42,7 @@ export async function action({ request, params }: Route.ActionArgs) {
   await checkHoneypot(formData);
 
   // Initialize Supabase and headers for redirect
-  const { supabase } = createClient(request);
+  const { supabase, supabaseAdmin } = createClient(request);
 
   // Validate and parse form data with Zod
   const {
@@ -60,13 +60,13 @@ export async function action({ request, params }: Route.ActionArgs) {
     success,
     message,
     data: successData,
-  } = await initializeOrganizationTierSubscription({ supabase, data });
+  } = await initializeOrganizationTierSubscription({ supabase, supabaseAdmin, data });
 
   return success
     ? redirectWithSuccess(
         successData
           ? `${successData?.data.authorization_url}`
-          : `/${params.organizationId}/dashboard/subscriptions/${data.tier}`,
+          : `/${params.organizationId}/dashboard/subscriptions`,
         message,
       )
     : dataWithError(null, message);
