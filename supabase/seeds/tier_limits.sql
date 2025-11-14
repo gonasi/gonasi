@@ -4,7 +4,6 @@
 -- ===================================================
 insert into tier_limits (
   tier,
-  max_organizations_per_user,
   storage_limit_mb_per_org,
   max_members_per_org,
   max_free_courses_per_org,
@@ -22,7 +21,6 @@ insert into tier_limits (
 
 -- Launch (Free) - Generous onboarding to build user base and showcase platform
 ('launch',
-  2,
   500,
   3,
   2,
@@ -40,7 +38,6 @@ insert into tier_limits (
 
 -- Scale ($39/mo or $390/yr with 2 months free)
 ('scale',
-  10,
   10000,
   15,
   15,
@@ -58,7 +55,6 @@ insert into tier_limits (
 
 -- Impact ($99/mo or $990/yr with 2 months free)
 ('impact',
-  25,
   50000,
   50,
   50,
@@ -76,7 +72,6 @@ insert into tier_limits (
 
 -- Enterprise ($299/mo or $2990/yr with 2 months free)
 ('enterprise',
-  100,
   200000,
   200,
   200,

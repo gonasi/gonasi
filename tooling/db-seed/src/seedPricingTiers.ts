@@ -9,7 +9,6 @@ type SupportLevel = 'community' | 'email' | 'priority' | 'dedicated';
 
 interface TierLimitSeed {
   tier: Tier;
-  max_organizations_per_user: number;
   storage_limit_mb_per_org: number;
   max_members_per_org: number;
   max_free_courses_per_org: number;
@@ -28,7 +27,6 @@ interface TierLimitSeed {
 const tierLimits: TierLimitSeed[] = [
   {
     tier: 'launch',
-    max_organizations_per_user: 2,
     storage_limit_mb_per_org: 500,
     max_members_per_org: 3,
     max_free_courses_per_org: 2,
@@ -45,7 +43,6 @@ const tierLimits: TierLimitSeed[] = [
   },
   {
     tier: 'scale',
-    max_organizations_per_user: 10,
     storage_limit_mb_per_org: 10000,
     max_members_per_org: 15,
     max_free_courses_per_org: 15,
@@ -62,7 +59,6 @@ const tierLimits: TierLimitSeed[] = [
   },
   {
     tier: 'impact',
-    max_organizations_per_user: 25,
     storage_limit_mb_per_org: 50000,
     max_members_per_org: 50,
     max_free_courses_per_org: 50,
@@ -79,7 +75,6 @@ const tierLimits: TierLimitSeed[] = [
   },
   {
     tier: 'enterprise',
-    max_organizations_per_user: 100,
     storage_limit_mb_per_org: 200000,
     max_members_per_org: 200,
     max_free_courses_per_org: 200,

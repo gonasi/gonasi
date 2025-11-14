@@ -108,6 +108,17 @@ schema_paths = [
   './schemas/organizations/organization_invites_schema_and_indexes.sql',
 
 
+  './schemas/organizations/tierLimits/helpers/get_org_tier.sql',
+  './schemas/organizations/tierLimits/helpers/get_tier_limits.sql',
+  './schemas/organizations/tierLimits/helpers/get_user_org_role.sql',
+  './schemas/organizations/tierLimits/helpers/has_org_role.sql',
+
+  './schemas/organizations/tierLimits/guards/can_accept_new_member.sql',
+  './schemas/organizations/tierLimits/guards/can_create_free_course.sql',
+  './schemas/organizations/tierLimits/guards/is_user_already_member.sql',
+  './schemas/organizations/tierLimits/guards/has_pending_invite.sql',
+
+  # // TODO: Delete utils - remove org creation limit
   './schemas/organizations/utils.sql',
 
   # gonasi wallets
@@ -259,6 +270,8 @@ schema_paths = [
   './schemas/publishedCourses/published_courses_rls.sql',
   './schemas/publishedCourses/published_course_structure_content_rls.sql',
   './schemas/publishedCourses/published_thumbnails_bucket_rls.sql',
+
+  './schemas/organizations/tierLimits/helpers/org_usage_counts.sql',
 
   # enrollments functions utils
   './schemas/enrollments/utils/calculate_access_end_date.sql',

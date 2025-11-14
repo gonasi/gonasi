@@ -2,19 +2,18 @@ import { getUserId } from '../auth';
 import type { TypedSupabaseClient } from '../client';
 import { ORGANIZATION_PROFILE_PHOTOS } from '../constants';
 
-// Signed URL expiry duration (1 week = 7 days * 24h * 3600s)
-const SIGNED_URL_EXPIRY = 60 * 60 * 24 * 7; // 604800 seconds
+const SIGNED_URL_EXPIRY = 60 * 60 * 24 * 7; // 7 days
 
 /**
- * Fetch all organizations the current user is part of,
- * enrich with ownership flags, tier limits, and signed avatar URLs.
+ * Fetches all organizations the current user belongs to,
+ * including roles, tier info, and signed avatar URLs.
  */
-export const fetchUsersOrganizations = async (supabase: TypedSupabaseClient) => {
+export async function fetchUsersOrganizations(supabase: TypedSupabaseClient) {
   try {
     const userId = await getUserId(supabase);
 
-    // Query all organizations where the user is a member
-    const { data, error } = await supabase
+    // Fetch organizations for the user
+    const { data: memberships, error } = await supabase
       .from('organization_members')
       .select(
         `
@@ -33,9 +32,10 @@ export const fetchUsersOrganizations = async (supabase: TypedSupabaseClient) => 
       )
       .eq('user_id', userId);
 
-    if (error || !data) {
+    // If query failed OR user has no organizations
+    if (error || !memberships?.length) {
       return {
-        success: false,
+        success: true,
         message: `Looks like you're not part of any organizations yet.`,
         data: [],
         total: 0,
@@ -45,73 +45,63 @@ export const fetchUsersOrganizations = async (supabase: TypedSupabaseClient) => 
       };
     }
 
-    // Collect all avatar paths for signed URL generation
-    const avatarPaths = data
-      .map((entry) => entry.organization?.avatar_url)
-      .filter((path): path is string => Boolean(path));
+    // -------- Signed URL generation --------
+    const avatarPaths = memberships
+      .map((m) => m.organization?.avatar_url)
+      .filter((p): p is string => Boolean(p));
 
     let signedUrls: Record<string, string> = {};
 
     if (avatarPaths.length > 0) {
-      try {
-        const { data: signedData, error: signedError } = await supabase.storage
-          .from(ORGANIZATION_PROFILE_PHOTOS)
-          .createSignedUrls(avatarPaths, SIGNED_URL_EXPIRY);
+      const { data: signedData, error: signedError } = await supabase.storage
+        .from(ORGANIZATION_PROFILE_PHOTOS)
+        .createSignedUrls(avatarPaths, SIGNED_URL_EXPIRY);
 
-        if (!signedError && signedData) {
-          signedUrls = signedData.reduce(
-            (acc, item) => {
-              if (item.signedUrl && typeof item.path === 'string') {
-                acc[item.path] = item.signedUrl;
-              }
-              return acc;
-            },
-            {} as Record<string, string>,
-          );
-        } else if (signedError) {
-          console.error('Error creating signed URLs for avatars:', signedError);
-        }
-      } catch (err) {
-        console.error('Exception while creating signed URLs for avatars:', err);
+      if (signedError) {
+        console.error('Error generating signed organization avatars:', signedError);
+      } else if (signedData) {
+        signedUrls = signedData.reduce(
+          (acc, file) => {
+            if (file.path && file.signedUrl) {
+              acc[file.path] = file.signedUrl;
+            }
+            return acc;
+          },
+          {} as Record<string, string>,
+        );
       }
     }
 
-    // Enrich organizations with signed avatar URLs and ownership flags
-    const withOwnershipFlags = data.map((entry) => ({
-      ...entry,
-      is_owner: entry.role === 'owner',
-      organization: entry.organization
-        ? {
-            ...entry.organization,
-            avatar_url: entry.organization.avatar_url
-              ? signedUrls[entry.organization.avatar_url] || entry.organization.avatar_url
-              : null,
-          }
-        : entry.organization,
-    }));
+    // -------- Enrich organizations --------
+    const enriched = memberships.map((entry) => {
+      const org = entry.organization;
 
-    // Ownership and tier-based constraints
-    const total = data.length;
-    const ownedOrgs = withOwnershipFlags.filter((entry) => entry.is_owner);
-    const owned_count = ownedOrgs.length;
-    const launchOwnedCount = ownedOrgs.filter(
-      (entry) => entry.organization?.tier === 'launch',
-    ).length;
+      return {
+        ...entry,
+        is_owner: entry.role === 'owner',
+        organization: org
+          ? {
+              ...org,
+              avatar_url: org.avatar_url ? (signedUrls[org.avatar_url] ?? org.avatar_url) : null,
+            }
+          : null,
+      };
+    });
 
-    // Limit: max 2 "launch" tier orgs can be owned
-    const can_create_more = launchOwnedCount < 2;
+    const ownedOrgs = enriched.filter((e) => e.is_owner);
 
     return {
       success: true,
       message: 'Organizations loaded successfully.',
-      data: withOwnershipFlags,
-      total,
-      owned_count,
-      can_create_more,
+      data: enriched,
+      total: enriched.length,
+      owned_count: ownedOrgs.length,
+      can_create_more: true, // TODO: wire into tier limits if needed
       userId,
     };
   } catch (err) {
     console.error('fetchUsersOrganizations error:', err);
+
     return {
       success: false,
       message: 'Something went wrong. Please try again later.',
@@ -122,4 +112,4 @@ export const fetchUsersOrganizations = async (supabase: TypedSupabaseClient) => 
       userId: '',
     };
   }
-};
+}

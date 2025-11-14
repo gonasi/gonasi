@@ -14,7 +14,6 @@ interface PricingComparisonTableProps {
 
 /** Feature definitions */
 const FEATURES = [
-  { key: 'max_organizations_per_user', name: 'Organizations', type: 'number' },
   { key: 'storage_limit_mb_per_org', name: 'Storage per Org', type: 'storage' },
   { key: 'max_members_per_org', name: 'Team Members', type: 'number' },
   { key: 'max_free_courses_per_org', name: 'Free Courses', type: 'number' },

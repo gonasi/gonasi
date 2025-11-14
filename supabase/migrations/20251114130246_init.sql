@@ -2914,6 +2914,35 @@ AS $function$
 $function$
 ;
 
+CREATE OR REPLACE FUNCTION public.can_create_free_course(p_org uuid)
+ RETURNS boolean
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+declare
+  free_count int;
+  max_free int;
+  limits public.tier_limits;
+begin
+  select (public.org_usage_counts(p_org) ->> 'free_courses')::int
+    into free_count;
+
+  select * into limits
+  from public.tier_limits
+  where tier = public.get_org_tier(p_org);
+
+  max_free := limits.max_free_courses_per_org;
+
+  if max_free is null then
+    return true;
+  end if;
+
+  return free_count < max_free;
+end;
+$function$
+;
+
 CREATE OR REPLACE FUNCTION public.can_create_organization(tier_name text, arg_user_id uuid)
  RETURNS boolean
  LANGUAGE sql
@@ -5263,14 +5292,14 @@ CREATE OR REPLACE FUNCTION public.get_org_notifications_for_member(p_organizatio
 AS $function$
 declare
   v_member_role public.org_role;
-  v_member_updated_at timestamptz;
+  v_member_joined_at timestamptz;
 begin
-  -- Get member's role and join timestamp (for filtering)
-  select role, updated_at
-    into v_member_role, v_member_updated_at
-  from public.organization_members
-  where organization_id = p_organization_id
-    and user_id = p_user_id;
+  -- Get member's role and join timestamp
+  select om.role, om.updated_at
+    into v_member_role, v_member_joined_at
+  from public.organization_members om
+  where om.organization_id = p_organization_id
+    and om.user_id = p_user_id;
 
   if v_member_role is null then
     raise exception 'User % is not a member of organization %',
@@ -5298,24 +5327,37 @@ begin
       'editor', nt.visible_to_editor
     ) as visibility
   from public.org_notifications n
-  inner join public.org_notifications_types nt
+  join public.org_notifications_types nt
     on nt.key = n.key
   left join public.org_notification_reads r
     on r.notification_id = n.id
     and r.user_id = p_user_id
   where n.organization_id = p_organization_id
     and n.deleted_at is null
-    and (r.dismissed_at is null)
-    and n.created_at >= v_member_updated_at
+    and r.dismissed_at is null
+    and n.created_at >= v_member_joined_at
     and (
-      (v_member_role = 'owner' and nt.visible_to_owner)
-      or (v_member_role = 'admin' and nt.visible_to_admin)
+      (v_member_role = 'owner'  and nt.visible_to_owner)
+      or (v_member_role = 'admin'  and nt.visible_to_admin)
       or (v_member_role = 'editor' and nt.visible_to_editor)
     )
   order by n.created_at desc
   limit p_limit
   offset p_offset;
 end;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.get_org_tier(p_org uuid)
+ RETURNS public.subscription_tier
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+  select o.tier
+  from public.organizations o
+  where o.id = p_org
+  limit 1;
 $function$
 ;
 
@@ -5786,6 +5828,22 @@ begin
 
   return result;
 end;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.get_tier_limits(p_org uuid)
+ RETURNS public.tier_limits
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+  select *
+  from public.tier_limits tl
+  where tl.tier = (
+    select o.tier
+    from public.organizations o
+    where o.id = p_org
+  );
 $function$
 ;
 
@@ -6555,6 +6613,30 @@ begin
 
   return NEW;
 end;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.org_usage_counts(p_org uuid)
+ RETURNS jsonb
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+  with members as (
+    select count(*) as total_members
+    from public.organization_members m
+    where m.organization_id = p_org
+  ),
+  free as (
+    select count(*) as free_courses
+    from public.published_courses pc
+    where pc.organization_id = p_org
+      and pc.has_free_tier = true
+  )
+  select jsonb_build_object(
+    'total_members', (select total_members from members),
+    'free_courses', (select free_courses from free)
+  );
 $function$
 ;
 

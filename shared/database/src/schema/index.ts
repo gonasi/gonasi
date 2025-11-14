@@ -2714,6 +2714,7 @@ export type Database = {
         Args: { arg_check_type?: string; arg_org_id: string }
         Returns: boolean
       }
+      can_create_free_course: { Args: { p_org: string }; Returns: boolean }
       can_create_organization: {
         Args: { arg_user_id: string; tier_name: string }
         Returns: boolean
@@ -2885,6 +2886,10 @@ export type Database = {
           visibility: Json
         }[]
       }
+      get_org_tier: {
+        Args: { p_org: string }
+        Returns: Database["public"]["Enums"]["subscription_tier"]
+      }
       get_org_unread_count: {
         Args: { p_organization_id: string; p_user_id: string }
         Returns: number
@@ -2939,6 +2944,38 @@ export type Database = {
       get_published_lesson_blocks: {
         Args: { p_chapter_id: string; p_course_id: string; p_lesson_id: string }
         Returns: Json
+      }
+      get_tier_limits: {
+        Args: { p_org: string }
+        Returns: {
+          ai_tools_enabled: boolean
+          ai_usage_limit_monthly: number | null
+          analytics_level: Database["public"]["Enums"]["analytics_level"]
+          created_at: string
+          custom_domains_enabled: boolean
+          max_custom_domains: number | null
+          max_free_courses_per_org: number
+          max_members_per_org: number
+          max_organizations_per_user: number
+          paystack_plan_code: string | null
+          paystack_plan_id: string | null
+          plan_currency: string
+          plan_interval: string
+          platform_fee_percentage: number
+          price_monthly_usd: number
+          price_yearly_usd: number
+          storage_limit_mb_per_org: number
+          support_level: Database["public"]["Enums"]["support_level"]
+          tier: Database["public"]["Enums"]["subscription_tier"]
+          updated_at: string
+          white_label_enabled: boolean
+        }
+        SetofOptions: {
+          from: "*"
+          to: "tier_limits"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       get_tier_limits_for_org: { Args: { org_id: string }; Returns: Json }
       get_unified_navigation: {
@@ -2998,6 +3035,7 @@ export type Database = {
         Args: { p_notification_id: string; p_user_id: string }
         Returns: undefined
       }
+      org_usage_counts: { Args: { p_org: string }; Returns: Json }
       process_course_payment_from_paystack: {
         Args: {
           p_amount_paid: number

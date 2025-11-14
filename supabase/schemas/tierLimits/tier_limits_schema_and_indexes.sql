@@ -36,7 +36,6 @@ create table public.tier_limits (
   tier subscription_tier primary key,
 
   -- Organizational limits
-  max_organizations_per_user integer not null check (max_organizations_per_user >= 0),
   storage_limit_mb_per_org integer not null check (storage_limit_mb_per_org >= 0),
 
   -- Team size

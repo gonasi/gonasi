@@ -1,6 +1,5 @@
 export const launchTierLimits = {
   tier: 'launch',
-  max_organizations_per_user: 3,
   storage_limit_mb_per_org: 1000,
   max_members_per_org: 2,
   max_collaborators_per_course: 5,
@@ -18,7 +17,6 @@ export const launchTierLimits = {
 
 export const scaleTierLimits = {
   tier: 'scale',
-  max_organizations_per_user: 10,
   storage_limit_mb_per_org: 10000,
   max_members_per_org: 5,
   max_collaborators_per_course: 15,
@@ -36,7 +34,6 @@ export const scaleTierLimits = {
 
 export const enterpriseTierLimits = {
   tier: 'enterprise',
-  max_organizations_per_user: -1, // Unlimited
   storage_limit_mb_per_org: 100000,
   max_members_per_org: 20,
   max_collaborators_per_course: 50,
