@@ -2,8 +2,6 @@
 -- TABLE: public.organizations
 -- ===================================================
 -- Stores profile data for each organization in the system, including contact details,
--- visibility options, tiering info, and audit metadata.
-
 create table public.organizations (
   id uuid primary key default uuid_generate_v4(), -- Unique ID for each organization
 
@@ -29,9 +27,6 @@ create table public.organizations (
   email_verified boolean not null default false,
   whatsapp_number text,
   location text,
-
-  -- Tiering
-  tier subscription_tier not null default 'launch' references tier_limits(tier), -- Linked to tier_limits
 
   -- Audit trail
   created_at timestamptz not null default timezone('utc', now()),
@@ -64,7 +59,6 @@ create index idx_organizations_created_at   on public.organizations(created_at);
 create index idx_organizations_created_by   on public.organizations(created_by);
 create index idx_organizations_updated_by   on public.organizations(updated_by);
 create index idx_organizations_deleted_by   on public.organizations(deleted_by);
-create index idx_organizations_tier         on public.organizations(tier);
 create index idx_organizations_owned_by     on public.organizations(owned_by);
 
 -- ===================================================

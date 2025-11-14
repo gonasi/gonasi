@@ -1883,7 +1883,6 @@ export type Database = {
           owned_by: string | null
           phone_number: string | null
           phone_number_verified: boolean
-          tier: Database["public"]["Enums"]["subscription_tier"]
           updated_at: string
           updated_by: string | null
           website_url: string | null
@@ -1909,7 +1908,6 @@ export type Database = {
           owned_by?: string | null
           phone_number?: string | null
           phone_number_verified?: boolean
-          tier?: Database["public"]["Enums"]["subscription_tier"]
           updated_at?: string
           updated_by?: string | null
           website_url?: string | null
@@ -1935,7 +1933,6 @@ export type Database = {
           owned_by?: string | null
           phone_number?: string | null
           phone_number_verified?: boolean
-          tier?: Database["public"]["Enums"]["subscription_tier"]
           updated_at?: string
           updated_by?: string | null
           website_url?: string | null
@@ -1962,13 +1959,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "organizations_tier_fkey"
-            columns: ["tier"]
-            isOneToOne: false
-            referencedRelation: "tier_limits"
-            referencedColumns: ["tier"]
           },
           {
             foreignKeyName: "organizations_updated_by_fkey"
@@ -2354,7 +2344,6 @@ export type Database = {
           max_custom_domains: number | null
           max_free_courses_per_org: number
           max_members_per_org: number
-          max_organizations_per_user: number
           paystack_plan_code: string | null
           paystack_plan_id: string | null
           plan_currency: string
@@ -2377,7 +2366,6 @@ export type Database = {
           max_custom_domains?: number | null
           max_free_courses_per_org: number
           max_members_per_org: number
-          max_organizations_per_user: number
           paystack_plan_code?: string | null
           paystack_plan_id?: string | null
           plan_currency?: string
@@ -2400,7 +2388,6 @@ export type Database = {
           max_custom_domains?: number | null
           max_free_courses_per_org?: number
           max_members_per_org?: number
-          max_organizations_per_user?: number
           paystack_plan_code?: string | null
           paystack_plan_id?: string | null
           plan_currency?: string
@@ -2716,7 +2703,7 @@ export type Database = {
       }
       can_create_free_course: { Args: { p_org: string }; Returns: boolean }
       can_create_organization: {
-        Args: { arg_user_id: string; tier_name: string }
+        Args: { arg_user_id: string }
         Returns: boolean
       }
       can_publish_course: {
@@ -2956,7 +2943,6 @@ export type Database = {
           max_custom_domains: number | null
           max_free_courses_per_org: number
           max_members_per_org: number
-          max_organizations_per_user: number
           paystack_plan_code: string | null
           paystack_plan_id: string | null
           plan_currency: string
@@ -3133,10 +3119,6 @@ export type Database = {
         }
         Returns: undefined
       }
-      rpc_verify_and_set_active_organization: {
-        Args: { organization_id_from_url: string }
-        Returns: Json
-      }
       schedule_downgrade_retry: {
         Args: { p_attempt_id: string; p_retry_delay_minutes?: number }
         Returns: undefined
@@ -3229,7 +3211,7 @@ export type Database = {
       }
     }
     Enums: {
-      analytics_level: "basic" | "intermediate" | "advanced" | "enterprise"
+      analytics_level: "none" | "basic" | "intermediate" | "advanced"
       app_permission:
         | "go_su_create"
         | "go_su_read"
@@ -3332,8 +3314,8 @@ export type Database = {
         | "attention"
         | "completed"
         | "cancelled"
-      subscription_tier: "launch" | "scale" | "impact" | "enterprise"
-      support_level: "community" | "email" | "priority" | "dedicated"
+      subscription_tier: "temp" | "launch" | "scale" | "impact"
+      support_level: "none" | "community" | "email" | "priority"
       transaction_direction: "credit" | "debit"
       transaction_status:
         | "pending"
@@ -3502,7 +3484,7 @@ export const Constants = {
   },
   public: {
     Enums: {
-      analytics_level: ["basic", "intermediate", "advanced", "enterprise"],
+      analytics_level: ["none", "basic", "intermediate", "advanced"],
       app_permission: [
         "go_su_create",
         "go_su_read",
@@ -3611,8 +3593,8 @@ export const Constants = {
         "completed",
         "cancelled",
       ],
-      subscription_tier: ["launch", "scale", "impact", "enterprise"],
-      support_level: ["community", "email", "priority", "dedicated"],
+      subscription_tier: ["temp", "launch", "scale", "impact"],
+      support_level: ["none", "community", "email", "priority"],
       transaction_direction: ["credit", "debit"],
       transaction_status: [
         "pending",

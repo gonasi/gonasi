@@ -20,7 +20,7 @@ import {
 import { cn } from '~/lib/utils';
 import type { UserProfileLoaderReturnType, UserRoleLoaderReturnType } from '~/root';
 import type {
-  MemberLoaderData,
+  OrgRoleLoaderData,
   OrganizationLoaderData,
 } from '~/routes/layouts/organizations/organizations-layout';
 
@@ -31,7 +31,7 @@ interface Props {
   dropdownAlign?: 'start' | 'center' | 'end';
   size?: AvatarSize;
   organization?: OrganizationLoaderData;
-  member?: MemberLoaderData;
+  member?: OrgRoleLoaderData;
 }
 
 export function ProfileDropdown({

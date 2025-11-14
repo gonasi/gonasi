@@ -4,6 +4,7 @@ import { Check, Plus } from 'lucide-react';
 import { dataWithError, redirectWithError, redirectWithSuccess } from 'remix-toast';
 
 import {
+  canCreateNewOrganization,
   fetchUsersOrganizations,
   switchToPersonalMode,
   updateActiveOrganization,
@@ -65,7 +66,11 @@ export async function action({ request }: Route.ActionArgs) {
 
 export async function loader({ request }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
-  const result = await fetchUsersOrganizations(supabase);
+
+  const [result, canCreateNewOrg] = await Promise.all([
+    fetchUsersOrganizations(supabase),
+    canCreateNewOrganization({ supabase }),
+  ]);
 
   if (!result.userId) {
     return redirectWithError('/', 'No account found');
@@ -75,7 +80,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     organizations: result.success ? result.data : [],
     total: result.total ?? 0,
     ownedCount: result.owned_count ?? 0,
-    canCreateMore: result.can_create_more ?? false,
+    canCreateNewOrg,
   };
 }
 
@@ -93,7 +98,7 @@ const fadeInUp = {
 };
 
 export default function OrganizationsIndex({ params, loaderData }: Route.ComponentProps) {
-  const { organizations, canCreateMore } = loaderData;
+  const { organizations, canCreateNewOrg } = loaderData;
   const fetcher = useFetcher();
   const { activeUserProfile, isActiveUserProfileLoading } = useStore();
 
@@ -123,12 +128,12 @@ export default function OrganizationsIndex({ params, loaderData }: Route.Compone
         variants={fadeInUp}
         custom={0}
       >
-        {!canCreateMore && (
+        {!canCreateNewOrg && (
           <BannerCard
             showCloseIcon={false}
             variant='warning'
-            message='Launch Plan Limit'
-            description='You can own up to 2 organizations on the Launch Plan. Upgrade an existing organization to create more.'
+            message='Organization Limit Reached'
+            description='You can only own one organization on the Launch plan and one temporary organization. To create another, upgrade your existing organization to a paid tier.'
             className='mt-4 md:mt-0'
           />
         )}
@@ -217,7 +222,7 @@ export default function OrganizationsIndex({ params, loaderData }: Route.Compone
           )}
         </div>
 
-        {canCreateMore && (
+        {canCreateNewOrg && (
           <motion.div
             initial='hidden'
             animate='visible'
@@ -236,7 +241,7 @@ export default function OrganizationsIndex({ params, loaderData }: Route.Compone
         )}
       </motion.div>
 
-      <Outlet context={{ canCreateMore }} />
+      <Outlet context={{ canCreateNewOrg }} />
     </>
   );
 }

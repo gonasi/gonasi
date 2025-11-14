@@ -1,4 +1,4 @@
-create type "public"."analytics_level" as enum ('basic', 'intermediate', 'advanced', 'enterprise');
+create type "public"."analytics_level" as enum ('none', 'basic', 'intermediate', 'advanced');
 
 create type "public"."app_permission" as enum ('go_su_create', 'go_su_read', 'go_su_update', 'go_su_delete', 'go_admin_create', 'go_admin_read', 'go_admin_update', 'go_admin_delete', 'go_staff_create', 'go_staff_read', 'go_staff_update', 'go_staff_delete');
 
@@ -26,9 +26,9 @@ create type "public"."profile_mode" as enum ('personal', 'organization');
 
 create type "public"."subscription_status" as enum ('active', 'non-renewing', 'attention', 'completed', 'cancelled');
 
-create type "public"."subscription_tier" as enum ('launch', 'scale', 'impact', 'enterprise');
+create type "public"."subscription_tier" as enum ('temp', 'launch', 'scale', 'impact');
 
-create type "public"."support_level" as enum ('community', 'email', 'priority', 'dedicated');
+create type "public"."support_level" as enum ('none', 'community', 'email', 'priority');
 
 create type "public"."transaction_direction" as enum ('credit', 'debit');
 
@@ -625,7 +625,6 @@ alter table "public"."organization_wallets" enable row level security;
     "email_verified" boolean not null default false,
     "whatsapp_number" text,
     "location" text,
-    "tier" public.subscription_tier not null default 'launch'::public.subscription_tier,
     "created_at" timestamp with time zone not null default timezone('utc'::text, now()),
     "updated_at" timestamp with time zone not null default timezone('utc'::text, now()),
     "created_by" uuid,
@@ -756,7 +755,6 @@ alter table "public"."role_permissions" enable row level security;
 
   create table "public"."tier_limits" (
     "tier" public.subscription_tier not null,
-    "max_organizations_per_user" integer not null,
     "storage_limit_mb_per_org" integer not null,
     "max_members_per_org" integer not null,
     "max_free_courses_per_org" integer not null,
@@ -1224,8 +1222,6 @@ CREATE INDEX idx_organizations_created_by ON public.organizations USING btree (c
 CREATE INDEX idx_organizations_deleted_by ON public.organizations USING btree (deleted_by);
 
 CREATE INDEX idx_organizations_owned_by ON public.organizations USING btree (owned_by);
-
-CREATE INDEX idx_organizations_tier ON public.organizations USING btree (tier);
 
 CREATE INDEX idx_organizations_updated_by ON public.organizations USING btree (updated_by);
 
@@ -2021,10 +2017,6 @@ alter table "public"."organizations" add constraint "organizations_owned_by_fkey
 
 alter table "public"."organizations" validate constraint "organizations_owned_by_fkey";
 
-alter table "public"."organizations" add constraint "organizations_tier_fkey" FOREIGN KEY (tier) REFERENCES public.tier_limits(tier) not valid;
-
-alter table "public"."organizations" validate constraint "organizations_tier_fkey";
-
 alter table "public"."organizations" add constraint "organizations_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES public.profiles(id) ON DELETE SET NULL not valid;
 
 alter table "public"."organizations" validate constraint "organizations_updated_by_fkey";
@@ -2350,10 +2342,6 @@ alter table "public"."tier_limits" validate constraint "tier_limits_max_free_cou
 alter table "public"."tier_limits" add constraint "tier_limits_max_members_per_org_check" CHECK ((max_members_per_org >= 0)) not valid;
 
 alter table "public"."tier_limits" validate constraint "tier_limits_max_members_per_org_check";
-
-alter table "public"."tier_limits" add constraint "tier_limits_max_organizations_per_user_check" CHECK ((max_organizations_per_user >= 0)) not valid;
-
-alter table "public"."tier_limits" validate constraint "tier_limits_max_organizations_per_user_check";
 
 alter table "public"."tier_limits" add constraint "tier_limits_paystack_plan_code_key" UNIQUE using index "tier_limits_paystack_plan_code_key";
 
@@ -2727,45 +2715,61 @@ end;
 $function$
 ;
 
-CREATE OR REPLACE FUNCTION public.assign_launch_subscription_to_new_org()
+CREATE OR REPLACE FUNCTION public.assign_default_subscription_to_new_org()
  RETURNS trigger
  LANGUAGE plpgsql
  SECURITY DEFINER
  SET search_path TO ''
 AS $function$
+declare
+    v_user_id uuid := new.owned_by;
+    v_tier public.subscription_tier;
 begin
-  -- Skip if this organization already has a subscription (safety check)
-  if exists (
-    select 1
-    from public.organization_subscriptions s
-    where s.organization_id = new.id
-  ) then
+    -- Skip if this organization already has a subscription (safety check)
+    if exists (
+        select 1
+        from public.organization_subscriptions s
+        where s.organization_id = new.id
+    ) then
+        return new;
+    end if;
+
+    -- Determine tier: launch for first org, temp otherwise
+    if not exists (
+        select 1
+        from public.organizations o
+        join public.organization_subscriptions s
+          on o.id = s.organization_id
+        where o.owned_by = v_user_id
+          and s.tier = 'launch'
+    ) then
+        v_tier := 'launch';
+    else
+        v_tier := 'temp';
+    end if;
+
+    -- Insert default subscription
+    insert into public.organization_subscriptions (
+        organization_id,
+        tier,
+        status,
+        start_date,
+        current_period_start,
+        current_period_end,
+        created_by,
+        updated_by
+    ) values (
+        new.id,
+        v_tier,
+        'active',
+        timezone('utc', now()),
+        timezone('utc', now()),
+        case when v_tier = 'launch' then null else timezone('utc', now()) + interval '30 days' end,
+        new.created_by,
+        new.created_by
+    );
+
     return new;
-  end if;
-
-  -- Insert default subscription record
-  insert into public.organization_subscriptions (
-    organization_id,
-    tier,
-    status,
-    start_date,
-    current_period_start,
-    current_period_end,
-    created_by,
-    updated_by
-  )
-  values (
-    new.id,                 -- new organization ID
-    'launch',               -- default free tier
-    'active',               -- active subscription
-    timezone('utc', now()), -- subscription start date
-    timezone('utc', now()), -- current period start
-    null,                   -- 'launch' tier has no expiry
-    new.created_by,         -- who created the organization (if tracked)
-    new.created_by
-  );
-
-  return new;
 end;
 $function$
 ;
@@ -2881,7 +2885,7 @@ CREATE OR REPLACE FUNCTION public.can_accept_new_member(arg_org_id uuid, arg_che
  STABLE SECURITY DEFINER
  SET search_path TO ''
 AS $function$
-  with counts as (
+with counts as (
     select 
       count(distinct om.user_id) as active_members,
       count(distinct oi.email) filter (
@@ -2889,28 +2893,26 @@ AS $function$
           and oi.revoked_at is null 
           and oi.expires_at > now()
       ) as pending_invites
-    from public.organizations o
-    left join public.organization_members om on o.id = om.organization_id
-    left join public.organization_invites oi on o.id = oi.organization_id
-    where o.id = arg_org_id
-  ),
-  limits as (
+    from public.organization_members om
+    left join public.organization_invites oi 
+      on om.organization_id = oi.organization_id
+    where om.organization_id = arg_org_id
+),
+limits as (
     select tl.max_members_per_org
-    from public.organizations o
-    join public.tier_limits tl on o.tier = tl.tier
-    where o.id = arg_org_id
-  )
-  select case 
+    from public.organization_subscriptions s
+    join public.tier_limits tl on s.tier = tl.tier
+    where s.organization_id = arg_org_id
+      and s.status = 'active'
+    limit 1
+)
+select case 
     when arg_check_type = 'accept' then
-      -- When accepting, only check active members
-      -- (the pending invite will become an active member)
-      counts.active_members < limits.max_members_per_org
+        counts.active_members < limits.max_members_per_org
     else
-      -- When inviting, check both active members + pending invites
-      -- to prevent over-inviting
-      (counts.active_members + counts.pending_invites) < limits.max_members_per_org
-  end
-  from counts, limits;
+        (counts.active_members + counts.pending_invites) < limits.max_members_per_org
+end
+from counts, limits;
 $function$
 ;
 
@@ -2943,25 +2945,32 @@ end;
 $function$
 ;
 
-CREATE OR REPLACE FUNCTION public.can_create_organization(tier_name text, arg_user_id uuid)
+CREATE OR REPLACE FUNCTION public.can_create_organization(arg_user_id uuid)
  RETURNS boolean
  LANGUAGE sql
  STABLE SECURITY DEFINER
  SET search_path TO ''
 AS $function$
-  with user_org_count as (
-    select count(*) as count
-    from public.organizations
-    where owned_by = coalesce(arg_user_id, auth.uid())
-      and tier = tier_name::public.subscription_tier
-  ),
-  tier_limit as (
-    select max_organizations_per_user
-    from public.tier_limits
-    where tier = tier_name::public.subscription_tier
-  )
-  select user_org_count.count < tier_limit.max_organizations_per_user
-  from user_org_count, tier_limit;
+with org_counts as (
+  select
+    count(*) filter (where s.tier = 'launch') as launch_count,
+    count(*) filter (where s.tier = 'temp') as temp_count
+  from public.organizations o
+  join public.organization_subscriptions s
+    on s.organization_id = o.id
+  where o.owned_by = coalesce(arg_user_id, (select auth.uid()))
+    and s.status = 'active'
+)
+select
+  (select
+      -- Only allow launch or temp tiers
+      case
+        when (launch_count = 0) then true          -- can create launch
+        when (launch_count > 0 and temp_count = 0) then true  -- can create temp only
+        else false
+      end
+    from org_counts
+  );
 $function$
 ;
 
@@ -5354,9 +5363,10 @@ CREATE OR REPLACE FUNCTION public.get_org_tier(p_org uuid)
  STABLE SECURITY DEFINER
  SET search_path TO ''
 AS $function$
-  select o.tier
-  from public.organizations o
-  where o.id = p_org
+  select s.tier
+  from public.organization_subscriptions s
+  where s.organization_id = p_org
+    and s.status = 'active'
   limit 1;
 $function$
 ;
@@ -5837,13 +5847,13 @@ CREATE OR REPLACE FUNCTION public.get_tier_limits(p_org uuid)
  STABLE SECURITY DEFINER
  SET search_path TO ''
 AS $function$
-  select *
+  select tl.*
   from public.tier_limits tl
-  where tl.tier = (
-    select o.tier
-    from public.organizations o
-    where o.id = p_org
-  );
+  join public.organization_subscriptions s
+    on s.tier = tl.tier
+  where s.organization_id = p_org
+    and s.status = 'active'
+  limit 1;
 $function$
 ;
 
@@ -5854,9 +5864,11 @@ CREATE OR REPLACE FUNCTION public.get_tier_limits_for_org(org_id uuid)
  SET search_path TO ''
 AS $function$
   select row_to_json(tl)
-  from public.organizations o
-  join public.tier_limits tl on tl.tier = o.tier
-  where o.id = org_id
+  from public.organization_subscriptions s
+  join public.tier_limits tl on tl.tier = s.tier
+  where s.organization_id = org_id
+    and s.status = 'active'
+  limit 1;
 $function$
 ;
 
@@ -6173,18 +6185,21 @@ AS $function$
 declare
   monthly_limit int;
 begin
-  -- Get monthly AI credit limit based on tier
-  select public.tier_limits.ai_usage_limit_monthly
+  -- Look up monthly AI credit limit based on the organization's active subscription
+  select tl.ai_usage_limit_monthly
   into monthly_limit
-  from public.tier_limits
-  where public.tier_limits.tier = new.tier;
+  from public.organization_subscriptions s
+  join public.tier_limits tl on tl.tier = s.tier
+  where s.organization_id = new.id
+    and s.status = 'active'
+  limit 1;
 
-  -- Fallback to 100 if tier not found or has null limit
+  -- Fallback to 100 if no tier found or limit is null
   if monthly_limit is null then
     monthly_limit := 100;
   end if;
 
-  -- Insert the org’s initial AI credit record
+  -- Insert initial AI credits for the organization
   insert into public.organizations_ai_credits (
     org_id,
     base_credits_total,
@@ -6205,7 +6220,7 @@ begin
     now() + interval '1 month',
     now()
   )
-  on conflict (org_id) do nothing;  -- Prevent duplicates
+  on conflict (org_id) do nothing;  -- Prevent duplicate inserts
 
   return new;
 end;
@@ -7975,116 +7990,6 @@ begin
   if not found then
     raise exception 'Failed downgrade attempt not found: %', p_attempt_id;
   end if;
-end;
-$function$
-;
-
-CREATE OR REPLACE FUNCTION public.rpc_verify_and_set_active_organization(organization_id_from_url uuid)
- RETURNS json
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO ''
-AS $function$
-declare
-  org public.organizations;
-  member public.organization_members;
-  profile_active_org_id uuid;
-  current_user_id uuid;
-  can_add boolean;
-  tier_limits_json json;
-begin
-  -- Get the ID of the currently authenticated user
-  current_user_id := (select auth.uid());
-
-  -- Block unauthenticated users
-  if current_user_id is null then
-    return json_build_object(
-      'success', false,
-      'message', 'User not authenticated',
-      'data', null
-    );
-  end if;
-
-  -- Check if the user is a member of the target organization
-  select * into member
-  from public.organization_members om
-  where om.organization_id = organization_id_from_url
-    and om.user_id = current_user_id;
-
-  -- If not a member, reset profile to personal mode and return early
-  if not found then
-    update public.profiles
-    set
-      mode = 'personal',
-      active_organization_id = null
-    where id = current_user_id;
-
-    return json_build_object(
-      'success', false,
-      'message', 'You are no longer a member of this organization. Switched to personal mode.',
-      'data', null
-    );
-  end if;
-
-  -- Fetch the current active organization from profile
-  select p.active_organization_id into profile_active_org_id
-  from public.profiles p
-  where p.id = current_user_id;
-
-  -- If already set to this org, return the current org context
-  if profile_active_org_id = organization_id_from_url then
-  begin
-    select * into org
-    from public.organizations o
-    where o.id = organization_id_from_url;
-
-    can_add := public.can_accept_new_member(organization_id_from_url, 'invite');
-    tier_limits_json := public.get_tier_limits_for_org(organization_id_from_url);
-
-    return json_build_object(
-      'success', true,
-      'message', null,
-      'data', json_build_object(
-        'organization', to_json(org),
-        'member', to_json(member),
-        'permissions', json_build_object(
-          'can_accept_new_member', can_add
-        ),
-        'tier_limits', tier_limits_json
-      )
-    );
-  end;
-  end if;
-
-  -- Set the target org as the active org and update mode to "organization"
-  update public.profiles p
-  set
-    active_organization_id = organization_id_from_url,
-    mode = 'organization'
-  where p.id = current_user_id;
-
-  -- Fetch organization details
-  select * into org
-  from public.organizations o
-  where o.id = organization_id_from_url;
-
-  -- Fetch permissions and tier config
-  can_add := public.can_accept_new_member(organization_id_from_url, 'invite');
-  tier_limits_json := public.get_tier_limits_for_org(organization_id_from_url);
-
-  -- Return updated organization context
-  return json_build_object(
-    'success', true,
-    'message', 'Active organization has been changed',
-    'data', json_build_object(
-      'organization', to_json(org),
-      'member', to_json(member),
-      'permissions', json_build_object(
-        'can_accept_new_member', can_add
-      ),
-      'tier_limits', tier_limits_json
-    )
-  );
 end;
 $function$
 ;
@@ -12386,7 +12291,7 @@ using ((owned_by = ( SELECT auth.uid() AS uid)));
   as permissive
   for insert
   to authenticated
-with check (((owned_by = ( SELECT auth.uid() AS uid)) AND public.can_create_organization((tier)::text, ( SELECT auth.uid() AS uid))));
+with check (((owned_by = ( SELECT auth.uid() AS uid)) AND public.can_create_organization(( SELECT auth.uid() AS uid))));
 
 
 
@@ -12874,7 +12779,7 @@ CREATE TRIGGER trg_organization_members_set_updated_at BEFORE UPDATE ON public.o
 
 CREATE TRIGGER trg_organizations_wallets_updated_at BEFORE UPDATE ON public.organization_wallets FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
-CREATE TRIGGER trg_assign_launch_subscription AFTER INSERT ON public.organizations FOR EACH ROW EXECUTE FUNCTION public.assign_launch_subscription_to_new_org();
+CREATE TRIGGER trg_assign_default_subscription AFTER INSERT ON public.organizations FOR EACH ROW EXECUTE FUNCTION public.assign_default_subscription_to_new_org();
 
 CREATE TRIGGER trg_create_org_ai_credits AFTER INSERT ON public.organizations FOR EACH ROW EXECUTE FUNCTION public.handle_new_organization_ai_credits();
 

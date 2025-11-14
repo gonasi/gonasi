@@ -2,7 +2,7 @@
 -- Sample tier configurations (optimized for early growth and profitability)
 -- Includes pricing: price_monthly_usd and price_yearly_usd
 -- ===================================================
-insert into tier_limits (
+insert into public.tier_limits (
   tier,
   storage_limit_mb_per_org,
   max_members_per_org,
@@ -19,70 +19,70 @@ insert into tier_limits (
   price_yearly_usd
 ) values
 
--- Launch (Free) - Generous onboarding to build user base and showcase platform
+-- TEMP TIER (extra organizations before upgrade)
+('temp',
+  50,         -- minimal storage
+  1,          -- owner only
+  1,
+  false,      -- no AI
+  0,
+  false,
+  0,
+  'none',     -- no analytics
+  'none',     -- no support
+  15.00,
+  false,
+  0.00,
+  0.00
+),
+
+-- LAUNCH TIER (only allowed 1 per owner)
 ('launch',
-  500,
+  1024,       -- 1GB
   3,
-  2,
+  3,
   true,
   200,
   false,
-  null,
+  0,
   'basic',
   'community',
   15.00,
   false,
-  0.00,     -- Monthly price
-  0.00      -- Yearly price
+  0.00,
+  0.00
 ),
 
--- Scale ($39/mo or $390/yr with 2 months free)
+-- SCALE TIER (starter paid)
 ('scale',
-  10000,
-  15,
-  15,
+  10240,      -- 10GB
+  10,
+  10,
   true,
   2000,
   true,
-  3,
+  1,
   'intermediate',
   'email',
-  12.00,
+  10.00,
   false,
-  39.00,     -- Monthly price
-  390.00     -- Yearly price (equivalent to $32.50/mo)
+  19.00,
+  190.00
 ),
 
--- Impact ($99/mo or $990/yr with 2 months free)
+-- IMPACT TIER (growing orgs)
 ('impact',
-  50000,
-  50,
+  51200,      -- 50GB
+  25,
   50,
   true,
   10000,
   true,
-  10,
+  3,
   'advanced',
   'priority',
-  9.00,
+  7.50,
   true,
-  99.00,     -- Monthly price
-  990.00     -- Yearly price (equivalent to $82.50/mo)
-),
-
--- Enterprise ($299/mo or $2990/yr with 2 months free)
-('enterprise',
-  200000,
-  200,
-  200,
-  true,
-  null,
-  true,
-  50,
-  'enterprise',
-  'dedicated',
-  7.00,
-  true,
-  299.00,    -- Monthly price
-  2990.00    -- Yearly price (equivalent to ~$249.17/mo)
+  49.00,
+  490.00
 );

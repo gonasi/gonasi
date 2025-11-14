@@ -3,9 +3,10 @@ import { faker } from '@snaplet/copycat';
 import { PASSWORD, SU_EMAIL, supabase } from './constants';
 import { SIGNED_UP_EMAILS } from './signUpUsers';
 
-type Tier = 'launch' | 'scale' | 'impact' | 'enterprise';
-type AnalyticsLevel = 'basic' | 'intermediate' | 'advanced' | 'enterprise';
-type SupportLevel = 'community' | 'email' | 'priority' | 'dedicated';
+type Tier = 'temp' | 'launch' | 'scale' | 'impact';
+
+type AnalyticsLevel = 'none' | 'basic' | 'intermediate' | 'advanced';
+type SupportLevel = 'none' | 'community' | 'email' | 'priority';
 
 interface TierLimitSeed {
   tier: Tier;
@@ -24,7 +25,30 @@ interface TierLimitSeed {
   price_yearly_usd: number;
 }
 
-const tierLimits: TierLimitSeed[] = [
+export const tierLimits: TierLimitSeed[] = [
+  //
+  // TEMP — placeholder tier for additional org creation
+  //
+  {
+    tier: 'temp',
+    storage_limit_mb_per_org: 0,
+    max_members_per_org: 0,
+    max_free_courses_per_org: 0,
+    ai_tools_enabled: false,
+    ai_usage_limit_monthly: null,
+    custom_domains_enabled: false,
+    max_custom_domains: null,
+    analytics_level: 'none',
+    support_level: 'none',
+    platform_fee_percentage: 0.0,
+    white_label_enabled: false,
+    price_monthly_usd: 0.0,
+    price_yearly_usd: 0.0,
+  },
+
+  //
+  // LAUNCH — free tier (1 per owner)
+  //
   {
     tier: 'launch',
     storage_limit_mb_per_org: 500,
@@ -41,6 +65,10 @@ const tierLimits: TierLimitSeed[] = [
     price_monthly_usd: 0.0,
     price_yearly_usd: 0.0,
   },
+
+  //
+  // SCALE — main mid-tier
+  //
   {
     tier: 'scale',
     storage_limit_mb_per_org: 10000,
@@ -57,6 +85,10 @@ const tierLimits: TierLimitSeed[] = [
     price_monthly_usd: 39.0,
     price_yearly_usd: 390.0,
   },
+
+  //
+  // IMPACT — advanced tier
+  //
   {
     tier: 'impact',
     storage_limit_mb_per_org: 50000,
@@ -72,22 +104,6 @@ const tierLimits: TierLimitSeed[] = [
     white_label_enabled: true,
     price_monthly_usd: 99.0,
     price_yearly_usd: 990.0,
-  },
-  {
-    tier: 'enterprise',
-    storage_limit_mb_per_org: 200000,
-    max_members_per_org: 200,
-    max_free_courses_per_org: 200,
-    ai_tools_enabled: true,
-    ai_usage_limit_monthly: null,
-    custom_domains_enabled: true,
-    max_custom_domains: 50,
-    analytics_level: 'enterprise',
-    support_level: 'dedicated',
-    platform_fee_percentage: 7.0,
-    white_label_enabled: true,
-    price_monthly_usd: 299.0,
-    price_yearly_usd: 2990.0,
   },
 ];
 

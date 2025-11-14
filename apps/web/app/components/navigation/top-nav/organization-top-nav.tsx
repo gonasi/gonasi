@@ -9,15 +9,15 @@ import { useDashboardLinks } from '~/hooks/useDashboardLinks';
 import { cn } from '~/lib/utils';
 import type { UserProfileLoaderReturnType, UserRoleLoaderReturnType } from '~/root';
 import type {
-  MemberLoaderData,
   OrganizationLoaderData,
+  OrgRoleLoaderData,
 } from '~/routes/layouts/organizations/organizations-layout';
 
 interface OrganizationTopNavProps {
   user: UserProfileLoaderReturnType;
   userRole: UserRoleLoaderReturnType;
   organization: OrganizationLoaderData;
-  member: MemberLoaderData;
+  orgRole: OrgRoleLoaderData;
   loading: boolean;
 }
 
@@ -25,14 +25,14 @@ export function OrganizationTopNav({
   user,
   userRole,
   organization,
-  member,
+  orgRole,
   loading,
 }: OrganizationTopNavProps) {
   const showOrgLabel = !!organization;
 
   const filteredLinks = useDashboardLinks({
     organizationId: organization?.id ?? '',
-    role: member?.role ?? 'editor',
+    role: orgRole,
   });
 
   return (
@@ -79,23 +79,23 @@ export function OrganizationTopNav({
               <div className='md:hidden'>
                 <OrganizationNotifications
                   organizationId={organization?.id ?? ''}
-                  memberRole={member?.role}
+                  memberRole={orgRole}
                 />
                 <MobileNav links={filteredLinks} />
               </div>
 
               {/* Desktop */}
               <div className='hidden items-center space-x-4 md:flex'>
-                {/* <OrganizationNotifications
+                <OrganizationNotifications
                   organizationId={organization?.id ?? ''}
-                  memberRole={member?.role}
-                /> */}
+                  memberRole={orgRole}
+                />
                 <ProfileDropdown
                   user={user}
                   userRole={userRole}
                   size='sm'
                   organization={organization}
-                  member={member}
+                  member={orgRole}
                 />
               </div>
             </>

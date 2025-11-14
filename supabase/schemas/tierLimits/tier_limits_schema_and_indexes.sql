@@ -2,37 +2,36 @@
 -- TYPE: public.subscription_tier
 -- ===================================================
 create type public.subscription_tier as enum (
+  'temp',
   'launch',
   'scale',
-  'impact',
-  'enterprise'
+  'impact'
 );
 
 -- ===================================================
 -- TYPE: public.analytics_level
 -- ===================================================
 create type public.analytics_level as enum (
+  'none',
   'basic',
   'intermediate',
-  'advanced',
-  'enterprise'
+  'advanced'
 );
 
 -- ===================================================
 -- TYPE: public.support_level
 -- ===================================================
 create type public.support_level as enum (
+  'none',
   'community',
   'email',
-  'priority',
-  'dedicated'
+  'priority'
 );
 
 -- ===================================================
 -- TABLE: public.tier_limits
 -- ===================================================
 create table public.tier_limits (
-  -- Primary key = subscription tier
   tier subscription_tier primary key,
 
   -- Organizational limits
@@ -52,18 +51,18 @@ create table public.tier_limits (
   custom_domains_enabled boolean not null default false,
   max_custom_domains integer check (max_custom_domains is null or max_custom_domains >= 0),
 
-  -- Feature depth (enums)
+  -- Feature depth
   analytics_level analytics_level not null,
   support_level support_level not null,
 
   -- Revenue sharing
-  platform_fee_percentage decimal(5,2) not null default 15.00
+  platform_fee_percentage numeric(5,2) not null default 15.00
     check (platform_fee_percentage >= 0 and platform_fee_percentage <= 100),
 
   -- Branding
   white_label_enabled boolean not null default false,
 
-  -- Pricing (USD)
+  -- Pricing
   price_monthly_usd numeric(10,2) not null default 0.00 check (price_monthly_usd >= 0),
   price_yearly_usd numeric(10,2) not null default 0.00 check (price_yearly_usd >= 0),
 

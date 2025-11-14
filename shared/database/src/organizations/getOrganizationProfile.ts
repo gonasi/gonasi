@@ -31,7 +31,6 @@ export const getOrganizationProfile = async ({
       email_verified,
       whatsapp_number,
       location,
-      tier,
       created_at,
       updated_at,
       created_by,

@@ -108,18 +108,8 @@ schema_paths = [
   './schemas/organizations/organization_invites_schema_and_indexes.sql',
 
 
-  './schemas/organizations/tierLimits/helpers/get_org_tier.sql',
-  './schemas/organizations/tierLimits/helpers/get_tier_limits.sql',
   './schemas/organizations/tierLimits/helpers/get_user_org_role.sql',
-  './schemas/organizations/tierLimits/helpers/has_org_role.sql',
 
-  './schemas/organizations/tierLimits/guards/can_accept_new_member.sql',
-  './schemas/organizations/tierLimits/guards/can_create_free_course.sql',
-  './schemas/organizations/tierLimits/guards/is_user_already_member.sql',
-  './schemas/organizations/tierLimits/guards/has_pending_invite.sql',
-
-  # // TODO: Delete utils - remove org creation limit
-  './schemas/organizations/utils.sql',
 
   # gonasi wallets
   './schemas/wallets/gonasi_wallets_schema_and_indexes.sql',
@@ -159,6 +149,27 @@ schema_paths = [
   './schemas/organizations/organizations_functions_triggers.sql',
 
 
+
+  './schemas/organizations/organization_subscriptions_schema_and_indexes.sql',
+  './schemas/organizations/utils/assign_launch_subscription_to_new_org.sql',
+  './schemas/organizations/utils/subscription_upsert_webhook.sql',
+  './schemas/organizations/failed_downgrade_attempts_schema_and_indexes.sql',
+
+  './schemas/organizations/tierLimits/helpers/has_org_role.sql',
+
+  './schemas/organizations/tierLimits/guards/can_create_free_course.sql',
+  './schemas/organizations/tierLimits/guards/is_user_already_member.sql',
+  './schemas/organizations/tierLimits/guards/has_pending_invite.sql',
+  './schemas/organizations/tierLimits/guards/can_create_organization.sql',
+
+  './schemas/organizations/tierLimits/helpers/get_org_tier.sql',
+  './schemas/organizations/tierLimits/helpers/get_tier_limits.sql',
+
+  './schemas/organizations/tierLimits/guards/can_accept_new_member.sql',
+
+
+  './schemas/organizations/organization_subscriptions_rls.sql',
+
   './schemas/organizations/organizations_rls.sql',
   './schemas/organizations/organization_members_rls.sql',
   './schemas/organizations/organization_invites_rls.sql',
@@ -167,13 +178,6 @@ schema_paths = [
 
   './schemas/organizations/organization_profile_photos_bucket_rls.sql',
   './schemas/organizations/organization_profile_banner_bucket_rls.sql',
-
-
-  './schemas/organizations/organization_subscriptions_schema_and_indexes.sql',
-  './schemas/organizations/organization_subscriptions_rls.sql',
-  './schemas/organizations/utils/assign_launch_subscription_to_new_org.sql',
-  './schemas/organizations/utils/subscription_upsert_webhook.sql',
-  './schemas/organizations/failed_downgrade_attempts_schema_and_indexes.sql',
 
   # ORG NOTIFICATIONS
   './schemas/organizationNotifications/enums/org_notification_category.sql',
@@ -197,10 +201,6 @@ schema_paths = [
 
   # rpc profiles, orgs
   './schemas/get_tier_limits_for_org_functions.sql',
-  './schemas/rpc_verify_and_set_active_organization.sql',
-
-
-
 
   # # courses & chapters & pricing
   './schemas/courses/courses_schema_and_indexes.sql',

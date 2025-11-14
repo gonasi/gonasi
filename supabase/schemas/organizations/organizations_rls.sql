@@ -24,7 +24,7 @@ for insert
 to authenticated
 with check (
   owned_by = (select auth.uid())
-  and public.can_create_organization(tier::text, (select auth.uid()))
+  and public.can_create_organization((select auth.uid()))
 );
 
 -- update: owners or admins can update, but only owners can transfer ownership

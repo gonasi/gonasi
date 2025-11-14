@@ -17,18 +17,20 @@ export async function fetchUsersOrganizations(supabase: TypedSupabaseClient) {
       .from('organization_members')
       .select(
         `
-        id,
-        role,
-        organization_id,
-        organization:organizations (
           id,
-          name,
-          handle,
-          avatar_url,
-          blur_hash,
-          tier
-        )
-      `,
+          role,
+          organization_id,
+          organization:organizations (
+            id,
+            name,
+            handle,
+            avatar_url,
+            blur_hash,
+            subscription:organization_subscriptions (
+              tier
+            )
+          )
+        `,
       )
       .eq('user_id', userId);
 
@@ -40,7 +42,6 @@ export async function fetchUsersOrganizations(supabase: TypedSupabaseClient) {
         data: [],
         total: 0,
         owned_count: 0,
-        can_create_more: true,
         userId,
       };
     }
@@ -96,7 +97,6 @@ export async function fetchUsersOrganizations(supabase: TypedSupabaseClient) {
       data: enriched,
       total: enriched.length,
       owned_count: ownedOrgs.length,
-      can_create_more: true, // TODO: wire into tier limits if needed
       userId,
     };
   } catch (err) {
@@ -108,7 +108,6 @@ export async function fetchUsersOrganizations(supabase: TypedSupabaseClient) {
       data: [],
       total: 0,
       owned_count: 0,
-      can_create_more: true,
       userId: '',
     };
   }

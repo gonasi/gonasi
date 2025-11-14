@@ -1,4 +1,4 @@
-import { Check, Crown } from 'lucide-react';
+import { Check, CircleOff, Crown } from 'lucide-react';
 
 import { PlainAvatar } from '~/components/avatars';
 import { Badge } from '~/components/ui/badge';
@@ -15,15 +15,19 @@ interface IOrganizationSwitcherCardProps {
 }
 
 const BADGE_COLOR_MAP: Record<string, string> = {
-  owner: 'bg-red-100 text-red-800 border-red-200',
-  admin: 'bg-indigo-100 text-indigo-800 border-indigo-200',
-  editor: 'bg-emerald-100 text-emerald-800 border-emerald-200',
-  instructor: 'bg-cyan-100 text-cyan-800 border-cyan-200',
-  analyst: 'bg-violet-100 text-violet-800 border-violet-200',
-  launch: 'bg-orange-100 text-orange-800 border-orange-200',
-  impact: 'bg-green-100 text-green-800 border-green-200',
-  scale: 'bg-blue-100 text-blue-800 border-blue-200',
-  enterprise: 'bg-purple-100 text-purple-800 border-purple-200',
+  owner:
+    'bg-red-200 text-red-900 border-red-300 dark:bg-red-900 dark:text-red-100 dark:border-red-700',
+  admin:
+    'bg-violet-200 text-violet-900 border-violet-300 dark:bg-violet-900 dark:text-violet-100 dark:border-violet-700',
+  editor:
+    'bg-emerald-200 text-emerald-900 border-emerald-300 dark:bg-emerald-900 dark:text-emerald-100 dark:border-emerald-700',
+  temp: 'bg-orange-200 text-orange-900 border-orange-300 dark:bg-orange-900 dark:text-orange-100 dark:border-orange-700',
+  launch:
+    'bg-amber-200 text-amber-900 border-amber-300 dark:bg-amber-900 dark:text-amber-100 dark:border-amber-700',
+  impact:
+    'bg-green-200 text-green-900 border-green-300 dark:bg-green-900 dark:text-green-100 dark:border-green-700',
+  scale:
+    'bg-blue-200 text-blue-900 border-blue-300 dark:bg-blue-900 dark:text-blue-100 dark:border-blue-700',
 };
 
 export const getBadgeColorClass = (key: string) =>
@@ -36,11 +40,15 @@ export default function OrganizationSwitcherCard({
   isLoading,
   pendingOrganizationId,
 }: IOrganizationSwitcherCardProps) {
+  if (!organization.organization) return null;
+
   const {
     is_owner,
     role,
-    organization: { id: orgId, name: orgName, handle: orgHandle, avatar_url, tier },
+    organization: { id: orgId, name: orgName, handle: orgHandle, avatar_url, subscription },
   } = organization;
+
+  const tier = subscription?.tier ?? 'launch'; // or whatever fallback you want
 
   const isActive = activeOrganizationId === orgId;
   const isPending = isLoading && pendingOrganizationId === orgId;
@@ -77,6 +85,7 @@ export default function OrganizationSwitcherCard({
             {role}
           </Badge>
           <Badge variant='outline' className={cn('rounded-full text-xs', getBadgeColorClass(tier))}>
+            {tier === 'temp' && <CircleOff />}
             {tier}
           </Badge>
         </div>

@@ -1,77 +1,73 @@
 -- ==========================================================
--- FUNCTION: assign_launch_subscription_to_new_org
+-- FUNCTION: assign_default_subscription_to_new_org
 -- ==========================================================
 -- Purpose:
---   Automatically assign every newly created organization
---   a default "launch" subscription (free tier).
---
--- Security:
---   - Declared as SECURITY DEFINER so it can insert into
---     organization_subscriptions even if the caller has limited rights.
---   - Sets search_path = '' to eliminate schema lookup risk.
---     All objects must be explicitly schema-qualified (public.table_name).
---
--- Trigger Timing:
---   AFTER INSERT on public.organizations
---
--- Behavior:
---   - Inserts a "launch" subscription with status 'active'
---   - Skips creation if a subscription already exists
---   - Uses UTC timestamps for start and current period fields
---
--- Notes:
---   - The 'launch' tier never expires (current_period_end = NULL)
+--   Automatically assign a subscription to every newly created organization:
+--     - First org: "launch"
+--     - Subsequent orgs: "temp"
 -- ==========================================================
-create or replace function public.assign_launch_subscription_to_new_org()
+create or replace function public.assign_default_subscription_to_new_org()
 returns trigger
 language plpgsql
 security definer
 set search_path = ''
 as $$
+declare
+    v_user_id uuid := new.owned_by;
+    v_tier public.subscription_tier;
 begin
-  -- Skip if this organization already has a subscription (safety check)
-  if exists (
-    select 1
-    from public.organization_subscriptions s
-    where s.organization_id = new.id
-  ) then
+    -- Skip if this organization already has a subscription (safety check)
+    if exists (
+        select 1
+        from public.organization_subscriptions s
+        where s.organization_id = new.id
+    ) then
+        return new;
+    end if;
+
+    -- Determine tier: launch for first org, temp otherwise
+    if not exists (
+        select 1
+        from public.organizations o
+        join public.organization_subscriptions s
+          on o.id = s.organization_id
+        where o.owned_by = v_user_id
+          and s.tier = 'launch'
+    ) then
+        v_tier := 'launch';
+    else
+        v_tier := 'temp';
+    end if;
+
+    -- Insert default subscription
+    insert into public.organization_subscriptions (
+        organization_id,
+        tier,
+        status,
+        start_date,
+        current_period_start,
+        current_period_end,
+        created_by,
+        updated_by
+    ) values (
+        new.id,
+        v_tier,
+        'active',
+        timezone('utc', now()),
+        timezone('utc', now()),
+        case when v_tier = 'launch' then null else timezone('utc', now()) + interval '30 days' end,
+        new.created_by,
+        new.created_by
+    );
+
     return new;
-  end if;
-
-  -- Insert default subscription record
-  insert into public.organization_subscriptions (
-    organization_id,
-    tier,
-    status,
-    start_date,
-    current_period_start,
-    current_period_end,
-    created_by,
-    updated_by
-  )
-  values (
-    new.id,                 -- new organization ID
-    'launch',               -- default free tier
-    'active',               -- active subscription
-    timezone('utc', now()), -- subscription start date
-    timezone('utc', now()), -- current period start
-    null,                   -- 'launch' tier has no expiry
-    new.created_by,         -- who created the organization (if tracked)
-    new.created_by
-  );
-
-  return new;
 end;
 $$;
 
-
 -- ==========================================================
--- TRIGGER: trg_assign_launch_subscription
+-- TRIGGER: trg_assign_default_subscription
 -- ==========================================================
--- Fires AFTER each new organization is created.
--- Ensures every organization starts with a default "launch" subscription.
--- ==========================================================
-create trigger trg_assign_launch_subscription
+create trigger trg_assign_default_subscription
 after insert on public.organizations
 for each row
-execute function public.assign_launch_subscription_to_new_org();
+execute function public.assign_default_subscription_to_new_org();

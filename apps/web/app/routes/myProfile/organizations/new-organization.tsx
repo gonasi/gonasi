@@ -56,7 +56,7 @@ export async function action({ request }: Route.ActionArgs) {
 
 export default function NewOrganization({ params }: Route.ComponentProps) {
   const isPending = useIsPending();
-  const { canCreateMore } = useOutletContext<{ canCreateMore: boolean }>();
+  const { canCreateNewOrg } = useOutletContext<{ canCreateNewOrg: boolean }>();
 
   const methods = useRemixForm<NewOrganizationSchemaTypes>({
     mode: 'all',
@@ -69,11 +69,13 @@ export default function NewOrganization({ params }: Route.ComponentProps) {
     <Modal open>
       <Modal.Content size='md'>
         <Modal.Header
-          title={canCreateMore ? 'Create a New Organization' : 'Organization Limit Reached'}
+          title={
+            canCreateNewOrg ? 'Create a New Organization' : 'Upgrade an Organization to Continue'
+          }
           closeRoute={`/go/${params.username}/organizations`}
         />
         <Modal.Body className='px-4'>
-          {canCreateMore ? (
+          {canCreateNewOrg ? (
             <RemixFormProvider {...methods}>
               <Form method='POST' onSubmit={methods.handleSubmit}>
                 <HoneypotInputs />
@@ -108,9 +110,9 @@ export default function NewOrganization({ params }: Route.ComponentProps) {
                 You’ve reached your organization limit.
               </p>
               <p className='font-secondary'>
-                On the <strong>Launch Plan</strong>, you can own up to{' '}
-                <strong>2 organizations</strong>. To create more, upgrade one of your existing
-                organizations to the <strong>Grow Plan</strong>.
+                You can only own <strong>one Launch organization</strong> and{' '}
+                <strong>one temporary organization</strong>. To create another, upgrade your
+                existing organization to a paid tier.
               </p>
             </div>
           )}

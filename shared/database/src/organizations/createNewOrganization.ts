@@ -20,7 +20,6 @@ export const createNewOrganization = async (
         owned_by: userId,
         created_by: userId,
         updated_by: userId,
-        tier: 'launch',
       })
       .select('id, handle')
       .single();

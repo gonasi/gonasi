@@ -3,7 +3,12 @@ import { Outlet, redirect } from 'react-router';
 import { Info } from 'lucide-react';
 
 import { getUserRole } from '@gonasi/database/auth';
-import { verifyAndSetActiveOrganization } from '@gonasi/database/organizations';
+import {
+  getOrganizationProfile,
+  getUserOrgRole,
+  updateActiveOrganization,
+} from '@gonasi/database/organizations';
+import { getUserProfile } from '@gonasi/database/profile';
 
 import type { Route } from './+types/organizations-layout';
 
@@ -42,9 +47,7 @@ export function meta({ data }: Route.MetaArgs) {
 
 type LoaderData = Awaited<ReturnType<typeof loader>>;
 export type OrganizationLoaderData = LoaderData['organization'];
-export type MemberLoaderData = LoaderData['member'];
-export type PermissionsLoaderData = LoaderData['permissions'];
-export type TierLimitsLoaderData = LoaderData['tier_limits'];
+export type OrgRoleLoaderData = LoaderData['orgRole'];
 
 export interface OrganizationsOutletContextType {
   data: LoaderData;
@@ -58,21 +61,26 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     throw new Response('Organization ID is required', { status: 400 });
   }
 
-  const [result, userRole] = await Promise.all([
-    verifyAndSetActiveOrganization({ supabase, organizationId }),
+  const [userProfile, result, userRole, orgRole, organization] = await Promise.all([
+    getUserProfile(supabase),
+    updateActiveOrganization({ supabase, organizationId }),
     getUserRole(supabase),
+    getUserOrgRole({ supabase, organizationId: params.organizationId }),
+    getOrganizationProfile({ supabase, organizationId: params.organizationId }),
   ]);
 
-  if (!result.success || !result.data) {
+  console.log(result);
+
+  if (!userProfile.user || !orgRole || !result.success || !organization) {
     throw redirect('/');
   }
 
-  return { ...result.data, message: result.message, userRole };
+  return { userProfile, orgRole, message: result.message, userRole, organization };
 }
 
 export default function OrganizationsPlainLayout({ loaderData }: Route.ComponentProps) {
   const { activeUserProfile, isActiveUserProfileLoading } = useStore();
-  const { organization, member, message: organizationSwitchMessage } = loaderData;
+  const { organization, orgRole, message: organizationSwitchMessage } = loaderData;
   const [showOrgSwitchModal, setShowOrgSwitchModal] = useState(!!organizationSwitchMessage);
 
   useEffect(() => {
@@ -81,7 +89,7 @@ export default function OrganizationsPlainLayout({ loaderData }: Route.Component
 
   const filteredLinks = useDashboardLinks({
     organizationId: organization.id,
-    role: member.role,
+    role: orgRole,
   });
 
   return (
@@ -92,7 +100,7 @@ export default function OrganizationsPlainLayout({ loaderData }: Route.Component
           user={activeUserProfile}
           userRole={loaderData.userRole}
           organization={organization}
-          member={member}
+          orgRole={orgRole}
           loading={isActiveUserProfileLoading}
         />
         <Outlet context={{ data: loaderData }} />
