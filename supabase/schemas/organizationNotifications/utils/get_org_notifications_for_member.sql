@@ -26,14 +26,14 @@ set search_path = ''
 as $$
 declare
   v_member_role public.org_role;
-  v_member_updated_at timestamptz;
+  v_member_joined_at timestamptz;
 begin
-  -- Get member's role and join timestamp (for filtering)
-  select role, updated_at
-    into v_member_role, v_member_updated_at
-  from public.organization_members
-  where organization_id = p_organization_id
-    and user_id = p_user_id;
+  -- Get member's role and join timestamp
+  select om.role, om.updated_at
+    into v_member_role, v_member_joined_at
+  from public.organization_members om
+  where om.organization_id = p_organization_id
+    and om.user_id = p_user_id;
 
   if v_member_role is null then
     raise exception 'User % is not a member of organization %',
@@ -61,18 +61,18 @@ begin
       'editor', nt.visible_to_editor
     ) as visibility
   from public.org_notifications n
-  inner join public.org_notifications_types nt
+  join public.org_notifications_types nt
     on nt.key = n.key
   left join public.org_notification_reads r
     on r.notification_id = n.id
     and r.user_id = p_user_id
   where n.organization_id = p_organization_id
     and n.deleted_at is null
-    and (r.dismissed_at is null)
-    and n.created_at >= v_member_updated_at
+    and r.dismissed_at is null
+    and n.created_at >= v_member_joined_at
     and (
-      (v_member_role = 'owner' and nt.visible_to_owner)
-      or (v_member_role = 'admin' and nt.visible_to_admin)
+      (v_member_role = 'owner'  and nt.visible_to_owner)
+      or (v_member_role = 'admin'  and nt.visible_to_admin)
       or (v_member_role = 'editor' and nt.visible_to_editor)
     )
   order by n.created_at desc

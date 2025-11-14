@@ -20,7 +20,7 @@ export function useOrgNotifications(
 
       const { data, error } = await supabaseClient.rpc('get_org_notifications_for_member', {
         p_organization_id: organizationId,
-        p_user_id: user?.id,
+        p_user_id: user?.id || '',
         p_limit: 50,
         p_offset: 0,
       });

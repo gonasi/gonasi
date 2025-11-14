@@ -13,7 +13,7 @@ import { Spinner } from '~/components/loaders';
 import { PlainButton } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
 import { createBrowserClient } from '~/lib/supabase/supabaseClient';
-import type { FileLoaderReturnType } from '~/routes/dashboard/file-library/all-files';
+import type { FileLoaderReturnType } from '~/routes/organizations/builder/course/file-library/file-library-index';
 import { useStore } from '~/store';
 
 export type InsertFilePayload = Readonly<FilePayload>;

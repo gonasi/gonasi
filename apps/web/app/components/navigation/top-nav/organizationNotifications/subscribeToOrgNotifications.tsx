@@ -33,6 +33,8 @@ export function subscribeToOrgNotifications(
 ) {
   const channelTopic = `org-notifications:${organizationId}`;
 
+  console.log('channelTopic: ', channelTopic);
+
   // Create a private channel with RLS authorization
   const channel = supabaseClient.channel(channelTopic, {
     config: {

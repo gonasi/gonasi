@@ -86,10 +86,10 @@ export function OrganizationTopNav({
 
               {/* Desktop */}
               <div className='hidden items-center space-x-4 md:flex'>
-                <OrganizationNotifications
+                {/* <OrganizationNotifications
                   organizationId={organization?.id ?? ''}
                   memberRole={member?.role}
-                />
+                /> */}
                 <ProfileDropdown
                   user={user}
                   userRole={userRole}

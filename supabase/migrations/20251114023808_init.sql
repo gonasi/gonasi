@@ -13166,3 +13166,25 @@ with check (((bucket_id = 'organization_profile_photos'::text) AND (EXISTS ( SEL
 
 
 
+  create policy "org_notifications_broadcast_receive"
+  on "realtime"."messages"
+  as permissive
+  for select
+  to authenticated
+using ((EXISTS ( SELECT 1
+   FROM public.organization_members om
+  WHERE ((om.user_id = ( SELECT auth.uid() AS uid)) AND (( SELECT realtime.topic() AS topic) = ('org-notifications:'::text || (om.organization_id)::text)) AND (messages.extension = 'broadcast'::text)))));
+
+
+
+  create policy "org_notifications_broadcast_send"
+  on "realtime"."messages"
+  as permissive
+  for insert
+  to authenticated
+with check ((EXISTS ( SELECT 1
+   FROM public.organization_members om
+  WHERE ((om.user_id = ( SELECT auth.uid() AS uid)) AND (( SELECT realtime.topic() AS topic) = ('org-notifications:'::text || (om.organization_id)::text)) AND (messages.extension = 'broadcast'::text)))));
+
+
+
