@@ -31,7 +31,21 @@ async function fetchPaystackSubscription(subscriptionCode: string) {
 // ────────────────────────────────────────────────
 // Helper: Disable Paystack subscription
 // ────────────────────────────────────────────────
-async function disablePaystackSubscription(subscriptionCode: string, emailToken: string) {
+async function disablePaystackSubscription(subscriptionCode: string) {
+  const subRes = await fetch(`https://api.paystack.co/subscription/${subscriptionCode}`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!subRes.ok) {
+    throw new Error(`Failed to fetch subscription`);
+  }
+
+  const sub = await subRes.json();
+
   const res = await fetch('https://api.paystack.co/subscription/disable', {
     method: 'POST',
     headers: {
@@ -40,7 +54,7 @@ async function disablePaystackSubscription(subscriptionCode: string, emailToken:
     },
     body: JSON.stringify({
       code: subscriptionCode,
-      token: emailToken,
+      token: sub?.data.email_token,
     }),
   });
 
@@ -155,10 +169,7 @@ export async function handleOrganizationSubscriptionUpgrade(
       authorizationToken = currentSub.authorization?.authorization_code ?? currentSub.email_token;
 
       // Disable the old subscription properly
-      await disablePaystackSubscription(
-        currentSubData.paystack_subscription_code,
-        currentSub.email_token,
-      );
+      await disablePaystackSubscription(currentSubData.paystack_subscription_code);
     } else {
       console.warn('⚠️ No current subscription found to disable.');
     }
@@ -229,7 +240,6 @@ export async function handleOrganizationSubscriptionUpgrade(
       tier: targetTier,
       paystack_subscription_code: paystackSubscriptionCode,
       updated_at: now,
-      updated_by: organizationId, // or use tx.customer.email if you track user actions
       cancel_at_period_end: false,
       downgrade_requested_at: null,
       downgrade_effective_at: null,
@@ -246,7 +256,7 @@ export async function handleOrganizationSubscriptionUpgrade(
 
     if (paystackSubscriptionCode) {
       try {
-        await disablePaystackSubscription(paystackSubscriptionCode, organizationEmail);
+        await disablePaystackSubscription(paystackSubscriptionCode);
       } catch (disableErr) {
         console.error(
           '❌ Failed to disable new subscription after local update failure:',

@@ -580,6 +580,7 @@ alter table "public"."organization_members" enable row level security;
     "current_period_start" timestamp with time zone not null default timezone('utc'::text, now()),
     "current_period_end" timestamp with time zone,
     "cancel_at_period_end" boolean not null default false,
+    "next_payment_date" timestamp with time zone,
     "initial_next_payment_date" timestamp with time zone,
     "revert_tier" public.subscription_tier,
     "created_at" timestamp with time zone not null default timezone('utc'::text, now()),
@@ -4114,18 +4115,6 @@ end;
 $function$
 ;
 
-create or replace view "public"."failed_downgrades_summary" as  SELECT failed_downgrade_attempts.failure_type,
-    failed_downgrade_attempts.severity,
-    count(*) AS failure_count,
-    min(failed_downgrade_attempts.attempted_at) AS oldest_failure,
-    max(failed_downgrade_attempts.attempted_at) AS latest_failure,
-    count(*) FILTER (WHERE (failed_downgrade_attempts.severity = 'critical'::text)) AS critical_count
-   FROM public.failed_downgrade_attempts
-  WHERE (failed_downgrade_attempts.resolved_at IS NULL)
-  GROUP BY failed_downgrade_attempts.failure_type, failed_downgrade_attempts.severity
-  ORDER BY (count(*) FILTER (WHERE (failed_downgrade_attempts.severity = 'critical'::text))) DESC, (count(*)) DESC;
-
-
 CREATE OR REPLACE FUNCTION public.get_active_organization_members(_organization_id uuid, _user_id uuid)
  RETURNS jsonb
  LANGUAGE plpgsql
@@ -6467,6 +6456,7 @@ CREATE OR REPLACE FUNCTION public.log_failed_downgrade(p_organization_id uuid, p
  RETURNS uuid
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path TO ''
 AS $function$
 declare
   v_attempt_id uuid;
@@ -6487,7 +6477,6 @@ begin
 
   -- Log critical failures to a monitoring table or send alert
   if p_severity = 'critical' then
-    -- Could trigger webhook to Slack/PagerDuty here
     perform pg_notify(
       'critical_downgrade_failure',
       json_build_object(
@@ -7317,25 +7306,6 @@ end;
 $function$
 ;
 
-create or replace view "public"."recent_failed_downgrades" as  SELECT fda.id,
-    fda.organization_id,
-    o.name AS organization_name,
-    fda.failure_type,
-    fda.severity,
-    (fda.metadata ->> 'target_tier'::text) AS target_tier,
-    (fda.metadata ->> 'current_tier'::text) AS current_tier,
-    (fda.metadata ->> 'error'::text) AS error_message,
-    fda.retry_count,
-    fda.attempted_at,
-    fda.next_retry_at,
-    age(now(), fda.attempted_at) AS time_since_failure
-   FROM (public.failed_downgrade_attempts fda
-     JOIN public.organizations o ON ((o.id = fda.organization_id)))
-  WHERE (fda.resolved_at IS NULL)
-  ORDER BY fda.severity DESC, fda.attempted_at DESC
- LIMIT 100;
-
-
 CREATE OR REPLACE FUNCTION public.reorder_chapters(p_course_id uuid, chapter_positions jsonb, p_updated_by uuid)
  RETURNS void
  LANGUAGE plpgsql
@@ -7908,6 +7878,7 @@ CREATE OR REPLACE FUNCTION public.resolve_failed_downgrade(p_attempt_id uuid, p_
  RETURNS void
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path TO ''
 AS $function$
 begin
   update public.failed_downgrade_attempts
@@ -8040,6 +8011,7 @@ CREATE OR REPLACE FUNCTION public.schedule_downgrade_retry(p_attempt_id uuid, p_
  RETURNS void
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path TO ''
 AS $function$
 begin
   update public.failed_downgrade_attempts

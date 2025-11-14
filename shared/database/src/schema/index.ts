@@ -1730,6 +1730,7 @@ export type Database = {
           downgrade_requested_by: string | null
           id: string
           initial_next_payment_date: string | null
+          next_payment_date: string | null
           next_plan_code: string | null
           next_tier: Database["public"]["Enums"]["subscription_tier"] | null
           organization_id: string
@@ -1754,6 +1755,7 @@ export type Database = {
           downgrade_requested_by?: string | null
           id?: string
           initial_next_payment_date?: string | null
+          next_payment_date?: string | null
           next_plan_code?: string | null
           next_tier?: Database["public"]["Enums"]["subscription_tier"] | null
           organization_id: string
@@ -1778,6 +1780,7 @@ export type Database = {
           downgrade_requested_by?: string | null
           id?: string
           initial_next_payment_date?: string | null
+          next_payment_date?: string | null
           next_plan_code?: string | null
           next_tier?: Database["public"]["Enums"]["subscription_tier"] | null
           organization_id?: string
@@ -2653,42 +2656,6 @@ export type Database = {
       }
     }
     Views: {
-      failed_downgrades_summary: {
-        Row: {
-          critical_count: number | null
-          failure_count: number | null
-          failure_type: string | null
-          latest_failure: string | null
-          oldest_failure: string | null
-          severity: string | null
-        }
-        Relationships: []
-      }
-      recent_failed_downgrades: {
-        Row: {
-          attempted_at: string | null
-          current_tier: string | null
-          error_message: string | null
-          failure_type: string | null
-          id: string | null
-          next_retry_at: string | null
-          organization_id: string | null
-          organization_name: string | null
-          retry_count: number | null
-          severity: string | null
-          target_tier: string | null
-          time_since_failure: unknown
-        }
-        Relationships: [
-          {
-            foreignKeyName: "failed_downgrade_attempts_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       v_organizations_ai_available_credits: {
         Row: {
           base_credits_remaining: number | null
@@ -3169,6 +3136,7 @@ export type Database = {
           downgrade_requested_by: string | null
           id: string
           initial_next_payment_date: string | null
+          next_payment_date: string | null
           next_plan_code: string | null
           next_tier: Database["public"]["Enums"]["subscription_tier"] | null
           organization_id: string

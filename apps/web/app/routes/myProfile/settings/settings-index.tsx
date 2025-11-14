@@ -19,7 +19,8 @@ export function meta() {
 
 export default function SettingsIndex({ params }: Route.ComponentProps) {
   const location = useLocation();
-  const redirectTo = new URLSearchParams(location.search).get('redirectTo') || '/';
+  const redirectTo =
+    new URLSearchParams(location.search).get('redirectTo') || `/go/${params.username}`;
 
   const sections = [
     {

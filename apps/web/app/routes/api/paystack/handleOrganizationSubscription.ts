@@ -459,7 +459,8 @@ async function handleSubscriptionNotRenew(
       cancel_at_period_end: true,
       status: 'non-renewing',
     })
-    .eq('organization_id', organizationId);
+    .eq('organization_id', organizationId)
+    .eq('paystack_subscription_code', data.subscription_code);
 
   if (error) {
     console.error('❌ Error updating subscription:', error);

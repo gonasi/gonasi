@@ -149,6 +149,7 @@ create trigger set_failed_downgrades_updated_at
 -- ======================================================================
 
 -- Function to log failed downgrade attempts (called from Edge Function)
+-- Function to log failed downgrade attempts
 create or replace function public.log_failed_downgrade(
   p_organization_id uuid,
   p_failure_type text,
@@ -158,6 +159,7 @@ create or replace function public.log_failed_downgrade(
 returns uuid
 language plpgsql
 security definer
+set search_path = ''
 as $$
 declare
   v_attempt_id uuid;
@@ -178,7 +180,6 @@ begin
 
   -- Log critical failures to a monitoring table or send alert
   if p_severity = 'critical' then
-    -- Could trigger webhook to Slack/PagerDuty here
     perform pg_notify(
       'critical_downgrade_failure',
       json_build_object(
@@ -202,6 +203,7 @@ create or replace function public.resolve_failed_downgrade(
 returns void
 language plpgsql
 security definer
+set search_path = ''
 as $$
 begin
   update public.failed_downgrade_attempts
@@ -227,6 +229,7 @@ create or replace function public.schedule_downgrade_retry(
 returns void
 language plpgsql
 security definer
+set search_path = ''
 as $$
 begin
   update public.failed_downgrade_attempts
@@ -243,44 +246,44 @@ begin
 end;
 $$;
 
--- ======================================================================
--- VIEWS FOR MONITORING
--- ======================================================================
+-- -- ======================================================================
+-- -- VIEWS FOR MONITORING
+-- -- ======================================================================
 
--- View: Unresolved failures grouped by type
-create or replace view public.failed_downgrades_summary as
-select
-  failure_type,
-  severity,
-  count(*) as failure_count,
-  min(attempted_at) as oldest_failure,
-  max(attempted_at) as latest_failure,
-  count(*) filter (where severity = 'critical') as critical_count
-from public.failed_downgrade_attempts
-where resolved_at is null
-group by failure_type, severity
-order by critical_count desc, failure_count desc;
+-- -- View: Unresolved failures grouped by type
+-- create or replace view public.failed_downgrades_summary as
+-- select
+--   failure_type,
+--   severity,
+--   count(*) as failure_count,
+--   min(attempted_at) as oldest_failure,
+--   max(attempted_at) as latest_failure,
+--   count(*) filter (where severity = 'critical') as critical_count
+-- from public.failed_downgrade_attempts
+-- where resolved_at is null
+-- group by failure_type, severity
+-- order by critical_count desc, failure_count desc;
 
--- View: Recent unresolved failures (for dashboard)
-create or replace view public.recent_failed_downgrades as
-select
-  fda.id,
-  fda.organization_id,
-  o.name as organization_name,
-  fda.failure_type,
-  fda.severity,
-  fda.metadata->>'target_tier' as target_tier,
-  fda.metadata->>'current_tier' as current_tier,
-  fda.metadata->>'error' as error_message,
-  fda.retry_count,
-  fda.attempted_at,
-  fda.next_retry_at,
-  age(now(), fda.attempted_at) as time_since_failure
-from public.failed_downgrade_attempts fda
-join public.organizations o on o.id = fda.organization_id
-where fda.resolved_at is null
-order by fda.severity desc, fda.attempted_at desc
-limit 100;
+-- -- View: Recent unresolved failures (for dashboard)
+-- create or replace view public.recent_failed_downgrades as
+-- select
+--   fda.id,
+--   fda.organization_id,
+--   o.name as organization_name,
+--   fda.failure_type,
+--   fda.severity,
+--   fda.metadata->>'target_tier' as target_tier,
+--   fda.metadata->>'current_tier' as current_tier,
+--   fda.metadata->>'error' as error_message,
+--   fda.retry_count,
+--   fda.attempted_at,
+--   fda.next_retry_at,
+--   age(now(), fda.attempted_at) as time_since_failure
+-- from public.failed_downgrade_attempts fda
+-- join public.organizations o on o.id = fda.organization_id
+-- where fda.resolved_at is null
+-- order by fda.severity desc, fda.attempted_at desc
+-- limit 100;
 
 -- ======================================================================
 -- COMMENTS

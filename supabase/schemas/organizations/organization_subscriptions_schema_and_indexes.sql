@@ -52,6 +52,7 @@ create table public.organization_subscriptions (
   current_period_start timestamptz not null default timezone('utc', now()),
   current_period_end timestamptz default null,
   cancel_at_period_end boolean not null default false,
+  next_payment_date timestamptz default null,
   initial_next_payment_date timestamptz default null,
 
   -- Optional rollback safety: store original tier for post-downgrade audits
