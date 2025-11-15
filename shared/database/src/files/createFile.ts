@@ -5,6 +5,7 @@ import { getUserId } from '../auth';
 import type { TypedSupabaseClient } from '../client';
 import { FILE_LIBRARY_BUCKET } from '../constants';
 import type { ApiResponse } from '../types';
+import { checkStorageLimitForOrg } from './checkStorageLimitForOrg';
 
 /**
  * Uploads a file to Supabase storage and creates a corresponding record in the `file_library` table.
@@ -25,6 +26,29 @@ export const createFile = async (
   const { name: fileName, size, mime_type, extension, file_type } = getFileMetadata(file);
 
   try {
+    const { success: hasSpaceSuccess, data: hasSpaceData } = await checkStorageLimitForOrg({
+      supabase,
+      organizationId,
+      newFileSize: file.size,
+    });
+
+    if (!hasSpaceSuccess) {
+      const fileMB = (file.size / 1024 / 1024).toFixed(2);
+      const remainingMB =
+        hasSpaceData?.remaining_bytes != null
+          ? (hasSpaceData.remaining_bytes / 1024 / 1024).toFixed(2)
+          : null;
+
+      const message = remainingMB
+        ? `Cannot upload ${fileMB} MB: uploading this file would exceed your storage limit. You have ${remainingMB} MB remaining.`
+        : `Cannot upload ${fileMB} MB: uploading this file would exceed your organization’s storage limit.`;
+
+      return {
+        success: false,
+        message,
+      };
+    }
+
     // Upload file with all required metadata
     const { data: uploadResponse, error: uploadError } = await supabase.storage
       .from(FILE_LIBRARY_BUCKET)

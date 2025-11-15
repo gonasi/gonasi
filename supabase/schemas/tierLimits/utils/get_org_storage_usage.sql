@@ -5,18 +5,18 @@
 --   Returns a structured summary of an organization's current
 --   storage usage and limits.
 --
--- Returned JSON:
+-- Standardized Return Format:
 --   {
---     "current_usage_bytes": bigint,
---     "storage_limit_bytes": bigint,
---     "remaining_bytes": bigint,
---     "percent_used": numeric,
---     "exceeded": boolean
+--     "success": boolean,
+--     "message": text,
+--     "data": {
+--       "current_usage_bytes": bigint,
+--       "storage_limit_bytes": bigint,
+--       "remaining_bytes": bigint,
+--       "percent_used": numeric,
+--       "exceeded": boolean
+--     } | null
 --   }
---
--- Notes:
---   - Includes both file_library and published_file_library
---   - Uses get_tier_limits_for_org() to fetch tier metadata
 -- ===========================================================
 
 create or replace function public.get_org_storage_usage(
@@ -33,10 +33,10 @@ declare
   v_storage_limit_mb integer;
   v_storage_limit_bytes bigint;
 
-  v_file_usage bigint;
-  v_published_usage bigint;
-
-  v_total_usage bigint;
+  v_file_usage bigint := 0;
+  v_published_usage bigint := 0;
+  v_total_usage bigint := 0;
+  v_data json;
 begin
   -------------------------------------------------------------------
   -- 1. Fetch tier limits via helper
@@ -46,13 +46,14 @@ begin
 
   if v_limits is null then
     return json_build_object(
-      'error', 'No active subscription found for organization'
+      'success', false,
+      'message', 'No active subscription found for organization',
+      'data', null
     );
   end if;
 
   v_storage_limit_mb := (v_limits ->> 'storage_limit_mb_per_org')::int;
   v_storage_limit_bytes := v_storage_limit_mb * 1024 * 1024;
-
 
   -------------------------------------------------------------------
   -- 2. Usage from file_library
@@ -62,7 +63,6 @@ begin
   from public.file_library
   where organization_id = p_org_id;
 
-
   -------------------------------------------------------------------
   -- 3. Usage from published_file_library
   -------------------------------------------------------------------
@@ -71,17 +71,15 @@ begin
   from public.published_file_library
   where organization_id = p_org_id;
 
-
   -------------------------------------------------------------------
   -- 4. Total usage
   -------------------------------------------------------------------
   v_total_usage := v_file_usage + v_published_usage;
 
-
   -------------------------------------------------------------------
-  -- 5. Build and return JSON object
+  -- 5. Data payload
   -------------------------------------------------------------------
-  return json_build_object(
+  v_data := json_build_object(
     'current_usage_bytes', v_total_usage,
     'storage_limit_bytes', v_storage_limit_bytes,
     'remaining_bytes', greatest(v_storage_limit_bytes - v_total_usage, 0),
@@ -92,5 +90,22 @@ begin
       end,
     'exceeded', v_total_usage > v_storage_limit_bytes
   );
+
+  -------------------------------------------------------------------
+  -- 6. Success response
+  -------------------------------------------------------------------
+  return json_build_object(
+    'success', true,
+    'message', 'Storage usage fetched successfully',
+    'data', v_data
+  );
+
+exception
+  when others then
+    return json_build_object(
+      'success', false,
+      'message', sqlerrm,
+      'data', null
+    );
 end;
 $$;

@@ -3102,51 +3102,73 @@ end;
 $function$
 ;
 
-CREATE OR REPLACE FUNCTION public.check_storage_limit_for_org(p_org_id uuid, p_new_file_size bigint, p_exclude_file_path text DEFAULT NULL::text)
- RETURNS boolean
+CREATE OR REPLACE FUNCTION public.check_storage_limit_for_org(p_org_id uuid, p_new_file_size bigint, p_exclude_file_id uuid DEFAULT NULL::uuid)
+ RETURNS jsonb
  LANGUAGE plpgsql
  STABLE SECURITY DEFINER
  SET search_path TO ''
 AS $function$
 declare
-  v_current_usage bigint;
-  v_storage_limit_mb integer;
-  v_storage_limit_bytes bigint;
-  v_limits json;
+  v_current_usage bigint;      -- Current total storage usage in bytes
+  v_storage_limit_mb integer;  -- Storage limit in megabytes
+  v_storage_limit_bytes bigint;-- Storage limit converted to bytes
+  v_limits json;               -- Tier limits JSON object
+  v_remaining_bytes bigint;    -- Remaining storage in bytes
 begin
   -------------------------------------------------------------------
-  -- 0. Reject invalid file size
+  -- 0. Validate file size
   -------------------------------------------------------------------
   if p_new_file_size is null or p_new_file_size <= 0 then
-    return false;
+    return jsonb_build_object(
+      'success', false,
+      'message', 'Invalid file size provided.',
+      'data', jsonb_build_object(
+        'file_size', p_new_file_size,
+        'remaining_bytes', null
+      )
+    );
   end if;
 
   -------------------------------------------------------------------
-  -- 1. Fetch tier limits
+  -- 1. Fetch organization's tier limits
   -------------------------------------------------------------------
   select public.get_tier_limits_for_org(p_org_id)
   into v_limits;
 
   if v_limits is null then
-    return false;
+    return jsonb_build_object(
+      'success', false,
+      'message', 'Organization tier limits not found.',
+      'data', jsonb_build_object(
+        'file_size', p_new_file_size,
+        'remaining_bytes', null
+      )
+    );
   end if;
 
   v_storage_limit_mb := (v_limits ->> 'storage_limit_mb_per_org')::int;
 
   if v_storage_limit_mb is null then
-    return false;
+    return jsonb_build_object(
+      'success', false,
+      'message', 'Organization has no storage limit defined.',
+      'data', jsonb_build_object(
+        'file_size', p_new_file_size,
+        'remaining_bytes', null
+      )
+    );
   end if;
 
   v_storage_limit_bytes := v_storage_limit_mb * 1024 * 1024;
 
   -------------------------------------------------------------------
-  -- 2. Calculate current usage safely (works if tables are empty)
+  -- 2. Calculate current storage usage
   -------------------------------------------------------------------
   select
     coalesce((
       select sum(size) from public.file_library
       where organization_id = p_org_id
-        and (p_exclude_file_path is null or path != p_exclude_file_path)
+        and (p_exclude_file_id is null or id != p_exclude_file_id)
     ), 0)
     +
     coalesce((
@@ -3155,10 +3177,30 @@ begin
     ), 0)
   into v_current_usage;
 
+  v_remaining_bytes := v_storage_limit_bytes - v_current_usage;
+
   -------------------------------------------------------------------
-  -- 3. Check if adding the new file exceeds limit
+  -- 3. Determine if the new file can be uploaded
   -------------------------------------------------------------------
-  return (v_current_usage + p_new_file_size) <= v_storage_limit_bytes;
+  if (v_current_usage + p_new_file_size) <= v_storage_limit_bytes then
+    return jsonb_build_object(
+      'success', true,
+      'message', 'File can be uploaded.',
+      'data', jsonb_build_object(
+        'file_size', p_new_file_size,
+        'remaining_bytes', v_remaining_bytes - p_new_file_size
+      )
+    );
+  else
+    return jsonb_build_object(
+      'success', false,
+      'message', 'Uploading this file would exceed the storage limit.',
+      'data', jsonb_build_object(
+        'file_size', p_new_file_size,
+        'remaining_bytes', v_remaining_bytes
+      )
+    );
+  end if;
 end;
 $function$
 ;
@@ -5496,10 +5538,10 @@ declare
   v_storage_limit_mb integer;
   v_storage_limit_bytes bigint;
 
-  v_file_usage bigint;
-  v_published_usage bigint;
-
-  v_total_usage bigint;
+  v_file_usage bigint := 0;
+  v_published_usage bigint := 0;
+  v_total_usage bigint := 0;
+  v_data json;
 begin
   -------------------------------------------------------------------
   -- 1. Fetch tier limits via helper
@@ -5509,13 +5551,14 @@ begin
 
   if v_limits is null then
     return json_build_object(
-      'error', 'No active subscription found for organization'
+      'success', false,
+      'message', 'No active subscription found for organization',
+      'data', null
     );
   end if;
 
   v_storage_limit_mb := (v_limits ->> 'storage_limit_mb_per_org')::int;
   v_storage_limit_bytes := v_storage_limit_mb * 1024 * 1024;
-
 
   -------------------------------------------------------------------
   -- 2. Usage from file_library
@@ -5525,7 +5568,6 @@ begin
   from public.file_library
   where organization_id = p_org_id;
 
-
   -------------------------------------------------------------------
   -- 3. Usage from published_file_library
   -------------------------------------------------------------------
@@ -5534,17 +5576,15 @@ begin
   from public.published_file_library
   where organization_id = p_org_id;
 
-
   -------------------------------------------------------------------
   -- 4. Total usage
   -------------------------------------------------------------------
   v_total_usage := v_file_usage + v_published_usage;
 
-
   -------------------------------------------------------------------
-  -- 5. Build and return JSON object
+  -- 5. Data payload
   -------------------------------------------------------------------
-  return json_build_object(
+  v_data := json_build_object(
     'current_usage_bytes', v_total_usage,
     'storage_limit_bytes', v_storage_limit_bytes,
     'remaining_bytes', greatest(v_storage_limit_bytes - v_total_usage, 0),
@@ -5555,6 +5595,23 @@ begin
       end,
     'exceeded', v_total_usage > v_storage_limit_bytes
   );
+
+  -------------------------------------------------------------------
+  -- 6. Success response
+  -------------------------------------------------------------------
+  return json_build_object(
+    'success', true,
+    'message', 'Storage usage fetched successfully',
+    'data', v_data
+  );
+
+exception
+  when others then
+    return json_build_object(
+      'success', false,
+      'message', sqlerrm,
+      'data', null
+    );
 end;
 $function$
 ;
@@ -13214,7 +13271,7 @@ using (((bucket_id = 'organization_profile_photos'::text) AND (EXISTS ( SELECT 1
   to authenticated
 with check (((bucket_id = 'files'::text) AND (EXISTS ( SELECT 1
    FROM public.courses c
-  WHERE ((c.id = (split_part(objects.name, '/'::text, 2))::uuid) AND (c.organization_id = (split_part(objects.name, '/'::text, 1))::uuid) AND public.can_user_edit_course(c.id) AND (public.check_storage_limit_for_org(c.organization_id, COALESCE(((objects.metadata ->> 'size'::text))::bigint, (0)::bigint)) = true))))));
+  WHERE ((c.id = (split_part(objects.name, '/'::text, 2))::uuid) AND (c.organization_id = (split_part(objects.name, '/'::text, 1))::uuid) AND public.can_user_edit_course(c.id))))));
 
 
 
@@ -13315,7 +13372,7 @@ using (((bucket_id = 'files'::text) AND (EXISTS ( SELECT 1
   WHERE ((fl.path = objects.name) AND public.can_user_edit_course(fl.course_id))))))
 with check (((bucket_id = 'files'::text) AND (EXISTS ( SELECT 1
    FROM public.file_library fl
-  WHERE ((fl.path = objects.name) AND public.can_user_edit_course(fl.course_id) AND public.check_storage_limit_for_org(fl.organization_id, COALESCE(((objects.metadata ->> 'size'::text))::bigint, (0)::bigint), objects.name))))));
+  WHERE ((fl.path = objects.name) AND public.can_user_edit_course(fl.course_id))))));
 
 
 

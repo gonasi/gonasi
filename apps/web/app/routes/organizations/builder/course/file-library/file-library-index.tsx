@@ -2,7 +2,7 @@ import { Outlet } from 'react-router';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Plus } from 'lucide-react';
 
-import { fetchFilesWithSignedUrls } from '@gonasi/database/files';
+import { fetchFilesWithSignedUrls, getOrgStorageUsage } from '@gonasi/database/files';
 
 import type { Route } from './+types/file-library-index';
 
@@ -38,10 +38,13 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     supabase.rpc('can_user_edit_course', {
       arg_course_id: params.courseId,
     }),
-    supabase.rpc('get_org_storage_usage', {
-      p_org_id: params.organizationId,
+    getOrgStorageUsage({
+      supabase,
+      organizationId: params.organizationId,
     }),
   ]);
+
+  console.log(storageUsage);
 
   return { data, storageUsage, canEdit: Boolean(canEditResult.data) };
 }

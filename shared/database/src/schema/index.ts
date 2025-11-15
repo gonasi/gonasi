@@ -2728,11 +2728,11 @@ export type Database = {
       }
       check_storage_limit_for_org: {
         Args: {
-          p_exclude_file_path?: string
+          p_exclude_file_id?: string
           p_new_file_size: number
           p_org_id: string
         }
-        Returns: boolean
+        Returns: Json
       }
       complete_block: {
         Args: {
