@@ -1,10 +1,15 @@
-import { Outlet, useOutletContext } from 'react-router';
+import { Outlet } from 'react-router';
 import { formatDistanceToNow } from 'date-fns';
 import { motion } from 'framer-motion';
 import { Dot, Plus, RotateCcw, X } from 'lucide-react';
 import { redirectWithError } from 'remix-toast';
 
-import { fetchOrganizationInvites, getUserOrgRole } from '@gonasi/database/organizations';
+import {
+  canAcceptNewOrgMember,
+  fetchOrganizationInvites,
+  fetchOrgTierLimits,
+  getUserOrgRole,
+} from '@gonasi/database/organizations';
 
 import type { Route } from './+types/members-invites';
 
@@ -20,7 +25,8 @@ import {
   TableRow,
 } from '~/components/ui/table';
 import { createClient } from '~/lib/supabase/supabase.server';
-import type { OrganizationsOutletContextType } from '~/routes/layouts/organizations/organizations-layout';
+
+export type MemberInvitesPageLoaderData = Exclude<Awaited<ReturnType<typeof loader>>, Response>;
 
 export async function loader({ params, request }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
@@ -36,24 +42,34 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     );
   }
 
-  const invites = await fetchOrganizationInvites({
-    supabase,
-    organizationId,
-  });
+  const [invites, canAcceptNewMember, tierLimits] = await Promise.all([
+    fetchOrganizationInvites({
+      supabase,
+      organizationId,
+    }),
+    canAcceptNewOrgMember({
+      supabase,
+      organizationId,
+    }),
+    fetchOrgTierLimits({
+      supabase,
+      organizationId,
+    }),
+  ]);
 
-  return invites;
+  return { invites, canAcceptNewMember, tierLimits, role };
 }
 
 export default function MembersInvites({ params, loaderData }: Route.ComponentProps) {
-  const { data } = useOutletContext<OrganizationsOutletContextType>();
+  const { invites, canAcceptNewMember, tierLimits } = loaderData;
 
   return (
     <>
-      {data.permissions.can_accept_new_member ? null : (
+      {canAcceptNewMember ? null : (
         <div className='px-4 pb-8'>
           <BannerCard
-            message={`You're at the limit for the ${data.tier_limits.tier} plan`}
-            description={`Your current plan allows up to ${data.tier_limits.max_members_per_org} members per organization. Need more room?`}
+            message={`You're at the limit for the ${tierLimits?.tier} plan`}
+            description={`Your current plan allows up to ${tierLimits?.max_members_per_org} members per organization. Need more room?`}
             showCloseIcon={false}
             variant='warning'
             cta={{
@@ -84,7 +100,7 @@ export default function MembersInvites({ params, loaderData }: Route.ComponentPr
             </TableRow>
           </TableHeader>
           <TableBody className='font-secondary'>
-            {loaderData?.map((invite) => {
+            {invites?.map((invite) => {
               const deliveryLabel = {
                 pending: 'Not Sent',
                 sent: 'Sent',
@@ -164,7 +180,7 @@ export default function MembersInvites({ params, loaderData }: Route.ComponentPr
           </TableBody>
         </Table>
       </div>
-      <Outlet context={{ data }} />
+      <Outlet context={{ ...loaderData }} />
     </>
   );
 }

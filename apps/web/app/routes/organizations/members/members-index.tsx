@@ -23,7 +23,7 @@ export default function AllMembers({ params }: Route.ComponentProps) {
       },
     ];
 
-    if (data.member.role !== 'editor') {
+    if (data.orgRole !== 'editor') {
       result.push({
         to: `${basePath}/invites`,
         name: 'Invites',
@@ -32,7 +32,7 @@ export default function AllMembers({ params }: Route.ComponentProps) {
     }
 
     return result.filter(Boolean) as Tab[];
-  }, [basePath, data.member.role]);
+  }, [basePath, data.orgRole]);
 
   useEffect(() => {
     if (location.pathname === basePath) {

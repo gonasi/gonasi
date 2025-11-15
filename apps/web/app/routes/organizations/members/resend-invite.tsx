@@ -1,4 +1,4 @@
-import { Form, useOutletContext } from 'react-router';
+import { Form } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ChevronRight, Mail } from 'lucide-react';
 import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
@@ -20,7 +20,6 @@ import type { Route } from './+types/resend-invite';
 import { Button } from '~/components/ui/button';
 import { Modal } from '~/components/ui/modal';
 import { createClient } from '~/lib/supabase/supabase.server';
-import type { OrganizationsOutletContextType } from '~/routes/layouts/organizations/organizations-layout';
 import { checkHoneypot } from '~/utils/honeypot.server';
 import { useIsPending } from '~/utils/misc';
 
@@ -87,12 +86,6 @@ export async function action({ request, params }: Route.ActionArgs) {
 }
 
 export default function ResendInvite({ params, loaderData }: Route.ComponentProps) {
-  const {
-    data: {
-      member: { role },
-    },
-  } = useOutletContext<OrganizationsOutletContextType>();
-
   const { canResend, reason, inviteEmail } = loaderData;
 
   const isPending = useIsPending();
@@ -116,11 +109,6 @@ export default function ResendInvite({ params, loaderData }: Route.ComponentProp
           closeRoute={`/${params.organizationId}/members/invites`}
         />
         <Modal.Body className='px-4'>
-          {role === 'editor' && (
-            <p className='text-muted-foreground text-sm font-medium'>
-              You don’t have permission to resend invites.
-            </p>
-          )}
           {canResend ? (
             <RemixFormProvider {...methods}>
               <Form method='POST' onSubmit={methods.handleSubmit} noValidate>

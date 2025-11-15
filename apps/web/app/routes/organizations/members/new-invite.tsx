@@ -13,12 +13,12 @@ import {
 } from '@gonasi/schemas/organizations';
 
 import type { Route } from './+types/new-invite';
+import type { MemberInvitesPageLoaderData } from './members-invites';
 
 import { Button, NavLinkButton } from '~/components/ui/button';
 import { GoInputField, GoSelectInputField } from '~/components/ui/forms/elements';
 import { Modal } from '~/components/ui/modal';
 import { createClient } from '~/lib/supabase/supabase.server';
-import type { OrganizationsOutletContextType } from '~/routes/layouts/organizations/organizations-layout';
 import { checkHoneypot } from '~/utils/honeypot.server';
 import { useIsPending } from '~/utils/misc';
 
@@ -61,13 +61,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 }
 
 export default function InviteMember({ params }: Route.ComponentProps) {
-  const {
-    data: {
-      tier_limits: { tier, max_members_per_org },
-      permissions: { can_accept_new_member },
-      member: { role },
-    },
-  } = useOutletContext<OrganizationsOutletContextType>();
+  const { canAcceptNewMember, tierLimits, role } = useOutletContext<MemberInvitesPageLoaderData>();
 
   const isPending = useIsPending();
 
@@ -86,11 +80,11 @@ export default function InviteMember({ params }: Route.ComponentProps) {
     <Modal open>
       <Modal.Content size='md'>
         <Modal.Header
-          title={can_accept_new_member ? 'Invite New Member' : 'Member Limit Reached'}
+          title={canAcceptNewMember ? 'Invite New Member' : 'Member Limit Reached'}
           closeRoute={`/${params.organizationId}/members/invites`}
         />
         <Modal.Body className='px-4'>
-          {can_accept_new_member ? (
+          {canAcceptNewMember ? (
             <RemixFormProvider {...methods}>
               <Form method='POST' onSubmit={methods.handleSubmit} noValidate>
                 <HoneypotInputs />
@@ -136,8 +130,9 @@ export default function InviteMember({ params }: Route.ComponentProps) {
             <div className='border-muted bg-muted/40 text-muted-foreground rounded-xl border p-4 text-sm'>
               <p className='text-foreground mb-1 font-medium'>Looks like your team is full.</p>
               <p className='font-secondary'>
-                Your current <strong>{tier}</strong> plan allows up to{' '}
-                <strong>{max_members_per_org}</strong> members per organization. Need more room?
+                Your current <strong>{tierLimits?.tier}</strong> plan allows up to{' '}
+                <strong>{tierLimits?.max_members_per_org}</strong> members per organization. Need
+                more room?
               </p>
               <NavLinkButton
                 to={`/${params.organizationId}/dashboard/subscriptions`}

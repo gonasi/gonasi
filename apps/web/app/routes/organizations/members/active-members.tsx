@@ -46,7 +46,7 @@ export default function ActiveMembers({ params, loaderData }: Route.ComponentPro
   const { data } = useOutletContext<OrganizationsOutletContextType>();
   const members = loaderData ?? [];
 
-  const isEditor = data.member.role === 'editor';
+  const isEditor = data.orgRole === 'editor';
 
   const canDelete = (
     currentUserRole: 'owner' | 'admin' | 'editor',
@@ -100,13 +100,14 @@ export default function ActiveMembers({ params, loaderData }: Route.ComponentPro
                   }[member.role] ?? 'bg-muted text-foreground';
 
                 const showDelete = canDelete(
-                  data.member.role,
+                  data.orgRole,
                   member.role,
-                  data.member.user_id,
+                  data.userProfile.user.id,
                   profile.id,
                 );
 
-                const showEdit = data.member.role === 'owner' && profile.id !== data.member.user_id;
+                const showEdit =
+                  data.orgRole === 'owner' && profile.id !== data.userProfile.user.id;
 
                 return (
                   <motion.tr

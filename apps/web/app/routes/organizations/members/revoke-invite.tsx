@@ -1,13 +1,12 @@
-import { Form, useOutletContext } from 'react-router';
+import { Form } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ChevronRight, Mail } from 'lucide-react';
 import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
-import { dataWithError, redirectWithError, redirectWithSuccess } from 'remix-toast';
+import { dataWithError, redirectWithSuccess } from 'remix-toast';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
 
 import {
   canRevokeOrganizationInvite,
-  getUserOrgRole,
   revokeOrganizationInvite,
 } from '@gonasi/database/organizations';
 import {
@@ -20,7 +19,6 @@ import type { Route } from './+types/revoke-invite';
 import { Button } from '~/components/ui/button';
 import { Modal } from '~/components/ui/modal';
 import { createClient } from '~/lib/supabase/supabase.server';
-import type { OrganizationsOutletContextType } from '~/routes/layouts/organizations/organizations-layout';
 import { checkHoneypot } from '~/utils/honeypot.server';
 import { useIsPending } from '~/utils/misc';
 
@@ -39,15 +37,6 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
   const organizationId = params.organizationId!;
   const token = params.token!;
-
-  const role = await getUserOrgRole({ supabase, organizationId });
-
-  if (!role || role === 'editor') {
-    return redirectWithError(
-      `/${organizationId}/members`,
-      'You are not allowed to view this page.',
-    );
-  }
 
   const { canRevoke, reason, invite } = await canRevokeOrganizationInvite({
     supabase,
@@ -87,12 +76,6 @@ export async function action({ request, params }: Route.ActionArgs) {
 }
 
 export default function RevokeInvite({ params, loaderData }: Route.ComponentProps) {
-  const {
-    data: {
-      member: { role },
-    },
-  } = useOutletContext<OrganizationsOutletContextType>();
-
   const { canRevoke, reason, inviteEmail } = loaderData;
 
   const isPending = useIsPending();
@@ -116,11 +99,6 @@ export default function RevokeInvite({ params, loaderData }: Route.ComponentProp
           closeRoute={`/${params.organizationId}/members/invites`}
         />
         <Modal.Body className='px-4'>
-          {role === 'editor' && (
-            <p className='text-muted-foreground text-sm font-medium'>
-              You don’t have permission to revoke invites.
-            </p>
-          )}
           {canRevoke ? (
             <RemixFormProvider {...methods}>
               <Form method='POST' onSubmit={methods.handleSubmit} noValidate>

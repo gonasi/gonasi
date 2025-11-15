@@ -2,13 +2,14 @@ import { faker } from '@snaplet/copycat';
 
 import { PASSWORD, SU_EMAIL, supabase } from './constants';
 import { SIGNED_UP_EMAILS } from './signUpUsers';
+import { tierLimitsLocal } from './tierLimitsLocal';
 
 type Tier = 'temp' | 'launch' | 'scale' | 'impact';
 
 type AnalyticsLevel = 'none' | 'basic' | 'intermediate' | 'advanced';
 type SupportLevel = 'none' | 'community' | 'email' | 'priority';
 
-interface TierLimitSeed {
+export interface TierLimitSeed {
   tier: Tier;
   storage_limit_mb_per_org: number;
   max_members_per_org: number;
@@ -121,7 +122,7 @@ export async function seedPricingTiers() {
     console.log(`❌ Failed to sign in as ${adminEmail}`);
   }
 
-  for (const tier of tierLimits) {
+  for (const tier of tierLimitsLocal) {
     const { error } = await supabase.from('tier_limits').insert(tier);
 
     if (error) {

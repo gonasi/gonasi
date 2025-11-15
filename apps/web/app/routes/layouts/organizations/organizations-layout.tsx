@@ -69,8 +69,6 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     getOrganizationProfile({ supabase, organizationId: params.organizationId }),
   ]);
 
-  console.log(result);
-
   if (!userProfile.user || !orgRole || !result.success || !organization) {
     throw redirect('/');
   }
