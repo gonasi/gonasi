@@ -157,7 +157,7 @@ schema_paths = [
 
   './schemas/organizations/tierLimits/helpers/has_org_role.sql',
 
-  './schemas/organizations/tierLimits/guards/can_create_free_course.sql',
+  './schemas/organizations/tierLimits/guards/can_publish_free_course.sql',
   './schemas/organizations/tierLimits/guards/is_user_already_member.sql',
   './schemas/organizations/tierLimits/guards/has_pending_invite.sql',
   './schemas/organizations/tierLimits/guards/can_create_organization.sql',
@@ -202,6 +202,10 @@ schema_paths = [
   # rpc profiles, orgs
   './schemas/get_tier_limits_for_org_functions.sql',
 
+  # limit checks
+  './schemas/tierLimits/checks/check_member_limit_for_org.sql',
+
+
   # # courses & chapters & pricing
   './schemas/courses/courses_schema_and_indexes.sql',
   './schemas/courses/course_editors_schema_and_indexes.sql',
@@ -241,6 +245,9 @@ schema_paths = [
   './schemas/fileLibrary/file_utils.sql',
   './schemas/fileLibrary/file_library_schema_indexes.sql',
   './schemas/fileLibrary/file_library_rls.sql',
+
+  './schemas/fileLibrary/utils/cleanup_file_variants.sql',
+
 
   # # published
   './schemas/publishedCourses/published_courses_schema_and_indexes.sql',
@@ -775,3 +782,14 @@ entrypoint = "./functions/org-subscriptions-reactivate/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/org-subscriptions-reactivate/*.html" ]
+
+[functions.create-new-course-file]
+enabled = true
+verify_jwt = true
+import_map = "./functions/create-new-course-file/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/create-new-course-file/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/create-new-course-file/*.html" ]

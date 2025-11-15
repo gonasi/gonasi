@@ -1,4 +1,4 @@
-create or replace function public.can_create_free_course(p_org uuid)
+create or replace function public.can_publish_free_course(p_org uuid)
 returns boolean
 language plpgsql
 security definer

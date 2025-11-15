@@ -1,0 +1,8 @@
+{
+  "imports": {
+    "@supabase/supabase-js": "npm:@supabase/supabase-js@2",
+    "zod": "npm:zod@^3.25.67",
+    "imagescript": "https://deno.land/x/imagescript@1.2.15/mod.ts",
+    "blurhash": "https://esm.sh/blurhash@2.0.5"
+  }
+}

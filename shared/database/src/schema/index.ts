@@ -2701,7 +2701,6 @@ export type Database = {
         Args: { arg_check_type?: string; arg_org_id: string }
         Returns: boolean
       }
-      can_create_free_course: { Args: { p_org: string }; Returns: boolean }
       can_create_organization: {
         Args: { arg_user_id: string }
         Returns: boolean
@@ -2710,9 +2709,22 @@ export type Database = {
         Args: { course_id: string; org_id: string; user_id: string }
         Returns: boolean
       }
+      can_publish_free_course: { Args: { p_org: string }; Returns: boolean }
       can_user_edit_course: {
         Args: { arg_course_id: string }
         Returns: boolean
+      }
+      check_member_limit_for_org: {
+        Args: { p_check_type?: string; p_organization_id: string }
+        Returns: {
+          active_members: number
+          allowed: number
+          check_type: string
+          current: number
+          exceeded: boolean
+          pending_invites: number
+          remaining: number
+        }[]
       }
       check_storage_limit: {
         Args: {
