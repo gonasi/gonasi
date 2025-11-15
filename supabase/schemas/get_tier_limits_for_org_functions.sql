@@ -29,6 +29,6 @@ as $$
   from public.organization_subscriptions s
   join public.tier_limits tl on tl.tier = s.tier
   where s.organization_id = org_id
-    and s.status = 'active'
+    and s.status in ('active', 'non-renewing')  -- allow non-renewing too
   limit 1;
 $$;
