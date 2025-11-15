@@ -100,9 +100,15 @@ begin
         raise exception 'Published course not found or inactive: %', p_published_course_id;
     end if;
 
-    select o.tier into v_org_tier
-    from public.organizations o
-    where o.id = v_organization_id;
+    -- FIXED: Get tier from organization_subscriptions table
+    select os.tier into v_org_tier
+    from public.organization_subscriptions os
+    where os.organization_id = v_organization_id
+      and os.status = 'active';
+
+    if not found then
+        raise exception 'No active subscription found for organization: %', v_organization_id;
+    end if;
 
     select tl.platform_fee_percentage
     into v_platform_fee_percent

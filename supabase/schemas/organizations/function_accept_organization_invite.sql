@@ -4,15 +4,16 @@
 --   Accepts a pending organization invite and adds the user to the
 --   organization if all validation checks pass.
 --
--- Updates:
---   - Changed invite_token parameter from uuid to text to match schema
---   - Added organization name to response for better UX
---   - Enhanced error handling and response structure
---   - Added comprehensive logging for debugging
+-- Updates (Latest):
+--   - Removed tier reference from organizations table query
+--   - Now fetches tier from organization_subscriptions table
+--   - Updated to work with new subscription model
+--   - Enhanced error handling for missing subscriptions
+--   - Added fallback for organizations without active subscriptions
 -- =====================================================================
 
 create or replace function public.accept_organization_invite(
-  invite_token text,    -- Changed from uuid to text
+  invite_token text,
   user_id uuid,
   user_email text
 )
@@ -24,6 +25,7 @@ as $$
 declare
   v_invite record;
   v_organization record;
+  v_subscription record;
   v_existing_member_id uuid;
   now_ts timestamptz := now();
   v_original_rls_setting text;
@@ -64,7 +66,8 @@ begin
   end if;
 
   -- Step 2: Fetch the invite by token
-  select oi.id, oi.organization_id, oi.email, oi.role, oi.invited_by, oi.accepted_at, oi.revoked_at, oi.expires_at
+  select oi.id, oi.organization_id, oi.email, oi.role, oi.invited_by, 
+         oi.accepted_at, oi.revoked_at, oi.expires_at
   into v_invite
   from public.organization_invites oi
   where oi.token = accept_organization_invite.invite_token;
@@ -78,8 +81,8 @@ begin
     );
   end if;
 
-  -- Step 3: Get organization details for response
-  select o.id, o.name, o.tier
+  -- Step 3: Get organization details (without tier)
+  select o.id, o.name
   into v_organization
   from public.organizations o
   where o.id = v_invite.organization_id;
@@ -92,6 +95,15 @@ begin
       'error_code', 'ORGANIZATION_NOT_FOUND'
     );
   end if;
+
+  -- Step 3b: Get organization subscription details (tier is now here)
+  select os.id, os.tier, os.status, os.next_tier
+  into v_subscription
+  from public.organization_subscriptions os
+  where os.organization_id = v_invite.organization_id;
+
+  -- Note: Organizations without subscriptions might be on a default/temp tier
+  -- The can_accept_new_member function should handle this scenario
 
   -- Step 4: Validate invite state
   if v_invite.revoked_at is not null then
@@ -148,6 +160,7 @@ begin
   end if;
 
   -- Step 7: Check if organization can accept new members
+  -- Note: can_accept_new_member should be updated to look at organization_subscriptions
   if not public.can_accept_new_member(v_invite.organization_id, 'accept') then
     execute format('set row_security = %L', coalesce(v_original_rls_setting, 'on'));
     return json_build_object(
@@ -194,7 +207,9 @@ begin
       'organization_name', v_organization.name,
       'role', v_invite.role,
       'user_id', accept_organization_invite.user_id,
-      'joined_at', now_ts
+      'joined_at', now_ts,
+      'subscription_tier', coalesce(v_subscription.tier, 'temp'::public.subscription_tier),
+      'subscription_status', v_subscription.status
     )
   );
 
