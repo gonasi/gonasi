@@ -58,8 +58,8 @@ using (
   )
 );
 
--- INSERT: Parse the path to extract organizationId and courseId, then check permissions
-create policy "insert: org owner/admin or course creator with storage limit"
+-- INSERT: Org owner/admin or course creator with robust storage limit
+create policy "insert: org owner/admin or course creator with robust storage limit"
 on storage.objects
 for insert
 to authenticated
@@ -70,23 +70,24 @@ with check (
     where c.id = (split_part(storage.objects.name, '/', 2))::uuid
       and c.organization_id = (split_part(storage.objects.name, '/', 1))::uuid
       and public.can_user_edit_course(c.id)
-      -- Check storage limit using the helper function
-      and public.check_storage_limit(
+      and public.check_storage_limit_for_org(
         c.organization_id,
         coalesce((storage.objects.metadata->>'size')::bigint, 0)
       ) = true
   )
 );
 
--- UPDATE: Use path to match file_library
-create policy "update: org owner/admin or course creator"
+
+-- UPDATE: Org owner/admin or course creator with robust storage limit
+create policy "update: org owner/admin or course creator with robust storage limit"
 on storage.objects
 for update
 to authenticated
 using (
   bucket_id = 'files'
   and exists (
-    select 1 from public.file_library fl
+    select 1
+    from public.file_library fl
     where fl.path = storage.objects.name
       and public.can_user_edit_course(fl.course_id)
   )
@@ -94,11 +95,18 @@ using (
 with check (
   bucket_id = 'files'
   and exists (
-    select 1 from public.file_library fl
+    select 1
+    from public.file_library fl
     where fl.path = storage.objects.name
       and public.can_user_edit_course(fl.course_id)
+      and public.check_storage_limit_for_org(
+        fl.organization_id,
+        coalesce((storage.objects.metadata->>'size')::bigint, 0),
+        storage.objects.name  -- exclude current file from quota calculation
+      )
   )
 );
+
 
 -- DELETE: Same as update
 create policy "delete: org owner/admin or course creator"

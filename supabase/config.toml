@@ -204,6 +204,10 @@ schema_paths = [
 
   # limit checks
   './schemas/tierLimits/checks/check_member_limit_for_org.sql',
+  './schemas/tierLimits/checks/check_storage_limit_for_org.sql',
+
+
+  './schemas/tierLimits/utils/get_org_storage_usage.sql',
 
 
   # # courses & chapters & pricing
@@ -782,14 +786,3 @@ entrypoint = "./functions/org-subscriptions-reactivate/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/org-subscriptions-reactivate/*.html" ]
-
-[functions.create-new-course-file]
-enabled = true
-verify_jwt = true
-import_map = "./functions/create-new-course-file/deno.json"
-# Uncomment to specify a custom file path to the entrypoint.
-# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
-entrypoint = "./functions/create-new-course-file/index.ts"
-# Specifies static files to be bundled with the function. Supports glob patterns.
-# For example, if you want to serve static HTML pages in your function:
-# static_files = [ "./functions/create-new-course-file/*.html" ]

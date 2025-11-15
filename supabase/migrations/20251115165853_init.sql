@@ -2997,24 +2997,38 @@ CREATE OR REPLACE FUNCTION public.can_user_edit_course(arg_course_id uuid)
  SECURITY DEFINER
  SET search_path TO ''
 AS $function$
-  -- Determine if the current user has permission to edit the specified course
   select coalesce(
     (
-      -- User is an owner or admin in the course's organization
-      public.get_user_org_role(c.organization_id, (select auth.uid())) in ('owner', 'admin')
-
-      -- OR user is an assigned course editor
-      or exists (
-        select 1
-        from public.course_editors ce
-        where ce.course_id = c.id
-          and ce.user_id = (select auth.uid())
+      -- Step 1: Fetch course and organization info
+      with course_org as (
+        select c.id as course_id, c.organization_id
+        from public.courses c
+        where c.id = arg_course_id
       )
+      select
+        -- Step 2: Check org subscription tier
+        case
+          -- If the org is in 'temp' tier, editing is disallowed
+          when public.get_org_tier(co.organization_id) = 'temp' then false
+          
+          -- Step 3: Otherwise, check normal permissions
+          else (
+            -- User is an owner or admin in the organization
+            public.get_user_org_role(co.organization_id, (select auth.uid())) in ('owner', 'admin')
+            -- OR user is explicitly assigned as a course editor
+            or exists (
+              select 1
+              from public.course_editors ce
+              where ce.course_id = co.course_id
+                and ce.user_id = (select auth.uid())
+            )
+          )
+        end
+      from course_org co
     ),
-    false  -- Default to false if no course or permission
+    -- Step 4: Default to false if course does not exist
+    false
   )
-  from public.courses c
-  where c.id = arg_course_id
 $function$
 ;
 
@@ -3036,7 +3050,7 @@ begin
   if limits is null then
     return query
     select
-      true as exceeded,
+      true as exceeded, 
       0 as allowed,
       0 as current,
       0 as remaining,
@@ -3088,35 +3102,62 @@ end;
 $function$
 ;
 
-CREATE OR REPLACE FUNCTION public.check_storage_limit(p_organization_id uuid, p_new_file_size bigint, p_exclude_file_path text DEFAULT NULL::text)
+CREATE OR REPLACE FUNCTION public.check_storage_limit_for_org(p_org_id uuid, p_new_file_size bigint, p_exclude_file_path text DEFAULT NULL::text)
  RETURNS boolean
  LANGUAGE plpgsql
- SECURITY DEFINER
+ STABLE SECURITY DEFINER
  SET search_path TO ''
 AS $function$
 declare
   v_current_usage bigint;
   v_storage_limit_mb integer;
   v_storage_limit_bytes bigint;
+  v_limits json;
 begin
-  select coalesce(sum(size), 0)
-  into v_current_usage
-  from public.file_library
-  where organization_id = p_organization_id
-    and (p_exclude_file_path is null or path != p_exclude_file_path);
-  
-  select tl.storage_limit_mb_per_org
-  into v_storage_limit_mb
-  from public.organizations o
-  join public.tier_limits tl on tl.tier = o.tier
-  where o.id = p_organization_id;
-  
+  -------------------------------------------------------------------
+  -- 0. Reject invalid file size
+  -------------------------------------------------------------------
+  if p_new_file_size is null or p_new_file_size <= 0 then
+    return false;
+  end if;
+
+  -------------------------------------------------------------------
+  -- 1. Fetch tier limits
+  -------------------------------------------------------------------
+  select public.get_tier_limits_for_org(p_org_id)
+  into v_limits;
+
+  if v_limits is null then
+    return false;
+  end if;
+
+  v_storage_limit_mb := (v_limits ->> 'storage_limit_mb_per_org')::int;
+
   if v_storage_limit_mb is null then
     return false;
   end if;
-  
+
   v_storage_limit_bytes := v_storage_limit_mb * 1024 * 1024;
-  
+
+  -------------------------------------------------------------------
+  -- 2. Calculate current usage safely (works if tables are empty)
+  -------------------------------------------------------------------
+  select
+    coalesce((
+      select sum(size) from public.file_library
+      where organization_id = p_org_id
+        and (p_exclude_file_path is null or path != p_exclude_file_path)
+    ), 0)
+    +
+    coalesce((
+      select sum(size) from public.published_file_library
+      where organization_id = p_org_id
+    ), 0)
+  into v_current_usage;
+
+  -------------------------------------------------------------------
+  -- 3. Check if adding the new file exceeds limit
+  -------------------------------------------------------------------
   return (v_current_usage + p_new_file_size) <= v_storage_limit_bytes;
 end;
 $function$
@@ -5440,6 +5481,80 @@ begin
   order by n.created_at desc
   limit p_limit
   offset p_offset;
+end;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.get_org_storage_usage(p_org_id uuid)
+ RETURNS json
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+declare
+  v_limits json;
+  v_storage_limit_mb integer;
+  v_storage_limit_bytes bigint;
+
+  v_file_usage bigint;
+  v_published_usage bigint;
+
+  v_total_usage bigint;
+begin
+  -------------------------------------------------------------------
+  -- 1. Fetch tier limits via helper
+  -------------------------------------------------------------------
+  select public.get_tier_limits_for_org(p_org_id)
+  into v_limits;
+
+  if v_limits is null then
+    return json_build_object(
+      'error', 'No active subscription found for organization'
+    );
+  end if;
+
+  v_storage_limit_mb := (v_limits ->> 'storage_limit_mb_per_org')::int;
+  v_storage_limit_bytes := v_storage_limit_mb * 1024 * 1024;
+
+
+  -------------------------------------------------------------------
+  -- 2. Usage from file_library
+  -------------------------------------------------------------------
+  select coalesce(sum(size), 0)
+  into v_file_usage
+  from public.file_library
+  where organization_id = p_org_id;
+
+
+  -------------------------------------------------------------------
+  -- 3. Usage from published_file_library
+  -------------------------------------------------------------------
+  select coalesce(sum(size), 0)
+  into v_published_usage
+  from public.published_file_library
+  where organization_id = p_org_id;
+
+
+  -------------------------------------------------------------------
+  -- 4. Total usage
+  -------------------------------------------------------------------
+  v_total_usage := v_file_usage + v_published_usage;
+
+
+  -------------------------------------------------------------------
+  -- 5. Build and return JSON object
+  -------------------------------------------------------------------
+  return json_build_object(
+    'current_usage_bytes', v_total_usage,
+    'storage_limit_bytes', v_storage_limit_bytes,
+    'remaining_bytes', greatest(v_storage_limit_bytes - v_total_usage, 0),
+    'percent_used',
+      case
+        when v_storage_limit_bytes = 0 then 0
+        else round((v_total_usage::numeric / v_storage_limit_bytes::numeric) * 100, 2)
+      end,
+    'exceeded', v_total_usage > v_storage_limit_bytes
+  );
 end;
 $function$
 ;
@@ -13092,14 +13207,14 @@ using (((bucket_id = 'organization_profile_photos'::text) AND (EXISTS ( SELECT 1
 
 
 
-  create policy "insert: org owner/admin or course creator with storage limit"
+  create policy "insert: org owner/admin or course creator with robust storage l"
   on "storage"."objects"
   as permissive
   for insert
   to authenticated
 with check (((bucket_id = 'files'::text) AND (EXISTS ( SELECT 1
    FROM public.courses c
-  WHERE ((c.id = (split_part(objects.name, '/'::text, 2))::uuid) AND (c.organization_id = (split_part(objects.name, '/'::text, 1))::uuid) AND public.can_user_edit_course(c.id) AND (public.check_storage_limit(c.organization_id, COALESCE(((objects.metadata ->> 'size'::text))::bigint, (0)::bigint)) = true))))));
+  WHERE ((c.id = (split_part(objects.name, '/'::text, 2))::uuid) AND (c.organization_id = (split_part(objects.name, '/'::text, 1))::uuid) AND public.can_user_edit_course(c.id) AND (public.check_storage_limit_for_org(c.organization_id, COALESCE(((objects.metadata ->> 'size'::text))::bigint, (0)::bigint)) = true))))));
 
 
 
@@ -13190,7 +13305,7 @@ using (((bucket_id = 'organization_profile_photos'::text) AND (EXISTS ( SELECT 1
 
 
 
-  create policy "update: org owner/admin or course creator"
+  create policy "update: org owner/admin or course creator with robust storage l"
   on "storage"."objects"
   as permissive
   for update
@@ -13200,7 +13315,7 @@ using (((bucket_id = 'files'::text) AND (EXISTS ( SELECT 1
   WHERE ((fl.path = objects.name) AND public.can_user_edit_course(fl.course_id))))))
 with check (((bucket_id = 'files'::text) AND (EXISTS ( SELECT 1
    FROM public.file_library fl
-  WHERE ((fl.path = objects.name) AND public.can_user_edit_course(fl.course_id))))));
+  WHERE ((fl.path = objects.name) AND public.can_user_edit_course(fl.course_id) AND public.check_storage_limit_for_org(fl.organization_id, COALESCE(((objects.metadata ->> 'size'::text))::bigint, (0)::bigint), objects.name))))));
 
 
 

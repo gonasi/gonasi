@@ -24,7 +24,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   const page = parseInt(url.searchParams.get('page') ?? '1', 10);
   const limit = 12;
 
-  const [data, canEditResult] = await Promise.all([
+  const [data, canEditResult, storageUsage] = await Promise.all([
     fetchFilesWithSignedUrls({
       supabase,
       courseId: params.courseId,
@@ -38,15 +38,19 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     supabase.rpc('can_user_edit_course', {
       arg_course_id: params.courseId,
     }),
+    supabase.rpc('get_org_storage_usage', {
+      p_org_id: params.organizationId,
+    }),
   ]);
 
-  return { data, canEdit: Boolean(canEditResult.data) };
+  return { data, storageUsage, canEdit: Boolean(canEditResult.data) };
 }
 
 export default function AllFiles({ loaderData, params }: Route.ComponentProps) {
   const {
     data: { data, count },
     canEdit,
+    storageUsage,
   } = loaderData;
 
   if (!canEdit) {

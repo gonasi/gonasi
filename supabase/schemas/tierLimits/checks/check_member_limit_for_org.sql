@@ -31,7 +31,7 @@ begin
   if limits is null then
     return query
     select
-      true as exceeded,
+      true as exceeded, 
       0 as allowed,
       0 as current,
       0 as remaining,

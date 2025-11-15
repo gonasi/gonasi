@@ -2726,11 +2726,11 @@ export type Database = {
           remaining: number
         }[]
       }
-      check_storage_limit: {
+      check_storage_limit_for_org: {
         Args: {
           p_exclude_file_path?: string
           p_new_file_size: number
-          p_organization_id: string
+          p_org_id: string
         }
         Returns: boolean
       }
@@ -2885,6 +2885,7 @@ export type Database = {
           visibility: Json
         }[]
       }
+      get_org_storage_usage: { Args: { p_org_id: string }; Returns: Json }
       get_org_tier: {
         Args: { p_org: string }
         Returns: Database["public"]["Enums"]["subscription_tier"]
