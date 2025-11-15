@@ -1,6 +1,8 @@
+// AllFiles.tsx
 import { Outlet } from 'react-router';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Plus } from 'lucide-react';
+import { redirectWithError } from 'remix-toast';
 
 import { fetchFilesWithSignedUrls, getOrgStorageUsage } from '@gonasi/database/files';
 
@@ -10,8 +12,10 @@ import { BannerCard, NotFoundCard } from '~/components/cards';
 import FileRenderer from '~/components/file-renderers/file-renderer';
 import { PaginationBar } from '~/components/search-params/pagination-bar';
 import { SearchInput } from '~/components/search-params/search-input';
-import { FloatingActionButton } from '~/components/ui/button';
+import { FloatingActionButton, NavLinkButton } from '~/components/ui/button';
+import { Progress } from '~/components/ui/progress';
 import { createClient } from '~/lib/supabase/supabase.server';
+import { formatBytes } from '~/utils/formatBytes';
 
 export type FileLoaderReturnType = Exclude<Awaited<ReturnType<typeof loader>>, Response>['data'];
 export type FileLoaderItemType = FileLoaderReturnType['data'][number];
@@ -44,7 +48,14 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     }),
   ]);
 
-  console.log(storageUsage);
+  if (!storageUsage.data) {
+    return redirectWithError(
+      `/${params.organizationId}/builder/${params.courseId}/overview`,
+      'Could not fetch storage usage data',
+    );
+  }
+
+  console.log('storageUsage: ', storageUsage);
 
   return { data, storageUsage, canEdit: Boolean(canEditResult.data) };
 }
@@ -68,6 +79,18 @@ export default function AllFiles({ loaderData, params }: Route.ComponentProps) {
     );
   }
 
+  // Safely handle nullable storageUsage.data
+  const usage = storageUsage.data ?? {
+    current_usage_bytes: 0,
+    storage_limit_bytes: 0,
+    remaining_bytes: 0,
+    percent_used: 0,
+    exceeded: false,
+  };
+
+  const { current_usage_bytes, storage_limit_bytes, remaining_bytes, percent_used, exceeded } =
+    usage;
+
   return (
     <div>
       {/* Search Input fade-in */}
@@ -79,6 +102,41 @@ export default function AllFiles({ loaderData, params }: Route.ComponentProps) {
       >
         <SearchInput placeholder='Search for course files...' />
       </motion.div>
+
+      {/* Storage Usage */}
+      <div className='bg-card mb-4 space-y-2 p-4'>
+        <div className='text-muted-foreground text-sm font-semibold'>Storage Left</div>
+
+        {/* Dynamic progress color */}
+        <Progress
+          value={Math.min(percent_used, 100)}
+          bgClassName={
+            percent_used >= 80 ? 'bg-danger' : percent_used >= 50 ? 'bg-warning' : 'bg-success'
+          }
+          className='h-2'
+        />
+
+        <div className='text-muted-foreground flex justify-between text-xs'>
+          <span>{formatBytes(current_usage_bytes)} used</span>
+          <span>
+            {formatBytes(remaining_bytes)} free of {formatBytes(storage_limit_bytes)}
+          </span>
+        </div>
+
+        {exceeded && (
+          <div className='text-danger font-secondary mt-2 text-sm font-bold'>
+            You have exceeded your storage limit! Please upgrade to continue uploading.
+          </div>
+        )}
+
+        {percent_used > 80 && (
+          <div>
+            <NavLinkButton to={`/${params.organizationId}/dashboard/subscriptions`}>
+              Upgrade Storage
+            </NavLinkButton>
+          </div>
+        )}
+      </div>
 
       {data && data.length > 0 ? (
         <div className='flex flex-col space-y-4'>
