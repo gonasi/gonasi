@@ -8,9 +8,7 @@ alter table public.organization_subscriptions enable row level security;
 -- ==========================================================
 -- Purpose:
 --   Allow:
---     - Owners and members of the organization to view its subscription
---     - Admin roles (via has_org_role) to view as well
---
+--     - Owners
 -- Notes:
 --   - Subscriptions are never publicly visible.
 -- ==========================================================
@@ -25,7 +23,35 @@ using (
     where o.id = organization_subscriptions.organization_id
       and (
         o.owned_by = (select auth.uid())
-        or public.has_org_role(o.id, 'admin', (select auth.uid()))
+        or public.has_org_role(o.id, 'owner', (select auth.uid()))
+      )
+  )
+);
+
+-- Allow authenticated owner to update their organization's subscriptions
+create policy "organization_subscriptions_update"
+on public.organization_subscriptions
+for update
+to authenticated
+using (
+  exists (
+    select 1
+    from public.organizations o
+    where o.id = organization_subscriptions.organization_id
+      and (
+        o.owned_by = (select auth.uid())
+        or public.has_org_role(o.id, 'owner', (select auth.uid()))
+      )
+  )
+)
+with check (
+  exists (
+    select 1
+    from public.organizations o
+    where o.id = organization_subscriptions.organization_id
+      and (
+        o.owned_by = (select auth.uid())
+        or public.has_org_role(o.id, 'owner', (select auth.uid()))
       )
   )
 );

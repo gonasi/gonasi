@@ -1,7 +1,7 @@
 import z from 'zod';
 
 export const OrganizationTierChangeSchema = z.object({
-  tier: z.enum(['launch', 'scale', 'impact', 'enterprise']),
+  tier: z.enum(['temp', 'launch', 'scale', 'impact']),
   organizationId: z.string(),
 });
 export type OrganizationTierChangeSchemaTypes = z.infer<typeof OrganizationTierChangeSchema>;

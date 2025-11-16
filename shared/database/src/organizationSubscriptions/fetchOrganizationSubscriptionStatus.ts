@@ -1,3 +1,4 @@
+import { getUserId } from '../auth';
 import type { TypedSupabaseClient } from '../client';
 import { getUserOrgRole } from '../organizations/getUserOrgRole';
 import type { Database } from '../schema';
@@ -7,19 +8,25 @@ interface FetchOrganizationSubscriptionStatusParams {
   organizationId: string;
 }
 
-// Extract base types from Supabase schema
+// Base Supabase types
+type TierLimitsRow = Database['public']['Tables']['tier_limits']['Row'];
 type OrganizationSubscriptionRow =
   Database['public']['Tables']['organization_subscriptions']['Row'];
-type TierLimitsRow = Database['public']['Tables']['tier_limits']['Row'];
 
-// Define success and error response types
+export type OrganizationSubscriptionType = OrganizationSubscriptionRow & {
+  tier_limits: TierLimitsRow;
+  next_tier_limits?: TierLimitsRow | null;
+};
+
+// Success + Error response shapes
 export interface OrganizationSubscriptionSuccessResponse {
   success: true;
   message: string;
   data: {
-    subscription: OrganizationSubscriptionRow;
+    subscription: OrganizationSubscriptionType;
     tier: TierLimitsRow;
     allTiers: TierLimitsRow[];
+    canSubToLaunchTier: boolean;
   };
 }
 
@@ -29,15 +36,23 @@ interface ErrorResponse {
   data: null;
 }
 
+export type FetchOrganizationSubscriptionStatusResponse =
+  | OrganizationSubscriptionSuccessResponse
+  | ErrorResponse;
+
+// Convenience exports
+export type OrganizationTier = TierLimitsRow;
+export type AllTiers = TierLimitsRow[];
+
 export const fetchOrganizationSubscriptionStatus = async ({
   supabase,
   organizationId,
-}: FetchOrganizationSubscriptionStatusParams): Promise<
-  OrganizationSubscriptionSuccessResponse | ErrorResponse
-> => {
-  const role = await getUserOrgRole({ supabase, organizationId });
+}: FetchOrganizationSubscriptionStatusParams): Promise<FetchOrganizationSubscriptionStatusResponse> => {
+  const userId = await getUserId(supabase);
 
-  if (!role || role === 'editor') {
+  // 1. Authorization check: only organization owners may access subscription data
+  const userRole = await getUserOrgRole({ supabase, organizationId });
+  if (!userRole || userRole !== 'owner') {
     return {
       success: false,
       message: 'You do not have permission to view this content.',
@@ -45,58 +60,89 @@ export const fetchOrganizationSubscriptionStatus = async ({
     };
   }
 
-  // Fetch organization
-  const { data: org, error: orgError } = await supabase
+  // 2. Determine the current tier for this organization
+  const { data: currentTier } = await supabase.rpc('get_org_tier', {
+    p_org: organizationId,
+  });
+  const isCurrentTierLaunch = currentTier === 'launch';
+
+  // 3. Check if user owns another "launch" tier org
+  const { count: launchOrgCount, error: launchOrgErr } = await supabase
     .from('organizations')
-    .select('id')
-    .eq('id', organizationId)
-    .maybeSingle();
+    .select('id, organization_subscriptions!inner(tier)', { count: 'exact', head: true })
+    .neq('id', organizationId)
+    .eq('owned_by', userId)
+    .eq('organization_subscriptions.tier', 'launch');
 
-  if (orgError || !org) {
-    console.error('Organization fetch error:', orgError);
-    return { success: false, message: 'Organization not found', data: null };
+  if (launchOrgErr || launchOrgCount === null) {
+    console.error('launchOrgErr:', launchOrgErr);
+    return {
+      success: false,
+      message: 'Failed to count user organizations.',
+      data: null,
+    };
   }
+  const userOwnsAnotherLaunchOrg = launchOrgCount > 0;
+  const canSubToLaunchTier = isCurrentTierLaunch || !userOwnsAnotherLaunchOrg;
 
-  const { data: subscription, error: subError } = await supabase
+  // 4. Fetch the active organization subscription with tier details
+  const { data: subscriptionRecord, error: subscriptionErr } = await supabase
     .from('organization_subscriptions')
     .select(
       `
-      id,
-      organization_id,
-      tier,
-      status,
-      start_date,
-      current_period_start,
-      current_period_end,
-      initial_next_payment_date,
-      cancel_at_period_end,
-      created_at,
-      updated_at,
-      created_by,
-      updated_by,
-      tier_limits:tier_limits!organization_subscriptions_tier_fkey ( * ),
-      next_tier_limits:tier_limits!organization_subscriptions_next_tier_fkey ( * )
-    `,
+    id,
+    organization_id,
+    tier,
+    status,
+    start_date,
+    current_period_start,
+    current_period_end,
+    initial_next_payment_date,
+    cancel_at_period_end,
+    created_at,
+    updated_at,
+    created_by,
+    updated_by,
+    downgrade_effective_at,
+    downgrade_executed_at,
+    downgrade_requested_at,
+    downgrade_requested_by,
+    next_payment_date,
+    next_plan_code,
+    next_tier,
+    paystack_customer_code,
+    paystack_subscription_code,
+    revert_tier,
+    tier_limits:tier_limits!organization_subscriptions_tier_fkey (*),
+    next_tier_limits:tier_limits!organization_subscriptions_next_tier_fkey (*)
+  `,
     )
-    .eq('organization_id', org.id)
+    .eq('organization_id', organizationId)
     .maybeSingle();
 
-  console.log(subError);
-
-  if (subError) {
+  if (subscriptionErr) {
+    console.log('[fetchOrganizationSubscriptionStatus] - subscriptionErr: ', subscriptionErr);
     return {
       success: false,
-      message: `Failed to fetch subscription: ${subError.message}`,
+      message: `Failed to fetch subscription: ${subscriptionErr.message}`,
       data: null,
     };
   }
 
-  if (!subscription) {
-    return { success: false, message: 'No subscription found for this organization', data: null };
+  if (!subscriptionRecord) {
+    return {
+      success: false,
+      message: 'No subscription found for this organization.',
+      data: null,
+    };
   }
 
-  // Fetch all tiers
-  const { data: allTiers, error: allTiersErr } = await supabase.from('tier_limits').select('*');
+  // 5. Fetch all available tiers (excluding "temp")
+  const { data: allTiers, error: allTiersErr } = await supabase
+    .from('tier_limits')
+    .select('*')
+    .neq('tier', 'temp');
+
   if (allTiersErr || !allTiers?.length) {
     return {
       success: false,
@@ -105,41 +151,15 @@ export const fetchOrganizationSubscriptionStatus = async ({
     };
   }
 
+  // 6. Return clean subscription + tier data
   return {
     success: true,
-    message: 'Organization subscription fetched successfully',
+    message: 'Organization subscription fetched successfully.',
     data: {
-      subscription: {
-        id: subscription.id,
-        organization_id: subscription.organization_id,
-        tier: subscription.tier,
-        status: subscription.status,
-        start_date: subscription.start_date,
-        current_period_start: subscription.current_period_start,
-        current_period_end: subscription.current_period_end,
-        cancel_at_period_end: subscription.cancel_at_period_end,
-        initial_next_payment_date: subscription.initial_next_payment_date,
-        created_at: subscription.created_at,
-        updated_at: subscription.updated_at,
-        created_by: subscription.created_by,
-        updated_by: subscription.updated_by,
-      },
-      tier: subscription.tier_limits,
+      subscription: subscriptionRecord,
+      tier: subscriptionRecord.tier_limits,
       allTiers,
+      canSubToLaunchTier,
     },
   };
 };
-
-// Export response types
-export type FetchOrganizationSubscriptionStatusResponse =
-  | OrganizationSubscriptionSuccessResponse
-  | ErrorResponse;
-
-// Happy path type
-export type FetchOrganizationSubscriptionStatusSuccess = OrganizationSubscriptionSuccessResponse;
-
-// Convenience exports
-export type OrganizationSubscription =
-  OrganizationSubscriptionSuccessResponse['data']['subscription'];
-export type OrganizationTier = OrganizationSubscriptionSuccessResponse['data']['tier'];
-export type AllTiers = OrganizationSubscriptionSuccessResponse['data']['allTiers'];

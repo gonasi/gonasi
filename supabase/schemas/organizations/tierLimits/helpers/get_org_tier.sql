@@ -3,7 +3,7 @@
 -- -----------------------------------------------------------
 -- Purpose:
 --   Returns the subscription tier of an organization based on
---   its active subscription.
+--   its active or non-renewing subscription.
 --
 -- Parameters:
 --   p_org uuid – The ID of the organization.
@@ -25,6 +25,6 @@ as $$
   select s.tier
   from public.organization_subscriptions s
   where s.organization_id = p_org
-    and s.status = 'active'
+    and s.status in ('active', 'non-renewing')
   limit 1;
 $$;

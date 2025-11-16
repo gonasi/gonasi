@@ -2,8 +2,8 @@ import { signInWithEmailAndPassword } from '../../auth';
 import { SU_EMAIL, SU_PASSWORD } from '../fixtures/test-data';
 import { TestCleanupManager, testSupabase } from '../setup/test-helpers';
 
-type Tier = 'launch' | 'scale' | 'impact' | 'enterprise';
-type AnalyticsLevel = 'basic' | 'intermediate' | 'advanced' | 'enterprise';
+type Tier = 'temp' | 'launch' | 'scale' | 'impact';
+type AnalyticsLevel = 'basic' | 'intermediate' | 'advanced';
 type SupportLevel = 'community' | 'email' | 'priority' | 'dedicated';
 
 interface TierLimitSeed {
@@ -22,6 +22,23 @@ interface TierLimitSeed {
   platform_fee_percentage: number;
   white_label_enabled: boolean;
 }
+
+export const tempTierLimits: TierLimitSeed = {
+  tier: 'temp',
+  storage_limit_mb_per_org: 0,
+  max_members_per_org: 1,
+  max_collaborators_per_course: 0,
+  max_free_courses_per_org: 0,
+  max_students_per_course: 0,
+  ai_tools_enabled: false,
+  ai_usage_limit_monthly: null,
+  custom_domains_enabled: false,
+  max_custom_domains: null,
+  analytics_level: 'basic',
+  support_level: 'community',
+  platform_fee_percentage: 0,
+  white_label_enabled: false,
+};
 
 export const launchTierLimits: TierLimitSeed = {
   tier: 'launch',
@@ -74,28 +91,11 @@ export const impactTierLimits: TierLimitSeed = {
   white_label_enabled: true,
 };
 
-export const enterpriseTierLimits: TierLimitSeed = {
-  tier: 'enterprise',
-  storage_limit_mb_per_org: 100000,
-  max_members_per_org: 20,
-  max_collaborators_per_course: 50,
-  max_free_courses_per_org: 10,
-  max_students_per_course: 1000,
-  ai_tools_enabled: true,
-  ai_usage_limit_monthly: null, // Unlimited
-  custom_domains_enabled: true,
-  max_custom_domains: 10,
-  analytics_level: 'enterprise',
-  support_level: 'dedicated',
-  platform_fee_percentage: 5.0,
-  white_label_enabled: true,
-};
-
 const tierLimits: TierLimitSeed[] = [
+  tempTierLimits,
   launchTierLimits,
   scaleTierLimits,
   impactTierLimits,
-  enterpriseTierLimits,
 ];
 
 export async function seedOrganizationPricingTiers() {

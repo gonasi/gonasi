@@ -52,7 +52,7 @@ begin
   -------------------------------------------------------------------
   -- 1. Fetch organization's tier limits
   -------------------------------------------------------------------
-  select public.get_tier_limits_for_org(p_org_id)
+  select public.get_tier_limits(p_org_id)
   into v_limits;
 
   if v_limits is null then

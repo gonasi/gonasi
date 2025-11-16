@@ -68,6 +68,7 @@ export default function SubscriptionsIndex({ params, loaderData }: Route.Compone
               <PricingComparisonTable
                 allTiers={loaderData.data.allTiers}
                 activeTier={loaderData.data.tier}
+                canSubToLaunchTier={loaderData.data.canSubToLaunchTier}
               />
             </div>
           </Modal.Body>

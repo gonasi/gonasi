@@ -1,15 +1,16 @@
 import { useParams } from 'react-router';
 import { motion } from 'framer-motion';
-import { ArrowRightLeft, Check } from 'lucide-react';
+import { ArrowRightLeft, Check, Info } from 'lucide-react';
 
 import type { AllTiers, OrganizationTier } from '@gonasi/database/organizationSubscriptions';
 
-import { NavLinkButton } from '~/components/ui/button';
+import { IconTooltipButton, NavLinkButton } from '~/components/ui/button';
 import { cn } from '~/lib/utils';
 
 interface PricingComparisonTableProps {
   allTiers: AllTiers;
   activeTier: OrganizationTier;
+  canSubToLaunchTier: boolean;
 }
 
 /** Feature definitions */
@@ -46,11 +47,15 @@ function formatValue(value: any, type: string) {
   }
 }
 
-export function PricingComparisonTable({ allTiers, activeTier }: PricingComparisonTableProps) {
-  /** ✅ Sort plans by price ascending, enterprise always last */
+export function PricingComparisonTable({
+  allTiers,
+  activeTier,
+  canSubToLaunchTier,
+}: PricingComparisonTableProps) {
+  /** ✅ Sort plans by price ascending, impact always last */
   const sortedTiers = [...allTiers].sort((a, b) => {
-    if (a.tier === 'enterprise') return 1;
-    if (b.tier === 'enterprise') return -1;
+    if (a.tier === 'impact') return 1;
+    if (b.tier === 'impact') return -1;
     return a.price_monthly_usd - b.price_monthly_usd;
   });
 
@@ -63,14 +68,17 @@ export function PricingComparisonTable({ allTiers, activeTier }: PricingComparis
     >
       {/* Mobile */}
       <div className='space-y-6 md:hidden'>
-        {sortedTiers.map((plan, i) => (
-          <MobilePlanCard
-            key={plan.tier}
-            plan={plan}
-            isActive={plan.tier === activeTier.tier}
-            index={i}
-          />
-        ))}
+        {sortedTiers
+          .filter((plan) => !(plan.tier === 'launch' && !canSubToLaunchTier))
+          .map((plan, i) => (
+            <MobilePlanCard
+              key={plan.tier}
+              plan={plan}
+              isActive={plan.tier === activeTier.tier}
+              index={i}
+              canSubToLaunchTier={canSubToLaunchTier}
+            />
+          ))}
       </div>
 
       {/* Desktop */}
@@ -87,19 +95,22 @@ export function PricingComparisonTable({ allTiers, activeTier }: PricingComparis
 
               {sortedTiers.map((plan, i) => {
                 const isActive = plan.tier === activeTier.tier;
+                const canSubToLaunch = plan.tier === 'launch' && canSubToLaunchTier;
+                const isDisabled = plan.tier === 'launch' && !canSubToLaunchTier;
+
                 return (
                   <motion.th
                     key={plan.tier}
                     className={cn(
                       'px-6 py-4 text-center align-top transition-all',
                       isActive && 'bg-primary/5 border-primary relative border-2 shadow-md',
+                      isDisabled && 'bg-card cursor-not-allowed opacity-30 shadow-md',
                     )}
                     initial={{ opacity: 0, y: -8 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.05 * i, duration: 0.25 }}
                   >
                     <div className='flex flex-col items-center gap-3'>
-                      {/* Plan title + Active badge */}
                       <div className='flex items-center justify-center gap-2'>
                         <h3 className='text-lg font-bold'>
                           {plan.tier.charAt(0).toUpperCase() + plan.tier.slice(1)}
@@ -117,9 +128,11 @@ export function PricingComparisonTable({ allTiers, activeTier }: PricingComparis
                         <span className='text-muted-foreground text-xs'>/mo</span>
                       </div>
 
-                      {plan.price_monthly_usd > 0 && (
-                        <PlanCTA isActive={isActive} tier={plan.tier} />
-                      )}
+                      <PlanCTA
+                        isActive={isActive}
+                        tier={plan.tier}
+                        canSubToLaunch={canSubToLaunch}
+                      />
                     </div>
                   </motion.th>
                 );
@@ -143,12 +156,15 @@ export function PricingComparisonTable({ allTiers, activeTier }: PricingComparis
 
                 {sortedTiers.map((plan) => {
                   const isActive = plan.tier === activeTier.tier;
+                  const isDisabled = plan.tier === 'launch' && !canSubToLaunchTier;
+
                   return (
                     <td
                       key={plan.tier + f.key}
                       className={cn(
                         'px-6 py-4 text-center transition-all',
                         isActive && 'bg-primary/5 border-primary border-x-2 shadow-inner',
+                        isDisabled && 'opacity-30',
                       )}
                     >
                       {formatValue((plan as any)[f.key], f.type)}
@@ -159,7 +175,6 @@ export function PricingComparisonTable({ allTiers, activeTier }: PricingComparis
             ))}
           </tbody>
 
-          {/* Bottom row border for active column */}
           <tfoot>
             <tr>
               <td />
@@ -180,7 +195,15 @@ export function PricingComparisonTable({ allTiers, activeTier }: PricingComparis
   );
 }
 
-function PlanCTA({ isActive, tier }: { isActive: boolean; tier: string }) {
+function PlanCTA({
+  isActive,
+  tier,
+  canSubToLaunch,
+}: {
+  isActive: boolean;
+  tier: string;
+  canSubToLaunch: boolean;
+}) {
   const params = useParams();
 
   if (isActive)
@@ -195,6 +218,15 @@ function PlanCTA({ isActive, tier }: { isActive: boolean; tier: string }) {
         Current Plan
       </NavLinkButton>
     );
+
+  if (!isActive && !canSubToLaunch && tier === 'launch') {
+    return (
+      <IconTooltipButton
+        title='You already have a Launch subscription on another organization. Only one Launch subscription is allowed per user.'
+        icon={Info}
+      />
+    );
+  }
 
   return (
     <NavLinkButton
@@ -212,16 +244,24 @@ function MobilePlanCard({
   plan,
   isActive,
   index,
+  canSubToLaunchTier,
 }: {
   plan: OrganizationTier;
   isActive: boolean;
   index: number;
+  canSubToLaunchTier: boolean;
 }) {
+  const isDisabled = plan.tier === 'launch' && !canSubToLaunchTier;
+
   return (
     <motion.div
       className={cn(
         'space-y-6 rounded-2xl border p-6 shadow-sm backdrop-blur-sm',
-        isActive ? 'border-primary bg-primary/5 shadow-md' : 'bg-card border-border',
+        isActive
+          ? 'border-primary bg-primary/5 shadow-md'
+          : isDisabled
+            ? 'bg-card border-border cursor-not-allowed opacity-30'
+            : 'bg-card border-border',
       )}
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
@@ -245,7 +285,7 @@ function MobilePlanCard({
           <span className='text-muted-foreground text-sm'>/mo</span>
         </div>
 
-        <PlanCTA isActive={isActive} tier={plan.tier} />
+        <PlanCTA isActive={isActive} tier={plan.tier} canSubToLaunch={canSubToLaunchTier} />
       </div>
 
       <div className='border-border space-y-3 border-t pt-6'>

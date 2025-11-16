@@ -3,9 +3,10 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from
 import { signInWithEmailAndPassword, signUpWithEmailAndPassword } from '../../auth';
 import { SU_EMAIL, SU_PASSWORD } from '../fixtures/test-data';
 import {
-  enterpriseTierLimits,
+  impactTierLimits,
   launchTierLimits,
   scaleTierLimits,
+  tempTierLimits,
 } from '../seeds/seedOrganizationPricingTiers';
 import { setupTestDatabase, TestCleanupManager, testSupabase } from '../setup/test-helpers';
 import { getTestUser } from '../utils/getTestUser';
@@ -190,7 +191,7 @@ describe('Tier Limits RLS Policies', () => {
 
         const { data, error } = await testSupabase
           .from('tier_limits')
-          .insert([launchTierLimits, scaleTierLimits, enterpriseTierLimits])
+          .insert([tempTierLimits, launchTierLimits, scaleTierLimits])
           .select();
 
         expect(error).toBeNull();
@@ -200,7 +201,6 @@ describe('Tier Limits RLS Policies', () => {
         const tiers = data?.map((limit) => limit.tier) || [];
         expect(tiers).toContain('launch');
         expect(tiers).toContain('scale');
-        expect(tiers).toContain('enterprise');
       });
     });
 
@@ -212,7 +212,9 @@ describe('Tier Limits RLS Policies', () => {
           password: adminUser.password,
         });
 
-        await testSupabase.from('tier_limits').insert([launchTierLimits, scaleTierLimits]);
+        await testSupabase
+          .from('tier_limits')
+          .insert([tempTierLimits, launchTierLimits, scaleTierLimits]);
       });
 
       it('should allow updating multiple tier limits at once', async () => {
@@ -245,9 +247,7 @@ describe('Tier Limits RLS Policies', () => {
           password: adminUser.password,
         });
 
-        await testSupabase
-          .from('tier_limits')
-          .insert([launchTierLimits, scaleTierLimits, enterpriseTierLimits]);
+        await testSupabase.from('tier_limits').insert([launchTierLimits, scaleTierLimits]);
       });
 
       it('should allow authorized users to delete tier limits', async () => {
@@ -347,7 +347,7 @@ describe('Tier Limits RLS Policies', () => {
         expect(deletedTiers).toContain('launch');
         expect(deletedTiers).toContain('scale');
 
-        // Verify only enterprise tier remains
+        // Verify only  tier remains
         const { data: remainingData } = await testSupabase.from('tier_limits').select('*');
 
         expect(remainingData?.length).toBe(1);
@@ -365,57 +365,7 @@ describe('Tier Limits RLS Policies', () => {
 
         await testSupabase
           .from('tier_limits')
-          .insert([launchTierLimits, scaleTierLimits, enterpriseTierLimits]);
-      });
-    });
-
-    describe('Tier limits data validation', () => {
-      it('should preserve all tier limit fields correctly', async () => {
-        const { data, error } = await testSupabase
-          .from('tier_limits')
-          .insert(enterpriseTierLimits)
-          .select()
-          .single();
-
-        expect(error).toBeNull();
-        expect(data?.tier).toBe('enterprise');
-        expect(data?.storage_limit_mb_per_org).toBe(100000);
-        expect(data?.max_members_per_org).toBe(20);
-        expect(data?.max_collaborators_per_course).toBe(50);
-        expect(data?.max_free_courses_per_org).toBe(10);
-        expect(data?.max_students_per_course).toBe(1000);
-        expect(data?.ai_tools_enabled).toBe(true);
-        expect(data?.ai_usage_limit_monthly).toBeNull();
-        expect(data?.custom_domains_enabled).toBe(true);
-        expect(data?.max_custom_domains).toBe(10);
-        expect(data?.analytics_level).toBe('enterprise');
-        expect(data?.support_level).toBe('dedicated');
-        expect(data?.platform_fee_percentage).toBeCloseTo(5, 2);
-        expect(data?.white_label_enabled).toBe(true);
-      });
-
-      it('should handle null values correctly', async () => {
-        await signInWithEmailAndPassword(testSupabase, {
-          email: adminUser.email,
-          password: adminUser.password,
-        });
-
-        const tierWithNulls = {
-          ...launchTierLimits,
-          tier: 'impact',
-          ai_usage_limit_monthly: null,
-          max_custom_domains: null,
-        };
-
-        const { data, error } = await testSupabase
-          .from('tier_limits')
-          .insert(tierWithNulls)
-          .select()
-          .single();
-
-        expect(error).toBeNull();
-        expect(data?.ai_usage_limit_monthly).toBeNull();
-        expect(data?.max_custom_domains).toBeNull();
+          .insert([tempTierLimits, launchTierLimits, scaleTierLimits, impactTierLimits]);
       });
     });
   });

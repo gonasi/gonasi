@@ -33,7 +33,7 @@ export const tierLimits: TierLimitSeed[] = [
   {
     tier: 'temp',
     storage_limit_mb_per_org: 0,
-    max_members_per_org: 0,
+    max_members_per_org: 1,
     max_free_courses_per_org: 0,
     ai_tools_enabled: false,
     ai_usage_limit_monthly: null,

@@ -25,10 +25,10 @@ import { VALID_TIER_ORDER } from './validateTierChangeRequest';
 // ---------------------------------------------------------------------------
 // Tier constants & types
 // ---------------------------------------------------------------------------
-const VALID_UPGRADE_TIER_ORDER: TierLimitsRow[] = ['scale', 'impact', 'enterprise'];
+const VALID_UPGRADE_TIER_ORDER: TierLimitsRow[] = ['scale', 'impact'];
 
 type Tier = (typeof VALID_UPGRADE_TIER_ORDER)[number] | 'launch';
-type ChangeType = 'upgrade' | 'downgrade' | 'reactivation' | 'new' | 'same';
+type ChangeType = 'start' | 'upgrade' | 'downgrade' | 'reactivation' | 'new' | 'same';
 type SubscriptionStatus = Database['public']['Enums']['subscription_status'];
 
 // ---------------------------------------------------------------------------
@@ -45,6 +45,8 @@ const determineChangeType = (
   nextTier: Tier | null = null,
   downgradeRequestedAt: string | null = null,
 ): ChangeType => {
+  if (currentTier === 'temp' && targetTier === 'launch') return 'start';
+
   // No subscription or on free tier → new
   if (!currentTier || currentTier === 'launch') return 'new';
 
@@ -145,6 +147,13 @@ async function handleDowngrade({
     currentPeriodEnd,
     userId,
   });
+
+  if (targetTier === 'temp') {
+    return {
+      success: false,
+      message: 'You can not downgrade to temp',
+    };
+  }
 
   // Paid downgrade (schedule for next cycle)
   const { data: tierRow, error: tierErr } = await supabase
@@ -255,6 +264,108 @@ export async function handleReactivation({
       data: null,
     };
   }
+}
+
+/**
+ * Creates a new subscription (temp to launch)
+ */
+async function handleStartSubscription({
+  supabase,
+  organizationId,
+  targetTier,
+  userProfile,
+}: {
+  supabase: TypedSupabaseClient;
+  organizationId: string;
+  targetTier: Tier;
+  userProfile: ProfileWithSignedUrl;
+}): Promise<InitializeOrgTierSubSuccess | InitializeOrgTierSubError> {
+  console.log('[handleStartSubscription] called', {
+    organizationId,
+    targetTier,
+    userId: userProfile.id,
+  });
+
+  if (targetTier !== 'launch') {
+    console.log('[handleStartSubscription] targetTier is not launch');
+    return {
+      success: false,
+      message: `Should be moving from temp to launch tier`,
+      data: null,
+    };
+  }
+
+  // Fetch current subscription first
+  const { data: currentSubs, error: fetchError } = await supabase
+    .from('organization_subscriptions')
+    .select('*')
+    .eq('organization_id', organizationId)
+    .limit(1);
+
+  if (fetchError) {
+    console.error('[handleStartSubscription] error fetching subscription', fetchError);
+    return {
+      success: false,
+      message: fetchError.message || 'Failed to fetch current subscription.',
+      data: null,
+    };
+  }
+
+  if (!currentSubs || currentSubs.length === 0) {
+    console.warn('[handleStartSubscription] no subscription found for org', organizationId);
+    return {
+      success: false,
+      message: 'No active subscription found to update.',
+      data: null,
+    };
+  }
+
+  console.log('[handleStartSubscription] current subscription', currentSubs[0]);
+
+  const now = new Date().toISOString();
+  console.log('[handleStartSubscription] now timestamp', now);
+
+  // Attempt update
+  const { data: updatedData, error: updateError } = await supabase
+    .from('organization_subscriptions')
+    .update({
+      tier: targetTier,
+      start_date: now,
+      current_period_start: now,
+      updated_by: userProfile.id,
+    })
+    .eq('organization_id', organizationId)
+    .limit(1)
+    .select();
+
+  if (updateError) {
+    console.error('[handleStartSubscription] supabase update error', updateError);
+    return {
+      success: false,
+      message: updateError.message || 'Failed to start subscription.',
+      data: null,
+    };
+  }
+
+  console.log('[handleStartSubscription] update returned data', updatedData);
+
+  if (!updatedData || updatedData.length === 0) {
+    console.warn('[handleStartSubscription] no subscription updated');
+    return {
+      success: false,
+      message: 'No active subscription found to update.',
+      data: null,
+    };
+  }
+
+  console.log('[handleStartSubscription] subscription updated successfully');
+
+  return {
+    success: true,
+    message: 'You’re now on the Launch plan! 🚀',
+    data: null,
+    changeType: 'start',
+  };
 }
 
 /**
@@ -376,7 +487,7 @@ export const initializeOrganizationTierSubscription = async ({
 
     // 2️⃣ Permission check
     const role = await getUserOrgRole({ supabase, organizationId });
-    if (!role || role === 'editor') {
+    if (!role || role !== 'owner') {
       return {
         success: false,
         message: 'You do not have permission to manage this organization’s subscription.',
@@ -418,6 +529,14 @@ export const initializeOrganizationTierSubscription = async ({
 
     // 5️⃣ Handle each change type
     switch (changeType) {
+      case 'start':
+        return await handleStartSubscription({
+          supabase,
+          organizationId,
+          targetTier: targetTier as Tier,
+          userProfile,
+        });
+
       case 'same':
         return {
           success: false,

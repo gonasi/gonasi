@@ -2736,24 +2736,24 @@ CREATE OR REPLACE FUNCTION public.assign_default_subscription_to_new_org()
  SET search_path TO ''
 AS $function$
 declare
-    v_user_id uuid := new.owned_by;
-    v_tier public.subscription_tier;
+  v_user_id uuid := new.owned_by;
+  v_tier public.subscription_tier;
 begin
-    -- Skip if this organization already has a subscription (safety check)
+    -- Safety check: skip if organization already has a subscription
     if exists (
-        select 1
-        from public.organization_subscriptions s
-        where s.organization_id = new.id
+      select 1
+      from public.organization_subscriptions s
+      where s.organization_id = new.id
     ) then
         return new;
     end if;
 
     -- Determine tier: launch for first org, temp otherwise
     if not exists (
-        select 1
+        select 1 
         from public.organizations o
         join public.organization_subscriptions s
-          on o.id = s.organization_id
+        on o.id = s.organization_id
         where o.owned_by = v_user_id
           and s.tier = 'launch'
     ) then
@@ -2764,23 +2764,24 @@ begin
 
     -- Insert default subscription
     insert into public.organization_subscriptions (
-        organization_id,
-        tier,
-        status,
-        start_date,
-        current_period_start,
-        current_period_end,
-        created_by,
-        updated_by
+      organization_id,
+      tier,
+      status,
+      start_date,
+      current_period_start,
+      current_period_end,
+      created_by,
+      updated_by
     ) values (
-        new.id,
-        v_tier,
-        'active',
-        timezone('utc', now()),
-        timezone('utc', now()),
-        case when v_tier = 'launch' then null else timezone('utc', now()) + interval '30 days' end,
-        new.created_by,
-        new.created_by
+      new.id,
+      v_tier,
+      'active',
+      timezone('utc', now()),
+      timezone('utc', now()),
+      -- current_period_end is NULL for launch or temp
+      case when v_tier in ('launch', 'temp') then null else timezone('utc', now()) + interval '30 days' end,
+      new.created_by,
+      new.created_by
     );
 
     return new;
@@ -3057,7 +3058,7 @@ declare
   max_members int;
 begin
   -- Pull tier limits JSON
-  select public.get_tier_limits_for_org(p_organization_id)
+  select public.get_tier_limits(p_organization_id)
   into limits;
 
   -- If no subscription / no limits: treat as zero capacity
@@ -3146,7 +3147,7 @@ begin
   -------------------------------------------------------------------
   -- 1. Fetch organization's tier limits
   -------------------------------------------------------------------
-  select public.get_tier_limits_for_org(p_org_id)
+  select public.get_tier_limits(p_org_id)
   into v_limits;
 
   if v_limits is null then
@@ -4025,6 +4026,32 @@ begin
   end if;
 
   return coalesce(new, old);
+end;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.enforce_null_end_for_launch_temp()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+begin
+  if new.tier in ('launch', 'temp') then
+    -- Force current_period_end to NULL for these tiers
+    new.current_period_end := NULL;
+    new.next_tier := NULL;
+    new.next_plan_code := NULL;
+    new.downgrade_requested_at := NULL;
+    new.downgrade_effective_at := NULL;
+    new.downgrade_executed_at := NULL;
+    new.downgrade_requested_by := NULL;
+    new.status := 'active';
+    new.next_payment_date := NULL;
+    new.initial_next_payment_date := NULL;
+  end if;
+
+  return new;
 end;
 $function$
 ;
@@ -5560,7 +5587,7 @@ begin
   -------------------------------------------------------------------
   -- 1. Fetch tier limits via helper
   -------------------------------------------------------------------
-  select public.get_tier_limits_for_org(p_org_id)
+  select public.get_tier_limits(p_org_id)
   into v_limits;
 
   if v_limits is null then
@@ -5639,7 +5666,7 @@ AS $function$
   select s.tier
   from public.organization_subscriptions s
   where s.organization_id = p_org
-    and s.status = 'active'
+    and s.status in ('active', 'non-renewing')
   limit 1;
 $function$
 ;
@@ -6125,22 +6152,7 @@ AS $function$
   join public.organization_subscriptions s
     on s.tier = tl.tier
   where s.organization_id = p_org
-    and s.status = 'active'
-  limit 1;
-$function$
-;
-
-CREATE OR REPLACE FUNCTION public.get_tier_limits_for_org(org_id uuid)
- RETURNS json
- LANGUAGE sql
- STABLE
- SET search_path TO ''
-AS $function$
-  select row_to_json(tl)
-  from public.organization_subscriptions s
-  join public.tier_limits tl on tl.tier = s.tier
-  where s.organization_id = org_id
-    and s.status = 'active'
+    and s.status in ('active', 'non-renewing') 
   limit 1;
 $function$
 ;
@@ -12543,7 +12555,21 @@ with check (((user_id <> ( SELECT auth.uid() AS uid)) AND (role = ANY (ARRAY['ad
   to authenticated
 using ((EXISTS ( SELECT 1
    FROM public.organizations o
-  WHERE ((o.id = organization_subscriptions.organization_id) AND ((o.owned_by = ( SELECT auth.uid() AS uid)) OR public.has_org_role(o.id, 'admin'::text, ( SELECT auth.uid() AS uid)))))));
+  WHERE ((o.id = organization_subscriptions.organization_id) AND ((o.owned_by = ( SELECT auth.uid() AS uid)) OR public.has_org_role(o.id, 'owner'::text, ( SELECT auth.uid() AS uid)))))));
+
+
+
+  create policy "organization_subscriptions_update"
+  on "public"."organization_subscriptions"
+  as permissive
+  for update
+  to authenticated
+using ((EXISTS ( SELECT 1
+   FROM public.organizations o
+  WHERE ((o.id = organization_subscriptions.organization_id) AND ((o.owned_by = ( SELECT auth.uid() AS uid)) OR public.has_org_role(o.id, 'owner'::text, ( SELECT auth.uid() AS uid)))))))
+with check ((EXISTS ( SELECT 1
+   FROM public.organizations o
+  WHERE ((o.id = organization_subscriptions.organization_id) AND ((o.owned_by = ( SELECT auth.uid() AS uid)) OR public.has_org_role(o.id, 'owner'::text, ( SELECT auth.uid() AS uid)))))));
 
 
 
@@ -13057,6 +13083,8 @@ CREATE TRIGGER trg_broadcast_org_notification AFTER INSERT ON public.org_notific
 CREATE TRIGGER after_update_role_on_org_members AFTER UPDATE OF role ON public.organization_members FOR EACH ROW EXECUTE FUNCTION public.delete_course_editors_on_role_change();
 
 CREATE TRIGGER trg_organization_members_set_updated_at BEFORE UPDATE ON public.organization_members FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+CREATE TRIGGER trg_enforce_null_end_for_launch_temp BEFORE INSERT OR UPDATE ON public.organization_subscriptions FOR EACH ROW EXECUTE FUNCTION public.enforce_null_end_for_launch_temp();
 
 CREATE TRIGGER trg_organizations_wallets_updated_at BEFORE UPDATE ON public.organization_wallets FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 

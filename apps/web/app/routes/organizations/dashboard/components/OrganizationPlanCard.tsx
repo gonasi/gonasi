@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useFetcher, useParams } from 'react-router';
-import { AlertTriangle, ArrowUpRight, Crown } from 'lucide-react';
+import { AlertTriangle, ArrowUpRight, CloudAlert, Crown } from 'lucide-react';
 
 import type { FetchOrganizationSubscriptionStatusResponse } from '@gonasi/database/organizationSubscriptions';
 
@@ -109,16 +109,20 @@ export function OrganizationPlanCard() {
               )}
             </div>
 
-            <h3 className='text-foreground mb-2 text-3xl font-bold capitalize'>{tier.tier}</h3>
-            <p className='text-muted-foreground font-secondary text-sm'>
-              {tier.support_level === 'community'
-                ? 'Ideal for small teams, early creators, and pilots'
-                : `Includes ${tier.support_level} support`}
-            </p>
+            <h3 className='text-foreground mb-2 text-3xl font-bold capitalize'>
+              {tier.tier === 'temp' ? 'No Subscription' : tier.tier}
+            </h3>
+            {tier.tier !== 'temp' && (
+              <p className='text-muted-foreground font-secondary text-sm'>
+                {tier.support_level === 'community'
+                  ? 'Ideal for small teams, early creators, and pilots'
+                  : `Includes ${tier.support_level} support`}
+              </p>
+            )}
           </div>
 
           <div className='bg-background/20 flex h-12 w-12 items-center justify-center rounded-lg'>
-            <Crown className='h-6 w-6' />
+            {tier.tier === 'temp' ? <CloudAlert className='text-danger' /> : <Crown />}
           </div>
         </div>
 

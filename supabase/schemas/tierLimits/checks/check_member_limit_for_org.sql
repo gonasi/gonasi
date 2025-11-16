@@ -24,7 +24,7 @@ declare
   max_members int;
 begin
   -- Pull tier limits JSON
-  select public.get_tier_limits_for_org(p_organization_id)
+  select public.get_tier_limits(p_organization_id)
   into limits;
 
   -- If no subscription / no limits: treat as zero capacity

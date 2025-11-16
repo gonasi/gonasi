@@ -145,10 +145,9 @@ async function handleSubscriptionCreate(
 
   // Map Paystack plan → your tier enum
   const planName = data.plan.name.toLowerCase();
-  let tier: 'launch' | 'scale' | 'impact' | 'enterprise' = 'launch';
+  let tier: 'launch' | 'scale' | 'impact' = 'launch';
   if (planName.includes('scale')) tier = 'scale';
   else if (planName.includes('impact')) tier = 'impact';
-  else if (planName.includes('enterprise')) tier = 'enterprise';
 
   console.log('📊 Determined tier:', tier);
 

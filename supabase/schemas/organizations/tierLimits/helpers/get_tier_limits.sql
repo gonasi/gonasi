@@ -29,4 +29,3 @@ as $$
     and s.status in ('active', 'non-renewing') 
   limit 1;
 $$;
- 

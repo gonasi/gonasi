@@ -10,8 +10,8 @@ enabled = true
 port = 54321
 # Schemas to expose in your API. Tables, views and stored procedures in this schema will get API
 # endpoints. `public` and `graphql_public` schemas are included by default.
-# schemas = ["public", "graphql_public"]
-schemas = ["public", "graphql_public", "pgmq_public"]
+schemas = ["public", "graphql_public"]
+# schemas = ["public", "graphql_public", "pgmq_public"]
 
 # Extra schemas to add to the search_path of every request.
 extra_search_path = ["public", "extensions"]
@@ -152,6 +152,7 @@ schema_paths = [
 
   './schemas/organizations/organization_subscriptions_schema_and_indexes.sql',
   './schemas/organizations/utils/assign_launch_subscription_to_new_org.sql',
+  './schemas/organizations/utils/enforce_null_end_for_launch_temp.sql',
   './schemas/organizations/utils/subscription_upsert_webhook.sql',
   './schemas/organizations/failed_downgrade_attempts_schema_and_indexes.sql',
 
@@ -198,9 +199,6 @@ schema_paths = [
   './schemas/organizationNotifications/utils/trigger_org_notification_email_dispatch.sql',
   './schemas/organizationNotifications/utils/broadcast_org_notification.sql',
   './schemas/organizationNotifications/org_notifications_broadcast_rls.sql',
-
-  # rpc profiles, orgs
-  './schemas/get_tier_limits_for_org_functions.sql',
 
   # limit checks
   './schemas/tierLimits/checks/check_member_limit_for_org.sql',

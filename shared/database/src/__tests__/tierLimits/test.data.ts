@@ -31,20 +31,3 @@ export const scaleTierLimits = {
   platform_fee_percentage: 10.0,
   white_label_enabled: false,
 };
-
-export const enterpriseTierLimits = {
-  tier: 'enterprise',
-  storage_limit_mb_per_org: 100000,
-  max_members_per_org: 20,
-  max_collaborators_per_course: 50,
-  max_free_courses_per_org: 10,
-  max_students_per_course: 1000,
-  ai_tools_enabled: true,
-  ai_usage_limit_monthly: null, // Unlimited
-  custom_domains_enabled: true,
-  max_custom_domains: 10,
-  analytics_level: 'enterprise',
-  support_level: 'dedicated',
-  platform_fee_percentage: 5.0,
-  white_label_enabled: true,
-};

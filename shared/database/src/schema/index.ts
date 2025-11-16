@@ -32,23 +32,6 @@ export type Database = {
       [_ in never]: never
     }
   }
-  pgmq_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      [_ in never]: never
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       ai_usage_log: {
@@ -2976,7 +2959,6 @@ export type Database = {
           isSetofReturn: false
         }
       }
-      get_tier_limits_for_org: { Args: { org_id: string }; Returns: Json }
       get_unified_navigation: {
         Args: {
           p_current_block_id?: string
@@ -3490,9 +3472,6 @@ export type CompositeTypes<
 
 export const Constants = {
   graphql_public: {
-    Enums: {},
-  },
-  pgmq_public: {
     Enums: {},
   },
   public: {

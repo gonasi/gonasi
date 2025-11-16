@@ -1,22 +1,24 @@
-import { Ban, Clock, Zap } from 'lucide-react';
+import { Ban, Clock, CloudAlert, Zap } from 'lucide-react';
 
 import type {
-  OrganizationSubscription,
+  OrganizationSubscriptionType,
   OrganizationTier,
 } from '@gonasi/database/organizationSubscriptions';
 
 import { NavLinkButton } from '~/components/ui/button';
 import { Card, CardContent } from '~/components/ui/card';
+import { cn } from '~/lib/utils';
 
 interface ActiveSubCardProps {
-  subscription: OrganizationSubscription;
+  subscription: OrganizationSubscriptionType;
   tier: OrganizationTier;
 }
 
 export function ActiveSubCard({ subscription, tier }: ActiveSubCardProps) {
   const isActive = subscription.status === 'active';
   const isCanceled = subscription.cancel_at_period_end;
-  const isFreePlan = tier.price_monthly_usd === 0;
+  const isFreePlan = tier.tier === 'launch';
+  const isTempPlan = tier.tier === 'temp';
 
   const hasScheduledDowngrade =
     subscription.next_tier &&
@@ -67,12 +69,12 @@ export function ActiveSubCard({ subscription, tier }: ActiveSubCardProps) {
   }
 
   return (
-    <Card className='border-border/50 rounded-none'>
+    <Card className={cn('border-border/50 rounded-none', isTempPlan && 'bg-danger/10')}>
       <CardContent className='p-4'>
         <div className='mb-4 flex items-start justify-between'>
           <div>
             <div className='mb-2 flex items-center gap-2'>
-              <h2 className='text-2xl font-bold'>{displayTier} Plan</h2>
+              <h2 className='text-2xl font-bold'>{isTempPlan ? 'No' : displayTier} Plan</h2>
 
               <span
                 className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${statusColor}`}
@@ -82,72 +84,81 @@ export function ActiveSubCard({ subscription, tier }: ActiveSubCardProps) {
             </div>
 
             <p className='text-muted-foreground font-secondary'>
-              {isFreePlan
-                ? 'You’re on the free tier.'
-                : hasScheduledDowngrade
-                  ? `You’ll remain on ${displayTier} until ${downgradeEffectiveDate}, then move to the ${subscription.next_tier?.charAt(0).toUpperCase() + subscription.next_tier?.slice(1)} tier.`
-                  : isCanceled
-                    ? 'Your subscription will end on the next billing date.'
-                    : 'Your current subscription is active.'}
-              a sdf asd fasd f
+              {isTempPlan
+                ? 'Get started by selecting a plan that’s right for you.'
+                : isFreePlan
+                  ? 'You’re on the free tier.'
+                  : hasScheduledDowngrade
+                    ? `You’ll remain on ${displayTier} until ${downgradeEffectiveDate}, then move to the ${subscription.next_tier?.charAt(0).toUpperCase() + subscription.next_tier?.slice(1)} tier.`
+                    : isCanceled
+                      ? 'Your subscription will end on the next billing date.'
+                      : 'Your current subscription is active.'}
             </p>
           </div>
 
-          <Zap className='text-foreground h-6 w-6' />
-        </div>
-
-        {/* Billing Info */}
-        <div className='border-accent/20 mb-8 space-y-3 border-t pt-6'>
-          <div className='flex justify-between'>
-            <span className='text-muted-foreground font-secondary'>Monthly Price</span>
-            <span className='font-semibold'>
-              {isFreePlan ? 'Free' : `${currency} ${monthlyPrice.toLocaleString()}`}
-            </span>
-          </div>
-
-          <div className='flex justify-between'>
-            <span className='text-muted-foreground font-secondary'>Start Date</span>
-            <span className='font-semibold'>{startDate}</span>
-          </div>
-
-          {!isFreePlan && (
-            <div className='flex justify-between'>
-              <span className='text-muted-foreground font-secondary'>Next Billing Date</span>
-              <span className='font-semibold'>{nextBillingDate}</span>
-            </div>
-          )}
-
-          {hasScheduledDowngrade && (
-            <div className='flex items-center justify-between'>
-              <span className='text-muted-foreground font-secondary flex items-center gap-1'>
-                <Clock className='h-4 w-4' />
-                Downgrade Effective
-              </span>
-              <span className='font-semibold text-blue-600'>{downgradeEffectiveDate}</span>
-            </div>
+          {isTempPlan ? (
+            <CloudAlert className='text-danger h-6 w-6' />
+          ) : (
+            <Zap className='text-foreground h-6 w-6' />
           )}
         </div>
 
-        {/* Actions */}
-        <div className='flex items-center justify-end space-x-4'>
-          {!isFreePlan && (
-            <div className='w-full md:w-1/2'>
-              <NavLinkButton
-                to='/organizations/dashboard/subscriptions/manage'
-                className='w-full'
-                variant={hasScheduledDowngrade ? 'ghost' : 'danger'}
-                leftIcon={hasScheduledDowngrade ? <Clock /> : <Ban />}
-                disabled={Boolean(isCanceled) || Boolean(hasScheduledDowngrade)}
-              >
-                {hasScheduledDowngrade
-                  ? 'Downgrade Scheduled'
-                  : isCanceled
-                    ? 'Already Canceling'
-                    : 'Cancel'}
-              </NavLinkButton>
+        {isTempPlan ? null : (
+          <>
+            {/* Billing Info */}
+            <div className='border-accent/20 mb-8 space-y-3 border-t pt-6'>
+              <div className='flex justify-between'>
+                <span className='text-muted-foreground font-secondary'>Monthly Price</span>
+                <span className='font-semibold'>
+                  {isFreePlan ? 'Free' : `${currency} ${monthlyPrice.toLocaleString()}`}
+                </span>
+              </div>
+
+              <div className='flex justify-between'>
+                <span className='text-muted-foreground font-secondary'>Start Date</span>
+                <span className='font-semibold'>{startDate}</span>
+              </div>
+
+              {!isFreePlan && (
+                <div className='flex justify-between'>
+                  <span className='text-muted-foreground font-secondary'>Next Billing Date</span>
+                  <span className='font-semibold'>{nextBillingDate}</span>
+                </div>
+              )}
+
+              {hasScheduledDowngrade && (
+                <div className='flex items-center justify-between'>
+                  <span className='text-muted-foreground font-secondary flex items-center gap-1'>
+                    <Clock className='h-4 w-4' />
+                    Downgrade Effective
+                  </span>
+                  <span className='font-semibold text-blue-600'>{downgradeEffectiveDate}</span>
+                </div>
+              )}
             </div>
-          )}
-        </div>
+
+            {/* Actions */}
+            <div className='flex items-center justify-end space-x-4'>
+              {!isFreePlan && (
+                <div className='w-full md:w-1/2'>
+                  <NavLinkButton
+                    to='/organizations/dashboard/subscriptions/manage'
+                    className='w-full'
+                    variant={hasScheduledDowngrade ? 'ghost' : 'danger'}
+                    leftIcon={hasScheduledDowngrade ? <Clock /> : <Ban />}
+                    disabled={Boolean(isCanceled) || Boolean(hasScheduledDowngrade)}
+                  >
+                    {hasScheduledDowngrade
+                      ? 'Downgrade Scheduled'
+                      : isCanceled
+                        ? 'Already Canceling'
+                        : 'Cancel'}
+                  </NavLinkButton>
+                </div>
+              )}
+            </div>
+          </>
+        )}
       </CardContent>
     </Card>
   );
