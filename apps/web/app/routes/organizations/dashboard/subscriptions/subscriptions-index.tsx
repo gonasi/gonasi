@@ -71,6 +71,7 @@ export default function SubscriptionsIndex({ params, loaderData }: Route.Compone
                 canSubToLaunchTier={loaderData.data.canSubToLaunchTier}
                 canSwitchToLaunch={loaderData.data.canSwitchToLaunch}
                 nextTier={loaderData.data.subscription.next_tier}
+                subscription={loaderData.data.subscription}
               />
             </div>
           </Modal.Body>

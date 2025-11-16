@@ -1,8 +1,12 @@
 import { useParams } from 'react-router';
 import { motion } from 'framer-motion';
-import { ArrowRightLeft, Check, Info, X } from 'lucide-react';
+import { ArrowRightLeft, Check, Info, Undo, X } from 'lucide-react';
 
-import type { AllTiers, OrganizationTier } from '@gonasi/database/organizationSubscriptions';
+import type {
+  AllTiers,
+  OrganizationSubscriptionType,
+  OrganizationTier,
+} from '@gonasi/database/organizationSubscriptions';
 import type { Database } from '@gonasi/database/schema';
 
 import { IconTooltipButton, NavLinkButton } from '~/components/ui/button';
@@ -14,6 +18,7 @@ interface PricingComparisonTableProps {
   canSubToLaunchTier: boolean;
   canSwitchToLaunch: boolean;
   nextTier: Database['public']['Enums']['subscription_tier'] | null;
+  subscription: OrganizationSubscriptionType;
 }
 
 /** Feature definitions */
@@ -56,6 +61,7 @@ export function PricingComparisonTable({
   canSubToLaunchTier,
   canSwitchToLaunch,
   nextTier,
+  subscription,
 }: PricingComparisonTableProps) {
   /** ✅ Sort plans by price ascending, impact always last */
   const sortedTiers = [...allTiers].sort((a, b) => {
@@ -77,18 +83,25 @@ export function PricingComparisonTable({
           .filter(
             (plan) => !(plan.tier === 'launch' && (!canSubToLaunchTier || !canSwitchToLaunch)),
           )
-          .map((plan, i) => (
-            <MobilePlanCard
-              key={plan.tier}
-              plan={plan}
-              isActive={plan.tier === activeTier.tier}
-              isNextTier={plan.tier === nextTier}
-              index={i}
-              canSubToLaunchTier={canSubToLaunchTier}
-              canSwitchToLaunch={canSwitchToLaunch}
-              activeTier={activeTier.tier}
-            />
-          ))}
+          .map((plan, i) => {
+            return (
+              <MobilePlanCard
+                key={plan.tier}
+                plan={plan}
+                isActive={plan.tier === activeTier.tier}
+                isNextTier={plan.tier === nextTier}
+                index={i}
+                canSubToLaunchTier={canSubToLaunchTier}
+                canSwitchToLaunch={canSwitchToLaunch}
+                activeTier={activeTier.tier}
+                isCanceling={
+                  subscription.tier === plan.tier &&
+                  subscription.cancel_at_period_end &&
+                  subscription.next_tier === 'temp'
+                }
+              />
+            );
+          })}
       </div>
 
       {/* Desktop */}
@@ -110,6 +123,16 @@ export function PricingComparisonTable({
                 const isDisabled =
                   (plan.tier === 'launch' && !canSubToLaunchTier) ||
                   (plan.tier === 'launch' && !canSwitchToLaunch);
+                const isCanceling =
+                  subscription.tier === plan.tier &&
+                  subscription.cancel_at_period_end &&
+                  subscription.next_tier === 'temp';
+
+                const canCancelActivePlan =
+                  subscription.tier === plan.tier &&
+                  !subscription.cancel_at_period_end &&
+                  !subscription.next_tier &&
+                  subscription.status === 'active';
 
                 return (
                   <motion.th
@@ -155,6 +178,8 @@ export function PricingComparisonTable({
                         canSubToLaunch={canSubToLaunch}
                         activeTier={activeTier.tier}
                         canSwitchToLaunch={canSwitchToLaunch}
+                        isCanceling={isCanceling}
+                        canCancelActivePlan={canCancelActivePlan}
                       />
                     </div>
                   </motion.th>
@@ -234,6 +259,8 @@ function PlanCTA({
   canSubToLaunch,
   canSwitchToLaunch,
   activeTier,
+  isCanceling,
+  canCancelActivePlan,
 }: {
   isActive: boolean;
   isNextTier: boolean;
@@ -241,8 +268,37 @@ function PlanCTA({
   canSubToLaunch: boolean;
   canSwitchToLaunch: boolean;
   activeTier: string;
+  isCanceling: boolean;
+  canCancelActivePlan: boolean;
 }) {
   const params = useParams();
+
+  if (canCancelActivePlan) {
+    return (
+      <NavLinkButton
+        to={`/${params.organizationId}/dashboard/subscriptions/temp`}
+        variant='danger'
+        className='rounded-full'
+        size='sm'
+        leftIcon={<X />}
+      >
+        Cancel Plan
+      </NavLinkButton>
+    );
+  }
+
+  if (isCanceling)
+    return (
+      <NavLinkButton
+        to={`/${params.organizationId}/dashboard/subscriptions/${tier}`}
+        variant='success'
+        className='rounded-full'
+        size='sm'
+        leftIcon={<Undo />}
+      >
+        Undo Cancellation
+      </NavLinkButton>
+    );
 
   if (isActive)
     return (
@@ -304,6 +360,7 @@ function MobilePlanCard({
   canSubToLaunchTier,
   canSwitchToLaunch,
   activeTier,
+  isCanceling,
 }: {
   plan: OrganizationTier;
   isActive: boolean;
@@ -312,6 +369,7 @@ function MobilePlanCard({
   canSubToLaunchTier: boolean;
   canSwitchToLaunch: boolean;
   activeTier: string;
+  isCanceling: boolean;
 }) {
   const isDisabled =
     (plan.tier === 'launch' && !canSubToLaunchTier) ||
@@ -362,6 +420,7 @@ function MobilePlanCard({
           canSubToLaunch={canSubToLaunchTier}
           activeTier={activeTier}
           canSwitchToLaunch={canSwitchToLaunch}
+          isCanceling={isCanceling}
         />
       </div>
 
