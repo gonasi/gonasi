@@ -1,4 +1,4 @@
-import { Ban, Clock, CloudAlert, Zap } from 'lucide-react';
+import { Ban, Clock, CloudAlert, X, Zap } from 'lucide-react';
 
 import type {
   OrganizationSubscriptionType,
@@ -15,8 +15,8 @@ interface ActiveSubCardProps {
 }
 
 export function ActiveSubCard({ subscription, tier }: ActiveSubCardProps) {
-  const isActive = subscription.status === 'active';
-  const isCanceled = subscription.cancel_at_period_end;
+  const isActive = subscription.status === 'active' || subscription.status === 'non-renewing';
+  const isCanceling = subscription.cancel_at_period_end;
   const isFreePlan = tier.tier === 'launch';
   const isTempPlan = tier.tier === 'temp';
 
@@ -52,6 +52,9 @@ export function ActiveSubCard({ subscription, tier }: ActiveSubCardProps) {
   const monthlyPrice = tier.price_monthly_usd;
   const currency = tier.plan_currency?.toUpperCase() || 'USD';
   const displayTier = subscription.tier.charAt(0).toUpperCase() + subscription.tier.slice(1);
+  const nextTierDisplay = subscription.next_tier
+    ? subscription.next_tier.charAt(0).toUpperCase() + subscription.next_tier.slice(1)
+    : null;
 
   // Dynamic status label
   let statusLabel = 'Active';
@@ -60,12 +63,36 @@ export function ActiveSubCard({ subscription, tier }: ActiveSubCardProps) {
   if (!isActive) {
     statusLabel = 'Inactive';
     statusColor = 'bg-destructive/20 text-destructive';
-  } else if (isCanceled && !hasScheduledDowngrade) {
+  } else if (isCanceling && !hasScheduledDowngrade) {
     statusLabel = 'Canceling';
     statusColor = 'bg-yellow-500/20 text-yellow-600';
   } else if (hasScheduledDowngrade) {
-    statusLabel = 'Downgrade Scheduled';
-    statusColor = 'bg-blue-500/20 text-blue-600';
+    const isDowngradeToTemp = subscription.next_tier === 'temp';
+    statusLabel = isDowngradeToTemp ? 'Canceling' : 'Downgrade Scheduled';
+    statusColor = 'bg-yellow-500/20 text-yellow-600';
+  }
+
+  // Determine button state and action
+  const hasScheduledChange = isCanceling || hasScheduledDowngrade;
+  const canTakeAction = isActive; // Can either cancel subscription or cancel scheduled change
+
+  // Description text
+  let descriptionText = '';
+  if (isTempPlan) {
+    descriptionText = `Get started by selecting a plan that's right for you.`;
+  } else if (isFreePlan) {
+    descriptionText = `You're on the free tier.`;
+  } else if (hasScheduledDowngrade) {
+    const isDowngradeToTemp = subscription.next_tier === 'temp';
+    if (isDowngradeToTemp) {
+      descriptionText = `Your subscription will end on ${downgradeEffectiveDate}. You'll be moved to a temporary plan until you select a new subscription.`;
+    } else {
+      descriptionText = `You'll remain on ${displayTier} until ${downgradeEffectiveDate}, then move to the ${nextTierDisplay} tier.`;
+    }
+  } else if (isCanceling) {
+    descriptionText = `Your subscription will end on ${nextBillingDate}. You'll be moved to a temporary plan after this date.`;
+  } else {
+    descriptionText = 'Your current subscription is active.';
   }
 
   return (
@@ -83,17 +110,7 @@ export function ActiveSubCard({ subscription, tier }: ActiveSubCardProps) {
               </span>
             </div>
 
-            <p className='text-muted-foreground font-secondary'>
-              {isTempPlan
-                ? 'Get started by selecting a plan that’s right for you.'
-                : isFreePlan
-                  ? 'You’re on the free tier.'
-                  : hasScheduledDowngrade
-                    ? `You’ll remain on ${displayTier} until ${downgradeEffectiveDate}, then move to the ${subscription.next_tier?.charAt(0).toUpperCase() + subscription.next_tier?.slice(1)} tier.`
-                    : isCanceled
-                      ? 'Your subscription will end on the next billing date.'
-                      : 'Your current subscription is active.'}
-            </p>
+            <p className='text-muted-foreground font-secondary'>{descriptionText}</p>
           </div>
 
           {isTempPlan ? (
@@ -121,7 +138,9 @@ export function ActiveSubCard({ subscription, tier }: ActiveSubCardProps) {
 
               {!isFreePlan && (
                 <div className='flex justify-between'>
-                  <span className='text-muted-foreground font-secondary'>Next Billing Date</span>
+                  <span className='text-muted-foreground font-secondary'>
+                    {isCanceling || hasScheduledDowngrade ? 'Active Until' : 'Next Billing Date'}
+                  </span>
                   <span className='font-semibold'>{nextBillingDate}</span>
                 </div>
               )}
@@ -130,9 +149,9 @@ export function ActiveSubCard({ subscription, tier }: ActiveSubCardProps) {
                 <div className='flex items-center justify-between'>
                   <span className='text-muted-foreground font-secondary flex items-center gap-1'>
                     <Clock className='h-4 w-4' />
-                    Downgrade Effective
+                    {subscription.next_tier === 'temp' ? 'Cancellation' : 'Downgrade'} Effective
                   </span>
-                  <span className='font-semibold text-blue-600'>{downgradeEffectiveDate}</span>
+                  <span className='font-semibold text-yellow-600'>{downgradeEffectiveDate}</span>
                 </div>
               )}
             </div>
@@ -144,15 +163,17 @@ export function ActiveSubCard({ subscription, tier }: ActiveSubCardProps) {
                   <NavLinkButton
                     to='/organizations/dashboard/subscriptions/manage'
                     className='w-full'
-                    variant={hasScheduledDowngrade ? 'ghost' : 'danger'}
-                    leftIcon={hasScheduledDowngrade ? <Clock /> : <Ban />}
-                    disabled={Boolean(isCanceled) || Boolean(hasScheduledDowngrade)}
+                    variant={hasScheduledChange ? 'warning' : 'danger'}
+                    leftIcon={hasScheduledChange ? <X /> : <Ban />}
+                    disabled={!canTakeAction}
                   >
-                    {hasScheduledDowngrade
-                      ? 'Downgrade Scheduled'
-                      : isCanceled
-                        ? 'Already Canceling'
-                        : 'Cancel'}
+                    {hasScheduledChange
+                      ? hasScheduledDowngrade
+                        ? subscription.next_tier === 'temp'
+                          ? 'Cancel Cancellation'
+                          : 'Cancel Downgrade'
+                        : 'Cancel Cancellation'
+                      : 'Cancel Subscription'}
                   </NavLinkButton>
                 </div>
               )}

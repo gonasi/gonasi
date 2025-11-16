@@ -6,8 +6,9 @@ import {
   ArrowDownLeft,
   ArrowDownRight,
   ArrowUpRight,
-  CircleX,
+  CheckCircle2,
   Info,
+  X,
 } from 'lucide-react';
 import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
 import { dataWithError, redirectWithError, redirectWithSuccess } from 'remix-toast';
@@ -28,7 +29,7 @@ import {
 import type { Route } from './+types/subscribe-to-tier';
 
 import { Badge } from '~/components/ui/badge';
-import { Button, NavLinkButton } from '~/components/ui/button';
+import { Button } from '~/components/ui/button';
 import { Modal } from '~/components/ui/modal';
 import { createClient } from '~/lib/supabase/supabase.server';
 import { cn } from '~/lib/utils';
@@ -41,17 +42,14 @@ export async function action({ request, params }: Route.ActionArgs) {
   const formData = await request.formData();
   await checkHoneypot(formData);
 
-  // Initialize Supabase and headers for redirect
   const { supabase, supabaseAdmin } = createClient(request);
 
-  // Validate and parse form data with Zod
   const {
     errors,
     data,
     receivedValues: defaultValues,
   } = await getValidatedFormData<OrganizationTierChangeSchemaTypes>(formData, resolver);
 
-  // Return validation errors, if any
   if (errors) {
     return { errors, defaultValues };
   }
@@ -97,12 +95,12 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     );
   }
 
-  return validation;
+  return validation as OrganizationTierChangeRequestSuccessResponse;
 }
 
 export default function SubscribeToTier({ params, loaderData }: Route.ComponentProps) {
-  const data = loaderData as OrganizationTierChangeRequestSuccessResponse;
-  const { currentTier, targetTier, isUpgrade, isDowngrade, canProceed, warnings } = data;
+  const { currentTier, targetTier, isUpgrade, isDowngrade, canProceed, warnings, data } =
+    loaderData;
 
   const form = useRemixForm<OrganizationTierChangeSchemaTypes>({
     mode: 'all',
@@ -116,22 +114,117 @@ export default function SubscribeToTier({ params, loaderData }: Route.ComponentP
   const isPending = useIsPending();
   const isDisabled = isPending || form.formState.isSubmitting;
 
-  const title = isUpgrade
-    ? `Upgrade from ${currentTier} → ${targetTier}`
-    : isDowngrade
-      ? `Downgrade from ${currentTier} → ${targetTier}`
-      : `Manage ${targetTier} tier`;
+  // Check for scheduled changes - with proper null handling
+  const subscription = data.subscription;
+  const hasScheduledChange = subscription.next_tier != null;
+  const scheduledTier = subscription.next_tier;
+  // const isCanceling = subscription.cancel_at_period_end;
+  const downgradeEffectiveDate = subscription.downgrade_effective_at
+    ? new Date(subscription.downgrade_effective_at).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      })
+    : null;
 
-  const icon = isUpgrade ? (
-    <ArrowUpRight className='text-success' />
-  ) : isDowngrade ? (
-    <ArrowDownRight className='text-warning' />
-  ) : (
-    <Info className='text-blue-500' />
-  );
+  // Determine the relationship between target tier and scheduled tier
+  const isTargetSameAsScheduled = scheduledTier !== null && targetTier === scheduledTier;
+  const isTargetSameAsCurrent = targetTier === currentTier;
 
-  const blockingErrors = warnings.filter((w) => w.type === 'error');
-  const nonBlockingWarnings = warnings.filter((w) => w.type !== 'error');
+  // Calculate tier indices for comparison
+  const currentIndex = VALID_TIER_ORDER.indexOf(currentTier);
+  const targetIndex = VALID_TIER_ORDER.indexOf(targetTier);
+  const scheduledIndex = scheduledTier ? VALID_TIER_ORDER.indexOf(scheduledTier) : -1;
+
+  // Determine action type
+  let actionType: 'cancel-scheduled' | 'upgrade' | 'downgrade' | 'no-change' = 'no-change';
+  let actionDescription = '';
+  let icon = <Info className='text-blue-500' />;
+  let title = `Manage ${targetTier} tier`;
+
+  if (isTargetSameAsCurrent && !hasScheduledChange) {
+    actionType = 'no-change';
+    title = `Already on ${targetTier} tier`;
+    icon = <CheckCircle2 className='text-green-500' />;
+    actionDescription = `You are currently on the ${targetTier} tier with no scheduled changes.`;
+  } else if (isTargetSameAsScheduled && hasScheduledChange && scheduledTier) {
+    actionType = 'cancel-scheduled';
+    const scheduledTierDisplay = scheduledTier.charAt(0).toUpperCase() + scheduledTier.slice(1);
+    const isScheduledDowngrade = scheduledIndex < currentIndex;
+    const isScheduledToTemp = scheduledTier === 'temp';
+
+    title = isScheduledToTemp
+      ? 'Cancel Scheduled Cancellation'
+      : `Cancel Scheduled ${isScheduledDowngrade ? 'Downgrade' : 'Change'}`;
+    icon = <X className='text-yellow-600' />;
+
+    if (isScheduledToTemp) {
+      actionDescription = `You have a cancellation scheduled for ${downgradeEffectiveDate ?? 'the end of your billing period'}. Canceling this will keep you on the ${currentTier} tier and continue billing normally.`;
+    } else {
+      actionDescription = `You have a ${isScheduledDowngrade ? 'downgrade' : 'change'} to ${scheduledTierDisplay} scheduled for ${downgradeEffectiveDate ?? 'the end of your billing period'}. This action will cancel that scheduled change and keep you on the ${currentTier} tier.`;
+    }
+  } else if (hasScheduledChange && scheduledTier && targetIndex > scheduledIndex) {
+    // Target is higher than scheduled tier (but not same as current)
+    actionType = isUpgrade ? 'upgrade' : 'downgrade';
+    const scheduledTierDisplay = scheduledTier.charAt(0).toUpperCase() + scheduledTier.slice(1);
+    const targetTierDisplay = targetTier.charAt(0).toUpperCase() + targetTier.slice(1);
+
+    if (targetIndex > currentIndex) {
+      title = `Upgrade to ${targetTier}`;
+      icon = <ArrowUpRight className='text-success' />;
+      actionDescription = `You currently have a change scheduled to ${scheduledTierDisplay} on ${downgradeEffectiveDate ?? 'the end of your billing period'}. This will cancel that scheduled change and upgrade you immediately to the ${targetTierDisplay} tier.`;
+    } else {
+      title = `Change to ${targetTier}`;
+      icon = <ArrowUpRight className='text-blue-500' />;
+      actionDescription = `You currently have a change scheduled to ${scheduledTierDisplay} on ${downgradeEffectiveDate ?? 'the end of your billing period'}. This will cancel that scheduled change and move you to the ${targetTierDisplay} tier instead.`;
+    }
+  } else if (isUpgrade) {
+    actionType = 'upgrade';
+    title = `Upgrade to ${targetTier}`;
+    icon = <ArrowUpRight className='text-success' />;
+    actionDescription = hasScheduledChange
+      ? `This will cancel your scheduled change and upgrade you immediately to the ${targetTier} tier.`
+      : `Upgrade your plan to unlock more features and higher limits.`;
+  } else if (isDowngrade) {
+    actionType = 'downgrade';
+    const isDowngradeToTemp = targetTier === 'temp';
+
+    if (isDowngradeToTemp) {
+      title = 'Cancel Subscription';
+      icon = <ArrowDownLeft className='text-warning' />;
+      actionDescription = `This will cancel your subscription. You'll retain access to your current ${currentTier} tier until ${downgradeEffectiveDate ?? 'the end of your billing period'}, after which you'll be moved to a temporary plan.`;
+    } else {
+      title = `Downgrade to ${targetTier}`;
+      icon = <ArrowDownRight className='text-warning' />;
+      actionDescription = hasScheduledChange
+        ? `This will replace your scheduled change with a downgrade to ${targetTier}, effective ${downgradeEffectiveDate ?? 'at the end of your billing period'}.`
+        : `Your downgrade will take effect at the end of your current billing period. You'll retain full access to ${currentTier} features until then.`;
+    }
+  }
+
+  // Button configuration
+  let buttonText = 'Confirm';
+  let buttonVariant: 'success' | 'danger' | 'default' | 'secondary' = 'default';
+  let buttonIcon = <ArrowUpRight />;
+
+  if (actionType === 'cancel-scheduled') {
+    buttonText = 'Cancel Scheduled Change';
+    buttonVariant = 'secondary';
+    buttonIcon = <X />;
+  } else if (actionType === 'upgrade') {
+    buttonText = 'Confirm Upgrade';
+    buttonVariant = 'success';
+    buttonIcon = <ArrowUpRight />;
+  } else if (actionType === 'downgrade') {
+    buttonText = targetTier === 'temp' ? 'Confirm Cancellation' : 'Confirm Downgrade';
+    buttonVariant = 'danger';
+    buttonIcon = <ArrowDownLeft />;
+  } else {
+    buttonText = 'No Action Needed';
+  }
+
+  const shouldDisableAction =
+    !canProceed || isDisabled || (isTargetSameAsCurrent && !hasScheduledChange);
 
   return (
     <Modal open>
@@ -142,6 +235,11 @@ export default function SubscribeToTier({ params, loaderData }: Route.ComponentP
           closeRoute={`/${params.organizationId}/dashboard/subscriptions`}
         />
         <Modal.Body className='space-y-6 px-4 pb-6'>
+          {/* Action Description */}
+          <div className='rounded-lg border border-blue-200 bg-blue-50 p-4'>
+            <p className='text-sm text-blue-900'>{actionDescription}</p>
+          </div>
+
           {/* Summary */}
           <div className='bg-muted/40 rounded-none border-none p-4'>
             <p className='text-muted-foreground mb-2 text-sm'>
@@ -150,17 +248,29 @@ export default function SubscribeToTier({ params, loaderData }: Route.ComponentP
                 {currentTier}
               </Badge>
             </p>
+            {hasScheduledChange && scheduledTier && (
+              <p className='text-muted-foreground mb-2 text-sm'>
+                Scheduled Tier:
+                <Badge variant='outline' className='ml-2 text-yellow-600 capitalize'>
+                  {scheduledTier}
+                </Badge>
+                {downgradeEffectiveDate && (
+                  <span className='ml-2 text-xs'>(effective {downgradeEffectiveDate})</span>
+                )}
+              </p>
+            )}
             <p className='text-muted-foreground text-sm'>
-              Target Tier:
+              {actionType === 'cancel-scheduled' ? 'Will remain on:' : 'Target Tier:'}
               <Badge
                 variant='secondary'
                 className={cn(
                   'ml-2 capitalize',
-                  isUpgrade && 'bg-success/20 text-success',
-                  isDowngrade && 'bg-warning/20 text-warning',
+                  actionType === 'upgrade' && 'bg-success/20 text-success',
+                  actionType === 'downgrade' && 'bg-warning/20 text-warning',
+                  actionType === 'cancel-scheduled' && 'bg-blue-100 text-blue-700',
                 )}
               >
-                {targetTier}
+                {actionType === 'cancel-scheduled' ? currentTier : targetTier}
               </Badge>
             </p>
           </div>
@@ -187,56 +297,61 @@ export default function SubscribeToTier({ params, loaderData }: Route.ComponentP
             </div>
           )}
 
-          {/* Comparison Table */}
-          <div className='overflow-hidden rounded-none'>
-            <div className='bg-muted/30 grid grid-cols-3 p-2 text-sm font-semibold'>
-              <span>Feature</span>
-              <span className='text-center capitalize'>{currentTier}</span>
-              <span className='text-center capitalize'>{targetTier}</span>
+          {/* Comparison Table - only show if not canceling scheduled change to same tier */}
+          {!(isTargetSameAsCurrent && !hasScheduledChange) && (
+            <div className='overflow-hidden rounded-none'>
+              <div className='bg-muted/30 grid grid-cols-3 p-2 text-sm font-semibold'>
+                <span>Feature</span>
+                <span className='text-center capitalize'>
+                  {actionType === 'cancel-scheduled' ? currentTier : currentTier}
+                </span>
+                <span className='text-center capitalize'>
+                  {actionType === 'cancel-scheduled' ? currentTier : targetTier}
+                </span>
+              </div>
+
+              {(Object.keys(data.currentTierLimits) as (keyof typeof data.currentTierLimits)[]).map(
+                (key) => {
+                  const currentVal = data.currentTierLimits[key];
+                  const targetVal =
+                    actionType === 'cancel-scheduled'
+                      ? data.currentTierLimits[key]
+                      : data.targetTierLimits[key];
+
+                  if (typeof currentVal !== 'boolean' && typeof currentVal !== 'number')
+                    return null;
+
+                  const changed = currentVal !== targetVal;
+                  return (
+                    <div
+                      key={key}
+                      className={cn(
+                        'grid grid-cols-3 border-t p-2 text-sm',
+                        changed && 'bg-green-50/50',
+                      )}
+                    >
+                      <span className='capitalize'>{key.replaceAll('_', ' ')}</span>
+                      <span className='text-center'>{String(currentVal)}</span>
+                      <span className='text-center font-medium'>{String(targetVal)}</span>
+                    </div>
+                  );
+                },
+              )}
             </div>
+          )}
 
-            {Object.keys(data.data.currentTierLimits).map((key) => {
-              const currentVal = data.data.currentTierLimits[key];
-              const targetVal = data.data.targetTierLimits[key];
-              if (typeof currentVal !== 'boolean' && typeof currentVal !== 'number') return null;
-
-              const changed = currentVal !== targetVal;
-              return (
-                <div
-                  key={key}
-                  className={cn(
-                    'grid grid-cols-3 border-t p-2 text-sm',
-                    changed && 'bg-green-50/50',
-                  )}
-                >
-                  <span className='capitalize'>{key.replaceAll('_', ' ')}</span>
-                  <span className='text-center'>{String(currentVal)}</span>
-                  <span className='text-center font-medium'>{String(targetVal)}</span>
-                </div>
-              );
-            })}
-          </div>
           <RemixFormProvider {...form}>
             <Form method='POST' onSubmit={form.handleSubmit}>
               <HoneypotInputs />
               <div className='flex justify-end gap-3 border-t pt-4'>
-                <div>
-                  <NavLinkButton
-                    to={`/${params.organizationId}/dashboard/subscriptions`}
-                    variant='ghost'
-                    leftIcon={<CircleX />}
-                  >
-                    Cancel
-                  </NavLinkButton>
-                </div>
                 <Button
-                  variant={isUpgrade ? 'success' : 'danger'}
+                  variant={buttonVariant}
                   type='submit'
-                  disabled={!canProceed || isDisabled}
+                  disabled={shouldDisableAction}
                   isLoading={isDisabled}
-                  rightIcon={isUpgrade ? <ArrowUpRight /> : <ArrowDownLeft />}
+                  rightIcon={buttonIcon}
                 >
-                  {isUpgrade ? 'Confirm Upgrade' : 'Confirm Downgrade'}
+                  {buttonText}
                 </Button>
               </div>
             </Form>

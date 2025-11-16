@@ -1,8 +1,9 @@
 import { useParams } from 'react-router';
 import { motion } from 'framer-motion';
-import { ArrowRightLeft, Check, Info } from 'lucide-react';
+import { ArrowRightLeft, Check, Info, X } from 'lucide-react';
 
 import type { AllTiers, OrganizationTier } from '@gonasi/database/organizationSubscriptions';
+import type { Database } from '@gonasi/database/schema';
 
 import { IconTooltipButton, NavLinkButton } from '~/components/ui/button';
 import { cn } from '~/lib/utils';
@@ -11,6 +12,7 @@ interface PricingComparisonTableProps {
   allTiers: AllTiers;
   activeTier: OrganizationTier;
   canSubToLaunchTier: boolean;
+  nextTier: Database['public']['Enums']['subscription_tier'] | null;
 }
 
 /** Feature definitions */
@@ -51,6 +53,7 @@ export function PricingComparisonTable({
   allTiers,
   activeTier,
   canSubToLaunchTier,
+  nextTier,
 }: PricingComparisonTableProps) {
   /** ✅ Sort plans by price ascending, impact always last */
   const sortedTiers = [...allTiers].sort((a, b) => {
@@ -75,8 +78,10 @@ export function PricingComparisonTable({
               key={plan.tier}
               plan={plan}
               isActive={plan.tier === activeTier.tier}
+              isNextTier={plan.tier === nextTier}
               index={i}
               canSubToLaunchTier={canSubToLaunchTier}
+              activeTier={activeTier.tier}
             />
           ))}
       </div>
@@ -95,6 +100,7 @@ export function PricingComparisonTable({
 
               {sortedTiers.map((plan, i) => {
                 const isActive = plan.tier === activeTier.tier;
+                const isNextTier = plan.tier === nextTier;
                 const canSubToLaunch = plan.tier === 'launch' && canSubToLaunchTier;
                 const isDisabled = plan.tier === 'launch' && !canSubToLaunchTier;
 
@@ -104,6 +110,7 @@ export function PricingComparisonTable({
                     className={cn(
                       'px-6 py-4 text-center align-top transition-all',
                       isActive && 'bg-primary/5 border-primary relative border-2 shadow-md',
+                      isNextTier && 'border-warning/80 bg-warning/5 relative border-2 shadow-md',
                       isDisabled && 'bg-card cursor-not-allowed opacity-30 shadow-md',
                     )}
                     initial={{ opacity: 0, y: -8 }}
@@ -121,6 +128,12 @@ export function PricingComparisonTable({
                             Active
                           </span>
                         )}
+
+                        {isNextTier && (
+                          <span className='rounded-full bg-blue-500 px-2.5 py-0.5 text-[10px] font-medium tracking-wide text-white uppercase'>
+                            Next
+                          </span>
+                        )}
                       </div>
 
                       <div className='text-2xl font-bold'>
@@ -130,8 +143,10 @@ export function PricingComparisonTable({
 
                       <PlanCTA
                         isActive={isActive}
+                        isNextTier={isNextTier}
                         tier={plan.tier}
                         canSubToLaunch={canSubToLaunch}
+                        activeTier={activeTier.tier}
                       />
                     </div>
                   </motion.th>
@@ -156,6 +171,7 @@ export function PricingComparisonTable({
 
                 {sortedTiers.map((plan) => {
                   const isActive = plan.tier === activeTier.tier;
+                  const isNextTier = plan.tier === nextTier;
                   const isDisabled = plan.tier === 'launch' && !canSubToLaunchTier;
 
                   return (
@@ -164,6 +180,7 @@ export function PricingComparisonTable({
                       className={cn(
                         'px-6 py-4 text-center transition-all',
                         isActive && 'bg-primary/5 border-primary border-x-2 shadow-inner',
+                        isNextTier && 'border-warning/80 bg-warning/5 border-x-2 shadow-inner',
                         isDisabled && 'opacity-30',
                       )}
                     >
@@ -180,10 +197,15 @@ export function PricingComparisonTable({
               <td />
               {sortedTiers.map((plan) => {
                 const isActive = plan.tier === activeTier.tier;
+                const isNextTier = plan.tier === nextTier;
                 return (
                   <td
                     key={`${plan.tier}-bottom`}
-                    className={cn('', isActive && 'border-primary rounded-b-xl border-b-2')}
+                    className={cn(
+                      '',
+                      isActive && 'border-primary rounded-b-xl border-b-2',
+                      isNextTier && 'border-warning/80 rounded-b-xl border-b-2',
+                    )}
                   />
                 );
               })}
@@ -197,19 +219,23 @@ export function PricingComparisonTable({
 
 function PlanCTA({
   isActive,
+  isNextTier,
   tier,
   canSubToLaunch,
+  activeTier,
 }: {
   isActive: boolean;
+  isNextTier: boolean;
   tier: string;
   canSubToLaunch: boolean;
+  activeTier: string;
 }) {
   const params = useParams();
 
   if (isActive)
     return (
       <NavLinkButton
-        to='/organizations/dashboard/subscriptions/manage'
+        to={`/${params.organizationId}/dashboard/subscriptions/${tier}`}
         variant='success'
         disabled
         className='rounded-full'
@@ -218,6 +244,20 @@ function PlanCTA({
         Current Plan
       </NavLinkButton>
     );
+
+  if (isNextTier) {
+    return (
+      <NavLinkButton
+        to={`/${params.organizationId}/dashboard/subscriptions/${activeTier}`}
+        variant='warning'
+        className='rounded-full'
+        size='sm'
+        leftIcon={<X />}
+      >
+        Cancel Downgrade
+      </NavLinkButton>
+    );
+  }
 
   if (!isActive && !canSubToLaunch && tier === 'launch') {
     return (
@@ -243,13 +283,17 @@ function PlanCTA({
 function MobilePlanCard({
   plan,
   isActive,
+  isNextTier,
   index,
   canSubToLaunchTier,
+  activeTier,
 }: {
   plan: OrganizationTier;
   isActive: boolean;
+  isNextTier: boolean;
   index: number;
   canSubToLaunchTier: boolean;
+  activeTier: string;
 }) {
   const isDisabled = plan.tier === 'launch' && !canSubToLaunchTier;
 
@@ -259,9 +303,11 @@ function MobilePlanCard({
         'space-y-6 rounded-2xl border p-6 shadow-sm backdrop-blur-sm',
         isActive
           ? 'border-primary bg-primary/5 shadow-md'
-          : isDisabled
-            ? 'bg-card border-border cursor-not-allowed opacity-30'
-            : 'bg-card border-border',
+          : isNextTier
+            ? 'border-warning/80 bg-warning/5 shadow-md'
+            : isDisabled
+              ? 'bg-card border-border cursor-not-allowed opacity-30'
+              : 'bg-card border-border',
       )}
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
@@ -278,6 +324,10 @@ function MobilePlanCard({
               Active
             </span>
           )}
+
+          {isNextTier && (
+            <span className='rounded-full bg-blue-500 px-3 py-1 text-xs text-white'>Next</span>
+          )}
         </div>
 
         <div className='text-2xl font-bold'>
@@ -285,7 +335,13 @@ function MobilePlanCard({
           <span className='text-muted-foreground text-sm'>/mo</span>
         </div>
 
-        <PlanCTA isActive={isActive} tier={plan.tier} canSubToLaunch={canSubToLaunchTier} />
+        <PlanCTA
+          isActive={isActive}
+          isNextTier={isNextTier}
+          tier={plan.tier}
+          canSubToLaunch={canSubToLaunchTier}
+          activeTier={activeTier}
+        />
       </div>
 
       <div className='border-border space-y-3 border-t pt-6'>

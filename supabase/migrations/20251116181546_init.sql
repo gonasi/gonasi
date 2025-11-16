@@ -6940,6 +6940,39 @@ AS $function$
 $function$
 ;
 
+CREATE OR REPLACE FUNCTION public.prevent_multiple_launch_orgs()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+declare
+  v_owner uuid;
+  v_exists boolean;
+begin
+  -- Only enforce on launch tier INSERTs/UPDATEs
+  if NEW.tier = 'launch' then
+    select owned_by into v_owner
+    from public.organizations
+    where id = NEW.organization_id;
+
+    select exists(
+      select 1
+      from public.organization_subscriptions s
+      join public.organizations o on o.id = s.organization_id
+      where o.owned_by = v_owner
+        and s.tier = 'launch'
+        and s.organization_id != NEW.organization_id
+    ) into v_exists;
+
+    if v_exists then
+      raise exception 'Owner already has an organization on launch tier';
+    end if;
+  end if;
+
+  return NEW;
+end;
+$function$
+;
+
 CREATE OR REPLACE FUNCTION public.process_course_payment_from_paystack(p_payment_reference text, p_paystack_transaction_id text, p_user_id uuid, p_published_course_id uuid, p_tier_id uuid, p_amount_paid numeric, p_currency_code text, p_payment_method text DEFAULT 'card'::text, p_paystack_fee numeric DEFAULT 0, p_metadata jsonb DEFAULT '{}'::jsonb)
  RETURNS jsonb
  LANGUAGE plpgsql
@@ -13085,6 +13118,8 @@ CREATE TRIGGER after_update_role_on_org_members AFTER UPDATE OF role ON public.o
 CREATE TRIGGER trg_organization_members_set_updated_at BEFORE UPDATE ON public.organization_members FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
 CREATE TRIGGER trg_enforce_null_end_for_launch_temp BEFORE INSERT OR UPDATE ON public.organization_subscriptions FOR EACH ROW EXECUTE FUNCTION public.enforce_null_end_for_launch_temp();
+
+CREATE TRIGGER trg_prevent_multiple_launch BEFORE INSERT OR UPDATE ON public.organization_subscriptions FOR EACH ROW EXECUTE FUNCTION public.prevent_multiple_launch_orgs();
 
 CREATE TRIGGER trg_organizations_wallets_updated_at BEFORE UPDATE ON public.organization_wallets FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 

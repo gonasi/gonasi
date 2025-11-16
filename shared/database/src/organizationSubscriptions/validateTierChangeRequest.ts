@@ -17,21 +17,40 @@ export interface TierChangeWarning {
   message: string;
 }
 
+export type TierLimits = Database['public']['Tables']['tier_limits']['Row'];
+
+// Type for the specific fields we select from organization_subscriptions
+export interface OrganizationSubscriptionWithLimits {
+  id: string;
+  organization_id: string;
+  tier: TierLimitsRow;
+  status: Database['public']['Tables']['organization_subscriptions']['Row']['status'];
+  start_date: string;
+  current_period_start: string;
+  current_period_end: string | null;
+  cancel_at_period_end: boolean;
+  downgrade_effective_at: string | null;
+  next_tier: TierLimitsRow | null;
+  created_at: string;
+  updated_at: string;
+  tier_limits: TierLimits;
+  next_tier_limits: TierLimits | null;
+}
+
 export interface OrganizationTierChangeRequestSuccessResponse {
   success: true;
   canProceed: boolean;
-  currentTier: string;
-  targetTier: string;
+  currentTier: TierLimitsRow;
+  targetTier: TierLimitsRow;
   isUpgrade: boolean;
   isDowngrade: boolean;
   warnings: TierChangeWarning[];
   data: {
-    subscription: any;
-    currentTierLimits: any;
-    targetTierLimits: any;
+    subscription: OrganizationSubscriptionWithLimits;
+    currentTierLimits: TierLimits;
+    targetTierLimits: TierLimits;
   };
 }
-
 interface ErrorResponse {
   success: false;
   message: string;
@@ -49,7 +68,7 @@ export const validateTierChangeRequest = async ({
   // 1. Permission check
   // -----------------------------------------------------------
   const role = await getUserOrgRole({ supabase, organizationId });
-  if (!role || role === 'editor') {
+  if (!role || role !== 'owner') {
     return {
       success: false,
       message: 'You do not have permission to manage this organization’s subscription.',
@@ -72,6 +91,8 @@ export const validateTierChangeRequest = async ({
       current_period_start,
       current_period_end,
       cancel_at_period_end,
+      downgrade_effective_at,
+      next_tier,
       created_at,
       updated_at,
       tier_limits:tier_limits!organization_subscriptions_tier_fkey ( * ),
@@ -132,18 +153,11 @@ export const validateTierChangeRequest = async ({
   // -----------------------------------------------------------
   // 5. Billing status validation
   // -----------------------------------------------------------
-  if (subscription.status === 'past_due') {
+  if (subscription.status === 'attention') {
     warnings.push({
       type: 'error',
       message:
         'Your subscription is past due. Please resolve payment issues before changing plans.',
-    });
-  }
-
-  if (subscription.status === 'incomplete') {
-    warnings.push({
-      type: 'error',
-      message: 'Subscription setup is incomplete. Add a payment method to continue.',
     });
   }
 
