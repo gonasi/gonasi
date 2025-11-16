@@ -12,6 +12,7 @@ interface PricingComparisonTableProps {
   allTiers: AllTiers;
   activeTier: OrganizationTier;
   canSubToLaunchTier: boolean;
+  canSwitchToLaunch: boolean;
   nextTier: Database['public']['Enums']['subscription_tier'] | null;
 }
 
@@ -53,6 +54,7 @@ export function PricingComparisonTable({
   allTiers,
   activeTier,
   canSubToLaunchTier,
+  canSwitchToLaunch,
   nextTier,
 }: PricingComparisonTableProps) {
   /** ✅ Sort plans by price ascending, impact always last */
@@ -72,7 +74,9 @@ export function PricingComparisonTable({
       {/* Mobile */}
       <div className='space-y-6 md:hidden'>
         {sortedTiers
-          .filter((plan) => !(plan.tier === 'launch' && !canSubToLaunchTier))
+          .filter(
+            (plan) => !(plan.tier === 'launch' && (!canSubToLaunchTier || !canSwitchToLaunch)),
+          )
           .map((plan, i) => (
             <MobilePlanCard
               key={plan.tier}
@@ -81,6 +85,7 @@ export function PricingComparisonTable({
               isNextTier={plan.tier === nextTier}
               index={i}
               canSubToLaunchTier={canSubToLaunchTier}
+              canSwitchToLaunch={canSwitchToLaunch}
               activeTier={activeTier.tier}
             />
           ))}
@@ -102,7 +107,9 @@ export function PricingComparisonTable({
                 const isActive = plan.tier === activeTier.tier;
                 const isNextTier = plan.tier === nextTier;
                 const canSubToLaunch = plan.tier === 'launch' && canSubToLaunchTier;
-                const isDisabled = plan.tier === 'launch' && !canSubToLaunchTier;
+                const isDisabled =
+                  (plan.tier === 'launch' && !canSubToLaunchTier) ||
+                  (plan.tier === 'launch' && !canSwitchToLaunch);
 
                 return (
                   <motion.th
@@ -147,6 +154,7 @@ export function PricingComparisonTable({
                         tier={plan.tier}
                         canSubToLaunch={canSubToLaunch}
                         activeTier={activeTier.tier}
+                        canSwitchToLaunch={canSwitchToLaunch}
                       />
                     </div>
                   </motion.th>
@@ -172,7 +180,9 @@ export function PricingComparisonTable({
                 {sortedTiers.map((plan) => {
                   const isActive = plan.tier === activeTier.tier;
                   const isNextTier = plan.tier === nextTier;
-                  const isDisabled = plan.tier === 'launch' && !canSubToLaunchTier;
+                  const isDisabled =
+                    (plan.tier === 'launch' && !canSubToLaunchTier) ||
+                    (plan.tier === 'launch' && !canSwitchToLaunch);
 
                   return (
                     <td
@@ -222,12 +232,14 @@ function PlanCTA({
   isNextTier,
   tier,
   canSubToLaunch,
+  canSwitchToLaunch,
   activeTier,
 }: {
   isActive: boolean;
   isNextTier: boolean;
   tier: string;
   canSubToLaunch: boolean;
+  canSwitchToLaunch: boolean;
   activeTier: string;
 }) {
   const params = useParams();
@@ -259,10 +271,14 @@ function PlanCTA({
     );
   }
 
-  if (!isActive && !canSubToLaunch && tier === 'launch') {
+  if (tier === 'launch' && (!canSubToLaunch || !canSwitchToLaunch)) {
     return (
       <IconTooltipButton
-        title='You already have a Launch subscription on another organization. Only one Launch subscription is allowed per user.'
+        title={
+          !canSwitchToLaunch
+            ? 'You have an organization with a scheduled downgrade to Launch Plan'
+            : 'You already have a Launch subscription on another organization. Only one Launch subscription is allowed per user.'
+        }
         icon={Info}
       />
     );
@@ -286,6 +302,7 @@ function MobilePlanCard({
   isNextTier,
   index,
   canSubToLaunchTier,
+  canSwitchToLaunch,
   activeTier,
 }: {
   plan: OrganizationTier;
@@ -293,9 +310,12 @@ function MobilePlanCard({
   isNextTier: boolean;
   index: number;
   canSubToLaunchTier: boolean;
+  canSwitchToLaunch: boolean;
   activeTier: string;
 }) {
-  const isDisabled = plan.tier === 'launch' && !canSubToLaunchTier;
+  const isDisabled =
+    (plan.tier === 'launch' && !canSubToLaunchTier) ||
+    (plan.tier === 'launch' && !canSwitchToLaunch);
 
   return (
     <motion.div
@@ -341,6 +361,7 @@ function MobilePlanCard({
           tier={plan.tier}
           canSubToLaunch={canSubToLaunchTier}
           activeTier={activeTier}
+          canSwitchToLaunch={canSwitchToLaunch}
         />
       </div>
 

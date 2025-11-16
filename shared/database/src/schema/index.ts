@@ -2693,6 +2693,10 @@ export type Database = {
         Returns: boolean
       }
       can_publish_free_course: { Args: { p_org: string }; Returns: boolean }
+      can_switch_to_launch_tier: {
+        Args: { p_org_id: string }
+        Returns: boolean
+      }
       can_user_edit_course: {
         Args: { arg_course_id: string }
         Returns: boolean

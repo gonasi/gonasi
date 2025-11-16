@@ -1,13 +1,14 @@
 // ────────────────────────────────────────────────────────────────────────────────
 // org-subscriptions-downgrade.ts
 // ------------------------------------------------------------------------------
-// Cancels the current Paystack subscription’s auto-renew immediately,
+// Cancels the current Paystack subscription's auto-renew immediately,
 // but keeps the organization active on the current tier until period end.
 //
 // The local record is marked as `non-renewing` and scheduled for downgrade.
 // A scheduled job (org-subscriptions-downgrade-trigger.ts) later activates
 // the new tier and creates a new Paystack subscription after expiry.
-// Downgrades to "launch" (free tier) skip Paystack requests entirely.
+// Cancellations move to "temp" tier. Downgrades to "launch" (free tier) skip
+// Paystack requests entirely.
 // ────────────────────────────────────────────────────────────────────────────────
 
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
@@ -27,8 +28,9 @@ const FRONTEND_URL = Deno.env.get('FRONTEND_URL');
 const DowngradeRequest = z.object({
   organizationId: z.string().uuid(),
   targetTier: z.string(),
-  newPlanCode: z.string().optional().nullable(), // ✅ allow null or undefined
+  newPlanCode: z.string().optional().nullable(),
   userId: z.string().uuid(),
+  isCancellation: z.boolean().optional().default(false), // flag for cancellation
 });
 
 // ────────────────────────────────────────────────────────────────────────────────
@@ -75,11 +77,21 @@ Deno.serve(async (req) => {
     );
   }
 
-  const { organizationId, targetTier, newPlanCode, userId } = parsed.data;
+  const { organizationId, targetTier, newPlanCode, userId, isCancellation } = parsed.data;
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
   const nowIso = new Date().toISOString();
 
-  console.log('📦 Parsed Request', { organizationId, targetTier, userId, newPlanCode });
+  // ✅ NEW: Override targetTier to 'temp' for cancellations
+  const effectiveTargetTier = isCancellation ? 'temp' : targetTier;
+
+  console.log('📦 Parsed Request', {
+    organizationId,
+    targetTier,
+    effectiveTargetTier,
+    isCancellation,
+    userId,
+    newPlanCode,
+  });
 
   // ──────────────────────────────────────────────────────────────────────────────
   // STEP 1: Fetch Current Subscription
@@ -115,14 +127,15 @@ Deno.serve(async (req) => {
   });
 
   // ──────────────────────────────────────────────────────────────────────────────
-  // STEP 2: Check for existing scheduled downgrade
+  // STEP 2: Check for existing scheduled downgrade/cancellation
   // ──────────────────────────────────────────────────────────────────────────────
-  if (status === 'non-renewing' && nextTier === targetTier && targetTier !== 'launch') {
-    console.log('⚠️ Downgrade to the same tier already scheduled, skipping duplicate.');
+  if (status === 'non-renewing' && nextTier === effectiveTargetTier) {
+    const action = isCancellation ? 'cancellation' : 'downgrade';
+    console.log(`⚠️ ${action} to ${effectiveTargetTier} already scheduled, skipping duplicate.`);
     return new Response(
       JSON.stringify({
         success: true,
-        message: `A downgrade to ${targetTier} is already scheduled. No action taken.`,
+        message: `A ${action} to ${effectiveTargetTier} is already scheduled. No action taken.`,
       }),
       { status: 200, headers: { 'Content-Type': 'application/json' } },
     );
@@ -133,9 +146,11 @@ Deno.serve(async (req) => {
   // ──────────────────────────────────────────────────────────────────────────────
   let nextPaymentDate: string | null = null;
 
-  // Skip Paystack call entirely for free ("launch") downgrades
-  if (targetTier === 'launch') {
-    console.log('🪶 Downgrade to free tier — skipping Paystack API call.');
+  // ✅ UPDATED: Skip Paystack call for free tier ("launch") OR cancellation ("temp")
+  if (effectiveTargetTier === 'launch' || effectiveTargetTier === 'temp') {
+    const action =
+      effectiveTargetTier === 'temp' ? 'Cancellation (temp tier)' : 'Downgrade to free tier';
+    console.log(`🪶 ${action} — skipping Paystack API call.`);
     nextPaymentDate = currentPeriodEnd;
   } else if (paystackCode) {
     const paystackRes = await fetch(`https://api.paystack.co/subscription/${paystackCode}`, {
@@ -173,7 +188,7 @@ Deno.serve(async (req) => {
   }
 
   // ──────────────────────────────────────────────────────────────────────────────
-  // STEP 4: Schedule Downgrade Locally
+  // STEP 4: Schedule Downgrade/Cancellation Locally
   // ──────────────────────────────────────────────────────────────────────────────
   const effectiveDate = nextPaymentDate || currentPeriodEnd || nowIso;
 
@@ -187,7 +202,7 @@ Deno.serve(async (req) => {
   const { error: updateError } = await supabase
     .from('organization_subscriptions')
     .update({
-      next_tier: targetTier,
+      next_tier: effectiveTargetTier, // ✅ UPDATED: Use effectiveTargetTier
       next_plan_code: newPlanCode || null,
       downgrade_requested_at: nowIso,
       downgrade_effective_at: effectiveDate,
@@ -207,18 +222,22 @@ Deno.serve(async (req) => {
     });
   }
 
+  const action = isCancellation ? 'Cancellation' : 'Downgrade';
   console.log(
-    `✅ Downgrade scheduled: Org ${organizationId} will move from ${currentTier} → ${targetTier} after ${effectiveDate}.`,
+    `✅ ${action} scheduled: Org ${organizationId} will move from ${currentTier} → ${effectiveTargetTier} after ${effectiveDate}.`,
   );
 
   // ──────────────────────────────────────────────────────────────────────────────
   // STEP 5: Notify Organization
   // ──────────────────────────────────────────────────────────────────────────────
+  // ✅ UPDATED: Different notification types for cancellation vs downgrade
+  const notificationType = isCancellation ? 'org_subscription_cancelled' : 'org_tier_downgraded';
+
   await supabase.rpc('insert_org_notification', {
     p_organization_id: organizationId,
-    p_type_key: 'org_tier_downgraded',
+    p_type_key: notificationType,
     p_metadata: {
-      tier_name: targetTier,
+      tier_name: effectiveTargetTier,
       effective_date: effectiveDate,
       human_readable_date: new Date(effectiveDate).toLocaleString('en-US', {
         year: 'numeric',
@@ -236,16 +255,21 @@ Deno.serve(async (req) => {
   // ──────────────────────────────────────────────────────────────────────────────
   // STEP 6: Respond
   // ──────────────────────────────────────────────────────────────────────────────
+  const responseMessage = isCancellation
+    ? `Your subscription has been cancelled and will remain active until ${humanReadableDate}. After that, your organization will be moved to temporary status.`
+    : `Your subscription will remain active until ${humanReadableDate}, then downgrade to ${effectiveTargetTier}. Auto-renew has been disabled.`;
+
   return new Response(
     JSON.stringify({
       success: true,
-      message: `Your subscription will remain active until ${humanReadableDate}, then downgrade to ${targetTier}. Auto-renew has been disabled.`,
+      message: responseMessage,
       data: {
         currentTier,
-        targetTier,
+        targetTier: effectiveTargetTier,
         effectiveDate,
         humanReadableDate,
         paystackCode,
+        isCancellation,
       },
     }),
     { status: 200, headers: { 'Content-Type': 'application/json' } },

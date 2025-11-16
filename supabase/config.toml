@@ -168,7 +168,7 @@ schema_paths = [
   './schemas/organizations/tierLimits/helpers/get_tier_limits.sql',
 
   './schemas/organizations/tierLimits/guards/can_accept_new_member.sql',
-
+  './schemas/organizations/tierLimits/guards/can_switch_to_launch_tier.sql',
 
   './schemas/organizations/organization_subscriptions_rls.sql',
 

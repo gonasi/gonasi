@@ -3006,6 +3006,56 @@ end;
 $function$
 ;
 
+CREATE OR REPLACE FUNCTION public.can_switch_to_launch_tier(p_org_id uuid)
+ RETURNS boolean
+ LANGUAGE plpgsql
+ STABLE
+AS $function$
+declare
+  v_owner uuid;
+  v_conflict boolean;
+begin
+  --------------------------------------------------------------------
+  -- Get owner
+  --------------------------------------------------------------------
+  select owned_by
+  into v_owner
+  from public.organizations
+  where id = p_org_id;
+
+  if v_owner is null then
+    -- organization doesn't exist or no owner
+    return false;
+  end if;
+
+  --------------------------------------------------------------------
+  -- Check if owner already has a launch org or scheduled launch upgrade
+  --------------------------------------------------------------------
+  select exists (
+    select 1
+    from public.organization_subscriptions s
+    join public.organizations o on o.id = s.organization_id
+    where o.owned_by = v_owner
+      and (
+        s.tier = 'launch'
+        or s.next_tier = 'launch'
+      )
+      and s.organization_id != p_org_id
+  )
+  into v_conflict;
+
+  if v_conflict then
+    return false;
+  end if;
+
+  --------------------------------------------------------------------
+  -- This organization itself is allowed to switch to launch
+  --------------------------------------------------------------------
+  return true;
+end;
+$function$
+;
+
 CREATE OR REPLACE FUNCTION public.can_user_edit_course(arg_course_id uuid)
  RETURNS boolean
  LANGUAGE sql
@@ -4052,6 +4102,80 @@ begin
   end if;
 
   return new;
+end;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.enforce_single_launch_tier()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+declare
+  v_owner uuid;
+  v_conflict boolean;
+begin
+  --------------------------------------------------------------------
+  -- Look up organization owner
+  --------------------------------------------------------------------
+  select owned_by
+  into v_owner
+  from public.organizations
+  where id = NEW.organization_id;
+
+  if v_owner is null then
+    -- Safety fallback: do not block if owner cannot be resolved
+    return NEW;
+  end if;
+
+  --------------------------------------------------------------------
+  -- RULE 3: Launch tier MUST always be active
+  --------------------------------------------------------------------
+  if NEW.tier = 'launch' and NEW.status != 'active' then
+    raise exception 'Launch tier must always have status = active.';
+  end if;
+
+  --------------------------------------------------------------------
+  -- RULE 1: Only one launch tier org per owner
+  --------------------------------------------------------------------
+  if NEW.tier = 'launch' then
+    select exists (
+      select 1
+      from public.organization_subscriptions s
+      join public.organizations o on o.id = s.organization_id
+      where o.owned_by = v_owner
+        and s.tier = 'launch'
+        and s.organization_id != NEW.organization_id
+    )
+    into v_conflict;
+
+    if v_conflict then
+      raise exception 'Owner already has an organization using the launch tier.';
+    end if;
+  end if;
+
+  --------------------------------------------------------------------
+  -- RULE 2: Cannot schedule next_tier = launch if one already exists
+  --------------------------------------------------------------------
+  if NEW.next_tier = 'launch' then
+    select exists (
+      select 1
+      from public.organization_subscriptions s
+      join public.organizations o on o.id = s.organization_id
+      where o.owned_by = v_owner
+        and (
+          s.tier = 'launch'
+          or s.next_tier = 'launch'
+        )
+        and s.organization_id != NEW.organization_id
+    )
+    into v_conflict;
+
+    if v_conflict then
+      raise exception 'Owner already has a launch tier org or launch upgrade scheduled.';
+    end if;
+  end if;
+
+  return NEW;
 end;
 $function$
 ;
@@ -6937,39 +7061,6 @@ AS $function$
     'total_members', (select total_members from members),
     'free_courses', (select free_courses from free)
   );
-$function$
-;
-
-CREATE OR REPLACE FUNCTION public.prevent_multiple_launch_orgs()
- RETURNS trigger
- LANGUAGE plpgsql
-AS $function$
-declare
-  v_owner uuid;
-  v_exists boolean;
-begin
-  -- Only enforce on launch tier INSERTs/UPDATEs
-  if NEW.tier = 'launch' then
-    select owned_by into v_owner
-    from public.organizations
-    where id = NEW.organization_id;
-
-    select exists(
-      select 1
-      from public.organization_subscriptions s
-      join public.organizations o on o.id = s.organization_id
-      where o.owned_by = v_owner
-        and s.tier = 'launch'
-        and s.organization_id != NEW.organization_id
-    ) into v_exists;
-
-    if v_exists then
-      raise exception 'Owner already has an organization on launch tier';
-    end if;
-  end if;
-
-  return NEW;
-end;
 $function$
 ;
 
@@ -13119,7 +13210,7 @@ CREATE TRIGGER trg_organization_members_set_updated_at BEFORE UPDATE ON public.o
 
 CREATE TRIGGER trg_enforce_null_end_for_launch_temp BEFORE INSERT OR UPDATE ON public.organization_subscriptions FOR EACH ROW EXECUTE FUNCTION public.enforce_null_end_for_launch_temp();
 
-CREATE TRIGGER trg_prevent_multiple_launch BEFORE INSERT OR UPDATE ON public.organization_subscriptions FOR EACH ROW EXECUTE FUNCTION public.prevent_multiple_launch_orgs();
+CREATE TRIGGER trg_enforce_single_launch_tier BEFORE INSERT OR UPDATE ON public.organization_subscriptions FOR EACH ROW EXECUTE FUNCTION public.enforce_single_launch_tier();
 
 CREATE TRIGGER trg_organizations_wallets_updated_at BEFORE UPDATE ON public.organization_wallets FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 

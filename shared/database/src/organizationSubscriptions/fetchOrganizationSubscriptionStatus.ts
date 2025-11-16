@@ -27,6 +27,7 @@ export interface OrganizationSubscriptionSuccessResponse {
     tier: TierLimitsRow;
     allTiers: TierLimitsRow[];
     canSubToLaunchTier: boolean;
+    canSwitchToLaunch: boolean;
   };
 }
 
@@ -151,6 +152,10 @@ export const fetchOrganizationSubscriptionStatus = async ({
     };
   }
 
+  const { data: canSwitchToLaunch } = await supabase.rpc('can_switch_to_launch_tier', {
+    p_org_id: organizationId,
+  });
+
   // 6. Return clean subscription + tier data
   return {
     success: true,
@@ -159,7 +164,8 @@ export const fetchOrganizationSubscriptionStatus = async ({
       subscription: subscriptionRecord,
       tier: subscriptionRecord.tier_limits,
       allTiers,
-      canSubToLaunchTier,
+      canSubToLaunchTier: !!canSubToLaunchTier,
+      canSwitchToLaunch: !!canSwitchToLaunch,
     },
   };
 };

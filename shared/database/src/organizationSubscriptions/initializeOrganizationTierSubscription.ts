@@ -148,10 +148,15 @@ async function handleDowngrade({
     userId,
   });
 
-  if (targetTier === 'temp') {
+  const { data: canSwitchToLaunch } = await supabase.rpc('can_switch_to_launch_tier', {
+    p_org_id: organizationId,
+  });
+
+  if (!canSwitchToLaunch && targetTier === 'launch') {
     return {
       success: false,
-      message: 'You can not downgrade to temp',
+      message: 'User already has a launch plan or launch downgrade scheduled.',
+      data: null,
     };
   }
 
@@ -162,7 +167,12 @@ async function handleDowngrade({
     .eq('tier', targetTier)
     .single();
 
-  if (tierErr || (!tierRow?.paystack_plan_code && tierRow.tier !== 'launch')) {
+  if (
+    tierErr ||
+    (!tierRow?.paystack_plan_code &&
+      tierRow.tier !== 'launch' &&
+      !(targetTier === 'temp' && currentTier !== 'launch'))
+  ) {
     return {
       success: false,
       message: `Target tier ${targetTier} is missing Paystack configuration.`,
@@ -175,6 +185,7 @@ async function handleDowngrade({
     targetTier,
     newPlanCode: tierRow.paystack_plan_code,
     userId,
+    isCancellation: targetTier === 'temp' && currentTier !== 'launch',
   };
 
   const { data: downgradeResponse, error: downgradeError } = await supabase.functions.invoke<{

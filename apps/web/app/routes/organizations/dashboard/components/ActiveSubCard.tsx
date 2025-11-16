@@ -1,11 +1,10 @@
-import { Ban, Clock, CloudAlert, X, Zap } from 'lucide-react';
+import { Clock, CloudAlert, Zap } from 'lucide-react';
 
 import type {
   OrganizationSubscriptionType,
   OrganizationTier,
 } from '@gonasi/database/organizationSubscriptions';
 
-import { NavLinkButton } from '~/components/ui/button';
 import { Card, CardContent } from '~/components/ui/card';
 import { cn } from '~/lib/utils';
 
@@ -71,10 +70,6 @@ export function ActiveSubCard({ subscription, tier }: ActiveSubCardProps) {
     statusLabel = isDowngradeToTemp ? 'Canceling' : 'Downgrade Scheduled';
     statusColor = 'bg-yellow-500/20 text-yellow-600';
   }
-
-  // Determine button state and action
-  const hasScheduledChange = isCanceling || hasScheduledDowngrade;
-  const canTakeAction = isActive; // Can either cancel subscription or cancel scheduled change
 
   // Description text
   let descriptionText = '';
@@ -152,29 +147,6 @@ export function ActiveSubCard({ subscription, tier }: ActiveSubCardProps) {
                     {subscription.next_tier === 'temp' ? 'Cancellation' : 'Downgrade'} Effective
                   </span>
                   <span className='font-semibold text-yellow-600'>{downgradeEffectiveDate}</span>
-                </div>
-              )}
-            </div>
-
-            {/* Actions */}
-            <div className='flex items-center justify-end space-x-4'>
-              {!isFreePlan && (
-                <div className='w-full md:w-1/2'>
-                  <NavLinkButton
-                    to='/organizations/dashboard/subscriptions/manage'
-                    className='w-full'
-                    variant={hasScheduledChange ? 'warning' : 'danger'}
-                    leftIcon={hasScheduledChange ? <X /> : <Ban />}
-                    disabled={!canTakeAction}
-                  >
-                    {hasScheduledChange
-                      ? hasScheduledDowngrade
-                        ? subscription.next_tier === 'temp'
-                          ? 'Cancel Cancellation'
-                          : 'Cancel Downgrade'
-                        : 'Cancel Cancellation'
-                      : 'Cancel Subscription'}
-                  </NavLinkButton>
                 </div>
               )}
             </div>
