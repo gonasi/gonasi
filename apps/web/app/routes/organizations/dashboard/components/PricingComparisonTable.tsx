@@ -9,6 +9,7 @@ import type {
 } from '@gonasi/database/organizationSubscriptions';
 import type { Database } from '@gonasi/database/schema';
 
+import { Badge } from '~/components/ui/badge';
 import { IconTooltipButton, NavLinkButton } from '~/components/ui/button';
 import { cn } from '~/lib/utils';
 
@@ -84,6 +85,17 @@ export function PricingComparisonTable({
             (plan) => !(plan.tier === 'launch' && (!canSubToLaunchTier || !canSwitchToLaunch)),
           )
           .map((plan, i) => {
+            const isCanceling =
+              subscription.tier === plan.tier &&
+              subscription.cancel_at_period_end &&
+              subscription.next_tier === 'temp';
+
+            const canCancelActivePlan =
+              subscription.tier === plan.tier &&
+              !subscription.cancel_at_period_end &&
+              !subscription.next_tier &&
+              subscription.status === 'active';
+
             return (
               <MobilePlanCard
                 key={plan.tier}
@@ -94,11 +106,8 @@ export function PricingComparisonTable({
                 canSubToLaunchTier={canSubToLaunchTier}
                 canSwitchToLaunch={canSwitchToLaunch}
                 activeTier={activeTier.tier}
-                isCanceling={
-                  subscription.tier === plan.tier &&
-                  subscription.cancel_at_period_end &&
-                  subscription.next_tier === 'temp'
-                }
+                isCanceling={isCanceling}
+                canCancelActivePlan={canCancelActivePlan}
               />
             );
           })}
@@ -153,11 +162,7 @@ export function PricingComparisonTable({
                           {plan.tier.charAt(0).toUpperCase() + plan.tier.slice(1)}
                         </h3>
 
-                        {isActive && (
-                          <span className='bg-primary text-primary-foreground rounded-full px-2.5 py-0.5 text-[10px] font-medium tracking-wide uppercase'>
-                            Active
-                          </span>
-                        )}
+                        {isActive && <Badge variant='success'>Active</Badge>}
 
                         {isNextTier && (
                           <span className='rounded-full bg-blue-500 px-2.5 py-0.5 text-[10px] font-medium tracking-wide text-white uppercase'>
@@ -300,18 +305,7 @@ function PlanCTA({
       </NavLinkButton>
     );
 
-  if (isActive)
-    return (
-      <NavLinkButton
-        to={`/${params.organizationId}/dashboard/subscriptions/${tier}`}
-        variant='success'
-        disabled
-        className='rounded-full'
-        size='sm'
-      >
-        Current Plan
-      </NavLinkButton>
-    );
+  if (isActive) return <></>;
 
   if (isNextTier) {
     return (
@@ -361,6 +355,7 @@ function MobilePlanCard({
   canSwitchToLaunch,
   activeTier,
   isCanceling,
+  canCancelActivePlan,
 }: {
   plan: OrganizationTier;
   isActive: boolean;
@@ -370,6 +365,7 @@ function MobilePlanCard({
   canSwitchToLaunch: boolean;
   activeTier: string;
   isCanceling: boolean;
+  canCancelActivePlan: boolean;
 }) {
   const isDisabled =
     (plan.tier === 'launch' && !canSubToLaunchTier) ||
@@ -397,11 +393,7 @@ function MobilePlanCard({
             {plan.tier.charAt(0).toUpperCase() + plan.tier.slice(1)}
           </h3>
 
-          {isActive && (
-            <span className='bg-primary text-primary-foreground rounded-full px-3 py-1 text-xs'>
-              Active
-            </span>
-          )}
+          {isActive && <Badge variant='success'>Active</Badge>}
 
           {isNextTier && (
             <span className='rounded-full bg-blue-500 px-3 py-1 text-xs text-white'>Next</span>
@@ -421,6 +413,7 @@ function MobilePlanCard({
           activeTier={activeTier}
           canSwitchToLaunch={canSwitchToLaunch}
           isCanceling={isCanceling}
+          canCancelActivePlan={canCancelActivePlan}
         />
       </div>
 

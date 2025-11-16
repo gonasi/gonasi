@@ -136,95 +136,158 @@ export default function SubscribeToTier({ params, loaderData }: Route.ComponentP
   const targetIndex = VALID_TIER_ORDER.indexOf(targetTier);
   const scheduledIndex = scheduledTier ? VALID_TIER_ORDER.indexOf(scheduledTier) : -1;
 
-  // Determine action type
-  let actionType: 'cancel-scheduled' | 'upgrade' | 'downgrade' | 'no-change' = 'no-change';
+  // =========================
+  // Action Intent + Copy Text
+  // =========================
+
+  type ActionType =
+    | 'no-change'
+    | 'cancel-scheduled'
+    | 'upgrade'
+    | 'downgrade'
+    | 'cancel-subscription'
+    | 'override-change';
+
+  let actionType: ActionType = 'no-change';
   let actionDescription = '';
   let icon = <Info className='text-blue-500' />;
-  let title = `Manage ${targetTier} tier`;
+  let title = `Manage ${formatTier(targetTier)} tier`;
 
-  if (isTargetSameAsCurrent && !hasScheduledChange) {
-    actionType = 'no-change';
-    title = `Already on ${targetTier} tier`;
-    icon = <CheckCircle2 className='text-green-500' />;
-    actionDescription = `You are currently on the ${targetTier} tier with no scheduled changes.`;
-  } else if (isTargetSameAsScheduled && hasScheduledChange && scheduledTier) {
-    actionType = 'cancel-scheduled';
-    const scheduledTierDisplay = scheduledTier.charAt(0).toUpperCase() + scheduledTier.slice(1);
-    const isScheduledDowngrade = scheduledIndex < currentIndex;
-    const isScheduledToTemp = scheduledTier === 'temp';
-
-    title = isScheduledToTemp
-      ? 'Cancel Scheduled Cancellation'
-      : `Cancel Scheduled ${isScheduledDowngrade ? 'Downgrade' : 'Change'}`;
-    icon = <X className='text-yellow-600' />;
-
-    if (isScheduledToTemp) {
-      actionDescription = `You have a cancellation scheduled for ${downgradeEffectiveDate ?? 'the end of your billing period'}. Canceling this will keep you on the ${currentTier} tier and continue billing normally.`;
-    } else {
-      actionDescription = `You have a ${isScheduledDowngrade ? 'downgrade' : 'change'} to ${scheduledTierDisplay} scheduled for ${downgradeEffectiveDate ?? 'the end of your billing period'}. This action will cancel that scheduled change and keep you on the ${currentTier} tier.`;
-    }
-  } else if (hasScheduledChange && scheduledTier && targetIndex > scheduledIndex) {
-    // Target is higher than scheduled tier (but not same as current)
-    actionType = isUpgrade ? 'upgrade' : 'downgrade';
-    const scheduledTierDisplay = scheduledTier.charAt(0).toUpperCase() + scheduledTier.slice(1);
-    const targetTierDisplay = targetTier.charAt(0).toUpperCase() + targetTier.slice(1);
-
-    if (targetIndex > currentIndex) {
-      title = `Upgrade to ${targetTier}`;
-      icon = <ArrowUpRight className='text-success' />;
-      actionDescription = `You currently have a change scheduled to ${scheduledTierDisplay} on ${downgradeEffectiveDate ?? 'the end of your billing period'}. This will cancel that scheduled change and upgrade you immediately to the ${targetTierDisplay} tier.`;
-    } else {
-      title = `Change to ${targetTier}`;
-      icon = <ArrowUpRight className='text-blue-500' />;
-      actionDescription = `You currently have a change scheduled to ${scheduledTierDisplay} on ${downgradeEffectiveDate ?? 'the end of your billing period'}. This will cancel that scheduled change and move you to the ${targetTierDisplay} tier instead.`;
-    }
-  } else if (isUpgrade) {
-    actionType = 'upgrade';
-    title = `Upgrade to ${targetTier}`;
-    icon = <ArrowUpRight className='text-success' />;
-    actionDescription = hasScheduledChange
-      ? `This will cancel your scheduled change and upgrade you immediately to the ${targetTier} tier.`
-      : `Upgrade your plan to unlock more features and higher limits.`;
-  } else if (isDowngrade) {
-    actionType = 'downgrade';
-    const isDowngradeToTemp = targetTier === 'temp';
-
-    if (isDowngradeToTemp) {
-      title = 'Cancel Subscription';
-      icon = <ArrowDownLeft className='text-warning' />;
-      actionDescription = `This will cancel your subscription. You'll retain access to your current ${currentTier} tier until ${downgradeEffectiveDate ?? 'the end of your billing period'}, after which you'll be moved to a temporary plan.`;
-    } else {
-      title = `Downgrade to ${targetTier}`;
-      icon = <ArrowDownRight className='text-warning' />;
-      actionDescription = hasScheduledChange
-        ? `This will replace your scheduled change with a downgrade to ${targetTier}, effective ${downgradeEffectiveDate ?? 'at the end of your billing period'}.`
-        : `Your downgrade will take effect at the end of your current billing period. You'll retain full access to ${currentTier} features until then.`;
-    }
+  // helper display formatter for tiers
+  function formatTier(t: string) {
+    if (!t) return '';
+    if (t === 'temp') return 'Temporary';
+    return t.charAt(0).toUpperCase() + t.slice(1);
   }
 
+  const scheduledTierDisplay = scheduledTier ? formatTier(scheduledTier) : null;
+  const targetTierDisplay = formatTier(targetTier);
+  const currentTierDisplay = formatTier(currentTier);
+
+  // --- 1. No change ---
+  if (isTargetSameAsCurrent && !hasScheduledChange) {
+    actionType = 'no-change';
+    title = `Already on ${currentTierDisplay}`;
+    icon = <CheckCircle2 className='text-green-500' />;
+    actionDescription = `You're already on the ${currentTierDisplay} plan and no changes are scheduled.`;
+  }
+
+  // --- 2. Cancel scheduled cancellation (next_tier === 'temp') ---
+  else if (isTargetSameAsScheduled && scheduledTier === 'temp') {
+    actionType = 'cancel-scheduled';
+    title = `Cancel Scheduled Cancellation`;
+    icon = <X className='text-yellow-600' />;
+
+    actionDescription = `Your subscription is scheduled to end on ${downgradeEffectiveDate ?? 'the end of your billing period'}. Canceling this will keep your ${currentTierDisplay} plan active.`;
+  }
+
+  // --- 3. Cancel scheduled downgrade/upgrade (generic) ---
+  else if (isTargetSameAsScheduled && hasScheduledChange && scheduledTier) {
+    actionType = 'cancel-scheduled';
+    const isScheduledDowngrade = scheduledIndex < currentIndex;
+
+    title = isScheduledDowngrade ? `Cancel Scheduled Downgrade` : `Cancel Scheduled Change`;
+    icon = <X className='text-yellow-600' />;
+
+    actionDescription = `You have a ${isScheduledDowngrade ? 'downgrade' : 'change'} to ${scheduledTierDisplay} scheduled for ${downgradeEffectiveDate ?? 'the end of your billing period'}. Canceling will keep you on the ${currentTierDisplay} plan.`;
+  }
+
+  // --- 4. Override scheduled change with a new change (target different from scheduled) ---
+  else if (hasScheduledChange && scheduledTier && targetIndex !== scheduledIndex) {
+    actionType = 'override-change';
+    const isUpgradeOverride = targetIndex > currentIndex;
+
+    title = isUpgradeOverride
+      ? `Upgrade to ${targetTierDisplay}`
+      : `Change to ${targetTierDisplay}`;
+    icon = isUpgradeOverride ? (
+      <ArrowUpRight className='text-success' />
+    ) : (
+      <ArrowDownRight className='text-warning' />
+    );
+
+    actionDescription = `You currently have a change scheduled to ${scheduledTierDisplay} on ${downgradeEffectiveDate ?? 'the end of your billing period'}. This will cancel that scheduled change and move you to ${targetTierDisplay} instead.`;
+  }
+
+  // --- 5. Upgrade now (immediate) ---
+  else if (isUpgrade) {
+    actionType = 'upgrade';
+    title = `Upgrade to ${targetTierDisplay}`;
+    icon = <ArrowUpRight className='text-success' />;
+    actionDescription = hasScheduledChange
+      ? `This will override your scheduled change and upgrade you immediately to the ${targetTierDisplay} plan.`
+      : `Upgrade now to unlock more features and higher limits.`;
+  }
+
+  // --- 6. Cancel subscription (downgrade to temp) ---
+  else if (isDowngrade && targetTier === 'temp') {
+    actionType = 'cancel-subscription';
+    title = `Cancel Subscription`;
+    icon = <ArrowDownLeft className='text-warning' />;
+    actionDescription = `You’ll keep access to your ${currentTierDisplay} plan until ${downgradeEffectiveDate ?? 'the end of your billing period'}. After that, your subscription will be canceled and moved to a temporary plan with reduced access.`;
+  }
+
+  // --- 7. Normal downgrade (effective at end of period) ---
+  else if (isDowngrade) {
+    actionType = 'downgrade';
+    title = `Downgrade to ${targetTierDisplay}`;
+    icon = <ArrowDownRight className='text-warning' />;
+    actionDescription = hasScheduledChange
+      ? `This will replace your scheduled change with a downgrade to ${targetTierDisplay}, effective at the end of your billing period.`
+      : `Your downgrade will take effect at the end of your current billing period. You’ll retain full access until then.`;
+  }
+
+  // ---------------------
   // Button configuration
+  // ---------------------
   let buttonText = 'Confirm';
   let buttonVariant: 'success' | 'danger' | 'default' | 'secondary' = 'default';
   let buttonIcon = <ArrowUpRight />;
 
+  // More explicit labels so undoing cancellation/downgrade never shows the generic "Confirm Change"
   if (actionType === 'cancel-scheduled') {
-    buttonText = 'Cancel Scheduled Change';
+    // If scheduledTier is 'temp' it's a cancellation undo; if it's a downgrade undo show "Undo Downgrade"
+    const isScheduledDowngrade = scheduledIndex < currentIndex;
+    if (scheduledTier === 'temp') {
+      buttonText = 'Cancel Cancellation';
+    } else if (isScheduledDowngrade) {
+      buttonText = 'Undo Downgrade';
+    } else {
+      buttonText = 'Cancel Scheduled Change';
+    }
     buttonVariant = 'secondary';
     buttonIcon = <X />;
   } else if (actionType === 'upgrade') {
     buttonText = 'Confirm Upgrade';
     buttonVariant = 'success';
     buttonIcon = <ArrowUpRight />;
+  } else if (actionType === 'override-change') {
+    // Replace scheduled change with a new one — explicit text
+    const isOverrideUpgrade = targetIndex > currentIndex;
+    buttonText = isOverrideUpgrade
+      ? 'Confirm Upgrade (Replace Scheduled)'
+      : 'Confirm Change (Replace Scheduled)';
+    buttonVariant = isOverrideUpgrade ? 'success' : 'danger';
+    buttonIcon = isOverrideUpgrade ? <ArrowUpRight /> : <ArrowDownRight />;
+  } else if (actionType === 'cancel-subscription') {
+    buttonText = 'Confirm Cancellation';
+    buttonVariant = 'danger';
+    buttonIcon = <ArrowDownLeft />;
   } else if (actionType === 'downgrade') {
     buttonText = targetTier === 'temp' ? 'Confirm Cancellation' : 'Confirm Downgrade';
     buttonVariant = 'danger';
     buttonIcon = <ArrowDownLeft />;
-  } else {
+  } else if (actionType === 'no-change') {
     buttonText = 'No Action Needed';
+    buttonVariant = 'secondary';
+    buttonIcon = <CheckCircle2 />;
   }
 
   const shouldDisableAction =
     !canProceed || isDisabled || (isTargetSameAsCurrent && !hasScheduledChange);
+
+  // Helper: display label for 'temp' tier in badges (friendly)
+  const displayTier = (t: string) => (t === 'temp' ? 'Temporary' : t);
 
   return (
     <Modal open>
@@ -245,14 +308,14 @@ export default function SubscribeToTier({ params, loaderData }: Route.ComponentP
             <p className='text-muted-foreground mb-2 text-sm'>
               Current Tier:
               <Badge variant='outline' className='ml-2 capitalize'>
-                {currentTier}
+                {displayTier(currentTier)}
               </Badge>
             </p>
             {hasScheduledChange && scheduledTier && (
               <p className='text-muted-foreground mb-2 text-sm'>
                 Scheduled Tier:
                 <Badge variant='outline' className='ml-2 text-yellow-600 capitalize'>
-                  {scheduledTier}
+                  {displayTier(scheduledTier)}
                 </Badge>
                 {downgradeEffectiveDate && (
                   <span className='ml-2 text-xs'>(effective {downgradeEffectiveDate})</span>
@@ -270,7 +333,9 @@ export default function SubscribeToTier({ params, loaderData }: Route.ComponentP
                   actionType === 'cancel-scheduled' && 'bg-blue-100 text-blue-700',
                 )}
               >
-                {actionType === 'cancel-scheduled' ? currentTier : targetTier}
+                {actionType === 'cancel-scheduled'
+                  ? displayTier(currentTier)
+                  : displayTier(targetTier)}
               </Badge>
             </p>
           </div>
@@ -303,10 +368,14 @@ export default function SubscribeToTier({ params, loaderData }: Route.ComponentP
               <div className='bg-muted/30 grid grid-cols-3 p-2 text-sm font-semibold'>
                 <span>Feature</span>
                 <span className='text-center capitalize'>
-                  {actionType === 'cancel-scheduled' ? currentTier : currentTier}
+                  {actionType === 'cancel-scheduled'
+                    ? displayTier(currentTier)
+                    : displayTier(currentTier)}
                 </span>
                 <span className='text-center capitalize'>
-                  {actionType === 'cancel-scheduled' ? currentTier : targetTier}
+                  {actionType === 'cancel-scheduled'
+                    ? displayTier(currentTier)
+                    : displayTier(targetTier)}
                 </span>
               </div>
 
