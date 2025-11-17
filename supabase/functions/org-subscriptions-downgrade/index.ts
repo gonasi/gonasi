@@ -256,8 +256,8 @@ Deno.serve(async (req) => {
   // step 6: respond
   // ──────────────────────────────────────────────────────────────────────────────
   const responseMessage = isCancellation
-    ? `your subscription has been cancelled and will remain active until ${humanReadableDate}. after that, your organization will be moved to temporary status.`
-    : `your subscription will remain active until ${humanReadableDate}, then downgrade to ${effectiveTargetTier}. auto-renew has been disabled.`;
+    ? `Your subscription has been cancelled and will remain active until ${humanReadableDate}. after that, your organization will be moved to temporary status.`
+    : `Your subscription will remain active until ${humanReadableDate}, then downgrade to ${effectiveTargetTier}. auto-renew has been disabled.`;
 
   const responsePayload: Record<string, unknown> = {
     success: true,

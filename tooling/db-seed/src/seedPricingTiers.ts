@@ -24,6 +24,7 @@ export interface TierLimitSeed {
   white_label_enabled: boolean;
   price_monthly_usd: number;
   price_yearly_usd: number;
+  plan_interval?: string;
 }
 
 export const tierLimits: TierLimitSeed[] = [

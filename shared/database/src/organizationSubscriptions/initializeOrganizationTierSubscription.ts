@@ -155,7 +155,8 @@ async function handleDowngrade({
   if (!canSwitchToLaunch && targetTier === 'launch') {
     return {
       success: false,
-      message: 'User already has a launch plan or launch downgrade scheduled.',
+      message:
+        'You already have a launch plan or launch downgrade scheduled in one of your organizations.',
       data: null,
     };
   }

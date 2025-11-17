@@ -61,7 +61,7 @@ select cron.schedule(
 
 select cron.schedule(
   'process-subscription-downgrades',
-  '*/15 * * * *',
+  '*/10 * * * *',
   $$
   select net.http_post(
     url := (select decrypted_secret from vault.decrypted_secrets where name = 'project_url') || '/functions/v1/org-subscriptions-downgrade-trigger',

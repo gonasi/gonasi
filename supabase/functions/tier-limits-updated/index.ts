@@ -225,8 +225,14 @@ async function createPaystackPlan(row: any) {
     return null;
   }
 
-  // Determine amount based on interval
-  const amount = row.plan_interval === 'monthly' ? row.price_monthly_usd : row.price_yearly_usd;
+  // Determine the monthly amount for billing.
+  // Note: 'hourly' is used only for local/testing purposes; in production, we only use monthly/yearly.
+  const amount =
+    row.plan_interval === 'monthly'
+      ? row.price_monthly_usd
+      : row.plan_interval === 'hourly'
+        ? row.price_monthly_usd // For local/testing, treat hourly as monthly
+        : row.price_yearly_usd;
 
   if (!amount || amount <= 0) {
     console.log('[Paystack] No valid amount for plan, skipping creation');
