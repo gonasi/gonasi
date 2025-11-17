@@ -128,6 +128,18 @@ const org_notifications_types = [
     body_template:
       'Your scheduled downgrade to the {{tier_name}} plan has been cancelled. Your organization will remain on the {{current_tier_name}} plan.',
   },
+  {
+    key: 'org_subscription_cancelled',
+    category: 'billing',
+    visible_to_owner: true,
+    visible_to_admin: false,
+    visible_to_editor: false,
+    default_in_app: true,
+    default_email: true,
+    title_template: 'Subscription Cancelled',
+    body_template:
+      'Your subscription has been cancelled. Your organization will remain on the {{tier_name}} plan until {{effective_date}}, after which it will move to temporary status.',
+  },
 
   // ============================
   // MEMBERS

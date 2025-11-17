@@ -19416,6 +19416,9 @@
           "name": "org_policy_update_required"
         },
         {
+          "name": "org_subscription_cancelled"
+        },
+        {
           "name": "org_subscription_expiring"
         },
         {

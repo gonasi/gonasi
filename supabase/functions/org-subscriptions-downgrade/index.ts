@@ -9,13 +9,14 @@
 // the new tier and creates a new Paystack subscription after expiry.
 // Cancellations move to "temp" tier. Downgrades to "launch" (free tier) skip
 // Paystack requests entirely.
+// Notifications are best-effort: failures do NOT break the flow.
 // ────────────────────────────────────────────────────────────────────────────────
 
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 
-console.log('🚀 [org-subscriptions-downgrade] Function started');
+console.log('🚀 [org-subscriptions-downgrade] function started');
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
@@ -23,68 +24,64 @@ const PAYSTACK_SECRET_KEY = Deno.env.get('PAYSTACK_SECRET_KEY');
 const FRONTEND_URL = Deno.env.get('FRONTEND_URL');
 
 // ────────────────────────────────────────────────────────────────────────────────
-// Validation Schema
+// validation schema
 // ────────────────────────────────────────────────────────────────────────────────
-const DowngradeRequest = z.object({
+const downgradeRequest = z.object({
   organizationId: z.string().uuid(),
   targetTier: z.string(),
   newPlanCode: z.string().optional().nullable(),
   userId: z.string().uuid(),
-  isCancellation: z.boolean().optional().default(false), // flag for cancellation
+  isCancellation: z.boolean().optional().default(false),
 });
 
 // ────────────────────────────────────────────────────────────────────────────────
-// Edge Function Entry Point
+// entry
 // ────────────────────────────────────────────────────────────────────────────────
 Deno.serve(async (req) => {
   if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+    return new Response(JSON.stringify({ error: 'method not allowed' }), {
       status: 405,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'content-type': 'application/json' },
     });
   }
 
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !PAYSTACK_SECRET_KEY || !FRONTEND_URL) {
-    console.error('❌ Missing environment configuration variables');
-    return new Response(JSON.stringify({ error: 'Missing environment configuration' }), {
+    console.error('❌ missing environment configuration variables');
+    return new Response(JSON.stringify({ error: 'missing environment configuration' }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'content-type': 'application/json' },
     });
   }
 
-  // ──────────────────────────────────────────────────────────────────────────────
-  // Parse & Validate Request
-  // ──────────────────────────────────────────────────────────────────────────────
+  // parse body
   let body: unknown;
   try {
     body = await req.json();
   } catch {
-    return new Response(JSON.stringify({ error: 'Invalid JSON body' }), {
+    return new Response(JSON.stringify({ error: 'invalid json body' }), {
       status: 400,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'content-type': 'application/json' },
     });
   }
 
-  const parsed = DowngradeRequest.safeParse(body);
+  const parsed = downgradeRequest.safeParse(body);
   if (!parsed.success) {
-    console.error('❌ Validation failed', parsed.error.flatten().fieldErrors);
+    console.error('❌ validation failed', parsed.error.flatten().fieldErrors);
     return new Response(
       JSON.stringify({
-        error: 'Validation failed',
+        error: 'validation failed',
         details: parsed.error.flatten().fieldErrors,
       }),
-      { status: 400, headers: { 'Content-Type': 'application/json' } },
+      { status: 400, headers: { 'content-type': 'application/json' } },
     );
   }
 
   const { organizationId, targetTier, newPlanCode, userId, isCancellation } = parsed.data;
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
   const nowIso = new Date().toISOString();
-
-  // ✅ NEW: Override targetTier to 'temp' for cancellations
   const effectiveTargetTier = isCancellation ? 'temp' : targetTier;
 
-  console.log('📦 Parsed Request', {
+  console.log('📦 parsed request', {
     organizationId,
     targetTier,
     effectiveTargetTier,
@@ -94,7 +91,7 @@ Deno.serve(async (req) => {
   });
 
   // ──────────────────────────────────────────────────────────────────────────────
-  // STEP 1: Fetch Current Subscription
+  // step 1: fetch subscription
   // ──────────────────────────────────────────────────────────────────────────────
   const { data: subscription, error: subError } = await supabase
     .from('organization_subscriptions')
@@ -103,10 +100,10 @@ Deno.serve(async (req) => {
     .single();
 
   if (subError || !subscription) {
-    console.error('❌ Subscription not found', subError);
-    return new Response(JSON.stringify({ error: 'Subscription not found' }), {
+    console.error('❌ subscription not found', subError);
+    return new Response(JSON.stringify({ error: 'subscription not found' }), {
       status: 404,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'content-type': 'application/json' },
     });
   }
 
@@ -118,7 +115,7 @@ Deno.serve(async (req) => {
     status,
   } = subscription;
 
-  console.log('📄 Current subscription record', {
+  console.log('📄 current subscription record', {
     currentTier,
     currentPeriodEnd,
     paystackCode,
@@ -127,71 +124,65 @@ Deno.serve(async (req) => {
   });
 
   // ──────────────────────────────────────────────────────────────────────────────
-  // STEP 2: Check for existing scheduled downgrade/cancellation
+  // step 2: skip duplicate
   // ──────────────────────────────────────────────────────────────────────────────
   if (status === 'non-renewing' && nextTier === effectiveTargetTier) {
     const action = isCancellation ? 'cancellation' : 'downgrade';
-    console.log(`⚠️ ${action} to ${effectiveTargetTier} already scheduled, skipping duplicate.`);
+    console.log(`⚠️ ${action} to ${effectiveTargetTier} already scheduled, skipping duplicate`);
     return new Response(
       JSON.stringify({
         success: true,
-        message: `A ${action} to ${effectiveTargetTier} is already scheduled. No action taken.`,
+        message: `a ${action} to ${effectiveTargetTier} is already scheduled. no action taken.`,
       }),
-      { status: 200, headers: { 'Content-Type': 'application/json' } },
+      { status: 200, headers: { 'content-type': 'application/json' } },
     );
   }
 
   // ──────────────────────────────────────────────────────────────────────────────
-  // STEP 3: Determine Effective Downgrade Date
+  // step 3: determine effective date
   // ──────────────────────────────────────────────────────────────────────────────
   let nextPaymentDate: string | null = null;
 
-  // ✅ UPDATED: Skip Paystack call for free tier ("launch") OR cancellation ("temp")
   if (effectiveTargetTier === 'launch' || effectiveTargetTier === 'temp') {
-    const action =
-      effectiveTargetTier === 'temp' ? 'Cancellation (temp tier)' : 'Downgrade to free tier';
-    console.log(`🪶 ${action} — skipping Paystack API call.`);
+    console.log(`🪶 downgrade/cancellation to ${effectiveTargetTier} — skipping paystack call`);
     nextPaymentDate = currentPeriodEnd;
   } else if (paystackCode) {
     const paystackRes = await fetch(`https://api.paystack.co/subscription/${paystackCode}`, {
       method: 'GET',
       headers: {
-        Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
-        'Content-Type': 'application/json',
+        authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
+        'content-type': 'application/json',
       },
     });
 
     const paystackJson = await paystackRes.json();
-
     if (!paystackRes.ok || !paystackJson.status) {
-      console.error('❌ Failed to fetch Paystack subscription', paystackJson);
+      console.error('❌ failed to fetch subscription from paystack', paystackJson);
       return new Response(
         JSON.stringify({
-          error: 'Failed to fetch subscription from Paystack',
+          error: 'failed to fetch subscription from paystack',
           details: paystackJson,
         }),
-        { status: 502, headers: { 'Content-Type': 'application/json' } },
+        { status: 502, headers: { 'content-type': 'application/json' } },
       );
     }
 
     const paystackSub = paystackJson.data;
     nextPaymentDate = paystackSub?.next_payment_date ?? currentPeriodEnd;
-
-    console.log('📬 Paystack subscription data', {
+    console.log('📬 paystack subscription data', {
       subscription_code: paystackSub.subscription_code,
       status: paystackSub.status,
       next_payment_date: nextPaymentDate,
     });
   } else {
-    console.log('⚙️ No Paystack subscription found; using current_period_end.');
+    console.log('⚙️ no paystack subscription found; using current_period_end');
     nextPaymentDate = currentPeriodEnd;
   }
 
   // ──────────────────────────────────────────────────────────────────────────────
-  // STEP 4: Schedule Downgrade/Cancellation Locally
+  // step 4: update subscription locally
   // ──────────────────────────────────────────────────────────────────────────────
   const effectiveDate = nextPaymentDate || currentPeriodEnd || nowIso;
-
   const humanReadableDate = new Date(effectiveDate).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
@@ -202,7 +193,7 @@ Deno.serve(async (req) => {
   const { error: updateError } = await supabase
     .from('organization_subscriptions')
     .update({
-      next_tier: effectiveTargetTier, // ✅ UPDATED: Use effectiveTargetTier
+      next_tier: effectiveTargetTier,
       next_plan_code: newPlanCode || null,
       downgrade_requested_at: nowIso,
       downgrade_effective_at: effectiveDate,
@@ -215,63 +206,80 @@ Deno.serve(async (req) => {
     .eq('organization_id', organizationId);
 
   if (updateError) {
-    console.error('❌ Failed to update subscription record', updateError);
-    return new Response(JSON.stringify({ error: 'Failed to update subscription' }), {
+    console.error('❌ failed to update subscription record', updateError);
+    return new Response(JSON.stringify({ error: 'failed to update subscription' }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'content-type': 'application/json' },
     });
   }
 
-  const action = isCancellation ? 'Cancellation' : 'Downgrade';
+  const action = isCancellation ? 'cancellation' : 'downgrade';
   console.log(
-    `✅ ${action} scheduled: Org ${organizationId} will move from ${currentTier} → ${effectiveTargetTier} after ${effectiveDate}.`,
+    `✅ ${action} scheduled: org ${organizationId} will move ${currentTier} → ${effectiveTargetTier} after ${effectiveDate}`,
   );
 
   // ──────────────────────────────────────────────────────────────────────────────
-  // STEP 5: Notify Organization
+  // step 5: notify organization (best-effort)
   // ──────────────────────────────────────────────────────────────────────────────
-  // ✅ UPDATED: Different notification types for cancellation vs downgrade
+  let notificationFailed = false;
   const notificationType = isCancellation ? 'org_subscription_cancelled' : 'org_tier_downgraded';
 
-  await supabase.rpc('insert_org_notification', {
-    p_organization_id: organizationId,
-    p_type_key: notificationType,
-    p_metadata: {
-      tier_name: effectiveTargetTier,
-      effective_date: effectiveDate,
-      human_readable_date: new Date(effectiveDate).toLocaleString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        timeZone: 'UTC',
-      }),
-    },
-    p_link: `${FRONTEND_URL}/${organizationId}/dashboard/subscriptions`,
-    p_performed_by: userId,
-  });
+  try {
+    const { error: notifError } = await supabase.rpc('insert_org_notification', {
+      p_organization_id: organizationId,
+      p_type_key: notificationType,
+      p_metadata: {
+        tier_name: effectiveTargetTier,
+        effective_date: new Date(effectiveDate).toLocaleString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          timeZone: 'UTC',
+        }),
+      },
+      p_link: `${FRONTEND_URL}/${organizationId}/dashboard/subscriptions`,
+      p_performed_by: userId,
+    });
+
+    if (notifError) {
+      console.error('⚠️ notification insert failed (non-blocking)', notifError);
+      notificationFailed = true;
+    }
+  } catch (err) {
+    console.error('⚠️ unexpected notification failure (non-blocking)', err);
+    notificationFailed = true;
+  }
 
   // ──────────────────────────────────────────────────────────────────────────────
-  // STEP 6: Respond
+  // step 6: respond
   // ──────────────────────────────────────────────────────────────────────────────
   const responseMessage = isCancellation
-    ? `Your subscription has been cancelled and will remain active until ${humanReadableDate}. After that, your organization will be moved to temporary status.`
-    : `Your subscription will remain active until ${humanReadableDate}, then downgrade to ${effectiveTargetTier}. Auto-renew has been disabled.`;
+    ? `your subscription has been cancelled and will remain active until ${humanReadableDate}. after that, your organization will be moved to temporary status.`
+    : `your subscription will remain active until ${humanReadableDate}, then downgrade to ${effectiveTargetTier}. auto-renew has been disabled.`;
 
-  return new Response(
-    JSON.stringify({
-      success: true,
-      message: responseMessage,
-      data: {
-        currentTier,
-        targetTier: effectiveTargetTier,
-        effectiveDate,
-        humanReadableDate,
-        paystackCode,
-        isCancellation,
-      },
-    }),
-    { status: 200, headers: { 'Content-Type': 'application/json' } },
-  );
+  const responsePayload: Record<string, unknown> = {
+    success: true,
+    message: responseMessage,
+    data: {
+      currentTier,
+      targetTier: effectiveTargetTier,
+      effectiveDate,
+      humanReadableDate,
+      paystackCode,
+      isCancellation,
+      notificationSent: !notificationFailed,
+    },
+  };
+
+  if (notificationFailed) {
+    responsePayload.warning =
+      'subscription update succeeded but the notification could not be sent. no action is needed — this does not affect your subscription.';
+  }
+
+  return new Response(JSON.stringify(responsePayload), {
+    status: 200,
+    headers: { 'content-type': 'application/json' },
+  });
 });

@@ -32,6 +32,23 @@ export type Database = {
       [_ in never]: never
     }
   }
+  pgmq_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      [_ in never]: never
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       ai_usage_log: {
@@ -3269,6 +3286,7 @@ export type Database = {
         | "org_tier_upgraded"
         | "org_tier_downgraded"
         | "org_downgrade_cancelled"
+        | "org_subscription_cancelled"
         | "org_tier_downgrade_activated"
         | "org_member_invited"
         | "org_member_joined"
@@ -3478,6 +3496,9 @@ export const Constants = {
   graphql_public: {
     Enums: {},
   },
+  pgmq_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       analytics_level: ["none", "basic", "intermediate", "advanced"],
@@ -3542,6 +3563,7 @@ export const Constants = {
         "org_tier_upgraded",
         "org_tier_downgraded",
         "org_downgrade_cancelled",
+        "org_subscription_cancelled",
         "org_tier_downgrade_activated",
         "org_member_invited",
         "org_member_joined",

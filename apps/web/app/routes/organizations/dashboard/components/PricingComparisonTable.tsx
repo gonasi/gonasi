@@ -91,6 +91,8 @@ export function PricingComparisonTable({
               subscription.next_tier === 'temp';
 
             const canCancelActivePlan =
+              plan.tier !== 'launch' &&
+              plan.tier !== 'temp' &&
               subscription.tier === plan.tier &&
               !subscription.cancel_at_period_end &&
               !subscription.next_tier &&
@@ -138,6 +140,8 @@ export function PricingComparisonTable({
                   subscription.next_tier === 'temp';
 
                 const canCancelActivePlan =
+                  plan.tier !== 'launch' &&
+                  plan.tier !== 'temp' &&
                   subscription.tier === plan.tier &&
                   !subscription.cancel_at_period_end &&
                   !subscription.next_tier &&
