@@ -10049,11 +10049,11 @@
           "maxLength": null
         },
         {
-          "name": "organizations_org_notifications_organization_idToorganizations",
+          "name": "organizations",
           "type": "organizations",
           "isRequired": true,
           "kind": "object",
-          "relationName": "org_notifications_organization_idToorganizations",
+          "relationName": "org_notificationsToorganizations",
           "relationFromFields": [
             "organization_id"
           ],
@@ -10067,11 +10067,11 @@
           "hasDefaultValue": false
         },
         {
-          "name": "organizations_org_notifications_performed_byToorganizations",
-          "type": "organizations",
+          "name": "profiles",
+          "type": "profiles",
           "isRequired": false,
           "kind": "object",
-          "relationName": "org_notifications_performed_byToorganizations",
+          "relationName": "org_notificationsToprofiles",
           "relationFromFields": [
             "performed_by"
           ],
@@ -11989,25 +11989,11 @@
           "hasDefaultValue": false
         },
         {
-          "name": "org_notifications_org_notifications_organization_idToorganizations",
+          "name": "org_notifications",
           "type": "org_notifications",
           "isRequired": false,
           "kind": "object",
-          "relationName": "org_notifications_organization_idToorganizations",
-          "relationFromFields": [],
-          "relationToFields": [],
-          "isList": true,
-          "isId": false,
-          "isGenerated": false,
-          "sequence": false,
-          "hasDefaultValue": false
-        },
-        {
-          "name": "org_notifications_org_notifications_performed_byToorganizations",
-          "type": "org_notifications",
-          "isRequired": false,
-          "kind": "object",
-          "relationName": "org_notifications_performed_byToorganizations",
+          "relationName": "org_notificationsToorganizations",
           "relationFromFields": [],
           "relationToFields": [],
           "isList": true,
@@ -12995,6 +12981,20 @@
           "isRequired": false,
           "kind": "object",
           "relationName": "org_notification_readsToprofiles",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "org_notifications",
+          "type": "org_notifications",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "org_notificationsToprofiles",
           "relationFromFields": [],
           "relationToFields": [],
           "isList": true,

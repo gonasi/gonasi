@@ -1917,7 +1917,7 @@ alter table "public"."org_notifications" add constraint "org_notifications_organ
 
 alter table "public"."org_notifications" validate constraint "org_notifications_organization_id_fkey";
 
-alter table "public"."org_notifications" add constraint "org_notifications_performed_by_fkey" FOREIGN KEY (performed_by) REFERENCES public.organizations(id) ON DELETE CASCADE not valid;
+alter table "public"."org_notifications" add constraint "org_notifications_performed_by_fkey" FOREIGN KEY (performed_by) REFERENCES public.profiles(id) ON DELETE CASCADE not valid;
 
 alter table "public"."org_notifications" validate constraint "org_notifications_performed_by_fkey";
 

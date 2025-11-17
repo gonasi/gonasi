@@ -285,11 +285,13 @@ async function handleStartSubscription({
   organizationId,
   targetTier,
   userProfile,
+  baseUrl,
 }: {
   supabase: TypedSupabaseClient;
   organizationId: string;
   targetTier: Tier;
   userProfile: ProfileWithSignedUrl;
+  baseUrl: string;
 }): Promise<InitializeOrgTierSubSuccess | InitializeOrgTierSubError> {
   console.log('[handleStartSubscription] called', {
     organizationId,
@@ -331,9 +333,8 @@ async function handleStartSubscription({
     };
   }
 
-  console.log('[handleStartSubscription] current subscription', currentSubs[0]);
-
   const now = new Date().toISOString();
+  console.log('[handleStartSubscription] current subscription', currentSubs[0]);
   console.log('[handleStartSubscription] now timestamp', now);
 
   // Attempt update
@@ -358,8 +359,6 @@ async function handleStartSubscription({
     };
   }
 
-  console.log('[handleStartSubscription] update returned data', updatedData);
-
   if (!updatedData || updatedData.length === 0) {
     console.warn('[handleStartSubscription] no subscription updated');
     return {
@@ -370,6 +369,29 @@ async function handleStartSubscription({
   }
 
   console.log('[handleStartSubscription] subscription updated successfully');
+
+  // Attempt to send notification but do NOT block main flow
+  const { error: notifError } = await supabase.rpc('insert_org_notification', {
+    p_organization_id: organizationId,
+    p_type_key: 'org_subscription_started',
+    p_metadata: {
+      tier_name: targetTier,
+      amount: 'USD 0 (FREE)',
+      interval: 'Lifetime',
+    },
+    p_link: `${baseUrl}/${organizationId}/dashboard/subscriptions`,
+    p_performed_by: userProfile.id,
+  });
+
+  if (notifError) {
+    console.error('[handleStartSubscription] notification insert failed', notifError);
+    return {
+      success: true,
+      message: `You’re now on the Launch plan! 🚀 (Notification failed to send)`,
+      data: null,
+      changeType: 'start',
+    };
+  }
 
   return {
     success: true,
@@ -487,7 +509,7 @@ export const initializeOrganizationTierSubscription = async ({
   data: OrganizationTierChangeSchemaTypes;
 }): Promise<InitializeOrganizationTierSubscriptionResult> => {
   try {
-    const { tier: targetTier, organizationId } = data;
+    const { tier: targetTier, organizationId, baseUrl } = data;
 
     // 1️⃣ Auth check
     const userProfileResp = await getUserProfile(supabase);
@@ -546,6 +568,7 @@ export const initializeOrganizationTierSubscription = async ({
           organizationId,
           targetTier: targetTier as Tier,
           userProfile,
+          baseUrl,
         });
 
       case 'same':

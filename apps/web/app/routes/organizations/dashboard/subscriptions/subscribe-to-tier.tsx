@@ -28,6 +28,7 @@ import {
 
 import type { Route } from './+types/subscribe-to-tier';
 
+import { getServerEnv } from '~/.server/env.server';
 import { Badge } from '~/components/ui/badge';
 import { Button } from '~/components/ui/button';
 import { Modal } from '~/components/ui/modal';
@@ -37,6 +38,8 @@ import { checkHoneypot } from '~/utils/honeypot.server';
 import { useIsPending } from '~/utils/misc';
 
 const resolver = zodResolver(OrganizationTierChangeSchema);
+
+const { BASE_URL } = getServerEnv();
 
 export async function action({ request, params }: Route.ActionArgs) {
   const formData = await request.formData();
@@ -58,7 +61,11 @@ export async function action({ request, params }: Route.ActionArgs) {
     success,
     message,
     data: successData,
-  } = await initializeOrganizationTierSubscription({ supabase, supabaseAdmin, data });
+  } = await initializeOrganizationTierSubscription({
+    supabase,
+    supabaseAdmin,
+    data: { ...data, baseUrl: BASE_URL },
+  });
 
   return success
     ? redirectWithSuccess(
@@ -108,6 +115,7 @@ export default function SubscribeToTier({ params, loaderData }: Route.ComponentP
     defaultValues: {
       organizationId: params.organizationId,
       tier: params.tier as TierLimitsRow,
+      baseUrl: '',
     },
   });
 

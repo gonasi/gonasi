@@ -1543,7 +1543,7 @@ export type Database = {
             foreignKeyName: "org_notifications_performed_by_fkey"
             columns: ["performed_by"]
             isOneToOne: false
-            referencedRelation: "organizations"
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
