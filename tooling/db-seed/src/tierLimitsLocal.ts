@@ -19,7 +19,6 @@ export const tierLimitsLocal: TierLimitSeed[] = [
     white_label_enabled: false,
     price_monthly_usd: 0.0,
     price_yearly_usd: 0.0,
-    plan_interval: 'hourly',
   },
 
   //
@@ -40,7 +39,6 @@ export const tierLimitsLocal: TierLimitSeed[] = [
     white_label_enabled: false,
     price_monthly_usd: 0.0,
     price_yearly_usd: 0.0,
-    plan_interval: 'hourly',
   },
 
   //
@@ -61,7 +59,6 @@ export const tierLimitsLocal: TierLimitSeed[] = [
     white_label_enabled: false,
     price_monthly_usd: 39.0,
     price_yearly_usd: 390.0,
-    plan_interval: 'hourly',
   },
 
   //
@@ -82,6 +79,5 @@ export const tierLimitsLocal: TierLimitSeed[] = [
     white_label_enabled: true,
     price_monthly_usd: 99.0,
     price_yearly_usd: 990.0,
-    plan_interval: 'hourly',
   },
 ];

@@ -21,18 +21,19 @@
 --   - This logic matches enforce_single_launch_tier().
 --   - Safe for UI/backend usage, does not raise errors.
 -- ======================================================================
-
 create or replace function can_switch_to_launch_tier(p_org_id uuid)
 returns boolean
 language plpgsql
 stable
+security definer
+set search_path = ''
 as $$
 declare
   v_owner uuid;
   v_conflict boolean;
 begin
   --------------------------------------------------------------------
-  -- Get owner
+  -- get owner
   --------------------------------------------------------------------
   select owned_by
   into v_owner
@@ -40,12 +41,11 @@ begin
   where id = p_org_id;
 
   if v_owner is null then
-    -- organization doesn't exist or no owner
     return false;
   end if;
 
   --------------------------------------------------------------------
-  -- Check if owner already has a launch org or scheduled launch upgrade
+  -- check if owner already has a launch org or scheduled launch upgrade
   --------------------------------------------------------------------
   select exists (
     select 1
@@ -64,9 +64,6 @@ begin
     return false;
   end if;
 
-  --------------------------------------------------------------------
-  -- This organization itself is allowed to switch to launch
-  --------------------------------------------------------------------
   return true;
 end;
 $$;

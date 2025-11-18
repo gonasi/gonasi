@@ -36,7 +36,6 @@ create index if not exists idx_organizations_ai_credits_next_reset_at
 -- View: Total Available Credits
 -- ------------------------------------------------------------
 create or replace view public.v_organizations_ai_available_credits
-with (security_invoker = true)
 as
 select
   org_id,
@@ -46,3 +45,6 @@ select
   last_reset_at,
   next_reset_at
 from public.organizations_ai_credits;
+
+-- Explicitly set security_invoker to use querying user's permissions
+alter view public.v_organizations_ai_available_credits set (security_invoker = true);

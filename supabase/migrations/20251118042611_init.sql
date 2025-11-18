@@ -3009,14 +3009,15 @@ $function$
 CREATE OR REPLACE FUNCTION public.can_switch_to_launch_tier(p_org_id uuid)
  RETURNS boolean
  LANGUAGE plpgsql
- STABLE
+ STABLE SECURITY DEFINER
+ SET search_path TO ''
 AS $function$
 declare
   v_owner uuid;
   v_conflict boolean;
 begin
   --------------------------------------------------------------------
-  -- Get owner
+  -- get owner
   --------------------------------------------------------------------
   select owned_by
   into v_owner
@@ -3024,12 +3025,11 @@ begin
   where id = p_org_id;
 
   if v_owner is null then
-    -- organization doesn't exist or no owner
     return false;
   end if;
 
   --------------------------------------------------------------------
-  -- Check if owner already has a launch org or scheduled launch upgrade
+  -- check if owner already has a launch org or scheduled launch upgrade
   --------------------------------------------------------------------
   select exists (
     select 1
@@ -3048,9 +3048,6 @@ begin
     return false;
   end if;
 
-  --------------------------------------------------------------------
-  -- This organization itself is allowed to switch to launch
-  --------------------------------------------------------------------
   return true;
 end;
 $function$
@@ -4109,54 +4106,56 @@ $function$
 CREATE OR REPLACE FUNCTION public.enforce_single_launch_tier()
  RETURNS trigger
  LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
 AS $function$
 declare
   v_owner uuid;
   v_conflict boolean;
 begin
   --------------------------------------------------------------------
-  -- Look up organization owner
+  -- look up organization owner
   --------------------------------------------------------------------
   select owned_by
   into v_owner
   from public.organizations
-  where id = NEW.organization_id;
+  where id = new.organization_id;
 
   if v_owner is null then
-    -- Safety fallback: do not block if owner cannot be resolved
-    return NEW;
+    -- safety fallback: do not block if owner cannot be resolved
+    return new;
   end if;
 
   --------------------------------------------------------------------
-  -- RULE 3: Launch tier MUST always be active
+  -- rule 3: launch tier must always be active
   --------------------------------------------------------------------
-  if NEW.tier = 'launch' and NEW.status != 'active' then
-    raise exception 'Launch tier must always have status = active.';
+  if new.tier = 'launch' and new.status != 'active' then
+    raise exception 'launch tier must always have status = active.';
   end if;
 
   --------------------------------------------------------------------
-  -- RULE 1: Only one launch tier org per owner
+  -- rule 1: only one launch tier org per owner
   --------------------------------------------------------------------
-  if NEW.tier = 'launch' then
+  if new.tier = 'launch' then
     select exists (
       select 1
       from public.organization_subscriptions s
       join public.organizations o on o.id = s.organization_id
       where o.owned_by = v_owner
         and s.tier = 'launch'
-        and s.organization_id != NEW.organization_id
+        and s.organization_id != new.organization_id
     )
     into v_conflict;
 
     if v_conflict then
-      raise exception 'Owner already has an organization using the launch tier.';
+      raise exception 'owner already has an organization using the launch tier.';
     end if;
   end if;
 
   --------------------------------------------------------------------
-  -- RULE 2: Cannot schedule next_tier = launch if one already exists
+  -- rule 2: cannot schedule next_tier = launch if one already exists
   --------------------------------------------------------------------
-  if NEW.next_tier = 'launch' then
+  if new.next_tier = 'launch' then
     select exists (
       select 1
       from public.organization_subscriptions s
@@ -4166,16 +4165,16 @@ begin
           s.tier = 'launch'
           or s.next_tier = 'launch'
         )
-        and s.organization_id != NEW.organization_id
+        and s.organization_id != new.organization_id
     )
     into v_conflict;
 
     if v_conflict then
-      raise exception 'Owner already has a launch tier org or launch upgrade scheduled.';
+      raise exception 'owner already has a launch tier org or launch upgrade scheduled.';
     end if;
   end if;
 
-  return NEW;
+  return new;
 end;
 $function$
 ;
