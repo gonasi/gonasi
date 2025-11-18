@@ -27,13 +27,13 @@ const FEATURES = [
   { key: 'storage_limit_mb_per_org', name: 'Storage per Org', type: 'storage' },
   { key: 'max_members_per_org', name: 'Team Members', type: 'number' },
   { key: 'max_free_courses_per_org', name: 'Free Courses', type: 'number' },
-  { key: 'ai_tools_enabled', name: 'AI Tools', type: 'boolean' },
-  { key: 'ai_usage_limit_monthly', name: 'Monthly AI Usage', type: 'number' },
-  { key: 'custom_domains_enabled', name: 'Custom Domains', type: 'boolean' },
-  { key: 'max_custom_domains', name: 'Max Custom Domains', type: 'number' },
+  // { key: 'ai_tools_enabled', name: 'AI Tools', type: 'boolean' },
+  // { key: 'ai_usage_limit_monthly', name: 'Monthly AI Usage', type: 'number' },
+  // { key: 'custom_domains_enabled', name: 'Custom Domains', type: 'boolean' },
+  // { key: 'max_custom_domains', name: 'Max Custom Domains', type: 'number' },
   { key: 'analytics_level', name: 'Analytics', type: 'text' },
   { key: 'support_level', name: 'Support', type: 'text' },
-  { key: 'white_label_enabled', name: 'White Label', type: 'boolean' },
+  // { key: 'white_label_enabled', name: 'White Label', type: 'boolean' },
   { key: 'platform_fee_percentage', name: 'Platform Fee', type: 'percent' },
 ] as const;
 

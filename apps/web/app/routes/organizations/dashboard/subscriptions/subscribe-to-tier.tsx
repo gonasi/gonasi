@@ -6,6 +6,7 @@ import {
   ArrowDownLeft,
   ArrowDownRight,
   ArrowUpRight,
+  Check,
   CheckCircle2,
   Info,
   X,
@@ -40,6 +41,47 @@ import { useIsPending } from '~/utils/misc';
 const resolver = zodResolver(OrganizationTierChangeSchema);
 
 const { BASE_URL } = getServerEnv();
+
+/** Feature definitions */
+const FEATURES = [
+  { key: 'storage_limit_mb_per_org', name: 'Storage per Org', type: 'storage' },
+  { key: 'max_members_per_org', name: 'Team Members', type: 'number' },
+  { key: 'max_free_courses_per_org', name: 'Free Courses', type: 'number' },
+
+  // Optional / advanced features (hidden by default)
+  // { key: 'ai_tools_enabled', name: 'AI Tools', type: 'boolean' },
+  // { key: 'ai_usage_limit_monthly', name: 'Monthly AI Usage', type: 'number' },
+  // { key: 'custom_domains_enabled', name: 'Custom Domains', type: 'boolean' },
+  // { key: 'max_custom_domains', name: 'Max Custom Domains', type: 'number' },
+  // { key: 'white_label_enabled', name: 'White Label', type: 'boolean' },
+
+  { key: 'analytics_level', name: 'Analytics', type: 'text' },
+  { key: 'support_level', name: 'Support', type: 'text' },
+  { key: 'platform_fee_percentage', name: 'Platform Fee', type: 'percent' },
+] as const;
+
+function formatValue(value: any, type: string) {
+  if (value == null || value === undefined) return '—';
+
+  switch (type) {
+    case 'boolean':
+      return value ? <Check className='text-primary mx-auto h-5 w-5' /> : '—';
+
+    case 'storage':
+      return value >= 1024 ? `${(value / 1024).toFixed(1)} GB` : `${value} MB`;
+
+    case 'text': {
+      const str = String(value || '');
+      return str ? str.charAt(0).toUpperCase() + str.slice(1) : '—';
+    }
+
+    case 'percent':
+      return `${value}%`;
+
+    default:
+      return String(value ?? '—');
+  }
+}
 
 export async function action({ request, params }: Route.ActionArgs) {
   const formData = await request.formData();
@@ -370,50 +412,40 @@ export default function SubscribeToTier({ params, loaderData }: Route.ComponentP
             </div>
           )}
 
-          {/* Comparison Table - only show if not canceling scheduled change to same tier */}
+          {/* Comparison Table */}
           {!(isTargetSameAsCurrent && !hasScheduledChange) && (
-            <div className='overflow-hidden rounded-none'>
+            <div className='rounded-NONE overflow-hidden'>
               <div className='bg-muted/30 grid grid-cols-3 p-2 text-sm font-semibold'>
                 <span>Feature</span>
-                <span className='text-center capitalize'>
-                  {actionType === 'cancel-scheduled'
-                    ? displayTier(currentTier)
-                    : displayTier(currentTier)}
-                </span>
-                <span className='text-center capitalize'>
-                  {actionType === 'cancel-scheduled'
-                    ? displayTier(currentTier)
-                    : displayTier(targetTier)}
-                </span>
+                <span className='text-center capitalize'>{displayTier(currentTier)}</span>
+                <span className='text-center capitalize'>{displayTier(targetTier)}</span>
               </div>
 
-              {(Object.keys(data.currentTierLimits) as (keyof typeof data.currentTierLimits)[]).map(
-                (key) => {
-                  const currentVal = data.currentTierLimits[key];
-                  const targetVal =
-                    actionType === 'cancel-scheduled'
-                      ? data.currentTierLimits[key]
-                      : data.targetTierLimits[key];
+              {FEATURES.map((feature) => {
+                const currentVal = data.currentTierLimits[feature.key];
+                const targetVal =
+                  actionType === 'cancel-scheduled'
+                    ? data.currentTierLimits[feature.key]
+                    : data.targetTierLimits[feature.key];
 
-                  if (typeof currentVal !== 'boolean' && typeof currentVal !== 'number')
-                    return null;
+                const changed = currentVal !== targetVal;
 
-                  const changed = currentVal !== targetVal;
-                  return (
-                    <div
-                      key={key}
-                      className={cn(
-                        'grid grid-cols-3 border-t p-2 text-sm',
-                        changed && 'bg-green-50/50',
-                      )}
-                    >
-                      <span className='capitalize'>{key.replaceAll('_', ' ')}</span>
-                      <span className='text-center'>{String(currentVal)}</span>
-                      <span className='text-center font-medium'>{String(targetVal)}</span>
-                    </div>
-                  );
-                },
-              )}
+                return (
+                  <div
+                    key={feature.key}
+                    className={cn(
+                      'grid grid-cols-3 border-t p-2 text-sm',
+                      changed && 'bg-green-50/60',
+                    )}
+                  >
+                    <span>{feature.name}</span>
+                    <span className='text-center'>{formatValue(currentVal, feature.type)}</span>
+                    <span className='text-center font-medium'>
+                      {formatValue(targetVal, feature.type)}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           )}
 
