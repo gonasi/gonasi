@@ -24,7 +24,10 @@
         "NODE_ENV",
         "BASE_URL",
         "HONEYPOT_SECRET",
-        "SESSION_SECRET"
+        "SESSION_SECRET",
+        "PAYSTACK_SECRET_KEY",
+        "PAYSTACK_PUBLIC_KEY",
+        "SUPABASE_ANON_KEY"
       ]
     },
     "lint": {},
