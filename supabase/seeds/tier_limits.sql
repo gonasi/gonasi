@@ -1,6 +1,5 @@
 -- ===================================================
--- Sample tier configurations (optimized for early growth and profitability)
--- Includes pricing: price_monthly_usd and price_yearly_usd
+-- Tier seed data (commented for clarity & dev debugging)
 -- ===================================================
 insert into public.tier_limits (
   tier,
@@ -19,70 +18,78 @@ insert into public.tier_limits (
   price_yearly_usd
 ) values
 
--- TEMP TIER (extra organizations before upgrade)
+-- ===================================================
+-- TEMP TIER (extra placeholder orgs, blocked until upgraded)
+-- ===================================================
 ('temp',
-  50,         -- minimal storage
-  1,          -- owner only
-  1,
-  false,      -- no AI
-  0,
-  false,
-  0,
-  'none',     -- no analytics
-  'none',     -- no support
-  15.00,
-  false,
-  0.00,
-  0.00
+  0,            -- storage_limit_mb_per_org
+  1,            -- max_members_per_org
+  0,            -- max_free_courses_per_org
+  false,        -- ai_tools_enabled
+  0,            -- ai_usage_limit_monthly
+  false,        -- custom_domains_enabled
+  0,            -- max_custom_domains
+  'none',       -- analytics_level
+  'none',       -- support_level
+  0,            -- platform_fee_percentage
+  false,        -- white_label_enabled
+  0.00,         -- price_monthly_usd
+  0.00          -- price_yearly_usd
 ),
 
--- LAUNCH TIER (only allowed 1 per owner)
+-- ===================================================
+-- LAUNCH (free plan)
+-- ===================================================
 ('launch',
-  1024,       -- 1GB
-  3,
-  3,
-  true,
-  200,
-  false,
-  0,
-  'basic',
-  'community',
-  15.00,
-  false,
-  0.00,
-  0.00
+  500,          -- storage_limit_mb_per_org
+  3,            -- max_members_per_org
+  2,            -- max_free_courses_per_org
+  true,         -- ai_tools_enabled
+  200,          -- ai_usage_limit_monthly
+  false,        -- custom_domains_enabled
+  0,            -- max_custom_domains
+  'basic',      -- analytics_level
+  'community',  -- support_level
+  20.00,        -- platform_fee_percentage
+  false,        -- white_label_enabled
+  0.00,         -- price_monthly_usd
+  0.00          -- price_yearly_usd
 ),
 
--- SCALE TIER (starter paid)
+-- ===================================================
+-- SCALE (starter paid tier)
+-- ===================================================
 ('scale',
-  10240,      -- 10GB
-  10,
-  10,
-  true,
-  2000,
-  true,
-  1,
-  'intermediate',
-  'email',
-  10.00,
-  false,
-  19.00,
-  190.00
+  20480,        -- storage_limit_mb_per_org (20GB)
+  15,           -- max_members_per_org
+  25,           -- max_free_courses_per_org
+  true,         -- ai_tools_enabled
+  5000,         -- ai_usage_limit_monthly
+  true,         -- custom_domains_enabled
+  2,            -- max_custom_domains
+  'intermediate', -- analytics_level
+  'email',      -- support_level
+  10.00,        -- platform_fee_percentage
+  false,        -- white_label_enabled
+  39.00,        -- price_monthly_usd
+  390.00        -- price_yearly_usd
 ),
 
--- IMPACT TIER (growing orgs)
+-- ===================================================
+-- IMPACT (advanced tier for schools/orgs with revenue)
+-- ===================================================
 ('impact',
-  51200,      -- 50GB
-  25,
-  50,
-  true,
-  10000,
-  true,
-  3,
-  'advanced',
-  'priority',
-  7.50,
-  true,
-  49.00,
-  490.00
+  102400,       -- storage_limit_mb_per_org (100GB)
+  60,           -- max_members_per_org
+  200,          -- max_free_courses_per_org
+  true,         -- ai_tools_enabled
+  50000,        -- ai_usage_limit_monthly
+  true,         -- custom_domains_enabled
+  5,            -- max_custom_domains
+  'advanced',   -- analytics_level
+  'priority',   -- support_level
+  5.00,         -- platform_fee_percentage
+  true,         -- white_label_enabled
+  99.00,        -- price_monthly_usd
+  990.00        -- price_yearly_usd
 );
