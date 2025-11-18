@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
 import { useLexicalNodeSelection } from '@lexical/react/useLexicalNodeSelection';
 import { CLICK_COMMAND, COMMAND_PRIORITY_LOW } from 'lexical';
@@ -11,8 +11,7 @@ import { FileComponentWrapper } from './FileComponentWrapper';
 
 import FileNodeRenderer from '~/components/file-renderers/file-node-renderer';
 import { Spinner } from '~/components/loaders';
-import { createBrowserClient } from '~/lib/supabase/supabaseClient';
-import { useStore } from '~/store';
+import { supabaseClient } from '~/lib/supabase/supabaseClient';
 
 interface FileComponentProps {
   fileId: string;
@@ -23,7 +22,6 @@ interface FileComponentProps {
  * FileComponent displays a file attachment with download and remove options
  */
 const FileComponent: React.FC<FileComponentProps> = ({ fileId, nodeKey }) => {
-  const { activeSession } = useStore();
   const [editor] = useLexicalComposerContext();
 
   const [fileMetadata, setFileMetadata] = useState<FetchFileByIdReturn>(null);
@@ -33,12 +31,6 @@ const FileComponent: React.FC<FileComponentProps> = ({ fileId, nodeKey }) => {
   // Selection state
   const [isSelected, setSelected, clearSelection] = useLexicalNodeSelection(nodeKey);
 
-  // Initialize Supabase client outside the fetch function
-  const supabase = useMemo(
-    () => (activeSession ? createBrowserClient(activeSession) : null),
-    [activeSession],
-  );
-
   useEffect(() => {
     if (error) {
       toast.error(error);
@@ -47,15 +39,9 @@ const FileComponent: React.FC<FileComponentProps> = ({ fileId, nodeKey }) => {
 
   // Fetch file metadata and URL
   const fetchFileDetails = useCallback(async () => {
-    if (!supabase) {
-      setError('No active session');
-      setLoading(false);
-      return;
-    }
-
     try {
       setLoading(true);
-      const { data } = await fetchFileById({ supabase, fileId });
+      const { data } = await fetchFileById({ supabase: supabaseClient, fileId });
 
       if (!data) {
         setError('File not found');
@@ -69,7 +55,7 @@ const FileComponent: React.FC<FileComponentProps> = ({ fileId, nodeKey }) => {
     } finally {
       setLoading(false);
     }
-  }, [fileId, supabase]);
+  }, [fileId]);
 
   // Fetch file details when component mounts or dependencies change
   useEffect(() => {

@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import type React from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'react-router';
 import { Search, X } from 'lucide-react';
 
@@ -11,9 +12,8 @@ import FileRenderer from '~/components/file-renderers/file-renderer';
 import { Spinner } from '~/components/loaders';
 import { PlainButton } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
-import { createBrowserClient } from '~/lib/supabase/supabaseClient';
+import { supabaseClient } from '~/lib/supabase/supabaseClient';
 import type { FileLoaderReturnType } from '~/routes/organizations/builder/course/file-library/file-library-index';
-import { useStore } from '~/store';
 
 export type InsertFilePayload = InsertImagePayload;
 
@@ -25,12 +25,6 @@ export function InsertFileDialog({
   fileType: FileType;
 }): React.JSX.Element {
   const params = useParams();
-  const { activeSession } = useStore();
-
-  const supabase = React.useMemo(
-    () => (activeSession ? createBrowserClient(activeSession) : null),
-    [activeSession],
-  );
 
   // File-related states
   const [files, setFiles] = useState<FileLoaderReturnType>({ count: 0, data: [] });
@@ -75,14 +69,12 @@ export function InsertFileDialog({
   // Initial fetch or when search changes
   useEffect(() => {
     const fetchData = async () => {
-      if (!supabase || !params.courseId) return;
-
       setLoading(true);
       try {
         const fetchedFiles = await fetchFilesWithSignedUrls({
-          supabase,
+          supabase: supabaseClient,
           fileType,
-          courseId: params.courseId,
+          courseId: params.courseId ?? '',
           searchQuery: debouncedSearchQuery,
           limit,
           page: 1,
@@ -98,18 +90,16 @@ export function InsertFileDialog({
     };
 
     fetchData();
-  }, [supabase, debouncedSearchQuery, limit, params.courseId, fileType]);
+  }, [debouncedSearchQuery, limit, params.courseId, fileType]);
 
   // Fetch more when pagination changes
   useEffect(() => {
     const fetchMoreData = async () => {
-      if (!supabase || !params.courseId || page === 1) return;
-
       setLoadingMore(true);
       try {
         const fetchedFiles = await fetchFilesWithSignedUrls({
-          supabase,
-          courseId: params.courseId,
+          supabase: supabaseClient,
+          courseId: params.courseId ?? '',
           searchQuery: debouncedSearchQuery,
           limit,
           page,
@@ -133,7 +123,7 @@ export function InsertFileDialog({
     };
 
     fetchMoreData();
-  }, [supabase, params.courseId, page, limit, debouncedSearchQuery, files.data.length, fileType]);
+  }, [params.courseId, page, limit, debouncedSearchQuery, files.data.length, fileType]);
 
   return (
     <div className='flex flex-col space-y-4'>
