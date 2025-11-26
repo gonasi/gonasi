@@ -1,13 +1,13 @@
 import { NavLink } from 'react-router';
 import { motion, useReducedMotion } from 'framer-motion';
-import { BookOpen, HardDrive, UploadCloud } from 'lucide-react';
+import { BookOpen, HardDrive, SquareChartGantt } from 'lucide-react';
 
 import { getStorageUsageAnalytics } from '@gonasi/database/files';
 
 import type { Route } from './+types/storage-index';
 
+import { BannerCard } from '~/components/cards/banner-card';
 import { GoThumbnail } from '~/components/cards/go-course-card';
-import { NavLinkButton } from '~/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Progress } from '~/components/ui/progress';
 import { createClient } from '~/lib/supabase/supabase.server';
@@ -34,7 +34,21 @@ export default function StorageIndex({ loaderData, params }: Route.ComponentProp
   const shouldReduceMotion = useReducedMotion();
 
   if (!storageUsage.success) {
-    return <div>Error: {storageUsage.message}</div>;
+    return (
+      <section className='p-4'>
+        <BannerCard
+          message={storageUsage.message}
+          showCloseIcon={false}
+          variant='error'
+          cta={[
+            {
+              to: `/${params.organizationId}/dashboard/subscriptions`,
+              children: 'View Subscription',
+            },
+          ]}
+        />
+      </section>
+    );
   }
 
   const formatStorage = (bytes: number) => {
@@ -53,6 +67,20 @@ export default function StorageIndex({ loaderData, params }: Route.ComponentProp
   const totalBytes = data.totalUsageBytes;
   const limitBytes = data.limitBytes;
   const remainingBytes = data.remainingBytes;
+  const unpublishedBytes = data.unpublishedUsageBytes;
+  const publishedBytes = data.publishedUsageBytes;
+  const status = data.status;
+
+  const getStatusMessage = () => {
+    switch (status) {
+      case 'error':
+        return `Storage limit exceeded by ${formatStorage(totalBytes - limitBytes)}`;
+      case 'warning':
+        return `Approaching storage limit (${usagePercentage.toFixed(1)}% used)`;
+      default:
+        return `Storage usage is within limits`;
+    }
+  };
 
   return (
     <motion.section
@@ -61,6 +89,64 @@ export default function StorageIndex({ loaderData, params }: Route.ComponentProp
       animate={shouldReduceMotion ? false : { opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: 'easeOut' }}
     >
+      <div className='mb-4'>
+        {status === 'error' && (
+          <BannerCard
+            message={getStatusMessage()}
+            showCloseIcon={false}
+            variant='error'
+            cta={[
+              {
+                to: `/${params.organizationId}/dashboard/subscriptions`,
+                children: 'Upgrade Storage',
+              },
+              {
+                to: `/${params.organizationId}/dashboard/subscriptions/plan-status`,
+                children: 'See My Plan Status',
+                variant: 'ghost',
+                rightIcon: <SquareChartGantt />,
+              },
+            ]}
+          />
+        )}
+
+        {status === 'warning' && (
+          <BannerCard
+            message={getStatusMessage()}
+            showCloseIcon={false}
+            variant='warning'
+            cta={[
+              {
+                to: `/${params.organizationId}/dashboard/subscriptions`,
+                children: 'Upgrade Storage',
+              },
+              {
+                to: `/${params.organizationId}/dashboard/subscriptions/plan-status`,
+                children: 'See My Plan Status',
+                variant: 'ghost',
+                rightIcon: <SquareChartGantt />,
+              },
+            ]}
+          />
+        )}
+
+        {status === 'success' && (
+          <BannerCard
+            message={getStatusMessage()}
+            showCloseIcon={false}
+            variant='success'
+            cta={[
+              {
+                to: `/${params.organizationId}/dashboard/subscriptions/plan-status`,
+                children: 'See My Plan Status',
+                variant: 'ghost',
+                rightIcon: <SquareChartGantt />,
+              },
+            ]}
+          />
+        )}
+      </div>
+
       <div className='flex flex-col items-start justify-between space-y-4 pb-4 md:flex-row md:items-center md:space-y-0'>
         <div className='flex flex-col gap-1'>
           <h1 className='text-2xl font-bold'>Storage Usage</h1>
@@ -68,14 +154,9 @@ export default function StorageIndex({ loaderData, params }: Route.ComponentProp
             {`View your organization's storage usage and manage your files.`}
           </p>
         </div>
-        <div>
-          <NavLinkButton variant='secondary' to=''>
-            <UploadCloud className='h-4 w-4' />
-            Upgrade Storage
-          </NavLinkButton>
-        </div>
       </div>
 
+      {/* Total Storage Usage */}
       <Card className='mt-4 max-w-lg rounded-none border-none shadow-none'>
         <CardHeader className='flex flex-row items-center space-y-0 pb-2'>
           <CardTitle className='flex items-center gap-2 text-sm font-medium'>
@@ -104,77 +185,131 @@ export default function StorageIndex({ loaderData, params }: Route.ComponentProp
         </CardContent>
       </Card>
 
+      {/* Published vs Unpublished Breakdown */}
+      <Card className='mt-4 max-w-lg rounded-none border-none shadow-none'>
+        <CardHeader className='pb-2'>
+          <CardTitle className='text-sm font-medium'>Storage Breakdown</CardTitle>
+        </CardHeader>
+        <CardContent className='space-y-3'>
+          <div className='grid grid-cols-2 gap-3'>
+            <div className='bg-muted/30 rounded-md p-3'>
+              <p className='text-muted-foreground text-xs font-medium'>Published Files</p>
+              <p className='text-lg font-semibold'>{formatStorage(publishedBytes)}</p>
+              <p className='text-muted-foreground mt-1 text-xs'>
+                {((publishedBytes / limitBytes) * 100).toFixed(1)}% of limit
+              </p>
+            </div>
+            <div className='bg-muted/30 rounded-md p-3'>
+              <p className='text-muted-foreground text-xs font-medium'>Unpublished Files</p>
+              <p className='text-lg font-semibold'>{formatStorage(unpublishedBytes)}</p>
+              <p className='text-muted-foreground mt-1 text-xs'>
+                {((unpublishedBytes / limitBytes) * 100).toFixed(1)}% of limit
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Storage by Course */}
       <Card className='my-8 max-w-lg rounded-none shadow-none'>
         <CardHeader>
           <CardTitle className='flex items-center gap-2 text-sm font-medium'>
             <BookOpen className='h-4 w-4' />
-            Storage by Builder & Published Courses
+            Storage by Course
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className='space-y-3'>
-            {data.courseBreakdown.map((course, index) => {
-              const coursePercentage = (course.usageBytes / limitBytes) * 100;
+          {data.courseBreakdown.length === 0 ? (
+            <div className='text-muted-foreground py-6 text-center text-sm'>
+              No files in any courses yet
+            </div>
+          ) : (
+            <div className='space-y-3'>
+              {data.courseBreakdown.map((course, index) => {
+                const coursePercentage = (course.usageBytes / limitBytes) * 100;
 
-              return (
-                <NavLink
-                  key={course.courseId}
-                  to={`/${params.organizationId}/builder/${course.courseId}/file-library`}
-                >
-                  {({ isPending }) => (
-                    <motion.div
-                      initial={shouldReduceMotion ? false : { opacity: 0, y: 8 }}
-                      animate={shouldReduceMotion ? false : { opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.05, duration: 0.3 }}
-                      className={cn(
-                        'space-y-2 rounded-md p-2 transition-colors',
-                        'hover:bg-muted/50',
-                        isPending && 'pointer-events-none opacity-50',
-                      )}
-                    >
-                      <div className='flex items-center justify-between'>
-                        <div className='flex min-w-0 flex-1 items-center gap-2'>
-                          {course.courseImageUrl && (
-                            <div className='h-8 w-8'>
-                              <GoThumbnail
-                                iconUrl={course.signedUrl ?? null}
-                                blurHash={course.courseBlurHash}
-                                name={course.courseName}
-                                objectFit='cover'
-                                aspectRatio='1/1'
-                                className='rounded-md'
-                              />
-                            </div>
-                          )}
-                          <span className='truncate text-sm font-medium'>{course.courseName}</span>
-                        </div>
-                        <div className='text-muted-foreground flex items-center gap-2 text-sm'>
-                          <span>{coursePercentage.toFixed(1)}%</span>
-                          <span className='text-foreground font-medium'>
-                            {formatStorage(course.usageBytes)}
-                          </span>
-                        </div>
-                      </div>
-
-                      <Progress value={coursePercentage} className='h-1' />
-
-                      <div className='text-muted-foreground flex justify-between text-xs'>
-                        <span>
-                          {course.fileCount} {course.fileCount === 1 ? 'file' : 'files'}
-                        </span>
-                        {course.largestFile && (
-                          <span>
-                            Largest: {course.largestFile.name} (
-                            {formatStorage(course.largestFile.sizeMB * 1024 * 1024)})
-                          </span>
+                return (
+                  <NavLink
+                    key={course.courseId}
+                    to={`/${params.organizationId}/builder/${course.courseId}/file-library`}
+                  >
+                    {({ isPending }) => (
+                      <motion.div
+                        initial={shouldReduceMotion ? false : { opacity: 0, y: 8 }}
+                        animate={shouldReduceMotion ? false : { opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.05, duration: 0.3 }}
+                        className={cn(
+                          'space-y-2 rounded-md p-2 transition-colors',
+                          'hover:bg-muted/50',
+                          isPending && 'pointer-events-none opacity-50',
                         )}
-                      </div>
-                    </motion.div>
-                  )}
-                </NavLink>
-              );
-            })}
-          </div>
+                      >
+                        <div className='flex items-center justify-between'>
+                          <div className='flex min-w-0 flex-1 items-center gap-2'>
+                            {course.courseImageUrl && (
+                              <div className='h-8 w-8'>
+                                <GoThumbnail
+                                  iconUrl={course.signedUrl ?? null}
+                                  blurHash={course.courseBlurHash}
+                                  name={course.courseName}
+                                  objectFit='cover'
+                                  aspectRatio='1/1'
+                                  className='rounded-md'
+                                />
+                              </div>
+                            )}
+                            <span className='truncate text-sm font-medium'>
+                              {course.courseName}
+                            </span>
+                          </div>
+                          <div className='text-muted-foreground flex items-center gap-2 text-sm'>
+                            <span>{coursePercentage.toFixed(1)}%</span>
+                            <span className='text-foreground font-medium'>
+                              {formatStorage(course.usageBytes)}
+                            </span>
+                          </div>
+                        </div>
+
+                        <Progress value={coursePercentage} className='h-1' />
+
+                        <div className='text-muted-foreground flex justify-between text-xs'>
+                          <span>
+                            {course.fileCount} {course.fileCount === 1 ? 'file' : 'files'}
+                          </span>
+                          {course.largestFile && (
+                            <span>
+                              Largest: {course.largestFile.name} (
+                              {formatStorage(course.largestFile.sizeMB * 1024 * 1024)})
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Published/Unpublished breakdown per course */}
+                        {(course.publishedUsageBytes > 0 || course.unpublishedUsageBytes > 0) && (
+                          <div className='flex gap-2 pt-1'>
+                            {course.publishedUsageBytes > 0 && (
+                              <div className='flex-1 rounded bg-blue-100 px-2 py-1'>
+                                <p className='text-xs text-blue-700'>
+                                  Pub: {formatStorage(course.publishedUsageBytes)}
+                                </p>
+                              </div>
+                            )}
+                            {course.unpublishedUsageBytes > 0 && (
+                              <div className='flex-1 rounded bg-gray-100 px-2 py-1'>
+                                <p className='text-xs text-gray-700'>
+                                  Unpub: {formatStorage(course.unpublishedUsageBytes)}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </motion.div>
+                    )}
+                  </NavLink>
+                );
+              })}
+            </div>
+          )}
 
           <div className='mt-4 border-t pt-4'>
             <div className='flex items-center justify-between text-sm'>
