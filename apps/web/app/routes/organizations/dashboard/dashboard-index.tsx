@@ -53,6 +53,11 @@ export default function DashboardIndex({ params, loaderData }: Route.ComponentPr
                         to: `/${params.organizationId}/dashboard/subscriptions`,
                         children: 'View Subscription',
                       },
+                      {
+                        to: `/${params.organizationId}/dashboard/subscriptions/plan-status`,
+                        children: 'See My Plan Status',
+                        variant: 'secondary',
+                      },
                     ]}
                   />
                 )}
@@ -62,10 +67,17 @@ export default function DashboardIndex({ params, loaderData }: Route.ComponentPr
                     message={orgSummary.message}
                     showCloseIcon={false}
                     variant='warning'
-                    cta={{
-                      to: `/${params.organizationId}/dashboard/subscriptions`,
-                      children: 'View Subscription',
-                    }}
+                    cta={[
+                      {
+                        to: `/${params.organizationId}/dashboard/subscriptions`,
+                        children: 'View Subscription',
+                      },
+                      {
+                        to: `/${params.organizationId}/dashboard/subscriptions/plan-status`,
+                        children: 'See My Plan Status',
+                        variant: 'secondary',
+                      },
+                    ]}
                   />
                 )}
 
@@ -74,6 +86,13 @@ export default function DashboardIndex({ params, loaderData }: Route.ComponentPr
                     message={orgSummary.message}
                     showCloseIcon={false}
                     variant='success'
+                    cta={[
+                      {
+                        to: `/${params.organizationId}/dashboard/subscriptions/plan-status`,
+                        children: 'See My Plan Status',
+                        variant: 'secondary',
+                      },
+                    ]}
                   />
                 )}
               </div>

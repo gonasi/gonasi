@@ -23,28 +23,28 @@ const variantStyles: Record<
 > = {
   info: {
     icon: Info,
-    textColor: 'text-info-foreground',
-    bgColor: 'bg-info',
+    textColor: 'text-info',
+    bgColor: 'bg-info/5',
   },
   success: {
     icon: CheckCircle,
     textColor: 'text-success',
-    bgColor: 'bg-success-foreground',
+    bgColor: 'bg-success/5',
   },
   warning: {
     icon: AlertTriangle,
-    textColor: 'text-warning-foreground',
-    bgColor: 'bg-warning',
+    textColor: 'text-warning',
+    bgColor: 'bg-warning/5',
   },
   error: {
     icon: AlertOctagon,
     textColor: 'text-danger',
-    bgColor: 'bg-danger-foreground',
+    bgColor: 'bg-danger/5',
   },
   tip: {
     icon: Lightbulb,
-    textColor: 'text-tip-foreground',
-    bgColor: 'bg-tip',
+    textColor: 'text-tip',
+    bgColor: 'bg-tip/5',
   },
   restricted: {
     icon: Lock,
@@ -107,7 +107,9 @@ export function BannerCard({
         {ctaArray.length > 0 && (
           <div className='flex space-x-2 pt-4'>
             {ctaArray.map((item, index) => (
-              <NavLinkButton key={index} {...item} />
+              <div key={index}>
+                <NavLinkButton {...item} />
+              </div>
             ))}
           </div>
         )}
