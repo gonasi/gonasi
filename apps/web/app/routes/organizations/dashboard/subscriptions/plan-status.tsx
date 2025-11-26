@@ -1,9 +1,8 @@
-import { CheckCircle } from 'lucide-react';
-
 import { organizationTierLimitsSummary } from '@gonasi/database/organizations';
 
 import type { Route } from './+types/plan-status';
 
+import { BannerCard } from '~/components/cards';
 import { Modal } from '~/components/ui/modal';
 import { createClient } from '~/lib/supabase/supabase.server';
 
@@ -22,7 +21,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
   const { organizationId } = params;
 
-  const orgSummary = organizationTierLimitsSummary({
+  const orgSummary = await organizationTierLimitsSummary({
     supabase,
     organizationId,
   });
@@ -33,19 +32,21 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 export default function PlanStatus({ params, loaderData }: Route.ComponentProps) {
   return (
     <Modal open>
-      <Modal.Content size='sm'>
+      <Modal.Content size='md'>
         <Modal.Header
-          title='Subscription Payment Verification'
+          title='Plan Status'
           closeRoute={`/${params.organizationId}/dashboard/subscriptions`}
         />
         <Modal.Body className='space-y-4 px-4 py-4'>
-          <div className='flex items-center space-x-2'>
-            <CheckCircle className='text-success h-6 w-6' />
-          </div>
-
-          <div className='text-muted-foreground space-y-2 pb-4 text-sm' />
-
-          <div className='text-muted-foreground border-t pt-2 text-xs' />
+          {!loaderData.data ? (
+            <BannerCard message={loaderData.message} showCloseIcon={false} variant='error' />
+          ) : (
+            <div>
+              {loaderData.data.allIssues.map((issue, index) => {
+                return <p key={index}>{issue}</p>;
+              })}
+            </div>
+          )}
         </Modal.Body>
       </Modal.Content>
     </Modal>
