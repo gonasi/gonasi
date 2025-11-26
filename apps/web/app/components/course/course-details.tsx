@@ -13,7 +13,7 @@ interface Props {
   errorMessage?: string[];
   updatedAt: string;
   canEditCourse: boolean;
-  visibility: 'public' | 'private';
+  visibility: 'public' | 'private' | 'unlisted';
 }
 
 const AnimatedRocket = () => (

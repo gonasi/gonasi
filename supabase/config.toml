@@ -281,8 +281,6 @@ schema_paths = [
   './schemas/publishedCourses/published_course_structure_content_rls.sql',
   './schemas/publishedCourses/published_thumbnails_bucket_rls.sql',
 
-  './schemas/organizations/tierLimits/helpers/org_usage_counts.sql',
-
   # enrollments functions utils
   './schemas/enrollments/utils/calculate_access_end_date.sql',
   './schemas/enrollments/utils/get_published_course_pricing_tier.sql',

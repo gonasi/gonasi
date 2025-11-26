@@ -22,43 +22,44 @@
 create or replace function public.get_org_storage_usage(
   p_org_id uuid
 )
-returns json
+returns jsonb
 language plpgsql
 security definer
 stable
 set search_path = ''
 as $$
 declare
-  v_limits json;
-  v_storage_limit_mb integer;
-  v_storage_limit_bytes bigint;
+  v_limits jsonb;
+  v_storage_limit_mb integer := 0;
+  v_storage_limit_bytes bigint := 0;
 
   v_file_usage bigint := 0;
   v_published_usage bigint := 0;
   v_total_usage bigint := 0;
-  v_data json;
+  v_data jsonb;
 begin
   -------------------------------------------------------------------
-  -- 1. Fetch tier limits via helper
+  -- 1. Fetch tier limits and convert composite type to JSONB
   -------------------------------------------------------------------
-  select public.get_tier_limits(p_org_id)
+  select to_jsonb(public.get_tier_limits(p_org_id))
   into v_limits;
 
   if v_limits is null then
-    return json_build_object(
+    return jsonb_build_object(
       'success', false,
       'message', 'No active subscription found for organization',
       'data', null
     );
   end if;
 
-  v_storage_limit_mb := (v_limits ->> 'storage_limit_mb_per_org')::int;
-  v_storage_limit_bytes := v_storage_limit_mb * 1024 * 1024;
+  -- Safely extract storage limit (default to 0 if missing)
+  v_storage_limit_mb := coalesce((v_limits ->> 'storage_limit_mb_per_org')::int, 0);
+  v_storage_limit_bytes := v_storage_limit_mb::bigint * 1024 * 1024;
 
   -------------------------------------------------------------------
   -- 2. Usage from file_library
   -------------------------------------------------------------------
-  select coalesce(sum(size), 0)
+  select coalesce(sum(size),0)
   into v_file_usage
   from public.file_library
   where organization_id = p_org_id;
@@ -66,7 +67,7 @@ begin
   -------------------------------------------------------------------
   -- 3. Usage from published_file_library
   -------------------------------------------------------------------
-  select coalesce(sum(size), 0)
+  select coalesce(sum(size),0)
   into v_published_usage
   from public.published_file_library
   where organization_id = p_org_id;
@@ -79,7 +80,7 @@ begin
   -------------------------------------------------------------------
   -- 5. Data payload
   -------------------------------------------------------------------
-  v_data := json_build_object(
+  v_data := jsonb_build_object(
     'current_usage_bytes', v_total_usage,
     'storage_limit_bytes', v_storage_limit_bytes,
     'remaining_bytes', greatest(v_storage_limit_bytes - v_total_usage, 0),
@@ -94,7 +95,7 @@ begin
   -------------------------------------------------------------------
   -- 6. Success response
   -------------------------------------------------------------------
-  return json_build_object(
+  return jsonb_build_object(
     'success', true,
     'message', 'Storage usage fetched successfully',
     'data', v_data
@@ -102,7 +103,7 @@ begin
 
 exception
   when others then
-    return json_build_object(
+    return jsonb_build_object(
       'success', false,
       'message', sqlerrm,
       'data', null

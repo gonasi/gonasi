@@ -45,7 +45,7 @@ create table public.tier_limits (
 
   -- AI tooling
   ai_tools_enabled boolean not null default true,
-  ai_usage_limit_monthly integer check (ai_usage_limit_monthly is null or ai_usage_limit_monthly >= 0),
+  ai_usage_limit_monthly integer not null default 0 check (ai_usage_limit_monthly >= 0),
 
   -- Custom domains
   custom_domains_enabled boolean not null default false,

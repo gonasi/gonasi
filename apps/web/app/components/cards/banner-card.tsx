@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { AlertOctagon, AlertTriangle, CheckCircle, Info, Lightbulb, Lock, X } from 'lucide-react';
 
-import { NavLinkButton } from '../ui/button';
+import { NavLinkButton, type NavLinkButtonProps } from '../ui/button';
 
 interface BannerCardProps {
   message: string;
@@ -10,10 +10,7 @@ interface BannerCardProps {
   variant?: 'info' | 'success' | 'warning' | 'error' | 'tip' | 'restricted';
   className?: string;
   showCloseIcon?: boolean;
-  cta?: {
-    link: string;
-    title: string;
-  };
+  cta?: NavLinkButtonProps | NavLinkButtonProps[];
 }
 
 const variantStyles: Record<
@@ -69,12 +66,14 @@ export function BannerCard({
 
   const handleClose = () => {
     setClosing(true);
-    setTimeout(() => setVisible(false), 200); // must match transition duration
+    setTimeout(() => setVisible(false), 200);
   };
 
   if (!visible) return null;
 
   const { icon: Icon, textColor, bgColor } = variantStyles[variant];
+
+  const ctaArray = Array.isArray(cta) ? cta : cta ? [cta] : [];
 
   return (
     <div
@@ -86,7 +85,7 @@ export function BannerCard({
             <Icon className={`${textColor} flex-shrink-0`} size={20} />
             <p className={`${textColor} text-sm`}>{message}</p>
           </div>
-          {showCloseIcon ? (
+          {showCloseIcon && (
             <div className='absolute -top-6 -right-4'>
               <button
                 onClick={handleClose}
@@ -96,19 +95,22 @@ export function BannerCard({
                 <X size={20} />
               </button>
             </div>
-          ) : null}
+          )}
         </div>
 
-        {description ? (
-          <div className='py-4'>
+        {description && (
+          <div className='pt-4'>
             <p className={`${textColor} font-secondary text-sm`}>{description}</p>
           </div>
-        ) : null}
-        {cta ? (
-          <div>
-            <NavLinkButton to={cta.link}>{cta.title}</NavLinkButton>
+        )}
+
+        {ctaArray.length > 0 && (
+          <div className='flex space-x-2 pt-4'>
+            {ctaArray.map((item, index) => (
+              <NavLinkButton key={index} {...item} />
+            ))}
           </div>
-        ) : null}
+        )}
       </div>
     </div>
   );

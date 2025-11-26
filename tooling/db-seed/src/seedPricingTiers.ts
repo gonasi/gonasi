@@ -36,7 +36,7 @@ export const tierLimits: TierLimitSeed[] = [
     max_members_per_org: 1,
     max_free_courses_per_org: 0,
     ai_tools_enabled: false,
-    ai_usage_limit_monthly: null,
+    ai_usage_limit_monthly: 0,
     custom_domains_enabled: false,
     max_custom_domains: null,
     analytics_level: 'none',
@@ -122,8 +122,16 @@ export async function seedPricingTiers() {
     console.log(`❌ Failed to sign in as ${adminEmail}`);
   }
 
+  // NOTE: tierLimitsLocal and tierLimits
   for (const tier of tierLimitsLocal) {
-    const { error } = await supabase.from('tier_limits').insert(tier);
+    // Convert null ai_usage_limit_monthly to undefined for DB compatibility
+    const tierToInsert = {
+      ...tier,
+      ai_usage_limit_monthly:
+        tier.ai_usage_limit_monthly === null ? undefined : tier.ai_usage_limit_monthly,
+    };
+
+    const { error } = await supabase.from('tier_limits').insert(tierToInsert);
 
     if (error) {
       console.error(`❌ Failed to insert tier "${tier.tier}":`, error.message);

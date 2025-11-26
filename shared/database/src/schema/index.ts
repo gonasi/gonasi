@@ -2337,7 +2337,7 @@ export type Database = {
       tier_limits: {
         Row: {
           ai_tools_enabled: boolean
-          ai_usage_limit_monthly: number | null
+          ai_usage_limit_monthly: number
           analytics_level: Database["public"]["Enums"]["analytics_level"]
           created_at: string
           custom_domains_enabled: boolean
@@ -2359,7 +2359,7 @@ export type Database = {
         }
         Insert: {
           ai_tools_enabled?: boolean
-          ai_usage_limit_monthly?: number | null
+          ai_usage_limit_monthly?: number
           analytics_level: Database["public"]["Enums"]["analytics_level"]
           created_at?: string
           custom_domains_enabled?: boolean
@@ -2381,7 +2381,7 @@ export type Database = {
         }
         Update: {
           ai_tools_enabled?: boolean
-          ai_usage_limit_monthly?: number | null
+          ai_usage_limit_monthly?: number
           analytics_level?: Database["public"]["Enums"]["analytics_level"]
           created_at?: string
           custom_domains_enabled?: boolean
@@ -2953,7 +2953,7 @@ export type Database = {
         Args: { p_org: string }
         Returns: {
           ai_tools_enabled: boolean
-          ai_usage_limit_monthly: number | null
+          ai_usage_limit_monthly: number
           analytics_level: Database["public"]["Enums"]["analytics_level"]
           created_at: string
           custom_domains_enabled: boolean
@@ -3037,7 +3037,6 @@ export type Database = {
         Args: { p_notification_id: string; p_user_id: string }
         Returns: undefined
       }
-      org_usage_counts: { Args: { p_org: string }; Returns: Json }
       process_course_payment_from_paystack: {
         Args: {
           p_amount_paid: number

@@ -54,8 +54,8 @@ export default function CourseOverview({ loaderData, params }: Route.ComponentPr
               className='mb-10'
               showCloseIcon={false}
               cta={{
-                link: `/${params.organizationId}/builder/${params.courseId}/overview/publish`,
-                title: 'Publish Course',
+                to: `/${params.organizationId}/builder/${params.courseId}/overview/publish`,
+                children: 'Publish Course',
               }}
             />
           ) : (

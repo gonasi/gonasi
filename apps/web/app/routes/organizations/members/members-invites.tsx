@@ -73,8 +73,8 @@ export default function MembersInvites({ params, loaderData }: Route.ComponentPr
             showCloseIcon={false}
             variant='warning'
             cta={{
-              link: `/${params.organizationId}/dashboard/subscriptions`,
-              title: 'Consider upgrading your plan.',
+              to: `/${params.organizationId}/dashboard/subscriptions`,
+              children: 'Consider upgrading your plan.',
             }}
           />
         </div>
