@@ -1,6 +1,8 @@
 import { Suspense } from 'react';
 import { Await, Outlet } from 'react-router';
-import { Award, LoaderCircle } from 'lucide-react';
+import { Award, LoaderCircle, SquareChartGantt } from 'lucide-react';
+
+import { organizationTierLimitsSummary } from '@gonasi/database/organizations';
 
 import type { Route } from './+types/dashboard-index';
 import { OrganizationPlanCard } from './components/OrganizationPlanCard';
@@ -9,7 +11,6 @@ import { TotalEarningsCard } from './components/TotalEarningsCard';
 import { TotalEnrollmentsCard } from './components/TotalEnrollmentsCard';
 import { TotalReEnrollmentsCard } from './components/TotalReEnrollmentsCard';
 import { TotalStudentsCard } from './components/TotalStudentsCard';
-import { organizationTierLimitsSummary } from '../../../../../../shared/database/src/organizations/tierLimits/organizationTierLimitsSummary';
 
 import { BannerCard, StatsCard, StorageCard } from '~/components/cards';
 import createClient from '~/lib/supabase/supabase.server';
@@ -56,7 +57,8 @@ export default function DashboardIndex({ params, loaderData }: Route.ComponentPr
                       {
                         to: `/${params.organizationId}/dashboard/subscriptions/plan-status`,
                         children: 'See My Plan Status',
-                        variant: 'secondary',
+                        variant: 'ghost',
+                        rightIcon: <SquareChartGantt />,
                       },
                     ]}
                   />
@@ -75,7 +77,8 @@ export default function DashboardIndex({ params, loaderData }: Route.ComponentPr
                       {
                         to: `/${params.organizationId}/dashboard/subscriptions/plan-status`,
                         children: 'See My Plan Status',
-                        variant: 'secondary',
+                        variant: 'ghost',
+                        rightIcon: <SquareChartGantt />,
                       },
                     ]}
                   />
@@ -90,7 +93,8 @@ export default function DashboardIndex({ params, loaderData }: Route.ComponentPr
                       {
                         to: `/${params.organizationId}/dashboard/subscriptions/plan-status`,
                         children: 'See My Plan Status',
-                        variant: 'secondary',
+                        variant: 'ghost',
+                        rightIcon: <SquareChartGantt />,
                       },
                     ]}
                   />
