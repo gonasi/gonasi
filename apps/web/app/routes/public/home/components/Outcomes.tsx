@@ -24,14 +24,14 @@ export function RealOutcomes() {
   ];
 
   return (
-    <section className='bg-primary-dark relative py-24 text-white'>
+    <section className='bg-primary-dark relative py-24'>
       {/* Subtle grid background */}
       <div className='bg-grid-pattern absolute inset-0 opacity-5' />
 
       {/* Optional soft radial accent behind center */}
       <div className='bg-primary/20 absolute -top-40 left-1/2 -z-10 h-[500px] w-full -translate-x-1/2 rounded-full blur-[180px]' />
 
-      <div className='relative container mx-auto px-6'>
+      <div className='relative container mx-auto px-6'>s
         {/* Heading */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
