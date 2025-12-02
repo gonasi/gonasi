@@ -12,7 +12,7 @@ export function Hero() {
     <section className='relative overflow-hidden'>
       {/* Background */}
       <div className='bg-grid-pattern absolute inset-0 opacity-5' />
-      <div className='bg-primary/10 pointer-events-none absolute -top-20 left-1/2 h-[600px] w-[600px] -translate-x-1/2 rounded-full blur-[180px]' />
+      <div className='bg-primary/10 pointer-events-none absolute -top-20 left-1/2 h-[600px] w-full -translate-x-1/2 rounded-full blur-[180px]' />
 
       <div className='relative container mx-auto px-6 py-24 lg:py-32'>
         <div className='grid items-center gap-16 lg:grid-cols-2'>
@@ -83,8 +83,8 @@ export function Hero() {
             >
               {['No credit card required', 'Free forever plan', 'Made for educators & teams'].map(
                 (label, i) => (
-                  <div key={i} className='flex items-center gap-2'>
-                    <div className='bg-primary h-2 w-2 rounded-full' />
+                  <div key={i} className='gap flex items-center gap-2'>
+                    <div className='bg-primary h-8 w-2 rounded-full md:h-2' />
                     <span>{label}</span>
                   </div>
                 ),
