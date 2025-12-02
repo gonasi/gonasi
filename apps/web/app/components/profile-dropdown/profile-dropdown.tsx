@@ -20,8 +20,8 @@ import {
 import { cn } from '~/lib/utils';
 import type { UserProfileLoaderReturnType, UserRoleLoaderReturnType } from '~/root';
 import type {
-  OrgRoleLoaderData,
   OrganizationLoaderData,
+  OrgRoleLoaderData,
 } from '~/routes/layouts/organizations/organizations-layout';
 
 interface Props {
@@ -101,12 +101,12 @@ export function ProfileDropdown({
                 <p className='text-md truncate'>{organization?.name}</p>
                 <div className='flex items-center justify-between'>
                   <p className='font-secondary text-muted-foreground truncate'>{full_name}</p>
-                  {member?.role && (
+                  {member && (
                     <Badge
                       variant='outline'
-                      className={cn('rounded-full text-xs', getBadgeColorClass(member.role))}
+                      className={cn('rounded-full text-xs', getBadgeColorClass(member))}
                     >
-                      {member.role}
+                      {member}
                     </Badge>
                   )}
                 </div>
@@ -137,7 +137,7 @@ export function ProfileDropdown({
             </Link>
           </DropdownMenuItem>
 
-          {mode === 'organization' && (member?.role === 'admin' || member?.role === 'owner') && (
+          {mode === 'organization' && (member === 'admin' || member === 'owner') && (
             <DropdownMenuItem asChild className='group cursor-pointer'>
               <Link to={settingsLink.to} className='flex items-center space-x-2'>
                 <settingsLink.icon className='h-4 w-4 transition-transform duration-200 group-hover:scale-105' />

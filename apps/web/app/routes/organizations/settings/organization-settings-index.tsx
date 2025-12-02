@@ -19,7 +19,7 @@ export function meta() {
 
 export default function OrganizationSettingsIndex({ params }: Route.ComponentProps) {
   const { data } = useOutletContext<OrganizationsOutletContextType>();
-  const { member } = data;
+  const { orgRole } = data;
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -27,10 +27,10 @@ export default function OrganizationSettingsIndex({ params }: Route.ComponentPro
 
   useEffect(() => {
     if (location.pathname === basePath) {
-      const defaultPage = member.role === 'editor' ? 'organization-danger' : 'organization-profile';
+      const defaultPage = orgRole === 'editor' ? 'organization-danger' : 'organization-profile';
       navigate(`${basePath}/${defaultPage}`, { replace: true });
     }
-  }, [location.pathname, basePath, navigate, member.role]);
+  }, [location.pathname, basePath, navigate, orgRole]);
 
   const links = useMemo(() => {
     return [
@@ -52,8 +52,8 @@ export default function OrganizationSettingsIndex({ params }: Route.ComponentPro
         icon: ShieldAlert,
         roles: ['editor', 'admin', 'owner'],
       },
-    ].filter((link) => link.roles.includes(member.role));
-  }, [basePath, member.role]);
+    ].filter((link) => link.roles.includes(orgRole));
+  }, [basePath, orgRole]);
 
   return (
     <div className='mx-auto flex'>
