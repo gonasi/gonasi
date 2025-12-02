@@ -8,7 +8,6 @@ import {
   Scripts,
   ScrollRestoration,
   useLoaderData,
-  useNavigate,
 } from 'react-router';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/react';
@@ -140,7 +139,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
 // --- App Component ---
 function App() {
-  const navigate = useNavigate();
   const { user, role, toast, session } = useLoaderData<typeof loader>();
   const { updateActiveSession, updateActiveUserProfile, updateActiveUserRole } = useStore();
 

@@ -1,5 +1,3 @@
-import { randomUUID } from 'crypto';
-
 import type { Database } from '@gonasi/database/schema';
 import type { InviteMemberToOrganizationSchemaTypes } from '@gonasi/schemas/organizations';
 
@@ -137,7 +135,7 @@ export const inviteOrganizationMember = async (
     }
 
     // ✅ Passed all checks — insert invite
-    const token = randomUUID();
+    const token = crypto.randomUUID();
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
     const { data, error } = await supabase

@@ -124,9 +124,9 @@ const org_notifications_types = [
     visible_to_editor: false,
     default_in_app: true,
     default_email: true,
-    title_template: 'Downgrade cancelled',
+    title_template: 'Tier Cancellation Cancelled',
     body_template:
-      'Your scheduled downgrade to the {{tier_name}} plan has been cancelled. Your organization will remain on the {{current_tier_name}} plan.',
+      'Your scheduled cancellation of the {{tier_name}} plan has been cancelled. Your organization will remain on the {{current_tier_name}} plan.',
   },
   {
     key: 'org_subscription_cancelled',

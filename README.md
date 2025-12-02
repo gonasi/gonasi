@@ -23,6 +23,6 @@ supabase start && \
 supabase db reset && \
 supabase gen types typescript --local > ../shared/database/src/schema/index.ts
 
-supabase db diff --schema public --schema auth --schema extensions --schema storage -f init
+supabase db diff --schema public --schema auth --schema extensions --schema storage --schema pgmq --schema realtime -f some_name
 
 supabase test db

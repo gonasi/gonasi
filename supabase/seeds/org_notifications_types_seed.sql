@@ -34,8 +34,8 @@ insert into public.org_notifications_types (
  'Plan upgraded! 🎉',
  'Your organization has been upgraded to {{tier_name}}. Enjoy your new features!'),
 ('org_downgrade_cancelled', 'billing', true, true, false, true, true,
- 'Downgrade cancelled',
- 'Your scheduled downgrade to the {{tier_name}} plan has been cancelled. Your organization will remain on the {{current_tier_name}} plan.'),
+ 'Tier Cancellation Cancelled',
+ 'Your scheduled cancellation of the {{tier_name}} plan has been cancelled. Your organization will remain on the {{current_tier_name}} plan.'),
 ('org_subscription_cancelled', 'billing', true, false, false, true, true,
  'Subscription Cancelled',
  'Your subscription has been cancelled. Your organization will remain on the {{tier_name}} plan until {{effective_date}}, after which it will move to temporary status.'),
@@ -44,7 +44,7 @@ insert into public.org_notifications_types (
  'Your organization will move to the {{tier_name}} plan on {{effective_date}}.'),
 ('org_tier_downgrade_activated', 'billing', true, true, false, true, true,
  'Downgrade completed',
- 'Your organization is now on the {{tier_name}} plan. The downgrade took effect on {{effective_date}}.')
+ 'Your organization is now on the {{tier_name}} plan. The downgrade took effect on {{effective_date}}.'),
 
 
 -- ============================================================================

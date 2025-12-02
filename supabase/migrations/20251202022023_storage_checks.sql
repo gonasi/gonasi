@@ -1,17 +1,274 @@
--- ====================================================================================
--- FUNCTION: public.upsert_published_course_with_content
--- ====================================================================================
+revoke delete on table "public"."user_roles" from "anon";
+
+revoke insert on table "public"."user_roles" from "anon";
+
+revoke references on table "public"."user_roles" from "anon";
+
+revoke select on table "public"."user_roles" from "anon";
+
+revoke trigger on table "public"."user_roles" from "anon";
+
+revoke truncate on table "public"."user_roles" from "anon";
+
+revoke update on table "public"."user_roles" from "anon";
+
+revoke delete on table "public"."user_roles" from "authenticated";
+
+revoke insert on table "public"."user_roles" from "authenticated";
+
+revoke references on table "public"."user_roles" from "authenticated";
+
+revoke select on table "public"."user_roles" from "authenticated";
+
+revoke trigger on table "public"."user_roles" from "authenticated";
+
+revoke truncate on table "public"."user_roles" from "authenticated";
+
+revoke update on table "public"."user_roles" from "authenticated";
+
+alter table "public"."tier_limits" drop constraint "tier_limits_ai_usage_limit_monthly_check";
+
+drop function if exists "public"."get_org_storage_usage"(p_org_id uuid);
+
+drop function if exists "public"."org_usage_counts"(p_org uuid);
+
+drop function if exists public.chk_org_storage_for_course(uuid, bigint, uuid);
+
+drop function if exists public.chk_org_storage_for_course(uuid, bigint);
+
 drop function if exists public.upsert_published_course_with_content(jsonb, jsonb);
 
-create or replace function public.upsert_published_course_with_content(
-  course_data jsonb,
-  structure_content jsonb
-)
-returns jsonb
-language plpgsql
-security definer
-set search_path = ''
-as $$
+
+alter table "public"."tier_limits" alter column "ai_usage_limit_monthly" set default 0;
+
+alter table "public"."tier_limits" alter column "ai_usage_limit_monthly" set not null;
+
+alter table "public"."tier_limits" add constraint "tier_limits_ai_usage_limit_monthly_check" CHECK ((ai_usage_limit_monthly >= 0)) not valid;
+
+alter table "public"."tier_limits" validate constraint "tier_limits_ai_usage_limit_monthly_check";
+
+set check_function_bodies = off;
+
+CREATE OR REPLACE FUNCTION public.chk_org_storage_for_course(org_id uuid, net_storage_change_bytes bigint, course_id uuid DEFAULT NULL::uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare
+  storage_limit_mb integer;
+  storage_limit_bytes bigint;
+  builder_files bigint;
+  published_files bigint;
+  total_used bigint;
+  available bigint;
+  allowed boolean;
+begin
+  -- 1. Fetch org tier
+  select coalesce(tl.storage_limit_mb_per_org, 0)
+  into storage_limit_mb
+  from organizations o
+  join organization_subscriptions os on o.id = os.organization_id
+  join tier_limits tl on os.tier = tl.tier
+  where o.id = org_id;
+
+  if storage_limit_mb is null then
+    raise exception 'Organization % or subscription not found', org_id;
+  end if;
+
+  storage_limit_bytes := storage_limit_mb::bigint * 1024 * 1024;
+
+  -- 2. Builder files
+  select coalesce(sum(size), 0)
+  into builder_files
+  from file_library
+  where organization_id = org_id;
+
+  -- 3. Published files
+  select coalesce(sum(size), 0)
+  into published_files
+  from published_file_library
+  where organization_id = org_id;
+
+  -- 4. Totals
+  total_used := builder_files + published_files;
+  available := storage_limit_bytes - total_used;
+
+  -- 5. Allow?
+  allowed := available >= net_storage_change_bytes;
+
+  -- 6. Return JSON
+  return jsonb_build_object(
+    'storage_limit_mb', storage_limit_mb,
+    'storage_limit_bytes', storage_limit_bytes,
+    'storage_limit_readable', readable_size(storage_limit_bytes),
+
+    'usage', jsonb_build_object(
+      'builder_files_bytes', builder_files,
+      'builder_files_readable', readable_size(builder_files),
+
+      'published_files_bytes', published_files,
+      'published_files_readable', readable_size(published_files),
+
+      'total_used_bytes', total_used,
+      'total_used_readable', readable_size(total_used),
+
+      'available_bytes', available,
+      'available_readable', readable_size(available),
+
+      'usage_percentage',
+        case when storage_limit_bytes > 0
+          then round((total_used::numeric / storage_limit_bytes::numeric * 100)::numeric, 2)
+          else 0 end
+    ),
+
+    'change', jsonb_build_object(
+      'net_storage_change_bytes', net_storage_change_bytes,
+      'net_storage_change_readable', readable_size(net_storage_change_bytes),
+
+      'available_after_change_bytes', available - net_storage_change_bytes,
+      'available_after_change_readable', readable_size(available - net_storage_change_bytes)
+    ),
+
+    'allowed', allowed,
+    'reason', case
+      when allowed then 'Enough storage available'
+      else 'Not enough storage: requires ' || readable_size(net_storage_change_bytes)
+            || ', but only ' || readable_size(available) || ' available.'
+    end
+  );
+end;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.readable_size(bytes bigint)
+ RETURNS text
+ LANGUAGE plpgsql
+ IMMUTABLE
+AS $function$
+begin
+  if bytes is null then
+    return '0 B';
+  elsif bytes >= 1024 * 1024 * 1024 then
+    return round((bytes::numeric / (1024*1024*1024))::numeric, 2) || ' GB';
+  elsif bytes >= 1024 * 1024 then
+    return round((bytes::numeric / (1024*1024))::numeric, 2) || ' MB';
+  elsif bytes >= 1024 then
+    return round((bytes::numeric / 1024)::numeric, 2) || ' KB';
+  else
+    return bytes || ' B';
+  end if;
+end;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.check_storage_limit_for_org(p_org_id uuid, p_new_file_size bigint, p_exclude_file_id uuid DEFAULT NULL::uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+declare
+  v_current_usage bigint := 0;
+  v_storage_limit_mb integer := 0;
+  v_storage_limit_bytes bigint := 0;
+  v_limits jsonb;
+  v_remaining_bytes bigint := 0;
+begin
+  -------------------------------------------------------------------
+  -- 0. Validate file size
+  -------------------------------------------------------------------
+  if p_new_file_size is null or p_new_file_size <= 0 then
+    return jsonb_build_object(
+      'success', false,
+      'message', 'Invalid file size provided.',
+      'data', jsonb_build_object(
+        'file_size', p_new_file_size,
+        'remaining_bytes', null
+      )
+    );
+  end if;
+
+  -------------------------------------------------------------------
+  -- 1. Fetch organization's tier limits and convert composite to jsonb
+  -------------------------------------------------------------------
+  select to_jsonb(public.get_tier_limits(p_org_id))
+  into v_limits;
+
+  if v_limits is null then
+    return jsonb_build_object(
+      'success', false,
+      'message', 'Organization tier limits not found.',
+      'data', jsonb_build_object(
+        'file_size', p_new_file_size,
+        'remaining_bytes', null
+      )
+    );
+  end if;
+
+  v_storage_limit_mb := coalesce((v_limits ->> 'storage_limit_mb_per_org')::int, 0);
+  v_storage_limit_bytes := v_storage_limit_mb::bigint * 1024 * 1024;
+
+  -------------------------------------------------------------------
+  -- 2. Calculate current storage usage
+  -------------------------------------------------------------------
+  select
+    coalesce((
+      select sum(size) from public.file_library
+      where organization_id = p_org_id
+        and (p_exclude_file_id is null or id != p_exclude_file_id)
+    ), 0)
+    +
+    coalesce((
+      select sum(size) from public.published_file_library
+      where organization_id = p_org_id
+    ), 0)
+  into v_current_usage;
+
+  v_remaining_bytes := v_storage_limit_bytes - v_current_usage;
+
+  -------------------------------------------------------------------
+  -- 3. Determine if the new file can be uploaded
+  -------------------------------------------------------------------
+  if (v_current_usage + p_new_file_size) <= v_storage_limit_bytes then
+    return jsonb_build_object(
+      'success', true,
+      'message', 'File can be uploaded.',
+      'data', jsonb_build_object(
+        'file_size', p_new_file_size,
+        'remaining_bytes', v_remaining_bytes - p_new_file_size
+      )
+    );
+  else
+    return jsonb_build_object(
+      'success', false,
+      'message', 'Uploading this file would exceed the storage limit.',
+      'data', jsonb_build_object(
+        'file_size', p_new_file_size,
+        'remaining_bytes', v_remaining_bytes
+      )
+    );
+  end if;
+exception
+  when others then
+    return jsonb_build_object(
+      'success', false,
+      'message', sqlerrm,
+      'data', jsonb_build_object(
+        'file_size', p_new_file_size,
+        'remaining_bytes', null
+      )
+    );
+end;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.upsert_published_course_with_content(course_data jsonb, structure_content jsonb)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
 declare
   course_uuid uuid;
   org_id uuid;
@@ -252,4 +509,7 @@ exception
       )
     );
 end;
-$$;
+$function$
+;
+
+

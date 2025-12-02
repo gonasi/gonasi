@@ -2337,7 +2337,7 @@ export type Database = {
       tier_limits: {
         Row: {
           ai_tools_enabled: boolean
-          ai_usage_limit_monthly: number | null
+          ai_usage_limit_monthly: number
           analytics_level: Database["public"]["Enums"]["analytics_level"]
           created_at: string
           custom_domains_enabled: boolean
@@ -2359,7 +2359,7 @@ export type Database = {
         }
         Insert: {
           ai_tools_enabled?: boolean
-          ai_usage_limit_monthly?: number | null
+          ai_usage_limit_monthly?: number
           analytics_level: Database["public"]["Enums"]["analytics_level"]
           created_at?: string
           custom_domains_enabled?: boolean
@@ -2381,7 +2381,7 @@ export type Database = {
         }
         Update: {
           ai_tools_enabled?: boolean
-          ai_usage_limit_monthly?: number | null
+          ai_usage_limit_monthly?: number
           analytics_level?: Database["public"]["Enums"]["analytics_level"]
           created_at?: string
           custom_domains_enabled?: boolean
@@ -2738,6 +2738,14 @@ export type Database = {
         }
         Returns: Json
       }
+      chk_org_storage_for_course: {
+        Args: {
+          course_id?: string
+          net_storage_change_bytes: number
+          org_id: string
+        }
+        Returns: Json
+      }
       complete_block: {
         Args: {
           p_block_id: string
@@ -2889,7 +2897,6 @@ export type Database = {
           visibility: Json
         }[]
       }
-      get_org_storage_usage: { Args: { p_org_id: string }; Returns: Json }
       get_org_tier: {
         Args: { p_org: string }
         Returns: Database["public"]["Enums"]["subscription_tier"]
@@ -2953,7 +2960,7 @@ export type Database = {
         Args: { p_org: string }
         Returns: {
           ai_tools_enabled: boolean
-          ai_usage_limit_monthly: number | null
+          ai_usage_limit_monthly: number
           analytics_level: Database["public"]["Enums"]["analytics_level"]
           created_at: string
           custom_domains_enabled: boolean
@@ -3037,7 +3044,6 @@ export type Database = {
         Args: { p_notification_id: string; p_user_id: string }
         Returns: undefined
       }
-      org_usage_counts: { Args: { p_org: string }; Returns: Json }
       process_course_payment_from_paystack: {
         Args: {
           p_amount_paid: number
@@ -3076,6 +3082,7 @@ export type Database = {
         }
         Returns: Json
       }
+      readable_size: { Args: { bytes: number }; Returns: string }
       reorder_chapters: {
         Args: {
           chapter_positions: Json
@@ -3219,7 +3226,7 @@ export type Database = {
       }
       upsert_published_course_with_content: {
         Args: { course_data: Json; structure_content: Json }
-        Returns: undefined
+        Returns: Json
       }
       user_has_active_access: {
         Args: { p_published_course_id: string; p_user_id: string }

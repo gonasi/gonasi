@@ -50,12 +50,12 @@ export default function CourseOverview({ loaderData, params }: Route.ComponentPr
             <BannerCard
               message='Course Unpublished'
               description='Publish your course to unlock student progress tracking, insights, and performance stats.'
-              variant='tip'
+              variant='info'
               className='mb-10'
               showCloseIcon={false}
               cta={{
-                link: `/${params.organizationId}/builder/${params.courseId}/overview/publish`,
-                title: 'Publish Course',
+                to: `/${params.organizationId}/builder/${params.courseId}/overview/publish`,
+                children: 'Publish Course',
               }}
             />
           ) : (

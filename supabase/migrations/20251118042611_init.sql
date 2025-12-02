@@ -13608,4 +13608,3 @@ with check ((EXISTS ( SELECT 1
   WHERE ((om.user_id = ( SELECT auth.uid() AS uid)) AND (( SELECT realtime.topic() AS topic) = ('org-notifications:'::text || (om.organization_id)::text)) AND (messages.extension = 'broadcast'::text)))));
 
 
-

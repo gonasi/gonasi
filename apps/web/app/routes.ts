@@ -64,6 +64,7 @@ export default [
         [
           route(':tier', 'routes/organizations/dashboard/subscriptions/subscribe-to-tier.tsx'),
           route('status', 'routes/organizations/dashboard/subscriptions/subscription-status.tsx'),
+          route('plan-status', 'routes/organizations/dashboard/subscriptions/plan-status.tsx'),
         ],
       ),
     ]),

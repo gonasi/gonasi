@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { NavLink, type NavLinkProps } from 'react-router';
+import { NavLink, type NavLinkProps, useNavigation } from 'react-router';
 import { type VariantProps } from 'class-variance-authority';
 import { motion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
@@ -34,14 +34,20 @@ const NavLinkButton = React.forwardRef<HTMLAnchorElement, NavLinkButtonProps>(
       children,
       showActiveIndicator = false,
       animate = 'ltr',
+      to,
       ...props
     },
     ref,
   ) => {
+    const navigation = useNavigation();
     const variants = {
       initial: { opacity: 0, x: animate === 'ltr' ? -10 : 10 },
       animate: { opacity: 1, x: 0 },
     };
+
+    // Check if this specific link is being navigated to
+    const isNavigatingToThis =
+      navigation.state === 'loading' && navigation.location?.pathname === String(to);
 
     return (
       <motion.div
@@ -53,6 +59,7 @@ const NavLinkButton = React.forwardRef<HTMLAnchorElement, NavLinkButtonProps>(
       >
         <NavLink
           ref={ref}
+          to={to}
           {...props}
           onClick={(e) => {
             if (disabled || isLoading) {
@@ -72,9 +79,9 @@ const NavLinkButton = React.forwardRef<HTMLAnchorElement, NavLinkButtonProps>(
             )
           }
         >
-          {({ isPending }) => (
+          {() => (
             <span className='relative z-5 flex h-full w-full items-center justify-center gap-2'>
-              {isLoading || isPending ? (
+              {isLoading || isNavigatingToThis ? (
                 !rightIcon ? (
                   <Loader2 className='h-4 w-4 animate-spin' />
                 ) : leftIcon ? (
@@ -90,7 +97,7 @@ const NavLinkButton = React.forwardRef<HTMLAnchorElement, NavLinkButtonProps>(
 
               <div className='mt-0.5 flex items-center gap-1'>{children}</div>
 
-              {isLoading || isPending ? (
+              {isLoading || isNavigatingToThis ? (
                 rightIcon ? (
                   <Loader2 className='h-4 w-4 animate-spin' />
                 ) : null

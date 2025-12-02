@@ -1,6 +1,10 @@
-import { Outlet } from 'react-router';
-import { Award } from 'lucide-react';
+import { Suspense } from 'react';
+import { Await, Outlet } from 'react-router';
+import { Award, LoaderCircle, SquareChartGantt } from 'lucide-react';
 
+import { organizationTierLimitsSummary } from '@gonasi/database/organizations';
+
+import type { Route } from './+types/dashboard-index';
 import { OrganizationPlanCard } from './components/OrganizationPlanCard';
 import { TotalCoursesCard } from './components/TotalCoursesCard';
 import { TotalEarningsCard } from './components/TotalEarningsCard';
@@ -8,11 +12,98 @@ import { TotalEnrollmentsCard } from './components/TotalEnrollmentsCard';
 import { TotalReEnrollmentsCard } from './components/TotalReEnrollmentsCard';
 import { TotalStudentsCard } from './components/TotalStudentsCard';
 
-import { StatsCard, StorageCard } from '~/components/cards';
+import { BannerCard, StatsCard, StorageCard } from '~/components/cards';
+import createClient from '~/lib/supabase/supabase.server';
 
-export default function DashboardIndex() {
+export async function loader({ params, request }: Route.LoaderArgs) {
+  const { supabase } = createClient(request);
+  const { organizationId } = params;
+
+  const orgSummary = organizationTierLimitsSummary({
+    supabase,
+    organizationId,
+  });
+
+  return orgSummary;
+}
+
+export default function DashboardIndex({ params, loaderData }: Route.ComponentProps) {
   return (
     <>
+      <Suspense
+        fallback={
+          <div className='flex w-full justify-end p-2'>
+            <LoaderCircle className='animate-spin' />
+          </div>
+        }
+      >
+        <Await resolve={loaderData}>
+          {(orgSummary) => {
+            const isError = orgSummary.status === 'error';
+            const isWarning = orgSummary.status === 'warning';
+
+            return (
+              <div className='px-4 pt-4'>
+                {isError && (
+                  <BannerCard
+                    message={orgSummary.message}
+                    showCloseIcon={false}
+                    variant='error'
+                    cta={[
+                      {
+                        to: `/${params.organizationId}/dashboard/subscriptions`,
+                        children: 'View Subscription',
+                      },
+                      {
+                        to: `/${params.organizationId}/dashboard/subscriptions/plan-status`,
+                        children: 'See My Plan Status',
+                        variant: 'ghost',
+                        rightIcon: <SquareChartGantt />,
+                      },
+                    ]}
+                  />
+                )}
+
+                {isWarning && (
+                  <BannerCard
+                    message={orgSummary.message}
+                    showCloseIcon={false}
+                    variant='warning'
+                    cta={[
+                      {
+                        to: `/${params.organizationId}/dashboard/subscriptions`,
+                        children: 'View Subscription',
+                      },
+                      {
+                        to: `/${params.organizationId}/dashboard/subscriptions/plan-status`,
+                        children: 'See My Plan Status',
+                        variant: 'ghost',
+                        rightIcon: <SquareChartGantt />,
+                      },
+                    ]}
+                  />
+                )}
+
+                {orgSummary.status === 'success' && (
+                  <BannerCard
+                    message={orgSummary.message}
+                    showCloseIcon={false}
+                    variant='success'
+                    cta={[
+                      {
+                        to: `/${params.organizationId}/dashboard/subscriptions/plan-status`,
+                        children: 'See My Plan Status',
+                        variant: 'ghost',
+                        rightIcon: <SquareChartGantt />,
+                      },
+                    ]}
+                  />
+                )}
+              </div>
+            );
+          }}
+        </Await>
+      </Suspense>
       <section className='mx-auto space-y-4 p-4'>
         <div className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4'>
           <TotalCoursesCard />
