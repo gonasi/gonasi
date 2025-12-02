@@ -29,7 +29,7 @@ export function RealOutcomes() {
       <div className='bg-grid-pattern absolute inset-0 opacity-5' />
 
       {/* Optional soft radial accent behind center */}
-      <div className='bg-primary/20 absolute -top-40 left-1/2 -z-10 h-[500px] w-[500px] -translate-x-1/2 rounded-full blur-[180px]' />
+      <div className='bg-primary/20 absolute -top-40 left-1/2 -z-10 h-[500px] w-full -translate-x-1/2 rounded-full blur-[180px]' />
 
       <div className='relative container mx-auto px-6'>
         {/* Heading */}
