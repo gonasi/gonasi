@@ -14,7 +14,7 @@ export function Hero() {
       <div className='bg-grid-pattern absolute inset-0 opacity-5' />
       <div className='bg-primary/10 pointer-events-none absolute -top-20 left-1/2 h-[600px] w-full -translate-x-1/2 rounded-full blur-[180px]' />
 
-      <div className='relative container mx-auto px-6 py-24 lg:py-32'>
+      <div className='relative container mx-auto px-6 py-8 lg:py-32'>
         <div className='grid items-center gap-16 lg:grid-cols-2'>
           {/* LEFT SIDE */}
           <motion.div
