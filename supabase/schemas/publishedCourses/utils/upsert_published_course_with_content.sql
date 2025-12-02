@@ -1,13 +1,13 @@
 -- ====================================================================================
--- FUNCTION: upsert_published_course_with_content (Updated)  
--- PURPOSE: Atomically upserts published course data and resets all user progress
--- SECURITY: Runs as definer with restricted search_path
+-- FUNCTION: public.upsert_published_course_with_content
 -- ====================================================================================
+drop function if exists public.upsert_published_course_with_content(jsonb, jsonb);
+
 create or replace function public.upsert_published_course_with_content(
   course_data jsonb,
   structure_content jsonb
 )
-returns void
+returns jsonb
 language plpgsql
 security definer
 set search_path = ''
@@ -15,21 +15,94 @@ as $$
 declare
   course_uuid uuid;
   org_id uuid;
+  new_files_to_publish_size bigint := 0;
+  old_published_files_size bigint := 0;
+  net_storage_change bigint;
+  storage_result jsonb;
 begin
-  -- Extract IDs
+  -------------------------------------------------------------------
+  -- STEP 1: Extract and validate required identifiers
+  -------------------------------------------------------------------
   course_uuid := (course_data->>'id')::uuid;
   if course_uuid is null then
     raise exception 'course_data must contain a valid id field';
   end if;
 
   org_id := (course_data->>'organization_id')::uuid;
-
-  -- Permission check using helper function
-  if not public.can_publish_course(course_uuid, org_id, auth.uid()) then
-    raise exception 'You do not have permission to publish this course';
+  if org_id is null then
+    raise exception 'course_data must contain a valid organization_id field';
   end if;
 
-  -- Upsert into published_courses
+  -------------------------------------------------------------------
+  -- STEP 2: Check user permissions before proceeding
+  -------------------------------------------------------------------
+  if not public.can_publish_course(course_uuid, org_id, auth.uid()) then
+    return jsonb_build_object(
+      'success', false,
+      'message', 'You do not have permission to publish this course'
+    );
+  end if;
+
+  -------------------------------------------------------------------
+  -- STEP 3: Calculate size of files that will be copied to published
+  -------------------------------------------------------------------
+  -- These files will be COPIED from file_library to published_file_library
+  -- The originals stay in file_library (draft storage)
+  select coalesce(sum(fl.size), 0)
+  into new_files_to_publish_size
+  from public.file_library fl
+  where fl.course_id = course_uuid and fl.organization_id = org_id;
+
+  -------------------------------------------------------------------
+  -- STEP 4: Get size of EXISTING published files for this course
+  -------------------------------------------------------------------
+  -- These will be DELETED and replaced with the new files
+  -- This frees up space in published_file_library
+  select coalesce(sum(pfl.size), 0)
+  into old_published_files_size
+  from public.published_file_library pfl
+  where pfl.course_id = course_uuid and pfl.organization_id = org_id;
+
+  -------------------------------------------------------------------
+  -- STEP 5: Calculate net storage change and validate quota
+  -------------------------------------------------------------------
+  -- Net change in published_file_library storage:
+  -- We're removing old_published_files_size and adding new_files_to_publish_size
+  -- file_library stays unchanged (files are copied, not moved)
+  net_storage_change := new_files_to_publish_size - old_published_files_size;
+  
+  -- Only check quota if we're increasing storage
+  if net_storage_change > 0 then
+    storage_result := public.chk_org_storage_for_course(
+      org_id, 
+      net_storage_change, 
+      course_uuid
+    );
+    
+    if not (storage_result->>'allowed')::boolean then
+      return jsonb_build_object(
+        'success', false,
+        'message', storage_result->>'reason',
+        'data', jsonb_build_object(
+          'course_id', course_uuid,
+          'new_files_to_publish_size_bytes', new_files_to_publish_size,
+          'old_published_files_size_bytes', old_published_files_size,
+          'net_storage_change_bytes', net_storage_change,
+          'storage_check', storage_result
+        )
+      );
+    end if;
+  else
+    -- Shrinking or same size - always allowed
+    storage_result := jsonb_build_object(
+      'allowed', true,
+      'message', 'Storage check passed (shrinking or no change)'
+    );
+  end if;
+
+  -------------------------------------------------------------------
+  -- STEP 6: Upsert course metadata into published_courses table
+  -------------------------------------------------------------------
   insert into public.published_courses (
     id, organization_id, category_id, subcategory_id, is_active,
     name, description, image_url, blur_hash, visibility,
@@ -87,7 +160,56 @@ begin
     published_at = excluded.published_at,
     updated_at = timezone('utc', now());
 
-  -- Upsert into published_course_structure_content
+  -------------------------------------------------------------------
+  -- STEP 7: Delete old published files for this course
+  -------------------------------------------------------------------
+  -- Clear out the old published files before adding the new ones
+  delete from public.published_file_library
+  where course_id = course_uuid and organization_id = org_id;
+
+  -------------------------------------------------------------------
+  -- STEP 8: Copy files from file_library to published_file_library
+  -------------------------------------------------------------------
+  -- COPY (not move) files from builder to published
+  -- Files remain in file_library for future edits
+
+  insert into public.published_file_library (
+    organization_id,
+    course_id,
+    created_by,
+    updated_by,
+    name,
+    path,
+    size,
+    mime_type,
+    extension,
+    file_type,
+    blur_preview,
+    created_at,
+    updated_at
+  )
+  select
+    fl.organization_id,
+    fl.course_id,
+    fl.created_by,
+    fl.updated_by,
+    fl.name,
+    fl.path,
+    fl.size,
+    fl.mime_type,
+    fl.extension,
+    fl.file_type,
+    fl.blur_preview,
+    fl.created_at,
+    fl.updated_at
+  from public.file_library fl
+  where fl.course_id = course_uuid
+    and fl.organization_id = org_id;
+
+
+  -------------------------------------------------------------------
+  -- STEP 9: Upsert course structure content into separate table
+  -------------------------------------------------------------------
   insert into public.published_course_structure_content (
     id, course_structure_content
   )
@@ -98,9 +220,36 @@ begin
     course_structure_content = excluded.course_structure_content,
     updated_at = timezone('utc', now());
 
-  -- Enqueue progress deletion
+  -------------------------------------------------------------------
+  -- STEP 10: Queue background job to reset user progress
+  -------------------------------------------------------------------
   perform public.enqueue_delete_course_progress(course_uuid);
 
-  raise notice 'Course % published and progress reset queued', course_uuid;
+  -------------------------------------------------------------------
+  -- STEP 11: Return success with detailed storage information
+  -------------------------------------------------------------------
+  return jsonb_build_object(
+    'success', true,
+    'message', 'Course published successfully',
+    'data', jsonb_build_object(
+      'course_id', course_uuid,
+      'new_files_to_publish_size_bytes', new_files_to_publish_size,
+      'old_published_files_size_bytes', old_published_files_size,
+      'net_storage_change_bytes', net_storage_change,
+      'note', 'Files copied from file_library (draft) to published_file_library (published). Draft files remain unchanged.',
+      'storage_info', storage_result
+    )
+  );
+
+exception
+  when others then
+    return jsonb_build_object(
+      'success', false,
+      'message', 'Error publishing course: ' || sqlerrm,
+      'data', jsonb_build_object(
+        'course_id', course_uuid,
+        'error_detail', sqlstate
+      )
+    );
 end;
 $$;

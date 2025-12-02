@@ -196,14 +196,16 @@ export default function StorageIndex({ loaderData, params }: Route.ComponentProp
               <p className='text-muted-foreground text-xs font-medium'>Published Files</p>
               <p className='text-lg font-semibold'>{formatStorage(publishedBytes)}</p>
               <p className='text-muted-foreground mt-1 text-xs'>
-                {((publishedBytes / limitBytes) * 100).toFixed(1)}% of limit
+                {limitBytes > 0 ? ((publishedBytes / limitBytes) * 100).toFixed(1) : '0.0'}% of
+                limit
               </p>
             </div>
             <div className='bg-muted/30 rounded-md p-3'>
               <p className='text-muted-foreground text-xs font-medium'>Unpublished Files</p>
               <p className='text-lg font-semibold'>{formatStorage(unpublishedBytes)}</p>
               <p className='text-muted-foreground mt-1 text-xs'>
-                {((unpublishedBytes / limitBytes) * 100).toFixed(1)}% of limit
+                {limitBytes > 0 ? ((unpublishedBytes / limitBytes) * 100).toFixed(1) : '0.0'}% of
+                limit
               </p>
             </div>
           </div>
@@ -324,7 +326,7 @@ export default function StorageIndex({ loaderData, params }: Route.ComponentProp
                 {data.totalFiles} total {data.totalFiles === 1 ? 'file' : 'files'}
               </span>
               <span>
-                {usagePercentage.toFixed(1)}% of {formatStorage(limitBytes)} limit
+                {(usagePercentage || 0).toFixed(1)}% of {formatStorage(limitBytes || 0)} limit
               </span>
             </div>
           </div>

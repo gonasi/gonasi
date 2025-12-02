@@ -206,9 +206,6 @@ schema_paths = [
   './schemas/tierLimits/checks/check_storage_limit_for_org.sql',
 
 
-  './schemas/tierLimits/utils/get_org_storage_usage.sql',
-
-
   # # courses & chapters & pricing
   './schemas/courses/courses_schema_and_indexes.sql',
   './schemas/courses/course_editors_schema_and_indexes.sql',
@@ -265,6 +262,7 @@ schema_paths = [
   './schemas/publishedCourses/utils/queues/process_delete_course_progress.sql',
   './schemas/publishedCourses/utils/queues/enqueue_delete_course_progress.sql',
 
+  './schemas/publishedCourses/utils/chk_org_storage_for_course.sql',
   './schemas/publishedCourses/utils/can_publish_course.sql',
   './schemas/publishedCourses/utils/upsert_published_course_with_content.sql',
   './schemas/publishedCourses/utils/get_course_progress_overview.sql',

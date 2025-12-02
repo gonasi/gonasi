@@ -6,4 +6,3 @@ export * from './editFile';
 export * from './deleteFile';
 export * from './getStorageUsageAnalytics';
 export * from './getStorageUsagePerCourse';
-export * from './getOrgStorageUsage';

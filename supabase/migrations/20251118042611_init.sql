@@ -759,7 +759,7 @@ alter table "public"."role_permissions" enable row level security;
     "max_members_per_org" integer not null,
     "max_free_courses_per_org" integer not null,
     "ai_tools_enabled" boolean not null default true,
-    "ai_usage_limit_monthly" integer not null default 0,
+    "ai_usage_limit_monthly" integer,
     "custom_domains_enabled" boolean not null default false,
     "max_custom_domains" integer,
     "analytics_level" public.analytics_level not null,
@@ -2327,7 +2327,7 @@ alter table "public"."published_file_library" validate constraint "valid_file_ex
 
 alter table "public"."role_permissions" add constraint "role_permissions_role_permission_key" UNIQUE using index "role_permissions_role_permission_key";
 
-alter table "public"."tier_limits" add constraint "tier_limits_ai_usage_limit_monthly_check" CHECK ((ai_usage_limit_monthly >= 0)) not valid;
+alter table "public"."tier_limits" add constraint "tier_limits_ai_usage_limit_monthly_check" CHECK (((ai_usage_limit_monthly IS NULL) OR (ai_usage_limit_monthly >= 0))) not valid;
 
 alter table "public"."tier_limits" validate constraint "tier_limits_ai_usage_limit_monthly_check";
 
@@ -3171,11 +3171,11 @@ CREATE OR REPLACE FUNCTION public.check_storage_limit_for_org(p_org_id uuid, p_n
  SET search_path TO ''
 AS $function$
 declare
-  v_current_usage bigint := 0;
-  v_storage_limit_mb integer := 0;
-  v_storage_limit_bytes bigint := 0;
-  v_limits jsonb;
-  v_remaining_bytes bigint := 0;
+  v_current_usage bigint;      -- Current total storage usage in bytes
+  v_storage_limit_mb integer;  -- Storage limit in megabytes
+  v_storage_limit_bytes bigint;-- Storage limit converted to bytes
+  v_limits json;               -- Tier limits JSON object
+  v_remaining_bytes bigint;    -- Remaining storage in bytes
 begin
   -------------------------------------------------------------------
   -- 0. Validate file size
@@ -3192,9 +3192,9 @@ begin
   end if;
 
   -------------------------------------------------------------------
-  -- 1. Fetch organization's tier limits and convert composite to jsonb
+  -- 1. Fetch organization's tier limits
   -------------------------------------------------------------------
-  select to_jsonb(public.get_tier_limits(p_org_id))
+  select public.get_tier_limits(p_org_id)
   into v_limits;
 
   if v_limits is null then
@@ -3208,8 +3208,20 @@ begin
     );
   end if;
 
-  v_storage_limit_mb := coalesce((v_limits ->> 'storage_limit_mb_per_org')::int, 0);
-  v_storage_limit_bytes := v_storage_limit_mb::bigint * 1024 * 1024;
+  v_storage_limit_mb := (v_limits ->> 'storage_limit_mb_per_org')::int;
+
+  if v_storage_limit_mb is null then
+    return jsonb_build_object(
+      'success', false,
+      'message', 'Organization has no storage limit defined.',
+      'data', jsonb_build_object(
+        'file_size', p_new_file_size,
+        'remaining_bytes', null
+      )
+    );
+  end if;
+
+  v_storage_limit_bytes := v_storage_limit_mb * 1024 * 1024;
 
   -------------------------------------------------------------------
   -- 2. Calculate current storage usage
@@ -3251,16 +3263,6 @@ begin
       )
     );
   end if;
-exception
-  when others then
-    return jsonb_build_object(
-      'success', false,
-      'message', sqlerrm,
-      'data', jsonb_build_object(
-        'file_size', p_new_file_size,
-        'remaining_bytes', null
-      )
-    );
 end;
 $function$
 ;
@@ -5690,43 +5692,42 @@ $function$
 ;
 
 CREATE OR REPLACE FUNCTION public.get_org_storage_usage(p_org_id uuid)
- RETURNS jsonb
+ RETURNS json
  LANGUAGE plpgsql
  STABLE SECURITY DEFINER
  SET search_path TO ''
 AS $function$
 declare
-  v_limits jsonb;
-  v_storage_limit_mb integer := 0;
-  v_storage_limit_bytes bigint := 0;
+  v_limits json;
+  v_storage_limit_mb integer;
+  v_storage_limit_bytes bigint;
 
   v_file_usage bigint := 0;
   v_published_usage bigint := 0;
   v_total_usage bigint := 0;
-  v_data jsonb;
+  v_data json;
 begin
   -------------------------------------------------------------------
-  -- 1. Fetch tier limits and convert composite type to JSONB
+  -- 1. Fetch tier limits via helper
   -------------------------------------------------------------------
-  select to_jsonb(public.get_tier_limits(p_org_id))
+  select public.get_tier_limits(p_org_id)
   into v_limits;
 
   if v_limits is null then
-    return jsonb_build_object(
+    return json_build_object(
       'success', false,
       'message', 'No active subscription found for organization',
       'data', null
     );
   end if;
 
-  -- Safely extract storage limit (default to 0 if missing)
-  v_storage_limit_mb := coalesce((v_limits ->> 'storage_limit_mb_per_org')::int, 0);
-  v_storage_limit_bytes := v_storage_limit_mb::bigint * 1024 * 1024;
+  v_storage_limit_mb := (v_limits ->> 'storage_limit_mb_per_org')::int;
+  v_storage_limit_bytes := v_storage_limit_mb * 1024 * 1024;
 
   -------------------------------------------------------------------
   -- 2. Usage from file_library
   -------------------------------------------------------------------
-  select coalesce(sum(size),0)
+  select coalesce(sum(size), 0)
   into v_file_usage
   from public.file_library
   where organization_id = p_org_id;
@@ -5734,7 +5735,7 @@ begin
   -------------------------------------------------------------------
   -- 3. Usage from published_file_library
   -------------------------------------------------------------------
-  select coalesce(sum(size),0)
+  select coalesce(sum(size), 0)
   into v_published_usage
   from public.published_file_library
   where organization_id = p_org_id;
@@ -5747,7 +5748,7 @@ begin
   -------------------------------------------------------------------
   -- 5. Data payload
   -------------------------------------------------------------------
-  v_data := jsonb_build_object(
+  v_data := json_build_object(
     'current_usage_bytes', v_total_usage,
     'storage_limit_bytes', v_storage_limit_bytes,
     'remaining_bytes', greatest(v_storage_limit_bytes - v_total_usage, 0),
@@ -5762,7 +5763,7 @@ begin
   -------------------------------------------------------------------
   -- 6. Success response
   -------------------------------------------------------------------
-  return jsonb_build_object(
+  return json_build_object(
     'success', true,
     'message', 'Storage usage fetched successfully',
     'data', v_data
@@ -5770,7 +5771,7 @@ begin
 
 exception
   when others then
-    return jsonb_build_object(
+    return json_build_object(
       'success', false,
       'message', sqlerrm,
       'data', null
@@ -7035,6 +7036,30 @@ begin
 
   return NEW;
 end;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.org_usage_counts(p_org uuid)
+ RETURNS jsonb
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+  with members as (
+    select count(*) as total_members
+    from public.organization_members m
+    where m.organization_id = p_org
+  ),
+  free as (
+    select count(*) as free_courses
+    from public.published_courses pc
+    where pc.organization_id = p_org
+      and pc.has_free_tier = true
+  )
+  select jsonb_build_object(
+    'total_members', (select total_members from members),
+    'free_courses', (select free_courses from free)
+  );
 $function$
 ;
 
@@ -13581,6 +13606,5 @@ using ((EXISTS ( SELECT 1
 with check ((EXISTS ( SELECT 1
    FROM public.organization_members om
   WHERE ((om.user_id = ( SELECT auth.uid() AS uid)) AND (( SELECT realtime.topic() AS topic) = ('org-notifications:'::text || (om.organization_id)::text)) AND (messages.extension = 'broadcast'::text)))));
-
 
 

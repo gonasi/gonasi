@@ -16,6 +16,48 @@ interface UpsertPublishCourseArgs {
   courseId: string;
 }
 
+/**
+ * FUNCTION: upsertPublishCourse
+ *
+ * PURPOSE:
+ *   Publishes a course by coordinating multiple steps:
+ *   1. Permission validation
+ *   2. Course data transformation
+ *   3. Thumbnail file management
+ *   4. Database upsert with storage quota validation
+ *   5. Course file copying and tracking
+ *
+ * WHAT THIS FUNCTION DOES:
+ *   - Verifies the user has permission to publish the course
+ *   - Fetches and transforms course data for publishing
+ *   - Copies course thumbnail to published storage bucket
+ *   - Calls the PL/pgSQL upsert_published_course_with_content function
+ *     which validates storage quota before committing changes
+ *   - Copies all course files to published storage
+ *   - Creates records for published files in the database
+ *
+ * INPUTS:
+ *   supabase: Authenticated Supabase client
+ *   organizationId: UUID of the organization
+ *   courseId: UUID of the course to publish
+ *
+ * RETURN VALUE:
+ *   ApiResponse object:
+ *   {
+ *     success: boolean,  -- true if course published, false if any step failed
+ *     message: string,   -- explanation of what happened
+ *     data?: {           -- optional, included on success with storage details
+ *       remaining_storage_bytes: bigint
+ *     }
+ *   }
+ *
+ * ERROR SCENARIOS:
+ *   - User lacks publish permission → returns success: false
+ *   - Storage quota would be exceeded → returns success: false with quota message
+ *   - Thumbnail copy fails → returns success: false
+ *   - Course files fail to copy → returns partial success (if some copied)
+ *   - Database errors → returns success: false
+ */
 export const upsertPublishCourse = async ({
   supabase,
   organizationId,
@@ -23,7 +65,9 @@ export const upsertPublishCourse = async ({
 }: UpsertPublishCourseArgs): Promise<ApiResponse> => {
   const userId = await getUserId(supabase);
 
-  // Step 1: Check if user can publish
+  // =========================================================================
+  // STEP 1: Check if user has permission to publish this course
+  // =========================================================================
   const { data: canPublishData, error: canPublishError } = await supabase.rpc(
     'can_publish_course',
     {
@@ -48,11 +92,20 @@ export const upsertPublishCourse = async ({
     };
   }
 
-  // Step 2: Get transformed data for publishing
+  // =========================================================================
+  // STEP 2: Fetch and transform course data into publishing format
+  // =========================================================================
+  // This retrieves course metadata, structure, and prepares it for the
+  // published_courses table. Data transformation includes enriching course
+  // info with computed fields like structure overview and enrollment stats.
   const data = await getTransformedDataToPublish({ supabase, organizationId, courseId });
 
   try {
-    // Step 3: Handle thumbnail copy first
+    // =========================================================================
+    // STEP 3: Handle thumbnail file management
+    // =========================================================================
+    // First remove any old published thumbnail, then copy the current one
+    // to the published bucket so the course thumbnail is immutable.
     await supabase.storage.from(PUBLISHED_THUMBNAILS).remove([data.image_url]);
 
     const { error: copyError } = await supabase.storage
@@ -69,46 +122,81 @@ export const upsertPublishCourse = async ({
       };
     }
 
-    // Step 4: Upsert published course via RPC
-    const { error: rpcError } = await supabase.rpc('upsert_published_course_with_content', {
-      course_data: {
-        id: data.id,
-        organization_id: data.organization_id ?? '',
-        category_id: data.category_id,
-        subcategory_id: data.subcategory_id,
-        is_active: data.is_active,
-        name: data.name,
-        description: data.description,
-        image_url: data.image_url,
-        blur_hash: data.blur_hash,
-        visibility: data.visibility,
-        course_structure_overview: data.course_structure_overview,
-        total_chapters: data.total_chapters,
-        total_lessons: data.total_lessons,
-        total_blocks: data.total_blocks,
-        pricing_tiers: data.pricing_tiers,
-        has_free_tier: data.has_free_tier,
-        min_price: data.min_price,
-        total_enrollments: data.total_enrollments,
-        active_enrollments: data.active_enrollments,
-        completion_rate: data.completion_rate,
-        average_rating: data.average_rating,
-        total_reviews: data.total_reviews,
-        published_by: userId,
-        published_at: new Date().toISOString(),
+    // =========================================================================
+    // STEP 4: Upsert published course with storage quota validation
+    // =========================================================================
+    // IMPORTANT: The PL/pgSQL function now:
+    //   - Calculates storage impact of the course
+    //   - Validates organization has sufficient quota
+    //   - Returns detailed storage metrics on success
+    //   - Returns quota error on failure (prevents partial publishes)
+    //
+    // We must check the returned data for success status and handle
+    // quota violations before proceeding to file operations.
+    const { data: rpcResult, error: rpcError } = await supabase.rpc(
+      'upsert_published_course_with_content',
+      {
+        course_data: {
+          id: data.id,
+          organization_id: data.organization_id ?? '',
+          category_id: data.category_id,
+          subcategory_id: data.subcategory_id,
+          is_active: data.is_active,
+          name: data.name,
+          description: data.description,
+          image_url: data.image_url,
+          blur_hash: data.blur_hash,
+          visibility: data.visibility,
+          course_structure_overview: data.course_structure_overview,
+          total_chapters: data.total_chapters,
+          total_lessons: data.total_lessons,
+          total_blocks: data.total_blocks,
+          pricing_tiers: data.pricing_tiers,
+          has_free_tier: data.has_free_tier,
+          min_price: data.min_price,
+          total_enrollments: data.total_enrollments,
+          active_enrollments: data.active_enrollments,
+          completion_rate: data.completion_rate,
+          average_rating: data.average_rating,
+          total_reviews: data.total_reviews,
+          published_by: userId,
+          published_at: new Date().toISOString(),
+        },
+        structure_content: data.course_structure_content,
       },
-      structure_content: data.course_structure_content,
-    });
+    );
 
+    // Handle RPC execution errors (network, database connection issues)
     if (rpcError) {
-      console.error('[upsertPublishCourse] RPC upsert error:', rpcError);
+      console.error('[upsertPublishCourse] RPC execution error:', rpcError);
       return {
         success: false,
         message: rpcError.message,
       };
     }
 
-    // Step 5: Delete existing published files
+    // Handle RPC logical errors (permissions, validation, quota exceeded)
+    // The PL/pgSQL function returns a JSONB response with success status
+    if (rpcResult && !rpcResult.success) {
+      console.error('[upsertPublishCourse] RPC validation error:', rpcResult.message);
+      return {
+        success: false,
+        message: rpcResult.message,
+        data: rpcResult.data,
+      };
+    }
+
+    // Log storage info on successful publish for monitoring
+    if (rpcResult?.data) {
+      console.log(
+        `[upsertPublishCourse] Course published. Storage change: ${rpcResult.data.net_size_change_bytes} bytes, Remaining: ${rpcResult.data.remaining_storage_bytes} bytes`,
+      );
+    }
+
+    // =========================================================================
+    // STEP 5: Delete existing published files from previous publish
+    // =========================================================================
+    // Clean up old files so we have a fresh set of published files
     await supabase.from('published_file_library').delete().match({
       course_id: courseId,
       organization_id: organizationId,
@@ -121,9 +209,13 @@ export const upsertPublishCourse = async ({
     });
     if (deleteError) {
       console.error('[upsertPublishCourse] Failed to delete course files:', deleteError);
+      // This is non-fatal; we'll attempt to copy new files anyway
     }
 
-    // Step 6: Copy course files to published folder
+    // =========================================================================
+    // STEP 6: Copy course files to published storage bucket
+    // =========================================================================
+    // Fetch all files associated with this course in the draft bucket
     const { data: fileData, error: fileError } = await supabase
       .from('file_library')
       .select('*')
@@ -141,6 +233,7 @@ export const upsertPublishCourse = async ({
       const copyResults = [];
       const failedCopies = [];
 
+      // Copy each file to the published bucket
       for (const file of fileData) {
         if (!file.path) continue;
 
@@ -153,6 +246,7 @@ export const upsertPublishCourse = async ({
         else copyResults.push({ id: file.id, path: file.path });
       }
 
+      // If some files failed to copy, decide whether to proceed or fail
       if (failedCopies.length > 0) {
         console.error('[upsertPublishCourse] Failed to copy files:', failedCopies);
         return {
@@ -164,7 +258,10 @@ export const upsertPublishCourse = async ({
         };
       }
 
-      // Insert copied files into published_file_library
+      // =========================================================================
+      // STEP 7: Create database records for copied files
+      // =========================================================================
+      // Track the published files in the database so we can retrieve them later
       const { error: insertError } = await supabase.from('published_file_library').insert(fileData);
       if (insertError) {
         console.error(
@@ -180,9 +277,19 @@ export const upsertPublishCourse = async ({
       console.log(`[upsertPublishCourse] Successfully copied ${copyResults.length} files`);
     }
 
-    return { success: true, message: 'Course published successfully.' };
+    // =========================================================================
+    // SUCCESS: Return detailed success response
+    // =========================================================================
+    return {
+      success: true,
+      message: 'Course published successfully.',
+      data: rpcResult as any, // Include storage metrics from PL/pgSQL function
+    };
   } catch (err) {
     console.error('[upsertPublishCourse] Unexpected error:', err);
-    return { success: false, message: 'An unexpected error occurred while publishing the course.' };
+    return {
+      success: false,
+      message: 'An unexpected error occurred while publishing the course.',
+    };
   }
 };
