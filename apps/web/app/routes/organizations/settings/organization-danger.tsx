@@ -1,7 +1,7 @@
 import { Outlet, useOutletContext } from 'react-router';
 import { LogOut } from 'lucide-react';
 
-import type { Route } from './+types/organization-profile';
+import type { Route } from './+types/organization-danger';
 
 import { BannerCard } from '~/components/cards';
 import { NavLinkButton } from '~/components/ui/button';
@@ -14,7 +14,7 @@ export default function OrganizationDanger({ params }: Route.ComponentProps) {
   return (
     <>
       <div className='flex max-w-lg flex-col space-y-10 md:space-y-12'>
-        {data.member.role === 'owner' ? (
+        {data.orgRole === 'owner' ? (
           <div className='px-4 pb-8'>
             <BannerCard
               message='Coming soon'
