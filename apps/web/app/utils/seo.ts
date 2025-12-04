@@ -131,10 +131,12 @@ export function generateCourseSchema(course: {
   description: string;
   url: string;
   image: string;
-  provider: string;
+  provider: string | { name: string; url: string };
   author?: string;
   price?: number;
   currency?: string;
+  totalChapters?: number;
+  totalLessons?: number;
 }) {
   const schema: Record<string, unknown> = {
     '@context': 'https://schema.org',
@@ -143,10 +145,17 @@ export function generateCourseSchema(course: {
     description: course.description,
     url: course.url,
     image: course.image,
-    provider: {
-      '@type': 'Organization',
-      name: course.provider,
-    },
+    provider:
+      typeof course.provider === 'string'
+        ? {
+            '@type': 'Organization',
+            name: course.provider,
+          }
+        : {
+            '@type': 'Organization',
+            name: course.provider.name,
+            url: course.provider.url,
+          },
   };
 
   if (course.author) {
@@ -161,6 +170,22 @@ export function generateCourseSchema(course: {
       '@type': 'Offer',
       price: course.price,
       priceCurrency: course.currency || 'USD',
+    };
+  }
+
+  // Add course structure information
+  if (course.totalChapters !== undefined || course.totalLessons !== undefined) {
+    const educationalUse = [];
+    if (course.totalChapters !== undefined) {
+      educationalUse.push(`${course.totalChapters} chapters`);
+    }
+    if (course.totalLessons !== undefined) {
+      educationalUse.push(`${course.totalLessons} lessons`);
+    }
+    schema.hasCourseInstance = {
+      '@type': 'CourseInstance',
+      courseMode: 'online',
+      educationalUse: educationalUse.join(', '),
     };
   }
 
