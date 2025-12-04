@@ -73,7 +73,7 @@ export default function CourseOverview({ loaderData, params }: Route.ComponentPr
 
   return (
     <>
-      <section>
+      <section className='pb-16'>
         <motion.div
           className='flex flex-col space-y-8'
           initial='hidden'
