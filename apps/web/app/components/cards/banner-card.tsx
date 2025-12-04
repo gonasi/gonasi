@@ -23,28 +23,28 @@ const variantStyles: Record<
 > = {
   info: {
     icon: Info,
-    textColor: 'text-info',
-    bgColor: 'bg-info/5',
+    textColor: 'text-info-foreground',
+    bgColor: 'bg-info',
   },
   success: {
     icon: CheckCircle,
-    textColor: 'text-success',
-    bgColor: 'bg-success/5',
+    textColor: 'text-success-foreground',
+    bgColor: 'bg-success',
   },
   warning: {
     icon: AlertTriangle,
-    textColor: 'text-warning',
-    bgColor: 'bg-warning/5',
+    textColor: 'text-warning-foreground',
+    bgColor: 'bg-warning',
   },
   error: {
     icon: AlertOctagon,
-    textColor: 'text-danger',
-    bgColor: 'bg-danger/5',
+    textColor: 'text-danger-foreground',
+    bgColor: 'bg-danger',
   },
   tip: {
     icon: Lightbulb,
-    textColor: 'text-tip',
-    bgColor: 'bg-tip/5',
+    textColor: 'text-tip-foreground',
+    bgColor: 'bg-tip',
   },
   restricted: {
     icon: Lock,
