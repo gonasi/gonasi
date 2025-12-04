@@ -9,50 +9,83 @@ export function Hero() {
   const isLoggedOut = !isActiveUserProfileLoading && !activeUserProfile;
 
   return (
-    <section className='relative overflow-hidden'>
+    <section className='relative overflow-hidden bg-gradient-to-b from-background via-background to-muted/20'>
       {/* Background */}
-      <div className='bg-grid-pattern absolute inset-0 opacity-5' />
-      <div className='bg-primary/10 pointer-events-none absolute -top-20 left-1/2 h-[600px] w-full -translate-x-1/2 rounded-full blur-[180px]' />
+      <div className='bg-grid-pattern absolute inset-0 opacity-[0.03]' />
+      <div className='bg-primary/5 pointer-events-none absolute -top-20 left-1/2 h-[600px] w-full -translate-x-1/2 rounded-full blur-[200px]' />
 
-      <div className='relative container mx-auto px-6 py-8 lg:py-32'>
+      <div className='relative container mx-auto px-6 py-16 lg:py-32'>
         <div className='grid items-center gap-16 lg:grid-cols-2'>
           {/* LEFT SIDE */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, ease: 'easeOut' }}
+            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
             className='space-y-8'
           >
             {/* Badge */}
             <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
+              initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.1, duration: 0.4 }}
-              className='bg-secondary text-secondary-foreground inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium'
+              transition={{ delay: 0.2, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+              whileHover={{ scale: 1.02 }}
+              className='bg-primary/10 text-primary border-primary/20 inline-flex items-center gap-2 rounded-full border px-5 py-2.5 text-sm font-semibold shadow-sm backdrop-blur-sm'
             >
-              <Sparkles className='h-4 w-4' />
+              <motion.div
+                animate={{ rotate: [0, 10, -10, 10, 0] }}
+                transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+              >
+                <Sparkles className='h-4 w-4' />
+              </motion.div>
               <span>The Future of Skill Learning</span>
             </motion.div>
 
             {/* Heading */}
-            <h1 className='text-5xl leading-tight font-bold text-balance lg:text-7xl'>
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+              className='text-foreground text-5xl font-extrabold leading-[1.1] tracking-tight text-balance lg:text-7xl'
+            >
               Build Courses That
-              <span className='text-primary'> Truly Engage.</span>
-            </h1>
+              <motion.span
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.6, duration: 0.8 }}
+                className='text-primary block'
+              >
+                {' '}
+                Truly Engage.
+              </motion.span>
+            </motion.h1>
 
             {/* Subtext */}
-            <p className='font-secondary text-muted-foreground max-w-2xl text-xl lg:text-2xl'>
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+              className='text-foreground/80 font-secondary max-w-2xl text-lg leading-relaxed lg:text-xl'
+            >
               Gonasi empowers you to create interactive, gamified learning experiences turning every
               lesson into lasting understanding.
-            </p>
+            </motion.p>
 
             {/* CTA */}
-            <div className='flex flex-col gap-4 sm:flex-row'>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+              className='flex flex-col gap-4 sm:flex-row'
+            >
               {isLoggedOut ? (
-                <motion.div whileHover={{ y: -2 }} transition={{ duration: 0.2 }}>
+                <motion.div
+                  whileHover={{ y: -2, scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  transition={{ duration: 0.2, ease: 'easeOut' }}
+                >
                   <NavLinkButton
                     size='lg'
-                    className='text-lg'
+                    className='shadow-lg shadow-primary/25 text-lg transition-shadow hover:shadow-xl hover:shadow-primary/30'
                     to='/login'
                     rightIcon={<ArrowRight />}
                   >
@@ -60,11 +93,15 @@ export function Hero() {
                   </NavLinkButton>
                 </motion.div>
               ) : (
-                <motion.div whileHover={{ y: -2 }} transition={{ duration: 0.2 }}>
+                <motion.div
+                  whileHover={{ y: -2, scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  transition={{ duration: 0.2, ease: 'easeOut' }}
+                >
                   <NavLinkButton
                     size='lg'
                     variant='secondary'
-                    className='text-lg'
+                    className='text-lg shadow-md transition-shadow hover:shadow-lg'
                     to='/go/explore'
                     rightIcon={<ArrowRight />}
                   >
@@ -72,21 +109,27 @@ export function Hero() {
                   </NavLinkButton>
                 </motion.div>
               )}
-            </div>
+            </motion.div>
 
             {/* Value Props */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.3, duration: 0.6 }}
-              className='text-muted-foreground flex items-center gap-8 text-sm'
+              transition={{ delay: 0.6, duration: 0.8 }}
+              className='text-foreground/70 flex flex-wrap items-center gap-6 text-sm font-medium'
             >
               {['No credit card required', 'Free forever plan', 'Made for educators & teams'].map(
                 (label, i) => (
-                  <div key={i} className='gap flex items-center gap-2'>
-                    <div className='bg-primary h-8 w-2 rounded-full md:h-2' />
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.7 + i * 0.1, duration: 0.5 }}
+                    className='flex items-center gap-2'
+                  >
+                    <div className='bg-primary h-1.5 w-1.5 rounded-full' />
                     <span>{label}</span>
-                  </div>
+                  </motion.div>
                 ),
               )}
             </motion.div>
@@ -96,16 +139,23 @@ export function Hero() {
           <motion.div
             initial={{ opacity: 0, x: 60 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.7, ease: 'easeOut' }}
+            transition={{ duration: 0.8, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
             className='relative hidden lg:block'
           >
-            <div className='bg-gradient-primary absolute -inset-6 rounded-full opacity-20 blur-3xl' />
+            <motion.div
+              animate={{
+                scale: [1, 1.05, 1],
+                opacity: [0.15, 0.25, 0.15],
+              }}
+              transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+              className='bg-primary absolute -inset-6 rounded-full blur-3xl'
+            />
             <motion.img
               src='assets/images/hero-learning.jpg'
               alt='Interactive and gamified learning experience'
-              className='shadow-card relative w-full rounded-2xl'
-              whileHover={{ scale: 1.02 }}
-              transition={{ duration: 0.3 }}
+              className='shadow-2xl ring-1 ring-border/50 relative w-full rounded-2xl'
+              whileHover={{ scale: 1.02, rotate: 0.5 }}
+              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
             />
           </motion.div>
         </div>

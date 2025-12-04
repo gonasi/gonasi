@@ -42,7 +42,7 @@ export default function MainLayout({ loaderData }: Route.ComponentProps) {
   return (
     <div>
       <TopNav user={activeUserProfile} userRole={loaderData} />
-      <section className='container mx-auto min-h-screen'>
+      <section className='min-h-screen'>
         <Outlet />
       </section>
       <Footer />
