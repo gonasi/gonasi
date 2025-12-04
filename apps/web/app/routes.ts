@@ -329,6 +329,10 @@ export default [
   route('api/files/:fileId/signed-url', 'routes/api/get-signed-url.ts'),
   route('api/files/:courseId/search', 'routes/api/search-files.ts'),
 
+  // SEO resource routes
+  route('sitemap.xml', 'routes/sitemap[.]xml.ts'),
+  route('robots.txt', 'routes/robots[.]txt.ts'),
+
   route('signout', 'routes/auth/signout.tsx'),
 
   // /*

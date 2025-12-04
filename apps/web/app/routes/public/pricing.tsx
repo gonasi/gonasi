@@ -2,6 +2,24 @@ import type { Route } from './+types/pricing';
 
 import { NotFoundCard } from '~/components/cards';
 import { createClient } from '~/lib/supabase/supabase.server';
+import { generateMetaTags } from '~/utils/seo';
+
+export function meta() {
+  const siteUrl = 'https://gonasi.com';
+
+  return generateMetaTags(
+    {
+      title: 'Pricing Plans • Gonasi',
+      description:
+        'Choose the perfect plan for your learning needs. From free forever plans to enterprise solutions, Gonasi has flexible pricing for educators and organizations.',
+      keywords:
+        'Gonasi pricing, LMS pricing, course builder pricing, education platform pricing, free LMS, affordable online learning',
+      url: `${siteUrl}/pricing`,
+      type: 'website',
+    },
+    siteUrl,
+  );
+}
 
 export function headers(_: Route.HeadersArgs) {
   return {

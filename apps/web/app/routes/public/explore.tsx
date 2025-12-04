@@ -4,7 +4,7 @@ import { Play } from 'lucide-react';
 
 import { fetchPublishedPublicCourses } from '@gonasi/database/publishedCourses';
 
-import type { Route } from './+types/home';
+import type { Route } from './+types/explore';
 
 import { UserAvatar } from '~/components/avatars';
 import { NotFoundCard } from '~/components/cards';
@@ -15,39 +15,23 @@ import { Badge } from '~/components/ui/badge';
 import { NavLinkButton } from '~/components/ui/button';
 import { createClient } from '~/lib/supabase/supabase.server';
 import { cn } from '~/lib/utils';
+import { generateMetaTags } from '~/utils/seo';
 
 export function meta() {
-  return [
-    { title: 'Explore Courses • Gonasi' },
+  const siteUrl = 'https://gonasi.com';
+
+  return generateMetaTags(
     {
-      name: 'description',
-      content:
+      title: 'Explore Courses • Gonasi',
+      description:
         'Explore interactive courses on Gonasi. Engage with dynamic challenges, real-time feedback, and personalized learning journeys.',
-    },
-    {
-      name: 'keywords',
-      content:
+      keywords:
         'Gonasi, interactive courses, online learning, e-learning platform, explore courses, no-code education, dynamic learning',
+      url: `${siteUrl}/explore`,
+      type: 'website',
     },
-    { name: 'robots', content: 'index, follow' },
-    { name: 'author', content: 'Gonasi Team' },
-    { property: 'og:title', content: 'Explore Courses • Gonasi' },
-    {
-      property: 'og:description',
-      content:
-        'Browse interactive learning experiences built to engage and educate—only on Gonasi.',
-    },
-    { property: 'og:type', content: 'website' },
-    { property: 'og:url', content: 'https://gonasi.com/go/explore' },
-    { property: 'og:image', content: 'https://gonasi.com/assets/images/seo/logo.png' },
-    { name: 'twitter:card', content: 'summary_large_image' },
-    { name: 'twitter:title', content: 'Explore Courses • Gonasi' },
-    {
-      name: 'twitter:description',
-      content: 'Find and explore engaging interactive courses on Gonasi today.',
-    },
-    { name: 'twitter:image', content: 'https://gonasi.com/assets/images/seo/logo.png' },
-  ];
+    siteUrl,
+  );
 }
 
 export function headers(_: Route.HeadersArgs) {
