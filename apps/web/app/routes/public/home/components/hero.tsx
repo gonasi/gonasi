@@ -9,7 +9,7 @@ export function Hero() {
   const isLoggedOut = !isActiveUserProfileLoading && !activeUserProfile;
 
   return (
-    <section className='relative overflow-hidden bg-gradient-to-b from-background via-background to-muted/20'>
+    <section className='from-background via-background to-muted/20 relative overflow-hidden bg-gradient-to-b'>
       {/* Background */}
       <div className='bg-grid-pattern absolute inset-0 opacity-[0.03]' />
       <div className='bg-primary/5 pointer-events-none absolute -top-20 left-1/2 h-[600px] w-full -translate-x-1/2 rounded-full blur-[200px]' />
@@ -45,7 +45,7 @@ export function Hero() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-              className='text-foreground text-5xl font-extrabold leading-[1.1] tracking-tight text-balance lg:text-7xl'
+              className='text-foreground text-5xl leading-[1.1] font-extrabold tracking-tight text-balance lg:text-7xl'
             >
               Build Courses That
               <motion.span
@@ -85,7 +85,7 @@ export function Hero() {
                 >
                   <NavLinkButton
                     size='lg'
-                    className='shadow-lg shadow-primary/25 text-lg transition-shadow hover:shadow-xl hover:shadow-primary/30'
+                    className='shadow-primary/25 hover:shadow-primary/30 text-lg shadow-lg transition-shadow hover:shadow-xl'
                     to='/login'
                     rightIcon={<ArrowRight />}
                   >
@@ -153,7 +153,7 @@ export function Hero() {
             <motion.img
               src='assets/images/hero-learning.jpg'
               alt='Interactive and gamified learning experience'
-              className='shadow-2xl ring-1 ring-border/50 relative w-full rounded-2xl'
+              className='ring-border/50 relative w-full rounded-2xl shadow-2xl ring-1'
               whileHover={{ scale: 1.02, rotate: 0.5 }}
               transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
             />

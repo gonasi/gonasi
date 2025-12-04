@@ -22,11 +22,12 @@ export function meta() {
 
   return generateMetaTags(
     {
-      title: 'Explore Courses • Gonasi',
+      title:
+        'Explore Interactive Courses Built with Gonasi | Examples of Creator-Built Learning',
       description:
-        'Explore interactive courses on Gonasi. Engage with dynamic challenges, real-time feedback, and personalized learning journeys.',
+        'Discover interactive courses built by creators using Gonasi - see what you can build. Examples of gamified learning, interactive quizzes, and engaging educational content. Courses built with the Kahoot alternative platform. Learn from creators who built interactive learning experiences like Brilliant.org.',
       keywords:
-        'Gonasi, interactive courses, online learning, e-learning platform, explore courses, no-code education, dynamic learning',
+        'gonasi courses, interactive courses examples, built with gonasi, creator-made courses, gamified learning examples, interactive quiz examples, kahoot alternative courses, brilliant.org style courses, duolingo-like courses, course builder examples, interactive learning showcase',
       url: `${siteUrl}/explore`,
       type: 'website',
     },

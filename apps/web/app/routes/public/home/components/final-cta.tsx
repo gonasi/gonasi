@@ -25,7 +25,7 @@ export function FinalCTA() {
           opacity: [0.1, 0.2, 0.1],
         }}
         transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }}
-        className='pointer-events-none absolute left-1/2 top-1/2 h-[800px] w-full -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/10 blur-[200px]'
+        className='pointer-events-none absolute top-1/2 left-1/2 h-[800px] w-full -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/10 blur-[200px]'
       />
 
       <div className='relative container mx-auto px-6'>
@@ -43,7 +43,7 @@ export function FinalCTA() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.1, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-              className='text-primary-foreground text-5xl font-extrabold leading-[1.1] tracking-tight text-balance lg:text-6xl'
+              className='text-primary-foreground text-5xl leading-[1.1] font-extrabold tracking-tight text-balance lg:text-6xl'
             >
               Ready to Transform
               <br />
@@ -109,7 +109,7 @@ export function FinalCTA() {
                   <NavLinkButton
                     size='lg'
                     variant='secondary'
-                    className='bg-primary-foreground text-primary hover:bg-primary-foreground/90 shadow-2xl shadow-black/25 text-lg font-bold'
+                    className='bg-primary-foreground text-primary hover:bg-primary-foreground/90 text-lg font-bold shadow-2xl shadow-black/25'
                     to='/login'
                     rightIcon={<ArrowRight />}
                   >
@@ -124,7 +124,7 @@ export function FinalCTA() {
                   <NavLinkButton
                     size='lg'
                     variant='ghost'
-                    className='border border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10 text-lg backdrop-blur-sm'
+                    className='border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10 border text-lg backdrop-blur-sm'
                     to='/explore'
                   >
                     Explore Courses
@@ -140,7 +140,7 @@ export function FinalCTA() {
                 <NavLinkButton
                   size='lg'
                   variant='secondary'
-                  className='bg-primary-foreground text-primary hover:bg-primary-foreground/90 shadow-2xl shadow-black/25 text-lg font-bold'
+                  className='bg-primary-foreground text-primary hover:bg-primary-foreground/90 text-lg font-bold shadow-2xl shadow-black/25'
                   to='/go/explore'
                   rightIcon={<ArrowRight />}
                 >
