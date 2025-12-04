@@ -1,0 +1,538 @@
+{
+  "id": "0c89417c-11c0-4176-bdad-09be1b0f58cf",
+  "organization_id": "f0c2aee8-8623-4750-9fc1-b8f0e95284aa",
+  "name": "Budgeting for Beginners",
+  "description": "Budgeting for Beginners is a practical, step-by-step course designed to help you take control of your money with confidence. You’ll learn how to track income, organize expenses, set realistic goals, and build a simple budget that actually works for your lifestyle. Perfect for students, young professionals, or anyone ready to get their finances on track, this course will give you the tools to save more, spend smarter, and reduce financial stress.",
+  "image_url": "https://ihvgowvmwrezcrtdtocl.supabase.co/storage/v1/object/sign/published_thumbnails/0c89417c-11c0-4176-bdad-09be1b0f58cf/thumbnail.webp?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9kZTU0NDNkNi0wZDE0LTQ3ZGUtYjA5Yy0wZDgzZmIyZWNiNWEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJwdWJsaXNoZWRfdGh1bWJuYWlscy8wYzg5NDE3Yy0xMWMwLTQxNzYtYmRhZC0wOWJlMWIwZjU4Y2YvdGh1bWJuYWlsLndlYnAiLCJpYXQiOjE3NjQ4ODE0NTksImV4cCI6MTc2NDg4NTA1OX0.6GSMoTr8H-QbOykQNJQ5xPPK3LeZsyZKBVIOwjYh6r0",
+  "blur_hash": "UVRK{Uxa-T-:?^tRk=V@xDXSjbaK^ii_R*bb",
+  "visibility": "public",
+  "is_active": true,
+  "pricing_tiers": [
+    {
+      "id": "d7d4a4fe-3daf-4f7e-b6f9-4b9ceebfff05",
+      "course_id": "0c89417c-11c0-4176-bdad-09be1b0f58cf",
+      "organization_id": "f0c2aee8-8623-4750-9fc1-b8f0e95284aa",
+      "payment_frequency": "monthly",
+      "is_free": true,
+      "price": 0,
+      "currency_code": "USD",
+      "promotional_price": null,
+      "promotion_start_date": null,
+      "promotion_end_date": null,
+      "tier_name": "free",
+      "tier_description": null,
+      "is_active": true,
+      "position": 1,
+      "is_popular": false,
+      "is_recommended": false
+    }
+  ],
+  "published_at": "2025-11-18T14:12:24.924611+00:00",
+  "published_by": "b8c35ad4-d6e0-4d53-bb7b-f67e8443b0f7",
+  "total_chapters": 5,
+  "total_lessons": 24,
+  "total_blocks": 107,
+  "has_free_tier": true,
+  "min_price": null,
+  "total_enrollments": 0,
+  "active_enrollments": 0,
+  "completion_rate": 0,
+  "average_rating": null,
+  "total_reviews": 0,
+  "course_structure_overview": {
+    "total_chapters": 5,
+    "total_lessons": 24,
+    "total_blocks": 107,
+    "chapters": [
+      {
+        "id": "046284c8-6527-4054-bf1f-a506ce3dcbb4",
+        "course_id": "0c89417c-11c0-4176-bdad-09be1b0f58cf",
+        "name": "Foundations of Budgeting",
+        "description": "Understand what a budget really is, why it matters, and how your money habits shape your future.",
+        "position": 1,
+        "lesson_count": 5,
+        "total_lessons": 5,
+        "total_blocks": 30,
+        "lessons": [
+          {
+            "id": "3e906080-de3c-43b2-ad94-792f688ee76f",
+            "course_id": "0c89417c-11c0-4176-bdad-09be1b0f58cf",
+            "chapter_id": "046284c8-6527-4054-bf1f-a506ce3dcbb4",
+            "lesson_type_id": "5e7f3e69-a545-4dbc-bc6f-924f1f7ece17",
+            "name": "What is a Budget?",
+            "position": 1,
+            "total_blocks": 9,
+            "lesson_types": {
+              "id": "5e7f3e69-a545-4dbc-bc6f-924f1f7ece17",
+              "name": "📖 concept lesson",
+              "description": "teaches core theories, definitions, and ideas.",
+              "lucide_icon": "BookOpen",
+              "bg_color": "hsl(220 80% 50%)"
+            }
+          },
+          {
+            "id": "36f772b3-4957-4141-866e-ad6f66202a6d",
+            "course_id": "0c89417c-11c0-4176-bdad-09be1b0f58cf",
+            "chapter_id": "046284c8-6527-4054-bf1f-a506ce3dcbb4",
+            "lesson_type_id": "5e7f3e69-a545-4dbc-bc6f-924f1f7ece17",
+            "name": "Why Budgeting Matters",
+            "position": 2,
+            "total_blocks": 7,
+            "lesson_types": {
+              "id": "5e7f3e69-a545-4dbc-bc6f-924f1f7ece17",
+              "name": "📖 concept lesson",
+              "description": "teaches core theories, definitions, and ideas.",
+              "lucide_icon": "BookOpen",
+              "bg_color": "hsl(220 80% 50%)"
+            }
+          },
+          {
+            "id": "35f057da-b482-4c24-aaee-4c8d61ace0b6",
+            "course_id": "0c89417c-11c0-4176-bdad-09be1b0f58cf",
+            "chapter_id": "046284c8-6527-4054-bf1f-a506ce3dcbb4",
+            "lesson_type_id": "5b4ca279-7d18-4313-ae50-2c49f6767d13",
+            "name": "Needs vs Wants",
+            "position": 3,
+            "total_blocks": 4,
+            "lesson_types": {
+              "id": "5b4ca279-7d18-4313-ae50-2c49f6767d13",
+              "name": "📄 reading material",
+              "description": "pdfs, articles, or deep dives into theory.",
+              "lucide_icon": "FileText",
+              "bg_color": "hsl(210 70% 45%)"
+            }
+          },
+          {
+            "id": "39400d57-c7fc-4ce8-bdec-998c6bca0758",
+            "course_id": "0c89417c-11c0-4176-bdad-09be1b0f58cf",
+            "chapter_id": "046284c8-6527-4054-bf1f-a506ce3dcbb4",
+            "lesson_type_id": "5b4ca279-7d18-4313-ae50-2c49f6767d13",
+            "name": "The Psychology of Spending",
+            "position": 4,
+            "total_blocks": 4,
+            "lesson_types": {
+              "id": "5b4ca279-7d18-4313-ae50-2c49f6767d13",
+              "name": "📄 reading material",
+              "description": "pdfs, articles, or deep dives into theory.",
+              "lucide_icon": "FileText",
+              "bg_color": "hsl(210 70% 45%)"
+            }
+          },
+          {
+            "id": "2f822549-ae42-4387-b576-c0427120cb7b",
+            "course_id": "0c89417c-11c0-4176-bdad-09be1b0f58cf",
+            "chapter_id": "046284c8-6527-4054-bf1f-a506ce3dcbb4",
+            "lesson_type_id": "726a545b-3ba2-41ba-a2d8-3c12d7c032a1",
+            "name": "Common Budget Myths",
+            "position": 5,
+            "total_blocks": 6,
+            "lesson_types": {
+              "id": "726a545b-3ba2-41ba-a2d8-3c12d7c032a1",
+              "name": "✅ interactive quiz",
+              "description": "practice questions with instant feedback.",
+              "lucide_icon": "CircleCheckBig",
+              "bg_color": "hsl(140 80% 40%)"
+            }
+          }
+        ]
+      },
+      {
+        "id": "085488fd-19bc-45c9-931d-f21180c311f7",
+        "course_id": "0c89417c-11c0-4176-bdad-09be1b0f58cf",
+        "name": "Building Your First Budget.",
+        "description": "Learn practical steps to set up your first budget and see it in action.",
+        "position": 2,
+        "lesson_count": 5,
+        "total_lessons": 5,
+        "total_blocks": 19,
+        "lessons": [
+          {
+            "id": "d3ec38ad-6f5b-401d-89c2-b598bca45825",
+            "course_id": "0c89417c-11c0-4176-bdad-09be1b0f58cf",
+            "chapter_id": "085488fd-19bc-45c9-931d-f21180c311f7",
+            "lesson_type_id": "5b4ca279-7d18-4313-ae50-2c49f6767d13",
+            "name": "Tracking Income",
+            "position": 1,
+            "total_blocks": 6,
+            "lesson_types": {
+              "id": "5b4ca279-7d18-4313-ae50-2c49f6767d13",
+              "name": "📄 reading material",
+              "description": "pdfs, articles, or deep dives into theory.",
+              "lucide_icon": "FileText",
+              "bg_color": "hsl(210 70% 45%)"
+            }
+          },
+          {
+            "id": "4d0d35a7-0a86-4a31-b0eb-202d81845910",
+            "course_id": "0c89417c-11c0-4176-bdad-09be1b0f58cf",
+            "chapter_id": "085488fd-19bc-45c9-931d-f21180c311f7",
+            "lesson_type_id": "5e7f3e69-a545-4dbc-bc6f-924f1f7ece17",
+            "name": "Tracking Expenses",
+            "position": 2,
+            "total_blocks": 3,
+            "lesson_types": {
+              "id": "5e7f3e69-a545-4dbc-bc6f-924f1f7ece17",
+              "name": "📖 concept lesson",
+              "description": "teaches core theories, definitions, and ideas.",
+              "lucide_icon": "BookOpen",
+              "bg_color": "hsl(220 80% 50%)"
+            }
+          },
+          {
+            "id": "39a1868f-4590-48b6-a734-fd7ae058e418",
+            "course_id": "0c89417c-11c0-4176-bdad-09be1b0f58cf",
+            "chapter_id": "085488fd-19bc-45c9-931d-f21180c311f7",
+            "lesson_type_id": "726a545b-3ba2-41ba-a2d8-3c12d7c032a1",
+            "name": "Categorizing Expenses",
+            "position": 3,
+            "total_blocks": 3,
+            "lesson_types": {
+              "id": "726a545b-3ba2-41ba-a2d8-3c12d7c032a1",
+              "name": "✅ interactive quiz",
+              "description": "practice questions with instant feedback.",
+              "lucide_icon": "CircleCheckBig",
+              "bg_color": "hsl(140 80% 40%)"
+            }
+          },
+          {
+            "id": "3e62af4c-8106-49f7-aac5-9f346713b9e7",
+            "course_id": "0c89417c-11c0-4176-bdad-09be1b0f58cf",
+            "chapter_id": "085488fd-19bc-45c9-931d-f21180c311f7",
+            "lesson_type_id": "5e7f3e69-a545-4dbc-bc6f-924f1f7ece17",
+            "name": "The 50/30/20 Rule",
+            "position": 4,
+            "total_blocks": 3,
+            "lesson_types": {
+              "id": "5e7f3e69-a545-4dbc-bc6f-924f1f7ece17",
+              "name": "📖 concept lesson",
+              "description": "teaches core theories, definitions, and ideas.",
+              "lucide_icon": "BookOpen",
+              "bg_color": "hsl(220 80% 50%)"
+            }
+          },
+          {
+            "id": "de03f5cd-8a7b-4d9e-b633-125c7a133037",
+            "course_id": "0c89417c-11c0-4176-bdad-09be1b0f58cf",
+            "chapter_id": "085488fd-19bc-45c9-931d-f21180c311f7",
+            "lesson_type_id": "6cfb47c7-5c71-4689-b0e7-8b3ad7afaa50",
+            "name": "Creating Your First Draft Budget",
+            "position": 5,
+            "total_blocks": 4,
+            "lesson_types": {
+              "id": "6cfb47c7-5c71-4689-b0e7-8b3ad7afaa50",
+              "name": "🧠 problem solving",
+              "description": "step-by-step walkthroughs of challenging problems.",
+              "lucide_icon": "Brain",
+              "bg_color": "hsl(30 90% 50%)"
+            }
+          }
+        ]
+      },
+      {
+        "id": "531a502f-d0c3-4a83-b993-aeada85eaa10",
+        "course_id": "0c89417c-11c0-4176-bdad-09be1b0f58cf",
+        "name": "Sticking to Your Budget",
+        "description": "Building a budget is only half the journey. Learn how to actually follow through, stay consistent, and adjust when life changes.",
+        "position": 3,
+        "lesson_count": 5,
+        "total_lessons": 5,
+        "total_blocks": 21,
+        "lessons": [
+          {
+            "id": "3120b227-6c06-4a9f-8f4d-89555cb50a76",
+            "course_id": "0c89417c-11c0-4176-bdad-09be1b0f58cf",
+            "chapter_id": "531a502f-d0c3-4a83-b993-aeada85eaa10",
+            "lesson_type_id": "5e7f3e69-a545-4dbc-bc6f-924f1f7ece17",
+            "name": "Daily and Weekly Tracking Habits",
+            "position": 1,
+            "total_blocks": 4,
+            "lesson_types": {
+              "id": "5e7f3e69-a545-4dbc-bc6f-924f1f7ece17",
+              "name": "📖 concept lesson",
+              "description": "teaches core theories, definitions, and ideas.",
+              "lucide_icon": "BookOpen",
+              "bg_color": "hsl(220 80% 50%)"
+            }
+          },
+          {
+            "id": "811b2055-72a7-434f-bfc3-7a3cb588e07a",
+            "course_id": "0c89417c-11c0-4176-bdad-09be1b0f58cf",
+            "chapter_id": "531a502f-d0c3-4a83-b993-aeada85eaa10",
+            "lesson_type_id": "5b4ca279-7d18-4313-ae50-2c49f6767d13",
+            "name": "Adjusting When Life Changes",
+            "position": 2,
+            "total_blocks": 4,
+            "lesson_types": {
+              "id": "5b4ca279-7d18-4313-ae50-2c49f6767d13",
+              "name": "📄 reading material",
+              "description": "pdfs, articles, or deep dives into theory.",
+              "lucide_icon": "FileText",
+              "bg_color": "hsl(210 70% 45%)"
+            }
+          },
+          {
+            "id": "751d2032-a2e7-496e-a145-78005ceaa987",
+            "course_id": "0c89417c-11c0-4176-bdad-09be1b0f58cf",
+            "chapter_id": "531a502f-d0c3-4a83-b993-aeada85eaa10",
+            "lesson_type_id": "f2a917c6-dc6d-47fc-b67b-2aa05e27e32d",
+            "name": "Avoiding Common Pitfalls",
+            "position": 3,
+            "total_blocks": 5,
+            "lesson_types": {
+              "id": "f2a917c6-dc6d-47fc-b67b-2aa05e27e32d",
+              "name": "🔁 review session",
+              "description": "summarized recap or review of key concepts.",
+              "lucide_icon": "RefreshCw",
+              "bg_color": "hsl(50 90% 50%)"
+            }
+          },
+          {
+            "id": "cb960229-28c5-4a76-9f08-dd3d33b5238d",
+            "course_id": "0c89417c-11c0-4176-bdad-09be1b0f58cf",
+            "chapter_id": "531a502f-d0c3-4a83-b993-aeada85eaa10",
+            "lesson_type_id": "f2a917c6-dc6d-47fc-b67b-2aa05e27e32d",
+            "name": "Accountability and Support Systems",
+            "position": 4,
+            "total_blocks": 3,
+            "lesson_types": {
+              "id": "f2a917c6-dc6d-47fc-b67b-2aa05e27e32d",
+              "name": "🔁 review session",
+              "description": "summarized recap or review of key concepts.",
+              "lucide_icon": "RefreshCw",
+              "bg_color": "hsl(50 90% 50%)"
+            }
+          },
+          {
+            "id": "72da4a80-415a-406a-a097-61912cbaff29",
+            "course_id": "0c89417c-11c0-4176-bdad-09be1b0f58cf",
+            "chapter_id": "531a502f-d0c3-4a83-b993-aeada85eaa10",
+            "lesson_type_id": "f2a917c6-dc6d-47fc-b67b-2aa05e27e32d",
+            "name": "Reviewing Your Budget Monthly",
+            "position": 5,
+            "total_blocks": 5,
+            "lesson_types": {
+              "id": "f2a917c6-dc6d-47fc-b67b-2aa05e27e32d",
+              "name": "🔁 review session",
+              "description": "summarized recap or review of key concepts.",
+              "lucide_icon": "RefreshCw",
+              "bg_color": "hsl(50 90% 50%)"
+            }
+          }
+        ]
+      },
+      {
+        "id": "736e492c-5675-4f6d-ab7c-9a5d78fdbe03",
+        "course_id": "0c89417c-11c0-4176-bdad-09be1b0f58cf",
+        "name": "Beyond Budgeting",
+        "description": "Budgeting is just the foundation. Now we’ll go beyond: building security, eliminating debt, and planning for the future.",
+        "position": 4,
+        "lesson_count": 5,
+        "total_lessons": 5,
+        "total_blocks": 19,
+        "lessons": [
+          {
+            "id": "36b022ce-c441-453b-bd4f-876db12df670",
+            "course_id": "0c89417c-11c0-4176-bdad-09be1b0f58cf",
+            "chapter_id": "736e492c-5675-4f6d-ab7c-9a5d78fdbe03",
+            "lesson_type_id": "0ad82c1d-c9ac-41fb-bee6-d03768c661ed",
+            "name": "Building an Emergency Fund",
+            "position": 1,
+            "total_blocks": 4,
+            "lesson_types": {
+              "id": "0ad82c1d-c9ac-41fb-bee6-d03768c661ed",
+              "name": "🛠️ mini project",
+              "description": "small, scoped real-world application projects.",
+              "lucide_icon": "PackagePlus",
+              "bg_color": "hsl(270 75% 50%)"
+            }
+          },
+          {
+            "id": "14b0041c-53e9-4221-bb6a-05882c3d1ddc",
+            "course_id": "0c89417c-11c0-4176-bdad-09be1b0f58cf",
+            "chapter_id": "736e492c-5675-4f6d-ab7c-9a5d78fdbe03",
+            "lesson_type_id": "95d8a1d0-8e94-45be-b5e8-7573db31492c",
+            "name": "Paying Off Debt Strategically",
+            "position": 2,
+            "total_blocks": 4,
+            "lesson_types": {
+              "id": "95d8a1d0-8e94-45be-b5e8-7573db31492c",
+              "name": "🏆 challenge",
+              "description": "timed or graded test-like questions.",
+              "lucide_icon": "Trophy",
+              "bg_color": "hsl(0 80% 40%)"
+            }
+          },
+          {
+            "id": "a9909fde-adf4-4abe-9199-b9213c6e199a",
+            "course_id": "0c89417c-11c0-4176-bdad-09be1b0f58cf",
+            "chapter_id": "736e492c-5675-4f6d-ab7c-9a5d78fdbe03",
+            "lesson_type_id": "6cfb47c7-5c71-4689-b0e7-8b3ad7afaa50",
+            "name": "Saving for Short-Term Goals",
+            "position": 3,
+            "total_blocks": 5,
+            "lesson_types": {
+              "id": "6cfb47c7-5c71-4689-b0e7-8b3ad7afaa50",
+              "name": "🧠 problem solving",
+              "description": "step-by-step walkthroughs of challenging problems.",
+              "lucide_icon": "Brain",
+              "bg_color": "hsl(30 90% 50%)"
+            }
+          },
+          {
+            "id": "f031f171-77f9-4060-a3af-80a8e5eaad16",
+            "course_id": "0c89417c-11c0-4176-bdad-09be1b0f58cf",
+            "chapter_id": "736e492c-5675-4f6d-ab7c-9a5d78fdbe03",
+            "lesson_type_id": "5e7f3e69-a545-4dbc-bc6f-924f1f7ece17",
+            "name": "Investing Basics",
+            "position": 4,
+            "total_blocks": 2,
+            "lesson_types": {
+              "id": "5e7f3e69-a545-4dbc-bc6f-924f1f7ece17",
+              "name": "📖 concept lesson",
+              "description": "teaches core theories, definitions, and ideas.",
+              "lucide_icon": "BookOpen",
+              "bg_color": "hsl(220 80% 50%)"
+            }
+          },
+          {
+            "id": "d9f225b1-55e4-4350-878b-307b5b46f511",
+            "course_id": "0c89417c-11c0-4176-bdad-09be1b0f58cf",
+            "chapter_id": "736e492c-5675-4f6d-ab7c-9a5d78fdbe03",
+            "lesson_type_id": "5b4ca279-7d18-4313-ae50-2c49f6767d13",
+            "name": "Designing Your Long-Term Money Plan",
+            "position": 5,
+            "total_blocks": 4,
+            "lesson_types": {
+              "id": "5b4ca279-7d18-4313-ae50-2c49f6767d13",
+              "name": "📄 reading material",
+              "description": "pdfs, articles, or deep dives into theory.",
+              "lucide_icon": "FileText",
+              "bg_color": "hsl(210 70% 45%)"
+            }
+          }
+        ]
+      },
+      {
+        "id": "a8cabf53-2ca4-4ee4-8a6b-c5cf93f07ef5",
+        "course_id": "0c89417c-11c0-4176-bdad-09be1b0f58cf",
+        "name": "Mastering Money Mindsets",
+        "description": "Budgeting isn’t just about math. It’s about habits, psychology, and mindset. This chapter teaches you how to overcome emotional spending, build discipline, and stay motivated for life.",
+        "position": 5,
+        "lesson_count": 4,
+        "total_lessons": 4,
+        "total_blocks": 18,
+        "lessons": [
+          {
+            "id": "b6c49a1c-7b89-4c63-8321-21d3f2f2e215",
+            "course_id": "0c89417c-11c0-4176-bdad-09be1b0f58cf",
+            "chapter_id": "a8cabf53-2ca4-4ee4-8a6b-c5cf93f07ef5",
+            "lesson_type_id": "f2a917c6-dc6d-47fc-b67b-2aa05e27e32d",
+            "name": "Overcoming Spending Triggers",
+            "position": 1,
+            "total_blocks": 2,
+            "lesson_types": {
+              "id": "f2a917c6-dc6d-47fc-b67b-2aa05e27e32d",
+              "name": "🔁 review session",
+              "description": "summarized recap or review of key concepts.",
+              "lucide_icon": "RefreshCw",
+              "bg_color": "hsl(50 90% 50%)"
+            }
+          },
+          {
+            "id": "74d58657-725f-47d1-9097-d3e3d33b7dd7",
+            "course_id": "0c89417c-11c0-4176-bdad-09be1b0f58cf",
+            "chapter_id": "a8cabf53-2ca4-4ee4-8a6b-c5cf93f07ef5",
+            "lesson_type_id": "f2a917c6-dc6d-47fc-b67b-2aa05e27e32d",
+            "name": "Building Lasting Habits",
+            "position": 2,
+            "total_blocks": 5,
+            "lesson_types": {
+              "id": "f2a917c6-dc6d-47fc-b67b-2aa05e27e32d",
+              "name": "🔁 review session",
+              "description": "summarized recap or review of key concepts.",
+              "lucide_icon": "RefreshCw",
+              "bg_color": "hsl(50 90% 50%)"
+            }
+          },
+          {
+            "id": "f34bbc05-a7f1-4971-9ea8-a5a3287abdab",
+            "course_id": "0c89417c-11c0-4176-bdad-09be1b0f58cf",
+            "chapter_id": "a8cabf53-2ca4-4ee4-8a6b-c5cf93f07ef5",
+            "lesson_type_id": "f2a917c6-dc6d-47fc-b67b-2aa05e27e32d",
+            "name": "Celebrating Progress Without Overspending",
+            "position": 3,
+            "total_blocks": 4,
+            "lesson_types": {
+              "id": "f2a917c6-dc6d-47fc-b67b-2aa05e27e32d",
+              "name": "🔁 review session",
+              "description": "summarized recap or review of key concepts.",
+              "lucide_icon": "RefreshCw",
+              "bg_color": "hsl(50 90% 50%)"
+            }
+          },
+          {
+            "id": "202fc807-1164-4e7d-b0ad-b5f71d6f103d",
+            "course_id": "0c89417c-11c0-4176-bdad-09be1b0f58cf",
+            "chapter_id": "a8cabf53-2ca4-4ee4-8a6b-c5cf93f07ef5",
+            "lesson_type_id": "f2a917c6-dc6d-47fc-b67b-2aa05e27e32d",
+            "name": "Staying Motivated for the Long Run",
+            "position": 4,
+            "total_blocks": 7,
+            "lesson_types": {
+              "id": "f2a917c6-dc6d-47fc-b67b-2aa05e27e32d",
+              "name": "🔁 review session",
+              "description": "summarized recap or review of key concepts.",
+              "lucide_icon": "RefreshCw",
+              "bg_color": "hsl(50 90% 50%)"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "course_enrollments": [
+    {
+      "id": "454ecbd5-7b50-4e9b-9535-6e0e7d274af4",
+      "user_id": "b8c35ad4-d6e0-4d53-bb7b-f67e8443b0f7",
+      "is_active": true,
+      "expires_at": "2025-12-18T14:12:58.221415+00:00"
+    },
+    {
+      "id": "1ca19fa7-d934-4b73-ba9e-9c2d884dcc19",
+      "user_id": "e5d2fa0e-7b99-4307-bce9-8cf509abc32f",
+      "is_active": true,
+      "expires_at": "2025-12-18T14:19:11.46279+00:00"
+    },
+    {
+      "id": "d7fa4cca-af5e-49da-8899-89b9cdd0ad45",
+      "user_id": "b74640d5-c488-402f-871f-65dbde34bb27",
+      "is_active": true,
+      "expires_at": "2025-12-20T10:00:59.658549+00:00"
+    },
+    {
+      "id": "309a853e-215c-4a46-88b8-5e76a231ad66",
+      "user_id": "42f8ee84-5d05-40d9-be7e-c3ffe3b06dae",
+      "is_active": true,
+      "expires_at": "2025-12-21T07:16:18.436086+00:00"
+    },
+    {
+      "id": "590169d7-0fea-4a23-820d-95ca3619e275",
+      "user_id": "e52c5eab-b045-4e93-9a84-514986d3b59d",
+      "is_active": true,
+      "expires_at": "2025-12-25T08:01:04.811206+00:00"
+    }
+  ],
+  "course_categories": {
+    "name": "🧠 Personal Development"
+  },
+  "course_sub_categories": {
+    "name": "Personal Finance"
+  },
+  "organizations": {
+    "id": "f0c2aee8-8623-4750-9fc1-b8f0e95284aa",
+    "name": "Kihela",
+    "handle": "kihela",
+    "blur_hash": null,
+    "avatar_url": null
+  }
+}
