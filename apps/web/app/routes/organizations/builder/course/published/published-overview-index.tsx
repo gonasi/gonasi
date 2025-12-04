@@ -1,7 +1,7 @@
 import { Outlet } from 'react-router';
 import { motion } from 'framer-motion';
 
-import { fetchPublishedCourseDetails } from '@gonasi/database/courses';
+import { fetchCourseUsersProgress, fetchPublishedCourseDetails } from '@gonasi/database/courses';
 
 import type { Route } from './+types/published-overview-index';
 import {
@@ -9,7 +9,7 @@ import {
   CourseMetrics,
   CourseStructure,
   PricingTiers,
-  RecentEnrollments,
+  UserProgressTable,
 } from './components';
 
 import { BannerCard } from '~/components/cards';
@@ -28,12 +28,18 @@ export function meta() {
 export async function loader({ params, request }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
 
-  const publishedCourse = await fetchPublishedCourseDetails({
-    supabase,
-    publishedCourseId: params.courseId,
-  });
+  const [publishedCourse, usersProgress] = await Promise.all([
+    fetchPublishedCourseDetails({
+      supabase,
+      publishedCourseId: params.courseId,
+    }),
+    fetchCourseUsersProgress({
+      supabase,
+      publishedCourseId: params.courseId ?? '',
+    }),
+  ]);
 
-  return publishedCourse;
+  return { publishedCourse, usersProgress };
 }
 
 const fadeInUp = {
@@ -42,7 +48,9 @@ const fadeInUp = {
 };
 
 export default function CourseOverview({ loaderData, params }: Route.ComponentProps) {
-  if (!loaderData) {
+  const { publishedCourse, usersProgress } = loaderData;
+
+  if (!publishedCourse) {
     return (
       <>
         <section>
@@ -82,34 +90,37 @@ export default function CourseOverview({ loaderData, params }: Route.ComponentPr
           transition={{ duration: 0.3 }}
         >
           <CourseHeader
-            name={loaderData.name}
-            description={loaderData.description}
-            image_url={loaderData.image_url}
-            visibility={loaderData.visibility}
-            is_active={loaderData.is_active}
-            published_at={loaderData.published_at}
-            has_free_tier={loaderData.has_free_tier}
-            course_categories={loaderData.course_categories}
-            course_sub_categories={loaderData.course_sub_categories}
-            organizations={loaderData.organizations}
+            name={publishedCourse.name}
+            description={publishedCourse.description}
+            image_url={publishedCourse.image_url}
+            visibility={publishedCourse.visibility}
+            is_active={publishedCourse.is_active}
+            published_at={publishedCourse.published_at}
+            has_free_tier={publishedCourse.has_free_tier}
+            course_categories={publishedCourse.course_categories}
+            course_sub_categories={publishedCourse.course_sub_categories}
+            organizations={publishedCourse.organizations}
           />
 
           <CourseMetrics
-            total_enrollments={loaderData.total_enrollments}
-            active_enrollments={loaderData.active_enrollments}
-            completion_rate={loaderData.completion_rate}
-            average_rating={loaderData.average_rating}
-            total_reviews={loaderData.total_reviews}
-            total_chapters={loaderData.total_chapters}
-            total_lessons={loaderData.total_lessons}
-            total_blocks={loaderData.total_blocks}
+            total_enrollments={publishedCourse.total_enrollments}
+            active_enrollments={publishedCourse.active_enrollments}
+            completion_rate={publishedCourse.completion_rate}
+            average_rating={publishedCourse.average_rating}
+            total_reviews={publishedCourse.total_reviews}
+            total_chapters={publishedCourse.total_chapters}
+            total_lessons={publishedCourse.total_lessons}
+            total_blocks={publishedCourse.total_blocks}
           />
 
-          <PricingTiers pricing_tiers={loaderData.pricing_tiers} />
+          <UserProgressTable
+            usersProgress={usersProgress}
+            courseEnrollments={publishedCourse.course_enrollments}
+          />
 
-          <CourseStructure course_structure_overview={loaderData.course_structure_overview} />
+          <PricingTiers pricing_tiers={publishedCourse.pricing_tiers} />
 
-          <RecentEnrollments course_enrollments={loaderData.course_enrollments} />
+          <CourseStructure course_structure_overview={publishedCourse.course_structure_overview} />
         </motion.div>
       </section>
       <Outlet />

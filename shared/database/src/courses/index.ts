@@ -6,6 +6,7 @@ export * from './fetchOrganizationCourses';
 export * from './editCourseGrouping';
 export * from './fetchUserCoursesAsSelectOptions';
 export * from './fetchCourseByPathwayId';
+export * from './fetchCourseUsersProgress';
 
 export * from './go';
 export * from './pricing';
