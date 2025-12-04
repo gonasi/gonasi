@@ -41,6 +41,10 @@ export default [
     ],
   ),
 
+  // SEO resource routes - must be before :organizationHandle to avoid conflicts
+  route('sitemap.xml', 'routes/sitemap[.]xml.ts'),
+  route('robots.txt', 'routes/robots[.]txt.ts'),
+
   route(':organizationHandle', 'routes/publicOrganizations/public-organization-profile-index.tsx'),
 
   layout('routes/layouts/myProfile/profile-wrapper-layout.tsx', [
@@ -328,10 +332,6 @@ export default [
   route('api/course-sub-categories', 'routes/api/course-sub-categories.ts'),
   route('api/files/:fileId/signed-url', 'routes/api/get-signed-url.ts'),
   route('api/files/:courseId/search', 'routes/api/search-files.ts'),
-
-  // SEO resource routes
-  route('sitemap.xml', 'routes/sitemap[.]xml.ts'),
-  route('robots.txt', 'routes/robots[.]txt.ts'),
 
   route('signout', 'routes/auth/signout.tsx'),
 
