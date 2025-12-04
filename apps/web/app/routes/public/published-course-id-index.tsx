@@ -40,33 +40,49 @@ import { Progress } from '~/components/ui/progress';
 import { createClient } from '~/lib/supabase/supabase.server';
 import { cn } from '~/lib/utils';
 import { getLowestPricingSummary } from '~/utils/get-lowest-pricing-summary';
+import { generateCourseSchema, generateMetaTags, renderStructuredData } from '~/utils/seo';
 
 export function meta({ data }: Route.MetaArgs) {
   const course = data?.courseOverview?.course;
+  const organization = data?.courseOverview?.organization;
   const shareUrl = data?.shareUrl;
+  const siteUrl = 'https://gonasi.com';
 
   if (!course) {
-    return [
-      { title: 'Course Not Found • Gonasi' },
+    return generateMetaTags(
       {
-        name: 'description',
-        content: 'This course could not be found. Explore other learning opportunities on Gonasi.',
+        title: 'Course Not Found',
+        description: 'This course could not be found. Explore other learning opportunities on Gonasi.',
+        url: siteUrl,
+        type: 'website',
       },
-    ];
+      siteUrl,
+    );
   }
 
-  const title = course.name;
-  const shortDescription = course.description?.slice(0, 150) ?? 'Join this course on Gonasi.';
+  const description = course.description?.slice(0, 160) ?? `Learn ${course.name} on Gonasi`;
+  const keywords = [
+    course.name,
+    course.category_name,
+    course.subcategory_name,
+    'online course',
+    'interactive learning',
+    organization?.name,
+  ]
+    .filter(Boolean)
+    .join(', ');
 
-  return [
-    { title: `${title} • Gonasi` },
-    { name: 'description', content: `${shortDescription} — an interactive course on Gonasi.` },
-    { property: 'og:url', content: shareUrl },
-    { property: 'og:title', content: title },
-    { property: 'og:description', content: shortDescription },
-    { property: 'og:image', content: course.image_url },
-    { name: 'twitter:card', content: 'summary_large_image' },
-  ];
+  return generateMetaTags(
+    {
+      title: course.name,
+      description,
+      keywords,
+      url: shareUrl || `${siteUrl}/c/${course.id}`,
+      type: 'website',
+      image: course.image_url,
+    },
+    siteUrl,
+  );
 }
 
 export async function loader({ params, request }: Route.LoaderArgs) {
@@ -130,6 +146,21 @@ export default function PublishedCourseIdIndex({ params, loaderData }: Route.Com
     return <NotFoundCard message='Could not load course' />;
   }
 
+  // Generate structured data for SEO
+  const siteUrl = typeof window !== 'undefined' ? window.location.origin : 'https://gonasi.com';
+  const courseSchema = generateCourseSchema({
+    name: course.name,
+    description: course.description || '',
+    provider: {
+      name: organization.name,
+      url: `${siteUrl}/${organization.handle}`,
+    },
+    url: `${siteUrl}/c/${course.id}`,
+    image: course.image_url,
+    totalChapters: course.total_chapters,
+    totalLessons: course.total_lessons,
+  });
+
   const badgeContent = loaderData.enrollmentStatus?.is_active && (
     <div className='bg-card/85 flex items-center justify-between rounded-sm p-2'>
       <div className='flex flex-col items-center text-center'>
@@ -155,6 +186,9 @@ export default function PublishedCourseIdIndex({ params, loaderData }: Route.Com
 
   return (
     <>
+      {/* Structured Data for SEO */}
+      <script {...renderStructuredData([courseSchema])} />
+
       <Modal open>
         <Modal.Content size='full'>
           <Modal.Header
