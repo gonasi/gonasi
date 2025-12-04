@@ -22,8 +22,7 @@ export function meta() {
 
   return generateMetaTags(
     {
-      title:
-        'Explore Interactive Courses Built with Gonasi | Examples of Creator-Built Learning',
+      title: 'Explore Interactive Courses Built with Gonasi | Examples of Creator-Built Learning',
       description:
         'Discover interactive courses built by creators using Gonasi - see what you can build. Examples of gamified learning, interactive quizzes, and engaging educational content. Courses built with the Kahoot alternative platform. Learn from creators who built interactive learning experiences like Brilliant.org.',
       keywords:

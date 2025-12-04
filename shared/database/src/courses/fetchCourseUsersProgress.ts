@@ -19,6 +19,7 @@ export interface UserProgressStats {
   is_completed: boolean;
   last_activity: string;
   time_spent_seconds: number;
+  reset_count: number;
 }
 
 /**
@@ -93,6 +94,26 @@ export async function fetchCourseUsersProgress({
     return [];
   }
 
+  // Fetch lesson reset counts to track how many times users have reset lessons
+  const { data: lessonResets, error: resetsError } = await supabase
+    .from('lesson_reset_count')
+    .select('user_id, reset_count')
+    .eq('published_course_id', publishedCourseId)
+    .in('user_id', userIds);
+
+  if (resetsError) {
+    console.error('Failed to fetch lesson reset counts:', resetsError);
+  }
+
+  // Sum up total reset counts per user across all lessons
+  const userResetCounts = lessonResets?.reduce(
+    (acc, reset) => {
+      acc[reset.user_id] = (acc[reset.user_id] || 0) + reset.reset_count;
+      return acc;
+    },
+    {} as Record<string, number>,
+  );
+
   // Calculate average scores and total time per user
   const userScores = blockProgress?.reduce(
     (acc, block) => {
@@ -135,6 +156,9 @@ export async function fetchCourseUsersProgress({
     // Extract profile data (profiles is returned as an object, not array)
     const profile = progress.profiles as any;
 
+    // Get total reset count for this user across all lessons
+    const resetCount = userResetCounts?.[progress.user_id] || 0;
+
     return {
       user_id: progress.user_id,
       username: profile?.username || null,
@@ -149,6 +173,7 @@ export async function fetchCourseUsersProgress({
       is_completed: progress.is_completed,
       last_activity: progress.updated_at,
       time_spent_seconds: timeSpent,
+      reset_count: resetCount,
     };
   });
 
