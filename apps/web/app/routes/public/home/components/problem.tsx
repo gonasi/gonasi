@@ -18,7 +18,7 @@ export function Problem() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.1, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-            className='text-foreground text-4xl font-bold leading-tight text-balance lg:text-5xl'
+            className='text-foreground text-4xl leading-tight font-bold text-balance lg:text-5xl'
           >
             Online Learning Is Broken and Everyone Feels It!
           </motion.h2>
@@ -55,7 +55,7 @@ export function Problem() {
               variants={{ hidden: { opacity: 0, y: 30 }, show: { opacity: 1, y: 0 } }}
               whileHover={{ y: -8, scale: 1.02 }}
               transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-              className='shadow-lg bg-card border-border/50 group relative overflow-hidden rounded-2xl border p-8'
+              className='bg-card border-border/50 group relative overflow-hidden rounded-2xl border p-8 shadow-lg'
             >
               <motion.div
                 className='bg-primary/5 absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100'
@@ -75,7 +75,7 @@ export function Problem() {
               variants={{ hidden: { opacity: 0, y: 30 }, show: { opacity: 1, y: 0 } }}
               whileHover={{ y: -8, scale: 1.02 }}
               transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-              className='shadow-lg bg-card border-border/50 group relative overflow-hidden rounded-2xl border p-8'
+              className='bg-card border-border/50 group relative overflow-hidden rounded-2xl border p-8 shadow-lg'
             >
               <motion.div
                 className='bg-primary/5 absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100'
@@ -95,7 +95,7 @@ export function Problem() {
               variants={{ hidden: { opacity: 0, y: 30 }, show: { opacity: 1, y: 0 } }}
               whileHover={{ y: -8, scale: 1.02 }}
               transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-              className='shadow-lg bg-card border-border/50 group relative overflow-hidden rounded-2xl border p-8'
+              className='bg-card border-border/50 group relative overflow-hidden rounded-2xl border p-8 shadow-lg'
             >
               <motion.div
                 className='bg-primary/5 absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100'

@@ -52,7 +52,8 @@ export function meta({ data }: Route.MetaArgs) {
     return generateMetaTags(
       {
         title: 'Course Not Found',
-        description: 'This course could not be found. Explore other learning opportunities on Gonasi.',
+        description:
+          'This course could not be found. Explore other learning opportunities on Gonasi.',
         url: siteUrl,
         type: 'website',
       },

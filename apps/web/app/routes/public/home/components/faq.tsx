@@ -1,6 +1,6 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
-import { useState } from 'react';
 
 export function FAQ() {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
@@ -59,7 +59,7 @@ export function FAQ() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.1, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-            className='text-foreground text-4xl font-bold leading-tight text-balance lg:text-5xl'
+            className='text-foreground text-4xl leading-tight font-bold text-balance lg:text-5xl'
           >
             Frequently Asked
             <span className='text-primary block'> Questions</span>
@@ -97,13 +97,13 @@ export function FAQ() {
               <motion.div
                 key={index}
                 variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }}
-                className='shadow-md hover:shadow-lg bg-card border-border/50 overflow-hidden rounded-xl border transition-shadow'
+                className='bg-card border-border/50 overflow-hidden rounded-xl border shadow-md transition-shadow hover:shadow-lg'
               >
                 <button
                   onClick={() => setOpenIndex(isOpen ? null : index)}
                   className='hover:bg-muted/50 flex w-full items-start justify-between gap-6 p-6 text-left transition-colors'
                 >
-                  <span className='text-foreground text-lg font-semibold leading-snug'>
+                  <span className='text-foreground text-lg leading-snug font-semibold'>
                     {faq.question}
                   </span>
                   <motion.div
@@ -124,7 +124,7 @@ export function FAQ() {
                   transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
                   className='overflow-hidden'
                 >
-                  <div className='text-foreground/70 font-secondary border-border/50 border-t px-6 pb-6 pt-4 leading-relaxed'>
+                  <div className='text-foreground/70 font-secondary border-border/50 border-t px-6 pt-4 pb-6 leading-relaxed'>
                     {faq.answer}
                   </div>
                 </motion.div>

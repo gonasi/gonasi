@@ -98,7 +98,7 @@ export function SocialProof() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.1, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-            className='text-foreground text-4xl font-bold leading-tight text-balance lg:text-5xl'
+            className='text-foreground text-4xl leading-tight font-bold text-balance lg:text-5xl'
           >
             Loved by Educators
             <span className='text-primary block'> Worldwide</span>
@@ -135,7 +135,7 @@ export function SocialProof() {
               variants={{ hidden: { opacity: 0, y: 30 }, show: { opacity: 1, y: 0 } }}
               whileHover={{ y: -6, scale: 1.01 }}
               transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-              className='shadow-lg hover:shadow-xl bg-card border-border/50 relative overflow-hidden rounded-2xl border p-8 transition-shadow'
+              className='bg-card border-border/50 relative overflow-hidden rounded-2xl border p-8 shadow-lg transition-shadow hover:shadow-xl'
             >
               {/* Stars */}
               <div className='mb-6 flex gap-1'>

@@ -82,12 +82,14 @@ export function generateCanonicalLink(url: string) {
 export function generateOrganizationSchema(siteUrl: string) {
   return {
     '@context': 'https://schema.org',
-    '@type': 'Organization',
+    '@type': ['Organization', 'EducationalOrganization', 'SoftwareApplication'],
     name: 'Gonasi',
+    alternateName: 'Gonasi App',
     description:
-      'Create and share interactive, gamified courses. Engage learners with hands-on experiences and monetize your expertise.',
+      'Gonasi is a creator platform for building interactive learning experiences like Brilliant.org and Duolingo. Empowering educators to create gamified courses, live quizzes, and interactive learning apps. The Kahoot alternative for creators seeking full control over their educational content.',
     url: siteUrl,
     logo: `${siteUrl}/logo.png`,
+    image: `${siteUrl}/logo.png`,
     sameAs: [
       // Add your social media profiles here
       // 'https://twitter.com/gonasi',
@@ -97,6 +99,21 @@ export function generateOrganizationSchema(siteUrl: string) {
       '@type': 'ContactPoint',
       contactType: 'Customer Support',
       email: 'support@gonasi.com',
+    },
+    keywords:
+      'interactive learning builder, kahoot alternative, brilliant.org alternative, gamified course creator, live quiz platform, interactive learning tools, course builder, educational app creator',
+    knowsAbout: [
+      'Interactive Learning Creation',
+      'Gamified Education',
+      'Course Builder Tools',
+      'Live Audience Engagement',
+      'Educational Technology',
+      'No-Code Learning Platforms',
+    ],
+    applicationCategory: 'EducationalApplication',
+    offers: {
+      '@type': 'Offer',
+      description: 'Tools to build interactive learning experiences and gamified courses',
     },
   };
 }
@@ -109,9 +126,24 @@ export function generateWebsiteSchema(siteUrl: string) {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
     name: 'Gonasi',
+    alternateName: [
+      'Gonasi App',
+      'Gonasi Interactive Learning Platform',
+      'Gonasi Course Builder',
+      'Kahoot Alternative',
+      'Interactive Learning Builder',
+    ],
     description:
-      'Gamified Learning & Interactive Course Builder. Create engaging courses that truly deliver results.',
+      'Gonasi - Creator platform for building interactive learning like Brilliant.org and Duolingo. The Kahoot alternative for educators who want to create gamified courses, live quizzes, and interactive learning experiences. Tools to build interactive learning for any audience.',
     url: siteUrl,
+    keywords:
+      'Gonasi, build interactive learning, kahoot alternative, brilliant.org alternative, duolingo alternative, interactive learning creator tools, gamified quiz builder, live audience engagement, course creation platform',
+    about: {
+      '@type': 'Thing',
+      name: 'Interactive Learning Creator Tools',
+      description:
+        'Platform for creators to build interactive learning experiences, gamified courses, and live engagement tools',
+    },
     potentialAction: {
       '@type': 'SearchAction',
       target: {

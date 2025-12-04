@@ -9,11 +9,11 @@ export function meta() {
 
   return generateMetaTags(
     {
-      title: 'Pricing Plans • Gonasi',
+      title: 'Gonasi Pricing - Build Interactive Learning | Kahoot Alternative Plans',
       description:
-        'Choose the perfect plan for your learning needs. From free forever plans to enterprise solutions, Gonasi has flexible pricing for educators and organizations.',
+        'Affordable pricing for creators to build interactive learning. Gonasi offers creator-friendly plans as a Kahoot alternative and Brilliant.org-style course builder. Tools to build gamified quizzes, interactive courses, and live audience experiences. Free plans available for educators and organizations.',
       keywords:
-        'Gonasi pricing, LMS pricing, course builder pricing, education platform pricing, free LMS, affordable online learning',
+        'gonasi pricing, build interactive learning pricing, kahoot alternative pricing, course builder pricing, interactive learning creator tools pricing, gamified quiz builder pricing, live quiz platform pricing, brilliant.org alternative pricing, free course builder, affordable creator platform',
       url: `${siteUrl}/pricing`,
       type: 'website',
     },

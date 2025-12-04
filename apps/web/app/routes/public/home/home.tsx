@@ -20,11 +20,12 @@ export function meta() {
 
   return generateMetaTags(
     {
-      title: 'Gonasi • Gamified Learning & Interactive Course Builder',
+      title:
+        'Gonasi - Build Interactive Learning Like Brilliant.org | Kahoot Alternative for Creators',
       description:
-        'Create and share interactive, gamified courses with Gonasi. Engage learners with hands-on experiences and monetize your expertise with ease.',
+        'Gonasi empowers creators to build interactive learning experiences like Brilliant.org and Duolingo. The ultimate Kahoot alternative for live gamified experiences with audiences. Create engaging interactive courses, quizzes, and gamified learning apps with our no-code platform. Tools to build interactive learning for educators and organizations.',
       keywords:
-        'LMS, learning management system, course builder, gamified learning, interactive courses, online education, e-learning platform, course monetization',
+        'Gonasi, build interactive learning, tools to build interactive learning, create interactive learning, kahoot alternative, alternative to kahoot, brilliant.org alternative, alternative to brilliant, duolingo alternative, interactive learning platform, gamified learning creator tools, live gamified experiences, interactive quiz builder, course creation platform, no-code learning platform, educational app builder, interactive course builder, gamified quiz platform, audience engagement tools, live learning platform, gonasi app, gonasi course',
       url: siteUrl,
       type: 'website',
     },

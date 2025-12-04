@@ -35,7 +35,7 @@ export function RealOutcomes() {
           opacity: [0.1, 0.2, 0.1],
         }}
         transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
-        className='absolute left-1/2 top-1/2 h-[600px] w-full -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/10 blur-[150px]'
+        className='absolute top-1/2 left-1/2 h-[600px] w-full -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/10 blur-[150px]'
       />
 
       <div className='relative container mx-auto px-6'>
@@ -52,7 +52,7 @@ export function RealOutcomes() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.1, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-            className='text-primary-foreground text-4xl font-bold leading-tight text-balance lg:text-5xl'
+            className='text-primary-foreground text-4xl leading-tight font-bold text-balance lg:text-5xl'
           >
             Real Outcomes Not Just Clicks
           </motion.h2>
@@ -95,7 +95,7 @@ export function RealOutcomes() {
                 <motion.div
                   whileHover={{ rotate: 360 }}
                   transition={{ duration: 0.6, ease: 'easeInOut' }}
-                  className='bg-primary-foreground/10 ring-primary-foreground/20 mx-auto flex h-20 w-20 items-center justify-center rounded-full backdrop-blur-sm ring-1'
+                  className='bg-primary-foreground/10 ring-primary-foreground/20 mx-auto flex h-20 w-20 items-center justify-center rounded-full ring-1 backdrop-blur-sm'
                 >
                   <Icon className='text-primary-foreground h-10 w-10' />
                 </motion.div>
@@ -118,7 +118,7 @@ export function RealOutcomes() {
           viewport={{ once: true, margin: '-100px' }}
           transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
           whileHover={{ scale: 1.02, y: -5 }}
-          className='bg-primary-foreground/10 ring-primary-foreground/20 mx-auto mt-24 max-w-3xl rounded-2xl p-10 text-center backdrop-blur-sm ring-1 transition-transform md:p-12'
+          className='bg-primary-foreground/10 ring-primary-foreground/20 mx-auto mt-24 max-w-3xl rounded-2xl p-10 text-center ring-1 backdrop-blur-sm transition-transform md:p-12'
         >
           <p className='text-primary-foreground text-lg leading-relaxed italic md:text-xl'>
             &quot;Gonasi transformed how we onboard new hires. Completion rates soared and our team
