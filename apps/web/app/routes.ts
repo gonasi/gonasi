@@ -41,6 +41,10 @@ export default [
     ],
   ),
 
+  // SEO resource routes - must be before :organizationHandle to avoid conflicts
+  route('sitemap.xml', 'routes/sitemap[.]xml.ts'),
+  route('robots.txt', 'routes/robots[.]txt.ts'),
+
   route(':organizationHandle', 'routes/publicOrganizations/public-organization-profile-index.tsx'),
 
   layout('routes/layouts/myProfile/profile-wrapper-layout.tsx', [
