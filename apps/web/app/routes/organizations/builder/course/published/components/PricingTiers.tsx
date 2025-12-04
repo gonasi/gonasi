@@ -1,7 +1,13 @@
 import { CheckCircle2, DollarSign } from 'lucide-react';
 
 import { Badge } from '~/components/ui/badge/badge';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '~/components/ui/card/card';
 
 interface PricingTier {
   id: string;

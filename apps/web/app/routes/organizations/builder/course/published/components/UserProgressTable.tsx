@@ -1,4 +1,13 @@
-import { Activity, Award, CheckCircle, Clock, Target, TrendingUp, UserCheck } from 'lucide-react';
+import {
+  Activity,
+  Award,
+  CheckCircle,
+  Clock,
+  RotateCcw,
+  Target,
+  TrendingUp,
+  UserCheck,
+} from 'lucide-react';
 
 import type { UserProgressStats } from '@gonasi/database/courses';
 
@@ -71,10 +80,7 @@ function formatExpirationDate(dateString: string): string {
   return `In ${years} ${years === 1 ? 'year' : 'years'}`;
 }
 
-export function UserProgressTable({
-  usersProgress,
-  courseEnrollments,
-}: UserProgressTableProps) {
+export function UserProgressTable({ usersProgress, courseEnrollments }: UserProgressTableProps) {
   if (!usersProgress || usersProgress.length === 0) {
     return null;
   }
@@ -93,7 +99,9 @@ export function UserProgressTable({
     usersWithScores.length > 0
       ? usersWithScores.reduce((sum, user) => sum + user.average_score, 0) / usersWithScores.length
       : 0;
-  const completedUsers = usersProgress.filter((user) => user.is_completed).length;
+  const completedUsers = usersProgress.filter(
+    (user) => user.is_completed || user.progress_percentage >= 100,
+  ).length;
   const activeEnrollments = courseEnrollments.filter((e) => e.is_active).length;
 
   return (
@@ -124,9 +132,7 @@ export function UserProgressTable({
           </CardHeader>
           <CardContent>
             <div className='text-2xl font-bold'>{Math.round(avgCompletion)}%</div>
-            <p className='text-muted-foreground text-xs'>
-              Average course completion
-            </p>
+            <p className='text-muted-foreground text-xs'>Average course completion</p>
           </CardContent>
         </Card>
 
@@ -138,9 +144,7 @@ export function UserProgressTable({
             </div>
           </CardHeader>
           <CardContent>
-            <div className='text-2xl font-bold'>
-              {avgScore > 0 ? avgScore.toFixed(1) : 'N/A'}
-            </div>
+            <div className='text-2xl font-bold'>{avgScore > 0 ? avgScore.toFixed(1) : 'N/A'}</div>
             <p className='text-muted-foreground text-xs'>
               {usersWithScores.length > 0
                 ? `From ${usersWithScores.length} learner${usersWithScores.length === 1 ? '' : 's'}`
@@ -174,8 +178,8 @@ export function UserProgressTable({
             <CardTitle>Learner Progress & Enrollment</CardTitle>
           </div>
           <CardDescription>
-            Track learning progress, performance, and enrollment status for all{' '}
-            {activeEnrollments} active {activeEnrollments === 1 ? 'learner' : 'learners'}
+            Track learning progress, performance, and enrollment status for all {activeEnrollments}{' '}
+            active {activeEnrollments === 1 ? 'learner' : 'learners'}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -183,14 +187,15 @@ export function UserProgressTable({
             <table className='w-full'>
               <thead>
                 <tr className='border-b text-left text-sm font-medium'>
-                  <th className='pb-3 pr-4'>Learner</th>
-                  <th className='pb-3 pr-4'>Progress</th>
-                  <th className='pb-3 pr-4'>Score</th>
-                  <th className='pb-3 pr-4'>Lessons</th>
-                  <th className='pb-3 pr-4'>Blocks</th>
-                  <th className='pb-3 pr-4'>Time Spent</th>
-                  <th className='pb-3 pr-4'>Last Activity</th>
-                  <th className='pb-3 pr-4'>Enrollment</th>
+                  <th className='pr-4 pb-3'>Learner</th>
+                  <th className='pr-4 pb-3'>Progress</th>
+                  <th className='pr-4 pb-3'>Score</th>
+                  <th className='pr-4 pb-3'>Lessons</th>
+                  <th className='pr-4 pb-3'>Blocks</th>
+                  <th className='pr-4 pb-3'>Time Spent</th>
+                  <th className='pr-4 pb-3'>Last Activity</th>
+                  <th className='pr-4 pb-3'>Resets</th>
+                  <th className='pr-4 pb-3'>Enrollment</th>
                   <th className='pb-3'>Course Status</th>
                 </tr>
               </thead>
@@ -271,6 +276,12 @@ export function UserProgressTable({
                       </span>
                     </td>
                     <td className='py-3 pr-4'>
+                      <div className='flex items-center gap-1'>
+                        <RotateCcw className='text-muted-foreground size-4' />
+                        <span className='text-sm'>{user.reset_count}</span>
+                      </div>
+                    </td>
+                    <td className='py-3 pr-4'>
                       {(() => {
                         const enrollment = enrollmentMap.get(user.user_id);
                         return (
@@ -289,7 +300,7 @@ export function UserProgressTable({
                             </Badge>
                             {enrollment?.expires_at && (
                               <span className='text-muted-foreground text-xs'>
-                                {formatExpirationDate(enrollment.expires_at)}
+                                Expires {formatExpirationDate(enrollment.expires_at)}
                               </span>
                             )}
                           </div>
@@ -297,8 +308,14 @@ export function UserProgressTable({
                       })()}
                     </td>
                     <td className='py-3'>
-                      <Badge variant={user.is_completed ? 'success' : 'outline'}>
-                        {user.is_completed ? (
+                      <Badge
+                        variant={
+                          user.is_completed || user.progress_percentage >= 100
+                            ? 'success'
+                            : 'outline'
+                        }
+                      >
+                        {user.is_completed || user.progress_percentage >= 100 ? (
                           <>
                             <CheckCircle className='size-3' /> Completed
                           </>
