@@ -64,10 +64,34 @@ export function useFillInTheBlankInteraction(
     const timestamp = getTimestamp();
     const isCorrect = isAnswerCorrect(userInput, correctAnswer, caseSensitive);
 
+    // Build letter attempts array - track each letter attempt
+    const userInputNoSpaces = userInput.replace(/\s/g, '');
+    const correctAnswerNoSpaces = correctAnswer.replace(/\s/g, '');
+
     setState((prev) => {
+      // Update letterAttempts array with current attempt
+      const updatedLetterAttempts = [...prev.letterAttempts];
+
+      // Ensure letterAttempts array is initialized for all positions
+      while (updatedLetterAttempts.length < correctAnswerNoSpaces.length) {
+        updatedLetterAttempts.push([]);
+      }
+
+      // Record each letter attempt
+      for (let i = 0; i < userInputNoSpaces.length; i++) {
+        const attemptedLetter = userInputNoSpaces[i];
+        if (attemptedLetter && attemptedLetter.trim()) {
+          // Only add if not already in the attempts for this position
+          if (!updatedLetterAttempts[i].includes(attemptedLetter)) {
+            updatedLetterAttempts[i] = [...updatedLetterAttempts[i], attemptedLetter];
+          }
+        }
+      }
+
       const newState = {
         ...prev,
         userAnswer: userInput,
+        letterAttempts: updatedLetterAttempts,
         showCheckIfAnswerIsCorrectButton: false,
         showTryAgainButton: false,
         showShowAnswerButton: false,
@@ -88,11 +112,30 @@ export function useFillInTheBlankInteraction(
           },
         };
       } else {
+        const updatedWrongAttempts = [...prev.wrongAttempts, { answer: userInput, timestamp }];
+
+        // Automatically reveal answer after 5 wrong attempts
+        if (updatedWrongAttempts.length >= 5) {
+          return {
+            ...newState,
+            userAnswer: correctAnswer,
+            showContinueButton: true,
+            canShowExplanationButton: true,
+            hasRevealedCorrectAnswer: true,
+            wrongAttempts: updatedWrongAttempts,
+            correctAttempt: {
+              answer: correctAnswer,
+              timestamp,
+              wasRevealed: true,
+            },
+          };
+        }
+
         return {
           ...newState,
           showTryAgainButton: true,
           showShowAnswerButton: true,
-          wrongAttempts: [...prev.wrongAttempts, { answer: userInput, timestamp }],
+          wrongAttempts: updatedWrongAttempts,
         };
       }
     });
@@ -148,6 +191,7 @@ export function useFillInTheBlankInteraction(
     state,
     userInput,
     letterFeedback,
+    letterAttempts: state.letterAttempts,
 
     // Derived
     isCompleted,
