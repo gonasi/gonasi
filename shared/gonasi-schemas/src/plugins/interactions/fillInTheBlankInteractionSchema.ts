@@ -4,6 +4,11 @@ export const FillInTheBlankStateInteractionSchema = z.object({
   plugin_type: z.literal('fill_in_the_blank'),
   userAnswer: z.string().default(''),
 
+  // Track per-letter attempt history
+  // Each index represents a letter position (without spaces)
+  // Each array contains all letters attempted at that position
+  letterAttempts: z.array(z.array(z.string())).default([]),
+
   correctAttempt: z
     .object({
       answer: z.string(),
