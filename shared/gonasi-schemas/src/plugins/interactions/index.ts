@@ -1,5 +1,6 @@
 export * from './richTextInteractionSchema';
 export * from './trueOrFalseInteractionSchema';
+export * from './fillInTheBlankInteractionSchema';
 export * from './multipleChoiceSingleAnswerInteractionSchema';
 export * from './multipleChoiceMultipleAnswersInteractionSchema';
 export * from './guidedImageHotspotsInteractionSchema';

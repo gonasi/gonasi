@@ -70,6 +70,14 @@ export const ALL_PLUGINS = [
             comingSoon: false,
           },
           {
+            id: 'fill_in_the_blank',
+            name: 'Fill in the Blank',
+            description: 'Type the correct answer with letter-by-letter feedback.',
+            example: 'The capital of France is ____.',
+            icon: 'PenLine',
+            comingSoon: false,
+          },
+          {
             id: 'multiple_choice_single',
             name: 'Multiple Choice (Single Answer)',
             description: 'One correct answer, multiple options.',
