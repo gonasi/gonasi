@@ -6,6 +6,7 @@ import type { BlockWithProgressSchemaTypes } from '@gonasi/schemas/publish/progr
 import { ViewMultipleChoiceMultipleAnswersPlugin } from '../QuizPlugins/MultipleChoiceMultipleAnswers/ViewMultipleChoiceMultipleAnswersPlugin';
 import { ViewMultipleChoiceSingleAnswerPlugin } from '../QuizPlugins/MultipleChoiceSingleAnswer/ViewMultipleChoiceSingleAnswerPlugin';
 import { ViewTrueOrFalsePlugin } from '../QuizPlugins/TrueOrFalsePlugin/ViewTrueOrFalsePlugin';
+import { ViewFillInTheBlankPlugin } from '../QuizPlugins/FillInTheBlankPlugin/ViewFillInTheBlankPlugin';
 import { ViewStepByStepRevealPlugin } from '../RevealPlugins/StepByStepReveal/ViewStepByStepRevealPlugin';
 import { ViewRichTextPlugin } from '../RichTextPlugins/RichTextPlugin/ViewRichTextPlugin';
 
@@ -22,6 +23,7 @@ const viewPluginComponentMap: Record<
   (props: ViewPluginComponentProps) => JSX.Element
 > = {
   true_or_false: ViewTrueOrFalsePlugin,
+  fill_in_the_blank: ViewFillInTheBlankPlugin,
   rich_text_editor: ViewRichTextPlugin,
   multiple_choice_multiple: ViewMultipleChoiceMultipleAnswersPlugin,
   multiple_choice_single: ViewMultipleChoiceSingleAnswerPlugin,
