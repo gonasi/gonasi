@@ -1,5 +1,6 @@
+import { getSignedUrl } from '@gonasi/cloudinary';
+
 import type { TypedSupabaseClient } from '../client';
-import { THUMBNAILS_BUCKET } from '../constants';
 
 interface FetchCourseOverviewArgs {
   supabase: TypedSupabaseClient;
@@ -11,11 +12,11 @@ interface FetchCourseOverviewArgs {
  * - Basic metadata (name, description, timestamps)
  * - Category & subcategory info
  * - Creator and last updater profile
- * - Signed image URL (if image is set)
+ * - Signed image URL from Cloudinary (if image is set)
  *
  * @param {TypedSupabaseClient} supabase - Supabase client instance
  * @param {string} courseId - The course ID to fetch
- * @returns {Promise<object | null>} Course overview with signed image URL or null on error
+ * @returns {Promise<object | null>} Course overview with signed Cloudinary URL or null on error
  */
 export async function fetchOrganizationCourseOverviewById({
   supabase,
@@ -59,17 +60,30 @@ export async function fetchOrganizationCourseOverviewById({
   if (!data.image_url) {
     return {
       ...data,
-      signedUrl: '',
+      signedUrl: null,
     };
   }
 
-  // Generate a signed URL for the course thumbnail (valid for 1 hour)
-  const { data: signedUrlData } = await supabase.storage
-    .from(THUMBNAILS_BUCKET)
-    .createSignedUrl(data.image_url, 3600);
+  // Generate a signed URL for the course thumbnail from Cloudinary (valid for 1 hour)
+  try {
+    const signedUrl = getSignedUrl(data.image_url, {
+      width: 800,
+      quality: 'auto',
+      format: 'auto',
+      expiresInSeconds: 3600,
+      resourceType: 'image',
+      crop: 'fill',
+    });
 
-  return {
-    ...data,
-    signedUrl: signedUrlData?.signedUrl || '',
-  };
+    return {
+      ...data,
+      signedUrl,
+    };
+  } catch (error) {
+    console.error('[fetchOrganizationCourseOverviewById] Failed to generate signed URL:', error);
+    return {
+      ...data,
+      signedUrl: null,
+    };
+  }
 }

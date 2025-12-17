@@ -77,8 +77,7 @@ export async function fetchPublishedCourseDetails({
     return null;
   }
 
-  const signedImageUrl = await generateSignedThumbnailUrl({
-    supabase,
+  const signedImageUrl = generateSignedThumbnailUrl({
     imagePath: courseRow.image_url,
   });
 

@@ -1,7 +1,7 @@
+import { deleteFromCloudinary } from '@gonasi/cloudinary';
 import type { DeleteFileSchemaTypes } from '@gonasi/schemas/file';
 
 import type { TypedSupabaseClient } from '../client';
-import { FILE_LIBRARY_BUCKET } from '../constants';
 import type { ApiResponse } from '../types';
 
 export const deleteFile = async (
@@ -11,6 +11,7 @@ export const deleteFile = async (
   const { fileId, path } = fileData;
 
   try {
+    // Step 1: Verify file exists and user has permission (RLS enforced)
     const { data, error } = await supabase.from('file_library').select().eq('id', fileId).single();
 
     if (error || !data) {
@@ -21,11 +22,18 @@ export const deleteFile = async (
       };
     }
 
-    const { error: deleteStorageError } = await supabase.storage
-      .from(FILE_LIBRARY_BUCKET)
-      .remove([path]);
+    // Step 2: Determine resource type from file_type
+    const resourceType =
+      data.file_type === 'video' ? 'video' : data.file_type === 'image' ? 'image' : 'raw';
 
-    if (deleteStorageError) {
+    // Step 3: Delete from Cloudinary
+    const { success: cloudinarySuccess, error: cloudinaryError } = await deleteFromCloudinary(
+      path,
+      resourceType,
+    );
+
+    if (!cloudinarySuccess) {
+      console.error('Cloudinary delete failed:', cloudinaryError);
       return {
         success: false,
         message: 'Failed to delete the file from storage.',

@@ -107,8 +107,7 @@ export async function fetchPublishedPublicCourses({
   // Process results: sign image URLs and validate pricing tiers
   const processedCourses = await Promise.all(
     (data ?? []).map(async (course) => {
-      const signedImageUrl = await generateSignedThumbnailUrl({
-        supabase,
+      const signedImageUrl = generateSignedThumbnailUrl({
         imagePath: course.image_url,
       });
 

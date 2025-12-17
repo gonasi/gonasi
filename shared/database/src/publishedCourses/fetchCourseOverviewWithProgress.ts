@@ -52,8 +52,7 @@ export async function fetchCourseOverviewWithProgress({
   const parsedData = parsed.data;
   const { course, organization } = parsedData;
 
-  const signedImageUrl = await generateSignedThumbnailUrl({
-    supabase,
+  const signedImageUrl = generateSignedThumbnailUrl({
     imagePath: course.image_url,
   });
 

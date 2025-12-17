@@ -15,6 +15,11 @@ const envSchema = z.object({
 
   PAYSTACK_SECRET_KEY: z.string().min(1),
   PAYSTACK_PUBLIC_KEY: z.string().min(1),
+
+  // Cloudinary configuration
+  CLOUDINARY_CLOUD_NAME: z.string().min(1),
+  CLOUDINARY_API_KEY: z.string().min(1),
+  CLOUDINARY_API_SECRET: z.string().min(1),
 });
 
 export const initEnv = () => {

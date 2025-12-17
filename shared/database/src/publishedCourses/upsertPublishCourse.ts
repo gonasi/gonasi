@@ -1,12 +1,7 @@
+import { copyToPublished, deletePublishedCourseFiles } from '@gonasi/cloudinary';
+
 import { getUserId } from '../auth';
 import type { TypedSupabaseClient } from '../client';
-import {
-  FILE_LIBRARY_BUCKET,
-  PUBLISHED_FILE_LIBRARY_BUCKET,
-  PUBLISHED_THUMBNAILS,
-  THUMBNAILS_BUCKET,
-} from '../constants';
-import { deleteAllPublishedFilesInFolder } from '../files/deleteAllPublishedFilesInFolder';
 import type { ApiResponse } from '../types';
 import { getTransformedDataToPublish } from './getTransformedDataToPublish';
 
@@ -104,22 +99,30 @@ export const upsertPublishCourse = async ({
     // =========================================================================
     // STEP 3: Handle thumbnail file management
     // =========================================================================
-    // First remove any old published thumbnail, then copy the current one
-    // to the published bucket so the course thumbnail is immutable.
-    await supabase.storage.from(PUBLISHED_THUMBNAILS).remove([data.image_url]);
+    // Copy course thumbnail from draft to published folder in Cloudinary
+    // This maintains the authenticated type and creates an immutable published version
 
-    const { error: copyError } = await supabase.storage
-      .from(THUMBNAILS_BUCKET)
-      .copy(data.image_url, data.image_url, {
-        destinationBucket: PUBLISHED_THUMBNAILS,
-      });
+    // Only attempt to copy thumbnail if image_url exists
+    if (data.image_url) {
+      const { success: thumbnailCopySuccess, error: thumbnailCopyError } = await copyToPublished(
+        data.image_url, // Use the actual public_id where the file exists in Cloudinary
+        {
+          organizationId,
+          courseId,
+          fileId: 'thumbnail', // Special case for thumbnail
+          resourceType: 'thumbnail', // Specify thumbnail type for correct published path
+        },
+      );
 
-    if (copyError) {
-      console.error('[upsertPublishCourse] Thumbnail copy error:', copyError);
-      return {
-        success: false,
-        message: 'Failed to copy course thumbnail to the published bucket.',
-      };
+      if (!thumbnailCopySuccess) {
+        console.error('[upsertPublishCourse] Thumbnail copy error:', thumbnailCopyError);
+        return {
+          success: false,
+          message: `Failed to copy course thumbnail to the published folder: ${thumbnailCopyError}`,
+        };
+      }
+    } else {
+      console.warn('[upsertPublishCourse] No thumbnail to copy - image_url is empty');
     }
 
     // =========================================================================
@@ -202,18 +205,18 @@ export const upsertPublishCourse = async ({
       organization_id: organizationId,
     });
 
-    const { error: deleteError } = await deleteAllPublishedFilesInFolder({
-      supabase,
+    // Delete all published files from Cloudinary
+    const { error: deleteError } = await deletePublishedCourseFiles({
       organizationId,
       courseId,
     });
     if (deleteError) {
-      console.error('[upsertPublishCourse] Failed to delete course files:', deleteError);
+      console.error('[upsertPublishCourse] Failed to delete published files:', deleteError);
       // This is non-fatal; we'll attempt to copy new files anyway
     }
 
     // =========================================================================
-    // STEP 6: Copy course files to published storage bucket
+    // STEP 6: Copy course files from draft to published folder in Cloudinary
     // =========================================================================
     // Fetch all files associated with this course in the draft bucket
     const { data: fileData, error: fileError } = await supabase
@@ -233,17 +236,31 @@ export const upsertPublishCourse = async ({
       const copyResults = [];
       const failedCopies = [];
 
-      // Copy each file to the published bucket
+      // Copy each file from draft to published folder in Cloudinary
       for (const file of fileData) {
         if (!file.path) continue;
 
-        const { error: copyFileError } = await supabase.storage
-          .from(FILE_LIBRARY_BUCKET)
-          .copy(file.path, file.path, { destinationBucket: PUBLISHED_FILE_LIBRARY_BUCKET });
+        const {
+          success: copySuccess,
+          publishedPublicId,
+          error: copyError,
+        } = await copyToPublished(
+          file.path, // Draft public_id
+          {
+            organizationId,
+            courseId,
+            fileId: file.id,
+          },
+        );
 
-        if (copyFileError)
-          failedCopies.push({ id: file.id, path: file.path, error: copyFileError });
-        else copyResults.push({ id: file.id, path: file.path });
+        if (!copySuccess) {
+          failedCopies.push({ id: file.id, path: file.path, error: copyError });
+        } else {
+          copyResults.push({
+            ...file,
+            path: publishedPublicId, // Update to published public_id
+          });
+        }
       }
 
       // If some files failed to copy, decide whether to proceed or fail
@@ -259,10 +276,17 @@ export const upsertPublishCourse = async ({
       }
 
       // =========================================================================
-      // STEP 7: Create database records for copied files
+      // STEP 7: Create database records for copied files with published paths
       // =========================================================================
       // Track the published files in the database so we can retrieve them later
-      const { error: insertError } = await supabase.from('published_file_library').insert(fileData);
+      const publishedFileRecords = copyResults.map((file) => ({
+        ...file,
+        path: file.path, // Already updated to published public_id
+      }));
+
+      const { error: insertError } = await supabase
+        .from('published_file_library')
+        .insert(publishedFileRecords);
       if (insertError) {
         console.error(
           '[upsertPublishCourse] Failed to insert published file records:',

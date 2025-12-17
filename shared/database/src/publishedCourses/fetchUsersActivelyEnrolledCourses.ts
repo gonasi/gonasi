@@ -72,7 +72,6 @@ export async function fetchUsersActivelyEnrolledCourses({
 
       const [signedImageUrl, signedAvatarUrl] = await Promise.all([
         generateSignedThumbnailUrl({
-          supabase,
           imagePath: published_courses.image_url,
         }),
         generateSignedOrgProfileUrl({

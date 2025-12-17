@@ -1,4 +1,5 @@
-import { THUMBNAILS_BUCKET } from '../../constants';
+import { getSignedUrl } from '@gonasi/cloudinary';
+
 import { getPaginationRange } from '../../constants/utils';
 import type { FetchAssetsParams } from '../../types';
 
@@ -43,18 +44,26 @@ export async function fetchAllPublishedCoursesWithSignedUrl({
 
       if (!course.image_url) return { ...course, lesson_count, chapters_count, signed_url: null };
 
-      const { data: signedUrlData, error: fileError } = await supabase.storage
-        .from(THUMBNAILS_BUCKET)
-        .createSignedUrl(course.image_url, 3600);
+      try {
+        const signedUrl = getSignedUrl(course.image_url, {
+          width: 400,
+          quality: 'auto',
+          format: 'auto',
+          expiresInSeconds: 3600,
+          resourceType: 'image',
+          crop: 'fill',
+        });
 
-      if (fileError) throw new Error(fileError.message);
-
-      return {
-        ...course,
-        lesson_count,
-        chapters_count,
-        signed_url: signedUrlData.signedUrl,
-      };
+        return {
+          ...course,
+          lesson_count,
+          chapters_count,
+          signed_url: signedUrl,
+        };
+      } catch (error) {
+        console.error('[fetchAllPublishedCoursesWithSignedUrl] Failed to generate signed URL:', error);
+        return { ...course, lesson_count, chapters_count, signed_url: null };
+      }
     }),
   );
 

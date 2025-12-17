@@ -1,0 +1,185 @@
+import { getCloudinary } from './client';
+import { generatePublicId } from './helpers';
+
+export interface CopyToPublishedParams {
+  organizationId: string;
+  courseId: string;
+  fileId: string;
+  resourceType?: 'file' | 'thumbnail'; // Optional: defaults to 'file'
+}
+
+export interface CopyToPublishedResult {
+  success: boolean;
+  publishedPublicId?: string;
+  error?: string;
+}
+
+/**
+ * Copies a file from draft folder to published folder in Cloudinary.
+ * Uses Cloudinary's upload API with the source file to create a copy.
+ *
+ * @param draftPublicId - Public ID of the draft file
+ * @param params - Organization, course, file, and environment context
+ * @returns Result with success status and published public_id
+ */
+export async function copyToPublished(
+  draftPublicId: string,
+  params: CopyToPublishedParams,
+): Promise<CopyToPublishedResult> {
+  try {
+    const cloudinary = getCloudinary();
+
+    // Remove file extension from public_id if present
+    // Cloudinary public_ids should not include file extensions
+    const cleanDraftPublicId = draftPublicId.replace(/\.(jpg|jpeg|png|gif|webp|svg|mp4|mov|avi|pdf|doc|docx)$/i, '');
+
+    // Generate published public_id
+    const publishedPublicId = generatePublicId({
+      scope: 'published',
+      resourceType: params.resourceType || 'file', // Use provided resourceType or default to 'file'
+      organizationId: params.organizationId,
+      courseId: params.courseId,
+      fileId: params.fileId,
+    });
+
+    // First, get the resource details to determine its type
+    let resourceType: 'image' | 'video' | 'raw' = 'image';
+    try {
+      const resourceInfo = await cloudinary.api.resource(cleanDraftPublicId, {
+        type: 'authenticated',
+      });
+      resourceType = resourceInfo.resource_type;
+      console.log('[Cloudinary] Found resource:', { cleanDraftPublicId, resourceType });
+    } catch (error) {
+      // If we can't get resource info, try different resource types
+      console.warn('[Cloudinary] Could not get resource info as authenticated image', {
+        cleanDraftPublicId,
+        error: error instanceof Error ? error.message : JSON.stringify(error),
+      });
+
+      // Try to find the resource in other types or as upload type
+      let found = false;
+      for (const tryType of ['upload', 'private'] as const) {
+        try {
+          const resourceInfo = await cloudinary.api.resource(cleanDraftPublicId, {
+            type: tryType,
+          });
+          resourceType = resourceInfo.resource_type;
+          console.log('[Cloudinary] Found resource with different type:', {
+            cleanDraftPublicId,
+            foundType: tryType,
+            resourceType,
+          });
+          found = true;
+          break;
+        } catch {
+          // Continue trying
+        }
+      }
+
+      if (!found) {
+        throw new Error(
+          `Resource not found in Cloudinary: ${cleanDraftPublicId}. The file may not have been uploaded yet or was uploaded with a different public_id.`,
+        );
+      }
+    }
+
+    // Generate a signed URL for the authenticated asset
+    // We need this because authenticated assets require signed URLs for access
+    const signedUrl = cloudinary.url(cleanDraftPublicId, {
+      sign_url: true,
+      type: 'authenticated',
+      resource_type: resourceType,
+    });
+
+    // Use Cloudinary's upload API to create a copy from the signed URL
+    const result = await cloudinary.uploader.upload(signedUrl, {
+      public_id: publishedPublicId,
+      type: 'authenticated', // CRITICAL: Maintain authenticated type
+      resource_type: resourceType,
+      overwrite: true,
+      invalidate: true, // Invalidate CDN cache
+    });
+
+    if (!result.public_id) {
+      throw new Error('Published public_id missing from response');
+    }
+
+    return {
+      success: true,
+      publishedPublicId: result.public_id,
+    };
+  } catch (error) {
+    const errorDetails = {
+      originalDraftPublicId: draftPublicId,
+      cleanedDraftPublicId: draftPublicId.replace(/\.(jpg|jpeg|png|gif|webp|svg|mp4|mov|avi|pdf|doc|docx)$/i, ''),
+      params,
+      errorType: typeof error,
+      error: error instanceof Error ? error.message : JSON.stringify(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      fullError: error,
+    };
+
+    console.error('[Cloudinary Copy to Published Error]', errorDetails);
+
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : (typeof error === 'object' && error !== null ? JSON.stringify(error) : 'Copy failed'),
+    };
+  }
+}
+
+export interface DeletePublishedCourseFilesParams {
+  organizationId: string;
+  courseId: string;
+}
+
+export interface DeletePublishedCourseFilesResult {
+  success: boolean;
+  error?: string;
+}
+
+/**
+ * Deletes all files in a published course folder.
+ * Uses Cloudinary's bulk delete by prefix.
+ *
+ * @param params - Organization and course context
+ * @returns Result with success status
+ */
+export async function deletePublishedCourseFiles(
+  params: DeletePublishedCourseFilesParams,
+): Promise<DeletePublishedCourseFilesResult> {
+  try {
+    const cloudinary = getCloudinary();
+
+    // Build prefix for published course files
+    // Pattern: /:organizationId/courses/:courseId/files/published/
+    const prefix = `${params.organizationId}/courses/${params.courseId}/files/published/`;
+
+    // Delete all resources with this prefix
+    await cloudinary.api.delete_resources_by_prefix(prefix, {
+      type: 'authenticated', // Match the upload type
+      invalidate: true, // Invalidate CDN cache
+    });
+
+    // Also delete published thumbnails
+    // Pattern: /:organizationId/courses/:courseId/thumbnail/published/
+    const thumbnailPrefix = `${params.organizationId}/courses/${params.courseId}/thumbnail/published/`;
+    await cloudinary.api.delete_resources_by_prefix(thumbnailPrefix, {
+      type: 'authenticated',
+      invalidate: true,
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error('[Cloudinary Delete Published Course Files Error]', {
+      params,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Delete failed',
+    };
+  }
+}

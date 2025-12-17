@@ -1,6 +1,7 @@
+import { getSignedUrl } from '@gonasi/cloudinary';
+
 import { getUserId } from '../auth';
 import type { TypedSupabaseClient } from '../client';
-import { THUMBNAILS_BUCKET } from '../constants';
 
 /**
  * Retrieves course categories from the database and maps them into
@@ -40,15 +41,21 @@ export async function fetchUserCoursesAsSelectOptions(
     data.map(async ({ id, name, image_url }) => {
       if (!image_url) return { value: id, label: name, imageUrl: undefined };
 
-      const { data: signedUrlData, error: fileError } = await supabase.storage
-        .from(THUMBNAILS_BUCKET)
-        .createSignedUrl(image_url, 3600);
+      try {
+        const signedUrl = getSignedUrl(image_url, {
+          width: 200,
+          quality: 'auto',
+          format: 'auto',
+          expiresInSeconds: 3600,
+          resourceType: 'image',
+          crop: 'fill',
+        });
 
-      if (fileError) {
-        throw new Error(`Failed to generate signed URL for ${image_url}: ${fileError.message}`);
+        return { value: id, label: name, imageUrl: signedUrl };
+      } catch (error) {
+        console.error('[fetchUserCoursesAsSelectOptions] Failed to generate signed URL:', error);
+        return { value: id, label: name, imageUrl: undefined };
       }
-
-      return { value: id, label: name, imageUrl: signedUrlData.signedUrl };
     }),
   );
 }
