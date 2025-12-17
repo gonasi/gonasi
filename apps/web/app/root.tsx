@@ -18,6 +18,7 @@ import { getToast } from 'remix-toast';
 import { HoneypotProvider } from 'remix-utils/honeypot/react';
 import { Toaster } from 'sonner';
 
+import { initCloudinary } from '@gonasi/cloudinary';
 import type { UserRole } from '@gonasi/database/client';
 import { getUserProfile } from '@gonasi/database/profile';
 
@@ -26,7 +27,7 @@ import { NavigationProgressBar } from './components/progress-bar';
 import { useStore } from './store';
 import './app.css';
 
-import { getClientEnv } from '~/.server/env.server';
+import { getClientEnv, getServerEnv } from '~/.server/env.server';
 import { useToast } from '~/components/ui/toast';
 import { createClient } from '~/lib/supabase/supabase.server';
 import { honeypot } from '~/utils/honeypot.server';
@@ -65,6 +66,15 @@ export interface AppOutletContext {
 // --- Loader ---
 export async function loader({ request }: Route.LoaderArgs) {
   const clientEnv = getClientEnv();
+
+  // Initialize Cloudinary
+  const env = getServerEnv();
+  initCloudinary({
+    cloudName: env.CLOUDINARY_CLOUD_NAME,
+    apiKey: env.CLOUDINARY_API_KEY,
+    apiSecret: env.CLOUDINARY_API_SECRET,
+  });
+
   const { headers: supabaseHeaders, supabase } = createClient(request);
 
   const { user } = await getUserProfile(supabase);

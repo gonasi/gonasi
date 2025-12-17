@@ -1,5 +1,6 @@
+import { getSignedUrl } from '@gonasi/cloudinary';
+
 import type { TypedSupabaseClient } from '../../client';
-import { THUMBNAILS_BUCKET } from '../../constants';
 
 /**
  * Retrieves the full details of a specific course by its ID.
@@ -95,14 +96,33 @@ export async function fetchPublishedCourseDetailsById(
     };
   }
 
-  const { data: signedUrlData } = await supabase.storage
-    .from(THUMBNAILS_BUCKET)
-    .createSignedUrl(data.image_url, 3600);
+  try {
+    // Use updated_at timestamp as cache-busting version parameter
+    const version = data.updated_at ? new Date(data.updated_at).getTime() : undefined;
 
-  return {
-    ...data,
-    signedUrl: signedUrlData?.signedUrl || '',
-    lesson_count,
-    chapters_count,
-  };
+    const signedUrl = getSignedUrl(data.image_url, {
+      width: 800,
+      quality: 'auto',
+      format: 'auto',
+      expiresInSeconds: 3600,
+      resourceType: 'image',
+      crop: 'fill',
+      version, // Add version for cache busting
+    });
+
+    return {
+      ...data,
+      signedUrl,
+      lesson_count,
+      chapters_count,
+    };
+  } catch (error) {
+    console.error('[fetchPublishedCourseDetailsById] Failed to generate signed URL:', error);
+    return {
+      ...data,
+      signedUrl: null,
+      lesson_count,
+      chapters_count,
+    };
+  }
 }

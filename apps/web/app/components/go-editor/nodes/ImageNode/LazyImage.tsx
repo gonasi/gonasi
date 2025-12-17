@@ -66,48 +66,52 @@ export function LazyImage({
   };
 
   return (
-    <div style={{ position: 'relative', display: 'inline-block' }}>
-      {/* Background blur/placeholder */}
-      {!hasError && (
+    <div style={{ position: 'relative', display: 'inline-block', ...initialStyle }}>
+      {/* Cloudinary blur placeholder - only show while loading */}
+      {!hasError && !isLoaded && (
         <div
           style={{
             position: 'absolute',
             inset: 0,
-            background: placeholder,
-            opacity: isLoaded ? 0 : 1,
-            transition: 'opacity 0.3s ease-in-out',
-            zIndex: 0,
+            ...(placeholder.startsWith('url(')
+              ? {
+                  backgroundImage: placeholder,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                }
+              : {
+                  background: placeholder,
+                }),
+            zIndex: 1,
             pointerEvents: 'none',
+            ...initialStyle,
           }}
         />
       )}
 
       {src && !hasError ? (
-        <div
+        <img
+          className={className || undefined}
+          src={src}
+          alt={altText}
+          ref={imageRef}
+          draggable='false'
           style={{
-            opacity: isLoaded ? 1 : 0,
-            transition: 'opacity 0.3s ease-in-out',
+            ...initialStyle,
+            objectFit: 'contain',
             position: 'relative',
-            zIndex: 1,
+            zIndex: 2,
           }}
-        >
-          <img
-            className={className || undefined}
-            src={src}
-            alt={altText}
-            ref={imageRef}
-            draggable='false'
-            style={{ ...initialStyle, objectFit: 'contain' }}
-            onError={onError}
-            onLoad={(e) => {
-              if (isSVGImage) {
-                const img = e.currentTarget;
-                setDimensions({ height: img.naturalHeight, width: img.naturalWidth });
-              }
-              onLoad();
-            }}
-          />
-        </div>
+          onError={onError}
+          onLoad={(e) => {
+            if (isSVGImage) {
+              const img = e.currentTarget;
+              setDimensions({ height: img.naturalHeight, width: img.naturalWidth });
+            }
+            onLoad();
+          }}
+          crossOrigin='anonymous'
+        />
       ) : (
         <div
           className={className || undefined}

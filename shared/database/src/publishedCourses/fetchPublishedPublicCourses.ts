@@ -43,6 +43,7 @@ export async function fetchPublishedPublicCourses({
       visibility,
       pricing_tiers,
       published_at,
+      updated_at,
       published_by,
       total_chapters,
       total_lessons,
@@ -107,9 +108,14 @@ export async function fetchPublishedPublicCourses({
   // Process results: sign image URLs and validate pricing tiers
   const processedCourses = await Promise.all(
     (data ?? []).map(async (course) => {
-      const signedImageUrl = await generateSignedThumbnailUrl({
-        supabase,
+      // Use updated_at for cache busting (changes on every republish)
+      // Fall back to published_at if updated_at is not available
+      const timestampToUse = course.updated_at ?? course.published_at;
+      const version = timestampToUse ? new Date(timestampToUse).getTime() : Date.now();
+
+      const signedImageUrl = generateSignedThumbnailUrl({
         imagePath: course.image_url,
+        version, // Add version for cache busting
       });
 
       const signedAvatarUrl = await generateSignedOrgProfileUrl({

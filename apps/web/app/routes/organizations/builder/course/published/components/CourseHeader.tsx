@@ -35,11 +35,7 @@ export function CourseHeader({
           {/* Course Image */}
           {image_url && (
             <div className='flex-shrink-0'>
-              <img
-                src={image_url}
-                alt={name}
-                className='h-48 w-full rounded-lg object-cover md:w-64'
-              />
+              <img src={image_url} alt={name} className='w-full object-contain md:w-84' />
             </div>
           )}
 

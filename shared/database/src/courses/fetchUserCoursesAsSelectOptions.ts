@@ -1,6 +1,7 @@
+import { getSignedUrl } from '@gonasi/cloudinary';
+
 import { getUserId } from '../auth';
 import type { TypedSupabaseClient } from '../client';
-import { THUMBNAILS_BUCKET } from '../constants';
 
 /**
  * Retrieves course categories from the database and maps them into
@@ -23,7 +24,7 @@ export async function fetchUserCoursesAsSelectOptions(
   // Use OR filter to handle both non-matching AND null pathway_ids
   const { data, error } = await supabase
     .from('courses')
-    .select('id, name, image_url, pathway_id')
+    .select('id, name, image_url, pathway_id, updated_at')
     .eq('created_by', userId)
     .or(`pathway_id.neq.${pathwayId},pathway_id.is.null`)
     .order('created_at', { ascending: false });
@@ -37,18 +38,28 @@ export async function fetchUserCoursesAsSelectOptions(
   }
 
   return await Promise.all(
-    data.map(async ({ id, name, image_url }) => {
-      if (!image_url) return { value: id, label: name, imageUrl: undefined };
+    data.map(async (course) => {
+      if (!course.image_url) return { value: course.id, label: course.name, imageUrl: undefined };
 
-      const { data: signedUrlData, error: fileError } = await supabase.storage
-        .from(THUMBNAILS_BUCKET)
-        .createSignedUrl(image_url, 3600);
+      try {
+        // Use updated_at timestamp as cache-busting version parameter
+        const version = course.updated_at ? new Date(course.updated_at).getTime() : undefined;
 
-      if (fileError) {
-        throw new Error(`Failed to generate signed URL for ${image_url}: ${fileError.message}`);
+        const signedUrl = getSignedUrl(course.image_url, {
+          width: 200,
+          quality: 'auto',
+          format: 'auto',
+          expiresInSeconds: 3600,
+          resourceType: 'image',
+          crop: 'fill',
+          version, // Add version for cache busting
+        });
+
+        return { value: course.id, label: course.name, imageUrl: signedUrl };
+      } catch (error) {
+        console.error('[fetchUserCoursesAsSelectOptions] Failed to generate signed URL:', error);
+        return { value: course.id, label: course.name, imageUrl: undefined };
       }
-
-      return { value: id, label: name, imageUrl: signedUrlData.signedUrl };
     }),
   );
 }

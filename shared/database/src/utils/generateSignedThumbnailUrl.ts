@@ -1,26 +1,34 @@
-import type { TypedSupabaseClient } from '../client';
-import { PUBLISHED_THUMBNAILS } from '../constants';
+import { getSignedUrl } from '@gonasi/cloudinary';
 
 interface GenerateSignedThumbnailUrlArgs {
-  supabase: TypedSupabaseClient;
-  imagePath: string;
+  imagePath: string; // Cloudinary public_id
+  width?: number;
+  height?: number;
+  quality?: 'auto' | number;
+  version?: string | number; // Cache-busting parameter (e.g., published_at or updated_at timestamp)
 }
 
-export async function generateSignedThumbnailUrl({
-  supabase,
+export function generateSignedThumbnailUrl({
   imagePath,
-}: GenerateSignedThumbnailUrlArgs): Promise<string | null> {
+  width,
+  height,
+  quality = 'auto',
+  version,
+}: GenerateSignedThumbnailUrlArgs): string | null {
   try {
-    const { data, error } = await supabase.storage
-      .from(PUBLISHED_THUMBNAILS)
-      .createSignedUrl(imagePath, 3600);
+    // Use Cloudinary's getSignedUrl helper with authenticated delivery
+    const signedUrl = getSignedUrl(imagePath, {
+      width,
+      height,
+      quality,
+      format: 'auto',
+      expiresInSeconds: 3600, // 1 hour expiration (same as before)
+      resourceType: 'image',
+      crop: 'fill',
+      version, // Add version for cache busting
+    });
 
-    if (error) {
-      console.error(`[generateSignedThumbnailUrl] Failed for ${imagePath}:`, error.message);
-      return null;
-    }
-
-    return data?.signedUrl || null;
+    return signedUrl;
   } catch (error) {
     console.error(`[generateSignedThumbnailUrl] Unexpected error for ${imagePath}:`, error);
     return null;

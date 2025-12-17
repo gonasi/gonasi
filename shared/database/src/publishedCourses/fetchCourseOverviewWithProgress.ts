@@ -52,9 +52,14 @@ export async function fetchCourseOverviewWithProgress({
   const parsedData = parsed.data;
   const { course, organization } = parsedData;
 
-  const signedImageUrl = await generateSignedThumbnailUrl({
-    supabase,
+  // Use published_at for cache busting (RPC doesn't return updated_at)
+  // Note: This means cache won't bust on republish for this endpoint
+  // Consider updating the RPC to include updated_at if needed
+  const version = course.published_at ? new Date(course.published_at).getTime() : Date.now();
+
+  const signedImageUrl = generateSignedThumbnailUrl({
     imagePath: course.image_url,
+    version, // Add version for cache busting
   });
 
   const signedOrgAvatarUrl = await generateSignedOrgProfileUrl({

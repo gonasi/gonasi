@@ -57,7 +57,7 @@ export default function CourseOverview({ loaderData, params }: Route.ComponentPr
   const {
     courseOverview: {
       signedUrl,
-      blur_hash,
+      blurUrl,
       name,
       visibility,
       id: courseId,
@@ -86,8 +86,9 @@ export default function CourseOverview({ loaderData, params }: Route.ComponentPr
           >
             <div className='flex max-w-md items-center justify-center md:max-w-sm'>
               <CourseThumbnail
+                key={signedUrl ?? 'no-thumbnail'} // Force remount when thumbnail changes
                 thumbnail={signedUrl}
-                blurHash={blur_hash}
+                blurUrl={blurUrl}
                 name={name}
                 editLink={
                   canEditCourse

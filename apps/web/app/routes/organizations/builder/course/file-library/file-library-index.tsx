@@ -37,7 +37,8 @@ export async function loader({ request, params }: Route.LoaderArgs) {
       supabase,
       courseId: params.courseId,
       transformOptions: {
-        width: 150,
+        width: 600, // Increased from 150 for better quality
+        quality: 80, // Slightly higher quality
       },
       searchQuery,
       limit,

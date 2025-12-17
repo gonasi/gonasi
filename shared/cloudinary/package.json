@@ -1,0 +1,21 @@
+{
+  "name": "@gonasi/cloudinary",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./client": "./src/client.ts",
+    "./upload": "./src/upload.ts",
+    "./helpers": "./src/helpers.ts",
+    "./publish": "./src/publish.ts",
+    "./environment": "./src/environment.ts"
+  },
+  "dependencies": {
+    "cloudinary": "^2.0.0"
+  },
+  "devDependencies": {
+    "@gonasi/typescript-config": "*",
+    "typescript": "^5.7.3"
+  }
+}

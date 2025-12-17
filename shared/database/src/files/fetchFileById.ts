@@ -1,7 +1,7 @@
+import { getBlurPlaceholderUrl, getSignedUrl, getVideoStreamingUrl } from '@gonasi/cloudinary';
 import type { FileType } from '@gonasi/schemas/file';
 
 import type { TypedSupabaseClient } from '../client';
-import { FILE_LIBRARY_BUCKET, PUBLISHED_FILE_LIBRARY_BUCKET } from '../constants';
 
 interface FetchFileByIdArgs {
   supabase: TypedSupabaseClient;
@@ -19,15 +19,14 @@ export async function fetchFileById({
   try {
     const isPreview = mode === 'preview';
     const table = isPreview ? 'file_library' : 'published_file_library';
-    const bucket = isPreview ? FILE_LIBRARY_BUCKET : PUBLISHED_FILE_LIBRARY_BUCKET;
 
     const { data, error } = await supabase
       .from(table)
       .select(
         `
-          id,
+          id, 
           created_by,
-          updated_by,
+          updated_by, 
           name,
           size,
           path,
@@ -58,18 +57,22 @@ export async function fetchFileById({
       };
     }
 
-    const { data: signedUrlData, error: signedUrlError } = await supabase.storage
-      .from(bucket)
-      .createSignedUrl(data.path, expirySeconds);
+    // Generate Cloudinary signed URL
+    const resourceType =
+      data.file_type === 'video' ? 'video' : data.file_type === 'image' ? 'image' : 'raw';
 
-    if (signedUrlError) {
-      console.error('[fetchFileById] Error creating signed URL:', signedUrlError, data.path, mode);
-      return {
-        success: false,
-        message: 'Failed to generate signed URL',
-        data: null,
-      };
-    }
+    const isVideo = data.file_type === 'video';
+    const signedUrl = isVideo
+      ? getVideoStreamingUrl(data.path, expirySeconds)
+      : getSignedUrl(data.path, {
+          quality: 'auto',
+          format: 'auto',
+          expiresInSeconds: expirySeconds,
+          resourceType,
+        });
+
+    // Generate blur placeholder URL for images (for progressive loading)
+    const blurUrl = data.file_type === 'image' ? getBlurPlaceholderUrl(data.path, expirySeconds) : null;
 
     return {
       success: true,
@@ -77,7 +80,8 @@ export async function fetchFileById({
       data: {
         ...data,
         file_type: data.file_type as FileType,
-        signed_url: signedUrlData?.signedUrl ?? null,
+        signed_url: signedUrl,
+        blur_url: blurUrl,
       },
     };
   } catch (error) {

@@ -1,5 +1,7 @@
+import { getSignedUrl } from '@gonasi/cloudinary';
+
 import { getUserId } from '../auth';
-import { PROFILE_PHOTOS, THUMBNAILS_BUCKET } from '../constants';
+import { PROFILE_PHOTOS } from '../constants';
 import { getPaginationRange } from '../constants/utils';
 import type { FetchAssetsParams } from '../types';
 
@@ -62,6 +64,7 @@ export async function fetchOrganizationCourses({
       name,
       image_url,
       blur_hash,
+      updated_at,
       course_editors(
         user_id,
         profiles!user_id(
@@ -171,15 +174,28 @@ export async function fetchOrganizationCourses({
       const canEdit = isAdminOrOwner || editors.some((e) => e.id === userId && e.role === 'editor');
 
       // -----------------------------------------------------
-      // SIGNED THUMBNAIL URL
+      // SIGNED THUMBNAIL URL (CLOUDINARY)
       // -----------------------------------------------------
       let signed_url: string | null = null;
 
       if (course.image_url) {
-        const { data } = await supabase.storage
-          .from(THUMBNAILS_BUCKET)
-          .createSignedUrl(course.image_url, 3600);
-        signed_url = data?.signedUrl ?? null;
+        try {
+          // Use updated_at timestamp as cache-busting version parameter
+          const version = course.updated_at ? new Date(course.updated_at).getTime() : undefined;
+
+          signed_url = getSignedUrl(course.image_url, {
+            width: 400,
+            quality: 'auto',
+            format: 'auto',
+            expiresInSeconds: 3600,
+            resourceType: 'image',
+            crop: 'fill',
+            version, // Add version for cache busting
+          });
+        } catch (error) {
+          console.error('[fetchOrganizationCourses] Failed to generate signed URL:', error);
+          signed_url = null;
+        }
       }
 
       // -----------------------------------------------------

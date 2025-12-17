@@ -1,14 +1,14 @@
+import { uploadToCloudinary } from '@gonasi/cloudinary';
 import type { EditFileSchemaTypes } from '@gonasi/schemas/file';
 import { FileType, getFileMetadata } from '@gonasi/schemas/file';
 
 import { getUserId } from '../auth';
 import type { TypedSupabaseClient } from '../client';
-import { FILE_LIBRARY_BUCKET } from '../constants';
 import type { ApiResponse } from '../types';
 
 /**
- * Replaces a file in Supabase storage and updates image-related metadata in the `file_library` table.
- * Does not change the original file name or path.
+ * Replaces a file in Cloudinary storage and updates metadata in the `file_library` table.
+ * Does not change the original file path (public_id).
  *
  * @param supabase - Supabase client instance.
  * @param fileData - File and metadata information.
@@ -28,24 +28,20 @@ export const editFile = async (
   const { size, mime_type, extension, file_type } = getFileMetadata(file);
 
   try {
-    // Replace file in storage bucket
-    const { error: uploadError } = await supabase.storage
-      .from(FILE_LIBRARY_BUCKET)
-      .update(path, file, {
-        upsert: true,
-        cacheControl: '3600',
-        contentType: mime_type,
-        metadata: {
-          size: size.toString(),
-          mime_type,
-          extension,
-          file_type,
-        },
-      });
+    // Determine resource type for Cloudinary
+    const resourceType =
+      file_type === FileType.VIDEO ? 'video' : file_type === FileType.IMAGE ? 'image' : 'raw';
 
-    if (uploadError) {
-      console.error('File update failed:', uploadError);
-      return { success: false, message: `File upload failed: ${uploadError.message}` };
+    // Re-upload to Cloudinary (overwrites existing file at same public_id)
+    const uploadResult = await uploadToCloudinary(file, path, {
+      resourceType,
+      type: 'authenticated', // Maintain authenticated type
+      overwrite: true, // Replace existing file
+    });
+
+    if (!uploadResult.success) {
+      console.error('File update failed:', uploadResult.error);
+      return { success: false, message: `File upload failed: ${uploadResult.error}` };
     }
 
     // Update image-related metadata only
@@ -67,22 +63,8 @@ export const editFile = async (
       return { success: false, message: `Failed to update file metadata: ${updateError.message}` };
     }
 
-    if (file_type === FileType.IMAGE) {
-      supabase.functions
-        .invoke('generate-blurhash', {
-          body: {
-            bucket: FILE_LIBRARY_BUCKET,
-            object_key: path,
-            table: 'file_library',
-            column: 'blur_preview',
-            row_id_column: 'id',
-            row_id_value: data.id,
-          },
-        })
-        .catch((err) => {
-          console.error('BlurHash generation failed:', err);
-        });
-    }
+    // Blur previews are now generated dynamically via Cloudinary transformations
+    // No async processing needed
 
     return {
       success: true,

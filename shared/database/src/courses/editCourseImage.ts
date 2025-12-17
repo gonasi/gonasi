@@ -1,8 +1,8 @@
+import { generatePublicId, uploadToCloudinary } from '@gonasi/cloudinary';
 import type { EditCourseImageSubmitValues } from '@gonasi/schemas/courses';
 
 import { getUserId } from '../auth';
 import type { TypedSupabaseClient } from '../client';
-import { THUMBNAILS_BUCKET } from '../constants';
 import type { ApiResponse } from '../types';
 
 export const editCourseImage = async (
@@ -20,46 +20,67 @@ export const editCourseImage = async (
   }
 
   try {
-    // Use courseId directly in the path structure instead of metadata
-    const stableFileName = `${courseId}/thumbnail.webp`;
+    // Get course to retrieve organization_id
+    const { data: course, error: courseError } = await supabase
+      .from('courses')
+      .select('organization_id')
+      .eq('id', courseId)
+      .single();
 
-    // Check if file already exists
-    const { data: existingFiles } = await supabase.storage
-      .from(THUMBNAILS_BUCKET)
-      .list(courseId, { search: 'thumbnail.webp' });
+    if (courseError || !course) {
+      console.error('Course fetch error:', courseError);
+      return {
+        success: false,
+        message: 'Could not find course.',
+      };
+    }
 
-    const fileAlreadyExists = existingFiles?.some((f) => f.name === 'thumbnail.webp');
+    // Generate Cloudinary public_id for draft thumbnail
+    const publicId = generatePublicId({
+      scope: 'draft',
+      resourceType: 'thumbnail',
+      organizationId: course.organization_id ?? undefined,
+      courseId,
+    });
 
-    // Upload the new image (conditionally upsert)
-    const { data: uploadResponse, error: uploadError } = await supabase.storage
-      .from(THUMBNAILS_BUCKET)
-      .upload(stableFileName, image, {
-        upsert: fileAlreadyExists,
-        cacheControl: '3600',
-        // Remove metadata approach, use path-based approach instead
-      });
+    // Upload thumbnail to Cloudinary
+    // Note: invalidate is automatically set to true when overwrite is true
+    const {
+      success: uploadSuccess,
+      data: uploadData,
+      error: uploadError,
+    } = await uploadToCloudinary(image, publicId, {
+      resourceType: 'image',
+      type: 'authenticated', // Private/authenticated delivery
+      overwrite: true, // This also invalidates CDN cache
+    });
 
-    if (uploadError || !uploadResponse?.path) {
-      console.error('Upload error:', uploadError);
+    if (!uploadSuccess || !uploadData) {
+      console.error('Cloudinary upload error:', uploadError);
       return {
         success: false,
         message: `Upload didn't work out. Want to try that again?`,
       };
     }
 
-    const finalImagePath = uploadResponse.path;
+    const finalImagePublicId = uploadData.publicId;
+
+    // Use current timestamp for aggressive cache busting
+    const now = new Date().toISOString();
 
     const { error: updateError } = await supabase
       .from('courses')
       .update({
         updated_by: userId,
-        image_url: finalImagePath,
+        updated_at: now, // Update timestamp to bust cache
+        image_url: finalImagePublicId, // Store Cloudinary public_id
       })
       .eq('id', courseId);
 
     if (updateError) {
       console.error('Upload course thumbnail error: ', updateError);
-      await supabase.storage.from(THUMBNAILS_BUCKET).remove([finalImagePath]);
+      // Note: We could delete from Cloudinary here, but keeping it doesn't hurt
+      // since it will be overwritten on next upload
 
       return {
         success: false,
@@ -67,21 +88,8 @@ export const editCourseImage = async (
       };
     }
 
-    // Start generalized BlurHash generation in background
-    supabase.functions
-      .invoke('generate-blurhash', {
-        body: {
-          bucket: THUMBNAILS_BUCKET,
-          object_key: finalImagePath,
-          table: 'courses',
-          column: 'blur_hash',
-          row_id_column: 'id',
-          row_id_value: courseId,
-        },
-      })
-      .catch((err) => {
-        console.error('Background BlurHash generation failed:', err);
-      });
+    // Note: BlurHash is not needed with Cloudinary as it provides
+    // dynamic blur transformations via getBlurPlaceholderUrl() helper
 
     return {
       success: true,
