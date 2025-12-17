@@ -52,7 +52,9 @@ export async function fetchCourseOverviewWithProgress({
   const parsedData = parsed.data;
   const { course, organization } = parsedData;
 
-  // Use published_at timestamp for cache busting
+  // Use published_at for cache busting (RPC doesn't return updated_at)
+  // Note: This means cache won't bust on republish for this endpoint
+  // Consider updating the RPC to include updated_at if needed
   const version = course.published_at ? new Date(course.published_at).getTime() : Date.now();
 
   const signedImageUrl = generateSignedThumbnailUrl({

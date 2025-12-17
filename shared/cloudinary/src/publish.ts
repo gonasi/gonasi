@@ -42,6 +42,13 @@ export async function copyToPublished(
       fileId: params.fileId,
     });
 
+    console.log('[copyToPublished] Starting copy operation:', {
+      originalDraftPublicId: draftPublicId,
+      cleanDraftPublicId,
+      publishedPublicId,
+      resourceType: params.resourceType,
+    });
+
     // First, get the resource details to determine its type
     let resourceType: 'image' | 'video' | 'raw' = 'image';
     try {
@@ -93,12 +100,23 @@ export async function copyToPublished(
     });
 
     // Use Cloudinary's upload API to create a copy from the signed URL
+    console.log('[copyToPublished] Uploading to published path:', {
+      signedUrlPreview: signedUrl.substring(0, 100) + '...',
+      targetPublicId: publishedPublicId,
+      resourceType,
+    });
+
     const result = await cloudinary.uploader.upload(signedUrl, {
       public_id: publishedPublicId,
       type: 'authenticated', // CRITICAL: Maintain authenticated type
       resource_type: resourceType,
       overwrite: true,
       invalidate: true, // Invalidate CDN cache
+    });
+
+    console.log('[copyToPublished] Upload successful:', {
+      resultPublicId: result.public_id,
+      resultUrl: result.secure_url,
     });
 
     if (!result.public_id) {

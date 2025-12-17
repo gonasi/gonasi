@@ -11,6 +11,15 @@ interface UpsertPublishCourseArgs {
   courseId: string;
 }
 
+interface RpcResult {
+  success: boolean;
+  message?: string;
+  data?: {
+    net_size_change_bytes?: number;
+    remaining_storage_bytes?: number;
+  };
+}
+
 /**
  * FUNCTION: upsertPublishCourse
  *
@@ -97,7 +106,30 @@ export const upsertPublishCourse = async ({
 
   try {
     // =========================================================================
-    // STEP 3: Handle thumbnail file management
+    // STEP 3: Delete existing published files from previous publish
+    // =========================================================================
+    // IMPORTANT: Clean up old files BEFORE copying new ones
+    // This ensures we don't delete files we just copied
+    await supabase.from('published_file_library').delete().match({
+      course_id: courseId,
+      organization_id: organizationId,
+    });
+
+    // Delete all published files from Cloudinary (including old thumbnails)
+    const { error: deleteOldFilesError } = await deletePublishedCourseFiles({
+      organizationId,
+      courseId,
+    });
+    if (deleteOldFilesError) {
+      console.error(
+        '[upsertPublishCourse] Failed to delete old published files:',
+        deleteOldFilesError,
+      );
+      // This is non-fatal; we'll copy new files anyway
+    }
+
+    // =========================================================================
+    // STEP 4: Handle thumbnail file management
     // =========================================================================
     // Copy course thumbnail from draft to published folder in Cloudinary
     // This maintains the authenticated type and creates an immutable published version
@@ -106,6 +138,12 @@ export const upsertPublishCourse = async ({
 
     // Only attempt to copy thumbnail if image_url exists
     if (data.image_url) {
+      console.log('[upsertPublishCourse] Starting thumbnail copy:', {
+        draftImageUrl: data.image_url,
+        organizationId,
+        courseId,
+      });
+
       const {
         success: thumbnailCopySuccess,
         publishedPublicId,
@@ -120,8 +158,14 @@ export const upsertPublishCourse = async ({
         },
       );
 
+      console.log('[upsertPublishCourse] Thumbnail copy result:', {
+        success: thumbnailCopySuccess,
+        publishedPublicId,
+        error: thumbnailCopyError,
+      });
+
       if (!thumbnailCopySuccess) {
-        console.error('[upsertPublishCourse] Thumbnail copy error:', thumbnailCopyError);
+        console.error('[upsertPublishCourse] Thumbnail copy failed:', thumbnailCopyError);
         return {
           success: false,
           message: `Failed to copy course thumbnail to the published folder: ${thumbnailCopyError}`,
@@ -130,16 +174,38 @@ export const upsertPublishCourse = async ({
 
       // Use the published public_id for the published course
       publishedImageUrl = publishedPublicId ?? data.image_url;
-      console.log('[upsertPublishCourse] Thumbnail copied:', {
+      console.log('[upsertPublishCourse] Thumbnail copied successfully:', {
         draft: data.image_url,
         published: publishedImageUrl,
       });
+
+      // Verify the published thumbnail exists in Cloudinary
+      try {
+        const { getCloudinary } = await import('@gonasi/cloudinary');
+        const cloudinary = getCloudinary();
+        const verifyResult = await cloudinary.api.resource(publishedImageUrl, {
+          type: 'authenticated',
+          resource_type: 'image',
+        });
+        console.log('[upsertPublishCourse] ✅ Published thumbnail verified in Cloudinary:', {
+          publicId: verifyResult.public_id,
+          format: verifyResult.format,
+          bytes: verifyResult.bytes,
+          url: verifyResult.secure_url,
+          created: verifyResult.created_at,
+        });
+      } catch (verifyError) {
+        console.error('[upsertPublishCourse] ❌ Failed to verify published thumbnail:', {
+          error: verifyError instanceof Error ? verifyError.message : verifyError,
+          publishedImageUrl,
+        });
+      }
     } else {
       console.warn('[upsertPublishCourse] No thumbnail to copy - image_url is empty');
     }
 
     // =========================================================================
-    // STEP 4: Upsert published course with storage quota validation
+    // STEP 5: Upsert published course with storage quota validation
     // =========================================================================
     // IMPORTANT: The PL/pgSQL function now:
     //   - Calculates storage impact of the course
@@ -193,39 +259,21 @@ export const upsertPublishCourse = async ({
 
     // Handle RPC logical errors (permissions, validation, quota exceeded)
     // The PL/pgSQL function returns a JSONB response with success status
-    if (rpcResult && !rpcResult.success) {
-      console.error('[upsertPublishCourse] RPC validation error:', rpcResult.message);
+    const result = rpcResult as unknown as RpcResult;
+    if (result && !result.success) {
+      console.error('[upsertPublishCourse] RPC validation error:', result.message);
       return {
         success: false,
-        message: rpcResult.message,
-        data: rpcResult.data,
+        message: result.message ?? 'Failed to publish course',
+        data: result.data as any,
       };
     }
 
     // Log storage info on successful publish for monitoring
-    if (rpcResult?.data) {
+    if (result?.data) {
       console.log(
-        `[upsertPublishCourse] Course published. Storage change: ${rpcResult.data.net_size_change_bytes} bytes, Remaining: ${rpcResult.data.remaining_storage_bytes} bytes`,
+        `[upsertPublishCourse] Course published. Storage change: ${result.data.net_size_change_bytes} bytes, Remaining: ${result.data.remaining_storage_bytes} bytes`,
       );
-    }
-
-    // =========================================================================
-    // STEP 5: Delete existing published files from previous publish
-    // =========================================================================
-    // Clean up old files so we have a fresh set of published files
-    await supabase.from('published_file_library').delete().match({
-      course_id: courseId,
-      organization_id: organizationId,
-    });
-
-    // Delete all published files from Cloudinary
-    const { error: deleteError } = await deletePublishedCourseFiles({
-      organizationId,
-      courseId,
-    });
-    if (deleteError) {
-      console.error('[upsertPublishCourse] Failed to delete published files:', deleteError);
-      // This is non-fatal; we'll attempt to copy new files anyway
     }
 
     // =========================================================================
@@ -266,12 +314,16 @@ export const upsertPublishCourse = async ({
           },
         );
 
-        if (!copySuccess) {
-          failedCopies.push({ id: file.id, path: file.path, error: copyError });
+        if (!copySuccess || !publishedPublicId) {
+          failedCopies.push({
+            id: file.id,
+            path: file.path,
+            error: copyError ?? 'Published public_id missing',
+          });
         } else {
           copyResults.push({
             ...file,
-            path: publishedPublicId, // Update to published public_id
+            path: publishedPublicId, // Update to published public_id (guaranteed to be string)
           });
         }
       }
@@ -320,7 +372,7 @@ export const upsertPublishCourse = async ({
     return {
       success: true,
       message: 'Course published successfully.',
-      data: rpcResult as any, // Include storage metrics from PL/pgSQL function
+      data: result as any, // Include storage metrics from PL/pgSQL function
     };
   } catch (err) {
     console.error('[upsertPublishCourse] Unexpected error:', err);

@@ -34,6 +34,7 @@ export async function fetchPublishedCourseDetails({
       is_active,
       pricing_tiers,
       published_at,
+      updated_at,
       published_by,
       total_chapters,
       total_lessons,
@@ -77,10 +78,10 @@ export async function fetchPublishedCourseDetails({
     return null;
   }
 
-  // Use published_at timestamp for cache busting
-  const version = courseRow.published_at
-    ? new Date(courseRow.published_at).getTime()
-    : Date.now();
+  // Use updated_at for cache busting (changes on every republish)
+  // Fall back to published_at if updated_at is not available
+  const timestampToUse = courseRow.updated_at ?? courseRow.published_at;
+  const version = timestampToUse ? new Date(timestampToUse).getTime() : Date.now();
 
   const signedImageUrl = generateSignedThumbnailUrl({
     imagePath: courseRow.image_url,

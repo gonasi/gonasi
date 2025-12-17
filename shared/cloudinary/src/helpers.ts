@@ -106,21 +106,23 @@ export function getSignedUrl(publicId: string, options: SignedUrlOptions = {}): 
   if (width) transformation.width = width;
   if (height) transformation.height = height;
 
-  const baseUrl = cloudinary.url(publicId, {
+  // For authenticated URLs, we need to use Cloudinary's version system
+  // instead of query parameters to avoid breaking the signature
+  const urlOptions: any = {
     sign_url: true, // CRITICAL: Generate signature
     expires_at: expiresAt, // CRITICAL: Set expiration
     type: 'authenticated', // CRITICAL: Use authenticated delivery (private)
     resource_type: resourceType,
     transformation: [transformation],
-  });
+  };
 
-  // Add version as cache-busting query parameter if provided
+  // Use Cloudinary's version parameter if provided (included in signature)
+  // This forces cache invalidation without breaking authentication
   if (version) {
-    const separator = baseUrl.includes('?') ? '&' : '?';
-    return `${baseUrl}${separator}v=${version}`;
+    urlOptions.version = version;
   }
 
-  return baseUrl;
+  return cloudinary.url(publicId, urlOptions);
 }
 
 /**
