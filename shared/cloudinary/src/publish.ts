@@ -49,53 +49,53 @@ export async function copyToPublished(
       resourceType: params.resourceType,
     });
 
-    // First, get the resource details to determine its type
+    // Detect the resource type by trying all combinations
+    // Different file types are stored with different resource_type values:
+    // - Images (JPG, PNG, etc.) → 'image'
+    // - Videos (MP4, MOV, etc.) → 'video'
+    // - Documents (PDF, DOC, etc.) → 'raw'
     let resourceType: 'image' | 'video' | 'raw' = 'image';
-    try {
-      const resourceInfo = await cloudinary.api.resource(cleanDraftPublicId, {
-        type: 'authenticated',
-      });
-      resourceType = resourceInfo.resource_type;
-      console.log('[Cloudinary] Found resource:', { cleanDraftPublicId, resourceType });
-    } catch (error) {
-      // If we can't get resource info, try different resource types
-      console.warn('[Cloudinary] Could not get resource info as authenticated image', {
-        cleanDraftPublicId,
-        error: error instanceof Error ? error.message : JSON.stringify(error),
-      });
+    let uploadType: 'authenticated' | 'upload' | 'private' = 'authenticated';
+    let found = false;
 
-      // Try to find the resource in other types or as upload type
-      let found = false;
-      for (const tryType of ['upload', 'private'] as const) {
+    console.log('[Cloudinary] Detecting resource type for:', cleanDraftPublicId);
+
+    // Try all combinations of type and resource_type
+    for (const tryType of ['authenticated', 'upload', 'private'] as const) {
+      if (found) break;
+
+      for (const tryResourceType of ['image', 'video', 'raw'] as const) {
         try {
           const resourceInfo = await cloudinary.api.resource(cleanDraftPublicId, {
             type: tryType,
+            resource_type: tryResourceType,
           });
           resourceType = resourceInfo.resource_type;
-          console.log('[Cloudinary] Found resource with different type:', {
-            cleanDraftPublicId,
-            foundType: tryType,
-            resourceType,
-          });
+          uploadType = tryType;
           found = true;
+          console.log('[Cloudinary] Found resource:', {
+            cleanDraftPublicId,
+            type: tryType,
+            resource_type: resourceType,
+          });
           break;
         } catch {
-          // Continue trying
+          // Continue trying other combinations
         }
-      }
-
-      if (!found) {
-        throw new Error(
-          `Resource not found in Cloudinary: ${cleanDraftPublicId}. The file may not have been uploaded yet or was uploaded with a different public_id.`,
-        );
       }
     }
 
-    // Generate a signed URL for the authenticated asset
-    // We need this because authenticated assets require signed URLs for access
+    if (!found) {
+      throw new Error(
+        `Resource not found in Cloudinary: ${cleanDraftPublicId}. The file may not have been uploaded yet or was uploaded with a different public_id.`,
+      );
+    }
+
+    // Generate a signed URL for the asset
+    // Use the detected type (authenticated/upload/private) and resource_type
     const signedUrl = cloudinary.url(cleanDraftPublicId, {
       sign_url: true,
-      type: 'authenticated',
+      type: uploadType,
       resource_type: resourceType,
     });
 
@@ -103,12 +103,13 @@ export async function copyToPublished(
     console.log('[copyToPublished] Uploading to published path:', {
       signedUrlPreview: signedUrl.substring(0, 100) + '...',
       targetPublicId: publishedPublicId,
+      uploadType,
       resourceType,
     });
 
     const result = await cloudinary.uploader.upload(signedUrl, {
       public_id: publishedPublicId,
-      type: 'authenticated', // CRITICAL: Maintain authenticated type
+      type: uploadType, // Maintain the same type as the source
       resource_type: resourceType,
       overwrite: true,
       invalidate: true, // Invalidate CDN cache
