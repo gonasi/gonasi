@@ -57,10 +57,11 @@ export async function copyToPublished(
     let resourceType: 'image' | 'video' | 'raw' = 'image';
     let uploadType: 'authenticated' | 'upload' | 'private' = 'authenticated';
     let found = false;
+    let actualPublicId = cleanDraftPublicId;
 
     console.log('[Cloudinary] Detecting resource type for:', cleanDraftPublicId);
 
-    // Try all combinations of type and resource_type
+    // Try all combinations of type and resource_type with CLEANED path (no extension)
     for (const tryType of ['authenticated', 'upload', 'private'] as const) {
       if (found) break;
 
@@ -72,8 +73,9 @@ export async function copyToPublished(
           });
           resourceType = resourceInfo.resource_type;
           uploadType = tryType;
+          actualPublicId = cleanDraftPublicId;
           found = true;
-          console.log('[Cloudinary] Found resource:', {
+          console.log('[Cloudinary] Found resource with CLEANED path:', {
             cleanDraftPublicId,
             type: tryType,
             resource_type: resourceType,
@@ -85,15 +87,46 @@ export async function copyToPublished(
       }
     }
 
+    // If not found with cleaned path, try ORIGINAL path (with extension)
+    if (!found) {
+      console.log('[Cloudinary] Not found with cleaned path, trying ORIGINAL path:', draftPublicId);
+
+      for (const tryType of ['authenticated', 'upload', 'private'] as const) {
+        if (found) break;
+
+        for (const tryResourceType of ['image', 'video', 'raw'] as const) {
+          try {
+            const resourceInfo = await cloudinary.api.resource(draftPublicId, {
+              type: tryType,
+              resource_type: tryResourceType,
+            });
+            resourceType = resourceInfo.resource_type;
+            uploadType = tryType;
+            actualPublicId = draftPublicId;
+            found = true;
+            console.log('[Cloudinary] Found resource with ORIGINAL path:', {
+              draftPublicId,
+              type: tryType,
+              resource_type: resourceType,
+            });
+            break;
+          } catch {
+            // Continue trying other combinations
+          }
+        }
+      }
+    }
+
     if (!found) {
       throw new Error(
-        `Resource not found in Cloudinary: ${cleanDraftPublicId}. The file may not have been uploaded yet or was uploaded with a different public_id.`,
+        `Resource not found in Cloudinary: ${cleanDraftPublicId} (also tried: ${draftPublicId}). The file may not have been uploaded yet or was uploaded with a different public_id.`,
       );
     }
 
     // Generate a signed URL for the asset
     // Use the detected type (authenticated/upload/private) and resource_type
-    const signedUrl = cloudinary.url(cleanDraftPublicId, {
+    // Use actualPublicId (which may include extension) not cleanDraftPublicId
+    const signedUrl = cloudinary.url(actualPublicId, {
       sign_url: true,
       type: uploadType,
       resource_type: resourceType,
@@ -101,6 +134,7 @@ export async function copyToPublished(
 
     // Use Cloudinary's upload API to create a copy from the signed URL
     console.log('[copyToPublished] Uploading to published path:', {
+      sourcePublicId: actualPublicId,
       signedUrlPreview: signedUrl.substring(0, 100) + '...',
       targetPublicId: publishedPublicId,
       uploadType,
@@ -160,7 +194,7 @@ export interface DeletePublishedCourseFilesResult {
 
 /**
  * Deletes all files in a published course folder.
- * Uses Cloudinary's bulk delete by prefix.
+ * Uses Cloudinary's bulk delete by prefix across all resource types and upload types.
  *
  * @param params - Organization and course context
  * @returns Result with success status
@@ -171,24 +205,50 @@ export async function deletePublishedCourseFiles(
   try {
     const cloudinary = getCloudinary();
 
-    // Build prefix for published course files
-    // Pattern: /:organizationId/courses/:courseId/files/published/
-    const prefix = `${params.organizationId}/courses/${params.courseId}/files/published/`;
-
-    // Delete all resources with this prefix
-    await cloudinary.api.delete_resources_by_prefix(prefix, {
-      type: 'authenticated', // Match the upload type
-      invalidate: true, // Invalidate CDN cache
-    });
-
-    // Also delete published thumbnails
-    // Pattern: /:organizationId/courses/:courseId/thumbnail/published/
+    // Build prefixes for published course files and thumbnails
+    const filePrefix = `${params.organizationId}/courses/${params.courseId}/files/published/`;
     const thumbnailPrefix = `${params.organizationId}/courses/${params.courseId}/thumbnail/published/`;
-    await cloudinary.api.delete_resources_by_prefix(thumbnailPrefix, {
-      type: 'authenticated',
-      invalidate: true,
+
+    const prefixes = [filePrefix, thumbnailPrefix];
+    const types = ['authenticated', 'upload', 'private'] as const;
+    const resourceTypes = ['image', 'video', 'raw'] as const;
+
+    console.log('[deletePublishedCourseFiles] Starting comprehensive deletion:', {
+      prefixes,
+      types,
+      resourceTypes,
     });
 
+    // Delete across all combinations of prefix, type, and resource_type
+    // This ensures we catch files regardless of how they were uploaded
+    const deletionPromises = [];
+
+    for (const prefix of prefixes) {
+      for (const type of types) {
+        for (const resourceType of resourceTypes) {
+          deletionPromises.push(
+            cloudinary.api
+              .delete_resources_by_prefix(prefix, {
+                type,
+                resource_type: resourceType,
+                invalidate: true, // Invalidate CDN cache
+              })
+              .catch(() => {
+                // Log but don't fail - some combinations may not exist
+                console.log(
+                  `[deletePublishedCourseFiles] No resources found for prefix=${prefix}, type=${type}, resource_type=${resourceType}`,
+                );
+                return null;
+              }),
+          );
+        }
+      }
+    }
+
+    // Execute all deletions in parallel
+    await Promise.all(deletionPromises);
+
+    console.log('[deletePublishedCourseFiles] ✅ Deletion complete');
     return { success: true };
   } catch (error) {
     console.error('[Cloudinary Delete Published Course Files Error]', {

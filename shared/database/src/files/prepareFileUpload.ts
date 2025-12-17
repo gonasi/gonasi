@@ -50,7 +50,7 @@ export const prepareFileUpload = async (
   params: PrepareFileUploadParams,
 ): Promise<ApiResponse<PrepareFileUploadResponse>> => {
   const userId = await getUserId(supabase);
-  const { name, size, courseId, organizationId } = params;
+  const { name, mimeType, size, courseId, organizationId } = params;
 
   try {
     // Check storage quota BEFORE generating signature
@@ -89,9 +89,17 @@ export const prepareFileUpload = async (
       fileId,
     });
 
-    // Determine file type and resource type from file extension
-    const extension = getFileExtension(name);
-    const file_type = getFileType(extension);
+    // Determine file type and resource type from MIME type (not user-provided name)
+    // This ensures images upload as 'image' type even if user names file without extension
+    const file_type = (() => {
+      if (mimeType.startsWith('image/')) return FileType.IMAGE;
+      if (mimeType.startsWith('video/')) return FileType.VIDEO;
+      if (mimeType.startsWith('audio/')) return FileType.AUDIO;
+      // For other types, try to detect from original file extension
+      const extension = getFileExtension(name);
+      return getFileType(extension);
+    })();
+
     const resourceType =
       file_type === FileType.VIDEO ? 'video' : file_type === FileType.IMAGE ? 'image' : 'raw';
 
@@ -120,9 +128,10 @@ export const prepareFileUpload = async (
     };
   } catch (error) {
     console.error('[prepareFileUpload] Error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return {
       success: false,
-      message: 'Failed to prepare file upload.',
+      message: `Failed to prepare file upload: ${errorMessage}`,
     };
   }
 };
