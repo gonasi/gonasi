@@ -52,8 +52,12 @@ export async function fetchCourseOverviewWithProgress({
   const parsedData = parsed.data;
   const { course, organization } = parsedData;
 
+  // Use published_at timestamp for cache busting
+  const version = course.published_at ? new Date(course.published_at).getTime() : Date.now();
+
   const signedImageUrl = generateSignedThumbnailUrl({
     imagePath: course.image_url,
+    version, // Add version for cache busting
   });
 
   const signedOrgAvatarUrl = await generateSignedOrgProfileUrl({

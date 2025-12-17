@@ -34,6 +34,7 @@ export async function fetchUsersActivelyEnrolledCourses({
         image_url,
         blur_hash,
         visibility,
+        published_at,
         organizations (
           id,
           name,
@@ -70,9 +71,15 @@ export async function fetchUsersActivelyEnrolledCourses({
     data.map(async ({ id: enrollment_id, expires_at, published_courses }) => {
       if (!published_courses) return null;
 
+      // Use published_at timestamp for cache busting
+      const version = published_courses.published_at
+        ? new Date(published_courses.published_at).getTime()
+        : Date.now();
+
       const [signedImageUrl, signedAvatarUrl] = await Promise.all([
         generateSignedThumbnailUrl({
           imagePath: published_courses.image_url,
+          version, // Add version for cache busting
         }),
         generateSignedOrgProfileUrl({
           supabase,

@@ -102,9 +102,15 @@ export const upsertPublishCourse = async ({
     // Copy course thumbnail from draft to published folder in Cloudinary
     // This maintains the authenticated type and creates an immutable published version
 
+    let publishedImageUrl = data.image_url; // Default to draft path if no thumbnail
+
     // Only attempt to copy thumbnail if image_url exists
     if (data.image_url) {
-      const { success: thumbnailCopySuccess, error: thumbnailCopyError } = await copyToPublished(
+      const {
+        success: thumbnailCopySuccess,
+        publishedPublicId,
+        error: thumbnailCopyError,
+      } = await copyToPublished(
         data.image_url, // Use the actual public_id where the file exists in Cloudinary
         {
           organizationId,
@@ -121,6 +127,13 @@ export const upsertPublishCourse = async ({
           message: `Failed to copy course thumbnail to the published folder: ${thumbnailCopyError}`,
         };
       }
+
+      // Use the published public_id for the published course
+      publishedImageUrl = publishedPublicId ?? data.image_url;
+      console.log('[upsertPublishCourse] Thumbnail copied:', {
+        draft: data.image_url,
+        published: publishedImageUrl,
+      });
     } else {
       console.warn('[upsertPublishCourse] No thumbnail to copy - image_url is empty');
     }
@@ -147,7 +160,7 @@ export const upsertPublishCourse = async ({
           is_active: data.is_active,
           name: data.name,
           description: data.description,
-          image_url: data.image_url,
+          image_url: publishedImageUrl, // Use published path, not draft
           blur_hash: data.blur_hash,
           visibility: data.visibility,
           course_structure_overview: data.course_structure_overview,

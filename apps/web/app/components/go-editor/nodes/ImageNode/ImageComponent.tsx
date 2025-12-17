@@ -4,7 +4,6 @@ import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext
 import { useLexicalEditable } from '@lexical/react/useLexicalEditable';
 import { useLexicalNodeSelection } from '@lexical/react/useLexicalNodeSelection';
 import { mergeRegister } from '@lexical/utils';
-import { blurhashToCssGradientString } from '@unpic/placeholder';
 import type { BaseSelection, LexicalCommand, LexicalEditor } from 'lexical';
 import {
   $getNodeByKey,
@@ -35,7 +34,6 @@ interface ImageComponentProps extends ImagePayload {
 
 export default function ImageComponent({
   fileId,
-  blurHash,
   nodeKey,
   width,
   height,
@@ -59,8 +57,10 @@ export default function ImageComponent({
   }, [fileId, mode]);
 
   const src = fetcher.data?.success ? fetcher.data.data?.signed_url : undefined;
+  const blurUrl = fetcher.data?.success ? fetcher.data.data?.blur_preview : undefined;
 
-  const placeholder = blurHash ? blurhashToCssGradientString(blurHash) : '#f3f4f6';
+  // Use Cloudinary's server-generated blur URL or fallback to gray
+  const placeholder = blurUrl ? `url(${blurUrl})` : '#f3f4f6';
   const isSVGImage = fetcher.data?.success ? fetcher.data.data?.extension === 'svg' : false;
 
   const [selection, setSelection] = useState<BaseSelection | null>(null);

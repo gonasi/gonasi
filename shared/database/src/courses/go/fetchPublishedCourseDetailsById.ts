@@ -97,6 +97,9 @@ export async function fetchPublishedCourseDetailsById(
   }
 
   try {
+    // Use updated_at timestamp as cache-busting version parameter
+    const version = data.updated_at ? new Date(data.updated_at).getTime() : undefined;
+
     const signedUrl = getSignedUrl(data.image_url, {
       width: 800,
       quality: 'auto',
@@ -104,6 +107,7 @@ export async function fetchPublishedCourseDetailsById(
       expiresInSeconds: 3600,
       resourceType: 'image',
       crop: 'fill',
+      version, // Add version for cache busting
     });
 
     return {

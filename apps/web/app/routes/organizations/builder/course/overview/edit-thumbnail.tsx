@@ -99,38 +99,20 @@ export async function action({ request, params }: Route.ActionArgs) {
 
   if (errors) return { errors, defaultValues };
 
-  try {
-    if (!(data.image instanceof File)) {
-      return dataWithError(null, "Oops! That doesn't look like a valid image.");
-    }
-
-    const { success, message } = await editCourseImage(supabase, {
-      ...data,
-      courseId: params.courseId,
-    });
-
-    return success
-      ? redirectWithSuccess(
-          `/${params.organizationId}/builder/${params.courseId}/overview`,
-          message,
-        )
-      : dataWithError(null, message);
-  } catch (error) {
-    console.error('Image processing error:', error);
-
-    // Save image even if blur hash generation fails
-    const { success, message } = await editCourseImage(supabase, {
-      ...data,
-      courseId: params.courseId,
-    });
-
-    return success
-      ? redirectWithSuccess(
-          `/${params.organizationId}/builder/${params.courseId}/overview`,
-          message,
-        )
-      : dataWithError(null, 'Image saved but preview failed to generate.');
+  if (!(data.image instanceof File)) {
+    return dataWithError(null, "Oops! That doesn't look like a valid image.");
   }
+
+  const { success, message } = await editCourseImage(supabase, {
+    ...data,
+    courseId: params.courseId,
+  });
+
+  // Add timestamp to URL to force loader revalidation and cache busting
+  const cacheBuster = Date.now();
+  const redirectUrl = `/${params.organizationId}/builder/${params.courseId}/overview?_=${cacheBuster}`;
+
+  return success ? redirectWithSuccess(redirectUrl, message) : dataWithError(null, message);
 }
 
 // UI Component: Edit Course Thumbnail Page
@@ -206,12 +188,12 @@ export default function EditCourseImage() {
     if (isSubmitting) {
       // Show first message after 1.5 seconds
       timer1 = setTimeout(() => {
-        setLoadingText('Generating optimized image…');
+        setLoadingText('Uploading your thumbnail…');
       }, 1500);
 
       // Show second message after 3 seconds
       timer2 = setTimeout(() => {
-        setLoadingText('Finishing up...');
+        setLoadingText('Almost there...');
       }, 4500);
     } else {
       setLoadingText('');

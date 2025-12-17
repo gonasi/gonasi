@@ -24,7 +24,7 @@ export const createFile = async (
     return { success: false, message: 'A file must be provided.' };
   }
 
-  const { name: fileName, size, mime_type, extension, file_type } = getFileMetadata(file);
+  const { size, mime_type, extension, file_type } = getFileMetadata(file);
 
   try {
     const { success: hasSpaceSuccess, data: hasSpaceData } = await checkStorageLimitForOrg({

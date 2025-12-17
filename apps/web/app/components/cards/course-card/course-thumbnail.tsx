@@ -1,13 +1,11 @@
 import { useState } from 'react';
-import { blurhashToCssGradientString } from '@unpic/placeholder';
-import { Image } from '@unpic/react';
 import { ImageIcon } from 'lucide-react';
 
 import { Badge } from '~/components/ui/badge';
 
 interface CourseThumbnailProps {
-  iconUrl: string | null;
-  blurHash: string | null;
+  iconUrl: string | null; // Signed URL from server
+  blurUrl?: string | null; // Cloudinary blur URL
   name: string;
   badges?: string[];
   className?: string;
@@ -15,13 +13,13 @@ interface CourseThumbnailProps {
 
 export function CourseThumbnail({
   iconUrl,
-  blurHash,
+  blurUrl,
   name,
   badges = [],
   className,
 }: CourseThumbnailProps) {
   const [imageError, setImageError] = useState(false);
-  const placeholder = blurHash ? blurhashToCssGradientString(blurHash) : 'auto';
+  const [isLoaded, setIsLoaded] = useState(false);
 
   return (
     <div
@@ -38,13 +36,34 @@ export function CourseThumbnail({
 
       {/* Image or fallback */}
       {iconUrl && !imageError ? (
-        <Image
-          src={iconUrl}
-          layout='fullWidth'
-          alt={`${name} thumbnail`}
-          background={placeholder}
-          onError={() => setImageError(true)}
-        />
+        <>
+          {/* Cloudinary blur placeholder background */}
+          {blurUrl && !isLoaded && (
+            <div
+              className='absolute inset-0'
+              style={{
+                backgroundImage: `url(${blurUrl})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                zIndex: 1,
+              }}
+            />
+          )}
+
+          {/* Main image */}
+          <img
+            src={iconUrl}
+            alt={`${name} thumbnail`}
+            onLoad={() => setIsLoaded(true)}
+            onError={() => setImageError(true)}
+            className='relative h-full w-full object-cover'
+            style={{
+              zIndex: 2,
+            }}
+            loading='lazy'
+            crossOrigin='anonymous'
+          />
+        </>
       ) : (
         <div className='text-muted-foreground absolute inset-0 flex flex-col items-center justify-center'>
           <ImageIcon className='mb-2 h-12 w-12' />

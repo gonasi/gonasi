@@ -44,6 +44,7 @@ export const editCourseImage = async (
     });
 
     // Upload thumbnail to Cloudinary
+    // Note: invalidate is automatically set to true when overwrite is true
     const {
       success: uploadSuccess,
       data: uploadData,
@@ -51,7 +52,7 @@ export const editCourseImage = async (
     } = await uploadToCloudinary(image, publicId, {
       resourceType: 'image',
       type: 'authenticated', // Private/authenticated delivery
-      overwrite: true,
+      overwrite: true, // This also invalidates CDN cache
     });
 
     if (!uploadSuccess || !uploadData) {
@@ -64,10 +65,14 @@ export const editCourseImage = async (
 
     const finalImagePublicId = uploadData.publicId;
 
+    // Use current timestamp for aggressive cache busting
+    const now = new Date().toISOString();
+
     const { error: updateError } = await supabase
       .from('courses')
       .update({
         updated_by: userId,
+        updated_at: now, // Update timestamp to bust cache
         image_url: finalImagePublicId, // Store Cloudinary public_id
       })
       .eq('id', courseId);

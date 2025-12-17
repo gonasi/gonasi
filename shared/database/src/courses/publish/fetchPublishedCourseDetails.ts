@@ -77,8 +77,14 @@ export async function fetchPublishedCourseDetails({
     return null;
   }
 
+  // Use published_at timestamp for cache busting
+  const version = courseRow.published_at
+    ? new Date(courseRow.published_at).getTime()
+    : Date.now();
+
   const signedImageUrl = generateSignedThumbnailUrl({
     imagePath: courseRow.image_url,
+    version, // Add version for cache busting
   });
 
   const pricingParse = PricingSchema.safeParse(courseRow.pricing_tiers);

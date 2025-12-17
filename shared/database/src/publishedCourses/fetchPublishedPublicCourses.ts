@@ -107,8 +107,12 @@ export async function fetchPublishedPublicCourses({
   // Process results: sign image URLs and validate pricing tiers
   const processedCourses = await Promise.all(
     (data ?? []).map(async (course) => {
+      // Use published_at timestamp for cache busting
+      const version = course.published_at ? new Date(course.published_at).getTime() : Date.now();
+
       const signedImageUrl = generateSignedThumbnailUrl({
         imagePath: course.image_url,
+        version, // Add version for cache busting
       });
 
       const signedAvatarUrl = await generateSignedOrgProfileUrl({

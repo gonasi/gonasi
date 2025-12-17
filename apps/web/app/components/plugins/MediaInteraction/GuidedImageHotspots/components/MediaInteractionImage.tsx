@@ -7,7 +7,6 @@ import {
   TransformComponent,
   TransformWrapper,
 } from 'react-zoom-pan-pinch';
-import { Image } from '@unpic/react';
 import { RefreshCcw, Trash, ZoomIn, ZoomOut } from 'lucide-react';
 import { useRemixFormContext } from 'remix-hook-form';
 import { v4 as uuidv4 } from 'uuid';
@@ -325,13 +324,11 @@ export default function MediaInteractionImage({ imageId, name }: MediaInteractio
                   )}
                   wrapperStyle={{ position: 'relative' }}
                 >
-                  <Image
+                  <img
                     src={fileData.signed_url}
-                    layout='constrained'
-                    width={800}
-                    height={200}
                     alt=''
                     className='h-auto w-full'
+                    crossOrigin='anonymous'
                   />
 
                   {/* Hotspots */}

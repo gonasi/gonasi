@@ -42,6 +42,7 @@ export const getClientEnv = () => {
   return {
     NODE_ENV: serverEnv.NODE_ENV,
     BASE_URL: serverEnv.BASE_URL,
+    CLOUDINARY_CLOUD_NAME: serverEnv.CLOUDINARY_CLOUD_NAME,
   };
 };
 

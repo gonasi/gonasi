@@ -1,5 +1,4 @@
-import { blurhashToCssGradientString } from '@unpic/placeholder';
-import { Image } from '@unpic/react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { ImageIcon } from 'lucide-react';
 
@@ -18,7 +17,7 @@ function GoCardContent({ className, ...props }: React.ComponentProps<'div'>) {
 
 interface GoThumbnailProps {
   iconUrl: string | null;
-  blurHash: string | null;
+  blurUrl?: string | null; // Cloudinary blur URL
   name: string;
   badges?: React.ReactNode[];
   className?: string;
@@ -29,7 +28,7 @@ interface GoThumbnailProps {
 
 function GoThumbnail({
   iconUrl,
-  blurHash,
+  blurUrl,
   name,
   badges = [],
   className,
@@ -37,7 +36,7 @@ function GoThumbnail({
   aspectRatio = '16/9',
   noThumbnailText = 'No thumbnail available',
 }: GoThumbnailProps) {
-  const placeholder = blurHash ? blurhashToCssGradientString(blurHash) : 'auto';
+  const [isLoaded, setIsLoaded] = useState(false);
   const aspectClass = AspectRatioClasses[aspectRatio];
 
   return (
@@ -54,16 +53,35 @@ function GoThumbnail({
       )}
 
       {/* Image or fallback with consistent hover animation */}
-      <motion.div className='h-full w-full transition-transform duration-300 ease-in-out group-hover:scale-101'>
+      <motion.div className='relative h-full w-full transition-transform duration-300 ease-in-out group-hover:scale-101'>
         {iconUrl ? (
-          <Image
-            src={iconUrl}
-            layout='fullWidth'
-            objectFit={objectFit}
-            alt={`${name} thumbnail`}
-            background={placeholder}
-            className='h-full w-full object-cover'
-          />
+          <>
+            {/* Cloudinary blur placeholder - shown behind main image while it loads */}
+            {blurUrl && !isLoaded && (
+              <div
+                className='absolute inset-0 h-full w-full'
+                style={{
+                  backgroundImage: `url(${blurUrl})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  zIndex: 1,
+                }}
+              />
+            )}
+
+            {/* Main image */}
+            <img
+              src={iconUrl}
+              alt={`${name} thumbnail`}
+              onLoad={() => setIsLoaded(true)}
+              className='relative h-full w-full object-cover'
+              style={{
+                zIndex: 2,
+              }}
+              loading='lazy'
+              crossOrigin='anonymous'
+            />
+          </>
         ) : (
           <div className='text-muted-foreground bg-muted flex h-full w-full flex-col items-center justify-center'>
             <ImageIcon className='h-12 w-12' />

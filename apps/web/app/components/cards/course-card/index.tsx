@@ -60,7 +60,7 @@ export function CourseCard({
           )}
         >
           <CardHeader className='text-primary p-0'>
-            <CourseThumbnail iconUrl={iconUrl} name={name} badges={badges} blurHash={blurHash} />
+            <CourseThumbnail iconUrl={iconUrl} name={name} badges={badges} />
           </CardHeader>
 
           <CardContent className='bg-background md:bg-card w-full p-4'>

@@ -1,4 +1,4 @@
-import { getSignedUrl, getBlurPlaceholderUrl } from '@gonasi/cloudinary';
+import { getBlurPlaceholderUrl, getSignedUrl } from '@gonasi/cloudinary';
 import type { FileType } from '@gonasi/schemas/file';
 
 import { getPaginationRange } from '../constants/utils';
@@ -53,8 +53,7 @@ export async function fetchFilesWithSignedUrls({
     });
 
     // Generate blur placeholder URL for images (for progressive loading)
-    const blurUrl =
-      file.file_type === 'image' ? getBlurPlaceholderUrl(file.path, 3600) : null;
+    const blurUrl = file.file_type === 'image' ? getBlurPlaceholderUrl(file.path, 3600) : null;
 
     return { ...file, signed_url: signedUrl, blur_url: blurUrl };
   });

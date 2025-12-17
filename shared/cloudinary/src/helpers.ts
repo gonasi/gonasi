@@ -68,6 +68,7 @@ export interface SignedUrlOptions {
   expiresInSeconds?: number;
   resourceType?: CloudinaryResourceType;
   crop?: 'fill' | 'fit' | 'scale' | 'thumb';
+  version?: string | number; // Cache-busting parameter (e.g., timestamp or version number)
 }
 
 /**
@@ -88,6 +89,7 @@ export function getSignedUrl(publicId: string, options: SignedUrlOptions = {}): 
     expiresInSeconds = 3600, // Default 1 hour (same as Supabase)
     resourceType = 'image',
     crop = 'fill',
+    version,
   } = options;
 
   // Calculate expiration timestamp (Unix timestamp in seconds)
@@ -104,13 +106,21 @@ export function getSignedUrl(publicId: string, options: SignedUrlOptions = {}): 
   if (width) transformation.width = width;
   if (height) transformation.height = height;
 
-  return cloudinary.url(publicId, {
+  const baseUrl = cloudinary.url(publicId, {
     sign_url: true, // CRITICAL: Generate signature
     expires_at: expiresAt, // CRITICAL: Set expiration
     type: 'authenticated', // CRITICAL: Use authenticated delivery (private)
     resource_type: resourceType,
     transformation: [transformation],
   });
+
+  // Add version as cache-busting query parameter if provided
+  if (version) {
+    const separator = baseUrl.includes('?') ? '&' : '?';
+    return `${baseUrl}${separator}v=${version}`;
+  }
+
+  return baseUrl;
 }
 
 /**

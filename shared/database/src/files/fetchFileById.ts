@@ -1,4 +1,4 @@
-import { getSignedUrl, getVideoStreamingUrl } from '@gonasi/cloudinary';
+import { getBlurPlaceholderUrl, getSignedUrl, getVideoStreamingUrl } from '@gonasi/cloudinary';
 import type { FileType } from '@gonasi/schemas/file';
 
 import type { TypedSupabaseClient } from '../client';
@@ -71,6 +71,9 @@ export async function fetchFileById({
           resourceType,
         });
 
+    // Generate blur placeholder URL for images (for progressive loading)
+    const blurUrl = data.file_type === 'image' ? getBlurPlaceholderUrl(data.path, expirySeconds) : null;
+
     return {
       success: true,
       message: 'File fetched successfully',
@@ -78,6 +81,7 @@ export async function fetchFileById({
         ...data,
         file_type: data.file_type as FileType,
         signed_url: signedUrl,
+        blur_url: blurUrl,
       },
     };
   } catch (error) {

@@ -45,6 +45,9 @@ export async function fetchAllPublishedCoursesWithSignedUrl({
       if (!course.image_url) return { ...course, lesson_count, chapters_count, signed_url: null };
 
       try {
+        // Use updated_at timestamp as cache-busting version parameter
+        const version = course.updated_at ? new Date(course.updated_at).getTime() : undefined;
+
         const signedUrl = getSignedUrl(course.image_url, {
           width: 400,
           quality: 'auto',
@@ -52,6 +55,7 @@ export async function fetchAllPublishedCoursesWithSignedUrl({
           expiresInSeconds: 3600,
           resourceType: 'image',
           crop: 'fill',
+          version, // Add version for cache busting
         });
 
         return {
