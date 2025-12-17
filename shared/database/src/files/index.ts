@@ -1,4 +1,6 @@
 export * from './createFile';
+export * from './prepareFileUpload';
+export * from './confirmFileUpload';
 export * from './fetchFilesWithSignedUrls';
 export * from './fetchFileById';
 export * from './editFileName';

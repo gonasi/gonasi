@@ -20,6 +20,10 @@ export type {
 export { uploadToCloudinary, deleteFromCloudinary } from './upload';
 export type { UploadResult, UploadOptions, DeleteResult } from './upload';
 
+// Direct Upload (Client-Side)
+export { generateUploadSignature } from './generateUploadSignature';
+export type { UploadSignatureParams, UploadSignature } from './generateUploadSignature';
+
 // Publishing Operations
 export { copyToPublished, deletePublishedCourseFiles } from './publish';
 export type {
