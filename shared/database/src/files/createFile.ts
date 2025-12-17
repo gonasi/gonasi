@@ -1,8 +1,4 @@
-import {
-  deleteFromCloudinary,
-  generatePublicId,
-  uploadToCloudinary,
-} from '@gonasi/cloudinary';
+import { deleteFromCloudinary, generatePublicId, uploadToCloudinary } from '@gonasi/cloudinary';
 import type { NewFileSchemaTypes } from '@gonasi/schemas/file';
 import { FileType, getFileMetadata } from '@gonasi/schemas/file';
 
