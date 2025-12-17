@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 import { data, useNavigate } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Loader2 } from 'lucide-react';
 import { redirectWithError } from 'remix-toast';
 import { toast } from 'sonner';
 
@@ -40,6 +42,7 @@ export default function NewFile({ params }: Route.ComponentProps) {
 
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   const methods = useForm<NewFileSchemaTypes>({
     mode: 'all',
@@ -65,19 +68,13 @@ export default function NewFile({ params }: Route.ComponentProps) {
       return;
     }
 
-    // 1. Validate file
     const validation = validateFile(file, {
       maxSizeMB: 100,
       allowedTypes: [
-        // Images
         'image/*',
-        // Audio
         'audio/*',
-        // Video
         'video/*',
-        // 3D Models
         'model/*',
-        // Documents
         'application/pdf',
         'application/msword',
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -86,7 +83,6 @@ export default function NewFile({ params }: Route.ComponentProps) {
         'application/vnd.ms-powerpoint',
         'application/vnd.openxmlformats-officedocument.presentationml.presentation',
         'text/plain',
-        // Fallback for other types
         'application/octet-stream',
       ],
     });
@@ -100,7 +96,6 @@ export default function NewFile({ params }: Route.ComponentProps) {
     setUploadProgress(0);
 
     try {
-      // 2. Prepare upload - get signed parameters from server
       const prepareData = new FormData();
 
       prepareData.append('name', formData.name);
@@ -126,14 +121,12 @@ export default function NewFile({ params }: Route.ComponentProps) {
 
       const { fileId, uploadSignature } = prepareResult.data;
 
-      // 3. Upload directly to Cloudinary
       const cloudinaryResponse = await uploadToCloudinaryDirect(file, uploadSignature, {
         onProgress: (progress) => {
           setUploadProgress(progress.percentage);
         },
       });
 
-      // 4. Confirm upload with server
       const confirmData = new FormData();
 
       confirmData.append('fileId', fileId);
@@ -160,7 +153,11 @@ export default function NewFile({ params }: Route.ComponentProps) {
       }
 
       toast.success('File uploaded successfully!');
-      navigate(`/${params.organizationId}/builder/${params.courseId}/file-library`);
+      setIsRedirecting(true);
+
+      requestAnimationFrame(() => {
+        navigate(`/${params.organizationId}/builder/${params.courseId}/file-library`);
+      });
     } catch (error) {
       console.error('Upload failed:', error);
       toast.error(`Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -170,7 +167,7 @@ export default function NewFile({ params }: Route.ComponentProps) {
     }
   };
 
-  const isDisabled = isUploading || methods.formState.isSubmitting;
+  const isDisabled = isUploading || methods.formState.isSubmitting || isRedirecting;
 
   return (
     <Modal open>
@@ -179,41 +176,86 @@ export default function NewFile({ params }: Route.ComponentProps) {
           title='Course File Upload'
           closeRoute={`/${params.organizationId}/builder/${params.courseId}/file-library`}
         />
+
         <Modal.Body>
-          <FormProvider {...methods}>
-            <form onSubmit={handleSubmit}>
-              <GoFileField
-                name='file'
-                labelProps={{ children: 'Upload file', required: true }}
-                inputProps={{
-                  disabled: isDisabled,
-                }}
-                description='Choose a file to upload (max 100MB).'
-              />
-              <GoInputField
-                labelProps={{ children: 'File name', required: true }}
-                inputProps={{
-                  disabled: isDisabled,
-                }}
-                name='name'
-                description='Enter a name for your file.'
-              />
+          <AnimatePresence mode='wait'>
+            {isRedirecting ? (
+              <motion.div
+                key='redirecting'
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0 }}
+                className='flex flex-col items-center justify-center gap-4 py-12'
+              >
+                <Loader2 className='text-muted-foreground h-6 w-6 animate-spin' />
+                <p className='text-muted-foreground text-sm'>Finalizing upload…</p>
+              </motion.div>
+            ) : (
+              <motion.div
+                key='form'
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.2, ease: 'easeOut' }}
+              >
+                <FormProvider {...methods}>
+                  <form onSubmit={handleSubmit}>
+                    <GoFileField
+                      name='file'
+                      labelProps={{ children: 'Upload file', required: true }}
+                      inputProps={{ disabled: isDisabled }}
+                      description='Choose a file to upload (max 100MB).'
+                    />
 
-              {isUploading && uploadProgress > 0 && (
-                <div className='mt-4 space-y-2'>
-                  <Progress value={uploadProgress} />
+                    <GoInputField
+                      name='name'
+                      labelProps={{ children: 'File name', required: true }}
+                      inputProps={{ disabled: isDisabled }}
+                      description='Enter a name for your file.'
+                    />
 
-                  <p className='text-sm text-gray-600 dark:text-gray-400'>
-                    Uploading: {uploadProgress}%
-                  </p>
-                </div>
-              )}
+                    <AnimatePresence>
+                      {isUploading && uploadProgress > 0 && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={{ duration: 0.25 }}
+                          className='mt-4 space-y-2 overflow-hidden'
+                        >
+                          <motion.div
+                            initial={{ scaleX: 0 }}
+                            animate={{ scaleX: 1 }}
+                            transition={{ duration: 0.3, ease: 'easeOut' }}
+                            style={{ originX: 0 }}
+                          >
+                            <Progress value={uploadProgress} />
+                          </motion.div>
 
-              <Button type='submit' disabled={isDisabled} isLoading={isDisabled} className='mt-4'>
-                {isUploading ? 'Uploading...' : 'Upload'}
-              </Button>
-            </form>
-          </FormProvider>
+                          <motion.p
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            className='text-sm text-gray-600 dark:text-gray-400'
+                          >
+                            Uploading: {uploadProgress}%
+                          </motion.p>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
+                    <Button
+                      type='submit'
+                      disabled={isDisabled}
+                      isLoading={isDisabled}
+                      className='mt-4'
+                    >
+                      {isUploading ? 'Uploading...' : 'Upload'}
+                    </Button>
+                  </form>
+                </FormProvider>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </Modal.Body>
       </Modal.Content>
     </Modal>
