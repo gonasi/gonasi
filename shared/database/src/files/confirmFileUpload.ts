@@ -1,4 +1,4 @@
-import { getFileExtension, getFileType } from '@gonasi/schemas/file';
+import { FileType, getFileExtension, getFileType } from '@gonasi/schemas/file';
 
 import { getUserId } from '../auth';
 import type { TypedSupabaseClient } from '../client';
@@ -37,9 +37,33 @@ export const confirmFileUpload = async (
   const { fileId, name, courseId, organizationId, cloudinaryPublicId, size, mimeType } = params;
 
   try {
-    // Extract metadata from file extension
-    const extension = getFileExtension(name);
-    const file_type = getFileType(extension);
+    // Debug logging
+    console.log('[confirmFileUpload] Params:', {
+      name,
+      mimeType,
+      fileId,
+    });
+
+    // Extract extension - validate it's real, otherwise fall back to mime type
+    const extractedExt = getFileExtension(name);
+    const isValidExtension = extractedExt && name.includes('.') && extractedExt.length > 0;
+    const extension = isValidExtension ? extractedExt : mimeType.split('/')[1] || 'bin';
+
+    // Determine file type from MIME type (not user-provided name)
+    // This ensures images save as 'image' type even if user names file without extension
+    const file_type = (() => {
+      if (mimeType.startsWith('image/')) return FileType.IMAGE;
+      if (mimeType.startsWith('video/')) return FileType.VIDEO;
+      if (mimeType.startsWith('audio/')) return FileType.AUDIO;
+      // For other types, try to detect from file extension
+      return getFileType(extension);
+    })();
+
+    console.log('[confirmFileUpload] Detected:', {
+      file_type,
+      extension,
+      FileTypeEnum: FileType.IMAGE,
+    });
 
     // Insert file record in database
     const { error: insertError } = await supabase.from('file_library').insert({

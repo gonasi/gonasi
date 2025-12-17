@@ -332,6 +332,8 @@ export default [
   route('api/course-sub-categories', 'routes/api/course-sub-categories.ts'),
   route('api/files/:fileId/signed-url', 'routes/api/get-signed-url.ts'),
   route('api/files/:courseId/search', 'routes/api/search-files.ts'),
+  route('api/files/prepare-upload', 'routes/api/files/prepare-upload.ts'),
+  route('api/files/confirm-upload', 'routes/api/files/confirm-upload.ts'),
 
   route('signout', 'routes/auth/signout.tsx'),
 

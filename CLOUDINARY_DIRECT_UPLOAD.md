@@ -3,11 +3,13 @@
 ## Problem Solved
 
 **Before**: Large file uploads (>50MB) fail on Vercel due to:
+
 - ⏱️ **Timeout**: Serverless functions have 10-60s limits
 - 💾 **Memory**: Files loaded entirely into server memory
 - 🐌 **Slow**: Client → Vercel → Cloudinary (double upload time)
 
 **After**: Files upload directly from browser to Cloudinary:
+
 - ✅ **No timeouts**: Upload happens outside serverless function
 - ✅ **No memory issues**: File never touches your server
 - ✅ **Fast**: Direct client → Cloudinary upload
@@ -258,14 +260,14 @@ if (USE_DIRECT_UPLOAD) {
 
 ## Benefits Summary
 
-| Metric | Before (Proxied) | After (Direct) |
-|--------|-----------------|----------------|
-| **Max file size** | ~50MB (Vercel limit) | 100MB+ (Cloudinary limit) |
-| **Upload time** | 2x (client→server→cloudinary) | 1x (client→cloudinary) |
-| **Server memory** | Full file in RAM | ~1KB (metadata only) |
-| **Timeout risk** | High (>60s fails) | None (happens client-side) |
-| **Progress tracking** | ❌ Not possible | ✅ Real-time progress |
-| **Resumable** | ❌ No | ✅ Via AbortSignal |
+| Metric                | Before (Proxied)              | After (Direct)             |
+| --------------------- | ----------------------------- | -------------------------- |
+| **Max file size**     | ~50MB (Vercel limit)          | 100MB+ (Cloudinary limit)  |
+| **Upload time**       | 2x (client→server→cloudinary) | 1x (client→cloudinary)     |
+| **Server memory**     | Full file in RAM              | ~1KB (metadata only)       |
+| **Timeout risk**      | High (>60s fails)             | None (happens client-side) |
+| **Progress tracking** | ❌ Not possible               | ✅ Real-time progress      |
+| **Resumable**         | ❌ No                         | ✅ Via AbortSignal         |
 
 ## Security Notes
 
@@ -289,13 +291,16 @@ if (USE_DIRECT_UPLOAD) {
 ## Troubleshooting
 
 ### Issue: "Signature invalid"
+
 - **Cause**: Clock skew between server and Cloudinary
 - **Fix**: Ensure server time is synced (NTP)
 
 ### Issue: "Max file size exceeded"
+
 - **Cause**: File larger than `max_bytes` in signature
 - **Fix**: Increase buffer in `prepareFileUpload` (line 93)
 
 ### Issue: Upload completes but database insert fails
+
 - **Cause**: Cloudinary upload succeeded but `confirmFileUpload` failed
 - **Fix**: File is in Cloudinary but not in database - need to implement cleanup or retry logic

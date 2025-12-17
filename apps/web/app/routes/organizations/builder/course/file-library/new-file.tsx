@@ -1,9 +1,10 @@
-import { data, Form } from 'react-router';
+import { useState } from 'react';
+import { FormProvider, useForm } from 'react-hook-form';
+import { data, useNavigate } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
-import { dataWithError, redirectWithError, redirectWithSuccess } from 'remix-toast';
+import { redirectWithError } from 'remix-toast';
+import { toast } from 'sonner';
 
-import { createFile } from '@gonasi/database/files';
 import { NewFileLibrarySchema, type NewFileSchemaTypes } from '@gonasi/schemas/file';
 
 import type { Route } from './+types/new-file';
@@ -11,9 +12,9 @@ import type { Route } from './+types/new-file';
 import { Button } from '~/components/ui/button';
 import { GoFileField, GoInputField } from '~/components/ui/forms/elements';
 import { Modal } from '~/components/ui/modal';
+import { Progress } from '~/components/ui/progress';
 import { createClient } from '~/lib/supabase/supabase.server';
-import { checkHoneypot } from '~/utils/honeypot.server';
-import { useIsPending } from '~/utils/misc';
+import { uploadToCloudinaryDirect, validateFile } from '~/utils/cloudinary-direct-upload';
 
 const resolver = zodResolver(NewFileLibrarySchema);
 
@@ -34,41 +35,13 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   return data(true);
 }
 
-export async function action({ request, params }: Route.ActionArgs) {
-  const formData = await request.formData();
-  await checkHoneypot(formData);
-
-  const { supabase } = createClient(request);
-
-  const {
-    errors,
-    data,
-    receivedValues: defaultValues,
-  } = await getValidatedFormData<NewFileSchemaTypes>(formData, resolver);
-
-  // If validation failed, return errors and default values
-  if (errors) {
-    return { errors, defaultValues };
-  }
-
-  const { success, message } = await createFile(supabase, {
-    ...data,
-    courseId: params.courseId,
-    organizationId: params.organizationId,
-  });
-
-  return success
-    ? redirectWithSuccess(
-        `/${params.organizationId}/builder/${params.courseId}/file-library`,
-        message,
-      )
-    : dataWithError(null, message);
-}
-
 export default function NewFile({ params }: Route.ComponentProps) {
-  const isPending = useIsPending();
+  const navigate = useNavigate();
 
-  const methods = useRemixForm<NewFileSchemaTypes>({
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
+
+  const methods = useForm<NewFileSchemaTypes>({
     mode: 'all',
     resolver,
     defaultValues: {
@@ -77,7 +50,113 @@ export default function NewFile({ params }: Route.ComponentProps) {
     },
   });
 
-  const isDisabled = isPending || methods.formState.isSubmitting;
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    methods.handleSubmit((formData) => {
+      handleFileUpload(formData);
+    })(e);
+  };
+
+  const handleFileUpload = async (formData: NewFileSchemaTypes) => {
+    const file = formData.file;
+
+    if (!file) {
+      toast.error('Please select a file to upload');
+      return;
+    }
+
+    // 1. Validate file
+    const validation = validateFile(file, {
+      maxSizeMB: 100,
+      allowedTypes: [
+        'image/*',
+        'video/*',
+        'application/pdf',
+        'model/gltf-binary',
+        'application/octet-stream',
+      ],
+    });
+
+    if (!validation.valid) {
+      toast.error(validation.error);
+      return;
+    }
+
+    setIsUploading(true);
+    setUploadProgress(0);
+
+    try {
+      // 2. Prepare upload - get signed parameters from server
+      const prepareData = new FormData();
+
+      prepareData.append('name', formData.name);
+      prepareData.append('mimeType', file.type);
+      prepareData.append('size', file.size.toString());
+      prepareData.append('courseId', params.courseId);
+      prepareData.append('organizationId', params.organizationId);
+
+      const prepareResponse = await fetch('/api/files/prepare-upload', {
+        method: 'POST',
+        body: prepareData,
+      });
+
+      if (!prepareResponse.ok) {
+        throw new Error('Failed to prepare upload');
+      }
+
+      const prepareResult = await prepareResponse.json();
+
+      if (!prepareResult?.success) {
+        throw new Error(prepareResult?.message || 'Failed to prepare upload');
+      }
+
+      const { fileId, uploadSignature } = prepareResult.data;
+
+      // 3. Upload directly to Cloudinary
+      const cloudinaryResponse = await uploadToCloudinaryDirect(file, uploadSignature, {
+        onProgress: (progress) => {
+          setUploadProgress(progress.percentage);
+        },
+      });
+
+      // 4. Confirm upload with server
+      const confirmData = new FormData();
+
+      confirmData.append('fileId', fileId);
+      confirmData.append('name', formData.name);
+      confirmData.append('courseId', params.courseId);
+      confirmData.append('organizationId', params.organizationId);
+      confirmData.append('cloudinaryPublicId', cloudinaryResponse.public_id);
+      confirmData.append('size', cloudinaryResponse.bytes.toString());
+      confirmData.append('mimeType', file.type);
+
+      const confirmResponse = await fetch('/api/files/confirm-upload', {
+        method: 'POST',
+        body: confirmData,
+      });
+
+      if (!confirmResponse.ok) {
+        throw new Error('Failed to confirm upload');
+      }
+
+      const confirmResult = await confirmResponse.json();
+
+      if (!confirmResult?.success) {
+        throw new Error(confirmResult?.message || 'Failed to confirm upload');
+      }
+
+      toast.success('File uploaded successfully!');
+      navigate(`/${params.organizationId}/builder/${params.courseId}/file-library`);
+    } catch (error) {
+      console.error('Upload failed:', error);
+      toast.error(`Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsUploading(false);
+      setUploadProgress(0);
+    }
+  };
+
+  const isDisabled = isUploading || methods.formState.isSubmitting;
 
   return (
     <Modal open>
@@ -87,15 +166,15 @@ export default function NewFile({ params }: Route.ComponentProps) {
           closeRoute={`/${params.organizationId}/builder/${params.courseId}/file-library`}
         />
         <Modal.Body>
-          <RemixFormProvider {...methods}>
-            <Form method='POST' encType='multipart/form-data' onSubmit={methods.handleSubmit}>
+          <FormProvider {...methods}>
+            <form onSubmit={handleSubmit}>
               <GoFileField
                 name='file'
                 labelProps={{ children: 'Upload file', required: true }}
                 inputProps={{
                   disabled: isDisabled,
                 }}
-                description='Choose a file to upload.'
+                description='Choose a file to upload (max 100MB).'
               />
               <GoInputField
                 labelProps={{ children: 'File name', required: true }}
@@ -105,11 +184,22 @@ export default function NewFile({ params }: Route.ComponentProps) {
                 name='name'
                 description='Enter a name for your file.'
               />
-              <Button type='submit' disabled={isDisabled} isLoading={isDisabled}>
-                Save
+
+              {isUploading && uploadProgress > 0 && (
+                <div className='mt-4 space-y-2'>
+                  <Progress value={uploadProgress} />
+
+                  <p className='text-sm text-gray-600 dark:text-gray-400'>
+                    Uploading: {uploadProgress}%
+                  </p>
+                </div>
+              )}
+
+              <Button type='submit' disabled={isDisabled} isLoading={isDisabled} className='mt-4'>
+                {isUploading ? 'Uploading...' : 'Upload'}
               </Button>
-            </Form>
-          </RemixFormProvider>
+            </form>
+          </FormProvider>
         </Modal.Body>
       </Modal.Content>
     </Modal>

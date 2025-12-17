@@ -20,6 +20,7 @@ export interface UploadSignature {
   tags?: string;
   context?: string;
   resourceType?: string;
+  maxBytes?: number;
 }
 
 /**
@@ -74,8 +75,8 @@ export function generateUploadSignature(params: UploadSignatureParams): UploadSi
     timestamp,
     public_id: publicId,
     type: 'authenticated', // CRITICAL: Private file storage
-    resource_type: resourceType,
     invalidate: true,
+    // Note: resource_type goes in URL path, not in signed params
   };
 
   if (tags.length > 0) {
@@ -88,9 +89,7 @@ export function generateUploadSignature(params: UploadSignatureParams): UploadSi
       .join('|');
   }
 
-  if (maxFileSize) {
-    paramsToSign.max_bytes = maxFileSize;
-  }
+  // Note: max_bytes is NOT signed - it's a constraint parameter only
 
   // Generate signature using Cloudinary SDK
   const signature = cloudinary.utils.api_sign_request(
@@ -109,5 +108,6 @@ export function generateUploadSignature(params: UploadSignatureParams): UploadSi
       ? Object.entries(context).map(([key, value]) => `${key}=${value}`).join('|')
       : undefined,
     resourceType,
+    maxBytes: maxFileSize,
   };
 }

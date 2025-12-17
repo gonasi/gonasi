@@ -67,13 +67,17 @@ export async function uploadToCloudinaryDirect(
   const uploadUrl = `https://api.cloudinary.com/v1_1/${signature.cloudName}/${signature.resourceType || 'auto'}/upload`;
 
   // Build form data with signed parameters
+  // IMPORTANT: Must include ALL parameters that were signed
   const formData = new FormData();
+
   formData.append('file', file);
   formData.append('public_id', signature.publicId);
   formData.append('timestamp', signature.timestamp.toString());
   formData.append('signature', signature.signature);
   formData.append('api_key', signature.apiKey);
   formData.append('type', 'authenticated'); // CRITICAL: Private file storage
+  formData.append('invalidate', 'true');
+  // Note: resource_type is in URL path, not a form parameter
 
   if (signature.tags) {
     formData.append('tags', signature.tags);
@@ -81,6 +85,11 @@ export async function uploadToCloudinaryDirect(
 
   if (signature.context) {
     formData.append('context', signature.context);
+  }
+
+  // Note: max_bytes is sent but NOT signed (it's a constraint only)
+  if (signature.maxBytes) {
+    formData.append('max_bytes', signature.maxBytes.toString());
   }
 
   // Upload with progress tracking
@@ -113,9 +122,7 @@ export async function uploadToCloudinaryDirect(
         try {
           const errorResponse = JSON.parse(xhr.responseText);
           reject(
-            new Error(
-              errorResponse.error?.message || `Upload failed with status ${xhr.status}`,
-            ),
+            new Error(errorResponse.error?.message || `Upload failed with status ${xhr.status}`),
           );
         } catch {
           reject(new Error(`Upload failed with status ${xhr.status}`));
@@ -170,12 +177,27 @@ export function validateFile(
     };
   }
 
-  // Check file type
-  if (allowedTypes && !allowedTypes.includes(file.type)) {
-    return {
-      valid: false,
-      error: `File type "${file.type}" is not allowed. Allowed types: ${allowedTypes.join(', ')}`,
-    };
+  // Check file type (supports wildcards like 'image/*')
+  if (allowedTypes && allowedTypes.length > 0) {
+    const isAllowed = allowedTypes.some((allowedType) => {
+      // Exact match
+      if (allowedType === file.type) return true;
+
+      // Wildcard match (e.g., 'image/*' matches 'image/png')
+      if (allowedType.endsWith('/*')) {
+        const prefix = allowedType.slice(0, -2);
+        return file.type.startsWith(`${prefix}/`);
+      }
+
+      return false;
+    });
+
+    if (!isAllowed) {
+      return {
+        valid: false,
+        error: `File type "${file.type}" is not allowed. Allowed types: ${allowedTypes.join(', ')}`,
+      };
+    }
   }
 
   return { valid: true };
