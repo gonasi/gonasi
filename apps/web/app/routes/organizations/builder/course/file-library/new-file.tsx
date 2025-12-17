@@ -69,10 +69,24 @@ export default function NewFile({ params }: Route.ComponentProps) {
     const validation = validateFile(file, {
       maxSizeMB: 100,
       allowedTypes: [
+        // Images
         'image/*',
+        // Audio
+        'audio/*',
+        // Video
         'video/*',
+        // 3D Models
+        'model/*',
+        // Documents
         'application/pdf',
-        'model/gltf-binary',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'application/vnd.ms-powerpoint',
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        'text/plain',
+        // Fallback for other types
         'application/octet-stream',
       ],
     });
