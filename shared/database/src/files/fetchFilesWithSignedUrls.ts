@@ -42,6 +42,10 @@ export async function fetchFilesWithSignedUrls({
     const resourceType =
       file.file_type === 'video' ? 'video' : file.file_type === 'image' ? 'image' : 'raw';
 
+    // Use updated_at timestamp as version for cache busting
+    // This ensures edited files get fresh URLs instead of cached versions
+    const cacheVersion = file.updated_at ? new Date(file.updated_at).getTime() : undefined;
+
     // Generate SIGNED URL with 1-hour expiration (private access)
     const signedUrl = getSignedUrl(file.path, {
       width: transformOptions?.width ?? 200,
@@ -50,6 +54,7 @@ export async function fetchFilesWithSignedUrls({
       format: 'auto',
       expiresInSeconds: 3600, // 1 hour (same as Supabase)
       resourceType,
+      version: cacheVersion, // CRITICAL: Cache busting
     });
 
     // Generate blur placeholder URL for images (for progressive loading)

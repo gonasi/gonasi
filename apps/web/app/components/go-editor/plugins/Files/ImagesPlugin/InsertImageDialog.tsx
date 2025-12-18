@@ -108,7 +108,7 @@ export default function InsertImageDialog({
 
       const payload: InsertImagePayload = {
         fileId: file.id,
-        blurHash: file.blur_preview ?? '',
+        blurHash: ('blur_url' in file ? file.blur_url : null) || undefined,
         width,
         height,
       };
@@ -120,7 +120,7 @@ export default function InsertImageDialog({
       // Fallback to default dimensions
       const payload: InsertImagePayload = {
         fileId: file.id,
-        blurHash: file.blur_preview ?? '',
+        blurHash: ('blur_url' in file ? file.blur_url : null) || undefined,
         width: 300,
         height: 200,
       };

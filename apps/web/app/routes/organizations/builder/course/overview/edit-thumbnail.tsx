@@ -1,30 +1,19 @@
-import { lazy, useEffect, useState } from 'react';
+import { lazy, useState } from 'react';
 import type { Area, Point } from 'react-easy-crop';
-import { Form, useParams } from 'react-router';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { useNavigate, useParams } from 'react-router';
 import { AnimatePresence, motion } from 'framer-motion';
-import { CircleX, Crop, LoaderCircle, Upload } from 'lucide-react';
-import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
-import { dataWithError, redirectWithSuccess } from 'remix-toast';
-import { HoneypotInputs } from 'remix-utils/honeypot/react';
+import { CircleX, Crop, Loader2, Upload } from 'lucide-react';
+import { toast } from 'sonner';
 
-// App logic and utils
-import { editCourseImage } from '@gonasi/database/courses';
-import { EditCourseImageSchema, type EditCourseImageSchemaTypes } from '@gonasi/schemas/courses';
-
-import type { Route } from './+types/edit-thumbnail';
-
-// Local types
 // UI Components
 import { Button } from '~/components/ui/button';
 import { FormDescription } from '~/components/ui/forms/elements/Common';
 import { Input } from '~/components/ui/input';
 import { Label } from '~/components/ui/label';
 import { Modal } from '~/components/ui/modal';
+import { Progress } from '~/components/ui/progress';
 import { Slider } from '~/components/ui/slider';
-import { createClient } from '~/lib/supabase/supabase.server';
-import { checkHoneypot } from '~/utils/honeypot.server';
-import { useIsPending } from '~/utils/misc';
+import { uploadToCloudinaryDirect, validateFile } from '~/utils/cloudinary-direct-upload';
 
 const Cropper = lazy(() => import('react-easy-crop'));
 
@@ -38,9 +27,6 @@ export function meta() {
     },
   ];
 }
-
-// Zod resolver setup
-const resolver = zodResolver(EditCourseImageSchema);
 
 // Utility: Generate cropped image from selected area
 const createCroppedImage = (
@@ -85,52 +71,18 @@ const createCroppedImage = (
   });
 };
 
-// Server-side form handler
-export async function action({ request, params }: Route.ActionArgs) {
-  const formData = await request.formData();
-  await checkHoneypot(formData); // Bot protection
-
-  const { supabase } = createClient(request);
-  const {
-    errors,
-    data,
-    receivedValues: defaultValues,
-  } = await getValidatedFormData<EditCourseImageSchemaTypes>(formData, resolver);
-
-  if (errors) return { errors, defaultValues };
-
-  if (!(data.image instanceof File)) {
-    return dataWithError(null, "Oops! That doesn't look like a valid image.");
-  }
-
-  const { success, message } = await editCourseImage(supabase, {
-    ...data,
-    courseId: params.courseId,
-  });
-
-  // Add timestamp to URL to force loader revalidation and cache busting
-  const cacheBuster = Date.now();
-  const redirectUrl = `/${params.organizationId}/builder/${params.courseId}/overview?_=${cacheBuster}`;
-
-  return success ? redirectWithSuccess(redirectUrl, message) : dataWithError(null, message);
-}
-
 // UI Component: Edit Course Thumbnail Page
 export default function EditCourseImage() {
-  const isPending = useIsPending();
+  const navigate = useNavigate();
   const params = useParams();
 
-  const methods = useRemixForm<EditCourseImageSchemaTypes>({
-    mode: 'all',
-    resolver,
-  });
-
-  const isSubmitting = isPending || methods.formState.isSubmitting;
-
   // Local state
-  const [loadingText, setLoadingText] = useState('');
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [originalFile, setOriginalFile] = useState<File | null>(null);
+  const [croppedFile, setCroppedFile] = useState<File | null>(null);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
   const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
@@ -155,20 +107,17 @@ export default function EditCourseImage() {
     setCroppedAreaPixels(croppedPixels);
   };
 
-  // Apply crop and set image to form
+  // Apply crop and save to state
   const handleCropConfirm = async () => {
     if (!selectedImage || !croppedAreaPixels || !originalFile) return;
 
     try {
-      const croppedFile = await createCroppedImage(
-        selectedImage,
-        croppedAreaPixels,
-        originalFile.name,
-      );
-      methods.setValue('image', croppedFile);
+      const file = await createCroppedImage(selectedImage, croppedAreaPixels, originalFile.name);
+      setCroppedFile(file);
       setShowCropper(false);
     } catch (error) {
       console.error('Cropping failed:', error);
+      toast.error('Failed to crop image');
     }
   };
 
@@ -178,32 +127,100 @@ export default function EditCourseImage() {
     setSelectedImage(null);
     setCroppedAreaPixels(null);
     setOriginalFile(null);
+    setCroppedFile(null);
   };
 
-  // Handle progressive loading text
-  useEffect(() => {
-    let timer1: NodeJS.Timeout;
-    let timer2: NodeJS.Timeout;
-
-    if (isSubmitting) {
-      // Show first message after 1.5 seconds
-      timer1 = setTimeout(() => {
-        setLoadingText('Uploading your thumbnail…');
-      }, 1500);
-
-      // Show second message after 3 seconds
-      timer2 = setTimeout(() => {
-        setLoadingText('Almost there...');
-      }, 4500);
-    } else {
-      setLoadingText('');
+  // Handle thumbnail upload
+  const handleThumbnailUpload = async () => {
+    if (!croppedFile) {
+      toast.error('Please select and crop an image first');
+      return;
     }
 
-    return () => {
-      clearTimeout(timer1);
-      clearTimeout(timer2);
-    };
-  }, [isSubmitting]);
+    // 1. Validate file
+    const validation = validateFile(croppedFile, {
+      maxSizeMB: 100,
+      allowedTypes: ['image/*'],
+    });
+
+    if (!validation.valid) {
+      toast.error(validation.error);
+      return;
+    }
+
+    setIsUploading(true);
+    setUploadProgress(0);
+
+    try {
+      // 2. Prepare upload - get signed parameters from server
+      const prepareData = new FormData();
+      prepareData.append('courseId', params.courseId!);
+      prepareData.append('organizationId', params.organizationId!);
+      prepareData.append('mimeType', croppedFile.type);
+      prepareData.append('size', croppedFile.size.toString());
+
+      const prepareResponse = await fetch('/api/courses/prepare-thumbnail-upload', {
+        method: 'POST',
+        body: prepareData,
+      });
+
+      if (!prepareResponse.ok) {
+        throw new Error('Failed to prepare upload');
+      }
+
+      const prepareResult = await prepareResponse.json();
+
+      if (!prepareResult?.success) {
+        throw new Error(prepareResult?.message || 'Failed to prepare upload');
+      }
+
+      const { uploadSignature } = prepareResult.data;
+
+      // 3. Upload directly to Cloudinary
+      const cloudinaryResponse = await uploadToCloudinaryDirect(croppedFile, uploadSignature, {
+        onProgress: (progress) => {
+          setUploadProgress(progress.percentage);
+        },
+      });
+
+      // 4. Confirm upload with server
+      const confirmData = new FormData();
+      confirmData.append('courseId', params.courseId!);
+      confirmData.append('cloudinaryPublicId', cloudinaryResponse.public_id);
+
+      const confirmResponse = await fetch('/api/courses/confirm-thumbnail-upload', {
+        method: 'POST',
+        body: confirmData,
+      });
+
+      if (!confirmResponse.ok) {
+        throw new Error('Failed to confirm upload');
+      }
+
+      const confirmResult = await confirmResponse.json();
+
+      if (!confirmResult?.success) {
+        throw new Error(confirmResult?.message || 'Failed to confirm upload');
+      }
+
+      toast.success('Thumbnail updated successfully!');
+      setIsRedirecting(true);
+
+      // Add cache buster to force reload
+      const cacheBuster = Date.now();
+      requestAnimationFrame(() => {
+        navigate(`/${params.organizationId}/builder/${params.courseId}/overview?_=${cacheBuster}`);
+      });
+    } catch (error) {
+      console.error('Upload failed:', error);
+      toast.error(`Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsUploading(false);
+      setUploadProgress(0);
+    }
+  };
+
+  const isDisabled = isUploading || isRedirecting;
 
   return (
     <Modal open>
@@ -248,56 +265,87 @@ export default function EditCourseImage() {
                 </Button>
               </div>
             </div>
+          ) : isRedirecting ? (
+            // Redirecting UI
+            <motion.div
+              key='redirecting'
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0 }}
+              className='flex flex-col items-center justify-center gap-4 py-12'
+            >
+              <Loader2 className='text-muted-foreground h-6 w-6 animate-spin' />
+              <p className='text-muted-foreground text-sm'>Finalizing upload…</p>
+            </motion.div>
           ) : (
-            // Form UI
-            <RemixFormProvider {...methods}>
-              <Form method='POST' encType='multipart/form-data' onSubmit={methods.handleSubmit}>
-                <HoneypotInputs />
-
-                <div className='space-y-4'>
-                  <div>
-                    <Label required className='text-sm font-medium'>
-                      Course thumbnail
-                    </Label>
-                    <Input
-                      type='file'
-                      accept='image/*'
-                      onChange={handleImageSelect}
-                      disabled={isSubmitting}
-                      className='w-full'
-                      placeholder={originalFile ? originalFile.name : ''}
-                    />
-                    <FormDescription>Upload a fresh new look for your course ✨</FormDescription>
-                  </div>
-
-                  {/* Progressive loading messages */}
-                  <AnimatePresence>
-                    {loadingText && (
-                      <motion.div
-                        key={loadingText}
-                        initial={{ opacity: 0, y: 6 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 6 }}
-                        transition={{ duration: 0.25 }}
-                        className='flex items-center space-x-2 pb-2'
-                      >
-                        <LoaderCircle size={10} className='animate-spin' />
-                        <p className='font-secondary text-xs'>{loadingText}</p>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-
-                  <Button
-                    type='submit'
-                    disabled={isPending || !methods.getValues('image')}
-                    isLoading={isSubmitting}
-                    rightIcon={<Upload />}
-                  >
-                    Save
-                  </Button>
+            // Upload UI
+            <motion.div
+              key='form'
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+            >
+              <div className='space-y-4'>
+                <div>
+                  <Label required className='text-sm font-medium'>
+                    Course thumbnail
+                  </Label>
+                  <Input
+                    type='file'
+                    accept='image/*'
+                    onChange={handleImageSelect}
+                    disabled={isDisabled}
+                    className='w-full'
+                  />
+                  <FormDescription>Upload a fresh new look for your course ✨</FormDescription>
+                  {croppedFile && (
+                    <p className='text-muted-foreground mt-2 text-xs'>
+                      ✓ Image cropped and ready: {croppedFile.name}
+                    </p>
+                  )}
                 </div>
-              </Form>
-            </RemixFormProvider>
+
+                {/* Upload Progress */}
+                <AnimatePresence>
+                  {isUploading && uploadProgress > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.25 }}
+                      className='space-y-2 overflow-hidden'
+                    >
+                      <motion.div
+                        initial={{ scaleX: 0 }}
+                        animate={{ scaleX: 1 }}
+                        transition={{ duration: 0.3, ease: 'easeOut' }}
+                        style={{ originX: 0 }}
+                      >
+                        <Progress value={uploadProgress} />
+                      </motion.div>
+
+                      <motion.p
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className='text-sm text-gray-600 dark:text-gray-400'
+                      >
+                        Uploading: {uploadProgress}%
+                      </motion.p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                <Button
+                  onClick={handleThumbnailUpload}
+                  disabled={isDisabled || !croppedFile}
+                  isLoading={isDisabled}
+                  rightIcon={<Upload />}
+                >
+                  {isUploading ? 'Uploading...' : 'Save'}
+                </Button>
+              </div>
+            </motion.div>
           )}
         </Modal.Body>
       </Modal.Content>

@@ -25,6 +25,7 @@ export interface ImagePayload {
   width: 'inherit' | number;
   height: 'inherit' | number;
   maxWidth?: number;
+  blurHash?: string;
   cropRegion?: CropRegion;
   key?: NodeKey;
 }

@@ -28,6 +28,14 @@ export function IconNavLink({
   return (
     <NavLink
       to={disabled ? '#' : to}
+      className={({ isPending }) =>
+        cn(
+          'relative flex flex-col items-center justify-center transition-all duration-200',
+          'hover:scale-105 hover:cursor-pointer z-10',
+          disabled && 'pointer-events-none opacity-30 hover:scale-100 hover:cursor-not-allowed',
+          className,
+        )
+      }
       onClick={(e) => {
         if (disabled) {
           e.preventDefault();
@@ -36,14 +44,7 @@ export function IconNavLink({
       }}
     >
       {({ isPending }) => (
-        <div
-          className={cn(
-            'relative flex flex-col items-center justify-center transition-all duration-200',
-            'hover:scale-105 hover:cursor-pointer',
-            disabled && 'pointer-events-none opacity-30 hover:scale-100 hover:cursor-not-allowed',
-            className,
-          )}
-        >
+        <>
           <motion.div
             animate={
               shouldPulse
@@ -80,7 +81,7 @@ export function IconNavLink({
           {isPending && !disabled && (
             <span className='bg-primary absolute top-0 right-0 h-0.5 w-0.5 animate-ping rounded-full' />
           )}
-        </div>
+        </>
       )}
     </NavLink>
   );

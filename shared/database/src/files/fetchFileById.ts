@@ -57,18 +57,23 @@ export async function fetchFileById({
       };
     }
 
-    // Generate Cloudinary signed URL
+    // Generate Cloudinary signed URL with cache busting
     const resourceType =
       data.file_type === 'video' ? 'video' : data.file_type === 'image' ? 'image' : 'raw';
 
+    // Use updated_at timestamp as version for cache busting
+    // This ensures that edited files get fresh URLs instead of cached versions
+    const cacheVersion = data.updated_at ? new Date(data.updated_at).getTime() : undefined;
+
     const isVideo = data.file_type === 'video';
     const signedUrl = isVideo
-      ? getVideoStreamingUrl(data.path, expirySeconds)
+      ? getVideoStreamingUrl(data.path, expirySeconds, cacheVersion) // CRITICAL: Cache busting
       : getSignedUrl(data.path, {
           quality: 'auto',
           format: 'auto',
           expiresInSeconds: expirySeconds,
           resourceType,
+          version: cacheVersion, // CRITICAL: Cache busting
         });
 
     // Generate blur placeholder URL for images (for progressive loading)

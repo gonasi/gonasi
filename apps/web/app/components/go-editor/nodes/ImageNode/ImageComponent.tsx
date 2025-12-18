@@ -38,6 +38,7 @@ export default function ImageComponent({
   width,
   height,
   maxWidth = 800,
+  blurHash,
 }: ImageComponentProps) {
   const fetcher = useFetcher<typeof loader>();
   const [isLoaded, setIsLoaded] = useState(false);
@@ -57,9 +58,24 @@ export default function ImageComponent({
   }, [fileId, mode]);
 
   const src = fetcher.data?.success ? fetcher.data.data?.signed_url : undefined;
-  const blurUrl = fetcher.data?.success ? fetcher.data.data?.blur_preview : undefined;
+  const fetchedBlurUrl = fetcher.data?.success ? fetcher.data.data?.blur_preview : undefined;
 
-  // Use Cloudinary's server-generated blur URL or fallback to gray
+  // Prefer stored blurHash from node, fallback to fetched blur URL
+  // Ensure we filter out empty strings and invalid values
+  const blurUrl = (blurHash && blurHash.trim()) || (fetchedBlurUrl && fetchedBlurUrl.trim());
+
+  // Debug logging to verify blur URL
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[ImageComponent] Blur URL:', {
+      fileId,
+      storedBlurHash: blurHash,
+      fetchedBlurUrl,
+      finalBlurUrl: blurUrl,
+    });
+  }
+
+  // Use stored or fetched blur URL, fallback to gray
+  // Only create url() if we have a valid blur URL
   const placeholder = blurUrl ? `url(${blurUrl})` : '#f3f4f6';
   const isSVGImage = fetcher.data?.success ? fetcher.data.data?.extension === 'svg' : false;
 
