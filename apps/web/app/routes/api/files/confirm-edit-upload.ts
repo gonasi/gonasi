@@ -80,6 +80,8 @@ export async function action({ request }: Route.ActionArgs) {
       if (mimeType.startsWith('image/')) return FileType.IMAGE;
       if (mimeType.startsWith('video/')) return FileType.VIDEO;
       if (mimeType.startsWith('audio/')) return FileType.AUDIO;
+      if (mimeType.startsWith('model/')) return FileType.MODEL_3D;
+      // For documents and other types, try to detect from file extension
       return getFileType(extension);
     })();
 

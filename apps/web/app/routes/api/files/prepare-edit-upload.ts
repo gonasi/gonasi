@@ -142,12 +142,17 @@ export async function action({ request }: Route.ActionArgs) {
       if (mimeType.startsWith('image/')) return FileType.IMAGE;
       if (mimeType.startsWith('video/')) return FileType.VIDEO;
       if (mimeType.startsWith('audio/')) return FileType.AUDIO;
+      if (mimeType.startsWith('model/')) return FileType.MODEL_3D;
       // For other types, use existing file type or detect from mime
       return existingFile.file_type || FileType.OTHER;
     })();
 
     const resourceType =
-      file_type === FileType.VIDEO ? 'video' : file_type === FileType.IMAGE ? 'image' : 'raw';
+      file_type === FileType.VIDEO
+        ? 'video'
+        : file_type === FileType.IMAGE
+          ? 'image'
+          : 'raw'; // 3D models, audio, documents all use 'raw'
 
     // Generate signed upload parameters
     console.log('[prepare-edit-upload] Generating signature...');

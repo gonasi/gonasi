@@ -106,6 +106,15 @@ export default function EditFileImage({ loaderData, params }: Route.ComponentPro
         'audio/*',
         'video/*',
         'model/*',
+        // 3D file formats
+        'model/gltf+json', // .gltf
+        'model/gltf-binary', // .glb
+        'model/obj', // .obj
+        'model/stl', // .stl
+        'model/fbx', // .fbx
+        'model/vnd.collada+xml', // .dae (Collada)
+        'application/x-blender', // .blend
+        // Documents
         'application/pdf',
         'application/msword',
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
