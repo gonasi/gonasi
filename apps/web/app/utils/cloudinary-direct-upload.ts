@@ -164,9 +164,10 @@ export function validateFile(
   options: {
     maxSizeMB?: number;
     allowedTypes?: string[];
+    allowedExtensions?: string[];
   } = {},
 ): { valid: boolean; error?: string } {
-  const { maxSizeMB = 100, allowedTypes } = options;
+  const { maxSizeMB = 100, allowedTypes, allowedExtensions } = options;
 
   // Check file size
   const fileSizeMB = file.size / 1024 / 1024;
@@ -192,7 +193,19 @@ export function validateFile(
       return false;
     });
 
+    // If MIME type validation failed, try extension validation for binary files
     if (!isAllowed) {
+      // Extract file extension
+      const extension = file.name.split('.').pop()?.toLowerCase();
+
+      // If file has no MIME type or is application/octet-stream, check extension
+      if ((!file.type || file.type === 'application/octet-stream') && extension && allowedExtensions) {
+        const isExtensionAllowed = allowedExtensions.includes(extension);
+        if (isExtensionAllowed) {
+          return { valid: true };
+        }
+      }
+
       return {
         valid: false,
         error: `File type "${file.type}" is not allowed. Allowed types: ${allowedTypes.join(', ')}`,

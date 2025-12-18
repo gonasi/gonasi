@@ -94,6 +94,26 @@ export default function NewFile({ params }: Route.ComponentProps) {
         'text/plain',
         'application/octet-stream',
       ],
+      // Allow these extensions even if browser doesn't recognize MIME type
+      allowedExtensions: [
+        // 3D formats
+        'gltf',
+        'glb',
+        'obj',
+        'stl',
+        'fbx',
+        'dae',
+        'blend',
+        // Documents
+        'pdf',
+        'doc',
+        'docx',
+        'xls',
+        'xlsx',
+        'ppt',
+        'pptx',
+        'txt',
+      ],
     });
 
     if (!validation.valid) {
@@ -108,6 +128,7 @@ export default function NewFile({ params }: Route.ComponentProps) {
       const prepareData = new FormData();
 
       prepareData.append('name', formData.name);
+      prepareData.append('fileName', file.name); // Original filename with extension
       prepareData.append('mimeType', file.type);
       prepareData.append('size', file.size.toString());
       prepareData.append('courseId', params.courseId);
@@ -140,6 +161,7 @@ export default function NewFile({ params }: Route.ComponentProps) {
 
       confirmData.append('fileId', fileId);
       confirmData.append('name', formData.name);
+      confirmData.append('fileName', file.name);
       confirmData.append('courseId', params.courseId);
       confirmData.append('organizationId', params.organizationId);
       confirmData.append('cloudinaryPublicId', cloudinaryResponse.public_id);

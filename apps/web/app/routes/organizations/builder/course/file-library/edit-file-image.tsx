@@ -80,16 +80,53 @@ export default function EditFileImage({ loaderData, params }: Route.ComponentPro
       return;
     }
 
-    // Determine file type category from MIME type
-    const getFileTypeCategory = (mimeType: string): string => {
-      if (mimeType.startsWith('image/')) return 'image';
-      if (mimeType.startsWith('video/')) return 'video';
-      if (mimeType.startsWith('audio/')) return 'audio';
+    // Map database file_type to category
+    const getFileCategoryFromDbType = (dbFileType: string): string => {
+      if (dbFileType === 'image') return 'image';
+      if (dbFileType === 'video') return 'video';
+      if (dbFileType === 'audio') return 'audio';
+      if (dbFileType === 'model3d') return 'model';
+      if (dbFileType === 'document') return 'document';
       return 'other';
     };
 
-    const oldFileCategory = getFileTypeCategory(loaderData.mime_type);
-    const newFileCategory = getFileTypeCategory(file.type);
+    // Determine new file's category from MIME type or extension
+    const getNewFileCategory = (mimeType: string, fileName: string): string => {
+      if (mimeType.startsWith('image/')) return 'image';
+      if (mimeType.startsWith('video/')) return 'video';
+      if (mimeType.startsWith('audio/')) return 'audio';
+      if (mimeType.startsWith('model/')) return 'model';
+
+      // For files with no MIME type or application/octet-stream, check extension
+      if (!mimeType || mimeType === 'application/octet-stream') {
+        const ext = fileName.split('.').pop()?.toLowerCase();
+        // 3D file extensions
+        if (['gltf', 'glb', 'obj', 'stl', 'fbx', 'dae', 'blend'].includes(ext || '')) {
+          return 'model';
+        }
+        // Document extensions
+        if (['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt'].includes(ext || '')) {
+          return 'document';
+        }
+      }
+
+      // Check for document MIME types
+      if (
+        mimeType.startsWith('application/pdf') ||
+        mimeType.includes('document') ||
+        mimeType.includes('sheet') ||
+        mimeType.includes('presentation') ||
+        mimeType === 'text/plain'
+      ) {
+        return 'document';
+      }
+
+      return 'other';
+    };
+
+    // Use database file_type for old file (more reliable than deriving from MIME type)
+    const oldFileCategory = getFileCategoryFromDbType(loaderData.file_type);
+    const newFileCategory = getNewFileCategory(file.type, file.name);
 
     // Only allow editing with the same file type category
     if (oldFileCategory !== newFileCategory) {
@@ -125,6 +162,26 @@ export default function EditFileImage({ loaderData, params }: Route.ComponentPro
         'text/plain',
         'application/octet-stream',
       ],
+      // Allow these extensions even if browser doesn't recognize MIME type
+      allowedExtensions: [
+        // 3D formats
+        'gltf',
+        'glb',
+        'obj',
+        'stl',
+        'fbx',
+        'dae',
+        'blend',
+        // Documents
+        'pdf',
+        'doc',
+        'docx',
+        'xls',
+        'xlsx',
+        'ppt',
+        'pptx',
+        'txt',
+      ],
     });
 
     if (!validation.valid) {
@@ -139,6 +196,7 @@ export default function EditFileImage({ loaderData, params }: Route.ComponentPro
       // 1. Prepare edit - get signed parameters from server
       const prepareData = new FormData();
       prepareData.append('fileId', params.fileId);
+      prepareData.append('fileName', file.name);
       prepareData.append('mimeType', file.type);
       prepareData.append('size', file.size.toString());
 
@@ -165,6 +223,7 @@ export default function EditFileImage({ loaderData, params }: Route.ComponentPro
       // 3. Confirm edit with server - updates database with cache busting
       const confirmData = new FormData();
       confirmData.append('fileId', params.fileId);
+      confirmData.append('fileName', file.name);
       confirmData.append('cloudinaryPublicId', cloudinaryResponse.public_id);
       confirmData.append('size', cloudinaryResponse.bytes.toString());
       confirmData.append('mimeType', file.type);
