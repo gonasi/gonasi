@@ -1,4 +1,4 @@
-import { data, Form, useNavigate } from 'react-router';
+import { data, Form } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Pencil } from 'lucide-react';
 import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
@@ -10,7 +10,7 @@ import { EditFileNameSchema, type EditFileNameSchemaTypes } from '@gonasi/schema
 import type { Route } from './+types/edit-file-name';
 
 import FileNodeRenderer from '~/components/file-renderers/file-node-renderer';
-import { Button } from '~/components/ui/button';
+import { Button, IconNavLink } from '~/components/ui/button';
 import { GoInputField } from '~/components/ui/forms/elements';
 import { Modal } from '~/components/ui/modal';
 import { createClient } from '~/lib/supabase/supabase.server';
@@ -75,8 +75,6 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 }
 
 export default function EditFileName({ loaderData, params }: Route.ComponentProps) {
-  const navigate = useNavigate();
-
   const methods = useRemixForm<EditFileNameSchemaTypes>({
     mode: 'all',
     resolver,
@@ -98,24 +96,18 @@ export default function EditFileName({ loaderData, params }: Route.ComponentProp
           closeRoute={`/${params.organizationId}/builder/${params.courseId}/file-library`}
         />
         <Modal.Body>
-          <div className='relative flex justify-center pt-10 pb-2'>
-            <div className='bg-card/50 flex h-40 w-full items-center justify-center md:h-60'>
+          <div className='relative pt-10 pb-2'>
+            <div className='bg-card/50 relative flex h-40 w-full items-center justify-center md:h-60'>
               <FileNodeRenderer file={loaderData} />
+
+              <IconNavLink
+                to={`/${params.organizationId}/builder/${params.courseId}/file-library/${params.fileId}/edit/image`}
+                icon={Pencil}
+                className='bg-background/90 hover:bg-background absolute top-3 right-3 rounded-full p-2 shadow backdrop-blur transition'
+              />
             </div>
-            <Button
-              className='absolute top-14 right-4'
-              size='sm'
-              variant='secondary'
-              type='button'
-              onClick={() =>
-                navigate(
-                  `/${params.organizationId}/builder/${params.courseId}/file-library/${params.fileId}/edit/image`,
-                )
-              }
-            >
-              <Pencil />
-            </Button>
           </div>
+
           <RemixFormProvider {...methods}>
             <Form method='POST' onSubmit={methods.handleSubmit}>
               <GoInputField

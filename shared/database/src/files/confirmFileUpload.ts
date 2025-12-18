@@ -47,7 +47,12 @@ export const confirmFileUpload = async (
     // Extract extension - validate it's real, otherwise fall back to mime type
     const extractedExt = getFileExtension(name);
     const isValidExtension = extractedExt && name.includes('.') && extractedExt.length > 0;
-    const extension = isValidExtension ? extractedExt : mimeType.split('/')[1] || 'bin';
+
+    // For mime types like "image/svg+xml", extract only "svg" (before the +)
+    const mimeSubtype = mimeType.split('/')[1] || 'bin';
+    const cleanedMimeExt = mimeSubtype.split('+')[0]; // "svg+xml" -> "svg"
+
+    const extension = isValidExtension ? extractedExt : cleanedMimeExt;
 
     // Determine file type from MIME type (not user-provided name)
     // This ensures images save as 'image' type even if user names file without extension
