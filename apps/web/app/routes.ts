@@ -334,6 +334,8 @@ export default [
   route('api/files/:courseId/search', 'routes/api/search-files.ts'),
   route('api/files/prepare-upload', 'routes/api/files/prepare-upload.ts'),
   route('api/files/confirm-upload', 'routes/api/files/confirm-upload.ts'),
+  route('api/files/prepare-edit-upload', 'routes/api/files/prepare-edit-upload.ts'),
+  route('api/files/confirm-edit-upload', 'routes/api/files/confirm-edit-upload.ts'),
   route('api/courses/prepare-thumbnail-upload', 'routes/api/courses/prepare-thumbnail-upload.ts'),
   route('api/courses/confirm-thumbnail-upload', 'routes/api/courses/confirm-thumbnail-upload.ts'),
 

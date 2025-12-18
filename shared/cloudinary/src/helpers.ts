@@ -159,18 +159,30 @@ export function getBlurPlaceholderUrl(publicId: string, expiresInSeconds = 3600)
  *
  * @param publicId - The Cloudinary public_id of the video
  * @param expiresInSeconds - URL expiration time in seconds (default: 3600)
+ * @param version - Optional version for cache busting (e.g., timestamp)
  * @returns Signed URL for video streaming
  */
-export function getVideoStreamingUrl(publicId: string, expiresInSeconds = 3600): string {
+export function getVideoStreamingUrl(
+  publicId: string,
+  expiresInSeconds = 3600,
+  version?: string | number,
+): string {
   const cloudinary = getCloudinary();
   const expiresAt = Math.floor(Date.now() / 1000) + expiresInSeconds;
 
-  return cloudinary.url(publicId, {
+  const urlOptions: any = {
     sign_url: true,
     expires_at: expiresAt,
     type: 'authenticated',
     resource_type: 'video',
     streaming_profile: 'hd',
     format: 'm3u8', // HLS streaming
-  });
+  };
+
+  // Add version for cache busting if provided
+  if (version) {
+    urlOptions.version = version;
+  }
+
+  return cloudinary.url(publicId, urlOptions);
 }
