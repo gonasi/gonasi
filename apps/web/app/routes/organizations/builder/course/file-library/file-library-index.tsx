@@ -104,13 +104,13 @@ export default function AllFiles({ loaderData, params }: Route.ComponentProps) {
       <Suspense
         fallback={
           <div className='bg-card mb-4 animate-pulse space-y-4 rounded-md p-4 shadow-sm'>
-            <div className='h-4 w-1/4 rounded bg-gray-300' />
-            <div className='h-2 rounded bg-gray-300' />
+            <div className='h-2 w-1/4 rounded bg-gray-300' />
             <div className='flex justify-between text-xs'>
-              <div className='h-3 w-1/6 rounded bg-gray-300' />
-              <div className='h-3 w-1/4 rounded bg-gray-300' />
+              <div className='h-2 w-1/6 rounded bg-gray-300' />
+              <div className='h-2 w-1/4 rounded bg-gray-300' />
             </div>
-            <div className='mt-2 h-4 rounded bg-gray-200' />
+            <div className='h-2 rounded bg-gray-300' />
+            <div className='h-2 w-1/6 rounded bg-gray-300' />
           </div>
         }
       >
@@ -137,66 +137,68 @@ export default function AllFiles({ loaderData, params }: Route.ComponentProps) {
             const unpublishedPercent = (breakdown.fileLibraryBytes / allowed_bytes) * 100;
 
             return (
-              <div className='bg-card mb-4 space-y-4 rounded-md p-4 shadow-sm'>
-                <div className='text-muted-foreground text-sm font-semibold'>
-                  Total Org Storage Overview
-                </div>
-
-                {/* Overall Usage with Published vs Unpublished Side-by-Side */}
-                <div className='space-y-2'>
-                  <div className='text-muted-foreground flex justify-between text-xs'>
-                    <span>{formatBytes(used_bytes)} used</span>
-                    <span>
-                      {formatBytes(remaining_bytes)} free of {formatBytes(allowed_bytes)}
-                    </span>
+              <>
+                <div className='bg-card mb-4 space-y-4 rounded-md p-4 shadow-sm'>
+                  <div className='text-muted-foreground text-sm font-semibold'>
+                    Total Org Storage Overview
                   </div>
 
-                  <div className='relative h-1 w-full overflow-hidden rounded bg-gray-200'>
-                    {/* Published Portion */}
-                    <div
-                      className='bg-primary absolute top-0 left-0 h-full'
-                      style={{ width: `${publishedPercent}%` }}
-                    />
-                    {/* Unpublished Portion */}
-                    <div
-                      className='bg-secondary absolute top-0 h-full'
-                      style={{
-                        left: `${publishedPercent}%`,
-                        width: `${unpublishedPercent}%`,
-                      }}
-                    />
-                  </div>
-
-                  {/* Legend */}
-                  <div className='mt-1 flex justify-start gap-4 text-xs'>
-                    <div className='flex items-center gap-1'>
-                      <div className='bg-primary font-secondary h-3 w-3 rounded-sm' />
-                      <span className='pt-1'>
-                        Published: {formatBytes(breakdown.publishedFileLibraryBytes)}
+                  {/* Overall Usage with Published vs Unpublished Side-by-Side */}
+                  <div className='space-y-2'>
+                    <div className='text-muted-foreground flex justify-between text-xs'>
+                      <span>{formatBytes(used_bytes)} used</span>
+                      <span>
+                        {formatBytes(remaining_bytes)} free of {formatBytes(allowed_bytes)}
                       </span>
                     </div>
-                    <div className='font-secondary flex items-center gap-1'>
-                      <div className='bg-secondary h-3 w-3 rounded-sm' />
-                      <span className='pt-1'>
-                        Unpublished: {formatBytes(breakdown.fileLibraryBytes)}
-                      </span>
+
+                    <div className='relative h-1 w-full overflow-hidden rounded bg-gray-200'>
+                      {/* Published Portion */}
+                      <div
+                        className='bg-primary absolute top-0 left-0 h-full'
+                        style={{ width: `${publishedPercent}%` }}
+                      />
+                      {/* Unpublished Portion */}
+                      <div
+                        className='bg-secondary absolute top-0 h-full'
+                        style={{
+                          left: `${publishedPercent}%`,
+                          width: `${unpublishedPercent}%`,
+                        }}
+                      />
+                    </div>
+
+                    {/* Legend */}
+                    <div className='mt-1 flex justify-start gap-4 text-xs'>
+                      <div className='flex items-center gap-1'>
+                        <div className='bg-primary font-secondary h-3 w-3 rounded-sm' />
+                        <span className='pt-1'>
+                          Published: {formatBytes(breakdown.publishedFileLibraryBytes)}
+                        </span>
+                      </div>
+                      <div className='font-secondary flex items-center gap-1'>
+                        <div className='bg-secondary h-3 w-3 rounded-sm' />
+                        <span className='pt-1'>
+                          Unpublished: {formatBytes(breakdown.fileLibraryBytes)}
+                        </span>
+                      </div>
                     </div>
                   </div>
+
+                  {/* Alerts */}
+                  {exceeded_limit && (
+                    <div className='text-danger font-secondary mt-2 text-sm font-bold'>
+                      You have exceeded your storage limit! Please upgrade to continue uploading.
+                    </div>
+                  )}
+
+                  {percentUsed > 80 && (
+                    <NavLinkButton to={`/${params.organizationId}/dashboard/subscriptions`}>
+                      Upgrade Storage
+                    </NavLinkButton>
+                  )}
                 </div>
-
-                {/* Alerts */}
-                {exceeded_limit && (
-                  <div className='text-danger font-secondary mt-2 text-sm font-bold'>
-                    You have exceeded your storage limit! Please upgrade to continue uploading.
-                  </div>
-                )}
-
-                {percentUsed > 80 && (
-                  <NavLinkButton to={`/${params.organizationId}/dashboard/subscriptions`}>
-                    Upgrade Storage
-                  </NavLinkButton>
-                )}
-              </div>
+              </>
             );
           }}
         </Await>

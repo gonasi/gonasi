@@ -67,21 +67,31 @@ export function LazyImage({
 
   return (
     <div style={{ position: 'relative', display: 'inline-block', ...initialStyle }}>
-      {/* Cloudinary blur placeholder - only show while loading */}
-      {!hasError && !isLoaded && (
+      {/* Blur placeholder background - shown behind the main image while loading */}
+      {!hasError && placeholder.startsWith('url(') && (
         <div
           style={{
             position: 'absolute',
             inset: 0,
-            ...(placeholder.startsWith('url(')
-              ? {
-                  backgroundImage: placeholder,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
-                }
-              : {
-                  background: placeholder,
-                }),
+            backgroundImage: placeholder,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            zIndex: 1,
+            pointerEvents: 'none',
+            opacity: isLoaded ? 0 : 1,
+            transition: 'opacity 0.3s ease-in-out',
+            ...initialStyle,
+          }}
+        />
+      )}
+
+      {/* Fallback solid color placeholder - only if no blur URL */}
+      {!hasError && !placeholder.startsWith('url(') && !isLoaded && (
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            background: placeholder,
             zIndex: 1,
             pointerEvents: 'none',
             ...initialStyle,
@@ -101,6 +111,8 @@ export function LazyImage({
             objectFit: 'contain',
             position: 'relative',
             zIndex: 2,
+            opacity: isLoaded ? 1 : 0,
+            transition: 'opacity 0.3s ease-in-out',
           }}
           onError={onError}
           onLoad={(e) => {
@@ -117,7 +129,7 @@ export function LazyImage({
           className={className || undefined}
           style={{
             ...initialStyle,
-            background: placeholder,
+            background: placeholder.startsWith('url(') ? '#f3f4f6' : placeholder,
             position: 'relative',
             zIndex: 1,
           }}
