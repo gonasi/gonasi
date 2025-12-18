@@ -22,6 +22,7 @@ export async function action({ request }: Route.ActionArgs) {
   const result = await confirmFileUpload(supabase, {
     fileId: formData.get('fileId') as string,
     name: formData.get('name') as string,
+    fileName: formData.get('fileName') as string,
     courseId: formData.get('courseId') as string,
     organizationId: formData.get('organizationId') as string,
     cloudinaryPublicId: formData.get('cloudinaryPublicId') as string,

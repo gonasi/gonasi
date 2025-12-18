@@ -26,23 +26,27 @@ export async function action({ request }: Route.ActionArgs) {
     const formData = await request.formData();
 
     const fileId = formData.get('fileId') as string;
+    const fileName = formData.get('fileName') as string;
     const cloudinaryPublicId = formData.get('cloudinaryPublicId') as string;
     const size = Number(formData.get('size'));
     const mimeType = formData.get('mimeType') as string;
 
     console.log('[confirm-edit-upload] Request params:', {
       fileId,
+      fileName,
       cloudinaryPublicId,
       size,
       mimeType,
     });
 
-    if (!fileId || !cloudinaryPublicId || !size || !mimeType) {
+    // Note: mimeType can be empty string for files like .fbx, so we check for undefined/null instead
+    if (!fileId || !fileName || !cloudinaryPublicId || !size || mimeType === undefined || mimeType === null) {
       console.error('[confirm-edit-upload] Missing required fields:', {
         fileId: !!fileId,
+        fileName: !!fileName,
         cloudinaryPublicId: !!cloudinaryPublicId,
         size: !!size,
-        mimeType: !!mimeType,
+        mimeType: mimeType !== undefined && mimeType !== null,
       });
       return Response.json(
         {
@@ -71,17 +75,23 @@ export async function action({ request }: Route.ActionArgs) {
       );
     }
 
-    // Extract extension from mime type
-    const mimeSubtype = mimeType.split('/')[1] || 'bin';
-    const extension = mimeSubtype.split('+')[0]; // Handle "svg+xml" -> "svg"
+    // Extract extension from actual filename (fileName contains the real extension like .fbx)
+    const extractedExt = fileName.split('.').pop()?.toLowerCase() || '';
 
-    // Determine new file type from MIME type
+    // For mime types like "image/svg+xml", also extract from mime as fallback
+    const mimeSubtype = mimeType.split('/')[1] || 'bin';
+    const mimeExt = mimeSubtype.split('+')[0]; // Handle "svg+xml" -> "svg"
+
+    // Use extracted extension from filename, fallback to mime-based extension
+    const extension = extractedExt || mimeExt;
+
+    // Determine new file type from MIME type or extension
     const new_file_type = (() => {
       if (mimeType.startsWith('image/')) return FileType.IMAGE;
       if (mimeType.startsWith('video/')) return FileType.VIDEO;
       if (mimeType.startsWith('audio/')) return FileType.AUDIO;
       if (mimeType.startsWith('model/')) return FileType.MODEL_3D;
-      // For documents and other types, try to detect from file extension
+      // For files with no MIME type or application/octet-stream, detect from extension
       return getFileType(extension);
     })();
 

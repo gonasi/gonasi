@@ -21,6 +21,7 @@ export async function action({ request }: Route.ActionArgs) {
 
   const result = await prepareFileUpload(supabase, {
     name: formData.get('name') as string,
+    fileName: formData.get('fileName') as string,
     mimeType: formData.get('mimeType') as string,
     size: Number(formData.get('size')),
     courseId: formData.get('courseId') as string,

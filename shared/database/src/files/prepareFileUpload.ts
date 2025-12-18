@@ -12,6 +12,7 @@ import { checkStorageLimitForOrg } from './checkStorageLimitForOrg';
 
 export interface PrepareFileUploadParams {
   name: string;
+  fileName: string;
   mimeType: string;
   size: number;
   courseId: string;
@@ -50,7 +51,7 @@ export const prepareFileUpload = async (
   params: PrepareFileUploadParams,
 ): Promise<ApiResponse<PrepareFileUploadResponse>> => {
   const userId = await getUserId(supabase);
-  const { name, mimeType, size, courseId, organizationId } = params;
+  const { name, fileName, mimeType, size, courseId, organizationId } = params;
 
   try {
     // Check storage quota BEFORE generating signature
@@ -96,8 +97,8 @@ export const prepareFileUpload = async (
       if (mimeType.startsWith('video/')) return FileType.VIDEO;
       if (mimeType.startsWith('audio/')) return FileType.AUDIO;
       if (mimeType.startsWith('model/')) return FileType.MODEL_3D;
-      // For other types, try to detect from original file extension
-      const extension = getFileExtension(name);
+      // For other types, try to detect from original file extension (fileName has the actual file extension)
+      const extension = getFileExtension(fileName);
       return getFileType(extension);
     })();
 

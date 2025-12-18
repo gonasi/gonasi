@@ -22,26 +22,30 @@ export async function action({ request }: Route.ActionArgs) {
     const formData = await request.formData();
 
     const fileId = formData.get('fileId') as string;
+    const fileName = formData.get('fileName') as string;
     const mimeType = formData.get('mimeType') as string;
     const sizeStr = formData.get('size') as string;
     const size = sizeStr ? parseInt(sizeStr, 10) : 0;
 
     console.log('[prepare-edit-upload] Request params:', {
       fileId,
+      fileName,
       mimeType,
       size,
     });
 
-    if (!fileId || !mimeType || !size) {
+    // Note: mimeType can be empty string for files like .fbx, so we check for undefined/null instead
+    if (!fileId || !fileName || mimeType === undefined || mimeType === null || !size) {
       console.error('[prepare-edit-upload] Missing required fields:', {
         fileId: !!fileId,
-        mimeType: !!mimeType,
+        fileName: !!fileName,
+        mimeType: mimeType !== undefined && mimeType !== null,
         size: !!size,
       });
       return Response.json(
         {
           success: false,
-          message: 'Missing required fields: fileId, mimeType, size',
+          message: 'Missing required fields: fileId, fileName, mimeType, size',
         },
         { status: 400 },
       );
@@ -137,14 +141,15 @@ export async function action({ request }: Route.ActionArgs) {
     // Use the SAME public_id (path) to replace the file
     const publicId = existingFile.path;
 
-    // Determine file type and resource type from MIME type
+    // Determine file type and resource type from MIME type or fileName
     const file_type = (() => {
       if (mimeType.startsWith('image/')) return FileType.IMAGE;
       if (mimeType.startsWith('video/')) return FileType.VIDEO;
       if (mimeType.startsWith('audio/')) return FileType.AUDIO;
       if (mimeType.startsWith('model/')) return FileType.MODEL_3D;
-      // For other types, use existing file type or detect from mime
-      return existingFile.file_type || FileType.OTHER;
+      // For files with no MIME type or application/octet-stream, detect from extension
+      const extension = getFileExtension(fileName);
+      return getFileType(extension);
     })();
 
     const resourceType =

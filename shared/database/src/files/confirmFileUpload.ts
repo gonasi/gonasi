@@ -7,6 +7,7 @@ import type { ApiResponse } from '../types';
 export interface ConfirmFileUploadParams {
   fileId: string;
   name: string;
+  fileName: string;
   courseId: string;
   organizationId: string;
   cloudinaryPublicId: string;
@@ -34,7 +35,7 @@ export const confirmFileUpload = async (
   params: ConfirmFileUploadParams,
 ): Promise<ApiResponse> => {
   const userId = await getUserId(supabase);
-  const { fileId, name, courseId, organizationId, cloudinaryPublicId, size, mimeType } = params;
+  const { fileId, name, fileName, courseId, organizationId, cloudinaryPublicId, size, mimeType } = params;
 
   try {
     // Debug logging
@@ -44,9 +45,9 @@ export const confirmFileUpload = async (
       fileId,
     });
 
-    // Extract extension - validate it's real, otherwise fall back to mime type
-    const extractedExt = getFileExtension(name);
-    const isValidExtension = extractedExt && name.includes('.') && extractedExt.length > 0;
+    // Extract extension from actual filename (fileName has the real extension like .fbx)
+    const extractedExt = getFileExtension(fileName);
+    const isValidExtension = extractedExt && fileName.includes('.') && extractedExt.length > 0;
 
     // For mime types like "image/svg+xml", extract only "svg" (before the +)
     const mimeSubtype = mimeType.split('/')[1] || 'bin';
