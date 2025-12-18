@@ -90,18 +90,23 @@ export const prepareFileUpload = async (
     });
 
     // Determine file type and resource type from MIME type (not user-provided name)
-    // This ensures images upload as 'image' type even if user names file without extension
+    // This ensures files upload with correct type even if user names file without extension
     const file_type = (() => {
       if (mimeType.startsWith('image/')) return FileType.IMAGE;
       if (mimeType.startsWith('video/')) return FileType.VIDEO;
       if (mimeType.startsWith('audio/')) return FileType.AUDIO;
+      if (mimeType.startsWith('model/')) return FileType.MODEL_3D;
       // For other types, try to detect from original file extension
       const extension = getFileExtension(name);
       return getFileType(extension);
     })();
 
     const resourceType =
-      file_type === FileType.VIDEO ? 'video' : file_type === FileType.IMAGE ? 'image' : 'raw';
+      file_type === FileType.VIDEO
+        ? 'video'
+        : file_type === FileType.IMAGE
+          ? 'image'
+          : 'raw'; // 3D models, audio, documents all use 'raw'
 
     // Generate signed upload parameters
     const uploadSignature = generateUploadSignature({

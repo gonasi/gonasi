@@ -55,11 +55,12 @@ export const confirmFileUpload = async (
     const extension = isValidExtension ? extractedExt : cleanedMimeExt;
 
     // Determine file type from MIME type (not user-provided name)
-    // This ensures images save as 'image' type even if user names file without extension
+    // This ensures files save with correct type even if user names file without extension
     const file_type = (() => {
       if (mimeType.startsWith('image/')) return FileType.IMAGE;
       if (mimeType.startsWith('video/')) return FileType.VIDEO;
       if (mimeType.startsWith('audio/')) return FileType.AUDIO;
+      if (mimeType.startsWith('model/')) return FileType.MODEL_3D;
       // For other types, try to detect from file extension
       return getFileType(extension);
     })();
