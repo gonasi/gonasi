@@ -338,6 +338,14 @@ export default [
   route('api/files/confirm-edit-upload', 'routes/api/files/confirm-edit-upload.ts'),
   route('api/courses/prepare-thumbnail-upload', 'routes/api/courses/prepare-thumbnail-upload.ts'),
   route('api/courses/confirm-thumbnail-upload', 'routes/api/courses/confirm-thumbnail-upload.ts'),
+  route(
+    'api/organizations/prepare-profile-photo-upload',
+    'routes/api/organizations/prepare-profile-photo-upload.ts',
+  ),
+  route(
+    'api/organizations/confirm-profile-photo-upload',
+    'routes/api/organizations/confirm-profile-photo-upload.ts',
+  ),
 
   route('signout', 'routes/auth/signout.tsx'),
 

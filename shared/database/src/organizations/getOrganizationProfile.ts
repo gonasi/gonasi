@@ -1,5 +1,7 @@
+import { getSignedUrl } from '@gonasi/cloudinary';
+
 import type { TypedSupabaseClient } from '../client';
-import { ORGANIZATION_BANNER_PHOTOS, ORGANIZATION_PROFILE_PHOTOS } from '../constants';
+import { ORGANIZATION_BANNER_PHOTOS } from '../constants';
 
 interface GetOrganizationProfileParams {
   supabase: TypedSupabaseClient;
@@ -49,15 +51,23 @@ export const getOrganizationProfile = async ({
   let signedAvatarUrl: string | undefined;
   let signedBannerUrl: string | undefined;
 
-  // Generate signed avatar URL
+  // Generate signed avatar URL from Cloudinary with cache busting
   if (profile.avatar_url) {
-    const { data: signed } = await supabase.storage
-      .from(ORGANIZATION_PROFILE_PHOTOS)
-      .createSignedUrl(profile.avatar_url, 3600);
-    signedAvatarUrl = signed?.signedUrl;
+    // avatar_url now stores the Cloudinary public_id (e.g., /:organizationId/profile/avatar)
+    // Use updated_at timestamp as version for cache busting
+    const version = profile.updated_at ? new Date(profile.updated_at).getTime() : undefined;
+
+    signedAvatarUrl = getSignedUrl(profile.avatar_url, {
+      width: 400,
+      height: 400,
+      quality: 'auto',
+      format: 'auto',
+      crop: 'fill',
+      version,
+    });
   }
 
-  // Generate signed banner URL
+  // Generate signed banner URL (still from Supabase Storage for now)
   if (profile.banner_url) {
     const { data: signed } = await supabase.storage
       .from(ORGANIZATION_BANNER_PHOTOS)

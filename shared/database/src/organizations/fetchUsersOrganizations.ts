@@ -1,8 +1,7 @@
+import { getSignedUrl } from '@gonasi/cloudinary';
+
 import { getUserId } from '../auth';
 import type { TypedSupabaseClient } from '../client';
-import { ORGANIZATION_PROFILE_PHOTOS } from '../constants';
-
-const SIGNED_URL_EXPIRY = 60 * 60 * 24 * 7; // 7 days
 
 /**
  * Fetches all organizations the current user belongs to,
@@ -26,6 +25,7 @@ export async function fetchUsersOrganizations(supabase: TypedSupabaseClient) {
             handle,
             avatar_url,
             blur_hash,
+            updated_at,
             subscription:organization_subscriptions (
               tier
             )
@@ -46,36 +46,31 @@ export async function fetchUsersOrganizations(supabase: TypedSupabaseClient) {
       };
     }
 
-    // -------- Signed URL generation --------
-    const avatarPaths = memberships
-      .map((m) => m.organization?.avatar_url)
-      .filter((p): p is string => Boolean(p));
-
-    let signedUrls: Record<string, string> = {};
-
-    if (avatarPaths.length > 0) {
-      const { data: signedData, error: signedError } = await supabase.storage
-        .from(ORGANIZATION_PROFILE_PHOTOS)
-        .createSignedUrls(avatarPaths, SIGNED_URL_EXPIRY);
-
-      if (signedError) {
-        console.error('Error generating signed organization avatars:', signedError);
-      } else if (signedData) {
-        signedUrls = signedData.reduce(
-          (acc, file) => {
-            if (file.path && file.signedUrl) {
-              acc[file.path] = file.signedUrl;
-            }
-            return acc;
-          },
-          {} as Record<string, string>,
-        );
-      }
-    }
-
-    // -------- Enrich organizations --------
+    // -------- Generate Cloudinary signed URLs --------
     const enriched = memberships.map((entry) => {
       const org = entry.organization;
+
+      // Generate Cloudinary signed URL if avatar_url exists
+      let avatarUrl: string | null = null;
+      if (org?.avatar_url) {
+        try {
+          // avatar_url now stores the Cloudinary public_id
+          // Use updated_at timestamp as version for cache busting
+          const version = org.updated_at ? new Date(org.updated_at).getTime() : undefined;
+
+          avatarUrl = getSignedUrl(org.avatar_url, {
+            width: 200,
+            height: 200,
+            quality: 'auto',
+            format: 'auto',
+            crop: 'fill',
+            version,
+          });
+        } catch (error) {
+          console.error('Error generating Cloudinary URL for organization avatar:', error);
+          avatarUrl = null;
+        }
+      }
 
       return {
         ...entry,
@@ -83,7 +78,7 @@ export async function fetchUsersOrganizations(supabase: TypedSupabaseClient) {
         organization: org
           ? {
               ...org,
-              avatar_url: org.avatar_url ? (signedUrls[org.avatar_url] ?? org.avatar_url) : null,
+              avatar_url: avatarUrl,
             }
           : null,
       };
