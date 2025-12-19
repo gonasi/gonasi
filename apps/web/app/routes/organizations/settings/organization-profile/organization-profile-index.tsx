@@ -7,9 +7,7 @@ import type z from 'zod';
 
 import {
   getOrganizationProfile,
-  updateOrganizationBanner,
   updateOrganizationProfileInformation,
-  updateOrganizationProfilePicture,
 } from '@gonasi/database/organizations';
 import { OrganizationSettingsUpdateSchema } from '@gonasi/schemas/organizations/settings/profile';
 
@@ -56,12 +54,6 @@ export async function action({ request, params }: Route.ActionArgs) {
     let result = { success: false, message: '' };
 
     switch (data.updateType) {
-      case 'organization-profile-picture':
-        result = await updateOrganizationProfilePicture({ supabase, data });
-        break;
-      case 'organization-banner':
-        result = await updateOrganizationBanner({ supabase, data });
-        break;
       case 'organization-information':
         result = await updateOrganizationProfileInformation({ supabase, updates: data });
         break;
