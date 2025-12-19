@@ -346,6 +346,14 @@ export default [
     'api/organizations/confirm-profile-photo-upload',
     'routes/api/organizations/confirm-profile-photo-upload.ts',
   ),
+  route(
+    'api/organizations/prepare-banner-upload',
+    'routes/api/organizations/prepare-banner-upload.ts',
+  ),
+  route(
+    'api/organizations/confirm-banner-upload',
+    'routes/api/organizations/confirm-banner-upload.ts',
+  ),
 
   route('signout', 'routes/auth/signout.tsx'),
 
