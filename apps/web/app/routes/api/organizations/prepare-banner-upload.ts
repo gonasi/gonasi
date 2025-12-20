@@ -80,8 +80,8 @@ export async function action({ request }: Route.ActionArgs) {
     }
 
     // Generate Cloudinary public_id for organization banner
-    // Pattern: /:organizationId/profile/banner (consistent folder structure)
-    const publicId = `${organizationId}/profile/banner`;
+    // Pattern: /organizations/:organizationId/profile/banner (consistent folder structure)
+    const publicId = `organizations/${organizationId}/profile/banner`;
 
     console.log('[prepare-banner-upload] Generating signature...');
 

@@ -25,7 +25,7 @@ export interface GeneratePublicIdParams {
 
 /**
  * Generates a Cloudinary public_id based on the new folder structure.
- * Public IDs follow the pattern: /:organizationId/courses/:courseId/{files|thumbnail}/:scope/...
+ * Public IDs follow the pattern: /organizations/:organizationId/courses/:courseId/{files|thumbnail}/:scope/...
  *
  * @param params - Parameters for generating the public_id
  * @returns Cloudinary public_id string
@@ -40,17 +40,17 @@ export function generatePublicId(params: GeneratePublicIdParams): string {
   if (resourceType === 'profile' && userId) {
     segments.push(userId, 'profile', fileName || 'avatar');
   } else if (resourceType === 'org-avatar' && organizationId) {
-    segments.push(organizationId, 'profile', 'organizations', fileName || 'avatar');
+    segments.push('organizations', organizationId, 'profile', fileName || 'avatar');
   } else if (resourceType === 'org-banner' && organizationId) {
-    segments.push(organizationId, 'profile', 'organizations', 'banner');
+    segments.push('organizations', organizationId, 'profile', 'banner');
   } else if (resourceType === 'thumbnail' && organizationId && courseId) {
-    // Pattern: /:organizationId/courses/:courseId/thumbnail/:scope/thumbnail
-    segments.push(organizationId, 'courses', courseId, 'thumbnail', scope, 'thumbnail');
+    // Pattern: /organizations/:organizationId/courses/:courseId/thumbnail/:scope/thumbnail
+    segments.push('organizations', organizationId, 'courses', courseId, 'thumbnail', scope, 'thumbnail');
   } else if (resourceType === 'file' && organizationId && courseId && fileId) {
-    // Pattern: /:organizationId/courses/:courseId/files/:scope/:fileId
-    segments.push(organizationId, 'courses', courseId, 'files', scope, fileId);
+    // Pattern: /organizations/:organizationId/courses/:courseId/files/:scope/:fileId
+    segments.push('organizations', organizationId, 'courses', courseId, 'files', scope, fileId);
   } else if (resourceType === 'pathway' && organizationId && fileId) {
-    segments.push(organizationId, 'pathways', scope, fileId);
+    segments.push('organizations', organizationId, 'pathways', scope, fileId);
   } else {
     throw new Error(
       `[Cloudinary] Invalid public_id generation params for resourceType: ${resourceType}`,

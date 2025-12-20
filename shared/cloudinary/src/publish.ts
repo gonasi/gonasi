@@ -206,8 +206,8 @@ export async function deletePublishedCourseFiles(
     const cloudinary = getCloudinary();
 
     // Build prefixes for published course files and thumbnails
-    const filePrefix = `${params.organizationId}/courses/${params.courseId}/files/published/`;
-    const thumbnailPrefix = `${params.organizationId}/courses/${params.courseId}/thumbnail/published/`;
+    const filePrefix = `organizations/${params.organizationId}/courses/${params.courseId}/files/published/`;
+    const thumbnailPrefix = `organizations/${params.organizationId}/courses/${params.courseId}/thumbnail/published/`;
 
     const prefixes = [filePrefix, thumbnailPrefix];
     const types = ['authenticated', 'upload', 'private'] as const;
