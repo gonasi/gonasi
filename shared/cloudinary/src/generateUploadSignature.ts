@@ -75,7 +75,8 @@ export function generateUploadSignature(params: UploadSignatureParams): UploadSi
     timestamp,
     public_id: publicId,
     type: 'authenticated', // CRITICAL: Private file storage
-    invalidate: true,
+    overwrite: true, // Replace existing file with same public_id
+    invalidate: true, // Invalidate CDN cache
     // Note: resource_type goes in URL path, not in signed params
   };
 

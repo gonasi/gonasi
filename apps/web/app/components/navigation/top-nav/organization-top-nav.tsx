@@ -50,7 +50,7 @@ export function OrganizationTopNav({
                       <div className='flex max-w-46 items-center space-x-2 md:max-w-60'>
                         <PlainAvatar
                           username={organization.name}
-                          imageUrl={organization.avatar_url}
+                          imageUrl={organization.signed_avatar_url}
                           isActive
                           size='xs'
                         />

@@ -1,29 +1,42 @@
+import { getSignedUrl } from '@gonasi/cloudinary';
+
 import type { TypedSupabaseClient } from '../client';
-import { PROFILE_PHOTOS } from '../constants';
 
 interface GenerateSignedUserProfilePictureUrlArgs {
   supabase: TypedSupabaseClient;
   imagePath: string;
+  version?: number;
 }
 
+/**
+ * Generates a signed Cloudinary URL for a user profile picture.
+ *
+ * @param imagePath - The Cloudinary public_id (e.g., "users/:userId/profile/avatar")
+ * @param version - Optional version/timestamp for cache busting
+ * @returns Signed URL valid for 1 hour, or null if imagePath is empty
+ */
 export async function generateSignedUserProfilePictureUrl({
   supabase,
   imagePath,
+  version,
 }: GenerateSignedUserProfilePictureUrlArgs): Promise<string | null> {
   try {
-    const { data, error } = await supabase.storage
-      .from(PROFILE_PHOTOS)
-      .createSignedUrl(imagePath, 3600);
-
-    if (error) {
-      console.error(
-        `[generateSignedUserProfilePictureUrl] Failed for ${imagePath}:`,
-        error.message,
-      );
+    if (!imagePath) {
       return null;
     }
 
-    return data.signedUrl ?? null;
+    // Generate Cloudinary signed URL valid for 1 hour
+    const signedUrl = getSignedUrl(imagePath, {
+      width: 400,
+      height: 400,
+      quality: 'auto',
+      format: 'auto',
+      expiresInSeconds: 3600,
+      resourceType: 'image',
+      version,
+    });
+
+    return signedUrl;
   } catch (err) {
     console.error(`[generateSignedUserProfilePictureUrl] Unexpected error for ${imagePath}:`, err);
     return null;

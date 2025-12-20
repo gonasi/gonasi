@@ -1,17 +1,9 @@
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import type { Area, Point } from 'react-easy-crop';
-import { Form, useFetcher } from 'react-router';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { useNavigate } from 'react-router';
 import { AnimatePresence, motion } from 'framer-motion';
-import { CircleX, Crop, LoaderCircle, Upload } from 'lucide-react';
-import { RemixFormProvider, useRemixForm } from 'remix-hook-form';
-import { HoneypotInputs } from 'remix-utils/honeypot/react';
-
-// App logic and utilities
-import {
-  UpdateProfilePictureSchema,
-  type UpdateProfilePictureSchemaTypes,
-} from '@gonasi/schemas/settings';
+import { CircleX, Crop, Loader2, Upload } from 'lucide-react';
+import { toast } from 'sonner';
 
 import type { Route } from './+types/update-profile-photo';
 
@@ -21,8 +13,9 @@ import { FormDescription } from '~/components/ui/forms/elements/Common';
 import { Input } from '~/components/ui/input';
 import { Label } from '~/components/ui/label';
 import { Modal } from '~/components/ui/modal';
+import { Progress } from '~/components/ui/progress';
 import { Slider } from '~/components/ui/slider';
-import { useIsPending } from '~/utils/misc';
+import { uploadToCloudinaryDirect, validateFile } from '~/utils/cloudinary-direct-upload';
 
 // Lazy load the Cropper component to avoid SSR issues
 const Cropper = lazy(() => import('react-easy-crop'));
@@ -37,8 +30,6 @@ export function meta() {
     },
   ];
 }
-
-const resolver = zodResolver(UpdateProfilePictureSchema);
 
 // Create a cropped File from image source and area
 const createCroppedImage = (
@@ -85,30 +76,17 @@ const createCroppedImage = (
 
 // UI component: Update Profile Photo
 export default function UpdateProfilePhoto({ params }: Route.ComponentProps) {
-  const fetcher = useFetcher();
-  const isPending = useIsPending();
+  const navigate = useNavigate();
 
   const closeActionRoute = `/go/${params.username}/settings/profile-information`;
 
-  const methods = useRemixForm<UpdateProfilePictureSchemaTypes>({
-    mode: 'all',
-    resolver,
-    fetcher,
-    defaultValues: {
-      updateType: 'profile-picture',
-    },
-    submitConfig: {
-      method: 'POST',
-      action: closeActionRoute,
-      replace: false,
-    },
-  });
-
-  const isSubmitting = isPending || methods.formState.isSubmitting;
-
-  const [loadingText, setLoadingText] = useState('');
+  // Local state
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [originalFile, setOriginalFile] = useState<File | null>(null);
+  const [croppedFile, setCroppedFile] = useState<File | null>(null);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
   const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
@@ -136,11 +114,12 @@ export default function UpdateProfilePhoto({ params }: Route.ComponentProps) {
     if (!selectedImage || !croppedAreaPixels || !originalFile) return;
 
     try {
-      const cropped = await createCroppedImage(selectedImage, croppedAreaPixels, originalFile.name);
-      methods.setValue('image', cropped);
+      const file = await createCroppedImage(selectedImage, croppedAreaPixels, originalFile.name);
+      setCroppedFile(file);
       setShowCropper(false);
-    } catch (err) {
-      console.error('Cropping failed:', err);
+    } catch (error) {
+      console.error('Cropping failed:', error);
+      toast.error('Failed to crop image');
     }
   };
 
@@ -149,23 +128,97 @@ export default function UpdateProfilePhoto({ params }: Route.ComponentProps) {
     setSelectedImage(null);
     setOriginalFile(null);
     setCroppedAreaPixels(null);
+    setCroppedFile(null);
   };
 
-  useEffect(() => {
-    let t1: NodeJS.Timeout, t2: NodeJS.Timeout;
-
-    if (isSubmitting) {
-      t1 = setTimeout(() => setLoadingText('Generating optimized image…'), 1500);
-      t2 = setTimeout(() => setLoadingText('Finishing up...'), 4500);
-    } else {
-      setLoadingText('');
+  // Handle profile photo upload
+  const handleProfilePhotoUpload = async () => {
+    if (!croppedFile) {
+      toast.error('Please select and crop an image first');
+      return;
     }
 
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-    };
-  }, [isSubmitting]);
+    // 1. Validate file
+    const validation = validateFile(croppedFile, {
+      maxSizeMB: 100,
+      allowedTypes: ['image/*'],
+    });
+
+    if (!validation.valid) {
+      toast.error(validation.error);
+      return;
+    }
+
+    setIsUploading(true);
+    setUploadProgress(0);
+
+    try {
+      // 2. Prepare upload - get signed parameters from server
+      const prepareData = new FormData();
+      prepareData.append('mimeType', croppedFile.type);
+      prepareData.append('size', croppedFile.size.toString());
+
+      const prepareResponse = await fetch('/api/users/prepare-profile-photo-upload', {
+        method: 'POST',
+        body: prepareData,
+      });
+
+      if (!prepareResponse.ok) {
+        throw new Error('Failed to prepare upload');
+      }
+
+      const prepareResult = await prepareResponse.json();
+
+      if (!prepareResult?.success) {
+        throw new Error(prepareResult?.message || 'Failed to prepare upload');
+      }
+
+      const { uploadSignature } = prepareResult.data;
+
+      // 3. Upload directly to Cloudinary
+      const cloudinaryResponse = await uploadToCloudinaryDirect(croppedFile, uploadSignature, {
+        onProgress: (progress) => {
+          setUploadProgress(progress.percentage);
+        },
+      });
+
+      // 4. Confirm upload with server
+      const confirmData = new FormData();
+      confirmData.append('cloudinaryPublicId', cloudinaryResponse.public_id);
+
+      const confirmResponse = await fetch('/api/users/confirm-profile-photo-upload', {
+        method: 'POST',
+        body: confirmData,
+      });
+
+      if (!confirmResponse.ok) {
+        throw new Error('Failed to confirm upload');
+      }
+
+      const confirmResult = await confirmResponse.json();
+
+      if (!confirmResult?.success) {
+        throw new Error(confirmResult?.message || 'Failed to confirm upload');
+      }
+
+      toast.success('Profile photo updated successfully!');
+      setIsRedirecting(true);
+
+      // Add cache buster to force reload
+      const cacheBuster = Date.now();
+      requestAnimationFrame(() => {
+        navigate(`${closeActionRoute}?_=${cacheBuster}`);
+      });
+    } catch (error) {
+      console.error('Upload failed:', error);
+      toast.error(`Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsUploading(false);
+      setUploadProgress(0);
+    }
+  };
+
+  const isDisabled = isUploading || isRedirecting;
 
   return (
     <Modal open>
@@ -176,12 +229,13 @@ export default function UpdateProfilePhoto({ params }: Route.ComponentProps) {
         />
         <Modal.Body>
           {showCropper && selectedImage ? (
+            // Cropper UI
             <div className='h-full space-y-4'>
               <div className='bg-card relative h-[50vh] w-full'>
                 <Suspense
                   fallback={
                     <div className='flex h-full items-center justify-center'>
-                      <LoaderCircle className='animate-spin' />
+                      <Loader2 className='animate-spin' />
                     </div>
                   }
                 >
@@ -217,55 +271,89 @@ export default function UpdateProfilePhoto({ params }: Route.ComponentProps) {
                 </Button>
               </div>
             </div>
+          ) : isRedirecting ? (
+            // Redirecting UI
+            <motion.div
+              key='redirecting'
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0 }}
+              className='flex flex-col items-center justify-center gap-4 py-12'
+            >
+              <Loader2 className='text-muted-foreground h-6 w-6 animate-spin' />
+              <p className='text-muted-foreground text-sm'>Finalizing upload…</p>
+            </motion.div>
           ) : (
-            <RemixFormProvider {...methods}>
-              <Form method='POST' encType='multipart/form-data' onSubmit={methods.handleSubmit}>
-                <HoneypotInputs />
-                <div className='space-y-4'>
-                  <div>
-                    <Label required className='text-sm font-medium'>
-                      Profile Photo
-                    </Label>
-                    <Input
-                      type='file'
-                      accept='image/*'
-                      onChange={handleImageSelect}
-                      disabled={isSubmitting}
-                      className='w-full'
-                      placeholder={originalFile?.name || 'Choose picture'}
-                    />
-                    <FormDescription>
-                      Choose a new photo to represent you on Gonasi.
-                    </FormDescription>
-                  </div>
-
-                  <AnimatePresence>
-                    {loadingText && (
-                      <motion.div
-                        key={loadingText}
-                        initial={{ opacity: 0, y: 6 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 6 }}
-                        transition={{ duration: 0.25 }}
-                        className='flex items-center space-x-2 pb-2'
-                      >
-                        <LoaderCircle size={10} className='animate-spin' />
-                        <p className='font-secondary text-xs'>{loadingText}</p>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-
-                  <Button
-                    type='submit'
-                    disabled={isPending || !methods.getValues('image')}
-                    isLoading={isSubmitting}
-                    rightIcon={<Upload />}
-                  >
-                    Save
-                  </Button>
+            // Upload UI
+            <motion.div
+              key='form'
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+            >
+              <div className='space-y-4'>
+                <div>
+                  <Label required className='text-sm font-medium'>
+                    Profile Photo
+                  </Label>
+                  <Input
+                    type='file'
+                    accept='image/*'
+                    onChange={handleImageSelect}
+                    disabled={isDisabled}
+                    className='w-full'
+                  />
+                  <FormDescription>
+                    Choose a new photo to represent you on Gonasi.
+                  </FormDescription>
+                  {croppedFile && (
+                    <p className='text-muted-foreground mt-2 text-xs'>
+                      ✓ Image cropped and ready: {croppedFile.name}
+                    </p>
+                  )}
                 </div>
-              </Form>
-            </RemixFormProvider>
+
+                {/* Upload Progress */}
+                <AnimatePresence>
+                  {isUploading && uploadProgress > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.25 }}
+                      className='space-y-2 overflow-hidden'
+                    >
+                      <motion.div
+                        initial={{ scaleX: 0 }}
+                        animate={{ scaleX: 1 }}
+                        transition={{ duration: 0.3, ease: 'easeOut' }}
+                        style={{ originX: 0 }}
+                      >
+                        <Progress value={uploadProgress} />
+                      </motion.div>
+
+                      <motion.p
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className='text-sm text-gray-600 dark:text-gray-400'
+                      >
+                        Uploading: {uploadProgress}%
+                      </motion.p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                <Button
+                  onClick={handleProfilePhotoUpload}
+                  disabled={isDisabled || !croppedFile}
+                  isLoading={isDisabled}
+                  rightIcon={<Upload />}
+                >
+                  {isUploading ? 'Uploading...' : 'Save'}
+                </Button>
+              </div>
+            </motion.div>
           )}
         </Modal.Body>
       </Modal.Content>
