@@ -52,7 +52,6 @@ export const getOrganizationProfile = async ({
 
   // Generate signed avatar URL from Cloudinary with cache busting
   if (profile.avatar_url) {
-    // avatar_url now stores the Cloudinary public_id (e.g., /:organizationId/profile/avatar)
     // Use updated_at timestamp as version for cache busting
     const version = profile.updated_at ? new Date(profile.updated_at).getTime() : undefined;
 
@@ -68,7 +67,6 @@ export const getOrganizationProfile = async ({
 
   // Generate signed banner URL from Cloudinary with cache busting
   if (profile.banner_url) {
-    // banner_url now stores the Cloudinary public_id (e.g., /:organizationId/profile/banner)
     // Use updated_at timestamp as version for cache busting
     const version = profile.updated_at ? new Date(profile.updated_at).getTime() : undefined;
 
