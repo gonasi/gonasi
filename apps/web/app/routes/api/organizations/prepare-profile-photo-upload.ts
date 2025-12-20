@@ -80,8 +80,8 @@ export async function action({ request }: Route.ActionArgs) {
     }
 
     // Generate Cloudinary public_id for organization profile photo
-    // Pattern: /:organizationId/profile/avatar (consistent folder structure)
-    const publicId = `${organizationId}/profile/avatar`;
+    // Pattern: /organizations/:organizationId/profile/avatar (consistent folder structure)
+    const publicId = `organizations/${organizationId}/profile/avatar`;
 
     console.log('[prepare-profile-photo-upload] Generating signature...');
 

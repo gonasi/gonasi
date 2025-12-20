@@ -37,7 +37,7 @@ export interface UploadSignature {
  * @example
  * ```typescript
  * const signature = await generateUploadSignature({
- *   publicId: 'org123/courses/course456/files/draft/file789',
+ *   publicId: 'organizations/org123/courses/course456/files/draft/file789',
  *   resourceType: 'raw',
  *   tags: ['draft', 'file-library'],
  *   context: { organizationId: 'org123', courseId: 'course456' }
