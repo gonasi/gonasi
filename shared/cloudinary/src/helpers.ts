@@ -38,7 +38,7 @@ export function generatePublicId(params: GeneratePublicIdParams): string {
   const segments: string[] = [];
 
   if (resourceType === 'profile' && userId) {
-    segments.push(userId, 'profile', fileName || 'avatar');
+    segments.push('users', userId, 'profile', fileName || 'avatar');
   } else if (resourceType === 'org-avatar' && organizationId) {
     segments.push('organizations', organizationId, 'profile', fileName || 'avatar');
   } else if (resourceType === 'org-banner' && organizationId) {

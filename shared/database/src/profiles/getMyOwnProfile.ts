@@ -1,6 +1,7 @@
+import { getSignedUrl } from '@gonasi/cloudinary';
+
 import { getUserId } from '../auth';
 import type { TypedSupabaseClient } from '../client';
-import { PROFILE_PHOTOS } from '../constants';
 
 /**
  * Fetches the current authenticated user's profile with optional signed avatar URL.
@@ -15,7 +16,7 @@ export const getMyOwnProfile = async (supabase: TypedSupabaseClient) => {
   // Fetch profile data from the 'profiles' table
   const { data: profile, error } = await supabase
     .from('profiles')
-    .select('id, username, email, full_name, avatar_url, blur_hash, is_public')
+    .select('id, username, email, full_name, avatar_url, blur_hash, is_public, updated_at')
     .eq('id', userId)
     .single();
 
@@ -26,13 +27,20 @@ export const getMyOwnProfile = async (supabase: TypedSupabaseClient) => {
 
   let signedUrl: string | undefined;
 
-  // If avatar_url exists, generate a signed URL valid for 1 hour
+  // If avatar_url exists, generate a Cloudinary signed URL valid for 1 hour
   if (profile.avatar_url) {
-    const { data: signedUrlData } = await supabase.storage
-      .from(PROFILE_PHOTOS)
-      .createSignedUrl(profile.avatar_url, 3600);
+    // Use updated_at timestamp as version for cache busting
+    const version = profile.updated_at ? new Date(profile.updated_at).getTime() : undefined;
 
-    signedUrl = signedUrlData?.signedUrl;
+    signedUrl = getSignedUrl(profile.avatar_url, {
+      width: 400,
+      height: 400,
+      quality: 'auto',
+      format: 'auto',
+      expiresInSeconds: 3600,
+      resourceType: 'image',
+      version,
+    });
   }
 
   // Return profile data with optional signed avatar URL

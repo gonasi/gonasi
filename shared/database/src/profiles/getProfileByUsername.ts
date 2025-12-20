@@ -12,7 +12,7 @@ export const getProfileByUsername = async ({ supabase, username }: GetProfileByU
 
   const { data: profile, error } = await supabase
     .from('profiles')
-    .select('id, username, full_name, avatar_url, blur_hash')
+    .select('id, username, full_name, avatar_url, blur_hash, updated_at')
     .eq('username', username)
     .single();
 
@@ -20,9 +20,12 @@ export const getProfileByUsername = async ({ supabase, username }: GetProfileByU
     return null;
   }
 
+  const version = profile.updated_at ? new Date(profile.updated_at).getTime() : undefined;
+
   const signedUrl = await generateSignedUserProfilePictureUrl({
     supabase,
     imagePath: profile.avatar_url ?? '',
+    version,
   });
 
   return {

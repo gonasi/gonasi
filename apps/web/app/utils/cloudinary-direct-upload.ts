@@ -76,7 +76,8 @@ export async function uploadToCloudinaryDirect(
   formData.append('signature', signature.signature);
   formData.append('api_key', signature.apiKey);
   formData.append('type', 'authenticated'); // CRITICAL: Private file storage
-  formData.append('invalidate', 'true');
+  formData.append('overwrite', 'true'); // Replace existing file with same public_id
+  formData.append('invalidate', 'true'); // Invalidate CDN cache
   // Note: resource_type is in URL path, not a form parameter
 
   if (signature.tags) {

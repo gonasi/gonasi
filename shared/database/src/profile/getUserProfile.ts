@@ -1,6 +1,7 @@
+import { getSignedUrl } from '@gonasi/cloudinary';
+
 import { getUserId } from '../auth';
 import type { TypedSupabaseClient } from '../client';
-import { PROFILE_PHOTOS } from '../constants';
 import type { Database } from '../schema';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
@@ -56,15 +57,20 @@ export const getUserProfile = async (
 
   const profile: ProfileWithSignedUrl = { ...data };
 
-  // If avatar_url exists, generate a signed URL valid for 1 hour
+  // If avatar_url exists, generate a Cloudinary signed URL valid for 1 hour
   if (profile.avatar_url) {
-    const { data: signedUrlData, error: signedUrlError } = await supabase.storage
-      .from(PROFILE_PHOTOS)
-      .createSignedUrl(profile.avatar_url, 3600);
+    // Use updated_at timestamp as version for cache busting
+    const version = profile.updated_at ? new Date(profile.updated_at).getTime() : undefined;
 
-    if (!signedUrlError) {
-      profile.signed_url = signedUrlData?.signedUrl;
-    }
+    profile.signed_url = getSignedUrl(profile.avatar_url, {
+      width: 400,
+      height: 400,
+      quality: 'auto',
+      format: 'auto',
+      expiresInSeconds: 3600,
+      resourceType: 'image',
+      version,
+    });
   }
 
   return { user: profile };
