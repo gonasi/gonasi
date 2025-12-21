@@ -246,7 +246,7 @@ export function ViewMatchingGamePlugin({ blockWithProgress }: ViewPluginComponen
         <div className='grid grid-cols-2 gap-4 md:gap-6'>
           {/* Left column */}
           <div className='space-y-2 py-2'>
-            <div className='text-muted-foreground mb-2 text-xs font-medium uppercase tracking-wide'>
+            <div className='text-muted-foreground mb-2 text-xs font-medium tracking-wide uppercase'>
               Tap to select
             </div>
             {leftItems.map((item) => (
@@ -265,7 +265,7 @@ export function ViewMatchingGamePlugin({ blockWithProgress }: ViewPluginComponen
 
           {/* Right column - with subtle background for distinction */}
           <div className='space-y-2 rounded-lg border p-2 shadow-lg'>
-            <div className='text-muted-foreground mb-2 text-xs font-medium uppercase tracking-wide'>
+            <div className='text-muted-foreground mb-2 text-xs font-medium tracking-wide uppercase'>
               Tap to match
             </div>
             {rightItems.map((item) => (
