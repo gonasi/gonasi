@@ -8,6 +8,7 @@ import {
   MultipleChoiceSingleAnswerInteractionSchema,
   RichTextStateInteractionSchema,
   StepByStepRevealInteractionSchema,
+  SwipeCategorizeInteractionSchema,
   TrueOrFalseStateInteractionSchema,
 } from './interactions';
 import {
@@ -18,6 +19,7 @@ import {
   MultipleChoiceSingleAnswerSchema,
   RichTextSchema,
   StepByStepRevealSchema,
+  SwipeCategorizeSchema,
   TrueOrFalseSchema,
 } from './schemas';
 
@@ -31,6 +33,7 @@ export const BuilderSchema = z.discriminatedUnion('plugin_type', [
   MultipleChoiceSingleAnswerSchema,
   MultipleChoiceMultipleAnswersSchema,
   MatchingGameSchema,
+  SwipeCategorizeSchema,
   GuidedImageHotspotSchema,
   StepByStepRevealSchema,
 ]);
@@ -44,6 +47,7 @@ export const BlockInteractionSchema = z.discriminatedUnion('plugin_type', [
   MultipleChoiceSingleAnswerInteractionSchema,
   MultipleChoiceMultipleAnswersInteractionSchema,
   MatchingGameInteractionSchema,
+  SwipeCategorizeInteractionSchema,
   GuidedImageHotspotsInteractionSchema,
   StepByStepRevealInteractionSchema,
 ]);
@@ -63,6 +67,7 @@ const PublishedMultipleChoiceSingleAnswerSchema =
 const PublishedMultipleChoiceMultipleAnswersSchema =
   MultipleChoiceMultipleAnswersSchema.merge(PublishedFields);
 const PublishedMatchingGameSchema = MatchingGameSchema.merge(PublishedFields);
+const PublishedSwipeCategorizeSchema = SwipeCategorizeSchema.merge(PublishedFields);
 const PublishedGuidedImageHotspotsSchema = GuidedImageHotspotSchema.merge(PublishedFields);
 const PublishedStepByStepRevealSchema = StepByStepRevealSchema.merge(PublishedFields);
 
@@ -73,6 +78,7 @@ export const PublishedBuilderSchema = z.discriminatedUnion('plugin_type', [
   PublishedMultipleChoiceSingleAnswerSchema,
   PublishedMultipleChoiceMultipleAnswersSchema,
   PublishedMatchingGameSchema,
+  PublishedSwipeCategorizeSchema,
   PublishedGuidedImageHotspotsSchema,
   PublishedStepByStepRevealSchema,
 ]);

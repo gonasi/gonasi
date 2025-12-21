@@ -101,6 +101,14 @@ export const ALL_PLUGINS = [
             icon: 'ArrowLeftRight',
             comingSoon: false,
           },
+          {
+            id: 'swipe_categorize',
+            name: 'Swipe Categorize',
+            description: 'Swipe cards left or right to sort items into two categories.',
+            example: 'Sort statements as true or false by swiping.',
+            icon: 'SwipeLeft',
+            comingSoon: false,
+          },
         ],
       },
       {

@@ -67,6 +67,12 @@ const LazyBuilderMatchingGamePlugin = lazy(() =>
   })),
 );
 
+const LazyBuilderSwipeCategorizePlugin = lazy(() =>
+  import('../QuizPlugins/SwipeCategorizePlugin/BuilderSwipeCategorizePlugin').then((module) => ({
+    default: module.BuilderSwipeCategorizePlugin,
+  })),
+);
+
 // Only components that accept `{ block?: LessonBlockLoaderReturnType }`
 const pluginComponentMap: Record<
   PluginTypeId,
@@ -79,6 +85,7 @@ const pluginComponentMap: Record<
   multiple_choice_multiple: LazyBuilderMultipleChoiceMultipleAnswersPlugin,
   multiple_choice_single: LazyBuilderMultipleChoiceSingleAnswerPlugin,
   matching_game: LazyBuilderMatchingGamePlugin,
+  swipe_categorize: LazyBuilderSwipeCategorizePlugin,
   guided_image_hotspots: LazyBuilderGuidedImageHotspotsPlugin,
   step_by_step_reveal: LazyBuilderStepByStepRevealPluginPlugin,
   hotspot_identification_question: notImplemented,
