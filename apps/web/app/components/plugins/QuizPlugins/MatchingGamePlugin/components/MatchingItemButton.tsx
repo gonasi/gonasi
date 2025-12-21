@@ -13,7 +13,8 @@ interface MatchingItemButtonProps {
   isDisabled?: boolean;
   isWrong?: boolean;
   matchColor?: MatchColor;
-  shouldPulse?: boolean; // Pulse to indicate user should interact
+  shouldPulse?: boolean; // Pulse to indicate user should interact (right items)
+  shouldPulseSubtle?: boolean; // Subtle pulse for left items when nothing selected
   shouldNudge?: boolean; // Nudge when match is made
   onClick?: () => void;
 }
@@ -26,6 +27,7 @@ export function MatchingItemButton({
   isWrong = false,
   matchColor,
   shouldPulse = false,
+  shouldPulseSubtle = false,
   shouldNudge = false,
   onClick,
 }: MatchingItemButtonProps) {
@@ -49,6 +51,13 @@ export function MatchingItemButton({
       };
     }
 
+    // Subtle pulse for left items when nothing is selected (guide to start)
+    if (shouldPulseSubtle && !isMatched && !isDisabled && !isSelected) {
+      return {
+        scale: [1, 1.015, 1],
+      };
+    }
+
     // Selected left item subtle pulse
     if (isSelected && !isMatched) {
       return {
@@ -66,6 +75,16 @@ export function MatchingItemButton({
         duration: 1.2,
         repeat: Infinity,
         repeatDelay: 0.8,
+        ease: 'easeInOut' as const,
+      };
+    }
+
+    // Subtle pulse for left items when nothing selected
+    if (shouldPulseSubtle && !isMatched && !isDisabled && !isSelected) {
+      return {
+        duration: 2,
+        repeat: Infinity,
+        repeatDelay: 1.5,
         ease: 'easeInOut' as const,
       };
     }

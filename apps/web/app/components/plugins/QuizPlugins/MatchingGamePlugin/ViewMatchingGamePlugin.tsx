@@ -257,6 +257,7 @@ export function ViewMatchingGamePlugin({ blockWithProgress }: ViewPluginComponen
                 isMatched={isLeftItemMatched(item.id)}
                 isDisabled={!canInteract || isLeftItemMatched(item.id)}
                 matchColor={getItemMatchColor(item.id, true)}
+                shouldPulseSubtle={state.selectedLeftId === null && !isLeftItemMatched(item.id)}
                 shouldNudge={item.id === nudgeLeftId}
                 onClick={() => selectLeftItem(item.id)}
               />
