@@ -93,6 +93,14 @@ export const ALL_PLUGINS = [
             icon: 'SquareCheck',
             comingSoon: false,
           },
+          {
+            id: 'matching_game',
+            name: 'Matching Game',
+            description: 'Match left items with corresponding right items.',
+            example: 'Match countries with their capitals.',
+            icon: 'ArrowLeftRight',
+            comingSoon: false,
+          },
         ],
       },
       {

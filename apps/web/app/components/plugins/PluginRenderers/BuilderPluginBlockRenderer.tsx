@@ -61,6 +61,12 @@ const LazyBuilderStepByStepRevealPluginPlugin = lazy(() =>
   })),
 );
 
+const LazyBuilderMatchingGamePlugin = lazy(() =>
+  import('../QuizPlugins/MatchingGamePlugin/BuilderMatchingGamePlugin').then((module) => ({
+    default: module.BuilderMatchingGamePlugin,
+  })),
+);
+
 // Only components that accept `{ block?: LessonBlockLoaderReturnType }`
 const pluginComponentMap: Record<
   PluginTypeId,
@@ -72,6 +78,7 @@ const pluginComponentMap: Record<
   fill_in_the_blank: LazyBuilderFillInTheBlankPlugin,
   multiple_choice_multiple: LazyBuilderMultipleChoiceMultipleAnswersPlugin,
   multiple_choice_single: LazyBuilderMultipleChoiceSingleAnswerPlugin,
+  matching_game: LazyBuilderMatchingGamePlugin,
   guided_image_hotspots: LazyBuilderGuidedImageHotspotsPlugin,
   step_by_step_reveal: LazyBuilderStepByStepRevealPluginPlugin,
   hotspot_identification_question: notImplemented,
@@ -122,9 +129,14 @@ export default function BuilderPluginRenderer({
   pluginTypeId,
   block,
 }: BuilderPluginRendererProps): JSX.Element {
+  console.log('[BuilderPluginRenderer] pluginTypeId:', pluginTypeId);
+  console.log('[BuilderPluginRenderer] block:', block);
+
   const PluginComponent = pluginComponentMap[pluginTypeId];
+  console.log('[BuilderPluginRenderer] PluginComponent:', PluginComponent ? 'found' : 'NOT FOUND');
 
   if (!PluginComponent) {
+    console.error('[BuilderPluginRenderer] Plugin component not found for:', pluginTypeId);
     return <UnsupportedPluginMessage pluginTypeId={pluginTypeId} />;
   }
 

@@ -1,8 +1,8 @@
+import { getUserId } from '@gonasi/database/auth';
 import { FileType, getFileType } from '@gonasi/schemas/file';
 
 import type { Route } from './+types/confirm-edit-upload';
 
-import { getUserId } from '@gonasi/database/auth';
 import { createClient } from '~/lib/supabase/supabase.server';
 
 /**
@@ -40,7 +40,14 @@ export async function action({ request }: Route.ActionArgs) {
     });
 
     // Note: mimeType can be empty string for files like .fbx, so we check for undefined/null instead
-    if (!fileId || !fileName || !cloudinaryPublicId || !size || mimeType === undefined || mimeType === null) {
+    if (
+      !fileId ||
+      !fileName ||
+      !cloudinaryPublicId ||
+      !size ||
+      mimeType === undefined ||
+      mimeType === null
+    ) {
       console.error('[confirm-edit-upload] Missing required fields:', {
         fileId: !!fileId,
         fileName: !!fileName,

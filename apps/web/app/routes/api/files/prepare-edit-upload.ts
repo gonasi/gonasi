@@ -1,4 +1,4 @@
-import { generatePublicId, generateUploadSignature } from '@gonasi/cloudinary';
+import { generateUploadSignature } from '@gonasi/cloudinary';
 import { checkStorageLimitForOrg } from '@gonasi/database/files';
 import { FileType, getFileExtension, getFileType } from '@gonasi/schemas/file';
 
@@ -153,11 +153,7 @@ export async function action({ request }: Route.ActionArgs) {
     })();
 
     const resourceType =
-      file_type === FileType.VIDEO
-        ? 'video'
-        : file_type === FileType.IMAGE
-          ? 'image'
-          : 'raw'; // 3D models, audio, documents all use 'raw'
+      file_type === FileType.VIDEO ? 'video' : file_type === FileType.IMAGE ? 'image' : 'raw'; // 3D models, audio, documents all use 'raw'
 
     // Generate signed upload parameters
     console.log('[prepare-edit-upload] Generating signature...');
