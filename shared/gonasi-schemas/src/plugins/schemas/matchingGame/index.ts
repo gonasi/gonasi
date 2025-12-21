@@ -33,7 +33,6 @@ export const MatchingGameContentSchema = z.object({
     .min(10, 'Hint must be at least 10 characters.')
     .max(100, 'Hint must be 100 characters or fewer.')
     .optional(),
-  explanationState: NonEmptyLexicalState,
 });
 export type MatchingGameContentSchemaTypes = z.infer<typeof MatchingGameContentSchema>;
 

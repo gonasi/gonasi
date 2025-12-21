@@ -53,7 +53,7 @@ export function GoMatchingPairField({
     watch,
   } = useRemixFormContext();
 
-  const { append, remove, update } = useFieldArray({
+  const { append, remove } = useFieldArray({
     control,
     name,
   });

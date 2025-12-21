@@ -13,13 +13,12 @@ import { useViewPluginCore } from '../../hooks/useViewPluginCore';
 import type { ViewPluginComponentProps } from '../../PluginRenderers/ViewPluginTypesRenderer';
 import { shuffleArray } from '../../utils';
 
+import rightAnswerSound from '/assets/sounds/right-answer.mp3';
+import wrongAnswerSound from '/assets/sounds/wrong-answer.mp3';
 import RichTextRenderer from '~/components/go-editor/ui/RichTextRenderer';
 import { BlockActionButton } from '~/components/ui/button';
 import { Progress } from '~/components/ui/progress';
 import { useStore } from '~/store';
-
-import rightAnswerSound from '/assets/sounds/right-answer.mp3';
-import wrongAnswerSound from '/assets/sounds/wrong-answer.mp3';
 
 // Create Howl instances for sound effects
 const rightAnswerHowl = new Howl({
@@ -244,10 +243,12 @@ export function ViewMatchingGamePlugin({ blockWithProgress }: ViewPluginComponen
           <RichTextRenderer editorState={questionState} />
         </div>
         {/* Two-column layout for matching items */}
-        <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
+        <div className='grid grid-cols-2 gap-4 md:gap-6'>
           {/* Left column */}
-          <div className='space-y-3'>
-            <div className='text-muted-foreground mb-3 text-sm font-medium'>Left Items</div>
+          <div className='space-y-2 py-2'>
+            <div className='text-muted-foreground mb-2 text-xs font-medium uppercase tracking-wide'>
+              Tap to select
+            </div>
             {leftItems.map((item) => (
               <MatchingItemButton
                 key={item.id}
@@ -262,9 +263,11 @@ export function ViewMatchingGamePlugin({ blockWithProgress }: ViewPluginComponen
             ))}
           </div>
 
-          {/* Right column */}
-          <div className='space-y-3'>
-            <div className='text-muted-foreground mb-3 text-sm font-medium'>Right Items</div>
+          {/* Right column - with subtle background for distinction */}
+          <div className='space-y-2 rounded-lg border p-2 shadow-lg'>
+            <div className='text-muted-foreground mb-2 text-xs font-medium uppercase tracking-wide'>
+              Tap to match
+            </div>
             {rightItems.map((item) => (
               <MatchingItemButton
                 key={item.id}

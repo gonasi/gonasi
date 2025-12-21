@@ -42,7 +42,6 @@ interface BuilderMatchingGamePluginProps {
 const defaultContent: MatchingGameContentSchemaTypes = {
   questionState: EMPTY_LEXICAL_STATE,
   pairs: [],
-  explanationState: EMPTY_LEXICAL_STATE,
 };
 
 const defaultSettings: MatchingGameSettingsSchemaTypes = {
@@ -173,12 +172,6 @@ export function BuilderMatchingGamePlugin({ block }: BuilderMatchingGamePluginPr
                 description='Add 2-10 matching pairs. Each pair consists of a left item and a right item that learners will match.'
                 minPairs={2}
                 maxPairs={10}
-              />
-              <GoRichTextInputField
-                name='content.explanationState'
-                labelProps={{ children: 'Explanation', required: true }}
-                placeholder='Explain the correct matches...'
-                description='Help learners understand the connections between each pair.'
               />
               <GoTextAreaField
                 name='content.hint'
