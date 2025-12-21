@@ -23,11 +23,17 @@ const LazyCreatePluginBlockRenderer = lazy(
 export default function CreateBlockByPluginIdModal({ params }: Route.ComponentProps) {
   const { pluginGroupId, pluginTypeId } = params;
 
+  console.log('[CreateBlockByPluginIdModal] params:', { pluginGroupId, pluginTypeId });
+
   // Resolve plugin name for title display
-  const plugin = useMemo(
-    () => getPluginTypeNameById(pluginGroupId as PluginGroupId, pluginTypeId as PluginTypeId),
-    [pluginGroupId, pluginTypeId],
-  );
+  const plugin = useMemo(() => {
+    const name = getPluginTypeNameById(
+      pluginGroupId as PluginGroupId,
+      pluginTypeId as PluginTypeId,
+    );
+    console.log('[CreateBlockByPluginIdModal] plugin name:', name);
+    return name;
+  }, [pluginGroupId, pluginTypeId]);
 
   return (
     <>

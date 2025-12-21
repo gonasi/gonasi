@@ -31,7 +31,7 @@ export function IconNavLink({
       className={({ isPending }) =>
         cn(
           'relative flex flex-col items-center justify-center transition-all duration-200',
-          'hover:scale-105 hover:cursor-pointer z-10',
+          'z-10 hover:scale-105 hover:cursor-pointer',
           disabled && 'pointer-events-none opacity-30 hover:scale-100 hover:cursor-not-allowed',
           className,
         )

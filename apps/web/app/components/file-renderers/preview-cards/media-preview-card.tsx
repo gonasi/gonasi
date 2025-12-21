@@ -24,7 +24,7 @@ export const MediaPreviewCard = ({ file }: { file: FileLoaderItemType }) => {
 
   if (isAudio && file.signed_url) {
     return (
-      <div className='flex h-full w-full items-center justify-center bg-muted p-4'>
+      <div className='bg-muted flex h-full w-full items-center justify-center p-4'>
         <audio controls className='w-full' src={file.signed_url} preload='metadata'>
           Your browser does not support the audio tag.
         </audio>

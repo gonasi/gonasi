@@ -61,7 +61,15 @@ export default function GoPluginsMenuDialog({ pluginTypes }: GonasiPluginGroupPr
                 )
               }
               onClick={(e) => {
-                if (comingSoon) e.preventDefault();
+                console.log('[GonasiPluginGroup] Clicked plugin:', { id, name, comingSoon });
+                console.log(
+                  '[GonasiPluginGroup] Navigating to:',
+                  `${pluginGroupBasePath}/${id}/create`,
+                );
+                if (comingSoon) {
+                  console.log('[GonasiPluginGroup] Prevented navigation - coming soon');
+                  e.preventDefault();
+                }
               }}
               tabIndex={comingSoon ? -1 : 0} // prevent keyboard focus if disabled
               aria-disabled={comingSoon ? 'true' : 'false'}

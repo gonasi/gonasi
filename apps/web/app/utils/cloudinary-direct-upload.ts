@@ -200,7 +200,11 @@ export function validateFile(
       const extension = file.name.split('.').pop()?.toLowerCase();
 
       // If file has no MIME type or is application/octet-stream, check extension
-      if ((!file.type || file.type === 'application/octet-stream') && extension && allowedExtensions) {
+      if (
+        (!file.type || file.type === 'application/octet-stream') &&
+        extension &&
+        allowedExtensions
+      ) {
         const isExtensionAllowed = allowedExtensions.includes(extension);
         if (isExtensionAllowed) {
           return { valid: true };

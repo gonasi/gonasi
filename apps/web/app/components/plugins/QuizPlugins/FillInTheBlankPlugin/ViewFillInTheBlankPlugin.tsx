@@ -341,7 +341,12 @@ export function ViewFillInTheBlankPlugin({ blockWithProgress }: ViewPluginCompon
 
       setLetters(correctLetters);
     }
-  }, [state.hasRevealedCorrectAnswer, state.correctAttempt?.wasRevealed, correctAnswer, caseSensitive]);
+  }, [
+    state.hasRevealedCorrectAnswer,
+    state.correctAttempt?.wasRevealed,
+    correctAnswer,
+    caseSensitive,
+  ]);
 
   return (
     <ViewPluginWrapper

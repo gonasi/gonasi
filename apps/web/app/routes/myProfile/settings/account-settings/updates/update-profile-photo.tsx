@@ -304,9 +304,7 @@ export default function UpdateProfilePhoto({ params }: Route.ComponentProps) {
                     disabled={isDisabled}
                     className='w-full'
                   />
-                  <FormDescription>
-                    Choose a new photo to represent you on Gonasi.
-                  </FormDescription>
+                  <FormDescription>Choose a new photo to represent you on Gonasi.</FormDescription>
                   {croppedFile && (
                     <p className='text-muted-foreground mt-2 text-xs'>
                       ✓ Image cropped and ready: {croppedFile.name}
