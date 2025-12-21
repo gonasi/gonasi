@@ -1,10 +1,11 @@
-import { useEffect, useMemo } from 'react';
-import { PartyPopper, X } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Check } from 'lucide-react';
 
 import type { BlockInteractionSchemaTypes, BuilderSchemaTypes } from '@gonasi/schemas/plugins';
 
 import { MatchingItemButton } from './components/MatchingItemButton';
 import { useMatchingGameInteraction } from './hooks/useMatchingGameInteraction';
+import { getMatchColor } from './utils/colors';
 import { PlayPluginWrapper } from '../../common/PlayPluginWrapper';
 import { RenderFeedback } from '../../common/RenderFeedback';
 import { ViewPluginWrapper } from '../../common/ViewPluginWrapper';
@@ -13,8 +14,25 @@ import type { ViewPluginComponentProps } from '../../PluginRenderers/ViewPluginT
 import { shuffleArray } from '../../utils';
 
 import RichTextRenderer from '~/components/go-editor/ui/RichTextRenderer';
-import { AnimateInButtonWrapper, ShowAnswerButton, TryAgainButton } from '~/components/ui/button';
+import { BlockActionButton } from '~/components/ui/button';
+import { Progress } from '~/components/ui/progress';
 import { useStore } from '~/store';
+
+import rightAnswerSound from '/assets/sounds/right-answer.mp3';
+import wrongAnswerSound from '/assets/sounds/wrong-answer.mp3';
+
+// Create Howl instances for sound effects
+const rightAnswerHowl = new Howl({
+  src: [rightAnswerSound],
+  volume: 0.5,
+  preload: true,
+});
+
+const wrongAnswerHowl = new Howl({
+  src: [wrongAnswerSound],
+  volume: 0.5,
+  preload: true,
+});
 
 type MatchingGamePluginType = Extract<BuilderSchemaTypes, { plugin_type: 'matching_game' }>;
 
@@ -35,12 +53,20 @@ function isMatchingGameInteraction(data: unknown): data is MatchingGameInteracti
 export function ViewMatchingGamePlugin({ blockWithProgress }: ViewPluginComponentProps) {
   const {
     settings: { playbackMode, randomization, weight },
-    content: { questionState, pairs, explanationState, hint },
+    content: { questionState, pairs, hint },
   } = blockWithProgress.block as MatchingGamePluginType;
 
   const { is_last_block } = blockWithProgress;
 
-  const { mode } = useStore();
+  const { mode, isSoundEnabled, isVibrationEnabled } = useStore();
+
+  // Track previous state to detect changes for sound effects and animations
+  const prevMatchedCountRef = useRef(0);
+  const prevWrongAttemptsCountRef = useRef(0);
+
+  // Track items that should show nudge animation
+  const [nudgeLeftId, setNudgeLeftId] = useState<string | null>(null);
+  const [nudgeRightId, setNudgeRightId] = useState<string | null>(null);
 
   const {
     loading,
@@ -74,9 +100,7 @@ export function ViewMatchingGamePlugin({ blockWithProgress }: ViewPluginComponen
     state,
     selectLeftItem,
     selectRightItem,
-    revealCorrectAnswer,
     isCompleted,
-    tryAgain,
     canInteract,
     score,
     reset,
@@ -88,16 +112,42 @@ export function ViewMatchingGamePlugin({ blockWithProgress }: ViewPluginComponen
     isRightItemWrong,
   } = useMatchingGameInteraction(currentInteractionData, pairs);
 
-  // Shuffle items independently if randomization is enabled
+  // Sort items by their indexes or shuffle if randomization is enabled
   const leftItems = useMemo(() => {
-    const items = pairs.map((pair) => ({ id: pair.id, content: pair.leftContent }));
-    return randomization === 'shuffle' ? shuffleArray(items) : items;
+    const items = pairs.map((pair) => ({
+      id: pair.id,
+      content: pair.leftContent,
+      index: pair.leftIndex,
+    }));
+    if (randomization === 'shuffle') {
+      return shuffleArray(items);
+    }
+    return items.sort((a, b) => a.index - b.index);
   }, [pairs, randomization]);
 
   const rightItems = useMemo(() => {
-    const items = pairs.map((pair) => ({ id: pair.id, content: pair.rightContent }));
-    return randomization === 'shuffle' ? shuffleArray(items) : items;
+    const items = pairs.map((pair) => ({
+      id: pair.id,
+      content: pair.rightContent,
+      index: pair.rightIndex,
+    }));
+    if (randomization === 'shuffle') {
+      return shuffleArray(items);
+    }
+    return items.sort((a, b) => a.index - b.index);
   }, [pairs, randomization]);
+
+  // Get the match color for a specific item based on when it was matched
+  const getItemMatchColor = useCallback(
+    (itemId: string, isLeft: boolean) => {
+      const matchIndex = state.matchedPairs.findIndex((match) =>
+        isLeft ? match.leftId === itemId : match.rightId === itemId,
+      );
+      if (matchIndex === -1) return undefined;
+      return getMatchColor(matchIndex);
+    },
+    [state.matchedPairs],
+  );
 
   // Update interaction data in real-time (play mode only)
   useEffect(() => {
@@ -117,6 +167,68 @@ export function ViewMatchingGamePlugin({ blockWithProgress }: ViewPluginComponen
       updateAttemptsCount(attemptsCount);
     }
   }, [mode, attemptsCount, updateAttemptsCount]);
+
+  // Play sound effects, vibrate, and trigger nudge animations on match or wrong attempt
+  useEffect(() => {
+    const currentMatchedCount = state.matchedPairs.length;
+    const currentWrongAttemptsCount = state.wrongAttemptsPerLeftItem.reduce(
+      (sum, entry) => sum + entry.wrongRightIds.length,
+      0,
+    );
+
+    // Correct match - play sound and trigger nudge animation
+    if (currentMatchedCount > prevMatchedCountRef.current) {
+      if (isSoundEnabled) {
+        rightAnswerHowl.play();
+      }
+
+      // Get the most recent match to trigger nudge animation
+      const latestMatch = state.matchedPairs[state.matchedPairs.length - 1];
+      if (latestMatch) {
+        setNudgeLeftId(latestMatch.leftId);
+        setNudgeRightId(latestMatch.rightId);
+
+        // Clear nudge after animation completes (600ms animation duration)
+        setTimeout(() => {
+          setNudgeLeftId(null);
+          setNudgeRightId(null);
+        }, 600);
+      }
+    }
+
+    // Wrong match - play sound, vibrate, and trigger nudge animation
+    if (currentWrongAttemptsCount > prevWrongAttemptsCountRef.current) {
+      if (isSoundEnabled) {
+        wrongAnswerHowl.play();
+      }
+      if (isVibrationEnabled && 'vibrate' in navigator) {
+        navigator.vibrate([100, 50, 100]);
+      }
+
+      // Find the most recent wrong attempt to trigger nudge
+      const latestWrongEntry = state.wrongAttemptsPerLeftItem
+        .map((entry) => ({
+          leftId: entry.leftId,
+          rightId: entry.wrongRightIds[entry.wrongRightIds.length - 1],
+        }))
+        .filter((item) => item.rightId !== undefined)[0];
+
+      if (latestWrongEntry?.rightId) {
+        setNudgeLeftId(latestWrongEntry.leftId);
+        setNudgeRightId(latestWrongEntry.rightId);
+
+        // Clear nudge after animation completes (600ms animation duration)
+        setTimeout(() => {
+          setNudgeLeftId(null);
+          setNudgeRightId(null);
+        }, 600);
+      }
+    }
+
+    // Update refs
+    prevMatchedCountRef.current = currentMatchedCount;
+    prevWrongAttemptsCountRef.current = currentWrongAttemptsCount;
+  }, [state.matchedPairs, state.wrongAttemptsPerLeftItem, isSoundEnabled, isVibrationEnabled]);
 
   return (
     <ViewPluginWrapper
@@ -143,6 +255,8 @@ export function ViewMatchingGamePlugin({ blockWithProgress }: ViewPluginComponen
                 isSelected={isLeftItemSelected(item.id)}
                 isMatched={isLeftItemMatched(item.id)}
                 isDisabled={!canInteract || isLeftItemMatched(item.id)}
+                matchColor={getItemMatchColor(item.id, true)}
+                shouldNudge={item.id === nudgeLeftId}
                 onClick={() => selectLeftItem(item.id)}
               />
             ))}
@@ -158,63 +272,54 @@ export function ViewMatchingGamePlugin({ blockWithProgress }: ViewPluginComponen
                 isMatched={isRightItemMatched(item.id)}
                 isDisabled={isRightItemDisabled(item.id)}
                 isWrong={isRightItemWrong(item.id)}
+                matchColor={getItemMatchColor(item.id, false)}
+                shouldPulse={state.selectedLeftId !== null && !isRightItemMatched(item.id)}
+                shouldNudge={item.id === nudgeRightId}
                 onClick={() => selectRightItem(item.id)}
               />
             ))}
           </div>
         </div>
 
-        {/* Attempts counter */}
-        {attemptsCount > 0 && (
-          <div className='text-muted-foreground mt-4 text-sm'>
-            Attempts: <span className='font-medium'>{attemptsCount}</span>
+        {/* Progress Bar */}
+        <div className='mt-6 space-y-3'>
+          <div className='flex items-center justify-between'>
+            <span className='text-muted-foreground text-sm font-medium'>
+              Progress: {state.matchedPairs.length}/{pairs.length} matched
+            </span>
+            {attemptsCount > 0 && (
+              <span className='text-muted-foreground text-sm'>
+                {attemptsCount} wrong attempt{attemptsCount !== 1 ? 's' : ''}
+              </span>
+            )}
           </div>
-        )}
+          <Progress value={(state.matchedPairs.length / pairs.length) * 100} />
+        </div>
 
-        {/* Feedback and action buttons */}
-        <div className='mt-6 space-y-4'>
-          {/* Try Again button */}
-          {state.showTryAgainButton && (
-            <AnimateInButtonWrapper>
-              <TryAgainButton onClick={tryAgain} />
-            </AnimateInButtonWrapper>
-          )}
-
-          {/* Show Answer button */}
-          {state.showShowAnswerButton && !isCompleted && (
-            <AnimateInButtonWrapper>
-              <ShowAnswerButton onClick={revealCorrectAnswer} />
-            </AnimateInButtonWrapper>
-          )}
-
-          {/* Feedback message */}
-          {isCompleted && (
+        {/* Completion message */}
+        {isCompleted && (
+          <div className='mt-6'>
             <RenderFeedback
-              color={state.hasRevealedCorrectAnswer ? 'destructive' : 'success'}
-              icon={
-                state.hasRevealedCorrectAnswer ? (
-                  <X className='h-6 w-6' />
-                ) : (
-                  <PartyPopper className='h-6 w-6' />
-                )
-              }
-              label={state.hasRevealedCorrectAnswer ? 'Answer Revealed' : 'Great job!'}
+              color='success'
+              icon={<Check className='h-6 w-6' />}
+              label='All matched!'
               score={score}
+              hasBeenPlayed={blockWithProgress.block_progress?.is_completed}
               actions={
-                <AnimateInButtonWrapper>
-                  <button
-                    type='button'
-                    onClick={() => handleContinue()}
-                    disabled={loading}
-                    className='text-primary hover:text-primary/80 text-sm font-medium'
-                  >
-                    {is_last_block ? 'Complete Lesson' : 'Continue'}
-                  </button>
-                </AnimateInButtonWrapper>
+                <div className='flex'>
+                  {!blockWithProgress.block_progress?.is_completed && (
+                    <BlockActionButton
+                      onClick={handleContinue}
+                      loading={loading}
+                      isLastBlock={is_last_block}
+                      disabled={mode === 'preview'}
+                    />
+                  )}
+                </div>
               }
             />
-          )}
-        </div>
+          </div>
+        )}
       </PlayPluginWrapper>
     </ViewPluginWrapper>
   );

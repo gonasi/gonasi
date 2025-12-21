@@ -1,4 +1,7 @@
+import { motion } from 'framer-motion';
 import { Check, X } from 'lucide-react';
+
+import type { MatchColor } from '../utils/colors';
 
 import RichTextRenderer from '~/components/go-editor/ui/RichTextRenderer';
 import { cn } from '~/lib/utils';
@@ -9,6 +12,9 @@ interface MatchingItemButtonProps {
   isMatched?: boolean;
   isDisabled?: boolean;
   isWrong?: boolean;
+  matchColor?: MatchColor;
+  shouldPulse?: boolean; // Pulse to indicate user should interact
+  shouldNudge?: boolean; // Nudge when match is made
   onClick?: () => void;
 }
 
@@ -18,6 +24,9 @@ export function MatchingItemButton({
   isMatched = false,
   isDisabled = false,
   isWrong = false,
+  matchColor,
+  shouldPulse = false,
+  shouldNudge = false,
   onClick,
 }: MatchingItemButtonProps) {
   const handleClick = () => {
@@ -26,24 +35,97 @@ export function MatchingItemButton({
     }
   };
 
+  // Determine animation state
+  const getAnimateProps = () => {
+    // Pulse animation when left is selected and right items should be picked
+    if (shouldPulse && !isMatched && !isDisabled) {
+      return {
+        scale: [1, 1.03, 1],
+        boxShadow: [
+          '0 0 0 0 rgba(59, 130, 246, 0)',
+          '0 0 0 4px rgba(59, 130, 246, 0.2)',
+          '0 0 0 0 rgba(59, 130, 246, 0)',
+        ],
+      };
+    }
+
+    // Selected left item subtle pulse
+    if (isSelected && !isMatched) {
+      return {
+        scale: [1, 1.01, 1],
+      };
+    }
+
+    return {};
+  };
+
+  const getTransitionProps = () => {
+    // Pulse animation for right items
+    if (shouldPulse && !isMatched && !isDisabled) {
+      return {
+        duration: 1.2,
+        repeat: Infinity,
+        repeatDelay: 0.8,
+        ease: 'easeInOut' as const,
+      };
+    }
+
+    // Selected left item pulse
+    if (isSelected && !isMatched) {
+      return {
+        duration: 0.8,
+        repeat: Infinity,
+        ease: 'easeInOut' as const,
+      };
+    }
+
+    return { duration: 0.3 };
+  };
+
   return (
-    <button
+    <motion.button
       type='button'
       onClick={handleClick}
       disabled={isDisabled}
+      // Key changes when shouldNudge changes to force animation re-trigger
+      key={shouldNudge ? 'nudging' : 'idle'}
       className={cn(
-        'border-border flex w-full items-center justify-between gap-3 rounded-lg border p-4 text-left transition-all',
+        'flex w-full items-center justify-between gap-3 rounded-lg border-2 p-4 text-left transition-all',
         // Base state
-        !isMatched && !isSelected && !isDisabled && 'hover:border-primary hover:bg-accent',
-        // Selected state
-        isSelected && !isMatched && 'border-primary bg-primary/10',
-        // Matched state
-        isMatched && 'bg-success/10 border-success cursor-not-allowed',
+        !isMatched && !isSelected && !isDisabled && 'border-border hover:border-primary hover:bg-accent/50',
+        // Selected state with glow
+        isSelected && !isMatched && 'border-primary bg-primary/5 shadow-primary/20 shadow-lg',
+        // Matched state with color (only border, no background)
+        isMatched && matchColor && `${matchColor.border} cursor-not-allowed`,
+        // Matched state without color (fallback)
+        isMatched && !matchColor && 'border-success cursor-not-allowed',
         // Disabled state (wrong attempt)
-        isDisabled && !isMatched && 'cursor-not-allowed opacity-50',
-        // Disabled state
-        isDisabled && 'cursor-not-allowed',
+        isDisabled && !isMatched && 'border-border cursor-not-allowed opacity-50',
+        // Pulsing state gets subtle highlight
+        shouldPulse && !isMatched && !isDisabled && 'ring-1 ring-primary/30',
       )}
+      // Initial state for nudge animation
+      initial={shouldNudge ? { scale: 1, x: 0, rotate: 0 } : false}
+      // Nudge animation when triggered
+      animate={
+        shouldNudge
+          ? {
+              scale: [1, 1.15, 1.15, 1],
+              x: [0, -10, 10, -10, 10, 0],
+              rotate: [0, -3, 3, -3, 3, 0],
+            }
+          : getAnimateProps()
+      }
+      transition={
+        shouldNudge
+          ? {
+              duration: 0.6,
+              ease: 'easeOut' as const,
+              times: [0, 0.2, 0.4, 0.6, 0.8, 1],
+            }
+          : getTransitionProps()
+      }
+      whileTap={!isDisabled && !isMatched ? { scale: 0.98 } : {}}
     >
       <div className='flex-1'>
         <RichTextRenderer editorState={content} />
@@ -52,16 +134,37 @@ export function MatchingItemButton({
       {/* Status indicators */}
       <div className='flex-shrink-0'>
         {isMatched && (
-          <div className='bg-success text-success-foreground flex h-6 w-6 items-center justify-center rounded-full'>
-            <Check className='h-4 w-4' />
-          </div>
+          <motion.div
+            initial={{ scale: 0, rotate: -180 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+            className={cn(
+              'flex h-7 w-7 items-center justify-center rounded-full',
+              matchColor ? `${matchColor.bg}` : 'bg-success',
+            )}
+          >
+            <Check className={cn('h-5 w-5 font-bold', matchColor ? matchColor.text : 'text-white')} strokeWidth={3} />
+          </motion.div>
         )}
         {isWrong && !isMatched && (
-          <div className='bg-danger text-danger-foreground flex h-6 w-6 items-center justify-center rounded-full'>
-            <X className='h-4 w-4' />
-          </div>
+          <motion.div
+            initial={{ scale: 0, rotate: 180 }}
+            animate={{
+              scale: 1,
+              rotate: 0,
+              x: [0, -2, 2, -2, 2, 0],
+            }}
+            transition={{
+              scale: { type: 'spring', stiffness: 200, damping: 15 },
+              rotate: { duration: 0.3 },
+              x: { duration: 0.4, times: [0, 0.2, 0.4, 0.6, 0.8, 1] },
+            }}
+            className='bg-destructive text-destructive-foreground flex h-7 w-7 items-center justify-center rounded-full'
+          >
+            <X className='h-5 w-5' strokeWidth={3} />
+          </motion.div>
         )}
       </div>
-    </button>
+    </motion.button>
   );
 }

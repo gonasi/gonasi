@@ -1,3 +1,19 @@
+/**
+ * GoMatchingPairField - Field for managing matching game pairs
+ *
+ * Features:
+ * - Add/Edit/Delete pairs with left and right content
+ * - Each pair has leftIndex and rightIndex for custom ordering
+ *
+ * Future Enhancement:
+ * - Drag-and-drop reordering for left and right items independently
+ * - When implementing drag-and-drop:
+ *   1. Use @dnd-kit/core for drag-and-drop functionality
+ *   2. Add separate drag handles for left and right items
+ *   3. Update leftIndex/rightIndex on drop
+ *   4. Reindex all items after reordering to maintain sequential indexes
+ */
+
 import { useState } from 'react';
 import { Controller, get, useFieldArray } from 'react-hook-form';
 import { ErrorMessage } from '@hookform/error-message';
@@ -59,17 +75,19 @@ export function GoMatchingPairField({
   const errorMessage = error?.message?.toString() || 'This field has an error';
 
   const addPair = () => {
+    const newIndex = pairs.length;
     const newPair: MatchingPairSchemaTypes = {
       id: uuidv4(),
       leftContent: EMPTY_LEXICAL_STATE,
       rightContent: EMPTY_LEXICAL_STATE,
+      leftIndex: newIndex,
+      rightIndex: newIndex,
     };
 
     // Add the pair first
     append(newPair);
 
     // Open modal with the new pair data
-    const newIndex = pairs.length; // This will be the index after append
     setCurrentPair({
       pair: newPair as MatchingPairSchemaTypes,
       index: newIndex,
@@ -97,6 +115,8 @@ export function GoMatchingPairField({
     const index = pairs.findIndex((pair) => pair.id === pairId);
     if (index !== -1) {
       remove(index);
+      // Note: Reindexing will be handled when drag-and-drop is implemented
+      // For now, gaps in indexes are acceptable
     }
   };
 

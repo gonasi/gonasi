@@ -29,16 +29,22 @@ export function useMatchingGameInteraction(
   // ============================================================================
 
   const isCompleted = useMemo(() => {
-    return state.matchedPairs.length === pairs.length || state.hasRevealedCorrectAnswer;
-  }, [state.matchedPairs.length, state.hasRevealedCorrectAnswer, pairs.length]);
+    return state.matchedPairs.length === pairs.length;
+  }, [state.matchedPairs.length, pairs.length]);
 
   const canInteract = useMemo(() => {
     return !isCompleted;
   }, [isCompleted]);
 
   const attemptsCount = useMemo(() => {
-    return state.allAttempts.length;
-  }, [state.allAttempts.length]);
+    // Count only wrong attempts
+    // First wrong match = 1 attempt, second wrong match = 2 attempts, etc.
+    const totalWrongAttempts = state.wrongAttemptsPerLeftItem.reduce(
+      (sum, entry) => sum + entry.wrongRightIds.length,
+      0,
+    );
+    return totalWrongAttempts;
+  }, [state.wrongAttemptsPerLeftItem]);
 
   const score = useMemo(() => {
     return calculateMatchingGameScore(state, pairs.length);
@@ -151,10 +157,8 @@ export function useMatchingGameInteraction(
           // Correct match!
           const newMatchedPairs = [
             ...prev.matchedPairs,
-            { leftId: selectedLeftId, rightId, timestamp, wasRevealed: false },
+            { leftId: selectedLeftId, rightId, timestamp },
           ];
-
-          const allMatched = newMatchedPairs.length === pairs.length;
 
           return {
             ...prev,
@@ -164,10 +168,6 @@ export function useMatchingGameInteraction(
               ...prev.allAttempts,
               { leftId: selectedLeftId, rightId, timestamp, isCorrect: true },
             ],
-            showContinueButton: allMatched,
-            canShowExplanationButton: allMatched,
-            showTryAgainButton: false,
-            showShowAnswerButton: !allMatched,
           };
         } else {
           // Wrong match
@@ -199,56 +199,12 @@ export function useMatchingGameInteraction(
               ...prev.allAttempts,
               { leftId: selectedLeftId, rightId, timestamp, isCorrect: false },
             ],
-            showTryAgainButton: true,
-            showShowAnswerButton: true,
           };
         }
       });
     },
     [state.selectedLeftId, canInteract, pairs, isRightItemDisabled],
   );
-
-  const revealCorrectAnswer = useCallback(() => {
-    if (isCompleted) return;
-
-    const timestamp = getTimestamp();
-
-    setState((prev) => {
-      // Find all unmatched pairs and match them
-      const unmatchedPairs = pairs.filter(
-        (pair) => !prev.matchedPairs.some((matched) => matched.leftId === pair.id),
-      );
-
-      const revealedPairs = unmatchedPairs.map((pair) => ({
-        leftId: pair.id,
-        rightId: pair.id,
-        timestamp,
-        wasRevealed: true,
-      }));
-
-      return {
-        ...prev,
-        selectedLeftId: null,
-        matchedPairs: [...prev.matchedPairs, ...revealedPairs],
-        showTryAgainButton: false,
-        showShowAnswerButton: false,
-        showContinueButton: true,
-        canShowExplanationButton: true,
-        hasRevealedCorrectAnswer: true,
-      };
-    });
-  }, [isCompleted, pairs]);
-
-  const tryAgain = useCallback(() => {
-    if (isCompleted || !state.showTryAgainButton) return;
-
-    setState((prev) => ({
-      ...prev,
-      selectedLeftId: null,
-      showTryAgainButton: false,
-      showShowAnswerButton: true,
-    }));
-  }, [isCompleted, state.showTryAgainButton]);
 
   const reset = useCallback(() => {
     setState(defaultState);
@@ -278,8 +234,6 @@ export function useMatchingGameInteraction(
     // Actions
     selectLeftItem,
     selectRightItem,
-    revealCorrectAnswer,
-    tryAgain,
     reset,
   };
 }

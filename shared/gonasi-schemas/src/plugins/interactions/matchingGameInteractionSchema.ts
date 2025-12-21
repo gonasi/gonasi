@@ -8,7 +8,6 @@ const MatchedPairSchema = z.object({
   leftId: z.string().uuid(),
   rightId: z.string().uuid(),
   timestamp: z.number(),
-  wasRevealed: z.boolean().default(false),
 });
 
 const WrongAttemptsPerLeftItemSchema = z.object({
@@ -38,13 +37,6 @@ export const MatchingGameInteractionSchema = z.object({
 
   // All attempts (for analytics/tracking)
   allAttempts: z.array(MatchAttemptSchema).default([]),
-
-  // UI state flags
-  showTryAgainButton: z.boolean().default(false),
-  showShowAnswerButton: z.boolean().default(false),
-  showContinueButton: z.boolean().default(false),
-  canShowExplanationButton: z.boolean().default(false),
-  hasRevealedCorrectAnswer: z.boolean().default(false),
 });
 
 export type MatchingGameInteractionSchemaTypes = z.infer<typeof MatchingGameInteractionSchema>;

@@ -8,10 +8,9 @@ const MINIMUM_SCORE = 10;
  * Calculate the score for a matching game based on the interaction state.
  *
  * Scoring formula:
- * - Base score: (earnedMatches / totalPairs) * 100
+ * - Base score: (correct matches / total pairs) * 100
  * - Penalty: 5 points per wrong attempt
- * - Minimum: 10 points (if at least one earned match)
- * - Score: 0 if answer was revealed
+ * - Minimum: 10 points (if at least one correct match)
  *
  * @param state - The current interaction state
  * @param totalPairs - Total number of pairs in the matching game
@@ -21,16 +20,10 @@ export function calculateMatchingGameScore(
   state: MatchingGameInteractionSchemaTypes,
   totalPairs: number,
 ): number {
-  // No score if answer was revealed
-  if (state.hasRevealedCorrectAnswer) {
-    return 0;
-  }
-
-  // Count earned matches (excluding revealed ones)
-  const earnedMatches = state.matchedPairs.filter((pair) => !pair.wasRevealed).length;
+  const correctMatches = state.matchedPairs.length;
 
   // No matches = no score
-  if (earnedMatches === 0) {
+  if (correctMatches === 0) {
     return 0;
   }
 
@@ -41,7 +34,7 @@ export function calculateMatchingGameScore(
   );
 
   // Calculate base score as percentage of correct matches
-  const baseScore = (earnedMatches / totalPairs) * MAX_SCORE;
+  const baseScore = (correctMatches / totalPairs) * MAX_SCORE;
 
   // Apply penalty for wrong attempts
   const penalty = totalWrongAttempts * PENALTY_PER_WRONG_ATTEMPT;

@@ -11,6 +11,9 @@ export const MatchingPairSchema = z.object({
   id: z.string().uuid(),
   leftContent: NonEmptyLexicalState,
   rightContent: NonEmptyLexicalState,
+  // Position indexes for custom ordering (allows independent left/right reordering)
+  leftIndex: z.number().int().min(0),
+  rightIndex: z.number().int().min(0),
 });
 export type MatchingPairSchemaTypes = z.infer<typeof MatchingPairSchema>;
 
