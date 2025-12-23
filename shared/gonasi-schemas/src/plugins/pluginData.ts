@@ -180,7 +180,7 @@ export const ALL_PLUGINS = [
             description: 'Embed and play videos with interactive features.',
             example: 'Show a tutorial video with pause and play controls.',
             icon: 'VideoPlayer',
-            comingSoon: true,
+            comingSoon: false,
           },
           {
             id: 'audio_player',

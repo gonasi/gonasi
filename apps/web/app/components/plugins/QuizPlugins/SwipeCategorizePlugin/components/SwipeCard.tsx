@@ -1,5 +1,6 @@
 import { motion, useMotionValue, useTransform, useAnimation } from 'framer-motion';
 import { useEffect, forwardRef, useImperativeHandle, useState } from 'react';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
 
 import RichTextRenderer from '~/components/go-editor/ui/RichTextRenderer';
 import { cn } from '~/lib/utils';
@@ -176,7 +177,7 @@ export const SwipeCard = forwardRef<SwipeCardRef, SwipeCardProps>(
               opacity: leftIndicatorOpacity,
             }}
           >
-            <div className='text-destructive text-6xl'>👈</div>
+            <ArrowLeft className='text-destructive h-16 w-16' strokeWidth={2.5} />
           </motion.div>
         )}
         {disabledDirection !== 'right' && (
@@ -186,7 +187,7 @@ export const SwipeCard = forwardRef<SwipeCardRef, SwipeCardProps>(
               opacity: rightIndicatorOpacity,
             }}
           >
-            <div className='text-success text-6xl'>👉</div>
+            <ArrowRight className='text-success h-16 w-16' strokeWidth={2.5} />
           </motion.div>
         )}
       </motion.div>

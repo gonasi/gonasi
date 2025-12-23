@@ -73,6 +73,12 @@ const LazyBuilderSwipeCategorizePlugin = lazy(() =>
   })),
 );
 
+const LazyBuilderVideoPlayerPlugin = lazy(() =>
+  import('../MediaPlayerPlugins/VideoPlayerPlugin/BuilderVideoPlayerPlugin').then((module) => ({
+    default: module.BuilderVideoPlayerPlugin,
+  })),
+);
+
 // Only components that accept `{ block?: LessonBlockLoaderReturnType }`
 const pluginComponentMap: Record<
   PluginTypeId,
@@ -97,7 +103,7 @@ const pluginComponentMap: Record<
   pie_chart: notImplemented,
   historical_events: notImplemented,
   project_milestones: notImplemented,
-  video_player: notImplemented,
+  video_player: LazyBuilderVideoPlayerPlugin,
   audio_player: notImplemented,
   slideshow_player: notImplemented,
   motion_simulation: notImplemented,

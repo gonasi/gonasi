@@ -7,3 +7,4 @@ export * from './matchingGameInteractionSchema';
 export * from './swipeCategorizeInteractionSchema';
 export * from './guidedImageHotspotsInteractionSchema';
 export * from './stepByStepRevealInteractionSchema';
+export * from './videoPlayerInteractionSchema';

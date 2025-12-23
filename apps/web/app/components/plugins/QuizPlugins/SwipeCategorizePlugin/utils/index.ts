@@ -4,47 +4,33 @@ import type { SwipeCategorizeInteractionSchemaTypes } from '@gonasi/schemas/plug
  * Calculate the score for a swipe categorize interaction
  *
  * Scoring Logic:
+ * - Follows the same pattern as other quiz plugins (True/False, Fill in the Blank)
+ * - Start at 100, deduct 20 points for each wrong swipe
  * - Since users are forced to correct wrong swipes, all cards eventually get categorized correctly
- * - Score is based on "first-try accuracy"
- * - Start at 100, deduct points for each wrong attempt
- * - Heavier penalty (15 points) since wrong direction gets blocked, forcing correction
+ * - Maximum 5 wrong swipes before score reaches 0
  *
  * @param state - The current interaction state
  * @param totalCards - Total number of cards in the plugin
- * @returns Score between 30-100 (minimum 30 if completed, 10 if in progress)
+ * @returns Score between 0-100
  */
 export function calculateSwipeCategorizeScore(
   state: SwipeCategorizeInteractionSchemaTypes,
   totalCards: number,
 ): number {
+  const MAX_SCORE = 100;
+  const PENALTY_PER_WRONG_SWIPE = 20;
+
   const totalSwiped = state.leftBucket.length + state.rightBucket.length;
   const wrongSwipeCount = state.wrongSwipes.length;
 
-  // If nothing swiped yet, return 0
+  // No score if nothing swiped yet
   if (totalSwiped === 0) return 0;
 
-  // Calculate first-try accuracy
-  const firstTryCorrect = totalSwiped - wrongSwipeCount;
-  const firstTryAccuracy = (firstTryCorrect / totalCards) * 100;
+  // Calculate penalty based on wrong swipes
+  const penalty = wrongSwipeCount * PENALTY_PER_WRONG_SWIPE;
 
-  // Penalty: 15 points per wrong swipe (since they're forced to correct it)
-  const penalty = wrongSwipeCount * 15;
-
-  // Calculate score starting from 100
-  let score = 100 - penalty;
-
-  // If not all cards done yet, scale by progress
-  if (totalSwiped < totalCards) {
-    // Partial completion: scale the score by completion percentage
-    const completionRate = totalSwiped / totalCards;
-    score = Math.max(firstTryAccuracy - penalty * completionRate, 10);
-  } else {
-    // All cards done: minimum score of 30 (they eventually got everything right)
-    score = Math.max(score, 30);
-  }
-
-  // Cap at 100
-  return Math.min(Math.round(score), 100);
+  // Simple scoring: 100 - penalty, minimum 0
+  return Math.max(MAX_SCORE - penalty, 0);
 }
 
 /**

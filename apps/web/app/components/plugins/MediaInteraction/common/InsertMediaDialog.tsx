@@ -12,9 +12,13 @@ import type { loader, SearchFileResult } from '~/routes/api/search-files';
 
 interface InsertMediaDialogProps {
   handleImageInsert: (file: SearchFileResult) => void;
+  fileType?: FileType; // Optional: defaults to IMAGE for backwards compatibility
 }
 
-export default function InsertMediaDialog({ handleImageInsert }: InsertMediaDialogProps) {
+export default function InsertMediaDialog({
+  handleImageInsert,
+  fileType = FileType.IMAGE
+}: InsertMediaDialogProps) {
   const params = useParams();
   const fetcher = useFetcher<typeof loader>();
   const [searchParams] = useSearchParams();
@@ -27,7 +31,7 @@ export default function InsertMediaDialog({ handleImageInsert }: InsertMediaDial
     const searchUrl = new URL(`/api/files/${params.courseId}/search`, window.location.origin);
 
     // Add search parameters
-    searchUrl.searchParams.set('fileType', FileType.IMAGE);
+    searchUrl.searchParams.set('fileType', fileType);
     searchUrl.searchParams.set('page', page);
     if (searchName) {
       searchUrl.searchParams.set('name', searchName);
@@ -37,7 +41,7 @@ export default function InsertMediaDialog({ handleImageInsert }: InsertMediaDial
     fetcher.load(searchUrl.pathname + searchUrl.search);
     initialLoadRef.current = true;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [params.courseId, searchParams, fetcher.load]);
+  }, [params.courseId, searchParams, fetcher.load, fileType]);
 
   // Show spinner during initial load or when there's no data yet
   const isInitialLoading = !initialLoadRef.current || (fetcher.state !== 'idle' && !fetcher.data);
@@ -50,7 +54,9 @@ export default function InsertMediaDialog({ handleImageInsert }: InsertMediaDial
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
       >
-        <SearchInput placeholder='Search for images...' />
+        <SearchInput
+          placeholder={`Search for ${fileType === FileType.VIDEO ? 'videos' : 'images'}...`}
+        />
       </motion.div>
       {isInitialLoading ? (
         <Spinner />
@@ -90,7 +96,9 @@ export default function InsertMediaDialog({ handleImageInsert }: InsertMediaDial
           </motion.div>
         </div>
       ) : (
-        <div className='text-muted-foreground mt-4 text-center'>No images found</div>
+        <div className='text-muted-foreground mt-4 text-center'>
+          No {fileType === FileType.VIDEO ? 'videos' : 'images'} found
+        </div>
       )}
     </div>
   );

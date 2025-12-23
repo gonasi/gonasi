@@ -1,18 +1,19 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Check } from 'lucide-react';
+import { PartyPopper } from 'lucide-react';
 
 import type { BlockInteractionSchemaTypes, BuilderSchemaTypes } from '@gonasi/schemas/plugins';
 
 import { CategoryLabels } from './components/CategoryLabels';
+import { ReviewCarousel } from './components/ReviewCarousel';
 import { SwipeButtons } from './components/SwipeButtons';
 import { SwipeCard, type SwipeCardRef } from './components/SwipeCard';
 import { useSwipeCategorizeInteraction } from './hooks/useSwipeCategorizeInteraction';
-import { shuffleArray } from './utils';
 import { PlayPluginWrapper } from '../../common/PlayPluginWrapper';
 import { RenderFeedback } from '../../common/RenderFeedback';
 import { ViewPluginWrapper } from '../../common/ViewPluginWrapper';
 import { useViewPluginCore } from '../../hooks/useViewPluginCore';
 import type { ViewPluginComponentProps } from '../../PluginRenderers/ViewPluginTypesRenderer';
+import { shuffleArray } from './utils';
 
 import rightAnswerSound from '/assets/sounds/right-answer.mp3';
 import wrongAnswerSound from '/assets/sounds/wrong-answer.mp3';
@@ -203,84 +204,91 @@ export function ViewSwipeCategorizePlugin({ blockWithProgress }: ViewPluginCompo
       reset={reset}
     >
       <PlayPluginWrapper hint={hint}>
-        {/* Question */}
-        <div className='mb-6'>
-          <RichTextRenderer editorState={questionState} />
-        </div>
-
-        {/* Category Labels */}
-        <CategoryLabels leftLabel={leftLabel} rightLabel={rightLabel} dragOffset={dragOffset} />
-
-        {/* Card Stack */}
-        <div className='relative mx-auto flex min-h-[400px] w-full max-w-md items-center justify-center'>
-          {currentCard ? (
-            <SwipeCard
-              ref={cardRef}
-              content={currentCard.content}
-              onSwipeLeft={swipeLeft}
-              onSwipeRight={swipeRight}
-              onWrongSwipe={handleWrongSwipe}
-              dragEnabled={canInteract}
-              cardNumber={state.currentCardIndex + 1}
-              totalCards={processedCards.length}
-              correctCategory={currentCard.correctCategory}
-              disabledDirection={blockedDirection}
-            />
-          ) : (
-            <div className='text-muted-foreground text-center'>
-              {isCompleted ? 'All cards sorted!' : 'No cards available'}
+        {!isCompleted ? (
+          <>
+            {/* Question */}
+            <div className='mb-6'>
+              <RichTextRenderer editorState={questionState} />
             </div>
-          )}
-        </div>
 
-        {/* Swipe Buttons (Desktop) */}
-        <SwipeButtons
-          onSwipeLeft={handleButtonLeft}
-          onSwipeRight={handleButtonRight}
-          disabled={!canInteract || !currentCard}
-          disabledLeft={blockedDirection === 'left'}
-          disabledRight={blockedDirection === 'right'}
-        />
+            {/* Category Labels */}
+            <CategoryLabels leftLabel={leftLabel} rightLabel={rightLabel} dragOffset={dragOffset} />
 
-        {/* Progress Bar */}
-        <div className='mt-6 space-y-3'>
-          <div className='flex items-center justify-between'>
-            <span className='text-muted-foreground text-sm font-medium'>
-              Progress: {state.leftBucket.length + state.rightBucket.length}/{processedCards.length}{' '}
-              cards sorted
-            </span>
-            {wrongSwipesCount > 0 && (
-              <span className='text-muted-foreground text-sm'>
-                {wrongSwipesCount} wrong swipe{wrongSwipesCount !== 1 ? 's' : ''}
-              </span>
-            )}
-          </div>
-          <Progress value={progress} />
-        </div>
+            {/* Card Stack */}
+            <div className='relative mx-auto flex min-h-[400px] w-full max-w-md items-center justify-center'>
+              {currentCard ? (
+                <SwipeCard
+                  ref={cardRef}
+                  content={currentCard.content}
+                  onSwipeLeft={swipeLeft}
+                  onSwipeRight={swipeRight}
+                  onWrongSwipe={handleWrongSwipe}
+                  dragEnabled={canInteract}
+                  cardNumber={state.currentCardIndex + 1}
+                  totalCards={processedCards.length}
+                  correctCategory={currentCard.correctCategory}
+                  disabledDirection={blockedDirection}
+                />
+              ) : (
+                <div className='text-muted-foreground text-center'>No cards available</div>
+              )}
+            </div>
 
-        {/* Completion message */}
-        {isCompleted && (
-          <div className='mt-6'>
+            {/* Swipe Buttons (Desktop) */}
+            <SwipeButtons
+              onSwipeLeft={handleButtonLeft}
+              onSwipeRight={handleButtonRight}
+              disabled={!canInteract || !currentCard}
+              disabledLeft={blockedDirection === 'left'}
+              disabledRight={blockedDirection === 'right'}
+            />
+
+            {/* Progress Bar */}
+            <div className='mt-6 space-y-3'>
+              <div className='flex items-center justify-between'>
+                <span className='text-muted-foreground text-sm font-medium'>
+                  Progress: {state.leftBucket.length + state.rightBucket.length}/
+                  {processedCards.length} cards sorted
+                </span>
+                {wrongSwipesCount > 0 && (
+                  <span className='text-muted-foreground text-sm'>
+                    {wrongSwipesCount} wrong swipe{wrongSwipesCount !== 1 ? 's' : ''}
+                  </span>
+                )}
+              </div>
+              <Progress value={progress} />
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Review Carousel */}
+            <div className='my-6'>
+              <ReviewCarousel
+                cards={processedCards}
+                state={state}
+                leftLabel={leftLabel}
+                rightLabel={rightLabel}
+              />
+            </div>
+            {/* Completion Feedback */}
             <RenderFeedback
               color='success'
-              icon={<Check className='h-6 w-6' />}
+              icon={<PartyPopper />}
               label='All cards categorized!'
               score={score}
               hasBeenPlayed={blockWithProgress.block_progress?.is_completed}
               actions={
-                <div className='flex'>
-                  {!blockWithProgress.block_progress?.is_completed && (
-                    <BlockActionButton
-                      onClick={handleContinue}
-                      loading={loading}
-                      isLastBlock={is_last_block}
-                      disabled={mode === 'preview'}
-                    />
-                  )}
-                </div>
+                !blockWithProgress.block_progress?.is_completed && (
+                  <BlockActionButton
+                    onClick={handleContinue}
+                    loading={loading}
+                    isLastBlock={is_last_block}
+                    disabled={mode === 'preview'}
+                  />
+                )
               }
             />
-          </div>
+          </>
         )}
       </PlayPluginWrapper>
     </ViewPluginWrapper>

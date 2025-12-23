@@ -11,6 +11,7 @@ import { ViewSwipeCategorizePlugin } from '../QuizPlugins/SwipeCategorizePlugin/
 import { ViewTrueOrFalsePlugin } from '../QuizPlugins/TrueOrFalsePlugin/ViewTrueOrFalsePlugin';
 import { ViewStepByStepRevealPlugin } from '../RevealPlugins/StepByStepReveal/ViewStepByStepRevealPlugin';
 import { ViewRichTextPlugin } from '../RichTextPlugins/RichTextPlugin/ViewRichTextPlugin';
+import { ViewVideoPlayerPlugin } from '../MediaPlayerPlugins/VideoPlayerPlugin/ViewVideoPlayerPlugin';
 
 export interface ViewPluginComponentProps {
   blockWithProgress: BlockWithProgressSchemaTypes;
@@ -42,7 +43,7 @@ const viewPluginComponentMap: Record<
   historical_events: unimplementedPlugin,
   project_milestones: unimplementedPlugin,
   step_by_step_reveal: ViewStepByStepRevealPlugin,
-  video_player: unimplementedPlugin,
+  video_player: ViewVideoPlayerPlugin,
   audio_player: unimplementedPlugin,
   slideshow_player: unimplementedPlugin,
   motion_simulation: unimplementedPlugin,
