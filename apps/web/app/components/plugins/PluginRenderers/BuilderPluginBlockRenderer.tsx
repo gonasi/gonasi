@@ -85,6 +85,12 @@ const LazyBuilderYouTubeEmbedPlugin = lazy(() =>
   })),
 );
 
+const LazyBuilderVimeoEmbedPlugin = lazy(() =>
+  import('../MediaPlayerPlugins/VimeoEmbedPlugin/BuilderVimeoEmbedPlugin').then((module) => ({
+    default: module.BuilderVimeoEmbedPlugin,
+  })),
+);
+
 // Only components that accept `{ block?: LessonBlockLoaderReturnType }`
 const pluginComponentMap: Record<
   PluginTypeId,
@@ -113,7 +119,7 @@ const pluginComponentMap: Record<
   audio_player: notImplemented,
   slideshow_player: notImplemented,
   youtube_embed: LazyBuilderYouTubeEmbedPlugin,
-  vimeo_embed: notImplemented,
+  vimeo_embed: LazyBuilderVimeoEmbedPlugin,
   twitch_embed: notImplemented,
   instagram_embed: notImplemented,
   tiktok_embed: notImplemented,

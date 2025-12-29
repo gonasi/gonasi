@@ -9,3 +9,4 @@ export * from './mediaInteraction';
 export * from './stepByStepReveal';
 export * from './videoPlayer';
 export * from './youtubeEmbed';
+export * from './vimeoEmbed';
