@@ -203,6 +203,74 @@ export const ALL_PLUGINS = [
     ],
   },
   {
+    id: 'embeddable_media',
+    name: 'Embeddable Media Plugins',
+    description: 'Plugins for embedding external media from popular platforms',
+    pluginGroups: [
+      {
+        id: 'video_embeds',
+        name: 'Video Embed Plugins',
+        description: 'Embed videos from platforms like YouTube and Vimeo directly into lessons.',
+        icon: 'Video',
+        pluginTypes: [
+          {
+            id: 'youtube_embed',
+            name: 'YouTube Embed',
+            description:
+              'Embed a YouTube video using a link or video ID. Supports autoplay, captions, and playback controls.',
+            example: 'Embed a YouTube tutorial directly in the lesson.',
+            icon: 'Youtube',
+            comingSoon: false,
+          },
+          {
+            id: 'vimeo_embed',
+            name: 'Vimeo Embed',
+            description:
+              'Embed a Vimeo video using a link or video ID. Supports privacy settings and player customization.',
+            example: 'Show a Vimeo-hosted lecture in your course module.',
+            icon: 'Vimeo',
+            comingSoon: false,
+          },
+          {
+            id: 'twitch_embed',
+            name: 'Twitch Embed',
+            description:
+              'Embed live or recorded Twitch streams for interactive learning experiences.',
+            example: 'Embed a coding livestream or recorded session for learners to follow along.',
+            icon: 'Twitch',
+            comingSoon: true,
+          },
+        ],
+      },
+      {
+        id: 'social_embeds',
+        name: 'Social Media Embeds',
+        description:
+          'Embed interactive media from social platforms like Instagram, TikTok, or Twitter.',
+        icon: 'Share',
+        pluginTypes: [
+          {
+            id: 'instagram_embed',
+            name: 'Instagram Embed',
+            description: 'Embed Instagram posts, reels, or IGTV videos directly into lessons.',
+            example: 'Show a relevant Instagram reel to support the lesson content.',
+            icon: 'Instagram',
+            comingSoon: true,
+          },
+          {
+            id: 'tiktok_embed',
+            name: 'TikTok Embed',
+            description:
+              'Embed TikTok videos to demonstrate trends or bite-sized learning content.',
+            example: 'Embed a short tutorial or learning clip from TikTok.',
+            icon: 'Tiktok',
+            comingSoon: true,
+          },
+        ],
+      },
+    ],
+  },
+  {
     id: 'media_interaction',
     name: 'Media Interaction',
     description: 'Plugins for adding interactive and engaging visual elements',
