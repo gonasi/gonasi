@@ -1,9 +1,9 @@
 import { useCallback, useMemo, useState } from 'react';
 
 import {
+  type CardSchemaTypes,
   SwipeCategorizeInteractionSchema,
   type SwipeCategorizeInteractionSchemaTypes,
-  type CardSchemaTypes,
 } from '@gonasi/schemas/plugins';
 
 import { calculateSwipeCategorizeScore } from '../utils';

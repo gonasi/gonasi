@@ -215,20 +215,30 @@ export function ViewSwipeCategorizePlugin({ blockWithProgress }: ViewPluginCompo
             <CategoryLabels leftLabel={leftLabel} rightLabel={rightLabel} dragOffset={dragOffset} />
 
             {/* Card Stack */}
-            <div className='relative mx-auto flex min-h-[400px] w-full max-w-md items-center justify-center'>
-              {currentCard ? (
-                <SwipeCard
-                  ref={cardRef}
-                  content={currentCard.content}
-                  onSwipeLeft={swipeLeft}
-                  onSwipeRight={swipeRight}
-                  onWrongSwipe={handleWrongSwipe}
-                  dragEnabled={canInteract}
-                  cardNumber={state.currentCardIndex + 1}
-                  totalCards={processedCards.length}
-                  correctCategory={currentCard.correctCategory}
-                  disabledDirection={blockedDirection}
-                />
+            <div className='relative mx-auto grid h-[500px] w-full place-items-center'>
+              {processedCards.length > 0 ? (
+                (() => {
+                  const remainingCards = processedCards.slice(state.currentCardIndex);
+                  // Render cards in order: back cards first, front card last (highest z-index)
+                  return remainingCards.map((card, index) => {
+                    const isFront = index === 0;
+                    return (
+                      <SwipeCard
+                        key={card.id}
+                        ref={isFront ? cardRef : null}
+                        content={card.content}
+                        onSwipeLeft={swipeLeft}
+                        onSwipeRight={swipeRight}
+                        onWrongSwipe={handleWrongSwipe}
+                        dragEnabled={canInteract}
+                        correctCategory={card.correctCategory}
+                        disabledDirection={blockedDirection}
+                        isFront={isFront}
+                        stackIndex={index}
+                      />
+                    );
+                  });
+                })()
               ) : (
                 <div className='text-muted-foreground text-center'>No cards available</div>
               )}
