@@ -1,5 +1,6 @@
 import * as React from 'react';
 import useEmblaCarousel, { type UseEmblaCarouselType } from 'embla-carousel-react';
+import { motion } from 'framer-motion';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 
 import { Button } from '~/components/ui/button';
@@ -189,13 +190,62 @@ function CarouselPrevious({
   );
 }
 
+interface CarouselNextProps extends React.ComponentProps<typeof Button> {
+  shouldNudge?: boolean;
+  customDisabled?: boolean;
+}
+
 function CarouselNext({
   className,
   variant = 'ghost',
   size = 'icon',
+  shouldNudge = false,
+  customDisabled = false,
   ...props
-}: React.ComponentProps<typeof Button>) {
+}: CarouselNextProps) {
   const { orientation, scrollNext, canScrollNext } = useCarousel();
+  const isDisabled = !canScrollNext || customDisabled;
+
+  if (shouldNudge && canScrollNext) {
+    return (
+      <motion.div
+        className={cn(
+          'absolute',
+          orientation === 'horizontal'
+            ? 'top-1/2 -right-2 -translate-y-1/2 md:-right-4'
+            : '-bottom-12 left-1/2 -translate-x-1/2',
+        )}
+        animate={{
+          scale: [1, 1.15, 1],
+          x: [0, 5, 0],
+        }}
+        transition={{
+          duration: 1.2,
+          repeat: Infinity,
+          repeatDelay: 0.5,
+          ease: 'easeInOut',
+        }}
+      >
+        <Button
+          data-slot='carousel-next'
+          variant={variant}
+          size={size}
+          className={cn(
+            'bg-background size-8 rounded-full',
+            orientation === 'vertical' && 'rotate-90',
+            shouldNudge && 'ring-primary/50 shadow-primary/20 shadow-lg ring-2',
+            className,
+          )}
+          disabled={isDisabled}
+          onClick={scrollNext}
+          {...props}
+        >
+          <ArrowRight />
+          <span className='sr-only'>Next slide</span>
+        </Button>
+      </motion.div>
+    );
+  }
 
   return (
     <Button
@@ -207,10 +257,10 @@ function CarouselNext({
         orientation === 'horizontal'
           ? 'top-1/2 -right-4 -translate-y-1/2'
           : '-bottom-12 left-1/2 -translate-x-1/2 rotate-90',
-        !canScrollNext && 'hidden hover:cursor-not-allowed',
+        isDisabled && 'hidden hover:cursor-not-allowed',
         className,
       )}
-      disabled={!canScrollNext}
+      disabled={isDisabled}
       onClick={scrollNext}
       {...props}
     >

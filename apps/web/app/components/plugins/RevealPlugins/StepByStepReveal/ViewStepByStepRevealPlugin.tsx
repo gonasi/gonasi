@@ -133,17 +133,53 @@ export function ViewStepByStepRevealPlugin({ blockWithProgress }: ViewPluginComp
     });
   }, [api]);
 
-  const renderCard = (card: StepByStepRevealCardSchemaTypes) => (
-    <TapToRevealCard
-      key={card.id}
-      cardId={card.id}
-      isRevealed={isCardRevealed(card.id)}
-      canReveal={currentCard?.id === card.id}
-      onReveal={revealCard}
-      front={<RichTextRenderer editorState={card.frontContent} />}
-      back={<RichTextRenderer editorState={card.backContent} />}
-    />
-  );
+  // Calculate if all visible cards on current slide are revealed
+  const allVisibleCardsRevealed = useMemo(() => {
+    if (!api) return false;
+
+    const currentSlideIndex = current - 1; // Convert to 0-indexed
+    const startIndex = currentSlideIndex * itemsPerSlide;
+    const endIndex = Math.min(startIndex + itemsPerSlide, cardsOptions.length);
+
+    const visibleCards = cardsOptions.slice(startIndex, endIndex);
+    return visibleCards.every((card) => isCardRevealed(card.id));
+  }, [api, current, itemsPerSlide, cardsOptions, isCardRevealed]);
+
+  // Determine if we should nudge the next arrow
+  const shouldNudgeNext = useMemo(() => {
+    if (!api) return false;
+    const canGoNext = api.canScrollNext();
+    return allVisibleCardsRevealed && canGoNext && !isCompleted;
+  }, [api, allVisibleCardsRevealed, isCompleted]);
+
+  // Get unrevealed card IDs on the current slide for flashing
+  const unrevealedCardsOnCurrentSlide = useMemo(() => {
+    if (!api) return new Set<string>();
+
+    const currentSlideIndex = current - 1;
+    const startIndex = currentSlideIndex * itemsPerSlide;
+    const endIndex = Math.min(startIndex + itemsPerSlide, cardsOptions.length);
+
+    const visibleCards = cardsOptions.slice(startIndex, endIndex);
+    return new Set(visibleCards.filter((card) => !isCardRevealed(card.id)).map((card) => card.id));
+  }, [api, current, itemsPerSlide, cardsOptions, isCardRevealed]);
+
+  const renderCard = (card: StepByStepRevealCardSchemaTypes) => {
+    const shouldFlash = unrevealedCardsOnCurrentSlide.has(card.id) && !isCompleted;
+
+    return (
+      <TapToRevealCard
+        key={card.id}
+        cardId={card.id}
+        isRevealed={isCardRevealed(card.id)}
+        canReveal={currentCard?.id === card.id}
+        onReveal={revealCard}
+        front={<RichTextRenderer editorState={card.frontContent} />}
+        back={<RichTextRenderer editorState={card.backContent} />}
+        shouldFlash={shouldFlash}
+      />
+    );
+  };
 
   return (
     <ViewPluginWrapper
@@ -194,7 +230,10 @@ export function ViewStepByStepRevealPlugin({ blockWithProgress }: ViewPluginComp
                   })}
                 </CarouselContent>
                 <CarouselPrevious />
-                <CarouselNext />
+                <CarouselNext
+                  shouldNudge={shouldNudgeNext}
+                  customDisabled={!allVisibleCardsRevealed}
+                />
               </Carousel>
               <SlideIndicator current={current} count={count} />
             </div>
