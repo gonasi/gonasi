@@ -78,15 +78,8 @@ export function ViewVimeoEmbedPlugin({ blockWithProgress }: ViewPluginComponentP
   // Use the most recent data
   const currentInteractionData = parsedPayloadData || initialInteractionData;
 
-  const {
-    state,
-    setPlayer,
-    handlePlay,
-    handlePause,
-    handleEnded,
-    playerRef,
-    isPlayingRef,
-  } = useVimeoEmbedInteraction(currentInteractionData, videoId || '');
+  const { state, setPlayer, handlePlay, handlePause, handleEnded, playerRef, isPlayingRef } =
+    useVimeoEmbedInteraction(currentInteractionData, videoId || '');
 
   // Store the initial duration flag
   const durationSetRef = useRef(false);
@@ -187,11 +180,9 @@ export function ViewVimeoEmbedPlugin({ blockWithProgress }: ViewPluginComponentP
             .getCurrentTime()
             .then((currentTime) => {
               if (currentTime > state.furthestWatchedSeconds + 1) {
-                playerRef.current
-                  ?.setCurrentTime(state.furthestWatchedSeconds)
-                  .catch((error) => {
-                    console.error('Error preventing seek:', error);
-                  });
+                playerRef.current?.setCurrentTime(state.furthestWatchedSeconds).catch((error) => {
+                  console.error('Error preventing seek:', error);
+                });
               }
             })
             .catch((error) => {
@@ -241,15 +232,17 @@ export function ViewVimeoEmbedPlugin({ blockWithProgress }: ViewPluginComponentP
           style={{ aspectRatio: '16/9' }}
         />
 
-        {/* Continue button - show only when not completed */}
-        {!blockWithProgress.block_progress?.is_completed && (
-          <BlockActionButton
-            onClick={handleContinue}
-            loading={loading}
-            isLastBlock={is_last_block}
-            disabled={mode === 'preview'}
-          />
-        )}
+        {/* Continue button - show only when not completed and user has played the video */}
+        {!blockWithProgress.block_progress?.is_completed &&
+          mode === 'play' &&
+          state.playCount > 0 && (
+            <BlockActionButton
+              onClick={handleContinue}
+              loading={loading}
+              isLastBlock={is_last_block}
+              disabled={false}
+            />
+          )}
       </div>
     </ViewPluginWrapper>
   );
