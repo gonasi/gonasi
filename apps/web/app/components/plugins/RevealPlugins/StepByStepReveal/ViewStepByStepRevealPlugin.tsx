@@ -61,57 +61,29 @@ export function ViewStepByStepRevealPlugin({ blockWithProgress }: ViewPluginComp
     mode === 'play' ? { progress: blockWithProgress.block_progress, blockWithProgress } : null,
   );
 
-  // Extract interaction data from DB - this is the key change
   const initialInteractionData: StepByStepRevealInteractionType | null = useMemo(() => {
     if (mode === 'preview') return null;
 
-    // Get interaction data from the database via block progress
     const dbInteractionData = blockWithProgress.block_progress?.interaction_data;
-
     return isStepByStepRevealInteraction(dbInteractionData) ? dbInteractionData : null;
   }, [blockWithProgress.block_progress?.interaction_data, mode]);
 
-  // Also get the current selected option from payload if available
   const parsedPayloadData: StepByStepRevealInteractionType | null = useMemo(() => {
     const data = payload?.interaction_data;
     return isStepByStepRevealInteraction(data) ? data : null;
   }, [payload?.interaction_data]);
 
-  // Use the most recent data (payload takes precedence over initial DB data)
   const currentInteractionData = parsedPayloadData || initialInteractionData;
 
   const cardsOptions = useMemo(() => {
     return randomization === 'shuffle' ? shuffleArray(cards) : cards;
   }, [cards, randomization]);
 
-  const {
-    state,
-
-    // Derived state
-    isCompleted,
-    currentCardIndex,
-    currentCard,
-    nextCard,
-    previousCard,
-    progress,
-    revealedCardIds,
-    canRevealNext,
-    canGoBack,
-
-    // Actions
-    revealCard,
-    revealNext,
-    reset,
-
-    // Helpers
-    isCardRevealed,
-    getCardRevealTime,
-    getRevealedCards,
-  } = useStepByStepRevealInteraction(currentInteractionData, cardsOptions);
+  const { state, isCompleted, currentCard, revealCard, reset, isCardRevealed } =
+    useStepByStepRevealInteraction(currentInteractionData, cardsOptions);
 
   useEffect(() => {
     if (mode === 'play') {
-      console.log('Updating interaction data:', state); // Debug log
       updateInteractionData({ ...state });
     }
   }, [mode, state, updateInteractionData]);
@@ -199,7 +171,6 @@ export function ViewStepByStepRevealPlugin({ blockWithProgress }: ViewPluginComp
           {!cardsOptions || cardsOptions.length === 0 ? (
             <NotFoundCard message='No cards found' />
           ) : cardsOptions.length === 1 && cardsOptions[0] ? (
-            // Single card - use same hook-based approach
             <div className='flex w-full items-center justify-center'>
               {renderCard(cardsOptions[0])}
             </div>
