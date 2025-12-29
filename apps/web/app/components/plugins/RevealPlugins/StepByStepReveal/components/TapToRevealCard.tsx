@@ -23,6 +23,7 @@ interface TapToRevealProps {
   isRevealed: boolean;
   canReveal: boolean; // Can this card be revealed right now?
   onReveal: (cardId: string) => void;
+  shouldFlash?: boolean; // Flash to draw attention
 }
 
 export function TapToRevealCard({
@@ -32,6 +33,7 @@ export function TapToRevealCard({
   isRevealed,
   canReveal,
   onReveal,
+  shouldFlash = false,
 }: TapToRevealProps) {
   const [isFlipped, setIsFlipped] = useState(false);
 
@@ -106,12 +108,48 @@ export function TapToRevealCard({
             ? 'border-success/20 from-success/5 to-muted/20 bg-gradient-to-br'
             : 'border-input from-background to-muted/30 bg-gradient-to-br',
         )}
-        animate={{ rotateY: isFlipped ? 180 : 0 }}
-        transition={{
-          type: 'spring',
-          stiffness: 120, // Reduced from 200 for slower animation
-          damping: 25, // Increased from 20 for smoother motion
-        }}
+        animate={
+          isFlipped
+            ? { rotateY: 180 }
+            : shouldFlash && canReveal && !isRevealed
+              ? {
+                  rotateY: 0,
+                  borderColor: ['hsl(var(--input))', 'hsl(var(--primary))', 'hsl(var(--input))'],
+                  boxShadow: [
+                    '0 0 0 0 rgba(59, 130, 246, 0)',
+                    '0 0 0 4px rgba(59, 130, 246, 0.3)',
+                    '0 0 0 0 rgba(59, 130, 246, 0)',
+                  ],
+                }
+              : { rotateY: 0 }
+        }
+        transition={
+          shouldFlash && canReveal && !isRevealed
+            ? {
+                rotateY: {
+                  type: 'spring',
+                  stiffness: 120,
+                  damping: 25,
+                },
+                borderColor: {
+                  duration: 1.5,
+                  repeat: Infinity,
+                  repeatDelay: 0.5,
+                  ease: 'easeInOut',
+                },
+                boxShadow: {
+                  duration: 1.5,
+                  repeat: Infinity,
+                  repeatDelay: 0.5,
+                  ease: 'easeInOut',
+                },
+              }
+            : {
+                type: 'spring',
+                stiffness: 120,
+                damping: 25,
+              }
+        }
         style={{
           transformStyle: 'preserve-3d',
           backfaceVisibility: 'hidden',
@@ -119,7 +157,7 @@ export function TapToRevealCard({
       >
         <EyeOff
           className={cn(
-            'absolute -top-2 -right-2 h-6 w-6 rounded-full border p-1',
+            'absolute -top-2 -right-0 h-6 w-6 rounded-full border p-1',
             isRevealed
               ? 'border-success/30 bg-success/10 text-success/60'
               : 'border-input bg-background/80 text-muted-foreground',
@@ -152,7 +190,7 @@ export function TapToRevealCard({
       >
         <Eye
           className={cn(
-            'absolute -top-2 -left-2 h-6 w-6 rounded-full border p-1',
+            'absolute -top-2 -left-0 h-6 w-6 rounded-full border p-1',
             isRevealed
               ? 'border-success/50 bg-success/20 text-success'
               : 'border-input bg-background/80 text-foreground',

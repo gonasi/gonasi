@@ -126,7 +126,7 @@ export function ReviewCarousel({ cards, state, leftLabel, rightLabel }: ReviewCa
                   )}
                 </div>
               </div>
-              <div className='bg-card border-border relative flex min-h-[300px] w-60 flex-col rounded-2xl border-2 p-4'>
+              <div className='bg-card border-border relative flex h-96 w-72 flex-col rounded-2xl border-2 p-4'>
                 {/* Card Content */}
                 <div className='flex flex-1 items-center justify-center overflow-y-auto'>
                   <RichTextRenderer editorState={result.card.content} />

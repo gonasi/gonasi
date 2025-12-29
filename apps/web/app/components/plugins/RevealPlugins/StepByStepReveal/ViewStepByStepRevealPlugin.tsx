@@ -61,57 +61,29 @@ export function ViewStepByStepRevealPlugin({ blockWithProgress }: ViewPluginComp
     mode === 'play' ? { progress: blockWithProgress.block_progress, blockWithProgress } : null,
   );
 
-  // Extract interaction data from DB - this is the key change
   const initialInteractionData: StepByStepRevealInteractionType | null = useMemo(() => {
     if (mode === 'preview') return null;
 
-    // Get interaction data from the database via block progress
     const dbInteractionData = blockWithProgress.block_progress?.interaction_data;
-
     return isStepByStepRevealInteraction(dbInteractionData) ? dbInteractionData : null;
   }, [blockWithProgress.block_progress?.interaction_data, mode]);
 
-  // Also get the current selected option from payload if available
   const parsedPayloadData: StepByStepRevealInteractionType | null = useMemo(() => {
     const data = payload?.interaction_data;
     return isStepByStepRevealInteraction(data) ? data : null;
   }, [payload?.interaction_data]);
 
-  // Use the most recent data (payload takes precedence over initial DB data)
   const currentInteractionData = parsedPayloadData || initialInteractionData;
 
   const cardsOptions = useMemo(() => {
     return randomization === 'shuffle' ? shuffleArray(cards) : cards;
   }, [cards, randomization]);
 
-  const {
-    state,
-
-    // Derived state
-    isCompleted,
-    currentCardIndex,
-    currentCard,
-    nextCard,
-    previousCard,
-    progress,
-    revealedCardIds,
-    canRevealNext,
-    canGoBack,
-
-    // Actions
-    revealCard,
-    revealNext,
-    reset,
-
-    // Helpers
-    isCardRevealed,
-    getCardRevealTime,
-    getRevealedCards,
-  } = useStepByStepRevealInteraction(currentInteractionData, cardsOptions);
+  const { state, isCompleted, currentCard, revealCard, reset, isCardRevealed } =
+    useStepByStepRevealInteraction(currentInteractionData, cardsOptions);
 
   useEffect(() => {
     if (mode === 'play') {
-      console.log('Updating interaction data:', state); // Debug log
       updateInteractionData({ ...state });
     }
   }, [mode, state, updateInteractionData]);
@@ -133,17 +105,53 @@ export function ViewStepByStepRevealPlugin({ blockWithProgress }: ViewPluginComp
     });
   }, [api]);
 
-  const renderCard = (card: StepByStepRevealCardSchemaTypes) => (
-    <TapToRevealCard
-      key={card.id}
-      cardId={card.id}
-      isRevealed={isCardRevealed(card.id)}
-      canReveal={currentCard?.id === card.id}
-      onReveal={revealCard}
-      front={<RichTextRenderer editorState={card.frontContent} />}
-      back={<RichTextRenderer editorState={card.backContent} />}
-    />
-  );
+  // Calculate if all visible cards on current slide are revealed
+  const allVisibleCardsRevealed = useMemo(() => {
+    if (!api) return false;
+
+    const currentSlideIndex = current - 1; // Convert to 0-indexed
+    const startIndex = currentSlideIndex * itemsPerSlide;
+    const endIndex = Math.min(startIndex + itemsPerSlide, cardsOptions.length);
+
+    const visibleCards = cardsOptions.slice(startIndex, endIndex);
+    return visibleCards.every((card) => isCardRevealed(card.id));
+  }, [api, current, itemsPerSlide, cardsOptions, isCardRevealed]);
+
+  // Determine if we should nudge the next arrow
+  const shouldNudgeNext = useMemo(() => {
+    if (!api) return false;
+    const canGoNext = api.canScrollNext();
+    return allVisibleCardsRevealed && canGoNext && !isCompleted;
+  }, [api, allVisibleCardsRevealed, isCompleted]);
+
+  // Get unrevealed card IDs on the current slide for flashing
+  const unrevealedCardsOnCurrentSlide = useMemo(() => {
+    if (!api) return new Set<string>();
+
+    const currentSlideIndex = current - 1;
+    const startIndex = currentSlideIndex * itemsPerSlide;
+    const endIndex = Math.min(startIndex + itemsPerSlide, cardsOptions.length);
+
+    const visibleCards = cardsOptions.slice(startIndex, endIndex);
+    return new Set(visibleCards.filter((card) => !isCardRevealed(card.id)).map((card) => card.id));
+  }, [api, current, itemsPerSlide, cardsOptions, isCardRevealed]);
+
+  const renderCard = (card: StepByStepRevealCardSchemaTypes) => {
+    const shouldFlash = unrevealedCardsOnCurrentSlide.has(card.id) && !isCompleted;
+
+    return (
+      <TapToRevealCard
+        key={card.id}
+        cardId={card.id}
+        isRevealed={isCardRevealed(card.id)}
+        canReveal={currentCard?.id === card.id}
+        onReveal={revealCard}
+        front={<RichTextRenderer editorState={card.frontContent} />}
+        back={<RichTextRenderer editorState={card.backContent} />}
+        shouldFlash={shouldFlash}
+      />
+    );
+  };
 
   return (
     <ViewPluginWrapper
@@ -163,7 +171,6 @@ export function ViewStepByStepRevealPlugin({ blockWithProgress }: ViewPluginComp
           {!cardsOptions || cardsOptions.length === 0 ? (
             <NotFoundCard message='No cards found' />
           ) : cardsOptions.length === 1 && cardsOptions[0] ? (
-            // Single card - use same hook-based approach
             <div className='flex w-full items-center justify-center'>
               {renderCard(cardsOptions[0])}
             </div>
@@ -194,7 +201,10 @@ export function ViewStepByStepRevealPlugin({ blockWithProgress }: ViewPluginComp
                   })}
                 </CarouselContent>
                 <CarouselPrevious />
-                <CarouselNext />
+                <CarouselNext
+                  shouldNudge={shouldNudgeNext}
+                  customDisabled={!allVisibleCardsRevealed}
+                />
               </Carousel>
               <SlideIndicator current={current} count={count} />
             </div>
