@@ -281,23 +281,25 @@ export function ViewSwipeCategorizePlugin({ blockWithProgress }: ViewPluginCompo
               />
             </div>
             {/* Completion Feedback */}
-            <RenderFeedback
-              color='success'
-              icon={<PartyPopper />}
-              label='All cards categorized!'
-              score={score}
-              hasBeenPlayed={blockWithProgress.block_progress?.is_completed}
-              actions={
-                !blockWithProgress.block_progress?.is_completed && (
-                  <BlockActionButton
-                    onClick={handleContinue}
-                    loading={loading}
-                    isLastBlock={is_last_block}
-                    disabled={mode === 'preview'}
-                  />
-                )
-              }
-            />
+            <div className='mb-4'>
+              <RenderFeedback
+                color='success'
+                icon={<PartyPopper />}
+                label='All cards categorized!'
+                score={score}
+                hasBeenPlayed={blockWithProgress.block_progress?.is_completed}
+                actions={
+                  !blockWithProgress.block_progress?.is_completed && (
+                    <BlockActionButton
+                      onClick={handleContinue}
+                      loading={loading}
+                      isLastBlock={is_last_block}
+                      disabled={mode === 'preview'}
+                    />
+                  )
+                }
+              />
+            </div>
           </>
         )}
       </PlayPluginWrapper>
