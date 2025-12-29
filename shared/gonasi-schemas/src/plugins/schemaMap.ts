@@ -8,7 +8,10 @@ import {
   MultipleChoiceSingleAnswerInteractionSchema,
   RichTextStateInteractionSchema,
   StepByStepRevealInteractionSchema,
+  SwipeCategorizeInteractionSchema,
   TrueOrFalseStateInteractionSchema,
+  VideoPlayerInteractionSchema,
+  YoutubeEmbedInteractionSchema,
 } from './interactions';
 import {
   FillInTheBlankSchema,
@@ -18,7 +21,10 @@ import {
   MultipleChoiceSingleAnswerSchema,
   RichTextSchema,
   StepByStepRevealSchema,
+  SwipeCategorizeSchema,
   TrueOrFalseSchema,
+  VideoPlayerSchema,
+  YoutubeEmbedSchema,
 } from './schemas';
 
 // Type that represents all possible plugin identifiers
@@ -31,8 +37,11 @@ export const BuilderSchema = z.discriminatedUnion('plugin_type', [
   MultipleChoiceSingleAnswerSchema,
   MultipleChoiceMultipleAnswersSchema,
   MatchingGameSchema,
+  SwipeCategorizeSchema,
   GuidedImageHotspotSchema,
   StepByStepRevealSchema,
+  VideoPlayerSchema,
+  YoutubeEmbedSchema,
 ]);
 export type BuilderSchemaTypes = z.infer<typeof BuilderSchema>;
 
@@ -44,8 +53,11 @@ export const BlockInteractionSchema = z.discriminatedUnion('plugin_type', [
   MultipleChoiceSingleAnswerInteractionSchema,
   MultipleChoiceMultipleAnswersInteractionSchema,
   MatchingGameInteractionSchema,
+  SwipeCategorizeInteractionSchema,
   GuidedImageHotspotsInteractionSchema,
   StepByStepRevealInteractionSchema,
+  VideoPlayerInteractionSchema,
+  YoutubeEmbedInteractionSchema,
 ]);
 export type BlockInteractionSchemaTypes = z.infer<typeof BlockInteractionSchema>;
 
@@ -63,8 +75,11 @@ const PublishedMultipleChoiceSingleAnswerSchema =
 const PublishedMultipleChoiceMultipleAnswersSchema =
   MultipleChoiceMultipleAnswersSchema.merge(PublishedFields);
 const PublishedMatchingGameSchema = MatchingGameSchema.merge(PublishedFields);
+const PublishedSwipeCategorizeSchema = SwipeCategorizeSchema.merge(PublishedFields);
 const PublishedGuidedImageHotspotsSchema = GuidedImageHotspotSchema.merge(PublishedFields);
 const PublishedStepByStepRevealSchema = StepByStepRevealSchema.merge(PublishedFields);
+const PublishedVideoPlayerSchema = VideoPlayerSchema.merge(PublishedFields);
+const PublishedYoutubeEmbedSchema = YoutubeEmbedSchema.merge(PublishedFields);
 
 export const PublishedBuilderSchema = z.discriminatedUnion('plugin_type', [
   PublishedRichTextSchema,
@@ -73,7 +88,10 @@ export const PublishedBuilderSchema = z.discriminatedUnion('plugin_type', [
   PublishedMultipleChoiceSingleAnswerSchema,
   PublishedMultipleChoiceMultipleAnswersSchema,
   PublishedMatchingGameSchema,
+  PublishedSwipeCategorizeSchema,
   PublishedGuidedImageHotspotsSchema,
   PublishedStepByStepRevealSchema,
+  PublishedVideoPlayerSchema,
+  PublishedYoutubeEmbedSchema,
 ]);
 export type PublishedBuilderSchemaTypes = z.infer<typeof PublishedBuilderSchema>;

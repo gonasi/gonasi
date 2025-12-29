@@ -101,6 +101,14 @@ export const ALL_PLUGINS = [
             icon: 'ArrowLeftRight',
             comingSoon: false,
           },
+          {
+            id: 'swipe_categorize',
+            name: 'Swipe Categorize',
+            description: 'Swipe cards left or right to sort items into two categories.',
+            example: 'Sort statements as true or false by swiping.',
+            icon: 'SwipeLeft',
+            comingSoon: false,
+          },
         ],
       },
       {
@@ -172,7 +180,7 @@ export const ALL_PLUGINS = [
             description: 'Embed and play videos with interactive features.',
             example: 'Show a tutorial video with pause and play controls.',
             icon: 'VideoPlayer',
-            comingSoon: true,
+            comingSoon: false,
           },
           {
             id: 'audio_player',
@@ -188,6 +196,74 @@ export const ALL_PLUGINS = [
             description: 'Display slideshows with images and text.',
             example: 'Show a presentation in a slideshow format.',
             icon: 'SlideshowPlayer',
+            comingSoon: true,
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'embeddable_media',
+    name: 'Embeddable Media Plugins',
+    description: 'Plugins for embedding external media from popular platforms',
+    pluginGroups: [
+      {
+        id: 'video_embeds',
+        name: 'Video Embed Plugins',
+        description: 'Embed videos from platforms like YouTube and Vimeo directly into lessons.',
+        icon: 'Video',
+        pluginTypes: [
+          {
+            id: 'youtube_embed',
+            name: 'YouTube Embed',
+            description:
+              'Embed a YouTube video using a link or video ID. Supports autoplay, captions, and playback controls.',
+            example: 'Embed a YouTube tutorial directly in the lesson.',
+            icon: 'Youtube',
+            comingSoon: false,
+          },
+          {
+            id: 'vimeo_embed',
+            name: 'Vimeo Embed',
+            description:
+              'Embed a Vimeo video using a link or video ID. Supports privacy settings and player customization.',
+            example: 'Show a Vimeo-hosted lecture in your course module.',
+            icon: 'Vimeo',
+            comingSoon: false,
+          },
+          {
+            id: 'twitch_embed',
+            name: 'Twitch Embed',
+            description:
+              'Embed live or recorded Twitch streams for interactive learning experiences.',
+            example: 'Embed a coding livestream or recorded session for learners to follow along.',
+            icon: 'Twitch',
+            comingSoon: true,
+          },
+        ],
+      },
+      {
+        id: 'social_embeds',
+        name: 'Social Media Embeds',
+        description:
+          'Embed interactive media from social platforms like Instagram, TikTok, or Twitter.',
+        icon: 'Share',
+        pluginTypes: [
+          {
+            id: 'instagram_embed',
+            name: 'Instagram Embed',
+            description: 'Embed Instagram posts, reels, or IGTV videos directly into lessons.',
+            example: 'Show a relevant Instagram reel to support the lesson content.',
+            icon: 'Instagram',
+            comingSoon: true,
+          },
+          {
+            id: 'tiktok_embed',
+            name: 'TikTok Embed',
+            description:
+              'Embed TikTok videos to demonstrate trends or bite-sized learning content.',
+            example: 'Embed a short tutorial or learning clip from TikTok.',
+            icon: 'Tiktok',
             comingSoon: true,
           },
         ],

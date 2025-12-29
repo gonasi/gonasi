@@ -4,5 +4,8 @@ export * from './fillInTheBlankInteractionSchema';
 export * from './multipleChoiceSingleAnswerInteractionSchema';
 export * from './multipleChoiceMultipleAnswersInteractionSchema';
 export * from './matchingGameInteractionSchema';
+export * from './swipeCategorizeInteractionSchema';
 export * from './guidedImageHotspotsInteractionSchema';
 export * from './stepByStepRevealInteractionSchema';
+export * from './videoPlayerInteractionSchema';
+export * from './youtubeEmbedInteractionSchema';

@@ -7,9 +7,12 @@ import { ViewFillInTheBlankPlugin } from '../QuizPlugins/FillInTheBlankPlugin/Vi
 import { ViewMatchingGamePlugin } from '../QuizPlugins/MatchingGamePlugin/ViewMatchingGamePlugin';
 import { ViewMultipleChoiceMultipleAnswersPlugin } from '../QuizPlugins/MultipleChoiceMultipleAnswers/ViewMultipleChoiceMultipleAnswersPlugin';
 import { ViewMultipleChoiceSingleAnswerPlugin } from '../QuizPlugins/MultipleChoiceSingleAnswer/ViewMultipleChoiceSingleAnswerPlugin';
+import { ViewSwipeCategorizePlugin } from '../QuizPlugins/SwipeCategorizePlugin/ViewSwipeCategorizePlugin';
 import { ViewTrueOrFalsePlugin } from '../QuizPlugins/TrueOrFalsePlugin/ViewTrueOrFalsePlugin';
 import { ViewStepByStepRevealPlugin } from '../RevealPlugins/StepByStepReveal/ViewStepByStepRevealPlugin';
 import { ViewRichTextPlugin } from '../RichTextPlugins/RichTextPlugin/ViewRichTextPlugin';
+import { ViewVideoPlayerPlugin } from '../MediaPlayerPlugins/VideoPlayerPlugin/ViewVideoPlayerPlugin';
+import { ViewYouTubeEmbedPlugin } from '../MediaPlayerPlugins/YouTubeEmbedPlugin/ViewYouTubeEmbedPlugin';
 
 export interface ViewPluginComponentProps {
   blockWithProgress: BlockWithProgressSchemaTypes;
@@ -29,6 +32,7 @@ const viewPluginComponentMap: Record<
   multiple_choice_multiple: ViewMultipleChoiceMultipleAnswersPlugin,
   multiple_choice_single: ViewMultipleChoiceSingleAnswerPlugin,
   matching_game: ViewMatchingGamePlugin,
+  swipe_categorize: ViewSwipeCategorizePlugin,
   guided_image_hotspots: unimplementedPlugin,
   hotspot_identification_question: unimplementedPlugin,
   match_concepts: unimplementedPlugin,
@@ -40,9 +44,14 @@ const viewPluginComponentMap: Record<
   historical_events: unimplementedPlugin,
   project_milestones: unimplementedPlugin,
   step_by_step_reveal: ViewStepByStepRevealPlugin,
-  video_player: unimplementedPlugin,
+  video_player: ViewVideoPlayerPlugin,
   audio_player: unimplementedPlugin,
   slideshow_player: unimplementedPlugin,
+  youtube_embed: ViewYouTubeEmbedPlugin,
+  vimeo_embed: unimplementedPlugin,
+  twitch_embed: unimplementedPlugin,
+  instagram_embed: unimplementedPlugin,
+  tiktok_embed: unimplementedPlugin,
   motion_simulation: unimplementedPlugin,
   gravity_simulation: unimplementedPlugin,
 };

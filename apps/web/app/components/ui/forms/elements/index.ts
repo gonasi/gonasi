@@ -15,3 +15,4 @@ export * from './GoLexicalInputField';
 export * from './GoChoiceField';
 export * from './GoMatchingPairField';
 export * from './GoStepByStepRevealField';
+export * from './GoCardField';

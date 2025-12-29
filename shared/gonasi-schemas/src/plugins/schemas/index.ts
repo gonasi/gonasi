@@ -4,5 +4,8 @@ export * from './fillInTheBlank';
 export * from './multipleChoiceSingleAnswer';
 export * from './multipleChoiceMultipleAnswers';
 export * from './matchingGame';
+export * from './swipeCategorize';
 export * from './mediaInteraction';
 export * from './stepByStepReveal';
+export * from './videoPlayer';
+export * from './youtubeEmbed';
