@@ -13,6 +13,7 @@ import { useViewPluginCore } from '../../hooks/useViewPluginCore';
 import type { ViewPluginComponentProps } from '../../PluginRenderers/ViewPluginTypesRenderer';
 import { shuffleArray } from '../../utils';
 
+import optionTapSound from '/assets/sounds/options-button.wav';
 import rightAnswerSound from '/assets/sounds/right-answer.mp3';
 import wrongAnswerSound from '/assets/sounds/wrong-answer.mp3';
 import RichTextRenderer from '~/components/go-editor/ui/RichTextRenderer';
@@ -30,6 +31,12 @@ const rightAnswerHowl = new Howl({
 const wrongAnswerHowl = new Howl({
   src: [wrongAnswerSound],
   volume: 0.5,
+  preload: true,
+});
+
+const tapHowl = new Howl({
+  src: [optionTapSound],
+  volume: 0.1,
   preload: true,
 });
 
@@ -105,9 +112,12 @@ export function ViewMatchingGamePlugin({ blockWithProgress }: ViewPluginComponen
     reset,
     attemptsCount,
     isLeftItemSelected,
+    isRightItemSelected,
     isLeftItemMatched,
     isRightItemMatched,
+    isLeftItemDisabled,
     isRightItemDisabled,
+    isLeftItemWrong,
     isRightItemWrong,
   } = useMatchingGameInteraction(currentInteractionData, pairs);
 
@@ -170,10 +180,16 @@ export function ViewMatchingGamePlugin({ blockWithProgress }: ViewPluginComponen
   // Play sound effects, vibrate, and trigger nudge animations on match or wrong attempt
   useEffect(() => {
     const currentMatchedCount = state.matchedPairs.length;
-    const currentWrongAttemptsCount = state.wrongAttemptsPerLeftItem.reduce(
+    // Count wrong attempts from both directions
+    const leftToRightWrong = state.wrongAttemptsPerLeftItem.reduce(
       (sum, entry) => sum + entry.wrongRightIds.length,
       0,
     );
+    const rightToLeftWrong = state.wrongAttemptsPerRightItem.reduce(
+      (sum, entry) => sum + entry.wrongLeftIds.length,
+      0,
+    );
+    const currentWrongAttemptsCount = leftToRightWrong + rightToLeftWrong;
 
     // Correct match - play sound and trigger nudge animation
     if (currentMatchedCount > prevMatchedCountRef.current) {
@@ -227,7 +243,13 @@ export function ViewMatchingGamePlugin({ blockWithProgress }: ViewPluginComponen
     // Update refs
     prevMatchedCountRef.current = currentMatchedCount;
     prevWrongAttemptsCountRef.current = currentWrongAttemptsCount;
-  }, [state.matchedPairs, state.wrongAttemptsPerLeftItem, isSoundEnabled, isVibrationEnabled]);
+  }, [
+    state.matchedPairs,
+    state.wrongAttemptsPerLeftItem,
+    state.wrongAttemptsPerRightItem,
+    isSoundEnabled,
+    isVibrationEnabled,
+  ]);
 
   return (
     <ViewPluginWrapper
@@ -247,7 +269,7 @@ export function ViewMatchingGamePlugin({ blockWithProgress }: ViewPluginComponen
           {/* Left column */}
           <div className='space-y-2 py-2'>
             <div className='text-muted-foreground mb-2 text-xs font-medium tracking-wide uppercase'>
-              Tap to select
+              {state.selectedRightId ? 'Tap to match' : 'Tap to select'}
             </div>
             {leftItems.map((item) => (
               <MatchingItemButton
@@ -255,11 +277,23 @@ export function ViewMatchingGamePlugin({ blockWithProgress }: ViewPluginComponen
                 content={item.content}
                 isSelected={isLeftItemSelected(item.id)}
                 isMatched={isLeftItemMatched(item.id)}
-                isDisabled={!canInteract || isLeftItemMatched(item.id)}
+                isDisabled={!canInteract || isLeftItemDisabled(item.id)}
+                isWrong={isLeftItemWrong(item.id)}
                 matchColor={getItemMatchColor(item.id, true)}
-                shouldPulseSubtle={state.selectedLeftId === null && !isLeftItemMatched(item.id)}
+                shouldPulseSubtle={
+                  state.selectedLeftId === null &&
+                  state.selectedRightId === null &&
+                  !isLeftItemMatched(item.id)
+                }
+                shouldPulse={state.selectedRightId !== null && !isLeftItemMatched(item.id)}
                 shouldNudge={item.id === nudgeLeftId}
-                onClick={() => selectLeftItem(item.id)}
+                onClick={() => {
+                  const isDisabled = !canInteract || isLeftItemDisabled(item.id);
+                  if (!isDisabled && isSoundEnabled) {
+                    tapHowl.play();
+                  }
+                  selectLeftItem(item.id);
+                }}
               />
             ))}
           </div>
@@ -267,28 +301,40 @@ export function ViewMatchingGamePlugin({ blockWithProgress }: ViewPluginComponen
           {/* Right column - with subtle background for distinction */}
           <div className='space-y-2 rounded-lg border p-2 shadow-lg'>
             <div className='text-muted-foreground mb-2 text-xs font-medium tracking-wide uppercase'>
-              Tap to match
+              {state.selectedLeftId ? 'Tap to match' : 'Tap to select'}
             </div>
             {rightItems.map((item) => (
               <MatchingItemButton
                 key={item.id}
                 content={item.content}
+                isSelected={isRightItemSelected(item.id)}
                 isMatched={isRightItemMatched(item.id)}
                 isDisabled={isRightItemDisabled(item.id)}
                 isWrong={isRightItemWrong(item.id)}
                 matchColor={getItemMatchColor(item.id, false)}
+                shouldPulseSubtle={
+                  state.selectedLeftId === null &&
+                  state.selectedRightId === null &&
+                  !isRightItemMatched(item.id)
+                }
                 shouldPulse={state.selectedLeftId !== null && !isRightItemMatched(item.id)}
                 shouldNudge={item.id === nudgeRightId}
-                onClick={() => selectRightItem(item.id)}
+                onClick={() => {
+                  const isDisabled = isRightItemDisabled(item.id);
+                  if (!isDisabled && isSoundEnabled) {
+                    tapHowl.play();
+                  }
+                  selectRightItem(item.id);
+                }}
               />
             ))}
           </div>
         </div>
 
         {/* Progress Bar */}
-        <div className='mt-6 space-y-3'>
+        <div className='mt-4 mb-10 space-y-2'>
           <div className='flex items-center justify-between'>
-            <span className='text-muted-foreground text-sm font-medium'>
+            <span className='text-muted-foreground font-secondary text-sm font-medium'>
               Progress: {state.matchedPairs.length}/{pairs.length} matched
             </span>
             {attemptsCount > 0 && (
@@ -302,7 +348,7 @@ export function ViewMatchingGamePlugin({ blockWithProgress }: ViewPluginComponen
 
         {/* Completion message */}
         {isCompleted && (
-          <div className='mt-6'>
+          <div className='mb-4'>
             <RenderFeedback
               color='success'
               icon={<Check className='h-6 w-6' />}

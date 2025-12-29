@@ -109,11 +109,11 @@ export function MatchingItemButton({
       // Key changes when shouldNudge changes to force animation re-trigger
       key={shouldNudge ? 'nudging' : 'idle'}
       className={cn(
-        'flex w-full items-center justify-between gap-3 rounded-lg border-2 p-4 text-left transition-all',
-        // Base state
-        !isMatched && !isSelected && !isDisabled && 'border-border hover:border-primary hover:bg-accent/50',
+        'flex w-full items-center justify-between gap-3 rounded-lg border-2 p-4 text-left transition-all duration-200',
+        // Base state with hover cursor
+        !isMatched && !isSelected && !isDisabled && 'border-border hover:border-primary hover:bg-accent/50 hover:cursor-pointer',
         // Selected state with glow
-        isSelected && !isMatched && 'border-primary bg-primary/5 shadow-primary/20 shadow-lg',
+        isSelected && !isMatched && 'border-primary bg-primary/5 shadow-primary/20 shadow-lg hover:cursor-pointer',
         // Matched state with color (only border, no background)
         isMatched && matchColor && `${matchColor.border} cursor-not-allowed`,
         // Matched state without color (fallback)
@@ -143,6 +143,14 @@ export function MatchingItemButton({
               times: [0, 0.2, 0.4, 0.6, 0.8, 1],
             }
           : getTransitionProps()
+      }
+      whileHover={
+        !isDisabled && !isMatched
+          ? {
+              scale: 1.02,
+              boxShadow: '0 2px 6px rgba(0, 0, 0, 0.05)',
+            }
+          : {}
       }
       whileTap={!isDisabled && !isMatched ? { scale: 0.98 } : {}}
     >
