@@ -2,8 +2,8 @@ import { useCallback, useEffect, useMemo, useRef } from 'react';
 
 import type { BlockInteractionSchemaTypes, BuilderSchemaTypes } from '@gonasi/schemas/plugins';
 
-import { extractYouTubeId } from './utils/extractYouTubeId';
 import { useYouTubeEmbedInteraction } from './hooks/useYouTubeEmbedInteraction';
+import { extractYouTubeId } from './utils/extractYouTubeId';
 import { PlayPluginWrapper } from '../../common/PlayPluginWrapper';
 import { ViewPluginWrapper } from '../../common/ViewPluginWrapper';
 import { useViewPluginCore } from '../../hooks/useViewPluginCore';
@@ -51,12 +51,7 @@ export function ViewYouTubeEmbedPlugin({ blockWithProgress }: ViewPluginComponen
   const { is_last_block } = blockWithProgress;
   const { mode } = useStore();
 
-  const {
-    loading,
-    payload,
-    handleContinue,
-    updateInteractionData,
-  } = useViewPluginCore(
+  const { loading, payload, handleContinue, updateInteractionData } = useViewPluginCore(
     mode === 'play' ? { progress: blockWithProgress.block_progress, blockWithProgress } : null,
   );
 
@@ -186,7 +181,7 @@ export function ViewYouTubeEmbedPlugin({ blockWithProgress }: ViewPluginComponen
       return () => clearInterval(checkInterval);
     }
     return undefined;
-  }, [allowSeek, state.furthestWatchedSeconds]);
+  }, [allowSeek, playerRef, state.furthestWatchedSeconds]);
 
   // Update interaction data when state changes
   useEffect(() => {
@@ -197,12 +192,7 @@ export function ViewYouTubeEmbedPlugin({ blockWithProgress }: ViewPluginComponen
 
   if (!videoId) {
     return (
-      <ViewPluginWrapper
-        isComplete={false}
-        playbackMode={playbackMode}
-        mode={mode}
-        weight={weight}
-      >
+      <ViewPluginWrapper isComplete={false} playbackMode={playbackMode} mode={mode} weight={weight}>
         <PlayPluginWrapper>
           <div className='bg-muted flex aspect-video w-full items-center justify-center rounded-lg'>
             <p className='text-muted-foreground'>Invalid YouTube URL</p>
@@ -221,40 +211,24 @@ export function ViewYouTubeEmbedPlugin({ blockWithProgress }: ViewPluginComponen
       mode={mode}
       weight={weight}
     >
-      <PlayPluginWrapper>
-        <div className='w-full space-y-4'>
-          {/* YouTube Player Container */}
-          <div
-            ref={playerContainerRef}
-            className='w-full rounded-lg'
-            style={{ aspectRatio: '16/9' }}
+      <div className='w-full space-y-4 py-4'>
+        {/* YouTube Player Container */}
+        <div
+          ref={playerContainerRef}
+          className='w-full rounded-lg'
+          style={{ aspectRatio: '16/9' }}
+        />
+
+        {/* Continue button - show only when not completed */}
+        {!blockWithProgress.block_progress?.is_completed && (
+          <BlockActionButton
+            onClick={handleContinue}
+            loading={loading}
+            isLastBlock={is_last_block}
+            disabled={mode === 'preview'}
           />
-
-          {/* Analytics display */}
-          <div className='text-muted-foreground flex items-center justify-between text-sm'>
-            <div>
-              Watched: <span className='font-medium'>{completionPercentage}%</span>
-            </div>
-            <div>
-              Furthest:{' '}
-              <span className='font-medium'>{formatTime(state.furthestWatchedSeconds)}</span>
-            </div>
-            <div>
-              Plays: <span className='font-medium'>{state.playCount}</span>
-            </div>
-          </div>
-
-          {/* Continue button - show only when not completed */}
-          {!blockWithProgress.block_progress?.is_completed && (
-            <BlockActionButton
-              onClick={handleContinue}
-              loading={loading}
-              isLastBlock={is_last_block}
-              disabled={mode === 'preview'}
-            />
-          )}
-        </div>
-      </PlayPluginWrapper>
+        )}
+      </div>
     </ViewPluginWrapper>
   );
 }
