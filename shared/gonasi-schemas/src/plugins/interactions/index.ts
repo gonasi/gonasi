@@ -8,3 +8,4 @@ export * from './swipeCategorizeInteractionSchema';
 export * from './guidedImageHotspotsInteractionSchema';
 export * from './stepByStepRevealInteractionSchema';
 export * from './videoPlayerInteractionSchema';
+export * from './youtubeEmbedInteractionSchema';

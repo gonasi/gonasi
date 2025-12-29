@@ -12,6 +12,7 @@ import { ViewTrueOrFalsePlugin } from '../QuizPlugins/TrueOrFalsePlugin/ViewTrue
 import { ViewStepByStepRevealPlugin } from '../RevealPlugins/StepByStepReveal/ViewStepByStepRevealPlugin';
 import { ViewRichTextPlugin } from '../RichTextPlugins/RichTextPlugin/ViewRichTextPlugin';
 import { ViewVideoPlayerPlugin } from '../MediaPlayerPlugins/VideoPlayerPlugin/ViewVideoPlayerPlugin';
+import { ViewYouTubeEmbedPlugin } from '../MediaPlayerPlugins/YouTubeEmbedPlugin/ViewYouTubeEmbedPlugin';
 
 export interface ViewPluginComponentProps {
   blockWithProgress: BlockWithProgressSchemaTypes;
@@ -46,6 +47,11 @@ const viewPluginComponentMap: Record<
   video_player: ViewVideoPlayerPlugin,
   audio_player: unimplementedPlugin,
   slideshow_player: unimplementedPlugin,
+  youtube_embed: ViewYouTubeEmbedPlugin,
+  vimeo_embed: unimplementedPlugin,
+  twitch_embed: unimplementedPlugin,
+  instagram_embed: unimplementedPlugin,
+  tiktok_embed: unimplementedPlugin,
   motion_simulation: unimplementedPlugin,
   gravity_simulation: unimplementedPlugin,
 };

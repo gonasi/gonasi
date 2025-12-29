@@ -32,6 +32,9 @@ const pluginTypes: PluginTypeId[] = [
   'video_player',
   'audio_player',
   'slideshow_player',
+  'youtube_embed',
+  'vimeo_embed',
+  'twitch_embed',
   'motion_simulation',
   'gravity_simulation',
 ];

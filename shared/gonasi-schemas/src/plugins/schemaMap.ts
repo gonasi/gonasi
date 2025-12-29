@@ -11,6 +11,7 @@ import {
   SwipeCategorizeInteractionSchema,
   TrueOrFalseStateInteractionSchema,
   VideoPlayerInteractionSchema,
+  YoutubeEmbedInteractionSchema,
 } from './interactions';
 import {
   FillInTheBlankSchema,
@@ -23,6 +24,7 @@ import {
   SwipeCategorizeSchema,
   TrueOrFalseSchema,
   VideoPlayerSchema,
+  YoutubeEmbedSchema,
 } from './schemas';
 
 // Type that represents all possible plugin identifiers
@@ -39,6 +41,7 @@ export const BuilderSchema = z.discriminatedUnion('plugin_type', [
   GuidedImageHotspotSchema,
   StepByStepRevealSchema,
   VideoPlayerSchema,
+  YoutubeEmbedSchema,
 ]);
 export type BuilderSchemaTypes = z.infer<typeof BuilderSchema>;
 
@@ -54,6 +57,7 @@ export const BlockInteractionSchema = z.discriminatedUnion('plugin_type', [
   GuidedImageHotspotsInteractionSchema,
   StepByStepRevealInteractionSchema,
   VideoPlayerInteractionSchema,
+  YoutubeEmbedInteractionSchema,
 ]);
 export type BlockInteractionSchemaTypes = z.infer<typeof BlockInteractionSchema>;
 
@@ -75,6 +79,7 @@ const PublishedSwipeCategorizeSchema = SwipeCategorizeSchema.merge(PublishedFiel
 const PublishedGuidedImageHotspotsSchema = GuidedImageHotspotSchema.merge(PublishedFields);
 const PublishedStepByStepRevealSchema = StepByStepRevealSchema.merge(PublishedFields);
 const PublishedVideoPlayerSchema = VideoPlayerSchema.merge(PublishedFields);
+const PublishedYoutubeEmbedSchema = YoutubeEmbedSchema.merge(PublishedFields);
 
 export const PublishedBuilderSchema = z.discriminatedUnion('plugin_type', [
   PublishedRichTextSchema,
@@ -87,5 +92,6 @@ export const PublishedBuilderSchema = z.discriminatedUnion('plugin_type', [
   PublishedGuidedImageHotspotsSchema,
   PublishedStepByStepRevealSchema,
   PublishedVideoPlayerSchema,
+  PublishedYoutubeEmbedSchema,
 ]);
 export type PublishedBuilderSchemaTypes = z.infer<typeof PublishedBuilderSchema>;
