@@ -244,13 +244,15 @@ export function ViewYouTubeEmbedPlugin({ blockWithProgress }: ViewPluginComponen
             </div>
           </div>
 
-          {/* Continue button - always visible */}
-          <BlockActionButton
-            onClick={handleContinue}
-            loading={loading}
-            isLastBlock={is_last_block}
-            disabled={mode === 'preview'}
-          />
+          {/* Continue button - show only when not completed */}
+          {!blockWithProgress.block_progress?.is_completed && (
+            <BlockActionButton
+              onClick={handleContinue}
+              loading={loading}
+              isLastBlock={is_last_block}
+              disabled={mode === 'preview'}
+            />
+          )}
         </div>
       </PlayPluginWrapper>
     </ViewPluginWrapper>

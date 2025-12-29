@@ -9,7 +9,6 @@ export const YoutubeEmbedContentSchema = z.object({
   youtube_url: z
     .string({ required_error: 'YouTube URL or Video ID is required.' })
     .min(1, 'YouTube URL or Video ID is required.'),
-  thumbnail_image_id: z.string().optional(), // Optional custom thumbnail
 });
 export type YoutubeEmbedContentSchemaTypes = z.infer<typeof YoutubeEmbedContentSchema>;
 
