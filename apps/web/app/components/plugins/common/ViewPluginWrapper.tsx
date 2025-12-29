@@ -91,13 +91,22 @@ export function ViewPluginWrapper({
   return (
     <div>
       {infoText ? (
-        <div className='relative'>
+        <motion.div
+          className='relative'
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{
+            duration: 0.4,
+            ease: 'easeOut',
+            delay: 0.5,
+          }}
+        >
           <div className='absolute top-0 right-0'>
             <Badge variant='tip'>
               <Info /> {infoText}
             </Badge>
           </div>
-        </div>
+        </motion.div>
       ) : null}
       {content}
       <Sheet open={isExplanationBottomSheetOpen} onOpenChange={() => closeExplanation()}>
