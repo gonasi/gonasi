@@ -4,17 +4,15 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Globe, Save, Settings } from 'lucide-react';
 import { RemixFormProvider, useRemixForm } from 'remix-hook-form';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
-import type {
-  YoutubeEmbedSchemaTypes,
-  YoutubeEmbedSettingsSchemaTypes,
-} from '@gonasi/schemas/plugins';
+
+import type { VimeoEmbedSchemaTypes, VimeoEmbedSettingsSchemaTypes } from '@gonasi/schemas/plugins';
 import {
-  YoutubeEmbedContentSchema,
-  YoutubeEmbedSchema,
-  YoutubeEmbedSettingsSchema,
+  VimeoEmbedContentSchema,
+  VimeoEmbedSchema,
+  VimeoEmbedSettingsSchema,
 } from '@gonasi/schemas/plugins';
 
-import { extractYouTubeId, getYouTubeThumbnail } from './utils/extractYouTubeId';
+import { extractVimeoId } from './utils/extractVimeoId';
 import { BlockWeightField } from '../../common/settings/BlockWeightField';
 import { PlaybackModeField } from '../../common/settings/PlaybackModeField';
 
@@ -28,30 +26,33 @@ import type { LessonBlockLoaderReturnType } from '~/routes/organizations/builder
 import { getActionUrl } from '~/utils/get-action-url';
 import { useIsPending } from '~/utils/misc';
 
-const resolver = zodResolver(YoutubeEmbedSchema);
+const resolver = zodResolver(VimeoEmbedSchema);
 
-interface BuilderYouTubeEmbedPluginProps {
+interface BuilderVimeoEmbedPluginProps {
   block?: LessonBlockLoaderReturnType;
 }
 
-const defaultContent: YoutubeEmbedSchemaTypes['content'] = {
-  youtube_url: '',
+const defaultContent: VimeoEmbedSchemaTypes['content'] = {
+  vimeo_url: '',
 };
 
-const defaultSettings: YoutubeEmbedSettingsSchemaTypes = {
+const defaultSettings: VimeoEmbedSettingsSchemaTypes = {
   playbackMode: 'inline',
   weight: 3,
   autoplay: false,
   controls: true,
   loop: false,
   muted: false,
-  captions: false,
+  title: true,
+  byline: true,
+  portrait: true,
+  color: '00adef',
   startTime: 0,
   allowSeek: true,
-  privacyEnhanced: true,
+  dnt: true,
 };
 
-export function BuilderYouTubeEmbedPlugin({ block }: BuilderYouTubeEmbedPluginProps) {
+export function BuilderVimeoEmbedPlugin({ block }: BuilderVimeoEmbedPluginProps) {
   const params = useParams();
   const isPending = useIsPending();
 
@@ -60,7 +61,7 @@ export function BuilderYouTubeEmbedPlugin({ block }: BuilderYouTubeEmbedPluginPr
   const lessonPath = `/${organizationId}/builder/${courseId}/content/${chapterId}/${lessonId}/lesson-blocks`;
   const backRoute = `${lessonPath}/plugins/${pluginGroupId}`;
 
-  const methods = useRemixForm<YoutubeEmbedSchemaTypes>({
+  const methods = useRemixForm<VimeoEmbedSchemaTypes>({
     mode: 'all',
     // @ts-expect-error - Zod schemas with .default() create a type mismatch between input (optional) and output (required) types
     resolver,
@@ -71,12 +72,12 @@ export function BuilderYouTubeEmbedPlugin({ block }: BuilderYouTubeEmbedPluginPr
           course_id: courseId!,
           chapter_id: chapterId!,
           lesson_id: lessonId!,
-          plugin_type: 'youtube_embed',
-          content: YoutubeEmbedContentSchema.safeParse(block.content).success
-            ? YoutubeEmbedContentSchema.parse(block.content)
+          plugin_type: 'vimeo_embed',
+          content: VimeoEmbedContentSchema.safeParse(block.content).success
+            ? VimeoEmbedContentSchema.parse(block.content)
             : defaultContent,
-          settings: YoutubeEmbedSettingsSchema.safeParse(block.settings).success
-            ? YoutubeEmbedSettingsSchema.parse(block.settings)
+          settings: VimeoEmbedSettingsSchema.safeParse(block.settings).success
+            ? VimeoEmbedSettingsSchema.parse(block.settings)
             : defaultSettings,
         }
       : {
@@ -84,7 +85,7 @@ export function BuilderYouTubeEmbedPlugin({ block }: BuilderYouTubeEmbedPluginPr
           course_id: courseId!,
           chapter_id: chapterId!,
           lesson_id: lessonId!,
-          plugin_type: 'youtube_embed',
+          plugin_type: 'vimeo_embed',
           content: defaultContent,
           settings: defaultSettings,
         },
@@ -102,13 +103,12 @@ export function BuilderYouTubeEmbedPlugin({ block }: BuilderYouTubeEmbedPluginPr
 
   const isDisabled = isPending || methods.formState.isSubmitting;
   const watchPlaybackMode = methods.watch('settings.playbackMode');
-  const watchYoutubeUrl = methods.watch('content.youtube_url');
+  const watchVimeoUrl = methods.watch('content.vimeo_url');
   const watchStartTime = methods.watch('settings.startTime');
-  const watchEndTime = methods.watch('settings.endTime');
+  const watchColor = methods.watch('settings.color');
 
   // Extract video ID for preview
-  const videoId = extractYouTubeId(watchYoutubeUrl || '');
-  const thumbnailUrl = videoId ? getYouTubeThumbnail(videoId, 'hq') : null;
+  const videoId = extractVimeoId(watchVimeoUrl || '');
 
   return (
     <Modal open>
@@ -117,7 +117,7 @@ export function BuilderYouTubeEmbedPlugin({ block }: BuilderYouTubeEmbedPluginPr
           <form onSubmit={methods.handleSubmit} method='POST' action={actionUrl}>
             <Modal.Header
               leadingIcon={block?.id ? null : <BackArrowNavLink to={backRoute} />}
-              title={block?.id ? 'Edit YouTube Embed' : 'Add YouTube Embed'}
+              title={block?.id ? 'Edit Vimeo Embed' : 'Add Vimeo Embed'}
               closeRoute={lessonPath}
               settingsPopover={
                 <Popover modal>
@@ -133,7 +133,7 @@ export function BuilderYouTubeEmbedPlugin({ block }: BuilderYouTubeEmbedPluginPr
                         <div className='space-y-2'>
                           <h4 className='leading-none font-medium'>Block settings</h4>
                           <p className='text-muted-foreground text-sm'>
-                            Configure YouTube embed playback and privacy options
+                            Configure Vimeo embed playback and display options
                           </p>
                         </div>
                         <div className='grid gap-4'>
@@ -143,7 +143,7 @@ export function BuilderYouTubeEmbedPlugin({ block }: BuilderYouTubeEmbedPluginPr
                             watchValue={watchPlaybackMode}
                           />
 
-                          {/* YouTube-specific settings */}
+                          {/* Vimeo-specific settings */}
                           <div className='space-y-3'>
                             <p className='text-muted-foreground text-sm font-medium'>
                               Playback Controls
@@ -218,23 +218,6 @@ export function BuilderYouTubeEmbedPlugin({ block }: BuilderYouTubeEmbedPluginPr
                             />
 
                             <Controller
-                              name='settings.captions'
-                              control={methods.control}
-                              render={({ field }) => (
-                                <div className='flex items-center space-x-2'>
-                                  <Checkbox
-                                    id='captions'
-                                    checked={field.value}
-                                    onCheckedChange={field.onChange}
-                                  />
-                                  <Label htmlFor='captions' className='text-sm'>
-                                    Enable closed captions
-                                  </Label>
-                                </div>
-                              )}
-                            />
-
-                            <Controller
                               name='settings.allowSeek'
                               control={methods.control}
                               render={({ field }) => (
@@ -250,19 +233,95 @@ export function BuilderYouTubeEmbedPlugin({ block }: BuilderYouTubeEmbedPluginPr
                                 </div>
                               )}
                             />
+                          </div>
+
+                          {/* Display options */}
+                          <div className='space-y-3'>
+                            <p className='text-muted-foreground text-sm font-medium'>
+                              Display Options
+                            </p>
 
                             <Controller
-                              name='settings.privacyEnhanced'
+                              name='settings.title'
                               control={methods.control}
                               render={({ field }) => (
                                 <div className='flex items-center space-x-2'>
                                   <Checkbox
-                                    id='privacyEnhanced'
+                                    id='title'
                                     checked={field.value}
                                     onCheckedChange={field.onChange}
                                   />
-                                  <Label htmlFor='privacyEnhanced' className='text-sm'>
-                                    Privacy-enhanced mode (no cookies)
+                                  <Label htmlFor='title' className='text-sm'>
+                                    Show video title
+                                  </Label>
+                                </div>
+                              )}
+                            />
+
+                            <Controller
+                              name='settings.byline'
+                              control={methods.control}
+                              render={({ field }) => (
+                                <div className='flex items-center space-x-2'>
+                                  <Checkbox
+                                    id='byline'
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                  />
+                                  <Label htmlFor='byline' className='text-sm'>
+                                    Show author byline
+                                  </Label>
+                                </div>
+                              )}
+                            />
+
+                            <Controller
+                              name='settings.portrait'
+                              control={methods.control}
+                              render={({ field }) => (
+                                <div className='flex items-center space-x-2'>
+                                  <Checkbox
+                                    id='portrait'
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                  />
+                                  <Label htmlFor='portrait' className='text-sm'>
+                                    Show author portrait
+                                  </Label>
+                                </div>
+                              )}
+                            />
+
+                            <div className='space-y-2'>
+                              <Label htmlFor='color' className='text-sm'>
+                                Player color (hex without #)
+                              </Label>
+                              <Input
+                                id='color'
+                                type='text'
+                                placeholder='00adef'
+                                value={watchColor}
+                                onChange={(e) => methods.setValue('settings.color', e.target.value)}
+                              />
+                            </div>
+                          </div>
+
+                          {/* Privacy */}
+                          <div className='space-y-3'>
+                            <p className='text-muted-foreground text-sm font-medium'>Privacy</p>
+
+                            <Controller
+                              name='settings.dnt'
+                              control={methods.control}
+                              render={({ field }) => (
+                                <div className='flex items-center space-x-2'>
+                                  <Checkbox
+                                    id='dnt'
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                  />
+                                  <Label htmlFor='dnt' className='text-sm'>
+                                    Do Not Track (prevent session tracking)
                                   </Label>
                                 </div>
                               )}
@@ -292,25 +351,6 @@ export function BuilderYouTubeEmbedPlugin({ block }: BuilderYouTubeEmbedPluginPr
                                 }
                               />
                             </div>
-
-                            <div className='space-y-2'>
-                              <Label htmlFor='endTime' className='text-sm'>
-                                End time (seconds, optional)
-                              </Label>
-                              <Input
-                                id='endTime'
-                                type='number'
-                                min='0'
-                                value={watchEndTime || ''}
-                                onChange={(e) => {
-                                  const val = e.target.value;
-                                  methods.setValue(
-                                    'settings.endTime',
-                                    val ? parseInt(val, 10) : undefined,
-                                  );
-                                }}
-                              />
-                            </div>
                           </div>
                         </div>
                       </div>
@@ -324,18 +364,18 @@ export function BuilderYouTubeEmbedPlugin({ block }: BuilderYouTubeEmbedPluginPr
               <div className='space-y-4'>
                 {/* URL Input */}
                 <div className='space-y-2'>
-                  <Label htmlFor='youtube_url' className='text-sm font-medium'>
-                    YouTube URL or Video ID
+                  <Label htmlFor='vimeo_url' className='text-sm font-medium'>
+                    Vimeo URL or Video ID
                   </Label>
                   <Input
-                    id='youtube_url'
-                    placeholder='https://www.youtube.com/watch?v=... or video ID'
+                    id='vimeo_url'
+                    placeholder='https://vimeo.com/... or video ID'
                     leftIcon={<Globe size={16} />}
-                    {...methods.register('content.youtube_url')}
+                    {...methods.register('content.vimeo_url')}
                   />
-                  {methods.formState.errors.content?.youtube_url && (
+                  {methods.formState.errors.content?.vimeo_url && (
                     <p className='text-destructive text-sm'>
-                      {methods.formState.errors.content.youtube_url.message}
+                      {methods.formState.errors.content.vimeo_url.message}
                     </p>
                   )}
                 </div>
@@ -344,10 +384,12 @@ export function BuilderYouTubeEmbedPlugin({ block }: BuilderYouTubeEmbedPluginPr
                 <div className='border-border/20 min-h-20 w-full border'>
                   {videoId ? (
                     <div className='relative w-full' style={{ aspectRatio: '16/9' }}>
-                      <img
-                        src={thumbnailUrl!}
-                        alt='YouTube video thumbnail'
-                        className='h-full w-full object-cover'
+                      <iframe
+                        src={`https://player.vimeo.com/video/${videoId}`}
+                        className='h-full w-full'
+                        frameBorder='0'
+                        allow='autoplay; fullscreen; picture-in-picture'
+                        title='Vimeo video preview'
                       />
                       <div className='bg-background/80 absolute bottom-2 left-2 rounded px-2 py-1 text-xs'>
                         Video ID: {videoId}
@@ -358,7 +400,7 @@ export function BuilderYouTubeEmbedPlugin({ block }: BuilderYouTubeEmbedPluginPr
                       <div className='text-muted-foreground flex flex-col items-center'>
                         <Globe size={40} />
                         <p className='font-secondary py-2 text-xs'>
-                          Enter a YouTube URL to see preview
+                          Enter a Vimeo URL to see preview
                         </p>
                       </div>
                     </div>

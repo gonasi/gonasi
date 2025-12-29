@@ -13,6 +13,7 @@ import { ViewStepByStepRevealPlugin } from '../RevealPlugins/StepByStepReveal/Vi
 import { ViewRichTextPlugin } from '../RichTextPlugins/RichTextPlugin/ViewRichTextPlugin';
 import { ViewVideoPlayerPlugin } from '../MediaPlayerPlugins/VideoPlayerPlugin/ViewVideoPlayerPlugin';
 import { ViewYouTubeEmbedPlugin } from '../MediaPlayerPlugins/YouTubeEmbedPlugin/ViewYouTubeEmbedPlugin';
+import { ViewVimeoEmbedPlugin } from '../MediaPlayerPlugins/VimeoEmbedPlugin/ViewVimeoEmbedPlugin';
 
 export interface ViewPluginComponentProps {
   blockWithProgress: BlockWithProgressSchemaTypes;
@@ -48,7 +49,7 @@ const viewPluginComponentMap: Record<
   audio_player: unimplementedPlugin,
   slideshow_player: unimplementedPlugin,
   youtube_embed: ViewYouTubeEmbedPlugin,
-  vimeo_embed: unimplementedPlugin,
+  vimeo_embed: ViewVimeoEmbedPlugin,
   twitch_embed: unimplementedPlugin,
   instagram_embed: unimplementedPlugin,
   tiktok_embed: unimplementedPlugin,

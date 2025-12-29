@@ -9,3 +9,4 @@ export * from './guidedImageHotspotsInteractionSchema';
 export * from './stepByStepRevealInteractionSchema';
 export * from './videoPlayerInteractionSchema';
 export * from './youtubeEmbedInteractionSchema';
+export * from './vimeoEmbedInteractionSchema';

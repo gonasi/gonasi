@@ -219,15 +219,17 @@ export function ViewYouTubeEmbedPlugin({ blockWithProgress }: ViewPluginComponen
           style={{ aspectRatio: '16/9' }}
         />
 
-        {/* Continue button - show only when not completed */}
-        {!blockWithProgress.block_progress?.is_completed && (
-          <BlockActionButton
-            onClick={handleContinue}
-            loading={loading}
-            isLastBlock={is_last_block}
-            disabled={mode === 'preview'}
-          />
-        )}
+        {/* Continue button - show only when not completed and user has played the video */}
+        {!blockWithProgress.block_progress?.is_completed &&
+          mode === 'play' &&
+          state.playCount > 0 && (
+            <BlockActionButton
+              onClick={handleContinue}
+              loading={loading}
+              isLastBlock={is_last_block}
+              disabled={false}
+            />
+          )}
       </div>
     </ViewPluginWrapper>
   );
