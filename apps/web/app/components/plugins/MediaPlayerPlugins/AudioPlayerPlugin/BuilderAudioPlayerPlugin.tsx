@@ -8,13 +8,13 @@ import { HoneypotInputs } from 'remix-utils/honeypot/react';
 
 import { FileType } from '@gonasi/schemas/file';
 import type {
-  VideoPlayerSettingsSchemaTypes,
-  VideoPlayerSchemaTypes,
+  AudioPlayerSettingsSchemaTypes,
+  AudioPlayerSchemaTypes,
 } from '@gonasi/schemas/plugins';
 import {
-  VideoPlayerContentSchema,
-  VideoPlayerSchema,
-  VideoPlayerSettingsSchema,
+  AudioPlayerContentSchema,
+  AudioPlayerSchema,
+  AudioPlayerSettingsSchema,
 } from '@gonasi/schemas/plugins';
 
 import { BlockWeightField } from '../../common/settings/BlockWeightField';
@@ -36,34 +36,33 @@ import { useIsPending } from '~/utils/misc';
 const InsertMediaDialog = lazy(
   () => import('../../MediaInteraction/common/InsertMediaDialog'),
 );
-const LazyVideoPreview = lazy(() =>
-  import('./components/VideoPreview').then((module) => ({
-    default: module.VideoPreview,
+const LazyAudioPreview = lazy(() =>
+  import('./components/AudioPreview').then((module) => ({
+    default: module.AudioPreview,
   })),
 );
 
-const resolver = zodResolver(VideoPlayerSchema);
+const resolver = zodResolver(AudioPlayerSchema);
 
-interface BuilderVideoPlayerPluginProps {
+interface BuilderAudioPlayerPluginProps {
   block?: LessonBlockLoaderReturnType;
 }
 
-const defaultContent: VideoPlayerSchemaTypes['content'] = {
-  video_id: '',
+const defaultContent: AudioPlayerSchemaTypes['content'] = {
+  audio_id: '',
 };
 
-const defaultSettings: VideoPlayerSettingsSchemaTypes = {
+const defaultSettings: AudioPlayerSettingsSchemaTypes = {
   playbackMode: 'inline',
   weight: 3,
   autoplay: false,
-  controls: true,
   loop: false,
-  muted: false,
   allowSeek: true,
   playbackSpeed: true,
+  showTimestamp: true,
 };
 
-export function BuilderVideoPlayerPlugin({ block }: BuilderVideoPlayerPluginProps) {
+export function BuilderAudioPlayerPlugin({ block }: BuilderAudioPlayerPluginProps) {
   const params = useParams();
   const isPending = useIsPending();
   const [modal, showModal] = useModal();
@@ -73,7 +72,7 @@ export function BuilderVideoPlayerPlugin({ block }: BuilderVideoPlayerPluginProp
   const lessonPath = `/${organizationId}/builder/${courseId}/content/${chapterId}/${lessonId}/lesson-blocks`;
   const backRoute = `${lessonPath}/plugins/${pluginGroupId}`;
 
-  const methods = useRemixForm<VideoPlayerSchemaTypes>({
+  const methods = useRemixForm<AudioPlayerSchemaTypes>({
     mode: 'all',
     resolver,
     defaultValues: block
@@ -83,12 +82,12 @@ export function BuilderVideoPlayerPlugin({ block }: BuilderVideoPlayerPluginProp
           course_id: courseId!,
           chapter_id: chapterId!,
           lesson_id: lessonId!,
-          plugin_type: 'video_player',
-          content: VideoPlayerContentSchema.safeParse(block.content).success
-            ? VideoPlayerContentSchema.parse(block.content)
+          plugin_type: 'audio_player',
+          content: AudioPlayerContentSchema.safeParse(block.content).success
+            ? AudioPlayerContentSchema.parse(block.content)
             : defaultContent,
-          settings: VideoPlayerSettingsSchema.safeParse(block.settings).success
-            ? VideoPlayerSettingsSchema.parse(block.settings)
+          settings: AudioPlayerSettingsSchema.safeParse(block.settings).success
+            ? AudioPlayerSettingsSchema.parse(block.settings)
             : defaultSettings,
         }
       : {
@@ -96,7 +95,7 @@ export function BuilderVideoPlayerPlugin({ block }: BuilderVideoPlayerPluginProp
           course_id: courseId!,
           chapter_id: chapterId!,
           lesson_id: lessonId!,
-          plugin_type: 'video_player',
+          plugin_type: 'audio_player',
           content: defaultContent,
           settings: defaultSettings,
         },
@@ -114,8 +113,8 @@ export function BuilderVideoPlayerPlugin({ block }: BuilderVideoPlayerPluginProp
 
   const isDisabled = isPending || methods.formState.isSubmitting;
   const watchPlaybackMode = methods.watch('settings.playbackMode');
-  const watchVideoSelection = methods.watch('content.video_id');
-  const getVideoId = methods.getValues('content.video_id');
+  const watchAudioSelection = methods.watch('content.audio_id');
+  const getAudioId = methods.getValues('content.audio_id');
 
   return (
     <Modal open>
@@ -124,7 +123,7 @@ export function BuilderVideoPlayerPlugin({ block }: BuilderVideoPlayerPluginProp
           <form onSubmit={methods.handleSubmit} method='POST' action={actionUrl}>
             <Modal.Header
               leadingIcon={block?.id ? null : <BackArrowNavLink to={backRoute} />}
-              title={block?.id ? 'Edit Video Player' : 'Add Video Player'}
+              title={block?.id ? 'Edit Audio Player' : 'Add Audio Player'}
               closeRoute={lessonPath}
               settingsPopover={
                 <Popover modal>
@@ -140,7 +139,7 @@ export function BuilderVideoPlayerPlugin({ block }: BuilderVideoPlayerPluginProp
                         <div className='space-y-2'>
                           <h4 className='leading-none font-medium'>Block settings</h4>
                           <p className='text-muted-foreground text-sm'>
-                            Configure video player behavior and controls
+                            Configure audio player behavior and controls
                           </p>
                         </div>
                         <div className='grid gap-4'>
@@ -150,7 +149,7 @@ export function BuilderVideoPlayerPlugin({ block }: BuilderVideoPlayerPluginProp
                             watchValue={watchPlaybackMode}
                           />
 
-                          {/* Video-specific settings */}
+                          {/* Audio-specific settings */}
                           <div className='space-y-3'>
                             <p className='text-muted-foreground text-sm font-medium'>
                               Playback Controls
@@ -167,24 +166,7 @@ export function BuilderVideoPlayerPlugin({ block }: BuilderVideoPlayerPluginProp
                                     onCheckedChange={field.onChange}
                                   />
                                   <Label htmlFor='autoplay' className='text-sm'>
-                                    Autoplay video
-                                  </Label>
-                                </div>
-                              )}
-                            />
-
-                            <Controller
-                              name='settings.controls'
-                              control={methods.control}
-                              render={({ field }) => (
-                                <div className='flex items-center space-x-2'>
-                                  <Checkbox
-                                    id='controls'
-                                    checked={field.value}
-                                    onCheckedChange={field.onChange}
-                                  />
-                                  <Label htmlFor='controls' className='text-sm'>
-                                    Show video controls
+                                    Autoplay audio
                                   </Label>
                                 </div>
                               )}
@@ -201,24 +183,7 @@ export function BuilderVideoPlayerPlugin({ block }: BuilderVideoPlayerPluginProp
                                     onCheckedChange={field.onChange}
                                   />
                                   <Label htmlFor='loop' className='text-sm'>
-                                    Loop video
-                                  </Label>
-                                </div>
-                              )}
-                            />
-
-                            <Controller
-                              name='settings.muted'
-                              control={methods.control}
-                              render={({ field }) => (
-                                <div className='flex items-center space-x-2'>
-                                  <Checkbox
-                                    id='muted'
-                                    checked={field.value}
-                                    onCheckedChange={field.onChange}
-                                  />
-                                  <Label htmlFor='muted' className='text-sm'>
-                                    Start muted
+                                    Loop audio
                                   </Label>
                                 </div>
                               )}
@@ -257,6 +222,23 @@ export function BuilderVideoPlayerPlugin({ block }: BuilderVideoPlayerPluginProp
                                 </div>
                               )}
                             />
+
+                            <Controller
+                              name='settings.showTimestamp'
+                              control={methods.control}
+                              render={({ field }) => (
+                                <div className='flex items-center space-x-2'>
+                                  <Checkbox
+                                    id='showTimestamp'
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                  />
+                                  <Label htmlFor='showTimestamp' className='text-sm'>
+                                    Show timestamp
+                                  </Label>
+                                </div>
+                              )}
+                            />
                           </div>
                         </div>
                       </div>
@@ -273,17 +255,17 @@ export function BuilderVideoPlayerPlugin({ block }: BuilderVideoPlayerPluginProp
                   <IconTooltipButton
                     type='button'
                     variant='secondary'
-                    title={watchVideoSelection ? 'Edit video' : 'Add video'}
-                    icon={watchVideoSelection ? Edit : Plus}
+                    title={watchAudioSelection ? 'Edit audio' : 'Add audio'}
+                    icon={watchAudioSelection ? Edit : Plus}
                     onClick={() => {
                       showModal(
-                        'Select Video',
+                        'Select Audio',
                         (onClose) => (
                           <Suspense fallback={<Spinner />}>
                             <InsertMediaDialog
-                              fileType={FileType.VIDEO}
+                              fileType={FileType.AUDIO}
                               handleImageInsert={(file: SearchFileResult) => {
-                                methods.setValue('content.video_id', file.id, {
+                                methods.setValue('content.audio_id', file.id, {
                                   shouldDirty: true,
                                   shouldValidate: true,
                                 });
@@ -300,17 +282,17 @@ export function BuilderVideoPlayerPlugin({ block }: BuilderVideoPlayerPluginProp
                   />
                 </div>
 
-                {/* Video preview or placeholder */}
+                {/* Audio preview or placeholder */}
                 <div className='border-border/20 min-h-20 w-full border'>
-                  {watchVideoSelection ? (
+                  {watchAudioSelection ? (
                     <Suspense fallback={<Spinner />}>
-                      <LazyVideoPreview videoId={getVideoId} />
+                      <LazyAudioPreview audioId={getAudioId} />
                     </Suspense>
                   ) : (
                     <div className='max-w-ms mx-auto flex min-h-100 items-center justify-center md:max-w-lg'>
                       <div className='text-muted-foreground flex flex-col items-center'>
                         <Play size={40} />
-                        <p className='font-secondary py-2 text-xs'>No video selected</p>
+                        <p className='font-secondary py-2 text-xs'>No audio selected</p>
                       </div>
                     </div>
                   )}

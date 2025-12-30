@@ -7,6 +7,7 @@ export * from './matchingGame';
 export * from './swipeCategorize';
 export * from './mediaInteraction';
 export * from './stepByStepReveal';
+export * from './audioPlayer';
 export * from './videoPlayer';
 export * from './youtubeEmbed';
 export * from './vimeoEmbed';

@@ -10,6 +10,7 @@ import {
   StepByStepRevealInteractionSchema,
   SwipeCategorizeInteractionSchema,
   TrueOrFalseStateInteractionSchema,
+  AudioPlayerInteractionSchema,
   VideoPlayerInteractionSchema,
   YoutubeEmbedInteractionSchema,
   VimeoEmbedInteractionSchema,
@@ -24,6 +25,7 @@ import {
   StepByStepRevealSchema,
   SwipeCategorizeSchema,
   TrueOrFalseSchema,
+  AudioPlayerSchema,
   VideoPlayerSchema,
   YoutubeEmbedSchema,
   VimeoEmbedSchema,
@@ -42,6 +44,7 @@ export const BuilderSchema = z.discriminatedUnion('plugin_type', [
   SwipeCategorizeSchema,
   GuidedImageHotspotSchema,
   StepByStepRevealSchema,
+  AudioPlayerSchema,
   VideoPlayerSchema,
   YoutubeEmbedSchema,
   VimeoEmbedSchema,
@@ -59,6 +62,7 @@ export const BlockInteractionSchema = z.discriminatedUnion('plugin_type', [
   SwipeCategorizeInteractionSchema,
   GuidedImageHotspotsInteractionSchema,
   StepByStepRevealInteractionSchema,
+  AudioPlayerInteractionSchema,
   VideoPlayerInteractionSchema,
   YoutubeEmbedInteractionSchema,
   VimeoEmbedInteractionSchema,
@@ -82,6 +86,7 @@ const PublishedMatchingGameSchema = MatchingGameSchema.merge(PublishedFields);
 const PublishedSwipeCategorizeSchema = SwipeCategorizeSchema.merge(PublishedFields);
 const PublishedGuidedImageHotspotsSchema = GuidedImageHotspotSchema.merge(PublishedFields);
 const PublishedStepByStepRevealSchema = StepByStepRevealSchema.merge(PublishedFields);
+const PublishedAudioPlayerSchema = AudioPlayerSchema.merge(PublishedFields);
 const PublishedVideoPlayerSchema = VideoPlayerSchema.merge(PublishedFields);
 const PublishedYoutubeEmbedSchema = YoutubeEmbedSchema.merge(PublishedFields);
 const PublishedVimeoEmbedSchema = VimeoEmbedSchema.merge(PublishedFields);
@@ -96,6 +101,7 @@ export const PublishedBuilderSchema = z.discriminatedUnion('plugin_type', [
   PublishedSwipeCategorizeSchema,
   PublishedGuidedImageHotspotsSchema,
   PublishedStepByStepRevealSchema,
+  PublishedAudioPlayerSchema,
   PublishedVideoPlayerSchema,
   PublishedYoutubeEmbedSchema,
   PublishedVimeoEmbedSchema,
