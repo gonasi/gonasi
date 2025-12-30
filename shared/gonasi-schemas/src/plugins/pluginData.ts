@@ -188,7 +188,7 @@ export const ALL_PLUGINS = [
             description: 'Embed and play audio lessons or podcasts.',
             example: 'Play an audio lesson on language learning.',
             icon: 'AudioPlayer',
-            comingSoon: true,
+            comingSoon: false,
           },
           {
             id: 'slideshow_player',

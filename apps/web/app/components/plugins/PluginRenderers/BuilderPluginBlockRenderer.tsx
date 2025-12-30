@@ -73,6 +73,12 @@ const LazyBuilderSwipeCategorizePlugin = lazy(() =>
   })),
 );
 
+const LazyBuilderAudioPlayerPlugin = lazy(() =>
+  import('../MediaPlayerPlugins/AudioPlayerPlugin/BuilderAudioPlayerPlugin').then((module) => ({
+    default: module.BuilderAudioPlayerPlugin,
+  })),
+);
+
 const LazyBuilderVideoPlayerPlugin = lazy(() =>
   import('../MediaPlayerPlugins/VideoPlayerPlugin/BuilderVideoPlayerPlugin').then((module) => ({
     default: module.BuilderVideoPlayerPlugin,
@@ -115,8 +121,8 @@ const pluginComponentMap: Record<
   pie_chart: notImplemented,
   historical_events: notImplemented,
   project_milestones: notImplemented,
+  audio_player: LazyBuilderAudioPlayerPlugin,
   video_player: LazyBuilderVideoPlayerPlugin,
-  audio_player: notImplemented,
   slideshow_player: notImplemented,
   youtube_embed: LazyBuilderYouTubeEmbedPlugin,
   vimeo_embed: LazyBuilderVimeoEmbedPlugin,

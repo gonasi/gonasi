@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useFetcher } from 'react-router';
 
 import type { BlockInteractionSchemaTypes, BuilderSchemaTypes } from '@gonasi/schemas/plugins';
@@ -9,8 +9,8 @@ import { ViewPluginWrapper } from '../../common/ViewPluginWrapper';
 import { useViewPluginCore } from '../../hooks/useViewPluginCore';
 import type { ViewPluginComponentProps } from '../../PluginRenderers/ViewPluginTypesRenderer';
 
-import { BlockActionButton } from '~/components/ui/button';
 import { Spinner } from '~/components/loaders';
+import { BlockActionButton } from '~/components/ui/button';
 import { useStore } from '~/store';
 
 type VideoPlayerPluginType = Extract<BuilderSchemaTypes, { plugin_type: 'video_player' }>;
@@ -40,12 +40,7 @@ export function ViewVideoPlayerPlugin({ blockWithProgress }: ViewPluginComponent
   const { is_last_block } = blockWithProgress;
   const { mode } = useStore();
 
-  const {
-    loading,
-    payload,
-    handleContinue,
-    updateInteractionData,
-  } = useViewPluginCore(
+  const { loading, payload, handleContinue, updateInteractionData } = useViewPluginCore(
     mode === 'play' ? { progress: blockWithProgress.block_progress, blockWithProgress } : null,
   );
 
@@ -66,14 +61,8 @@ export function ViewVideoPlayerPlugin({ blockWithProgress }: ViewPluginComponent
   // Use the most recent data
   const currentInteractionData = parsedPayloadData || initialInteractionData;
 
-  const {
-    state,
-    completionPercentage,
-    formatTime,
-    handleTimeUpdate,
-    handlePlay,
-    handlePause,
-  } = useVideoPlayerInteraction(currentInteractionData, videoRef);
+  const { state, completionPercentage, formatTime, handleTimeUpdate, handlePlay, handlePause } =
+    useVideoPlayerInteraction(currentInteractionData, videoRef);
 
   // Fetch video file
   const videoFetcher = useFetcher<{ success: boolean; data: any }>();
