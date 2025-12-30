@@ -2,7 +2,7 @@ import type { JSX } from 'react';
 import { lazy, Suspense } from 'react';
 import { INSERT_HORIZONTAL_RULE_COMMAND } from '@lexical/react/LexicalHorizontalRuleNode';
 import type { LexicalEditor } from 'lexical';
-import { ChevronDown, File, ImagePlus, Plus, SquareSplitVertical, Tag } from 'lucide-react';
+import { AudioLines, ChevronDown, File, ImagePlus, Plus, SquareSplitVertical, Tag } from 'lucide-react';
 
 import useModal from '../../hooks/useModal';
 
@@ -17,6 +17,7 @@ import {
 } from '~/components/ui/dropdown-menu';
 
 const InsertImageDialog = lazy(() => import('../Files/ImagesPlugin/InsertImageDialog'));
+const InsertAudioDialog = lazy(() => import('../Files/AudioPlugin/InsertAudioDialog'));
 
 interface InsertDropdownProps {
   activeEditor: LexicalEditor;
@@ -71,6 +72,27 @@ export function InsertDropdown({
               >
                 <ImagePlus />
                 Image
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  showModal(
+                    'Insert Audio', // title
+                    (
+                      onClose, // getContent
+                    ) => (
+                      <Suspense fallback={<Spinner />}>
+                        <InsertAudioDialog activeEditor={activeEditor} onClose={onClose} />
+                      </Suspense>
+                    ),
+                    '', // className (empty string is fine)
+                    <File />, // leadingIcon (null is valid)
+                    'lg', // size (valid value from 'sm' | 'md' | 'lg' | 'full')
+                  );
+                }}
+                active={toolbarState.isLowercase}
+              >
+                <AudioLines />
+                Audio
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => {

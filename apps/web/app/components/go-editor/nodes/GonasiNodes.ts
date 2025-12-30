@@ -9,6 +9,7 @@ import { HeadingNode, QuoteNode } from '@lexical/rich-text';
 import { TableCellNode, TableNode, TableRowNode } from '@lexical/table';
 import type { Klass, LexicalNode } from 'lexical';
 
+import { AudioNode } from './AudioNode';
 import { FileNode } from './FileNode';
 import { ImageNode } from './ImageNode';
 
@@ -29,6 +30,7 @@ export const GonasiNodes: Klass<LexicalNode>[] = [
 
   // PollNode,
   // StickyNode,
+  AudioNode,
   FileNode,
   ImageNode,
   // InlineImageNode,
@@ -64,6 +66,7 @@ export const GonasiRichTextRendererNodes: Klass<LexicalNode>[] = [
   AutoLinkNode,
   LinkNode,
   OverflowNode,
+  AudioNode,
   FileNode,
   ImageNode,
 ];
