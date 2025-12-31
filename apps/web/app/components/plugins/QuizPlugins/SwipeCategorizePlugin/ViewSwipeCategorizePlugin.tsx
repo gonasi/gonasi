@@ -215,7 +215,7 @@ export function ViewSwipeCategorizePlugin({ blockWithProgress }: ViewPluginCompo
             <CategoryLabels leftLabel={leftLabel} rightLabel={rightLabel} dragOffset={dragOffset} />
 
             {/* Card Stack */}
-            <div className='relative mx-auto grid h-[500px] w-full place-items-center'>
+            <div className='relative z-5 mx-auto grid h-[500px] w-full place-items-center'>
               {processedCards.length > 0 ? (
                 (() => {
                   const remainingCards = processedCards.slice(state.currentCardIndex);
