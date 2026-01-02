@@ -245,3 +245,9 @@ export const DeleteFileSchema = z.object({
 });
 
 export type DeleteFileSchemaTypes = z.infer<typeof DeleteFileSchema>;
+
+// ----------------------
+// 3D Model Settings
+// ----------------------
+
+export * from './model-settings';

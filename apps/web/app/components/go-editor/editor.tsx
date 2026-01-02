@@ -16,6 +16,7 @@ import AutocompletePlugin from './plugins/AutocompletePlugin';
 import DraggableBlockPlugin from './plugins/DraggableBlockPlugin';
 import AudioPlugin from './plugins/Files/AudioPlugin';
 import ImagesPlugin from './plugins/Files/ImagesPlugin';
+import Model3DPlugin from './plugins/Files/Model3DPlugin';
 import FilesPlugin from './plugins/FilesPlugin';
 import { AutoFocusPlugin } from './plugins/LexicalAutoFocusPlugin';
 import { ListPlugin } from './plugins/LexicalListPlugin';
@@ -95,6 +96,7 @@ export default function Editor({ placeholder = 'Enter text', hasError }: Props):
       <FilesPlugin />
       <AudioPlugin />
       <ImagesPlugin />
+      <Model3DPlugin />
       <ListPlugin />
       <CheckListPlugin />
       <TablePlugin

@@ -12,6 +12,7 @@ import type { Klass, LexicalNode } from 'lexical';
 import { AudioNode } from './AudioNode';
 import { FileNode } from './FileNode';
 import { ImageNode } from './ImageNode';
+import { Model3DNode } from './Model3DNode';
 
 export const GonasiNodes: Klass<LexicalNode>[] = [
   HeadingNode,
@@ -33,6 +34,7 @@ export const GonasiNodes: Klass<LexicalNode>[] = [
   AudioNode,
   FileNode,
   ImageNode,
+  Model3DNode,
   // InlineImageNode,
   // EmojiNode,
   // ExcalidrawNode,
@@ -69,4 +71,5 @@ export const GonasiRichTextRendererNodes: Klass<LexicalNode>[] = [
   AudioNode,
   FileNode,
   ImageNode,
+  Model3DNode,
 ];

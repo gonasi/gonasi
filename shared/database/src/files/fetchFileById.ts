@@ -24,9 +24,9 @@ export async function fetchFileById({
       .from(table)
       .select(
         `
-          id, 
+          id,
           created_by,
-          updated_by, 
+          updated_by,
           name,
           size,
           path,
@@ -37,7 +37,8 @@ export async function fetchFileById({
           course_id,
           organization_id,
           blur_preview,
-          file_type
+          file_type,
+          settings
         `,
       )
       .eq('id', fileId)

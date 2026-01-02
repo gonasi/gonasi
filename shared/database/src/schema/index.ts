@@ -1036,6 +1036,7 @@ export type Database = {
           name: string
           organization_id: string
           path: string
+          settings: Json | null
           size: number
           updated_at: string
           updated_by: string | null
@@ -1052,6 +1053,7 @@ export type Database = {
           name: string
           organization_id: string
           path: string
+          settings?: Json | null
           size: number
           updated_at?: string
           updated_by?: string | null
@@ -1068,6 +1070,7 @@ export type Database = {
           name?: string
           organization_id?: string
           path?: string
+          settings?: Json | null
           size?: number
           updated_at?: string
           updated_by?: string | null
@@ -2249,6 +2252,7 @@ export type Database = {
           name: string
           organization_id: string
           path: string
+          settings: Json | null
           size: number
           updated_at: string
           updated_by: string | null
@@ -2265,6 +2269,7 @@ export type Database = {
           name: string
           organization_id: string
           path: string
+          settings?: Json | null
           size: number
           updated_at?: string
           updated_by?: string | null
@@ -2281,6 +2286,7 @@ export type Database = {
           name?: string
           organization_id?: string
           path?: string
+          settings?: Json | null
           size?: number
           updated_at?: string
           updated_by?: string | null

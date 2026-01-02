@@ -253,6 +253,8 @@ export default [
               ),
 
               route('delete', 'routes/organizations/builder/course/file-library/delete-file.tsx'),
+
+              route('configure', 'routes/organizations/builder/course/file-library/$fileId/configure.tsx'),
             ]),
           ],
         ),
@@ -336,6 +338,7 @@ export default [
   route('api/files/confirm-upload', 'routes/api/files/confirm-upload.ts'),
   route('api/files/prepare-edit-upload', 'routes/api/files/prepare-edit-upload.ts'),
   route('api/files/confirm-edit-upload', 'routes/api/files/confirm-edit-upload.ts'),
+  route('api/files/configure-model', 'routes/api/files/configure-model.ts'),
   route('api/courses/prepare-thumbnail-upload', 'routes/api/courses/prepare-thumbnail-upload.ts'),
   route('api/courses/confirm-thumbnail-upload', 'routes/api/courses/confirm-thumbnail-upload.ts'),
   route(

@@ -183,12 +183,27 @@ export default function NewFile({ params }: Route.ComponentProps) {
         throw new Error(confirmResult?.message || 'Failed to confirm upload');
       }
 
-      toast.success('File uploaded successfully!');
-      setIsRedirecting(true);
+      // Check if uploaded file is a 3D model
+      const extension = file.name.split('.').pop()?.toLowerCase() || '';
+      const is3DModel = ['gltf', 'glb', 'obj', 'fbx', 'stl', 'dae', 'blend'].includes(extension);
 
-      requestAnimationFrame(() => {
-        navigate(`/${params.organizationId}/builder/${params.courseId}/file-library`);
-      });
+      if (is3DModel) {
+        toast.success('File uploaded! Configure your 3D model settings.');
+        setIsRedirecting(true);
+
+        requestAnimationFrame(() => {
+          navigate(
+            `/${params.organizationId}/builder/${params.courseId}/file-library/${fileId}/configure`,
+          );
+        });
+      } else {
+        toast.success('File uploaded successfully!');
+        setIsRedirecting(true);
+
+        requestAnimationFrame(() => {
+          navigate(`/${params.organizationId}/builder/${params.courseId}/file-library`);
+        });
+      }
     } catch (error) {
       console.error('Upload failed:', error);
       toast.error(`Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
