@@ -35,7 +35,9 @@ export const MediaCard: React.FC<MediaCardProps> = ({ file, media, canEdit }) =>
       {/* File Info */}
       <div className='bg-background flex items-center justify-between p-4 md:bg-transparent'>
         <div>
-          <h3 className='truncate font-medium'>{file.name}</h3>
+          <div className='w-full max-w-full'>
+            <h3 className='truncate font-medium'>{file.name}</h3>
+          </div>
           <div className='font-secondary text-muted-foreground flex flex-col justify-between text-xs'>
             <span>{formatFileSize(file.size)}</span>
             <span className='pt-1'>{new Date(file.created_at).toLocaleDateString()}</span>
