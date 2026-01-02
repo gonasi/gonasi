@@ -2,7 +2,16 @@ import type { JSX } from 'react';
 import { lazy, Suspense } from 'react';
 import { INSERT_HORIZONTAL_RULE_COMMAND } from '@lexical/react/LexicalHorizontalRuleNode';
 import type { LexicalEditor } from 'lexical';
-import { AudioLines, ChevronDown, File, ImagePlus, Plus, SquareSplitVertical, Tag } from 'lucide-react';
+import {
+  AudioLines,
+  Box,
+  ChevronDown,
+  File,
+  ImagePlus,
+  Plus,
+  SquareSplitVertical,
+  Tag,
+} from 'lucide-react';
 
 import useModal from '../../hooks/useModal';
 
@@ -18,6 +27,7 @@ import {
 
 const InsertImageDialog = lazy(() => import('../Files/ImagesPlugin/InsertImageDialog'));
 const InsertAudioDialog = lazy(() => import('../Files/AudioPlugin/InsertAudioDialog'));
+const InsertModel3DDialog = lazy(() => import('../Files/Model3DPlugin/InsertModel3DDialog'));
 
 interface InsertDropdownProps {
   activeEditor: LexicalEditor;
@@ -93,6 +103,27 @@ export function InsertDropdown({
               >
                 <AudioLines />
                 Audio
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  showModal(
+                    'Insert 3D Model', // title
+                    (
+                      onClose, // getContent
+                    ) => (
+                      <Suspense fallback={<Spinner />}>
+                        <InsertModel3DDialog activeEditor={activeEditor} onClose={onClose} />
+                      </Suspense>
+                    ),
+                    '', // className (empty string is fine)
+                    <File />, // leadingIcon (null is valid)
+                    'lg', // size (valid value from 'sm' | 'md' | 'lg' | 'full')
+                  );
+                }}
+                active={toolbarState.isLowercase}
+              >
+                <Box />
+                3D Model
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => {
