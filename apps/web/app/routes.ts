@@ -254,7 +254,10 @@ export default [
 
               route('delete', 'routes/organizations/builder/course/file-library/delete-file.tsx'),
 
-              route('configure', 'routes/organizations/builder/course/file-library/$fileId/configure.tsx'),
+              route(
+                'configure',
+                'routes/organizations/builder/course/file-library/$fileId/configure.tsx',
+              ),
             ]),
           ],
         ),

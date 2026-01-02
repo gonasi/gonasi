@@ -95,17 +95,6 @@ export function getSignedUrl(publicId: string, options: SignedUrlOptions = {}): 
   // Calculate expiration timestamp (Unix timestamp in seconds)
   const expiresAt = Math.floor(Date.now() / 1000) + expiresInSeconds;
 
-  // Build transformation object
-  const transformation: any = {
-    quality,
-    fetch_format: format,
-    crop,
-  };
-
-  // Add width/height only if provided
-  if (width) transformation.width = width;
-  if (height) transformation.height = height;
-
   // For authenticated URLs, we need to use Cloudinary's version system
   // instead of query parameters to avoid breaking the signature
   const urlOptions: any = {
@@ -113,8 +102,24 @@ export function getSignedUrl(publicId: string, options: SignedUrlOptions = {}): 
     expires_at: expiresAt, // CRITICAL: Set expiration
     type: 'authenticated', // CRITICAL: Use authenticated delivery (private)
     resource_type: resourceType,
-    transformation: [transformation],
   };
+
+  // Only apply transformations for images and videos
+  // Raw files (3D models, documents) should not have image transformations
+  // as they can break external references (e.g., GLTF scene.bin buffers)
+  if (resourceType === 'image' || resourceType === 'video') {
+    const transformation: any = {
+      quality,
+      fetch_format: format,
+      crop,
+    };
+
+    // Add width/height only if provided
+    if (width) transformation.width = width;
+    if (height) transformation.height = height;
+
+    urlOptions.transformation = [transformation];
+  }
 
   // Use Cloudinary's version parameter if provided (included in signature)
   // This forces cache invalidation without breaking authentication

@@ -22,8 +22,10 @@ const Model = ({ url, extension, scale, position }: ModelProps) => {
   const model = useLoader(extension === 'fbx' ? FBXLoader : GLTFLoader, url);
   return (
     <primitive
+      // eslint-disable-next-line react/no-unknown-property
       object={extension === 'fbx' ? model : (model as GLTF).scene}
       scale={scale}
+      // eslint-disable-next-line react/no-unknown-property
       position={position}
     />
   );
@@ -66,27 +68,74 @@ export const ModelConfigurator = ({
     onSettingsChange(newSettings);
   };
 
+  // cspell:ignore gltf glb Aspose
+  // GLTF files with external dependencies are not supported
+  // Users should convert to GLB format instead
+  if (extension.toLowerCase() === 'gltf') {
+    return (
+      <div className='flex h-[60vh] w-full items-center justify-center rounded-lg border bg-gray-900 p-6'>
+        <div className='max-w-md rounded-lg bg-yellow-900/40 p-6 text-center backdrop-blur-sm'>
+          <div className='mb-4 text-4xl'>⚠️</div>
+          <h3 className='mb-3 text-lg font-semibold text-yellow-200'>GLTF Format Not Supported</h3>
+          <p className='mb-4 text-sm text-yellow-100/90'>
+            GLTF files with external dependencies (like .bin files) cannot be displayed. Please
+            convert your file to GLB format, which embeds all resources in a single file.
+          </p>
+          <div className='space-y-2 text-left text-xs text-yellow-100/80'>
+            <p className='font-semibold'>How to convert:</p>
+            <ul className='ml-4 list-disc space-y-1'>
+              <li>Blender: Import GLTF → Export GLB</li>
+              <li>
+                Online:{' '}
+                <a
+                  href='https://products.aspose.app/3d/conversion/gltf-to-glb'
+                  target='_blank'
+                  rel='noopener noreferrer'
+                  className='underline hover:text-yellow-200'
+                >
+                  Aspose 3D Converter
+                </a>
+              </li>
+              <li>CLI: gltf-pipeline -i model.gltf -o model.glb</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className='space-y-6'>
       {/* 3D Canvas */}
       <div className='bg-card relative h-[60vh] w-full overflow-hidden rounded-lg border'>
         <Canvas camera={{ position: settings.camera.position, fov: settings.camera.fov }}>
+          {/* eslint-disable-next-line react/no-unknown-property */}
           <ambientLight intensity={settings.lighting.ambient} />
           <directionalLight
+            // eslint-disable-next-line react/no-unknown-property
             position={settings.lighting.directional.position}
+            // eslint-disable-next-line react/no-unknown-property
             intensity={settings.lighting.directional.intensity}
           />
           <Suspense
             fallback={
               <mesh>
+                {/* eslint-disable-next-line react/no-unknown-property */}
                 <boxGeometry args={[1, 1, 1]} />
+                {/* eslint-disable-next-line react/no-unknown-property */}
                 <meshStandardMaterial color='gray' />
               </mesh>
             }
           >
-            <Model url={url} extension={extension} scale={settings.scale} position={settings.position} />
+            <Model
+              url={url}
+              extension={extension}
+              scale={settings.scale}
+              position={settings.position}
+            />
           </Suspense>
           <CameraController settings={settings} />
+          {/* eslint-disable-next-line react/no-unknown-property */}
           <gridHelper args={[100, 10]} position={[0, -20, 0]} />
         </Canvas>
       </div>
@@ -225,9 +274,7 @@ export const ModelConfigurator = ({
 
         {/* Model Position X */}
         <div className='space-y-2'>
-          <Label className='text-sm font-medium'>
-            Model X: {settings.position[0].toFixed(1)}
-          </Label>
+          <Label className='text-sm font-medium'>Model X: {settings.position[0].toFixed(1)}</Label>
           <Slider
             value={[settings.position[0]]}
             onValueChange={([val]) =>
@@ -243,9 +290,7 @@ export const ModelConfigurator = ({
 
         {/* Model Position Y */}
         <div className='space-y-2'>
-          <Label className='text-sm font-medium'>
-            Model Y: {settings.position[1].toFixed(1)}
-          </Label>
+          <Label className='text-sm font-medium'>Model Y: {settings.position[1].toFixed(1)}</Label>
           <Slider
             value={[settings.position[1]]}
             onValueChange={([val]) =>
@@ -261,9 +306,7 @@ export const ModelConfigurator = ({
 
         {/* Model Position Z */}
         <div className='space-y-2'>
-          <Label className='text-sm font-medium'>
-            Model Z: {settings.position[2].toFixed(1)}
-          </Label>
+          <Label className='text-sm font-medium'>Model Z: {settings.position[2].toFixed(1)}</Label>
           <Slider
             value={[settings.position[2]]}
             onValueChange={([val]) =>
