@@ -28,22 +28,26 @@ export const MediaCard: React.FC<MediaCardProps> = ({ file, media, canEdit }) =>
   return (
     <div className='group bg-card/10 hover:bg-card/30 relative w-full transition-colors duration-300 hover:cursor-pointer'>
       {/* Media Preview */}
-      <div className='bg-card flex h-40 w-full max-w-full items-center justify-center md:h-60'>
-        {media}
-      </div>
+      <div className='bg-card flex h-40 w-full items-center justify-center md:h-60'>{media}</div>
 
       {/* File Info */}
-      <div className='bg-background flex items-center justify-between p-4 md:bg-transparent'>
-        <div>
-          <div className='w-full max-w-full'>
-            <h3 className='truncate font-medium'>{file.name}</h3>
-          </div>
-          <div className='font-secondary text-muted-foreground flex flex-col justify-between text-xs'>
+      <div className='bg-background flex items-center gap-3 p-4 md:bg-transparent'>
+        {/* LEFT: text column */}
+        <div className='min-w-0 flex-1'>
+          <h3 className='truncate font-medium'>{file.name}</h3>
+
+          <div className='font-secondary text-muted-foreground mt-1 flex flex-col text-xs'>
             <span>{formatFileSize(file.size)}</span>
-            <span className='pt-1'>{new Date(file.created_at).toLocaleDateString()}</span>
+            <span>{new Date(file.created_at).toLocaleDateString()}</span>
           </div>
         </div>
-        <div className=''>{canEdit && <ActionDropdown items={options} />}</div>
+
+        {/* RIGHT: actions */}
+        {canEdit && (
+          <div className='shrink-0'>
+            <ActionDropdown items={options} />
+          </div>
+        )}
       </div>
     </div>
   );
