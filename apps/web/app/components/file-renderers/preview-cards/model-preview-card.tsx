@@ -1,11 +1,11 @@
 import { Suspense, useEffect, useRef, useState } from 'react';
-import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber';
 import { ContactShadows, Environment, OrbitControls } from '@react-three/drei';
+import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber';
 import { RotateCcw } from 'lucide-react';
+import * as THREE from 'three';
 import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import * as THREE from 'three';
 
 import { DEFAULT_MODEL_SETTINGS, type Model3DSettings } from '@gonasi/schemas/file';
 
@@ -24,51 +24,19 @@ const Model = ({
   position: [number, number, number];
 }) => {
   // Load the model based on the extension
+  // Note: GLTF is not supported (handled in parent component)
   const model = useLoader(extension === 'fbx' ? FBXLoader : GLTFLoader, url);
 
-  // For GLTF files, use the `scene` property, for FBX just use the loaded model directly
+  // For GLB files, use the `scene` property, for FBX just use the loaded model directly
   return (
     <primitive
+      // eslint-disable-next-line react/no-unknown-property
       object={extension === 'fbx' ? model : (model as GLTF).scene}
       scale={scale}
+      // eslint-disable-next-line react/no-unknown-property
       position={position}
     />
   );
-};
-
-// Subtle zoom-in animation on initial render
-const InitialZoomAnimation = ({
-  targetPosition,
-}: {
-  targetPosition: [number, number, number];
-}) => {
-  const { camera } = useThree();
-  const animating = useRef(true);
-  const targetRef = useRef(new THREE.Vector3(...targetPosition));
-  const startPositionRef = useRef<THREE.Vector3 | null>(null);
-
-  useFrame(() => {
-    if (!animating.current) return;
-
-    // Set initial position on first frame (1.3x further away)
-    if (startPositionRef.current === null) {
-      startPositionRef.current = targetRef.current.clone().multiplyScalar(1.3);
-      camera.position.copy(startPositionRef.current);
-      return;
-    }
-
-    // Smoothly interpolate to target position
-    camera.position.lerp(targetRef.current, 0.08);
-
-    // Check if we're close enough to stop
-    const distance = camera.position.distanceTo(targetRef.current);
-    if (distance < 0.01) {
-      camera.position.copy(targetRef.current);
-      animating.current = false;
-    }
-  });
-
-  return null;
 };
 
 // Device orientation handler component for mobile tilt controls
@@ -128,6 +96,7 @@ const DeviceOrientationHandler = ({ enabled }: { enabled: boolean }) => {
 };
 
 // Camera reset handler with smooth animation
+// cspell:ignore lerp
 const CameraResetHandler = ({
   initialPosition,
   initialTarget,
@@ -207,17 +176,30 @@ const useDeviceOrientation = () => {
 };
 
 export const ModelPreviewCard = ({ file }: { file: FileLoaderItemType }) => {
-  if (!file.signed_url) return <p>Invalid model URL</p>;
-
   const extension = file.extension.toLowerCase();
   const { isSupported: supportsOrientation, isEnabled: orientationEnabled } =
     useDeviceOrientation();
   const [cameraMoved, setCameraMoved] = useState(false);
   const resetCameraRef = useRef<(() => void) | null>(null);
 
+  if (!file.signed_url) return <p>Invalid model URL</p>;
+
+  // cspell:ignore gltf glb Aspose
+  // GLTF files with external dependencies are not supported
+  // Users should convert to GLB format instead
+  if (extension === 'gltf') {
+    return (
+      <div className='flex h-full w-full items-center justify-center bg-gray-900 p-6'>
+        <div className='max-w-md rounded-lg bg-yellow-900/40 p-6 text-center backdrop-blur-sm'>
+          <div className='mb-4 text-4xl'>⚠️</div>
+          <h3 className='mb-3 text-lg font-semibold text-yellow-200'>GLTF Format Not Supported</h3>
+        </div>
+      </div>
+    );
+  }
+
   // Get settings from database or use defaults
-  const settings: Model3DSettings =
-    (file.settings as any)?.model3d ?? DEFAULT_MODEL_SETTINGS;
+  const settings: Model3DSettings = (file.settings as any)?.model3d ?? DEFAULT_MODEL_SETTINGS;
 
   const handleResetReady = (resetFn: () => void) => {
     resetCameraRef.current = resetFn;
@@ -241,23 +223,23 @@ export const ModelPreviewCard = ({ file }: { file: FileLoaderItemType }) => {
         shadows
       >
         {/* Enhanced lighting for depth and realism */}
+        {/* eslint-disable-next-line react/no-unknown-property */}
         <ambientLight intensity={settings.lighting.ambient * 0.8} />
         <directionalLight
+          // eslint-disable-next-line react/no-unknown-property
           position={settings.lighting.directional.position}
+          // eslint-disable-next-line react/no-unknown-property
           intensity={settings.lighting.directional.intensity}
+          // eslint-disable-next-line react/no-unknown-property
           castShadow
+          // eslint-disable-next-line react/no-unknown-property
           shadow-mapSize={[1024, 1024]}
         />
-        <spotLight
-          position={[10, 10, 10]}
-          angle={0.3}
-          penumbra={1}
-          intensity={0.5}
-          castShadow
-        />
+        {/* eslint-disable-next-line react/no-unknown-property */}
+        <spotLight position={[10, 10, 10]} angle={0.3} penumbra={1} intensity={0.5} castShadow />
 
         {/* Environment lighting for professional look */}
-        <Environment preset="studio" />
+        <Environment preset='studio' />
 
         <Suspense fallback={null}>
           <Model
@@ -269,22 +251,16 @@ export const ModelPreviewCard = ({ file }: { file: FileLoaderItemType }) => {
         </Suspense>
 
         {/* Contact shadows for depth perception */}
-        <ContactShadows
-          position={[0, -20, 0]}
-          opacity={0.4}
-          scale={100}
-          blur={2}
-          far={40}
-        />
+        <ContactShadows position={[0, -20, 0]} opacity={0.4} scale={100} blur={2} far={40} />
 
         {/* Interactive controls */}
         <OrbitControls
-          enableZoom={true}
-          enablePan={true}
-          enableRotate={true}
+          enableZoom
+          enablePan
+          enableRotate
           minPolarAngle={Math.PI / 4}
           maxPolarAngle={Math.PI / 1.5}
-          enableDamping={true}
+          enableDamping
           dampingFactor={0.05}
           rotateSpeed={0.5}
           zoomSpeed={0.8}
@@ -307,7 +283,7 @@ export const ModelPreviewCard = ({ file }: { file: FileLoaderItemType }) => {
       {cameraMoved && (
         <button
           onClick={handleReset}
-          className="absolute bottom-4 right-4 flex items-center gap-2 rounded-lg bg-black/50 px-3 py-2 text-sm text-white backdrop-blur-sm transition-all hover:bg-black/70"
+          className='absolute right-4 bottom-4 flex items-center gap-2 rounded-lg bg-black/50 px-3 py-2 text-sm text-white backdrop-blur-sm transition-all hover:bg-black/70'
           style={{ zIndex: 10 }}
         >
           <RotateCcw size={16} />
