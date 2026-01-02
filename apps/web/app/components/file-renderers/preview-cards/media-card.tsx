@@ -1,6 +1,6 @@
 import type React from 'react';
 import { useParams } from 'react-router';
-import { Pencil, Trash } from 'lucide-react';
+import { Pencil, Settings, Trash } from 'lucide-react';
 
 import { formatFileSize } from '../file-renderer-types';
 
@@ -19,6 +19,9 @@ export const MediaCard: React.FC<MediaCardProps> = ({ file, media, canEdit }) =>
 
   const options = [
     { title: 'Edit', icon: Pencil, to: `${basePath}/edit` },
+    ...(file.file_type === 'model3d'
+      ? [{ title: 'Configure 3D', icon: Settings, to: `${basePath}/configure` }]
+      : []),
     { title: 'Delete', icon: Trash, to: `${basePath}/delete` },
   ];
 

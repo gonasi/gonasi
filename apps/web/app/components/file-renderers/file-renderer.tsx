@@ -16,7 +16,6 @@ export const FileRenderer: React.FC<{ file: FileLoaderItemType; canEdit: boolean
   file,
   canEdit,
 }) => {
-  console.log('file', file);
   switch (file.file_type) {
     case FileType.IMAGE:
       return <MediaCard file={file} media={<ImagePreviewCard file={file} />} canEdit={canEdit} />;

@@ -20,6 +20,7 @@ create table public.published_file_library (
   extension text not null,                         -- File extension (e.g. "png")
   file_type public.file_type not null default 'other', -- Enum for classification (image, audio, etc.)
   blur_preview text null,                          -- Optional blurred preview (base64-encoded)
+  settings jsonb null,                             -- JSON configuration for file rendering (3D models: camera, lighting, scale)
 
   -- Audit timestamps
   created_at timestamptz not null default timezone('utc', now()),
@@ -61,6 +62,9 @@ create index idx_published_file_library_org_course on public.published_file_libr
 create index idx_published_file_library_org_created_at_desc on public.published_file_library (organization_id, created_at desc);
 create index idx_published_file_library_org_extension on public.published_file_library (organization_id, extension);
 create index idx_published_file_library_org_file_type on public.published_file_library (organization_id, file_type);
+
+-- GIN index for settings JSONB column (for 3D model configuration queries)
+create index idx_published_file_library_settings on public.published_file_library using gin (settings);
 
 -- =====================================================================
 -- TRIGGERS
