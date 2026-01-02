@@ -224,8 +224,8 @@ export const ModelConfigurator = ({
                 },
               })
             }
-            min={-50}
-            max={50}
+            min={-100}
+            max={100}
             step={1}
           />
         </div>
@@ -245,8 +245,8 @@ export const ModelConfigurator = ({
                 },
               })
             }
-            min={-50}
-            max={50}
+            min={-100}
+            max={100}
             step={1}
           />
         </div>
@@ -266,8 +266,8 @@ export const ModelConfigurator = ({
                 },
               })
             }
-            min={-50}
-            max={50}
+            min={-100}
+            max={100}
             step={1}
           />
         </div>
@@ -282,8 +282,8 @@ export const ModelConfigurator = ({
                 position: [val ?? 0, settings.position[1], settings.position[2]],
               })
             }
-            min={-50}
-            max={50}
+            min={-100}
+            max={100}
             step={1}
           />
         </div>
@@ -298,8 +298,8 @@ export const ModelConfigurator = ({
                 position: [settings.position[0], val ?? 0, settings.position[2]],
               })
             }
-            min={-50}
-            max={50}
+            min={-100}
+            max={100}
             step={1}
           />
         </div>
@@ -314,8 +314,8 @@ export const ModelConfigurator = ({
                 position: [settings.position[0], settings.position[1], val ?? 0],
               })
             }
-            min={-50}
-            max={50}
+            min={-100}
+            max={100}
             step={1}
           />
         </div>
