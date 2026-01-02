@@ -22,10 +22,14 @@ export const LightingSettingsSchema = z.object({
   directional: DirectionalLightSchema,
 });
 
+// Model position schema
+export const ModelPositionSchema = z.tuple([z.number(), z.number(), z.number()]);
+
 // Complete 3D model settings schema
 export const Model3DSettingsSchema = z.object({
   camera: CameraSettingsSchema,
   scale: z.number().min(0.001).max(100),
+  position: ModelPositionSchema,
   lighting: LightingSettingsSchema,
 });
 
@@ -38,6 +42,7 @@ export const FileSettingsSchema = z.object({
 export type CameraPosition = z.infer<typeof CameraPositionSchema>;
 export type CameraTarget = z.infer<typeof CameraTargetSchema>;
 export type CameraSettings = z.infer<typeof CameraSettingsSchema>;
+export type ModelPosition = z.infer<typeof ModelPositionSchema>;
 export type DirectionalLight = z.infer<typeof DirectionalLightSchema>;
 export type LightingSettings = z.infer<typeof LightingSettingsSchema>;
 export type Model3DSettings = z.infer<typeof Model3DSettingsSchema>;
@@ -52,6 +57,7 @@ export const DEFAULT_MODEL_SETTINGS: Model3DSettings = {
     zoom: 1,
   },
   scale: 0.01,
+  position: [0, 0, 0],
   lighting: {
     ambient: 0.5,
     directional: {

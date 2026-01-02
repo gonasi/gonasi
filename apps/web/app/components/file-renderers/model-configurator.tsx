@@ -15,11 +15,18 @@ interface ModelProps {
   url: string;
   extension: string;
   scale: number;
+  position: [number, number, number];
 }
 
-const Model = ({ url, extension, scale }: ModelProps) => {
+const Model = ({ url, extension, scale, position }: ModelProps) => {
   const model = useLoader(extension === 'fbx' ? FBXLoader : GLTFLoader, url);
-  return <primitive object={extension === 'fbx' ? model : (model as GLTF).scene} scale={scale} />;
+  return (
+    <primitive
+      object={extension === 'fbx' ? model : (model as GLTF).scene}
+      scale={scale}
+      position={position}
+    />
+  );
 };
 
 interface CameraControllerProps {
@@ -77,7 +84,7 @@ export const ModelConfigurator = ({
               </mesh>
             }
           >
-            <Model url={url} extension={extension} scale={settings.scale} />
+            <Model url={url} extension={extension} scale={settings.scale} position={settings.position} />
           </Suspense>
           <CameraController settings={settings} />
           <gridHelper args={[100, 10]} position={[0, -20, 0]} />
@@ -208,6 +215,60 @@ export const ModelConfigurator = ({
                   ...settings.camera,
                   position: [settings.camera.position[0], settings.camera.position[1], val ?? 0],
                 },
+              })
+            }
+            min={-50}
+            max={50}
+            step={1}
+          />
+        </div>
+
+        {/* Model Position X */}
+        <div className='space-y-2'>
+          <Label className='text-sm font-medium'>
+            Model X: {settings.position[0].toFixed(1)}
+          </Label>
+          <Slider
+            value={[settings.position[0]]}
+            onValueChange={([val]) =>
+              handleSettingChange({
+                position: [val ?? 0, settings.position[1], settings.position[2]],
+              })
+            }
+            min={-50}
+            max={50}
+            step={1}
+          />
+        </div>
+
+        {/* Model Position Y */}
+        <div className='space-y-2'>
+          <Label className='text-sm font-medium'>
+            Model Y: {settings.position[1].toFixed(1)}
+          </Label>
+          <Slider
+            value={[settings.position[1]]}
+            onValueChange={([val]) =>
+              handleSettingChange({
+                position: [settings.position[0], val ?? 0, settings.position[2]],
+              })
+            }
+            min={-50}
+            max={50}
+            step={1}
+          />
+        </div>
+
+        {/* Model Position Z */}
+        <div className='space-y-2'>
+          <Label className='text-sm font-medium'>
+            Model Z: {settings.position[2].toFixed(1)}
+          </Label>
+          <Slider
+            value={[settings.position[2]]}
+            onValueChange={([val]) =>
+              handleSettingChange({
+                position: [settings.position[0], settings.position[1], val ?? 0],
               })
             }
             min={-50}

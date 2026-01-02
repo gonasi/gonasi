@@ -9,12 +9,28 @@ import { DEFAULT_MODEL_SETTINGS, type Model3DSettings } from '@gonasi/schemas/fi
 import type { FileLoaderItemType } from '~/routes/dashboard/file-library/all-files';
 
 // Model component that loads FBX or GLB depending on the file extension
-const Model = ({ url, extension, scale }: { url: string; extension: string; scale: number }) => {
+const Model = ({
+  url,
+  extension,
+  scale,
+  position,
+}: {
+  url: string;
+  extension: string;
+  scale: number;
+  position: [number, number, number];
+}) => {
   // Load the model based on the extension
   const model = useLoader(extension === 'fbx' ? FBXLoader : GLTFLoader, url);
 
   // For GLTF files, use the `scene` property, for FBX just use the loaded model directly
-  return <primitive object={extension === 'fbx' ? model : (model as GLTF).scene} scale={scale} />;
+  return (
+    <primitive
+      object={extension === 'fbx' ? model : (model as GLTF).scene}
+      scale={scale}
+      position={position}
+    />
+  );
 };
 
 export const ModelPreviewCard = ({ file }: { file: FileLoaderItemType }) => {
@@ -41,7 +57,12 @@ export const ModelPreviewCard = ({ file }: { file: FileLoaderItemType }) => {
           intensity={settings.lighting.directional.intensity}
         />
         <Suspense fallback={null}>
-          <Model url={file.signed_url} extension={extension} scale={settings.scale} />
+          <Model
+            url={file.signed_url}
+            extension={extension}
+            scale={settings.scale}
+            position={settings.position}
+          />
         </Suspense>
         {/* Lowering the grid along the Y axis */}
         <gridHelper args={[100, 10]} position={[0, -20, 0]} />
