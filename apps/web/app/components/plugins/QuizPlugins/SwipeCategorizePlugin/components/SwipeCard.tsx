@@ -10,7 +10,7 @@ import {
 import { motion, useAnimation, useMotionValue, useTransform } from 'framer-motion';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 
-import { FileType } from '@gonasi/schemas/file';
+import type { FileType } from '@gonasi/schemas/file';
 import type { CardSchemaTypes } from '@gonasi/schemas/plugins';
 
 import { AssetRenderer } from './AssetRenderer';
@@ -48,8 +48,8 @@ export interface SwipeCardRef {
   shake: () => void;
 }
 
-const SWIPE_THRESHOLD = 100;
-const VELOCITY_THRESHOLD = 500;
+const SWIPE_THRESHOLD = 75;
+const VELOCITY_THRESHOLD = 400;
 
 export const SwipeCard = forwardRef<SwipeCardRef, SwipeCardProps>(
   (
@@ -223,7 +223,11 @@ export const SwipeCard = forwardRef<SwipeCardRef, SwipeCardProps>(
       (_event: any, info: any) => {
         // Prevent processing if already exiting or not front card
         if (!isFront || isProcessingRef.current || isExiting) {
-          x.set(0);
+          controls.start({
+            x: 0,
+            rotate: staticRotateOffset,
+            transition: { type: 'spring', stiffness: 500, damping: 30 },
+          });
           return;
         }
 
@@ -235,11 +239,15 @@ export const SwipeCard = forwardRef<SwipeCardRef, SwipeCardProps>(
           const direction = offset.x > 0 ? 'right' : 'left';
           handleSwipe(direction);
         } else {
-          // Reset to center if not swiping
-          x.set(0);
+          // Reset to center with smooth spring animation
+          controls.start({
+            x: 0,
+            rotate: staticRotateOffset,
+            transition: { type: 'spring', stiffness: 500, damping: 30 },
+          });
         }
       },
-      [isFront, isExiting, handleSwipe, x],
+      [isFront, isExiting, handleSwipe, controls, staticRotateOffset],
     );
 
     const dragConstraints = useMemo(() => {
@@ -255,7 +263,9 @@ export const SwipeCard = forwardRef<SwipeCardRef, SwipeCardProps>(
     // Get display settings and determine padding/border
     const isAssetType = cardData.contentData.type === 'asset';
     const displaySettings =
-      isAssetType && cardData.contentData.type === 'asset' ? cardData.contentData.displaySettings : undefined;
+      isAssetType && cardData.contentData.type === 'asset'
+        ? cardData.contentData.displaySettings
+        : undefined;
     const noPadding = displaySettings?.noPadding ?? false;
     const noBorder = displaySettings?.noBorder ?? false;
 
@@ -280,6 +290,8 @@ export const SwipeCard = forwardRef<SwipeCardRef, SwipeCardProps>(
             ? '0 20px 25px -5px rgb(0 0 0 / 0.5), 0 8px 10px -6px rgb(0 0 0 / 0.5)'
             : '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
           zIndex: isFront ? 50 : 10 - stackIndex,
+          touchAction: 'pan-y',
+          willChange: isFront ? 'transform' : undefined,
         }}
         animate={
           isFront
@@ -291,9 +303,10 @@ export const SwipeCard = forwardRef<SwipeCardRef, SwipeCardProps>(
         initial={{ scale: isFront ? 1 : 0.95 - stackIndex * 0.02 }}
         drag={dragEnabled && !isExiting && isFront ? 'x' : false}
         dragConstraints={isFront ? dragConstraints : { left: 0, right: 0 }}
-        dragElastic={0.7}
+        dragElastic={0.2}
+        dragDirectionLock
+        dragTransition={{ bounceStiffness: 600, bounceDamping: 20 }}
         onDragEnd={handleDragEnd}
-        whileTap={isFront && dragEnabled && !isExiting ? { scale: 0.98 } : undefined}
       >
         {/* Card content */}
         <div

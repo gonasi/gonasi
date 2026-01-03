@@ -12,7 +12,7 @@
 import { Suspense, useEffect, useRef, useState } from 'react';
 import { Controller, get, useFieldArray } from 'react-hook-form';
 import { ErrorMessage } from '@hookform/error-message';
-import { Edit, FileIcon, Plus, Trash } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Edit, FileIcon, Plus, Trash } from 'lucide-react';
 import { useRemixFormContext } from 'remix-hook-form';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -20,6 +20,7 @@ import { FileType } from '@gonasi/schemas/file';
 import { EMPTY_LEXICAL_STATE } from '@gonasi/schemas/plugins';
 import type { CardSchemaTypes } from '@gonasi/schemas/plugins/schemas/swipeCategorize';
 
+import { Badge } from '../../badge';
 import { Button, IconTooltipButton } from '../../button';
 import { Checkbox } from '../../checkbox';
 import { Label, type LabelProps } from '../../label';
@@ -28,6 +29,11 @@ import { ErrorDisplay, FormDescription } from './Common';
 import { GoRichTextInputField } from './GoRichTextInputField';
 import { GoSelectInputField } from './GoSelectInputField';
 
+import { DocumentPreviewCard } from '~/components/file-renderers/preview-cards/document-preview-card';
+import { FileCard } from '~/components/file-renderers/preview-cards/file-preview-card';
+import { ImagePreviewCard } from '~/components/file-renderers/preview-cards/image-preview-card';
+import { MediaPreviewCard } from '~/components/file-renderers/preview-cards/media-preview-card';
+import { ModelPreviewCard } from '~/components/file-renderers/preview-cards/model-preview-card';
 import useModal from '~/components/go-editor/hooks/useModal';
 import RichTextRenderer from '~/components/go-editor/ui/RichTextRenderer';
 import { Spinner } from '~/components/loaders';
@@ -40,6 +46,8 @@ interface GoCardFieldProps {
   labelProps: Omit<LabelProps, 'htmlFor' | 'error'>;
   maxCards?: number;
   minCards?: number;
+  leftLabel?: string;
+  rightLabel?: string;
 }
 
 // Card Editor Modal Component
@@ -49,12 +57,16 @@ function CardEditorModal({
   name,
   currentCard,
   watch,
+  leftLabel = 'Left',
+  rightLabel = 'Right',
 }: {
   isOpen: boolean;
   onClose: () => void;
   name: string;
   currentCard: { card: CardSchemaTypes; index: number; isNew: boolean } | null;
   watch: any;
+  leftLabel?: string;
+  rightLabel?: string;
 }) {
   const { setValue } = useRemixFormContext();
   const [modal, showModal] = useModal();
@@ -258,8 +270,8 @@ function CardEditorModal({
                 description='Which category should this card be swiped to?'
                 selectProps={{
                   options: [
-                    { value: 'left', label: '👈 Left' },
-                    { value: 'right', label: '👉 Right' },
+                    { value: 'left', label: `👈 ${leftLabel}` },
+                    { value: 'right', label: `👉 ${rightLabel}` },
                   ],
                 }}
               />
@@ -299,6 +311,8 @@ export function GoCardField({
   labelProps,
   minCards = 3,
   maxCards = 20,
+  leftLabel = 'Left',
+  rightLabel = 'Right',
 }: GoCardFieldProps) {
   const {
     control,
@@ -402,69 +416,22 @@ export function GoCardField({
     if (loading) return <Spinner />;
     if (!fileData) return <div className='text-muted-foreground text-sm'>Asset not found</div>;
 
-    // Render preview based on file type
     switch (fileData.file_type) {
       case FileType.IMAGE:
-        return (
-          <div className='relative h-full w-full'>
-            {fileData.blur_url && (
-              <div
-                className='absolute inset-0 h-full w-full'
-                style={{
-                  backgroundImage: `url(${fileData.blur_url})`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
-                  filter: 'blur(10px)',
-                }}
-              />
-            )}
-            <img
-              src={fileData.signed_url}
-              alt={fileData.name}
-              className='relative h-full w-full object-contain'
-              loading='lazy'
-            />
-          </div>
-        );
+        return <ImagePreviewCard file={fileData} />;
 
       case FileType.VIDEO:
-        return (
-          <video
-            src={fileData.signed_url}
-            className='h-full w-full object-contain'
-            controls={false}
-            muted
-            preload='metadata'
-          />
-        );
-
       case FileType.AUDIO:
-        return (
-          <div className='flex items-center gap-2'>
-            <svg className='h-8 w-8' fill='currentColor' viewBox='0 0 20 20'>
-              <path d='M18 3a1 1 0 00-1.196-.98l-10 2A1 1 0 006 5v9.114A4.369 4.369 0 005 14c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V7.82l8-1.6v5.894A4.37 4.37 0 0015 12c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V3z' />
-            </svg>
-            <span className='text-sm'>{fileData.name}</span>
-          </div>
-        );
+        return <MediaPreviewCard file={fileData} />;
+
+      case FileType.DOCUMENT:
+        return <DocumentPreviewCard file={fileData} />;
 
       case FileType.MODEL_3D:
-        return (
-          <div className='flex items-center gap-2'>
-            <svg className='h-8 w-8' fill='currentColor' viewBox='0 0 20 20'>
-              <path d='M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z' />
-            </svg>
-            <span className='text-sm'>{fileData.name}</span>
-          </div>
-        );
+        return <ModelPreviewCard file={fileData} />;
 
       default:
-        return (
-          <div className='flex items-center gap-2'>
-            <FileIcon size={16} />
-            <span className='text-sm'>{fileData.name}</span>
-          </div>
-        );
+        return <FileCard file={fileData} />;
     }
   };
 
@@ -474,18 +441,20 @@ export function GoCardField({
         <div className='flex items-center justify-between'>
           <div className='flex items-center space-x-2'>
             <span className='text-sm font-medium'>Card {index + 1}</span>
-            <span className='bg-primary/10 text-primary rounded-full px-2 py-1 text-xs'>
+            <Badge variant='outline'>
               {card.contentData.type === 'richtext' ? '📝 Text' : '🎨 Asset'}
-            </span>
-            <span
-              className={`rounded-full px-2 py-1 text-xs ${
-                card.correctCategory === 'left'
-                  ? 'bg-destructive/10 text-destructive'
-                  : 'bg-success/10 text-success'
-              }`}
-            >
-              {card.correctCategory === 'left' ? '👈 Left' : '👉 Right'}
-            </span>
+            </Badge>
+            <Badge variant='outline'>
+              {card.correctCategory === 'left' ? (
+                <>
+                  <ArrowLeft /> {leftLabel}
+                </>
+              ) : (
+                <>
+                  <ArrowRight /> {rightLabel}
+                </>
+              )}
+            </Badge>
           </div>
 
           <div className='flex items-center space-x-2'>
@@ -575,6 +544,8 @@ export function GoCardField({
             name={name}
             currentCard={currentCard}
             watch={watch}
+            leftLabel={leftLabel}
+            rightLabel={rightLabel}
           />
         </div>
       )}

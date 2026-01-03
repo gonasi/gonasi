@@ -1,5 +1,5 @@
-import { X, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
 
 import { Button } from '~/components/ui/button';
 import { cn } from '~/lib/utils';
@@ -41,10 +41,10 @@ export function SwipeButtons({
             'h-16 w-16 rounded-full border-2 p-0 transition-all',
             isLeftDisabled
               ? 'border-muted bg-muted text-muted-foreground cursor-not-allowed opacity-30'
-              : 'bg-destructive/10 text-destructive hover:bg-destructive/20 border-destructive/30 hover:border-destructive/50',
+              : 'bg-secondary/10 text-secondary hover:bg-secondary/20 border-secondary/30 hover:border-secondary/50',
           )}
         >
-          <X className='h-8 w-8' />
+          <ArrowLeft className='h-8 w-8' />
         </Button>
       </motion.div>
 
@@ -63,10 +63,10 @@ export function SwipeButtons({
             'h-16 w-16 rounded-full border-2 p-0 transition-all',
             isRightDisabled
               ? 'border-muted bg-muted text-muted-foreground cursor-not-allowed opacity-30'
-              : 'bg-success/10 text-success hover:bg-success/20 border-success/30 hover:border-success/50',
+              : 'bg-secondary/10 text-secondary hover:bg-secondary/20 border-secondary/30 hover:border-secondary/50',
           )}
         >
-          <Check className='h-8 w-8' />
+          <ArrowRight className='h-8 w-8' />
         </Button>
       </motion.div>
     </div>
