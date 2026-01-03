@@ -26,7 +26,13 @@ export async function action({ request, params }: Route.ActionArgs) {
     receivedValues: defaultValues,
   } = await getValidatedFormData<FormData>(formData, zodResolver(BuilderSchema));
 
-  if (errors) return { errors, defaultValues };
+  if (errors) {
+    console.error('[UpsertPlugin] Validation errors:', JSON.stringify(errors, null, 2));
+    console.error('[UpsertPlugin] Received values:', JSON.stringify(defaultValues, null, 2));
+    return { errors, defaultValues };
+  }
+
+  console.log('[UpsertPlugin] Validation successful for:', data.plugin_type);
 
   const basePath = `/${params.organizationId}/builder/${params.courseId}/content`;
   const redirectUrl = `${basePath}/${params.chapterId}/${params.lessonId}/lesson-blocks`;

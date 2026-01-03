@@ -52,6 +52,33 @@ const defaultSettings: SwipeCategorizeSettingsSchemaTypes = {
   randomization: 'shuffle',
 };
 
+// Migration helper: Convert old card format to new format
+function migrateCardToNewFormat(card: any): any {
+  // If card already has contentData, return as is
+  if ('contentData' in card) {
+    console.log('[Migration] Card already has contentData:', card);
+    return card;
+  }
+
+  // Migrate old format: { content: LexicalState } -> { contentData: { type: 'richtext', content: LexicalState } }
+  if ('content' in card) {
+    console.log('[Migration] Migrating old format card:', card.id);
+    return {
+      ...card,
+      contentData: {
+        type: 'richtext',
+        content: card.content,
+      },
+      // Remove old content field
+      content: undefined,
+    };
+  }
+
+  // Shouldn't happen, but return as-is if neither field exists
+  console.warn('[Migration] Card has neither content nor contentData:', card);
+  return card;
+}
+
 export function BuilderSwipeCategorizePlugin({ block }: BuilderSwipeCategorizePluginProps) {
   console.log('[BuilderSwipeCategorizePlugin] Rendering with block:', block);
 
@@ -82,7 +109,11 @@ export function BuilderSwipeCategorizePlugin({ block }: BuilderSwipeCategorizePl
           lesson_id: params.lessonId!,
           plugin_type: 'swipe_categorize',
           content: SwipeCategorizeContentSchema.safeParse(block.content).success
-            ? SwipeCategorizeContentSchema.parse(block.content)
+            ? {
+                ...SwipeCategorizeContentSchema.parse(block.content),
+                // Migrate cards to new format
+                cards: (block.content as any).cards?.map(migrateCardToNewFormat) || [],
+              }
             : defaultContent,
           settings: SwipeCategorizeSettingsSchema.safeParse(block.settings).success
             ? SwipeCategorizeSettingsSchema.parse(block.settings)

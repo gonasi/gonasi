@@ -51,6 +51,29 @@ function isSwipeCategorizeInteraction(data: unknown): data is SwipeCategorizeInt
   );
 }
 
+// Migration helper: Convert old card format to new format
+function migrateCardToNewFormat(card: any): any {
+  // If card already has contentData, return as is
+  if ('contentData' in card) {
+    return card;
+  }
+
+  // Migrate old format: { content: LexicalState } -> { contentData: { type: 'richtext', content: LexicalState } }
+  if ('content' in card) {
+    return {
+      ...card,
+      contentData: {
+        type: 'richtext',
+        content: card.content,
+      },
+      // Remove old content field to avoid confusion
+      content: undefined,
+    };
+  }
+
+  return card;
+}
+
 export function ViewSwipeCategorizePlugin({ blockWithProgress }: ViewPluginComponentProps) {
   const {
     settings: { playbackMode, randomization, weight },
@@ -102,9 +125,11 @@ export function ViewSwipeCategorizePlugin({ blockWithProgress }: ViewPluginCompo
   // Use the most recent data (payload takes precedence over initial DB data)
   const currentInteractionData = parsedPayloadData || initialInteractionData;
 
-  // Sort and shuffle cards based on randomization setting
+  // Sort and shuffle cards based on randomization setting, with migration
   const processedCards = useMemo(() => {
-    const sortedCards = [...cards].sort((a, b) => a.index - b.index);
+    // Migrate cards to new format
+    const migratedCards = cards.map(migrateCardToNewFormat);
+    const sortedCards = [...migratedCards].sort((a, b) => a.index - b.index);
     if (randomization === 'shuffle') {
       return shuffleArray(sortedCards);
     }
@@ -226,7 +251,8 @@ export function ViewSwipeCategorizePlugin({ blockWithProgress }: ViewPluginCompo
                       <SwipeCard
                         key={card.id}
                         ref={isFront ? cardRef : null}
-                        content={card.content}
+                        cardData={card}
+                        mode={mode}
                         onSwipeLeft={swipeLeft}
                         onSwipeRight={swipeRight}
                         onWrongSwipe={handleWrongSwipe}
@@ -278,6 +304,7 @@ export function ViewSwipeCategorizePlugin({ blockWithProgress }: ViewPluginCompo
                 state={state}
                 leftLabel={leftLabel}
                 rightLabel={rightLabel}
+                mode={mode}
               />
             </div>
             {/* Completion Feedback */}

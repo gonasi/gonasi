@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react';
 import { ArrowLeft, ArrowRight, Check, X } from 'lucide-react';
 
+import { FileType } from '@gonasi/schemas/file';
 import type {
   CardSchemaTypes,
   SwipeCategorizeInteractionSchemaTypes,
 } from '@gonasi/schemas/plugins';
+
+import { AssetRenderer } from './AssetRenderer';
 
 import RichTextRenderer from '~/components/go-editor/ui/RichTextRenderer';
 import { Badge } from '~/components/ui/badge';
@@ -16,13 +19,25 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from '~/components/ui/carousel';
+import { Spinner } from '~/components/loaders';
 import { cn } from '~/lib/utils';
+
+interface FileWithSignedUrl {
+  id: string;
+  name: string;
+  signed_url: string;
+  file_type: FileType;
+  extension: string;
+  blur_url?: string | null;
+  settings?: any;
+}
 
 interface ReviewCarouselProps {
   cards: CardSchemaTypes[];
   state: SwipeCategorizeInteractionSchemaTypes;
   leftLabel: string;
   rightLabel: string;
+  mode?: 'preview' | 'play';
 }
 
 interface CardResult {
@@ -32,7 +47,47 @@ interface CardResult {
   hadWrongAttempt: boolean;
 }
 
-export function ReviewCarousel({ cards, state, leftLabel, rightLabel }: ReviewCarouselProps) {
+// Card content renderer component
+function CardContentRenderer({ card, mode = 'play' }: { card: CardSchemaTypes; mode?: 'preview' | 'play' }) {
+  const [assetFile, setAssetFile] = useState<FileWithSignedUrl | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (card.contentData.type === 'asset') {
+      const assetId = card.contentData.assetId;
+      setLoading(true);
+      fetch(`/api/files/${assetId}/signed-url?mode=${mode}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success) {
+            setAssetFile(data.data);
+          }
+        })
+        .catch((error) => {
+          console.error('Failed to load asset:', error);
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    }
+  }, [card.contentData, mode]);
+
+  if (card.contentData.type === 'richtext') {
+    return <RichTextRenderer editorState={card.contentData.content} />;
+  }
+
+  if (loading) {
+    return <Spinner />;
+  }
+
+  if (assetFile) {
+    return <AssetRenderer file={assetFile} displaySettings={card.contentData.displaySettings} />;
+  }
+
+  return <div className='text-muted-foreground text-center text-sm'>Asset not found</div>;
+}
+
+export function ReviewCarousel({ cards, state, leftLabel, rightLabel, mode = 'play' }: ReviewCarouselProps) {
   const [api, setApi] = useState<CarouselApi>();
   const [current, setCurrent] = useState(0);
   const [count, setCount] = useState(0);
@@ -126,10 +181,28 @@ export function ReviewCarousel({ cards, state, leftLabel, rightLabel }: ReviewCa
                   )}
                 </div>
               </div>
-              <div className='bg-card border-border relative flex h-96 w-72 flex-col rounded-2xl border-2 p-4'>
+              <div
+                className={cn(
+                  'bg-card border-border relative flex h-96 w-72 flex-col rounded-2xl',
+                  // Conditional padding and border based on display settings
+                  result.card.contentData.type === 'asset' &&
+                  result.card.contentData.displaySettings?.noPadding
+                    ? 'p-0'
+                    : 'p-4',
+                  result.card.contentData.type === 'asset' &&
+                  result.card.contentData.displaySettings?.noBorder
+                    ? 'border-0'
+                    : 'border-2',
+                )}
+              >
                 {/* Card Content */}
-                <div className='flex flex-1 items-center justify-center overflow-y-auto'>
-                  <RichTextRenderer editorState={result.card.content} />
+                <div
+                  className={cn(
+                    'flex flex-1 items-center justify-center',
+                    result.card.contentData.type === 'richtext' && 'overflow-y-auto',
+                  )}
+                >
+                  <CardContentRenderer card={result.card} mode={mode} />
                 </div>
               </div>
             </CarouselItem>
