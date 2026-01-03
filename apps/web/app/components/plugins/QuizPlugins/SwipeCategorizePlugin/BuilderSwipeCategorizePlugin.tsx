@@ -48,7 +48,7 @@ const defaultContent: SwipeCategorizeContentSchemaTypes = {
 
 const defaultSettings: SwipeCategorizeSettingsSchemaTypes = {
   playbackMode: 'inline',
-  weight: 1,
+  weight: 4,
   randomization: 'shuffle',
 };
 
@@ -132,6 +132,8 @@ export function BuilderSwipeCategorizePlugin({ block }: BuilderSwipeCategorizePl
 
   const watchPlaybackMode = methods.watch('settings.playbackMode');
   const watchRandomization = methods.watch('settings.randomization');
+  const watchLeftLabel = methods.watch('content.leftLabel');
+  const watchRightLabel = methods.watch('content.rightLabel');
 
   const actionUrl = getActionUrl(
     {
@@ -224,6 +226,8 @@ export function BuilderSwipeCategorizePlugin({ block }: BuilderSwipeCategorizePl
                 description='Add 3-20 cards. Each card will be swiped left or right into the correct category.'
                 minCards={3}
                 maxCards={20}
+                leftLabel={watchLeftLabel || 'Left'}
+                rightLabel={watchRightLabel || 'Right'}
               />
 
               <GoTextAreaField
