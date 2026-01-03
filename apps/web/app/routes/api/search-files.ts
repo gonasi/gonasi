@@ -14,8 +14,13 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 
   const searchQuery = url.searchParams.get('name') ?? '';
   const page = parseInt(url.searchParams.get('page') ?? '1', 10);
-  const fileType = url.searchParams.get('fileType') ?? '';
   const limit = 12;
+
+  // Handle multiple fileType parameters
+  const fileTypes = url.searchParams.getAll('fileType').filter(Boolean);
+
+  // If no file types specified, pass undefined to fetch all
+  const fileTypeParam = fileTypes.length > 0 ? fileTypes : undefined;
 
   const data = await fetchFilesWithSignedUrls({
     supabase,
@@ -23,7 +28,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     searchQuery,
     limit,
     page,
-    fileType: fileType as FileType,
+    fileTypes: fileTypeParam as FileType[] | undefined,
   });
 
   return data;

@@ -8,8 +8,8 @@ import { HoneypotInputs } from 'remix-utils/honeypot/react';
 
 import { FileType } from '@gonasi/schemas/file';
 import type {
-  AudioPlayerSettingsSchemaTypes,
   AudioPlayerSchemaTypes,
+  AudioPlayerSettingsSchemaTypes,
 } from '@gonasi/schemas/plugins';
 import {
   AudioPlayerContentSchema,
@@ -33,9 +33,7 @@ import type { LessonBlockLoaderReturnType } from '~/routes/organizations/builder
 import { getActionUrl } from '~/utils/get-action-url';
 import { useIsPending } from '~/utils/misc';
 
-const InsertMediaDialog = lazy(
-  () => import('../../MediaInteraction/common/InsertMediaDialog'),
-);
+const InsertMediaDialog = lazy(() => import('../../MediaInteraction/common/InsertMediaDialog'));
 const LazyAudioPreview = lazy(() =>
   import('./components/AudioPreview').then((module) => ({
     default: module.AudioPreview,
@@ -263,7 +261,7 @@ export function BuilderAudioPlayerPlugin({ block }: BuilderAudioPlayerPluginProp
                         (onClose) => (
                           <Suspense fallback={<Spinner />}>
                             <InsertMediaDialog
-                              fileType={FileType.AUDIO}
+                              fileTypes={[FileType.AUDIO]}
                               handleImageInsert={(file: SearchFileResult) => {
                                 methods.setValue('content.audio_id', file.id, {
                                   shouldDirty: true,

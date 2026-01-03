@@ -8,8 +8,8 @@ import { HoneypotInputs } from 'remix-utils/honeypot/react';
 
 import { FileType } from '@gonasi/schemas/file';
 import type {
-  VideoPlayerSettingsSchemaTypes,
   VideoPlayerSchemaTypes,
+  VideoPlayerSettingsSchemaTypes,
 } from '@gonasi/schemas/plugins';
 import {
   VideoPlayerContentSchema,
@@ -33,9 +33,7 @@ import type { LessonBlockLoaderReturnType } from '~/routes/organizations/builder
 import { getActionUrl } from '~/utils/get-action-url';
 import { useIsPending } from '~/utils/misc';
 
-const InsertMediaDialog = lazy(
-  () => import('../../MediaInteraction/common/InsertMediaDialog'),
-);
+const InsertMediaDialog = lazy(() => import('../../MediaInteraction/common/InsertMediaDialog'));
 const LazyVideoPreview = lazy(() =>
   import('./components/VideoPreview').then((module) => ({
     default: module.VideoPreview,
@@ -281,7 +279,13 @@ export function BuilderVideoPlayerPlugin({ block }: BuilderVideoPlayerPluginProp
                         (onClose) => (
                           <Suspense fallback={<Spinner />}>
                             <InsertMediaDialog
-                              fileType={FileType.VIDEO}
+                              fileTypes={[
+                                FileType.VIDEO,
+                                FileType.AUDIO,
+                                FileType.IMAGE,
+                                FileType.DOCUMENT,
+                                FileType.MODEL_3D,
+                              ]}
                               handleImageInsert={(file: SearchFileResult) => {
                                 methods.setValue('content.video_id', file.id, {
                                   shouldDirty: true,

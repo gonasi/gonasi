@@ -135,23 +135,16 @@ function CardEditorModal({
         <Suspense fallback={<Spinner />}>
           <InsertMediaDialog
             handleImageInsert={(file: SearchFileResult) => {
-              setValue(
-                `${name}.${currentCard.index}.${side}ContentData.assetId`,
-                file.id,
-                {
-                  shouldDirty: true,
-                  shouldValidate: true,
-                },
-              );
-              setValue(
-                `${name}.${currentCard.index}.${side}ContentData.fileType`,
-                file.file_type,
-                {
-                  shouldDirty: true,
-                },
-              );
+              setValue(`${name}.${currentCard.index}.${side}ContentData.assetId`, file.id, {
+                shouldDirty: true,
+                shouldValidate: true,
+              });
+              setValue(`${name}.${currentCard.index}.${side}ContentData.fileType`, file.file_type, {
+                shouldDirty: true,
+              });
               onModalClose();
             }}
+            fileTypes={[FileType.IMAGE, FileType.VIDEO, FileType.AUDIO]}
           />
         </Suspense>
       ),

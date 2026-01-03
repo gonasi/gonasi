@@ -6,7 +6,7 @@ import type { FetchDataParams } from '../types';
 
 interface FetchFilesParams extends FetchDataParams {
   courseId: string;
-  fileType?: FileType;
+  fileTypes?: FileType[]; // Changed to array
   transformOptions?: { width?: number; height?: number; quality?: number }; // optional for images
 }
 
@@ -16,7 +16,7 @@ export async function fetchFilesWithSignedUrls({
   searchQuery = '',
   limit = 12,
   page = 1,
-  fileType,
+  fileTypes, // Now accepts an array
   transformOptions,
 }: FetchFilesParams) {
   const { startIndex, endIndex } = getPaginationRange(page, limit);
@@ -28,7 +28,11 @@ export async function fetchFilesWithSignedUrls({
     .order('created_at', { ascending: false })
     .eq('course_id', courseId);
 
-  if (fileType) query = query.eq('file_type', fileType);
+  // Handle multiple file types with IN clause
+  if (fileTypes && fileTypes.length > 0) {
+    query = query.in('file_type', fileTypes);
+  }
+
   if (searchQuery) query = query.ilike('name', `%${searchQuery}%`);
   query = query.range(startIndex, endIndex);
 

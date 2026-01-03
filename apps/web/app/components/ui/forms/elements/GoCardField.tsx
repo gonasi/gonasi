@@ -105,6 +105,7 @@ function CardEditorModal({
       (onModalClose) => (
         <Suspense fallback={<Spinner />}>
           <InsertMediaDialog
+            fileTypes={[FileType.IMAGE, FileType.AUDIO, FileType.MODEL_3D]}
             handleImageInsert={(file: SearchFileResult) => {
               setValue(`${name}.${currentCard.index}.contentData.assetId`, file.id, {
                 shouldDirty: true,
