@@ -2,6 +2,14 @@ import { z } from 'zod';
 
 import { BasePluginSettingsSchema } from '../../pluginSettings';
 import { NonEmptyLexicalState } from '../../utils';
+import {
+  CardContentSchema,
+  type CardContentSchemaTypes,
+  type CardDisplaySettingsSchemaTypes,
+} from '../shared/cardContent';
+
+// Re-export shared types for backward compatibility
+export type { CardContentSchemaTypes, CardDisplaySettingsSchemaTypes };
 
 // ============================================================================
 // Card Schema
@@ -9,7 +17,7 @@ import { NonEmptyLexicalState } from '../../utils';
 
 export const CardSchema = z.object({
   id: z.string().uuid(),
-  content: NonEmptyLexicalState,
+  contentData: CardContentSchema,
   correctCategory: z.enum(['left', 'right']),
   // Position index for custom ordering (allows shuffling)
   index: z.number().int().min(0),

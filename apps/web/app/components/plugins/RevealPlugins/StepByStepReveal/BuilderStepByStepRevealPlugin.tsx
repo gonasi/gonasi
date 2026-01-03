@@ -43,6 +43,37 @@ const defaultSettings: StepByStepRevealSettingsSchemaTypes = {
   randomization: 'none',
 };
 
+// Migration helper: Convert old card format to new format
+function migrateCardToNewFormat(card: any): any {
+  // If card already has frontContentData and backContentData, return as is
+  if ('frontContentData' in card && 'backContentData' in card) {
+    return card;
+  }
+
+  // Migrate old format
+  const migratedCard: any = { ...card };
+
+  // Migrate frontContent -> frontContentData
+  if ('frontContent' in card && !('frontContentData' in card)) {
+    migratedCard.frontContentData = {
+      type: 'richtext',
+      content: card.frontContent,
+    };
+    delete migratedCard.frontContent;
+  }
+
+  // Migrate backContent -> backContentData
+  if ('backContent' in card && !('backContentData' in card)) {
+    migratedCard.backContentData = {
+      type: 'richtext',
+      content: card.backContent,
+    };
+    delete migratedCard.backContent;
+  }
+
+  return migratedCard;
+}
+
 export function BuilderStepByStepRevealPlugin({ block }: BuilderStepByStepRevealPluginProps) {
   const params = useParams();
   const isPending = useIsPending();
@@ -64,7 +95,11 @@ export function BuilderStepByStepRevealPlugin({ block }: BuilderStepByStepReveal
           lesson_id: params.lessonId!,
           plugin_type: 'step_by_step_reveal',
           content: StepByStepRevealContentSchema.safeParse(block.content).success
-            ? StepByStepRevealContentSchema.parse(block.content)
+            ? {
+                ...StepByStepRevealContentSchema.parse(block.content),
+                // Migrate cards to new format
+                cards: (block.content as any).cards?.map(migrateCardToNewFormat) || [],
+              }
             : { id: crypto.randomUUID(), title: EMPTY_LEXICAL_STATE, cards: [] },
           settings: StepByStepRevealSettingsSchema.safeParse(block.settings).success
             ? StepByStepRevealSettingsSchema.parse(block.settings)

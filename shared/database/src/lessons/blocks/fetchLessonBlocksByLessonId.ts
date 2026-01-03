@@ -27,6 +27,13 @@ export const fetchLessonBlocksByLessonId = async (
 
     if (!parseResult.success) {
       console.error('Validation failed for lesson blocks:', parseResult.error.format());
+      console.error('Raw data that failed validation:', JSON.stringify(data, null, 2));
+
+      // Log each block's plugin_type to help debug
+      data.forEach((block, index) => {
+        console.error(`Block ${index} (${block.plugin_type}):`, JSON.stringify(block, null, 2));
+      });
+
       return {
         success: false,
         message: 'Lesson blocks validation failed.',

@@ -2,13 +2,25 @@ import { z } from 'zod';
 
 import { BasePluginSettingsSchema, LayoutPluginSettingsSchema } from '../../pluginSettings';
 import { NonEmptyLexicalState } from '../../utils';
+import {
+  CardContentSchema,
+  type CardContentSchemaTypes,
+  type CardDisplaySettingsSchemaTypes,
+} from '../shared/cardContent';
+
+// Re-export shared types for backward compatibility
+export type { CardContentSchemaTypes, CardDisplaySettingsSchemaTypes };
+
+// ============================================================================
+// Step By Step Reveal Card Schema
+// ============================================================================
 
 export const StepByStepRevealCardSchema = z.object({
   id: z.string().uuid({
     message: `<lucide name="AlertCircle" size="12" /> Invalid <span class="go-title">id</span>; must be a valid UUID.`,
   }),
-  frontContent: NonEmptyLexicalState,
-  backContent: NonEmptyLexicalState,
+  frontContentData: CardContentSchema,
+  backContentData: CardContentSchema,
 });
 
 export type StepByStepRevealCardSchemaTypes = z.infer<typeof StepByStepRevealCardSchema>;

@@ -10,11 +10,28 @@ import {
 import { motion, useAnimation, useMotionValue, useTransform } from 'framer-motion';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 
+import { FileType } from '@gonasi/schemas/file';
+import type { CardSchemaTypes } from '@gonasi/schemas/plugins';
+
+import { AssetRenderer } from './AssetRenderer';
+
 import RichTextRenderer from '~/components/go-editor/ui/RichTextRenderer';
+import { Spinner } from '~/components/loaders';
 import { cn } from '~/lib/utils';
 
+interface FileWithSignedUrl {
+  id: string;
+  name: string;
+  signed_url: string;
+  file_type: FileType;
+  extension: string;
+  blur_url?: string | null;
+  settings?: any;
+}
+
 interface SwipeCardProps {
-  content: string;
+  cardData: CardSchemaTypes;
+  mode?: 'preview' | 'play';
   onSwipeLeft: () => void;
   onSwipeRight: () => void;
   onWrongSwipe?: (direction: 'left' | 'right') => void;
@@ -37,7 +54,8 @@ const VELOCITY_THRESHOLD = 500;
 export const SwipeCard = forwardRef<SwipeCardRef, SwipeCardProps>(
   (
     {
-      content,
+      cardData,
+      mode = 'play',
       onSwipeLeft,
       onSwipeRight,
       onWrongSwipe,
@@ -53,6 +71,31 @@ export const SwipeCard = forwardRef<SwipeCardRef, SwipeCardProps>(
     const controls = useAnimation();
     const [isExiting, setIsExiting] = useState(false);
     const isProcessingRef = useRef(false);
+
+    // State for asset file data
+    const [assetFile, setAssetFile] = useState<FileWithSignedUrl | null>(null);
+    const [assetLoading, setAssetLoading] = useState(false);
+
+    // Fetch asset if card type is 'asset'
+    useEffect(() => {
+      if (cardData.contentData.type === 'asset') {
+        const assetId = cardData.contentData.assetId;
+        setAssetLoading(true);
+        fetch(`/api/files/${assetId}/signed-url?mode=${mode}`)
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.success) {
+              setAssetFile(data.data);
+            }
+          })
+          .catch((error) => {
+            console.error('Failed to load asset:', error);
+          })
+          .finally(() => {
+            setAssetLoading(false);
+          });
+      }
+    }, [cardData.contentData, mode]);
 
     // Optimized rotation calculation
     const staticRotateOffset = useMemo(() => {
@@ -73,7 +116,7 @@ export const SwipeCard = forwardRef<SwipeCardRef, SwipeCardProps>(
         x.set(0);
         isProcessingRef.current = false;
       }
-    }, [content, x, isFront, isExiting]);
+    }, [cardData.id, x, isFront, isExiting]);
 
     // Cleanup on unmount
     useEffect(() => {
@@ -209,10 +252,21 @@ export const SwipeCard = forwardRef<SwipeCardRef, SwipeCardProps>(
       return { left: -200, right: 200 };
     }, [disabledDirection]);
 
+    // Get display settings and determine padding/border
+    const isAssetType = cardData.contentData.type === 'asset';
+    const displaySettings =
+      isAssetType && cardData.contentData.type === 'asset' ? cardData.contentData.displaySettings : undefined;
+    const noPadding = displaySettings?.noPadding ?? false;
+    const noBorder = displaySettings?.noBorder ?? false;
+
     return (
       <motion.div
         className={cn(
-          'bg-card border-border flex h-96 w-72 origin-bottom cursor-grab flex-col rounded-lg border p-4 select-none active:cursor-grabbing',
+          'bg-card border-border flex h-96 w-72 origin-bottom cursor-grab flex-col rounded-lg select-none active:cursor-grabbing',
+          // Conditional padding
+          noPadding ? 'p-0' : 'p-4',
+          // Conditional border
+          noBorder ? 'border-0' : 'border',
           !dragEnabled && 'cursor-default active:cursor-default',
           !isFront && 'pointer-events-none',
         )}
@@ -242,8 +296,21 @@ export const SwipeCard = forwardRef<SwipeCardRef, SwipeCardProps>(
         whileTap={isFront && dragEnabled && !isExiting ? { scale: 0.98 } : undefined}
       >
         {/* Card content */}
-        <div className='flex flex-1 items-center justify-center overflow-y-auto'>
-          <RichTextRenderer editorState={content} />
+        <div
+          className={cn(
+            'flex flex-1 items-center justify-center',
+            isAssetType ? (noPadding ? '' : 'p-0') : 'overflow-y-auto',
+          )}
+        >
+          {cardData.contentData.type === 'richtext' ? (
+            <RichTextRenderer editorState={cardData.contentData.content} />
+          ) : assetLoading ? (
+            <Spinner />
+          ) : assetFile ? (
+            <AssetRenderer file={assetFile} displaySettings={displaySettings} />
+          ) : (
+            <div className='text-muted-foreground text-center text-sm'>Asset not found</div>
+          )}
         </div>
 
         {/* Direction indicators - only on front card */}
