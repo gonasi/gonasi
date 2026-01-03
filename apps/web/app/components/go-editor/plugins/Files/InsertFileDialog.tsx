@@ -73,7 +73,7 @@ export function InsertFileDialog({
       try {
         const fetchedFiles = await fetchFilesWithSignedUrls({
           supabase: supabaseClient,
-          fileType,
+          fileTypes: [fileType],
           courseId: params.courseId ?? '',
           searchQuery: debouncedSearchQuery,
           limit,
@@ -103,7 +103,7 @@ export function InsertFileDialog({
           searchQuery: debouncedSearchQuery,
           limit,
           page,
-          fileType,
+          fileTypes: [fileType],
         });
 
         setFiles((prev) => ({
@@ -175,7 +175,12 @@ export function InsertFileDialog({
                   <PlainButton
                     key={file.id}
                     onClick={() =>
-                      handleFileInsert({ fileId: file.id, blurHash: file.blur_preview ?? '' })
+                      handleFileInsert({
+                        fileId: file.id,
+                        blurHash: file.blur_preview ?? '',
+                        width: 'inherit',
+                        height: 'inherit',
+                      })
                     }
                     className='h-full w-full'
                   >
