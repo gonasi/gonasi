@@ -2,37 +2,14 @@ import { z } from 'zod';
 
 import { BasePluginSettingsSchema } from '../../pluginSettings';
 import { NonEmptyLexicalState } from '../../utils';
-import { FileType } from '../../../file';
+import {
+  CardContentSchema,
+  type CardContentSchemaTypes,
+  type CardDisplaySettingsSchemaTypes,
+} from '../shared/cardContent';
 
-// ============================================================================
-// Card Display Settings Schema
-// ============================================================================
-
-export const CardDisplaySettingsSchema = z.object({
-  noPadding: z.boolean().optional(),
-  noBorder: z.boolean().optional(),
-  objectFit: z.enum(['contain', 'cover', 'fill']).optional(),
-  aspectRatio: z.enum(['auto', '1/1', '16/9', '4/3', '3/4']).optional(),
-});
-export type CardDisplaySettingsSchemaTypes = z.infer<typeof CardDisplaySettingsSchema>;
-
-// ============================================================================
-// Card Content Schema (Discriminated Union)
-// ============================================================================
-
-export const CardContentSchema = z.discriminatedUnion('type', [
-  z.object({
-    type: z.literal('richtext'),
-    content: NonEmptyLexicalState,
-  }),
-  z.object({
-    type: z.literal('asset'),
-    assetId: z.string({ required_error: 'Asset is required.' }),
-    fileType: z.nativeEnum(FileType),
-    displaySettings: CardDisplaySettingsSchema.optional(),
-  }),
-]);
-export type CardContentSchemaTypes = z.infer<typeof CardContentSchema>;
+// Re-export shared types for backward compatibility
+export type { CardContentSchemaTypes, CardDisplaySettingsSchemaTypes };
 
 // ============================================================================
 // Card Schema
