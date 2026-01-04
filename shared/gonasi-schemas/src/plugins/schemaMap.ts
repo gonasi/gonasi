@@ -14,6 +14,7 @@ import {
   VideoPlayerInteractionSchema,
   YoutubeEmbedInteractionSchema,
   VimeoEmbedInteractionSchema,
+  ImageFocusQuizInteractionSchema,
 } from './interactions';
 import {
   FillInTheBlankSchema,
@@ -29,6 +30,7 @@ import {
   VideoPlayerSchema,
   YoutubeEmbedSchema,
   VimeoEmbedSchema,
+  ImageFocusQuizSchema,
 } from './schemas';
 
 // Type that represents all possible plugin identifiers
@@ -48,6 +50,7 @@ export const BuilderSchema = z.discriminatedUnion('plugin_type', [
   VideoPlayerSchema,
   YoutubeEmbedSchema,
   VimeoEmbedSchema,
+  ImageFocusQuizSchema,
 ]);
 export type BuilderSchemaTypes = z.infer<typeof BuilderSchema>;
 
@@ -66,6 +69,7 @@ export const BlockInteractionSchema = z.discriminatedUnion('plugin_type', [
   VideoPlayerInteractionSchema,
   YoutubeEmbedInteractionSchema,
   VimeoEmbedInteractionSchema,
+  ImageFocusQuizInteractionSchema,
 ]);
 export type BlockInteractionSchemaTypes = z.infer<typeof BlockInteractionSchema>;
 
@@ -90,6 +94,7 @@ const PublishedAudioPlayerSchema = AudioPlayerSchema.merge(PublishedFields);
 const PublishedVideoPlayerSchema = VideoPlayerSchema.merge(PublishedFields);
 const PublishedYoutubeEmbedSchema = YoutubeEmbedSchema.merge(PublishedFields);
 const PublishedVimeoEmbedSchema = VimeoEmbedSchema.merge(PublishedFields);
+const PublishedImageFocusQuizSchema = ImageFocusQuizSchema.merge(PublishedFields);
 
 export const PublishedBuilderSchema = z.discriminatedUnion('plugin_type', [
   PublishedRichTextSchema,
@@ -105,5 +110,6 @@ export const PublishedBuilderSchema = z.discriminatedUnion('plugin_type', [
   PublishedVideoPlayerSchema,
   PublishedYoutubeEmbedSchema,
   PublishedVimeoEmbedSchema,
+  PublishedImageFocusQuizSchema,
 ]);
 export type PublishedBuilderSchemaTypes = z.infer<typeof PublishedBuilderSchema>;

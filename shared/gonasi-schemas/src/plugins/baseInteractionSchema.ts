@@ -37,6 +37,8 @@ const pluginTypes: PluginTypeId[] = [
   'twitch_embed',
   'motion_simulation',
   'gravity_simulation',
+  'image_focus_quiz',
+  'swipe_categorize',
 ];
 
 /**

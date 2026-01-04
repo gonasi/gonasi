@@ -15,6 +15,7 @@ import { ViewAudioPlayerPlugin } from '../MediaPlayerPlugins/AudioPlayerPlugin/V
 import { ViewVideoPlayerPlugin } from '../MediaPlayerPlugins/VideoPlayerPlugin/ViewVideoPlayerPlugin';
 import { ViewYouTubeEmbedPlugin } from '../MediaPlayerPlugins/YouTubeEmbedPlugin/ViewYouTubeEmbedPlugin';
 import { ViewVimeoEmbedPlugin } from '../MediaPlayerPlugins/VimeoEmbedPlugin/ViewVimeoEmbedPlugin';
+import { ViewImageFocusQuizPlugin } from '../RapidRecall/ImageFocusQuiz/ViewImageFocusQuizPlugin';
 
 export interface ViewPluginComponentProps {
   blockWithProgress: BlockWithProgressSchemaTypes;
@@ -56,6 +57,7 @@ const viewPluginComponentMap: Record<
   tiktok_embed: unimplementedPlugin,
   motion_simulation: unimplementedPlugin,
   gravity_simulation: unimplementedPlugin,
+  image_focus_quiz: ViewImageFocusQuizPlugin,
 };
 
 export default function ViewPluginTypesRenderer({

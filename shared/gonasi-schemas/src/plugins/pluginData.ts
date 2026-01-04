@@ -399,6 +399,29 @@ export const ALL_PLUGINS = [
       },
     ],
   },
+  {
+    id: 'rapid_recall',
+    name: 'Rapid Recall Plugins',
+    description: 'Active recall plugins for visual learning and memorization',
+    pluginGroups: [
+      {
+        id: 'image_focus_quiz',
+        name: 'Image Focus Quiz',
+        description: 'Focus on regions of an image with answer reveals for visual recall training',
+        icon: 'ScanEye',
+        pluginTypes: [
+          {
+            id: 'image_focus_quiz',
+            name: 'Image Focus Quiz',
+            description: 'Upload an image, define focus regions, and create rapid recall drills.',
+            example: 'Cram road signs, anatomical charts, or circuit diagrams.',
+            icon: 'Focus',
+            comingSoon: false,
+          },
+        ],
+      },
+    ],
+  },
 ] as const;
 // ----------------- INFERRED PLUGIN TYPES -----------------
 

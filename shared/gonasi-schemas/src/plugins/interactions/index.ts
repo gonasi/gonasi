@@ -11,3 +11,4 @@ export * from './audioPlayerInteractionSchema';
 export * from './videoPlayerInteractionSchema';
 export * from './youtubeEmbedInteractionSchema';
 export * from './vimeoEmbedInteractionSchema';
+export * from './imageFocusQuizInteractionSchema';

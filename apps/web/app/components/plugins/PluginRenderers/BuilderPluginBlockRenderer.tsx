@@ -97,6 +97,12 @@ const LazyBuilderVimeoEmbedPlugin = lazy(() =>
   })),
 );
 
+const LazyBuilderImageFocusQuizPlugin = lazy(() =>
+  import('../RapidRecall/ImageFocusQuiz/BuilderImageFocusQuizPlugin').then((module) => ({
+    default: module.BuilderImageFocusQuizPlugin,
+  })),
+);
+
 // Only components that accept `{ block?: LessonBlockLoaderReturnType }`
 const pluginComponentMap: Record<
   PluginTypeId,
@@ -131,6 +137,7 @@ const pluginComponentMap: Record<
   tiktok_embed: notImplemented,
   motion_simulation: notImplemented,
   gravity_simulation: notImplemented,
+  image_focus_quiz: LazyBuilderImageFocusQuizPlugin,
 };
 
 function PluginLoadingFallback() {
