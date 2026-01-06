@@ -28,7 +28,6 @@ import { Spinner } from '~/components/loaders';
 import { Button } from '~/components/ui/button';
 import { Checkbox } from '~/components/ui/checkbox';
 import { GoRichTextInputField } from '~/components/ui/forms/elements';
-import { Input } from '~/components/ui/input';
 import { Label } from '~/components/ui/label';
 import {
   Select,
@@ -56,9 +55,16 @@ const Cropper = lazy(() => import('react-easy-crop'));
 interface ImageFocusCanvasProps {
   imageId: string;
   name: string;
+  showCropper: boolean;
+  setShowCropper: (show: boolean) => void;
 }
 
-export default function ImageFocusCanvas({ imageId, name }: ImageFocusCanvasProps) {
+export default function ImageFocusCanvas({
+  imageId,
+  name,
+  showCropper,
+  setShowCropper,
+}: ImageFocusCanvasProps) {
   const fetcher = useFetcher<typeof loader>();
   const audioFetcher = useFetcher<typeof loader>();
   const {
@@ -81,7 +87,6 @@ export default function ImageFocusCanvas({ imageId, name }: ImageFocusCanvasProp
   const error = get(errors, name);
 
   // Crop state for creating/editing regions
-  const [showCropper, setShowCropper] = useState(false);
   const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
@@ -91,11 +96,8 @@ export default function ImageFocusCanvas({ imageId, name }: ImageFocusCanvasProp
 
   // Crop settings
   const [aspectRatio, setAspectRatio] = useState<number | undefined>(undefined);
-  const [customAspectWidth, setCustomAspectWidth] = useState('16');
-  const [customAspectHeight, setCustomAspectHeight] = useState('9');
   const [showGrid, setShowGrid] = useState(true);
   const [restrictPosition, setRestrictPosition] = useState(true);
-  const [newRegionZoomScale, setNewRegionZoomScale] = useState(2);
 
   // Track current zoom level for display
   const [currentZoomLevel, setCurrentZoomLevel] = useState(1);
@@ -145,7 +147,6 @@ export default function ImageFocusCanvas({ imageId, name }: ImageFocusCanvasProp
     setAspectRatio(undefined);
     setShowGrid(true);
     setRestrictPosition(true);
-    setNewRegionZoomScale(2);
     setCurrentZoomLevel(1); // Reset view zoom when entering cropper
     setShowCropper(true);
   };
@@ -167,14 +168,6 @@ export default function ImageFocusCanvas({ imageId, name }: ImageFocusCanvasProp
       case '3:2':
         setAspectRatio(3 / 2);
         break;
-      case 'custom': {
-        const width = parseFloat(customAspectWidth);
-        const height = parseFloat(customAspectHeight);
-        if (width > 0 && height > 0) {
-          setAspectRatio(width / height);
-        }
-        break;
-      }
     }
   };
 
@@ -206,7 +199,7 @@ export default function ImageFocusCanvas({ imageId, name }: ImageFocusCanvasProp
       const newRegion: FocusRegionSchemaTypes = {
         id: uuidv4(),
         ...regionData,
-        zoomScale: newRegionZoomScale,
+
         answerState: EMPTY_LEXICAL_STATE,
         index: regions.length,
       };
@@ -297,10 +290,10 @@ export default function ImageFocusCanvas({ imageId, name }: ImageFocusCanvasProp
           {showCropper ? (
             // CROPPER MODE: Define region boundaries + Configure
             <div className='space-y-4'>
-              <div className='grid grid-cols-1 gap-4 xl:grid-cols-3'>
+              <div>
                 {/* Main cropper area */}
-                <div className='xl:col-span-2'>
-                  <div className='bg-card relative h-[50vh] w-full overflow-hidden rounded-lg border shadow md:h-[60vh] xl:h-[70vh]'>
+                <div>
+                  <div className='bg-card relative h-[40vh] w-full overflow-hidden rounded-lg'>
                     <Suspense
                       fallback={
                         <div className='flex h-full items-center justify-center'>
@@ -333,10 +326,8 @@ export default function ImageFocusCanvas({ imageId, name }: ImageFocusCanvasProp
                 </div>
 
                 {/* Settings panel */}
-                <div className='space-y-4 xl:col-span-1'>
-                  <div className='rounded-lg border p-3 shadow-sm md:p-4'>
-                    <h3 className='mb-3 text-sm font-semibold md:mb-4'>Crop Settings</h3>
-
+                <div className='space-y-2'>
+                  <div>
                     {/* Aspect Ratio */}
                     <div className='space-y-2'>
                       <Label className='text-xs font-medium md:text-sm'>Aspect Ratio</Label>
@@ -369,48 +360,6 @@ export default function ImageFocusCanvas({ imageId, name }: ImageFocusCanvasProp
                         </SelectContent>
                       </Select>
                     </div>
-
-                    {/* Custom Aspect Ratio */}
-                    {aspectRatio !== undefined &&
-                    aspectRatio !== 1 &&
-                    aspectRatio !== 4 / 3 &&
-                    aspectRatio !== 16 / 9 &&
-                    aspectRatio !== 3 / 2 ? (
-                      <div className='space-y-2'>
-                        <Label className='text-xs font-medium md:text-sm'>Custom</Label>
-                        <div className='flex items-center gap-2'>
-                          <Input
-                            type='number'
-                            value={customAspectWidth}
-                            onChange={(e) => {
-                              setCustomAspectWidth(e.target.value);
-                              const width = parseFloat(e.target.value);
-                              const height = parseFloat(customAspectHeight);
-                              if (width > 0 && height > 0) {
-                                setAspectRatio(width / height);
-                              }
-                            }}
-                            className='w-16 text-xs md:text-sm'
-                            min='1'
-                          />
-                          <span className='text-muted-foreground text-xs'>:</span>
-                          <Input
-                            type='number'
-                            value={customAspectHeight}
-                            onChange={(e) => {
-                              setCustomAspectHeight(e.target.value);
-                              const width = parseFloat(customAspectWidth);
-                              const height = parseFloat(e.target.value);
-                              if (width > 0 && height > 0) {
-                                setAspectRatio(width / height);
-                              }
-                            }}
-                            className='w-16 text-xs md:text-sm'
-                            min='1'
-                          />
-                        </div>
-                      </div>
-                    ) : null}
 
                     {/* Zoom */}
                     <div className='space-y-2'>
@@ -456,26 +405,15 @@ export default function ImageFocusCanvas({ imageId, name }: ImageFocusCanvasProp
                         </label>
                       </div>
                     </div>
-
-                    {/* Region Info */}
-                    {croppedAreaPixels && (
-                      <div className='bg-muted/50 space-y-1 rounded-md border p-2'>
-                        <div className='text-xs font-medium'>Selected</div>
-                        <div className='text-muted-foreground text-xs'>
-                          {Math.round(croppedAreaPixels.width)} ×{' '}
-                          {Math.round(croppedAreaPixels.height)}px
-                        </div>
-                      </div>
-                    )}
                   </div>
                 </div>
               </div>
 
               {/* Region Content Form - appears after crop is selected */}
               {editingRegionIndex !== null && (
-                <div className='rounded-lg border p-4 shadow-sm'>
+                <div>
                   <div className='mb-4 flex items-center justify-between'>
-                    <h3 className='text-sm font-semibold'>
+                    <h3 className='text-lg font-bold'>
                       Region Content{' '}
                       {editingRegionIndex < regions.length ? `#${editingRegionIndex + 1}` : '(New)'}
                     </h3>
@@ -505,94 +443,14 @@ export default function ImageFocusCanvas({ imageId, name }: ImageFocusCanvasProp
                     )}
                   </div>
 
-                  <div className='space-y-4'>
-                    {/* Region Details */}
-                    {editingRegionIndex < regions.length &&
-                      imageRef.current &&
-                      regions[editingRegionIndex] && (
-                        <div className='bg-muted/50 space-y-2 rounded-lg border p-3'>
-                          <div className='text-sm font-medium'>Region Details</div>
-                          <div className='text-muted-foreground grid grid-cols-2 gap-2 text-xs'>
-                            <div>
-                              X:{' '}
-                              {Math.round(
-                                (regions[editingRegionIndex].x / 100) *
-                                  imageRef.current.naturalWidth,
-                              )}
-                              px ({regions[editingRegionIndex].x.toFixed(2)}%)
-                            </div>
-                            <div>
-                              Y:{' '}
-                              {Math.round(
-                                (regions[editingRegionIndex].y / 100) *
-                                  imageRef.current.naturalHeight,
-                              )}
-                              px ({regions[editingRegionIndex].y.toFixed(2)}%)
-                            </div>
-                            <div>
-                              Width:{' '}
-                              {Math.round(
-                                (regions[editingRegionIndex].width / 100) *
-                                  imageRef.current.naturalWidth,
-                              )}
-                              px ({regions[editingRegionIndex].width.toFixed(2)}%)
-                            </div>
-                            <div>
-                              Height:{' '}
-                              {Math.round(
-                                (regions[editingRegionIndex].height / 100) *
-                                  imageRef.current.naturalHeight,
-                              )}
-                              px ({regions[editingRegionIndex].height.toFixed(2)}%)
-                            </div>
-                          </div>
-                          <div className='text-muted-foreground text-xs'>
-                            Image: {imageRef.current.naturalWidth} ×{' '}
-                            {imageRef.current.naturalHeight}
-                            px
-                          </div>
-                        </div>
-                      )}
-
-                    {/* Zoom Scale */}
-                    <div className='space-y-2'>
-                      <Label className='text-sm font-medium'>
-                        Zoom Scale:{' '}
-                        {editingRegionIndex !== null && editingRegionIndex < regions.length
-                          ? `${regions[editingRegionIndex]?.zoomScale || 2}x`
-                          : `${newRegionZoomScale}x`}
-                      </Label>
-                      <Slider
-                        value={[
-                          editingRegionIndex !== null && editingRegionIndex < regions.length
-                            ? regions[editingRegionIndex]?.zoomScale || 2
-                            : newRegionZoomScale,
-                        ]}
-                        onValueChange={([scale]) => {
-                          if (editingRegionIndex !== null && editingRegionIndex < regions.length) {
-                            setValue(`${name}.${editingRegionIndex}.zoomScale`, scale ?? 2, {
-                              shouldDirty: true,
-                            });
-                          } else {
-                            setNewRegionZoomScale(scale ?? 2);
-                          }
-                        }}
-                        min={1}
-                        max={5}
-                        step={0.5}
-                      />
-                      <p className='text-muted-foreground text-xs'>
-                        Controls how much to zoom when revealing this region in play mode
-                      </p>
-                    </div>
-
+                  <div>
                     <GoRichTextInputField
                       name={`${name}.${editingRegionIndex}.answerState`}
                       labelProps={{ children: 'Answer', required: true }}
                       placeholder='Enter the answer to reveal...'
                     />
 
-                    <div className='space-y-2'>
+                    <div>
                       <Label htmlFor={`${name}.${editingRegionIndex}.audioId`}>
                         Audio (optional)
                       </Label>
@@ -668,39 +526,29 @@ export default function ImageFocusCanvas({ imageId, name }: ImageFocusCanvasProp
                 </div>
               )}
 
-              {/* Action buttons */}
-              <div className='flex flex-col gap-2 sm:flex-row'>
-                <Button
-                  variant='ghost'
-                  leftIcon={<CircleX />}
-                  onClick={handleCropCancel}
-                  className='w-full sm:w-auto'
-                >
-                  Cancel
-                </Button>
-                <Button
-                  variant='secondary'
-                  onClick={handleCropConfirm}
-                  rightIcon={<Crop />}
-                  disabled={!croppedAreaPixels}
-                  className='w-full sm:flex-1'
-                >
-                  {editingRegionIndex !== null && editingRegionIndex < regions.length
-                    ? 'Update Crop'
-                    : 'Confirm Crop'}
-                </Button>
-                {editingRegionIndex !== null && editingRegionIndex < regions.length && (
+              <div className='flex space-x-4 py-4'>
+                {/* Action buttons */}
+                <div className='flex flex-col gap-2 sm:flex-row'>
                   <Button
-                    onClick={handleSaveRegion}
+                    variant='ghost'
+                    leftIcon={<CircleX />}
+                    onClick={handleCropCancel}
                     className='w-full sm:w-auto'
-                    disabled={
-                      !regions[editingRegionIndex]?.answerState ||
-                      regions[editingRegionIndex].answerState === EMPTY_LEXICAL_STATE
-                    }
                   >
-                    Save &amp; Close
+                    Cancel
                   </Button>
-                )}
+                  <Button
+                    variant='secondary'
+                    onClick={handleCropConfirm}
+                    rightIcon={<Crop />}
+                    disabled={!croppedAreaPixels}
+                    className='w-full sm:flex-1'
+                  >
+                    {editingRegionIndex !== null && editingRegionIndex < regions.length
+                      ? 'Update Crop'
+                      : 'Confirm Crop'}
+                  </Button>
+                </div>
               </div>
             </div>
           ) : (

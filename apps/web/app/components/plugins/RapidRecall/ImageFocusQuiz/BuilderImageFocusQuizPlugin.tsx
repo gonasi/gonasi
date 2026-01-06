@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { useParams } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Edit, File, ImageOff, Plus, Save, Settings } from 'lucide-react';
@@ -69,6 +69,7 @@ export function BuilderImageFocusQuizPlugin({ block }: BuilderImageFocusQuizPlug
   const params = useParams();
   const isPending = useIsPending();
   const [modal, showModal] = useModal();
+  const [showCropper, setShowCropper] = useState(false);
 
   const { organizationId, courseId, chapterId, lessonId, pluginGroupId } = params;
 
@@ -120,152 +121,183 @@ export function BuilderImageFocusQuizPlugin({ block }: BuilderImageFocusQuizPlug
   const watchImageSelection = methods.watch('content.imageId');
   const watchRegions = methods.watch('content.regions');
 
+  console.log('watchRegions: ', watchRegions);
+
   return (
     <Modal open>
-      <Modal.Content size='full'>
+      <Modal.Content size={showCropper ? 'md' : 'full'}>
         <RemixFormProvider {...methods}>
           <form onSubmit={methods.handleSubmit} method='POST' action={actionUrl}>
             <Modal.Header
-              leadingIcon={block?.id ? null : <BackArrowNavLink to={backRoute} />}
-              title={block?.id ? 'Edit Image Focus Quiz' : 'Add Image Focus Quiz'}
-              closeRoute={lessonPath}
-              settingsPopover={
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Settings
-                      className='transition-transform duration-200 hover:scale-105 hover:rotate-15 hover:cursor-pointer'
-                      size={20}
-                    />
-                  </PopoverTrigger>
-                  <PopoverContent className='max-h-[70vh] w-full max-w-md overflow-y-auto'>
-                    <div className='grid gap-4'>
-                      <div className='space-y-2'>
-                        <h4 className='leading-none font-medium'>Block settings</h4>
-                        <p className='text-muted-foreground text-sm'>
-                          Configure timing, visual effects, and flow control
-                        </p>
-                      </div>
-                      <div className='grid gap-3'>
-                        {/* Base Settings */}
-                        <BlockWeightField name='settings.weight' />
-                        <PlaybackModeField
-                          name='settings.playbackMode'
-                          watchValue={watchPlaybackMode}
-                        />
-
-                        {/* Reveal Settings */}
-                        <div className='space-y-2'>
-                          <Label className='text-sm font-medium'>Reveal Settings</Label>
-                          <GoSelectInputField
-                            name='settings.revealMode'
-                            labelProps={{ children: 'Reveal Mode' }}
-                            selectProps={{
-                              placeholder: 'Select reveal mode',
-                              options: [
-                                { value: 'auto', label: 'Auto (timed reveal)' },
-                                { value: 'manual', label: 'Manual (tap to reveal)' },
-                              ],
-                            }}
-                          />
-                          {watchRevealMode === 'auto' && (
-                            <GoInputField
-                              name='settings.defaultRevealDelay'
-                              labelProps={{ children: 'Default Reveal Delay (seconds)' }}
-                            />
-                          )}
-                        </div>
-
-                        {/* Visual Effects */}
-                        <div className='space-y-2'>
-                          <Label className='text-sm font-medium'>Visual Effects</Label>
-                          <GoInputField
-                            name='settings.blurIntensity'
-                            labelProps={{ children: 'Blur Intensity (0-20px)' }}
-                          />
-                          <GoInputField
-                            name='settings.dimIntensity'
-                            labelProps={{ children: 'Dim Intensity (0-1)' }}
-                          />
-                          <GoInputField
-                            name='settings.animationDuration'
-                            labelProps={{ children: 'Animation Duration (ms)' }}
-                          />
-                        </div>
-
-                        {/* Flow Control */}
-                        <div className='space-y-2'>
-                          <Label className='text-sm font-medium'>Flow Control</Label>
-                          <GoSelectInputField
-                            name='settings.randomization'
-                            labelProps={{ children: 'Region Order' }}
-                            selectProps={{
-                              options: [
-                                { value: 'none', label: 'Sequential' },
-                                { value: 'shuffle', label: 'Shuffled' },
-                              ],
-                            }}
-                          />
-                          <GoInputField
-                            name='content.initialDisplayDuration'
-                            labelProps={{ children: 'Initial Display Duration (s)' }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </PopoverContent>
-                </Popover>
+              leadingIcon={
+                showCropper ? null : block?.id ? null : <BackArrowNavLink to={backRoute} />
               }
+              title={
+                showCropper
+                  ? 'Crop Image Selected Region'
+                  : block?.id
+                    ? 'Edit Image Focus Quiz'
+                    : 'Add Image Focus Quiz'
+              }
+              closeRoute={showCropper ? undefined : lessonPath}
+              settingsPopover={
+                showCropper ? null : (
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Settings
+                        className='transition-transform duration-200 hover:scale-105 hover:rotate-15 hover:cursor-pointer'
+                        size={20}
+                      />
+                    </PopoverTrigger>
+                    <PopoverContent className='w-full max-w-md'>
+                      <div className='grid gap-4'>
+                        <div className='space-y-2'>
+                          <h4 className='leading-none font-medium'>Block settings</h4>
+                          <p className='text-muted-foreground text-sm'>
+                            Tweak how this block behaves, your rules, your way!
+                          </p>
+                        </div>
+                        <div className='grid gap-2'>
+                          {/* Base Settings */}
+                          <BlockWeightField name='settings.weight' />
+
+                          <PlaybackModeField
+                            name='settings.playbackMode'
+                            watchValue={watchPlaybackMode}
+                          />
+
+                          {/* Reveal Settings */}
+                          <div className='space-y-2'>
+                            <Label className='text-sm font-medium'>Reveal Settings</Label>
+
+                            <GoSelectInputField
+                              name='settings.revealMode'
+                              labelProps={{ children: 'Reveal Mode' }}
+                              selectProps={{
+                                placeholder: 'Select reveal mode',
+                                options: [
+                                  { value: 'auto', label: 'Auto (timed reveal)' },
+                                  { value: 'manual', label: 'Manual (tap to reveal)' },
+                                ],
+                              }}
+                            />
+
+                            {watchRevealMode === 'auto' && (
+                              <GoInputField
+                                name='settings.defaultRevealDelay'
+                                labelProps={{
+                                  children: 'Default Reveal Delay (seconds)',
+                                }}
+                              />
+                            )}
+                          </div>
+
+                          {/* Visual Effects */}
+                          <div className='space-y-2'>
+                            <Label className='text-sm font-medium'>Visual Effects</Label>
+
+                            <GoInputField
+                              name='settings.blurIntensity'
+                              labelProps={{ children: 'Blur Intensity (0–20px)' }}
+                            />
+
+                            <GoInputField
+                              name='settings.dimIntensity'
+                              labelProps={{ children: 'Dim Intensity (0–1)' }}
+                            />
+
+                            <GoInputField
+                              name='settings.animationDuration'
+                              labelProps={{ children: 'Animation Duration (ms)' }}
+                            />
+                          </div>
+
+                          {/* Flow Control */}
+                          <div className='space-y-2'>
+                            <Label className='text-sm font-medium'>Flow Control</Label>
+
+                            <GoSelectInputField
+                              name='settings.randomization'
+                              labelProps={{ children: 'Region Order' }}
+                              selectProps={{
+                                options: [
+                                  { value: 'none', label: 'Sequential' },
+                                  { value: 'shuffle', label: 'Shuffled' },
+                                ],
+                              }}
+                            />
+
+                            <GoInputField
+                              name='content.initialDisplayDuration'
+                              labelProps={{
+                                children: 'Initial Display Duration (s)',
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                )
+              }
+              hasClose={!showCropper}
             />
             <Modal.Body>
               <HoneypotInputs />
-              <BannerCard
-                showCloseIcon={false}
-                variant='error'
-                message='No regions added'
-                description='Add regions to the image to create a quiz.'
-                className='my-2'
-              />
+              {!showCropper && watchRegions.length === 0 ? (
+                <BannerCard
+                  showCloseIcon={false}
+                  variant='error'
+                  message='No regions added'
+                  description='Add regions to the image to create a quiz.'
+                  className='my-2'
+                />
+              ) : null}
               <div className='relative'>
                 {/* Top-right icon button */}
-                <div
-                  className={cn(
-                    'absolute right-2 z-10',
-                    watchImageSelection ? 'top-12' : 'top-2',
-                    watchRegions?.length > 0 && 'hidden',
-                  )}
-                >
-                  <IconTooltipButton
-                    variant='secondary'
-                    title={watchImageSelection ? 'Edit image' : 'Add image'}
-                    icon={watchImageSelection ? Edit : Plus}
-                    onClick={() => {
-                      showModal(
-                        'Insert Image',
-                        (onClose) => (
-                          <Suspense fallback={<Spinner />}>
-                            <InsertMediaDialog
-                              handleImageInsert={(file: SearchFileResult) => {
-                                methods.setValue('content.imageId', file.id);
-                                onClose();
-                              }}
-                            />
-                          </Suspense>
-                        ),
-                        '',
-                        <File />,
-                        'lg',
-                      );
-                    }}
-                  />
-                </div>
+                {!showCropper && (
+                  <div
+                    className={cn(
+                      'absolute right-2 z-10',
+                      watchImageSelection ? 'top-12' : 'top-2',
+                      watchRegions?.length > 0 && 'hidden',
+                    )}
+                  >
+                    <IconTooltipButton
+                      variant='secondary'
+                      title={watchImageSelection ? 'Edit image' : 'Add image'}
+                      icon={watchImageSelection ? Edit : Plus}
+                      onClick={() => {
+                        showModal(
+                          'Insert Image',
+                          (onClose) => (
+                            <Suspense fallback={<Spinner />}>
+                              <InsertMediaDialog
+                                handleImageInsert={(file: SearchFileResult) => {
+                                  methods.setValue('content.imageId', file.id);
+                                  onClose();
+                                }}
+                              />
+                            </Suspense>
+                          ),
+                          '',
+                          <File />,
+                          'lg',
+                        );
+                      }}
+                    />
+                  </div>
+                )}
 
                 {/* Canvas for region drawing */}
-                <div className='border-border/20 min-h-20 w-full border'>
+                <div className='min-h-20 w-full'>
                   {watchImageSelection ? (
                     <Suspense fallback={<Spinner />}>
                       <LazyImageFocusCanvas
                         imageId={methods.getValues('content.imageId')}
                         name='content.regions'
+                        showCropper={showCropper}
+                        setShowCropper={setShowCropper}
                       />
                     </Suspense>
                   ) : (
@@ -281,18 +313,20 @@ export function BuilderImageFocusQuizPlugin({ block }: BuilderImageFocusQuizPlug
               </div>
               {modal}
             </Modal.Body>
-            <div className='bg-background/90 border-t-border/20 sticky right-0 bottom-0 left-0 z-10 flex justify-end space-x-2 border-t p-4'>
-              <div className='flex w-full'>
-                <Button
-                  type='submit'
-                  rightIcon={<Save />}
-                  disabled={isDisabled || !methods.formState.isDirty}
-                  isLoading={isDisabled}
-                >
-                  Save
-                </Button>
+            {showCropper ? null : (
+              <div className='bg-background/90 border-t-border/20 sticky right-0 bottom-0 left-0 z-10 flex justify-end space-x-2 border-t p-4'>
+                <div className='flex w-full'>
+                  <Button
+                    type='submit'
+                    rightIcon={<Save />}
+                    disabled={isDisabled || !methods.formState.isDirty}
+                    isLoading={isDisabled}
+                  >
+                    Save
+                  </Button>
+                </div>
               </div>
-            </div>
+            )}
           </form>
         </RemixFormProvider>
       </Modal.Content>

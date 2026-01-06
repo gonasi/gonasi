@@ -39,12 +39,6 @@ export const FocusRegionSchema = z.object({
     .min(1, 'Height must be at least 1%.')
     .max(100, 'Height cannot exceed 100%.'),
 
-  /** Zoom scale for this region (how much to zoom in) */
-  zoomScale: z
-    .number({ required_error: 'Zoom scale is required.' })
-    .min(1.1, 'Zoom scale must be at least 1.1x.')
-    .max(5, 'Zoom scale cannot exceed 5x.'),
-
   /** Answer text revealed after delay (supports rich text formatting) */
   answerState: NonEmptyLexicalState,
 
@@ -105,9 +99,11 @@ export type ImageFocusQuizContentSchemaTypes = z.infer<typeof ImageFocusQuizCont
 
 export const ImageFocusQuizSettingsSchema = BasePluginSettingsSchema.extend({
   /** How answers are revealed: auto (after delay) or manual (user tap/click) */
-  revealMode: z.enum(['auto', 'manual'], {
-    errorMap: () => ({ message: 'Reveal mode must be either "auto" or "manual".' }),
-  }).default('auto'),
+  revealMode: z
+    .enum(['auto', 'manual'], {
+      errorMap: () => ({ message: 'Reveal mode must be either "auto" or "manual".' }),
+    })
+    .default('auto'),
 
   /** Default time (in seconds) to wait before revealing the answer (auto mode) */
   defaultRevealDelay: z
