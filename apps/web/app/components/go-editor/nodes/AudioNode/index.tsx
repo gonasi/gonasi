@@ -74,10 +74,7 @@ export class AudioNode extends DecoratorNode<React.JSX.Element> {
     const element = document.createElement('audio');
     element.setAttribute('data-file-id', this.__fileId);
     element.setAttribute('controls', 'true');
-    element.setAttribute(
-      'src',
-      'data:audio/mpeg;base64,//uQx',
-    );
+    element.setAttribute('src', 'data:audio/mpeg;base64,//uQx');
     return { element };
   }
 

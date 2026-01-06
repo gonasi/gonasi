@@ -111,9 +111,14 @@ export function MatchingItemButton({
       className={cn(
         'flex w-full items-center justify-between gap-3 rounded-lg border-2 p-4 text-left transition-all duration-200',
         // Base state with hover cursor
-        !isMatched && !isSelected && !isDisabled && 'border-border hover:border-primary hover:bg-accent/50 hover:cursor-pointer',
+        !isMatched &&
+          !isSelected &&
+          !isDisabled &&
+          'border-border hover:border-primary hover:bg-accent/50 hover:cursor-pointer',
         // Selected state with glow
-        isSelected && !isMatched && 'border-primary bg-primary/5 shadow-primary/20 shadow-lg hover:cursor-pointer',
+        isSelected &&
+          !isMatched &&
+          'border-primary bg-primary/5 shadow-primary/20 shadow-lg hover:cursor-pointer',
         // Matched state with color (only border, no background)
         isMatched && matchColor && `${matchColor.border} cursor-not-allowed`,
         // Matched state without color (fallback)
@@ -121,7 +126,7 @@ export function MatchingItemButton({
         // Disabled state (wrong attempt)
         isDisabled && !isMatched && 'border-border cursor-not-allowed opacity-50',
         // Pulsing state gets subtle highlight
-        shouldPulse && !isMatched && !isDisabled && 'ring-1 ring-primary/30',
+        shouldPulse && !isMatched && !isDisabled && 'ring-primary/30 ring-1',
       )}
       // Initial state for nudge animation
       initial={shouldNudge ? { scale: 1, x: 0, rotate: 0 } : false}
@@ -170,7 +175,10 @@ export function MatchingItemButton({
               matchColor ? `${matchColor.bg}` : 'bg-success',
             )}
           >
-            <Check className={cn('h-5 w-5 font-bold', matchColor ? matchColor.text : 'text-white')} strokeWidth={3} />
+            <Check
+              className={cn('h-5 w-5 font-bold', matchColor ? matchColor.text : 'text-white')}
+              strokeWidth={3}
+            />
           </motion.div>
         )}
         {isWrong && !isMatched && (

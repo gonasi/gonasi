@@ -42,7 +42,10 @@ export function extractYouTubeId(url: string): string | null {
 /**
  * Generate YouTube thumbnail URL from video ID
  */
-export function getYouTubeThumbnail(videoId: string, quality: 'default' | 'hq' | 'mq' | 'sd' | 'maxres' = 'hq'): string {
+export function getYouTubeThumbnail(
+  videoId: string,
+  quality: 'default' | 'hq' | 'mq' | 'sd' | 'maxres' = 'hq',
+): string {
   const qualityMap = {
     default: 'default.jpg',
     hq: 'hqdefault.jpg',

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ArrowLeft, ArrowRight, Check, X } from 'lucide-react';
 
-import { FileType } from '@gonasi/schemas/file';
+import type { FileType } from '@gonasi/schemas/file';
 import type {
   CardSchemaTypes,
   SwipeCategorizeInteractionSchemaTypes,
@@ -10,6 +10,7 @@ import type {
 import { AssetRenderer } from './AssetRenderer';
 
 import RichTextRenderer from '~/components/go-editor/ui/RichTextRenderer';
+import { Spinner } from '~/components/loaders';
 import { Badge } from '~/components/ui/badge';
 import {
   Carousel,
@@ -19,7 +20,6 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from '~/components/ui/carousel';
-import { Spinner } from '~/components/loaders';
 import { cn } from '~/lib/utils';
 
 interface FileWithSignedUrl {
@@ -48,7 +48,13 @@ interface CardResult {
 }
 
 // Card content renderer component
-function CardContentRenderer({ card, mode = 'play' }: { card: CardSchemaTypes; mode?: 'preview' | 'play' }) {
+function CardContentRenderer({
+  card,
+  mode = 'play',
+}: {
+  card: CardSchemaTypes;
+  mode?: 'preview' | 'play';
+}) {
   const [assetFile, setAssetFile] = useState<FileWithSignedUrl | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -87,7 +93,13 @@ function CardContentRenderer({ card, mode = 'play' }: { card: CardSchemaTypes; m
   return <div className='text-muted-foreground text-center text-sm'>Asset not found</div>;
 }
 
-export function ReviewCarousel({ cards, state, leftLabel, rightLabel, mode = 'play' }: ReviewCarouselProps) {
+export function ReviewCarousel({
+  cards,
+  state,
+  leftLabel,
+  rightLabel,
+  mode = 'play',
+}: ReviewCarouselProps) {
   const [api, setApi] = useState<CarouselApi>();
   const [current, setCurrent] = useState(0);
   const [count, setCount] = useState(0);
@@ -186,11 +198,11 @@ export function ReviewCarousel({ cards, state, leftLabel, rightLabel, mode = 'pl
                   'bg-card border-border relative flex h-96 w-72 flex-col rounded-2xl',
                   // Conditional padding and border based on display settings
                   result.card.contentData.type === 'asset' &&
-                  result.card.contentData.displaySettings?.noPadding
+                    result.card.contentData.displaySettings?.noPadding
                     ? 'p-0'
                     : 'p-4',
                   result.card.contentData.type === 'asset' &&
-                  result.card.contentData.displaySettings?.noBorder
+                    result.card.contentData.displaySettings?.noBorder
                     ? 'border-0'
                     : 'border-2',
                 )}

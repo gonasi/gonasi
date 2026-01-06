@@ -4,7 +4,6 @@ import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext
 import { useLexicalEditable } from '@lexical/react/useLexicalEditable';
 import { useLexicalNodeSelection } from '@lexical/react/useLexicalNodeSelection';
 import { mergeRegister } from '@lexical/utils';
-import { Box } from 'lucide-react';
 import type { BaseSelection } from 'lexical';
 import {
   $getNodeByKey,
@@ -14,9 +13,10 @@ import {
   COMMAND_PRIORITY_LOW,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
+import { Box } from 'lucide-react';
 
-import { $isModel3DNode } from '.';
 import ImageResizer from '../ImageNode/ImageResizer';
+import { $isModel3DNode } from '.';
 
 import { ModelPreviewCard } from '~/components/file-renderers/preview-cards/model-preview-card';
 import type { loader } from '~/routes/api/get-signed-url';

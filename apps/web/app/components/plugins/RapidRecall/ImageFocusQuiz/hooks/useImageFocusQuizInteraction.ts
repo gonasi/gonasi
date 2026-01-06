@@ -1,10 +1,10 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 import type {
+  FocusRegionSchemaTypes,
   ImageFocusQuizInteractionSchemaTypes,
   ImageFocusQuizStateSchemaTypes,
 } from '@gonasi/schemas/plugins';
-import type { FocusRegionSchemaTypes } from '@gonasi/schemas/plugins';
 
 interface UseImageFocusQuizInteractionReturn {
   state: ImageFocusQuizStateSchemaTypes;
@@ -89,9 +89,10 @@ export function useImageFocusQuizInteraction(
       const currentRegionId = currentRegion?.id;
 
       // Add current region to completed if not already there
-      const updatedCompleted = currentRegionId && !prev.completedRegions.includes(currentRegionId)
-        ? [...prev.completedRegions, currentRegionId]
-        : prev.completedRegions;
+      const updatedCompleted =
+        currentRegionId && !prev.completedRegions.includes(currentRegionId)
+          ? [...prev.completedRegions, currentRegionId]
+          : prev.completedRegions;
 
       return {
         ...prev,

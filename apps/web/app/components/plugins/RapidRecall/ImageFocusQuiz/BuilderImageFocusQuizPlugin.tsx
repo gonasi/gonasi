@@ -18,6 +18,7 @@ import {
 import { BlockWeightField } from '../../common/settings/BlockWeightField';
 import { PlaybackModeField } from '../../common/settings/PlaybackModeField';
 
+import { BannerCard } from '~/components/cards';
 import useModal from '~/components/go-editor/hooks/useModal';
 import { Spinner } from '~/components/loaders';
 import { BackArrowNavLink, Button } from '~/components/ui/button';
@@ -26,6 +27,7 @@ import { Label } from '~/components/ui/label';
 import { Modal } from '~/components/ui/modal';
 import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover';
 import { IconTooltipButton } from '~/components/ui/tooltip';
+import { cn } from '~/lib/utils';
 import type { SearchFileResult } from '~/routes/api/search-files';
 import type { LessonBlockLoaderReturnType } from '~/routes/organizations/builder/course/content/chapterId/lessonId/lesson-blocks/plugins/edit-plugin-modal';
 import { getActionUrl } from '~/utils/get-action-url';
@@ -116,6 +118,7 @@ export function BuilderImageFocusQuizPlugin({ block }: BuilderImageFocusQuizPlug
   const watchPlaybackMode = methods.watch('settings.playbackMode');
   const watchRevealMode = methods.watch('settings.revealMode');
   const watchImageSelection = methods.watch('content.imageId');
+  const watchRegions = methods.watch('content.regions');
 
   return (
     <Modal open>
@@ -134,7 +137,7 @@ export function BuilderImageFocusQuizPlugin({ block }: BuilderImageFocusQuizPlug
                       size={20}
                     />
                   </PopoverTrigger>
-                  <PopoverContent className='max-h-[80vh] w-full max-w-md overflow-y-auto'>
+                  <PopoverContent className='max-h-[70vh] w-full max-w-md overflow-y-auto'>
                     <div className='grid gap-4'>
                       <div className='space-y-2'>
                         <h4 className='leading-none font-medium'>Block settings</h4>
@@ -215,9 +218,22 @@ export function BuilderImageFocusQuizPlugin({ block }: BuilderImageFocusQuizPlug
             />
             <Modal.Body>
               <HoneypotInputs />
+              <BannerCard
+                showCloseIcon={false}
+                variant='error'
+                message='No regions added'
+                description='Add regions to the image to create a quiz.'
+                className='my-2'
+              />
               <div className='relative'>
                 {/* Top-right icon button */}
-                <div className='absolute top-2 right-2 z-5'>
+                <div
+                  className={cn(
+                    'absolute right-2 z-10',
+                    watchImageSelection ? 'top-12' : 'top-2',
+                    watchRegions?.length > 0 && 'hidden',
+                  )}
+                >
                   <IconTooltipButton
                     variant='secondary'
                     title={watchImageSelection ? 'Edit image' : 'Add image'}

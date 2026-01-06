@@ -3,19 +3,19 @@ import type { JSX } from 'react';
 import type { PluginTypeId } from '@gonasi/schemas/plugins';
 import type { BlockWithProgressSchemaTypes } from '@gonasi/schemas/publish/progressiveReveal';
 
+import { ViewAudioPlayerPlugin } from '../MediaPlayerPlugins/AudioPlayerPlugin/ViewAudioPlayerPlugin';
+import { ViewVideoPlayerPlugin } from '../MediaPlayerPlugins/VideoPlayerPlugin/ViewVideoPlayerPlugin';
+import { ViewVimeoEmbedPlugin } from '../MediaPlayerPlugins/VimeoEmbedPlugin/ViewVimeoEmbedPlugin';
+import { ViewYouTubeEmbedPlugin } from '../MediaPlayerPlugins/YouTubeEmbedPlugin/ViewYouTubeEmbedPlugin';
 import { ViewFillInTheBlankPlugin } from '../QuizPlugins/FillInTheBlankPlugin/ViewFillInTheBlankPlugin';
 import { ViewMatchingGamePlugin } from '../QuizPlugins/MatchingGamePlugin/ViewMatchingGamePlugin';
 import { ViewMultipleChoiceMultipleAnswersPlugin } from '../QuizPlugins/MultipleChoiceMultipleAnswers/ViewMultipleChoiceMultipleAnswersPlugin';
 import { ViewMultipleChoiceSingleAnswerPlugin } from '../QuizPlugins/MultipleChoiceSingleAnswer/ViewMultipleChoiceSingleAnswerPlugin';
 import { ViewSwipeCategorizePlugin } from '../QuizPlugins/SwipeCategorizePlugin/ViewSwipeCategorizePlugin';
 import { ViewTrueOrFalsePlugin } from '../QuizPlugins/TrueOrFalsePlugin/ViewTrueOrFalsePlugin';
+import { ViewImageFocusQuizPlugin } from '../RapidRecall/ImageFocusQuiz/ViewImageFocusQuizPlugin';
 import { ViewStepByStepRevealPlugin } from '../RevealPlugins/StepByStepReveal/ViewStepByStepRevealPlugin';
 import { ViewRichTextPlugin } from '../RichTextPlugins/RichTextPlugin/ViewRichTextPlugin';
-import { ViewAudioPlayerPlugin } from '../MediaPlayerPlugins/AudioPlayerPlugin/ViewAudioPlayerPlugin';
-import { ViewVideoPlayerPlugin } from '../MediaPlayerPlugins/VideoPlayerPlugin/ViewVideoPlayerPlugin';
-import { ViewYouTubeEmbedPlugin } from '../MediaPlayerPlugins/YouTubeEmbedPlugin/ViewYouTubeEmbedPlugin';
-import { ViewVimeoEmbedPlugin } from '../MediaPlayerPlugins/VimeoEmbedPlugin/ViewVimeoEmbedPlugin';
-import { ViewImageFocusQuizPlugin } from '../RapidRecall/ImageFocusQuiz/ViewImageFocusQuizPlugin';
 
 export interface ViewPluginComponentProps {
   blockWithProgress: BlockWithProgressSchemaTypes;

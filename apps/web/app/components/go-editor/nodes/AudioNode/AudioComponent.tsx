@@ -3,7 +3,6 @@ import { useFetcher } from 'react-router';
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
 import { useLexicalNodeSelection } from '@lexical/react/useLexicalNodeSelection';
 import { mergeRegister } from '@lexical/utils';
-import { Volume2 } from 'lucide-react';
 import type { BaseSelection } from 'lexical';
 import {
   $getSelection,
@@ -12,6 +11,7 @@ import {
   COMMAND_PRIORITY_LOW,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
+import { Volume2 } from 'lucide-react';
 
 import type { loader } from '~/routes/api/get-signed-url';
 import { useStore } from '~/store';

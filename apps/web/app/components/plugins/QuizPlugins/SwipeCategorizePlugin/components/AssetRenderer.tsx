@@ -27,11 +27,7 @@ export function AssetRenderer({ file, displaySettings }: AssetRendererProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
 
-  const {
-    objectFit,
-    aspectRatio,
-    noBorder,
-  } = displaySettings ?? {};
+  const { objectFit, aspectRatio, noBorder } = displaySettings ?? {};
 
   // Apply defaults
   const finalObjectFit = objectFit ?? 'contain';
@@ -45,7 +41,7 @@ export function AssetRenderer({ file, displaySettings }: AssetRendererProps) {
 
   if (hasError) {
     return (
-      <div className='flex flex-col items-center justify-center gap-2 p-4 text-muted-foreground'>
+      <div className='text-muted-foreground flex flex-col items-center justify-center gap-2 p-4'>
         <FileIcon size={48} />
         <p className='text-sm'>Failed to load asset</p>
       </div>
@@ -124,7 +120,7 @@ export function AssetRenderer({ file, displaySettings }: AssetRendererProps) {
 
     case FileType.DOCUMENT:
       return (
-        <div className='flex h-full flex-col items-center justify-center gap-4 p-4 text-muted-foreground'>
+        <div className='text-muted-foreground flex h-full flex-col items-center justify-center gap-4 p-4'>
           <FileIcon size={48} />
           <p className='text-center text-sm font-medium'>{file.name}</p>
           <p className='text-xs'>Document preview not available</p>
@@ -133,7 +129,7 @@ export function AssetRenderer({ file, displaySettings }: AssetRendererProps) {
 
     default:
       return (
-        <div className='flex h-full flex-col items-center justify-center gap-4 p-4 text-muted-foreground'>
+        <div className='text-muted-foreground flex h-full flex-col items-center justify-center gap-4 p-4'>
           <FileIcon size={48} />
           <p className='text-center text-sm'>{file.name}</p>
         </div>
