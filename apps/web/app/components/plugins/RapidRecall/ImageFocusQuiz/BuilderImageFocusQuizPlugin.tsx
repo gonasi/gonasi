@@ -121,8 +121,6 @@ export function BuilderImageFocusQuizPlugin({ block }: BuilderImageFocusQuizPlug
   const watchImageSelection = methods.watch('content.imageId');
   const watchRegions = methods.watch('content.regions');
 
-  console.log('watchRegions: ', watchRegions);
-
   return (
     <Modal open>
       <Modal.Content size={showCropper ? 'md' : 'full'}>

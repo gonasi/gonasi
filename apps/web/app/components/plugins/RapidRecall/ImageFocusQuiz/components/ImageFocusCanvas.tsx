@@ -7,7 +7,6 @@ import {
   CircleX,
   Crop,
   Edit2,
-  File,
   Loader2,
   Music,
   Plus,
@@ -90,9 +89,16 @@ export default function ImageFocusCanvas({
   const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
+  const [croppedAreaPercentages, setCroppedAreaPercentages] = useState<Area | null>(null);
+  const [initialCroppedAreaPercentages, setInitialCroppedAreaPercentages] = useState<
+    Area | undefined
+  >(undefined);
 
   // Track if we're editing existing region or creating new
   const [editingRegionIndex, setEditingRegionIndex] = useState<number | null>(null);
+
+  // Force Cropper remount on each edit by incrementing this key
+  const [cropperKey, setCropperKey] = useState(0);
 
   // Crop settings
   const [aspectRatio, setAspectRatio] = useState<number | undefined>(undefined);
@@ -135,7 +141,12 @@ export default function ImageFocusCanvas({
     return null;
   }
 
-  const onCropComplete = (_: Area, pixels: Area) => {
+  const onCropComplete = (croppedArea: Area, pixels: Area) => {
+    console.log('📐 onCropComplete called:', {
+      croppedAreaPercentages: croppedArea,
+      croppedAreaPixels: pixels,
+    });
+    setCroppedAreaPercentages(croppedArea);
     setCroppedAreaPixels(pixels);
   };
 
@@ -144,6 +155,8 @@ export default function ImageFocusCanvas({
     setCrop({ x: 0, y: 0 });
     setZoom(1);
     setCroppedAreaPixels(null);
+    setCroppedAreaPercentages(null);
+    setInitialCroppedAreaPercentages(undefined);
     setAspectRatio(undefined);
     setShowGrid(true);
     setRestrictPosition(true);
@@ -162,30 +175,53 @@ export default function ImageFocusCanvas({
       case '4:3':
         setAspectRatio(4 / 3);
         break;
+      case '3:4':
+        setAspectRatio(3 / 4);
+        break;
       case '16:9':
         setAspectRatio(16 / 9);
         break;
       case '3:2':
         setAspectRatio(3 / 2);
         break;
+      case '2:3':
+        setAspectRatio(2 / 3);
+        break;
+      case '9:16':
+        setAspectRatio(9 / 16);
+        break;
+      case '21:9':
+        setAspectRatio(21 / 9);
+        break;
+      case '5:4':
+        setAspectRatio(5 / 4);
+        break;
     }
   };
 
   const handleCropConfirm = () => {
-    if (!croppedAreaPixels || !imageRef.current) return;
+    if (!croppedAreaPercentages || !croppedAreaPixels) return;
 
-    const img = imageRef.current;
-    const imgNaturalWidth = img.naturalWidth;
-    const imgNaturalHeight = img.naturalHeight;
+    console.log('💾 Saving crop:', {
+      croppedAreaPercentages,
+      croppedAreaPixels,
+      currentZoom: zoom,
+      currentCrop: crop,
+    });
 
-    // croppedAreaPixels is in natural image pixels from react-easy-crop
-    // Convert to percentages for storage
+    // Use the percentages directly from react-easy-crop (first param of onCropComplete)
+    // This is more accurate than converting pixels ourselves
     const regionData = {
-      x: (croppedAreaPixels.x / imgNaturalWidth) * 100,
-      y: (croppedAreaPixels.y / imgNaturalHeight) * 100,
-      width: (croppedAreaPixels.width / imgNaturalWidth) * 100,
-      height: (croppedAreaPixels.height / imgNaturalHeight) * 100,
+      x: croppedAreaPercentages.x,
+      y: croppedAreaPercentages.y,
+      width: croppedAreaPercentages.width,
+      height: croppedAreaPercentages.height,
+      zoom, // Save the zoom level
+      cropX: crop.x, // Save crop position
+      cropY: crop.y,
     };
+
+    console.log('💾 Region data (using croppedAreaPercentages):', regionData);
 
     if (editingRegionIndex !== null && editingRegionIndex < regions.length) {
       // Update existing region - only update coordinates
@@ -216,6 +252,8 @@ export default function ImageFocusCanvas({
     setCrop({ x: 0, y: 0 });
     setZoom(1);
     setCroppedAreaPixels(null);
+    setCroppedAreaPercentages(null);
+    setInitialCroppedAreaPercentages(undefined);
     setCurrentZoomLevel(1); // Reset view zoom when exiting cropper
   };
 
@@ -223,49 +261,82 @@ export default function ImageFocusCanvas({
     const region = regions[index];
     if (!region || !imageRef.current) return;
 
-    const imgNaturalWidth = imageRef.current.naturalWidth;
-    const imgNaturalHeight = imageRef.current.naturalHeight;
+    console.log('🔄 Editing region - RESETTING ALL STATE FIRST');
 
-    // Convert region percentages back to pixels for cropper
-    const regionPixels = {
-      x: (region.x / 100) * imgNaturalWidth,
-      y: (region.y / 100) * imgNaturalHeight,
-      width: (region.width / 100) * imgNaturalWidth,
-      height: (region.height / 100) * imgNaturalHeight,
-    };
-
-    // Calculate aspect ratio from the region dimensions
-    const regionAspectRatio = regionPixels.width / regionPixels.height;
-    setAspectRatio(regionAspectRatio);
-
-    // Set initial crop to center of the region
-    setCrop({
-      x: regionPixels.x + regionPixels.width / 2,
-      y: regionPixels.y + regionPixels.height / 2,
-    });
-
-    // Set initial zoom
-    setZoom(1);
-
-    // Set the cropped area to the current region
-    setCroppedAreaPixels(regionPixels);
-
-    // Reset other settings
-    setShowGrid(true);
-    setRestrictPosition(true);
-    setCurrentZoomLevel(1); // Reset view zoom when entering cropper
-
-    setEditingRegionIndex(index);
-    setShowCropper(true);
-  };
-
-  const handleSaveRegion = () => {
+    // STEP 1: Reset ALL state first to avoid stale values
     setShowCropper(false);
     setEditingRegionIndex(null);
     setCrop({ x: 0, y: 0 });
     setZoom(1);
     setCroppedAreaPixels(null);
-    setCurrentZoomLevel(1); // Reset view zoom when exiting cropper
+    setCroppedAreaPercentages(null);
+    setInitialCroppedAreaPercentages(undefined);
+    setAspectRatio(undefined);
+
+    // Increment key to force Cropper remount
+    setCropperKey((prev) => prev + 1);
+
+    // STEP 2: Use setTimeout to ensure state reset completes before setting new values
+    setTimeout(() => {
+      const imgNaturalWidth = imageRef.current?.naturalWidth;
+      const imgNaturalHeight = imageRef.current?.naturalHeight;
+
+      if (!imgNaturalWidth || !imgNaturalHeight) return;
+
+      console.log('🔄 Editing region - SETTING NEW STATE:', {
+        index,
+        savedRegion: region,
+        imageNaturalDimensions: {
+          width: imgNaturalWidth,
+          height: imgNaturalHeight,
+        },
+      });
+
+      // Calculate aspect ratio from the region dimensions in pixels
+      const regionWidthPixels = (region.width / 100) * imgNaturalWidth;
+      const regionHeightPixels = (region.height / 100) * imgNaturalHeight;
+      const regionAspectRatio = regionWidthPixels / regionHeightPixels;
+
+      console.log('🔄 Aspect ratio calculation:', {
+        regionWidthPercent: region.width,
+        regionHeightPercent: region.height,
+        regionWidthPixels,
+        regionHeightPixels,
+        calculatedAspectRatio: regionAspectRatio,
+      });
+
+      // Set aspect ratio
+      setAspectRatio(regionAspectRatio);
+
+      // Restore the exact zoom and crop position that were saved
+      if (region.zoom && region.cropX !== undefined && region.cropY !== undefined) {
+        console.log('🔄 Restoring saved zoom and crop:', {
+          zoom: region.zoom,
+          crop: { x: region.cropX, y: region.cropY },
+        });
+        setZoom(region.zoom);
+        setCrop({ x: region.cropX, y: region.cropY });
+      } else {
+        // Fallback: use initialCroppedAreaPercentages if zoom/crop not saved (old regions)
+        console.log('🔄 No saved zoom/crop, using initialCroppedAreaPercentages fallback');
+        const initialArea = {
+          x: region.x,
+          y: region.y,
+          width: region.width,
+          height: region.height,
+        };
+        setInitialCroppedAreaPercentages(initialArea);
+      }
+
+      // Reset other settings
+      setShowGrid(true);
+      setRestrictPosition(true);
+      setCurrentZoomLevel(1);
+
+      // Finally, show the cropper and set the editing index
+      setEditingRegionIndex(index);
+      setShowCropper(true);
+    }, 0);
   };
 
   const deleteRegion = (index: number) => {
@@ -286,132 +357,143 @@ export default function ImageFocusCanvas({
       name={name}
       control={control}
       render={() => (
-        <div className='container mx-auto'>
+        <>
           {showCropper ? (
             // CROPPER MODE: Define region boundaries + Configure
             <div className='space-y-4'>
-              <div>
-                {/* Main cropper area */}
-                <div>
-                  <div className='bg-card relative h-[40vh] w-full overflow-hidden rounded-lg'>
-                    <Suspense
-                      fallback={
-                        <div className='flex h-full items-center justify-center'>
-                          <Loader2 className='animate-spin' />
-                        </div>
-                      }
-                    >
-                      <Cropper
-                        image={fileData.signed_url}
-                        crop={crop}
-                        zoom={zoom}
-                        aspect={aspectRatio}
-                        onCropChange={setCrop}
-                        onCropComplete={onCropComplete}
-                        onZoomChange={setZoom}
-                        objectFit='contain'
-                        showGrid={showGrid}
-                        restrictPosition={restrictPosition}
-                      />
-                    </Suspense>
-                    {/* Hidden image to get natural dimensions */}
-                    <img
-                      ref={imageRef}
-                      src={fileData.signed_url}
-                      alt=''
-                      className='hidden'
-                      crossOrigin='anonymous'
-                    />
-                  </div>
+              {/* Main cropper area */}
+              <div className='bg-card relative h-[40vh] w-full overflow-hidden rounded-lg'>
+                <Suspense
+                  fallback={
+                    <div className='flex h-full items-center justify-center'>
+                      <Loader2 className='animate-spin' />
+                    </div>
+                  }
+                >
+                  <Cropper
+                    key={`cropper-${cropperKey}-${editingRegionIndex !== null && editingRegionIndex < regions.length ? regions[editingRegionIndex]?.id : 'new'}`}
+                    image={fileData.signed_url}
+                    crop={crop}
+                    zoom={zoom}
+                    aspect={aspectRatio}
+                    minZoom={1}
+                    maxZoom={10}
+                    initialCroppedAreaPercentages={initialCroppedAreaPercentages}
+                    onCropChange={setCrop}
+                    onCropComplete={onCropComplete}
+                    onZoomChange={setZoom}
+                    objectFit='contain'
+                    showGrid={showGrid}
+                    restrictPosition={restrictPosition}
+                  />
+                </Suspense>
+                {/* Hidden image to get natural dimensions */}
+                <img
+                  ref={imageRef}
+                  src={fileData.signed_url}
+                  alt=''
+                  className='hidden'
+                  crossOrigin='anonymous'
+                />
+              </div>
+
+              {/* Settings panel */}
+              <div className='space-y-2'>
+                {/* Aspect Ratio */}
+                <div className='space-y-2'>
+                  <Label className='text-xs font-medium md:text-sm'>Aspect Ratio</Label>
+                  <Select
+                    value={
+                      aspectRatio === undefined
+                        ? 'free'
+                        : aspectRatio === 1
+                          ? '1:1'
+                          : aspectRatio === 4 / 3
+                            ? '4:3'
+                            : aspectRatio === 3 / 4
+                              ? '3:4'
+                              : aspectRatio === 16 / 9
+                                ? '16:9'
+                                : aspectRatio === 3 / 2
+                                  ? '3:2'
+                                  : aspectRatio === 2 / 3
+                                    ? '2:3'
+                                    : aspectRatio === 9 / 16
+                                      ? '9:16'
+                                      : aspectRatio === 21 / 9
+                                        ? '21:9'
+                                        : aspectRatio === 5 / 4
+                                          ? '5:4'
+                                          : 'custom'
+                    }
+                    onValueChange={handleAspectRatioChange}
+                  >
+                    <SelectTrigger className='text-xs md:text-sm'>
+                      <SelectValue placeholder='Select ratio' />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value='free'>Free</SelectItem>
+                      <SelectItem value='1:1'>1:1 Square</SelectItem>
+                      <SelectItem value='4:3'>4:3 Landscape</SelectItem>
+                      <SelectItem value='3:4'>3:4 Portrait</SelectItem>
+                      <SelectItem value='3:2'>3:2 Landscape</SelectItem>
+                      <SelectItem value='2:3'>2:3 Portrait</SelectItem>
+                      <SelectItem value='16:9'>16:9 Widescreen</SelectItem>
+                      <SelectItem value='21:9'>21:9 Ultrawide</SelectItem>
+                      <SelectItem value='5:4'>5:4 Classic</SelectItem>
+                      <SelectItem value='9:16'>9:16 Mobile</SelectItem>
+                      <SelectItem value='custom'>Custom</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
-                {/* Settings panel */}
+                {/* Zoom */}
                 <div className='space-y-2'>
-                  <div>
-                    {/* Aspect Ratio */}
-                    <div className='space-y-2'>
-                      <Label className='text-xs font-medium md:text-sm'>Aspect Ratio</Label>
-                      <Select
-                        value={
-                          aspectRatio === undefined
-                            ? 'free'
-                            : aspectRatio === 1
-                              ? '1:1'
-                              : aspectRatio === 4 / 3
-                                ? '4:3'
-                                : aspectRatio === 16 / 9
-                                  ? '16:9'
-                                  : aspectRatio === 3 / 2
-                                    ? '3:2'
-                                    : 'custom'
-                        }
-                        onValueChange={handleAspectRatioChange}
-                      >
-                        <SelectTrigger className='text-xs md:text-sm'>
-                          <SelectValue placeholder='Select ratio' />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value='free'>Free</SelectItem>
-                          <SelectItem value='1:1'>1:1 Square</SelectItem>
-                          <SelectItem value='4:3'>4:3</SelectItem>
-                          <SelectItem value='16:9'>16:9</SelectItem>
-                          <SelectItem value='3:2'>3:2</SelectItem>
-                          <SelectItem value='custom'>Custom</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
+                  <Label className='text-xs font-medium md:text-sm'>Zoom: {zoom.toFixed(1)}x</Label>
+                  <Slider
+                    value={[zoom]}
+                    onValueChange={([z]) => setZoom(z ?? 1)}
+                    min={1}
+                    max={10}
+                    step={0.1}
+                  />
+                </div>
 
-                    {/* Zoom */}
-                    <div className='space-y-2'>
-                      <Label className='text-xs font-medium md:text-sm'>
-                        Zoom: {zoom.toFixed(1)}x
-                      </Label>
-                      <Slider
-                        value={[zoom]}
-                        onValueChange={([z]) => setZoom(z ?? 1)}
-                        min={1}
-                        max={10}
-                        step={0.1}
-                      />
-                    </div>
+                {/* Display Options */}
+                <div className='space-y-2 pt-3 md:space-y-3 md:pt-4'>
+                  <div className='flex items-center space-x-2'>
+                    <Checkbox
+                      id='show-grid'
+                      checked={showGrid}
+                      onCheckedChange={(checked) => setShowGrid(checked === true)}
+                    />
+                    <label
+                      htmlFor='show-grid'
+                      className='text-xs leading-none font-normal md:text-sm'
+                    >
+                      Grid
+                    </label>
+                  </div>
 
-                    {/* Display Options */}
-                    <div className='space-y-2 border-t pt-3 md:space-y-3 md:pt-4'>
-                      <div className='flex items-center space-x-2'>
-                        <Checkbox
-                          id='show-grid'
-                          checked={showGrid}
-                          onCheckedChange={(checked) => setShowGrid(checked === true)}
-                        />
-                        <label
-                          htmlFor='show-grid'
-                          className='text-xs leading-none font-normal md:text-sm'
-                        >
-                          Grid
-                        </label>
-                      </div>
-
-                      <div className='flex items-center space-x-2'>
-                        <Checkbox
-                          id='restrict-position'
-                          checked={restrictPosition}
-                          onCheckedChange={(checked) => setRestrictPosition(checked === true)}
-                        />
-                        <label
-                          htmlFor='restrict-position'
-                          className='text-xs leading-none font-normal md:text-sm'
-                        >
-                          Restrict
-                        </label>
-                      </div>
-                    </div>
+                  <div className='flex items-center space-x-2'>
+                    <Checkbox
+                      id='restrict-position'
+                      checked={restrictPosition}
+                      onCheckedChange={(checked) => setRestrictPosition(checked === true)}
+                    />
+                    <label
+                      htmlFor='restrict-position'
+                      className='text-xs leading-none font-normal md:text-sm'
+                    >
+                      Restrict
+                    </label>
                   </div>
                 </div>
               </div>
 
               {/* Region Content Form - appears after crop is selected */}
               {editingRegionIndex !== null && (
-                <div>
+                <>
                   <div className='mb-4 flex items-center justify-between'>
                     <h3 className='text-lg font-bold'>
                       Region Content{' '}
@@ -443,87 +525,85 @@ export default function ImageFocusCanvas({
                     )}
                   </div>
 
-                  <div>
-                    <GoRichTextInputField
-                      name={`${name}.${editingRegionIndex}.answerState`}
-                      labelProps={{ children: 'Answer', required: true }}
-                      placeholder='Enter the answer to reveal...'
-                    />
+                  <GoRichTextInputField
+                    name={`${name}.${editingRegionIndex}.answerState`}
+                    labelProps={{ children: 'Answer', required: true }}
+                    placeholder='Enter the answer to reveal...'
+                  />
 
-                    <div>
-                      <Label htmlFor={`${name}.${editingRegionIndex}.audioId`}>
-                        Audio (optional)
-                      </Label>
-                      {regions[editingRegionIndex]?.audioId ? (
-                        <div className='border-border/40 bg-muted/50 flex items-center justify-between gap-2 rounded-md border p-2'>
-                          <div className='flex items-center gap-2 truncate'>
-                            <Music className='text-muted-foreground' size={16} />
-                            <span className='text-muted-foreground truncate text-xs'>
-                              {audioFetcher.data?.success && audioFetcher.data.data
-                                ? audioFetcher.data.data.name
-                                : 'Audio selected'}
-                            </span>
-                          </div>
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  type='button'
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    setValue(`${name}.${editingRegionIndex}.audioId`, undefined, {
+                  <div>
+                    <Label htmlFor={`${name}.${editingRegionIndex}.audioId`}>
+                      Audio (optional)
+                    </Label>
+                    {regions[editingRegionIndex]?.audioId ? (
+                      <div className='border-border/40 bg-muted/50 flex items-center justify-between gap-2 rounded-md border p-2'>
+                        <div className='flex items-center gap-2 truncate'>
+                          <Music className='text-muted-foreground' size={16} />
+                          <span className='text-muted-foreground truncate text-xs'>
+                            {audioFetcher.data?.success && audioFetcher.data.data
+                              ? audioFetcher.data.data.name
+                              : 'Audio selected'}
+                          </span>
+                        </div>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                type='button'
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  setValue(`${name}.${editingRegionIndex}.audioId`, undefined, {
+                                    shouldDirty: true,
+                                  });
+                                }}
+                                variant='ghost'
+                                size='sm'
+                                className='h-6 w-6 p-0'
+                              >
+                                <X size={14} />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Remove audio</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
+                    ) : (
+                      <Button
+                        type='button'
+                        variant='secondary'
+                        size='sm'
+                        className='w-full'
+                        leftIcon={<Music size={16} />}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          showModal(
+                            'Select Audio',
+                            (onClose: () => void) => (
+                              <Suspense fallback={<Spinner />}>
+                                <InsertMediaDialog
+                                  handleImageInsert={(file: SearchFileResult) => {
+                                    setValue(`${name}.${editingRegionIndex}.audioId`, file.id, {
                                       shouldDirty: true,
                                     });
+                                    onClose();
                                   }}
-                                  variant='ghost'
-                                  size='sm'
-                                  className='h-6 w-6 p-0'
-                                >
-                                  <X size={14} />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>Remove audio</TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        </div>
-                      ) : (
-                        <Button
-                          type='button'
-                          variant='secondary'
-                          size='sm'
-                          className='w-full'
-                          leftIcon={<Music size={16} />}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            showModal(
-                              'Select Audio',
-                              (onClose: () => void) => (
-                                <Suspense fallback={<Spinner />}>
-                                  <InsertMediaDialog
-                                    handleImageInsert={(file: SearchFileResult) => {
-                                      setValue(`${name}.${editingRegionIndex}.audioId`, file.id, {
-                                        shouldDirty: true,
-                                      });
-                                      onClose();
-                                    }}
-                                    fileTypes={[FileType.AUDIO]}
-                                  />
-                                </Suspense>
-                              ),
-                              '',
-                              <File />,
-                              'lg',
-                            );
-                          }}
-                        >
-                          Add audio
-                        </Button>
-                      )}
-                    </div>
+                                  fileTypes={[FileType.AUDIO]}
+                                />
+                              </Suspense>
+                            ),
+                            'Select an audio file to play when this region is revealed',
+                            <Music />,
+                            'lg',
+                          );
+                        }}
+                      >
+                        Add audio
+                      </Button>
+                    )}
                   </div>
-                </div>
+                </>
               )}
 
               <div className='flex space-x-4 py-4'>
@@ -691,12 +771,12 @@ export default function ImageFocusCanvas({
                     📍 Click &quot;New Region&quot; to crop a new region. Click existing regions to
                     edit details. Zoom with Ctrl+Scroll or buttons.
                   </p>
-                  {modal}
                 </>
               )}
             </TransformWrapper>
           )}
-        </div>
+          {modal}
+        </>
       )}
     />
   );

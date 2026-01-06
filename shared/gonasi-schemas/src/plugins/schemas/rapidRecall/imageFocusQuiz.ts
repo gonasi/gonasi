@@ -54,6 +54,15 @@ export const FocusRegionSchema = z.object({
 
   /** Position index for ordering (allows shuffling) */
   index: z.number().int().min(0),
+
+  /** Saved zoom level for this region (for cropper restoration) */
+  zoom: z.number().min(1).max(10).optional(),
+
+  /** Saved crop X position for this region (for cropper restoration) */
+  cropX: z.number().optional(),
+
+  /** Saved crop Y position for this region (for cropper restoration) */
+  cropY: z.number().optional(),
 });
 export type FocusRegionSchemaTypes = z.infer<typeof FocusRegionSchema>;
 
