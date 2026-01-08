@@ -4,6 +4,8 @@ import { Controller, get, useFieldArray, useWatch } from 'react-hook-form';
 import { useFetcher } from 'react-router';
 import { TransformComponent, TransformWrapper } from 'react-zoom-pan-pinch';
 import {
+  ArrowDown,
+  ArrowUp,
   CircleX,
   Crop,
   Edit2,
@@ -218,6 +220,7 @@ export default function ImageFocusCanvas({
       // Set to edit the newly created region
       setEditingRegionIndex(regions.length);
     }
+    setShowCropper(false);
   };
 
   const handleCropCancel = () => {
@@ -321,12 +324,54 @@ export default function ImageFocusCanvas({
     }
   };
 
+  const moveRegionUp = (index: number) => {
+    if (index === 0) return; // Can't move up if already first
+
+    // Create updated regions array with swapped positions
+    const updatedRegions = [...regions];
+    const temp = updatedRegions[index];
+    updatedRegions[index] = { ...updatedRegions[index - 1], index };
+    updatedRegions[index - 1] = { ...temp, index: index - 1 };
+
+    // Update both regions
+    update(index - 1, updatedRegions[index - 1]);
+    update(index, updatedRegions[index]);
+
+    // Update editing index to follow the moved region
+    if (editingRegionIndex === index) {
+      setEditingRegionIndex(index - 1);
+    }
+  };
+
+  const moveRegionDown = (index: number) => {
+    if (index === regions.length - 1) return; // Can't move down if already last
+
+    // Create updated regions array with swapped positions
+    const updatedRegions = [...regions];
+    const temp = updatedRegions[index];
+    updatedRegions[index] = { ...updatedRegions[index + 1], index };
+    updatedRegions[index + 1] = { ...temp, index: index + 1 };
+
+    // Update both regions
+    update(index, updatedRegions[index]);
+    update(index + 1, updatedRegions[index + 1]);
+
+    // Update editing index to follow the moved region
+    if (editingRegionIndex === index) {
+      setEditingRegionIndex(index + 1);
+    }
+  };
+
   const openRegionEditor = (index: number) => {
     handleEditRegionCrop(index);
   };
 
   // Get current aspect ratio key for select value
   const currentAspectRatioKey = getAspectRatioKey(aspectRatio) || '1:1';
+
+  // Check if we can move up or down
+  const canMoveUp = editingRegionIndex !== null && editingRegionIndex > 0;
+  const canMoveDown = editingRegionIndex !== null && editingRegionIndex < regions.length - 1;
 
   return (
     <Controller
@@ -445,10 +490,38 @@ export default function ImageFocusCanvas({
               {editingRegionIndex !== null && (
                 <>
                   <div className='mb-4 flex items-center justify-between'>
-                    <h3 className='text-lg font-bold'>
-                      Region Content{' '}
-                      {editingRegionIndex < regions.length ? `#${editingRegionIndex + 1}` : '(New)'}
-                    </h3>
+                    <div className='flex items-center space-x-2'>
+                      <h3 className='text-lg font-bold'>
+                        Region Content{' '}
+                        {editingRegionIndex < regions.length
+                          ? `#${editingRegionIndex + 1}`
+                          : '(New)'}
+                      </h3>
+                      {editingRegionIndex < regions.length && (
+                        <div className='flex items-center gap-1'>
+                          <IconTooltipButton
+                            type='button'
+                            title='Move Up'
+                            icon={ArrowUp}
+                            onClick={() => moveRegionUp(editingRegionIndex)}
+                            variant='ghost'
+                            size='sm'
+                            className='border'
+                            disabled={!canMoveUp}
+                          />
+                          <IconTooltipButton
+                            type='button'
+                            title='Move Down'
+                            icon={ArrowDown}
+                            onClick={() => moveRegionDown(editingRegionIndex)}
+                            variant='ghost'
+                            size='sm'
+                            className='border'
+                            disabled={!canMoveDown}
+                          />
+                        </div>
+                      )}
+                    </div>
                     {editingRegionIndex < regions.length && (
                       <TooltipProvider>
                         <Tooltip>
