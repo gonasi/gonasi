@@ -22,6 +22,9 @@ import { v4 as uuidv4 } from 'uuid';
 import { FileType } from '@gonasi/schemas/file';
 import { EMPTY_LEXICAL_STATE, type FocusRegionSchemaTypes } from '@gonasi/schemas/plugins';
 
+import type { AspectRatioKey } from '../constants/aspectRatios';
+import { ASPECT_RATIOS } from '../constants/aspectRatios';
+
 import useModal from '~/components/go-editor/hooks/useModal';
 import { Spinner } from '~/components/loaders';
 import { Button } from '~/components/ui/button';
@@ -57,21 +60,6 @@ interface ImageFocusCanvasProps {
   showCropper: boolean;
   setShowCropper: (show: boolean) => void;
 }
-
-// Aspect ratio configuration
-const ASPECT_RATIOS = {
-  '1:1': { value: 1, label: '1:1 Square' },
-  '4:3': { value: 4 / 3, label: '4:3 Landscape' },
-  '3:4': { value: 3 / 4, label: '3:4 Portrait' },
-  '3:2': { value: 3 / 2, label: '3:2 Landscape' },
-  '2:3': { value: 2 / 3, label: '2:3 Portrait' },
-  '16:9': { value: 16 / 9, label: '16:9 Widescreen' },
-  '21:9': { value: 21 / 9, label: '21:9 Ultrawide' },
-  '5:4': { value: 5 / 4, label: '5:4 Classic' },
-  '9:16': { value: 9 / 16, label: '9:16 Mobile' },
-} as const;
-
-type AspectRatioKey = keyof typeof ASPECT_RATIOS;
 
 const getAspectRatioKey = (value: number): AspectRatioKey | null => {
   for (const [key, config] of Object.entries(ASPECT_RATIOS)) {
@@ -679,7 +667,7 @@ export default function ImageFocusCanvas({
                             <div
                               key={region.id}
                               className={cn(
-                                'absolute cursor-pointer border-2 transition-all',
+                                'border-0.5 absolute cursor-pointer transition-all md:border-2',
                                 hasAnswer
                                   ? 'border-green-500 bg-green-500/20 hover:bg-green-500/30'
                                   : 'border-red-500 bg-red-500/20 hover:bg-red-500/30',
@@ -706,7 +694,7 @@ export default function ImageFocusCanvas({
                             >
                               <div
                                 className={cn(
-                                  'absolute top-1 left-1 rounded px-1.5 py-0.5 text-xs font-semibold',
+                                  'absolute top-0 left-0 rounded px-1 py-0.5 text-[6px] leading-none font-semibold md:top-1 md:left-1 md:px-1.5 md:text-xs',
                                   hasAnswer ? 'bg-green-500 text-white' : 'bg-red-500 text-white',
                                 )}
                               >
@@ -714,10 +702,11 @@ export default function ImageFocusCanvas({
                               </div>
                               <Edit2
                                 className={cn(
-                                  'absolute top-1 right-1',
+                                  'absolute top-0 right-0 md:top-1 md:right-1',
                                   hasAnswer ? 'text-green-500' : 'text-red-500',
                                 )}
-                                size={14}
+                                size={10}
+                                strokeWidth={2.5}
                               />
                             </div>
                           );
