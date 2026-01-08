@@ -58,6 +58,30 @@ interface ImageFocusCanvasProps {
   setShowCropper: (show: boolean) => void;
 }
 
+// Aspect ratio configuration
+const ASPECT_RATIOS = {
+  '1:1': { value: 1, label: '1:1 Square' },
+  '4:3': { value: 4 / 3, label: '4:3 Landscape' },
+  '3:4': { value: 3 / 4, label: '3:4 Portrait' },
+  '3:2': { value: 3 / 2, label: '3:2 Landscape' },
+  '2:3': { value: 2 / 3, label: '2:3 Portrait' },
+  '16:9': { value: 16 / 9, label: '16:9 Widescreen' },
+  '21:9': { value: 21 / 9, label: '21:9 Ultrawide' },
+  '5:4': { value: 5 / 4, label: '5:4 Classic' },
+  '9:16': { value: 9 / 16, label: '9:16 Mobile' },
+} as const;
+
+type AspectRatioKey = keyof typeof ASPECT_RATIOS;
+
+const getAspectRatioKey = (value: number): AspectRatioKey | null => {
+  for (const [key, config] of Object.entries(ASPECT_RATIOS)) {
+    if (Math.abs(config.value - value) < 0.001) {
+      return key as AspectRatioKey;
+    }
+  }
+  return null;
+};
+
 export default function ImageFocusCanvas({
   imageId,
   name,
@@ -100,8 +124,8 @@ export default function ImageFocusCanvas({
   // Force Cropper remount on each edit by incrementing this key
   const [cropperKey, setCropperKey] = useState(0);
 
-  // Crop settings
-  const [aspectRatio, setAspectRatio] = useState<number | undefined>(undefined);
+  // Crop settings - default to 1:1
+  const [aspectRatio, setAspectRatio] = useState<number>(1);
   const [showGrid, setShowGrid] = useState(true);
   const [restrictPosition, setRestrictPosition] = useState(true);
 
@@ -157,46 +181,11 @@ export default function ImageFocusCanvas({
     setCroppedAreaPixels(null);
     setCroppedAreaPercentages(null);
     setInitialCroppedAreaPercentages(undefined);
-    setAspectRatio(undefined);
+    setAspectRatio(1); // Default to 1:1
     setShowGrid(true);
     setRestrictPosition(true);
-    setCurrentZoomLevel(1); // Reset view zoom when entering cropper
+    setCurrentZoomLevel(1);
     setShowCropper(true);
-  };
-
-  const handleAspectRatioChange = (value: string) => {
-    switch (value) {
-      case 'free':
-        setAspectRatio(undefined);
-        break;
-      case '1:1':
-        setAspectRatio(1);
-        break;
-      case '4:3':
-        setAspectRatio(4 / 3);
-        break;
-      case '3:4':
-        setAspectRatio(3 / 4);
-        break;
-      case '16:9':
-        setAspectRatio(16 / 9);
-        break;
-      case '3:2':
-        setAspectRatio(3 / 2);
-        break;
-      case '2:3':
-        setAspectRatio(2 / 3);
-        break;
-      case '9:16':
-        setAspectRatio(9 / 16);
-        break;
-      case '21:9':
-        setAspectRatio(21 / 9);
-        break;
-      case '5:4':
-        setAspectRatio(5 / 4);
-        break;
-    }
   };
 
   const handleCropConfirm = () => {
@@ -209,15 +198,13 @@ export default function ImageFocusCanvas({
       currentCrop: crop,
     });
 
-    // Use the percentages directly from react-easy-crop (first param of onCropComplete)
-    // This is more accurate than converting pixels ourselves
     const regionData = {
       x: croppedAreaPercentages.x,
       y: croppedAreaPercentages.y,
       width: croppedAreaPercentages.width,
       height: croppedAreaPercentages.height,
-      zoom, // Save the zoom level
-      cropX: crop.x, // Save crop position
+      zoom,
+      cropX: crop.x,
       cropY: crop.y,
     };
 
@@ -235,7 +222,6 @@ export default function ImageFocusCanvas({
       const newRegion: FocusRegionSchemaTypes = {
         id: uuidv4(),
         ...regionData,
-
         answerState: EMPTY_LEXICAL_STATE,
         index: regions.length,
       };
@@ -254,7 +240,7 @@ export default function ImageFocusCanvas({
     setCroppedAreaPixels(null);
     setCroppedAreaPercentages(null);
     setInitialCroppedAreaPercentages(undefined);
-    setCurrentZoomLevel(1); // Reset view zoom when exiting cropper
+    setCurrentZoomLevel(1);
   };
 
   const handleEditRegionCrop = (index: number) => {
@@ -271,7 +257,6 @@ export default function ImageFocusCanvas({
     setCroppedAreaPixels(null);
     setCroppedAreaPercentages(null);
     setInitialCroppedAreaPercentages(undefined);
-    setAspectRatio(undefined);
 
     // Increment key to force Cropper remount
     setCropperKey((prev) => prev + 1);
@@ -352,6 +337,9 @@ export default function ImageFocusCanvas({
     handleEditRegionCrop(index);
   };
 
+  // Get current aspect ratio key for select value
+  const currentAspectRatioKey = getAspectRatioKey(aspectRatio) || '1:1';
+
   return (
     <Controller
       name={name}
@@ -403,46 +391,20 @@ export default function ImageFocusCanvas({
                 <div className='space-y-2'>
                   <Label className='text-xs font-medium md:text-sm'>Aspect Ratio</Label>
                   <Select
-                    value={
-                      aspectRatio === undefined
-                        ? 'free'
-                        : aspectRatio === 1
-                          ? '1:1'
-                          : aspectRatio === 4 / 3
-                            ? '4:3'
-                            : aspectRatio === 3 / 4
-                              ? '3:4'
-                              : aspectRatio === 16 / 9
-                                ? '16:9'
-                                : aspectRatio === 3 / 2
-                                  ? '3:2'
-                                  : aspectRatio === 2 / 3
-                                    ? '2:3'
-                                    : aspectRatio === 9 / 16
-                                      ? '9:16'
-                                      : aspectRatio === 21 / 9
-                                        ? '21:9'
-                                        : aspectRatio === 5 / 4
-                                          ? '5:4'
-                                          : 'custom'
-                    }
-                    onValueChange={handleAspectRatioChange}
+                    value={currentAspectRatioKey}
+                    onValueChange={(key: AspectRatioKey) => {
+                      setAspectRatio(ASPECT_RATIOS[key].value);
+                    }}
                   >
                     <SelectTrigger className='text-xs md:text-sm'>
-                      <SelectValue placeholder='Select ratio' />
+                      <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value='free'>Free</SelectItem>
-                      <SelectItem value='1:1'>1:1 Square</SelectItem>
-                      <SelectItem value='4:3'>4:3 Landscape</SelectItem>
-                      <SelectItem value='3:4'>3:4 Portrait</SelectItem>
-                      <SelectItem value='3:2'>3:2 Landscape</SelectItem>
-                      <SelectItem value='2:3'>2:3 Portrait</SelectItem>
-                      <SelectItem value='16:9'>16:9 Widescreen</SelectItem>
-                      <SelectItem value='21:9'>21:9 Ultrawide</SelectItem>
-                      <SelectItem value='5:4'>5:4 Classic</SelectItem>
-                      <SelectItem value='9:16'>9:16 Mobile</SelectItem>
-                      <SelectItem value='custom'>Custom</SelectItem>
+                      {Object.entries(ASPECT_RATIOS).map(([key, config]) => (
+                        <SelectItem key={key} value={key}>
+                          {config.label}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>

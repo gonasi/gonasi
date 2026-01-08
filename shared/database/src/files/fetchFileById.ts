@@ -48,8 +48,6 @@ export async function fetchFileById({
       console.error(
         `[fetchFileById] Error fetching mode: ${mode}, table: ${table}, File Id: ${fileId}:`,
         error,
-        'fileId:',
-        fileId,
       );
       return {
         success: false,
@@ -58,28 +56,47 @@ export async function fetchFileById({
       };
     }
 
-    // Generate Cloudinary signed URL with cache busting
-    const resourceType =
-      data.file_type === 'video' ? 'video' : data.file_type === 'image' ? 'image' : 'raw';
-
-    // Use updated_at timestamp as version for cache busting
-    // This ensures that edited files get fresh URLs instead of cached versions
     const cacheVersion = data.updated_at ? new Date(data.updated_at).getTime() : undefined;
 
     const isVideo = data.file_type === 'video';
-    const signedUrl = isVideo
-      ? getVideoStreamingUrl(data.path, expirySeconds, cacheVersion) // CRITICAL: Cache busting
-      : getSignedUrl(data.path, {
-          quality: 'auto',
-          format: 'auto',
-          expiresInSeconds: expirySeconds,
-          resourceType,
-          version: cacheVersion, // CRITICAL: Cache busting
-        });
+    const isImage = data.file_type === 'image';
+    const isSvg =
+      isImage && (data.mime_type === 'image/svg+xml' || data.extension?.toLowerCase() === 'svg');
 
-    // Generate blur placeholder URL for images (for progressive loading)
-    const blurUrl = data.file_type === 'image' ? getBlurPlaceholderUrl(data.path, expirySeconds) : null;
+    let signedUrl: string;
 
+    // 🎥 Videos
+    if (isVideo) {
+      signedUrl = getVideoStreamingUrl(data.path, expirySeconds, cacheVersion);
+    }
+    // 🖼 Images (SVG-safe)
+    else if (isImage) {
+      signedUrl = getSignedUrl(data.path, {
+        expiresInSeconds: expirySeconds,
+        resourceType: 'image',
+        version: cacheVersion,
+        mimeType: data.mime_type,
+        extension: data.extension,
+        ...(isSvg
+          ? {} // 🔒 SVG: NO transforms, NO format, NO quality
+          : {
+              format: 'auto',
+              quality: 'auto',
+            }),
+      });
+    }
+    // 📦 Raw assets (GLB, PDF, ZIP, etc.)
+    else {
+      signedUrl = getSignedUrl(data.path, {
+        expiresInSeconds: expirySeconds,
+        resourceType: 'raw',
+        version: cacheVersion,
+      });
+    }
+
+    const blurUrl = isImage && !isSvg ? getBlurPlaceholderUrl(data.path, expirySeconds) : null;
+
+    console.log('🔍 signedUrl:', signedUrl);
     return {
       success: true,
       message: 'File fetched successfully',
