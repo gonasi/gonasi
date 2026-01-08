@@ -45,7 +45,15 @@ export function generatePublicId(params: GeneratePublicIdParams): string {
     segments.push('organizations', organizationId, 'profile', 'banner');
   } else if (resourceType === 'thumbnail' && organizationId && courseId) {
     // Pattern: /organizations/:organizationId/courses/:courseId/thumbnail/:scope/thumbnail
-    segments.push('organizations', organizationId, 'courses', courseId, 'thumbnail', scope, 'thumbnail');
+    segments.push(
+      'organizations',
+      organizationId,
+      'courses',
+      courseId,
+      'thumbnail',
+      scope,
+      'thumbnail',
+    );
   } else if (resourceType === 'file' && organizationId && courseId && fileId) {
     // Pattern: /organizations/:organizationId/courses/:courseId/files/:scope/:fileId
     segments.push('organizations', organizationId, 'courses', courseId, 'files', scope, fileId);
@@ -79,50 +87,57 @@ export interface SignedUrlOptions {
  * @param options - Transformation and security options
  * @returns Signed URL with transformations and expiration
  */
-export function getSignedUrl(publicId: string, options: SignedUrlOptions = {}): string {
+export function getSignedUrl(
+  publicId: string,
+  options: SignedUrlOptions & {
+    mimeType?: string;
+    extension?: string;
+  } = {},
+): string {
   const cloudinary = getCloudinary();
+
   const {
     width,
     height,
     quality = 'auto',
     format = 'auto',
-    expiresInSeconds = 3600, // Default 1 hour (same as Supabase)
+    expiresInSeconds = 3600,
     resourceType = 'image',
     crop = 'fill',
     version,
+    mimeType,
+    extension,
   } = options;
 
-  // Calculate expiration timestamp (Unix timestamp in seconds)
   const expiresAt = Math.floor(Date.now() / 1000) + expiresInSeconds;
 
-  // For authenticated URLs, we need to use Cloudinary's version system
-  // instead of query parameters to avoid breaking the signature
+  const isSvg =
+    resourceType === 'image' &&
+    (mimeType === 'image/svg+xml' || extension?.toLowerCase() === 'svg');
+
   const urlOptions: any = {
-    sign_url: true, // CRITICAL: Generate signature
-    expires_at: expiresAt, // CRITICAL: Set expiration
-    type: 'authenticated', // CRITICAL: Use authenticated delivery (private)
+    sign_url: true,
+    expires_at: expiresAt,
+    type: 'authenticated',
     resource_type: resourceType,
   };
 
-  // Only apply transformations for images and videos
-  // Raw files (3D models, documents) should not have image transformations
-  // as they can break external references (e.g., GLTF scene.bin buffers)
-  if (resourceType === 'image' || resourceType === 'video') {
+  /**
+   * 🔒 SVGs: NO TRANSFORMS. EVER.
+   */
+  if (!isSvg && (resourceType === 'image' || resourceType === 'video')) {
     const transformation: any = {
+      crop,
       quality,
       fetch_format: format,
-      crop,
     };
 
-    // Add width/height only if provided
     if (width) transformation.width = width;
     if (height) transformation.height = height;
 
     urlOptions.transformation = [transformation];
   }
 
-  // Use Cloudinary's version parameter if provided (included in signature)
-  // This forces cache invalidation without breaking authentication
   if (version) {
     urlOptions.version = version;
   }

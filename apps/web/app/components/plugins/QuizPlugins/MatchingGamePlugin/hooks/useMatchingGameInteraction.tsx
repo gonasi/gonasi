@@ -114,7 +114,12 @@ export function useMatchingGameInteraction(
       // Not disabled if no right item is selected (allows left-to-right selection)
       return false;
     },
-    [state.selectedRightId, state.matchedPairs, state.wrongAttemptsPerRightItem, state.wrongAttemptsPerLeftItem],
+    [
+      state.selectedRightId,
+      state.matchedPairs,
+      state.wrongAttemptsPerRightItem,
+      state.wrongAttemptsPerLeftItem,
+    ],
   );
 
   const isRightItemDisabled = useCallback(
@@ -146,7 +151,12 @@ export function useMatchingGameInteraction(
       // Not disabled if no left item is selected (allows right-to-left selection)
       return false;
     },
-    [state.selectedLeftId, state.matchedPairs, state.wrongAttemptsPerLeftItem, state.wrongAttemptsPerRightItem],
+    [
+      state.selectedLeftId,
+      state.matchedPairs,
+      state.wrongAttemptsPerLeftItem,
+      state.wrongAttemptsPerRightItem,
+    ],
   );
 
   const isLeftItemWrong = useCallback(
@@ -163,9 +173,7 @@ export function useMatchingGameInteraction(
       }
 
       // Also check if attempted wrong from left-to-right
-      const wrongForLeft = state.wrongAttemptsPerLeftItem.find(
-        (entry) => entry.leftId === leftId,
-      );
+      const wrongForLeft = state.wrongAttemptsPerLeftItem.find((entry) => entry.leftId === leftId);
       return wrongForLeft?.wrongRightIds.includes(state.selectedRightId) ?? false;
     },
     [state.selectedRightId, state.wrongAttemptsPerRightItem, state.wrongAttemptsPerLeftItem],
@@ -218,14 +226,8 @@ export function useMatchingGameInteraction(
             ...prev,
             selectedLeftId: null, // Deselect both items after match
             selectedRightId: null,
-            matchedPairs: [
-              ...prev.matchedPairs,
-              { leftId, rightId, timestamp },
-            ],
-            allAttempts: [
-              ...prev.allAttempts,
-              { leftId, rightId, timestamp, isCorrect: true },
-            ],
+            matchedPairs: [...prev.matchedPairs, { leftId, rightId, timestamp }],
+            allAttempts: [...prev.allAttempts, { leftId, rightId, timestamp, isCorrect: true }],
           };
         } else {
           // Wrong match - track which direction the attempt came from
@@ -278,10 +280,7 @@ export function useMatchingGameInteraction(
             selectedRightId: null,
             wrongAttemptsPerLeftItem: newWrongAttemptsLeft,
             wrongAttemptsPerRightItem: newWrongAttemptsRight,
-            allAttempts: [
-              ...prev.allAttempts,
-              { leftId, rightId, timestamp, isCorrect: false },
-            ],
+            allAttempts: [...prev.allAttempts, { leftId, rightId, timestamp, isCorrect: false }],
           };
         }
       });

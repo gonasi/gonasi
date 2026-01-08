@@ -54,13 +54,7 @@ export class Model3DNode extends DecoratorNode<React.JSX.Element> {
   }
 
   static clone(node: Model3DNode): Model3DNode {
-    return new Model3DNode(
-      node.__fileId,
-      node.__maxWidth,
-      node.__width,
-      node.__height,
-      node.__key,
-    );
+    return new Model3DNode(node.__fileId, node.__maxWidth, node.__width, node.__height, node.__key);
   }
 
   constructor(

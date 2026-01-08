@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 
-import { FileType } from '@gonasi/schemas/file';
+import type { FileType } from '@gonasi/schemas/file';
 import type {
   BlockInteractionSchemaTypes,
   BuilderSchemaTypes,
@@ -11,11 +11,11 @@ import type {
 import { SlideIndicator } from './components/SlideIndicator';
 import { TapToRevealCard } from './components/TapToRevealCard';
 import { useStepByStepRevealInteraction } from './hooks/useStepByStepRevealInteraction';
-import { AssetRenderer } from '../../QuizPlugins/SwipeCategorizePlugin/components/AssetRenderer';
 import { PlayPluginWrapper } from '../../common/PlayPluginWrapper';
 import { ViewPluginWrapper } from '../../common/ViewPluginWrapper';
 import { useViewPluginCore } from '../../hooks/useViewPluginCore';
 import type { ViewPluginComponentProps } from '../../PluginRenderers/ViewPluginTypesRenderer';
+import { AssetRenderer } from '../../QuizPlugins/SwipeCategorizePlugin/components/AssetRenderer';
 import { shuffleArray } from '../../utils';
 
 import { NotFoundCard } from '~/components/cards';
@@ -138,7 +138,7 @@ function CardContentRenderer({
 
   if (!assetFile) {
     return (
-      <div className='flex h-full items-center justify-center text-muted-foreground'>
+      <div className='text-muted-foreground flex h-full items-center justify-center'>
         <p className='text-sm'>Asset not found</p>
       </div>
     );

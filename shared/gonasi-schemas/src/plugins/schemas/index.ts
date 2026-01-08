@@ -11,3 +11,4 @@ export * from './audioPlayer';
 export * from './videoPlayer';
 export * from './youtubeEmbed';
 export * from './vimeoEmbed';
+export * from './rapidRecall';

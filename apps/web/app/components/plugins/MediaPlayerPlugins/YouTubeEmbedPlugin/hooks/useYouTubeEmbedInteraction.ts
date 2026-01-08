@@ -90,7 +90,8 @@ export function useYouTubeEmbedInteraction(
 
           setState((prev) => {
             const newFurthestWatched = Math.max(prev.furthestWatchedSeconds, currentTime);
-            const newPercentage = duration > 0 ? Math.round((newFurthestWatched / duration) * 100) : 0;
+            const newPercentage =
+              duration > 0 ? Math.round((newFurthestWatched / duration) * 100) : 0;
 
             return {
               ...prev,

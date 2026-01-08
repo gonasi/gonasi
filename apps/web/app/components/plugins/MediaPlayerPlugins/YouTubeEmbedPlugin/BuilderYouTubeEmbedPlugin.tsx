@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Globe, Save, Settings } from 'lucide-react';
 import { RemixFormProvider, useRemixForm } from 'remix-hook-form';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
+
 import type {
   YoutubeEmbedSchemaTypes,
   YoutubeEmbedSettingsSchemaTypes,

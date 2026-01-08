@@ -25,7 +25,10 @@ export function getSwipeDirection(
  * @param velocity - The drag velocity in pixels/second
  * @returns Whether the swipe threshold is met
  */
-export function shouldSwipe(offset: { x: number; y: number }, velocity: { x: number; y: number }): boolean {
+export function shouldSwipe(
+  offset: { x: number; y: number },
+  velocity: { x: number; y: number },
+): boolean {
   return getSwipeDirection(offset, velocity) !== null;
 }
 
@@ -54,5 +57,5 @@ export function getOpacity(offset: number): number {
   const dragDistance = Math.abs(offset);
   if (dragDistance >= MAX_OFFSET) return MIN_OPACITY;
 
-  return 1 - ((dragDistance / MAX_OFFSET) * (1 - MIN_OPACITY));
+  return 1 - (dragDistance / MAX_OFFSET) * (1 - MIN_OPACITY);
 }
