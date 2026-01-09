@@ -101,9 +101,7 @@ export function ViewImageFocusQuizPlugin({ blockWithProgress }: ViewPluginCompon
     currentRegion,
     isLastRegion,
     isFirstRegion,
-    isQuizComplete,
     totalRegions,
-    completedCount,
     revealAnswer,
     nextRegion,
     previousRegion,
@@ -172,13 +170,12 @@ export function ViewImageFocusQuizPlugin({ blockWithProgress }: ViewPluginCompon
     }
   }, [mode, state, updateInteractionData]);
 
-  // Update score
+  // Update score - always give full weight for memorization practice
   useEffect(() => {
     if (mode === 'play') {
-      const score = isQuizComplete ? weight : Math.floor((completedCount / totalRegions) * weight);
-      updateEarnedScore(score);
+      updateEarnedScore(weight);
     }
-  }, [mode, isQuizComplete, completedCount, totalRegions, weight, updateEarnedScore]);
+  }, [mode, weight, updateEarnedScore]);
 
   // Handle manual reveal
   const handleRevealAnswer = () => {
@@ -190,29 +187,34 @@ export function ViewImageFocusQuizPlugin({ blockWithProgress }: ViewPluginCompon
     setPlaybackPhase(PlaybackPhase.ANSWER_REVEALED);
   };
 
-  // Handle next region - always show full image between regions for better UX
+  // Handle next region - loop back to first when reaching the end
   const handleNextRegion = () => {
-    if (isLastRegion) {
-      setPlaybackPhase(PlaybackPhase.COMPLETE);
-    } else {
-      // Always transition through full image for smooth UX
-      setPlaybackPhase(PlaybackPhase.BETWEEN_REGIONS);
-      setTimeout(() => {
+    setPlaybackPhase(PlaybackPhase.BETWEEN_REGIONS);
+    setTimeout(() => {
+      if (isLastRegion) {
+        // Loop back to first region
+        reset();
+      } else {
         nextRegion();
-        setPlaybackPhase(PlaybackPhase.REGION_FOCUSED);
-      }, betweenRegionsDuration * 1000);
-    }
+      }
+      setPlaybackPhase(PlaybackPhase.REGION_FOCUSED);
+    }, betweenRegionsDuration * 1000);
   };
 
-  // Handle previous region - also show full image between regions
+  // Handle previous region - loop to last when going before first
   const handlePreviousRegion = () => {
-    if (!isFirstRegion) {
-      setPlaybackPhase(PlaybackPhase.BETWEEN_REGIONS);
-      setTimeout(() => {
+    setPlaybackPhase(PlaybackPhase.BETWEEN_REGIONS);
+    setTimeout(() => {
+      if (isFirstRegion) {
+        // Loop to last region by calling nextRegion totalRegions-1 times
+        for (let i = 0; i < totalRegions - 1; i++) {
+          nextRegion();
+        }
+      } else {
         previousRegion();
-        setPlaybackPhase(PlaybackPhase.REGION_FOCUSED);
-      }, betweenRegionsDuration * 1000);
-    }
+      }
+      setPlaybackPhase(PlaybackPhase.REGION_FOCUSED);
+    }, betweenRegionsDuration * 1000);
   };
 
   // Handle opening modal - reset and start quiz
@@ -274,8 +276,8 @@ export function ViewImageFocusQuizPlugin({ blockWithProgress }: ViewPluginCompon
     };
   }, [currentRegion, playbackPhase, animationDuration]);
 
-  const isComplete =
-    mode === 'preview' ? isQuizComplete : blockWithProgress.block_progress?.is_completed;
+  // For memorization, completion is only based on block progress, not quiz state
+  const isComplete = blockWithProgress.block_progress?.is_completed;
 
   const fileData = fetcher.data?.success && fetcher.data.data ? fetcher.data.data : null;
 
@@ -434,12 +436,9 @@ export function ViewImageFocusQuizPlugin({ blockWithProgress }: ViewPluginCompon
 
             <div className='space-y-4'>
               {/* Progress indicator */}
-              <div className='flex items-center justify-between text-sm'>
+              <div className='flex items-center justify-center text-sm'>
                 <span className='text-muted-foreground'>
                   Region {state.currentRegionIndex + 1} of {totalRegions}
-                </span>
-                <span className='text-muted-foreground'>
-                  {completedCount} / {totalRegions} completed
                 </span>
               </div>
 
@@ -524,12 +523,8 @@ export function ViewImageFocusQuizPlugin({ blockWithProgress }: ViewPluginCompon
 
               {/* Control buttons */}
               <div className='flex items-center justify-between gap-4'>
-                {/* Previous button */}
-                <OutlineButton
-                  onClick={handlePreviousRegion}
-                  disabled={isFirstRegion}
-                  className='flex items-center gap-2'
-                >
+                {/* Previous button - loops to last region when at first */}
+                <OutlineButton onClick={handlePreviousRegion} className='flex items-center gap-2'>
                   <ChevronLeft size={16} />
                   Previous
                 </OutlineButton>
@@ -542,27 +537,10 @@ export function ViewImageFocusQuizPlugin({ blockWithProgress }: ViewPluginCompon
                       Reveal Answer
                     </OutlineButton>
                   )}
-
-                  {playbackPhase === PlaybackPhase.ANSWER_REVEALED && !isLastRegion && (
-                    <OutlineButton onClick={handleNextRegion} className='flex items-center gap-2'>
-                      Next Region
-                      <ChevronRight size={16} />
-                    </OutlineButton>
-                  )}
-
-                  {playbackPhase === PlaybackPhase.COMPLETE && (
-                    <Button onClick={handleCloseModal} variant='secondary'>
-                      Close
-                    </Button>
-                  )}
                 </div>
 
-                {/* Next button (disabled when manual reveal is needed) */}
-                <OutlineButton
-                  onClick={handleNextRegion}
-                  disabled={playbackPhase === PlaybackPhase.REGION_FOCUSED || isLastRegion}
-                  className='flex items-center gap-2'
-                >
+                {/* Next button - loops to first region when at last */}
+                <OutlineButton onClick={handleNextRegion} className='flex items-center gap-2'>
                   Next
                   <ChevronRight size={16} />
                 </OutlineButton>
