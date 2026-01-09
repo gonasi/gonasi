@@ -1,5 +1,5 @@
-import { Suspense, useState } from 'react';
-import { FileIcon, Volume2 } from 'lucide-react';
+import { Component, type ErrorInfo, type ReactNode, Suspense, useState } from 'react';
+import { AlertCircle, FileIcon, Volume2 } from 'lucide-react';
 
 import { FileType } from '@gonasi/schemas/file';
 import type { CardDisplaySettingsSchemaTypes } from '@gonasi/schemas/plugins';
@@ -7,6 +7,41 @@ import type { CardDisplaySettingsSchemaTypes } from '@gonasi/schemas/plugins';
 import { ModelPreviewCard } from '~/components/file-renderers/preview-cards/model-preview-card';
 import { Spinner } from '~/components/loaders';
 import { cn } from '~/lib/utils';
+
+// Error Boundary for 3D Model Loading
+class Model3DErrorBoundary extends Component<
+  { children: ReactNode; fileName: string },
+  { hasError: boolean; error: Error | null }
+> {
+  constructor(props: { children: ReactNode; fileName: string }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error('[AssetRenderer] 3D Model Error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className='text-muted-foreground flex h-full flex-col items-center justify-center gap-2 p-4'>
+          <AlertCircle className='text-destructive h-12 w-12' />
+          <p className='text-center text-sm font-medium'>{this.props.fileName}</p>
+          <p className='text-destructive text-center text-xs'>
+            Failed to load 3D model: {this.state.error?.message || 'Unknown error'}
+          </p>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
 
 interface FileWithSignedUrl {
   id: string;
@@ -116,15 +151,19 @@ export function AssetRenderer({ file, displaySettings }: AssetRendererProps) {
 
     case FileType.MODEL_3D:
       return (
-        <Suspense
-          fallback={
-            <div className='flex h-full items-center justify-center'>
-              <Spinner />
-            </div>
-          }
-        >
-          <ModelPreviewCard file={file} />
-        </Suspense>
+        <Model3DErrorBoundary fileName={file.name}>
+          <Suspense
+            fallback={
+              <div className='flex h-full flex-col items-center justify-center gap-2'>
+                <Spinner />
+                <p className='text-muted-foreground text-xs'>Loading 3D model...</p>
+                <p className='text-muted-foreground text-xs italic'>{file.name}</p>
+              </div>
+            }
+          >
+            <ModelPreviewCard file={file} />
+          </Suspense>
+        </Model3DErrorBoundary>
       );
 
     case FileType.DOCUMENT:

@@ -19,7 +19,7 @@
 import { Suspense, useEffect, useRef, useState } from 'react';
 import { Controller, get, useFieldArray } from 'react-hook-form';
 import { ErrorMessage } from '@hookform/error-message';
-import { Edit, FileIcon, Plus, Trash } from 'lucide-react';
+import { Edit, FileIcon, Plus, RefreshCw, Trash } from 'lucide-react';
 import { useRemixFormContext } from 'remix-hook-form';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -110,6 +110,8 @@ function AssetPreviewWithSettings({
 }) {
   const [fileData, setFileData] = useState<SearchFileResult | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
     if (!assetId) {
@@ -117,26 +119,88 @@ function AssetPreviewWithSettings({
       return;
     }
 
-    setLoading(true);
-    fetch(`/api/files/${assetId}/signed-url?mode=preview`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success) {
-          setFileData(data.data);
+    const fetchAsset = async (attempt: number = 0) => {
+      const maxRetries = 3;
+      const retryDelay = 1000;
+
+      setLoading(true);
+      setError(null);
+
+      try {
+        const controller = new AbortController();
+        const timeout = 15000; // 15 seconds for preview
+        const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+        const response = await fetch(`/api/files/${assetId}/signed-url?mode=preview`, {
+          signal: controller.signal,
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
-      })
-      .catch((error) => {
-        console.error('Failed to load asset:', error);
-      })
-      .finally(() => {
+
+        const data = await response.json();
+
+        if (data.success && data.data) {
+          setFileData(data.data);
+          setError(null);
+        } else {
+          throw new Error(data.message || 'Failed to load asset data');
+        }
+      } catch (err) {
+        const isTimeout = err instanceof Error && err.name === 'AbortError';
+        const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+
+        console.error(`[AssetPreview] Failed to load (attempt ${attempt + 1}/${maxRetries}):`, {
+          assetId,
+          error: errorMessage,
+          isTimeout,
+        });
+
+        if (attempt < maxRetries - 1) {
+          setTimeout(() => {
+            setRetryCount(attempt + 1);
+            fetchAsset(attempt + 1);
+          }, retryDelay * (attempt + 1));
+        } else {
+          setError(
+            isTimeout
+              ? 'Timeout loading asset. The file may be too large.'
+              : `Failed to load: ${errorMessage}`,
+          );
+        }
+      } finally {
         setLoading(false);
-      });
-  }, [assetId]);
+      }
+    };
+
+    fetchAsset(retryCount);
+  }, [assetId, retryCount]);
 
   if (loading) {
     return (
-      <div className='bg-muted/30 relative mt-4 flex h-40 items-center justify-center rounded-lg border p-4'>
+      <div className='bg-muted/30 relative mt-4 flex h-40 flex-col items-center justify-center gap-2 rounded-lg border p-4'>
         <Spinner />
+        <p className='text-muted-foreground text-xs'>Loading preview...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className='bg-muted/30 relative mt-4 flex h-40 flex-col items-center justify-center gap-2 rounded-lg border p-4'>
+        <FileIcon className='text-destructive h-8 w-8' />
+        <p className='text-destructive text-center text-xs'>{error}</p>
+        <button
+          type='button'
+          onClick={() => setRetryCount(0)}
+          className='text-primary hover:text-primary/80 flex items-center gap-1 text-xs underline'
+        >
+          <RefreshCw className='h-3 w-3' />
+          Retry
+        </button>
       </div>
     );
   }
