@@ -22,7 +22,18 @@ const FBXModel = memo(
     scale: number;
     position: [number, number, number];
   }) => {
-    const model = useFBX(url);
+    let model;
+
+    try {
+      model = useFBX(url);
+    } catch (error) {
+      console.error('[FBXModel] Failed to load FBX:', {
+        url,
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+      throw error;
+    }
 
     return (
       <primitive
@@ -51,7 +62,19 @@ const GLBModel = memo(
     scale: number;
     position: [number, number, number];
   }) => {
-    const { scene } = useGLTF(url);
+    let scene;
+
+    try {
+      const gltf = useGLTF(url);
+      scene = gltf.scene;
+    } catch (error) {
+      console.error('[GLBModel] Failed to load GLB:', {
+        url,
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+      throw error;
+    }
 
     return (
       <primitive
@@ -224,18 +247,22 @@ export const ModelPreviewCard = memo(
     const [cameraMoved, setCameraMoved] = useState(false);
     const resetCameraRef = useRef<(() => void) | null>(null);
 
-    // Clear Three.js cache when component mounts or file changes
+    // Clear Three.js cache on unmount
     useEffect(() => {
       return () => {
-        // Clear cache for this specific URL on unmount
-        if (file.signed_url) {
-          Cache.remove(file.signed_url);
-          // Also clear drei's cache
-          if (extension === 'fbx') {
-            useGLTF.clear(file.signed_url);
-          } else {
-            useGLTF.clear(file.signed_url);
+        try {
+          // Clear cache for this specific URL on unmount
+          if (file.signed_url) {
+            Cache.remove(file.signed_url);
+            // Also clear drei's cache
+            if (extension === 'fbx') {
+              useFBX.clear(file.signed_url);
+            } else {
+              useGLTF.clear(file.signed_url);
+            }
           }
+        } catch (error) {
+          console.error('[ModelPreviewCard] Cache clear error:', error);
         }
       };
     }, [file.signed_url, extension]);
@@ -286,9 +313,7 @@ export const ModelPreviewCard = memo(
           gl={{
             antialias: true,
             alpha: true,
-            powerPreference: 'high-performance',
           }}
-          dpr={[1, 2]} // Limit pixel ratio for mobile performance
         >
           {/* Lighting */}
           {/* eslint-disable-next-line react/no-unknown-property */}
