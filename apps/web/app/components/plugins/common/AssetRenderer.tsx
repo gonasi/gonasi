@@ -1,4 +1,4 @@
-import { memo, Suspense, useState } from 'react';
+import { Component, type ErrorInfo, memo, type ReactNode, Suspense, useState } from 'react';
 import { AlertCircle, FileIcon, RefreshCw, Volume2 } from 'lucide-react';
 
 import { FileType } from '@gonasi/schemas/file';
@@ -26,12 +26,22 @@ interface AssetRendererProps {
 /**
  * Simple error fallback for 3D models
  */
-function Model3DError({ fileName, onRetry }: { fileName: string; onRetry: () => void }) {
+function Model3DError({
+  fileName,
+  errorMessage,
+  onRetry,
+}: {
+  fileName: string;
+  errorMessage?: string;
+  onRetry: () => void;
+}) {
   return (
     <div className='text-muted-foreground flex h-full flex-col items-center justify-center gap-3 p-4'>
       <AlertCircle className='text-destructive h-12 w-12' />
       <p className='text-center text-sm font-medium'>{fileName}</p>
-      <p className='text-destructive text-center text-xs'>Failed to load 3D model</p>
+      <p className='text-destructive text-center text-xs'>
+        {errorMessage || 'Failed to load 3D model'}
+      </p>
       <button
         onClick={onRetry}
         className='bg-primary text-primary-foreground hover:bg-primary/90 mt-2 rounded-md px-4 py-2 text-sm transition-colors'
@@ -43,27 +53,65 @@ function Model3DError({ fileName, onRetry }: { fileName: string; onRetry: () => 
 }
 
 /**
+ * Error boundary for 3D model loading
+ */
+class Model3DErrorBoundary extends Component<
+  { children: ReactNode; onError: (error: string) => void },
+  { hasError: boolean; errorMessage: string }
+> {
+  constructor(props: { children: ReactNode; onError: (error: string) => void }) {
+    super(props);
+    this.state = { hasError: false, errorMessage: '' };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return {
+      hasError: true,
+      errorMessage: error.message || 'Unknown error',
+    };
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error('[Model3DErrorBoundary] Caught error:', {
+      error,
+      errorInfo,
+      message: error.message,
+      stack: error.stack,
+    });
+    this.props.onError(error.message || 'Unknown error occurred');
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return null; // Parent will handle the error display
+    }
+    return this.props.children;
+  }
+}
+
+/**
  * Memoized 3D model wrapper with error handling and reload
  */
 const Model3DWrapper = memo(({ file }: { file: FileWithSignedUrl }) => {
-  const [error, setError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [key, setKey] = useState(0);
   const [isReloading, setIsReloading] = useState(false);
 
   const handleReload = () => {
     setIsReloading(true);
-    setError(false);
+    setErrorMessage(null);
     setKey((prev) => prev + 1);
     // Reset reloading state after a brief delay
     setTimeout(() => setIsReloading(false), 500);
   };
 
-  if (error) {
+  if (errorMessage) {
     return (
       <Model3DError
         fileName={file.name}
+        errorMessage={errorMessage}
         onRetry={() => {
-          setError(false);
+          setErrorMessage(null);
           setKey((prev) => prev + 1);
         }}
       />
@@ -72,29 +120,37 @@ const Model3DWrapper = memo(({ file }: { file: FileWithSignedUrl }) => {
 
   return (
     <div className='relative h-full w-full'>
-      <Suspense
-        key={key}
-        fallback={
-          <div className='flex h-full flex-col items-center justify-center gap-2'>
-            <Spinner />
-            <p className='text-muted-foreground text-xs'>Loading 3D model...</p>
-            <p className='text-muted-foreground text-xs italic'>{file.name}</p>
-          </div>
-        }
-      >
-        <ModelPreviewCard file={file} onError={() => setError(true)} onReload={handleReload} />
-      </Suspense>
+      <Model3DErrorBoundary onError={(error) => setErrorMessage(error)}>
+        <Suspense
+          key={key}
+          fallback={
+            <div className='flex h-full flex-col items-center justify-center gap-2'>
+              <Spinner />
+              <p className='text-muted-foreground text-xs'>Loading 3D model...</p>
+              <p className='text-muted-foreground text-xs italic'>{file.name}</p>
+            </div>
+          }
+        >
+          <ModelPreviewCard
+            file={file}
+            onError={() => setErrorMessage('Failed to initialize 3D viewer')}
+            onReload={handleReload}
+          />
+        </Suspense>
+      </Model3DErrorBoundary>
 
-      {/* Reload button - always visible */}
-      <button
-        onClick={handleReload}
-        disabled={isReloading}
-        className='absolute top-4 right-4 flex items-center gap-2 rounded-lg bg-black/50 p-2 text-white backdrop-blur-sm transition-all hover:bg-black/70 disabled:opacity-50'
-        style={{ zIndex: 10 }}
-        title='Reload 3D model'
-      >
-        <RefreshCw size={16} className={isReloading ? 'animate-spin' : ''} />
-      </button>
+      {/* Reload button - always visible when no error */}
+      {!errorMessage && (
+        <button
+          onClick={handleReload}
+          disabled={isReloading}
+          className='absolute top-4 right-4 flex items-center gap-2 rounded-lg bg-black/50 p-2 text-white backdrop-blur-sm transition-all hover:bg-black/70 disabled:opacity-50'
+          style={{ zIndex: 10 }}
+          title='Reload 3D model'
+        >
+          <RefreshCw size={16} className={isReloading ? 'animate-spin' : ''} />
+        </button>
+      )}
     </div>
   );
 });
