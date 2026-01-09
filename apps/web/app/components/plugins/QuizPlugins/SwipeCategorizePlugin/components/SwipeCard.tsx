@@ -8,9 +8,9 @@ import {
   useState,
 } from 'react';
 import { motion, useAnimation, useMotionValue, useTransform } from 'framer-motion';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { AlertCircle, ArrowLeft, ArrowRight, RefreshCw } from 'lucide-react';
 
-import type { FileType } from '@gonasi/schemas/file';
+import { FileType } from '@gonasi/schemas/file';
 import type { CardSchemaTypes } from '@gonasi/schemas/plugins';
 
 import RichTextRenderer from '~/components/go-editor/ui/RichTextRenderer';
@@ -74,27 +74,95 @@ export const SwipeCard = forwardRef<SwipeCardRef, SwipeCardProps>(
     // State for asset file data
     const [assetFile, setAssetFile] = useState<FileWithSignedUrl | null>(null);
     const [assetLoading, setAssetLoading] = useState(false);
+    const [assetError, setAssetError] = useState<string | null>(null);
+    const [retryCount, setRetryCount] = useState(0);
 
-    // Fetch asset if card type is 'asset'
+    // Fetch asset with retry logic and cleanup
     useEffect(() => {
-      if (cardData.contentData.type === 'asset') {
-        const assetId = cardData.contentData.assetId;
+      if (cardData.contentData.type !== 'asset') return;
+
+      const assetId = cardData.contentData.assetId;
+      const fileType = cardData.contentData.fileType;
+      let isMounted = true;
+
+      const fetchAsset = async (attempt: number = 0) => {
+        const maxRetries = 3;
+        const retryDelay = 1000;
+
+        if (!isMounted) return;
+
         setAssetLoading(true);
-        fetch(`/api/files/${assetId}/signed-url?mode=${mode}`)
-          .then((res) => res.json())
-          .then((data) => {
-            if (data.success) {
-              setAssetFile(data.data);
-            }
-          })
-          .catch((error) => {
-            console.error('Failed to load asset:', error);
-          })
-          .finally(() => {
-            setAssetLoading(false);
+        setAssetError(null);
+
+        try {
+          const controller = new AbortController();
+          const timeout = fileType === FileType.MODEL_3D ? 30000 : 10000;
+          const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+          const response = await fetch(`/api/files/${assetId}/signed-url?mode=${mode}`, {
+            signal: controller.signal,
           });
-      }
-    }, [cardData.contentData, mode]);
+
+          clearTimeout(timeoutId);
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const data = await response.json();
+
+          if (!isMounted) return;
+
+          if (data.success && data.data) {
+            setAssetFile(data.data);
+            setAssetError(null);
+            console.log(`[SwipeCard] Successfully loaded ${fileType} asset:`, assetId);
+          } else {
+            throw new Error(data.message || 'Failed to load asset data');
+          }
+        } catch (error) {
+          if (!isMounted) return;
+
+          const isTimeout = error instanceof Error && error.name === 'AbortError';
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+          console.error(`[SwipeCard] Asset load failed (attempt ${attempt + 1}/${maxRetries}):`, {
+            assetId,
+            fileType,
+            error: errorMessage,
+            isTimeout,
+          });
+
+          if (attempt < maxRetries - 1) {
+            console.log(
+              `[SwipeCard] Retrying in ${retryDelay * (attempt + 1)}ms... (attempt ${attempt + 2}/${maxRetries})`,
+            );
+            setTimeout(() => {
+              if (isMounted) {
+                setRetryCount(attempt + 1);
+                fetchAsset(attempt + 1);
+              }
+            }, retryDelay * (attempt + 1));
+          } else {
+            setAssetError(
+              isTimeout
+                ? `Timeout loading ${fileType} file.`
+                : `Failed to load ${fileType}: ${errorMessage}`,
+            );
+          }
+        } finally {
+          if (isMounted) {
+            setAssetLoading(false);
+          }
+        }
+      };
+
+      fetchAsset(retryCount);
+
+      return () => {
+        isMounted = false;
+      };
+    }, [cardData.contentData, mode, retryCount]);
 
     // Optimized rotation calculation
     const staticRotateOffset = useMemo(() => {
@@ -317,11 +385,46 @@ export const SwipeCard = forwardRef<SwipeCardRef, SwipeCardProps>(
           {cardData.contentData.type === 'richtext' ? (
             <RichTextRenderer editorState={cardData.contentData.content} />
           ) : assetLoading ? (
-            <Spinner />
+            <div className='flex flex-col items-center justify-center gap-2'>
+              <Spinner />
+              {cardData.contentData.fileType === FileType.MODEL_3D && (
+                <p className='text-muted-foreground text-xs'>Loading 3D model...</p>
+              )}
+            </div>
+          ) : assetError ? (
+            <div className='flex flex-col items-center justify-center gap-2 p-4 text-center'>
+              <AlertCircle className='text-destructive h-10 w-10' />
+              <p className='text-destructive text-xs'>{assetError}</p>
+              <button
+                type='button'
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setRetryCount(0);
+                }}
+                className='text-primary hover:text-primary/80 flex items-center gap-1 text-xs underline'
+              >
+                <RefreshCw className='h-3 w-3' />
+                Retry
+              </button>
+            </div>
           ) : assetFile ? (
             <AssetRenderer file={assetFile} displaySettings={displaySettings} />
           ) : (
-            <div className='text-muted-foreground text-center text-sm'>Asset not found</div>
+            <div className='text-muted-foreground flex flex-col items-center justify-center gap-2 p-4'>
+              <AlertCircle className='h-10 w-10' />
+              <p className='text-center text-xs'>Asset not found</p>
+              <button
+                type='button'
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setRetryCount(0);
+                }}
+                className='text-primary hover:text-primary/80 flex items-center gap-1 text-xs underline'
+              >
+                <RefreshCw className='h-3 w-3' />
+                Retry
+              </button>
+            </div>
           )}
         </div>
 
