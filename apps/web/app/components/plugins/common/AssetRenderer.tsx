@@ -1,4 +1,4 @@
-import { Component, type ErrorInfo, type ReactNode, Suspense, useState } from 'react';
+import { Suspense, useState } from 'react';
 import { AlertCircle, FileIcon, Volume2 } from 'lucide-react';
 
 import { FileType } from '@gonasi/schemas/file';
@@ -7,41 +7,6 @@ import type { CardDisplaySettingsSchemaTypes } from '@gonasi/schemas/plugins';
 import { ModelPreviewCard } from '~/components/file-renderers/preview-cards/model-preview-card';
 import { Spinner } from '~/components/loaders';
 import { cn } from '~/lib/utils';
-
-// Error Boundary for 3D Model Loading
-class Model3DErrorBoundary extends Component<
-  { children: ReactNode; fileName: string },
-  { hasError: boolean; error: Error | null }
-> {
-  constructor(props: { children: ReactNode; fileName: string }) {
-    super(props);
-    this.state = { hasError: false, error: null };
-  }
-
-  static getDerivedStateFromError(error: Error) {
-    return { hasError: true, error };
-  }
-
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('[AssetRenderer] 3D Model Error:', error, errorInfo);
-  }
-
-  render() {
-    if (this.state.hasError) {
-      return (
-        <div className='text-muted-foreground flex h-full flex-col items-center justify-center gap-2 p-4'>
-          <AlertCircle className='text-destructive h-12 w-12' />
-          <p className='text-center text-sm font-medium'>{this.props.fileName}</p>
-          <p className='text-destructive text-center text-xs'>
-            Failed to load 3D model: {this.state.error?.message || 'Unknown error'}
-          </p>
-        </div>
-      );
-    }
-
-    return this.props.children;
-  }
-}
 
 interface FileWithSignedUrl {
   id: string;
@@ -56,6 +21,50 @@ interface FileWithSignedUrl {
 interface AssetRendererProps {
   file: FileWithSignedUrl;
   displaySettings?: CardDisplaySettingsSchemaTypes;
+}
+
+/**
+ * Error fallback component for 3D model loading failures
+ */
+function Model3DError({ fileName, error }: { fileName: string; error?: string }) {
+  return (
+    <div className='text-muted-foreground flex h-full flex-col items-center justify-center gap-2 p-4'>
+      <AlertCircle className='text-destructive h-12 w-12' />
+      <p className='text-center text-sm font-medium'>{fileName}</p>
+      <p className='text-destructive text-center text-xs'>{error || 'Failed to load 3D model'}</p>
+    </div>
+  );
+}
+
+/**
+ * Error boundary wrapper for 3D models using functional approach
+ */
+function Model3DWrapper({ file }: { file: FileWithSignedUrl }) {
+  const [error, setError] = useState<string | null>(null);
+
+  if (error) {
+    return <Model3DError fileName={file.name} error={error} />;
+  }
+
+  return (
+    <Suspense
+      fallback={
+        <div className='flex h-full flex-col items-center justify-center gap-2'>
+          <Spinner />
+          <p className='text-muted-foreground text-xs'>Loading 3D model...</p>
+          <p className='text-muted-foreground text-xs italic'>{file.name}</p>
+        </div>
+      }
+    >
+      <ModelPreviewCard
+        file={file}
+        onError={(err: Error) => {
+          console.error('[AssetRenderer] 3D Model Error:', err);
+          setError(err.message || 'Unknown error occurred');
+        }}
+      />
+    </Suspense>
+  );
 }
 
 /**
@@ -133,6 +142,7 @@ export function AssetRenderer({ file, displaySettings }: AssetRendererProps) {
           loop
           playsInline
           preload='metadata'
+          crossOrigin='anonymous'
         >
           Your browser does not support the video tag.
         </video>
@@ -143,28 +153,16 @@ export function AssetRenderer({ file, displaySettings }: AssetRendererProps) {
         <div className='flex h-full flex-col items-center justify-center gap-4 p-4'>
           <Volume2 size={48} className='text-primary' />
           <span className='text-foreground text-center text-sm font-medium'>{file.name}</span>
-          <audio src={file.signed_url} controls className='w-full' preload='metadata'>
+          <audio controls className='w-full' preload='metadata' crossOrigin='anonymous'>
+            <source src={file.signed_url} />
+            <track kind='captions' />
             Your browser does not support the audio tag.
           </audio>
         </div>
       );
 
     case FileType.MODEL_3D:
-      return (
-        <Model3DErrorBoundary fileName={file.name}>
-          <Suspense
-            fallback={
-              <div className='flex h-full flex-col items-center justify-center gap-2'>
-                <Spinner />
-                <p className='text-muted-foreground text-xs'>Loading 3D model...</p>
-                <p className='text-muted-foreground text-xs italic'>{file.name}</p>
-              </div>
-            }
-          >
-            <ModelPreviewCard file={file} />
-          </Suspense>
-        </Model3DErrorBoundary>
-      );
+      return <Model3DWrapper file={file} />;
 
     case FileType.DOCUMENT:
       return (
