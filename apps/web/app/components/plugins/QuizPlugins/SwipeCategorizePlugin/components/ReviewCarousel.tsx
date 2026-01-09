@@ -7,9 +7,8 @@ import type {
   SwipeCategorizeInteractionSchemaTypes,
 } from '@gonasi/schemas/plugins';
 
-import { AssetRenderer } from './AssetRenderer';
-
 import RichTextRenderer from '~/components/go-editor/ui/RichTextRenderer';
+import { AssetRenderer } from '~/components/plugins/common/AssetRenderer';
 import { Spinner } from '~/components/loaders';
 import { Badge } from '~/components/ui/badge';
 import {

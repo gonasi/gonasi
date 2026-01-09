@@ -4,6 +4,8 @@
  * Features:
  * - Add/Edit/Delete pairs with left and right content
  * - Each pair has leftIndex and rightIndex for custom ordering
+ * - Support for both rich text and media assets
+ * - Display settings for asset cards
  *
  * Future Enhancement:
  * - Drag-and-drop reordering for left and right items independently
@@ -14,23 +16,36 @@
  *   4. Reindex all items after reordering to maintain sequential indexes
  */
 
-import { useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import { Controller, get, useFieldArray } from 'react-hook-form';
 import { ErrorMessage } from '@hookform/error-message';
-import { Edit, Plus, Trash } from 'lucide-react';
+import { Edit, FileIcon, Plus, Trash } from 'lucide-react';
 import { useRemixFormContext } from 'remix-hook-form';
 import { v4 as uuidv4 } from 'uuid';
 
+import { FileType } from '@gonasi/schemas/file';
 import { EMPTY_LEXICAL_STATE } from '@gonasi/schemas/plugins';
 import type { MatchingPairSchemaTypes } from '@gonasi/schemas/plugins/schemas/matchingGame';
 
+import { Badge } from '../../badge';
 import { Button, IconTooltipButton } from '../../button';
+import { Checkbox } from '../../checkbox';
 import { Label, type LabelProps } from '../../label';
 import { Modal } from '../../modal';
 import { ErrorDisplay, FormDescription } from './Common';
 import { GoRichTextInputField } from './GoRichTextInputField';
+import { GoSelectInputField } from './GoSelectInputField';
 
+import { DocumentPreviewCard } from '~/components/file-renderers/preview-cards/document-preview-card';
+import { FileCard } from '~/components/file-renderers/preview-cards/file-preview-card';
+import { ImagePreviewCard } from '~/components/file-renderers/preview-cards/image-preview-card';
+import { MediaPreviewCard } from '~/components/file-renderers/preview-cards/media-preview-card';
+import { ModelPreviewCard } from '~/components/file-renderers/preview-cards/model-preview-card';
+import useModal from '~/components/go-editor/hooks/useModal';
 import RichTextRenderer from '~/components/go-editor/ui/RichTextRenderer';
+import { Spinner } from '~/components/loaders';
+import InsertMediaDialog from '~/components/plugins/MediaInteraction/common/InsertMediaDialog';
+import type { SearchFileResult } from '~/routes/api/search-files';
 
 interface GoMatchingPairFieldProps {
   name: string;
@@ -38,6 +53,448 @@ interface GoMatchingPairFieldProps {
   labelProps: Omit<LabelProps, 'htmlFor' | 'error'>;
   maxPairs?: number;
   minPairs?: number;
+}
+
+// Asset preview component
+function AssetPreview({ assetId }: { assetId: string }) {
+  const [fileData, setFileData] = useState<SearchFileResult | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(`/api/files/${assetId}/signed-url?mode=preview`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          setFileData(data.data);
+        }
+      })
+      .catch((error) => {
+        console.error('Failed to load asset:', error);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, [assetId]);
+
+  if (loading) return <Spinner />;
+  if (!fileData) return <div className='text-muted-foreground text-sm'>Asset not found</div>;
+
+  switch (fileData.file_type) {
+    case FileType.IMAGE:
+      return <ImagePreviewCard file={fileData} />;
+
+    case FileType.VIDEO:
+    case FileType.AUDIO:
+      return <MediaPreviewCard file={fileData} />;
+
+    case FileType.DOCUMENT:
+      return <DocumentPreviewCard file={fileData} />;
+
+    case FileType.MODEL_3D:
+      return <ModelPreviewCard file={fileData} />;
+
+    default:
+      return <FileCard file={fileData} />;
+  }
+}
+
+// Pair Editor Modal Component
+function PairEditorModal({
+  isOpen,
+  onClose,
+  name,
+  currentPair,
+  watch,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  name: string;
+  currentPair: { pair: MatchingPairSchemaTypes; index: number; isNew: boolean } | null;
+  watch: any;
+}) {
+  const { setValue } = useRemixFormContext();
+  const [modal, showModal] = useModal();
+  const previousLeftTypeRef = useRef<'richtext' | 'asset' | null>(null);
+  const previousRightTypeRef = useRef<'richtext' | 'asset' | null>(null);
+
+  // Get values before early return (but guard against null)
+  const leftContentType = currentPair
+    ? watch(`${name}.${currentPair.index}.leftContentData.type`)
+    : null;
+  const rightContentType = currentPair
+    ? watch(`${name}.${currentPair.index}.rightContentData.type`)
+    : null;
+  const leftAssetId = currentPair
+    ? watch(`${name}.${currentPair.index}.leftContentData.assetId`)
+    : null;
+  const rightAssetId = currentPair
+    ? watch(`${name}.${currentPair.index}.rightContentData.assetId`)
+    : null;
+
+  // Handle left content type changes
+  useEffect(() => {
+    if (!currentPair) return;
+
+    if (previousLeftTypeRef.current !== null && previousLeftTypeRef.current !== leftContentType) {
+      if (leftContentType === 'richtext') {
+        setValue(
+          `${name}.${currentPair.index}.leftContentData`,
+          {
+            type: 'richtext',
+            content: EMPTY_LEXICAL_STATE,
+          },
+          { shouldDirty: true },
+        );
+      } else if (leftContentType === 'asset') {
+        setValue(
+          `${name}.${currentPair.index}.leftContentData`,
+          {
+            type: 'asset',
+            assetId: '',
+            fileType: FileType.IMAGE,
+          },
+          { shouldDirty: true },
+        );
+      }
+    }
+    previousLeftTypeRef.current = leftContentType;
+  }, [leftContentType, name, currentPair, setValue]);
+
+  // Handle right content type changes
+  useEffect(() => {
+    if (!currentPair) return;
+
+    if (previousRightTypeRef.current !== null && previousRightTypeRef.current !== rightContentType) {
+      if (rightContentType === 'richtext') {
+        setValue(
+          `${name}.${currentPair.index}.rightContentData`,
+          {
+            type: 'richtext',
+            content: EMPTY_LEXICAL_STATE,
+          },
+          { shouldDirty: true },
+        );
+      } else if (rightContentType === 'asset') {
+        setValue(
+          `${name}.${currentPair.index}.rightContentData`,
+          {
+            type: 'asset',
+            assetId: '',
+            fileType: FileType.IMAGE,
+          },
+          { shouldDirty: true },
+        );
+      }
+    }
+    previousRightTypeRef.current = rightContentType;
+  }, [rightContentType, name, currentPair, setValue]);
+
+  // Early return after all hooks
+  if (!currentPair) return null;
+
+  const handleAssetSelect = (side: 'left' | 'right') => {
+    showModal(
+      'Select Media Asset',
+      (onModalClose) => (
+        <Suspense fallback={<Spinner />}>
+          <InsertMediaDialog
+            fileTypes={[FileType.IMAGE, FileType.AUDIO, FileType.MODEL_3D]}
+            handleImageInsert={(file: SearchFileResult) => {
+              const fieldName =
+                side === 'left'
+                  ? `${name}.${currentPair.index}.leftContentData`
+                  : `${name}.${currentPair.index}.rightContentData`;
+              setValue(`${fieldName}.assetId`, file.id, {
+                shouldDirty: true,
+                shouldValidate: true,
+              });
+              setValue(`${fieldName}.fileType`, file.file_type, {
+                shouldDirty: true,
+              });
+              onModalClose();
+            }}
+          />
+        </Suspense>
+      ),
+      '',
+      <FileIcon />,
+      'lg',
+    );
+  };
+
+  return (
+    <>
+      {modal}
+      <Modal open={isOpen} onOpenChange={onClose}>
+        <Modal.Content size='lg'>
+          <Modal.Header title={`${currentPair.isNew ? 'Create' : 'Edit'} Pair`} />
+          <Modal.Body>
+            <div className='space-y-6'>
+              {/* Left Item */}
+              <div className='space-y-4 rounded-lg border p-4'>
+                <h3 className='font-semibold'>Left Item</h3>
+
+                <GoSelectInputField
+                  name={`${name}.${currentPair.index}.leftContentData.type`}
+                  labelProps={{ children: 'Content Type', required: true }}
+                  description='Choose between rich text or a media asset'
+                  selectProps={{
+                    options: [
+                      { value: 'richtext', label: '📝 Rich Text' },
+                      { value: 'asset', label: '🎨 Media Asset' },
+                    ],
+                  }}
+                />
+
+                {leftContentType === 'richtext' ? (
+                  <GoRichTextInputField
+                    name={`${name}.${currentPair.index}.leftContentData.content`}
+                    labelProps={{ children: 'Content', required: true }}
+                    placeholder='Enter left item content...'
+                  />
+                ) : (
+                  <>
+                    <div className='space-y-2'>
+                      <Label>Media Asset</Label>
+                      <Button
+                        type='button'
+                        leftIcon={leftAssetId ? <Edit /> : <Plus />}
+                        onClick={() => handleAssetSelect('left')}
+                        variant='secondary'
+                      >
+                        {leftAssetId ? 'Change Asset' : 'Select Asset'}
+                      </Button>
+                    </div>
+
+                    <div className='space-y-3 border-t pt-4'>
+                      <h4 className='text-sm font-medium'>Display Settings</h4>
+
+                      <div className='flex items-center space-x-2'>
+                        <Checkbox
+                          id={`${name}.${currentPair.index}.leftContentData.displaySettings.noPadding`}
+                          onCheckedChange={(checked) => {
+                            setValue(
+                              `${name}.${currentPair.index}.leftContentData.displaySettings.noPadding`,
+                              checked,
+                              { shouldDirty: true },
+                            );
+                          }}
+                          checked={
+                            watch(
+                              `${name}.${currentPair.index}.leftContentData.displaySettings.noPadding`,
+                            ) ?? false
+                          }
+                        />
+                        <Label
+                          htmlFor={`${name}.${currentPair.index}.leftContentData.displaySettings.noPadding`}
+                          className='text-sm font-normal'
+                        >
+                          Remove padding
+                        </Label>
+                      </div>
+
+                      <div className='flex items-center space-x-2'>
+                        <Checkbox
+                          id={`${name}.${currentPair.index}.leftContentData.displaySettings.noBorder`}
+                          onCheckedChange={(checked) => {
+                            setValue(
+                              `${name}.${currentPair.index}.leftContentData.displaySettings.noBorder`,
+                              checked,
+                              { shouldDirty: true },
+                            );
+                          }}
+                          checked={
+                            watch(
+                              `${name}.${currentPair.index}.leftContentData.displaySettings.noBorder`,
+                            ) ?? false
+                          }
+                        />
+                        <Label
+                          htmlFor={`${name}.${currentPair.index}.leftContentData.displaySettings.noBorder`}
+                          className='text-sm font-normal'
+                        >
+                          Remove border
+                        </Label>
+                      </div>
+
+                      <GoSelectInputField
+                        name={`${name}.${currentPair.index}.leftContentData.displaySettings.objectFit`}
+                        labelProps={{ children: 'Object Fit' }}
+                        selectProps={{
+                          options: [
+                            { value: 'contain', label: 'Contain (fit all)' },
+                            { value: 'cover', label: 'Cover (fill, may crop)' },
+                            { value: 'fill', label: 'Fill (stretch)' },
+                          ],
+                        }}
+                      />
+
+                      <GoSelectInputField
+                        name={`${name}.${currentPair.index}.leftContentData.displaySettings.aspectRatio`}
+                        labelProps={{ children: 'Aspect Ratio' }}
+                        selectProps={{
+                          options: [
+                            { value: 'auto', label: 'Auto (preserve original)' },
+                            { value: '1/1', label: 'Square (1:1)' },
+                            { value: '16/9', label: 'Landscape (16:9)' },
+                            { value: '4/3', label: 'Standard (4:3)' },
+                            { value: '3/4', label: 'Portrait (3:4)' },
+                          ],
+                        }}
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Right Item */}
+              <div className='space-y-4 rounded-lg border p-4'>
+                <h3 className='font-semibold'>Right Item</h3>
+
+                <GoSelectInputField
+                  name={`${name}.${currentPair.index}.rightContentData.type`}
+                  labelProps={{ children: 'Content Type', required: true }}
+                  description='Choose between rich text or a media asset'
+                  selectProps={{
+                    options: [
+                      { value: 'richtext', label: '📝 Rich Text' },
+                      { value: 'asset', label: '🎨 Media Asset' },
+                    ],
+                  }}
+                />
+
+                {rightContentType === 'richtext' ? (
+                  <GoRichTextInputField
+                    name={`${name}.${currentPair.index}.rightContentData.content`}
+                    labelProps={{ children: 'Content', required: true }}
+                    placeholder='Enter right item content...'
+                  />
+                ) : (
+                  <>
+                    <div className='space-y-2'>
+                      <Label>Media Asset</Label>
+                      <Button
+                        type='button'
+                        leftIcon={rightAssetId ? <Edit /> : <Plus />}
+                        onClick={() => handleAssetSelect('right')}
+                        variant='secondary'
+                      >
+                        {rightAssetId ? 'Change Asset' : 'Select Asset'}
+                      </Button>
+                    </div>
+
+                    <div className='space-y-3 border-t pt-4'>
+                      <h4 className='text-sm font-medium'>Display Settings</h4>
+
+                      <div className='flex items-center space-x-2'>
+                        <Checkbox
+                          id={`${name}.${currentPair.index}.rightContentData.displaySettings.noPadding`}
+                          onCheckedChange={(checked) => {
+                            setValue(
+                              `${name}.${currentPair.index}.rightContentData.displaySettings.noPadding`,
+                              checked,
+                              { shouldDirty: true },
+                            );
+                          }}
+                          checked={
+                            watch(
+                              `${name}.${currentPair.index}.rightContentData.displaySettings.noPadding`,
+                            ) ?? false
+                          }
+                        />
+                        <Label
+                          htmlFor={`${name}.${currentPair.index}.rightContentData.displaySettings.noPadding`}
+                          className='text-sm font-normal'
+                        >
+                          Remove padding
+                        </Label>
+                      </div>
+
+                      <div className='flex items-center space-x-2'>
+                        <Checkbox
+                          id={`${name}.${currentPair.index}.rightContentData.displaySettings.noBorder`}
+                          onCheckedChange={(checked) => {
+                            setValue(
+                              `${name}.${currentPair.index}.rightContentData.displaySettings.noBorder`,
+                              checked,
+                              { shouldDirty: true },
+                            );
+                          }}
+                          checked={
+                            watch(
+                              `${name}.${currentPair.index}.rightContentData.displaySettings.noBorder`,
+                            ) ?? false
+                          }
+                        />
+                        <Label
+                          htmlFor={`${name}.${currentPair.index}.rightContentData.displaySettings.noBorder`}
+                          className='text-sm font-normal'
+                        >
+                          Remove border
+                        </Label>
+                      </div>
+
+                      <GoSelectInputField
+                        name={`${name}.${currentPair.index}.rightContentData.displaySettings.objectFit`}
+                        labelProps={{ children: 'Object Fit' }}
+                        selectProps={{
+                          options: [
+                            { value: 'contain', label: 'Contain (fit all)' },
+                            { value: 'cover', label: 'Cover (fill, may crop)' },
+                            { value: 'fill', label: 'Fill (stretch)' },
+                          ],
+                        }}
+                      />
+
+                      <GoSelectInputField
+                        name={`${name}.${currentPair.index}.rightContentData.displaySettings.aspectRatio`}
+                        labelProps={{ children: 'Aspect Ratio' }}
+                        selectProps={{
+                          options: [
+                            { value: 'auto', label: 'Auto (preserve original)' },
+                            { value: '1/1', label: 'Square (1:1)' },
+                            { value: '16/9', label: 'Landscape (16:9)' },
+                            { value: '4/3', label: 'Standard (4:3)' },
+                            { value: '3/4', label: 'Portrait (3:4)' },
+                          ],
+                        }}
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Action Buttons */}
+              <div className='flex justify-end gap-2 border-t pt-4'>
+                <Button type='button' onClick={onClose} variant='ghost'>
+                  Cancel
+                </Button>
+                <Button
+                  type='button'
+                  onClick={onClose}
+                  variant='secondary'
+                  disabled={
+                    (leftContentType === 'asset' && !leftAssetId) ||
+                    (rightContentType === 'asset' && !rightAssetId)
+                  }
+                >
+                  {currentPair.isNew ? 'Create Pair' : 'Save Changes'}
+                </Button>
+              </div>
+
+              {/* Validation message */}
+              {((leftContentType === 'asset' && !leftAssetId) ||
+                (rightContentType === 'asset' && !rightAssetId)) && (
+                <p className='text-destructive mt-2 text-sm'>
+                  Please select media assets for all asset-type content before saving
+                </p>
+              )}
+            </div>
+          </Modal.Body>
+        </Modal.Content>
+      </Modal>
+    </>
+  );
 }
 
 export function GoMatchingPairField({
@@ -78,8 +535,14 @@ export function GoMatchingPairField({
     const newIndex = pairs.length;
     const newPair: MatchingPairSchemaTypes = {
       id: uuidv4(),
-      leftContent: EMPTY_LEXICAL_STATE,
-      rightContent: EMPTY_LEXICAL_STATE,
+      leftContentData: {
+        type: 'richtext',
+        content: EMPTY_LEXICAL_STATE,
+      },
+      rightContentData: {
+        type: 'richtext',
+        content: EMPTY_LEXICAL_STATE,
+      },
       leftIndex: newIndex,
       rightIndex: newIndex,
     };
@@ -131,6 +594,12 @@ export function GoMatchingPairField({
         <div className='flex items-center justify-between'>
           <div className='flex items-center space-x-2'>
             <span className='text-sm font-medium'>Pair {index + 1}</span>
+            <Badge variant='outline'>
+              {pair.leftContentData.type === 'richtext' ? '📝' : '🎨'} Left
+            </Badge>
+            <Badge variant='outline'>
+              {pair.rightContentData.type === 'richtext' ? '📝' : '🎨'} Right
+            </Badge>
           </div>
 
           <div className='flex items-center space-x-2'>
@@ -153,20 +622,28 @@ export function GoMatchingPairField({
           <div>
             <Label className='mb-2 text-xs'>Left Item</Label>
             <div className='border-border/80 bg-border/50 flex min-h-[60px] w-full items-center border p-2'>
-              <RichTextRenderer editorState={pair.leftContent} />
+              {pair.leftContentData.type === 'richtext' ? (
+                <RichTextRenderer editorState={pair.leftContentData.content} />
+              ) : (
+                <AssetPreview assetId={pair.leftContentData.assetId} />
+              )}
             </div>
             <p className='text-danger font-secondary text-xs'>
-              <ErrorMessage errors={errors} name={`${name}.${index}.leftContent`} />
+              <ErrorMessage errors={errors} name={`${name}.${index}.leftContentData`} />
             </p>
           </div>
 
           <div>
             <Label className='mb-2 text-xs'>Right Item</Label>
             <div className='border-border/80 bg-border/50 flex min-h-[60px] w-full items-center border p-2'>
-              <RichTextRenderer editorState={pair.rightContent} />
+              {pair.rightContentData.type === 'richtext' ? (
+                <RichTextRenderer editorState={pair.rightContentData.content} />
+              ) : (
+                <AssetPreview assetId={pair.rightContentData.assetId} />
+              )}
             </div>
             <p className='text-danger font-secondary text-xs'>
-              <ErrorMessage errors={errors} name={`${name}.${index}.rightContent`} />
+              <ErrorMessage errors={errors} name={`${name}.${index}.rightContentData`} />
             </p>
           </div>
         </div>
@@ -222,40 +699,13 @@ export function GoMatchingPairField({
           </div>
 
           {/* Pair Editor Modal */}
-          <Modal open={isModalOpen} onOpenChange={closeModal}>
-            <Modal.Content size='lg' className=''>
-              <Modal.Header title={`${currentPair?.isNew ? 'Create' : 'Edit'} Pair`} />
-              <Modal.Body>
-                {currentPair && (
-                  <div className='space-y-4'>
-                    <div className='grid grid-cols-2 gap-4'>
-                      <GoRichTextInputField
-                        name={`${name}.${currentPair.index}.leftContent`}
-                        labelProps={{ children: 'Left Item', required: true }}
-                        placeholder='Enter left item content...'
-                      />
-
-                      <GoRichTextInputField
-                        name={`${name}.${currentPair.index}.rightContent`}
-                        labelProps={{ children: 'Right Item', required: true }}
-                        placeholder='Enter right item content...'
-                      />
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div className='flex justify-end gap-2 border-t pt-4'>
-                      <Button type='button' onClick={closeModal} variant='ghost'>
-                        Cancel
-                      </Button>
-                      <Button type='button' onClick={closeModal} variant='secondary'>
-                        {currentPair.isNew ? 'Create Pair' : 'Save Changes'}
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </Modal.Body>
-            </Modal.Content>
-          </Modal>
+          <PairEditorModal
+            isOpen={isModalOpen}
+            onClose={closeModal}
+            name={name}
+            currentPair={currentPair}
+            watch={watch}
+          />
         </div>
       )}
     />

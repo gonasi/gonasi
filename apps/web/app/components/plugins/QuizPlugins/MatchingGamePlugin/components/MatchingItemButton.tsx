@@ -1,13 +1,30 @@
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Check, X } from 'lucide-react';
+
+import type { FileType } from '@gonasi/schemas/file';
+import type { CardContentSchemaTypes } from '@gonasi/schemas/plugins';
 
 import type { MatchColor } from '../utils/colors';
 
 import RichTextRenderer from '~/components/go-editor/ui/RichTextRenderer';
+import { AssetRenderer } from '~/components/plugins/common/AssetRenderer';
+import { Spinner } from '~/components/loaders';
 import { cn } from '~/lib/utils';
 
+interface FileWithSignedUrl {
+  id: string;
+  name: string;
+  signed_url: string;
+  file_type: FileType;
+  extension: string;
+  blur_url?: string | null;
+  settings?: any;
+}
+
 interface MatchingItemButtonProps {
-  content: string;
+  contentData: CardContentSchemaTypes;
+  mode?: 'preview' | 'play';
   isSelected?: boolean;
   isMatched?: boolean;
   isDisabled?: boolean;
@@ -20,7 +37,8 @@ interface MatchingItemButtonProps {
 }
 
 export function MatchingItemButton({
-  content,
+  contentData,
+  mode = 'play',
   isSelected = false,
   isMatched = false,
   isDisabled = false,
@@ -31,6 +49,30 @@ export function MatchingItemButton({
   shouldNudge = false,
   onClick,
 }: MatchingItemButtonProps) {
+  const [assetFile, setAssetFile] = useState<FileWithSignedUrl | null>(null);
+  const [assetLoading, setAssetLoading] = useState(false);
+
+  // Fetch asset if content type is 'asset'
+  useEffect(() => {
+    if (contentData.type === 'asset') {
+      const assetId = contentData.assetId;
+      setAssetLoading(true);
+      fetch(`/api/files/${assetId}/signed-url?mode=${mode}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success) {
+            setAssetFile(data.data);
+          }
+        })
+        .catch((error) => {
+          console.error('Failed to load asset:', error);
+        })
+        .finally(() => {
+          setAssetLoading(false);
+        });
+    }
+  }, [contentData, mode]);
+
   const handleClick = () => {
     if (!isDisabled && onClick) {
       onClick();
@@ -160,7 +202,15 @@ export function MatchingItemButton({
       whileTap={!isDisabled && !isMatched ? { scale: 0.98 } : {}}
     >
       <div className='flex-1'>
-        <RichTextRenderer editorState={content} />
+        {contentData.type === 'richtext' ? (
+          <RichTextRenderer editorState={contentData.content} />
+        ) : assetLoading ? (
+          <Spinner />
+        ) : assetFile ? (
+          <AssetRenderer file={assetFile} displaySettings={contentData.displaySettings} />
+        ) : (
+          <div className='text-muted-foreground text-sm'>Asset not found</div>
+        )}
       </div>
 
       {/* Status indicators */}

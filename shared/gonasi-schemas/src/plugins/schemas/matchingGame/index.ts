@@ -2,6 +2,14 @@ import { z } from 'zod';
 
 import { BasePluginSettingsSchema, LayoutPluginSettingsSchema } from '../../pluginSettings';
 import { NonEmptyLexicalState } from '../../utils';
+import {
+  CardContentSchema,
+  type CardContentSchemaTypes,
+  type CardDisplaySettingsSchemaTypes,
+} from '../shared/cardContent';
+
+// Re-export shared types for backward compatibility
+export type { CardContentSchemaTypes, CardDisplaySettingsSchemaTypes };
 
 // ============================================================================
 // Matching Pair Schema
@@ -9,8 +17,8 @@ import { NonEmptyLexicalState } from '../../utils';
 
 export const MatchingPairSchema = z.object({
   id: z.string().uuid(),
-  leftContent: NonEmptyLexicalState,
-  rightContent: NonEmptyLexicalState,
+  leftContentData: CardContentSchema,
+  rightContentData: CardContentSchema,
   // Position indexes for custom ordering (allows independent left/right reordering)
   leftIndex: z.number().int().min(0),
   rightIndex: z.number().int().min(0),
