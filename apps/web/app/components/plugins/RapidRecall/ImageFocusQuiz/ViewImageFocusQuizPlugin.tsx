@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useFetcher } from 'react-router';
-import { ChevronLeft, ChevronRight, Eye, Play, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Eye, Play, Settings, X } from 'lucide-react';
 
 import type { BlockInteractionSchemaTypes, BuilderSchemaTypes } from '@gonasi/schemas/plugins';
 
@@ -20,6 +20,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from '~/components/ui/dialog';
+import { Label } from '~/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover';
+import { RadioGroup, RadioGroupItem } from '~/components/ui/radio-group';
 import type { loader } from '~/routes/api/get-signed-url';
 import { useStore } from '~/store';
 
@@ -56,7 +59,6 @@ export function ViewImageFocusQuizPlugin({ blockWithProgress }: ViewPluginCompon
       defaultRevealDelay,
       blurIntensity,
       dimIntensity,
-      showFullImageBetweenRegions: _showFullImageBetweenRegions,
       betweenRegionsDuration,
       autoAdvance,
       autoAdvanceDelay,
@@ -70,6 +72,9 @@ export function ViewImageFocusQuizPlugin({ blockWithProgress }: ViewPluginCompon
   const { mode } = useStore();
   const fetcher = useFetcher<typeof loader>();
   const imageRef = useRef<HTMLDivElement>(null);
+
+  // User preference for randomization (overrides builder setting)
+  const [userRandomization, setUserRandomization] = useState<'none' | 'shuffle'>(randomization);
 
   const { loading, payload, handleContinue, updateInteractionData, updateEarnedScore } =
     useViewPluginCore(
@@ -90,7 +95,7 @@ export function ViewImageFocusQuizPlugin({ blockWithProgress }: ViewPluginCompon
 
   const currentInteractionData = parsedPayloadData || initialInteractionData;
 
-  // Use interaction hook
+  // Use interaction hook with user's randomization preference
   const {
     state,
     currentRegion,
@@ -103,7 +108,7 @@ export function ViewImageFocusQuizPlugin({ blockWithProgress }: ViewPluginCompon
     nextRegion,
     previousRegion,
     reset,
-  } = useImageFocusQuizInteraction(currentInteractionData, regions, randomization);
+  } = useImageFocusQuizInteraction(currentInteractionData, regions, userRandomization);
 
   // Modal state - quiz starts when user clicks play
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -326,6 +331,68 @@ export function ViewImageFocusQuizPlugin({ blockWithProgress }: ViewPluginCompon
                 >
                   Play
                 </Button>
+
+                {/* Settings Popover */}
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant='ghost' size='lg' className='h-12 w-12 p-0'>
+                      <Settings
+                        className='text-muted-foreground transition-transform duration-200 hover:scale-110 hover:rotate-90'
+                        size={20}
+                      />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className='w-80'>
+                    <div className='grid gap-4'>
+                      <div className='space-y-2'>
+                        <h4 className='leading-none font-medium'>Memorization Settings</h4>
+                        <p className='text-muted-foreground text-sm'>
+                          Customize how you&apos;d like to practice this exercise
+                        </p>
+                      </div>
+
+                      <div className='space-y-3'>
+                        <Label className='text-sm font-medium'>Region Order</Label>
+                        <RadioGroup
+                          value={userRandomization}
+                          onValueChange={(value) =>
+                            setUserRandomization(value as 'none' | 'shuffle')
+                          }
+                        >
+                          <div className='flex items-start space-y-0 space-x-3'>
+                            <RadioGroupItem value='none' id='order-sequential' />
+                            <div className='-mt-2 flex-1'>
+                              <Label
+                                htmlFor='order-sequential'
+                                className='cursor-pointer leading-tight font-normal'
+                              >
+                                Sequential
+                              </Label>
+                              <p className='text-muted-foreground mt-1 text-xs'>
+                                Go through regions in order, ideal for initial learning
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className='flex items-start space-y-0 space-x-3'>
+                            <RadioGroupItem value='shuffle' id='order-shuffle' />
+                            <div className='-mt-2 flex-1'>
+                              <Label
+                                htmlFor='order-shuffle'
+                                className='flex cursor-pointer items-center gap-1.5 leading-tight font-normal'
+                              >
+                                Randomized
+                              </Label>
+                              <p className='text-muted-foreground mt-1 text-xs'>
+                                Shuffle regions each time, better for testing memory
+                              </p>
+                            </div>
+                          </div>
+                        </RadioGroup>
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
               </div>
             </div>
 
