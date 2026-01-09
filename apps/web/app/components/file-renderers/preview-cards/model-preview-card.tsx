@@ -1,5 +1,12 @@
 import { memo, Suspense, useEffect, useRef, useState } from 'react';
-import { ContactShadows, Environment, OrbitControls, useGLTF } from '@react-three/drei';
+import {
+  ContactShadows,
+  Environment,
+  Html,
+  OrbitControls,
+  useGLTF,
+  useProgress,
+} from '@react-three/drei';
 import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber';
 import { RotateCcw } from 'lucide-react';
 import * as THREE from 'three';
@@ -8,7 +15,33 @@ import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 
 import { DEFAULT_MODEL_SETTINGS, type Model3DSettings } from '@gonasi/schemas/file';
 
-import type { FileLoaderItemType } from '~/routes/dashboard/file-library/all-files';
+import { Spinner } from '~/components/loaders';
+import type { FileLoaderItemType } from '~/routes/organizations/builder/course/file-library/file-library-index';
+
+/**
+ * 3D Model Loader component
+ * Shows loading progress using Html and useProgress from drei
+ */
+function Loader({ fileName }: { fileName?: string }) {
+  const { progress, active, loaded, total } = useProgress();
+
+  return (
+    <Html center>
+      <div className='flex flex-col items-center gap-3 rounded-lg bg-black/80 p-6 backdrop-blur-sm'>
+        <Spinner />
+        <div className='text-center text-white'>
+          <p className='text-sm font-medium'>{Math.round(progress)}% loaded</p>
+          {fileName && <p className='text-muted-foreground mt-1 text-xs'>{fileName}</p>}
+          {active && (
+            <p className='text-muted-foreground mt-1 text-xs'>
+              {loaded} / {total} items
+            </p>
+          )}
+        </div>
+      </div>
+    </Html>
+  );
+}
 
 /**
  * FBX Model component - memoized for performance
@@ -438,7 +471,7 @@ export const ModelPreviewCard = memo(
 
           <Environment preset='studio' />
 
-          <Suspense fallback={null}>
+          <Suspense fallback={<Loader fileName={file.name} />}>
             {extension === 'fbx' ? (
               <FBXModel url={file.signed_url} scale={settings.scale} position={settings.position} />
             ) : (
