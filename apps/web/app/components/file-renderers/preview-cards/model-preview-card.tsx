@@ -1,9 +1,10 @@
 import { memo, Suspense, useEffect, useRef, useState } from 'react';
-import { ContactShadows, Environment, OrbitControls, useFBX, useGLTF } from '@react-three/drei';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { ContactShadows, Environment, OrbitControls, useGLTF } from '@react-three/drei';
+import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber';
 import { RotateCcw } from 'lucide-react';
 import * as THREE from 'three';
 import { Cache } from 'three';
+import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 
 import { DEFAULT_MODEL_SETTINGS, type Model3DSettings } from '@gonasi/schemas/file';
 
@@ -11,6 +12,7 @@ import type { FileLoaderItemType } from '~/routes/dashboard/file-library/all-fil
 
 /**
  * FBX Model component - memoized for performance
+ * Uses useLoader with FBXLoader as per R3F documentation
  * Properly handles materials and textures
  */
 const FBXModel = memo(
@@ -23,25 +25,14 @@ const FBXModel = memo(
     scale: number;
     position: [number, number, number];
   }) => {
-    let model;
-
-    try {
-      model = useFBX(url);
-    } catch (error) {
-      console.error('[FBXModel] Failed to load FBX:', {
-        url,
-        error: error instanceof Error ? error.message : String(error),
-        stack: error instanceof Error ? error.stack : undefined,
-      });
-      throw error;
-    }
+    const fbx = useLoader(FBXLoader, url);
 
     // Process materials and textures on model load
     useEffect(() => {
-      if (!model) return;
+      if (!fbx) return;
 
       // Traverse the model to ensure materials are properly configured
-      model.traverse((child) => {
+      fbx.traverse((child) => {
         if ((child as THREE.Mesh).isMesh) {
           const mesh = child as THREE.Mesh;
 
@@ -86,12 +77,12 @@ const FBXModel = memo(
           }
         }
       });
-    }, [model]);
+    }, [fbx]);
 
     return (
       <primitive
         // eslint-disable-next-line react/no-unknown-property
-        object={model}
+        object={fbx}
         scale={scale}
         // eslint-disable-next-line react/no-unknown-property
         position={position}
@@ -357,10 +348,8 @@ export const ModelPreviewCard = memo(
           // Clear cache for this specific URL on unmount
           if (file.signed_url) {
             Cache.remove(file.signed_url);
-            // Also clear drei's cache
-            if (extension === 'fbx') {
-              useFBX.clear(file.signed_url);
-            } else {
+            // Clear useGLTF cache for GLB files
+            if (extension === 'glb' || extension === 'gltf') {
               useGLTF.clear(file.signed_url);
             }
           }
