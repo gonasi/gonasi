@@ -44,7 +44,9 @@ import { ModelPreviewCard } from '~/components/file-renderers/preview-cards/mode
 import useModal from '~/components/go-editor/hooks/useModal';
 import RichTextRenderer from '~/components/go-editor/ui/RichTextRenderer';
 import { Spinner } from '~/components/loaders';
+import { AssetRenderer } from '~/components/plugins/common/AssetRenderer';
 import InsertMediaDialog from '~/components/plugins/MediaInteraction/common/InsertMediaDialog';
+import { cn } from '~/lib/utils';
 import type { SearchFileResult } from '~/routes/api/search-files';
 
 interface GoMatchingPairFieldProps {
@@ -98,6 +100,80 @@ function AssetPreview({ assetId }: { assetId: string }) {
   }
 }
 
+// Asset Preview Component with Real-time Display Settings
+function AssetPreviewWithSettings({
+  assetId,
+  displaySettings,
+}: {
+  assetId: string;
+  displaySettings?: any;
+}) {
+  const [fileData, setFileData] = useState<SearchFileResult | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!assetId) {
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    fetch(`/api/files/${assetId}/signed-url?mode=preview`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          setFileData(data.data);
+        }
+      })
+      .catch((error) => {
+        console.error('Failed to load asset:', error);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, [assetId]);
+
+  if (loading) {
+    return (
+      <div className='bg-muted/30 relative mt-4 flex h-40 items-center justify-center rounded-lg border p-4'>
+        <Spinner />
+      </div>
+    );
+  }
+
+  if (!fileData) return null;
+
+  // Map SearchFileResult to the format expected by AssetRenderer
+  const assetFile = {
+    id: fileData.id,
+    name: fileData.name,
+    signed_url: fileData.signed_url,
+    file_type: fileData.file_type as FileType,
+    extension: fileData.extension,
+    blur_url: fileData.blur_url,
+    settings: fileData.settings as any,
+  };
+
+  return (
+    <div className='bg-muted/30 relative mt-4 rounded-lg border p-4'>
+      <Label className='mb-2 text-xs font-medium'>Live Preview</Label>
+      <div
+        className={cn(
+          'bg-background relative h-32 w-full overflow-hidden rounded-md',
+          // Apply display settings to preview container
+          displaySettings?.noBorder ? 'border-0' : 'border',
+          displaySettings?.noPadding ? 'p-0' : 'p-2',
+        )}
+      >
+        <AssetRenderer file={assetFile} displaySettings={displaySettings} />
+      </div>
+      <p className='text-muted-foreground mt-2 text-xs'>
+        ✨ Preview updates in real-time as you change settings
+      </p>
+    </div>
+  );
+}
+
 // Pair Editor Modal Component
 function PairEditorModal({
   isOpen,
@@ -129,6 +205,14 @@ function PairEditorModal({
     : null;
   const rightAssetId = currentPair
     ? watch(`${name}.${currentPair.index}.rightContentData.assetId`)
+    : null;
+
+  // Watch display settings for real-time preview updates
+  const leftDisplaySettings = currentPair
+    ? watch(`${name}.${currentPair.index}.leftContentData.displaySettings`)
+    : null;
+  const rightDisplaySettings = currentPair
+    ? watch(`${name}.${currentPair.index}.rightContentData.displaySettings`)
     : null;
 
   // Handle left content type changes
@@ -343,6 +427,14 @@ function PairEditorModal({
                         }}
                       />
                     </div>
+
+                    {/* Real-time Asset Preview */}
+                    {leftAssetId && (
+                      <AssetPreviewWithSettings
+                        assetId={leftAssetId}
+                        displaySettings={leftDisplaySettings}
+                      />
+                    )}
                   </>
                 )}
               </div>
@@ -460,6 +552,14 @@ function PairEditorModal({
                         }}
                       />
                     </div>
+
+                    {/* Real-time Asset Preview */}
+                    {rightAssetId && (
+                      <AssetPreviewWithSettings
+                        assetId={rightAssetId}
+                        displaySettings={rightDisplaySettings}
+                      />
+                    )}
                   </>
                 )}
               </div>
