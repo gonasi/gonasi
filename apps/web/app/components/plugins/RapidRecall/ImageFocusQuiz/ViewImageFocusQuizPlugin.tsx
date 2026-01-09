@@ -115,6 +115,11 @@ export function ViewImageFocusQuizPlugin({ blockWithProgress }: ViewPluginCompon
   const [playbackPhase, setPlaybackPhase] = useState<PlaybackPhase>(PlaybackPhase.INITIAL_DISPLAY);
   const [autoRevealTimer, setAutoRevealTimer] = useState<NodeJS.Timeout | null>(null);
 
+  // Timer state for countdown
+  const [timeRemaining, setTimeRemaining] = useState<number>(0);
+  const [timerInterval, setTimerInterval] = useState<NodeJS.Timeout | null>(null);
+  const { isSoundEnabled } = useStore();
+
   // Load image
   useEffect(() => {
     if (imageId && mode) {
@@ -135,20 +140,52 @@ export function ViewImageFocusQuizPlugin({ blockWithProgress }: ViewPluginCompon
     return undefined;
   }, [isModalOpen, playbackPhase, initialDisplayDuration, regions.length]);
 
-  // Auto-reveal answer timer
+  // Timer countdown for quiz-like feeling
   useEffect(() => {
-    if (playbackPhase === PlaybackPhase.REGION_FOCUSED && revealMode === 'auto') {
+    if (playbackPhase === PlaybackPhase.REGION_FOCUSED) {
       const delay = currentRegion?.revealDelay ?? defaultRevealDelay;
-      const timer = setTimeout(() => {
-        revealAnswer();
-        setPlaybackPhase(PlaybackPhase.ANSWER_REVEALED);
-      }, delay * 1000);
+      setTimeRemaining(delay);
 
-      setAutoRevealTimer(timer);
-      return () => clearTimeout(timer);
+      // Update timer every 100ms for smooth progress bar
+      const interval = setInterval(() => {
+        setTimeRemaining((prev) => {
+          const newTime = prev - 0.1;
+          if (newTime <= 0) {
+            clearInterval(interval);
+            // Play sound when timer expires
+            if (isSoundEnabled) {
+              const audio = new Audio('/sounds/timer-complete.mp3');
+              audio.play().catch(() => {
+                // Ignore if sound fails to play
+              });
+            }
+            // Auto-reveal answer when timer expires (for both auto and manual modes)
+            if (revealMode === 'auto') {
+              revealAnswer();
+              setPlaybackPhase(PlaybackPhase.ANSWER_REVEALED);
+            }
+            return 0;
+          }
+          return newTime;
+        });
+      }, 100);
+
+      setTimerInterval(interval);
+
+      return () => {
+        clearInterval(interval);
+        setTimerInterval(null);
+      };
     }
     return undefined;
-  }, [playbackPhase, revealMode, currentRegion?.revealDelay, defaultRevealDelay, revealAnswer]);
+  }, [
+    playbackPhase,
+    currentRegion?.revealDelay,
+    defaultRevealDelay,
+    isSoundEnabled,
+    revealMode,
+    revealAnswer,
+  ]);
 
   // Auto-advance to next region
   useEffect(() => {
@@ -182,6 +219,10 @@ export function ViewImageFocusQuizPlugin({ blockWithProgress }: ViewPluginCompon
     if (autoRevealTimer) {
       clearTimeout(autoRevealTimer);
       setAutoRevealTimer(null);
+    }
+    if (timerInterval) {
+      clearInterval(timerInterval);
+      setTimerInterval(null);
     }
     revealAnswer();
     setPlaybackPhase(PlaybackPhase.ANSWER_REVEALED);
@@ -231,6 +272,10 @@ export function ViewImageFocusQuizPlugin({ blockWithProgress }: ViewPluginCompon
       clearTimeout(autoRevealTimer);
       setAutoRevealTimer(null);
     }
+    if (timerInterval) {
+      clearInterval(timerInterval);
+      setTimerInterval(null);
+    }
   };
 
   // Calculate region position for zoom (must be before early return)
@@ -254,12 +299,12 @@ export function ViewImageFocusQuizPlugin({ blockWithProgress }: ViewPluginCompon
     const centerX = x + width / 2;
     const centerY = y + height / 2;
 
-    // Calculate zoom scale: aim to make region fill roughly 60-80% of viewport
+    // Calculate zoom scale: aim to make region fill roughly 80-90% of viewport
     // Smaller regions need more zoom. Use the smaller dimension to ensure entire region is visible.
-    const targetFillPercentage = 70; // Target region to fill 70% of viewport
+    const targetFillPercentage = 85; // Target region to fill 85% of viewport
     const scaleX = targetFillPercentage / width;
     const scaleY = targetFillPercentage / height;
-    const scale = Math.min(scaleX, scaleY, 3); // Cap at 3x to avoid over-zooming
+    const scale = Math.min(scaleX, scaleY, 5); // Cap at 5x for better detail visibility
 
     // Use image center as transform origin, calculate translation to center region in viewport
     // After scaling from center (50%, 50%), point at P becomes: 50 + (P - 50) * scale
@@ -414,12 +459,14 @@ export function ViewImageFocusQuizPlugin({ blockWithProgress }: ViewPluginCompon
 
         {/* Modal for quiz experience */}
         <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-          <DialogContent className='max-w-4xl'>
+          <DialogContent className='h-full w-full !max-w-full md:!top-0 md:!left-0 md:h-screen md:!max-h-screen md:w-screen md:!translate-x-0 md:!translate-y-0 md:rounded-none'>
             <DialogHeader>
-              <div className='flex items-center justify-between'>
-                <div>
-                  <DialogTitle>Image Focus Memorization</DialogTitle>
-                  <DialogDescription>
+              <div className='flex items-start justify-between gap-4'>
+                <div className='flex-1'>
+                  <DialogTitle className='text-base md:text-lg'>
+                    Image Focus Memorization
+                  </DialogTitle>
+                  <DialogDescription className='hidden text-sm md:block'>
                     Explore the image regions and test your memory
                   </DialogDescription>
                 </div>
@@ -427,7 +474,7 @@ export function ViewImageFocusQuizPlugin({ blockWithProgress }: ViewPluginCompon
                   variant='ghost'
                   size='sm'
                   onClick={handleCloseModal}
-                  className='h-8 w-8 p-0'
+                  className='h-8 w-8 shrink-0 p-0'
                 >
                   <X size={16} />
                 </Button>
@@ -443,10 +490,7 @@ export function ViewImageFocusQuizPlugin({ blockWithProgress }: ViewPluginCompon
               </div>
 
               {/* Image container */}
-              <div
-                className='relative flex items-center justify-center overflow-hidden rounded-lg shadow-lg'
-                style={{ height: '50vh', maxHeight: '50vh' }}
-              >
+              <div className='relative flex h-[45vh] items-center justify-center overflow-hidden rounded-lg shadow-lg md:h-[75vh]'>
                 <div
                   ref={imageRef}
                   className='relative flex items-center justify-center'
@@ -455,7 +499,7 @@ export function ViewImageFocusQuizPlugin({ blockWithProgress }: ViewPluginCompon
                   <img
                     src={fileData.signed_url}
                     alt='Focus quiz'
-                    className='h-auto max-h-[50vh] w-auto max-w-full select-none'
+                    className='h-auto max-h-[45vh] w-auto max-w-full select-none md:max-h-[75vh]'
                     crossOrigin='anonymous'
                   />
 
@@ -513,35 +557,81 @@ export function ViewImageFocusQuizPlugin({ blockWithProgress }: ViewPluginCompon
                 </div>
               </div>
 
+              {/* Timer section - shown when region is focused */}
+              {playbackPhase === PlaybackPhase.REGION_FOCUSED && currentRegion && (
+                <div className='bg-card rounded-lg border p-4 shadow-sm md:p-6'>
+                  <div className='space-y-3'>
+                    <div className='flex items-center justify-between'>
+                      <h3 className='text-sm font-medium md:text-base'>
+                        {revealMode === 'manual'
+                          ? 'Think about your answer...'
+                          : 'Answer revealing in...'}
+                      </h3>
+                      <span className='text-primary text-lg font-bold md:text-xl'>
+                        {timeRemaining.toFixed(1)}s
+                      </span>
+                    </div>
+
+                    {/* Progress bar */}
+                    <div className='bg-muted h-3 overflow-hidden rounded-full md:h-4'>
+                      <div
+                        className='bg-primary h-full transition-all duration-100 ease-linear'
+                        style={{
+                          width: `${((timeRemaining / (currentRegion.revealDelay ?? defaultRevealDelay)) * 100).toFixed(2)}%`,
+                        }}
+                      />
+                    </div>
+
+                    {revealMode === 'manual' && (
+                      <p className='text-muted-foreground text-xs md:text-sm'>
+                        Click &quot;Reveal Answer&quot; when you&apos;re ready, or wait for
+                        auto-reveal
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* Answer section */}
               {playbackPhase === PlaybackPhase.ANSWER_REVEALED && currentRegion && (
-                <div className='bg-card rounded-lg border p-6 shadow-sm'>
-                  <h3 className='mb-4 font-medium'>Answer:</h3>
-                  <RichTextRenderer editorState={currentRegion.answerState} />
+                <div className='bg-card rounded-lg border p-4 shadow-sm md:p-6'>
+                  <h3 className='mb-3 text-sm font-medium md:mb-4 md:text-base'>Answer:</h3>
+                  <div className='text-sm md:text-base'>
+                    <RichTextRenderer editorState={currentRegion.answerState} />
+                  </div>
                 </div>
               )}
 
               {/* Control buttons */}
-              <div className='flex items-center justify-between gap-4'>
+              <div className='flex items-center justify-between gap-2 md:gap-4'>
                 {/* Previous button - loops to last region when at first */}
-                <OutlineButton onClick={handlePreviousRegion} className='flex items-center gap-2'>
+                <OutlineButton
+                  onClick={handlePreviousRegion}
+                  className='flex items-center gap-1 md:gap-2'
+                >
                   <ChevronLeft size={16} />
-                  Previous
+                  <span className='hidden sm:inline'>Previous</span>
                 </OutlineButton>
 
                 {/* Center action */}
                 <div className='flex-1 text-center'>
                   {playbackPhase === PlaybackPhase.REGION_FOCUSED && revealMode === 'manual' && (
-                    <OutlineButton onClick={handleRevealAnswer} className='flex items-center gap-2'>
+                    <OutlineButton
+                      onClick={handleRevealAnswer}
+                      className='flex items-center gap-1 md:gap-2'
+                    >
                       <Eye size={16} />
-                      Reveal Answer
+                      <span className='hidden sm:inline'>Reveal Answer</span>
                     </OutlineButton>
                   )}
                 </div>
 
                 {/* Next button - loops to first region when at last */}
-                <OutlineButton onClick={handleNextRegion} className='flex items-center gap-2'>
-                  Next
+                <OutlineButton
+                  onClick={handleNextRegion}
+                  className='flex items-center gap-1 md:gap-2'
+                >
+                  <span className='hidden sm:inline'>Next</span>
                   <ChevronRight size={16} />
                 </OutlineButton>
               </div>
