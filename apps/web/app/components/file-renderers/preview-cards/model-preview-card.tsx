@@ -17,15 +17,41 @@ const Model = ({
   extension,
   scale,
   position,
+  onError,
 }: {
   url: string;
   extension: string;
   scale: number;
   position: [number, number, number];
+  onError?: (error: Error) => void;
 }) => {
-  // Load the model based on the extension
+  const [error, setError] = useState<Error | null>(null);
+
+  // Load the model based on the extension with error handling
   // Note: GLTF is not supported (handled in parent component)
-  const model = useLoader(extension === 'fbx' ? FBXLoader : GLTFLoader, url);
+  let model;
+  try {
+    model = useLoader(
+      extension === 'fbx' ? FBXLoader : GLTFLoader,
+      url,
+      undefined,
+      (error) => {
+        const loadError = error instanceof Error ? error : new Error(String(error));
+        console.error('[Model] Failed to load 3D model:', loadError);
+        setError(loadError);
+        onError?.(loadError);
+      }
+    );
+  } catch (err) {
+    const loadError = err instanceof Error ? err : new Error(String(err));
+    console.error('[Model] Failed to load 3D model:', loadError);
+    onError?.(loadError);
+    throw loadError;
+  }
+
+  if (error) {
+    throw error;
+  }
 
   // For GLB files, use the `scene` property, for FBX just use the loaded model directly
   return (
@@ -175,14 +201,24 @@ const useDeviceOrientation = () => {
   return { isSupported, isEnabled };
 };
 
-export const ModelPreviewCard = ({ file }: { file: FileLoaderItemType }) => {
+export const ModelPreviewCard = ({
+  file,
+  onError,
+}: {
+  file: FileLoaderItemType;
+  onError?: (error: Error) => void;
+}) => {
   const extension = file.extension.toLowerCase();
   const { isSupported: supportsOrientation, isEnabled: orientationEnabled } =
     useDeviceOrientation();
   const [cameraMoved, setCameraMoved] = useState(false);
   const resetCameraRef = useRef<(() => void) | null>(null);
 
-  if (!file.signed_url) return <p>Invalid model URL</p>;
+  if (!file.signed_url) {
+    const error = new Error('Invalid model URL');
+    onError?.(error);
+    return <p>Invalid model URL</p>;
+  }
 
   // cspell:ignore gltf glb Aspose
   // GLTF files with external dependencies are not supported
@@ -247,6 +283,7 @@ export const ModelPreviewCard = ({ file }: { file: FileLoaderItemType }) => {
             extension={extension}
             scale={settings.scale}
             position={settings.position}
+            onError={onError}
           />
         </Suspense>
 
