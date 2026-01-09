@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { ArrowLeft, ArrowRight, Check, X } from 'lucide-react';
+import { AlertCircle, ArrowLeft, ArrowRight, Check, RefreshCw, X } from 'lucide-react';
 
-import type { FileType } from '@gonasi/schemas/file';
+import { FileType } from '@gonasi/schemas/file';
 import type {
   CardSchemaTypes,
   SwipeCategorizeInteractionSchemaTypes,
@@ -46,7 +46,7 @@ interface CardResult {
   hadWrongAttempt: boolean;
 }
 
-// Card content renderer component
+// Card content renderer component with reliable loading
 function CardContentRenderer({
   card,
   mode = 'play',
@@ -56,40 +56,136 @@ function CardContentRenderer({
 }) {
   const [assetFile, setAssetFile] = useState<FileWithSignedUrl | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
-    if (card.contentData.type === 'asset') {
-      const assetId = card.contentData.assetId;
+    if (card.contentData.type !== 'asset') return;
+
+    const assetId = card.contentData.assetId;
+    const fileType = card.contentData.fileType;
+    let isMounted = true;
+
+    const fetchAsset = async (attempt: number = 0) => {
+      const maxRetries = 3;
+      const retryDelay = 1000;
+
+      if (!isMounted) return;
+
       setLoading(true);
-      fetch(`/api/files/${assetId}/signed-url?mode=${mode}`)
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.success) {
-            setAssetFile(data.data);
-          }
-        })
-        .catch((error) => {
-          console.error('Failed to load asset:', error);
-        })
-        .finally(() => {
-          setLoading(false);
+      setError(null);
+
+      try {
+        const controller = new AbortController();
+        const timeout = fileType === FileType.MODEL_3D ? 30000 : 10000;
+        const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+        const response = await fetch(`/api/files/${assetId}/signed-url?mode=${mode}`, {
+          signal: controller.signal,
         });
-    }
-  }, [card.contentData, mode]);
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (!isMounted) return;
+
+        if (data.success && data.data) {
+          setAssetFile(data.data);
+          setError(null);
+        } else {
+          throw new Error(data.message || 'Failed to load asset data');
+        }
+      } catch (err) {
+        if (!isMounted) return;
+
+        const isTimeout = err instanceof Error && err.name === 'AbortError';
+        const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+
+        console.error(`[ReviewCarousel] Asset load failed (attempt ${attempt + 1}/${maxRetries}):`, {
+          assetId,
+          fileType,
+          error: errorMessage,
+        });
+
+        if (attempt < maxRetries - 1) {
+          setTimeout(() => {
+            if (isMounted) {
+              setRetryCount(attempt + 1);
+              fetchAsset(attempt + 1);
+            }
+          }, retryDelay * (attempt + 1));
+        } else {
+          setError(isTimeout ? `Timeout loading ${fileType}` : `Failed to load: ${errorMessage}`);
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchAsset(retryCount);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [card.contentData, mode, retryCount]);
 
   if (card.contentData.type === 'richtext') {
     return <RichTextRenderer editorState={card.contentData.content} />;
   }
 
   if (loading) {
-    return <Spinner />;
+    return (
+      <div className='flex flex-col items-center justify-center gap-2'>
+        <Spinner />
+        {card.contentData.fileType === FileType.MODEL_3D && (
+          <p className='text-muted-foreground text-xs'>Loading 3D model...</p>
+        )}
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className='flex flex-col items-center justify-center gap-2 p-4 text-center'>
+        <AlertCircle className='text-destructive h-8 w-8' />
+        <p className='text-destructive text-xs'>{error}</p>
+        <button
+          type='button'
+          onClick={() => setRetryCount(0)}
+          className='text-primary hover:text-primary/80 flex items-center gap-1 text-xs underline'
+        >
+          <RefreshCw className='h-3 w-3' />
+          Retry
+        </button>
+      </div>
+    );
   }
 
   if (assetFile) {
     return <AssetRenderer file={assetFile} displaySettings={card.contentData.displaySettings} />;
   }
 
-  return <div className='text-muted-foreground text-center text-sm'>Asset not found</div>;
+  return (
+    <div className='text-muted-foreground flex flex-col items-center justify-center gap-2 p-4'>
+      <AlertCircle className='h-8 w-8' />
+      <p className='text-center text-xs'>Asset not found</p>
+      <button
+        type='button'
+        onClick={() => setRetryCount(0)}
+        className='text-primary hover:text-primary/80 flex items-center gap-1 text-xs underline'
+      >
+        <RefreshCw className='h-3 w-3' />
+        Retry
+      </button>
+    </div>
+  );
 }
 
 export function ReviewCarousel({

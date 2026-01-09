@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
+import { AlertCircle, RefreshCw } from 'lucide-react';
 
-import type { FileType } from '@gonasi/schemas/file';
+import { FileType } from '@gonasi/schemas/file';
 import type {
   BlockInteractionSchemaTypes,
   BuilderSchemaTypes,
@@ -19,8 +20,8 @@ import { shuffleArray } from '../../utils';
 
 import { NotFoundCard } from '~/components/cards';
 import RichTextRenderer from '~/components/go-editor/ui/RichTextRenderer';
-import { AssetRenderer } from '~/components/plugins/common/AssetRenderer';
 import { Spinner } from '~/components/loaders';
+import { AssetRenderer } from '~/components/plugins/common/AssetRenderer';
 import { BlockActionButton } from '~/components/ui/button';
 import {
   Carousel,
@@ -92,7 +93,7 @@ function migrateCardToNewFormat(card: any): StepByStepRevealCardSchemaTypes {
   return migratedCard;
 }
 
-// Component to render card content (richtext or asset)
+// Component to render card content (richtext or asset) with reliable loading
 function CardContentRenderer({
   contentData,
   mode,
@@ -102,49 +103,165 @@ function CardContentRenderer({
 }) {
   const [assetFile, setAssetFile] = useState<FileWithSignedUrl | null>(null);
   const [assetLoading, setAssetLoading] = useState(false);
+  const [assetError, setAssetError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
-    if (contentData.type === 'asset') {
-      const assetId = contentData.assetId;
-      setAssetLoading(true);
-      fetch(`/api/files/${assetId}/signed-url?mode=${mode}`)
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.success) {
-            setAssetFile(data.data);
-          }
-        })
-        .catch((error) => {
-          console.error('Failed to fetch asset:', error);
-        })
-        .finally(() => {
-          setAssetLoading(false);
-        });
-    }
-  }, [contentData, mode]);
+    if (contentData.type !== 'asset') return;
 
+    const assetId = contentData.assetId;
+    const fileType = contentData.fileType;
+    let isMounted = true;
+
+    const fetchAsset = async (attempt: number = 0) => {
+      const maxRetries = 3;
+      const retryDelay = 1000;
+
+      if (!isMounted) return;
+
+      setAssetLoading(true);
+      setAssetError(null);
+
+      try {
+        const controller = new AbortController();
+        // Longer timeout for 3D files (30s), shorter for others (10s)
+        const timeout = fileType === FileType.MODEL_3D ? 30000 : 10000;
+        const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+        const response = await fetch(`/api/files/${assetId}/signed-url?mode=${mode}`, {
+          signal: controller.signal,
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (!isMounted) return;
+
+        if (data.success && data.data) {
+          setAssetFile(data.data);
+          setAssetError(null);
+          console.log(`[StepByStepReveal] Successfully loaded ${fileType} asset:`, assetId);
+        } else {
+          throw new Error(data.message || 'Failed to load asset data');
+        }
+      } catch (error) {
+        if (!isMounted) return;
+
+        const isTimeout = error instanceof Error && error.name === 'AbortError';
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+        console.error(
+          `[StepByStepReveal] Asset load failed (attempt ${attempt + 1}/${maxRetries}):`,
+          {
+            assetId,
+            fileType,
+            error: errorMessage,
+            isTimeout,
+          },
+        );
+
+        // Retry logic
+        if (attempt < maxRetries - 1) {
+          console.log(
+            `[StepByStepReveal] Retrying in ${retryDelay * (attempt + 1)}ms... (attempt ${attempt + 2}/${maxRetries})`,
+          );
+          setTimeout(
+            () => {
+              if (isMounted) {
+                setRetryCount(attempt + 1);
+                fetchAsset(attempt + 1);
+              }
+            },
+            retryDelay * (attempt + 1),
+          ); // Exponential backoff
+        } else {
+          setAssetError(
+            isTimeout
+              ? `Timeout loading ${fileType} file. The file may be too large.`
+              : `Failed to load ${fileType}: ${errorMessage}`,
+          );
+        }
+      } finally {
+        if (isMounted) {
+          setAssetLoading(false);
+        }
+      }
+    };
+
+    fetchAsset(retryCount);
+
+    // Cleanup function
+    return () => {
+      isMounted = false;
+    };
+  }, [contentData, mode, retryCount]);
+
+  // Rich text content
   if (contentData.type === 'richtext') {
     return <RichTextRenderer editorState={contentData.content} />;
   }
 
-  // Asset type
+  // Asset loading state
   if (assetLoading) {
     return (
-      <div className='flex h-full items-center justify-center'>
+      <div className='flex h-full flex-col items-center justify-center gap-2'>
         <Spinner />
+        {contentData.fileType === FileType.MODEL_3D && (
+          <p className='text-muted-foreground text-xs'>Loading 3D model...</p>
+        )}
       </div>
     );
   }
 
-  if (!assetFile) {
+  // Asset error state
+  if (assetError) {
     return (
-      <div className='text-muted-foreground flex h-full items-center justify-center'>
-        <p className='text-sm'>Asset not found</p>
+      <div className='flex h-full flex-col items-center justify-center gap-2 p-4 text-center'>
+        <AlertCircle className='text-destructive h-10 w-10' />
+        <p className='text-destructive text-xs'>{assetError}</p>
+        <button
+          type='button'
+          onClick={(e) => {
+            e.stopPropagation();
+            setRetryCount(0);
+          }}
+          className='text-primary hover:text-primary/80 flex items-center gap-1 text-xs underline'
+        >
+          <RefreshCw className='h-3 w-3' />
+          Retry
+        </button>
       </div>
     );
   }
 
-  return <AssetRenderer file={assetFile} displaySettings={contentData.displaySettings} />;
+  // Asset loaded successfully
+  if (assetFile) {
+    return <AssetRenderer file={assetFile} displaySettings={contentData.displaySettings} />;
+  }
+
+  // Fallback: Asset not found
+  return (
+    <div className='text-muted-foreground flex h-full flex-col items-center justify-center gap-2 p-4'>
+      <AlertCircle className='h-10 w-10' />
+      <p className='text-center text-xs'>Asset not found</p>
+      <button
+        type='button'
+        onClick={(e) => {
+          e.stopPropagation();
+          setRetryCount(0);
+        }}
+        className='text-primary hover:text-primary/80 flex items-center gap-1 text-xs underline'
+      >
+        <RefreshCw className='h-3 w-3' />
+        Retry
+      </button>
+    </div>
+  );
 }
 
 export function ViewStepByStepRevealPlugin({ blockWithProgress }: ViewPluginComponentProps) {
