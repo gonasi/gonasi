@@ -51,6 +51,38 @@ const defaultSettings: MatchingGameSettingsSchemaTypes = {
   randomization: 'shuffle',
 };
 
+// Migration helper: Convert old pair format to new format
+function migratePairToNewFormat(pair: any): any {
+  // If pair already has contentData, return as is
+  if ('leftContentData' in pair && 'rightContentData' in pair) {
+    console.log('[Migration] Pair already has contentData:', pair);
+    return pair;
+  }
+
+  // Migrate old format: { leftContent: LexicalState, rightContent: LexicalState } -> { leftContentData: { type: 'richtext', content: LexicalState }, rightContentData: { type: 'richtext', content: LexicalState } }
+  if ('leftContent' in pair && 'rightContent' in pair) {
+    console.log('[Migration] Migrating old format pair:', pair.id);
+    return {
+      ...pair,
+      leftContentData: {
+        type: 'richtext',
+        content: pair.leftContent,
+      },
+      rightContentData: {
+        type: 'richtext',
+        content: pair.rightContent,
+      },
+      // Remove old fields
+      leftContent: undefined,
+      rightContent: undefined,
+    };
+  }
+
+  // Shouldn't happen, but return as-is if neither field exists
+  console.warn('[Migration] Pair has neither old nor new format:', pair);
+  return pair;
+}
+
 export function BuilderMatchingGamePlugin({ block }: BuilderMatchingGamePluginProps) {
   console.log('[BuilderMatchingGamePlugin] Rendering with block:', block);
 
@@ -81,7 +113,11 @@ export function BuilderMatchingGamePlugin({ block }: BuilderMatchingGamePluginPr
           lesson_id: params.lessonId!,
           plugin_type: 'matching_game',
           content: MatchingGameContentSchema.safeParse(block.content).success
-            ? MatchingGameContentSchema.parse(block.content)
+            ? {
+                ...MatchingGameContentSchema.parse(block.content),
+                // Migrate pairs to new format
+                pairs: (block.content as any).pairs?.map(migratePairToNewFormat) || [],
+              }
             : defaultContent,
           settings: MatchingGameSettingsSchema.safeParse(block.settings).success
             ? MatchingGameSettingsSchema.parse(block.settings)

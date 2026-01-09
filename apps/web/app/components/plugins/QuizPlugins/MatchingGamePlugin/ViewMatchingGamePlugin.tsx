@@ -125,7 +125,7 @@ export function ViewMatchingGamePlugin({ blockWithProgress }: ViewPluginComponen
   const leftItems = useMemo(() => {
     const items = pairs.map((pair) => ({
       id: pair.id,
-      content: pair.leftContent,
+      contentData: pair.leftContentData,
       index: pair.leftIndex,
     }));
     if (randomization === 'shuffle') {
@@ -137,7 +137,7 @@ export function ViewMatchingGamePlugin({ blockWithProgress }: ViewPluginComponen
   const rightItems = useMemo(() => {
     const items = pairs.map((pair) => ({
       id: pair.id,
-      content: pair.rightContent,
+      contentData: pair.rightContentData,
       index: pair.rightIndex,
     }));
     if (randomization === 'shuffle') {
@@ -274,7 +274,8 @@ export function ViewMatchingGamePlugin({ blockWithProgress }: ViewPluginComponen
             {leftItems.map((item) => (
               <MatchingItemButton
                 key={item.id}
-                content={item.content}
+                contentData={item.contentData}
+                mode={mode}
                 isSelected={isLeftItemSelected(item.id)}
                 isMatched={isLeftItemMatched(item.id)}
                 isDisabled={!canInteract || isLeftItemDisabled(item.id)}
@@ -306,7 +307,8 @@ export function ViewMatchingGamePlugin({ blockWithProgress }: ViewPluginComponen
             {rightItems.map((item) => (
               <MatchingItemButton
                 key={item.id}
-                content={item.content}
+                contentData={item.contentData}
+                mode={mode}
                 isSelected={isRightItemSelected(item.id)}
                 isMatched={isRightItemMatched(item.id)}
                 isDisabled={isRightItemDisabled(item.id)}

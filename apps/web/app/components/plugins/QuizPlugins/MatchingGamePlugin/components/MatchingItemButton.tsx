@@ -1,13 +1,30 @@
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Check, X } from 'lucide-react';
+
+import type { FileType } from '@gonasi/schemas/file';
+import type { CardContentSchemaTypes } from '@gonasi/schemas/plugins';
 
 import type { MatchColor } from '../utils/colors';
 
 import RichTextRenderer from '~/components/go-editor/ui/RichTextRenderer';
+import { AssetRenderer } from '~/components/plugins/common/AssetRenderer';
+import { Spinner } from '~/components/loaders';
 import { cn } from '~/lib/utils';
 
+interface FileWithSignedUrl {
+  id: string;
+  name: string;
+  signed_url: string;
+  file_type: FileType;
+  extension: string;
+  blur_url?: string | null;
+  settings?: any;
+}
+
 interface MatchingItemButtonProps {
-  content: string;
+  contentData: CardContentSchemaTypes;
+  mode?: 'preview' | 'play';
   isSelected?: boolean;
   isMatched?: boolean;
   isDisabled?: boolean;
@@ -20,7 +37,8 @@ interface MatchingItemButtonProps {
 }
 
 export function MatchingItemButton({
-  content,
+  contentData,
+  mode = 'play',
   isSelected = false,
   isMatched = false,
   isDisabled = false,
@@ -31,6 +49,30 @@ export function MatchingItemButton({
   shouldNudge = false,
   onClick,
 }: MatchingItemButtonProps) {
+  const [assetFile, setAssetFile] = useState<FileWithSignedUrl | null>(null);
+  const [assetLoading, setAssetLoading] = useState(false);
+
+  // Fetch asset if content type is 'asset'
+  useEffect(() => {
+    if (contentData.type === 'asset') {
+      const assetId = contentData.assetId;
+      setAssetLoading(true);
+      fetch(`/api/files/${assetId}/signed-url?mode=${mode}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success) {
+            setAssetFile(data.data);
+          }
+        })
+        .catch((error) => {
+          console.error('Failed to load asset:', error);
+        })
+        .finally(() => {
+          setAssetLoading(false);
+        });
+    }
+  }, [contentData, mode]);
+
   const handleClick = () => {
     if (!isDisabled && onClick) {
       onClick();
@@ -109,7 +151,7 @@ export function MatchingItemButton({
       // Key changes when shouldNudge changes to force animation re-trigger
       key={shouldNudge ? 'nudging' : 'idle'}
       className={cn(
-        'flex w-full items-center justify-between gap-3 rounded-lg border-2 p-4 text-left transition-all duration-200',
+        'relative flex w-full items-center rounded-lg border-2 p-4 text-left transition-all duration-200',
         // Base state with hover cursor
         !isMatched &&
           !isSelected &&
@@ -159,47 +201,63 @@ export function MatchingItemButton({
       }
       whileTap={!isDisabled && !isMatched ? { scale: 0.98 } : {}}
     >
-      <div className='flex-1'>
-        <RichTextRenderer editorState={content} />
+      {/* Content container - ensures assets fit properly */}
+      <div className='flex-1 overflow-hidden'>
+        <div
+          className={cn(
+            contentData.type === 'asset' ? 'flex items-center justify-center' : '',
+            contentData.type === 'asset' ? 'h-20' : '', // Fixed height for asset content
+          )}
+        >
+          {contentData.type === 'richtext' ? (
+            <RichTextRenderer editorState={contentData.content} />
+          ) : assetLoading ? (
+            <Spinner />
+          ) : assetFile ? (
+            <div className='h-full w-full'>
+              <AssetRenderer file={assetFile} displaySettings={contentData.displaySettings} />
+            </div>
+          ) : (
+            <div className='text-muted-foreground text-sm'>Asset not found</div>
+          )}
+        </div>
       </div>
 
-      {/* Status indicators */}
-      <div className='flex-shrink-0'>
-        {isMatched && (
-          <motion.div
-            initial={{ scale: 0, rotate: -180 }}
-            animate={{ scale: 1, rotate: 0 }}
-            transition={{ type: 'spring', stiffness: 200, damping: 15 }}
-            className={cn(
-              'flex h-7 w-7 items-center justify-center rounded-full',
-              matchColor ? `${matchColor.bg}` : 'bg-success',
-            )}
-          >
-            <Check
-              className={cn('h-5 w-5 font-bold', matchColor ? matchColor.text : 'text-white')}
-              strokeWidth={3}
-            />
-          </motion.div>
-        )}
-        {isWrong && !isMatched && (
-          <motion.div
-            initial={{ scale: 0, rotate: 180 }}
-            animate={{
-              scale: 1,
-              rotate: 0,
-              x: [0, -2, 2, -2, 2, 0],
-            }}
-            transition={{
-              scale: { type: 'spring', stiffness: 200, damping: 15 },
-              rotate: { duration: 0.3 },
-              x: { duration: 0.4, times: [0, 0.2, 0.4, 0.6, 0.8, 1] },
-            }}
-            className='bg-destructive text-destructive-foreground flex h-7 w-7 items-center justify-center rounded-full'
-          >
-            <X className='h-5 w-5' strokeWidth={3} />
-          </motion.div>
-        )}
-      </div>
+      {/* Status indicators - positioned outside at top right */}
+      {isMatched && (
+        <motion.div
+          initial={{ scale: 0, rotate: -180 }}
+          animate={{ scale: 1, rotate: 0 }}
+          transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+          className={cn(
+            'absolute -top-2 -right-2 z-10 flex h-6 w-6 items-center justify-center rounded-full border-2 border-background',
+            matchColor ? `${matchColor.bg}` : 'bg-success',
+          )}
+        >
+          <Check
+            className={cn('h-4 w-4 font-bold', matchColor ? matchColor.text : 'text-white')}
+            strokeWidth={3}
+          />
+        </motion.div>
+      )}
+      {isWrong && !isMatched && (
+        <motion.div
+          initial={{ scale: 0, rotate: 180 }}
+          animate={{
+            scale: 1,
+            rotate: 0,
+            x: [0, -2, 2, -2, 2, 0],
+          }}
+          transition={{
+            scale: { type: 'spring', stiffness: 200, damping: 15 },
+            rotate: { duration: 0.3 },
+            x: { duration: 0.4, times: [0, 0.2, 0.4, 0.6, 0.8, 1] },
+          }}
+          className='bg-destructive text-destructive-foreground absolute -top-2 -right-2 z-10 flex h-6 w-6 items-center justify-center rounded-full border-2 border-background'
+        >
+          <X className='h-4 w-4' strokeWidth={3} />
+        </motion.div>
+      )}
     </motion.button>
   );
 }

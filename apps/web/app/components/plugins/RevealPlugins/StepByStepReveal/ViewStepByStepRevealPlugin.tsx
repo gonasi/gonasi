@@ -15,11 +15,11 @@ import { PlayPluginWrapper } from '../../common/PlayPluginWrapper';
 import { ViewPluginWrapper } from '../../common/ViewPluginWrapper';
 import { useViewPluginCore } from '../../hooks/useViewPluginCore';
 import type { ViewPluginComponentProps } from '../../PluginRenderers/ViewPluginTypesRenderer';
-import { AssetRenderer } from '../../QuizPlugins/SwipeCategorizePlugin/components/AssetRenderer';
 import { shuffleArray } from '../../utils';
 
 import { NotFoundCard } from '~/components/cards';
 import RichTextRenderer from '~/components/go-editor/ui/RichTextRenderer';
+import { AssetRenderer } from '~/components/plugins/common/AssetRenderer';
 import { Spinner } from '~/components/loaders';
 import { BlockActionButton } from '~/components/ui/button';
 import {
