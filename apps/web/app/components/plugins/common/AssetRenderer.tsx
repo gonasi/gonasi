@@ -134,7 +134,6 @@ const Model3DWrapper = memo(({ file }: { file: FileWithSignedUrl }) => {
           <ModelPreviewCard
             file={file}
             onError={() => setErrorMessage('Failed to initialize 3D viewer')}
-            onReload={handleReload}
           />
         </Suspense>
       </Model3DErrorBoundary>

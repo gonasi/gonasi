@@ -11,6 +11,7 @@ import type { FileLoaderItemType } from '~/routes/dashboard/file-library/all-fil
 
 /**
  * FBX Model component - memoized for performance
+ * Properly handles materials and textures
  */
 const FBXModel = memo(
   ({
@@ -35,6 +36,58 @@ const FBXModel = memo(
       throw error;
     }
 
+    // Process materials and textures on model load
+    useEffect(() => {
+      if (!model) return;
+
+      // Traverse the model to ensure materials are properly configured
+      model.traverse((child) => {
+        if ((child as THREE.Mesh).isMesh) {
+          const mesh = child as THREE.Mesh;
+
+          // Ensure mesh casts and receives shadows
+          mesh.castShadow = true;
+          mesh.receiveShadow = true;
+
+          // Process materials
+          if (mesh.material) {
+            const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+
+            materials.forEach((material) => {
+              if (
+                material instanceof THREE.MeshStandardMaterial ||
+                material instanceof THREE.MeshPhongMaterial ||
+                material instanceof THREE.MeshLambertMaterial
+              ) {
+                // Enable proper lighting
+                material.needsUpdate = true;
+
+                // Handle textures properly
+                if (material.map) {
+                  material.map.needsUpdate = true;
+                  // Ensure proper texture encoding
+                  material.map.colorSpace = THREE.SRGBColorSpace;
+                }
+
+                // Handle normal maps
+                if ((material as any).normalMap) {
+                  (material as any).normalMap.needsUpdate = true;
+                }
+
+                // Handle roughness/metalness maps
+                if ((material as any).roughnessMap) {
+                  (material as any).roughnessMap.needsUpdate = true;
+                }
+                if ((material as any).metalnessMap) {
+                  (material as any).metalnessMap.needsUpdate = true;
+                }
+              }
+            });
+          }
+        }
+      });
+    }, [model]);
+
     return (
       <primitive
         // eslint-disable-next-line react/no-unknown-property
@@ -44,13 +97,14 @@ const FBXModel = memo(
         position={position}
       />
     );
-  }
+  },
 );
 
 FBXModel.displayName = 'FBXModel';
 
 /**
  * GLB Model component - memoized for performance
+ * Properly handles materials and textures
  */
 const GLBModel = memo(
   ({
@@ -76,6 +130,63 @@ const GLBModel = memo(
       throw error;
     }
 
+    // Process materials and textures on model load
+    useEffect(() => {
+      if (!scene) return;
+
+      // Traverse the scene to ensure materials are properly configured
+      scene.traverse((child) => {
+        if ((child as THREE.Mesh).isMesh) {
+          const mesh = child as THREE.Mesh;
+
+          // Ensure mesh casts and receives shadows
+          mesh.castShadow = true;
+          mesh.receiveShadow = true;
+
+          // Process materials
+          if (mesh.material) {
+            const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+
+            materials.forEach((material) => {
+              if (
+                material instanceof THREE.MeshStandardMaterial ||
+                material instanceof THREE.MeshPhongMaterial ||
+                material instanceof THREE.MeshLambertMaterial
+              ) {
+                // Enable proper lighting
+                material.needsUpdate = true;
+
+                // Handle textures properly
+                if (material.map) {
+                  material.map.needsUpdate = true;
+                  // Ensure proper texture encoding
+                  material.map.colorSpace = THREE.SRGBColorSpace;
+                }
+
+                // Handle normal maps
+                if ((material as any).normalMap) {
+                  (material as any).normalMap.needsUpdate = true;
+                }
+
+                // Handle roughness/metalness maps
+                if ((material as any).roughnessMap) {
+                  (material as any).roughnessMap.needsUpdate = true;
+                }
+                if ((material as any).metalnessMap) {
+                  (material as any).metalnessMap.needsUpdate = true;
+                }
+
+                // Handle AO maps
+                if ((material as any).aoMap) {
+                  (material as any).aoMap.needsUpdate = true;
+                }
+              }
+            });
+          }
+        }
+      });
+    }, [scene]);
+
     return (
       <primitive
         // eslint-disable-next-line react/no-unknown-property
@@ -85,7 +196,7 @@ const GLBModel = memo(
         position={position}
       />
     );
-  }
+  },
 );
 
 GLBModel.displayName = 'GLBModel';
@@ -204,7 +315,7 @@ const CameraResetHandler = memo(
     }, [onResetReady]);
 
     return null;
-  }
+  },
 );
 
 CameraResetHandler.displayName = 'CameraResetHandler';
@@ -232,15 +343,7 @@ function useDeviceOrientation() {
  * Optimized with memoization for multiple model instances
  */
 export const ModelPreviewCard = memo(
-  ({
-    file,
-    onError,
-    onReload,
-  }: {
-    file: FileLoaderItemType;
-    onError?: () => void;
-    onReload?: () => void;
-  }) => {
+  ({ file, onError }: { file: FileLoaderItemType; onError?: () => void }) => {
     const extension = file.extension.toLowerCase();
     const { isSupported: supportsOrientation, isEnabled: orientationEnabled } =
       useDeviceOrientation();
@@ -313,6 +416,9 @@ export const ModelPreviewCard = memo(
           gl={{
             antialias: true,
             alpha: true,
+            toneMapping: THREE.ACESFilmicToneMapping,
+            toneMappingExposure: 1,
+            outputColorSpace: THREE.SRGBColorSpace,
           }}
         >
           {/* Lighting */}
@@ -345,17 +451,9 @@ export const ModelPreviewCard = memo(
 
           <Suspense fallback={null}>
             {extension === 'fbx' ? (
-              <FBXModel
-                url={file.signed_url}
-                scale={settings.scale}
-                position={settings.position}
-              />
+              <FBXModel url={file.signed_url} scale={settings.scale} position={settings.position} />
             ) : (
-              <GLBModel
-                url={file.signed_url}
-                scale={settings.scale}
-                position={settings.position}
-              />
+              <GLBModel url={file.signed_url} scale={settings.scale} position={settings.position} />
             )}
           </Suspense>
 
@@ -387,7 +485,7 @@ export const ModelPreviewCard = memo(
         {cameraMoved && (
           <button
             onClick={handleReset}
-            className='absolute bottom-4 right-4 flex items-center gap-2 rounded-lg bg-black/50 px-3 py-2 text-sm text-white backdrop-blur-sm transition-all hover:bg-black/70'
+            className='absolute right-4 bottom-4 flex items-center gap-2 rounded-lg bg-black/50 px-3 py-2 text-sm text-white backdrop-blur-sm transition-all hover:bg-black/70'
             style={{ zIndex: 10 }}
           >
             <RotateCcw size={16} />
@@ -396,7 +494,7 @@ export const ModelPreviewCard = memo(
         )}
       </div>
     );
-  }
+  },
 );
 
 ModelPreviewCard.displayName = 'ModelPreviewCard';
