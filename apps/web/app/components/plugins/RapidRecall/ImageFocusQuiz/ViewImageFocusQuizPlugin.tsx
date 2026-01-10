@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useFetcher } from 'react-router';
-import { ChevronLeft, ChevronRight, Eye, Pause, Play, Settings, X } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { ChevronLeft, ChevronRight, Pause, PauseCircle, Play, Settings } from 'lucide-react';
 
 import type { BuilderSchemaTypes } from '@gonasi/schemas/plugins';
 
@@ -13,7 +14,8 @@ import type { ViewPluginComponentProps } from '../../PluginRenderers/ViewPluginT
 import useModal from '~/components/go-editor/hooks/useModal';
 import RichTextRenderer from '~/components/go-editor/ui/RichTextRenderer';
 import { Spinner } from '~/components/loaders';
-import { BlockActionButton, Button, OutlineButton } from '~/components/ui/button';
+import { Badge } from '~/components/ui/badge';
+import { BlockActionButton, Button, IconTooltipButton } from '~/components/ui/button';
 import { Label } from '~/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover';
 import { RadioGroup, RadioGroupItem } from '~/components/ui/radio-group';
@@ -47,7 +49,6 @@ interface ImageFocusQuizModalContentProps {
 }
 
 function ImageFocusQuizModalContent({
-  onClose,
   regions,
   initialDisplayDuration,
   revealMode,
@@ -61,7 +62,7 @@ function ImageFocusQuizModalContent({
   fileData,
   userRandomization,
 }: ImageFocusQuizModalContentProps) {
-  const imageRef = useRef<HTMLDivElement>(null);
+  const imageRef = useRef<HTMLImageElement>(null);
   const { isSoundEnabled } = useStore();
 
   const {
@@ -77,10 +78,28 @@ function ImageFocusQuizModalContent({
   } = useImageFocusQuizInteraction(null, regions, userRandomization);
 
   const [playbackPhase, setPlaybackPhase] = useState<PlaybackPhase>(PlaybackPhase.INITIAL_DISPLAY);
-  const [autoRevealTimer, setAutoRevealTimer] = useState<NodeJS.Timeout | null>(null);
   const [timeRemaining, setTimeRemaining] = useState<number>(0);
   const [isPaused, setIsPaused] = useState(false);
+  const [userRevealMode, setUserRevealMode] = useState<'auto' | 'manual'>(revealMode);
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const nextRegionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const autoAdvanceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Pre-load and cache audio
+  useEffect(() => {
+    if (isSoundEnabled) {
+      const audio = new Audio('/sounds/timer-complete.mp3');
+      audio.preload = 'auto';
+      audioRef.current = audio;
+    }
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, [isSoundEnabled]);
 
   // Initial display phase
   useEffect(() => {
@@ -113,9 +132,10 @@ function ImageFocusQuizModalContent({
               clearInterval(timerIntervalRef.current);
               timerIntervalRef.current = null;
             }
-            if (isSoundEnabled) {
-              const audio = new Audio('/sounds/timer-complete.mp3');
-              audio.play().catch(() => {});
+            // Use cached audio for better performance
+            if (isSoundEnabled && audioRef.current) {
+              audioRef.current.currentTime = 0; // Reset to start
+              audioRef.current.play().catch(() => {});
             }
             if (revealMode === 'auto') {
               revealAnswer();
@@ -139,46 +159,58 @@ function ImageFocusQuizModalContent({
     return undefined;
   }, [playbackPhase, isPaused, isSoundEnabled, revealMode, revealAnswer]);
 
-  // Cleanup timers on unmount
+  // Cleanup all timers and resources on unmount
   useEffect(() => {
     return () => {
-      if (autoRevealTimer) clearTimeout(autoRevealTimer);
+      // Clear all timers
       if (timerIntervalRef.current) {
         clearInterval(timerIntervalRef.current);
         timerIntervalRef.current = null;
       }
+      if (nextRegionTimeoutRef.current) {
+        clearTimeout(nextRegionTimeoutRef.current);
+        nextRegionTimeoutRef.current = null;
+      }
+      if (autoAdvanceTimeoutRef.current) {
+        clearTimeout(autoAdvanceTimeoutRef.current);
+        autoAdvanceTimeoutRef.current = null;
+      }
+      // Clean up audio
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
     };
-  }, [autoRevealTimer]);
-
-  // Memoized handlers for performance
-  const handleRevealAnswer = useCallback(() => {
-    if (autoRevealTimer) {
-      clearTimeout(autoRevealTimer);
-      setAutoRevealTimer(null);
-    }
-    if (timerIntervalRef.current) {
-      clearInterval(timerIntervalRef.current);
-      timerIntervalRef.current = null;
-    }
-    revealAnswer();
-    setPlaybackPhase(PlaybackPhase.ANSWER_REVEALED);
-  }, [autoRevealTimer, revealAnswer]);
+  }, []);
 
   const handleNextRegion = useCallback(() => {
+    // Clear any existing timeout to prevent memory leaks
+    if (nextRegionTimeoutRef.current) {
+      clearTimeout(nextRegionTimeoutRef.current);
+      nextRegionTimeoutRef.current = null;
+    }
+
     setPlaybackPhase(PlaybackPhase.BETWEEN_REGIONS);
-    setTimeout(() => {
+    nextRegionTimeoutRef.current = setTimeout(() => {
       if (isLastRegion) {
         reset();
       } else {
         nextRegion();
       }
       setPlaybackPhase(PlaybackPhase.REGION_FOCUSED);
+      nextRegionTimeoutRef.current = null;
     }, betweenRegionsDuration * 1000);
   }, [isLastRegion, reset, nextRegion, betweenRegionsDuration]);
 
   const handlePreviousRegion = useCallback(() => {
+    // Clear any existing timeout to prevent memory leaks
+    if (nextRegionTimeoutRef.current) {
+      clearTimeout(nextRegionTimeoutRef.current);
+      nextRegionTimeoutRef.current = null;
+    }
+
     setPlaybackPhase(PlaybackPhase.BETWEEN_REGIONS);
-    setTimeout(() => {
+    nextRegionTimeoutRef.current = setTimeout(() => {
       if (isFirstRegion) {
         for (let i = 0; i < totalRegions - 1; i++) {
           nextRegion();
@@ -187,17 +219,30 @@ function ImageFocusQuizModalContent({
         previousRegion();
       }
       setPlaybackPhase(PlaybackPhase.REGION_FOCUSED);
+      nextRegionTimeoutRef.current = null;
     }, betweenRegionsDuration * 1000);
   }, [isFirstRegion, totalRegions, nextRegion, previousRegion, betweenRegionsDuration]);
 
   // Auto-advance to next region after answer is revealed
   useEffect(() => {
     if (playbackPhase === PlaybackPhase.ANSWER_REVEALED && autoAdvance && !isPaused) {
-      const timer = setTimeout(() => {
+      // Clear any existing timeout
+      if (autoAdvanceTimeoutRef.current) {
+        clearTimeout(autoAdvanceTimeoutRef.current);
+        autoAdvanceTimeoutRef.current = null;
+      }
+
+      autoAdvanceTimeoutRef.current = setTimeout(() => {
         handleNextRegion();
+        autoAdvanceTimeoutRef.current = null;
       }, autoAdvanceDelay * 1000);
 
-      return () => clearTimeout(timer);
+      return () => {
+        if (autoAdvanceTimeoutRef.current) {
+          clearTimeout(autoAdvanceTimeoutRef.current);
+          autoAdvanceTimeoutRef.current = null;
+        }
+      };
     }
     return undefined;
   }, [playbackPhase, autoAdvance, autoAdvanceDelay, isPaused, handleNextRegion]);
@@ -206,6 +251,12 @@ function ImageFocusQuizModalContent({
   const togglePause = useCallback(() => {
     setIsPaused((prev) => !prev);
   }, []);
+
+  // Memoize current region index for performance
+  const currentRegionIndex = useMemo(() => state.currentRegionIndex, [state.currentRegionIndex]);
+
+  // Memoize dimmed intensity calculation
+  const calculatedDimIntensity = useMemo(() => dimIntensity * 0.1, [dimIntensity]);
 
   const regionStyle = useMemo(() => {
     if (
@@ -239,173 +290,231 @@ function ImageFocusQuizModalContent({
   }, [currentRegion, playbackPhase, animationDuration]);
 
   return (
-    <div className='space-y-4'>
+    <div className='flex h-full flex-col'>
       <div className='flex items-start justify-between gap-4'>
         <p className='text-muted-foreground hidden text-sm md:block'>
           Explore the image regions and test your memory
         </p>
-        <div className='flex items-center gap-2'>
-          <Button
-            variant='ghost'
-            size='sm'
-            onClick={togglePause}
-            className='h-8 w-8 shrink-0 p-0'
-            aria-label={isPaused ? 'Resume' : 'Pause'}
-          >
-            {isPaused ? <Play size={16} /> : <Pause size={16} />}
-          </Button>
-          <Button variant='ghost' size='sm' onClick={onClose} className='h-8 w-8 shrink-0 p-0'>
-            <X size={16} />
-          </Button>
-        </div>
       </div>
 
-      <div className='space-y-4'>
-        {/* Progress indicator */}
-        <div className='flex flex-col items-center justify-center gap-2 text-sm'>
-          <span className='text-muted-foreground'>
-            Region {state.currentRegionIndex + 1} of {totalRegions}
-          </span>
-          {isPaused && (
-            <span className='bg-warning/10 text-warning border-warning/20 rounded-full border px-3 py-1 text-xs font-medium'>
-              Paused
-            </span>
-          )}
+      <div className='flex-1 space-y-4 pb-24'>
+        <div className='flex h-10 flex-col items-center justify-center'>
+          <AnimatePresence mode='wait'>
+            {isPaused ? (
+              <motion.div
+                key='paused'
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                transition={{ duration: 0.2 }}
+              >
+                <Badge variant='info'>
+                  <PauseCircle />
+                  Paused
+                </Badge>
+              </motion.div>
+            ) : (
+              <motion.span
+                key='region-count'
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+                transition={{ duration: 0.3 }}
+                className='text-muted-foreground text-xs'
+              >
+                Region {currentRegionIndex + 1} of {totalRegions}
+              </motion.span>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Image container */}
-        <div className='relative flex h-[45vh] items-center justify-center overflow-hidden rounded-lg shadow-lg md:h-[75vh]'>
+        <div className='relative -mx-6 flex h-[60vh] items-center justify-center overflow-hidden md:mx-0'>
+          {/* ZOOM LAYER */}
           <div
-            ref={imageRef}
-            className='relative flex items-center justify-center'
-            style={regionStyle}
+            className='relative'
+            style={{
+              ...regionStyle,
+              transformOrigin: 'center center',
+              transition: `transform ${animationDuration}ms ease-in-out`,
+            }}
           >
-            <img
-              src={fileData.signed_url}
-              alt='Focus quiz'
-              className='h-auto max-h-[45vh] w-auto max-w-full select-none md:max-h-[75vh]'
-              crossOrigin='anonymous'
-            />
+            {/* IMAGE BOUNDS (true coordinate system) */}
+            <div className='relative max-h-[60vh] max-w-full'>
+              <img
+                ref={imageRef}
+                src={fileData.signed_url}
+                alt='Focus quiz'
+                className='block max-h-[60vh] max-w-full object-contain'
+                crossOrigin='anonymous'
+              />
 
-            {/* Blur overlays */}
-            {(playbackPhase === PlaybackPhase.REGION_FOCUSED ||
-              playbackPhase === PlaybackPhase.ANSWER_REVEALED) &&
-              currentRegion && (
-                <>
-                  <div
-                    className='pointer-events-none absolute right-0 left-0'
-                    style={{
-                      top: 0,
-                      height: `${currentRegion.y}%`,
-                      backgroundColor: `rgba(0, 0, 0, ${dimIntensity})`,
-                      backdropFilter: `blur(${blurIntensity}px)`,
-                      transition: `opacity ${animationDuration}ms ease-in-out`,
-                    }}
-                  />
-                  <div
-                    className='pointer-events-none absolute right-0 left-0'
-                    style={{
-                      top: `${currentRegion.y + currentRegion.height}%`,
-                      bottom: 0,
-                      backgroundColor: `rgba(0, 0, 0, ${dimIntensity})`,
-                      backdropFilter: `blur(${blurIntensity}px)`,
-                      transition: `opacity ${animationDuration}ms ease-in-out`,
-                    }}
-                  />
-                  <div
-                    className='pointer-events-none absolute top-0 bottom-0'
-                    style={{
-                      left: 0,
-                      width: `${currentRegion.x}%`,
-                      backgroundColor: `rgba(0, 0, 0, ${dimIntensity})`,
-                      backdropFilter: `blur(${blurIntensity}px)`,
-                      transition: `opacity ${animationDuration}ms ease-in-out`,
-                    }}
-                  />
-                  <div
-                    className='pointer-events-none absolute top-0 bottom-0'
-                    style={{
-                      left: `${currentRegion.x + currentRegion.width}%`,
-                      right: 0,
-                      backgroundColor: `rgba(0, 0, 0, ${dimIntensity})`,
-                      backdropFilter: `blur(${blurIntensity}px)`,
-                      transition: `opacity ${animationDuration}ms ease-in-out`,
-                    }}
-                  />
-                </>
-              )}
+              {/* Blur overlays */}
+              {(playbackPhase === PlaybackPhase.REGION_FOCUSED ||
+                playbackPhase === PlaybackPhase.ANSWER_REVEALED) &&
+                currentRegion && (
+                  <>
+                    <div
+                      className='pointer-events-none absolute inset-x-0'
+                      style={{
+                        top: 0,
+                        height: `${currentRegion.y}%`,
+                        backgroundColor: `rgba(0,0,0,${calculatedDimIntensity})`,
+                        backdropFilter: `blur(${blurIntensity}px)`,
+                      }}
+                    />
+                    <div
+                      className='pointer-events-none absolute inset-x-0'
+                      style={{
+                        top: `${currentRegion.y + currentRegion.height}%`,
+                        bottom: 0,
+                        backgroundColor: `rgba(0,0,0,${calculatedDimIntensity})`,
+                        backdropFilter: `blur(${blurIntensity}px)`,
+                      }}
+                    />
+                    <div
+                      className='pointer-events-none absolute inset-y-0'
+                      style={{
+                        left: 0,
+                        width: `${currentRegion.x}%`,
+                        backgroundColor: `rgba(0,0,0,${calculatedDimIntensity})`,
+                        backdropFilter: `blur(${blurIntensity}px)`,
+                      }}
+                    />
+                    <div
+                      className='pointer-events-none absolute inset-y-0'
+                      style={{
+                        left: `${currentRegion.x + currentRegion.width}%`,
+                        right: 0,
+                        backgroundColor: `rgba(0,0,0,${calculatedDimIntensity})`,
+                        backdropFilter: `blur(${blurIntensity}px)`,
+                      }}
+                    />
+                  </>
+                )}
+            </div>
           </div>
         </div>
 
         {/* Timer section */}
-        {playbackPhase === PlaybackPhase.REGION_FOCUSED && currentRegion && (
-          <div className='bg-card rounded-lg border p-4 shadow-sm md:p-6'>
-            <div className='space-y-3'>
-              <div className='flex items-center justify-between'>
-                <h3 className='text-sm font-medium md:text-base'>
-                  {revealMode === 'manual'
-                    ? 'Think about your answer...'
-                    : 'Answer revealing in...'}
-                </h3>
-                <span className='text-primary text-lg font-bold md:text-xl'>
-                  {timeRemaining.toFixed(1)}s
-                </span>
-              </div>
-
-              <div className='bg-muted h-3 overflow-hidden rounded-full md:h-4'>
-                <div
-                  className='bg-primary h-full transition-all duration-100 ease-linear'
-                  style={{
-                    width: `${((timeRemaining / (currentRegion.revealDelay ?? defaultRevealDelay)) * 100).toFixed(2)}%`,
-                  }}
-                />
-              </div>
-
+        <AnimatePresence mode='wait'>
+          {playbackPhase === PlaybackPhase.REGION_FOCUSED && currentRegion && (
+            <motion.div
+              key='timer-section'
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+            >
               {revealMode === 'manual' && (
-                <p className='text-muted-foreground text-xs md:text-sm'>
-                  Click &quot;Reveal Answer&quot; when you&apos;re ready, or wait for auto-reveal
-                </p>
+                <div className='bg-card rounded-lg border p-4 shadow-sm md:p-6'>
+                  <div className='space-y-3'>
+                    <p className='text-muted-foreground text-xs md:text-sm'>
+                      Click &quot;Reveal Answer&quot; when you&apos;re ready, or wait for
+                      auto-reveal
+                    </p>
+                  </div>
+                </div>
               )}
-            </div>
-          </div>
-        )}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-        {/* Answer section */}
-        {playbackPhase === PlaybackPhase.ANSWER_REVEALED && currentRegion && (
-          <div className='bg-card rounded-lg border p-4 shadow-sm md:p-6'>
-            <h3 className='mb-3 text-sm font-medium md:mb-4 md:text-base'>Answer:</h3>
-            <div className='text-sm md:text-base'>
-              <RichTextRenderer editorState={currentRegion.answerState} />
-            </div>
-          </div>
-        )}
-
-        {/* Control buttons */}
-        <div className='flex items-center justify-between gap-2 md:gap-4'>
-          <OutlineButton
-            onClick={handlePreviousRegion}
-            className='flex items-center gap-1 md:gap-2'
-          >
-            <ChevronLeft size={16} />
-            <span className='hidden sm:inline'>Previous</span>
-          </OutlineButton>
-
-          <div className='flex-1 text-center'>
-            {playbackPhase === PlaybackPhase.REGION_FOCUSED && revealMode === 'manual' && (
-              <OutlineButton
-                onClick={handleRevealAnswer}
-                className='flex items-center gap-1 md:gap-2'
+        {/* Control buttons - Fixed at bottom */}
+        <div className='fixed inset-x-0 bottom-0 z-50'>
+          {/* Answer section with playful animations */}
+          <AnimatePresence mode='wait'>
+            {playbackPhase === PlaybackPhase.ANSWER_REVEALED && currentRegion && (
+              <motion.div
+                key={`answer-${currentRegionIndex}`}
+                initial={{ opacity: 0, y: 50, scale: 0.9 }}
+                animate={{
+                  opacity: 1,
+                  y: 0,
+                  scale: 1,
+                }}
+                exit={{ opacity: 0, y: -30, scale: 0.95 }}
+                transition={{
+                  type: 'spring',
+                  stiffness: 300,
+                  damping: 25,
+                  duration: 0.5,
+                }}
+                className='bg-card mx-auto max-w-2xl p-4 shadow-xs'
               >
-                <Eye size={16} />
-                <span className='hidden sm:inline'>Reveal Answer</span>
-              </OutlineButton>
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.2, duration: 0.3 }}
+                  className='text-sm md:text-base'
+                >
+                  {/* Celebratory sparkle effect */}
+                  <motion.div
+                    initial={{ scale: 0, rotate: -180 }}
+                    animate={{ scale: [0, 1.2, 1], rotate: 0 }}
+                    transition={{
+                      duration: 0.6,
+                      ease: 'easeOut',
+                    }}
+                  >
+                    <RichTextRenderer editorState={currentRegion.answerState} />
+                  </motion.div>
+                </motion.div>
+              </motion.div>
             )}
-          </div>
+          </AnimatePresence>
 
-          <OutlineButton onClick={handleNextRegion} className='flex items-center gap-1 md:gap-2'>
-            <span className='hidden sm:inline'>Next</span>
-            <ChevronRight size={16} />
-          </OutlineButton>
+          {/* Progress bar with smooth animation */}
+          <motion.div
+            className='bg-muted h-1 overflow-hidden'
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3 }}
+          >
+            <motion.div
+              className='from-secondary/70 to-primary/70 h-full bg-gradient-to-r'
+              initial={{ width: '100%' }}
+              animate={{
+                width: `${
+                  currentRegion
+                    ? (
+                        (timeRemaining / (currentRegion.revealDelay ?? defaultRevealDelay)) *
+                        100
+                      ).toFixed(2)
+                    : '0'
+                }%`,
+              }}
+              transition={{ duration: 0.1, ease: 'linear' }}
+            />
+          </motion.div>
+
+          {/* Control buttons with hover animations */}
+          <motion.div
+            className='mx-auto flex w-full max-w-2xl items-center justify-between px-4 py-4 md:px-6'
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1, duration: 0.3 }}
+          >
+            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
+              <IconTooltipButton
+                title='Previous'
+                icon={ChevronLeft}
+                onClick={handlePreviousRegion}
+              />
+            </motion.div>
+
+            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
+              <IconTooltipButton
+                title={isPaused ? 'Resume' : 'Pause'}
+                icon={isPaused ? Play : Pause}
+                onClick={togglePause}
+              />
+            </motion.div>
+
+            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
+              <IconTooltipButton title='Next' icon={ChevronRight} onClick={handleNextRegion} />
+            </motion.div>
+          </motion.div>
         </div>
       </div>
     </div>
