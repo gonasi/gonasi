@@ -119,7 +119,7 @@ export const ImageFocusQuizSettingsSchema = BasePluginSettingsSchema.extend({
     .number()
     .min(0, 'Default reveal delay must be at least 0 seconds.')
     .max(30, 'Default reveal delay cannot exceed 30 seconds.')
-    .default(2),
+    .default(4),
 
   /** Blur intensity for unfocused areas in pixels (0-20px) */
   blurIntensity: z

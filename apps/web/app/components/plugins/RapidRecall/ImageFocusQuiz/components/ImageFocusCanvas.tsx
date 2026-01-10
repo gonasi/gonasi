@@ -170,11 +170,18 @@ export default function ImageFocusCanvas({
     setZoom(1);
     setCroppedAreaPixels(null);
     setCroppedAreaPercentages(null);
-    setInitialCroppedAreaPercentages(undefined);
+    // Set a default centered crop area to ensure onCropComplete fires immediately
+    setInitialCroppedAreaPercentages({
+      x: 25,
+      y: 25,
+      width: 50,
+      height: 50,
+    });
     setAspectRatio(1); // Default to 1:1
     setShowGrid(true);
     setRestrictPosition(true);
     setCurrentZoomLevel(1);
+    setCropperKey((prev) => prev + 1); // Force remount for new region
     setShowCropper(true);
   };
 
@@ -284,30 +291,34 @@ export default function ImageFocusCanvas({
       // Set aspect ratio
       setAspectRatio(regionAspectRatio);
 
+      // ALWAYS set initialCroppedAreaPercentages to position the crop box correctly
+      const initialArea = {
+        x: region.x,
+        y: region.y,
+        width: region.width,
+        height: region.height,
+      };
+      setInitialCroppedAreaPercentages(initialArea);
+
       // Restore the exact zoom and crop position that were saved
       if (region.zoom && region.cropX !== undefined && region.cropY !== undefined) {
         console.log('🔄 Restoring saved zoom and crop:', {
           zoom: region.zoom,
           crop: { x: region.cropX, y: region.cropY },
+          initialArea,
         });
         setZoom(region.zoom);
         setCrop({ x: region.cropX, y: region.cropY });
       } else {
-        // Fallback: use initialCroppedAreaPercentages if zoom/crop not saved (old regions)
-        console.log('🔄 No saved zoom/crop, using initialCroppedAreaPercentages fallback');
-        const initialArea = {
-          x: region.x,
-          y: region.y,
-          width: region.width,
-          height: region.height,
-        };
-        setInitialCroppedAreaPercentages(initialArea);
+        // Fallback: reset zoom and crop for old regions without saved values
+        console.log('🔄 No saved zoom/crop, using default values with initialArea');
+        setZoom(1);
+        setCrop({ x: 0, y: 0 });
       }
 
       // Reset other settings
       setShowGrid(true);
       setRestrictPosition(true);
-      setCurrentZoomLevel(1);
 
       // Finally, show the cropper and set the editing index
       setEditingRegionIndex(index);
@@ -327,15 +338,13 @@ export default function ImageFocusCanvas({
   const moveRegionUp = (index: number) => {
     if (index === 0) return; // Can't move up if already first
 
-    // Create updated regions array with swapped positions
-    const updatedRegions = [...regions];
-    const temp = updatedRegions[index];
-    updatedRegions[index] = { ...updatedRegions[index - 1], index };
-    updatedRegions[index - 1] = { ...temp, index: index - 1 };
+    // Swap the regions with updated indices
+    const currentRegion = { ...regions[index]!, index: index - 1 };
+    const prevRegion = { ...regions[index - 1]!, index };
 
     // Update both regions
-    update(index - 1, updatedRegions[index - 1]);
-    update(index, updatedRegions[index]);
+    update(index - 1, currentRegion);
+    update(index, prevRegion);
 
     // Update editing index to follow the moved region
     if (editingRegionIndex === index) {
@@ -346,15 +355,13 @@ export default function ImageFocusCanvas({
   const moveRegionDown = (index: number) => {
     if (index === regions.length - 1) return; // Can't move down if already last
 
-    // Create updated regions array with swapped positions
-    const updatedRegions = [...regions];
-    const temp = updatedRegions[index];
-    updatedRegions[index] = { ...updatedRegions[index + 1], index };
-    updatedRegions[index + 1] = { ...temp, index: index + 1 };
+    // Swap the regions with updated indices
+    const currentRegion = { ...regions[index]!, index: index + 1 };
+    const nextRegion = { ...regions[index + 1]!, index };
 
     // Update both regions
-    update(index, updatedRegions[index]);
-    update(index + 1, updatedRegions[index + 1]);
+    update(index, nextRegion);
+    update(index + 1, currentRegion);
 
     // Update editing index to follow the moved region
     if (editingRegionIndex === index) {
@@ -653,6 +660,16 @@ export default function ImageFocusCanvas({
                   </Button>
                 </div>
               </div>
+
+              {/* Error message */}
+              {error && (
+                <div className='bg-destructive/10 border-destructive text-destructive rounded-md border p-3'>
+                  <p className='text-sm font-medium'>
+                    {error.message?.toString() ||
+                      'Please check all regions have required fields filled'}
+                  </p>
+                </div>
+              )}
             </div>
           ) : (
             // VIEW MODE: Display all regions
@@ -788,9 +805,17 @@ export default function ImageFocusCanvas({
                     </TransformComponent>
                   </div>
 
+                  {/* Error message */}
                   {error && (
-                    <p className='text-destructive mt-2 text-sm'>{error.message?.toString()}</p>
+                    <div className='bg-destructive/10 border-destructive text-destructive mt-3 rounded-md border p-3'>
+                      <p className='text-sm font-medium'>
+                        {error.message?.toString() ||
+                          'Please check all regions have required fields filled'}
+                      </p>
+                    </div>
                   )}
+
+                  {/* Help text */}
                   <p className='text-muted-foreground mt-2 text-xs'>
                     📍 Click &quot;New Region&quot; to crop a new region. Click existing regions to
                     edit details. Zoom with Ctrl+Scroll or buttons.
