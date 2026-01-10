@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useFetcher } from 'react-router';
-import { ChevronLeft, ChevronRight, Eye, Play, Settings, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Eye, Pause, Play, Settings, X } from 'lucide-react';
 
-import type { BlockInteractionSchemaTypes, BuilderSchemaTypes } from '@gonasi/schemas/plugins';
+import type { BuilderSchemaTypes } from '@gonasi/schemas/plugins';
 
 import { useImageFocusQuizInteraction } from './hooks/useImageFocusQuizInteraction';
 import { PlayPluginWrapper } from '../../common/PlayPluginWrapper';
@@ -10,16 +10,10 @@ import { ViewPluginWrapper } from '../../common/ViewPluginWrapper';
 import { useViewPluginCore } from '../../hooks/useViewPluginCore';
 import type { ViewPluginComponentProps } from '../../PluginRenderers/ViewPluginTypesRenderer';
 
+import useModal from '~/components/go-editor/hooks/useModal';
 import RichTextRenderer from '~/components/go-editor/ui/RichTextRenderer';
 import { Spinner } from '~/components/loaders';
 import { BlockActionButton, Button, OutlineButton } from '~/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '~/components/ui/dialog';
 import { Label } from '~/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover';
 import { RadioGroup, RadioGroupItem } from '~/components/ui/radio-group';
@@ -28,26 +22,394 @@ import { useStore } from '~/store';
 
 type ImageFocusQuizPluginType = Extract<BuilderSchemaTypes, { plugin_type: 'image_focus_quiz' }>;
 
-type ImageFocusQuizInteractionType = Extract<
-  BlockInteractionSchemaTypes,
-  { plugin_type: 'image_focus_quiz' }
->;
-
-function isImageFocusQuizInteraction(data: unknown): data is ImageFocusQuizInteractionType {
-  return (
-    typeof data === 'object' &&
-    data !== null &&
-    'plugin_type' in data &&
-    (data as any).plugin_type === 'image_focus_quiz'
-  );
-}
-
 enum PlaybackPhase {
   INITIAL_DISPLAY = 'initial_display',
   REGION_FOCUSED = 'region_focused',
   ANSWER_REVEALED = 'answer_revealed',
   BETWEEN_REGIONS = 'between_regions',
   COMPLETE = 'complete',
+}
+
+interface ImageFocusQuizModalContentProps {
+  onClose: () => void;
+  regions: ImageFocusQuizPluginType['content']['regions'];
+  initialDisplayDuration: number;
+  revealMode: ImageFocusQuizPluginType['settings']['revealMode'];
+  defaultRevealDelay: number;
+  blurIntensity: number;
+  dimIntensity: number;
+  betweenRegionsDuration: number;
+  animationDuration: number;
+  autoAdvance: boolean;
+  autoAdvanceDelay: number;
+  fileData: { signed_url: string };
+  userRandomization: 'none' | 'shuffle';
+}
+
+function ImageFocusQuizModalContent({
+  onClose,
+  regions,
+  initialDisplayDuration,
+  revealMode,
+  defaultRevealDelay,
+  blurIntensity,
+  dimIntensity,
+  betweenRegionsDuration,
+  animationDuration,
+  autoAdvance,
+  autoAdvanceDelay,
+  fileData,
+  userRandomization,
+}: ImageFocusQuizModalContentProps) {
+  const imageRef = useRef<HTMLDivElement>(null);
+  const { isSoundEnabled } = useStore();
+
+  const {
+    state,
+    currentRegion,
+    isLastRegion,
+    isFirstRegion,
+    totalRegions,
+    revealAnswer,
+    nextRegion,
+    previousRegion,
+    reset,
+  } = useImageFocusQuizInteraction(null, regions, userRandomization);
+
+  const [playbackPhase, setPlaybackPhase] = useState<PlaybackPhase>(PlaybackPhase.INITIAL_DISPLAY);
+  const [autoRevealTimer, setAutoRevealTimer] = useState<NodeJS.Timeout | null>(null);
+  const [timeRemaining, setTimeRemaining] = useState<number>(0);
+  const [isPaused, setIsPaused] = useState(false);
+  const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Initial display phase
+  useEffect(() => {
+    if (playbackPhase === PlaybackPhase.INITIAL_DISPLAY && regions.length > 0) {
+      const timer = setTimeout(() => {
+        setPlaybackPhase(PlaybackPhase.REGION_FOCUSED);
+      }, initialDisplayDuration * 1000);
+
+      return () => clearTimeout(timer);
+    }
+    return undefined;
+  }, [playbackPhase, initialDisplayDuration, regions.length]);
+
+  // Initialize timer when entering REGION_FOCUSED phase or changing region
+  useEffect(() => {
+    if (playbackPhase === PlaybackPhase.REGION_FOCUSED) {
+      const delay = currentRegion?.revealDelay ?? defaultRevealDelay;
+      setTimeRemaining(delay);
+    }
+  }, [playbackPhase, currentRegion, defaultRevealDelay]);
+
+  // Timer countdown - separate from initialization
+  useEffect(() => {
+    if (playbackPhase === PlaybackPhase.REGION_FOCUSED && !isPaused) {
+      const interval = setInterval(() => {
+        setTimeRemaining((prev) => {
+          const newTime = prev - 0.1;
+          if (newTime <= 0) {
+            if (timerIntervalRef.current) {
+              clearInterval(timerIntervalRef.current);
+              timerIntervalRef.current = null;
+            }
+            if (isSoundEnabled) {
+              const audio = new Audio('/sounds/timer-complete.mp3');
+              audio.play().catch(() => {});
+            }
+            if (revealMode === 'auto') {
+              revealAnswer();
+              setPlaybackPhase(PlaybackPhase.ANSWER_REVEALED);
+            }
+            return 0;
+          }
+          return newTime;
+        });
+      }, 100);
+
+      timerIntervalRef.current = interval;
+
+      return () => {
+        if (timerIntervalRef.current) {
+          clearInterval(timerIntervalRef.current);
+          timerIntervalRef.current = null;
+        }
+      };
+    }
+    return undefined;
+  }, [playbackPhase, isPaused, isSoundEnabled, revealMode, revealAnswer]);
+
+  // Cleanup timers on unmount
+  useEffect(() => {
+    return () => {
+      if (autoRevealTimer) clearTimeout(autoRevealTimer);
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current);
+        timerIntervalRef.current = null;
+      }
+    };
+  }, [autoRevealTimer]);
+
+  // Memoized handlers for performance
+  const handleRevealAnswer = useCallback(() => {
+    if (autoRevealTimer) {
+      clearTimeout(autoRevealTimer);
+      setAutoRevealTimer(null);
+    }
+    if (timerIntervalRef.current) {
+      clearInterval(timerIntervalRef.current);
+      timerIntervalRef.current = null;
+    }
+    revealAnswer();
+    setPlaybackPhase(PlaybackPhase.ANSWER_REVEALED);
+  }, [autoRevealTimer, revealAnswer]);
+
+  const handleNextRegion = useCallback(() => {
+    setPlaybackPhase(PlaybackPhase.BETWEEN_REGIONS);
+    setTimeout(() => {
+      if (isLastRegion) {
+        reset();
+      } else {
+        nextRegion();
+      }
+      setPlaybackPhase(PlaybackPhase.REGION_FOCUSED);
+    }, betweenRegionsDuration * 1000);
+  }, [isLastRegion, reset, nextRegion, betweenRegionsDuration]);
+
+  const handlePreviousRegion = useCallback(() => {
+    setPlaybackPhase(PlaybackPhase.BETWEEN_REGIONS);
+    setTimeout(() => {
+      if (isFirstRegion) {
+        for (let i = 0; i < totalRegions - 1; i++) {
+          nextRegion();
+        }
+      } else {
+        previousRegion();
+      }
+      setPlaybackPhase(PlaybackPhase.REGION_FOCUSED);
+    }, betweenRegionsDuration * 1000);
+  }, [isFirstRegion, totalRegions, nextRegion, previousRegion, betweenRegionsDuration]);
+
+  // Auto-advance to next region after answer is revealed
+  useEffect(() => {
+    if (playbackPhase === PlaybackPhase.ANSWER_REVEALED && autoAdvance && !isPaused) {
+      const timer = setTimeout(() => {
+        handleNextRegion();
+      }, autoAdvanceDelay * 1000);
+
+      return () => clearTimeout(timer);
+    }
+    return undefined;
+  }, [playbackPhase, autoAdvance, autoAdvanceDelay, isPaused, handleNextRegion]);
+
+  // Toggle pause state
+  const togglePause = useCallback(() => {
+    setIsPaused((prev) => !prev);
+  }, []);
+
+  const regionStyle = useMemo(() => {
+    if (
+      !currentRegion ||
+      playbackPhase === PlaybackPhase.INITIAL_DISPLAY ||
+      playbackPhase === PlaybackPhase.BETWEEN_REGIONS ||
+      playbackPhase === PlaybackPhase.COMPLETE
+    ) {
+      return {
+        transform: 'scale(1)',
+        transition: `transform ${animationDuration}ms ease-in-out`,
+        transformOrigin: 'center center',
+      };
+    }
+
+    const { x, y, width, height } = currentRegion;
+    const centerX = x + width / 2;
+    const centerY = y + height / 2;
+    const targetFillPercentage = 85;
+    const scaleX = targetFillPercentage / width;
+    const scaleY = targetFillPercentage / height;
+    const scale = Math.min(scaleX, scaleY, 5);
+    const translateX = -((centerX - 50) * scale);
+    const translateY = -((centerY - 50) * scale);
+
+    return {
+      transform: `translate(${translateX}%, ${translateY}%) scale(${scale})`,
+      transition: `transform ${animationDuration}ms ease-in-out`,
+      transformOrigin: '50% 50%',
+    };
+  }, [currentRegion, playbackPhase, animationDuration]);
+
+  return (
+    <div className='space-y-4'>
+      <div className='flex items-start justify-between gap-4'>
+        <p className='text-muted-foreground hidden text-sm md:block'>
+          Explore the image regions and test your memory
+        </p>
+        <div className='flex items-center gap-2'>
+          <Button
+            variant='ghost'
+            size='sm'
+            onClick={togglePause}
+            className='h-8 w-8 shrink-0 p-0'
+            aria-label={isPaused ? 'Resume' : 'Pause'}
+          >
+            {isPaused ? <Play size={16} /> : <Pause size={16} />}
+          </Button>
+          <Button variant='ghost' size='sm' onClick={onClose} className='h-8 w-8 shrink-0 p-0'>
+            <X size={16} />
+          </Button>
+        </div>
+      </div>
+
+      <div className='space-y-4'>
+        {/* Progress indicator */}
+        <div className='flex flex-col items-center justify-center gap-2 text-sm'>
+          <span className='text-muted-foreground'>
+            Region {state.currentRegionIndex + 1} of {totalRegions}
+          </span>
+          {isPaused && (
+            <span className='bg-warning/10 text-warning border-warning/20 rounded-full border px-3 py-1 text-xs font-medium'>
+              Paused
+            </span>
+          )}
+        </div>
+
+        {/* Image container */}
+        <div className='relative flex h-[45vh] items-center justify-center overflow-hidden rounded-lg shadow-lg md:h-[75vh]'>
+          <div
+            ref={imageRef}
+            className='relative flex items-center justify-center'
+            style={regionStyle}
+          >
+            <img
+              src={fileData.signed_url}
+              alt='Focus quiz'
+              className='h-auto max-h-[45vh] w-auto max-w-full select-none md:max-h-[75vh]'
+              crossOrigin='anonymous'
+            />
+
+            {/* Blur overlays */}
+            {(playbackPhase === PlaybackPhase.REGION_FOCUSED ||
+              playbackPhase === PlaybackPhase.ANSWER_REVEALED) &&
+              currentRegion && (
+                <>
+                  <div
+                    className='pointer-events-none absolute right-0 left-0'
+                    style={{
+                      top: 0,
+                      height: `${currentRegion.y}%`,
+                      backgroundColor: `rgba(0, 0, 0, ${dimIntensity})`,
+                      backdropFilter: `blur(${blurIntensity}px)`,
+                      transition: `opacity ${animationDuration}ms ease-in-out`,
+                    }}
+                  />
+                  <div
+                    className='pointer-events-none absolute right-0 left-0'
+                    style={{
+                      top: `${currentRegion.y + currentRegion.height}%`,
+                      bottom: 0,
+                      backgroundColor: `rgba(0, 0, 0, ${dimIntensity})`,
+                      backdropFilter: `blur(${blurIntensity}px)`,
+                      transition: `opacity ${animationDuration}ms ease-in-out`,
+                    }}
+                  />
+                  <div
+                    className='pointer-events-none absolute top-0 bottom-0'
+                    style={{
+                      left: 0,
+                      width: `${currentRegion.x}%`,
+                      backgroundColor: `rgba(0, 0, 0, ${dimIntensity})`,
+                      backdropFilter: `blur(${blurIntensity}px)`,
+                      transition: `opacity ${animationDuration}ms ease-in-out`,
+                    }}
+                  />
+                  <div
+                    className='pointer-events-none absolute top-0 bottom-0'
+                    style={{
+                      left: `${currentRegion.x + currentRegion.width}%`,
+                      right: 0,
+                      backgroundColor: `rgba(0, 0, 0, ${dimIntensity})`,
+                      backdropFilter: `blur(${blurIntensity}px)`,
+                      transition: `opacity ${animationDuration}ms ease-in-out`,
+                    }}
+                  />
+                </>
+              )}
+          </div>
+        </div>
+
+        {/* Timer section */}
+        {playbackPhase === PlaybackPhase.REGION_FOCUSED && currentRegion && (
+          <div className='bg-card rounded-lg border p-4 shadow-sm md:p-6'>
+            <div className='space-y-3'>
+              <div className='flex items-center justify-between'>
+                <h3 className='text-sm font-medium md:text-base'>
+                  {revealMode === 'manual'
+                    ? 'Think about your answer...'
+                    : 'Answer revealing in...'}
+                </h3>
+                <span className='text-primary text-lg font-bold md:text-xl'>
+                  {timeRemaining.toFixed(1)}s
+                </span>
+              </div>
+
+              <div className='bg-muted h-3 overflow-hidden rounded-full md:h-4'>
+                <div
+                  className='bg-primary h-full transition-all duration-100 ease-linear'
+                  style={{
+                    width: `${((timeRemaining / (currentRegion.revealDelay ?? defaultRevealDelay)) * 100).toFixed(2)}%`,
+                  }}
+                />
+              </div>
+
+              {revealMode === 'manual' && (
+                <p className='text-muted-foreground text-xs md:text-sm'>
+                  Click &quot;Reveal Answer&quot; when you&apos;re ready, or wait for auto-reveal
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Answer section */}
+        {playbackPhase === PlaybackPhase.ANSWER_REVEALED && currentRegion && (
+          <div className='bg-card rounded-lg border p-4 shadow-sm md:p-6'>
+            <h3 className='mb-3 text-sm font-medium md:mb-4 md:text-base'>Answer:</h3>
+            <div className='text-sm md:text-base'>
+              <RichTextRenderer editorState={currentRegion.answerState} />
+            </div>
+          </div>
+        )}
+
+        {/* Control buttons */}
+        <div className='flex items-center justify-between gap-2 md:gap-4'>
+          <OutlineButton
+            onClick={handlePreviousRegion}
+            className='flex items-center gap-1 md:gap-2'
+          >
+            <ChevronLeft size={16} />
+            <span className='hidden sm:inline'>Previous</span>
+          </OutlineButton>
+
+          <div className='flex-1 text-center'>
+            {playbackPhase === PlaybackPhase.REGION_FOCUSED && revealMode === 'manual' && (
+              <OutlineButton
+                onClick={handleRevealAnswer}
+                className='flex items-center gap-1 md:gap-2'
+              >
+                <Eye size={16} />
+                <span className='hidden sm:inline'>Reveal Answer</span>
+              </OutlineButton>
+            )}
+          </div>
+
+          <OutlineButton onClick={handleNextRegion} className='flex items-center gap-1 md:gap-2'>
+            <span className='hidden sm:inline'>Next</span>
+            <ChevronRight size={16} />
+          </OutlineButton>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export function ViewImageFocusQuizPlugin({ blockWithProgress }: ViewPluginComponentProps) {
@@ -68,57 +430,19 @@ export function ViewImageFocusQuizPlugin({ blockWithProgress }: ViewPluginCompon
     content: { imageId, regions, initialDisplayDuration },
   } = blockWithProgress.block as ImageFocusQuizPluginType;
 
+  const totalRegions = regions.length;
+
   const { is_last_block } = blockWithProgress;
   const { mode } = useStore();
   const fetcher = useFetcher<typeof loader>();
-  const imageRef = useRef<HTMLDivElement>(null);
+  const [modal, showModal] = useModal();
 
   // User preference for randomization (overrides builder setting)
   const [userRandomization, setUserRandomization] = useState<'none' | 'shuffle'>(randomization);
 
-  const { loading, payload, handleContinue, updateInteractionData, updateEarnedScore } =
-    useViewPluginCore(
-      mode === 'play' ? { progress: blockWithProgress.block_progress, blockWithProgress } : null,
-    );
-
-  // Extract interaction data
-  const initialInteractionData: ImageFocusQuizInteractionType | null = useMemo(() => {
-    if (mode === 'preview') return null;
-    const dbInteractionData = blockWithProgress.block_progress?.interaction_data;
-    return isImageFocusQuizInteraction(dbInteractionData) ? dbInteractionData : null;
-  }, [blockWithProgress.block_progress?.interaction_data, mode]);
-
-  const parsedPayloadData: ImageFocusQuizInteractionType | null = useMemo(() => {
-    const data = payload?.interaction_data;
-    return isImageFocusQuizInteraction(data) ? data : null;
-  }, [payload?.interaction_data]);
-
-  const currentInteractionData = parsedPayloadData || initialInteractionData;
-
-  // Use interaction hook with user's randomization preference
-  const {
-    state,
-    currentRegion,
-    isLastRegion,
-    isFirstRegion,
-    totalRegions,
-    revealAnswer,
-    nextRegion,
-    previousRegion,
-    reset,
-  } = useImageFocusQuizInteraction(currentInteractionData, regions, userRandomization);
-
-  // Modal state - quiz starts when user clicks play
-  const [isModalOpen, setIsModalOpen] = useState(false);
-
-  // Playback phase management
-  const [playbackPhase, setPlaybackPhase] = useState<PlaybackPhase>(PlaybackPhase.INITIAL_DISPLAY);
-  const [autoRevealTimer, setAutoRevealTimer] = useState<NodeJS.Timeout | null>(null);
-
-  // Timer state for countdown
-  const [timeRemaining, setTimeRemaining] = useState<number>(0);
-  const [timerInterval, setTimerInterval] = useState<NodeJS.Timeout | null>(null);
-  const { isSoundEnabled } = useStore();
+  const { loading, handleContinue, updateEarnedScore } = useViewPluginCore(
+    mode === 'play' ? { progress: blockWithProgress.block_progress, blockWithProgress } : null,
+  );
 
   // Load image
   useEffect(() => {
@@ -128,85 +452,6 @@ export function ViewImageFocusQuizPlugin({ blockWithProgress }: ViewPluginCompon
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [imageId, mode]);
 
-  // Initial display phase - only when modal is open
-  useEffect(() => {
-    if (isModalOpen && playbackPhase === PlaybackPhase.INITIAL_DISPLAY && regions.length > 0) {
-      const timer = setTimeout(() => {
-        setPlaybackPhase(PlaybackPhase.REGION_FOCUSED);
-      }, initialDisplayDuration * 1000);
-
-      return () => clearTimeout(timer);
-    }
-    return undefined;
-  }, [isModalOpen, playbackPhase, initialDisplayDuration, regions.length]);
-
-  // Timer countdown for quiz-like feeling
-  useEffect(() => {
-    if (playbackPhase === PlaybackPhase.REGION_FOCUSED) {
-      const delay = currentRegion?.revealDelay ?? defaultRevealDelay;
-      setTimeRemaining(delay);
-
-      // Update timer every 100ms for smooth progress bar
-      const interval = setInterval(() => {
-        setTimeRemaining((prev) => {
-          const newTime = prev - 0.1;
-          if (newTime <= 0) {
-            clearInterval(interval);
-            // Play sound when timer expires
-            if (isSoundEnabled) {
-              const audio = new Audio('/sounds/timer-complete.mp3');
-              audio.play().catch(() => {
-                // Ignore if sound fails to play
-              });
-            }
-            // Auto-reveal answer when timer expires (for both auto and manual modes)
-            if (revealMode === 'auto') {
-              revealAnswer();
-              setPlaybackPhase(PlaybackPhase.ANSWER_REVEALED);
-            }
-            return 0;
-          }
-          return newTime;
-        });
-      }, 100);
-
-      setTimerInterval(interval);
-
-      return () => {
-        clearInterval(interval);
-        setTimerInterval(null);
-      };
-    }
-    return undefined;
-  }, [
-    playbackPhase,
-    currentRegion?.revealDelay,
-    defaultRevealDelay,
-    isSoundEnabled,
-    revealMode,
-    revealAnswer,
-  ]);
-
-  // Auto-advance to next region
-  useEffect(() => {
-    if (playbackPhase === PlaybackPhase.ANSWER_REVEALED && autoAdvance) {
-      const timer = setTimeout(() => {
-        handleNextRegion();
-      }, autoAdvanceDelay * 1000);
-
-      return () => clearTimeout(timer);
-    }
-    return undefined;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [playbackPhase, autoAdvance, autoAdvanceDelay]);
-
-  // Update interaction data
-  useEffect(() => {
-    if (mode === 'play') {
-      updateInteractionData({ ...state } as any);
-    }
-  }, [mode, state, updateInteractionData]);
-
   // Update score - always give full weight for memorization practice
   useEffect(() => {
     if (mode === 'play') {
@@ -214,117 +459,54 @@ export function ViewImageFocusQuizPlugin({ blockWithProgress }: ViewPluginCompon
     }
   }, [mode, weight, updateEarnedScore]);
 
-  // Handle manual reveal
-  const handleRevealAnswer = () => {
-    if (autoRevealTimer) {
-      clearTimeout(autoRevealTimer);
-      setAutoRevealTimer(null);
-    }
-    if (timerInterval) {
-      clearInterval(timerInterval);
-      setTimerInterval(null);
-    }
-    revealAnswer();
-    setPlaybackPhase(PlaybackPhase.ANSWER_REVEALED);
-  };
+  // Get file data from fetcher
+  const fileData = fetcher.data?.success && fetcher.data.data ? fetcher.data.data : null;
 
-  // Handle next region - loop back to first when reaching the end
-  const handleNextRegion = () => {
-    setPlaybackPhase(PlaybackPhase.BETWEEN_REGIONS);
-    setTimeout(() => {
-      if (isLastRegion) {
-        // Loop back to first region
-        reset();
-      } else {
-        nextRegion();
-      }
-      setPlaybackPhase(PlaybackPhase.REGION_FOCUSED);
-    }, betweenRegionsDuration * 1000);
-  };
+  // Handle opening modal - show the quiz modal
+  const handleOpenModal = useCallback(() => {
+    if (!fileData) return;
 
-  // Handle previous region - loop to last when going before first
-  const handlePreviousRegion = () => {
-    setPlaybackPhase(PlaybackPhase.BETWEEN_REGIONS);
-    setTimeout(() => {
-      if (isFirstRegion) {
-        // Loop to last region by calling nextRegion totalRegions-1 times
-        for (let i = 0; i < totalRegions - 1; i++) {
-          nextRegion();
-        }
-      } else {
-        previousRegion();
-      }
-      setPlaybackPhase(PlaybackPhase.REGION_FOCUSED);
-    }, betweenRegionsDuration * 1000);
-  };
-
-  // Handle opening modal - reset and start quiz
-  const handleOpenModal = () => {
-    setIsModalOpen(true);
-    setPlaybackPhase(PlaybackPhase.INITIAL_DISPLAY);
-    reset();
-  };
-
-  // Handle closing modal - cleanup timers
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    if (autoRevealTimer) {
-      clearTimeout(autoRevealTimer);
-      setAutoRevealTimer(null);
-    }
-    if (timerInterval) {
-      clearInterval(timerInterval);
-      setTimerInterval(null);
-    }
-  };
-
-  // Calculate region position for zoom (must be before early return)
-  const regionStyle = useMemo(() => {
-    if (
-      !currentRegion ||
-      playbackPhase === PlaybackPhase.INITIAL_DISPLAY ||
-      playbackPhase === PlaybackPhase.BETWEEN_REGIONS ||
-      playbackPhase === PlaybackPhase.COMPLETE
-    ) {
-      return {
-        transform: 'scale(1)',
-        transition: `transform ${animationDuration}ms ease-in-out`,
-        transformOrigin: 'center center',
-      };
-    }
-
-    const { x, y, width, height } = currentRegion;
-
-    // Calculate the center of the region in percentage coordinates
-    const centerX = x + width / 2;
-    const centerY = y + height / 2;
-
-    // Calculate zoom scale: aim to make region fill roughly 80-90% of viewport
-    // Smaller regions need more zoom. Use the smaller dimension to ensure entire region is visible.
-    const targetFillPercentage = 85; // Target region to fill 85% of viewport
-    const scaleX = targetFillPercentage / width;
-    const scaleY = targetFillPercentage / height;
-    const scale = Math.min(scaleX, scaleY, 5); // Cap at 5x for better detail visibility
-
-    // Use image center as transform origin, calculate translation to center region in viewport
-    // After scaling from center (50%, 50%), point at P becomes: 50 + (P - 50) * scale
-    // We want region center to be at 50%:
-    // 50 + (centerX - 50) * scale + translateX = 50
-    // translateX = -((centerX - 50) * scale)
-    const translateX = -((centerX - 50) * scale);
-    const translateY = -((centerY - 50) * scale);
-
-    return {
-      transform: `translate(${translateX}%, ${translateY}%) scale(${scale})`,
-      transition: `transform ${animationDuration}ms ease-in-out`,
-      transformOrigin: '50% 50%',
-    };
-  }, [currentRegion, playbackPhase, animationDuration]);
+    showModal(
+      'Image Focus Memorization',
+      (onClose) => (
+        <ImageFocusQuizModalContent
+          onClose={onClose}
+          regions={regions}
+          initialDisplayDuration={initialDisplayDuration}
+          revealMode={revealMode}
+          defaultRevealDelay={defaultRevealDelay}
+          blurIntensity={blurIntensity}
+          dimIntensity={dimIntensity}
+          betweenRegionsDuration={betweenRegionsDuration}
+          animationDuration={animationDuration}
+          autoAdvance={autoAdvance}
+          autoAdvanceDelay={autoAdvanceDelay}
+          fileData={fileData}
+          userRandomization={userRandomization}
+        />
+      ),
+      '',
+      undefined,
+      'full',
+    );
+  }, [
+    fileData,
+    showModal,
+    regions,
+    initialDisplayDuration,
+    revealMode,
+    defaultRevealDelay,
+    blurIntensity,
+    dimIntensity,
+    betweenRegionsDuration,
+    animationDuration,
+    autoAdvance,
+    autoAdvanceDelay,
+    userRandomization,
+  ]);
 
   // For memorization, completion is only based on block progress, not quiz state
   const isComplete = blockWithProgress.block_progress?.is_completed;
-
-  const fileData = fetcher.data?.success && fetcher.data.data ? fetcher.data.data : null;
 
   if (fetcher.state !== 'idle' || !fileData) {
     return (
@@ -339,7 +521,6 @@ export function ViewImageFocusQuizPlugin({ blockWithProgress }: ViewPluginCompon
       isComplete={isComplete}
       playbackMode={playbackMode}
       mode={mode}
-      reset={reset}
       weight={weight}
     >
       <PlayPluginWrapper>
@@ -349,7 +530,7 @@ export function ViewImageFocusQuizPlugin({ blockWithProgress }: ViewPluginCompon
             {/* Image preview */}
             <div
               className='relative flex items-center justify-center overflow-hidden rounded-lg shadow-lg'
-              style={{ height: '50vh', maxHeight: '50vh' }}
+              style={{ maxHeight: '50vh' }}
             >
               <img
                 src={fileData.signed_url}
@@ -445,7 +626,7 @@ export function ViewImageFocusQuizPlugin({ blockWithProgress }: ViewPluginCompon
 
             {/* Always show Continue/Complete button */}
             {!blockWithProgress.block_progress?.is_completed && (
-              <div className='flex justify-center pt-4'>
+              <div className='flex justify-end pt-4'>
                 <BlockActionButton
                   onClick={handleContinue}
                   loading={loading}
@@ -458,186 +639,7 @@ export function ViewImageFocusQuizPlugin({ blockWithProgress }: ViewPluginCompon
         </div>
 
         {/* Modal for quiz experience */}
-        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-          <DialogContent className='h-full w-full !max-w-full md:!top-0 md:!left-0 md:h-screen md:!max-h-screen md:w-screen md:!translate-x-0 md:!translate-y-0 md:rounded-none'>
-            <DialogHeader>
-              <div className='flex items-start justify-between gap-4'>
-                <div className='flex-1'>
-                  <DialogTitle className='text-base md:text-lg'>
-                    Image Focus Memorization
-                  </DialogTitle>
-                  <DialogDescription className='hidden text-sm md:block'>
-                    Explore the image regions and test your memory
-                  </DialogDescription>
-                </div>
-                <Button
-                  variant='ghost'
-                  size='sm'
-                  onClick={handleCloseModal}
-                  className='h-8 w-8 shrink-0 p-0'
-                >
-                  <X size={16} />
-                </Button>
-              </div>
-            </DialogHeader>
-
-            <div className='space-y-4'>
-              {/* Progress indicator */}
-              <div className='flex items-center justify-center text-sm'>
-                <span className='text-muted-foreground'>
-                  Region {state.currentRegionIndex + 1} of {totalRegions}
-                </span>
-              </div>
-
-              {/* Image container */}
-              <div className='relative flex h-[45vh] items-center justify-center overflow-hidden rounded-lg shadow-lg md:h-[75vh]'>
-                <div
-                  ref={imageRef}
-                  className='relative flex items-center justify-center'
-                  style={regionStyle}
-                >
-                  <img
-                    src={fileData.signed_url}
-                    alt='Focus quiz'
-                    className='h-auto max-h-[45vh] w-auto max-w-full select-none md:max-h-[75vh]'
-                    crossOrigin='anonymous'
-                  />
-
-                  {/* Blur overlay when focused on region */}
-                  {(playbackPhase === PlaybackPhase.REGION_FOCUSED ||
-                    playbackPhase === PlaybackPhase.ANSWER_REVEALED) &&
-                    currentRegion && (
-                      <>
-                        {/* Top overlay */}
-                        <div
-                          className='pointer-events-none absolute right-0 left-0'
-                          style={{
-                            top: 0,
-                            height: `${currentRegion.y}%`,
-                            backgroundColor: `rgba(0, 0, 0, ${dimIntensity})`,
-                            backdropFilter: `blur(${blurIntensity}px)`,
-                            transition: `opacity ${animationDuration}ms ease-in-out`,
-                          }}
-                        />
-                        {/* Bottom overlay */}
-                        <div
-                          className='pointer-events-none absolute right-0 left-0'
-                          style={{
-                            top: `${currentRegion.y + currentRegion.height}%`,
-                            bottom: 0,
-                            backgroundColor: `rgba(0, 0, 0, ${dimIntensity})`,
-                            backdropFilter: `blur(${blurIntensity}px)`,
-                            transition: `opacity ${animationDuration}ms ease-in-out`,
-                          }}
-                        />
-                        {/* Left overlay */}
-                        <div
-                          className='pointer-events-none absolute top-0 bottom-0'
-                          style={{
-                            left: 0,
-                            width: `${currentRegion.x}%`,
-                            backgroundColor: `rgba(0, 0, 0, ${dimIntensity})`,
-                            backdropFilter: `blur(${blurIntensity}px)`,
-                            transition: `opacity ${animationDuration}ms ease-in-out`,
-                          }}
-                        />
-                        {/* Right overlay */}
-                        <div
-                          className='pointer-events-none absolute top-0 bottom-0'
-                          style={{
-                            left: `${currentRegion.x + currentRegion.width}%`,
-                            right: 0,
-                            backgroundColor: `rgba(0, 0, 0, ${dimIntensity})`,
-                            backdropFilter: `blur(${blurIntensity}px)`,
-                            transition: `opacity ${animationDuration}ms ease-in-out`,
-                          }}
-                        />
-                      </>
-                    )}
-                </div>
-              </div>
-
-              {/* Timer section - shown when region is focused */}
-              {playbackPhase === PlaybackPhase.REGION_FOCUSED && currentRegion && (
-                <div className='bg-card rounded-lg border p-4 shadow-sm md:p-6'>
-                  <div className='space-y-3'>
-                    <div className='flex items-center justify-between'>
-                      <h3 className='text-sm font-medium md:text-base'>
-                        {revealMode === 'manual'
-                          ? 'Think about your answer...'
-                          : 'Answer revealing in...'}
-                      </h3>
-                      <span className='text-primary text-lg font-bold md:text-xl'>
-                        {timeRemaining.toFixed(1)}s
-                      </span>
-                    </div>
-
-                    {/* Progress bar */}
-                    <div className='bg-muted h-3 overflow-hidden rounded-full md:h-4'>
-                      <div
-                        className='bg-primary h-full transition-all duration-100 ease-linear'
-                        style={{
-                          width: `${((timeRemaining / (currentRegion.revealDelay ?? defaultRevealDelay)) * 100).toFixed(2)}%`,
-                        }}
-                      />
-                    </div>
-
-                    {revealMode === 'manual' && (
-                      <p className='text-muted-foreground text-xs md:text-sm'>
-                        Click &quot;Reveal Answer&quot; when you&apos;re ready, or wait for
-                        auto-reveal
-                      </p>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Answer section */}
-              {playbackPhase === PlaybackPhase.ANSWER_REVEALED && currentRegion && (
-                <div className='bg-card rounded-lg border p-4 shadow-sm md:p-6'>
-                  <h3 className='mb-3 text-sm font-medium md:mb-4 md:text-base'>Answer:</h3>
-                  <div className='text-sm md:text-base'>
-                    <RichTextRenderer editorState={currentRegion.answerState} />
-                  </div>
-                </div>
-              )}
-
-              {/* Control buttons */}
-              <div className='flex items-center justify-between gap-2 md:gap-4'>
-                {/* Previous button - loops to last region when at first */}
-                <OutlineButton
-                  onClick={handlePreviousRegion}
-                  className='flex items-center gap-1 md:gap-2'
-                >
-                  <ChevronLeft size={16} />
-                  <span className='hidden sm:inline'>Previous</span>
-                </OutlineButton>
-
-                {/* Center action */}
-                <div className='flex-1 text-center'>
-                  {playbackPhase === PlaybackPhase.REGION_FOCUSED && revealMode === 'manual' && (
-                    <OutlineButton
-                      onClick={handleRevealAnswer}
-                      className='flex items-center gap-1 md:gap-2'
-                    >
-                      <Eye size={16} />
-                      <span className='hidden sm:inline'>Reveal Answer</span>
-                    </OutlineButton>
-                  )}
-                </div>
-
-                {/* Next button - loops to first region when at last */}
-                <OutlineButton
-                  onClick={handleNextRegion}
-                  className='flex items-center gap-1 md:gap-2'
-                >
-                  <span className='hidden sm:inline'>Next</span>
-                  <ChevronRight size={16} />
-                </OutlineButton>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+        {modal}
       </PlayPluginWrapper>
     </ViewPluginWrapper>
   );
