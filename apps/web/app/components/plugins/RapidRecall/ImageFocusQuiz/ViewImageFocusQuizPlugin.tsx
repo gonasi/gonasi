@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useFetcher } from 'react-router';
 import { AnimatePresence, motion } from 'framer-motion';
+import { Howl } from 'howler';
 import { ChevronLeft, ChevronRight, Pause, PauseCircle, Play, Settings } from 'lucide-react';
 
 import type { BuilderSchemaTypes } from '@gonasi/schemas/plugins';
@@ -11,6 +12,7 @@ import { ViewPluginWrapper } from '../../common/ViewPluginWrapper';
 import { useViewPluginCore } from '../../hooks/useViewPluginCore';
 import type { ViewPluginComponentProps } from '../../PluginRenderers/ViewPluginTypesRenderer';
 
+import rightAnswer from '/assets/sounds/right-answer.mp3';
 import useModal from '~/components/go-editor/hooks/useModal';
 import RichTextRenderer from '~/components/go-editor/ui/RichTextRenderer';
 import { Spinner } from '~/components/loaders';
@@ -32,6 +34,13 @@ enum PlaybackPhase {
   BETWEEN_REGIONS = 'between_regions',
   COMPLETE = 'complete',
 }
+
+// Create Howl instance for timer complete sound - reused across all quiz instances
+const timerCompleteHowl = new Howl({
+  src: [rightAnswer],
+  volume: 0.5,
+  preload: true,
+});
 
 interface ImageFocusQuizModalContentProps {
   onClose: () => void;
@@ -86,25 +95,9 @@ function ImageFocusQuizModalContent({
   const [isPaused, setIsPaused] = useState(false);
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
   const regionAudioRef = useRef<HTMLAudioElement | null>(null);
   const nextRegionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const autoAdvanceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Pre-load and cache audio
-  useEffect(() => {
-    if (isSoundEnabled) {
-      const audio = new Audio('/sounds/timer-complete.mp3');
-      audio.preload = 'auto';
-      audioRef.current = audio;
-    }
-    return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
-      }
-    };
-  }, [isSoundEnabled]);
 
   // Initial display phase
   useEffect(() => {
@@ -137,14 +130,25 @@ function ImageFocusQuizModalContent({
               clearInterval(timerIntervalRef.current);
               timerIntervalRef.current = null;
             }
-            // Use cached audio for better performance
-            if (isSoundEnabled && audioRef.current) {
-              audioRef.current.currentTime = 0; // Reset to start
-              audioRef.current.play().catch(() => {});
-            }
+
             if (userRevealMode === 'auto') {
-              revealAnswer();
-              setPlaybackPhase(PlaybackPhase.ANSWER_REVEALED);
+              // Play success sound first, then reveal answer after it finishes
+              if (isSoundEnabled) {
+                const soundId = timerCompleteHowl.play();
+                // Wait for sound to finish before revealing
+                timerCompleteHowl.once(
+                  'end',
+                  () => {
+                    revealAnswer();
+                    setPlaybackPhase(PlaybackPhase.ANSWER_REVEALED);
+                  },
+                  soundId,
+                );
+              } else {
+                // No sound, reveal immediately
+                revealAnswer();
+                setPlaybackPhase(PlaybackPhase.ANSWER_REVEALED);
+              }
             }
             return 0;
           }
@@ -231,11 +235,7 @@ function ImageFocusQuizModalContent({
         clearTimeout(autoAdvanceTimeoutRef.current);
         autoAdvanceTimeoutRef.current = null;
       }
-      // Clean up audio
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
-      }
+      // Clean up region audio
       if (regionAudioRef.current) {
         regionAudioRef.current.pause();
         regionAudioRef.current = null;
@@ -337,14 +337,24 @@ function ImageFocusQuizModalContent({
         clearInterval(timerIntervalRef.current);
         timerIntervalRef.current = null;
       }
-      // Play sound
-      if (isSoundEnabled && audioRef.current) {
-        audioRef.current.currentTime = 0;
-        audioRef.current.play().catch(() => {});
+
+      // Play success sound first, then reveal answer after it finishes
+      if (isSoundEnabled) {
+        const soundId = timerCompleteHowl.play();
+        // Wait for sound to finish before revealing
+        timerCompleteHowl.once(
+          'end',
+          () => {
+            revealAnswer();
+            setPlaybackPhase(PlaybackPhase.ANSWER_REVEALED);
+          },
+          soundId,
+        );
+      } else {
+        // No sound, reveal immediately
+        revealAnswer();
+        setPlaybackPhase(PlaybackPhase.ANSWER_REVEALED);
       }
-      // Reveal the answer
-      revealAnswer();
-      setPlaybackPhase(PlaybackPhase.ANSWER_REVEALED);
     }
   }, [playbackPhase, isSoundEnabled, revealAnswer]);
 
