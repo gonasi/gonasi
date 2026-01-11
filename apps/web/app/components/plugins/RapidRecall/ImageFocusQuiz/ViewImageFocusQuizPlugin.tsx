@@ -46,6 +46,8 @@ interface ImageFocusQuizModalContentProps {
   autoAdvanceDelay: number;
   fileData: { signed_url: string };
   userRandomization: 'none' | 'shuffle';
+  userRevealMode: 'auto' | 'manual';
+  setUserRevealMode: (mode: 'auto' | 'manual') => void;
 }
 
 function ImageFocusQuizModalContent({
@@ -61,6 +63,8 @@ function ImageFocusQuizModalContent({
   autoAdvanceDelay,
   fileData,
   userRandomization,
+  userRevealMode,
+  setUserRevealMode,
 }: ImageFocusQuizModalContentProps) {
   const imageRef = useRef<HTMLImageElement>(null);
   const { isSoundEnabled } = useStore();
@@ -80,7 +84,6 @@ function ImageFocusQuizModalContent({
   const [playbackPhase, setPlaybackPhase] = useState<PlaybackPhase>(PlaybackPhase.INITIAL_DISPLAY);
   const [timeRemaining, setTimeRemaining] = useState<number>(0);
   const [isPaused, setIsPaused] = useState(false);
-  const [userRevealMode, setUserRevealMode] = useState<'auto' | 'manual'>(revealMode);
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const nextRegionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -137,7 +140,7 @@ function ImageFocusQuizModalContent({
               audioRef.current.currentTime = 0; // Reset to start
               audioRef.current.play().catch(() => {});
             }
-            if (revealMode === 'auto') {
+            if (userRevealMode === 'auto') {
               revealAnswer();
               setPlaybackPhase(PlaybackPhase.ANSWER_REVEALED);
             }
@@ -157,7 +160,7 @@ function ImageFocusQuizModalContent({
       };
     }
     return undefined;
-  }, [playbackPhase, isPaused, isSoundEnabled, revealMode, revealAnswer]);
+  }, [playbackPhase, isPaused, isSoundEnabled, userRevealMode, revealAnswer]);
 
   // Cleanup all timers and resources on unmount
   useEffect(() => {
@@ -251,6 +254,25 @@ function ImageFocusQuizModalContent({
   const togglePause = useCallback(() => {
     setIsPaused((prev) => !prev);
   }, []);
+
+  // Manual reveal handler
+  const handleManualReveal = useCallback(() => {
+    if (playbackPhase === PlaybackPhase.REGION_FOCUSED) {
+      // Clear the timer
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current);
+        timerIntervalRef.current = null;
+      }
+      // Play sound
+      if (isSoundEnabled && audioRef.current) {
+        audioRef.current.currentTime = 0;
+        audioRef.current.play().catch(() => {});
+      }
+      // Reveal the answer
+      revealAnswer();
+      setPlaybackPhase(PlaybackPhase.ANSWER_REVEALED);
+    }
+  }, [playbackPhase, isSoundEnabled, revealAnswer]);
 
   // Memoize current region index for performance
   const currentRegionIndex = useMemo(() => state.currentRegionIndex, [state.currentRegionIndex]);
@@ -406,14 +428,16 @@ function ImageFocusQuizModalContent({
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.3 }}
             >
-              {revealMode === 'manual' && (
-                <div className='bg-card rounded-lg border p-4 shadow-sm md:p-6'>
-                  <div className='space-y-3'>
-                    <p className='text-muted-foreground text-xs md:text-sm'>
-                      Click &quot;Reveal Answer&quot; when you&apos;re ready, or wait for
-                      auto-reveal
-                    </p>
-                  </div>
+              {userRevealMode === 'manual' && (
+                <div className='bg-card flex items-center justify-center rounded-lg border p-4 shadow-sm md:p-6'>
+                  <Button
+                    onClick={handleManualReveal}
+                    size='lg'
+                    variant='default'
+                    className='min-w-48'
+                  >
+                    Reveal Answer
+                  </Button>
                 </div>
               )}
             </motion.div>
@@ -547,6 +571,9 @@ export function ViewImageFocusQuizPlugin({ blockWithProgress }: ViewPluginCompon
   // User preference for randomization (overrides builder setting)
   const [userRandomization, setUserRandomization] = useState<'none' | 'shuffle'>(randomization);
 
+  // User preference for reveal mode (overrides builder setting)
+  const [userRevealMode, setUserRevealMode] = useState<'auto' | 'manual'>(revealMode);
+
   const { loading, handleContinue, updateEarnedScore } = useViewPluginCore(
     mode === 'play' ? { progress: blockWithProgress.block_progress, blockWithProgress } : null,
   );
@@ -590,6 +617,8 @@ export function ViewImageFocusQuizPlugin({ blockWithProgress }: ViewPluginCompon
           autoAdvanceDelay={autoAdvanceDelay}
           fileData={fileData}
           userRandomization={userRandomization}
+          userRevealMode={userRevealMode}
+          setUserRevealMode={setUserRevealMode}
         />
       ),
       '',
@@ -610,6 +639,8 @@ export function ViewImageFocusQuizPlugin({ blockWithProgress }: ViewPluginCompon
     autoAdvance,
     autoAdvanceDelay,
     userRandomization,
+    userRevealMode,
+    setUserRevealMode,
   ]);
 
   // For memorization, completion is only based on block progress, not quiz state
@@ -685,7 +716,6 @@ export function ViewImageFocusQuizPlugin({ blockWithProgress }: ViewPluginCompon
                           Customize how you&apos;d like to practice this exercise
                         </p>
                       </div>
-
                       <div className='space-y-3'>
                         <Label className='text-sm font-medium'>Region Order</Label>
                         <RadioGroup
@@ -720,6 +750,43 @@ export function ViewImageFocusQuizPlugin({ blockWithProgress }: ViewPluginCompon
                               </Label>
                               <p className='text-muted-foreground mt-1 text-xs'>
                                 Shuffle regions each time, better for testing memory
+                              </p>
+                            </div>
+                          </div>
+                        </RadioGroup>
+                      </div>{' '}
+                      <div className='space-y-3'>
+                        <Label className='text-sm font-medium'>Reveal Mode</Label>
+                        <RadioGroup
+                          value={userRevealMode}
+                          onValueChange={(value) => setUserRevealMode(value as 'auto' | 'manual')}
+                        >
+                          <div className='flex items-start space-y-0 space-x-3'>
+                            <RadioGroupItem value='auto' id='reveal-auto' />
+                            <div className='-mt-2 flex-1'>
+                              <Label
+                                htmlFor='reveal-auto'
+                                className='cursor-pointer leading-tight font-normal'
+                              >
+                                Auto Reveal
+                              </Label>
+                              <p className='text-muted-foreground mt-1 text-xs'>
+                                Answer reveals automatically when timer expires
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className='flex items-start space-y-0 space-x-3'>
+                            <RadioGroupItem value='manual' id='reveal-manual' />
+                            <div className='-mt-2 flex-1'>
+                              <Label
+                                htmlFor='reveal-manual'
+                                className='cursor-pointer leading-tight font-normal'
+                              >
+                                Manual Reveal
+                              </Label>
+                              <p className='text-muted-foreground mt-1 text-xs'>
+                                Click button to reveal answer when ready
                               </p>
                             </div>
                           </div>

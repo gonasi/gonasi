@@ -6,7 +6,6 @@ import { Hero } from './components/hero';
 import { HowItWorks } from './components/how-it-works';
 import { RealOutcomes } from './components/Outcomes';
 import { Problem } from './components/problem';
-import { SocialProof } from './components/social-proof';
 
 import {
   generateMetaTags,
@@ -58,7 +57,6 @@ export default function Home() {
         <Features />
         <HowItWorks />
         <RealOutcomes />
-        <SocialProof />
         <FAQ />
         <FinalCTA />
       </div>
