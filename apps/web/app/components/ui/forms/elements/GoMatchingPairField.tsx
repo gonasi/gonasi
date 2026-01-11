@@ -160,10 +160,13 @@ function AssetPreviewWithSettings({
         });
 
         if (attempt < maxRetries - 1) {
-          setTimeout(() => {
-            setRetryCount(attempt + 1);
-            fetchAsset(attempt + 1);
-          }, retryDelay * (attempt + 1));
+          setTimeout(
+            () => {
+              setRetryCount(attempt + 1);
+              fetchAsset(attempt + 1);
+            },
+            retryDelay * (attempt + 1),
+          );
         } else {
           setError(
             isTimeout
@@ -312,7 +315,10 @@ function PairEditorModal({
   useEffect(() => {
     if (!currentPair) return;
 
-    if (previousRightTypeRef.current !== null && previousRightTypeRef.current !== rightContentType) {
+    if (
+      previousRightTypeRef.current !== null &&
+      previousRightTypeRef.current !== rightContentType
+    ) {
       if (rightContentType === 'richtext') {
         setValue(
           `${name}.${currentPair.index}.rightContentData`,

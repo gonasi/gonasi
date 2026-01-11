@@ -164,6 +164,9 @@ export const ImageFocusQuizSettingsSchema = BasePluginSettingsSchema.extend({
     .min(200, 'Animation duration must be at least 200ms.')
     .max(2000, 'Animation duration cannot exceed 2000ms.')
     .default(600),
+
+  /** Whether to play audio for regions that have audio files */
+  playAudio: z.boolean().default(true),
 });
 export type ImageFocusQuizSettingsSchemaTypes = z.infer<typeof ImageFocusQuizSettingsSchema>;
 

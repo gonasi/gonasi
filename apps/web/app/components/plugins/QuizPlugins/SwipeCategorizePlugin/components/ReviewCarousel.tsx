@@ -8,8 +8,8 @@ import type {
 } from '@gonasi/schemas/plugins';
 
 import RichTextRenderer from '~/components/go-editor/ui/RichTextRenderer';
-import { AssetRenderer } from '~/components/plugins/common/AssetRenderer';
 import { Spinner } from '~/components/loaders';
+import { AssetRenderer } from '~/components/plugins/common/AssetRenderer';
 import { Badge } from '~/components/ui/badge';
 import {
   Carousel,
@@ -106,19 +106,25 @@ function CardContentRenderer({
         const isTimeout = err instanceof Error && err.name === 'AbortError';
         const errorMessage = err instanceof Error ? err.message : 'Unknown error';
 
-        console.error(`[ReviewCarousel] Asset load failed (attempt ${attempt + 1}/${maxRetries}):`, {
-          assetId,
-          fileType,
-          error: errorMessage,
-        });
+        console.error(
+          `[ReviewCarousel] Asset load failed (attempt ${attempt + 1}/${maxRetries}):`,
+          {
+            assetId,
+            fileType,
+            error: errorMessage,
+          },
+        );
 
         if (attempt < maxRetries - 1) {
-          setTimeout(() => {
-            if (isMounted) {
-              setRetryCount(attempt + 1);
-              fetchAsset(attempt + 1);
-            }
-          }, retryDelay * (attempt + 1));
+          setTimeout(
+            () => {
+              if (isMounted) {
+                setRetryCount(attempt + 1);
+                fetchAsset(attempt + 1);
+              }
+            },
+            retryDelay * (attempt + 1),
+          );
         } else {
           setError(isTimeout ? `Timeout loading ${fileType}` : `Failed to load: ${errorMessage}`);
         }

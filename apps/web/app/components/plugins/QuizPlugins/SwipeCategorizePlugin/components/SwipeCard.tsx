@@ -14,8 +14,8 @@ import { FileType } from '@gonasi/schemas/file';
 import type { CardSchemaTypes } from '@gonasi/schemas/plugins';
 
 import RichTextRenderer from '~/components/go-editor/ui/RichTextRenderer';
-import { AssetRenderer } from '~/components/plugins/common/AssetRenderer';
 import { Spinner } from '~/components/loaders';
+import { AssetRenderer } from '~/components/plugins/common/AssetRenderer';
 import { cn } from '~/lib/utils';
 
 interface FileWithSignedUrl {
@@ -137,12 +137,15 @@ export const SwipeCard = forwardRef<SwipeCardRef, SwipeCardProps>(
             console.log(
               `[SwipeCard] Retrying in ${retryDelay * (attempt + 1)}ms... (attempt ${attempt + 2}/${maxRetries})`,
             );
-            setTimeout(() => {
-              if (isMounted) {
-                setRetryCount(attempt + 1);
-                fetchAsset(attempt + 1);
-              }
-            }, retryDelay * (attempt + 1));
+            setTimeout(
+              () => {
+                if (isMounted) {
+                  setRetryCount(attempt + 1);
+                  fetchAsset(attempt + 1);
+                }
+              },
+              retryDelay * (attempt + 1),
+            );
           } else {
             setAssetError(
               isTimeout

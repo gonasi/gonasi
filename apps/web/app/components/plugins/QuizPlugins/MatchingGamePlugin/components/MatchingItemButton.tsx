@@ -111,10 +111,13 @@ export function MatchingItemButton({
           console.log(
             `[MatchingItemButton] Retrying in ${retryDelay}ms... (attempt ${attempt + 2}/${maxRetries})`,
           );
-          setTimeout(() => {
-            setRetryCount(attempt + 1);
-            fetchAsset(attempt + 1);
-          }, retryDelay * (attempt + 1)); // Exponential backoff
+          setTimeout(
+            () => {
+              setRetryCount(attempt + 1);
+              fetchAsset(attempt + 1);
+            },
+            retryDelay * (attempt + 1),
+          ); // Exponential backoff
         } else {
           setAssetError(
             isTimeout
