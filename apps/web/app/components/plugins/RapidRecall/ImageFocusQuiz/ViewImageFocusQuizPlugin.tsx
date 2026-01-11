@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useFetcher } from 'react-router';
 import { AnimatePresence, motion } from 'framer-motion';
+import { Howl } from 'howler';
 import { ChevronLeft, ChevronRight, Pause, PauseCircle, Play, Settings } from 'lucide-react';
 
 import type { BuilderSchemaTypes } from '@gonasi/schemas/plugins';
@@ -11,6 +12,7 @@ import { ViewPluginWrapper } from '../../common/ViewPluginWrapper';
 import { useViewPluginCore } from '../../hooks/useViewPluginCore';
 import type { ViewPluginComponentProps } from '../../PluginRenderers/ViewPluginTypesRenderer';
 
+import rightAnswer from '/assets/sounds/right-answer.mp3';
 import useModal from '~/components/go-editor/hooks/useModal';
 import RichTextRenderer from '~/components/go-editor/ui/RichTextRenderer';
 import { Spinner } from '~/components/loaders';
@@ -19,6 +21,7 @@ import { BlockActionButton, Button, IconTooltipButton } from '~/components/ui/bu
 import { Label } from '~/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover';
 import { RadioGroup, RadioGroupItem } from '~/components/ui/radio-group';
+import { Switch } from '~/components/ui/switch';
 import type { loader } from '~/routes/api/get-signed-url';
 import { useStore } from '~/store';
 
@@ -32,11 +35,17 @@ enum PlaybackPhase {
   COMPLETE = 'complete',
 }
 
+// Create Howl instance for timer complete sound - reused across all quiz instances
+const timerCompleteHowl = new Howl({
+  src: [rightAnswer],
+  volume: 0.5,
+  preload: true,
+});
+
 interface ImageFocusQuizModalContentProps {
   onClose: () => void;
   regions: ImageFocusQuizPluginType['content']['regions'];
   initialDisplayDuration: number;
-  revealMode: ImageFocusQuizPluginType['settings']['revealMode'];
   defaultRevealDelay: number;
   blurIntensity: number;
   dimIntensity: number;
@@ -47,13 +56,12 @@ interface ImageFocusQuizModalContentProps {
   fileData: { signed_url: string };
   userRandomization: 'none' | 'shuffle';
   userRevealMode: 'auto' | 'manual';
-  setUserRevealMode: (mode: 'auto' | 'manual') => void;
+  userPlayAudio: boolean;
 }
 
 function ImageFocusQuizModalContent({
   regions,
   initialDisplayDuration,
-  revealMode,
   defaultRevealDelay,
   blurIntensity,
   dimIntensity,
@@ -64,10 +72,11 @@ function ImageFocusQuizModalContent({
   fileData,
   userRandomization,
   userRevealMode,
-  setUserRevealMode,
+  userPlayAudio,
 }: ImageFocusQuizModalContentProps) {
   const imageRef = useRef<HTMLImageElement>(null);
-  const { isSoundEnabled } = useStore();
+  const { isSoundEnabled, mode } = useStore();
+  const audioFetcher = useFetcher<typeof loader>();
 
   const {
     state,
@@ -84,25 +93,11 @@ function ImageFocusQuizModalContent({
   const [playbackPhase, setPlaybackPhase] = useState<PlaybackPhase>(PlaybackPhase.INITIAL_DISPLAY);
   const [timeRemaining, setTimeRemaining] = useState<number>(0);
   const [isPaused, setIsPaused] = useState(false);
+  const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const regionAudioRef = useRef<HTMLAudioElement | null>(null);
   const nextRegionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const autoAdvanceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Pre-load and cache audio
-  useEffect(() => {
-    if (isSoundEnabled) {
-      const audio = new Audio('/sounds/timer-complete.mp3');
-      audio.preload = 'auto';
-      audioRef.current = audio;
-    }
-    return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
-      }
-    };
-  }, [isSoundEnabled]);
 
   // Initial display phase
   useEffect(() => {
@@ -135,14 +130,25 @@ function ImageFocusQuizModalContent({
               clearInterval(timerIntervalRef.current);
               timerIntervalRef.current = null;
             }
-            // Use cached audio for better performance
-            if (isSoundEnabled && audioRef.current) {
-              audioRef.current.currentTime = 0; // Reset to start
-              audioRef.current.play().catch(() => {});
-            }
+
             if (userRevealMode === 'auto') {
-              revealAnswer();
-              setPlaybackPhase(PlaybackPhase.ANSWER_REVEALED);
+              // Play success sound first, then reveal answer after it finishes
+              if (isSoundEnabled) {
+                const soundId = timerCompleteHowl.play();
+                // Wait for sound to finish before revealing
+                timerCompleteHowl.once(
+                  'end',
+                  () => {
+                    revealAnswer();
+                    setPlaybackPhase(PlaybackPhase.ANSWER_REVEALED);
+                  },
+                  soundId,
+                );
+              } else {
+                // No sound, reveal immediately
+                revealAnswer();
+                setPlaybackPhase(PlaybackPhase.ANSWER_REVEALED);
+              }
             }
             return 0;
           }
@@ -162,6 +168,57 @@ function ImageFocusQuizModalContent({
     return undefined;
   }, [playbackPhase, isPaused, isSoundEnabled, userRevealMode, revealAnswer]);
 
+  // Load region audio when region changes
+  useEffect(() => {
+    if (currentRegion?.audioId && mode) {
+      audioFetcher.load(`/api/files/${currentRegion.audioId}/signed-url?mode=${mode}`);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentRegion?.audioId, mode]);
+
+  // Play region audio when answer is revealed
+  useEffect(() => {
+    if (
+      playbackPhase === PlaybackPhase.ANSWER_REVEALED &&
+      isSoundEnabled &&
+      userPlayAudio &&
+      currentRegion?.audioId
+    ) {
+      const audioData =
+        audioFetcher.data?.success && audioFetcher.data.data ? audioFetcher.data.data : null;
+
+      if (audioData?.signed_url) {
+        const audio = new Audio(audioData.signed_url);
+        regionAudioRef.current = audio;
+
+        setIsAudioPlaying(true);
+
+        const handleEnded = () => {
+          setIsAudioPlaying(false);
+        };
+
+        const handleError = () => {
+          setIsAudioPlaying(false);
+        };
+
+        audio.addEventListener('ended', handleEnded);
+        audio.addEventListener('error', handleError);
+
+        audio.play().catch(() => {
+          setIsAudioPlaying(false);
+        });
+
+        return () => {
+          audio.pause();
+          audio.removeEventListener('ended', handleEnded);
+          audio.removeEventListener('error', handleError);
+          regionAudioRef.current = null;
+        };
+      }
+    }
+    return undefined;
+  }, [playbackPhase, isSoundEnabled, userPlayAudio, currentRegion?.audioId, audioFetcher.data]);
+
   // Cleanup all timers and resources on unmount
   useEffect(() => {
     return () => {
@@ -178,10 +235,10 @@ function ImageFocusQuizModalContent({
         clearTimeout(autoAdvanceTimeoutRef.current);
         autoAdvanceTimeoutRef.current = null;
       }
-      // Clean up audio
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
+      // Clean up region audio
+      if (regionAudioRef.current) {
+        regionAudioRef.current.pause();
+        regionAudioRef.current = null;
       }
     };
   }, []);
@@ -228,17 +285,26 @@ function ImageFocusQuizModalContent({
 
   // Auto-advance to next region after answer is revealed
   useEffect(() => {
-    if (playbackPhase === PlaybackPhase.ANSWER_REVEALED && autoAdvance && !isPaused) {
+    if (
+      playbackPhase === PlaybackPhase.ANSWER_REVEALED &&
+      autoAdvance &&
+      !isPaused &&
+      !isAudioPlaying
+    ) {
       // Clear any existing timeout
       if (autoAdvanceTimeoutRef.current) {
         clearTimeout(autoAdvanceTimeoutRef.current);
         autoAdvanceTimeoutRef.current = null;
       }
 
+      // If there was audio, add 1 second delay after it finishes
+      // Otherwise use the configured autoAdvanceDelay
+      const delayToUse = currentRegion?.audioId ? 1 : autoAdvanceDelay;
+
       autoAdvanceTimeoutRef.current = setTimeout(() => {
         handleNextRegion();
         autoAdvanceTimeoutRef.current = null;
-      }, autoAdvanceDelay * 1000);
+      }, delayToUse * 1000);
 
       return () => {
         if (autoAdvanceTimeoutRef.current) {
@@ -248,7 +314,15 @@ function ImageFocusQuizModalContent({
       };
     }
     return undefined;
-  }, [playbackPhase, autoAdvance, autoAdvanceDelay, isPaused, handleNextRegion]);
+  }, [
+    playbackPhase,
+    autoAdvance,
+    autoAdvanceDelay,
+    isPaused,
+    isAudioPlaying,
+    currentRegion?.audioId,
+    handleNextRegion,
+  ]);
 
   // Toggle pause state
   const togglePause = useCallback(() => {
@@ -263,14 +337,24 @@ function ImageFocusQuizModalContent({
         clearInterval(timerIntervalRef.current);
         timerIntervalRef.current = null;
       }
-      // Play sound
-      if (isSoundEnabled && audioRef.current) {
-        audioRef.current.currentTime = 0;
-        audioRef.current.play().catch(() => {});
+
+      // Play success sound first, then reveal answer after it finishes
+      if (isSoundEnabled) {
+        const soundId = timerCompleteHowl.play();
+        // Wait for sound to finish before revealing
+        timerCompleteHowl.once(
+          'end',
+          () => {
+            revealAnswer();
+            setPlaybackPhase(PlaybackPhase.ANSWER_REVEALED);
+          },
+          soundId,
+        );
+      } else {
+        // No sound, reveal immediately
+        revealAnswer();
+        setPlaybackPhase(PlaybackPhase.ANSWER_REVEALED);
       }
-      // Reveal the answer
-      revealAnswer();
-      setPlaybackPhase(PlaybackPhase.ANSWER_REVEALED);
     }
   }, [playbackPhase, isSoundEnabled, revealAnswer]);
 
@@ -557,6 +641,7 @@ export function ViewImageFocusQuizPlugin({ blockWithProgress }: ViewPluginCompon
       autoAdvanceDelay,
       randomization,
       animationDuration,
+      playAudio,
     },
     content: { imageId, regions, initialDisplayDuration },
   } = blockWithProgress.block as ImageFocusQuizPluginType;
@@ -573,6 +658,9 @@ export function ViewImageFocusQuizPlugin({ blockWithProgress }: ViewPluginCompon
 
   // User preference for reveal mode (overrides builder setting)
   const [userRevealMode, setUserRevealMode] = useState<'auto' | 'manual'>(revealMode);
+
+  // User preference for audio playback (overrides builder setting)
+  const [userPlayAudio, setUserPlayAudio] = useState<boolean>(playAudio);
 
   const { loading, handleContinue, updateEarnedScore } = useViewPluginCore(
     mode === 'play' ? { progress: blockWithProgress.block_progress, blockWithProgress } : null,
@@ -607,7 +695,6 @@ export function ViewImageFocusQuizPlugin({ blockWithProgress }: ViewPluginCompon
           onClose={onClose}
           regions={regions}
           initialDisplayDuration={initialDisplayDuration}
-          revealMode={revealMode}
           defaultRevealDelay={defaultRevealDelay}
           blurIntensity={blurIntensity}
           dimIntensity={dimIntensity}
@@ -618,7 +705,7 @@ export function ViewImageFocusQuizPlugin({ blockWithProgress }: ViewPluginCompon
           fileData={fileData}
           userRandomization={userRandomization}
           userRevealMode={userRevealMode}
-          setUserRevealMode={setUserRevealMode}
+          userPlayAudio={userPlayAudio}
         />
       ),
       '',
@@ -630,7 +717,6 @@ export function ViewImageFocusQuizPlugin({ blockWithProgress }: ViewPluginCompon
     showModal,
     regions,
     initialDisplayDuration,
-    revealMode,
     defaultRevealDelay,
     blurIntensity,
     dimIntensity,
@@ -640,7 +726,7 @@ export function ViewImageFocusQuizPlugin({ blockWithProgress }: ViewPluginCompon
     autoAdvanceDelay,
     userRandomization,
     userRevealMode,
-    setUserRevealMode,
+    userPlayAudio,
   ]);
 
   // For memorization, completion is only based on block progress, not quiz state
@@ -699,7 +785,7 @@ export function ViewImageFocusQuizPlugin({ blockWithProgress }: ViewPluginCompon
                 </Button>
 
                 {/* Settings Popover */}
-                <Popover>
+                <Popover modal>
                   <PopoverTrigger asChild>
                     <Button variant='ghost' size='lg' className='h-12 w-12 p-0'>
                       <Settings
@@ -708,7 +794,7 @@ export function ViewImageFocusQuizPlugin({ blockWithProgress }: ViewPluginCompon
                       />
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className='w-80'>
+                  <PopoverContent className='max-h-120 w-80 overflow-y-auto'>
                     <div className='grid gap-4'>
                       <div className='space-y-2'>
                         <h4 className='leading-none font-medium'>Memorization Settings</h4>
@@ -791,6 +877,27 @@ export function ViewImageFocusQuizPlugin({ blockWithProgress }: ViewPluginCompon
                             </div>
                           </div>
                         </RadioGroup>
+                      </div>
+                      <div className='space-y-3'>
+                        <Label className='text-sm font-medium'>Audio Playback</Label>
+                        <div className='flex items-center justify-between'>
+                          <div className='flex-1'>
+                            <Label
+                              htmlFor='play-audio'
+                              className='cursor-pointer leading-tight font-normal'
+                            >
+                              Play region audio
+                            </Label>
+                            <p className='text-muted-foreground mt-1 text-xs'>
+                              Play audio files when answers are revealed
+                            </p>
+                          </div>
+                          <Switch
+                            id='play-audio'
+                            checked={userPlayAudio}
+                            onCheckedChange={setUserPlayAudio}
+                          />
+                        </div>
                       </div>
                     </div>
                   </PopoverContent>
