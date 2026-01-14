@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 import { data, useNavigate } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -52,6 +52,17 @@ export default function NewFile({ params }: Route.ComponentProps) {
       organizationId: params.organizationId,
     },
   });
+
+  // Watch file field to auto-populate name
+  const selectedFile = methods.watch('file');
+
+  useEffect(() => {
+    if (selectedFile && selectedFile instanceof File) {
+      // Remove file extension for cleaner display name
+      const fileName = selectedFile.name.replace(/\.[^/.]+$/, '');
+      methods.setValue('name', fileName, { shouldValidate: true });
+    }
+  }, [selectedFile, methods]);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
