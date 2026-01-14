@@ -100,6 +100,9 @@ function ImageFocusQuizModalContent({
   const autoAdvanceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const audioCleanupInProgressRef = useRef(false);
 
+  // Cache for audio URLs to prevent re-fetching during loops
+  const audioUrlCacheRef = useRef<Map<string, { signed_url: string; name: string }>>(new Map());
+
   // Initial display phase
   useEffect(() => {
     if (playbackPhase === PlaybackPhase.INITIAL_DISPLAY && regions.length > 0) {
@@ -187,13 +190,16 @@ function ImageFocusQuizModalContent({
     }
   }, []);
 
-  // Load region audio when region changes
+  // Load region audio when region changes (with caching)
   useEffect(() => {
     // Clean up previous audio immediately when region changes
     cleanupAudio();
 
     if (currentRegion?.audioId && mode) {
-      audioFetcher.load(`/api/files/${currentRegion.audioId}/signed-url?mode=${mode}`);
+      // Only fetch if not already in cache
+      if (!audioUrlCacheRef.current.has(currentRegion.audioId)) {
+        audioFetcher.load(`/api/files/${currentRegion.audioId}/signed-url?mode=${mode}`);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentRegion?.audioId, mode]);
@@ -209,8 +215,15 @@ function ImageFocusQuizModalContent({
       userPlayAudio &&
       currentRegion?.audioId
     ) {
-      const audioData =
-        audioFetcher.data?.success && audioFetcher.data.data ? audioFetcher.data.data : null;
+      // Check cache first
+      let audioData = audioUrlCacheRef.current.get(currentRegion.audioId);
+
+      // If not in cache, check fetcher data
+      if (!audioData && audioFetcher.data?.success && audioFetcher.data.data) {
+        audioData = audioFetcher.data.data;
+        // Store in cache for future use
+        audioUrlCacheRef.current.set(currentRegion.audioId, audioData);
+      }
 
       if (audioData?.signed_url) {
         // Clean up any existing audio first
@@ -283,6 +296,8 @@ function ImageFocusQuizModalContent({
         regionAudioRef.current.pause();
         regionAudioRef.current = null;
       }
+      // Clear audio URL cache
+      audioUrlCacheRef.current.clear();
     };
   }, []);
 
