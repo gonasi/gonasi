@@ -88,7 +88,7 @@ export const ImageFocusQuizContentSchema = z.object({
   regions: z
     .array(FocusRegionSchema, { required_error: 'At least one focus region is required.' })
     .min(1, 'You must define at least one focus region.')
-    .max(20, 'You can define up to 20 focus regions.'),
+    .max(100, 'You can define up to 100 focus regions.'),
 
   /** Optional instruction/context text shown before quiz starts */
   instructionState: NonEmptyLexicalState.optional(),
