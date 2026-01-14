@@ -98,6 +98,7 @@ function ImageFocusQuizModalContent({
   const regionAudioRef = useRef<HTMLAudioElement | null>(null);
   const nextRegionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const autoAdvanceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const audioCleanupInProgressRef = useRef(false);
 
   // Initial display phase
   useEffect(() => {
@@ -168,8 +169,29 @@ function ImageFocusQuizModalContent({
     return undefined;
   }, [playbackPhase, isPaused, isSoundEnabled, userRevealMode, revealAnswer]);
 
+  // Cleanup audio function - centralized and reliable
+  const cleanupAudio = useCallback(() => {
+    if (regionAudioRef.current) {
+      try {
+        audioCleanupInProgressRef.current = true;
+        regionAudioRef.current.pause();
+        regionAudioRef.current.currentTime = 0;
+        regionAudioRef.current.src = '';
+        regionAudioRef.current = null;
+        setIsAudioPlaying(false);
+      } catch (error) {
+        console.error('Error cleaning up audio:', error);
+      } finally {
+        audioCleanupInProgressRef.current = false;
+      }
+    }
+  }, []);
+
   // Load region audio when region changes
   useEffect(() => {
+    // Clean up previous audio immediately when region changes
+    cleanupAudio();
+
     if (currentRegion?.audioId && mode) {
       audioFetcher.load(`/api/files/${currentRegion.audioId}/signed-url?mode=${mode}`);
     }
@@ -178,6 +200,9 @@ function ImageFocusQuizModalContent({
 
   // Play region audio when answer is revealed
   useEffect(() => {
+    // Don't start new audio if cleanup is in progress
+    if (audioCleanupInProgressRef.current) return undefined;
+
     if (
       playbackPhase === PlaybackPhase.ANSWER_REVEALED &&
       isSoundEnabled &&
@@ -188,36 +213,54 @@ function ImageFocusQuizModalContent({
         audioFetcher.data?.success && audioFetcher.data.data ? audioFetcher.data.data : null;
 
       if (audioData?.signed_url) {
+        // Clean up any existing audio first
+        cleanupAudio();
+
         const audio = new Audio(audioData.signed_url);
+        audio.preload = 'auto';
         regionAudioRef.current = audio;
 
         setIsAudioPlaying(true);
 
         const handleEnded = () => {
           setIsAudioPlaying(false);
+          if (regionAudioRef.current === audio) {
+            regionAudioRef.current = null;
+          }
         };
 
-        const handleError = () => {
+        const handleError = (e: ErrorEvent | Event) => {
+          console.error('Audio playback error:', e);
           setIsAudioPlaying(false);
+          if (regionAudioRef.current === audio) {
+            regionAudioRef.current = null;
+          }
         };
 
         audio.addEventListener('ended', handleEnded);
         audio.addEventListener('error', handleError);
 
-        audio.play().catch(() => {
+        audio.play().catch((error) => {
+          console.error('Failed to play audio:', error);
           setIsAudioPlaying(false);
+          if (regionAudioRef.current === audio) {
+            regionAudioRef.current = null;
+          }
         });
 
         return () => {
           audio.pause();
+          audio.currentTime = 0;
           audio.removeEventListener('ended', handleEnded);
           audio.removeEventListener('error', handleError);
-          regionAudioRef.current = null;
+          if (regionAudioRef.current === audio) {
+            regionAudioRef.current = null;
+          }
         };
       }
     }
     return undefined;
-  }, [playbackPhase, isSoundEnabled, userPlayAudio, currentRegion?.audioId, audioFetcher.data]);
+  }, [playbackPhase, isSoundEnabled, userPlayAudio, currentRegion?.audioId, audioFetcher.data, cleanupAudio]);
 
   // Cleanup all timers and resources on unmount
   useEffect(() => {
@@ -244,10 +287,19 @@ function ImageFocusQuizModalContent({
   }, []);
 
   const handleNextRegion = useCallback(() => {
+    // Stop and cleanup audio immediately
+    cleanupAudio();
+
     // Clear any existing timeout to prevent memory leaks
     if (nextRegionTimeoutRef.current) {
       clearTimeout(nextRegionTimeoutRef.current);
       nextRegionTimeoutRef.current = null;
+    }
+
+    // Clear auto-advance timeout if navigating manually
+    if (autoAdvanceTimeoutRef.current) {
+      clearTimeout(autoAdvanceTimeoutRef.current);
+      autoAdvanceTimeoutRef.current = null;
     }
 
     setPlaybackPhase(PlaybackPhase.BETWEEN_REGIONS);
@@ -260,13 +312,22 @@ function ImageFocusQuizModalContent({
       setPlaybackPhase(PlaybackPhase.REGION_FOCUSED);
       nextRegionTimeoutRef.current = null;
     }, betweenRegionsDuration * 1000);
-  }, [isLastRegion, reset, nextRegion, betweenRegionsDuration]);
+  }, [isLastRegion, reset, nextRegion, betweenRegionsDuration, cleanupAudio]);
 
   const handlePreviousRegion = useCallback(() => {
+    // Stop and cleanup audio immediately
+    cleanupAudio();
+
     // Clear any existing timeout to prevent memory leaks
     if (nextRegionTimeoutRef.current) {
       clearTimeout(nextRegionTimeoutRef.current);
       nextRegionTimeoutRef.current = null;
+    }
+
+    // Clear auto-advance timeout if navigating manually
+    if (autoAdvanceTimeoutRef.current) {
+      clearTimeout(autoAdvanceTimeoutRef.current);
+      autoAdvanceTimeoutRef.current = null;
     }
 
     setPlaybackPhase(PlaybackPhase.BETWEEN_REGIONS);
@@ -281,7 +342,7 @@ function ImageFocusQuizModalContent({
       setPlaybackPhase(PlaybackPhase.REGION_FOCUSED);
       nextRegionTimeoutRef.current = null;
     }, betweenRegionsDuration * 1000);
-  }, [isFirstRegion, totalRegions, nextRegion, previousRegion, betweenRegionsDuration]);
+  }, [isFirstRegion, totalRegions, nextRegion, previousRegion, betweenRegionsDuration, cleanupAudio]);
 
   // Auto-advance to next region after answer is revealed
   useEffect(() => {
@@ -326,8 +387,17 @@ function ImageFocusQuizModalContent({
 
   // Toggle pause state
   const togglePause = useCallback(() => {
-    setIsPaused((prev) => !prev);
-  }, []);
+    setIsPaused((prev) => {
+      const newPausedState = !prev;
+
+      // When pausing, stop any playing audio
+      if (newPausedState && regionAudioRef.current) {
+        cleanupAudio();
+      }
+
+      return newPausedState;
+    });
+  }, [cleanupAudio]);
 
   // Manual reveal handler
   const handleManualReveal = useCallback(() => {
@@ -364,9 +434,12 @@ function ImageFocusQuizModalContent({
   // Memoize dimmed intensity calculation
   const calculatedDimIntensity = useMemo(() => dimIntensity * 0.1, [dimIntensity]);
 
+  // Memoize current region to prevent unnecessary recalculations
+  const memoizedCurrentRegion = useMemo(() => currentRegion, [currentRegion?.id]);
+
   const regionStyle = useMemo(() => {
     if (
-      !currentRegion ||
+      !memoizedCurrentRegion ||
       playbackPhase === PlaybackPhase.INITIAL_DISPLAY ||
       playbackPhase === PlaybackPhase.BETWEEN_REGIONS ||
       playbackPhase === PlaybackPhase.COMPLETE
@@ -378,7 +451,7 @@ function ImageFocusQuizModalContent({
       };
     }
 
-    const { x, y, width, height } = currentRegion;
+    const { x, y, width, height } = memoizedCurrentRegion;
     const centerX = x + width / 2;
     const centerY = y + height / 2;
     const targetFillPercentage = 85;
@@ -393,7 +466,7 @@ function ImageFocusQuizModalContent({
       transition: `transform ${animationDuration}ms ease-in-out`,
       transformOrigin: '50% 50%',
     };
-  }, [currentRegion, playbackPhase, animationDuration]);
+  }, [memoizedCurrentRegion, playbackPhase, animationDuration]);
 
   return (
     <div className='flex h-full flex-col'>
@@ -458,13 +531,13 @@ function ImageFocusQuizModalContent({
               {/* Blur overlays */}
               {(playbackPhase === PlaybackPhase.REGION_FOCUSED ||
                 playbackPhase === PlaybackPhase.ANSWER_REVEALED) &&
-                currentRegion && (
+                memoizedCurrentRegion && (
                   <>
                     <div
                       className='pointer-events-none absolute inset-x-0'
                       style={{
                         top: 0,
-                        height: `${currentRegion.y}%`,
+                        height: `${memoizedCurrentRegion.y}%`,
                         backgroundColor: `rgba(0,0,0,${calculatedDimIntensity})`,
                         backdropFilter: `blur(${blurIntensity}px)`,
                       }}
@@ -472,7 +545,7 @@ function ImageFocusQuizModalContent({
                     <div
                       className='pointer-events-none absolute inset-x-0'
                       style={{
-                        top: `${currentRegion.y + currentRegion.height}%`,
+                        top: `${memoizedCurrentRegion.y + memoizedCurrentRegion.height}%`,
                         bottom: 0,
                         backgroundColor: `rgba(0,0,0,${calculatedDimIntensity})`,
                         backdropFilter: `blur(${blurIntensity}px)`,
@@ -482,7 +555,7 @@ function ImageFocusQuizModalContent({
                       className='pointer-events-none absolute inset-y-0'
                       style={{
                         left: 0,
-                        width: `${currentRegion.x}%`,
+                        width: `${memoizedCurrentRegion.x}%`,
                         backgroundColor: `rgba(0,0,0,${calculatedDimIntensity})`,
                         backdropFilter: `blur(${blurIntensity}px)`,
                       }}
@@ -490,7 +563,7 @@ function ImageFocusQuizModalContent({
                     <div
                       className='pointer-events-none absolute inset-y-0'
                       style={{
-                        left: `${currentRegion.x + currentRegion.width}%`,
+                        left: `${memoizedCurrentRegion.x + memoizedCurrentRegion.width}%`,
                         right: 0,
                         backgroundColor: `rgba(0,0,0,${calculatedDimIntensity})`,
                         backdropFilter: `blur(${blurIntensity}px)`,
@@ -504,7 +577,7 @@ function ImageFocusQuizModalContent({
 
         {/* Timer section */}
         <AnimatePresence mode='wait'>
-          {playbackPhase === PlaybackPhase.REGION_FOCUSED && currentRegion && (
+          {playbackPhase === PlaybackPhase.REGION_FOCUSED && memoizedCurrentRegion && (
             <motion.div
               key='timer-section'
               initial={{ opacity: 0, y: 20 }}
@@ -532,7 +605,7 @@ function ImageFocusQuizModalContent({
         <div className='fixed inset-x-0 bottom-0 z-50'>
           {/* Answer section with playful animations */}
           <AnimatePresence mode='wait'>
-            {playbackPhase === PlaybackPhase.ANSWER_REVEALED && currentRegion && (
+            {playbackPhase === PlaybackPhase.ANSWER_REVEALED && memoizedCurrentRegion && (
               <motion.div
                 key={`answer-${currentRegionIndex}`}
                 initial={{ opacity: 0, scale: 0.85 }}
@@ -563,7 +636,7 @@ function ImageFocusQuizModalContent({
                       ease: 'easeOut',
                     }}
                   >
-                    <RichTextRenderer editorState={currentRegion.answerState} />
+                    <RichTextRenderer editorState={memoizedCurrentRegion.answerState} />
                   </motion.div>
                 </motion.div>
               </motion.div>
@@ -582,9 +655,9 @@ function ImageFocusQuizModalContent({
               initial={{ width: '100%' }}
               animate={{
                 width: `${
-                  currentRegion
+                  memoizedCurrentRegion
                     ? (
-                        (timeRemaining / (currentRegion.revealDelay ?? defaultRevealDelay)) *
+                        (timeRemaining / (memoizedCurrentRegion.revealDelay ?? defaultRevealDelay)) *
                         100
                       ).toFixed(2)
                     : '0'
