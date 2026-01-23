@@ -3,6 +3,7 @@ import { useCallback, useMemo, useState } from 'react';
 import {
   TrueOrFalseStateInteractionSchema,
   type TrueOrFalseStateInteractionSchemaTypes,
+  type TrueOrFalseContentSchemaTypes,
 } from '@gonasi/schemas/plugins';
 
 import { calculateTrueFalseScore } from '../utils';
@@ -13,8 +14,9 @@ const getTimestamp = () => Date.now();
 
 export function useTrueOrFalseInteraction(
   initial: TrueOrFalseStateInteractionSchemaTypes | null,
-  correctAnswer: 'true' | 'false',
+  content: TrueOrFalseContentSchemaTypes,
 ) {
+  const correctAnswer = content.correctAnswer;
   // Memoize defaultState to prevent creating new object on every render
   const defaultState: TrueOrFalseStateInteractionSchemaTypes = useMemo(
     () =>

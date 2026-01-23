@@ -1,9 +1,9 @@
 import { useCallback, useMemo, useState } from 'react';
 
 import {
+  type FillInTheBlankContentSchemaTypes,
   FillInTheBlankStateInteractionSchema,
   type FillInTheBlankStateInteractionSchemaTypes,
-  type FillInTheBlankContentSchemaTypes,
 } from '@gonasi/schemas/plugins';
 
 import { calculateFillInTheBlankScore, getLetterFeedback, isAnswerCorrect } from '../utils';

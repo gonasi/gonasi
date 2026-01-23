@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef } from 'react';
-import { useWatch } from 'react-hook-form';
 import { useParams } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRemixForm } from 'remix-hook-form';
@@ -155,7 +154,8 @@ export function usePluginBuilder<TSchema extends z.ZodType>(
   // Get playback mode value without subscription to avoid re-renders
   // Note: This means playbackMode won't reactively update if changed, but that's okay
   // since the form will re-render anyway when the value changes
-  const playbackMode = (methods.getValues('settings.playbackMode' as any) as 'inline' | 'standalone') || 'inline';
+  const playbackMode =
+    (methods.getValues('settings.playbackMode' as any) as 'inline' | 'standalone') || 'inline';
 
   return {
     methods: methods as any,

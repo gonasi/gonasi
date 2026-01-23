@@ -1,10 +1,10 @@
 import { useCallback, useMemo, useState } from 'react';
 
 import {
+  type MultipleChoiceSingleAnswerContentSchemaTypes,
   MultipleChoiceSingleAnswerInteractionSchema,
   type MultipleChoiceSingleAnswerInteractionSchemaTypes,
 } from '@gonasi/schemas/plugins';
-import type { ChoiceSchemaTypes } from '@gonasi/schemas/plugins/schemas/choiceSchema';
 
 import { calculateMultipleChoiceSingleAnswerScore } from '../utils';
 
@@ -15,8 +15,9 @@ const getTimestamp = () => Date.now();
 
 export function useMultipleChoiceSingleAnswerInteraction(
   initial: MultipleChoiceSingleAnswerInteractionSchemaTypes | null,
-  choices: ChoiceSchemaTypes[],
+  content: MultipleChoiceSingleAnswerContentSchemaTypes,
 ) {
+  const choices = content.choices;
   const correctChoiceId = choices.find((choice) => choice.isCorrect)?.id ?? '';
 
   // Memoize defaultState to prevent creating new object on every render

@@ -60,10 +60,11 @@ export function createPlugin<TContent, TSettings, TInteraction>(
         migrations: config.migrations,
       });
 
-      const settingsPopover = config.renderSettings?.({
-        methods,
-        playbackMode,
-      }) || null;
+      const settingsPopover =
+        config.renderSettings?.({
+          methods,
+          playbackMode,
+        }) || null;
 
       const builderContent = config.renderBuilder({ methods, playbackMode, block: props.block });
 
