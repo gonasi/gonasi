@@ -1,9 +1,9 @@
 import { useCallback, useMemo, useState } from 'react';
 
 import {
+  type TrueOrFalseContentSchemaTypes,
   TrueOrFalseStateInteractionSchema,
   type TrueOrFalseStateInteractionSchemaTypes,
-  type TrueOrFalseContentSchemaTypes,
 } from '@gonasi/schemas/plugins';
 
 import { calculateTrueFalseScore } from '../utils';

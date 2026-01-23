@@ -296,35 +296,27 @@ export const SwipeCategorizePlugin = createPlugin({
 
     // Play sound effects and vibrate on swipe
     useEffect(() => {
-      const currentCorrectSwipes =
-        interaction.state.leftBucket.filter((item) => item.wasCorrect).length +
-        interaction.state.rightBucket.filter((item) => item.wasCorrect).length;
-      const currentWrongSwipes = interaction.state.wrongSwipes.length;
-
       // Correct swipe - play success sound
-      if (currentCorrectSwipes > prevCorrectSwipesRef.current) {
+      if (interaction.correctSwipes > prevCorrectSwipesRef.current) {
         if (isSoundEnabled) {
           rightAnswerHowl.play();
         }
+        prevCorrectSwipesRef.current = interaction.correctSwipes;
       }
 
       // Wrong swipe - play error sound and vibrate
-      if (currentWrongSwipes > prevWrongSwipesRef.current) {
+      if (interaction.wrongSwipesCount > prevWrongSwipesRef.current) {
         if (isSoundEnabled) {
           wrongAnswerHowl.play();
         }
         if (isVibrationEnabled && 'vibrate' in navigator) {
           navigator.vibrate([100, 50, 100]);
         }
+        prevWrongSwipesRef.current = interaction.wrongSwipesCount;
       }
-
-      // Update refs
-      prevCorrectSwipesRef.current = currentCorrectSwipes;
-      prevWrongSwipesRef.current = currentWrongSwipes;
     }, [
-      interaction.state.leftBucket,
-      interaction.state.rightBucket,
-      interaction.state.wrongSwipes,
+      interaction.correctSwipes,
+      interaction.wrongSwipesCount,
       isSoundEnabled,
       isVibrationEnabled,
     ]);
