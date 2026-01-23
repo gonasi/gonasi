@@ -24,10 +24,14 @@ export function useMultipleChoiceMultipleAnswersInteraction(
   correctAnswerIds: string[],
   choiceCount: number,
 ) {
-  // Fallback state used if `initial` is null
-  const defaultState: MultipleChoiceMultipleAnswersInteractionSchemaTypes = schema.parse({
-    plugin_type: 'multiple_choice_multiple',
-  });
+  // Memoize defaultState to prevent creating new object on every render
+  const defaultState: MultipleChoiceMultipleAnswersInteractionSchemaTypes = useMemo(
+    () =>
+      schema.parse({
+        plugin_type: 'multiple_choice_multiple',
+      }),
+    [],
+  );
 
   // Main interaction state validated by schema (parsed from initial or fallback)
   const [state, setState] = useState<MultipleChoiceMultipleAnswersInteractionSchemaTypes>(() =>

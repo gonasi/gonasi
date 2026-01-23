@@ -3,16 +3,19 @@ import type { JSX } from 'react';
 import type { PluginTypeId } from '@gonasi/schemas/plugins';
 import type { BlockWithProgressSchemaTypes } from '@gonasi/schemas/publish/progressiveReveal';
 
+// Ensure refactored plugins are imported and registered
+import '../QuizPlugins/TrueOrFalsePlugin';
+import '../QuizPlugins/MultipleChoiceSingleAnswer';
+import '../QuizPlugins/MultipleChoiceMultipleAnswers';
+import '../QuizPlugins/FillInTheBlankPlugin';
+import '../QuizPlugins/MatchingGamePlugin';
+import '../QuizPlugins/SwipeCategorizePlugin';
+
+import { pluginRegistry } from '../index';
 import { ViewAudioPlayerPlugin } from '../MediaPlayerPlugins/AudioPlayerPlugin/ViewAudioPlayerPlugin';
 import { ViewVideoPlayerPlugin } from '../MediaPlayerPlugins/VideoPlayerPlugin/ViewVideoPlayerPlugin';
 import { ViewVimeoEmbedPlugin } from '../MediaPlayerPlugins/VimeoEmbedPlugin/ViewVimeoEmbedPlugin';
 import { ViewYouTubeEmbedPlugin } from '../MediaPlayerPlugins/YouTubeEmbedPlugin/ViewYouTubeEmbedPlugin';
-import { ViewFillInTheBlankPlugin } from '../QuizPlugins/FillInTheBlankPlugin/ViewFillInTheBlankPlugin';
-import { ViewMatchingGamePlugin } from '../QuizPlugins/MatchingGamePlugin/ViewMatchingGamePlugin';
-import { ViewMultipleChoiceMultipleAnswersPlugin } from '../QuizPlugins/MultipleChoiceMultipleAnswers/ViewMultipleChoiceMultipleAnswersPlugin';
-import { ViewMultipleChoiceSingleAnswerPlugin } from '../QuizPlugins/MultipleChoiceSingleAnswer/ViewMultipleChoiceSingleAnswerPlugin';
-import { ViewSwipeCategorizePlugin } from '../QuizPlugins/SwipeCategorizePlugin/ViewSwipeCategorizePlugin';
-import { ViewTrueOrFalsePlugin } from '../QuizPlugins/TrueOrFalsePlugin/ViewTrueOrFalsePlugin';
 import { ViewImageFocusQuizPlugin } from '../RapidRecall/ImageFocusQuiz/ViewImageFocusQuizPlugin';
 import { ViewStepByStepRevealPlugin } from '../RevealPlugins/StepByStepReveal/ViewStepByStepRevealPlugin';
 import { ViewRichTextPlugin } from '../RichTextPlugins/RichTextPlugin/ViewRichTextPlugin';
@@ -25,17 +28,36 @@ function unimplementedPlugin() {
   return <div>Plugin not implemented</div>;
 }
 
+// Get view components from registry once at module level
+const ViewTrueOrFalsePlugin = pluginRegistry.getView('true_or_false');
+const ViewMultipleChoiceSinglePlugin = pluginRegistry.getView('multiple_choice_single');
+const ViewMultipleChoiceMultiplePlugin = pluginRegistry.getView('multiple_choice_multiple');
+const ViewFillInTheBlankPlugin = pluginRegistry.getView('fill_in_the_blank');
+const ViewMatchingGamePlugin = pluginRegistry.getView('matching_game');
+const ViewSwipeCategorizePlugin = pluginRegistry.getView('swipe_categorize');
+
 const viewPluginComponentMap: Record<
   PluginTypeId,
   (props: ViewPluginComponentProps) => JSX.Element
 > = {
-  true_or_false: ViewTrueOrFalsePlugin,
-  fill_in_the_blank: ViewFillInTheBlankPlugin,
+  // Refactored plugins - use registry (wrapped to ensure stable references)
+  true_or_false: (props) => <ViewTrueOrFalsePlugin blockWithProgress={props.blockWithProgress} />,
+  multiple_choice_single: (props) => (
+    <ViewMultipleChoiceSinglePlugin blockWithProgress={props.blockWithProgress} />
+  ),
+  multiple_choice_multiple: (props) => (
+    <ViewMultipleChoiceMultiplePlugin blockWithProgress={props.blockWithProgress} />
+  ),
+  fill_in_the_blank: (props) => (
+    <ViewFillInTheBlankPlugin blockWithProgress={props.blockWithProgress} />
+  ),
+  matching_game: (props) => <ViewMatchingGamePlugin blockWithProgress={props.blockWithProgress} />,
+  swipe_categorize: (props) => (
+    <ViewSwipeCategorizePlugin blockWithProgress={props.blockWithProgress} />
+  ),
+
+  // Legacy plugins - still using old imports
   rich_text_editor: ViewRichTextPlugin,
-  multiple_choice_multiple: ViewMultipleChoiceMultipleAnswersPlugin,
-  multiple_choice_single: ViewMultipleChoiceSingleAnswerPlugin,
-  matching_game: ViewMatchingGamePlugin,
-  swipe_categorize: ViewSwipeCategorizePlugin,
   guided_image_hotspots: unimplementedPlugin,
   hotspot_identification_question: unimplementedPlugin,
   match_concepts: unimplementedPlugin,

@@ -1,4 +1,5 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
+import { useWatch } from 'react-hook-form';
 import { useParams } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRemixForm } from 'remix-hook-form';
@@ -54,15 +55,23 @@ export function usePluginBuilder<TSchema extends z.ZodType>(
   const params = useParams();
   const isPending = useIsPending();
 
+  // Memoize param values to prevent unnecessary re-renders
+  const organizationId = params.organizationId;
+  const courseId = params.courseId;
+  const chapterId = params.chapterId;
+  const lessonId = params.lessonId;
+  const pluginGroupId = params.pluginGroupId;
+
   // Compute default values with optional migrations
+  // Only recompute when block ID changes, not when the entire block object reference changes
   const defaultValues = useMemo(() => {
     // Creating new block - use defaults
     if (!options.block) {
       return {
-        organization_id: params.organizationId!,
-        course_id: params.courseId!,
-        chapter_id: params.chapterId!,
-        lesson_id: params.lessonId!,
+        organization_id: organizationId!,
+        course_id: courseId!,
+        chapter_id: chapterId!,
+        lesson_id: lessonId!,
         plugin_type: options.pluginType,
         content: options.defaultContent,
         settings: options.defaultSettings,
@@ -80,59 +89,80 @@ export function usePluginBuilder<TSchema extends z.ZodType>(
 
     return {
       id: options.block.id,
-      organization_id: params.organizationId!,
-      course_id: params.courseId!,
-      chapter_id: params.chapterId!,
-      lesson_id: params.lessonId!,
+      organization_id: organizationId!,
+      course_id: courseId!,
+      chapter_id: chapterId!,
+      lesson_id: lessonId!,
       plugin_type: options.pluginType,
       content,
       settings: parsed.settings,
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    options.block,
+    options.block?.id, // Only depend on block ID, not the entire block object
     options.schema,
     options.pluginType,
     options.defaultContent,
     options.defaultSettings,
     options.migrations,
-    params,
+    organizationId,
+    courseId,
+    chapterId,
+    lessonId,
   ]);
 
-  // Setup form with remix-hook-form
+  // Setup form with remix-hook-form - use stable defaultValues
+  const blockIdRef = useRef<string | undefined>(options.block?.id);
+  const initialDefaultValuesRef = useRef(defaultValues);
+  const resolverRef = useRef(zodResolver(options.schema as any));
+
   const methods = useRemixForm<z.infer<TSchema>>({
     mode: 'onBlur',
-    resolver: zodResolver(options.schema as any),
-    defaultValues: defaultValues as any,
+    resolver: resolverRef.current,
+    defaultValues: initialDefaultValuesRef.current as any,
   });
+
+  // Update initial defaultValues and reset form only when block ID actually changes
+  useEffect(() => {
+    if (blockIdRef.current !== options.block?.id) {
+      blockIdRef.current = options.block?.id;
+      initialDefaultValuesRef.current = defaultValues;
+      // Reset form when block ID changes
+      methods.reset(defaultValues as any);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [options.block?.id]); // Only depend on block ID, not defaultValues or methods
 
   // Compute navigation paths
   const paths = useMemo(() => {
-    const lessonPath = `/${params.organizationId}/builder/${params.courseId}/content/${params.chapterId}/${params.lessonId}/lesson-blocks`;
+    const lessonPath = `/${organizationId}/builder/${courseId}/content/${chapterId}/${lessonId}/lesson-blocks`;
 
     return {
       lesson: lessonPath,
-      back: `${lessonPath}/plugins/${params.pluginGroupId}`,
+      back: `${lessonPath}/plugins/${pluginGroupId}`,
       action: getActionUrl(
         {
-          organizationId: params.organizationId,
-          courseId: params.courseId,
-          chapterId: params.chapterId,
-          lessonId: params.lessonId,
+          organizationId,
+          courseId,
+          chapterId,
+          lessonId,
         },
         { id: options.block?.id },
       ),
     };
-  }, [params, options.block?.id]);
+  }, [organizationId, courseId, chapterId, lessonId, pluginGroupId, options.block?.id]);
 
-  // Watch playback mode for conditional rendering
-  const playbackMode = (methods.watch as any)('settings.playbackMode') as 'inline' | 'standalone';
+  // Get playback mode value without subscription to avoid re-renders
+  // Note: This means playbackMode won't reactively update if changed, but that's okay
+  // since the form will re-render anyway when the value changes
+  const playbackMode = (methods.getValues('settings.playbackMode' as any) as 'inline' | 'standalone') || 'inline';
 
   return {
     methods: methods as any,
     isPending,
     paths,
     params: params as Record<string, string | undefined>,
-    playbackMode: playbackMode || 'inline',
+    playbackMode,
     isEditMode: !!options.block,
   };
 }

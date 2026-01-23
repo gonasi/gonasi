@@ -60,36 +60,40 @@ export function createPlugin<TContent, TSettings, TInteraction>(
         migrations: config.migrations,
       });
 
+      const settingsPopover = config.renderSettings?.({
+        methods,
+        playbackMode,
+      }) || null;
+
+      const builderContent = config.renderBuilder({ methods, playbackMode, block: props.block });
+
+      // Access formState the same way RichTextPlugin does
       const isDisabled = isPending || methods.formState.isSubmitting;
+      const isDirty = methods.formState.isDirty;
 
       return (
         <Modal open>
           <Modal.Content size='md'>
             <RemixFormProvider {...methods}>
-              <form onSubmit={methods.handleSubmit(() => {})} method='POST' action={paths.action}>
+              <form onSubmit={methods.handleSubmit} method='POST' action={paths.action}>
                 <Modal.Header
                   leadingIcon={isEditMode ? null : <BackArrowNavLink to={paths.back} />}
                   title={
                     isEditMode ? `Edit ${config.metadata.name}` : `Add ${config.metadata.name}`
                   }
                   closeRoute={paths.lesson}
-                  settingsPopover={
-                    config.renderSettings?.({
-                      methods,
-                      playbackMode,
-                    }) || null
-                  }
+                  settingsPopover={settingsPopover}
                 />
                 <Modal.Body>
                   <HoneypotInputs />
-                  {config.renderBuilder({ methods, playbackMode, block: props.block })}
+                  {builderContent}
                 </Modal.Body>
                 <div className='bg-background/90 border-t-border/20 sticky right-0 bottom-0 left-0 z-10 flex justify-end space-x-2 border-t p-4'>
                   <div className='flex w-full'>
                     <Button
                       type='submit'
                       rightIcon={<Save />}
-                      disabled={isDisabled || !methods.formState.isDirty}
+                      disabled={isDisabled || !isDirty}
                       isLoading={isDisabled}
                     >
                       Save

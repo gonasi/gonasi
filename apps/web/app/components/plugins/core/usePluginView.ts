@@ -93,11 +93,18 @@ export function usePluginView<TInteraction = any, TContent = any, TSettings = an
   );
 
   // Auto-sync interaction state changes to core
+  // Use stringified state to prevent infinite loops from object reference changes
+  const stateString = useMemo(
+    () => (interaction.state ? JSON.stringify(interaction.state) : null),
+    [interaction.state],
+  );
+
   useEffect(() => {
     if (mode === 'play' && interaction.state) {
       core.updateInteractionData({ ...interaction.state } as any);
     }
-  }, [interaction.state, mode, core.updateInteractionData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stateString, mode]); // Use stringified version to detect actual changes
 
   // Auto-sync score changes to core
   useEffect(() => {

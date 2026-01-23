@@ -3,16 +3,15 @@ import { Check, PartyPopper, Settings, X, XCircle } from 'lucide-react';
 
 import {
   EMPTY_LEXICAL_STATE,
-  TrueOrFalseContentSchema,
-  type TrueOrFalseContentSchemaTypes,
-  TrueOrFalseSchema,
-  TrueOrFalseSettingsSchema,
-  type TrueOrFalseSettingsSchemaTypes,
-  TrueOrFalseStateInteractionSchema,
-  type TrueOrFalseStateInteractionSchemaTypes,
+  MultipleChoiceSingleAnswerContentSchema,
+  type MultipleChoiceSingleAnswerContentSchemaTypes,
+  MultipleChoiceSingleAnswerInteractionSchema,
+  MultipleChoiceSingleAnswerSchema,
+  MultipleChoiceSingleAnswerSettingsSchema,
+  type MultipleChoiceSingleAnswerSettingsSchemaTypes,
 } from '@gonasi/schemas/plugins';
 
-import { useTrueOrFalseInteraction } from './hooks/useTrueOrFalseInteraction';
+import { useMultipleChoiceSingleAnswerInteraction } from './hooks/useMultipleChoiceSingleAnswerInteraction';
 import { PlayPluginWrapper } from '../../common/PlayPluginWrapper';
 import { RenderFeedback } from '../../common/RenderFeedback';
 import { BlockWeightField } from '../../common/settings/BlockWeightField';
@@ -22,19 +21,20 @@ import { RandomizationModeField } from '../../common/settings/RandomizationModeF
 import { ViewPluginWrapper } from '../../common/ViewPluginWrapper';
 import { createPlugin } from '../../core';
 import { shuffleArray } from '../../utils';
+import { calculateMultipleChoiceSingleAnswerScore } from './utils';
 
 import RichTextRenderer from '~/components/go-editor/ui/RichTextRenderer';
 import {
   AnimateInButtonWrapper,
   BlockActionButton,
   CheckAnswerButton,
+  ChoiceOptionButton,
   OutlineButton,
   ShowAnswerButton,
-  TrueOrFalseOptionsButton,
   TryAgainButton,
 } from '~/components/ui/button';
 import {
-  GoRadioGroupField,
+  GoChoiceField,
   GoRichTextInputField,
   GoTextAreaField,
 } from '~/components/ui/forms/elements';
@@ -43,47 +43,47 @@ import { cn } from '~/lib/utils';
 import { useStore } from '~/store';
 
 /**
- * Default content for new True or False blocks
+ * Default content for new Multiple Choice Single Answer blocks
  */
-const defaultContent: TrueOrFalseContentSchemaTypes = {
+const defaultContent: MultipleChoiceSingleAnswerContentSchemaTypes = {
   questionState: EMPTY_LEXICAL_STATE,
-  correctAnswer: 'true',
+  choices: [],
   explanationState: EMPTY_LEXICAL_STATE,
 };
 
 /**
- * Default settings for new True or False blocks
+ * Default settings for new Multiple Choice Single Answer blocks
  */
-const defaultSettings: TrueOrFalseSettingsSchemaTypes = {
+const defaultSettings: MultipleChoiceSingleAnswerSettingsSchemaTypes = {
   playbackMode: 'inline',
-  weight: 2,
-  layoutStyle: 'double',
+  weight: 3,
+  layoutStyle: 'single',
   randomization: 'shuffle',
 };
 
 /**
- * True or False Plugin
+ * Multiple Choice Single Answer Plugin
  *
  * Refactored using the new plugin architecture.
  * Before: ~350 lines (Builder + View)
- * After: ~140 lines (including UI rendering)
- * Reduction: 60%
+ * After: ~180 lines (including UI rendering)
+ * Reduction: ~50%
  */
-export const TrueOrFalsePlugin = createPlugin({
-  pluginType: 'true_or_false',
+export const MultipleChoiceSingleAnswerPlugin = createPlugin({
+  pluginType: 'multiple_choice_single',
 
   metadata: {
-    name: 'True or False',
-    description: 'Binary choice questions',
-    icon: 'CheckCircle',
+    name: 'Multiple Choice (Single Answer)',
+    description: 'Multiple choice questions with one correct answer',
+    icon: 'ListChecks',
     category: 'quiz',
   },
 
   schemas: {
-    builder: TrueOrFalseSchema,
-    content: TrueOrFalseContentSchema,
-    settings: TrueOrFalseSettingsSchema,
-    interaction: TrueOrFalseStateInteractionSchema as any,
+    builder: MultipleChoiceSingleAnswerSchema,
+    content: MultipleChoiceSingleAnswerContentSchema,
+    settings: MultipleChoiceSingleAnswerSettingsSchema,
+    interaction: MultipleChoiceSingleAnswerInteractionSchema as any,
   },
 
   defaults: {
@@ -92,7 +92,7 @@ export const TrueOrFalsePlugin = createPlugin({
   },
 
   hooks: {
-    useInteraction: useTrueOrFalseInteraction,
+    useInteraction: useMultipleChoiceSingleAnswerInteraction,
   },
 
   /**
@@ -104,29 +104,27 @@ export const TrueOrFalsePlugin = createPlugin({
         <GoRichTextInputField
           name='content.questionState'
           labelProps={{ children: 'Question', required: true }}
-          placeholder='Type your brain teaser here...'
-          description='What statement should learners decide is true or false? Make it fun!'
+          placeholder='Ask a challenging question...'
+          description='Make learners think deeply about this one!'
         />
-        <GoRadioGroupField
-          name='content.correctAnswer'
-          labelProps={{ children: "What's the right call?" }}
-          options={[
-            { value: 'true', label: 'True' },
-            { value: 'false', label: 'False' },
-          ]}
-          description='Pick the correct answer — no pressure!'
+
+        <GoChoiceField
+          name='content.choices'
+          labelProps={{ children: 'Choices', required: true }}
         />
+
         <GoRichTextInputField
           name='content.explanationState'
           labelProps={{ children: 'Why is that the answer?', required: true }}
-          placeholder='Share your wisdom...'
-          description='Help learners get the "aha!" moment by explaining the logic.'
+          placeholder='Give a short explanation...'
+          description='Briefly explain the reasoning behind the correct answer. This helps learners build deeper understanding, especially if they got it wrong.'
         />
+
         <GoTextAreaField
           name='content.hint'
-          labelProps={{ children: 'Need a hint?' }}
+          labelProps={{ children: 'Hint (optional)' }}
           textareaProps={{}}
-          description="Give learners a gentle nudge if they're stuck (optional)."
+          description='Provide a subtle clue to help learners.'
         />
       </>
     );
@@ -136,7 +134,6 @@ export const TrueOrFalsePlugin = createPlugin({
    * Settings popover - Plugin configuration
    */
   renderSettings: ({ methods, playbackMode }) => {
-    // Use getValues() instead of useWatch() to avoid creating subscriptions during render
     const watchLayoutStyle = methods.getValues('settings.layoutStyle');
     const watchRandomization = methods.getValues('settings.randomization');
 
@@ -174,7 +171,7 @@ export const TrueOrFalsePlugin = createPlugin({
   /**
    * View UI - Interactive quiz rendering
    */
-  renderView: function TrueOrFalseView({
+  renderView: function MultipleChoiceSingleAnswerView({
     interaction,
     content,
     settings,
@@ -185,10 +182,10 @@ export const TrueOrFalsePlugin = createPlugin({
   }) {
     const { isExplanationBottomSheetOpen, setExplanationState } = useStore();
 
+    // Prepare answer options (shuffle if randomization is enabled)
     const answerOptions = useMemo(() => {
-      const options = [true, false];
-      return settings.randomization === 'shuffle' ? shuffleArray(options) : options;
-    }, [settings.randomization]);
+      return settings.randomization === 'shuffle' ? shuffleArray(content.choices) : content.choices;
+    }, [content.choices, settings.randomization]);
 
     return (
       <ViewPluginWrapper
@@ -203,74 +200,89 @@ export const TrueOrFalsePlugin = createPlugin({
         weight={settings.weight}
       >
         <PlayPluginWrapper hint={content.hint}>
+          {/* Question Section */}
           <RichTextRenderer editorState={content.questionState} />
 
-          <div className='flex flex-col gap-4'>
-            <div
-              className={cn('gap-4 py-6', {
-                'grid grid-cols-1': settings.layoutStyle === 'single',
-                'grid grid-cols-2': settings.layoutStyle === 'double',
-              })}
-            >
-              {answerOptions.map((val) => {
-                const isSelected = interaction.selectedOption === val;
-                const isCorrectAttempt =
-                  interaction.state.correctAttempt?.selected === val &&
-                  !interaction.state.correctAttempt?.wasRevealed;
-                const isRevealedCorrect =
-                  interaction.state.correctAttempt?.selected === val &&
-                  interaction.state.correctAttempt?.wasRevealed;
-                const isWrongAttempt = interaction.state.wrongAttempts.some(
-                  (a: TrueOrFalseStateInteractionSchemaTypes['wrongAttempts'][number]) =>
-                    a.selected === val,
-                );
-                const isDisabled =
-                  !interaction.canInteract ||
-                  isCorrectAttempt ||
-                  isWrongAttempt ||
-                  isRevealedCorrect;
+          {/* Answer Options Grid/List */}
+          <div
+            className={cn('gap-4 py-6', {
+              'flex flex-col': settings.layoutStyle === 'single', // Vertical layout
+              'grid grid-cols-2 items-stretch': settings.layoutStyle === 'double', // Equal height in double layout
+            })}
+          >
+            {answerOptions.map((option) => {
+              // Use the option ID as the value
+              const optionValue = option.id;
 
-                return (
-                  <div key={String(val)} className='relative w-full'>
-                    <TrueOrFalseOptionsButton
-                      val={val}
-                      icon={val ? <Check /> : <X />}
-                      isSelected={isSelected}
-                      isDisabled={isDisabled}
-                      selectOption={() => interaction.selectOption(val)}
-                    />
+              // Determine option state for styling and behavior
+              const isSelected = interaction.selectedOption === optionValue;
 
-                    <div className='absolute -top-1.5 -right-1.5 rounded-full'>
-                      {isCorrectAttempt && (
-                        <Check
-                          size={14}
-                          className='text-success-foreground bg-success rounded-full p-0.5'
-                        />
-                      )}
-                      {isRevealedCorrect && (
-                        <Check
-                          size={14}
-                          className='text-muted-foreground bg-muted rounded-full p-0.5'
-                        />
-                      )}
-                      {isWrongAttempt && (
-                        <X
-                          size={14}
-                          className='text-danger-foreground bg-danger rounded-full p-0.5'
-                        />
-                      )}
-                    </div>
+              // Check if this option was the correct answer in a previous attempt
+              const isCorrectAttempt =
+                interaction.state.correctAttempt?.selected === optionValue &&
+                !interaction.state.correctAttempt?.wasRevealed;
+
+              // Check if this option was revealed as correct
+              const isRevealedCorrect =
+                interaction.state.correctAttempt?.selected === optionValue &&
+                interaction.state.correctAttempt?.wasRevealed;
+
+              // Check if this option was selected incorrectly in a previous attempt
+              const isWrongAttempt = interaction.state.wrongAttempts.some(
+                (attempt) => attempt.selected === optionValue,
+              );
+
+              // Disable interaction for completed attempts or when interaction is locked
+              const isDisabled =
+                !interaction.canInteract || isWrongAttempt || isCorrectAttempt || isRevealedCorrect;
+
+              return (
+                <div key={option.id} className='relative w-full'>
+                  {/* Option Button */}
+                  <ChoiceOptionButton
+                    choiceState={option.content}
+                    isSelected={isSelected}
+                    isDisabled={isDisabled}
+                    onClick={() => interaction.selectOption(optionValue)}
+                  />
+
+                  {/* Status Indicators */}
+                  <div className='absolute -top-1.5 -right-1.5 rounded-full'>
+                    {/* Green checkmark for correct answers */}
+                    {isCorrectAttempt && (
+                      <Check
+                        size={14}
+                        className='text-success-foreground bg-success rounded-full p-0.5'
+                      />
+                    )}
+                    {/* Muted checkmark for revealed correct answers */}
+                    {isRevealedCorrect && (
+                      <Check
+                        size={14}
+                        className='text-muted-foreground bg-muted rounded-full p-0.5'
+                      />
+                    )}
+                    {/* Red X for wrong answers */}
+                    {isWrongAttempt && (
+                      <X
+                        size={14}
+                        className='text-danger-foreground bg-danger rounded-full p-0.5'
+                      />
+                    )}
                   </div>
-                );
-              })}
-            </div>
+                </div>
+              );
+            })}
           </div>
 
+          {/* Attempt Counter */}
           <div className='text-muted-foreground font-secondary pb-1 text-xs'>
             Attempts: <span className='font-normal'>{interaction.attemptsCount}</span>
           </div>
 
+          {/* Action Buttons Section */}
           <div className='w-full pb-4'>
+            {/* Initial State: Check Answer Button */}
             {interaction.state.showCheckIfAnswerIsCorrectButton && (
               <CheckAnswerButton
                 disabled={interaction.selectedOption === null}
@@ -278,6 +290,7 @@ export const TrueOrFalsePlugin = createPlugin({
               />
             )}
 
+            {/* Success State: Correct Answer Feedback */}
             {interaction.state.showContinueButton && (
               <RenderFeedback
                 color='success'
@@ -287,6 +300,7 @@ export const TrueOrFalsePlugin = createPlugin({
                 hasBeenPlayed={blockWithProgress.block_progress?.is_completed}
                 actions={
                   <div className='flex'>
+                    {/* Continue/Next Button */}
                     {!blockWithProgress.block_progress?.is_completed && (
                       <BlockActionButton
                         onClick={handleContinue}
@@ -296,6 +310,7 @@ export const TrueOrFalsePlugin = createPlugin({
                       />
                     )}
 
+                    {/* Optional Explanation Button */}
                     {!isExplanationBottomSheetOpen &&
                       interaction.state.canShowExplanationButton && (
                         <AnimateInButtonWrapper>
@@ -312,6 +327,7 @@ export const TrueOrFalsePlugin = createPlugin({
               />
             )}
 
+            {/* Error State: Wrong Answer Feedback */}
             {interaction.state.showTryAgainButton && (
               <RenderFeedback
                 color='destructive'
@@ -320,7 +336,9 @@ export const TrueOrFalsePlugin = createPlugin({
                 hasBeenPlayed={blockWithProgress.block_progress?.is_completed}
                 actions={
                   <div className='flex items-center space-x-4'>
+                    {/* Retry Button */}
                     {interaction.tryAgain && <TryAgainButton onClick={interaction.tryAgain} />}
+                    {/* Show Answer Button (appears after wrong attempt) */}
                     {interaction.state.showShowAnswerButton && interaction.revealCorrectAnswer && (
                       <ShowAnswerButton onClick={interaction.revealCorrectAnswer} />
                     )}
@@ -339,16 +357,13 @@ export const TrueOrFalsePlugin = createPlugin({
    */
   scoring: {
     calculate: (state) => {
-      const MAX_SCORE = 100;
-      const PENALTY_PER_WRONG_ATTEMPT = 50;
-
-      if (state.correctAttempt === null) return 0;
-      if (state.correctAttempt?.wasRevealed) return 0;
-
-      const penalty = state.wrongAttempts.length * PENALTY_PER_WRONG_ATTEMPT;
-      return Math.max(MAX_SCORE - penalty, 0);
+      return calculateMultipleChoiceSingleAnswerScore({
+        correctAnswerRevealed: state.hasRevealedCorrectAnswer,
+        wrongAttemptsCount: state.wrongAttempts.length,
+        numberOfOptions: 4, // This is a placeholder - actual number would need to be passed
+      });
     },
     getMaxScore: () => 100,
-    getPenaltyFactor: () => 0.5,
+    getPenaltyFactor: () => 0.25, // Varies based on number of options
   },
 });

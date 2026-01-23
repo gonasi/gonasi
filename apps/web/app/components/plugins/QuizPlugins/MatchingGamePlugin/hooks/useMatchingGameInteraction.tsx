@@ -16,9 +16,14 @@ export function useMatchingGameInteraction(
   initial: MatchingGameInteractionSchemaTypes | null,
   pairs: MatchingPairSchemaTypes[],
 ) {
-  const defaultState: MatchingGameInteractionSchemaTypes = schema.parse({
-    plugin_type: 'matching_game',
-  });
+  // Memoize defaultState to prevent creating new object on every render
+  const defaultState: MatchingGameInteractionSchemaTypes = useMemo(
+    () =>
+      schema.parse({
+        plugin_type: 'matching_game',
+      }),
+    [],
+  );
 
   const [state, setState] = useState<MatchingGameInteractionSchemaTypes>(() =>
     schema.parse(initial ?? { plugin_type: 'matching_game' }),

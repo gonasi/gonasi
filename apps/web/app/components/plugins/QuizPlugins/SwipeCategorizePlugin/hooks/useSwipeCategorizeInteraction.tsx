@@ -16,9 +16,14 @@ export function useSwipeCategorizeInteraction(
   initial: SwipeCategorizeInteractionSchemaTypes | null,
   cards: CardSchemaTypes[],
 ) {
-  const defaultState: SwipeCategorizeInteractionSchemaTypes = schema.parse({
-    plugin_type: 'swipe_categorize',
-  });
+  // Memoize defaultState to prevent creating new object on every render
+  const defaultState: SwipeCategorizeInteractionSchemaTypes = useMemo(
+    () =>
+      schema.parse({
+        plugin_type: 'swipe_categorize',
+      }),
+    [],
+  );
 
   const [state, setState] = useState<SwipeCategorizeInteractionSchemaTypes>(() =>
     schema.parse(initial ?? { plugin_type: 'swipe_categorize' }),

@@ -15,9 +15,14 @@ export function useTrueOrFalseInteraction(
   initial: TrueOrFalseStateInteractionSchemaTypes | null,
   correctAnswer: 'true' | 'false',
 ) {
-  const defaultState: TrueOrFalseStateInteractionSchemaTypes = schema.parse({
-    plugin_type: 'true_or_false',
-  });
+  // Memoize defaultState to prevent creating new object on every render
+  const defaultState: TrueOrFalseStateInteractionSchemaTypes = useMemo(
+    () =>
+      schema.parse({
+        plugin_type: 'true_or_false',
+      }),
+    [],
+  );
 
   const [state, setState] = useState<TrueOrFalseStateInteractionSchemaTypes>(() =>
     schema.parse(initial ?? { plugin_type: 'true_or_false' }),

@@ -19,10 +19,14 @@ export function useMultipleChoiceSingleAnswerInteraction(
 ) {
   const correctChoiceId = choices.find((choice) => choice.isCorrect)?.id ?? '';
 
-  // Fallback state used if `initial` is null
-  const defaultState: MultipleChoiceSingleAnswerInteractionSchemaTypes = schema.parse({
-    plugin_type: 'multiple_choice_single',
-  });
+  // Memoize defaultState to prevent creating new object on every render
+  const defaultState: MultipleChoiceSingleAnswerInteractionSchemaTypes = useMemo(
+    () =>
+      schema.parse({
+        plugin_type: 'multiple_choice_single',
+      }),
+    [],
+  );
 
   // Main interaction state validated by schema (parsed from initial or fallback)
   const [state, setState] = useState<MultipleChoiceSingleAnswerInteractionSchemaTypes>(() =>
