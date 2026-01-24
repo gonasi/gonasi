@@ -1,22 +1,28 @@
-import type { Route } from './+types/invites-index';
-
-import { Modal } from '~/components/ui/modal';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card/card';
 
 export function meta() {
-  return [{ title: 'Gonasi' }, { name: 'description', content: 'Welcome to Gonasi' }];
+  return [
+    { title: 'Invites • Gonasi' },
+    { name: 'description', content: 'Manage learner invitations for this course' },
+  ];
 }
 
-export default function InvitesIndex({ params }: Route.ComponentProps) {
-  const closeRoute = `/${params.organizationId}/builder/${params.courseId}/file-library`;
-
+export default function InvitesIndex() {
   return (
-    <Modal open>
-      <Modal.Content size='sm'>
-        <Modal.Header closeRoute={closeRoute} />
-        <Modal.Body>
-          <h2>hello</h2>
-        </Modal.Body>
-      </Modal.Content>
-    </Modal>
+    <div className='flex flex-col gap-6'>
+      <Card className='rounded-none'>
+        <CardHeader>
+          <CardTitle>Invites</CardTitle>
+          <CardDescription>
+            Send and manage course invitations to new learners
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className='flex flex-col items-center justify-center py-12'>
+            <p className='text-muted-foreground'>Invite management coming soon</p>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
