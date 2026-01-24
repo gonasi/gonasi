@@ -21,7 +21,8 @@ create or replace function public.process_course_payment_from_paystack(
   p_currency_code text,
   p_payment_method text default 'card',
   p_paystack_fee numeric(19,4) default 0,
-  p_metadata jsonb default '{}'::jsonb
+  p_metadata jsonb default '{}'::jsonb,
+  p_cohort_id uuid default null
 )
 returns jsonb
 language plpgsql
@@ -288,10 +289,10 @@ begin
         where id = v_enrollment_id;
     else
         insert into public.course_enrollments(
-            user_id, published_course_id, organization_id,
+            user_id, published_course_id, organization_id, cohort_id,
             enrolled_at, expires_at, is_active
         ) values (
-            p_user_id, p_published_course_id, v_organization_id,
+            p_user_id, p_published_course_id, v_organization_id, p_cohort_id,
             v_access_start, v_access_start + interval '1 month', true
         ) returning id into v_enrollment_id;
     end if;
