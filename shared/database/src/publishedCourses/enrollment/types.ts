@@ -45,6 +45,8 @@ export const InitializeEnrollMetadataSchema = z.object({
   isPromotional: z.boolean(),
   promotionalPrice: z.number().nullable(),
   effectivePrice: z.number().nonnegative(),
+
+  cohortId: z.string().uuid().nullable().optional(),
 });
 
 export type InitializeEnrollMetadata = z.infer<typeof InitializeEnrollMetadataSchema>;

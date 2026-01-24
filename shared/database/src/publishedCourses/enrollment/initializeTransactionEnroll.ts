@@ -38,7 +38,7 @@ export const initializeTransactionEnroll = async ({
   data: InitializeEnrollTransactionSchemaTypes;
 }): Promise<ApiResponse<InitializeEnrollTransactionResponse>> => {
   try {
-    const { publishedCourseId, pricingTierId, organizationId } = data;
+    const { publishedCourseId, pricingTierId, organizationId, cohortId } = data;
 
     // Step 1: Ensure the user is authenticated
     const userProfile = await getUserProfile(supabase);
@@ -117,6 +117,7 @@ export const initializeTransactionEnroll = async ({
           p_user_id: userProfile.user.id,
           p_published_course_id: publishedCourseId,
           p_tier_id: selectedTier.id,
+          p_cohort_id: cohortId ?? null,
         },
       );
 
@@ -166,6 +167,7 @@ export const initializeTransactionEnroll = async ({
       promotionalPrice: selectedTier.promotional_price ?? null,
       effectivePrice,
       courseTitle: course.name,
+      cohortId: cohortId ?? null,
     });
 
     const { data: transactionData, error: transactionError } = await supabase.functions.invoke(

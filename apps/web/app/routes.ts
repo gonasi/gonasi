@@ -138,6 +138,26 @@ export default [
                 route(
                   'cohorts',
                   'routes/organizations/builder/course/published/learners/cohorts/cohorts-index.tsx',
+                  [
+                    route(
+                      'new',
+                      'routes/organizations/builder/course/published/learners/cohorts/new-cohort.tsx',
+                    ),
+                    ...prefix(':cohortId', [
+                      route(
+                        'edit',
+                        'routes/organizations/builder/course/published/learners/cohorts/edit-cohort.tsx',
+                      ),
+                      route(
+                        'delete',
+                        'routes/organizations/builder/course/published/learners/cohorts/delete-cohort.tsx',
+                      ),
+                      route(
+                        'assign',
+                        'routes/organizations/builder/course/published/learners/cohorts/assign-users-to-cohort.tsx',
+                      ),
+                    ]),
+                  ],
                 ),
                 route(
                   'invites',

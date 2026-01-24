@@ -54,7 +54,7 @@ export default function LearnersIndex({ params }: Route.ComponentProps) {
 
   return (
     <Modal open>
-      <Modal.Content size='full'>
+      <Modal.Content size='lg'>
         <Modal.Header closeRoute={closeRoute} />
         <Modal.Body className='p-0'>
           <div className='flex flex-col'>

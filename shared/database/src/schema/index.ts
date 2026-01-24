@@ -337,6 +337,124 @@ export type Database = {
           },
         ]
       }
+      cohort_membership_history: {
+        Row: {
+          changed_at: string
+          changed_by: string | null
+          enrollment_id: string
+          id: string
+          new_cohort_id: string | null
+          old_cohort_id: string | null
+          reason: string | null
+        }
+        Insert: {
+          changed_at?: string
+          changed_by?: string | null
+          enrollment_id: string
+          id?: string
+          new_cohort_id?: string | null
+          old_cohort_id?: string | null
+          reason?: string | null
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string | null
+          enrollment_id?: string
+          id?: string
+          new_cohort_id?: string | null
+          old_cohort_id?: string | null
+          reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cohort_membership_history_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "course_enrollments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cohort_membership_history_new_cohort_id_fkey"
+            columns: ["new_cohort_id"]
+            isOneToOne: false
+            referencedRelation: "cohorts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cohort_membership_history_old_cohort_id_fkey"
+            columns: ["old_cohort_id"]
+            isOneToOne: false
+            referencedRelation: "cohorts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cohorts: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          current_enrollment_count: number
+          description: string | null
+          end_date: string | null
+          id: string
+          is_active: boolean
+          max_enrollment: number | null
+          name: string
+          organization_id: string
+          published_course_id: string
+          start_date: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          current_enrollment_count?: number
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          is_active?: boolean
+          max_enrollment?: number | null
+          name: string
+          organization_id: string
+          published_course_id: string
+          start_date?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          current_enrollment_count?: number
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          is_active?: boolean
+          max_enrollment?: number | null
+          name?: string
+          organization_id?: string
+          published_course_id?: string
+          start_date?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cohorts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cohorts_published_course_id_fkey"
+            columns: ["published_course_id"]
+            isOneToOne: false
+            referencedRelation: "published_courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       course_categories: {
         Row: {
           course_count: number
@@ -494,6 +612,7 @@ export type Database = {
       }
       course_enrollments: {
         Row: {
+          cohort_id: string | null
           completed_at: string | null
           created_at: string
           enrolled_at: string
@@ -506,6 +625,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          cohort_id?: string | null
           completed_at?: string | null
           created_at?: string
           enrolled_at?: string
@@ -518,6 +638,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          cohort_id?: string | null
           completed_at?: string | null
           created_at?: string
           enrolled_at?: string
@@ -530,6 +651,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "course_enrollments_cohort_id_fkey"
+            columns: ["cohort_id"]
+            isOneToOne: false
+            referencedRelation: "cohorts"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "course_enrollments_organization_id_fkey"
             columns: ["organization_id"]
@@ -2798,6 +2926,7 @@ export type Database = {
       }
       enroll_user_in_free_course: {
         Args: {
+          p_cohort_id?: string
           p_published_course_id: string
           p_tier_id: string
           p_user_id: string
@@ -3053,6 +3182,7 @@ export type Database = {
       process_course_payment_from_paystack: {
         Args: {
           p_amount_paid: number
+          p_cohort_id?: string
           p_currency_code: string
           p_metadata?: Json
           p_payment_method?: string

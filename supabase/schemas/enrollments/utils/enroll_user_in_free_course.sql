@@ -10,7 +10,8 @@
 create or replace function public.enroll_user_in_free_course(
   p_user_id uuid,
   p_published_course_id uuid,
-  p_tier_id uuid
+  p_tier_id uuid,
+  p_cohort_id uuid default null
 )
 returns jsonb
 language plpgsql
@@ -126,11 +127,11 @@ begin
   else
     -- Create a new enrollment
     insert into public.course_enrollments (
-      id, user_id, published_course_id, organization_id,
+      id, user_id, published_course_id, organization_id, cohort_id,
       enrolled_at, expires_at, completed_at, is_active,
       created_at, updated_at
     ) values (
-      gen_random_uuid(), p_user_id, p_published_course_id, v_org_id,
+      gen_random_uuid(), p_user_id, p_published_course_id, v_org_id, p_cohort_id,
       v_access_start, v_access_end, null, true,
       v_now, v_now
     )
