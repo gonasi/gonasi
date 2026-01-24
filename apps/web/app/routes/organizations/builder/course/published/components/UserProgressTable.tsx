@@ -2,16 +2,21 @@ import {
   Activity,
   Award,
   CheckCircle,
+  ChevronRight,
   Clock,
   RotateCcw,
   Target,
   TrendingUp,
   UserCheck,
+  Users,
 } from 'lucide-react';
 
 import type { UserProgressStats } from '@gonasi/database/courses';
 
+import { PlainAvatar } from '~/components/avatars';
 import { Badge } from '~/components/ui/badge/badge';
+import { NavLinkButton } from '~/components/ui/button';
+import { Button } from '~/components/ui/button/button';
 import {
   Card,
   CardContent,
@@ -30,6 +35,7 @@ interface Enrollment {
 interface UserProgressTableProps {
   usersProgress: UserProgressStats[];
   courseEnrollments: Enrollment[];
+  learnersRoute: string;
 }
 
 function formatDuration(seconds: number): string {
@@ -80,7 +86,11 @@ function formatExpirationDate(dateString: string): string {
   return `In ${years} ${years === 1 ? 'year' : 'years'}`;
 }
 
-export function UserProgressTable({ usersProgress, courseEnrollments }: UserProgressTableProps) {
+export function UserProgressTable({
+  usersProgress,
+  courseEnrollments,
+  learnersRoute,
+}: UserProgressTableProps) {
   if (!usersProgress || usersProgress.length === 0) {
     return null;
   }
@@ -173,15 +183,35 @@ export function UserProgressTable({ usersProgress, courseEnrollments }: UserProg
       {/* User Progress Table */}
       <Card className='rounded-none'>
         <CardHeader>
-          <div className='flex items-center gap-2'>
-            <Target className='size-5' />
-            <CardTitle>Learner Progress & Enrollment</CardTitle>
+          <div className='flex flex-col md:flex-row md:items-center md:justify-between'>
+            {/* Mobile: button first, desktop: stays on right */}
+            <div className='mb-2 flex justify-end md:order-2 md:mb-0 md:justify-start'>
+              <div>
+                <NavLinkButton
+                  to={learnersRoute}
+                  variant='secondary'
+                  size='sm'
+                  leftIcon={<Users />}
+                >
+                  Manage Learners
+                </NavLinkButton>
+              </div>
+            </div>
+
+            {/* Title and description */}
+            <div className='flex flex-col gap-2 md:order-1'>
+              <div className='flex items-center gap-2'>
+                <Target className='size-5' />
+                <CardTitle>Learner Progress & Enrollment</CardTitle>
+              </div>
+              <CardDescription>
+                Track learning progress, performance, and enrollment status for all{' '}
+                {activeEnrollments} active {activeEnrollments === 1 ? 'learner' : 'learners'}
+              </CardDescription>
+            </div>
           </div>
-          <CardDescription>
-            Track learning progress, performance, and enrollment status for all {activeEnrollments}{' '}
-            active {activeEnrollments === 1 ? 'learner' : 'learners'}
-          </CardDescription>
         </CardHeader>
+
         <CardContent>
           <div className='overflow-x-auto'>
             <table className='w-full'>
@@ -204,19 +234,12 @@ export function UserProgressTable({ usersProgress, courseEnrollments }: UserProg
                   <tr key={user.user_id} className='border-b last:border-b-0'>
                     <td className='py-3 pr-4'>
                       <div className='flex items-center gap-2'>
-                        {user.avatar_url ? (
-                          <img
-                            src={user.avatar_url}
-                            alt={user.full_name || user.username || 'User'}
-                            className='size-8 rounded-full object-cover'
-                          />
-                        ) : (
-                          <div className='bg-primary/10 text-primary flex size-8 items-center justify-center rounded-full text-xs font-semibold'>
-                            {(user.full_name || user.username || user.user_id)
-                              .slice(0, 2)
-                              .toUpperCase()}
-                          </div>
-                        )}
+                        <PlainAvatar
+                          username={user?.username ?? user?.full_name}
+                          imageUrl={user?.signed_url}
+                          size='md'
+                        />
+
                         <div className='flex flex-col'>
                           <span className='text-sm font-medium'>
                             {user.full_name || user.username || 'Unknown User'}
@@ -271,9 +294,16 @@ export function UserProgressTable({ usersProgress, courseEnrollments }: UserProg
                       </div>
                     </td>
                     <td className='py-3 pr-4'>
-                      <span className='text-muted-foreground text-sm'>
-                        {formatRelativeTime(user.last_activity)}
-                      </span>
+                      <div className='flex flex-col'>
+                        <span className='text-muted-foreground text-sm'>
+                          {user.last_activity
+                            ? formatRelativeTime(user.last_activity)
+                            : formatRelativeTime(user.enrolled_at)}
+                        </span>
+                        {!user.last_activity && (
+                          <span className='text-muted-foreground text-xs'>(enrolled)</span>
+                        )}
+                      </div>
                     </td>
                     <td className='py-3 pr-4'>
                       <div className='flex items-center gap-1'>
@@ -329,6 +359,16 @@ export function UserProgressTable({ usersProgress, courseEnrollments }: UserProg
               </tbody>
             </table>
           </div>
+
+          {/* View All Button - Show if there are more enrollments than displayed */}
+          {activeEnrollments > 5 && (
+            <div className='mt-4 flex justify-center border-t pt-4'>
+              <Button variant='ghost' size='sm' className='gap-2'>
+                View all {activeEnrollments} learners
+                <ChevronRight className='size-4' />
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

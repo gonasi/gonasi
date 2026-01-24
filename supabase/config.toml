@@ -274,6 +274,7 @@ schema_paths = [
   './schemas/enrollments/course_payments_schema_and_indexes.sql',
   './schemas/enrollments/course_payments_rls.sql',
   './schemas/enrollments/course_enrollment_activities_rls.sql',
+  './schemas/enrollments/update_enrollment_stats_triggers.sql',
 
   './schemas/publishedCourses/published_courses_rls.sql',
   './schemas/publishedCourses/published_course_structure_content_rls.sql',

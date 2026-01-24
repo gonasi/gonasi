@@ -874,7 +874,7 @@ export function ViewImageFocusQuizPlugin({ blockWithProgress }: ViewPluginCompon
                   This memorization exercise contains {totalRegions} region
                   {totalRegions !== 1 ? 's' : ''} to explore.
                 </p>
-                <p>Click Play to start the interactive experience.</p>
+                <p className='font-secondary'>Click Play to start the interactive experience.</p>
               </div>
 
               <div className='flex items-center justify-center gap-4'>
