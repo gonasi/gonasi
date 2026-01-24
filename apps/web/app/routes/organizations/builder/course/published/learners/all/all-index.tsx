@@ -2,40 +2,43 @@ import {
   Activity,
   Award,
   CheckCircle,
-  ChevronRight,
   Clock,
   RotateCcw,
-  Target,
   TrendingUp,
   UserCheck,
-  Users,
 } from 'lucide-react';
 
-import type { UserProgressStats } from '@gonasi/database/courses';
+import { fetchCourseUsersProgress, fetchPublishedCourseDetails } from '@gonasi/database/courses';
+
+import type { Route } from './+types/all-index';
 
 import { PlainAvatar } from '~/components/avatars';
 import { Badge } from '~/components/ui/badge/badge';
-import { NavLinkButton } from '~/components/ui/button';
-import { Button } from '~/components/ui/button/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '~/components/ui/card/card';
+import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card/card';
+import { createClient } from '~/lib/supabase/supabase.server';
 
-interface Enrollment {
-  id: string;
-  user_id: string;
-  is_active: boolean;
-  expires_at: string | null;
+export function meta() {
+  return [
+    { title: 'All Learners • Gonasi' },
+    { name: 'description', content: 'View and manage all learners enrolled in this course' },
+  ];
 }
 
-interface UserProgressTableProps {
-  usersProgress: UserProgressStats[];
-  courseEnrollments: Enrollment[];
-  learnersRoute: string;
+export async function loader({ params, request }: Route.LoaderArgs) {
+  const { supabase } = createClient(request);
+
+  const [publishedCourse, usersProgress] = await Promise.all([
+    fetchPublishedCourseDetails({
+      supabase,
+      publishedCourseId: params.courseId,
+    }),
+    fetchCourseUsersProgress({
+      supabase,
+      publishedCourseId: params.courseId ?? '',
+    }),
+  ]);
+
+  return { publishedCourse, usersProgress };
 }
 
 function formatDuration(seconds: number): string {
@@ -64,7 +67,6 @@ function formatExpirationDate(dateString: string): string {
   const expiryDate = new Date(dateString);
   const now = new Date();
 
-  // Reset time to start of day for accurate day comparison
   const expiryDay = new Date(expiryDate.getFullYear(), expiryDate.getMonth(), expiryDate.getDate());
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
@@ -86,19 +88,23 @@ function formatExpirationDate(dateString: string): string {
   return `In ${years} ${years === 1 ? 'year' : 'years'}`;
 }
 
-export function UserProgressTable({
-  usersProgress,
-  courseEnrollments,
-  learnersRoute,
-}: UserProgressTableProps) {
-  if (!usersProgress || usersProgress.length === 0) {
-    return null;
-  }
+export default function AllLearnersIndex({ loaderData }: Route.ComponentProps) {
+  const { usersProgress, publishedCourse } = loaderData;
+
+  const courseEnrollments = publishedCourse?.course_enrollments ?? [];
 
   // Create enrollment lookup map
   const enrollmentMap = new Map(
     courseEnrollments.map((enrollment) => [enrollment.user_id, enrollment]),
   );
+
+  if (!usersProgress || usersProgress.length === 0) {
+    return (
+      <div className='flex flex-col items-center justify-center py-12'>
+        <p className='text-muted-foreground'>No learners enrolled yet</p>
+      </div>
+    );
+  }
 
   // Calculate overall stats
   const totalUsers = usersProgress.length;
@@ -182,57 +188,27 @@ export function UserProgressTable({
 
       {/* User Progress Table */}
       <Card className='rounded-none'>
-        <CardHeader>
-          <div className='flex flex-col md:flex-row md:items-center md:justify-between'>
-            {/* Mobile: button first, desktop: stays on right */}
-            <div className='mb-2 flex justify-end md:order-2 md:mb-0 md:justify-start'>
-              <div>
-                <NavLinkButton
-                  to={learnersRoute}
-                  variant='secondary'
-                  size='sm'
-                  leftIcon={<Users />}
-                >
-                  Manage Learners
-                </NavLinkButton>
-              </div>
-            </div>
-
-            {/* Title and description */}
-            <div className='flex flex-col gap-2 md:order-1'>
-              <div className='flex items-center gap-2'>
-                <Target className='size-5' />
-                <CardTitle>Learner Progress & Enrollment</CardTitle>
-              </div>
-              <CardDescription>
-                Track learning progress, performance, and enrollment status for all{' '}
-                {activeEnrollments} active {activeEnrollments === 1 ? 'learner' : 'learners'}
-              </CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-
-        <CardContent>
+        <CardContent className='p-0'>
           <div className='overflow-x-auto'>
             <table className='w-full'>
               <thead>
                 <tr className='border-b text-left text-sm font-medium'>
-                  <th className='pr-4 pb-3'>Learner</th>
-                  <th className='pr-4 pb-3'>Progress</th>
-                  <th className='pr-4 pb-3'>Score</th>
-                  <th className='pr-4 pb-3'>Lessons</th>
-                  <th className='pr-4 pb-3'>Blocks</th>
-                  <th className='pr-4 pb-3'>Time Spent</th>
-                  <th className='pr-4 pb-3'>Last Activity</th>
-                  <th className='pr-4 pb-3'>Resets</th>
-                  <th className='pr-4 pb-3'>Enrollment</th>
-                  <th className='pb-3'>Course Status</th>
+                  <th className='px-4 py-3'>Learner</th>
+                  <th className='px-4 py-3'>Progress</th>
+                  <th className='px-4 py-3'>Score</th>
+                  <th className='px-4 py-3'>Lessons</th>
+                  <th className='px-4 py-3'>Blocks</th>
+                  <th className='px-4 py-3'>Time Spent</th>
+                  <th className='px-4 py-3'>Last Activity</th>
+                  <th className='px-4 py-3'>Resets</th>
+                  <th className='px-4 py-3'>Enrollment</th>
+                  <th className='px-4 py-3'>Course Status</th>
                 </tr>
               </thead>
               <tbody>
                 {usersProgress.map((user) => (
                   <tr key={user.user_id} className='border-b last:border-b-0'>
-                    <td className='py-3 pr-4'>
+                    <td className='px-4 py-3'>
                       <div className='flex items-center gap-2'>
                         <PlainAvatar
                           username={user?.username ?? user?.full_name}
@@ -250,7 +226,7 @@ export function UserProgressTable({
                         </div>
                       </div>
                     </td>
-                    <td className='py-3 pr-4'>
+                    <td className='px-4 py-3'>
                       <div className='flex flex-col gap-1'>
                         <div className='flex items-center gap-2'>
                           <div className='bg-muted h-2 w-24 overflow-hidden rounded-full'>
@@ -265,7 +241,7 @@ export function UserProgressTable({
                         </div>
                       </div>
                     </td>
-                    <td className='py-3 pr-4'>
+                    <td className='px-4 py-3'>
                       {user.average_score > 0 ? (
                         <div className='flex items-center gap-1'>
                           <Award className='text-warning size-4' />
@@ -277,23 +253,23 @@ export function UserProgressTable({
                         <span className='text-muted-foreground text-sm'>-</span>
                       )}
                     </td>
-                    <td className='py-3 pr-4'>
+                    <td className='px-4 py-3'>
                       <span className='text-muted-foreground text-sm'>
                         {user.completed_lessons}/{user.total_lessons}
                       </span>
                     </td>
-                    <td className='py-3 pr-4'>
+                    <td className='px-4 py-3'>
                       <span className='text-muted-foreground text-sm'>
                         {user.completed_blocks}/{user.total_blocks}
                       </span>
                     </td>
-                    <td className='py-3 pr-4'>
+                    <td className='px-4 py-3'>
                       <div className='flex items-center gap-1'>
                         <Clock className='text-muted-foreground size-4' />
                         <span className='text-sm'>{formatDuration(user.time_spent_seconds)}</span>
                       </div>
                     </td>
-                    <td className='py-3 pr-4'>
+                    <td className='px-4 py-3'>
                       <div className='flex flex-col'>
                         <span className='text-muted-foreground text-sm'>
                           {user.last_activity
@@ -305,13 +281,13 @@ export function UserProgressTable({
                         )}
                       </div>
                     </td>
-                    <td className='py-3 pr-4'>
+                    <td className='px-4 py-3'>
                       <div className='flex items-center gap-1'>
                         <RotateCcw className='text-muted-foreground size-4' />
                         <span className='text-sm'>{user.reset_count}</span>
                       </div>
                     </td>
-                    <td className='py-3 pr-4'>
+                    <td className='px-4 py-3'>
                       {(() => {
                         const enrollment = enrollmentMap.get(user.user_id);
                         return (
@@ -330,14 +306,14 @@ export function UserProgressTable({
                             </Badge>
                             {enrollment?.expires_at && (
                               <span className='text-muted-foreground text-xs'>
-                                Expires {formatExpirationDate(enrollment.expires_at)}
+                                {formatExpirationDate(enrollment.expires_at)}
                               </span>
                             )}
                           </div>
                         );
                       })()}
                     </td>
-                    <td className='py-3'>
+                    <td className='px-4 py-3'>
                       <Badge
                         variant={
                           user.is_completed || user.progress_percentage >= 100
@@ -359,16 +335,6 @@ export function UserProgressTable({
               </tbody>
             </table>
           </div>
-
-          {/* View All Button - Show if there are more enrollments than displayed */}
-          {activeEnrollments > 5 && (
-            <div className='mt-4 flex justify-center border-t pt-4'>
-              <Button variant='ghost' size='sm' className='gap-2'>
-                View all {activeEnrollments} learners
-                <ChevronRight className='size-4' />
-              </Button>
-            </div>
-          )}
         </CardContent>
       </Card>
     </div>

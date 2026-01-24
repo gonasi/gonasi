@@ -126,6 +126,26 @@ export default [
         route(
           'published',
           'routes/organizations/builder/course/published/published-overview-index.tsx',
+          [
+            route(
+              'learners',
+              'routes/organizations/builder/course/published/learners/learners-index.tsx',
+              [
+                route(
+                  'all',
+                  'routes/organizations/builder/course/published/learners/all/all-index.tsx',
+                ),
+                route(
+                  'cohorts',
+                  'routes/organizations/builder/course/published/learners/cohorts/cohorts-index.tsx',
+                ),
+                route(
+                  'invites',
+                  'routes/organizations/builder/course/published/learners/invites/invites-index.tsx',
+                ),
+              ],
+            ),
+          ],
         ),
         route('overview', 'routes/organizations/builder/course/overview/overview-index.tsx', [
           route(
