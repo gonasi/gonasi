@@ -15,8 +15,7 @@ import type { UserProgressStats } from '@gonasi/database/courses';
 
 import { PlainAvatar } from '~/components/avatars';
 import { Badge } from '~/components/ui/badge/badge';
-import { NavLinkButton } from '~/components/ui/button';
-import { Button } from '~/components/ui/button/button';
+import { Button, NavLinkButton } from '~/components/ui/button';
 import {
   Card,
   CardContent,
