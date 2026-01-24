@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 
 import {
+  type FillInTheBlankContentSchemaTypes,
   FillInTheBlankStateInteractionSchema,
   type FillInTheBlankStateInteractionSchemaTypes,
 } from '@gonasi/schemas/plugins';
@@ -13,12 +14,18 @@ const getTimestamp = () => Date.now();
 
 export function useFillInTheBlankInteraction(
   initial: FillInTheBlankStateInteractionSchemaTypes | null,
-  correctAnswer: string,
-  caseSensitive: boolean = false,
+  content: FillInTheBlankContentSchemaTypes,
 ) {
-  const defaultState: FillInTheBlankStateInteractionSchemaTypes = schema.parse({
-    plugin_type: 'fill_in_the_blank',
-  });
+  const correctAnswer = content.correctAnswer;
+  const caseSensitive = content.caseSensitive || false;
+  // Memoize defaultState to prevent creating new object on every render
+  const defaultState: FillInTheBlankStateInteractionSchemaTypes = useMemo(
+    () =>
+      schema.parse({
+        plugin_type: 'fill_in_the_blank',
+      }),
+    [],
+  );
 
   const [state, setState] = useState<FillInTheBlankStateInteractionSchemaTypes>(() =>
     schema.parse(initial ?? { plugin_type: 'fill_in_the_blank' }),

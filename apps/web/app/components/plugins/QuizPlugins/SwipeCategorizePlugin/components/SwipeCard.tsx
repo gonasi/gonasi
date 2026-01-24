@@ -205,24 +205,24 @@ export const SwipeCard = forwardRef<SwipeCardRef, SwipeCardProps>(
         const exitX = direction === 'right' ? 1000 : -1000;
         const exitRotate = direction === 'right' ? 30 : -30;
 
-        // Trigger callback immediately for better responsiveness
-        if (direction === 'left') {
-          onSwipeLeft();
-        } else {
-          onSwipeRight();
-        }
-
-        // Then animate exit
+        // Animate the card flying away first
         await controls.start({
           x: exitX,
           rotate: exitRotate,
           opacity: 0,
           scale: 0.8,
           transition: {
-            duration: 0.3,
+            duration: 0.4,
             ease: [0.4, 0, 0.2, 1],
           },
         });
+
+        // Trigger callback AFTER animation completes so the card is visible during swipe
+        if (direction === 'left') {
+          onSwipeLeft();
+        } else {
+          onSwipeRight();
+        }
 
         // Reset state after animation
         setIsExiting(false);

@@ -1,7 +1,18 @@
 import type React from 'react';
-import { type JSX, lazy, Suspense } from 'react';
+import { type ComponentType, type JSX, lazy, Suspense, useMemo } from 'react';
 
 import type { PluginTypeId } from '@gonasi/schemas/plugins';
+
+import '../QuizPlugins/TrueOrFalsePlugin';
+import '../QuizPlugins/MultipleChoiceSingleAnswer';
+import '../QuizPlugins/MultipleChoiceMultipleAnswers';
+import '../QuizPlugins/FillInTheBlankPlugin';
+import '../QuizPlugins/MatchingGamePlugin';
+import '../QuizPlugins/SwipeCategorizePlugin';
+
+import type { BuilderComponentProps } from '../core/types';
+// Import registry and refactored plugins
+import { pluginRegistry } from '../index';
 
 import { Spinner } from '~/components/loaders';
 import { Modal } from '~/components/ui/modal';
@@ -16,30 +27,16 @@ function notImplemented(): never {
   throw new Error('Plugin component not implemented.');
 }
 
-// Lazy load the builder plugin components
-const LazyBuilderMultipleChoiceSingleAnswerPlugin = lazy(() =>
-  import('../QuizPlugins/MultipleChoiceSingleAnswer/BuilderMultipleChoiceSingleAnswerPlugin').then(
-    (module) => ({ default: module.BuilderMultipleChoiceSingleAnswerPlugin }),
-  ),
+// Lazy load the builder plugin components (refactored plugins use registry)
+const LazyBuilderMultipleChoiceSingleAnswerPlugin =
+  pluginRegistry.getBuilder('multiple_choice_single');
+const LazyBuilderMultipleChoiceMultipleAnswersPlugin = pluginRegistry.getBuilder(
+  'multiple_choice_multiple',
 );
-
-const LazyBuilderMultipleChoiceMultipleAnswersPlugin = lazy(() =>
-  import(
-    '../QuizPlugins/MultipleChoiceMultipleAnswers/BuilderMultipleChoiceMultipleAnswersPlugin'
-  ).then((module) => ({ default: module.BuilderMultipleChoiceMultipleAnswersPlugin })),
-);
-
-const LazyBuilderTrueOrFalsePlugin = lazy(() =>
-  import('../QuizPlugins/TrueOrFalsePlugin/BuilderTrueOrFalsePlugin').then((module) => ({
-    default: module.BuilderTrueOrFalsePlugin,
-  })),
-);
-
-const LazyBuilderFillInTheBlankPlugin = lazy(() =>
-  import('../QuizPlugins/FillInTheBlankPlugin/BuilderFillInTheBlankPlugin').then((module) => ({
-    default: module.BuilderFillInTheBlankPlugin,
-  })),
-);
+const LazyBuilderTrueOrFalsePlugin = pluginRegistry.getBuilder('true_or_false');
+const LazyBuilderFillInTheBlankPlugin = pluginRegistry.getBuilder('fill_in_the_blank');
+const LazyBuilderMatchingGamePlugin = pluginRegistry.getBuilder('matching_game');
+const LazyBuilderSwipeCategorizePlugin = pluginRegistry.getBuilder('swipe_categorize');
 
 const LazyBuilderRichTextPlugin = lazy(() =>
   import('../RichTextPlugins/RichTextPlugin/BuilderRichTextPlugin').then((module) => ({
@@ -58,18 +55,6 @@ const LazyBuilderGuidedImageHotspotsPlugin = lazy(() =>
 const LazyBuilderStepByStepRevealPluginPlugin = lazy(() =>
   import('../RevealPlugins/StepByStepReveal/BuilderStepByStepRevealPlugin').then((module) => ({
     default: module.BuilderStepByStepRevealPlugin,
-  })),
-);
-
-const LazyBuilderMatchingGamePlugin = lazy(() =>
-  import('../QuizPlugins/MatchingGamePlugin/BuilderMatchingGamePlugin').then((module) => ({
-    default: module.BuilderMatchingGamePlugin,
-  })),
-);
-
-const LazyBuilderSwipeCategorizePlugin = lazy(() =>
-  import('../QuizPlugins/SwipeCategorizePlugin/BuilderSwipeCategorizePlugin').then((module) => ({
-    default: module.BuilderSwipeCategorizePlugin,
   })),
 );
 
@@ -106,8 +91,7 @@ const LazyBuilderImageFocusQuizPlugin = lazy(() =>
 // Only components that accept `{ block?: LessonBlockLoaderReturnType }`
 const pluginComponentMap: Record<
   PluginTypeId,
-  | React.LazyExoticComponent<(props: { block?: LessonBlockLoaderReturnType }) => JSX.Element>
-  | (() => never)
+  React.LazyExoticComponent<ComponentType<BuilderComponentProps>> | (() => never)
 > = {
   rich_text_editor: LazyBuilderRichTextPlugin,
   true_or_false: LazyBuilderTrueOrFalsePlugin,
@@ -172,32 +156,47 @@ export default function BuilderPluginRenderer({
   pluginTypeId,
   block,
 }: BuilderPluginRendererProps): JSX.Element {
-  console.log('[BuilderPluginRenderer] pluginTypeId:', pluginTypeId);
-  console.log('[BuilderPluginRenderer] block:', block);
+  console.log('[BuilderPluginRenderer] Rendering', {
+    pluginTypeId,
+    blockId: block?.id,
+    hasBlock: !!block,
+  });
 
-  const PluginComponent = pluginComponentMap[pluginTypeId];
-  console.log('[BuilderPluginRenderer] PluginComponent:', PluginComponent ? 'found' : 'NOT FOUND');
+  const PluginComponent = useMemo(() => {
+    const component = pluginComponentMap[pluginTypeId];
+    console.log('[BuilderPluginRenderer] PluginComponent lookup', {
+      pluginTypeId,
+      found: !!component,
+      isNotImplemented: component === notImplemented,
+    });
+    return component;
+  }, [pluginTypeId]);
 
   if (!PluginComponent) {
-    console.error('[BuilderPluginRenderer] Plugin component not found for:', pluginTypeId);
+    console.warn('[BuilderPluginRenderer] Plugin component not found:', pluginTypeId);
     return <UnsupportedPluginMessage pluginTypeId={pluginTypeId} />;
   }
 
-  // Check if it's a lazy component or the notImplemented function
-  const isLazyComponent = 'render' in PluginComponent || '$$typeof' in PluginComponent;
-
-  if (isLazyComponent) {
-    const LazyComponent = PluginComponent as React.LazyExoticComponent<
-      (props: { block?: LessonBlockLoaderReturnType }) => JSX.Element
-    >;
-    return (
-      <Suspense fallback={<PluginLoadingFallback />}>
-        <LazyComponent block={block} />
-      </Suspense>
-    );
+  // Check if it's the notImplemented function by checking if it's a function that throws
+  if (PluginComponent === notImplemented) {
+    console.warn('[BuilderPluginRenderer] Plugin not implemented:', pluginTypeId);
+    // This will throw an error, which is the intended behavior
+    return <PluginComponent />;
   }
 
-  // For notImplemented functions - this will throw an error
-  const NotImplementedComponent = PluginComponent as () => never;
-  return <NotImplementedComponent />;
+  // All other components are lazy components
+  const LazyComponent = PluginComponent as React.LazyExoticComponent<
+    ComponentType<BuilderComponentProps>
+  >;
+
+  console.log('[BuilderPluginRenderer] Rendering LazyComponent', {
+    pluginTypeId,
+    blockId: block?.id,
+  });
+
+  return (
+    <Suspense fallback={<PluginLoadingFallback />}>
+      <LazyComponent block={block} />
+    </Suspense>
+  );
 }
