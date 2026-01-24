@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 
 import {
-  type CardSchemaTypes,
+  type SwipeCategorizeContentSchemaTypes,
   SwipeCategorizeInteractionSchema,
   type SwipeCategorizeInteractionSchemaTypes,
 } from '@gonasi/schemas/plugins';
@@ -14,11 +14,17 @@ const getTimestamp = () => Date.now();
 
 export function useSwipeCategorizeInteraction(
   initial: SwipeCategorizeInteractionSchemaTypes | null,
-  cards: CardSchemaTypes[],
+  content: SwipeCategorizeContentSchemaTypes,
 ) {
-  const defaultState: SwipeCategorizeInteractionSchemaTypes = schema.parse({
-    plugin_type: 'swipe_categorize',
-  });
+  const cards = content.cards;
+  // Memoize defaultState to prevent creating new object on every render
+  const defaultState: SwipeCategorizeInteractionSchemaTypes = useMemo(
+    () =>
+      schema.parse({
+        plugin_type: 'swipe_categorize',
+      }),
+    [],
+  );
 
   const [state, setState] = useState<SwipeCategorizeInteractionSchemaTypes>(() =>
     schema.parse(initial ?? { plugin_type: 'swipe_categorize' }),

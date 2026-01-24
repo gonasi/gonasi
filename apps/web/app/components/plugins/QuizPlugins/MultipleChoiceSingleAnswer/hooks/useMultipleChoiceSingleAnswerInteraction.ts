@@ -1,10 +1,10 @@
 import { useCallback, useMemo, useState } from 'react';
 
 import {
+  type MultipleChoiceSingleAnswerContentSchemaTypes,
   MultipleChoiceSingleAnswerInteractionSchema,
   type MultipleChoiceSingleAnswerInteractionSchemaTypes,
 } from '@gonasi/schemas/plugins';
-import type { ChoiceSchemaTypes } from '@gonasi/schemas/plugins/schemas/choiceSchema';
 
 import { calculateMultipleChoiceSingleAnswerScore } from '../utils';
 
@@ -15,14 +15,19 @@ const getTimestamp = () => Date.now();
 
 export function useMultipleChoiceSingleAnswerInteraction(
   initial: MultipleChoiceSingleAnswerInteractionSchemaTypes | null,
-  choices: ChoiceSchemaTypes[],
+  content: MultipleChoiceSingleAnswerContentSchemaTypes,
 ) {
+  const choices = content.choices;
   const correctChoiceId = choices.find((choice) => choice.isCorrect)?.id ?? '';
 
-  // Fallback state used if `initial` is null
-  const defaultState: MultipleChoiceSingleAnswerInteractionSchemaTypes = schema.parse({
-    plugin_type: 'multiple_choice_single',
-  });
+  // Memoize defaultState to prevent creating new object on every render
+  const defaultState: MultipleChoiceSingleAnswerInteractionSchemaTypes = useMemo(
+    () =>
+      schema.parse({
+        plugin_type: 'multiple_choice_single',
+      }),
+    [],
+  );
 
   // Main interaction state validated by schema (parsed from initial or fallback)
   const [state, setState] = useState<MultipleChoiceSingleAnswerInteractionSchemaTypes>(() =>

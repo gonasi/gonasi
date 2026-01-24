@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 
 import {
+  type MultipleChoiceMultipleAnswersContentSchemaTypes,
   MultipleChoiceMultipleAnswersInteractionSchema,
   type MultipleChoiceMultipleAnswersInteractionSchemaTypes,
 } from '@gonasi/schemas/plugins';
@@ -16,18 +17,25 @@ const getTimestamp = () => Date.now();
  * Custom React hook to manage the state and logic for a "Multiple Choice Multiple Answers" quiz interaction.
  *
  * @param initial - The initial state for the interaction (can be null)
- * @param correctAnswerIds - Array of IDs representing the correct answer options
- * @param choiceCount - Total number of available choices
+ * @param content - The content object containing choices and other quiz data
  */
 export function useMultipleChoiceMultipleAnswersInteraction(
   initial: MultipleChoiceMultipleAnswersInteractionSchemaTypes | null,
-  correctAnswerIds: string[],
-  choiceCount: number,
+  content: MultipleChoiceMultipleAnswersContentSchemaTypes,
 ) {
-  // Fallback state used if `initial` is null
-  const defaultState: MultipleChoiceMultipleAnswersInteractionSchemaTypes = schema.parse({
-    plugin_type: 'multiple_choice_multiple',
-  });
+  // Extract correct answer IDs and choice count from content
+  const correctAnswerIds = content.choices
+    .filter((choice) => choice.isCorrect)
+    .map((choice) => choice.id);
+  const choiceCount = content.choices.length;
+  // Memoize defaultState to prevent creating new object on every render
+  const defaultState: MultipleChoiceMultipleAnswersInteractionSchemaTypes = useMemo(
+    () =>
+      schema.parse({
+        plugin_type: 'multiple_choice_multiple',
+      }),
+    [],
+  );
 
   // Main interaction state validated by schema (parsed from initial or fallback)
   const [state, setState] = useState<MultipleChoiceMultipleAnswersInteractionSchemaTypes>(() =>

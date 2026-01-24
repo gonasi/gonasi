@@ -45,13 +45,14 @@ export function GoRadioGroupField({
           <Label htmlFor={id} error={hasError} {...labelProps} />
           <RadioGroup
             id={id}
+            value={field.value || ''}
+            onValueChange={field.onChange}
+            onBlur={field.onBlur}
+            name={field.name}
+            ref={field.ref}
             aria-invalid={hasError}
             aria-describedby={description ? descriptionId : undefined}
-            onValueChange={(value) => {
-              field.onChange(value);
-            }}
             error={hasError}
-            {...field}
           >
             {options.map((option) => (
               <div

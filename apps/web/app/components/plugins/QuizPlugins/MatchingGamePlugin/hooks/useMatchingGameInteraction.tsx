@@ -1,9 +1,9 @@
 import { useCallback, useMemo, useState } from 'react';
 
 import {
+  type MatchingGameContentSchemaTypes,
   MatchingGameInteractionSchema,
   type MatchingGameInteractionSchemaTypes,
-  type MatchingPairSchemaTypes,
 } from '@gonasi/schemas/plugins';
 
 import { calculateMatchingGameScore } from '../utils';
@@ -14,11 +14,17 @@ const getTimestamp = () => Date.now();
 
 export function useMatchingGameInteraction(
   initial: MatchingGameInteractionSchemaTypes | null,
-  pairs: MatchingPairSchemaTypes[],
+  content: MatchingGameContentSchemaTypes,
 ) {
-  const defaultState: MatchingGameInteractionSchemaTypes = schema.parse({
-    plugin_type: 'matching_game',
-  });
+  const pairs = content.pairs;
+  // Memoize defaultState to prevent creating new object on every render
+  const defaultState: MatchingGameInteractionSchemaTypes = useMemo(
+    () =>
+      schema.parse({
+        plugin_type: 'matching_game',
+      }),
+    [],
+  );
 
   const [state, setState] = useState<MatchingGameInteractionSchemaTypes>(() =>
     schema.parse(initial ?? { plugin_type: 'matching_game' }),

@@ -107,15 +107,21 @@ export function useViewPluginCore(args: ViewPluginCoreArgs | null): ViewPluginCo
     fetcher.submit(formData, { method: 'post' });
   }, [args, earnedScore, attemptCount, payload?.interaction_data, fetcher]);
 
-  if (!args) {
-    return {
+  // Memoize empty handlers for null args to prevent infinite re-renders
+  const emptyHandlers = useMemo(
+    () => ({
       loading: false,
       payload: null,
       handleContinue: () => {},
       updateInteractionData: () => {},
       updateEarnedScore: () => {},
       updateAttemptsCount: () => {},
-    };
+    }),
+    [],
+  );
+
+  if (!args) {
+    return emptyHandlers;
   }
 
   return {

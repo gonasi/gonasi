@@ -273,7 +273,14 @@ function ImageFocusQuizModalContent({
       }
     }
     return undefined;
-  }, [playbackPhase, isSoundEnabled, userPlayAudio, currentRegion?.audioId, audioFetcher.data, cleanupAudio]);
+  }, [
+    playbackPhase,
+    isSoundEnabled,
+    userPlayAudio,
+    currentRegion?.audioId,
+    audioFetcher.data,
+    cleanupAudio,
+  ]);
 
   // Cleanup all timers and resources on unmount
   useEffect(() => {
@@ -357,7 +364,14 @@ function ImageFocusQuizModalContent({
       setPlaybackPhase(PlaybackPhase.REGION_FOCUSED);
       nextRegionTimeoutRef.current = null;
     }, betweenRegionsDuration * 1000);
-  }, [isFirstRegion, totalRegions, nextRegion, previousRegion, betweenRegionsDuration, cleanupAudio]);
+  }, [
+    isFirstRegion,
+    totalRegions,
+    nextRegion,
+    previousRegion,
+    betweenRegionsDuration,
+    cleanupAudio,
+  ]);
 
   // Auto-advance to next region after answer is revealed
   useEffect(() => {
@@ -672,7 +686,8 @@ function ImageFocusQuizModalContent({
                 width: `${
                   memoizedCurrentRegion
                     ? (
-                        (timeRemaining / (memoizedCurrentRegion.revealDelay ?? defaultRevealDelay)) *
+                        (timeRemaining /
+                          (memoizedCurrentRegion.revealDelay ?? defaultRevealDelay)) *
                         100
                       ).toFixed(2)
                     : '0'
