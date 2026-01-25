@@ -37,7 +37,7 @@ const CohortEndDateSchema = z
   .optional()
   .nullable();
 
-const CohortMaxEnrollmentSchema = z
+const CohortMaxEnrollmentSchema = z.coerce
   .number({
     invalid_type_error: 'Max enrollment must be a number',
   })
@@ -46,7 +46,7 @@ const CohortMaxEnrollmentSchema = z
   .optional()
   .nullable();
 
-const CohortIsActiveSchema = z.boolean().default(true);
+const CohortIsActiveSchema = z.boolean();
 
 // =====================================================================================
 // Base Cohort Object (merge-safe)
@@ -61,26 +61,32 @@ const CohortBaseObjectSchema = z.object({
   isActive: CohortIsActiveSchema,
 });
 
-type CohortBase = z.infer<typeof CohortBaseObjectSchema>;
-
-// =====================================================================================
-// Date range refinement (TS-safe)
-// =====================================================================================
-
-const refineCohortDateRange = (data: CohortBase) => {
-  if (data.startDate && data.endDate) {
-    return new Date(data.startDate) < new Date(data.endDate);
-  }
-  return true;
-};
-
 // =====================================================================================
 // New Cohort Schema
 // =====================================================================================
 
-export const NewCohortSchema = CohortBaseObjectSchema.refine(refineCohortDateRange, {
-  message: 'Start date must be before end date',
-  path: ['endDate'],
+export const NewCohortSchema = CohortBaseObjectSchema.superRefine((data, ctx) => {
+  if (data.startDate && !data.endDate) {
+    ctx.addIssue({
+      code: 'custom',
+      message: 'End date is required when start date is selected',
+      path: ['endDate'],
+    });
+  }
+  if (data.endDate && !data.startDate) {
+    ctx.addIssue({
+      code: 'custom',
+      message: 'Start date is required when end date is selected',
+      path: ['startDate'],
+    });
+  }
+  if (data.startDate && data.endDate && new Date(data.startDate) >= new Date(data.endDate)) {
+    ctx.addIssue({
+      code: 'custom',
+      message: 'Start date must be before end date',
+      path: ['endDate'],
+    });
+  }
 });
 
 export type NewCohortSchemaTypes = z.infer<typeof NewCohortSchema>;
@@ -90,9 +96,28 @@ export const SubmitNewCohortSchema = CohortBaseObjectSchema.merge(
     organizationId: z.string().uuid(),
     publishedCourseId: z.string().uuid(),
   }),
-).refine(refineCohortDateRange, {
-  message: 'Start date must be before end date',
-  path: ['endDate'],
+).superRefine((data, ctx) => {
+  if (data.startDate && !data.endDate) {
+    ctx.addIssue({
+      code: 'custom',
+      message: 'End date is required when start date is selected',
+      path: ['endDate'],
+    });
+  }
+  if (data.endDate && !data.startDate) {
+    ctx.addIssue({
+      code: 'custom',
+      message: 'Start date is required when end date is selected',
+      path: ['startDate'],
+    });
+  }
+  if (data.startDate && data.endDate && new Date(data.startDate) >= new Date(data.endDate)) {
+    ctx.addIssue({
+      code: 'custom',
+      message: 'Start date must be before end date',
+      path: ['endDate'],
+    });
+  }
 });
 
 export type NewCohortSubmitValues = z.infer<typeof SubmitNewCohortSchema>;
@@ -101,9 +126,28 @@ export type NewCohortSubmitValues = z.infer<typeof SubmitNewCohortSchema>;
 // Edit Cohort Schema
 // =====================================================================================
 
-export const EditCohortSchema = CohortBaseObjectSchema.refine(refineCohortDateRange, {
-  message: 'Start date must be before end date',
-  path: ['endDate'],
+export const EditCohortSchema = CohortBaseObjectSchema.superRefine((data, ctx) => {
+  if (data.startDate && !data.endDate) {
+    ctx.addIssue({
+      code: 'custom',
+      message: 'End date is required when start date is selected',
+      path: ['endDate'],
+    });
+  }
+  if (data.endDate && !data.startDate) {
+    ctx.addIssue({
+      code: 'custom',
+      message: 'Start date is required when end date is selected',
+      path: ['startDate'],
+    });
+  }
+  if (data.startDate && data.endDate && new Date(data.startDate) >= new Date(data.endDate)) {
+    ctx.addIssue({
+      code: 'custom',
+      message: 'Start date must be before end date',
+      path: ['endDate'],
+    });
+  }
 });
 
 export type EditCohortSchemaTypes = z.infer<typeof EditCohortSchema>;
@@ -112,9 +156,28 @@ export const SubmitEditCohortSchema = CohortBaseObjectSchema.merge(
   z.object({
     cohortId: z.string().uuid(),
   }),
-).refine(refineCohortDateRange, {
-  message: 'Start date must be before end date',
-  path: ['endDate'],
+).superRefine((data, ctx) => {
+  if (data.startDate && !data.endDate) {
+    ctx.addIssue({
+      code: 'custom',
+      message: 'End date is required when start date is selected',
+      path: ['endDate'],
+    });
+  }
+  if (data.endDate && !data.startDate) {
+    ctx.addIssue({
+      code: 'custom',
+      message: 'Start date is required when end date is selected',
+      path: ['startDate'],
+    });
+  }
+  if (data.startDate && data.endDate && new Date(data.startDate) >= new Date(data.endDate)) {
+    ctx.addIssue({
+      code: 'custom',
+      message: 'Start date must be before end date',
+      path: ['endDate'],
+    });
+  }
 });
 
 export type EditCohortSubmitValues = z.infer<typeof SubmitEditCohortSchema>;

@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router';
-import { ImageOff, MailPlus, Users, UsersRound } from 'lucide-react';
+import { ImageOff, Layers, MailPlus, Users } from 'lucide-react';
 import { redirectWithError } from 'remix-toast';
 
 import { fetchCourseTitleAndThumbnailById } from '@gonasi/database/courses';
@@ -61,7 +61,7 @@ export default function LearnersIndex({ params, loaderData }: Route.ComponentPro
       {
         to: `${basePath}/cohorts`,
         name: 'Cohorts',
-        icon: UsersRound,
+        icon: Layers,
       },
       {
         to: `${basePath}/invites`,
@@ -84,6 +84,7 @@ export default function LearnersIndex({ params, loaderData }: Route.ComponentPro
         <Modal.Header
           closeRoute={closeRoute}
           title={loaderData.name}
+          className='container mx-auto px-4 md:px-0'
           leadingIcon={
             loaderData.signedUrl ? (
               <img
@@ -98,12 +99,12 @@ export default function LearnersIndex({ params, loaderData }: Route.ComponentPro
             )
           }
         />
-        <Modal.Body className='p-0'>
+        <Modal.Body className='container mx-auto px-4 md:px-0'>
           <div className='flex flex-col'>
-            <div className='bg-background/95 sticky top-0 z-20 p-4'>
+            <div className='bg-background/95 sticky top-0 z-20'>
               <GoTabNav tabs={tabs} />
             </div>
-            <div className='p-4'>
+            <div className='py-4'>
               <Outlet />
             </div>
           </div>

@@ -13,16 +13,14 @@ import type { Route } from './+types/assign-users-to-cohort';
 
 import { Button } from '~/components/ui/button';
 import { Modal } from '~/components/ui/modal';
-import { createClient } from '~/lib/supabase/supabase.server';
 import { checkHoneypot } from '~/utils/honeypot.server';
 import { useIsPending } from '~/utils/misc';
 
 const resolver = zodResolver(AssignUsersToCohortSchema);
 
-export async function loader({ params, request }: Route.LoaderArgs) {
-  const { supabase } = createClient(request);
-
+export async function loader({ params }: Route.LoaderArgs) {
   // TODO: Fetch cohort data
+  // const { supabase } = createClient(request);
   // const cohort = await fetchCohortById(supabase, params.cohortId);
 
   // TODO: Fetch available users (enrollments without cohort or from different cohorts)
@@ -45,18 +43,17 @@ export async function action({ params, request }: Route.ActionArgs) {
   const formData = await request.formData();
   await checkHoneypot(formData);
 
-  const { supabase } = createClient(request);
+  // TODO: Implement assignUserToCohort function
+  // const { supabase } = createClient(request);
 
   const {
     errors,
-    data,
     receivedValues: defaultValues,
   } = await getValidatedFormData<AssignUsersToCohortSchemaTypes>(formData, resolver);
 
   if (errors) return { errors, defaultValues };
 
-  // TODO: Implement assignUserToCohort function
-  // Loop through selected enrollment IDs and assign them to the cohort
+  // TODO: Loop through selected enrollment IDs and assign them to the cohort
   // const results = await Promise.all(
   //   data.enrollmentIds.map(id => assignUserToCohort(supabase, id, params.cohortId))
   // );
@@ -73,7 +70,7 @@ export async function action({ params, request }: Route.ActionArgs) {
 }
 
 export default function AssignUsersToCohort({ loaderData, params }: Route.ComponentProps) {
-  const { cohort, availableUsers } = loaderData;
+  const { cohort } = loaderData;
   const navigate = useNavigate();
   const isPending = useIsPending();
 
@@ -106,7 +103,7 @@ export default function AssignUsersToCohort({ loaderData, params }: Route.Compon
               </div>
 
               <Modal.Footer>
-                <Button type='button' variant='outline' onClick={() => navigate(closeRoute)}>
+                <Button type='button' variant='secondary' onClick={() => navigate(closeRoute)}>
                   Cancel
                 </Button>
                 <Button type='submit' disabled={isPending}>

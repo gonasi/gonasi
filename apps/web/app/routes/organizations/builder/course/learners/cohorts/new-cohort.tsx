@@ -1,15 +1,17 @@
-import { Form, useNavigate } from 'react-router';
+import { Form } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Save } from 'lucide-react';
 import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
 import { dataWithError, redirectWithSuccess } from 'remix-toast';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
 
 import { createCohort } from '@gonasi/database/cohorts';
-import { type NewCohortSchemaTypes, SubmitNewCohortSchema } from '@gonasi/schemas/cohorts';
+import { NewCohortSchema, type NewCohortSchemaTypes } from '@gonasi/schemas/cohorts';
 
 import type { Route } from './+types/new-cohort';
 
-import { Button } from '~/components/ui/button';
+import { Button, NavLinkButton } from '~/components/ui/button';
+import { FormDescription } from '~/components/ui/forms';
 import {
   GoCalendar26,
   GoInputField,
@@ -21,7 +23,7 @@ import { createClient } from '~/lib/supabase/supabase.server';
 import { checkHoneypot } from '~/utils/honeypot.server';
 import { useIsPending } from '~/utils/misc';
 
-const resolver = zodResolver(SubmitNewCohortSchema);
+const formResolver = zodResolver(NewCohortSchema);
 
 export async function action({ params, request }: Route.ActionArgs) {
   const formData = await request.formData();
@@ -33,13 +35,13 @@ export async function action({ params, request }: Route.ActionArgs) {
     errors,
     data,
     receivedValues: defaultValues,
-  } = await getValidatedFormData<NewCohortSchemaTypes>(formData, resolver);
+  } = await getValidatedFormData<NewCohortSchemaTypes>(formData, formResolver);
 
   if (errors) return { errors, defaultValues };
 
   const result = await createCohort(supabase, {
-    organizationId: data.organizationId,
-    publishedCourseId: data.publishedCourseId,
+    organizationId: params.organizationId,
+    publishedCourseId: params.courseId,
     name: data.name,
     description: data.description,
     startDate: data.startDate,
@@ -56,20 +58,19 @@ export async function action({ params, request }: Route.ActionArgs) {
 }
 
 export default function NewCohort({ params }: Route.ComponentProps) {
-  const navigate = useNavigate();
   const isPending = useIsPending();
 
   const closeRoute = `/${params.organizationId}/builder/${params.courseId}/learners/cohorts`;
 
   const methods = useRemixForm<NewCohortSchemaTypes>({
     mode: 'all',
-    resolver,
+    resolver: formResolver,
     defaultValues: {
       name: '',
-      description: null,
-      startDate: null,
-      endDate: null,
-      maxEnrollment: null,
+      description: undefined,
+      startDate: undefined,
+      endDate: undefined,
+      maxEnrollment: undefined,
       isActive: true,
     },
   });
@@ -86,6 +87,7 @@ export default function NewCohort({ params }: Route.ComponentProps) {
               <div className='space-y-4'>
                 <GoInputField
                   name='name'
+                  description='Give your cohort a clear, descriptive name.'
                   labelProps={{ children: 'Cohort Name' }}
                   inputProps={{
                     placeholder: 'e.g., Fall 2024, Beginners Group A',
@@ -95,6 +97,7 @@ export default function NewCohort({ params }: Route.ComponentProps) {
 
                 <GoTextAreaField
                   name='description'
+                  description='Optional: Add a short description of the cohort’s purpose or focus.'
                   labelProps={{ children: 'Description (Optional)' }}
                   textareaProps={{
                     placeholder: 'Add a brief description of this cohort',
@@ -106,39 +109,54 @@ export default function NewCohort({ params }: Route.ComponentProps) {
                   <GoCalendar26
                     name='startDate'
                     labelProps={{ children: 'Start Date (Optional)' }}
+                    showClearButton
                   />
-
-                  <GoCalendar26 name='endDate' labelProps={{ children: 'End Date (Optional)' }} />
+                  <GoCalendar26
+                    name='endDate'
+                    labelProps={{ children: 'End Date (Optional)' }}
+                    showClearButton
+                  />
+                </div>
+                <div className='-mt-8'>
+                  <FormDescription>
+                    Start and end dates are informational only. Learner access depends on the
+                    enrollment timeline defined in your pricing plan.
+                  </FormDescription>
                 </div>
 
                 <GoInputField
                   name='maxEnrollment'
-                  // type='number'
-                  labelProps={{ children: 'Max Enrollment (Optional)' }}
+                  labelProps={{ children: 'Maximum Enrollment (Optional)' }}
                   inputProps={{
                     placeholder: 'Leave empty for unlimited',
                     min: 1,
+                    type: 'number',
                   }}
+                  description='Set a recommended maximum number of learners. Exceeding this limit is allowed, but you will receive a warning.'
                 />
 
                 <GoSwitchField
                   name='isActive'
                   labelProps={{ children: 'Active' }}
-                  description='Cohort is active'
+                  description='Toggle to make this cohort active or inactive.'
                 />
-
-                {/* Hidden fields for organizationId and publishedCourseId */}
-                <input type='hidden' name='organizationId' value={params.organizationId} />
-                <input type='hidden' name='publishedCourseId' value={params.courseId} />
               </div>
 
               <Modal.Footer>
-                <Button type='button' variant='secondary' onClick={() => navigate(closeRoute)}>
-                  Cancel
-                </Button>
-                <Button type='submit' disabled={isPending}>
-                  {isPending ? 'Creating...' : 'Create Cohort'}
-                </Button>
+                <div className='flex items-center justify-end space-x-4'>
+                  <div>
+                    <NavLinkButton variant='ghost' to={closeRoute}>
+                      Cancel
+                    </NavLinkButton>
+                  </div>
+                  <Button
+                    type='submit'
+                    disabled={isPending || !methods.formState.isDirty}
+                    leftIcon={<Save />}
+                  >
+                    {isPending ? 'Creating...' : 'Create Cohort'}
+                  </Button>
+                </div>
               </Modal.Footer>
             </Form>
           </RemixFormProvider>

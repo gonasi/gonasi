@@ -37,32 +37,30 @@ const Content = ({ children, title = '', size = 'md', className }: ContentProps)
         )}
       />
       <div
-        className={cn('fixed inset-0 z-50 flex h-screen items-center justify-center px-4', {
+        className={cn('fixed inset-0 z-50 flex items-center justify-center px-4', {
           'px-0': size === 'full',
         })}
       >
         <Dialog.Content
           onPointerDownOutside={(e) => e.preventDefault()}
           className={cn(
-            'border-card bg-background font-mont max-h-screen w-full overflow-hidden overflow-y-auto rounded-lg border shadow-sm duration-200',
+            'border-card bg-background font-mont flex max-h-screen w-full flex-col overflow-hidden rounded-lg border shadow-sm duration-200',
             sizeClasses[size],
             'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
-            'max-h-[90%]',
             className,
           )}
           aria-describedby={undefined}
         >
           {/* Screen-reader accessible title */}
-          <div
-            className={cn({
-              'container mx-auto': size === 'full',
-            })}
-          >
-            <Dialog.Title asChild>
-              <h1>{title}</h1>
-            </Dialog.Title>
-            {children}
+          <div className={cn({ 'container mx-auto': size === 'full' })}>
+            {title && (
+              <Dialog.Title asChild>
+                <h1 className='mb-2 text-xl font-semibold'>{title}</h1>
+              </Dialog.Title>
+            )}
           </div>
+
+          {children}
         </Dialog.Content>
       </div>
     </Dialog.Portal>
@@ -94,7 +92,7 @@ const Header = ({
         {leadingIcon ?? null}
         {title ? (
           <div className='flex w-full items-center justify-between'>
-            <h2 className='mt-1 line-clamp-1 text-lg font-semibold text-ellipsis'>{title}</h2>
+            <h2 className='mt-1 line-clamp-1 text-lg font-semibold'>{title}</h2>
             {subTitle ? (
               <Badge variant='outline' className='font-secondary mr-4 hidden text-sm md:flex'>
                 {subTitle}
@@ -109,7 +107,7 @@ const Header = ({
       </div>
 
       <div className='flex items-center space-x-2'>
-        {settingsPopover ? settingsPopover : null}
+        {settingsPopover}
         {closeRoute ? (
           <CloseIconNavLink to={closeRoute} />
         ) : hasClose ? (
@@ -123,15 +121,11 @@ const Header = ({
 };
 
 const Body = ({ children, className }: { children: ReactNode; className?: string }) => {
-  return <div className={cn('px-4 pb-4', className)}>{children}</div>;
+  return <div className={cn('flex-1 overflow-auto px-4 pb-4', className)}>{children}</div>;
 };
 
 const Footer = ({ children }: { children: ReactNode }) => {
-  return (
-    <div className='border-card bg-background/95 fixed bottom-0 left-0 z-10 max-h-fit w-full border p-4 shadow-lg'>
-      {children}
-    </div>
-  );
+  return <div className='border-card bg-background/95 flex-shrink-0 border-t pt-4'>{children}</div>;
 };
 
 Modal.Trigger = Dialog.Trigger;

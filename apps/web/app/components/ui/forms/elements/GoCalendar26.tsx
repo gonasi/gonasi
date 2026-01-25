@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Controller, get } from 'react-hook-form';
-import { ChevronDownIcon } from 'lucide-react';
+import { ChevronDownIcon, X } from 'lucide-react';
 import { useRemixFormContext } from 'remix-hook-form';
 
-import { Button } from '../../button';
+import { Button, IconTooltipButton } from '../../button';
 import { Calendar } from '../../calendar';
 import { Input } from '../../input';
 import { Label, type LabelProps } from '../../label';
@@ -18,6 +18,7 @@ interface GoCalendar26Props {
   description?: string;
   className?: string;
   disabled?: boolean;
+  showClearButton?: boolean;
 }
 
 // Helper function to combine date and time into UTC timestamp
@@ -61,6 +62,7 @@ export function GoCalendar26({
   description,
   className,
   disabled,
+  showClearButton = false,
 }: GoCalendar26Props) {
   const {
     control,
@@ -99,42 +101,56 @@ export function GoCalendar26({
             <div className='flex space-x-4'>
               <div className='flex-1'>
                 <Label htmlFor={name} error={hasError} {...labelProps} />
-                <Popover open={openFrom} onOpenChange={setOpenFrom}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      id={field.name}
-                      type='button'
+                <div className='relative'>
+                  <Popover open={openFrom} onOpenChange={setOpenFrom}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        id={field.name}
+                        type='button'
+                        disabled={disabled}
+                        className={cn(
+                          'border-input font-secondary w-full justify-between border bg-transparent font-normal',
+                          'text-foreground',
+                          hasError && 'border-danger',
+                          disabled && 'cursor-not-allowed opacity-50',
+                        )}
+                        rightIcon={<ChevronDownIcon />}
+                        rightIconAtEdge
+                        childrenAlign='left'
+                      >
+                        {currentDate
+                          ? currentDate.toLocaleDateString('en-US', {
+                              day: '2-digit',
+                              month: 'short',
+                              year: 'numeric',
+                            })
+                          : 'Select date'}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className='w-auto overflow-hidden p-0' align='start'>
+                      <Calendar
+                        mode='single'
+                        selected={currentDate}
+                        captionLayout='dropdown'
+                        className='font-secondary'
+                        onSelect={handleDateChange}
+                        disabled={disabled}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  {showClearButton && currentDate && (
+                    <IconTooltipButton
                       disabled={disabled}
-                      className={cn(
-                        'border-input font-secondary w-full justify-between border bg-transparent font-normal',
-                        'text-foreground',
-                        hasError && 'border-danger',
-                        disabled && 'cursor-not-allowed opacity-50',
-                      )}
-                      rightIcon={<ChevronDownIcon />}
-                      rightIconAtEdge
-                      childrenAlign='left'
-                    >
-                      {currentDate
-                        ? currentDate.toLocaleDateString('en-US', {
-                            day: '2-digit',
-                            month: 'short',
-                            year: 'numeric',
-                          })
-                        : 'Select date'}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className='w-auto overflow-hidden p-0' align='start'>
-                    <Calendar
-                      mode='single'
-                      selected={currentDate}
-                      captionLayout='dropdown'
-                      className='font-secondary'
-                      onSelect={handleDateChange}
-                      disabled={disabled}
+                      aria-label='Clear date'
+                      className='absolute -top-2 -right-2 rounded-full px-0.5 py-0.5 disabled:cursor-not-allowed disabled:opacity-50'
+                      onClick={() => field.onChange(null)}
+                      title='Clear date'
+                      icon={X}
+                      size='fit'
+                      variant='danger'
                     />
-                  </PopoverContent>
-                </Popover>
+                  )}
+                </div>
               </div>
               <div>
                 <Label required>Time</Label>

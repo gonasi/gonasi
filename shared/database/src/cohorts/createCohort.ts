@@ -52,6 +52,31 @@ export async function createCohort(
   }
 
   try {
+    // 1️⃣ Check if cohort name already exists (scoped)
+    const { data: existingCohort, error: existsError } = await supabase
+      .from('cohorts')
+      .select('id')
+      .eq('organization_id', input.organizationId)
+      .eq('published_course_id', input.publishedCourseId)
+      .ilike('name', input.name)
+      .maybeSingle();
+
+    if (existsError) {
+      console.error('[createCohort] Name check error:', existsError);
+      return {
+        success: false,
+        message: 'Unable to validate cohort name. Please try again.',
+      };
+    }
+
+    if (existingCohort) {
+      return {
+        success: false,
+        message: `A cohort named "${input.name}" already exists for this course.`,
+      };
+    }
+
+    // 2️⃣ Create cohort
     const cohortData: CohortInsert = {
       organization_id: input.organizationId,
       published_course_id: input.publishedCourseId,
@@ -65,14 +90,10 @@ export async function createCohort(
       updated_by: userId,
     };
 
-    const { data, error } = await supabase
-      .from('cohorts')
-      .insert(cohortData)
-      .select()
-      .single();
+    const { data, error } = await supabase.from('cohorts').insert(cohortData).select().single();
 
     if (error || !data) {
-      console.error('[createCohort] Error:', error);
+      console.error('[createCohort] Insert error:', error);
       return {
         success: false,
         message: error?.message || 'Failed to create cohort.',
