@@ -1,12 +1,12 @@
 import { Link, Outlet } from 'react-router';
 import {
+  BookUser,
   Calendar,
   Edit,
   MoreVertical,
   Plus,
   Trash2,
   Users,
-  Users2,
   UsersRound,
 } from 'lucide-react';
 
@@ -176,11 +176,11 @@ export default function CohortsIndex({ loaderData, params }: Route.ComponentProp
                     <div>
                       <NavLinkButton
                         to={`/${params.organizationId}/builder/${params.courseId}/learners/cohorts/${cohort.id}/assign-users`}
-                        leftIcon={<Users2 />}
+                        leftIcon={<BookUser />}
                         variant='secondary'
                         size='sm'
                       >
-                        Manage Users
+                        Manage Cohort
                       </NavLinkButton>
                     </div>
                   </div>
