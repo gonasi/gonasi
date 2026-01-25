@@ -681,6 +681,88 @@ export type Database = {
           },
         ]
       }
+      course_invites: {
+        Row: {
+          accepted_at: string | null
+          accepted_by: string | null
+          cohort_id: string | null
+          created_at: string
+          delivery_logs: Json
+          delivery_status: Database["public"]["Enums"]["invite_delivery_status"]
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string
+          last_sent_at: string
+          organization_id: string
+          published_course_id: string
+          resend_count: number
+          revoked_at: string | null
+          token: string
+          updated_at: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          cohort_id?: string | null
+          created_at?: string
+          delivery_logs?: Json
+          delivery_status?: Database["public"]["Enums"]["invite_delivery_status"]
+          email: string
+          expires_at: string
+          id?: string
+          invited_by: string
+          last_sent_at?: string
+          organization_id: string
+          published_course_id: string
+          resend_count?: number
+          revoked_at?: string | null
+          token: string
+          updated_at?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          cohort_id?: string | null
+          created_at?: string
+          delivery_logs?: Json
+          delivery_status?: Database["public"]["Enums"]["invite_delivery_status"]
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string
+          last_sent_at?: string
+          organization_id?: string
+          published_course_id?: string
+          resend_count?: number
+          revoked_at?: string | null
+          token?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_invites_cohort_id_fkey"
+            columns: ["cohort_id"]
+            isOneToOne: false
+            referencedRelation: "cohorts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_invites_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_invites_published_course_id_fkey"
+            columns: ["published_course_id"]
+            isOneToOne: false
+            referencedRelation: "published_courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       course_payments: {
         Row: {
           amount_paid: number
@@ -2844,6 +2926,14 @@ export type Database = {
         Returns: boolean
       }
       can_publish_free_course: { Args: { p_org: string }; Returns: boolean }
+      can_resend_course_invite: {
+        Args: { p_invite_id: string }
+        Returns: boolean
+      }
+      can_send_course_invite: {
+        Args: { p_org_id: string; p_published_course_id: string }
+        Returns: boolean
+      }
       can_switch_to_launch_tier: {
         Args: { p_org_id: string }
         Returns: boolean
