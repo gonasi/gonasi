@@ -286,6 +286,13 @@ schema_paths = [
   './schemas/cohorts/cohorts_triggers.sql',
   './schemas/cohorts/cohorts_rls.sql',
 
+  # course invites (must come after cohorts and enrollments)
+  './schemas/courseInvites/course_invites_schema_and_indexes.sql',
+  './schemas/courseInvites/guards/can_send_course_invite.sql',
+  './schemas/courseInvites/guards/can_resend_course_invite.sql',
+  './schemas/courseInvites/utils/revoke_invites_on_free_course_for_launch_tier.sql',
+  './schemas/courseInvites/course_invites_rls.sql',
+
   './schemas/publishedCourses/published_courses_rls.sql',
   './schemas/publishedCourses/published_course_structure_content_rls.sql',
   './schemas/publishedCourses/published_thumbnails_bucket_rls.sql',
