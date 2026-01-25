@@ -153,6 +153,20 @@ export default [
           route(
             'invites',
             'routes/organizations/builder/course/learners/invites/invites-index.tsx',
+            [
+              route(
+                'new-invite',
+                'routes/organizations/builder/course/learners/invites/new-invite.tsx',
+              ),
+              route(
+                'resend/:inviteId/:token',
+                'routes/organizations/builder/course/learners/invites/resend-invite.tsx',
+              ),
+              route(
+                'revoke/:inviteId/:token',
+                'routes/organizations/builder/course/learners/invites/revoke-invite.tsx',
+              ),
+            ],
           ),
         ]),
         route('overview', 'routes/organizations/builder/course/overview/overview-index.tsx', [
@@ -257,8 +271,12 @@ export default [
             'routes/organizations/builder/course/pricing/update-pricing-type-modal.tsx',
           ),
           route(
-            'manage-pricing-tier/:coursePricingId',
-            'routes/organizations/builder/course/pricing/manage-pricing-tier-modal.tsx',
+            'manage-pricing-tier/add',
+            'routes/organizations/builder/course/pricing/add-pricing-tier.tsx',
+          ),
+          route(
+            'manage-pricing-tier/:coursePricingId/edit',
+            'routes/organizations/builder/course/pricing/edit-pricing-tier.tsx',
           ),
           route(
             'manage-pricing-tier/:coursePricingId/delete',

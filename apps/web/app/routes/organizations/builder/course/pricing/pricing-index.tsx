@@ -234,7 +234,7 @@ export default function CoursePricing({ loaderData, params }: Route.ComponentPro
           {isPaid && canEdit ? (
             <NavLinkButton
               variant='secondary'
-              to={`/${params.organizationId}/builder/${params.courseId}/pricing/manage-pricing-tier/add-new-tier`}
+              to={`/${params.organizationId}/builder/${params.courseId}/pricing/manage-pricing-tier/add`}
               leftIcon={<Plus />}
               disabled={!isPaid || !availableFrequencies || availableFrequencies?.length === 0}
             >
@@ -323,9 +323,9 @@ export default function CoursePricing({ loaderData, params }: Route.ComponentPro
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align='end'>
-                      <DropdownMenuItem className='w-full'>
+                      <DropdownMenuItem asChild>
                         <NavLink
-                          to={`/${params.organizationId}/builder/${params.courseId}/pricing/manage-pricing-tier/${priceTier.id}`}
+                          to={`/${params.organizationId}/builder/${params.courseId}/pricing/manage-pricing-tier/${priceTier.id}/edit`}
                           className={cn('flex h-full w-full items-center space-x-4')}
                         >
                           <Edit className='mr-2 h-4 w-4' />
@@ -333,7 +333,7 @@ export default function CoursePricing({ loaderData, params }: Route.ComponentPro
                         </NavLink>
                       </DropdownMenuItem>
                       {isPaid ? (
-                        <DropdownMenuItem className='w-full'>
+                        <DropdownMenuItem asChild>
                           <NavLink
                             to={`/${params.organizationId}/builder/${params.courseId}/pricing/manage-pricing-tier/${priceTier.id}/delete`}
                             className={cn('flex w-full items-center space-x-4')}
@@ -351,7 +351,7 @@ export default function CoursePricing({ loaderData, params }: Route.ComponentPro
           ))}
         </Reorder.Group>
       </Table>
-      <Outlet context={{ isPaid, availableFrequencies }} />
+      <Outlet />
     </div>
   );
 }

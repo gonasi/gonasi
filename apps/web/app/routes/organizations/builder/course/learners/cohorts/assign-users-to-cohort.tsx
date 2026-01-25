@@ -46,10 +46,8 @@ export async function action({ params, request }: Route.ActionArgs) {
   // TODO: Implement assignUserToCohort function
   // const { supabase } = createClient(request);
 
-  const {
-    errors,
-    receivedValues: defaultValues,
-  } = await getValidatedFormData<AssignUsersToCohortSchemaTypes>(formData, resolver);
+  const { errors, receivedValues: defaultValues } =
+    await getValidatedFormData<AssignUsersToCohortSchemaTypes>(formData, resolver);
 
   if (errors) return { errors, defaultValues };
 
