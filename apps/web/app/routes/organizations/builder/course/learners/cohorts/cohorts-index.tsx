@@ -1,5 +1,14 @@
 import { Link, Outlet } from 'react-router';
-import { Calendar, Edit, MoreVertical, Plus, Trash2, Users, UsersRound } from 'lucide-react';
+import {
+  Calendar,
+  Edit,
+  MoreVertical,
+  Plus,
+  Trash2,
+  Users,
+  Users2,
+  UsersRound,
+} from 'lucide-react';
 
 import { fetchCohortsForCourse } from '@gonasi/database/cohorts';
 
@@ -38,7 +47,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 }
 
 function formatDate(dateString: string | null): string {
-  if (!dateString) return 'N/A';
+  if (!dateString) return '—';
   const date = new Date(dateString);
   return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
 }
@@ -101,11 +110,9 @@ export default function CohortsIndex({ loaderData, params }: Route.ComponentProp
                     <div className='flex-1'>
                       <CardTitle className='mb-1 text-base'>{cohort.name}</CardTitle>
 
-                      {cohort.description && (
-                        <CardDescription className='line-clamp-2 text-xs'>
-                          {cohort.description}
-                        </CardDescription>
-                      )}
+                      <CardDescription className='line-clamp-2 text-xs'>
+                        {cohort.description || 'No description provided'}
+                      </CardDescription>
                     </div>
 
                     <DropdownMenu>
@@ -148,29 +155,34 @@ export default function CohortsIndex({ loaderData, params }: Route.ComponentProp
 
                     <span className='font-medium'>
                       {cohort.current_enrollment_count}
-                      {cohort.max_enrollment ? ` / ${cohort.max_enrollment}` : ''}
+                      {cohort.max_enrollment ? ` / ${cohort.max_enrollment}` : ' (Unlimited)'}
                     </span>
                   </div>
 
-                  {(cohort.start_date || cohort.end_date) && (
-                    <div className='flex items-center justify-between text-sm'>
-                      <div className='flex items-center gap-1.5'>
-                        <Calendar className='text-muted-foreground size-4' />
-                        <span className='text-muted-foreground'>Duration:</span>
-                      </div>
-
-                      <span className='text-xs'>
-                        {formatDate(cohort.start_date)} - {formatDate(cohort.end_date)}
-                      </span>
+                  <div className='flex items-center justify-between text-sm'>
+                    <div className='flex items-center gap-1.5'>
+                      <Calendar className='text-muted-foreground size-4' />
+                      <span className='text-muted-foreground'>Duration:</span>
                     </div>
-                  )}
+
+                    <span className='text-xs'>
+                      {cohort.start_date || cohort.end_date
+                        ? `${formatDate(cohort.start_date)} - ${formatDate(cohort.end_date)}`
+                        : 'No dates set'}
+                    </span>
+                  </div>
 
                   <div className='flex items-center justify-end'>
-                    <NavLinkButton
-                      to={`/${params.organizationId}/builder/${params.courseId}/learners/cohorts/${cohort.id}/assign-users`}
-                    >
-                      Manage Users
-                    </NavLinkButton>
+                    <div>
+                      <NavLinkButton
+                        to={`/${params.organizationId}/builder/${params.courseId}/learners/cohorts/${cohort.id}/assign-users`}
+                        leftIcon={<Users2 />}
+                        variant='secondary'
+                        size='sm'
+                      >
+                        Manage Users
+                      </NavLinkButton>
+                    </div>
                   </div>
                 </CardContent>
               </Card>

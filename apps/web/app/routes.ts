@@ -144,7 +144,7 @@ export default [
                   'routes/organizations/builder/course/learners/cohorts/delete-cohort.tsx',
                 ),
                 route(
-                  'assign',
+                  'assign-users',
                   'routes/organizations/builder/course/learners/cohorts/assign-users-to-cohort.tsx',
                 ),
               ]),
