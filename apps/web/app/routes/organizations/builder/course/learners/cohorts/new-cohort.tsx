@@ -48,7 +48,7 @@ export async function action({ params, request }: Route.ActionArgs) {
     isActive: data.isActive,
   });
 
-  const redirectTo = `/${params.organizationId}/builder/${params.courseId}/published/learners/cohorts`;
+  const redirectTo = `/${params.organizationId}/builder/${params.courseId}/learners/cohorts`;
 
   return result.success
     ? redirectWithSuccess(redirectTo, result.message, { headers })
@@ -59,7 +59,7 @@ export default function NewCohort({ params }: Route.ComponentProps) {
   const navigate = useNavigate();
   const isPending = useIsPending();
 
-  const closeRoute = `/${params.organizationId}/builder/${params.courseId}/published/learners/cohorts`;
+  const closeRoute = `/${params.organizationId}/builder/${params.courseId}/learners/cohorts`;
 
   const methods = useRemixForm<NewCohortSchemaTypes>({
     mode: 'all',

@@ -116,7 +116,7 @@ export default function CourseOverview({ loaderData, params }: Route.ComponentPr
           <UserProgressTable
             usersProgress={usersProgress}
             courseEnrollments={publishedCourse.course_enrollments}
-            learnersRoute={`/${params.organizationId}/builder/${params.courseId}/published/learners`}
+            learnersRoute={`/${params.organizationId}/builder/${params.courseId}/learners`}
           />
 
           <PricingTiers pricing_tiers={publishedCourse.pricing_tiers} />

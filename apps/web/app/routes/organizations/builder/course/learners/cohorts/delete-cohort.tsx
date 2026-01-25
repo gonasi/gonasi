@@ -26,7 +26,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 
   // if (!canEdit) {
   //   return redirectWithError(
-  //     `/${params.organizationId}/builder/${params.courseId}/published/learners/cohorts`,
+  //     `/${params.organizationId}/builder/${params.courseId}/learners/cohorts`,
   //     "You don't have permission to delete this cohort.",
   //   );
   // }
@@ -36,7 +36,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 
   // if (!cohort) {
   //   return redirectWithError(
-  //     `/${params.organizationId}/builder/${params.courseId}/published/learners/cohorts`,
+  //     `/${params.organizationId}/builder/${params.courseId}/learners/cohorts`,
   //     'Cohort not found.',
   //   );
   // }
@@ -61,7 +61,7 @@ export async function action({ params, request }: Route.ActionArgs) {
   // TODO: Implement deleteCohort function
   // const result = await deleteCohort(supabase, data.cohortId);
 
-  const redirectTo = `/${params.organizationId}/builder/${params.courseId}/published/learners/cohorts`;
+  const redirectTo = `/${params.organizationId}/builder/${params.courseId}/learners/cohorts`;
 
   // return result.success
   //   ? redirectWithSuccess(redirectTo, result.message)
@@ -75,7 +75,7 @@ export default function DeleteCohort({ loaderData, params }: Route.ComponentProp
   const navigate = useNavigate();
   const isPending = useIsPending();
 
-  const closeRoute = `/${params.organizationId}/builder/${params.courseId}/published/learners/cohorts`;
+  const closeRoute = `/${params.organizationId}/builder/${params.courseId}/learners/cohorts`;
 
   const methods = useRemixForm<DeleteCohortSchemaTypes>({
     mode: 'all',

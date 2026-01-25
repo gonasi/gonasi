@@ -30,7 +30,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 
   // if (!cohort) {
   //   return redirectWithError(
-  //     `/${params.organizationId}/builder/${params.courseId}/published/learners/cohorts`,
+  //     `/${params.organizationId}/builder/${params.courseId}/learners/cohorts`,
   //     'Cohort not found.',
   //   );
   // }
@@ -61,7 +61,7 @@ export async function action({ params, request }: Route.ActionArgs) {
   //   data.enrollmentIds.map(id => assignUserToCohort(supabase, id, params.cohortId))
   // );
 
-  const redirectTo = `/${params.organizationId}/builder/${params.courseId}/published/learners/cohorts`;
+  const redirectTo = `/${params.organizationId}/builder/${params.courseId}/learners/cohorts`;
 
   // const successCount = results.filter(r => r.success).length;
   // return redirectWithSuccess(
@@ -77,7 +77,7 @@ export default function AssignUsersToCohort({ loaderData, params }: Route.Compon
   const navigate = useNavigate();
   const isPending = useIsPending();
 
-  const closeRoute = `/${params.organizationId}/builder/${params.courseId}/published/learners/cohorts`;
+  const closeRoute = `/${params.organizationId}/builder/${params.courseId}/learners/cohorts`;
 
   const methods = useRemixForm<AssignUsersToCohortSchemaTypes>({
     mode: 'all',

@@ -7,7 +7,7 @@ import { CloseIconNavLink } from '../button';
 
 import { cn } from '~/lib/utils';
 
-export type ModalSize = 'sm' | 'md' | 'lg' | 'full';
+export type ModalSize = 'sm' | 'md' | 'lg' | 'xl' | 'full';
 
 interface ContentProps {
   children: ReactNode;
@@ -25,6 +25,7 @@ const Content = ({ children, title = '', size = 'md', className }: ContentProps)
     sm: 'max-w-md',
     md: 'max-w-xl',
     lg: 'max-w-3xl',
+    xl: 'max-w-[80%]',
     full: 'min-w-full min-h-full rounded-none',
   };
 
