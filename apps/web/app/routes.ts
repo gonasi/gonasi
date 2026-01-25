@@ -126,47 +126,35 @@ export default [
         route(
           'published',
           'routes/organizations/builder/course/published/published-overview-index.tsx',
-          [
-            route(
-              'learners',
-              'routes/organizations/builder/course/published/learners/learners-index.tsx',
-              [
-                route(
-                  'all',
-                  'routes/organizations/builder/course/published/learners/all/all-index.tsx',
-                ),
-                route(
-                  'cohorts',
-                  'routes/organizations/builder/course/published/learners/cohorts/cohorts-index.tsx',
-                  [
-                    route(
-                      'new',
-                      'routes/organizations/builder/course/published/learners/cohorts/new-cohort.tsx',
-                    ),
-                    ...prefix(':cohortId', [
-                      route(
-                        'edit',
-                        'routes/organizations/builder/course/published/learners/cohorts/edit-cohort.tsx',
-                      ),
-                      route(
-                        'delete',
-                        'routes/organizations/builder/course/published/learners/cohorts/delete-cohort.tsx',
-                      ),
-                      route(
-                        'assign',
-                        'routes/organizations/builder/course/published/learners/cohorts/assign-users-to-cohort.tsx',
-                      ),
-                    ]),
-                  ],
-                ),
-                route(
-                  'invites',
-                  'routes/organizations/builder/course/published/learners/invites/invites-index.tsx',
-                ),
-              ],
-            ),
-          ],
         ),
+        route('learners', 'routes/organizations/builder/course/learners/learners-index.tsx', [
+          route('all', 'routes/organizations/builder/course/learners/all/all-index.tsx'),
+          route(
+            'cohorts',
+            'routes/organizations/builder/course/learners/cohorts/cohorts-index.tsx',
+            [
+              route('new', 'routes/organizations/builder/course/learners/cohorts/new-cohort.tsx'),
+              ...prefix(':cohortId', [
+                route(
+                  'edit',
+                  'routes/organizations/builder/course/learners/cohorts/edit-cohort.tsx',
+                ),
+                route(
+                  'delete',
+                  'routes/organizations/builder/course/learners/cohorts/delete-cohort.tsx',
+                ),
+                route(
+                  'assign-users',
+                  'routes/organizations/builder/course/learners/cohorts/assign-users-to-cohort.tsx',
+                ),
+              ]),
+            ],
+          ),
+          route(
+            'invites',
+            'routes/organizations/builder/course/learners/invites/invites-index.tsx',
+          ),
+        ]),
         route('overview', 'routes/organizations/builder/course/overview/overview-index.tsx', [
           route(
             'edit-thumbnail',

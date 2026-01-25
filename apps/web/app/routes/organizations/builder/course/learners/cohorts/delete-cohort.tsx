@@ -1,9 +1,10 @@
 import { Form, useNavigate } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
-import { redirectWithSuccess } from 'remix-toast';
+import { dataWithError, redirectWithError, redirectWithSuccess } from 'remix-toast';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
 
+import { deleteCohort, fetchCohortById } from '@gonasi/database/cohorts';
 import { DeleteCohortSchema, type DeleteCohortSchemaTypes } from '@gonasi/schemas/cohorts';
 
 import type { Route } from './+types/delete-cohort';
@@ -17,38 +18,26 @@ import { useIsPending } from '~/utils/misc';
 const resolver = zodResolver(DeleteCohortSchema);
 
 export async function loader({ params, request }: Route.LoaderArgs) {
-  const { supabase } = createClient(request);
+  const { supabase, headers } = createClient(request);
 
-  // TODO: Check permissions
-  // const canEdit = await supabase.rpc('can_user_edit_course', {
-  //   arg_course_id: params.courseId,
-  // });
+  const cohort = await fetchCohortById(supabase, params.cohortId);
 
-  // if (!canEdit) {
-  //   return redirectWithError(
-  //     `/${params.organizationId}/builder/${params.courseId}/published/learners/cohorts`,
-  //     "You don't have permission to delete this cohort.",
-  //   );
-  // }
+  if (!cohort) {
+    return redirectWithError(
+      `/${params.organizationId}/builder/${params.courseId}/learners/cohorts`,
+      'Cohort not found.',
+      { headers },
+    );
+  }
 
-  // TODO: Fetch cohort data
-  // const cohort = await fetchCohortById(supabase, params.cohortId);
-
-  // if (!cohort) {
-  //   return redirectWithError(
-  //     `/${params.organizationId}/builder/${params.courseId}/published/learners/cohorts`,
-  //     'Cohort not found.',
-  //   );
-  // }
-
-  return { cohort: { id: params.cohortId, name: 'Sample Cohort' } };
+  return { cohort: { id: cohort.id, name: cohort.name } };
 }
 
 export async function action({ params, request }: Route.ActionArgs) {
   const formData = await request.formData();
   await checkHoneypot(formData);
 
-  const { supabase } = createClient(request);
+  const { supabase, headers } = createClient(request);
 
   const {
     errors,
@@ -58,16 +47,13 @@ export async function action({ params, request }: Route.ActionArgs) {
 
   if (errors) return { errors, defaultValues };
 
-  // TODO: Implement deleteCohort function
-  // const result = await deleteCohort(supabase, data.cohortId);
+  const result = await deleteCohort(supabase, data.cohortId);
 
-  const redirectTo = `/${params.organizationId}/builder/${params.courseId}/published/learners/cohorts`;
+  const redirectTo = `/${params.organizationId}/builder/${params.courseId}/learners/cohorts`;
 
-  // return result.success
-  //   ? redirectWithSuccess(redirectTo, result.message)
-  //   : dataWithError(null, result.message);
-
-  return redirectWithSuccess(redirectTo, 'Cohort deleted successfully!');
+  return result.success
+    ? redirectWithSuccess(redirectTo, result.message, { headers })
+    : dataWithError(null, result.message, { headers });
 }
 
 export default function DeleteCohort({ loaderData, params }: Route.ComponentProps) {
@@ -75,7 +61,7 @@ export default function DeleteCohort({ loaderData, params }: Route.ComponentProp
   const navigate = useNavigate();
   const isPending = useIsPending();
 
-  const closeRoute = `/${params.organizationId}/builder/${params.courseId}/published/learners/cohorts`;
+  const closeRoute = `/${params.organizationId}/builder/${params.courseId}/learners/cohorts`;
 
   const methods = useRemixForm<DeleteCohortSchemaTypes>({
     mode: 'all',
