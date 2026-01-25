@@ -1,3 +1,4 @@
+import { reactRouterDevTools } from 'react-router-devtools';
 import { reactRouter } from '@react-router/dev/vite';
 import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'vite';
@@ -7,7 +8,7 @@ export default defineConfig(({ mode }) => {
   const isProd = mode === 'production';
 
   return {
-    plugins: [tailwindcss(), reactRouter(), tsconfigPaths()],
+    plugins: [reactRouterDevTools(), tailwindcss(), reactRouter(), tsconfigPaths()],
 
     // Only use dev server config when NOT in production
     ...(isProd

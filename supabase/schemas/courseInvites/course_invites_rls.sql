@@ -81,16 +81,8 @@ with check (
       and p.email = course_invites.email
   )
 
-  -- Can't invite someone with a pending invite
-  and not exists (
-    select 1 from public.course_invites ci
-    where ci.published_course_id = course_invites.published_course_id
-      and ci.email = course_invites.email
-      and ci.accepted_at is null
-      and ci.revoked_at is null
-      and ci.expires_at > now()
-      and ci.id != course_invites.id  -- Allow self when updating
-  )
+  -- Note: Duplicate invite check is handled by unique index and application layer
+  -- to avoid infinite recursion in RLS policy
 );
 
 -- ===================================================

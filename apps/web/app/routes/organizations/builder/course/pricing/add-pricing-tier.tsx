@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Form, useOutletContext } from 'react-router';
+import { Form } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
@@ -17,8 +17,8 @@ import { dataWithError, redirectWithError, redirectWithSuccess } from 'remix-toa
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
 
 import {
-  addFrequencyOption,
-  fetchCoursePricingTierById,
+  fetchAvailablePaymentFrequencies,
+  fetchCoursePricing,
   type FrequencyOption,
   managePricingTier,
 } from '@gonasi/database/courses';
@@ -28,8 +28,7 @@ import {
   type CurrencyCodeEnumType,
 } from '@gonasi/schemas/coursePricing';
 
-import type { Route } from './+types/manage-pricing-tier-modal';
-import type { AvailableFrequenciesLoaderReturnType } from './pricing-index';
+import type { Route } from './+types/add-pricing-tier';
 
 import { BannerCard } from '~/components/cards';
 import { Badge } from '~/components/ui/badge';
@@ -52,29 +51,38 @@ const resolver = zodResolver(CoursePricingSchema);
 
 export function meta() {
   return [
-    { title: 'Manage Pricing Tier • Gonasi' },
+    { title: 'Add Pricing Tier • Gonasi' },
     {
       name: 'description',
       content:
-        'Configure and manage pricing tiers for your course on Gonasi. Set pricing details, access permissions, and enhance your monetization strategy effectively.',
+        'Create a new pricing tier for your course on Gonasi. Set pricing details, access permissions, and enhance your monetization strategy effectively.',
     },
   ];
 }
 
 export async function loader({ params, request }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
-  const { coursePricingId, courseId, organizationId } = params;
+  const { courseId, organizationId } = params;
 
   const redirectToPricingPage = (message: string) =>
     redirectWithError(`/${organizationId}/builder/${courseId}/pricing`, message);
 
-  const pricingTier = await fetchCoursePricingTierById({ supabase, coursePricingId });
-
-  if (!pricingTier && coursePricingId !== 'add-new-tier') {
-    return redirectToPricingPage('Pricing tier does not exist or you lack permissions');
+  if (!courseId) {
+    return redirectToPricingPage('Invalid course or pricing tier');
   }
 
-  return { pricingTier };
+  const [pricingData, availableFrequencies] = await Promise.all([
+    fetchCoursePricing({ supabase, courseId }),
+    fetchAvailablePaymentFrequencies({ supabase, courseId }),
+  ]);
+
+  const isPaid = Array.isArray(pricingData)
+    ? pricingData.some((item) => item.is_free === false)
+    : false;
+
+  const normalizedFrequencies = availableFrequencies ?? [];
+
+  return { isPaid, availableFrequencies: normalizedFrequencies };
 }
 
 export async function action({ params, request }: Route.ActionArgs) {
@@ -91,7 +99,7 @@ export async function action({ params, request }: Route.ActionArgs) {
     return { errors, defaultValues };
   }
 
-  const { supabase } = createClient(request);
+  const { supabase, headers } = createClient(request);
 
   const result = await managePricingTier({
     supabase,
@@ -102,6 +110,7 @@ export async function action({ params, request }: Route.ActionArgs) {
     ? redirectWithSuccess(
         `/${params.organizationId}/builder/${params.courseId}/pricing`,
         result.message,
+        { headers },
       )
     : dataWithError(null, result.message);
 }
@@ -130,17 +139,11 @@ const getSteps = (isPaid: boolean) =>
     },
   ] as const;
 
-export default function ManagePricingTierModal({ params, loaderData }: Route.ComponentProps) {
-  const { organizationId, courseId, coursePricingId } = params;
-  const { pricingTier } = loaderData;
+export default function AddPricingTier({ params, loaderData }: Route.ComponentProps) {
+  const { organizationId, courseId } = params;
+  const { isPaid, availableFrequencies } = loaderData;
 
-  const { isPaid, availableFrequencies } =
-    useOutletContext<{
-      isPaid: boolean;
-      availableFrequencies: AvailableFrequenciesLoaderReturnType;
-    }>() ?? {};
-
-  const steps = [...getSteps(isPaid)];
+  const steps = getSteps(isPaid);
 
   type StepId = (typeof steps)[number]['id'];
 
@@ -152,37 +155,18 @@ export default function ManagePricingTierModal({ params, loaderData }: Route.Com
     mode: 'all',
     resolver,
     defaultValues: {
-      pricingId: params.coursePricingId,
+      pricingId: 'add-new-tier',
       organizationId: params.organizationId,
       courseId: courseId ?? '',
-      paymentFrequency: pricingTier?.payment_frequency,
       isFree: !isPaid,
-      price: pricingTier?.price,
-      position: pricingTier?.position,
-      currencyCode: pricingTier?.currency_code as CurrencyCodeEnumType,
-      enablePromotionalPricing: !!pricingTier?.promotional_price,
-      promotionalPrice: pricingTier?.promotional_price,
-      promotionStartDate: pricingTier?.promotion_start_date
-        ? new Date(pricingTier.promotion_start_date)
-        : undefined,
-      promotionEndDate: pricingTier?.promotion_end_date
-        ? new Date(pricingTier.promotion_end_date)
-        : undefined,
-      tierName: pricingTier?.tier_name,
-      tierDescription: pricingTier?.tier_description,
-      isPopular: pricingTier?.is_popular,
-      isActive: pricingTier?.is_active,
-      isRecommended: pricingTier?.is_recommended,
+      currencyCode: 'KES' as CurrencyCodeEnumType,
+      isActive: true,
     },
   });
 
-  const normalizedFrequencies = availableFrequencies ?? [];
-  const frequencyOptions: FrequencyOption[] =
-    coursePricingId === 'add-new-tier'
-      ? normalizedFrequencies
-      : addFrequencyOption(pricingTier?.payment_frequency ?? 'monthly', normalizedFrequencies);
+  const frequencyOptions: FrequencyOption[] = availableFrequencies ?? [];
 
-  const { watch, trigger } = methods;
+  const { watch, trigger, setValue } = methods;
   const watchedValues = watch();
 
   const currentStepIndex = steps.findIndex((step) => step.id === currentStep);
@@ -237,6 +221,14 @@ export default function ManagePricingTierModal({ params, loaderData }: Route.Com
       trigger(['price', 'promotionalPrice']);
     }
   }, [trigger, watchedValues.currencyCode]);
+
+  useEffect(() => {
+    if (!watchedValues.enablePromotionalPricing) {
+      setValue('promotionalPrice', null);
+      setValue('promotionStartDate', undefined);
+      setValue('promotionEndDate', undefined);
+    }
+  }, [watchedValues.enablePromotionalPricing, setValue]);
 
   const badgeVariants = {
     initial: { opacity: 0, scale: 0.9 },
@@ -400,7 +392,7 @@ export default function ManagePricingTierModal({ params, loaderData }: Route.Com
                       </div>
                     ),
                   }}
-                  description='Let users know this one’s a fan favorite'
+                  description="Let users know this one's a fan favorite"
                 />
 
                 <GoSwitchField
@@ -475,21 +467,12 @@ export default function ManagePricingTierModal({ params, loaderData }: Route.Com
     <Modal open>
       <Modal.Content size='md'>
         <Modal.Header
-          title={
-            coursePricingId === 'add-new-tier'
-              ? isPaid
-                ? 'Add New Pricing Tier'
-                : 'Add New Free Access Tier'
-              : isPaid
-                ? 'Edit Pricing Tier'
-                : 'Edit Free Access Tier'
-          }
+          title={isPaid ? 'Add New Pricing Tier' : 'Add New Free Access Tier'}
           closeRoute={closeRoute}
         />
 
         <Modal.Body>
-          {coursePricingId === 'add-new-tier' &&
-          (!availableFrequencies || !availableFrequencies.length) ? (
+          {!availableFrequencies || !availableFrequencies.length ? (
             <BannerCard
               variant='error'
               message='All pricing options are in use'
@@ -515,13 +498,7 @@ export default function ManagePricingTierModal({ params, loaderData }: Route.Com
                         disabled={isDisabled || !methods.formState.isDirty}
                         isLoading={isDisabled}
                       >
-                        {params.coursePricingId === 'add-new-tier'
-                          ? isPaid
-                            ? 'Create Pricing Tier'
-                            : 'Create Access Tier'
-                          : isPaid
-                            ? 'Update Pricing Tier'
-                            : 'Update Access Tier'}
+                        {isPaid ? 'Create Pricing Tier' : 'Create Access Tier'}
                       </Button>
                     ) : (
                       <div className='h-12' />
