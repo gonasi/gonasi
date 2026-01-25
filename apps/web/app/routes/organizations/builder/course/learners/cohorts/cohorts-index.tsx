@@ -52,7 +52,7 @@ export default function CohortsIndex({ loaderData, params }: Route.ComponentProp
         <div className='flex items-center justify-between'>
           <div>
             <h2 className='text-2xl font-bold'>Cohorts</h2>
-            <p className='text-muted-foreground text-sm'>
+            <p className='text-muted-foreground hidden text-sm md:flex'>
               Organize learners into cohorts for better management
             </p>
           </div>
@@ -87,23 +87,34 @@ export default function CohortsIndex({ loaderData, params }: Route.ComponentProp
         ) : (
           <div className='grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3'>
             {cohorts.map((cohort) => (
-              <Card key={cohort.id} className='rounded-none'>
+              <Card key={cohort.id} className='relative rounded-none'>
+                {/* Status badge – pinned top left */}
+                <Badge
+                  variant={cohort.is_active ? 'success' : 'outline'}
+                  className='absolute -top-2 left-0 z-10'
+                >
+                  {cohort.is_active ? 'Active' : 'Inactive'}
+                </Badge>
+
                 <CardHeader>
                   <div className='flex items-start justify-between'>
                     <div className='flex-1'>
                       <CardTitle className='mb-1 text-base'>{cohort.name}</CardTitle>
+
                       {cohort.description && (
                         <CardDescription className='line-clamp-2 text-xs'>
                           {cohort.description}
                         </CardDescription>
                       )}
                     </div>
+
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant='ghost' size='icon' className='size-8'>
                           <MoreVertical className='size-4' />
                         </Button>
                       </DropdownMenuTrigger>
+
                       <DropdownMenuContent align='end'>
                         <DropdownMenuItem asChild>
                           <Link
@@ -113,6 +124,7 @@ export default function CohortsIndex({ loaderData, params }: Route.ComponentProp
                             Edit
                           </Link>
                         </DropdownMenuItem>
+
                         <DropdownMenuItem asChild>
                           <Link
                             to={`/${params.organizationId}/builder/${params.courseId}/learners/cohorts/${cohort.id}/delete`}
@@ -126,12 +138,14 @@ export default function CohortsIndex({ loaderData, params }: Route.ComponentProp
                     </DropdownMenu>
                   </div>
                 </CardHeader>
+
                 <CardContent className='space-y-3'>
                   <div className='flex items-center justify-between text-sm'>
                     <div className='flex items-center gap-1.5'>
                       <Users className='text-muted-foreground size-4' />
                       <span className='text-muted-foreground'>Enrolled:</span>
                     </div>
+
                     <span className='font-medium'>
                       {cohort.current_enrollment_count}
                       {cohort.max_enrollment ? ` / ${cohort.max_enrollment}` : ''}
@@ -144,17 +158,14 @@ export default function CohortsIndex({ loaderData, params }: Route.ComponentProp
                         <Calendar className='text-muted-foreground size-4' />
                         <span className='text-muted-foreground'>Duration:</span>
                       </div>
+
                       <span className='text-xs'>
                         {formatDate(cohort.start_date)} - {formatDate(cohort.end_date)}
                       </span>
                     </div>
                   )}
 
-                  <div className='flex items-center justify-between'>
-                    <Badge variant={cohort.is_active ? 'success' : 'outline'}>
-                      {cohort.is_active ? 'Active' : 'Inactive'}
-                    </Badge>
-
+                  <div className='flex items-center justify-end'>
                     <NavLinkButton
                       to={`/${params.organizationId}/builder/${params.courseId}/learners/cohorts/${cohort.id}/assign-users`}
                     >
