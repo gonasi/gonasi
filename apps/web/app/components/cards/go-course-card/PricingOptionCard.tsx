@@ -12,12 +12,14 @@ interface PricingOptionCardProps {
   pricingData: PricingSchemaTypes[number];
   hideDescription?: boolean;
   hideContinueButton?: boolean;
+  enrollUrl?: string;
 }
 
 export function PricingOptionCard({
   pricingData,
   hideDescription = false,
   hideContinueButton = false,
+  enrollUrl,
 }: PricingOptionCardProps) {
   const {
     is_popular,
@@ -122,7 +124,7 @@ export function PricingOptionCard({
             {!hideContinueButton && (
               <div>
                 <NavLinkButton
-                  to={`/c/${pricingData.course_id}/enroll/${pricingData.id}`}
+                  to={enrollUrl || `/c/${pricingData.course_id}/enroll/${pricingData.id}`}
                   size='sm'
                   variant='secondary'
                   rightIcon={<MoveRight />}
