@@ -55,7 +55,31 @@ export const inviteToCourse = async (
       }
     }
 
-    // 2. Check pending invite
+    // 2. Verify pricing tier is active
+    const { data: pricingTierData, error: pricingTierError } = await supabase
+      .from('course_pricing_tiers')
+      .select('is_active')
+      .eq('id', pricingTierId)
+      .single();
+
+    if (pricingTierError) {
+      console.error('[inviteToCourse] Pricing tier check failed:', pricingTierError);
+      return {
+        success: false,
+        message: 'Could not verify pricing tier.',
+        data: null,
+      };
+    }
+
+    if (!pricingTierData.is_active) {
+      return {
+        success: false,
+        message: 'Cannot send invite. The selected pricing tier is inactive.',
+        data: null,
+      };
+    }
+
+    // 3. Check pending invite
     const { data: existingInvites, error: inviteCheckError } = await supabase
       .from('course_invites')
       .select('id')
@@ -82,7 +106,7 @@ export const inviteToCourse = async (
       };
     }
 
-    // 3. Tier restriction check via RLS (will be caught by insert error)
+    // 4. Tier restriction check via RLS (will be caught by insert error)
     // The can_send_course_invite function is called automatically by RLS
 
     // ✅ Passed all checks — insert invite
