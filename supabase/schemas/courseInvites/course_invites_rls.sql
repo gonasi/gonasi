@@ -44,9 +44,10 @@ using (
 -- Allows users to create course invites if they are:
 -- 1. Org admins/owners OR course editors
 -- 2. Organization tier allows it (enforced via can_send_course_invite)
--- 3. Not inviting themselves
--- 4. Not inviting someone already enrolled
--- 5. No pending invite exists for this email+course
+-- 3. Course visibility is 'private' (public/unlisted don't need invites)
+-- 4. Not inviting themselves
+-- 5. Not inviting someone already enrolled
+-- 6. No pending invite exists for this email+course
 -- ===================================================
 create policy "course_invites_insert"
 on public.course_invites
@@ -69,6 +70,13 @@ with check (
 
   -- Tier-based invite restrictions (temp can't send, launch can't send for free courses)
   and public.can_send_course_invite(organization_id, published_course_id)
+
+  -- Course must be private (public/unlisted courses don't need email invites)
+  and exists (
+    select 1 from public.published_courses pc
+    where pc.id = published_course_id
+      and pc.visibility = 'private'
+  )
 
   -- Can't invite yourself
   and email != (select email from public.profiles where id = (select auth.uid()))
@@ -95,6 +103,7 @@ with check (
 -- With check ensures:
 -- - Accepting user must be the recipient
 -- - Only admins/editors can revoke
+-- - Resending only allowed for private courses
 -- - Resending respects cooldown period
 -- ===================================================
 create policy "course_invites_update"
@@ -132,6 +141,16 @@ with check (
       join public.courses c on c.id = ce.course_id
       where c.id = published_course_id
         and ce.user_id = (select auth.uid())
+    )
+  )
+
+  -- If resending (last_sent_at changed), course must still be private
+  and (
+    last_sent_at = (select ci_old.last_sent_at from public.course_invites ci_old where ci_old.id = course_invites.id)
+    or exists (
+      select 1 from public.published_courses pc
+      where pc.id = published_course_id
+        and pc.visibility = 'private'
     )
   )
 );
