@@ -7,6 +7,8 @@
 --   - temp tier: Cannot send invites (can't create courses)
 --   - launch tier: Can only send invites for PAID courses
 --   - scale/impact tiers: Can send invites for both free and paid courses
+--   - pricing_tier_id: Required when creating invites, nullable after tier deletion
+--   - cohort_id: Optional when creating invites
 -- ===================================================
 
 create table if not exists public.course_invites (
@@ -19,6 +21,8 @@ create table if not exists public.course_invites (
     references public.organizations(id) on delete cascade,
   cohort_id uuid
     references public.cohorts(id) on delete set null,
+  pricing_tier_id uuid
+    references public.course_pricing_tiers(id) on delete set null,
 
   -- Invitee information
   email text not null,  -- No user_id until accepted
@@ -58,6 +62,8 @@ create index if not exists idx_course_invites_organization_id
   on public.course_invites(organization_id);
 create index if not exists idx_course_invites_cohort_id
   on public.course_invites(cohort_id);
+create index if not exists idx_course_invites_pricing_tier_id
+  on public.course_invites(pricing_tier_id);
 create index if not exists idx_course_invites_invited_by
   on public.course_invites(invited_by);
 create index if not exists idx_course_invites_accepted_by

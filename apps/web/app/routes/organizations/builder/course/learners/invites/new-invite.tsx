@@ -7,6 +7,7 @@ import { HoneypotInputs } from 'remix-utils/honeypot/react';
 
 import { fetchCohortsForCourse } from '@gonasi/database/cohorts';
 import { inviteToCourse } from '@gonasi/database/courseInvites';
+import { fetchCoursePricing } from '@gonasi/database/courses/pricing';
 import {
   InviteToCourseSchema,
   type InviteToCourseSchemaTypes,
@@ -40,16 +41,109 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   const { courseId } = params;
 
   if (!courseId) {
-    return { cohorts: [] };
+    return { cohorts: [], pricingTiers: [] };
   }
 
-  const cohorts = await fetchCohortsForCourse(supabase, courseId);
+  const [cohorts, pricingTiers] = await Promise.all([
+    fetchCohortsForCourse(supabase, courseId),
+    fetchCoursePricing({ supabase, courseId }),
+  ]);
+
+  // Helper to format payment frequency (matching PricingDisplay component)
+  const frequencyLabels: Record<string, string> = {
+    monthly: 'month',
+    bi_monthly: '2 months',
+    quarterly: 'quarter',
+    semi_annual: '6 months',
+    annual: 'year',
+  };
+
+  // Helper to format price using Intl.NumberFormat
+  const formatPrice = (price: number, currency: string) => {
+    try {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency,
+      }).format(price);
+    } catch {
+      // Fallback if currency code is invalid
+      return `${currency} ${Number(price).toLocaleString()}`;
+    }
+  };
+
+  // Helper to check if promotion is active
+  const isPromotionActive = (tier: NonNullable<typeof pricingTiers>[number]) => {
+    if (!tier.promotional_price || !tier.promotion_start_date || !tier.promotion_end_date) {
+      return false;
+    }
+    const now = new Date();
+    const start = new Date(tier.promotion_start_date);
+    const end = new Date(tier.promotion_end_date);
+    return now >= start && now <= end;
+  };
+
+  const allPricingTiers = (pricingTiers ?? [])
+    .sort((a, b) => a.position - b.position)
+    .map((tier) => {
+        if (tier.is_free) {
+          const label = tier.tier_name || 'Free Access';
+          const description = tier.tier_description || 'No payment required';
+
+          return {
+            value: tier.id,
+            label: `${label} - Free`,
+            description,
+            status: tier.is_active ? 'active' : 'not active',
+          };
+        }
+
+        // Check if promotion is active
+        const hasActivePromo = isPromotionActive(tier);
+        const effectivePrice = hasActivePromo ? tier.promotional_price! : tier.price;
+        const priceDisplay = formatPrice(effectivePrice, tier.currency_code);
+        const frequency = frequencyLabels[tier.payment_frequency] || tier.payment_frequency;
+
+        // Build main label with tier name and current price
+        const tierName = tier.tier_name || 'Standard';
+        const mainLabel = `${tierName} - ${priceDisplay} / ${frequency}`;
+
+        // Build description with additional details
+        let description = '';
+        if (hasActivePromo) {
+          const originalPrice = formatPrice(tier.price, tier.currency_code);
+          const savings = formatPrice(tier.price - tier.promotional_price!, tier.currency_code);
+          description = `🎉 Promotional price! Save ${savings} (was ${originalPrice} / ${frequency})`;
+        } else if (tier.tier_description) {
+          description = tier.tier_description;
+        }
+
+        // Add badges for popular/recommended
+        const badges: string[] = [];
+        if (tier.is_popular) badges.push('🔥 Popular');
+        if (tier.is_recommended) badges.push('⭐ Recommended');
+
+        // Combine badges with description
+        if (badges.length > 0) {
+          description = badges.join(' • ') + (description ? ` • ${description}` : '');
+        }
+
+        return {
+          value: tier.id,
+          label: mainLabel,
+          description: description || undefined,
+          status: tier.is_active ? 'active' : 'not active',
+        };
+      });
+
+  const hasActiveTiers = allPricingTiers.some((tier) => tier.status === 'active');
 
   return {
     cohorts: (cohorts ?? []).map((c) => ({
       value: c.id,
       label: c.name,
     })),
+    pricingTiers: allPricingTiers,
+    hasActiveTiers,
   };
 }
 
@@ -81,7 +175,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 export default function NewInvite({ params, loaderData }: Route.ComponentProps) {
   const outletContext = useOutletContext<CourseInvitesPageLoaderData>();
   const { canSendInvite } = outletContext;
-  const { cohorts } = loaderData;
+  const { cohorts, pricingTiers, hasActiveTiers } = loaderData;
 
   const isPending = useIsPending();
 
@@ -125,6 +219,26 @@ export default function NewInvite({ params, loaderData }: Route.ComponentProps) 
                 />
 
                 <GoSelectInputField
+                  labelProps={{ children: 'Pricing Tier', required: true }}
+                  name='pricingTierId'
+                  description='The pricing tier determines what the invited learner will pay for course access.'
+                  selectProps={{
+                    placeholder: 'Choose a pricing option...',
+                    options: pricingTiers,
+                    disabled: isDisabled || !hasActiveTiers,
+                  }}
+                />
+
+                {!hasActiveTiers && (
+                  <div className='border-muted bg-muted/40 text-muted-foreground -mt-2 mb-4 rounded-lg border p-3 text-sm'>
+                    <p className='text-foreground mb-1 font-medium'>No active pricing tiers available</p>
+                    <p className='font-secondary'>
+                      Please activate at least one pricing tier before sending invites.
+                    </p>
+                  </div>
+                )}
+
+                <GoSelectInputField
                   labelProps={{ children: 'Cohort (Optional)' }}
                   name='cohortId'
                   description='Assign this learner to a specific cohort for organized tracking.'
@@ -137,7 +251,7 @@ export default function NewInvite({ params, loaderData }: Route.ComponentProps) 
 
                 <Button
                   type='submit'
-                  disabled={isDisabled}
+                  disabled={isDisabled || !hasActiveTiers}
                   isLoading={isDisabled}
                   rightIcon={<ChevronRight />}
                 >

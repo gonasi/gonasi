@@ -17,6 +17,12 @@ export const InviteToCourseSchema = z.object({
     .uuid({ message: 'Invalid organization ID.' }),
   email: EmailSchema,
   cohortId: z.string().uuid({ message: 'Invalid cohort ID.' }).optional().nullable(),
+  pricingTierId: z
+    .string({
+      required_error: 'Pricing tier is required.',
+      invalid_type_error: 'Pricing tier must be a string.',
+    })
+    .uuid({ message: 'Invalid pricing tier ID.' }),
 });
 
 export type InviteToCourseSchemaTypes = z.infer<typeof InviteToCourseSchema>;

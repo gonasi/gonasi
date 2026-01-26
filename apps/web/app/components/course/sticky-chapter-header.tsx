@@ -51,7 +51,7 @@ export function StickyChapterHeader({
     <motion.div
       ref={ref}
       animate={containerControls}
-      className={`bg-background/90 sticky top-16 z-5 pt-2 pb-2 transition-colors duration-300 ${
+      className={`bg-background/90 sticky top-0 z-5 pt-2 pb-2 transition-colors duration-300 ${
         isActive ? 'border-primary/20 border-l-4' : 'border-l-4 border-transparent'
       }`}
     >
