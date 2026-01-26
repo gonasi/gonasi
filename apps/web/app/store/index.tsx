@@ -1,10 +1,6 @@
 import { create } from 'zustand';
 
-import type {
-  UserActiveSessionLoaderReturnType,
-  UserProfileLoaderReturnType,
-  UserRoleLoaderReturnType,
-} from '~/root';
+import type { UserProfileLoaderReturnType, UserRoleLoaderReturnType } from '~/root';
 
 type Mode = 'preview' | 'play';
 
@@ -14,12 +10,10 @@ type Mode = 'preview' | 'play';
  */
 interface StoreState {
   // ===== User State =====
-  activeSession: UserActiveSessionLoaderReturnType;
   activeUserProfile: UserProfileLoaderReturnType;
   activeUserRole: UserRoleLoaderReturnType;
   isActiveUserProfileLoading: boolean;
 
-  updateActiveSession: (newSession: UserActiveSessionLoaderReturnType) => void;
   updateActiveUserProfile: (userProfile: UserProfileLoaderReturnType) => void;
   updateActiveUserRole: (userRole: UserRoleLoaderReturnType) => void;
 
@@ -52,7 +46,6 @@ export const useStore = create<StoreState>((set) => ({
   activeUserRole: 'user',
   isActiveUserProfileLoading: true,
 
-  updateActiveSession: (newSession) => set({ activeSession: newSession }),
   updateActiveUserProfile: (userProfile) =>
     set({ activeUserProfile: userProfile, isActiveUserProfileLoading: false }),
   updateActiveUserRole: (userRole) => set({ activeUserRole: userRole }),

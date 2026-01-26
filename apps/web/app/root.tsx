@@ -52,15 +52,9 @@ export type UserRoleLoaderReturnType = Exclude<
   Response
 >['data']['role'];
 
-export type UserActiveSessionLoaderReturnType = Exclude<
-  Awaited<ReturnType<typeof loader>>,
-  Response
->['data']['session'];
-
 export interface AppOutletContext {
   user: UserProfileLoaderReturnType;
   role: UserRoleLoaderReturnType;
-  session: UserActiveSessionLoaderReturnType;
 }
 
 // --- Loader ---
@@ -96,7 +90,6 @@ export async function loader({ request }: Route.LoaderArgs) {
       user,
       toast,
       honeyProps,
-      session: sessionResult.data.session,
     },
     {
       headers: combineHeaders(supabaseHeaders, toastHeaders),
@@ -149,15 +142,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
 // --- App Component ---
 function App() {
-  const { user, role, toast, session } = useLoaderData<typeof loader>();
-  const { updateActiveSession, updateActiveUserProfile, updateActiveUserRole } = useStore();
+  const { user, role, toast } = useLoaderData<typeof loader>();
+  const { updateActiveUserProfile, updateActiveUserRole } = useStore();
 
   useToast(toast);
 
   useEffect(() => {
-    updateActiveSession(session);
     updateActiveUserRole(role);
-  }, [session, role, updateActiveSession, updateActiveUserRole]);
+  }, [role, updateActiveUserRole]);
 
   useEffect(() => {
     updateActiveUserProfile(user);
