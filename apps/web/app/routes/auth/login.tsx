@@ -90,7 +90,12 @@ export default function Login() {
       title='Log in'
       description={
         <div>
-          Not a member yet? <GoLink to='/signup'>Sign up</GoLink>
+          Not a member yet?{' '}
+          <GoLink
+            to={`/signup${redirectTo ? `?redirectTo=${encodeURIComponent(redirectTo)}` : ''}`}
+          >
+            Sign up
+          </GoLink>
         </div>
       }
       leftLink='/'

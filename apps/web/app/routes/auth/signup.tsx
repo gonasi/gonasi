@@ -126,10 +126,13 @@ export default function SignUp() {
       title='Sign up'
       description={
         <div>
-          Already a member? <GoLink to='/login'>Log in</GoLink>
+          Already a member?{' '}
+          <GoLink to={`/login${redirectTo ? `?redirectTo=${encodeURIComponent(redirectTo)}` : ''}`}>
+            Log in
+          </GoLink>
         </div>
       }
-      leftLink='/login'
+      leftLink={`/login${redirectTo ? `?redirectTo=${encodeURIComponent(redirectTo)}` : ''}`}
       closeLink='/'
     >
       <div className='pb-8'>

@@ -51,7 +51,7 @@ export default function RevokeInvite({ params }: Route.ComponentProps) {
 
   return (
     <Modal open>
-      <Modal.Content size='md'>
+      <Modal.Content size='sm'>
         <Modal.Header title='Revoke Invite' closeRoute={closeRoute} />
         <Modal.Body className='px-4'>
           <p className='text-muted-foreground mb-4 text-sm'>

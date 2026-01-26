@@ -84,3 +84,47 @@ create trigger trg_revoke_invites_on_tier_deactivation
 after update on public.course_pricing_tiers
 for each row
 execute function public.revoke_invites_on_pricing_tier_deactivation();
+
+-- ============================================================================
+-- FUNCTION: revoke_invites_on_course_visibility_change
+-- ----------------------------------------------------------------------------
+-- Automatically revokes course invites when a published course's visibility
+-- changes from 'private' to 'public' or 'unlisted'. Email invitations are
+-- only needed for private courses. Public and unlisted courses can be accessed
+-- directly via link, making invitations unnecessary.
+--
+-- Behavior:
+--   - Sets revoked_at timestamp for all pending invites
+--   - Only fires when visibility changes from 'private' to 'public'/'unlisted'
+--   - Only affects invites that haven't been accepted or revoked yet
+--   - Preserves audit trail (invites remain in database)
+-- ============================================================================
+create or replace function public.revoke_invites_on_course_visibility_change()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  -- Only process if visibility changed from 'private' to 'public' or 'unlisted'
+  if old.visibility = 'private' and new.visibility in ('public', 'unlisted') then
+    -- Update all pending invites for this published course
+    update public.course_invites
+    set revoked_at = now()
+    where published_course_id = new.id
+      and accepted_at is null
+      and revoked_at is null;
+  end if;
+
+  return new;
+end;
+$$;
+
+-- Drop existing trigger if it exists
+drop trigger if exists trg_revoke_invites_on_visibility_change on public.published_courses;
+
+-- Create trigger that fires after a published course is updated
+create trigger trg_revoke_invites_on_visibility_change
+after update on public.published_courses
+for each row
+execute function public.revoke_invites_on_course_visibility_change();
