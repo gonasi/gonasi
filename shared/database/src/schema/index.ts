@@ -40,7 +40,42 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      archive: {
+        Args: { message_id: number; queue_name: string }
+        Returns: boolean
+      }
+      delete: {
+        Args: { message_id: number; queue_name: string }
+        Returns: boolean
+      }
+      pop: {
+        Args: { queue_name: string }
+        Returns: unknown[]
+        SetofOptions: {
+          from: "*"
+          to: "message_record"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      read: {
+        Args: { n: number; queue_name: string; sleep_seconds: number }
+        Returns: unknown[]
+        SetofOptions: {
+          from: "*"
+          to: "message_record"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      send: {
+        Args: { message: Json; queue_name: string; sleep_seconds?: number }
+        Returns: number[]
+      }
+      send_batch: {
+        Args: { messages: Json[]; queue_name: string; sleep_seconds?: number }
+        Returns: number[]
+      }
     }
     Enums: {
       [_ in never]: never
@@ -695,6 +730,7 @@ export type Database = {
           invited_by: string
           last_sent_at: string
           organization_id: string
+          pricing_tier_id: string | null
           published_course_id: string
           resend_count: number
           revoked_at: string | null
@@ -714,6 +750,7 @@ export type Database = {
           invited_by: string
           last_sent_at?: string
           organization_id: string
+          pricing_tier_id?: string | null
           published_course_id: string
           resend_count?: number
           revoked_at?: string | null
@@ -733,6 +770,7 @@ export type Database = {
           invited_by?: string
           last_sent_at?: string
           organization_id?: string
+          pricing_tier_id?: string | null
           published_course_id?: string
           resend_count?: number
           revoked_at?: string | null
@@ -752,6 +790,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_invites_pricing_tier_id_fkey"
+            columns: ["pricing_tier_id"]
+            isOneToOne: false
+            referencedRelation: "course_pricing_tiers"
             referencedColumns: ["id"]
           },
           {

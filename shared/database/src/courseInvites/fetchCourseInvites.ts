@@ -17,6 +17,7 @@ export async function fetchCourseInvites({
         id,
         email,
         cohort_id,
+        pricing_tier_id,
         delivery_status,
         accepted_at,
         accepted_by,
@@ -28,6 +29,14 @@ export async function fetchCourseInvites({
         cohorts (
           id,
           name
+        ),
+        course_pricing_tiers (
+          id,
+          tier_name,
+          payment_frequency,
+          price,
+          currency_code,
+          is_free
         )
       `,
       )

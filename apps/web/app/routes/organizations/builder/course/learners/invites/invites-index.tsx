@@ -159,6 +159,7 @@ export default function InvitesIndex({ params, loaderData }: Route.ComponentProp
             <TableHeader>
               <TableRow>
                 <TableHead>Email</TableHead>
+                <TableHead>Pricing Tier</TableHead>
                 <TableHead>Cohort</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Last Sent</TableHead>
@@ -174,6 +175,7 @@ export default function InvitesIndex({ params, loaderData }: Route.ComponentProp
                 }[invite.delivery_status];
 
                 const isExpired = new Date(invite.expires_at) < new Date();
+                const isTierDeleted = invite.revoked_at && !invite.pricing_tier_id;
 
                 const status = invite.revoked_at
                   ? 'Revoked'
@@ -205,6 +207,24 @@ export default function InvitesIndex({ params, loaderData }: Route.ComponentProp
                   >
                     <TableCell>{invite.email}</TableCell>
                     <TableCell className='text-muted-foreground text-sm'>
+                      {invite.course_pricing_tiers ? (
+                        <div className='flex flex-col gap-0.5'>
+                          <div className='text-foreground font-medium'>
+                            {invite.course_pricing_tiers.tier_name || 'Standard'}
+                          </div>
+                          <div className='text-xs'>
+                            {invite.course_pricing_tiers.is_free
+                              ? 'Free'
+                              : `${invite.course_pricing_tiers.currency_code} ${Number(
+                                  invite.course_pricing_tiers.price,
+                                ).toLocaleString()} / ${invite.course_pricing_tiers.payment_frequency}`}
+                          </div>
+                        </div>
+                      ) : (
+                        <span className='text-destructive text-xs'>Tier deleted</span>
+                      )}
+                    </TableCell>
+                    <TableCell className='text-muted-foreground text-sm'>
                       {invite.cohorts?.name ?? 'No cohort'}
                     </TableCell>
                     <TableCell>
@@ -214,6 +234,9 @@ export default function InvitesIndex({ params, loaderData }: Route.ComponentProp
                           <span className='text-muted-foreground text-xs'>
                             Email: {deliveryLabel}
                           </span>
+                        )}
+                        {isTierDeleted && status === 'Revoked' && (
+                          <span className='text-destructive text-xs'>Tier was deleted</span>
                         )}
                       </div>
                     </TableCell>

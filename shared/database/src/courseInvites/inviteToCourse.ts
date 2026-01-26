@@ -9,7 +9,7 @@ export const inviteToCourse = async (
 ) => {
   try {
     const { user } = await getUserProfile(supabase);
-    const { publishedCourseId, organizationId, email, cohortId } = formData;
+    const { publishedCourseId, organizationId, email, cohortId, pricingTierId } = formData;
 
     // Self-invite check
     if (email === user?.email) {
@@ -95,6 +95,7 @@ export const inviteToCourse = async (
         published_course_id: publishedCourseId,
         organization_id: organizationId,
         cohort_id: cohortId || null,
+        pricing_tier_id: pricingTierId,
         email,
         invited_by: user?.id ?? '',
         token,

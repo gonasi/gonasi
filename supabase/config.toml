@@ -288,6 +288,7 @@ schema_paths = [
 
   # course invites (must come after cohorts and enrollments)
   './schemas/courseInvites/course_invites_schema_and_indexes.sql',
+  './schemas/courseInvites/course_invites_triggers.sql',
   './schemas/courseInvites/guards/can_send_course_invite.sql',
   './schemas/courseInvites/guards/can_resend_course_invite.sql',
   './schemas/courseInvites/utils/revoke_invites_on_free_course_for_launch_tier.sql',

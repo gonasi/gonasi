@@ -17,6 +17,7 @@ export interface SelectOption {
   value: string;
   description?: string;
   imageUrl?: string;
+  status?: string;
 }
 
 interface GoSelectInputFieldProps {
@@ -96,18 +97,29 @@ export function GoSelectInputField({
               <SelectContent>
                 <SelectGroup>
                   {options.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      <div className='flex items-center gap-2'>
-                        {option.imageUrl && (
-                          <div className={imageContainerClassName}>
-                            <img
-                              src={option.imageUrl}
-                              alt={option.label}
-                              className={imageClassName}
-                            />
-                          </div>
+                    <SelectItem
+                      key={option.value}
+                      value={option.value}
+                      disabled={option.status === 'not active'}
+                    >
+                      <div className='flex flex-col gap-0.5 py-1'>
+                        <div className='flex items-center gap-2'>
+                          {option.imageUrl && (
+                            <div className={imageContainerClassName}>
+                              <img
+                                src={option.imageUrl}
+                                alt={option.label}
+                                className={imageClassName}
+                              />
+                            </div>
+                          )}
+                          <span className='font-medium'>{option.label}</span>
+                        </div>
+                        {option.description && (
+                          <span className='text-muted-foreground text-xs leading-snug'>
+                            {option.description}
+                          </span>
                         )}
-                        <span>{option.label}</span>
                       </div>
                     </SelectItem>
                   ))}
