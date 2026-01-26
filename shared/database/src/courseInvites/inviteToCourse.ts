@@ -55,7 +55,33 @@ export const inviteToCourse = async (
       }
     }
 
-    // 2. Verify pricing tier is active
+    // 2. Verify pricing tier is active and course is private
+    const { data: courseData, error: courseCheckError } = await supabase
+      .from('published_courses')
+      .select('visibility')
+      .eq('id', publishedCourseId)
+      .single();
+
+    if (courseCheckError) {
+      console.error('[inviteToCourse] Course check failed:', courseCheckError);
+      return {
+        success: false,
+        message: 'Could not verify course details.',
+        data: null,
+      };
+    }
+
+    // Only private courses need email invitations
+    if (courseData.visibility !== 'private') {
+      return {
+        success: false,
+        message:
+          'Email invitations are only for private courses. This course is public or unlisted, so you can share the course link directly.',
+        data: null,
+      };
+    }
+
+    // 3. Verify pricing tier is active
     const { data: pricingTierData, error: pricingTierError } = await supabase
       .from('course_pricing_tiers')
       .select('is_active')
@@ -79,7 +105,7 @@ export const inviteToCourse = async (
       };
     }
 
-    // 3. Check pending invite
+    // 4. Check pending invite
     const { data: existingInvites, error: inviteCheckError } = await supabase
       .from('course_invites')
       .select('id')
@@ -106,7 +132,7 @@ export const inviteToCourse = async (
       };
     }
 
-    // 4. Tier restriction check via RLS (will be caught by insert error)
+    // 5. Tier restriction check via RLS (will be caught by insert error)
     // The can_send_course_invite function is called automatically by RLS
 
     // ✅ Passed all checks — insert invite

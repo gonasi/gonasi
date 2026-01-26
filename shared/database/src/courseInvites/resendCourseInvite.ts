@@ -28,7 +28,32 @@ export const resendCourseInvite = async ({ supabase, data }: ResendCourseInviteP
       };
     }
 
-    // 2. Check if already accepted
+    // 2. Check if course is still private
+    const { data: courseData, error: courseCheckError } = await supabase
+      .from('published_courses')
+      .select('visibility')
+      .eq('id', publishedCourseId)
+      .single();
+
+    if (courseCheckError) {
+      console.error('[resendCourseInvite] Course check failed:', courseCheckError);
+      return {
+        success: false,
+        message: 'Could not verify course details.',
+        data: null,
+      };
+    }
+
+    if (courseData.visibility !== 'private') {
+      return {
+        success: false,
+        message:
+          'Cannot resend invite. This course is now public or unlisted, so you can share the course link directly instead.',
+        data: null,
+      };
+    }
+
+    // 3. Check if already accepted
     if (invite.accepted_at) {
       return {
         success: false,
@@ -37,7 +62,7 @@ export const resendCourseInvite = async ({ supabase, data }: ResendCourseInviteP
       };
     }
 
-    // 3. Enforce 5-minute resend interval (matching our guard function)
+    // 4. Enforce 5-minute resend interval (matching our guard function)
     const lastSentAt = new Date(invite.last_sent_at);
     const now = new Date();
     const fiveMinutes = 5 * 60 * 1000;
@@ -50,7 +75,7 @@ export const resendCourseInvite = async ({ supabase, data }: ResendCourseInviteP
       };
     }
 
-    // 4. Update resend count and last_sent_at
+    // 5. Update resend count and last_sent_at
     const { error: updateError } = await supabase
       .from('course_invites')
       .update({

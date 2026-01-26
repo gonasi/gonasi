@@ -54,15 +54,22 @@ export async function action({ request, params }: Route.ActionArgs) {
 
   const { success, message } = await editCourseDetails({ supabase, data });
 
-  return success
-    ? redirectWithSuccess(`/${params.organizationId}/builder/${params.courseId}/overview`, message)
-    : dataWithError(null, message);
+  // Get redirectTo from URL
+  const url = new URL(request.url);
+  const redirectTo = url.searchParams.get('redirectTo');
+  const publishPath = `/${params.organizationId}/builder/${params.courseId}/overview/publish${redirectTo ? `?redirectTo=${encodeURIComponent(redirectTo)}` : ''}`;
+
+  return success ? redirectWithSuccess(publishPath, message) : dataWithError(null, message);
 }
 
 export async function loader({ params, request }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
   const courseId = params.courseId ?? '';
   const orgId = params.organizationId;
+
+  // Get redirectTo from URL
+  const url = new URL(request.url);
+  const redirectTo = url.searchParams.get('redirectTo');
 
   const [courseOverview, canEditRes] = await Promise.all([
     fetchOrganizationCourseOverviewById({ supabase, courseId }),
@@ -79,12 +86,14 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 
   return {
     courseOverview,
+    redirectTo,
   };
 }
 
 export default function EditCourseGrouping({ params, loaderData }: Route.ComponentProps) {
   const {
     courseOverview: { name, description, visibility },
+    redirectTo,
   } = loaderData;
   const fetcher = useFetcher<typeof subCategoryLoader>();
 
@@ -105,13 +114,12 @@ export default function EditCourseGrouping({ params, loaderData }: Route.Compone
 
   const watchValue = form.watch('visibility');
 
+  const closeRoute = redirectTo ?? `/${params.organizationId}/builder/${params.courseId}/overview`;
+
   return (
     <Modal open>
       <Modal.Content size='md'>
-        <Modal.Header
-          title='Edit Course Details'
-          closeRoute={`/${params.organizationId}/builder/${params.courseId}/overview`}
-        />
+        <Modal.Header title='Edit Course Details' closeRoute={closeRoute} />
         <Modal.Body>
           <RemixFormProvider {...form}>
             <Form method='POST' onSubmit={form.handleSubmit}>

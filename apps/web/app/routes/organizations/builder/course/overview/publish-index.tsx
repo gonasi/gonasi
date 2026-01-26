@@ -43,8 +43,13 @@ export async function action({ request, params }: Route.ActionArgs) {
     courseId: params.courseId,
   });
 
+  // Get redirectTo from URL
+  const url = new URL(request.url);
+  const redirectTo = url.searchParams.get('redirectTo');
+  const fallbackPath = `/${params.organizationId}/builder/${params.courseId}/published`;
+
   return success
-    ? redirectWithSuccess(`/${params.organizationId}/builder/${params.courseId}/published`, message)
+    ? redirectWithSuccess(redirectTo ?? fallbackPath, message)
     : dataWithError(null, message);
 }
 
