@@ -1,3 +1,4 @@
+export * from './fetchCourseInviteDetails';
 export * from './fetchCourseInvites';
 export * from './inviteToCourse';
 export * from './resendCourseInvite';
