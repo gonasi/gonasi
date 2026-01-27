@@ -85,55 +85,55 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   const allPricingTiers = (pricingTiers ?? [])
     .sort((a, b) => a.position - b.position)
     .map((tier) => {
-        if (tier.is_free) {
-          const label = tier.tier_name || 'Free Access';
-          const description = tier.tier_description || 'No payment required';
-
-          return {
-            value: tier.id,
-            label: `${label} - Free`,
-            description,
-            status: tier.is_active ? 'active' : 'not active',
-          };
-        }
-
-        // Check if promotion is active
-        const hasActivePromo = isPromotionActive(tier);
-        const effectivePrice = hasActivePromo ? tier.promotional_price! : tier.price;
-        const priceDisplay = formatPrice(effectivePrice, tier.currency_code);
-        const frequency = frequencyLabels[tier.payment_frequency] || tier.payment_frequency;
-
-        // Build main label with tier name and current price
-        const tierName = tier.tier_name || 'Standard';
-        const mainLabel = `${tierName} - ${priceDisplay} / ${frequency}`;
-
-        // Build description with additional details
-        let description = '';
-        if (hasActivePromo) {
-          const originalPrice = formatPrice(tier.price, tier.currency_code);
-          const savings = formatPrice(tier.price - tier.promotional_price!, tier.currency_code);
-          description = `🎉 Promotional price! Save ${savings} (was ${originalPrice} / ${frequency})`;
-        } else if (tier.tier_description) {
-          description = tier.tier_description;
-        }
-
-        // Add badges for popular/recommended
-        const badges: string[] = [];
-        if (tier.is_popular) badges.push('🔥 Popular');
-        if (tier.is_recommended) badges.push('⭐ Recommended');
-
-        // Combine badges with description
-        if (badges.length > 0) {
-          description = badges.join(' • ') + (description ? ` • ${description}` : '');
-        }
+      if (tier.is_free) {
+        const label = tier.tier_name || 'Free Access';
+        const description = tier.tier_description || 'No payment required';
 
         return {
           value: tier.id,
-          label: mainLabel,
-          description: description || undefined,
+          label: `${label} - Free`,
+          description,
           status: tier.is_active ? 'active' : 'not active',
         };
-      });
+      }
+
+      // Check if promotion is active
+      const hasActivePromo = isPromotionActive(tier);
+      const effectivePrice = hasActivePromo ? tier.promotional_price! : tier.price;
+      const priceDisplay = formatPrice(effectivePrice, tier.currency_code);
+      const frequency = frequencyLabels[tier.payment_frequency] || tier.payment_frequency;
+
+      // Build main label with tier name and current price
+      const tierName = tier.tier_name || 'Standard';
+      const mainLabel = `${tierName} - ${priceDisplay} / ${frequency}`;
+
+      // Build description with additional details
+      let description = '';
+      if (hasActivePromo) {
+        const originalPrice = formatPrice(tier.price, tier.currency_code);
+        const savings = formatPrice(tier.price - tier.promotional_price!, tier.currency_code);
+        description = `🎉 Promotional price! Save ${savings} (was ${originalPrice} / ${frequency})`;
+      } else if (tier.tier_description) {
+        description = tier.tier_description;
+      }
+
+      // Add badges for popular/recommended
+      const badges: string[] = [];
+      if (tier.is_popular) badges.push('🔥 Popular');
+      if (tier.is_recommended) badges.push('⭐ Recommended');
+
+      // Combine badges with description
+      if (badges.length > 0) {
+        description = badges.join(' • ') + (description ? ` • ${description}` : '');
+      }
+
+      return {
+        value: tier.id,
+        label: mainLabel,
+        description: description || undefined,
+        status: tier.is_active ? 'active' : 'not active',
+      };
+    });
 
   const hasActiveTiers = allPricingTiers.some((tier) => tier.status === 'active');
 
@@ -174,7 +174,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 
 export default function NewInvite({ params, loaderData }: Route.ComponentProps) {
   const outletContext = useOutletContext<CourseInvitesPageLoaderData>();
-  const { canSendInvite } = outletContext;
+  const { canSendInvite, visibility, visibilityLabel } = outletContext;
   const { cohorts, pricingTiers, hasActiveTiers } = loaderData;
 
   const isPending = useIsPending();
@@ -193,15 +193,37 @@ export default function NewInvite({ params, loaderData }: Route.ComponentProps) 
 
   const closeRoute = `/${params.organizationId}/builder/${params.courseId}/learners/invites`;
 
+  const isPrivateCourse = visibility === 'private';
+  const canCreateInvite = canSendInvite.allowed && isPrivateCourse;
+
   return (
     <Modal open>
       <Modal.Content size='md'>
         <Modal.Header
-          title={canSendInvite.allowed ? 'Invite New Learner' : 'Invites Not Available'}
+          title={canCreateInvite ? 'Invite New Learner' : 'Invites Not Available'}
           closeRoute={closeRoute}
         />
         <Modal.Body className='px-4'>
-          {canSendInvite.allowed ? (
+          {!isPrivateCourse ? (
+            <div className='border-muted bg-muted/40 text-muted-foreground rounded-xl border p-4 text-sm'>
+              <p className='text-foreground mb-1 font-medium'>
+                Email invitations not needed for {visibilityLabel} courses
+              </p>
+              <p className='font-secondary mb-2'>
+                The currently published version of this course is set to {visibilityLabel},{' '}
+                {visibility === 'public'
+                  ? 'making it visible and searchable to everyone'
+                  : 'so anyone with the course link can access it directly'}
+                . If you change this course to Private, you’ll need to publish your changes for them
+                to take effect. Email invitations are only required for Private courses, until then,
+                you can simply share the course link with learners.
+              </p>
+
+              <NavLinkButton to={closeRoute} className='mt-4'>
+                Go Back
+              </NavLinkButton>
+            </div>
+          ) : canSendInvite.allowed ? (
             <RemixFormProvider {...methods}>
               <Form method='POST' onSubmit={methods.handleSubmit} noValidate>
                 <HoneypotInputs />
@@ -231,7 +253,9 @@ export default function NewInvite({ params, loaderData }: Route.ComponentProps) 
 
                 {!hasActiveTiers && (
                   <div className='border-muted bg-muted/40 text-muted-foreground -mt-2 mb-4 rounded-lg border p-3 text-sm'>
-                    <p className='text-foreground mb-1 font-medium'>No active pricing tiers available</p>
+                    <p className='text-foreground mb-1 font-medium'>
+                      No active pricing tiers available
+                    </p>
                     <p className='font-secondary'>
                       Please activate at least one pricing tier before sending invites.
                     </p>

@@ -1,4 +1,5 @@
 import { Outlet } from 'react-router';
+import clsx from 'clsx';
 import { formatDistanceToNow } from 'date-fns';
 import { motion } from 'framer-motion';
 import { Dot, Plus, RotateCcw, X } from 'lucide-react';
@@ -68,12 +69,21 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 
   const canSendInvite = await determineCanSendInvite(tierLimits, publishedCourse);
 
+  // Check if course is private (only private courses need email invitations)
+  const isPrivateCourse = publishedCourse.visibility === 'private';
+  const visibility = publishedCourse.visibility;
+  const visibilityLabel =
+    visibility === 'public' ? 'Public' : visibility === 'unlisted' ? 'Unlisted' : 'Private';
+
   return {
     invites: invites ?? [],
     tierLimits,
     publishedCourse,
     canSendInvite,
     role,
+    isPrivateCourse,
+    visibility,
+    visibilityLabel,
   };
 }
 
@@ -113,15 +123,38 @@ async function determineCanSendInvite(
 }
 
 export default function InvitesIndex({ params, loaderData }: Route.ComponentProps) {
-  const { invites, canSendInvite, tierLimits } = loaderData;
+  const { invites, canSendInvite, tierLimits, visibility, visibilityLabel } = loaderData;
+
+  // Only show banner for public or unlisted courses
+  const shouldShowVisibilityBanner = visibility === 'public' || visibility === 'unlisted';
 
   return (
     <>
-      {!canSendInvite.allowed && (
+      {shouldShowVisibilityBanner && (
+        <div className='px-0 pb-8 md:px-4'>
+          <h1>{visibility}</h1>
+          <BannerCard
+            message={`Email invitations not needed for the published ${visibilityLabel} course`}
+            description={`The currently published version of this course is set to ${visibilityLabel}, so ${
+              visibility === 'public'
+                ? 'it’s visible and searchable by anyone'
+                : 'anyone with the course link can access it'
+            }. If you change this course to Private, you’ll need to publish your changes for them to take effect. Email invitations are only required for Private courses.`}
+            showCloseIcon={false}
+            variant='tip'
+            cta={{
+              to: `/${params.organizationId}/builder/${params.courseId}/overview/edit-details?redirectTo=/${params.organizationId}/builder/${params.courseId}/learners/invites`,
+              children: 'Change to private',
+            }}
+          />
+        </div>
+      )}
+
+      {!canSendInvite.allowed && visibility === 'private' && (
         <div className='px-0 pb-8 md:px-4'>
           <BannerCard
-            message={`Course invites not available on ${tierLimits?.tier} plan`}
-            description={canSendInvite.reason ?? 'Upgrade your plan to send course invites.'}
+            message={`Course invites not available on the ${tierLimits?.tier} plan`}
+            description={`Course invites are disabled for the currently published version of this course on the ${tierLimits?.tier} plan. If you upgrade your plan, you’ll need to publish your changes for course invites to become available.`}
             showCloseIcon={false}
             variant='warning'
             cta={{
@@ -137,12 +170,13 @@ export default function InvitesIndex({ params, loaderData }: Route.ComponentProp
         <IconNavLink
           to={`/${params.organizationId}/builder/${params.courseId}/learners/invites/new-invite`}
           icon={Plus}
-          className='rounded-lg border p-2'
-          aria-disabled={!canSendInvite.allowed}
-          style={{
-            opacity: !canSendInvite.allowed ? 0.5 : 1,
-            pointerEvents: !canSendInvite.allowed ? 'none' : 'auto',
-          }}
+          aria-disabled={!canSendInvite.allowed || visibility !== 'private'}
+          className={clsx(
+            'rounded-lg border p-2',
+            !canSendInvite.allowed || visibility !== 'private'
+              ? 'pointer-events-none cursor-not-allowed opacity-50'
+              : 'cursor-pointer',
+          )}
         />
       </div>
 
@@ -150,7 +184,7 @@ export default function InvitesIndex({ params, loaderData }: Route.ComponentProp
         {invites.length === 0 ? (
           <div className='border-muted text-muted-foreground flex flex-col items-center justify-center rounded-lg border py-12'>
             <p className='text-sm'>No invites sent yet</p>
-            {canSendInvite.allowed && (
+            {canSendInvite.allowed && visibility === 'private' && (
               <p className='text-xs'>Click the + button above to send your first invite</p>
             )}
           </div>

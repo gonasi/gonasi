@@ -47,6 +47,10 @@ export const InitializeEnrollMetadataSchema = z.object({
   effectivePrice: z.number().nonnegative(),
 
   cohortId: z.string().uuid().nullable().optional(),
+
+  // Optional invite fields for invite-based enrollment
+  inviteId: z.string().uuid().optional(),
+  inviteToken: z.string().uuid().optional(),
 });
 
 export type InitializeEnrollMetadata = z.infer<typeof InitializeEnrollMetadataSchema>;

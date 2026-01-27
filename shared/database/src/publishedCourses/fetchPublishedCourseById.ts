@@ -12,7 +12,7 @@ export async function fetchPublishedCourseById({
   try {
     const { data, error } = await supabase
       .from('published_courses')
-      .select('id, organization_id, name, has_free_tier, pricing_tiers')
+      .select('id, organization_id, name, has_free_tier, pricing_tiers, visibility')
       .eq('id', courseId)
       .eq('is_active', true)
       .single();

@@ -228,7 +228,8 @@ async function handleCourseSale(
     p_payment_method: tx.channel ?? 'card',
     p_paystack_fee: paystackFee,
     p_metadata: rpcMetadata,
-    p_cohort_id: metadata.cohortId ?? null,
+    p_cohort_id: metadata.cohortId && metadata.cohortId !== '' ? metadata.cohortId : null,
+    p_invite_id: metadata.inviteId && metadata.inviteId !== '' ? metadata.inviteId : null,
   };
 
   console.log('📞 Calling process_course_payment_from_paystack RPC...');

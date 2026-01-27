@@ -59,7 +59,26 @@ export default [
   ]),
 
   route('i/org-invites/:token/accept', 'routes/invites/accept-org-invite.tsx'),
-  route('i/course-invites/:token/accept', 'routes/invites/accept-course-invite.tsx'),
+  route(
+    'i/course-invites/:token/accept',
+    'routes/invites/accept-course-invite/accept-course-invite-index.tsx',
+    [
+      route(
+        'enroll/:pricingTierId',
+        'routes/invites/accept-course-invite/accept-course-invite-enroll.tsx',
+        [
+          route(
+            'cancel',
+            'routes/invites/accept-course-invite/accept-course-invite-cancel-enroll.tsx',
+          ),
+        ],
+      ),
+      route(
+        'enroll/status',
+        'routes/invites/accept-course-invite/accept-course-invite-enroll-status.tsx',
+      ),
+    ],
+  ),
 
   layout('routes/layouts/organizations/organizations-layout.tsx', [
     route(':organizationId/dashboard', 'routes/organizations/dashboard/dashboard-index.tsx', [

@@ -87,7 +87,7 @@ export function meta({ data }: Route.MetaArgs) {
 }
 
 export async function loader({ params, request }: Route.LoaderArgs) {
-  const { supabase } = createClient(request);
+  const { supabase, supabaseAdmin } = createClient(request);
   const publishedCourseId = params.publishedCourseId;
 
   const [courseOverview, enrollmentStatus] = await Promise.all([
@@ -97,6 +97,20 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 
   if (!courseOverview) {
     return redirectWithError('/explore', 'Could not find course data');
+  }
+
+  // Check if course is private and user is not enrolled
+  const { data: courseVisibility } = await supabaseAdmin
+    .from('published_courses')
+    .select('visibility')
+    .eq('id', publishedCourseId)
+    .single();
+
+  if (courseVisibility?.visibility === 'private' && !enrollmentStatus?.is_active) {
+    return redirectWithError(
+      '/explore',
+      'This course is private. You need to be enrolled to view it.',
+    );
   }
 
   const lessonNavigationPromise = getUnifiedNavigation({
@@ -227,7 +241,6 @@ export default function PublishedCourseIdIndex({ params, loaderData }: Route.Com
                         <GoThumbnail
                           iconUrl={course.image_url}
                           name={course.name}
-                          blurHash={course.blur_hash}
                           objectFit='fill'
                           className='m-1 rounded-full'
                           aspectRatio='1/1'
@@ -240,10 +253,11 @@ export default function PublishedCourseIdIndex({ params, loaderData }: Route.Com
             }
             title={course.name}
             closeRoute={redirectTo}
+            className='container mx-auto px-4 md:px-0'
           />
           <Modal.Body className='px-0 md:px-4'>
             <motion.div
-              className='min-h-screen'
+              className='container mx-auto min-h-screen'
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4 }}

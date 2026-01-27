@@ -1,35 +1,13 @@
--- ============================================================================
--- FUNCTION: process_course_payment_from_paystack
--- ============================================================================
--- DESCRIPTION:
---   Handles PAID course purchases made via Paystack.
---
---   Flow:
---      External → Organization → Platform → Paystack Fee
--- 
---   NOTE:
---      Free-course handling has been removed.
---      Free enrollments must now be handled by a separate function.
--- ============================================================================
-create or replace function public.process_course_payment_from_paystack(
-  p_payment_reference text,
-  p_paystack_transaction_id text,
-  p_user_id uuid,
-  p_published_course_id uuid,
-  p_tier_id uuid,
-  p_amount_paid numeric(19,4),
-  p_currency_code text,
-  p_payment_method text default 'card',
-  p_paystack_fee numeric(19,4) default 0,
-  p_metadata jsonb default '{}'::jsonb,
-  p_cohort_id uuid default null,
-  p_invite_id uuid default null
-)
-returns jsonb
-language plpgsql
-security definer
-set search_path = ''
-as $$
+drop function if exists "public"."process_course_payment_from_paystack"(p_payment_reference text, p_paystack_transaction_id text, p_user_id uuid, p_published_course_id uuid, p_tier_id uuid, p_amount_paid numeric, p_currency_code text, p_payment_method text, p_paystack_fee numeric, p_metadata jsonb, p_cohort_id uuid);
+
+set check_function_bodies = off;
+
+CREATE OR REPLACE FUNCTION public.process_course_payment_from_paystack(p_payment_reference text, p_paystack_transaction_id text, p_user_id uuid, p_published_course_id uuid, p_tier_id uuid, p_amount_paid numeric, p_currency_code text, p_payment_method text DEFAULT 'card'::text, p_paystack_fee numeric DEFAULT 0, p_metadata jsonb DEFAULT '{}'::jsonb, p_cohort_id uuid DEFAULT NULL::uuid, p_invite_id uuid DEFAULT NULL::uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
 declare
     -- Course & org info
     v_course_title text;
@@ -432,4 +410,7 @@ exception
     when others then
         raise exception 'Payment processing failed: %', sqlerrm;
 end;
-$$;
+$function$
+;
+
+

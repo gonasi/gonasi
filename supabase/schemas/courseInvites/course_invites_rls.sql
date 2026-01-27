@@ -144,9 +144,12 @@ with check (
     )
   )
 
-  -- If resending (last_sent_at changed), course must still be private
+  -- Course must be private for updates by admins/editors
+  -- (Resend cooldown is enforced in application layer to avoid infinite recursion)
   and (
-    last_sent_at = (select ci_old.last_sent_at from public.course_invites ci_old where ci_old.id = course_invites.id)
+    -- If user is the recipient accepting, no visibility check needed
+    email = (select email from public.profiles where id = (select auth.uid()))
+    -- Otherwise (admin/editor updating), course must be private
     or exists (
       select 1 from public.published_courses pc
       where pc.id = published_course_id
