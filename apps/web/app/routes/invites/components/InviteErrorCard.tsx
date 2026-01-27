@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Mail } from 'lucide-react';
+import { ChevronLeft, Mail } from 'lucide-react';
 
 import { PlainAvatar } from '~/components/avatars';
 import { NavLinkButton } from '~/components/ui/button';
@@ -40,7 +40,7 @@ export function InviteErrorCard({ message, username, imageUrl }: InviteErrorCard
               <p className='text-muted-foreground text-sm'>{message}</p>
             </div>
             <div className='pt-4'>
-              <NavLinkButton to='/' variant='ghost' className='w-full'>
+              <NavLinkButton to='/' variant='ghost' className='w-full' leftIcon={<ChevronLeft />}>
                 Go to Home
               </NavLinkButton>
             </div>

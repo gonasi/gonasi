@@ -3068,6 +3068,16 @@ export type Database = {
         }
         Returns: Json
       }
+      enroll_user_via_invite: {
+        Args: {
+          p_cohort_id?: string
+          p_invite_id?: string
+          p_published_course_id: string
+          p_tier_id: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
       get_active_organization_members: {
         Args: { _organization_id: string; _user_id: string }
         Returns: Json
@@ -3319,6 +3329,7 @@ export type Database = {
           p_amount_paid: number
           p_cohort_id?: string
           p_currency_code: string
+          p_invite_id?: string
           p_metadata?: Json
           p_payment_method?: string
           p_payment_reference: string

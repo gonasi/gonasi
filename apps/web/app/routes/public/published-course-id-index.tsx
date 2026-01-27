@@ -241,7 +241,6 @@ export default function PublishedCourseIdIndex({ params, loaderData }: Route.Com
                         <GoThumbnail
                           iconUrl={course.image_url}
                           name={course.name}
-                          blurHash={course.blur_hash}
                           objectFit='fill'
                           className='m-1 rounded-full'
                           aspectRatio='1/1'
@@ -254,10 +253,11 @@ export default function PublishedCourseIdIndex({ params, loaderData }: Route.Com
             }
             title={course.name}
             closeRoute={redirectTo}
+            className='container mx-auto px-4 md:px-0'
           />
           <Modal.Body className='px-0 md:px-4'>
             <motion.div
-              className='min-h-screen'
+              className='container mx-auto min-h-screen'
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4 }}
