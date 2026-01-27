@@ -75,14 +75,14 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
 
   if (!isValidUUID(token)) {
     console.error('[accept-course-invite] Invalid UUID:', { token });
-    return data({ error: { message: 'Invalid invitation token format.' } });
+    return data({ error: { message: 'Invalid invitation token format.' }, user });
   }
 
   // Validate the course invite using database function
   const result = await validateCourseInvite(supabaseAdmin, token, user.email);
 
   if (!result.success) {
-    return data({ error: { message: result.message } });
+    return data({ error: { message: result.message }, user });
   }
 
   // Check if user is already enrolled
@@ -96,6 +96,7 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
   if (existingEnrollment) {
     return data({
       error: { message: 'You are already enrolled in this course.' },
+      user,
     });
   }
 
@@ -178,6 +179,8 @@ export default function AcceptCourseInvite({ loaderData }: Route.ComponentProps)
     return (
       <InviteErrorCard
         message={loaderData.error?.message || 'This invitation is no longer valid.'}
+        username={loaderData.user.full_name || loaderData.user.username || 'User'}
+        imageUrl={loaderData.user.signed_url || null}
       />
     );
   }

@@ -1,15 +1,17 @@
 import { motion } from 'framer-motion';
 import { Mail } from 'lucide-react';
 
-import { AppLogo } from '~/components/app-logo';
+import { PlainAvatar } from '~/components/avatars';
 import { NavLinkButton } from '~/components/ui/button';
 import { Card, CardContent } from '~/components/ui/card';
 
 interface InviteErrorCardProps {
   message: string;
+  username: string | null;
+  imageUrl: string | null;
 }
 
-export function InviteErrorCard({ message }: InviteErrorCardProps) {
+export function InviteErrorCard({ message, username, imageUrl }: InviteErrorCardProps) {
   return (
     <div className='from-background to-muted/20 flex min-h-screen items-center justify-center bg-gradient-to-br p-4'>
       <motion.div
@@ -19,7 +21,13 @@ export function InviteErrorCard({ message }: InviteErrorCardProps) {
         className='w-full max-w-md space-y-8 text-center'
       >
         <div className='flex justify-center'>
-          <AppLogo />
+          <PlainAvatar
+            username={username || 'User'}
+            imageUrl={imageUrl || null}
+            isActive
+            size='md'
+            className='py-4'
+          />
         </div>
 
         <Card className='border-destructive/20 bg-destructive/5'>
