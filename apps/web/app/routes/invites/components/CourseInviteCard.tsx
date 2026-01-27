@@ -60,7 +60,7 @@ export function CourseInviteCard({
         )}
 
         {/* Course Details */}
-        <div className='space-y-6 p-6 md:p-8'>
+        <div className='space-y-4 p-4 md:p-8'>
           {/* Title and Description */}
           <div className='space-y-4'>
             <h2 className='text-2xl font-bold md:text-3xl'>{courseName}</h2>

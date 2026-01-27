@@ -87,7 +87,7 @@ export function meta({ data }: Route.MetaArgs) {
 }
 
 export async function loader({ params, request }: Route.LoaderArgs) {
-  const { supabase } = createClient(request);
+  const { supabase, supabaseAdmin } = createClient(request);
   const publishedCourseId = params.publishedCourseId;
 
   const [courseOverview, enrollmentStatus] = await Promise.all([
@@ -97,6 +97,20 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 
   if (!courseOverview) {
     return redirectWithError('/explore', 'Could not find course data');
+  }
+
+  // Check if course is private and user is not enrolled
+  const { data: courseVisibility } = await supabaseAdmin
+    .from('published_courses')
+    .select('visibility')
+    .eq('id', publishedCourseId)
+    .single();
+
+  if (courseVisibility?.visibility === 'private' && !enrollmentStatus?.is_active) {
+    return redirectWithError(
+      '/explore',
+      'This course is private. You need to be enrolled to view it.',
+    );
   }
 
   const lessonNavigationPromise = getUnifiedNavigation({

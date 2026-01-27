@@ -1,7 +1,16 @@
 import { useEffect, useState } from 'react';
 import { data, redirect } from 'react-router';
 import { motion, useAnimationControls } from 'framer-motion';
-import { BookOpen, CheckCircle2, ChevronRight, PlayCircle, TableOfContents } from 'lucide-react';
+import {
+  BookOpen,
+  CalendarClock,
+  CheckCircle2,
+  ChevronRight,
+  Clock,
+  PlayCircle,
+  TableOfContents,
+  Users,
+} from 'lucide-react';
 
 import { fetchCohortById } from '@gonasi/database/cohorts';
 import { fetchCourseInviteDetails, validateCourseInvite } from '@gonasi/database/courseInvites';
@@ -12,8 +21,8 @@ import type { Route } from './+types/accept-course-invite';
 import { CourseInviteCard, InviteErrorCard } from './components';
 
 import { PlainAvatar } from '~/components/avatars';
-import { PricingOptionCard } from '~/components/cards/go-course-card/PricingOptionCard';
 import { Badge } from '~/components/ui/badge';
+import { NavLinkButton } from '~/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Separator } from '~/components/ui/separator';
 import { createClient } from '~/lib/supabase/supabase.server';
@@ -176,19 +185,28 @@ export default function AcceptCourseInvite({ loaderData }: Route.ComponentProps)
   const { invite, user, courseOverview } = loaderData;
   const { course, chapters } = courseOverview || {};
 
-  // Find the pricing tier that matches the invite
-  const matchingPricingTier = course?.pricing_tiers?.find(
-    (tier) => tier.tier_name === invite.tierName,
-  );
+  // Calculate expiration urgency
+  const getExpirationUrgency = () => {
+    if (!invite.expiresAt) return null;
+    const now = new Date();
+    const expires = new Date(invite.expiresAt);
+    const daysLeft = Math.ceil((expires.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+    if (daysLeft <= 3) return { days: daysLeft, urgent: true };
+    if (daysLeft <= 7) return { days: daysLeft, urgent: false };
+    return null;
+  };
+
+  const expirationUrgency = getExpirationUrgency();
 
   // Success state - show invite details and accept button
   return (
-    <div className='px-0 py-12 md:px-4'>
+    <div className='px-0 py-4 md:px-4'>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: 'easeOut' }}
-        className='mx-auto max-w-4xl space-y-8'
+        className='container mx-auto space-y-8'
       >
         {/* Header */}
         <div className='flex flex-col items-center space-y-4 text-center'>
@@ -200,196 +218,381 @@ export default function AcceptCourseInvite({ loaderData }: Route.ComponentProps)
               size='md'
               className='py-4'
             />
-            <h1 className='text-3xl font-bold'>You&apos;re Invited!</h1>
-            <p className='text-muted-foreground font-secondary text-lg'>
-              Join an exclusive learning experience
+            <h1 className='text-3xl font-bold md:text-4xl'>
+              {invite.organizationName} Invited You to Learn
+            </h1>
+            <p className='text-muted-foreground font-secondary mt-2 text-lg md:text-xl'>
+              {invite.isFree
+                ? 'Your exclusive free access is ready'
+                : 'You have special access to join this course'}
             </p>
           </div>
+
+          {/* Urgency Banner */}
+          {expirationUrgency && (
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.3 }}
+              className={`flex items-center gap-2 rounded-full px-2 py-1 ${
+                expirationUrgency.urgent
+                  ? 'bg-red-50 text-red-700 dark:bg-red-950/30 dark:text-red-400'
+                  : 'bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400'
+              }`}
+            >
+              <Clock className='size-4' />
+              <span className='text-xs font-medium'>
+                {expirationUrgency.days === 1
+                  ? 'Invitation expires in 24 hours'
+                  : `Only ${expirationUrgency.days} days left to accept`}
+              </span>
+            </motion.div>
+          )}
         </div>
 
-        {/* Course Invite Card */}
-        <CourseInviteCard
-          courseName={invite.courseName}
-          description={invite.description}
-          imageUrl={invite.imageUrl}
-          organizationName={invite.organizationName}
-          organizationPhotoUrl={invite.organizationAvatarUrl}
-          categoryName={invite.categoryName}
-          subCategoryName={invite.subCategoryName}
-          publishedAt={invite.publishedAt}
-          cohortName={invite.cohortName}
-          tierName={invite.tierName}
-          isFree={invite.isFree}
-          price={invite.price}
-          currencyCode={invite.currencyCode}
-          expiresAt={invite.expiresAt}
-        />
+        <div className='relative flex flex-col space-x-0 md:flex-row md:space-x-8'>
+          <div className='w-full md:w-[60%]'>
+            {/* Course Invite Card */}
+            <CourseInviteCard
+              courseName={invite.courseName}
+              description={invite.description}
+              imageUrl={invite.imageUrl}
+              organizationName={invite.organizationName}
+              organizationPhotoUrl={invite.organizationAvatarUrl}
+              categoryName={invite.categoryName}
+              subCategoryName={invite.subCategoryName}
+              publishedAt={invite.publishedAt}
+              cohortName={invite.cohortName}
+              tierName={invite.tierName}
+              isFree={invite.isFree}
+              price={invite.price}
+              currencyCode={invite.currencyCode}
+              expiresAt={invite.expiresAt}
+            />
 
-        {/* Course Stats */}
-        {course && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className='bg-muted/30 grid grid-cols-2 gap-4 rounded-lg p-6'
-          >
-            <div className='flex items-center gap-3'>
-              <div className='bg-primary/10 text-primary rounded-full p-3'>
-                <TableOfContents className='size-5' />
-              </div>
-              <div>
-                <p className='text-2xl font-bold'>{course.total_chapters}</p>
-                <p className='text-muted-foreground text-sm'>
-                  {course.total_chapters === 1 ? 'Chapter' : 'Chapters'}
-                </p>
-              </div>
-            </div>
-            <div className='flex items-center gap-3'>
-              <div className='bg-primary/10 text-primary rounded-full p-3'>
-                <BookOpen className='size-5' />
-              </div>
-              <div>
-                <p className='text-2xl font-bold'>{course.total_lessons}</p>
-                <p className='text-muted-foreground text-sm'>
-                  {course.total_lessons === 1 ? 'Lesson' : 'Lessons'}
-                </p>
-              </div>
-            </div>
-          </motion.div>
-        )}
+            {/* Course Stats */}
+            {course && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+                className='bg-muted/30 grid grid-cols-2 gap-4 p-4 md:p-8'
+              >
+                <div className='flex items-center gap-3'>
+                  <div className='bg-primary/10 text-primary rounded-full p-3'>
+                    <TableOfContents className='size-5' />
+                  </div>
+                  <div>
+                    <p className='text-2xl font-bold'>{course.total_chapters}</p>
+                    <p className='text-muted-foreground text-sm'>
+                      {course.total_chapters === 1 ? 'Chapter' : 'Chapters'}
+                    </p>
+                  </div>
+                </div>
+                <div className='flex items-center gap-3'>
+                  <div className='bg-primary/10 text-primary rounded-full p-3'>
+                    <BookOpen className='size-5' />
+                  </div>
+                  <div>
+                    <p className='text-2xl font-bold'>{course.total_lessons}</p>
+                    <p className='text-muted-foreground text-sm'>
+                      {course.total_lessons === 1 ? 'Lesson' : 'Lessons'}
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+            )}
 
-        {/* Course Curriculum */}
-        {chapters && chapters.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-          >
-            <Card className='rounded-none border-0 shadow-none'>
-              <CardHeader className='px-0'>
-                <CardTitle className='flex items-center gap-2'>
-                  <PlayCircle className='size-5' />
-                  Course Curriculum
-                </CardTitle>
-              </CardHeader>
-              <CardContent className='space-y-4 px-0'>
-                {chapters.map((chapter, idx) => (
-                  <div key={chapter.id} className='border-border space-y-2 rounded-lg border p-4'>
-                    <div className='flex items-start justify-between gap-4'>
-                      <div className='flex-1'>
-                        <div className='flex items-center gap-2'>
-                          <Badge variant='outline' className='text-xs'>
-                            Chapter {idx + 1}
+            {/* Course Curriculum */}
+            {chapters && chapters.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+              >
+                <Card className='rounded-none border-0 px-4 shadow-none md:px-8'>
+                  <CardHeader className='px-0'>
+                    <CardTitle className='flex items-center gap-2 text-2xl'>
+                      <PlayCircle className='size-6' />
+                      <span className='mt-1'>{`What You'll Learn`}</span>
+                    </CardTitle>
+                    <p className='text-muted-foreground font-secondary text-sm'>
+                      Complete curriculum designed to take you from beginner to expert
+                    </p>
+                  </CardHeader>
+                  <CardContent className='space-y-4 px-0'>
+                    {chapters.map((chapter, idx) => (
+                      <div
+                        key={chapter.id}
+                        className='border-border hover:border-primary/50 space-y-2 rounded-lg border p-4 transition-all hover:shadow-sm'
+                      >
+                        <div className='flex items-start justify-between gap-4'>
+                          <div className='flex-1'>
+                            <div className='flex items-center gap-2'>
+                              <Badge variant='outline' className='text-xs'>
+                                Chapter {idx + 1}
+                              </Badge>
+                              <h3 className='mt-1 font-semibold'>{chapter.name}</h3>
+                            </div>
+                            {chapter.description && (
+                              <p className='text-muted-foreground font-secondary mt-2 text-sm'>
+                                {chapter.description}
+                              </p>
+                            )}
+                          </div>
+                          <Badge variant='secondary' className='flex-shrink-0'>
+                            {chapter.total_lessons}{' '}
+                            {chapter.total_lessons === 1 ? 'lesson' : 'lessons'}
                           </Badge>
-                          <h3 className='font-semibold'>{chapter.name}</h3>
                         </div>
-                        {chapter.description && (
-                          <p className='text-muted-foreground font-secondary mt-2 text-sm'>
-                            {chapter.description}
-                          </p>
+                        {chapter.lessons && chapter.lessons.length > 0 && (
+                          <div className='border-l-border mt-3 ml-4 space-y-2 border-l-2 pl-4'>
+                            {chapter.lessons.slice(0, 3).map((lesson) => (
+                              <div key={lesson.id} className='flex items-center gap-2 text-sm'>
+                                <ChevronRight className='text-muted-foreground size-4 flex-shrink-0' />
+                                <span className='text-muted-foreground'>{lesson.name}</span>
+                              </div>
+                            ))}
+                            {chapter.lessons.length > 3 && (
+                              <p className='text-muted-foreground text-xs italic'>
+                                + {chapter.lessons.length - 3} more{' '}
+                                {chapter.lessons.length - 3 === 1 ? 'lesson' : 'lessons'}
+                              </p>
+                            )}
+                          </div>
                         )}
                       </div>
-                      <Badge variant='secondary' className='flex-shrink-0'>
-                        {chapter.total_lessons} {chapter.total_lessons === 1 ? 'lesson' : 'lessons'}
+                    ))}
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
+
+            {/* What You'll Get */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className='space-y-6 px-4 py-8 md:px-0 md:py-16'
+            >
+              <div>
+                <h3 className='text-3xl font-semibold md:text-4xl'>
+                  Everything Included in Your Access
+                </h3>
+                <p className='text-muted-foreground font-secondary mt-2 text-lg'>
+                  {invite.isFree
+                    ? `${invite.organizationName} is covering the full cost for you`
+                    : `Premium features included with your ${invite.tierName} access`}
+                </p>
+              </div>
+              <div className='space-y-4'>
+                <div className='flex items-start gap-3'>
+                  <CheckCircle2 className='text-primary size-6 flex-shrink-0' />
+                  <div>
+                    <p className='font-secondary text-lg font-medium'>Complete Course Access</p>
+                    <p className='text-muted-foreground font-secondary text-sm'>
+                      Unlock all {course?.total_chapters} chapters and {course?.total_lessons}{' '}
+                      lessons immediately after enrolling
+                    </p>
+                  </div>
+                </div>
+                <div className='flex items-start gap-3'>
+                  <CheckCircle2 className='text-primary size-6 flex-shrink-0' />
+                  <div>
+                    <p className='font-secondary text-lg font-medium'>
+                      {invite.isFree ? 'No Payment Required' : `${invite.tierName} Tier Benefits`}
+                    </p>
+                    <p className='text-muted-foreground font-secondary text-sm'>
+                      {invite.isFree
+                        ? 'Completely free with no hidden fees or future charges'
+                        : `Full access to premium features and exclusive content`}
+                    </p>
+                  </div>
+                </div>
+                {invite.cohortName && (
+                  <div className='flex items-start gap-3'>
+                    <CheckCircle2 className='text-primary size-6 flex-shrink-0' />
+                    <div>
+                      <p className='font-secondary text-lg font-medium'>
+                        Exclusive Cohort Community
+                      </p>
+                      <p className='text-muted-foreground font-secondary text-sm'>
+                        Join the {invite.cohortName} cohort and connect with fellow learners
+                      </p>
+                    </div>
+                  </div>
+                )}
+                <div className='flex items-start gap-3'>
+                  <CheckCircle2 className='text-primary size-6 flex-shrink-0' />
+                  <div>
+                    <p className='font-secondary text-lg font-medium'>Learn at Your Own Pace</p>
+                    <p className='text-muted-foreground font-secondary text-sm'>
+                      Interactive lessons with progress tracking and lifetime access to course
+                      materials
+                    </p>
+                  </div>
+                </div>
+                <div className='flex items-start gap-3'>
+                  <CheckCircle2 className='text-primary size-6 flex-shrink-0' />
+                  <div>
+                    <p className='font-secondary text-lg font-medium'>Instant Access</p>
+                    <p className='text-muted-foreground font-secondary text-sm'>
+                      {invite.isFree
+                        ? 'Start learning immediately - no payment or approval needed'
+                        : 'Begin your learning journey right after enrollment is complete'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+
+            <Separator />
+          </div>
+
+          {/* Desktop: Sticky right sidebar */}
+          <div className='hidden md:block md:w-[40%]'>
+            <div className='sticky top-8 space-y-4'>
+              <Card className='rounded-none shadow-none'>
+                <CardContent className='space-y-6 px-8'>
+                  <div className='space-y-2'>
+                    <h3 className='text-2xl font-bold'>
+                      {invite.isFree ? 'Claim Your Free Access' : 'Complete Your Enrollment'}
+                    </h3>
+                    <p className='text-muted-foreground font-secondary'>
+                      {invite.isFree
+                        ? 'This invitation gives you complimentary access to the full course'
+                        : 'Secure your spot and start learning today'}
+                    </p>
+                  </div>
+
+                  <Separator />
+
+                  <div className='space-y-3'>
+                    <div className='flex items-center justify-between'>
+                      <span className='text-sm font-medium'>Course Access:</span>
+                      <Badge variant='secondary' className='text-sm'>
+                        {invite.tierName}
                       </Badge>
                     </div>
-                    {chapter.lessons && chapter.lessons.length > 0 && (
-                      <div className='border-l-border mt-3 ml-4 space-y-2 border-l-2 pl-4'>
-                        {chapter.lessons.slice(0, 3).map((lesson) => (
-                          <div key={lesson.id} className='flex items-center gap-2 text-sm'>
-                            <ChevronRight className='text-muted-foreground size-4 flex-shrink-0' />
-                            <span className='text-muted-foreground'>{lesson.name}</span>
-                          </div>
-                        ))}
-                        {chapter.lessons.length > 3 && (
-                          <p className='text-muted-foreground text-xs italic'>
-                            + {chapter.lessons.length - 3} more{' '}
-                            {chapter.lessons.length - 3 === 1 ? 'lesson' : 'lessons'}
-                          </p>
+                    <div className='flex items-center justify-between'>
+                      <span className='text-sm font-medium'>
+                        {invite.isFree ? 'Your Price:' : 'Total:'}
+                      </span>
+                      <span className='text-xl font-bold'>
+                        {invite.isFree ? (
+                          <span className='text-green-600 dark:text-green-500'>FREE</span>
+                        ) : (
+                          <span>
+                            {invite.currencyCode} {invite.price?.toLocaleString()}
+                          </span>
                         )}
+                      </span>
+                    </div>
+                    {!invite.isFree && (
+                      <div className='bg-muted/50 rounded-lg p-2'>
+                        <p className='text-muted-foreground text-xs'>
+                          One-time payment • Lifetime access • Secure checkout
+                        </p>
+                      </div>
+                    )}
+                    {invite.expiresAt && (
+                      <div className='flex items-center justify-between'>
+                        <span className='text-sm font-medium'>Offer Expires:</span>
+                        <div className='flex items-center space-x-2 text-amber-700 dark:text-amber-400'>
+                          <CalendarClock size={16} />
+                          <span className='mt-1 text-sm font-semibold'>
+                            {new Date(invite.expiresAt).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric',
+                            })}
+                          </span>
+                        </div>
                       </div>
                     )}
                   </div>
-                ))}
-              </CardContent>
-            </Card>
+
+                  <div className='space-y-3'>
+                    <NavLinkButton to='/' className='w-full text-base font-semibold' size='lg'>
+                      {invite.isFree ? 'Claim Free Access' : 'Enroll Now'}
+                    </NavLinkButton>
+                    <p className='text-muted-foreground font-secondary text-center text-xs'>
+                      {invite.isFree
+                        ? 'No credit card required • Start learning instantly'
+                        : 'Secure payment • Start learning immediately after checkout'}
+                    </p>
+                  </div>
+
+                  {!invite.isFree && (
+                    <div className='border-t pt-4'>
+                      <div className='text-muted-foreground flex items-center gap-2 text-xs'>
+                        <Users className='size-4' />
+                        <span>Join other learners already enrolled in this course</span>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Trust Signals */}
+              <div className='bg-muted/30 space-y-2 p-4'>
+                <p className='text-muted-foreground text-xs font-semibold tracking-wide uppercase'>
+                  Trusted By
+                </p>
+                <p className='font-secondary text-sm'>{invite.organizationName}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile: Bottom sticky CTA (shows after scrolling) */}
+        {showFloatingCTA && (
+          <motion.div
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            transition={{ duration: 0.3, ease: 'easeOut' }}
+            className='fixed inset-x-0 -bottom-8 z-50 md:hidden'
+          >
+            <div className='bg-background/98 border-primary/20 border-t-2 p-4 shadow-2xl backdrop-blur-md'>
+              <div className='flex items-center justify-between gap-4'>
+                <div className='min-w-0 flex-1'>
+                  <p className='truncate font-semibold'>{invite.courseName}</p>
+                  <p className='text-sm'>
+                    {invite.isFree ? (
+                      <span className='font-semibold text-green-600 dark:text-green-500'>
+                        FREE Access
+                      </span>
+                    ) : (
+                      <span className='text-muted-foreground'>
+                        {invite.currencyCode} {invite.price?.toLocaleString()}
+                      </span>
+                    )}
+                  </p>
+                </div>
+                <motion.button
+                  animate={controls}
+                  className='bg-primary text-primary-foreground hover:bg-primary/90 flex-shrink-0 rounded-lg px-6 py-3 text-base font-bold shadow-lg transition-all active:scale-95'
+                >
+                  {invite.isFree ? 'Claim Now' : 'Enroll'}
+                </motion.button>
+              </div>
+            </div>
           </motion.div>
         )}
 
-        {/* What You'll Get */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-          className='bg-primary/5 border-primary/20 space-y-4 rounded-lg border p-6'
-        >
-          <h3 className='text-lg font-semibold'>What You&apos;ll Get</h3>
-          <div className='space-y-3'>
-            <div className='flex items-start gap-3'>
-              <CheckCircle2 className='text-primary size-5 flex-shrink-0' />
-              <p className='text-sm'>
-                Full access to all {course?.total_chapters} chapters and {course?.total_lessons}{' '}
-                interactive lessons
-              </p>
-            </div>
-            <div className='flex items-start gap-3'>
-              <CheckCircle2 className='text-primary size-5 flex-shrink-0' />
-              <p className='text-sm'>
-                {invite.isFree
-                  ? 'Completely free access with no hidden charges'
-                  : `Special ${invite.tierName} access included`}
-              </p>
-            </div>
-            <div className='flex items-start gap-3'>
-              <CheckCircle2 className='text-primary size-5 flex-shrink-0' />
-              <p className='text-sm'>
-                Join a community of learners{' '}
-                {invite.cohortName && `in the ${invite.cohortName} cohort`}
-              </p>
-            </div>
-            <div className='flex items-start gap-3'>
-              <CheckCircle2 className='text-primary size-5 flex-shrink-0' />
-              <p className='text-sm'>
-                Learn at your own pace with interactive content and progress tracking
-              </p>
-            </div>
-          </div>
-        </motion.div>
-
-        <Separator />
-
         {/* Footer Note */}
-        <p className='text-muted-foreground text-center text-sm'>
-          By accepting this invitation, you&apos;ll get immediate access to this course and join the
-          learning community.
-        </p>
+        <div className='bg-muted/30 rounded-lg p-6 text-center'>
+          <p className='text-muted-foreground font-secondary text-sm'>
+            {invite.isFree
+              ? `This exclusive invitation from ${invite.organizationName} gives you full course access at no cost. Accept now to start learning.`
+              : `Secure your enrollment to access all course content and join the learning community.`}
+          </p>
+        </div>
 
-        {/* Spacing for floating CTA */}
-        <div className='h-32' />
+        {/* Spacing for mobile floating CTA */}
+        <div className='h-24 md:hidden' />
       </motion.div>
-
-      {/* Floating CTA */}
-      {matchingPricingTier && showFloatingCTA && (
-        <motion.div
-          initial={{ opacity: 0, y: 100 }}
-          animate={{
-            opacity: 1,
-            y: 0,
-          }}
-          exit={{ opacity: 0, y: 100 }}
-          transition={{ duration: 0.4, ease: 'easeOut' }}
-          className='border-border bg-background/95 fixed right-0 bottom-0 left-0 z-50 border-t shadow-lg backdrop-blur-md'
-        >
-          <motion.div animate={controls} className='mx-auto max-w-4xl px-4 py-3'>
-            <PricingOptionCard
-              pricingData={matchingPricingTier}
-              hideDescription={false}
-              hideContinueButton={false}
-              enrollUrl='#accept-invite'
-            />
-          </motion.div>
-        </motion.div>
-      )}
     </div>
   );
 }
