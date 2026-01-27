@@ -585,7 +585,7 @@ export default function AcceptCourseInvite({ loaderData }: Route.ComponentProps)
         )}
 
         {/* Footer Note */}
-        <div className='bg-muted/30 rounded-lg p-6 text-center'>
+        <div className='md:bg-muted/30 rounded-lg bg-none p-4 text-center md:p-6'>
           <p className='text-muted-foreground font-secondary text-sm'>
             {invite.isFree
               ? `This exclusive invitation from ${invite.organizationName} gives you full course access at no cost. Accept now to start learning.`
