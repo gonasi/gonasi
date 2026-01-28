@@ -54,7 +54,7 @@ export default function GoPluginsMenuDialog() {
   return (
     <>
       <motion.div
-        className='sticky top-11 z-10'
+        className='sticky top-0 z-10'
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
