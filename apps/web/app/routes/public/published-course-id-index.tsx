@@ -334,7 +334,6 @@ export default function PublishedCourseIdIndex({ params, loaderData }: Route.Com
                     <GoThumbnail
                       iconUrl={course.image_url}
                       name={course.name}
-                      blurHash={course.blur_hash}
                       badges={[badgeContent]}
                     />
 

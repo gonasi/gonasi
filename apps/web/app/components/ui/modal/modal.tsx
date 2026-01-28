@@ -22,9 +22,9 @@ const Modal = (props: ComponentProps<typeof Dialog.Root>) => {
 
 const Content = ({ children, title = '', size = 'md', className }: ContentProps) => {
   const sizeClasses = {
-    sm: 'max-w-md',
-    md: 'max-w-xl',
-    lg: 'max-w-3xl',
+    sm: 'max-w-md max-h-[80%]',
+    md: 'max-w-xl max-h-[90%]',
+    lg: 'max-w-3xl max-h-[90%]',
     xl: 'max-w-[80%]',
     full: 'min-w-full min-h-full rounded-none',
   };

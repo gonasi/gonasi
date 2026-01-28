@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect, useState } from 'react';
 import { data, Outlet, useFetcher, useNavigate } from 'react-router';
 import { Reorder } from 'framer-motion';
 import { PenOff, SquarePen } from 'lucide-react';
-import { dataWithError } from 'remix-toast';
+import { dataWithError, redirectWithError } from 'remix-toast';
 import { ClientOnly } from 'remix-utils/client-only';
 
 import {
@@ -43,13 +43,13 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     }),
   ]);
 
-  // if (!lesson || !lessonBlocks.data) {
-  //   // Redirect with error if data is missing
-  //   return redirectWithError(
-  //     `/${params.organizationId}/builder/${params.courseId}/content/${params.chapterId}/lessons`,
-  //     'Lesson not found',
-  //   );
-  // }
+  if (!lesson || !lessonBlocks.data) {
+    // Redirect with error if data is missing
+    return redirectWithError(
+      `/${params.organizationId}/builder/${params.courseId}/content/${params.chapterId}/lessons`,
+      'Lesson not found',
+    );
+  }
 
   return { lesson, lessonBlocks: lessonBlocks.data, canEdit: Boolean(canEdit.data) };
 }
@@ -108,6 +108,7 @@ export default function EditLessonContent({ loaderData, params }: Route.Componen
 
   const [reorderedBlocks, setReorderedBlocks] = useState<Block[]>(lessonBlocks ?? []);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   useEffect(() => {
     setReorderedBlocks(lessonBlocks ?? []);
@@ -144,53 +145,57 @@ export default function EditLessonContent({ loaderData, params }: Route.Componen
             subTitle={lesson.lesson_types?.name}
             closeRoute={`/${params.organizationId}/builder/${params.courseId}/content/${params.chapterId}/lessons`}
           />
-          <div className='mx-auto flex max-w-xl pr-4 pl-8 md:px-0'>
-            {reorderedBlocks.length > 0 ? (
-              <Reorder.Group
-                axis='y'
-                values={reorderedBlocks}
-                onReorder={handleReorder}
-                className='flex w-full flex-col space-y-8 py-10'
-              >
-                {reorderedBlocks.map((block, index) => {
-                  const blockIdPath = `${lessonBasePath}/${block.id}`;
-                  const isLastBlock = index === reorderedBlocks.length - 1;
+          <Modal.Body>
+            <div className='mx-auto flex max-w-2xl pl-4 md:px-0'>
+              {reorderedBlocks.length > 0 ? (
+                <Reorder.Group
+                  axis='y'
+                  values={reorderedBlocks}
+                  onReorder={handleReorder}
+                  className='flex w-full flex-col space-y-8 py-10'
+                >
+                  {reorderedBlocks.map((block, index) => {
+                    const blockIdPath = `${lessonBasePath}/${block.id}`;
+                    const isLastBlock = index === reorderedBlocks.length - 1;
 
-                  return (
-                    <LessonBlockWrapper
-                      key={block.id}
-                      block={block}
-                      loading={isSubmitting}
-                      onEdit={navigateTo(`${blockIdPath}/edit`)}
-                      onDelete={navigateTo(`${blockIdPath}/delete`)}
-                      canEdit={canEdit}
-                    >
-                      <ClientOnly fallback={<Spinner />}>
-                        {() => (
-                          <Suspense fallback={<Spinner />}>
-                            <ViewPluginTypesRenderer
-                              blockWithProgress={{
-                                block,
-                                block_progress: null,
-                                is_active: false,
-                                is_visible: true,
-                                is_last_block: isLastBlock,
-                              }}
-                              mode='preview'
-                            />
-                          </Suspense>
-                        )}
-                      </ClientOnly>
-                    </LessonBlockWrapper>
-                  );
-                })}
-              </Reorder.Group>
-            ) : (
-              <p>No blocks found</p>
-            )}
-          </div>
+                    return (
+                      <LessonBlockWrapper
+                        key={block.id}
+                        block={block}
+                        loading={isSubmitting}
+                        onEdit={navigateTo(`${blockIdPath}/edit`)}
+                        onDelete={navigateTo(`${blockIdPath}/delete`)}
+                        canEdit={canEdit}
+                        isDragging={isDragging}
+                        onMinimize={() => setIsDragging(true)}
+                        onExpand={() => setIsDragging(false)}
+                      >
+                        <ClientOnly fallback={<Spinner />}>
+                          {() => (
+                            <Suspense fallback={<Spinner />}>
+                              <ViewPluginTypesRenderer
+                                blockWithProgress={{
+                                  block,
+                                  block_progress: null,
+                                  is_active: false,
+                                  is_visible: true,
+                                  is_last_block: isLastBlock,
+                                }}
+                              />
+                            </Suspense>
+                          )}
+                        </ClientOnly>
+                      </LessonBlockWrapper>
+                    );
+                  })}
+                </Reorder.Group>
+              ) : (
+                <p>No blocks found</p>
+              )}
+            </div>
 
-          {canEdit ? <PluginButton onClick={navigateTo(`${lessonBasePath}/plugins`)} /> : null}
+            {canEdit ? <PluginButton onClick={navigateTo(`${lessonBasePath}/plugins`)} /> : null}
+          </Modal.Body>
         </Modal.Content>
       </Modal>
       <Outlet />

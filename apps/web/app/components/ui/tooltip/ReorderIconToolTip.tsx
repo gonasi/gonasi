@@ -12,6 +12,8 @@ interface ReorderIconTooltipProps {
   dragControls: DragControls;
   disabled?: boolean;
   className?: string;
+  onPointerDown?: () => void;
+  onPointerUp?: () => void;
 }
 
 export function ReorderIconTooltip({
@@ -21,6 +23,8 @@ export function ReorderIconTooltip({
   dragControls,
   disabled,
   className,
+  onPointerDown,
+  onPointerUp,
 }: ReorderIconTooltipProps) {
   return (
     <TooltipProvider>
@@ -38,7 +42,13 @@ export function ReorderIconTooltip({
               className,
             )}
             style={{ zIndex: '5', touchAction: 'none' }}
-            onPointerDown={(event) => dragControls.start(event)}
+            onPointerDown={(event) => {
+              onPointerDown?.();
+              dragControls.start(event);
+            }}
+            onPointerUp={() => {
+              onPointerUp?.();
+            }}
             disabled={disabled}
           >
             <Icon
