@@ -351,7 +351,7 @@ export default function CoursePricing({ loaderData, params }: Route.ComponentPro
           ))}
         </Reorder.Group>
       </Table>
-      <Outlet />
+      <Outlet context={{ isPaid }} />
     </div>
   );
 }

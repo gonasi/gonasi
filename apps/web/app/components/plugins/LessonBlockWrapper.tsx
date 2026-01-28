@@ -1,4 +1,4 @@
-import { Reorder, useDragControls, useMotionValue } from 'framer-motion';
+import { motion, Reorder, useDragControls, useMotionValue } from 'framer-motion';
 import { GripVerticalIcon, Pencil, Trash } from 'lucide-react';
 
 import { ActionDropdown } from '../action-dropdown';
@@ -24,10 +24,23 @@ interface LessonBlockWrapperProps {
   loading?: boolean;
   block: Block;
   canEdit: boolean;
+  isDragging?: boolean;
+  onMinimize?: () => void;
+  onExpand?: () => void;
 }
 
 export default function LessonBlockWrapper(props: LessonBlockWrapperProps) {
-  const { children, onEdit, onDelete, loading, block, canEdit } = props;
+  const {
+    children,
+    onEdit,
+    onDelete,
+    loading,
+    block,
+    canEdit,
+    isDragging = false,
+    onMinimize,
+    onExpand,
+  } = props;
 
   const title = toTitleCaseFromUnderscore(block.plugin_type ?? 'Edit');
 
@@ -39,12 +52,12 @@ export default function LessonBlockWrapper(props: LessonBlockWrapperProps) {
     <Reorder.Item
       value={block}
       id={block.id}
-      style={{ boxShadow: blockBoxShadow, y: courseY }}
+      style={{ ...blockBoxShadow, y: courseY, borderRadius: '8px' }}
       dragListener={false}
       dragControls={blockDragControls}
       className='bg-card/80 border-card w-full rounded-lg border'
     >
-      <div className={cn('relative px-4 py-4')}>
+      <div className={cn('relative rounded-lg p-4')}>
         <>
           <div className='absolute top-3 -left-4'>
             <ReorderIconTooltip
@@ -52,6 +65,8 @@ export default function LessonBlockWrapper(props: LessonBlockWrapperProps) {
               icon={GripVerticalIcon}
               disabled={loading || !canEdit}
               dragControls={blockDragControls}
+              onPointerDown={onMinimize}
+              onPointerUp={onExpand}
             />
           </div>
           <div className='flex w-full items-center justify-between'>
@@ -66,7 +81,21 @@ export default function LessonBlockWrapper(props: LessonBlockWrapperProps) {
             ) : null}
           </div>
         </>
-        <div className='mt-4'>{children}</div>
+        <motion.div
+          className='overflow-hidden'
+          initial={false}
+          animate={{
+            height: isDragging ? 0 : 'auto',
+            opacity: isDragging ? 0 : 1,
+            marginTop: isDragging ? 0 : 16,
+          }}
+          transition={{
+            duration: 0.3,
+            ease: [0.4, 0.0, 0.2, 1],
+          }}
+        >
+          {children}
+        </motion.div>
       </div>
     </Reorder.Item>
   );

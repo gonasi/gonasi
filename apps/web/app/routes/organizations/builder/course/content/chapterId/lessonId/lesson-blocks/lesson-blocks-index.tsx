@@ -108,6 +108,7 @@ export default function EditLessonContent({ loaderData, params }: Route.Componen
 
   const [reorderedBlocks, setReorderedBlocks] = useState<Block[]>(lessonBlocks ?? []);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   useEffect(() => {
     setReorderedBlocks(lessonBlocks ?? []);
@@ -145,7 +146,7 @@ export default function EditLessonContent({ loaderData, params }: Route.Componen
             closeRoute={`/${params.organizationId}/builder/${params.courseId}/content/${params.chapterId}/lessons`}
           />
           <Modal.Body>
-            <div className='mx-auto flex max-w-2xl pr-4 pl-8 md:px-0'>
+            <div className='mx-auto flex max-w-2xl pl-4 md:px-0'>
               {reorderedBlocks.length > 0 ? (
                 <Reorder.Group
                   axis='y'
@@ -165,6 +166,9 @@ export default function EditLessonContent({ loaderData, params }: Route.Componen
                         onEdit={navigateTo(`${blockIdPath}/edit`)}
                         onDelete={navigateTo(`${blockIdPath}/delete`)}
                         canEdit={canEdit}
+                        isDragging={isDragging}
+                        onMinimize={() => setIsDragging(true)}
+                        onExpand={() => setIsDragging(false)}
                       >
                         <ClientOnly fallback={<Spinner />}>
                           {() => (
