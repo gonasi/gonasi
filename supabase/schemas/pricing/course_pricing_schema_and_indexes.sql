@@ -61,6 +61,7 @@ create table public.course_pricing_tiers (
   -- Audit metadata
   created_at timestamptz not null default timezone('utc', now()),
   updated_at timestamptz not null default timezone('utc', now()),
+  pricing_version integer not null default 1,
   created_by uuid not null references public.profiles(id) on delete cascade,
   updated_by uuid not null references public.profiles(id) on delete cascade,
 
@@ -106,14 +107,18 @@ create table public.course_pricing_tiers (
 -- Optimize frequent filtering, sorting, and joins
 
 -- Foreign key join indexes
-create index idx_course_pricing_tiers_course_id 
+create index idx_course_pricing_tiers_course_id
   on public.course_pricing_tiers (course_id);
 
-create index idx_course_pricing_tiers_created_by 
+create index idx_course_pricing_tiers_created_by
   on public.course_pricing_tiers (created_by);
 
-create index idx_course_pricing_tiers_updated_by 
+create index idx_course_pricing_tiers_updated_by
   on public.course_pricing_tiers (updated_by);
+
+-- Version tracking index
+create index idx_course_pricing_tiers_pricing_version
+  on public.course_pricing_tiers (pricing_version);
 
 -- Filter by course + is_active
 create index idx_course_pricing_tiers_course_id_active 

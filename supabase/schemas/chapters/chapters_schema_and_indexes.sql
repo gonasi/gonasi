@@ -11,6 +11,7 @@ create table public.chapters (
   position integer default 0,                                        -- chapter order in course
   created_at timestamptz not null default timezone('utc', now()),    -- timestamp of creation
   updated_at timestamptz not null default timezone('utc', now()),    -- timestamp of last update
+  content_version integer not null default 1,                        -- increments when chapter content changes
   created_by uuid,                                          -- fk: user who created the chapter
   updated_by uuid,                                          -- fk: user who last updated the chapter
 
@@ -30,6 +31,7 @@ create table public.chapters (
 
 create index idx_chapters_organization_id on public.chapters (organization_id);
 create index idx_chapters_course_id on public.chapters (course_id);
-create index idx_chapters_created_by on public.chapters (created_by); 
+create index idx_chapters_created_by on public.chapters (created_by);
 create index idx_chapters_updated_by on public.chapters (updated_by);
 create index idx_chapters_position on public.chapters (course_id, position);
+create index idx_chapters_content_version on public.chapters (content_version);

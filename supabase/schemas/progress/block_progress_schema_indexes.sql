@@ -39,6 +39,10 @@ create table public.block_progress (
   interaction_data jsonb, -- stores user input: selected answers, steps taken, etc.
   last_response jsonb,    -- optional snapshot of last full submission
 
+  -- version tracking (for detecting stale progress when block content changes)
+  block_content_version integer, -- version of block when it was completed
+  block_published_at timestamptz, -- when the block was published (for change detection)
+
   -- auditing
   user_id uuid not null references public.profiles(id) on delete cascade,
   created_at timestamptz not null default timezone('utc', now()),
@@ -81,6 +85,10 @@ create index idx_block_progress_user_course_completed
 -- Composite index to support fast visibility/progress checks per block
 create index idx_block_progress_user_block
   on public.block_progress(user_id, block_id);
+
+-- Index for detecting version mismatches (stale progress after block content changes)
+create index idx_block_progress_version_mismatch
+  on public.block_progress(published_course_id, block_id, block_content_version);
 
 -- New index for weight-based calculations
 create index idx_block_progress_lesson_weight

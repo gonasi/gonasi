@@ -33,6 +33,10 @@ create table public.lesson_progress (
   updated_at timestamptz not null default timezone('utc', now()),
   created_at timestamptz not null default timezone('utc', now()),
 
+  -- Version tracking (for detecting if lesson structure changed)
+  lesson_content_version integer,
+  last_recalculated_at timestamptz,
+
   unique (user_id, published_course_id, lesson_id),
   unique (chapter_progress_id, lesson_id)
 );
