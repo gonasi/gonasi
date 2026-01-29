@@ -47,6 +47,10 @@ create table public.chapter_progress (
   updated_at timestamptz not null default timezone('utc', now()),
   created_at timestamptz not null default timezone('utc', now()),
 
+  -- Version tracking (for detecting if chapter structure changed)
+  chapter_content_version integer,
+  last_recalculated_at timestamptz,
+
   unique (user_id, published_course_id, chapter_id),
   unique (course_progress_id, chapter_id)
 );

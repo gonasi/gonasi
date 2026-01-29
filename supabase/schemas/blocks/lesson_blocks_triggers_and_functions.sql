@@ -71,3 +71,157 @@ begin
     updated_at = timezone('utc', now());
 end;
 $$;
+
+
+-- ====================================================================================
+-- FUNCTION: increment_lesson_block_version
+-- PURPOSE: Automatically increments the content_version of a lesson_block when
+--          its content, settings, or plugin_type changes
+-- ====================================================================================
+create or replace function public.increment_lesson_block_version()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  -- On INSERT, always start with version 1 (default already set)
+  if TG_OP = 'INSERT' then
+    return NEW;
+  end if;
+
+  -- On UPDATE, only increment version if content/settings/plugin_type changed
+  if TG_OP = 'UPDATE' and (
+    NEW.content is distinct from OLD.content or
+    NEW.settings is distinct from OLD.settings or
+    NEW.plugin_type is distinct from OLD.plugin_type
+  ) then
+    NEW.content_version := OLD.content_version + 1;
+  end if;
+
+  return NEW;
+end;
+$$;
+
+-- ====================================================================================
+-- TRIGGER: Increment lesson block version on content changes
+-- ====================================================================================
+create trigger trg_increment_lesson_block_version
+  before update on public.lesson_blocks
+  for each row
+  execute function public.increment_lesson_block_version();
+
+
+-- ====================================================================================
+-- FUNCTION: increment_lesson_version
+-- PURPOSE: Automatically increments the content_version of a lesson when
+--          its settings change
+-- ====================================================================================
+create or replace function public.increment_lesson_version()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  -- On INSERT, always start with version 1 (default already set)
+  if TG_OP = 'INSERT' then
+    return NEW;
+  end if;
+
+  -- On UPDATE, only increment version if settings changed
+  if TG_OP = 'UPDATE' and (
+    NEW.settings is distinct from OLD.settings or
+    NEW.name is distinct from OLD.name
+  ) then
+    NEW.content_version := OLD.content_version + 1;
+  end if;
+
+  return NEW;
+end;
+$$;
+
+-- ====================================================================================
+-- TRIGGER: Increment lesson version on content changes
+-- ====================================================================================
+create trigger trg_increment_lesson_version
+  before update on public.lessons
+  for each row
+  execute function public.increment_lesson_version();
+
+
+-- ====================================================================================
+-- FUNCTION: increment_chapter_version
+-- PURPOSE: Automatically increments the content_version of a chapter when
+--          its name or description changes
+-- ====================================================================================
+create or replace function public.increment_chapter_version()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  -- On INSERT, always start with version 1 (default already set)
+  if TG_OP = 'INSERT' then
+    return NEW;
+  end if;
+
+  -- On UPDATE, only increment version if name/description changed
+  if TG_OP = 'UPDATE' and (
+    NEW.name is distinct from OLD.name or
+    NEW.description is distinct from OLD.description
+  ) then
+    NEW.content_version := OLD.content_version + 1;
+  end if;
+
+  return NEW;
+end;
+$$;
+
+-- ====================================================================================
+-- TRIGGER: Increment chapter version on content changes
+-- ====================================================================================
+create trigger trg_increment_chapter_version
+  before update on public.chapters
+  for each row
+  execute function public.increment_chapter_version();
+
+
+-- ====================================================================================
+-- FUNCTION: increment_pricing_tier_version
+-- PURPOSE: Automatically increments the pricing_version of a pricing tier when
+--          price, frequency, or promotional pricing changes
+-- ====================================================================================
+create or replace function public.increment_pricing_tier_version()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  -- On INSERT, always start with version 1 (default already set)
+  if TG_OP = 'INSERT' then
+    return NEW;
+  end if;
+
+  -- On UPDATE, only increment version if pricing-related fields changed
+  if TG_OP = 'UPDATE' and (
+    NEW.price is distinct from OLD.price or
+    NEW.payment_frequency is distinct from OLD.payment_frequency or
+    NEW.is_free is distinct from OLD.is_free or
+    NEW.promotional_price is distinct from OLD.promotional_price or
+    NEW.promotion_start_date is distinct from OLD.promotion_start_date or
+    NEW.promotion_end_date is distinct from OLD.promotion_end_date or
+    NEW.is_active is distinct from OLD.is_active
+  ) then
+    NEW.pricing_version := OLD.pricing_version + 1;
+  end if;
+
+  return NEW;
+end;
+$$;
+
+-- ====================================================================================
+-- TRIGGER: Increment pricing tier version on pricing changes
+-- ====================================================================================
+create trigger trg_increment_pricing_tier_version
+  before update on public.course_pricing_tiers
+  for each row
+  execute function public.increment_pricing_tier_version();

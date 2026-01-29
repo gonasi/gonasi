@@ -45,6 +45,14 @@ create table public.courses (
   last_published timestamptz,                   -- When course was last published
 
   -- =========================
+  -- Version tracking
+  -- =========================
+  content_version integer not null default 1,   -- Increments when chapters/lessons/blocks change
+  pricing_version integer not null default 1,   -- Increments when pricing tiers change
+  overview_version integer not null default 1,  -- Increments when name/description/category/image change
+  last_update_type course_update_type,          -- Type of last update: content/pricing/overview/multiple
+
+  -- =========================
   -- Audit trail
   -- =========================
   created_by uuid references public.profiles(id) on delete set null,
@@ -104,12 +112,14 @@ execute function public.validate_subcategory_belongs_to_category();
 -- ====================================================================================
 -- INDEXES: Improve query performance and filtering across key columns
 -- ====================================================================================
-create index idx_courses_created_by      on public.courses (created_by);
-create index idx_courses_updated_by      on public.courses (updated_by);
-create index idx_courses_category_id     on public.courses (category_id);
-create index idx_courses_subcategory_id  on public.courses (subcategory_id);
-create index idx_courses_visibility      on public.courses (visibility);
-create index idx_courses_organization_id on public.courses (organization_id);
+create index idx_courses_created_by       on public.courses (created_by);
+create index idx_courses_updated_by       on public.courses (updated_by);
+create index idx_courses_category_id      on public.courses (category_id);
+create index idx_courses_subcategory_id   on public.courses (subcategory_id);
+create index idx_courses_visibility       on public.courses (visibility);
+create index idx_courses_organization_id  on public.courses (organization_id);
+create index idx_courses_content_version  on public.courses (content_version);
+create index idx_courses_last_update_type on public.courses (last_update_type);
 
 
 -- ====================================================================================
