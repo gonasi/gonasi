@@ -16,7 +16,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // Static public routes from your routes.ts
   const staticRoutes: SitemapRoute[] = [
     // Home
-    { path: '/', priority: 1.0, changefreq: 'daily' },
+    { path: '/', priority: 1.0, changefreq: 'hourly' },
     // Public pages
     { path: '/go/explore', priority: 0.9, changefreq: 'daily' },
     { path: '/go/pricing', priority: 0.8, changefreq: 'weekly' },

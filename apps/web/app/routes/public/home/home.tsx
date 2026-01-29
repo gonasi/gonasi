@@ -1,3 +1,5 @@
+import type { MetaFunction } from 'react-router';
+
 import type { Route } from './+types/home';
 import { FAQ } from './components/faq';
 import { Features } from './components/features';
@@ -8,29 +10,53 @@ import { RealOutcomes } from './components/Outcomes';
 import { Problem } from './components/problem';
 
 import {
-  generateMetaTags,
   generateOrganizationSchema,
   generateWebsiteSchema,
   renderStructuredData,
 } from '~/utils/seo';
 
-export function meta() {
+export const meta: MetaFunction = () => {
   const siteUrl = 'https://gonasi.com';
+  const title = 'Gonasi – Build Interactive Courses & Gamified Learning Experiences';
+  const description =
+    'Gonasi is an interactive course builder for creators, educators, and organizations. Build gamified lessons, quizzes, and learning experiences inspired by Brilliant.org and Duolingo. No-code, flexible blocks, full ownership of your content and learners.';
 
-  return generateMetaTags(
+  return [
+    // Basic SEO
+    { title },
+    { name: 'description', content: description },
     {
-      title:
-        'Gonasi - Build Interactive Learning Like Brilliant.org | Kahoot Alternative for Creators',
-      description:
-        'Gonasi empowers creators to build interactive learning experiences like Brilliant.org and Duolingo. The ultimate Kahoot alternative for live gamified experiences with audiences. Create engaging interactive courses, quizzes, and gamified learning apps with our no-code platform. Tools to build interactive learning for educators and organizations.',
-      keywords:
-        'Gonasi, build interactive learning, tools to build interactive learning, create interactive learning, kahoot alternative, alternative to kahoot, brilliant.org alternative, alternative to brilliant, duolingo alternative, interactive learning platform, gamified learning creator tools, live gamified experiences, interactive quiz builder, course creation platform, no-code learning platform, educational app builder, interactive course builder, gamified quiz platform, audience engagement tools, live learning platform, gonasi app, gonasi course',
-      url: siteUrl,
-      type: 'website',
+      name: 'keywords',
+      content:
+        'Gonasi, interactive course builder, gamified learning platform, build interactive courses, brilliant.org alternative, duolingo alternative, no-code course builder, quiz builder for educators',
     },
-    siteUrl,
-  );
-}
+    { name: 'robots', content: 'index, follow' },
+    { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+
+    // Canonical
+    { tagName: 'link', rel: 'canonical', href: siteUrl },
+
+    // Open Graph
+    { property: 'og:title', content: title },
+    { property: 'og:description', content: description },
+    { property: 'og:type', content: 'website' },
+    { property: 'og:url', content: siteUrl },
+    { property: 'og:site_name', content: 'Gonasi' },
+    {
+      property: 'og:image',
+      content: `${siteUrl}/og-image.png`,
+    },
+
+    // Twitter / X
+    { name: 'twitter:card', content: 'summary_large_image' },
+    { name: 'twitter:title', content: title },
+    { name: 'twitter:description', content: description },
+    {
+      name: 'twitter:image',
+      content: `${siteUrl}/og-image.png`,
+    },
+  ];
+};
 
 export function headers(_: Route.HeadersArgs) {
   return {
