@@ -31,9 +31,10 @@ export function Problem() {
             transition={{ delay: 0.2, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
             className='text-foreground/70 font-secondary text-lg leading-relaxed text-balance md:text-xl'
           >
-            Most online courses turn into passive video watching. Learners don&apos;t practice, they
-            don&apos;t stay engaged, and they rarely finish. Knowledge fades fast and real outcomes
-            never happen.
+            Most online courses fail because learners don’t stay engaged or practice enough to
+            retain knowledge. Gonasi combines videos, interactive lessons, gamified challenges, and
+            rich exercises so learners actively engage, progress at their own pace, and achieve real
+            mastery.
           </motion.p>
 
           {/* Cards */}
@@ -55,7 +56,7 @@ export function Problem() {
               variants={{ hidden: { opacity: 0, y: 30 }, show: { opacity: 1, y: 0 } }}
               whileHover={{ y: -8, scale: 1.02 }}
               transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-              className='bg-card border-border/50 group relative overflow-hidden rounded-2xl border p-8 shadow-lg'
+              className='bg-card border-border/50 group relative overflow-hidden rounded-2xl border p-8'
             >
               <motion.div
                 className='bg-primary/5 absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100'
@@ -75,7 +76,7 @@ export function Problem() {
               variants={{ hidden: { opacity: 0, y: 30 }, show: { opacity: 1, y: 0 } }}
               whileHover={{ y: -8, scale: 1.02 }}
               transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-              className='bg-card border-border/50 group relative overflow-hidden rounded-2xl border p-8 shadow-lg'
+              className='bg-card border-border/50 group relative overflow-hidden rounded-2xl border p-8'
             >
               <motion.div
                 className='bg-primary/5 absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100'
@@ -95,7 +96,7 @@ export function Problem() {
               variants={{ hidden: { opacity: 0, y: 30 }, show: { opacity: 1, y: 0 } }}
               whileHover={{ y: -8, scale: 1.02 }}
               transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-              className='bg-card border-border/50 group relative overflow-hidden rounded-2xl border p-8 shadow-lg'
+              className='bg-card border-border/50 group relative overflow-hidden rounded-2xl border p-8'
             >
               <motion.div
                 className='bg-primary/5 absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100'

@@ -1,164 +1,258 @@
 import { motion } from 'framer-motion';
-import { ArrowRight, Sparkles } from 'lucide-react';
-
-import { NavLinkButton } from '~/components/ui/button';
-import { useStore } from '~/store';
+import { BookOpen, CheckCircle, Sparkles, Users } from 'lucide-react';
+import Typewriter from 'typewriter-effect';
 
 export function Hero() {
-  const { isActiveUserProfileLoading, activeUserProfile } = useStore();
-  const isLoggedOut = !isActiveUserProfileLoading && !activeUserProfile;
-
   return (
-    <section className='from-background via-background to-muted/20 relative overflow-hidden bg-gradient-to-b'>
-      {/* Background */}
-      <div className='bg-grid-pattern absolute inset-0 opacity-[0.03]' />
-      <div className='bg-primary/5 pointer-events-none absolute -top-20 left-1/2 h-[600px] w-full -translate-x-1/2 rounded-full blur-[200px]' />
+    <section className='from-card to-muted/30 bg-background-to-b relative overflow-hidden'>
+      {/* Ambient background accents */}
+      <div className='pointer-events-none absolute inset-0'>
+        <div className='bg-primary/10 absolute -top-24 left-1/3 h-72 w-72 rounded-full blur-3xl' />
+        <div className='bg-primary/5 absolute top-1/2 -right-24 h-96 w-96 rounded-full blur-3xl' />
+      </div>
 
-      <div className='relative container mx-auto px-6 py-16 lg:py-32'>
-        <div className='grid items-center gap-16 lg:grid-cols-2'>
-          {/* LEFT SIDE */}
+      <div className='relative container mx-auto px-4 py-20 md:px-0 md:py-28'>
+        <motion.div
+          initial='hidden'
+          animate='visible'
+          variants={{
+            hidden: {},
+            visible: {
+              transition: { staggerChildren: 0.12 },
+            },
+          }}
+          className='max-w-6xl space-y-8'
+        >
+          {/* Badge */}
+
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-            className='space-y-8'
+            initial='hidden'
+            animate='visible'
+            variants={{
+              hidden: { opacity: 0, y: 12 },
+              visible: {
+                opacity: 1,
+                y: 0,
+                transition: { staggerChildren: 0.08 },
+              },
+            }}
+            className='bg-muted/60 font-secondary text-foreground/80 inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-sm font-medium backdrop-blur'
           >
-            {/* Badge */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.2, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-              whileHover={{ scale: 1.02 }}
-              className='bg-primary/10 text-primary border-primary/20 inline-flex items-center gap-2 rounded-full border px-5 py-2.5 text-sm font-semibold shadow-sm backdrop-blur-sm'
+            {/* Intro */}
+            <motion.span
+              variants={{ hidden: { opacity: 0 }, visible: { opacity: 1 } }}
+              className='flex items-center gap-1'
             >
-              <motion.div
-                animate={{ rotate: [0, 10, -10, 10, 0] }}
-                transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
-              >
-                <Sparkles className='h-4 w-4' />
-              </motion.div>
-              <span>The Future of Skill Learning</span>
-            </motion.div>
+              <CheckCircle className='h-4 w-4 text-emerald-500' />
+              <span>Built for</span>
+            </motion.span>
 
-            {/* Heading */}
-            <motion.h1
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-              className='text-foreground text-5xl leading-[1.1] font-extrabold tracking-tight text-balance lg:text-7xl'
+            {/* Educators */}
+            <motion.span
+              variants={{ hidden: { opacity: 0, y: 4 }, visible: { opacity: 1, y: 0 } }}
+              className='flex items-center gap-1'
             >
-              Build Courses That
-              <motion.span
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.6, duration: 0.8 }}
-                className='text-primary block'
-              >
-                {' '}
-                Truly Engage.
-              </motion.span>
-            </motion.h1>
+              <Users className='h-4 w-4 text-blue-500' />
+              <span>educators</span>
+            </motion.span>
 
-            {/* Subtext */}
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-              className='text-foreground/80 font-secondary max-w-2xl text-lg leading-relaxed lg:text-xl'
+            {/* Schools */}
+            <motion.span
+              variants={{ hidden: { opacity: 0, y: 4 }, visible: { opacity: 1, y: 0 } }}
+              className='flex items-center gap-1'
             >
-              Gonasi empowers you to create interactive, gamified learning experiences turning every
-              lesson into lasting understanding.
-            </motion.p>
+              <BookOpen className='h-4 w-4 text-violet-500' />
+              <span>schools</span>
+            </motion.span>
 
-            {/* CTA */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-              className='flex flex-col gap-4 sm:flex-row'
+            {/* Course creators */}
+            <motion.span
+              variants={{ hidden: { opacity: 0, y: 4 }, visible: { opacity: 1, y: 0 } }}
+              className='flex items-center gap-1'
             >
-              {isLoggedOut ? (
-                <motion.div
-                  whileHover={{ y: -2, scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  transition={{ duration: 0.2, ease: 'easeOut' }}
-                >
-                  <NavLinkButton
-                    size='lg'
-                    className='shadow-primary/25 hover:shadow-primary/30 text-lg shadow-lg transition-shadow hover:shadow-xl'
-                    to='/login'
-                    rightIcon={<ArrowRight />}
-                  >
-                    Start Free
-                  </NavLinkButton>
-                </motion.div>
-              ) : (
-                <motion.div
-                  whileHover={{ y: -2, scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  transition={{ duration: 0.2, ease: 'easeOut' }}
-                >
-                  <NavLinkButton
-                    size='lg'
-                    variant='secondary'
-                    className='text-lg shadow-md transition-shadow hover:shadow-lg'
-                    to='/go/explore'
-                    rightIcon={<ArrowRight />}
-                  >
-                    Continue Learning
-                  </NavLinkButton>
-                </motion.div>
-              )}
-            </motion.div>
-
-            {/* Value Props */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.6, duration: 0.8 }}
-              className='text-foreground/70 flex flex-wrap items-center gap-6 text-sm font-medium'
-            >
-              {['No credit card required', 'Free forever plan', 'Made for educators & teams'].map(
-                (label, i) => (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.7 + i * 0.1, duration: 0.5 }}
-                    className='flex items-center gap-2'
-                  >
-                    <div className='bg-primary h-1.5 w-1.5 rounded-full' />
-                    <span>{label}</span>
-                  </motion.div>
-                ),
-              )}
-            </motion.div>
+              <Sparkles className='h-4 w-4 text-amber-500' />
+              <span>course creators</span>
+            </motion.span>
           </motion.div>
 
-          {/* RIGHT IMAGE */}
-          <motion.div
-            initial={{ opacity: 0, x: 60 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
-            className='relative hidden lg:block'
+          {/* Heading */}
+          <motion.h1
+            variants={{
+              hidden: { opacity: 0, y: 16 },
+              visible: { opacity: 1, y: 0 },
+            }}
+            className='text-4xl font-bold tracking-tight text-balance md:text-6xl'
           >
-            <motion.div
-              animate={{
-                scale: [1, 1.05, 1],
-                opacity: [0.15, 0.25, 0.15],
+            The #1 Interactive Course Builder
+            <span className='text-primary block'>for real learning outcomes</span>
+          </motion.h1>
+
+          {/* Typewriter subline */}
+          <motion.div
+            variants={{
+              hidden: { opacity: 0 },
+              visible: { opacity: 1 },
+            }}
+            className='text-foreground/80 text-lg md:text-xl'
+          >
+            <Typewriter
+              options={{
+                delay: 40,
+                deleteSpeed: 20,
+                loop: true,
               }}
-              transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
-              className='bg-primary absolute -inset-6 rounded-full blur-3xl'
-            />
-            <motion.img
-              src='assets/images/hero-learning.jpg'
-              alt='Interactive and gamified learning experience'
-              className='ring-border/50 relative w-full rounded-2xl shadow-2xl ring-1'
-              whileHover={{ scale: 1.02, rotate: 0.5 }}
-              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+              onInit={(typewriter) => {
+                typewriter
+                  .typeString('Build interactive courses.')
+                  .pauseFor(1200)
+                  .deleteAll()
+                  .typeString('Engage learners with gamified lessons.')
+                  .pauseFor(1200)
+                  .deleteAll()
+                  .typeString('Turn learning into real mastery.')
+                  .pauseFor(1600)
+                  .start();
+              }}
             />
           </motion.div>
-        </div>
+
+          {/* Supporting copy */}
+          <motion.p
+            variants={{
+              hidden: { opacity: 0, y: 12 },
+              visible: { opacity: 1, y: 0 },
+            }}
+            className='text-foreground/75 font-secondary max-w-2xl text-lg leading-relaxed md:text-xl'
+          >
+            Gonasi lets you build structured courses with interactive lessons, quizzes, and progress
+            tracking, all in one place. Designed for clarity, not content overload.
+          </motion.p>
+
+          {/* CTA */}
+          <motion.div
+            variants={{
+              hidden: { opacity: 0, y: 12 },
+              visible: { opacity: 1, y: 0 },
+            }}
+            className='flex flex-col gap-4 sm:flex-row'
+          >
+            <motion.div whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }}>
+              <div className='pt-4'>
+                <div
+                  style={{
+                    fontFamily:
+                      '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+                    border: '1px solid rgb(224, 224, 224)',
+                    borderRadius: '12px',
+                    padding: '20px',
+                    maxWidth: '500px',
+                    background: 'rgb(255, 255, 255)',
+                    boxShadow: 'rgba(0, 0, 0, 0.05) 0px 2px 8px',
+                  }}
+                >
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      marginBottom: '12px',
+                    }}
+                  >
+                    <img
+                      alt='Gonasi'
+                      src='https://ph-files.imgix.net/c163ae63-bc48-4de7-8afe-ba38a04512d7.jpeg?auto=format&fit=crop&w=80&h=80'
+                      style={{
+                        width: '64px',
+                        height: '64px',
+                        borderRadius: '8px',
+                        objectFit: 'cover',
+                        flexShrink: 0,
+                      }}
+                    />
+                    <div style={{ flex: '1 1 0%', minWidth: 0 }}>
+                      <h3
+                        style={{
+                          margin: 0,
+                          fontSize: '18px',
+                          fontWeight: 600,
+                          color: 'rgb(26, 26, 26)',
+                          lineHeight: 1.3,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        Gonasi
+                      </h3>
+                      <p
+                        style={{
+                          margin: '4px 0 0',
+                          fontSize: '14px',
+                          color: 'rgb(102, 102, 102)',
+                          lineHeight: 1.4,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical',
+                        }}
+                      >
+                        Build interactive courses learners love, like Brilliant.org
+                      </p>
+                    </div>
+                  </div>
+                  <a
+                    href='https://www.producthunt.com/products/gonasi?embed=true&utm_source=embed&utm_medium=post_embed'
+                    target='_blank'
+                    rel='noopener noreferrer'
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      marginTop: '12px',
+                      padding: '8px 16px',
+                      background: 'rgb(255, 97, 84)',
+                      color: 'rgb(255, 255, 255)',
+                      textDecoration: 'none',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      fontWeight: 600,
+                    }}
+                  >
+                    Check it out on Product Hunt →
+                  </a>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+
+          {/* Value props */}
+          <motion.div
+            className='text-foreground/65 flex flex-wrap gap-x-6 gap-y-3 pt-4 text-sm'
+            variants={{
+              hidden: {},
+              visible: {
+                transition: { staggerChildren: 0.1 },
+              },
+            }}
+          >
+            {[
+              'Interactive lessons & quizzes',
+              'Learner progress tracking',
+              'Free forever for creators',
+            ].map((item) => (
+              <motion.span
+                key={item}
+                variants={{
+                  hidden: { opacity: 0, y: 8 },
+                  visible: { opacity: 1, y: 0 },
+                }}
+              >
+                {item}
+              </motion.span>
+            ))}
+          </motion.div>
+        </motion.div>
       </div>
     </section>
   );
