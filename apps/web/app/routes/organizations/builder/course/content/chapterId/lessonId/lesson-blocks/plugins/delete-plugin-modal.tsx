@@ -1,38 +1,89 @@
-import { dataWithError, redirectWithError, redirectWithSuccess } from 'remix-toast';
+import { Form, useNavigate } from 'react-router';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
+import { dataWithError, redirectWithSuccess } from 'remix-toast';
+import { HoneypotInputs } from 'remix-utils/honeypot/react';
 
 import { deleteBlockById } from '@gonasi/database/lessons/blocks';
+import { DeleteBlockSchema, type DeleteBlockSchemaTypes } from '@gonasi/schemas/plugins';
 
 import type { Route } from './+types/delete-plugin-modal';
 
+import { DeleteConfirmationLayout } from '~/components/layouts/modals';
+import { Modal } from '~/components/ui/modal';
 import { createClient } from '~/lib/supabase/supabase.server';
+import { checkHoneypot } from '~/utils/honeypot.server';
+import { useIsPending } from '~/utils/misc';
 
-type Params = Route.LoaderArgs['params'];
+const resolver = zodResolver(DeleteBlockSchema);
 
-const getBasePath = (params: Params) =>
-  `/${params.organizationId}/builder/${params.courseId}/content`;
+export async function action({ params, request }: Route.ActionArgs) {
+  const formData = await request.formData();
 
-// Use loader instead of action for automatic invocation on route visit
-export async function loader({ request, params }: Route.LoaderArgs) {
+  // Anti-bot check using honeypot
+  await checkHoneypot(formData);
+
   const { supabase } = createClient(request);
 
-  const canDelete = await supabase.rpc('can_user_edit_course', {
-    arg_course_id: params.courseId,
-  });
+  // Validate form data against schema
+  const {
+    errors,
+    data,
+    receivedValues: defaultValues,
+  } = await getValidatedFormData<DeleteBlockSchemaTypes>(formData, resolver);
 
-  if (!canDelete.data) {
-    return redirectWithError(
-      `/${params.organizationId}/builder/${params.courseId}/content/${params.chapterId}/${params.lessonId}/lesson-blocks`,
-      'You don’t have permission to delete blocks.',
-    );
-  }
+  if (errors) return { errors, defaultValues };
 
-  const { success, message } = await deleteBlockById(supabase, params.blockId);
+  // Attempt to delete the block
+  const { success, message } = await deleteBlockById(supabase, data.blockId);
 
   if (!success) {
     return dataWithError(null, message);
   }
 
-  const redirectUrl = `${getBasePath(params)}/${params.chapterId}/${params.lessonId}/lesson-blocks`;
+  // Redirect on success
+  const redirectPath = `/${params.organizationId}/builder/${params.courseId}/content/${params.chapterId}/${params.lessonId}/lesson-blocks`;
+  return redirectWithSuccess(redirectPath, message);
+}
 
-  return redirectWithSuccess(redirectUrl, message);
+export default function DeletePluginModal({ params }: Route.ComponentProps) {
+  const navigate = useNavigate();
+  const isPending = useIsPending();
+
+  const redirectPath = `/${params.organizationId}/builder/${params.courseId}/content/${params.chapterId}/${params.lessonId}/lesson-blocks`;
+
+  // Form setup with Remix Hook Form and Zod schema
+  const methods = useRemixForm<DeleteBlockSchemaTypes>({
+    mode: 'all',
+    resolver,
+    defaultValues: {
+      blockId: params.blockId,
+    },
+  });
+
+  const isDisabled = isPending || methods.formState.isSubmitting;
+
+  const handleClose = () => navigate(redirectPath);
+
+  return (
+    <Modal open>
+      <Modal.Content size='sm'>
+        <Modal.Header closeRoute={redirectPath} />
+        <Modal.Body>
+          <RemixFormProvider {...methods}>
+            <Form method='POST' onSubmit={methods.handleSubmit}>
+              {/* Honeypot field for spam protection */}
+              <HoneypotInputs />
+              <DeleteConfirmationLayout
+                titlePrefix='this'
+                title='Block'
+                isLoading={isDisabled}
+                handleClose={handleClose}
+              />
+            </Form>
+          </RemixFormProvider>
+        </Modal.Body>
+      </Modal.Content>
+    </Modal>
+  );
 }
