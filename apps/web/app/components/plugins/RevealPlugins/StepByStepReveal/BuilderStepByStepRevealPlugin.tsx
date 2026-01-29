@@ -135,51 +135,46 @@ export function BuilderStepByStepRevealPlugin({ block }: BuilderStepByStepReveal
   return (
     <Modal open>
       <Modal.Content size='md'>
-        <RemixFormProvider {...methods}>
-          <form
-            onSubmit={methods.handleSubmit}
-            method='POST'
-            action={actionUrl}
-            className='flex h-full flex-col'
-          >
-            <Modal.Header
-              leadingIcon={block && block.id ? null : <BackArrowNavLink to={backRoute} />}
-              title={block && block.id ? 'Edit Step By Step Reveal' : 'Add Step By Step Reveal'}
-              closeRoute={lessonPath}
-              settingsPopover={
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Settings
-                      className='transition-transform duration-200 hover:scale-105 hover:rotate-15 hover:cursor-pointer'
-                      size={20}
+        <Modal.Header
+          leadingIcon={block && block.id ? null : <BackArrowNavLink to={backRoute} />}
+          title={block && block.id ? 'Edit Step By Step Reveal' : 'Add Step By Step Reveal'}
+          closeRoute={lessonPath}
+          settingsPopover={
+            <Popover>
+              <PopoverTrigger asChild>
+                <Settings
+                  className='transition-transform duration-200 hover:scale-105 hover:rotate-15 hover:cursor-pointer'
+                  size={20}
+                />
+              </PopoverTrigger>
+              <PopoverContent className='w-full max-w-md'>
+                <div className='grid gap-4'>
+                  <div className='space-y-2'>
+                    <h4 className='leading-none font-medium'>Block Settings</h4>
+                  </div>
+                  <div className='grid gap-2'>
+                    <BlockWeightField name='settings.weight' />
+                    <PlaybackModeField
+                      name='settings.playbackMode'
+                      watchValue={watchPlaybackMode}
                     />
-                  </PopoverTrigger>
-                  <PopoverContent className='w-full max-w-md'>
-                    <div className='grid gap-4'>
-                      <div className='space-y-2'>
-                        <h4 className='leading-none font-medium'>Block Settings</h4>
-                      </div>
-                      <div className='grid gap-2'>
-                        <BlockWeightField name='settings.weight' />
-                        <PlaybackModeField
-                          name='settings.playbackMode'
-                          watchValue={watchPlaybackMode}
-                        />
-                        <CarouselLayoutField
-                          name='settings.layoutStyle'
-                          watchValue={watchLayoutStyle}
-                        />
-                        <RandomizationModeField
-                          name='settings.randomization'
-                          watchValue={watchRandomization}
-                        />
-                      </div>
-                    </div>
-                  </PopoverContent>
-                </Popover>
-              }
-            />
-            <Modal.Body className='flex-1 overflow-auto'>
+                    <CarouselLayoutField
+                      name='settings.layoutStyle'
+                      watchValue={watchLayoutStyle}
+                    />
+                    <RandomizationModeField
+                      name='settings.randomization'
+                      watchValue={watchRandomization}
+                    />
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
+          }
+        />
+        <Modal.Body>
+          <RemixFormProvider {...methods}>
+            <form onSubmit={methods.handleSubmit} method='POST' action={actionUrl}>
               <HoneypotInputs />
               <GoRichTextInputField
                 name='content.title'
@@ -193,9 +188,8 @@ export function BuilderStepByStepRevealPlugin({ block }: BuilderStepByStepReveal
                 labelProps={{ children: 'Reveal Cards', required: true }}
                 description='Add a title and cards for your step-by-step reveal.'
               />
-            </Modal.Body>
-            <div className='bg-background/90 border-t-border/20 sticky right-0 bottom-0 left-0 z-10 flex justify-end space-x-2 border-t p-4'>
-              <div className='flex w-full'>
+
+              <div className='mt-4 flex w-full justify-end'>
                 <Button
                   type='submit'
                   rightIcon={<Save />}
@@ -205,9 +199,9 @@ export function BuilderStepByStepRevealPlugin({ block }: BuilderStepByStepReveal
                   Save
                 </Button>
               </div>
-            </div>
-          </form>
-        </RemixFormProvider>
+            </form>
+          </RemixFormProvider>
+        </Modal.Body>
       </Modal.Content>
     </Modal>
   );

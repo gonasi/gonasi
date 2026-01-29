@@ -75,22 +75,18 @@ export function createPlugin<TContent, TSettings, TInteraction>(
       return (
         <Modal open>
           <Modal.Content size='md'>
-            <RemixFormProvider {...methods}>
-              <form onSubmit={methods.handleSubmit} method='POST' action={paths.action}>
-                <Modal.Header
-                  leadingIcon={isEditMode ? null : <BackArrowNavLink to={paths.back} />}
-                  title={
-                    isEditMode ? `Edit ${config.metadata.name}` : `Add ${config.metadata.name}`
-                  }
-                  closeRoute={paths.lesson}
-                  settingsPopover={settingsPopover}
-                />
-                <Modal.Body>
+            <Modal.Header
+              leadingIcon={isEditMode ? null : <BackArrowNavLink to={paths.back} />}
+              title={isEditMode ? `Edit ${config.metadata.name}` : `Add ${config.metadata.name}`}
+              closeRoute={paths.lesson}
+              settingsPopover={settingsPopover}
+            />
+            <Modal.Body>
+              <RemixFormProvider {...methods}>
+                <form onSubmit={methods.handleSubmit} method='POST' action={paths.action}>
                   <HoneypotInputs />
                   {builderContent}
-                </Modal.Body>
-                <div className='bg-background/90 border-t-border/20 sticky right-0 bottom-0 left-0 z-10 flex justify-end space-x-2 border-t p-4'>
-                  <div className='flex w-full'>
+                  <div className='mt-4 flex w-full justify-end'>
                     <Button
                       type='submit'
                       rightIcon={<Save />}
@@ -100,9 +96,9 @@ export function createPlugin<TContent, TSettings, TInteraction>(
                       Save
                     </Button>
                   </div>
-                </div>
-              </form>
-            </RemixFormProvider>
+                </form>
+              </RemixFormProvider>
+            </Modal.Body>
           </Modal.Content>
         </Modal>
       );
