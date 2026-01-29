@@ -174,7 +174,12 @@ export function BuilderStepByStepRevealPlugin({ block }: BuilderStepByStepReveal
         />
         <Modal.Body>
           <RemixFormProvider {...methods}>
-            <form onSubmit={methods.handleSubmit} method='POST' action={actionUrl}>
+            <form
+              id='step-by-step-reveal-form'
+              onSubmit={methods.handleSubmit}
+              method='POST'
+              action={actionUrl}
+            >
               <HoneypotInputs />
               <GoRichTextInputField
                 name='content.title'
@@ -188,20 +193,22 @@ export function BuilderStepByStepRevealPlugin({ block }: BuilderStepByStepReveal
                 labelProps={{ children: 'Reveal Cards', required: true }}
                 description='Add a title and cards for your step-by-step reveal.'
               />
-
-              <div className='mt-4 flex w-full justify-end'>
-                <Button
-                  type='submit'
-                  rightIcon={<Save />}
-                  disabled={isDisabled || !methods.formState.isDirty}
-                  isLoading={isDisabled}
-                >
-                  Save
-                </Button>
-              </div>
             </form>
           </RemixFormProvider>
         </Modal.Body>
+        <Modal.Footer>
+          <div className='flex w-full justify-end'>
+            <Button
+              type='submit'
+              form='step-by-step-reveal-form'
+              rightIcon={<Save />}
+              disabled={isDisabled || !methods.formState.isDirty}
+              isLoading={isDisabled}
+            >
+              Save
+            </Button>
+          </div>
+        </Modal.Footer>
       </Modal.Content>
     </Modal>
   );

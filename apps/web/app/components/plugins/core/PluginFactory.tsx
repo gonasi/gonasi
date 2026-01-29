@@ -83,22 +83,30 @@ export function createPlugin<TContent, TSettings, TInteraction>(
             />
             <Modal.Body>
               <RemixFormProvider {...methods}>
-                <form onSubmit={methods.handleSubmit} method='POST' action={paths.action}>
+                <form
+                  id={`${config.pluginType}-form`}
+                  onSubmit={methods.handleSubmit}
+                  method='POST'
+                  action={paths.action}
+                >
                   <HoneypotInputs />
                   {builderContent}
-                  <div className='mt-4 flex w-full justify-end'>
-                    <Button
-                      type='submit'
-                      rightIcon={<Save />}
-                      disabled={isDisabled || !isDirty}
-                      isLoading={isDisabled}
-                    >
-                      Save
-                    </Button>
-                  </div>
                 </form>
               </RemixFormProvider>
             </Modal.Body>
+            <Modal.Footer>
+              <div className='flex w-full justify-end'>
+                <Button
+                  type='submit'
+                  form={`${config.pluginType}-form`}
+                  rightIcon={<Save />}
+                  disabled={isDisabled || !isDirty}
+                  isLoading={isDisabled}
+                >
+                  Save
+                </Button>
+              </div>
+            </Modal.Footer>
           </Modal.Content>
         </Modal>
       );

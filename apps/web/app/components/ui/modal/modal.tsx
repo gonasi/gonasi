@@ -125,7 +125,9 @@ const Body = ({ children, className }: { children: ReactNode; className?: string
 };
 
 const Footer = ({ children }: { children: ReactNode }) => {
-  return <div className='border-card bg-background/95 flex-shrink-0 border-t pt-4'>{children}</div>;
+  return (
+    <div className='border-card/80 bg-background/80 flex-shrink-0 border-t p-4'>{children}</div>
+  );
 };
 
 Modal.Trigger = Dialog.Trigger;

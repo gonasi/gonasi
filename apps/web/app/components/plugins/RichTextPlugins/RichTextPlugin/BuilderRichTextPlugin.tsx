@@ -115,7 +115,12 @@ export function BuilderRichTextPlugin({ block }: BuilderRichTextPluginProps) {
         />
         <Modal.Body>
           <RemixFormProvider {...methods}>
-            <form onSubmit={methods.handleSubmit} method='POST' action={actionUrl}>
+            <form
+              id='rich-text-form'
+              onSubmit={methods.handleSubmit}
+              method='POST'
+              action={actionUrl}
+            >
               <HoneypotInputs />
               <GoRichTextInputField
                 name='content.richTextState'
@@ -123,19 +128,22 @@ export function BuilderRichTextPlugin({ block }: BuilderRichTextPluginProps) {
                 description='You can format your content using rich text.'
                 placeholder='Start typing...'
               />
-              <div className='mt-4 flex w-full justify-end'>
-                <Button
-                  type='submit'
-                  rightIcon={<Save />}
-                  disabled={isDisabled || !methods.formState.isDirty}
-                  isLoading={isDisabled}
-                >
-                  Save
-                </Button>
-              </div>
             </form>
           </RemixFormProvider>
         </Modal.Body>
+        <Modal.Footer>
+          <div className='flex w-full justify-end'>
+            <Button
+              type='submit'
+              form='rich-text-form'
+              rightIcon={<Save />}
+              disabled={isDisabled || !methods.formState.isDirty}
+              isLoading={isDisabled}
+            >
+              Save
+            </Button>
+          </div>
+        </Modal.Footer>
       </Modal.Content>
     </Modal>
   );
