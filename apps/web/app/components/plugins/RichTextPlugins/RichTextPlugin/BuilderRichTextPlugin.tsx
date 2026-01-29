@@ -84,43 +84,43 @@ export function BuilderRichTextPlugin({ block }: BuilderRichTextPluginProps) {
   return (
     <Modal open>
       <Modal.Content size='lg'>
-        <RemixFormProvider {...methods}>
-          <form
-            onSubmit={methods.handleSubmit}
-            method='POST'
-            action={actionUrl}
-            className='flex h-full flex-col'
-          >
-            <Modal.Header
-              leadingIcon={block && block.id ? null : <BackArrowNavLink to={backRoute} />}
-              title={block && block.id ? 'Edit Rich Text' : 'Add Rich Text'}
-              closeRoute={lessonPath}
-              settingsPopover={
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Settings
-                      className='transition-transform duration-200 hover:scale-105 hover:rotate-15 hover:cursor-pointer'
-                      size={20}
+        <Modal.Header
+          leadingIcon={block && block.id ? null : <BackArrowNavLink to={backRoute} />}
+          title={block && block.id ? 'Edit Rich Text' : 'Add Rich Text'}
+          closeRoute={lessonPath}
+          settingsPopover={
+            <Popover>
+              <PopoverTrigger asChild>
+                <Settings
+                  className='transition-transform duration-200 hover:scale-105 hover:rotate-15 hover:cursor-pointer'
+                  size={20}
+                />
+              </PopoverTrigger>
+              <PopoverContent className='w-full max-w-md'>
+                <div className='grid gap-4'>
+                  <div className='space-y-2'>
+                    <h4 className='leading-none font-medium'>Block Settings</h4>
+                  </div>
+                  <div className='grid gap-2'>
+                    <BlockWeightField name='settings.weight' />
+                    <PlaybackModeField
+                      name='settings.playbackMode'
+                      watchValue={watchPlaybackMode}
                     />
-                  </PopoverTrigger>
-                  <PopoverContent className='w-full max-w-md'>
-                    <div className='grid gap-4'>
-                      <div className='space-y-2'>
-                        <h4 className='leading-none font-medium'>Block Settings</h4>
-                      </div>
-                      <div className='grid gap-2'>
-                        <BlockWeightField name='settings.weight' />
-                        <PlaybackModeField
-                          name='settings.playbackMode'
-                          watchValue={watchPlaybackMode}
-                        />
-                      </div>
-                    </div>
-                  </PopoverContent>
-                </Popover>
-              }
-            />
-            <Modal.Body className='flex-1 overflow-auto'>
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
+          }
+        />
+        <Modal.Body>
+          <RemixFormProvider {...methods}>
+            <form
+              id='rich-text-form'
+              onSubmit={methods.handleSubmit}
+              method='POST'
+              action={actionUrl}
+            >
               <HoneypotInputs />
               <GoRichTextInputField
                 name='content.richTextState'
@@ -128,21 +128,22 @@ export function BuilderRichTextPlugin({ block }: BuilderRichTextPluginProps) {
                 description='You can format your content using rich text.'
                 placeholder='Start typing...'
               />
-            </Modal.Body>
-            <div className='bg-background/90 border-t-border/20 sticky right-0 bottom-0 left-0 z-10 flex justify-end space-x-2 border-t p-4'>
-              <div className='flex w-full'>
-                <Button
-                  type='submit'
-                  rightIcon={<Save />}
-                  disabled={isDisabled || !methods.formState.isDirty}
-                  isLoading={isDisabled}
-                >
-                  Save
-                </Button>
-              </div>
-            </div>
-          </form>
-        </RemixFormProvider>
+            </form>
+          </RemixFormProvider>
+        </Modal.Body>
+        <Modal.Footer>
+          <div className='flex w-full justify-end'>
+            <Button
+              type='submit'
+              form='rich-text-form'
+              rightIcon={<Save />}
+              disabled={isDisabled || !methods.formState.isDirty}
+              isLoading={isDisabled}
+            >
+              Save
+            </Button>
+          </div>
+        </Modal.Footer>
       </Modal.Content>
     </Modal>
   );
