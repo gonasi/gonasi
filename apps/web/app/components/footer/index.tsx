@@ -59,7 +59,7 @@ export function Footer() {
               </li>
               <li>
                 <Link
-                  to='#'
+                  to='/go/pricing'
                   className='text-muted-foreground font-secondary hover:text-foreground/80 text-sm transition-colors'
                 >
                   Pricing
