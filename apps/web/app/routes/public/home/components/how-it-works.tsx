@@ -37,7 +37,7 @@ export function HowItWorks() {
       {/* Background decoration */}
       <div className='bg-grid-pattern absolute inset-0 opacity-[0.03]' />
 
-      <div className='relative container mx-auto px-6'>
+      <div className='relative container mx-auto px-4'>
         {/* Heading */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -127,7 +127,7 @@ export function HowItWorks() {
                   viewport={{ once: true }}
                   transition={{ delay: 0.2, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
                   whileHover={{ scale: 1.02, y: -5 }}
-                  className={`bg-card border-border/50 group relative overflow-hidden rounded-2xl border p-12 shadow-xl transition-shadow hover:shadow-2xl ${isEven ? '' : 'lg:col-start-1 lg:row-start-1'}`}
+                  className={`bg-card border-border/50 group relative overflow-hidden rounded-2xl border p-12 ${isEven ? '' : 'lg:col-start-1 lg:row-start-1'}`}
                 >
                   <div className='bg-primary/5 group-hover:bg-primary/10 relative flex aspect-video items-center justify-center rounded-xl transition-colors duration-300'>
                     <motion.div

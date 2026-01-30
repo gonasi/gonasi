@@ -24,7 +24,7 @@ export function RealOutcomes() {
   ];
 
   return (
-    <section className='bg-primary relative overflow-hidden py-24 md:py-32'>
+    <section className='bg-primary/90 relative overflow-hidden py-24 md:py-32'>
       {/* Subtle grid background */}
       <div className='bg-grid-pattern absolute inset-0 opacity-[0.05]' />
 
@@ -38,7 +38,7 @@ export function RealOutcomes() {
         className='absolute top-1/2 left-1/2 h-[600px] w-full -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/10 blur-[150px]'
       />
 
-      <div className='relative container mx-auto px-6'>
+      <div className='relative container mx-auto px-4'>
         {/* Heading */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -120,7 +120,7 @@ export function RealOutcomes() {
           whileHover={{ scale: 1.02, y: -5 }}
           className='bg-primary-foreground/10 ring-primary-foreground/20 mx-auto mt-24 max-w-3xl rounded-2xl p-10 text-center ring-1 backdrop-blur-sm transition-transform md:p-12'
         >
-          <p className='text-primary-foreground text-lg leading-relaxed italic md:text-xl'>
+          <p className='text-primary-foreground font-secondary text-lg leading-relaxed italic md:text-xl'>
             &quot;Gonasi transformed how we onboard new hires. Completion rates soared and our team
             now learns through practice instead of passively watching videos. It&apos;s the first
             training tool that actually improves performance.&quot;

@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { BookOpen, CheckCircle, Sparkles, Users } from 'lucide-react';
+import { Blocks } from 'lucide-react';
 import Typewriter from 'typewriter-effect';
 
 export function Hero() {
@@ -11,7 +11,7 @@ export function Hero() {
         <div className='bg-primary/5 absolute top-1/2 -right-24 h-96 w-96 rounded-full blur-3xl' />
       </div>
 
-      <div className='relative container mx-auto px-4 py-20 md:px-0 md:py-28'>
+      <div className='relative container mx-auto px-4 py-8 md:px-0 md:py-28'>
         <motion.div
           initial='hidden'
           animate='visible'
@@ -26,53 +26,19 @@ export function Hero() {
           {/* Badge */}
 
           <motion.div
-            initial='hidden'
-            animate='visible'
-            variants={{
-              hidden: { opacity: 0, y: 12 },
-              visible: {
-                opacity: 1,
-                y: 0,
-                transition: { staggerChildren: 0.08 },
-              },
-            }}
-            className='bg-muted/60 font-secondary text-foreground/80 inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-sm font-medium backdrop-blur'
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.2, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            whileHover={{ scale: 1.02 }}
+            className='bg-primary/10 text-primary border-primary/20 font-secondary inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm font-semibold'
           >
-            {/* Intro */}
-            <motion.span
-              variants={{ hidden: { opacity: 0 }, visible: { opacity: 1 } }}
-              className='flex items-center gap-1'
+            <motion.div
+              animate={{ rotate: [0, 10, -10, 10, 0] }}
+              transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
             >
-              <CheckCircle className='h-4 w-4 text-emerald-500' />
-              <span>Built for</span>
-            </motion.span>
-
-            {/* Educators */}
-            <motion.span
-              variants={{ hidden: { opacity: 0, y: 4 }, visible: { opacity: 1, y: 0 } }}
-              className='flex items-center gap-1'
-            >
-              <Users className='h-4 w-4 text-blue-500' />
-              <span>educators</span>
-            </motion.span>
-
-            {/* Schools */}
-            <motion.span
-              variants={{ hidden: { opacity: 0, y: 4 }, visible: { opacity: 1, y: 0 } }}
-              className='flex items-center gap-1'
-            >
-              <BookOpen className='h-4 w-4 text-violet-500' />
-              <span>schools</span>
-            </motion.span>
-
-            {/* Course creators */}
-            <motion.span
-              variants={{ hidden: { opacity: 0, y: 4 }, visible: { opacity: 1, y: 0 } }}
-              className='flex items-center gap-1'
-            >
-              <Sparkles className='h-4 w-4 text-amber-500' />
-              <span>course creators</span>
-            </motion.span>
+              <Blocks className='h-4 w-4' />
+            </motion.div>
+            <span>Real Learning, Block by Block</span>
           </motion.div>
 
           {/* Heading */}
