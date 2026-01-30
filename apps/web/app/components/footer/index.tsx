@@ -1,5 +1,5 @@
 import { Link } from 'react-router';
-import { Facebook, Github, Instagram, Linkedin, Twitter } from 'lucide-react';
+import { Facebook, Instagram, Linkedin } from 'lucide-react';
 
 export function Footer() {
   return (
@@ -112,14 +112,7 @@ export function Footer() {
                   Status
                 </Link>
               </li>
-              <li>
-                <Link
-                  to='#'
-                  className='text-muted-foreground font-secondary hover:text-foreground/80 text-sm transition-colors'
-                >
-                  Contact Support
-                </Link>
-              </li>
+              <li>info@gonasi.com</li>
             </ul>
           </div>
 
@@ -167,36 +160,35 @@ export function Footer() {
         <div className='mt-8 md:mt-0'>
           <div className='flex space-x-6'>
             <Link
-              to='#'
+              to='https://www.facebook.com/people/Gonasi/61579657334134/'
+              target='_blank'
               className='text-muted-foreground hover:text-foreground/80 transition-colors'
+              rel='noreferrer'
             >
               <span className='sr-only'>Facebook</span>
               <Facebook className='h-6 w-6' />
             </Link>
-            <Link
+            {/* <Link
               to='#'
               className='text-muted-foreground hover:text-foreground/80 transition-colors'
             >
               <span className='sr-only'>Twitter</span>
               <Twitter className='h-6 w-6' />
-            </Link>
+            </Link> */}
             <Link
-              to='#'
+              to='https://www.instagram.com/gonasi_app/'
+              target='_blank'
               className='text-muted-foreground hover:text-foreground/80 transition-colors'
+              rel='noreferrer'
             >
               <span className='sr-only'>Instagram</span>
               <Instagram className='h-6 w-6' />
             </Link>
             <Link
-              to='#'
+              to='https://www.linkedin.com/company/gonasi-app/'
+              target='_blank'
               className='text-muted-foreground hover:text-foreground/80 transition-colors'
-            >
-              <span className='sr-only'>GitHub</span>
-              <Github className='h-6 w-6' />
-            </Link>
-            <Link
-              to='#'
-              className='text-muted-foreground hover:text-foreground/80 transition-colors'
+              rel='noreferrer'
             >
               <span className='sr-only'>LinkedIn</span>
               <Linkedin className='h-6 w-6' />

@@ -45,7 +45,7 @@ export function FAQ() {
 
   return (
     <section className='bg-muted/30 py-20 md:py-32'>
-      <div className='container mx-auto px-6'>
+      <div className='container mx-auto px-4'>
         {/* Heading */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -97,7 +97,7 @@ export function FAQ() {
               <motion.div
                 key={index}
                 variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }}
-                className='bg-card border-border/50 overflow-hidden rounded-xl border shadow-md transition-shadow hover:shadow-lg'
+                className='bg-card border-border/50 overflow-hidden rounded-xl border'
               >
                 <button
                   onClick={() => setOpenIndex(isOpen ? null : index)}

@@ -76,7 +76,7 @@ export function Features() {
 
   return (
     <section className='bg-background py-20 md:py-32'>
-      <div className='container mx-auto px-6'>
+      <div className='container mx-auto px-4'>
         {/* Heading */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -129,7 +129,7 @@ export function Features() {
                 variants={{ hidden: { opacity: 0, y: 30 }, show: { opacity: 1, y: 0 } }}
                 whileHover={{ y: -6, scale: 1.01 }}
                 transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                className='bg-card border-border/50 group relative overflow-hidden rounded-2xl border p-8 shadow-lg transition-shadow hover:shadow-xl'
+                className='bg-card border-border/50 group relative overflow-hidden rounded-2xl border p-8 transition-shadow hover:shadow-xl'
               >
                 {/* Gradient accent on hover */}
                 <motion.div
@@ -142,7 +142,7 @@ export function Features() {
                   <motion.div
                     whileHover={{ rotate: 5, scale: 1.1 }}
                     transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                    className={`bg-gradient-to-br ${feature.color} flex h-16 w-16 items-center justify-center rounded-xl shadow-lg`}
+                    className={`bg-gradient-to-br ${feature.color} flex h-16 w-16 items-center justify-center rounded-xl`}
                   >
                     <Icon className='h-8 w-8 text-white' />
                   </motion.div>

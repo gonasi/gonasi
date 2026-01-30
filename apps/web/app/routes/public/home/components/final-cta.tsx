@@ -28,7 +28,7 @@ export function FinalCTA() {
         className='pointer-events-none absolute top-1/2 left-1/2 h-[800px] w-full -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/10 blur-[200px]'
       />
 
-      <div className='relative container mx-auto px-6'>
+      <div className='relative container mx-auto px-4'>
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
