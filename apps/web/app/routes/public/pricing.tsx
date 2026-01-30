@@ -110,20 +110,13 @@ function PricingCard({ tier, isYearly }: { tier: TierData; isYearly: boolean }) 
       label: `${formatStorage(tier.storage_limit_mb_per_org)} storage`,
       highlight: false,
     },
-    {
-      label: tier.ai_tools_enabled
-        ? `${formatNumber(tier.ai_usage_limit_monthly)} AI credits/month`
-        : 'No AI tools',
-      highlight: tier.ai_tools_enabled,
-      disabled: !tier.ai_tools_enabled,
-    },
-    {
-      label: tier.custom_domains_enabled
-        ? `${tier.max_custom_domains} custom domain${tier.max_custom_domains !== 1 ? 's' : ''}`
-        : 'No custom domains',
-      highlight: tier.custom_domains_enabled,
-      disabled: !tier.custom_domains_enabled,
-    },
+    // {
+    //   label: tier.custom_domains_enabled
+    //     ? `${tier.max_custom_domains} custom domain${tier.max_custom_domains !== 1 ? 's' : ''}`
+    //     : 'No custom domains',
+    //   highlight: tier.custom_domains_enabled,
+    //   disabled: !tier.custom_domains_enabled,
+    // },
     {
       label: `${tier.analytics_level.charAt(0).toUpperCase() + tier.analytics_level.slice(1)} analytics`,
       highlight: tier.analytics_level === 'advanced',
