@@ -59,6 +59,7 @@ schema_paths = [
   './schemas/update_updated_at_column.sql',
 
   './schemas/enums/course_access.sql',
+  './schemas/enums/course_update_type.sql',
 
   # profiles
   './schemas/profiles_schema_and_indexes.sql', 
