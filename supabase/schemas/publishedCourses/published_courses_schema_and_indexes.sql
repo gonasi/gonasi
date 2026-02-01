@@ -47,7 +47,7 @@ create table public.published_courses (
   content_version integer not null default 1,
   pricing_version integer not null default 1,
   overview_version integer not null default 1,
-  last_update_type course_update_type,
+  last_update_types course_update_type[],       -- Types of last update: e.g., ['content', 'pricing']
   content_changed_at timestamptz,
   pricing_changed_at timestamptz,
   overview_changed_at timestamptz,
@@ -111,7 +111,8 @@ create index idx_published_courses_rating on public.published_courses(average_ra
 create index idx_published_courses_content_version on public.published_courses(content_version);
 create index idx_published_courses_pricing_version on public.published_courses(pricing_version);
 create index idx_published_courses_overview_version on public.published_courses(overview_version);
-create index idx_published_courses_last_update_type on public.published_courses(last_update_type);
+-- GIN index for efficient array querying (e.g., WHERE 'content' = ANY(last_update_types))
+create index idx_published_courses_last_update_types on public.published_courses using gin (last_update_types);
 
 -- ====================================================================================
 -- FUNCTION: ensure_incremented_course_version

@@ -41,6 +41,8 @@ declare
   v_organization_id uuid;
   course_structure jsonb;
   block_weight numeric;
+  block_content_version integer;
+  block_published_at timestamptz;
   course_total_blocks integer := 0;
   course_total_lessons integer := 0;
   course_total_chapters integer := 0;
@@ -80,11 +82,14 @@ begin
     raise exception 'Course structure not found for published_course_id: %', p_published_course_id;
   end if;
 
-  select coalesce(
-    (block_obj->>'weight')::numeric,
-    1.0
-  )
-  into block_weight
+  select
+    coalesce((block_obj->>'weight')::numeric, 1.0),
+    coalesce((block_obj->>'content_version')::integer, 1),
+    coalesce((block_obj->>'published_at')::timestamptz, timezone('utc', now()))
+  into
+    block_weight,
+    block_content_version,
+    block_published_at
   from jsonb_path_query(
     course_structure,
     '$.chapters[*].lessons[*].blocks[*] ? (@.id == $block_id)',
@@ -278,6 +283,8 @@ begin
     attempt_count,
     interaction_data,
     last_response,
+    block_content_version,
+    block_published_at,
     user_id
   )
   values (
@@ -295,12 +302,16 @@ begin
     1,
     p_interaction_data,
     p_last_response,
+    block_content_version,
+    block_published_at,
     current_user_id
   )
   on conflict (user_id, published_course_id, block_id)
   do update set
     lesson_progress_id = excluded.lesson_progress_id,
     block_weight = excluded.block_weight,
+    block_content_version = excluded.block_content_version,
+    block_published_at = excluded.block_published_at,
     is_completed = true,
     completed_at = coalesce(block_progress.completed_at, timezone('utc', now())),
     time_spent_seconds = block_progress.time_spent_seconds + excluded.time_spent_seconds,

@@ -906,6 +906,34 @@
           "maxLength": null
         },
         {
+          "id": "public.block_progress.block_content_version",
+          "name": "block_content_version",
+          "columnName": "block_content_version",
+          "type": "int4",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.block_progress.block_published_at",
+          "name": "block_published_at",
+          "columnName": "block_published_at",
+          "type": "timestamptz",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
           "name": "lesson_progress",
           "type": "lesson_progress",
           "isRequired": true,
@@ -1237,9 +1265,9 @@
       "tableName": "buckets_analytics",
       "fields": [
         {
-          "id": "storage.buckets_analytics.id",
-          "name": "id",
-          "columnName": "id",
+          "id": "storage.buckets_analytics.name",
+          "name": "name",
+          "columnName": "name",
           "type": "text",
           "isRequired": true,
           "kind": "scalar",
@@ -1247,7 +1275,7 @@
           "isGenerated": false,
           "sequence": false,
           "hasDefaultValue": false,
-          "isId": true,
+          "isId": false,
           "maxLength": null
         },
         {
@@ -1307,6 +1335,34 @@
           "maxLength": null
         },
         {
+          "id": "storage.buckets_analytics.id",
+          "name": "id",
+          "columnName": "id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": true,
+          "maxLength": null
+        },
+        {
+          "id": "storage.buckets_analytics.deleted_at",
+          "name": "deleted_at",
+          "columnName": "deleted_at",
+          "type": "timestamptz",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
           "name": "iceberg_namespaces",
           "type": "iceberg_namespaces",
           "isRequired": false,
@@ -1335,7 +1391,15 @@
           "hasDefaultValue": false
         }
       ],
-      "uniqueConstraints": []
+      "uniqueConstraints": [
+        {
+          "name": "buckets_analytics_unique_name_idx",
+          "fields": [
+            "name"
+          ],
+          "nullNotDistinct": false
+        }
+      ]
     },
     "buckets_vectors": {
       "id": "storage.buckets_vectors",
@@ -1687,6 +1751,34 @@
           "maxLength": null
         },
         {
+          "id": "public.chapter_progress.chapter_content_version",
+          "name": "chapter_content_version",
+          "columnName": "chapter_content_version",
+          "type": "int4",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.chapter_progress.last_recalculated_at",
+          "name": "last_recalculated_at",
+          "columnName": "last_recalculated_at",
+          "type": "timestamptz",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
           "name": "course_progress",
           "type": "course_progress",
           "isRequired": true,
@@ -1928,6 +2020,20 @@
           "maxLength": null
         },
         {
+          "id": "public.chapters.content_version",
+          "name": "content_version",
+          "columnName": "content_version",
+          "type": "int4",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
           "name": "courses",
           "type": "courses",
           "isRequired": true,
@@ -2041,6 +2147,540 @@
           "fields": [
             "course_id",
             "position"
+          ],
+          "nullNotDistinct": false
+        }
+      ]
+    },
+    "cohort_membership_history": {
+      "id": "public.cohort_membership_history",
+      "schemaName": "public",
+      "tableName": "cohort_membership_history",
+      "fields": [
+        {
+          "id": "public.cohort_membership_history.id",
+          "name": "id",
+          "columnName": "id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": true,
+          "maxLength": null
+        },
+        {
+          "id": "public.cohort_membership_history.enrollment_id",
+          "name": "enrollment_id",
+          "columnName": "enrollment_id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.cohort_membership_history.old_cohort_id",
+          "name": "old_cohort_id",
+          "columnName": "old_cohort_id",
+          "type": "uuid",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.cohort_membership_history.new_cohort_id",
+          "name": "new_cohort_id",
+          "columnName": "new_cohort_id",
+          "type": "uuid",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.cohort_membership_history.reason",
+          "name": "reason",
+          "columnName": "reason",
+          "type": "text",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.cohort_membership_history.changed_by",
+          "name": "changed_by",
+          "columnName": "changed_by",
+          "type": "uuid",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.cohort_membership_history.changed_at",
+          "name": "changed_at",
+          "columnName": "changed_at",
+          "type": "timestamptz",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "name": "users",
+          "type": "users",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "cohort_membership_historyTousers",
+          "relationFromFields": [
+            "changed_by"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "cohorts_cohort_membership_history_new_cohort_idTocohorts",
+          "type": "cohorts",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "cohort_membership_history_new_cohort_idTocohorts",
+          "relationFromFields": [
+            "new_cohort_id"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "cohorts_cohort_membership_history_old_cohort_idTocohorts",
+          "type": "cohorts",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "cohort_membership_history_old_cohort_idTocohorts",
+          "relationFromFields": [
+            "old_cohort_id"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "course_enrollments",
+          "type": "course_enrollments",
+          "isRequired": true,
+          "kind": "object",
+          "relationName": "cohort_membership_historyTocourse_enrollments",
+          "relationFromFields": [
+            "enrollment_id"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        }
+      ],
+      "uniqueConstraints": [
+        {
+          "name": "cohort_membership_history_pkey",
+          "fields": [
+            "id"
+          ],
+          "nullNotDistinct": false
+        }
+      ]
+    },
+    "cohorts": {
+      "id": "public.cohorts",
+      "schemaName": "public",
+      "tableName": "cohorts",
+      "fields": [
+        {
+          "id": "public.cohorts.id",
+          "name": "id",
+          "columnName": "id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": true,
+          "maxLength": null
+        },
+        {
+          "id": "public.cohorts.organization_id",
+          "name": "organization_id",
+          "columnName": "organization_id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.cohorts.published_course_id",
+          "name": "published_course_id",
+          "columnName": "published_course_id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.cohorts.name",
+          "name": "name",
+          "columnName": "name",
+          "type": "text",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.cohorts.description",
+          "name": "description",
+          "columnName": "description",
+          "type": "text",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.cohorts.start_date",
+          "name": "start_date",
+          "columnName": "start_date",
+          "type": "timestamptz",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.cohorts.end_date",
+          "name": "end_date",
+          "columnName": "end_date",
+          "type": "timestamptz",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.cohorts.max_enrollment",
+          "name": "max_enrollment",
+          "columnName": "max_enrollment",
+          "type": "int4",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.cohorts.is_active",
+          "name": "is_active",
+          "columnName": "is_active",
+          "type": "bool",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.cohorts.current_enrollment_count",
+          "name": "current_enrollment_count",
+          "columnName": "current_enrollment_count",
+          "type": "int4",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.cohorts.created_at",
+          "name": "created_at",
+          "columnName": "created_at",
+          "type": "timestamptz",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.cohorts.updated_at",
+          "name": "updated_at",
+          "columnName": "updated_at",
+          "type": "timestamptz",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.cohorts.created_by",
+          "name": "created_by",
+          "columnName": "created_by",
+          "type": "uuid",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.cohorts.updated_by",
+          "name": "updated_by",
+          "columnName": "updated_by",
+          "type": "uuid",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "name": "users_cohorts_created_byTousers",
+          "type": "users",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "cohorts_created_byTousers",
+          "relationFromFields": [
+            "created_by"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "users_cohorts_updated_byTousers",
+          "type": "users",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "cohorts_updated_byTousers",
+          "relationFromFields": [
+            "updated_by"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "organizations",
+          "type": "organizations",
+          "isRequired": true,
+          "kind": "object",
+          "relationName": "cohortsToorganizations",
+          "relationFromFields": [
+            "organization_id"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "published_courses",
+          "type": "published_courses",
+          "isRequired": true,
+          "kind": "object",
+          "relationName": "cohortsTopublished_courses",
+          "relationFromFields": [
+            "published_course_id"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "cohort_membership_history_cohort_membership_history_new_cohort_idTocohorts",
+          "type": "cohort_membership_history",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "cohort_membership_history_new_cohort_idTocohorts",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "cohort_membership_history_cohort_membership_history_old_cohort_idTocohorts",
+          "type": "cohort_membership_history",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "cohort_membership_history_old_cohort_idTocohorts",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "course_enrollments",
+          "type": "course_enrollments",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "course_enrollmentsTocohorts",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "course_invites",
+          "type": "course_invites",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "course_invitesTocohorts",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        }
+      ],
+      "uniqueConstraints": [
+        {
+          "name": "cohorts_pkey",
+          "fields": [
+            "id"
+          ],
+          "nullNotDistinct": false
+        },
+        {
+          "name": "unique_cohort_name_per_course",
+          "fields": [
+            "name",
+            "published_course_id"
           ],
           "nullNotDistinct": false
         }
@@ -2840,6 +3480,38 @@
           "maxLength": null
         },
         {
+          "id": "public.course_enrollments.cohort_id",
+          "name": "cohort_id",
+          "columnName": "cohort_id",
+          "type": "uuid",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "name": "cohorts",
+          "type": "cohorts",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "course_enrollmentsTocohorts",
+          "relationFromFields": [
+            "cohort_id"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
           "name": "organizations",
           "type": "organizations",
           "isRequired": true,
@@ -2894,6 +3566,20 @@
           "hasDefaultValue": false
         },
         {
+          "name": "cohort_membership_history",
+          "type": "cohort_membership_history",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "cohort_membership_historyTocourse_enrollments",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
           "name": "course_enrollment_activities",
           "type": "course_enrollment_activities",
           "isRequired": false,
@@ -2935,6 +3621,397 @@
           "fields": [
             "published_course_id",
             "user_id"
+          ],
+          "nullNotDistinct": false
+        }
+      ]
+    },
+    "course_invites": {
+      "id": "public.course_invites",
+      "schemaName": "public",
+      "tableName": "course_invites",
+      "fields": [
+        {
+          "id": "public.course_invites.id",
+          "name": "id",
+          "columnName": "id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": true,
+          "maxLength": null
+        },
+        {
+          "id": "public.course_invites.published_course_id",
+          "name": "published_course_id",
+          "columnName": "published_course_id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.course_invites.organization_id",
+          "name": "organization_id",
+          "columnName": "organization_id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.course_invites.cohort_id",
+          "name": "cohort_id",
+          "columnName": "cohort_id",
+          "type": "uuid",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.course_invites.email",
+          "name": "email",
+          "columnName": "email",
+          "type": "text",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.course_invites.invited_by",
+          "name": "invited_by",
+          "columnName": "invited_by",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.course_invites.token",
+          "name": "token",
+          "columnName": "token",
+          "type": "text",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.course_invites.resend_count",
+          "name": "resend_count",
+          "columnName": "resend_count",
+          "type": "int4",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.course_invites.last_sent_at",
+          "name": "last_sent_at",
+          "columnName": "last_sent_at",
+          "type": "timestamptz",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.course_invites.delivery_status",
+          "name": "delivery_status",
+          "columnName": "delivery_status",
+          "type": "invite_delivery_status",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.course_invites.delivery_logs",
+          "name": "delivery_logs",
+          "columnName": "delivery_logs",
+          "type": "jsonb",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.course_invites.expires_at",
+          "name": "expires_at",
+          "columnName": "expires_at",
+          "type": "timestamptz",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.course_invites.accepted_at",
+          "name": "accepted_at",
+          "columnName": "accepted_at",
+          "type": "timestamptz",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.course_invites.accepted_by",
+          "name": "accepted_by",
+          "columnName": "accepted_by",
+          "type": "uuid",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.course_invites.revoked_at",
+          "name": "revoked_at",
+          "columnName": "revoked_at",
+          "type": "timestamptz",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.course_invites.created_at",
+          "name": "created_at",
+          "columnName": "created_at",
+          "type": "timestamptz",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.course_invites.updated_at",
+          "name": "updated_at",
+          "columnName": "updated_at",
+          "type": "timestamptz",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.course_invites.pricing_tier_id",
+          "name": "pricing_tier_id",
+          "columnName": "pricing_tier_id",
+          "type": "uuid",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "name": "users_course_invites_accepted_byTousers",
+          "type": "users",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "course_invites_accepted_byTousers",
+          "relationFromFields": [
+            "accepted_by"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "users_course_invites_invited_byTousers",
+          "type": "users",
+          "isRequired": true,
+          "kind": "object",
+          "relationName": "course_invites_invited_byTousers",
+          "relationFromFields": [
+            "invited_by"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "cohorts",
+          "type": "cohorts",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "course_invitesTocohorts",
+          "relationFromFields": [
+            "cohort_id"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "course_pricing_tiers",
+          "type": "course_pricing_tiers",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "course_invitesTocourse_pricing_tiers",
+          "relationFromFields": [
+            "pricing_tier_id"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "organizations",
+          "type": "organizations",
+          "isRequired": true,
+          "kind": "object",
+          "relationName": "course_invitesToorganizations",
+          "relationFromFields": [
+            "organization_id"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "published_courses",
+          "type": "published_courses",
+          "isRequired": true,
+          "kind": "object",
+          "relationName": "course_invitesTopublished_courses",
+          "relationFromFields": [
+            "published_course_id"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        }
+      ],
+      "uniqueConstraints": [
+        {
+          "name": "course_invites_pkey",
+          "fields": [
+            "id"
+          ],
+          "nullNotDistinct": false
+        },
+        {
+          "name": "course_invites_token_key",
+          "fields": [
+            "token"
+          ],
+          "nullNotDistinct": false
+        },
+        {
+          "name": "unique_pending_course_invite_per_user",
+          "fields": [
+            "email",
+            "published_course_id"
           ],
           "nullNotDistinct": false
         }
@@ -3608,6 +4685,20 @@
           "maxLength": null
         },
         {
+          "id": "public.course_pricing_tiers.pricing_version",
+          "name": "pricing_version",
+          "columnName": "pricing_version",
+          "type": "int4",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
           "name": "courses",
           "type": "courses",
           "isRequired": true,
@@ -3674,6 +4765,20 @@
             "id"
           ],
           "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "course_invites",
+          "type": "course_invites",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "course_invitesTocourse_pricing_tiers",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
           "isId": false,
           "isGenerated": false,
           "sequence": false,
@@ -3967,6 +5072,20 @@
           "isGenerated": false,
           "sequence": false,
           "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.course_progress.last_recalculated_at",
+          "name": "last_recalculated_at",
+          "columnName": "last_recalculated_at",
+          "type": "timestamptz",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
           "isId": false,
           "maxLength": null
         },
@@ -4455,6 +5574,62 @@
           "isGenerated": false,
           "sequence": false,
           "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.courses.content_version",
+          "name": "content_version",
+          "columnName": "content_version",
+          "type": "int4",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.courses.last_update_type",
+          "name": "last_update_type",
+          "columnName": "last_update_type",
+          "type": "course_update_type",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.courses.overview_version",
+          "name": "overview_version",
+          "columnName": "overview_version",
+          "type": "int4",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.courses.pricing_version",
+          "name": "pricing_version",
+          "columnName": "pricing_version",
+          "type": "int4",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
           "isId": false,
           "maxLength": null
         },
@@ -5262,6 +6437,20 @@
           "maxLength": null
         },
         {
+          "id": "public.file_library.settings",
+          "name": "settings",
+          "columnName": "settings",
+          "type": "jsonb",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
           "name": "courses",
           "type": "courses",
           "isRequired": true,
@@ -5855,9 +7044,9 @@
           "maxLength": null
         },
         {
-          "id": "storage.iceberg_namespaces.bucket_id",
-          "name": "bucket_id",
-          "columnName": "bucket_id",
+          "id": "storage.iceberg_namespaces.bucket_name",
+          "name": "bucket_name",
+          "columnName": "bucket_name",
           "type": "text",
           "isRequired": true,
           "kind": "scalar",
@@ -5911,13 +7100,41 @@
           "maxLength": null
         },
         {
+          "id": "storage.iceberg_namespaces.metadata",
+          "name": "metadata",
+          "columnName": "metadata",
+          "type": "jsonb",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "storage.iceberg_namespaces.catalog_id",
+          "name": "catalog_id",
+          "columnName": "catalog_id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
           "name": "buckets_analytics",
           "type": "buckets_analytics",
           "isRequired": true,
           "kind": "object",
           "relationName": "iceberg_namespacesTobuckets_analytics",
           "relationFromFields": [
-            "bucket_id"
+            "catalog_id"
           ],
           "relationToFields": [
             "id"
@@ -5947,7 +7164,7 @@
         {
           "name": "idx_iceberg_namespaces_bucket_id",
           "fields": [
-            "bucket_id",
+            "catalog_id",
             "name"
           ],
           "nullNotDistinct": false
@@ -5988,9 +7205,9 @@
           "maxLength": null
         },
         {
-          "id": "storage.iceberg_tables.bucket_id",
-          "name": "bucket_id",
-          "columnName": "bucket_id",
+          "id": "storage.iceberg_tables.bucket_name",
+          "name": "bucket_name",
+          "columnName": "bucket_name",
           "type": "text",
           "isRequired": true,
           "kind": "scalar",
@@ -6058,13 +7275,69 @@
           "maxLength": null
         },
         {
+          "id": "storage.iceberg_tables.remote_table_id",
+          "name": "remote_table_id",
+          "columnName": "remote_table_id",
+          "type": "text",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "storage.iceberg_tables.shard_key",
+          "name": "shard_key",
+          "columnName": "shard_key",
+          "type": "text",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "storage.iceberg_tables.shard_id",
+          "name": "shard_id",
+          "columnName": "shard_id",
+          "type": "text",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "storage.iceberg_tables.catalog_id",
+          "name": "catalog_id",
+          "columnName": "catalog_id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
           "name": "buckets_analytics",
           "type": "buckets_analytics",
           "isRequired": true,
           "kind": "object",
           "relationName": "iceberg_tablesTobuckets_analytics",
           "relationFromFields": [
-            "bucket_id"
+            "catalog_id"
           ],
           "relationToFields": [
             "id"
@@ -6096,8 +7369,16 @@
       ],
       "uniqueConstraints": [
         {
+          "name": "idx_iceberg_tables_location",
+          "fields": [
+            "location"
+          ],
+          "nullNotDistinct": false
+        },
+        {
           "name": "idx_iceberg_tables_namespace_id",
           "fields": [
+            "catalog_id",
             "name",
             "namespace_id"
           ],
@@ -6831,6 +8112,20 @@
           "maxLength": null
         },
         {
+          "id": "public.lesson_blocks.content_version",
+          "name": "content_version",
+          "columnName": "content_version",
+          "type": "int4",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
           "name": "chapters",
           "type": "chapters",
           "isRequired": true,
@@ -7155,6 +8450,34 @@
           "isGenerated": false,
           "sequence": false,
           "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.lesson_progress.last_recalculated_at",
+          "name": "last_recalculated_at",
+          "columnName": "last_recalculated_at",
+          "type": "timestamptz",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.lesson_progress.lesson_content_version",
+          "name": "lesson_content_version",
+          "columnName": "lesson_content_version",
+          "type": "int4",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
           "isId": false,
           "maxLength": null
         },
@@ -7789,6 +9112,20 @@
           "isGenerated": false,
           "sequence": false,
           "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.lessons.content_version",
+          "name": "content_version",
+          "columnName": "content_version",
+          "type": "int4",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
           "isId": false,
           "maxLength": null
         },
@@ -8955,6 +10292,20 @@
           "maxLength": null
         },
         {
+          "id": "auth.oauth_authorizations.nonce",
+          "name": "nonce",
+          "columnName": "nonce",
+          "type": "text",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
           "name": "oauth_clients",
           "type": "oauth_clients",
           "isRequired": true,
@@ -9007,6 +10358,70 @@
           "nullNotDistinct": false
         }
       ]
+    },
+    "oauth_client_states": {
+      "id": "auth.oauth_client_states",
+      "schemaName": "auth",
+      "tableName": "oauth_client_states",
+      "fields": [
+        {
+          "id": "auth.oauth_client_states.id",
+          "name": "id",
+          "columnName": "id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": true,
+          "maxLength": null
+        },
+        {
+          "id": "auth.oauth_client_states.provider_type",
+          "name": "provider_type",
+          "columnName": "provider_type",
+          "type": "text",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "auth.oauth_client_states.code_verifier",
+          "name": "code_verifier",
+          "columnName": "code_verifier",
+          "type": "text",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "auth.oauth_client_states.created_at",
+          "name": "created_at",
+          "columnName": "created_at",
+          "type": "timestamptz",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        }
+      ],
+      "uniqueConstraints": []
     },
     "oauth_clients": {
       "id": "auth.oauth_clients",
@@ -11863,6 +13278,20 @@
           "hasDefaultValue": false
         },
         {
+          "name": "cohorts",
+          "type": "cohorts",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "cohortsToorganizations",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
           "name": "course_editors",
           "type": "course_editors",
           "isRequired": false,
@@ -11882,6 +13311,20 @@
           "isRequired": false,
           "kind": "object",
           "relationName": "course_enrollmentsToorganizations",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "course_invites",
+          "type": "course_invites",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "course_invitesToorganizations",
           "relationFromFields": [],
           "relationToFields": [],
           "isList": true,
@@ -13628,6 +15071,104 @@
           "maxLength": null
         },
         {
+          "id": "public.published_courses.content_changed_at",
+          "name": "content_changed_at",
+          "columnName": "content_changed_at",
+          "type": "timestamptz",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.published_courses.content_version",
+          "name": "content_version",
+          "columnName": "content_version",
+          "type": "int4",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.published_courses.last_update_type",
+          "name": "last_update_type",
+          "columnName": "last_update_type",
+          "type": "course_update_type",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.published_courses.overview_changed_at",
+          "name": "overview_changed_at",
+          "columnName": "overview_changed_at",
+          "type": "timestamptz",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.published_courses.overview_version",
+          "name": "overview_version",
+          "columnName": "overview_version",
+          "type": "int4",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.published_courses.pricing_changed_at",
+          "name": "pricing_changed_at",
+          "columnName": "pricing_changed_at",
+          "type": "timestamptz",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.published_courses.pricing_version",
+          "name": "pricing_version",
+          "columnName": "pricing_version",
+          "type": "int4",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
           "name": "course_categories",
           "type": "course_categories",
           "isRequired": false,
@@ -13746,11 +15287,39 @@
           "hasDefaultValue": false
         },
         {
+          "name": "cohorts",
+          "type": "cohorts",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "cohortsTopublished_courses",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
           "name": "course_enrollments",
           "type": "course_enrollments",
           "isRequired": false,
           "kind": "object",
           "relationName": "course_enrollmentsTopublished_courses",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "course_invites",
+          "type": "course_invites",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "course_invitesTopublished_courses",
           "relationFromFields": [],
           "relationToFields": [],
           "isList": true,
@@ -14046,6 +15615,20 @@
           "isGenerated": false,
           "sequence": false,
           "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.published_file_library.settings",
+          "name": "settings",
+          "columnName": "settings",
+          "type": "jsonb",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
           "isId": false,
           "maxLength": null
         },
@@ -15822,6 +17405,20 @@
           "name": "refresh_token_counter",
           "columnName": "refresh_token_counter",
           "type": "int8",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "auth.sessions.scopes",
+          "name": "scopes",
+          "columnName": "scopes",
+          "type": "text",
           "isRequired": false,
           "kind": "scalar",
           "isList": false,
@@ -18264,6 +19861,48 @@
           "hasDefaultValue": false
         },
         {
+          "name": "cohort_membership_history",
+          "type": "cohort_membership_history",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "cohort_membership_historyTousers",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "cohorts_cohorts_created_byTousers",
+          "type": "cohorts",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "cohorts_created_byTousers",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "cohorts_cohorts_updated_byTousers",
+          "type": "cohorts",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "cohorts_updated_byTousers",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
           "name": "course_categories_course_categories_created_byTousers",
           "type": "course_categories",
           "isRequired": false,
@@ -18283,6 +19922,34 @@
           "isRequired": false,
           "kind": "object",
           "relationName": "course_categories_updated_byTousers",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "course_invites_course_invites_accepted_byTousers",
+          "type": "course_invites",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "course_invites_accepted_byTousers",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "course_invites_course_invites_invited_byTousers",
+          "type": "course_invites",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "course_invites_invited_byTousers",
           "relationFromFields": [],
           "relationToFields": [],
           "isList": true,
@@ -19177,6 +20844,23 @@
         },
         {
           "name": "unlisted"
+        }
+      ]
+    },
+    "course_update_type": {
+      "schemaName": "public",
+      "values": [
+        {
+          "name": "content"
+        },
+        {
+          "name": "multiple"
+        },
+        {
+          "name": "overview"
+        },
+        {
+          "name": "pricing"
         }
       ]
     },

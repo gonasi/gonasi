@@ -16,7 +16,7 @@ $$;
 
 -- ========================================
 -- function: trg_touch_course_updated_at
--- purpose: updates the parent course's updated_at field, version, and last_update_type
+-- purpose: updates the parent course's updated_at field, version, and last_update_types
 --          when a chapter, lesson, lesson_block or course_pricing_tiers is inserted, updated, or deleted
 -- ========================================
 create or replace function public.trg_touch_course_updated_at()
@@ -47,9 +47,9 @@ begin
         when tg_table_name = 'course_pricing_tiers' then pricing_version + 1
         else pricing_version
       end,
-      last_update_type = case
-        when tg_table_name = 'course_pricing_tiers' then 'pricing'::course_update_type
-        else 'content'::course_update_type
+      last_update_types = case
+        when tg_table_name = 'course_pricing_tiers' then ARRAY['pricing']::course_update_type[]
+        else ARRAY['content']::course_update_type[]
       end
     where id = target_course_id;
   end if;
