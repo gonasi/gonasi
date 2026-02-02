@@ -5592,10 +5592,10 @@
           "maxLength": null
         },
         {
-          "id": "public.courses.last_update_type",
-          "name": "last_update_type",
-          "columnName": "last_update_type",
-          "type": "course_update_type",
+          "id": "public.courses.last_update_types",
+          "name": "last_update_types",
+          "columnName": "last_update_types",
+          "type": "course_update_type[]",
           "isRequired": false,
           "kind": "scalar",
           "isList": false,
@@ -15099,10 +15099,10 @@
           "maxLength": null
         },
         {
-          "id": "public.published_courses.last_update_type",
-          "name": "last_update_type",
-          "columnName": "last_update_type",
-          "type": "course_update_type",
+          "id": "public.published_courses.last_update_types",
+          "name": "last_update_types",
+          "columnName": "last_update_types",
+          "type": "course_update_type[]",
           "isRequired": false,
           "kind": "scalar",
           "isList": false,
@@ -20852,9 +20852,6 @@
       "values": [
         {
           "name": "content"
-        },
-        {
-          "name": "multiple"
         },
         {
           "name": "overview"

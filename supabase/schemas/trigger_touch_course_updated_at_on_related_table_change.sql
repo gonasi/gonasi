@@ -18,6 +18,7 @@ $$;
 -- function: trg_touch_course_updated_at
 -- purpose: updates the parent course's updated_at field, version, and last_update_types
 --          when a chapter, lesson, lesson_block or course_pricing_tiers is inserted, updated, or deleted
+-- note: this runs as an AFTER trigger, and APPENDS to last_update_types array instead of replacing
 -- ========================================
 create or replace function public.trg_touch_course_updated_at()
 returns trigger
@@ -26,12 +27,20 @@ set search_path = ''
 as $$
 declare
   target_course_id uuid;
+  update_type public.course_update_type;
 begin
   -- determine course_id based on operation type
   if tg_op = 'delete' then
     target_course_id := old.course_id;
   else
     target_course_id := new.course_id;
+  end if;
+
+  -- determine the update type
+  if tg_table_name = 'course_pricing_tiers' then
+    update_type := 'pricing';
+  else
+    update_type := 'content';
   end if;
 
   -- update the parent course if course_id is present
@@ -47,9 +56,11 @@ begin
         when tg_table_name = 'course_pricing_tiers' then pricing_version + 1
         else pricing_version
       end,
+      -- append to array if not already present
       last_update_types = case
-        when tg_table_name = 'course_pricing_tiers' then ARRAY['pricing']::course_update_type[]
-        else ARRAY['content']::course_update_type[]
+        when last_update_types is null then ARRAY[update_type]
+        when update_type = any(last_update_types) then last_update_types
+        else array_append(last_update_types, update_type)
       end
     where id = target_course_id;
   end if;

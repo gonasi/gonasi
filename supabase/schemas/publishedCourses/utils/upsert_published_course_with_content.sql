@@ -243,7 +243,14 @@ begin
     updated_at = timezone('utc', now());
 
   -------------------------------------------------------------------
-  -- STEP 10: Return success with detailed storage information
+  -- STEP 10: Reset last_update_types on draft course after publishing
+  -------------------------------------------------------------------
+  update public.courses
+  set last_update_types = null
+  where id = course_uuid;
+
+  -------------------------------------------------------------------
+  -- STEP 11: Return success with detailed storage information
   -------------------------------------------------------------------
   -- Note: Progress invalidation is now handled granularly by the
   -- detect_changed_blocks and invalidate_stale_block_progress functions
