@@ -107,6 +107,7 @@ begin
     id, organization_id, category_id, subcategory_id, is_active,
     name, description, image_url, blur_hash, visibility,
     course_structure_overview, total_chapters, total_lessons, total_blocks,
+    content_version, pricing_version, overview_version, last_update_types,
     pricing_tiers, has_free_tier, min_price,
     average_rating, total_reviews,
     published_by, published_at
@@ -123,6 +124,13 @@ begin
     (course_data->>'total_chapters')::integer,
     (course_data->>'total_lessons')::integer,
     (course_data->>'total_blocks')::integer,
+    coalesce((course_data->>'content_version')::integer, 1),
+    coalesce((course_data->>'pricing_version')::integer, 1),
+    coalesce((course_data->>'overview_version')::integer, 1),
+    (
+      select array_agg(value::text::public.course_update_type)
+      from jsonb_array_elements_text(course_data->'last_update_types')
+    ),
     course_data->'pricing_tiers',
     (course_data->>'has_free_tier')::boolean,
     (course_data->>'min_price')::numeric,
@@ -145,6 +153,22 @@ begin
     total_chapters = excluded.total_chapters,
     total_lessons = excluded.total_lessons,
     total_blocks = excluded.total_blocks,
+    content_version = excluded.content_version,
+    pricing_version = excluded.pricing_version,
+    overview_version = excluded.overview_version,
+    last_update_types = excluded.last_update_types,
+    content_changed_at = case
+      when excluded.content_version > public.published_courses.content_version then timezone('utc', now())
+      else public.published_courses.content_changed_at
+    end,
+    pricing_changed_at = case
+      when excluded.pricing_version > public.published_courses.pricing_version then timezone('utc', now())
+      else public.published_courses.pricing_changed_at
+    end,
+    overview_changed_at = case
+      when excluded.overview_version > public.published_courses.overview_version then timezone('utc', now())
+      else public.published_courses.overview_changed_at
+    end,
     pricing_tiers = excluded.pricing_tiers,
     has_free_tier = excluded.has_free_tier,
     min_price = excluded.min_price,
@@ -219,13 +243,18 @@ begin
     updated_at = timezone('utc', now());
 
   -------------------------------------------------------------------
-  -- STEP 10: Queue background job to reset user progress
+  -- STEP 10: Reset last_update_types on draft course after publishing
   -------------------------------------------------------------------
-  perform public.enqueue_delete_course_progress(course_uuid);
+  update public.courses
+  set last_update_types = null
+  where id = course_uuid;
 
   -------------------------------------------------------------------
   -- STEP 11: Return success with detailed storage information
   -------------------------------------------------------------------
+  -- Note: Progress invalidation is now handled granularly by the
+  -- detect_changed_blocks and invalidate_stale_block_progress functions
+  -- in the TypeScript layer after successful publication
   return jsonb_build_object(
     'success', true,
     'message', 'Course published successfully',

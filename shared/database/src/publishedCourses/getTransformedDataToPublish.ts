@@ -27,17 +27,22 @@ export async function getTransformedDataToPublish({
           subcategory_id,
           name,
           description,
-          image_url, 
+          image_url,
           blur_hash,
           visibility,
-      
+          content_version,
+          pricing_version,
+          overview_version,
+          last_update_types,
+
           chapters (
             id,
             course_id,
             name,
             description,
             position,
-      
+            content_version,
+
             lessons (
               id,
               course_id,
@@ -46,7 +51,8 @@ export async function getTransformedDataToPublish({
               name,
               position,
               settings,
-      
+              content_version,
+
               lesson_types (
                 id,
                 name,
@@ -54,7 +60,7 @@ export async function getTransformedDataToPublish({
                 lucide_icon,
                 bg_color
               ),
-      
+
               lesson_blocks (
                 id,
                 organization_id,
@@ -64,11 +70,12 @@ export async function getTransformedDataToPublish({
                 plugin_type,
                 content,
                 settings,
-                position
+                position,
+                content_version
               )
             )
           ),
-      
+
           course_pricing_tiers (
             id,
             course_id,
@@ -85,7 +92,8 @@ export async function getTransformedDataToPublish({
             is_active,
             position,
             is_popular,
-            is_recommended
+            is_recommended,
+            pricing_version
           )
         `,
       )
@@ -136,6 +144,7 @@ export async function getTransformedDataToPublish({
       ) || 0;
 
     // Build course structure content (full structure with blocks)
+    const publishedAt = new Date().toISOString();
     const courseStructureContent: CourseStructureContentSchemaTypes = {
       total_chapters: totalChapters,
       total_lessons: totalLessons,
@@ -151,6 +160,8 @@ export async function getTransformedDataToPublish({
         total_blocks:
           chapter.lessons?.reduce((acc, lesson) => acc + (lesson.lesson_blocks?.length ?? 0), 0) ??
           0,
+        content_version: chapter.content_version || 1,
+        published_at: publishedAt,
         lessons: (chapter.lessons ?? []).map((lesson) => ({
           id: lesson.id,
           course_id: lesson.course_id,
@@ -160,6 +171,8 @@ export async function getTransformedDataToPublish({
           position: lesson.position ?? 0,
           settings: lesson.settings ?? {},
           total_blocks: lesson.lesson_blocks?.length ?? 0,
+          content_version: lesson.content_version || 1,
+          published_at: publishedAt,
           lesson_types: {
             id: lesson.lesson_types.id,
             name: lesson.lesson_types.name,
@@ -177,7 +190,11 @@ export async function getTransformedDataToPublish({
                 );
               }
 
-              return parseResult.data;
+              return {
+                ...parseResult.data,
+                content_version: block.content_version || 1,
+                published_at: publishedAt,
+              };
             }) ?? [],
         })),
       })),
@@ -266,6 +283,12 @@ export async function getTransformedDataToPublish({
       total_chapters: totalChapters,
       total_lessons: totalLessons,
       total_blocks: totalBlocks,
+
+      // Version tracking
+      content_version: data.content_version || 1,
+      pricing_version: data.pricing_version || 1,
+      overview_version: data.overview_version || 1,
+      last_update_types: data.last_update_types,
 
       // Pricing data
       pricing_tiers: pricingTiers,

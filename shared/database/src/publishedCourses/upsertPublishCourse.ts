@@ -535,6 +535,10 @@ export const upsertPublishCourse = async ({
           total_chapters: data.total_chapters,
           total_lessons: data.total_lessons,
           total_blocks: data.total_blocks,
+          content_version: data.content_version,
+          pricing_version: data.pricing_version,
+          overview_version: data.overview_version,
+          last_update_types: data.last_update_types,
           pricing_tiers: data.pricing_tiers,
           has_free_tier: data.has_free_tier,
           min_price: data.min_price,
@@ -579,7 +583,58 @@ export const upsertPublishCourse = async ({
     }
 
     // =========================================================================
-    // STEP 9: Complete replacement - Insert published file metadata (batch)
+    // STEP 9A: Detect content changes and invalidate stale progress
+    // =========================================================================
+    // After successful publication, detect which blocks have changed and
+    // invalidate user progress for those blocks, then recalculate parent progress
+    console.log('[upsertPublishCourse] Detecting content changes for progress invalidation');
+
+    const { data: changedBlocks, error: detectError } = await supabase.rpc(
+      'detect_changed_blocks',
+      {
+        p_course_id: courseId,
+        p_published_course_id: courseId,
+      },
+    );
+
+    if (detectError) {
+      console.error('[upsertPublishCourse] Failed to detect changed blocks:', detectError);
+      // Non-fatal: Course is published successfully, but progress may not be updated
+    } else if (changedBlocks && changedBlocks.length > 0) {
+      console.log(
+        `[upsertPublishCourse] Detected ${changedBlocks.length} changed block(s), invalidating progress`,
+      );
+
+      // =========================================================================
+      // STEP 9B: Invalidate stale block progress
+      // =========================================================================
+      const { data: invalidationResult, error: invalidateError } = await supabase.rpc(
+        'invalidate_stale_block_progress',
+        {
+          p_published_course_id: courseId,
+          p_changed_blocks: changedBlocks,
+        },
+      );
+
+      if (invalidateError) {
+        console.error('[upsertPublishCourse] Failed to invalidate stale progress:', invalidateError);
+        // Non-fatal: Course is published successfully, but progress may be stale
+      } else if (invalidationResult && invalidationResult[0]) {
+        const result = invalidationResult[0];
+        console.log('[upsertPublishCourse] ✅ Progress invalidation complete:', {
+          invalidated_count: result.invalidated_count ?? 0,
+          affected_users: result.affected_users?.length ?? 0,
+          affected_lessons: result.affected_lessons?.length ?? 0,
+          recalculated_lessons: result.recalculated_lessons ?? 0,
+          recalculated_chapters: result.recalculated_chapters ?? 0,
+        });
+      }
+    } else {
+      console.log('[upsertPublishCourse] No content changes detected, skipping progress invalidation');
+    }
+
+    // =========================================================================
+    // STEP 10: Complete replacement - Insert published file metadata (batch)
     // =========================================================================
     // Insert all published file records in a single batch operation
     // This completes the draft → published replacement for file metadata

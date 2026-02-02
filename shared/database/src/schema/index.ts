@@ -40,42 +40,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      archive: {
-        Args: { message_id: number; queue_name: string }
-        Returns: boolean
-      }
-      delete: {
-        Args: { message_id: number; queue_name: string }
-        Returns: boolean
-      }
-      pop: {
-        Args: { queue_name: string }
-        Returns: unknown[]
-        SetofOptions: {
-          from: "*"
-          to: "message_record"
-          isOneToOne: false
-          isSetofReturn: true
-        }
-      }
-      read: {
-        Args: { n: number; queue_name: string; sleep_seconds: number }
-        Returns: unknown[]
-        SetofOptions: {
-          from: "*"
-          to: "message_record"
-          isOneToOne: false
-          isSetofReturn: true
-        }
-      }
-      send: {
-        Args: { message: Json; queue_name: string; sleep_seconds?: number }
-        Returns: number[]
-      }
-      send_batch: {
-        Args: { messages: Json[]; queue_name: string; sleep_seconds?: number }
-        Returns: number[]
-      }
+      [_ in never]: never
     }
     Enums: {
       [_ in never]: never
@@ -1133,14 +1098,20 @@ export type Database = {
         Row: {
           blur_hash: string | null
           category_id: string | null
+          content_version: number
           created_at: string
           created_by: string | null
           description: string | null
           id: string
           image_url: string | null
           last_published: string | null
+          last_update_types:
+            | Database["public"]["Enums"]["course_update_type"][]
+            | null
           name: string
           organization_id: string | null
+          overview_version: number
+          pricing_version: number
           subcategory_id: string | null
           updated_at: string
           updated_by: string | null
@@ -1149,14 +1120,20 @@ export type Database = {
         Insert: {
           blur_hash?: string | null
           category_id?: string | null
+          content_version?: number
           created_at?: string
           created_by?: string | null
           description?: string | null
           id?: string
           image_url?: string | null
           last_published?: string | null
+          last_update_types?:
+            | Database["public"]["Enums"]["course_update_type"][]
+            | null
           name: string
           organization_id?: string | null
+          overview_version?: number
+          pricing_version?: number
           subcategory_id?: string | null
           updated_at?: string
           updated_by?: string | null
@@ -1165,14 +1142,20 @@ export type Database = {
         Update: {
           blur_hash?: string | null
           category_id?: string | null
+          content_version?: number
           created_at?: string
           created_by?: string | null
           description?: string | null
           id?: string
           image_url?: string | null
           last_published?: string | null
+          last_update_types?:
+            | Database["public"]["Enums"]["course_update_type"][]
+            | null
           name?: string
           organization_id?: string | null
+          overview_version?: number
+          pricing_version?: number
           subcategory_id?: string | null
           updated_at?: string
           updated_by?: string | null
@@ -3374,6 +3357,7 @@ export type Database = {
         Returns: undefined
       }
       reorder_lesson_blocks:
+        | { Args: { blocks: Json }; Returns: undefined }
         | {
             Args: {
               block_positions: Json
@@ -3382,7 +3366,6 @@ export type Database = {
             }
             Returns: undefined
           }
-        | { Args: { blocks: Json }; Returns: undefined }
       reorder_lessons: {
         Args: {
           lesson_positions: Json
@@ -3532,6 +3515,7 @@ export type Database = {
         | "go_staff_delete"
       app_role: "go_su" | "go_admin" | "go_staff" | "user"
       course_access: "public" | "unlisted" | "private"
+      course_update_type: "content" | "pricing" | "overview"
       currency_code: "KES" | "USD"
       file_type: "image" | "audio" | "video" | "model3d" | "document" | "other"
       invite_delivery_status: "pending" | "sent" | "failed"
@@ -3807,6 +3791,7 @@ export const Constants = {
       ],
       app_role: ["go_su", "go_admin", "go_staff", "user"],
       course_access: ["public", "unlisted", "private"],
+      course_update_type: ["content", "pricing", "overview"],
       currency_code: ["KES", "USD"],
       file_type: ["image", "audio", "video", "model3d", "document", "other"],
       invite_delivery_status: ["pending", "sent", "failed"],
