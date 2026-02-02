@@ -367,7 +367,52 @@ schema_paths = [
   './schemas/ai/utils/handle_new_organization_ai_credits.sql',
   './schemas/ai/utils/reset_org_ai_base_credits_when_due.sql',
 
+  # LIVE SESSIONS
+  # Enums
+  './schemas/liveSessions/enums/live_session_visibility.sql',
+  './schemas/liveSessions/enums/live_session_status.sql',
+  './schemas/liveSessions/enums/live_session_block_status.sql',
+  './schemas/liveSessions/enums/live_response_status.sql',
+  './schemas/liveSessions/enums/live_participant_status.sql',
 
+  # Tables and indexes
+  './schemas/liveSessions/live_sessions_schema_and_indexes.sql',
+  './schemas/liveSessions/live_session_facilitators_schema_and_indexes.sql',
+  './schemas/liveSessions/live_session_blocks_schema_and_indexes.sql',
+  './schemas/liveSessions/live_session_participants_schema_and_indexes.sql',
+  './schemas/liveSessions/live_session_responses_schema_and_indexes.sql',
+  './schemas/liveSessions/live_session_messages_schema_and_indexes.sql',
+  './schemas/liveSessions/live_session_reactions_schema_and_indexes.sql',
+  './schemas/liveSessions/live_session_analytics_schema_and_indexes.sql',
+
+  # Triggers
+  './schemas/liveSessions/live_sessions_triggers.sql',
+
+  # Utility functions
+  './schemas/liveSessions/utils/generate_session_code.sql',
+  './schemas/liveSessions/utils/trigger_generate_session_code.sql',
+  './schemas/liveSessions/utils/can_user_edit_live_session.sql',
+  './schemas/liveSessions/utils/add_creator_as_facilitator.sql',
+  './schemas/liveSessions/utils/update_participant_stats.sql',
+  './schemas/liveSessions/utils/update_block_stats.sql',
+  './schemas/liveSessions/utils/calculate_leaderboard_ranks.sql',
+  './schemas/liveSessions/utils/update_session_analytics.sql',
+  './schemas/liveSessions/utils/trigger_update_stats_after_response.sql',
+  './schemas/liveSessions/utils/join_live_session.sql',
+  './schemas/liveSessions/utils/leave_live_session.sql',
+
+  # RPC and reordering
+  './schemas/liveSessions/live_session_blocks_rpc_reorder.sql',
+
+  # RLS policies
+  './schemas/liveSessions/live_sessions_rls.sql',
+  './schemas/liveSessions/live_session_facilitators_rls.sql',
+  './schemas/liveSessions/live_session_blocks_rls.sql',
+  './schemas/liveSessions/live_session_participants_rls.sql',
+  './schemas/liveSessions/live_session_responses_rls.sql',
+  './schemas/liveSessions/live_session_messages_rls.sql',
+  './schemas/liveSessions/live_session_reactions_rls.sql',
+  './schemas/liveSessions/live_session_analytics_rls.sql',
 
   # './schemas/enrollment_activities_schema_indexes_rls.sql',
 
@@ -375,7 +420,7 @@ schema_paths = [
 
 
   # rest
-  # './schemas/*.sql' 
+  # './schemas/*.sql'
 ]
 
 [db.seed]

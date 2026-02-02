@@ -20,6 +20,10 @@ export default [
       route('reset', 'routes/publishedCourses/reset-course.tsx'),
     ]),
 
+    // Live Sessions - Public participant routes
+    route('live/:sessionCode/join', 'routes/liveSessions/public/join-session.tsx'),
+    route('live/:sessionCode', 'routes/liveSessions/public/session-play.tsx'),
+
     route('api/check-username-exists', 'routes/api/check-username-exists.ts'),
     route('api/check-handle-exists/:organizationId', 'routes/api/check-handle-exists.ts'),
     route(
@@ -331,6 +335,69 @@ export default [
     ),
 
     route(':organizationId/storage', 'routes/organizations/storage/storage-index.tsx'),
+
+    // Live Sessions - Organization management routes
+    route(
+      ':organizationId/live-sessions',
+      'routes/organizations/liveSessions/live-sessions-index.tsx',
+      [
+        route('new', 'routes/organizations/liveSessions/new-session.tsx'),
+        route(':sessionId', 'routes/organizations/liveSessions/session/session-index.tsx', [
+          route(
+            'overview',
+            'routes/organizations/liveSessions/session/overview/overview-index.tsx',
+            [
+              route(
+                'edit-details',
+                'routes/organizations/liveSessions/session/overview/edit-details.tsx',
+              ),
+              route(
+                'edit-settings',
+                'routes/organizations/liveSessions/session/overview/edit-settings.tsx',
+              ),
+              route(
+                'delete',
+                'routes/organizations/liveSessions/session/overview/delete-session.tsx',
+              ),
+            ],
+          ),
+          route('blocks', 'routes/organizations/liveSessions/session/blocks/blocks-index.tsx', [
+            route('new', 'routes/organizations/liveSessions/session/blocks/new-block.tsx'),
+            route(
+              ':blockId/edit',
+              'routes/organizations/liveSessions/session/blocks/edit-block.tsx',
+            ),
+            route(
+              ':blockId/delete',
+              'routes/organizations/liveSessions/session/blocks/delete-block.tsx',
+            ),
+            route(
+              ':blockId/upsert',
+              'routes/organizations/liveSessions/session/blocks/upsert-block-api.tsx',
+            ),
+          ]),
+          route(
+            'facilitators',
+            'routes/organizations/liveSessions/session/facilitators/facilitators-index.tsx',
+            [
+              route(
+                'add',
+                'routes/organizations/liveSessions/session/facilitators/add-facilitator.tsx',
+              ),
+              route(
+                ':facilitatorId/remove',
+                'routes/organizations/liveSessions/session/facilitators/remove-facilitator.tsx',
+              ),
+            ],
+          ),
+          route('control', 'routes/organizations/liveSessions/session/control/control-panel.tsx'),
+          route(
+            'analytics',
+            'routes/organizations/liveSessions/session/analytics/analytics-index.tsx',
+          ),
+        ]),
+      ],
+    ),
 
     route(
       ':organizationId/settings',

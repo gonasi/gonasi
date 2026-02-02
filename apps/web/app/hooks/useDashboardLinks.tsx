@@ -4,6 +4,7 @@ import {
   LayoutTemplateIcon,
   LineChart,
   type LucideIcon,
+  Radio,
   SettingsIcon,
   ShieldIcon,
 } from 'lucide-react';
@@ -46,6 +47,12 @@ export function useDashboardLinks({
       name: 'Builder',
       to: `/${organizationId}/builder`,
       icon: LayoutTemplateIcon,
+      roles: allRoles,
+    },
+    {
+      name: 'Live Sessions',
+      to: `/${organizationId}/live-sessions`,
+      icon: Radio,
       roles: allRoles,
     },
     // {
