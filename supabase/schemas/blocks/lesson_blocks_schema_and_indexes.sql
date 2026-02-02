@@ -14,6 +14,7 @@ create table public.lesson_blocks (
   settings jsonb not null default '{}'::jsonb,                    -- Additional plugin settings
   created_at timestamptz not null default timezone('utc', now()), -- Creation timestamp (UTC)
   updated_at timestamptz not null default timezone('utc', now()), -- Last update timestamp (UTC)
+  content_version integer not null default 1,                     -- Increments when content/settings/plugin_type change
   created_by uuid,                                                -- FK: user who created (nullable on delete)
   updated_by uuid,                                                -- FK: user who last updated (nullable on delete)
 
@@ -40,6 +41,9 @@ create index idx_lesson_blocks_updated_by on public.lesson_blocks(updated_by);
 
 -- Sorting / position index
 create index idx_lesson_blocks_position on public.lesson_blocks(position);
+
+-- Version tracking index
+create index idx_lesson_blocks_content_version on public.lesson_blocks(content_version);
 
 -- Uniqueness constraint to prevent duplicate positions within a lesson
 create unique index unique_lesson_block_position_per_lesson

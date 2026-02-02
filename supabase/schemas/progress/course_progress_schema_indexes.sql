@@ -47,6 +47,9 @@ create table public.course_progress (
   updated_at timestamptz not null default timezone('utc', now()),
   created_at timestamptz not null default timezone('utc', now()),
 
+  -- Version tracking (for tracking when progress was last recalculated)
+  last_recalculated_at timestamptz,
+
   unique (user_id, published_course_id)
 );
 

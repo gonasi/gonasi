@@ -43,6 +43,15 @@ create table public.published_courses (
   published_at timestamptz not null default timezone('utc', now()),
   published_by uuid not null references public.profiles(id) on delete cascade,
 
+  -- Version tracking (what changed in this publish)
+  content_version integer not null default 1,
+  pricing_version integer not null default 1,
+  overview_version integer not null default 1,
+  last_update_types course_update_type[],       -- Types of last update: e.g., ['content', 'pricing']
+  content_changed_at timestamptz,
+  pricing_changed_at timestamptz,
+  overview_changed_at timestamptz,
+
   -- Public interaction stats (mutable)
   total_enrollments integer not null default 0,
   active_enrollments integer not null default 0,
@@ -95,6 +104,15 @@ create index idx_published_courses_min_price on public.published_courses(min_pri
 -- ------------------------------------------------
 create index idx_published_courses_enrollments on public.published_courses(total_enrollments);
 create index idx_published_courses_rating on public.published_courses(average_rating) where average_rating is not null;
+
+-- --------------------------------------------------------------------
+-- 🔄 Version tracking (for change detection and progress invalidation)
+-- --------------------------------------------------------------------
+create index idx_published_courses_content_version on public.published_courses(content_version);
+create index idx_published_courses_pricing_version on public.published_courses(pricing_version);
+create index idx_published_courses_overview_version on public.published_courses(overview_version);
+-- GIN index for efficient array querying (e.g., WHERE 'content' = ANY(last_update_types))
+create index idx_published_courses_last_update_types on public.published_courses using gin (last_update_types);
 
 -- ====================================================================================
 -- FUNCTION: ensure_incremented_course_version
