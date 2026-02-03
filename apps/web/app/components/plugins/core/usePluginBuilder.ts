@@ -8,7 +8,7 @@ import type { PluginTypeId } from '@gonasi/schemas/plugins';
 
 import type { MigrationFunction, PluginBuilderHookReturn } from './types';
 
-import type { LessonBlockLoaderReturnType } from '~/routes/organizations/builder/course/content/chapterId/lessonId/lesson-blocks/plugins/edit-plugin-modal';
+import type { LessonBlockLoaderReturnType } from '~/routes/organizations/courses/course/content/chapterId/lessonId/lesson-blocks/plugins/edit-plugin-modal';
 import { getActionUrl } from '~/utils/get-action-url';
 import { useIsPending } from '~/utils/misc';
 
@@ -134,7 +134,7 @@ export function usePluginBuilder<TSchema extends z.ZodType>(
 
   // Compute navigation paths
   const paths = useMemo(() => {
-    const lessonPath = `/${organizationId}/builder/${courseId}/content/${chapterId}/${lessonId}/lesson-blocks`;
+    const lessonPath = `/${organizationId}/courses/${courseId}/content/${chapterId}/${lessonId}/lesson-blocks`;
 
     return {
       lesson: lessonPath,

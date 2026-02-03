@@ -5,7 +5,7 @@ import type { ZodSchema } from 'zod';
 import type { BlockInteractionSchemaTypes, PluginTypeId } from '@gonasi/schemas/plugins';
 import type { BlockWithProgressSchemaTypes } from '@gonasi/schemas/publish/progressiveReveal';
 
-import type { LessonBlockLoaderReturnType } from '~/routes/organizations/builder/course/content/chapterId/lessonId/lesson-blocks/plugins/edit-plugin-modal';
+import type { LessonBlockLoaderReturnType } from '~/routes/organizations/courses/course/content/chapterId/lessonId/lesson-blocks/plugins/edit-plugin-modal';
 
 /**
  * Plugin metadata for display and categorization

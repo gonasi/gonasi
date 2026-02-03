@@ -273,7 +273,7 @@ async function handleCourseSale(
       amount: `${currency} ${amountPaid}`,
       course_title: metadata.courseTitle,
     },
-    p_link: `${BASE_URL}/${metadata.organizationId}/builder/${metadata.publishedCourseId}/published`,
+    p_link: `${BASE_URL}/${metadata.organizationId}/courses/${metadata.publishedCourseId}/published`,
   });
 
   return new Response(

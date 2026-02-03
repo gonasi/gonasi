@@ -8,7 +8,7 @@ import { ReorderIconTooltip } from '../ui/tooltip/ReorderIconToolTip';
 
 import { useRaisedShadow } from '~/hooks/useRaisedShadow';
 import { cn } from '~/lib/utils';
-import type { CourseChapter } from '~/routes/organizations/builder/course/content/content-index';
+import type { CourseChapter } from '~/routes/organizations/courses/course/content/content-index';
 
 interface ChapterBadgesProps {
   lessonCount: number;
@@ -39,7 +39,7 @@ export default function CourseChapterItem({ chapter, loading, canEdit }: Props) 
   const courseBoxShadow = useRaisedShadow(courseY);
   const courseDragControls = useDragControls();
 
-  const basePath = `/${params.organizationId}/builder/${params.courseId}/content/${chapter.id}`;
+  const basePath = `/${params.organizationId}/courses/${params.courseId}/content/${chapter.id}`;
 
   return (
     <Reorder.Item
@@ -61,7 +61,7 @@ export default function CourseChapterItem({ chapter, loading, canEdit }: Props) 
           />
         </div>
         <NavLink
-          to={`/${params.organizationId}/builder/${params.courseId}/content/${chapter.id}/lessons`}
+          to={`/${params.organizationId}/courses/${params.courseId}/content/${chapter.id}/lessons`}
         >
           {({ isPending }) => (
             <div

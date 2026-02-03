@@ -174,8 +174,8 @@ export function usePluginBuilder<TSchema extends z.ZodType>(options: {
   // Unified paths
   const paths = useMemo(
     () => ({
-      lesson: `/${params.organizationId}/builder/${params.courseId}/content/${params.chapterId}/${params.lessonId}/lesson-blocks`,
-      back: `/${params.organizationId}/builder/${params.courseId}/content/${params.chapterId}/${params.lessonId}/lesson-blocks/plugins/${params.pluginGroupId}`,
+      lesson: `/${params.organizationId}/courses/${params.courseId}/content/${params.chapterId}/${params.lessonId}/lesson-blocks`,
+      back: `/${params.organizationId}/courses/${params.courseId}/content/${params.chapterId}/${params.lessonId}/lesson-blocks/plugins/${params.pluginGroupId}`,
       action: getActionUrl(
         {
           organizationId: params.organizationId!,

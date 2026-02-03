@@ -91,7 +91,7 @@ export function CourseOverview({
         <div className='w-full'>
           <div className='w-full'>
             <NavLinkButton
-              to={`/${params.organizationId}/builder/${params.courseId}/overview/publish`}
+              to={`/${params.organizationId}/courses/${params.courseId}/overview/publish`}
               rightIcon={<AnimatedRocket />}
               className='w-full md:w-48'
             >

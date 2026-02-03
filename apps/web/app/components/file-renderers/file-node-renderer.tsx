@@ -8,7 +8,7 @@ import { ImagePreviewCard } from './preview-cards/image-preview-card';
 import { MediaPreviewCard } from './preview-cards/media-preview-card';
 import { ModelPreviewCard } from './preview-cards/model-preview-card';
 
-import type { FileLoaderItemType } from '~/routes/organizations/builder/course/file-library/file-library-index';
+import type { FileLoaderItemType } from '~/routes/organizations/courses/course/file-library/file-library-index';
 
 // Advanced File Renderer
 export const FileNodeRenderer: React.FC<{ file: FileLoaderItemType }> = ({ file }) => {

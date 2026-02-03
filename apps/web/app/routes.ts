@@ -139,131 +139,131 @@ export default [
       'routes/organizations/financial-activity/financial-activity-index.tsx',
     ),
 
-    route(':organizationId/builder', 'routes/organizations/builder/builder-index.tsx', [
-      route('new-course-title', 'routes/organizations/builder/new-course-title.tsx'),
+    route(':organizationId/courses', 'routes/organizations/courses/courses-index.tsx', [
+      route('new-course-title', 'routes/organizations/courses/new-course-title.tsx'),
     ]),
 
     route(
-      ':organizationId/builder/:courseId',
-      'routes/organizations/builder/course/course-index.tsx',
+      ':organizationId/courses/:courseId',
+      'routes/organizations/courses/course/course-index.tsx',
       [
         route(
           'published',
-          'routes/organizations/builder/course/published/published-overview-index.tsx',
+          'routes/organizations/courses/course/published/published-overview-index.tsx',
         ),
-        route('learners', 'routes/organizations/builder/course/learners/learners-index.tsx', [
-          route('all', 'routes/organizations/builder/course/learners/all/all-index.tsx'),
+        route('learners', 'routes/organizations/courses/course/learners/learners-index.tsx', [
+          route('all', 'routes/organizations/courses/course/learners/all/all-index.tsx'),
           route(
             'cohorts',
-            'routes/organizations/builder/course/learners/cohorts/cohorts-index.tsx',
+            'routes/organizations/courses/course/learners/cohorts/cohorts-index.tsx',
             [
-              route('new', 'routes/organizations/builder/course/learners/cohorts/new-cohort.tsx'),
+              route('new', 'routes/organizations/courses/course/learners/cohorts/new-cohort.tsx'),
               ...prefix(':cohortId', [
                 route(
                   'edit',
-                  'routes/organizations/builder/course/learners/cohorts/edit-cohort.tsx',
+                  'routes/organizations/courses/course/learners/cohorts/edit-cohort.tsx',
                 ),
                 route(
                   'delete',
-                  'routes/organizations/builder/course/learners/cohorts/delete-cohort.tsx',
+                  'routes/organizations/courses/course/learners/cohorts/delete-cohort.tsx',
                 ),
                 route(
                   'assign-users',
-                  'routes/organizations/builder/course/learners/cohorts/assign-users-to-cohort.tsx',
+                  'routes/organizations/courses/course/learners/cohorts/assign-users-to-cohort.tsx',
                 ),
               ]),
             ],
           ),
           route(
             'invites',
-            'routes/organizations/builder/course/learners/invites/invites-index.tsx',
+            'routes/organizations/courses/course/learners/invites/invites-index.tsx',
             [
               route(
                 'new-invite',
-                'routes/organizations/builder/course/learners/invites/new-invite.tsx',
+                'routes/organizations/courses/course/learners/invites/new-invite.tsx',
               ),
               route(
                 'resend/:inviteId/:token',
-                'routes/organizations/builder/course/learners/invites/resend-invite.tsx',
+                'routes/organizations/courses/course/learners/invites/resend-invite.tsx',
               ),
               route(
                 'revoke/:inviteId/:token',
-                'routes/organizations/builder/course/learners/invites/revoke-invite.tsx',
+                'routes/organizations/courses/course/learners/invites/revoke-invite.tsx',
               ),
             ],
           ),
         ]),
-        route('overview', 'routes/organizations/builder/course/overview/overview-index.tsx', [
+        route('overview', 'routes/organizations/courses/course/overview/overview-index.tsx', [
           route(
             'edit-thumbnail',
-            'routes/organizations/builder/course/overview/edit-thumbnail.tsx',
+            'routes/organizations/courses/course/overview/edit-thumbnail.tsx',
           ),
-          route('edit-details', 'routes/organizations/builder/course/overview/edit-details.tsx'),
-          route('edit-grouping', 'routes/organizations/builder/course/overview/edit-grouping.tsx'),
-          route('publish', 'routes/organizations/builder/course/overview/publish-index.tsx'),
+          route('edit-details', 'routes/organizations/courses/course/overview/edit-details.tsx'),
+          route('edit-grouping', 'routes/organizations/courses/course/overview/edit-grouping.tsx'),
+          route('publish', 'routes/organizations/courses/course/overview/publish-index.tsx'),
         ]),
 
-        route('content', 'routes/organizations/builder/course/content/content-index.tsx', [
+        route('content', 'routes/organizations/courses/course/content/content-index.tsx', [
           ...prefix('chapter', [
-            // /:username/builder/:courseId/content/chapter/new
+            // /:username/courses/:courseId/content/chapter/new
             route(
               'new',
-              'routes/organizations/builder/course/content/chapter/new-course-chapter.tsx',
+              'routes/organizations/courses/course/content/chapter/new-course-chapter.tsx',
             ),
           ]),
           ...prefix(':chapterId', [
-            // /:username/builder/:courseId/content/:chapterId/edit-chapter
+            // /:username/courses/:courseId/content/:chapterId/edit-chapter
             route(
               'edit',
-              'routes/organizations/builder/course/content/chapterId/edit-course-chapter.tsx',
+              'routes/organizations/courses/course/content/chapterId/edit-course-chapter.tsx',
             ),
-            // /:username/builder/:courseId/content/:chapterId/delete-chapter
+            // /:username/courses/:courseId/content/:chapterId/delete-chapter
             route(
               'delete',
-              'routes/organizations/builder/course/content/chapterId/delete-course-chapter.tsx',
+              'routes/organizations/courses/course/content/chapterId/delete-course-chapter.tsx',
             ),
 
             route(
               'lessons',
-              'routes/organizations/builder/course/content/chapterId/lessonId/lessons-index.tsx',
+              'routes/organizations/courses/course/content/chapterId/lessonId/lessons-index.tsx',
               [
-                // /:username/builder/:courseId/content/:chapterId/new-lesson-details
+                // /:username/courses/:courseId/content/:chapterId/new-lesson-details
                 route(
                   'new-lesson-details',
-                  'routes/organizations/builder/course/content/chapterId/new-lesson-details.tsx',
+                  'routes/organizations/courses/course/content/chapterId/new-lesson-details.tsx',
                 ),
-                // /:username/builder/:courseId/content/:chapterId/:lessonId/edit-lesson-details
+                // /:username/courses/:courseId/content/:chapterId/:lessonId/edit-lesson-details
                 route(
                   ':lessonId/edit-lesson-details',
-                  'routes/organizations/builder/course/content/chapterId/lessonId/edit-lesson-details.tsx',
+                  'routes/organizations/courses/course/content/chapterId/lessonId/edit-lesson-details.tsx',
                 ),
-                // /:username/builder/:courseId/content/:chapterId/:lessonId/delete
+                // /:username/courses/:courseId/content/:chapterId/:lessonId/delete
                 route(
                   ':lessonId/delete',
-                  'routes/organizations/builder/course/content/chapterId/lessonId/delete-lesson.tsx',
+                  'routes/organizations/courses/course/content/chapterId/lessonId/delete-lesson.tsx',
                 ),
               ],
             ),
 
-            // /:username/builder/:courseId/content/:chapterId/:lessonId
+            // /:username/courses/:courseId/content/:chapterId/:lessonId
             route(
               ':lessonId/lesson-blocks',
-              'routes/organizations/builder/course/content/chapterId/lessonId/lesson-blocks/lesson-blocks-index.tsx',
+              'routes/organizations/courses/course/content/chapterId/lessonId/lesson-blocks/lesson-blocks-index.tsx',
               [
-                // /:username/builder/:courseId/content/:chapterId/:lessonId/plugins
+                // /:username/courses/:courseId/content/:chapterId/:lessonId/plugins
                 route(
                   'plugins',
-                  'routes/organizations/builder/course/content/chapterId/lessonId/lesson-blocks/plugins/plugin-index.tsx',
+                  'routes/organizations/courses/course/content/chapterId/lessonId/lesson-blocks/plugins/plugin-index.tsx',
                   [
-                    // /:username/builder/:courseId/content/:chapterId/:lessonId/plugins/:pluginGroupId
+                    // /:username/courses/:courseId/content/:chapterId/:lessonId/plugins/:pluginGroupId
                     route(
                       ':pluginGroupId',
-                      'routes/organizations/builder/course/content/chapterId/lessonId/lesson-blocks/plugins/view-plugins-by-plugin-group-id-modal.tsx',
+                      'routes/organizations/courses/course/content/chapterId/lessonId/lesson-blocks/plugins/view-plugins-by-plugin-group-id-modal.tsx',
                       [
-                        // /:username/builder/:courseId/content/:chapterId/:lessonId/plugins/:pluginGroupId/:pluginTypeId/create
+                        // /:username/courses/:courseId/content/:chapterId/:lessonId/plugins/:pluginGroupId/:pluginTypeId/create
                         route(
                           ':pluginTypeId/create',
-                          'routes/organizations/builder/course/content/chapterId/lessonId/lesson-blocks/plugins/create-block-by-plugin-id-modal.tsx',
+                          'routes/organizations/courses/course/content/chapterId/lessonId/lesson-blocks/plugins/create-block-by-plugin-id-modal.tsx',
                         ),
                       ],
                     ),
@@ -271,62 +271,62 @@ export default [
                 ),
                 route(
                   ':blockId/edit',
-                  'routes/organizations/builder/course/content/chapterId/lessonId/lesson-blocks/plugins/edit-plugin-modal.tsx',
+                  'routes/organizations/courses/course/content/chapterId/lessonId/lesson-blocks/plugins/edit-plugin-modal.tsx',
                 ),
                 // contains action to both edit and create block
                 route(
                   ':blockId/upsert',
-                  'routes/organizations/builder/course/content/chapterId/lessonId/lesson-blocks/plugins/upsert-plugin-api.tsx',
+                  'routes/organizations/courses/course/content/chapterId/lessonId/lesson-blocks/plugins/upsert-plugin-api.tsx',
                 ),
 
-                // /:username/builder/:courseId/content/:chapterId/:lessonId/:blockId/delete
+                // /:username/courses/:courseId/content/:chapterId/:lessonId/:blockId/delete
                 route(
                   ':blockId/delete',
-                  'routes/organizations/builder/course/content/chapterId/lessonId/lesson-blocks/plugins/delete-plugin-modal.tsx',
+                  'routes/organizations/courses/course/content/chapterId/lessonId/lesson-blocks/plugins/delete-plugin-modal.tsx',
                 ),
               ],
             ),
           ]),
         ]),
 
-        route('pricing', 'routes/organizations/builder/course/pricing/pricing-index.tsx', [
+        route('pricing', 'routes/organizations/courses/course/pricing/pricing-index.tsx', [
           route(
             'update-pricing-type',
-            'routes/organizations/builder/course/pricing/update-pricing-type-modal.tsx',
+            'routes/organizations/courses/course/pricing/update-pricing-type-modal.tsx',
           ),
           route(
             'manage-pricing-tier/add',
-            'routes/organizations/builder/course/pricing/add-pricing-tier.tsx',
+            'routes/organizations/courses/course/pricing/add-pricing-tier.tsx',
           ),
           route(
             'manage-pricing-tier/:coursePricingId/edit',
-            'routes/organizations/builder/course/pricing/edit-pricing-tier.tsx',
+            'routes/organizations/courses/course/pricing/edit-pricing-tier.tsx',
           ),
           route(
             'manage-pricing-tier/:coursePricingId/delete',
-            'routes/organizations/builder/course/pricing/delete-pricing-tier-modal.tsx',
+            'routes/organizations/courses/course/pricing/delete-pricing-tier-modal.tsx',
           ),
         ]),
 
         // TODO: DELETE BELOW
         route(
           'file-library',
-          'routes/organizations/builder/course/file-library/file-library-index.tsx',
+          'routes/organizations/courses/course/file-library/file-library-index.tsx',
           [
-            route('new', 'routes/organizations/builder/course/file-library/new-file.tsx'),
+            route('new', 'routes/organizations/courses/course/file-library/new-file.tsx'),
             ...prefix(':fileId', [
-              route('edit', 'routes/organizations/builder/course/file-library/edit-file-name.tsx'),
+              route('edit', 'routes/organizations/courses/course/file-library/edit-file-name.tsx'),
 
               route(
                 'edit/image',
-                'routes/organizations/builder/course/file-library/edit-file-image.tsx',
+                'routes/organizations/courses/course/file-library/edit-file-image.tsx',
               ),
 
-              route('delete', 'routes/organizations/builder/course/file-library/delete-file.tsx'),
+              route('delete', 'routes/organizations/courses/course/file-library/delete-file.tsx'),
 
               route(
                 'configure',
-                'routes/organizations/builder/course/file-library/$fileId/configure.tsx',
+                'routes/organizations/courses/course/file-library/$fileId/configure.tsx',
               ),
             ]),
           ],
@@ -340,62 +340,55 @@ export default [
     route(
       ':organizationId/live-sessions',
       'routes/organizations/liveSessions/live-sessions-index.tsx',
+      [route('new', 'routes/organizations/liveSessions/new-session.tsx')],
+    ),
+
+    route(
+      ':organizationId/live-sessions/:sessionId',
+      'routes/organizations/liveSessions/session/session-index.tsx',
       [
-        route('new', 'routes/organizations/liveSessions/new-session.tsx'),
-        route(':sessionId', 'routes/organizations/liveSessions/session/session-index.tsx', [
+        route('overview', 'routes/organizations/liveSessions/session/overview/overview-index.tsx', [
           route(
-            'overview',
-            'routes/organizations/liveSessions/session/overview/overview-index.tsx',
-            [
-              route(
-                'edit-details',
-                'routes/organizations/liveSessions/session/overview/edit-details.tsx',
-              ),
-              route(
-                'edit-settings',
-                'routes/organizations/liveSessions/session/overview/edit-settings.tsx',
-              ),
-              route(
-                'delete',
-                'routes/organizations/liveSessions/session/overview/delete-session.tsx',
-              ),
-            ],
+            'edit-details',
+            'routes/organizations/liveSessions/session/overview/edit-details.tsx',
           ),
-          route('blocks', 'routes/organizations/liveSessions/session/blocks/blocks-index.tsx', [
-            route('new', 'routes/organizations/liveSessions/session/blocks/new-block.tsx'),
-            route(
-              ':blockId/edit',
-              'routes/organizations/liveSessions/session/blocks/edit-block.tsx',
-            ),
-            route(
-              ':blockId/delete',
-              'routes/organizations/liveSessions/session/blocks/delete-block.tsx',
-            ),
-            route(
-              ':blockId/upsert',
-              'routes/organizations/liveSessions/session/blocks/upsert-block-api.tsx',
-            ),
-          ]),
           route(
-            'facilitators',
-            'routes/organizations/liveSessions/session/facilitators/facilitators-index.tsx',
-            [
-              route(
-                'add',
-                'routes/organizations/liveSessions/session/facilitators/add-facilitator.tsx',
-              ),
-              route(
-                ':facilitatorId/remove',
-                'routes/organizations/liveSessions/session/facilitators/remove-facilitator.tsx',
-              ),
-            ],
+            'edit-settings',
+            'routes/organizations/liveSessions/session/overview/edit-settings.tsx',
           ),
-          route('control', 'routes/organizations/liveSessions/session/control/control-panel.tsx'),
+          route('delete', 'routes/organizations/liveSessions/session/overview/delete-session.tsx'),
+        ]),
+        route('blocks', 'routes/organizations/liveSessions/session/blocks/blocks-index.tsx', [
+          route('new', 'routes/organizations/liveSessions/session/blocks/new-block.tsx'),
+          route(':blockId/edit', 'routes/organizations/liveSessions/session/blocks/edit-block.tsx'),
           route(
-            'analytics',
-            'routes/organizations/liveSessions/session/analytics/analytics-index.tsx',
+            ':blockId/delete',
+            'routes/organizations/liveSessions/session/blocks/delete-block.tsx',
+          ),
+          route(
+            ':blockId/upsert',
+            'routes/organizations/liveSessions/session/blocks/upsert-block-api.tsx',
           ),
         ]),
+        route(
+          'facilitators',
+          'routes/organizations/liveSessions/session/facilitators/facilitators-index.tsx',
+          [
+            route(
+              'add',
+              'routes/organizations/liveSessions/session/facilitators/add-facilitator.tsx',
+            ),
+            route(
+              ':facilitatorId/remove',
+              'routes/organizations/liveSessions/session/facilitators/remove-facilitator.tsx',
+            ),
+          ],
+        ),
+        route('control', 'routes/organizations/liveSessions/session/control/control-panel.tsx'),
+        route(
+          'analytics',
+          'routes/organizations/liveSessions/session/analytics/analytics-index.tsx',
+        ),
       ],
     ),
 

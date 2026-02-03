@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 
-import type { FileLoaderItemType } from '~/routes/organizations/builder/course/file-library/file-library-index';
+import type { FileLoaderItemType } from '~/routes/organizations/courses/course/file-library/file-library-index';
 
 export const ImagePreviewCard = ({ file }: { file: FileLoaderItemType }) => {
   const [isLoaded, setIsLoaded] = useState(false);

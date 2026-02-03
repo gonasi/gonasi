@@ -48,7 +48,7 @@ export function CourseChapters({ chapters, canEdit }: Props) {
 
     fetcher.submit(formData, {
       method: 'post',
-      action: `/${params.organizationId}/builder/${params.courseId}/content`,
+      action: `/${params.organizationId}/courses/${params.courseId}/content`,
     });
   };
 

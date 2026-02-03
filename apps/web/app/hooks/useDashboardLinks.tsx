@@ -44,8 +44,8 @@ export function useDashboardLinks({
       roles: analyticsRoles,
     },
     {
-      name: 'Builder',
-      to: `/${organizationId}/builder`,
+      name: 'Courses',
+      to: `/${organizationId}/courses`,
       icon: LayoutTemplateIcon,
       roles: allRoles,
     },

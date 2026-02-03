@@ -19,7 +19,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 
   if (!sub.success) {
     return redirectWithError(
-      `/${params.organizationId}/builder`,
+      `/${params.organizationId}/courses`,
       sub.message || 'You do not have permission',
     );
   }

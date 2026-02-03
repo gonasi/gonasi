@@ -1,6 +1,6 @@
 import { FileType } from '@gonasi/schemas/file';
 
-import type { FileLoaderItemType } from '~/routes/organizations/builder/course/file-library/file-library-index';
+import type { FileLoaderItemType } from '~/routes/organizations/courses/course/file-library/file-library-index';
 
 export const MediaPreviewCard = ({ file }: { file: FileLoaderItemType }) => {
   const isVideo = file.file_type === FileType.VIDEO;

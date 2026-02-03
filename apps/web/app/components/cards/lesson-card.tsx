@@ -10,7 +10,7 @@ import { LucideIconRenderer } from './lucide-icon-renderer';
 
 import { useRaisedShadow } from '~/hooks/useRaisedShadow';
 import { cn } from '~/lib/utils';
-import type { LoaderLessonType } from '~/routes/organizations/builder/course/content/chapterId/lessonId/lessons-index';
+import type { LoaderLessonType } from '~/routes/organizations/courses/course/content/chapterId/lessonId/lessons-index';
 
 interface Props {
   lesson: LoaderLessonType;
@@ -23,7 +23,7 @@ export function LessonCard({ lesson, loading, canEdit, setDragging }: Props) {
   const params = useParams();
 
   const { lucide_icon, bg_color, name: typeName, description } = lesson.lesson_types;
-  const basePath = `/${params.organizationId}/builder/${params.courseId}/content/${lesson.chapter_id}/${lesson.id}`;
+  const basePath = `/${params.organizationId}/courses/${params.courseId}/content/${lesson.chapter_id}/${lesson.id}`;
   const lessonY = useMotionValue(0);
   const lessonBoxShadow = useRaisedShadow(lessonY, {
     borderRadius: '12px',
@@ -34,7 +34,7 @@ export function LessonCard({ lesson, loading, canEdit, setDragging }: Props) {
     {
       title: 'Edit details',
       icon: Pencil,
-      to: `/${params.organizationId}/builder/${params.courseId}/content/${params.chapterId}/lessons/${lesson.id}/edit-lesson-details`,
+      to: `/${params.organizationId}/courses/${params.courseId}/content/${params.chapterId}/lessons/${lesson.id}/edit-lesson-details`,
     },
     {
       title: 'Edit blocks',
@@ -44,7 +44,7 @@ export function LessonCard({ lesson, loading, canEdit, setDragging }: Props) {
     {
       title: 'Delete lesson',
       icon: Trash,
-      to: `/${params.organizationId}/builder/${params.courseId}/content/${params.chapterId}/lessons/${lesson.id}/delete`,
+      to: `/${params.organizationId}/courses/${params.courseId}/content/${params.chapterId}/lessons/${lesson.id}/delete`,
     },
   ];
 

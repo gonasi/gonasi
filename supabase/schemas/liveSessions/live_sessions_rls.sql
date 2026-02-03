@@ -17,6 +17,7 @@ using (
 
 -- ============================================================================
 -- INSERT: Org members (owner/admin/editor) can create sessions
+--         EXCEPT if org is on 'temp' tier
 -- ============================================================================
 create policy "Insert: Org members can create sessions"
 on public.live_sessions
@@ -24,6 +25,7 @@ for insert
 to authenticated
 with check (
   public.get_user_org_role(organization_id, (select auth.uid())) in ('owner', 'admin', 'editor')
+  and public.get_org_tier(organization_id) != 'temp'
 );
 
 -- ============================================================================
@@ -41,7 +43,8 @@ with check (
 
 -- ============================================================================
 -- DELETE: Only admins/owners may delete sessions
---    → Facilitators CANNOT delete sessions.
+--         → Facilitators CANNOT delete sessions.
+--         → EXCEPT if org is on 'temp' tier
 -- ============================================================================
 create policy "Delete: Admins can delete sessions"
 on public.live_sessions
@@ -49,4 +52,5 @@ for delete
 to authenticated
 using (
   public.get_user_org_role(organization_id, (select auth.uid())) in ('owner', 'admin')
+  and public.get_org_tier(organization_id) != 'temp'
 );

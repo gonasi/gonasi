@@ -51,28 +51,28 @@ export const CHAPTER_ERROR_NAVIGATION: Record<
   (args: RouteParams) => { route: string }
 > = {
   id: ({ organizationId, courseId }) => ({
-    route: `/${organizationId}/builder/${courseId}/content/chapter/new`,
+    route: `/${organizationId}/courses/${courseId}/content/chapter/new`,
   }),
   course_id: ({ organizationId, courseId }) => ({
-    route: `/${organizationId}/builder/${courseId}/chapters`,
+    route: `/${organizationId}/courses/${courseId}/chapters`,
   }),
   organization_id: ({ organizationId, courseId }) => ({
-    route: `/${organizationId}/builder/${courseId}/chapters`,
+    route: `/${organizationId}/courses/${courseId}/chapters`,
   }),
   name: ({ organizationId, courseId, chapterId }) => ({
-    route: `/${organizationId}/builder/${courseId}/chapters/${chapterId}/edit-details`,
+    route: `/${organizationId}/courses/${courseId}/chapters/${chapterId}/edit-details`,
   }),
   description: ({ organizationId, courseId, chapterId }) => ({
-    route: `/${organizationId}/builder/${courseId}/chapters/${chapterId}/edit-details`,
+    route: `/${organizationId}/courses/${courseId}/chapters/${chapterId}/edit-details`,
   }),
   position: ({ organizationId, courseId, chapterId }) => ({
-    route: `/${organizationId}/builder/${courseId}/chapters/${chapterId}/edit-details`,
+    route: `/${organizationId}/courses/${courseId}/chapters/${chapterId}/edit-details`,
   }),
   lesson_count: ({ organizationId, courseId, chapterId }) => ({
-    route: `/${organizationId}/builder/${courseId}/chapters/${chapterId}/lessons`,
+    route: `/${organizationId}/courses/${courseId}/chapters/${chapterId}/lessons`,
   }),
   lessons: ({ organizationId, courseId, chapterId }) => ({
-    route: `/${organizationId}/builder/${courseId}/content/${chapterId}/lessons/new-lesson-details`,
+    route: `/${organizationId}/courses/${courseId}/content/${chapterId}/lessons/new-lesson-details`,
   }),
 };
 
@@ -198,7 +198,7 @@ export async function fetchAndValidateChapters({
         {
           field: 'course_id',
           message: `<lucide name="AlertTriangle" size="12" /> We couldn't find chapters for this course.`,
-          navigation: { route: `/${organizationId}/builder/${courseId}/chapters` },
+          navigation: { route: `/${organizationId}/courses/${courseId}/chapters` },
         },
       ],
       completionStatus: { total: 0, completed: 0, percentage: 0 },
@@ -227,7 +227,7 @@ export async function fetchAndValidateChapters({
         const navigationFn = CHAPTER_ERROR_NAVIGATION[field];
         const navigation = navigationFn
           ? navigationFn({ organizationId, courseId, chapterId })
-          : { route: `/${organizationId}/builder/${courseId}/chapters` };
+          : { route: `/${organizationId}/courses/${courseId}/chapters` };
 
         return {
           field,

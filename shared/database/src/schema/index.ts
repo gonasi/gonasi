@@ -1,3 +1,5 @@
+Using workdir /Users/dc_dalin/Desktop/gonasi
+Connecting to db 5432
 export type Json =
   | string
   | number
@@ -2260,6 +2262,7 @@ export type Database = {
         Row: {
           actual_start_time: string | null
           allow_late_join: boolean
+          blur_hash: string | null
           course_id: string | null
           created_at: string
           created_by: string
@@ -2268,6 +2271,7 @@ export type Database = {
           enable_reactions: boolean
           ended_at: string | null
           id: string
+          image_url: string | null
           max_participants: number | null
           name: string
           organization_id: string
@@ -2285,6 +2289,7 @@ export type Database = {
         Insert: {
           actual_start_time?: string | null
           allow_late_join?: boolean
+          blur_hash?: string | null
           course_id?: string | null
           created_at?: string
           created_by: string
@@ -2293,6 +2298,7 @@ export type Database = {
           enable_reactions?: boolean
           ended_at?: string | null
           id?: string
+          image_url?: string | null
           max_participants?: number | null
           name: string
           organization_id: string
@@ -2310,6 +2316,7 @@ export type Database = {
         Update: {
           actual_start_time?: string | null
           allow_late_join?: boolean
+          blur_hash?: string | null
           course_id?: string | null
           created_at?: string
           created_by?: string
@@ -2318,6 +2325,7 @@ export type Database = {
           enable_reactions?: boolean
           ended_at?: string | null
           id?: string
+          image_url?: string | null
           max_participants?: number | null
           name?: string
           organization_id?: string
@@ -3659,6 +3667,10 @@ export type Database = {
         Args: { p_org_id: string; p_published_course_id: string }
         Returns: boolean
       }
+      can_start_live_session: {
+        Args: { arg_session_id: string }
+        Returns: Json
+      }
       can_switch_to_launch_tier: {
         Args: { p_org_id: string }
         Returns: boolean
@@ -4688,3 +4700,5 @@ export const Constants = {
   },
 } as const
 
+A new version of Supabase CLI is available: v2.75.0 (currently installed v2.72.7)
+We recommend updating regularly for new features and bug fixes: https://supabase.com/docs/guides/cli/getting-started#updating-the-supabase-cli

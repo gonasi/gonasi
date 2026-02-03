@@ -5,7 +5,7 @@ import { motion, Reorder } from 'framer-motion';
 import { NotFoundCard } from '../cards';
 import { LessonCard } from '../cards/lesson-card';
 
-import type { LoaderLessonType } from '~/routes/organizations/builder/course/content/chapterId/lessonId/lessons-index';
+import type { LoaderLessonType } from '~/routes/organizations/courses/course/content/chapterId/lessonId/lessons-index';
 
 interface Props {
   lessons: LoaderLessonType[];
@@ -44,7 +44,7 @@ export function CourseLessons({ lessons, canEdit }: Props) {
 
       fetcher.submit(formData, {
         method: 'post',
-        action: `/${params.organizationId}/builder/${params.courseId}/content`,
+        action: `/${params.organizationId}/courses/${params.courseId}/content`,
       });
 
       setPendingReorder(null); // Reset

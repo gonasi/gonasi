@@ -50,31 +50,31 @@ export const COURSE_ERROR_NAVIGATION: Record<
   (args: RouteParams) => { route: string }
 > = {
   id: ({ organizationId, courseId }) => ({
-    route: `/${organizationId}/builder/${courseId}/overview/edit-details`,
+    route: `/${organizationId}/courses/${courseId}/overview/edit-details`,
   }),
   organization_id: ({ organizationId, courseId }) => ({
-    route: `/${organizationId}/builder/${courseId}/overview/edit-details`,
+    route: `/${organizationId}/courses/${courseId}/overview/edit-details`,
   }),
   name: ({ organizationId, courseId }) => ({
-    route: `/${organizationId}/builder/${courseId}/overview/edit-details`,
+    route: `/${organizationId}/courses/${courseId}/overview/edit-details`,
   }),
   description: ({ organizationId, courseId }) => ({
-    route: `/${organizationId}/builder/${courseId}/overview/edit-details`,
+    route: `/${organizationId}/courses/${courseId}/overview/edit-details`,
   }),
   image_url: ({ organizationId, courseId }) => ({
-    route: `/${organizationId}/builder/${courseId}/overview/edit-thumbnail`,
+    route: `/${organizationId}/courses/${courseId}/overview/edit-thumbnail`,
   }),
   blur_hash: ({ organizationId, courseId }) => ({
-    route: `/${organizationId}/builder/${courseId}/overview/edit-thumbnail`,
+    route: `/${organizationId}/courses/${courseId}/overview/edit-thumbnail`,
   }),
   visibility: ({ organizationId, courseId }) => ({
-    route: `/${organizationId}/builder/${courseId}/overview/edit-details`,
+    route: `/${organizationId}/courses/${courseId}/overview/edit-details`,
   }),
   course_categories: ({ organizationId, courseId }) => ({
-    route: `/${organizationId}/builder/${courseId}/overview/edit-grouping`,
+    route: `/${organizationId}/courses/${courseId}/overview/edit-grouping`,
   }),
   course_sub_categories: ({ organizationId, courseId }) => ({
-    route: `/${organizationId}/builder/${courseId}/overview/edit-grouping`,
+    route: `/${organizationId}/courses/${courseId}/overview/edit-grouping`,
   }),
 };
 
@@ -147,7 +147,7 @@ export async function fetchAndValidateCourseOverview({
         const navigationFn = COURSE_ERROR_NAVIGATION[field];
         const navigation = navigationFn
           ? navigationFn({ organizationId, courseId, chapterId })
-          : { route: `/${organizationId}/builder/${courseId}/overview/edit-details` };
+          : { route: `/${organizationId}/courses/${courseId}/overview/edit-details` };
 
         return {
           field,

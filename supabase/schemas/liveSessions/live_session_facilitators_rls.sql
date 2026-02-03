@@ -17,6 +17,7 @@ using (
 );
 
 -- INSERT: Only org admins (or higher) may add facilitators
+--         EXCEPT if org is on 'temp' tier
 create policy "live-session-facilitators-insert-admins"
 on public.live_session_facilitators
 for insert
@@ -35,9 +36,13 @@ with check (
         where m.organization_id = live_session_facilitators.organization_id
           and m.user_id = live_session_facilitators.user_id
     )
+    AND
+    -- Org must not be on temp tier
+    public.get_org_tier(organization_id) != 'temp'
 );
 
 -- DELETE: Only org admins (or higher) may remove facilitators
+--         EXCEPT if org is on 'temp' tier
 create policy "live-session-facilitators-delete-admins"
 on public.live_session_facilitators
 for delete
@@ -47,6 +52,9 @@ using (
         'admin',
         (select auth.uid())
     )
+    AND
+    -- Org must not be on temp tier
+    public.get_org_tier(organization_id) != 'temp'
 );
 
 comment on policy "live-session-facilitators-select-org-members" on public.live_session_facilitators is 'Org members can view session facilitators';

@@ -16,7 +16,7 @@ import { pluginRegistry } from '../index';
 
 import { Spinner } from '~/components/loaders';
 import { Modal } from '~/components/ui/modal';
-import type { LessonBlockLoaderReturnType } from '~/routes/organizations/builder/course/content/chapterId/lessonId/lesson-blocks/plugins/edit-plugin-modal';
+import type { LessonBlockLoaderReturnType } from '~/routes/organizations/courses/course/content/chapterId/lessonId/lesson-blocks/plugins/edit-plugin-modal';
 
 interface BuilderPluginRendererProps {
   pluginTypeId: PluginTypeId;

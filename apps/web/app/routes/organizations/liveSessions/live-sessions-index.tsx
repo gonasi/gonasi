@@ -1,13 +1,18 @@
 import { NavLink, Outlet } from 'react-router';
+import { motion } from 'framer-motion';
 import { Plus } from 'lucide-react';
+
+import { fetchOrganizationLiveSessions } from '@gonasi/database/liveSessions';
 
 import type { Route } from './+types/live-sessions-index';
 
 import { NotFoundCard } from '~/components/cards';
+import { GoCardContent, GoCourseHeader, GoThumbnail } from '~/components/cards/go-course-card';
+import { Badge } from '~/components/ui/badge';
 import { IconNavLink } from '~/components/ui/button';
 import { createClient } from '~/lib/supabase/supabase.server';
+import { cn } from '~/lib/utils';
 
-// TODO: Implement metadata
 export function meta() {
   return [
     { title: 'Live Sessions • Gonasi' },
@@ -18,30 +23,33 @@ export function meta() {
   ];
 }
 
-// TODO: Implement loader to fetch sessions
 export async function loader({ request, params }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
+  const url = new URL(request.url);
+  const search = url.searchParams.get('name') ?? '';
+  const page = Number(url.searchParams.get('page')) || 1;
+  const limit = 12;
 
-  // TODO: Fetch organization live sessions
-  // TODO: Apply search filter (name)
-  // TODO: Apply status filter (draft, active, ended)
-  // TODO: Pagination support
-  // TODO: Check user's org role for permissions
+  const sessions = await fetchOrganizationLiveSessions({
+    supabase,
+    searchQuery: search,
+    limit,
+    page,
+    organizationId: params.organizationId ?? '',
+  });
 
-  return { sessions: [] };
+  return { sessions };
 }
 
-// TODO: Implement sessions list component
 export default function LiveSessionsIndex({ params, loaderData }: Route.ComponentProps) {
-  const { sessions } = loaderData;
+  const {
+    sessions: { data },
+  } = loaderData;
 
-  // TODO: Card grid displaying sessions (draft, active, ended)
-  // TODO: Filter by status
-  // TODO: Search by name
-  // TODO: Visibility indicators (public/unlisted/private)
-  // TODO: "New Session" button
-  // TODO: Shows facilitators (avatars)
-  // TODO: Quick actions (edit, control, analytics)
+  const fadeInUp = {
+    hidden: { opacity: 0, y: 2 },
+    visible: { opacity: 1, y: 0 },
+  };
 
   return (
     <>
@@ -56,10 +64,52 @@ export default function LiveSessionsIndex({ params, loaderData }: Route.Componen
         </div>
 
         <section className='px-0 py-4 md:px-4'>
-          {sessions && sessions.length ? (
+          {data && data.length ? (
             <div className='grid grid-cols-1 gap-0 md:grid-cols-2 md:gap-4 lg:grid-cols-3'>
-              {/* TODO: Map sessions to cards */}
-              <p>Session cards go here...</p>
+              {data.map(({ id, name, signed_url, status, session_code }, index) => {
+                const badges = (
+                  <div className='flex items-center gap-2'>
+                    <Badge variant='secondary' className='p-1 opacity-50'>
+                      {status}
+                    </Badge>
+                  </div>
+                );
+
+                return (
+                  <motion.div
+                    key={id}
+                    variants={fadeInUp}
+                    initial='hidden'
+                    animate='visible'
+                    transition={{ duration: 0.3, delay: index * 0.05 }}
+                  >
+                    <NavLink
+                      to={`/${params.organizationId}/live-sessions/${id}`}
+                      className={cn('pb-4 hover:cursor-pointer md:pb-0')}
+                    >
+                      {({ isPending }) => (
+                        <div
+                          className={cn(
+                            'group md:bg-card/80 m-0 rounded-none border-none bg-transparent p-0 shadow-none',
+                            isPending && 'bg-primary/5',
+                          )}
+                        >
+                          <GoThumbnail
+                            iconUrl={signed_url}
+                            name={name}
+                            className='rounded-t-none'
+                            badges={[badges]}
+                          />
+                          <GoCardContent>
+                            <GoCourseHeader className='line-clamp-1 text-sm' name={name} />
+                            <p className='text-muted-foreground text-xs'>{session_code}</p>
+                          </GoCardContent>
+                        </div>
+                      )}
+                    </NavLink>
+                  </motion.div>
+                );
+              })}
             </div>
           ) : (
             <div className='max-w-md'>

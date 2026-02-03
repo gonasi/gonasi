@@ -16,7 +16,7 @@ import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 import { DEFAULT_MODEL_SETTINGS, type Model3DSettings } from '@gonasi/schemas/file';
 
 import { Spinner } from '~/components/loaders';
-import type { FileLoaderItemType } from '~/routes/organizations/builder/course/file-library/file-library-index';
+import type { FileLoaderItemType } from '~/routes/organizations/courses/course/file-library/file-library-index';
 
 /**
  * 3D Model Loader component

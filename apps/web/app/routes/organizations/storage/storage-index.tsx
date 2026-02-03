@@ -233,7 +233,7 @@ export default function StorageIndex({ loaderData, params }: Route.ComponentProp
                 return (
                   <NavLink
                     key={course.courseId}
-                    to={`/${params.organizationId}/builder/${course.courseId}/file-library`}
+                    to={`/${params.organizationId}/courses/${course.courseId}/file-library`}
                   >
                     {({ isPending }) => (
                       <motion.div

@@ -49,11 +49,13 @@ Public routes are under `main-layout.tsx` and accessible to anyone with the sess
 ### Organization Routes
 
 #### **`/:organizationId/live-sessions`** (Index)
+
 **File**: `routes/organizations/liveSessions/live-sessions-index.tsx`
 
 **Purpose**: List all sessions in the organization
 
 **Features**:
+
 - Card grid displaying sessions (draft, active, ended)
 - Filter by status
 - Search by name
@@ -62,16 +64,18 @@ Public routes are under `main-layout.tsx` and accessible to anyone with the sess
 - Shows facilitators (avatars)
 - Quick actions (edit, control, analytics)
 
-**Similar to**: `routes/organizations/builder/builder-index.tsx` (course list)
+**Similar to**: `routes/organizations/courses/courses-index.tsx` (course list)
 
 ---
 
 #### **`/:organizationId/live-sessions/new`**
+
 **File**: `routes/organizations/liveSessions/new-session.tsx`
 
 **Purpose**: Create a new live session
 
 **Features**:
+
 - Form: name, description, visibility
 - Generate session code automatically
 - Set session key (for private sessions)
@@ -80,32 +84,36 @@ Public routes are under `main-layout.tsx` and accessible to anyone with the sess
 
 **Action**: Creates session in DB, redirects to `/:sessionId/overview`
 
-**Similar to**: `routes/organizations/builder/new-course-title.tsx`
+**Similar to**: `routes/organizations/courses/new-course-title.tsx`
 
 ---
 
 #### **`/:organizationId/live-sessions/:sessionId`** (Index)
+
 **File**: `routes/organizations/liveSessions/session/session-index.tsx`
 
 **Purpose**: Session dashboard/navigation hub
 
 **Features**:
+
 - Tabs: Overview, Blocks, Facilitators, Control, Analytics
 - Status badge (draft, waiting, active, paused, ended)
 - Quick stats (participants, blocks, responses)
 - Session code display (with copy button)
 - Start/Stop session buttons
 
-**Similar to**: `routes/organizations/builder/course/course-index.tsx`
+**Similar to**: `routes/organizations/courses/course/course-index.tsx`
 
 ---
 
 #### **`/:organizationId/live-sessions/:sessionId/overview`**
+
 **File**: `routes/organizations/liveSessions/session/overview/overview-index.tsx`
 
 **Purpose**: View & edit session metadata
 
 **Features**:
+
 - Display session details (name, description, code, key)
 - Visibility settings
 - Configuration (max participants, late join, leaderboard, chat, reactions)
@@ -114,20 +122,23 @@ Public routes are under `main-layout.tsx` and accessible to anyone with the sess
 - Actions: Edit Details, Edit Settings, Delete
 
 **Child Routes**:
+
 - `/edit-details` - Modal to edit name, description, scheduled time
 - `/edit-settings` - Modal to edit config (max participants, chat, etc.)
 - `/delete` - Confirmation modal to delete session
 
-**Similar to**: `routes/organizations/builder/course/overview/overview-index.tsx`
+**Similar to**: `routes/organizations/courses/course/overview/overview-index.tsx`
 
 ---
 
 #### **`/:organizationId/live-sessions/:sessionId/blocks`**
+
 **File**: `routes/organizations/liveSessions/session/blocks/blocks-index.tsx`
 
 **Purpose**: Manage question blocks (drag-drop reordering)
 
 **Features**:
+
 - List all blocks with preview
 - Drag-and-drop reordering (like lesson blocks)
 - Block status indicators (pending, active, closed, skipped)
@@ -136,46 +147,53 @@ Public routes are under `main-layout.tsx` and accessible to anyone with the sess
 - Real-time stats (if session is active): response count, accuracy, avg time
 
 **Child Routes**:
+
 - `/new` - Plugin selector modal (reuse existing plugin UI)
 - `/:blockId/edit` - Edit block content modal (reuse plugin editors)
 - `/:blockId/delete` - Delete confirmation
 - `/:blockId/upsert` - API route to save block
 
-**Similar to**: `routes/organizations/builder/course/content/chapterId/lessonId/lesson-blocks/lesson-blocks-index.tsx`
+**Similar to**: `routes/organizations/courses/course/content/chapterId/lessonId/lesson-blocks/lesson-blocks-index.tsx`
 
 **Reuses**: All existing quiz plugins (multiple_choice_single, true_or_false, etc.)
 
 ---
 
 #### **`/:organizationId/live-sessions/:sessionId/facilitators`**
+
 **File**: `routes/organizations/liveSessions/session/facilitators/facilitators-index.tsx`
 
 **Purpose**: Manage assigned facilitators (staff members)
 
 **Features**:
+
 - List current facilitators (with avatars, usernames)
 - "Add Facilitator" button (admins/owners only)
 - Remove facilitator button (admins/owners only)
 - Shows who added each facilitator + when
 
 **Child Routes**:
+
 - `/add` - Modal to select org member to add
 - `/:facilitatorId/remove` - Confirmation modal to remove
 
 **Similar to**: Course editors management
 
 **Permissions**:
+
 - Editors (facilitators) can VIEW but not modify
 - Only admins/owners can add/remove
 
 ---
 
 #### **`/:organizationId/live-sessions/:sessionId/control`**
+
 **File**: `routes/organizations/liveSessions/session/control/control-panel.tsx`
 
 **Purpose**: Live control panel for running the session
 
 **Features**:
+
 - **Session Controls**:
   - Start session (draft → waiting)
   - Pause/Resume
@@ -206,11 +224,13 @@ Public routes are under `main-layout.tsx` and accessible to anyone with the sess
 ---
 
 #### **`/:organizationId/live-sessions/:sessionId/analytics`**
+
 **File**: `routes/organizations/liveSessions/session/analytics/analytics-index.tsx`
 
 **Purpose**: View post-session analytics
 
 **Features**:
+
 - **Overview Stats**:
   - Total participants, peak participants
   - Total responses, participation rate
@@ -237,11 +257,13 @@ Public routes are under `main-layout.tsx` and accessible to anyone with the sess
 ### Public Routes
 
 #### **`/live/:sessionCode/join`**
+
 **File**: `routes/liveSessions/public/join-session.tsx`
 
 **Purpose**: Landing page to join a live session
 
 **Features**:
+
 - Session info display (name, description, instructor)
 - Status check (draft/waiting/active/ended)
 - For **private sessions**: Password/key input field
@@ -261,11 +283,13 @@ Public routes are under `main-layout.tsx` and accessible to anyone with the sess
 ---
 
 #### **`/live/:sessionCode`** (Session Play)
+
 **File**: `routes/liveSessions/public/session-play.tsx`
 
 **Purpose**: Active session view for participants
 
 **Features**:
+
 - **Waiting State** (session not started):
   - "Waiting for host" message
   - Countdown to scheduled start (if set)
@@ -289,6 +313,7 @@ Public routes are under `main-layout.tsx` and accessible to anyone with the sess
   - "Session Ended" message
 
 **Real-Time**: Subscribes to:
+
 - `live_session_blocks` (for new questions)
 - `live_session_participants` (for leaderboard updates)
 - `live_sessions` (for status changes)
@@ -302,6 +327,7 @@ Public routes are under `main-layout.tsx` and accessible to anyone with the sess
 ## Implementation Checklist
 
 ### Phase 1: Database & Backend
+
 - [x] Database schema created
 - [x] RLS policies configured
 - [x] Helper functions created
@@ -311,6 +337,7 @@ Public routes are under `main-layout.tsx` and accessible to anyone with the sess
 - [ ] Create Zod schemas in `shared/gonasi-schemas/src/liveSessions/`
 
 ### Phase 2: Organization Routes (Instructor View)
+
 - [ ] `live-sessions-index.tsx` (list)
 - [ ] `new-session.tsx` (create)
 - [ ] `session-index.tsx` (dashboard)
@@ -321,10 +348,12 @@ Public routes are under `main-layout.tsx` and accessible to anyone with the sess
 - [ ] `analytics/analytics-index.tsx` (results)
 
 ### Phase 3: Public Routes (Participant View)
+
 - [ ] `public/join-session.tsx` (landing)
 - [ ] `public/session-play.tsx` (active session)
 
 ### Phase 4: Real-Time Integration
+
 - [ ] Set up Supabase Realtime subscriptions
 - [ ] Control panel real-time updates
 - [ ] Participant view real-time updates
@@ -332,6 +361,7 @@ Public routes are under `main-layout.tsx` and accessible to anyone with the sess
 - [ ] Chat/reactions real-time updates
 
 ### Phase 5: Testing
+
 - [ ] Test all instructor flows
 - [ ] Test all participant flows
 - [ ] Test real-time updates
@@ -376,20 +406,21 @@ apps/web/app/routes/
 
 ## Key Differences from Courses
 
-| Feature | Courses | Live Sessions |
-|---------|---------|---------------|
-| **Structure** | Hierarchical (chapters → lessons → blocks) | Flat (just blocks) |
-| **Publishing** | Draft → Published versions | No publishing (ephemeral) |
-| **Access** | Enrollment-based | Code-based (+ optional key) |
-| **Timing** | Self-paced | Real-time/synchronous |
-| **State** | Progress tracking | Response tracking |
-| **Interaction** | Individual, asynchronous | Collective, synchronous |
-| **Leaderboard** | No | Yes (real-time) |
-| **Control Panel** | No | Yes (instructor controls flow) |
+| Feature           | Courses                                    | Live Sessions                  |
+| ----------------- | ------------------------------------------ | ------------------------------ |
+| **Structure**     | Hierarchical (chapters → lessons → blocks) | Flat (just blocks)             |
+| **Publishing**    | Draft → Published versions                 | No publishing (ephemeral)      |
+| **Access**        | Enrollment-based                           | Code-based (+ optional key)    |
+| **Timing**        | Self-paced                                 | Real-time/synchronous          |
+| **State**         | Progress tracking                          | Response tracking              |
+| **Interaction**   | Individual, asynchronous                   | Collective, synchronous        |
+| **Leaderboard**   | No                                         | Yes (real-time)                |
+| **Control Panel** | No                                         | Yes (instructor controls flow) |
 
 ## Shared/Reused Components
 
 ### From Course Builder
+
 - ✅ **All quiz plugins** (multiple_choice_single, true_or_false, fill_in_blank, matching, swipe_categorize, etc.)
 - ✅ Plugin selector modal
 - ✅ Plugin edit modals
@@ -398,12 +429,14 @@ apps/web/app/routes/
 - ✅ Permission checks (`can_user_edit_live_session()` mirrors `can_user_edit_course()`)
 
 ### From Course Play
+
 - ✅ Plugin viewers (MultipleChoiceSingleAnswerView, etc.)
 - ✅ Block rendering logic
 - ✅ Answer submission flow
 - ✅ Feedback display
 
 ### New Components Needed
+
 - ❌ Session code display/copy component
 - ❌ Real-time leaderboard component
 - ❌ Session status badge component
@@ -417,58 +450,77 @@ apps/web/app/routes/
 ## Real-Time Architecture
 
 ### Control Panel Subscriptions
+
 ```typescript
 // Subscribe to participant changes
 supabase
   .channel('control-participants')
-  .on('postgres_changes', {
-    event: '*',
-    schema: 'public',
-    table: 'live_session_participants',
-    filter: `live_session_id=eq.${sessionId}`
-  }, handleParticipantChange)
+  .on(
+    'postgres_changes',
+    {
+      event: '*',
+      schema: 'public',
+      table: 'live_session_participants',
+      filter: `live_session_id=eq.${sessionId}`,
+    },
+    handleParticipantChange,
+  )
   .subscribe();
 
 // Subscribe to response submissions
 supabase
   .channel('control-responses')
-  .on('postgres_changes', {
-    event: 'INSERT',
-    schema: 'public',
-    table: 'live_session_responses',
-    filter: `live_session_id=eq.${sessionId}`
-  }, handleNewResponse)
+  .on(
+    'postgres_changes',
+    {
+      event: 'INSERT',
+      schema: 'public',
+      table: 'live_session_responses',
+      filter: `live_session_id=eq.${sessionId}`,
+    },
+    handleNewResponse,
+  )
   .subscribe();
 ```
 
 ### Participant View Subscriptions
+
 ```typescript
 // Subscribe to block changes
 supabase
   .channel('participant-blocks')
-  .on('postgres_changes', {
-    event: 'UPDATE',
-    schema: 'public',
-    table: 'live_session_blocks',
-    filter: `live_session_id=eq.${sessionId}`
-  }, handleBlockUpdate)
+  .on(
+    'postgres_changes',
+    {
+      event: 'UPDATE',
+      schema: 'public',
+      table: 'live_session_blocks',
+      filter: `live_session_id=eq.${sessionId}`,
+    },
+    handleBlockUpdate,
+  )
   .subscribe();
 
 // Subscribe to leaderboard updates
 supabase
   .channel('participant-leaderboard')
-  .on('postgres_changes', {
-    event: '*',
-    schema: 'public',
-    table: 'live_session_participants',
-    filter: `live_session_id=eq.${sessionId}`
-  }, handleLeaderboardUpdate)
+  .on(
+    'postgres_changes',
+    {
+      event: '*',
+      schema: 'public',
+      table: 'live_session_participants',
+      filter: `live_session_id=eq.${sessionId}`,
+    },
+    handleLeaderboardUpdate,
+  )
   .subscribe();
 ```
 
 ## Next Steps
 
 1. **Generate Database Types**:
+
    ```bash
    cd supabase
    supabase gen types typescript --local > ../shared/database/src/schema/index.ts

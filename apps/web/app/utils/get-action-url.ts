@@ -16,6 +16,6 @@ export function getActionUrl(params: Params, block?: Block): string {
   const lessonId = params.lessonId ?? 'unknown-lesson';
   const blockId = block?.id ?? 'create-new';
 
-  const basePath = `/${organizationId}/builder/${courseId}/content`;
+  const basePath = `/${organizationId}/courses/${courseId}/content`;
   return `${basePath}/${chapterId}/${lessonId}/lesson-blocks/${blockId}/upsert`;
 }

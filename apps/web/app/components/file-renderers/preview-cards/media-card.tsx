@@ -5,7 +5,7 @@ import { Pencil, Settings, Trash } from 'lucide-react';
 import { formatFileSize } from '../file-renderer-types';
 
 import { ActionDropdown } from '~/components/action-dropdown';
-import type { FileLoaderItemType } from '~/routes/organizations/builder/course/file-library/file-library-index';
+import type { FileLoaderItemType } from '~/routes/organizations/courses/course/file-library/file-library-index';
 
 interface MediaCardProps {
   file: FileLoaderItemType;
@@ -15,7 +15,7 @@ interface MediaCardProps {
 
 export const MediaCard: React.FC<MediaCardProps> = ({ file, media, canEdit }) => {
   const { organizationId, courseId } = useParams();
-  const basePath = `/${organizationId}/builder/${courseId}/file-library/${file.id}`;
+  const basePath = `/${organizationId}/courses/${courseId}/file-library/${file.id}`;
 
   const options = [
     { title: 'Edit', icon: Pencil, to: `${basePath}/edit` },

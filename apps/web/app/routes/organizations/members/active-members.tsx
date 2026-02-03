@@ -34,7 +34,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   // Block editor and null (non-members)
   if (userOrgRole === 'editor' || userOrgRole === null) {
     return redirectWithError(
-      `/${organizationId}/builder`,
+      `/${organizationId}/courses`,
       'You are not authorized to view this page.',
     );
   }

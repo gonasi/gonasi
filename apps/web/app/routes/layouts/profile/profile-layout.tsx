@@ -47,7 +47,7 @@ export default function ProfileLayout({ loaderData, params }: Route.ComponentPro
   const tabs = [
     { to: `/go/${username}`, name: 'Courses', icon: BookCopy, isVisible: true },
     {
-      to: `/go/${username}/builder`,
+      to: `/go/${username}/courses`,
       name: 'Builder',
       icon: BookLock,
       isVisible: isMyProfile,

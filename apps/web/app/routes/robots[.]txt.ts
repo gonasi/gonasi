@@ -10,12 +10,12 @@ Disallow: /auth/
 Disallow: /myProfile/
 Disallow: /go/
 Disallow: /onboarding/
-Disallow: /organizations/*/builder/
+Disallow: /organizations/*/courses/
 Disallow: /organizations/*/dashboard/
 Disallow: /organizations/*/members/
 Disallow: /organizations/*/settings/
 Disallow: /organizations/*/financial-activity/
-Disallow: /builder/
+Disallow: /courses/
 Disallow: /invites/  
 Disallow: /gonasi/
 Disallow: /api/

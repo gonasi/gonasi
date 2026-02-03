@@ -26,7 +26,7 @@ import { GoStepByStepRevealField } from '~/components/ui/forms/elements/GoStepBy
 // import { GoStepByStepRevealInputField } from '~/components/ui/forms/elements';
 import { Modal } from '~/components/ui/modal';
 import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover';
-import type { LessonBlockLoaderReturnType } from '~/routes/organizations/builder/course/content/chapterId/lessonId/lesson-blocks/plugins/edit-plugin-modal';
+import type { LessonBlockLoaderReturnType } from '~/routes/organizations/courses/course/content/chapterId/lessonId/lesson-blocks/plugins/edit-plugin-modal';
 import { getActionUrl } from '~/utils/get-action-url';
 import { useIsPending } from '~/utils/misc';
 
@@ -80,7 +80,7 @@ export function BuilderStepByStepRevealPlugin({ block }: BuilderStepByStepReveal
 
   const { organizationId, courseId, chapterId, lessonId, pluginGroupId } = params;
 
-  const lessonPath = `/${organizationId}/builder/${courseId}/content/${chapterId}/${lessonId}/lesson-blocks`;
+  const lessonPath = `/${organizationId}/courses/${courseId}/content/${chapterId}/${lessonId}/lesson-blocks`;
   const backRoute = `${lessonPath}/plugins/${pluginGroupId}`;
 
   const methods = useRemixForm<StepByStepRevealSchemaTypes>({

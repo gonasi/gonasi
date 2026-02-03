@@ -9,7 +9,7 @@ import { MediaCard } from './preview-cards/media-card';
 import { MediaPreviewCard } from './preview-cards/media-preview-card';
 import { ModelPreviewCard } from './preview-cards/model-preview-card';
 
-import type { FileLoaderItemType } from '~/routes/organizations/builder/course/file-library/file-library-index';
+import type { FileLoaderItemType } from '~/routes/organizations/courses/course/file-library/file-library-index';
 
 // Advanced File Renderer her
 export const FileRenderer: React.FC<{ file: FileLoaderItemType; canEdit: boolean }> = ({

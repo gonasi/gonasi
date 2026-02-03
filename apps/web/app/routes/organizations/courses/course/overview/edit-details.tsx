@@ -1,0 +1,178 @@
+import { Form, useFetcher } from 'react-router';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { MailPlus, Store } from 'lucide-react';
+import { getValidatedFormData, RemixFormProvider, useRemixForm } from 'remix-hook-form';
+import { dataWithError, redirectWithError, redirectWithSuccess } from 'remix-toast';
+import { HoneypotInputs } from 'remix-utils/honeypot/react';
+
+import { editCourseDetails, fetchOrganizationCourseOverviewById } from '@gonasi/database/courses';
+import {
+  EditCourseDetailsSchema,
+  type EditCourseDetailsSchemaTypes,
+} from '@gonasi/schemas/courses';
+
+import type { Route } from './+types/edit-details';
+import type { loader as subCategoryLoader } from '../../../../api/course-sub-categories';
+
+import { Button } from '~/components/ui/button';
+import { GoInputField, GoRadioGroupField, GoTextAreaField } from '~/components/ui/forms/elements';
+import { Modal } from '~/components/ui/modal';
+import { createClient } from '~/lib/supabase/supabase.server';
+import { checkHoneypot } from '~/utils/honeypot.server';
+import { useIsPending } from '~/utils/misc';
+
+export function meta() {
+  return [
+    { title: 'Edit Course Details • Gonasi' },
+    {
+      name: 'description',
+      content:
+        'Update your course title, description, and other details to better reflect your content.',
+    },
+  ];
+}
+const resolver = zodResolver(EditCourseDetailsSchema);
+
+export async function action({ request, params }: Route.ActionArgs) {
+  const formData = await request.formData();
+  await checkHoneypot(formData);
+
+  // Initialize Supabase and headers for redirect
+  const { supabase } = createClient(request);
+
+  // Validate and parse form data with Zod
+  const {
+    errors,
+    data,
+    receivedValues: defaultValues,
+  } = await getValidatedFormData<EditCourseDetailsSchemaTypes>(formData, resolver);
+
+  // Return validation errors, if any
+  if (errors) {
+    return { errors, defaultValues };
+  }
+
+  const { success, message } = await editCourseDetails({ supabase, data });
+
+  // Get redirectTo from URL
+  const url = new URL(request.url);
+  const redirectTo = url.searchParams.get('redirectTo');
+  const publishPath = `/${params.organizationId}/courses/${params.courseId}/overview/publish${redirectTo ? `?redirectTo=${encodeURIComponent(redirectTo)}` : ''}`;
+
+  return success ? redirectWithSuccess(publishPath, message) : dataWithError(null, message);
+}
+
+export async function loader({ params, request }: Route.LoaderArgs) {
+  const { supabase } = createClient(request);
+  const courseId = params.courseId ?? '';
+  const orgId = params.organizationId;
+
+  // Get redirectTo from URL
+  const url = new URL(request.url);
+  const redirectTo = url.searchParams.get('redirectTo');
+
+  const [courseOverview, canEditRes] = await Promise.all([
+    fetchOrganizationCourseOverviewById({ supabase, courseId }),
+
+    supabase.rpc('can_user_edit_course', { arg_course_id: courseId }),
+  ]);
+
+  if (!courseOverview || !canEditRes.data) {
+    throw redirectWithError(
+      `/${orgId}/courses/${courseId}/overview`,
+      'Course not found or no permissions',
+    );
+  }
+
+  return {
+    courseOverview,
+    redirectTo,
+  };
+}
+
+export default function EditCourseGrouping({ params, loaderData }: Route.ComponentProps) {
+  const {
+    courseOverview: { name, description, visibility },
+    redirectTo,
+  } = loaderData;
+  const fetcher = useFetcher<typeof subCategoryLoader>();
+
+  const form = useRemixForm<EditCourseDetailsSchemaTypes>({
+    mode: 'all',
+    resolver: zodResolver(EditCourseDetailsSchema),
+    defaultValues: {
+      organizationId: params.organizationId,
+      courseId: params.courseId,
+      name,
+      description: description ?? '',
+      visibility,
+    },
+  });
+
+  const isPending = useIsPending();
+  const isDisabled = isPending || form.formState.isSubmitting;
+
+  const watchValue = form.watch('visibility');
+
+  const closeRoute = redirectTo ?? `/${params.organizationId}/courses/${params.courseId}/overview`;
+
+  return (
+    <Modal open>
+      <Modal.Content size='md'>
+        <Modal.Header title='Edit Course Details' closeRoute={closeRoute} />
+        <Modal.Body>
+          <RemixFormProvider {...form}>
+            <Form method='POST' onSubmit={form.handleSubmit}>
+              <HoneypotInputs />
+
+              <GoInputField
+                labelProps={{ children: 'Course title', required: true }}
+                name='name'
+                inputProps={{
+                  autoFocus: true,
+                  disabled: isDisabled,
+                }}
+                description='Enter the course title.'
+              />
+              <GoTextAreaField
+                labelProps={{ children: 'Course description', required: true }}
+                name='description'
+                textareaProps={{
+                  disabled: isDisabled,
+                }}
+                description='Provide a brief course description.'
+              />
+              <GoRadioGroupField
+                labelProps={{
+                  children: 'Visibility',
+                  endAdornment:
+                    watchValue === 'public' ? <Store size={14} /> : <MailPlus size={14} />,
+                  endAdornmentKey: watchValue,
+                }}
+                name='visibility'
+                description='Who can discover and access this course.'
+                options={[
+                  {
+                    value: 'public',
+                    label: 'Public – appears in the marketplace and open to all 🌍',
+                  },
+                  {
+                    value: 'private',
+                    label: 'Private – invite-only access ✉️',
+                  },
+                ]}
+              />
+              <Button
+                type='submit'
+                disabled={isDisabled || fetcher.state !== 'idle' || !form.formState.isDirty}
+                isLoading={isDisabled}
+              >
+                Save
+              </Button>
+            </Form>
+          </RemixFormProvider>
+        </Modal.Body>
+      </Modal.Content>
+    </Modal>
+  );
+}

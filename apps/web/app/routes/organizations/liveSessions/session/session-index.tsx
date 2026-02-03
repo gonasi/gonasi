@@ -1,74 +1,110 @@
-import { NavLink, Outlet } from 'react-router';
+import { useEffect, useMemo } from 'react';
+import { data, Outlet, useLocation, useNavigate, useOutletContext } from 'react-router';
+import {
+  BarChart2,
+  ClipboardList,
+  LayoutList,
+  Pen,
+  PencilOff,
+  Play,
+  Users,
+} from 'lucide-react';
 
 import type { Route } from './+types/session-index';
 
+import { GoTabNav } from '~/components/go-tab-nav';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '~/components/ui/tooltip';
 import { createClient } from '~/lib/supabase/supabase.server';
+import type { OrganizationsOutletContextType } from '~/routes/layouts/organizations/organizations-layout';
 
-// TODO: Implement metadata
-export function meta({ data }: Route.MetaArgs) {
-  return [
-    { title: `${data?.session?.name ?? 'Session'} • Gonasi` },
-    {
-      name: 'description',
-      content: 'Manage your live session on Gonasi.',
-    },
-  ];
-}
-
-// TODO: Implement loader to fetch session details
-export async function loader({ request, params }: Route.LoaderArgs) {
+export async function loader({ params, request }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
+  const sessionId = params.sessionId ?? '';
 
-  // TODO: Fetch session by ID
-  // TODO: Check user can edit session (can_user_edit_live_session)
-  // TODO: Fetch quick stats (participants count, blocks count, responses count)
+  const canEdit = await supabase.rpc('can_user_edit_live_session', {
+    arg_session_id: sessionId,
+  });
 
-  return { session: null };
+  return data({ canEdit: canEdit.data });
 }
 
-// TODO: Implement session dashboard component
 export default function SessionIndex({ params, loaderData }: Route.ComponentProps) {
-  const { session } = loaderData;
+  const { data } = useOutletContext<OrganizationsOutletContextType>();
 
-  // TODO: Tabs navigation: Overview, Blocks, Facilitators, Control, Analytics
-  // TODO: Status badge (draft, waiting, active, paused, ended)
-  // TODO: Quick stats display (participants, blocks, responses)
-  // TODO: Session code display (with copy button)
-  // TODO: Start/Stop session buttons
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const basePath = useMemo(
+    () => `/${params.organizationId}/live-sessions/${params.sessionId}`,
+    [params.organizationId, params.sessionId],
+  );
+
+  const tabs = useMemo(
+    () => [
+      {
+        to: `${basePath}/overview`,
+        name: 'Overview',
+        icon: ClipboardList,
+      },
+      {
+        to: `${basePath}/blocks`,
+        name: 'Blocks',
+        icon: LayoutList,
+      },
+      {
+        to: `${basePath}/facilitators`,
+        name: 'Facilitators',
+        icon: Users,
+      },
+      {
+        to: `${basePath}/control`,
+        name: 'Control',
+        icon: Play,
+      },
+      {
+        to: `${basePath}/analytics`,
+        name: 'Analytics',
+        icon: BarChart2,
+      },
+    ],
+    [basePath],
+  );
+
+  useEffect(() => {
+    if (location.pathname === basePath) {
+      navigate(`${basePath}/overview`, { replace: true });
+    }
+  }, [location.pathname, basePath, navigate]);
 
   return (
-    <div className='mx-auto max-w-7xl p-4'>
-      <div className='mb-6'>
-        <h1 className='text-2xl font-bold'>{session?.name ?? 'Session Dashboard'}</h1>
-        <p className='text-muted-foreground'>Session Code: {params.sessionId}</p>
+    <section className='container mx-auto px-0'>
+      <div className='bg-background/95 sticky top-0 z-20'>
+        <GoTabNav
+          previousLink={`/${params.organizationId}/live-sessions`}
+          tabs={tabs}
+          endComponent={
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  {loaderData.canEdit ? (
+                    <Pen size={16} className='text-muted-foreground hidden md:flex' />
+                  ) : (
+                    <PencilOff size={16} className='text-muted-foreground hidden md:flex' />
+                  )}
+                </TooltipTrigger>
+                <TooltipContent side='top'>
+                  {loaderData.canEdit
+                    ? 'You can make edits to this session'
+                    : 'You cannot make edits to this session'}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          }
+        />
       </div>
-
-      {/* TODO: Implement tabs navigation */}
-      <nav className='mb-6 flex gap-4 border-b'>
-        <NavLink
-          to={`/${params.organizationId}/live-sessions/${params.sessionId}/overview`}
-          className='px-4 py-2'
-        >
-          Overview
-        </NavLink>
-        <NavLink to={`/${params.organizationId}/live-sessions/${params.sessionId}/blocks`} className='px-4 py-2'>
-          Blocks
-        </NavLink>
-        <NavLink
-          to={`/${params.organizationId}/live-sessions/${params.sessionId}/facilitators`}
-          className='px-4 py-2'
-        >
-          Facilitators
-        </NavLink>
-        <NavLink to={`/${params.organizationId}/live-sessions/${params.sessionId}/control`} className='px-4 py-2'>
-          Control
-        </NavLink>
-        <NavLink to={`/${params.organizationId}/live-sessions/${params.sessionId}/analytics`} className='px-4 py-2'>
-          Analytics
-        </NavLink>
-      </nav>
-
-      <Outlet />
-    </div>
+      <div className='mt-4 min-h-screen px-4 md:mt-8'>
+        <Outlet context={{ data }} />
+      </div>
+    </section>
   );
 }

@@ -25,7 +25,7 @@ import { Modal } from '~/components/ui/modal';
 import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover';
 import { IconTooltipButton } from '~/components/ui/tooltip';
 import type { SearchFileResult } from '~/routes/api/search-files';
-import type { LessonBlockLoaderReturnType } from '~/routes/organizations/builder/course/content/chapterId/lessonId/lesson-blocks/plugins/edit-plugin-modal';
+import type { LessonBlockLoaderReturnType } from '~/routes/organizations/courses/course/content/chapterId/lessonId/lesson-blocks/plugins/edit-plugin-modal';
 import { getActionUrl } from '~/utils/get-action-url';
 import { useIsPending } from '~/utils/misc';
 
@@ -57,7 +57,7 @@ export function BuilderGuidedImageHotspotsPlugin({ block }: BuilderGuidedImageHo
 
   const { organizationId, courseId, chapterId, lessonId, pluginGroupId } = params;
 
-  const lessonPath = `/${organizationId}/builder/${courseId}/content/${chapterId}/${lessonId}/lesson-blocks`;
+  const lessonPath = `/${organizationId}/courses/${courseId}/content/${chapterId}/${lessonId}/lesson-blocks`;
   const backRoute = `${lessonPath}/plugins/${pluginGroupId}`;
 
   const methods = useRemixForm<GuidedImageHotspotSchemaTypes>({

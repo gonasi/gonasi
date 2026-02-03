@@ -6,7 +6,7 @@ import { ReorderIconTooltip } from '../ui/tooltip/ReorderIconToolTip';
 
 import { useRaisedShadow } from '~/hooks/useRaisedShadow';
 import { cn } from '~/lib/utils';
-import type { Block } from '~/routes/organizations/builder/course/content/chapterId/lessonId/lesson-blocks/lesson-blocks-index';
+import type { Block } from '~/routes/organizations/courses/course/content/chapterId/lessonId/lesson-blocks/lesson-blocks-index';
 
 /**
  * Utility: Converts strings like "plugin_type_example" to "Plugin Type Example"

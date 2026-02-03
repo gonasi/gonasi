@@ -14,7 +14,7 @@ import { Spinner } from '~/components/loaders';
 import { PlainButton } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
 import { supabaseClient } from '~/lib/supabase/supabaseClient';
-import type { FileLoaderReturnType } from '~/routes/organizations/builder/course/file-library/file-library-index';
+import type { FileLoaderReturnType } from '~/routes/organizations/courses/course/file-library/file-library-index';
 
 export type InsertFilePayload = Readonly<FilePayload>;
 

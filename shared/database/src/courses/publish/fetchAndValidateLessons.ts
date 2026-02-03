@@ -50,34 +50,34 @@ interface RouteParams {
 export const LESSON_ERROR_NAVIGATION: Record<LessonKeys, (args: RouteParams) => { route: string }> =
   {
     id: ({ organizationId, courseId, chapterId }) => ({
-      route: `/${organizationId}/builder/${courseId}/content/${chapterId}/lessons/new-lesson-details`,
+      route: `/${organizationId}/courses/${courseId}/content/${chapterId}/lessons/new-lesson-details`,
     }),
     organization_id: ({ organizationId }) => ({
       route: `/${organizationId}/dashboard`,
     }),
     course_id: ({ organizationId, courseId }) => ({
-      route: `/${organizationId}/builder/${courseId}/chapters`,
+      route: `/${organizationId}/courses/${courseId}/chapters`,
     }),
     chapter_id: ({ organizationId, courseId, chapterId }) => ({
-      route: `/${organizationId}/builder/${courseId}/chapters/${chapterId}/lessons`,
+      route: `/${organizationId}/courses/${courseId}/chapters/${chapterId}/lessons`,
     }),
     lesson_type_id: ({ organizationId, courseId, chapterId, lessonId }) => ({
-      route: `/${organizationId}/builder/${courseId}/content/${chapterId}/lessons/${lessonId}/edit-details`,
+      route: `/${organizationId}/courses/${courseId}/content/${chapterId}/lessons/${lessonId}/edit-details`,
     }),
     name: ({ organizationId, courseId, chapterId, lessonId }) => ({
-      route: `/${organizationId}/builder/${courseId}/content/${chapterId}/lessons/${lessonId}/edit-details`,
+      route: `/${organizationId}/courses/${courseId}/content/${chapterId}/lessons/${lessonId}/edit-details`,
     }),
     position: ({ organizationId, courseId, chapterId, lessonId }) => ({
-      route: `/${organizationId}/builder/${courseId}/content/${chapterId}/lessons/${lessonId}/edit-details`,
+      route: `/${organizationId}/courses/${courseId}/content/${chapterId}/lessons/${lessonId}/edit-details`,
     }),
     settings: ({ organizationId, courseId, chapterId, lessonId }) => ({
-      route: `/${organizationId}/builder/${courseId}/content/${chapterId}/lessons/${lessonId}/edit-details`,
+      route: `/${organizationId}/courses/${courseId}/content/${chapterId}/lessons/${lessonId}/edit-details`,
     }),
     blocks: ({ organizationId, courseId, chapterId, lessonId }) => ({
-      route: `/${organizationId}/builder/${courseId}/content/${chapterId}/${lessonId}/lesson-blocks/plugins`,
+      route: `/${organizationId}/courses/${courseId}/content/${chapterId}/${lessonId}/lesson-blocks/plugins`,
     }),
     lesson_types: ({ organizationId, courseId, chapterId, lessonId }) => ({
-      route: `/${organizationId}/builder/${courseId}/content/${chapterId}/lessons/${lessonId}/edit-details`,
+      route: `/${organizationId}/courses/${courseId}/content/${chapterId}/lessons/${lessonId}/edit-details`,
     }),
   };
 
@@ -216,7 +216,7 @@ export async function fetchAndValidateLessons({
           field: 'course_id',
           message: `<lucide name="AlertTriangle" size="12" /> We couldn't find lessons for this course.`,
           navigation: {
-            route: `/${organizationId}/builder/${courseId}/chapters`,
+            route: `/${organizationId}/courses/${courseId}/chapters`,
           },
         },
       ],
@@ -246,7 +246,7 @@ export async function fetchAndValidateLessons({
       const navigationFn = LESSON_ERROR_NAVIGATION[field];
       const navigation = navigationFn
         ? navigationFn({ organizationId, courseId, chapterId, lessonId })
-        : { route: `/${organizationId}/builder/${courseId}/chapters` };
+        : { route: `/${organizationId}/courses/${courseId}/chapters` };
 
       return {
         field,

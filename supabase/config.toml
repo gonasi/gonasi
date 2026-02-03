@@ -393,6 +393,7 @@ schema_paths = [
   './schemas/liveSessions/utils/trigger_generate_session_code.sql',
   './schemas/liveSessions/utils/can_user_edit_live_session.sql',
   './schemas/liveSessions/utils/add_creator_as_facilitator.sql',
+  './schemas/liveSessions/utils/can_start_live_session.sql',
   './schemas/liveSessions/utils/update_participant_stats.sql',
   './schemas/liveSessions/utils/update_block_stats.sql',
   './schemas/liveSessions/utils/calculate_leaderboard_ranks.sql',

@@ -12,6 +12,8 @@ create table "public"."live_sessions" (
   -- Session Metadata
   "name" text not null,
   "description" text,
+  "image_url" text, -- Cloudinary public_id for session thumbnail
+  "blur_hash" text, -- BlurHash string for placeholder image
   "session_code" text not null unique, -- Short code for joining (e.g., "ABC123")
 
   -- Visibility and Access Control
@@ -94,9 +96,12 @@ create index "live_sessions_status_idx" on "public"."live_sessions" ("status");
 create index "live_sessions_session_code_idx" on "public"."live_sessions" ("session_code");
 create index "live_sessions_course_id_idx" on "public"."live_sessions" ("course_id");
 create index "live_sessions_visibility_idx" on "public"."live_sessions" ("visibility");
+create index "live_sessions_image_url_idx" on "public"."live_sessions" ("image_url");
 
 -- Comments
 comment on table "public"."live_sessions" is 'Live interactive learning sessions with real-time Q&A';
+comment on column "public"."live_sessions"."image_url" is 'Cloudinary public_id for the session thumbnail image';
+comment on column "public"."live_sessions"."blur_hash" is 'BlurHash string for placeholder image while loading';
 comment on column "public"."live_sessions"."session_code" is 'Short unique code for joining (e.g., "ABC123")';
 comment on column "public"."live_sessions"."session_key" is 'Password/key required for private sessions';
 comment on column "public"."live_sessions"."visibility" is 'Access control: public, unlisted, or private (key required)';

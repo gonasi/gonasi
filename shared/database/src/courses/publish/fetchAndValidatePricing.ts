@@ -51,49 +51,49 @@ const PRICING_ERROR_NAVIGATION: Record<
   (args: { organizationId: string; courseId: string; pricingId?: string }) => { route: string }
 > = {
   id: ({ organizationId, courseId }) => ({
-    route: `/${organizationId}/builder/${courseId}/monetization/pricing`,
+    route: `/${organizationId}/courses/${courseId}/monetization/pricing`,
   }),
   course_id: ({ organizationId, courseId }) => ({
-    route: `/${organizationId}/builder/${courseId}/monetization/pricing`,
+    route: `/${organizationId}/courses/${courseId}/monetization/pricing`,
   }),
   payment_frequency: ({ organizationId, courseId }) => ({
-    route: `/${organizationId}/builder/${courseId}/monetization/pricing`,
+    route: `/${organizationId}/courses/${courseId}/monetization/pricing`,
   }),
   is_free: ({ organizationId, courseId }) => ({
-    route: `/${organizationId}/builder/${courseId}/monetization/pricing`,
+    route: `/${organizationId}/courses/${courseId}/monetization/pricing`,
   }),
   price: ({ organizationId, courseId }) => ({
-    route: `/${organizationId}/builder/${courseId}/monetization/pricing`,
+    route: `/${organizationId}/courses/${courseId}/monetization/pricing`,
   }),
   currency_code: ({ organizationId, courseId }) => ({
-    route: `/${organizationId}/builder/${courseId}/monetization/pricing`,
+    route: `/${organizationId}/courses/${courseId}/monetization/pricing`,
   }),
   promotional_price: ({ organizationId, courseId }) => ({
-    route: `/${organizationId}/builder/${courseId}/monetization/pricing`,
+    route: `/${organizationId}/courses/${courseId}/monetization/pricing`,
   }),
   promotion_start_date: ({ organizationId, courseId }) => ({
-    route: `/${organizationId}/builder/${courseId}/monetization/pricing`,
+    route: `/${organizationId}/courses/${courseId}/monetization/pricing`,
   }),
   promotion_end_date: ({ organizationId, courseId }) => ({
-    route: `/${organizationId}/builder/${courseId}/monetization/pricing`,
+    route: `/${organizationId}/courses/${courseId}/monetization/pricing`,
   }),
   tier_name: ({ organizationId, courseId }) => ({
-    route: `/${organizationId}/builder/${courseId}/monetization/pricing`,
+    route: `/${organizationId}/courses/${courseId}/monetization/pricing`,
   }),
   tier_description: ({ organizationId, courseId }) => ({
-    route: `/${organizationId}/builder/${courseId}/monetization/pricing`,
+    route: `/${organizationId}/courses/${courseId}/monetization/pricing`,
   }),
   is_active: ({ organizationId, courseId }) => ({
-    route: `/${organizationId}/builder/${courseId}/monetization/pricing`,
+    route: `/${organizationId}/courses/${courseId}/monetization/pricing`,
   }),
   position: ({ organizationId, courseId }) => ({
-    route: `/${organizationId}/builder/${courseId}/monetization/pricing`,
+    route: `/${organizationId}/courses/${courseId}/monetization/pricing`,
   }),
   is_popular: ({ organizationId, courseId }) => ({
-    route: `/${organizationId}/builder/${courseId}/monetization/pricing`,
+    route: `/${organizationId}/courses/${courseId}/monetization/pricing`,
   }),
   is_recommended: ({ organizationId, courseId }) => ({
-    route: `/${organizationId}/builder/${courseId}/monetization/pricing`,
+    route: `/${organizationId}/courses/${courseId}/monetization/pricing`,
   }),
 };
 
@@ -193,7 +193,7 @@ export async function fetchAndValidatePricing({
         {
           field: 'course_id',
           message: `<lucide name="AlertTriangle" size="12" /> We couldn't find pricing for this course.`,
-          navigation: { route: `/${organizationId}/builder/${courseId}/monetization/pricing` },
+          navigation: { route: `/${organizationId}/courses/${courseId}/monetization/pricing` },
         },
       ],
       completionStatus: { total: 0, completed: 0, percentage: 0 },
@@ -217,7 +217,7 @@ export async function fetchAndValidatePricing({
         const navigationFn = PRICING_ERROR_NAVIGATION[field];
         const navigation = navigationFn
           ? navigationFn({ organizationId, courseId, pricingId })
-          : { route: `/${organizationId}/builder/${courseId}/monetization/pricing` };
+          : { route: `/${organizationId}/courses/${courseId}/monetization/pricing` };
 
         return {
           field,
