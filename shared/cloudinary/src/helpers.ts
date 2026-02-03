@@ -18,6 +18,7 @@ export interface GeneratePublicIdParams {
   resourceType: ResourceType;
   organizationId?: string;
   courseId?: string;
+  liveSessionId?: string;
   userId?: string;
   fileId?: string;
   fileName?: string;
@@ -32,7 +33,8 @@ export interface GeneratePublicIdParams {
  * @throws Error if required parameters are missing for the resource type
  */
 export function generatePublicId(params: GeneratePublicIdParams): string {
-  const { scope, resourceType, organizationId, courseId, userId, fileId, fileName } = params;
+  const { scope, resourceType, organizationId, courseId, liveSessionId, userId, fileId, fileName } =
+    params;
 
   // Build path segments
   const segments: string[] = [];
@@ -43,6 +45,17 @@ export function generatePublicId(params: GeneratePublicIdParams): string {
     segments.push('organizations', organizationId, 'profile', fileName || 'avatar');
   } else if (resourceType === 'org-banner' && organizationId) {
     segments.push('organizations', organizationId, 'profile', 'banner');
+  } else if (resourceType === 'thumbnail' && organizationId && liveSessionId) {
+    // Pattern: /organizations/:organizationId/live-sessions/:liveSessionId/thumbnail/:scope/thumbnail
+    segments.push(
+      'organizations',
+      organizationId,
+      'live-sessions',
+      liveSessionId,
+      'thumbnail',
+      scope,
+      'thumbnail',
+    );
   } else if (resourceType === 'thumbnail' && organizationId && courseId) {
     // Pattern: /organizations/:organizationId/courses/:courseId/thumbnail/:scope/thumbnail
     segments.push(

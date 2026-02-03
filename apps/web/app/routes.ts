@@ -349,6 +349,10 @@ export default [
       [
         route('overview', 'routes/organizations/liveSessions/session/overview/overview-index.tsx', [
           route(
+            'edit-thumbnail',
+            'routes/organizations/liveSessions/session/overview/edit-thumbnail.tsx',
+          ),
+          route(
             'edit-details',
             'routes/organizations/liveSessions/session/overview/edit-details.tsx',
           ),
@@ -470,6 +474,14 @@ export default [
   route('api/files/configure-model', 'routes/api/files/configure-model.ts'),
   route('api/courses/prepare-thumbnail-upload', 'routes/api/courses/prepare-thumbnail-upload.ts'),
   route('api/courses/confirm-thumbnail-upload', 'routes/api/courses/confirm-thumbnail-upload.ts'),
+  route(
+    'api/liveSessions/prepare-thumbnail-upload',
+    'routes/api/liveSessions/prepare-thumbnail-upload.ts',
+  ),
+  route(
+    'api/liveSessions/confirm-thumbnail-upload',
+    'routes/api/liveSessions/confirm-thumbnail-upload.ts',
+  ),
   route(
     'api/organizations/prepare-profile-photo-upload',
     'routes/api/organizations/prepare-profile-photo-upload.ts',
