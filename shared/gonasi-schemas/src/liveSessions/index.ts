@@ -33,13 +33,13 @@ export const NewLiveSessionSchema = z
     name: LiveSessionNameSchema,
     description: LiveSessionDescriptionSchema,
     organizationId: z.string().uuid(),
-    visibility: LiveSessionVisibilitySchema.default('public'),
+    visibility: LiveSessionVisibilitySchema,
     sessionKey: LiveSessionKeySchema,
     maxParticipants: z.number().int().positive().max(1000).optional().nullable(),
-    allowLateJoin: z.boolean().default(true),
-    showLeaderboard: z.boolean().default(true),
-    enableChat: z.boolean().default(false),
-    enableReactions: z.boolean().default(true),
+    allowLateJoin: z.boolean(),
+    showLeaderboard: z.boolean(),
+    enableChat: z.boolean(),
+    enableReactions: z.boolean(),
     timeLimitPerQuestion: z.number().int().positive().max(600).optional().nullable(), // max 10 minutes per question
   })
   .refine(

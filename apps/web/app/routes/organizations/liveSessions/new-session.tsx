@@ -6,12 +6,14 @@ import { dataWithError, redirectWithSuccess } from 'remix-toast';
 import { HoneypotInputs } from 'remix-utils/honeypot/react';
 
 import { createLiveSession } from '@gonasi/database/liveSessions';
+import { fetchOrgTierLimits } from '@gonasi/database/organizations';
 import { NewLiveSessionSchema, type NewLiveSessionSchemaTypes } from '@gonasi/schemas/liveSessions';
 
 import type { Route } from './+types/new-session';
 
+import { BannerCard } from '~/components/cards';
 import { Button } from '~/components/ui/button';
-import { GoCheckBoxField, GoInputField, GoRadioGroupField, GoSelectInputField, GoTextAreaField } from '~/components/ui/forms/elements';
+import { GoInputField, GoSelectInputField, GoTextAreaField } from '~/components/ui/forms/elements';
 import { Modal } from '~/components/ui/modal';
 import { createClient } from '~/lib/supabase/supabase.server';
 import { checkHoneypot } from '~/utils/honeypot.server';
@@ -28,6 +30,12 @@ export function meta() {
   ];
 }
 
+export async function loader({ request, params }: Route.LoaderArgs) {
+  const { supabase } = createClient(request);
+  const tierLimits = await fetchOrgTierLimits({ supabase, organizationId: params.organizationId });
+  return { tierLimits };
+}
+
 // Zod resolver for validation
 const resolver = zodResolver(NewLiveSessionSchema);
 
@@ -38,7 +46,7 @@ export async function action({ request, params }: Route.ActionArgs) {
   // Bot protection
   await checkHoneypot(formData);
 
-  const { supabase, headers } = createClient(request);
+  const { supabase } = createClient(request);
 
   // Validate form data
   const {
@@ -55,19 +63,22 @@ export async function action({ request, params }: Route.ActionArgs) {
   const result = await createLiveSession({ supabase, data });
 
   if (!result.success || !result.data) {
+    console.log('Error creating live session:', result.message);
     return dataWithError(null, result.message);
   }
 
   return redirectWithSuccess(
     `/${params.organizationId}/live-sessions/${result.data.id}/overview`,
     `${result.message} Session code: ${result.data.sessionCode}`,
-    { headers },
   );
 }
 
 // Component: New Live Session Modal
-export default function NewSession({ params }: Route.ComponentProps) {
+export default function NewSession({ params, loaderData }: Route.ComponentProps) {
+  const { tierLimits } = loaderData;
   const isSubmitting = useIsPending();
+  const isRestricted = tierLimits?.tier === 'temp';
+  const isDisabled = isRestricted || isSubmitting;
 
   const methods = useRemixForm<NewLiveSessionSchemaTypes>({
     mode: 'all',
@@ -86,156 +97,177 @@ export default function NewSession({ params }: Route.ComponentProps) {
 
   return (
     <Modal open>
-      <Modal.Content size='lg'>
-        <Modal.Header title='Create Live Session 🎮' closeRoute={`/${params.organizationId}/live-sessions`} />
+      <Modal.Content size='md'>
+        <Modal.Header
+          title='Create Live Session 🎮'
+          closeRoute={`/${params.organizationId}/live-sessions`}
+        />
         <Modal.Body>
-          <RemixFormProvider {...methods}>
-            <Form method='POST' onSubmit={methods.handleSubmit} className='space-y-6'>
-              <HoneypotInputs />
+          {isRestricted ? (
+            <BannerCard
+              message='Live sessions are not available on your current plan'
+              description='Upgrade your plan to create, edit, and manage live sessions.'
+              showCloseIcon={false}
+              variant='restricted'
+              cta={{
+                to: `/${params.organizationId}/dashboard/subscriptions`,
+                children: 'Upgrade Plan',
+              }}
+            />
+          ) : (
+            <RemixFormProvider {...methods}>
+              <Form method='POST' onSubmit={methods.handleSubmit}>
+                <HoneypotInputs />
 
-              {/* Session Name */}
-              <GoInputField
-                name='name'
-                labelProps={{ children: 'Session Name' }}
-                inputProps={{
-                  autoFocus: true,
-                  placeholder: 'e.g. JavaScript Quiz Challenge',
-                  disabled: isSubmitting,
-                }}
-                description='Give your session a catchy, descriptive name.'
-              />
-
-              {/* Description */}
-              <GoTextAreaField
-                name='description'
-                labelProps={{ children: 'Description (Optional)' }}
-                textareaProps={{
-                  placeholder: 'Brief description of what participants can expect...',
-                  rows: 3,
-                  disabled: isSubmitting,
-                }}
-                description='Help participants understand what this session is about.'
-              />
-
-              {/* Visibility */}
-              <GoSelectInputField
-                name='visibility'
-                labelProps={{ children: 'Visibility' }}
-                selectProps={{
-                  disabled: isSubmitting,
-                  placeholder: 'Select visibility',
-                  options: [
-                    {
-                      value: 'public',
-                      label: 'Public - Anyone with the code can join',
-                    },
-                    {
-                      value: 'unlisted',
-                      label: 'Unlisted - Hidden from listings, code access only',
-                    },
-                    {
-                      value: 'private',
-                      label: 'Private - Requires session key (password)',
-                    },
-                  ],
-                }}
-                description='Control who can join this session.'
-              />
-
-              {/* Session Key (for private sessions) */}
-              {visibility === 'private' && (
+                {/* Session Name */}
                 <GoInputField
-                  name='sessionKey'
-                  labelProps={{ children: 'Session Key (Password)' }}
+                  name='name'
+                  labelProps={{ children: 'Session Name' }}
                   inputProps={{
-                    type: 'text',
-                    placeholder: 'Enter a password for this session',
-                    disabled: isSubmitting,
+                    autoFocus: true,
+                    placeholder: 'e.g. Daily Trivia',
+                    disabled: isDisabled,
                   }}
-                  description='Participants will need this key to join the private session.'
+                  description='Give your session a catchy, descriptive name.'
                 />
-              )}
 
-              {/* Max Participants */}
-              <GoInputField
-                name='maxParticipants'
-                labelProps={{ children: 'Max Participants (Optional)' }}
-                inputProps={{
-                  type: 'number',
-                  placeholder: 'e.g. 100',
-                  min: 1,
-                  max: 1000,
+                {/* Description */}
+                <GoTextAreaField
+                  name='description'
+                  labelProps={{ children: 'Description (Optional)' }}
+                  textareaProps={{
+                    placeholder: 'Brief description of what participants can expect...',
+                    rows: 3,
+                    disabled: isDisabled,
+                  }}
+                  description='Help participants understand what this session is about.'
+                />
+
+                {/* Visibility */}
+                <GoSelectInputField
+                  name='visibility'
+                  labelProps={{ children: 'Visibility' }}
+                  selectProps={{
+                    disabled: isDisabled,
+                    placeholder: 'Select visibility',
+                    options: [
+                      {
+                        value: 'public',
+                        label: 'Public - Anyone with the code can join',
+                      },
+                      {
+                        value: 'unlisted',
+                        label: 'Unlisted - Hidden from listings, code access only',
+                      },
+                      {
+                        value: 'private',
+                        label: 'Private - Requires session key (password)',
+                      },
+                    ],
+                  }}
+                  description='Control who can join this session.'
+                />
+
+                {/* Session Key (for private sessions) */}
+                {visibility === 'private' && (
+                  <GoInputField
+                    name='sessionKey'
+                    labelProps={{ children: 'Session Key (Password)' }}
+                    inputProps={{
+                      type: 'text',
+                      placeholder: 'Enter a password for this session',
+                      disabled: isDisabled,
+                    }}
+                    description='Participants will need this key to join the private session.'
+                  />
+                )}
+
+                {/* Max Participants */}
+                <GoInputField
+                  name='maxParticipants'
+                  labelProps={{ children: 'Max Participants (Optional)' }}
+                  inputProps={{
+                    type: 'number',
+                    placeholder: 'e.g. 100',
+                    min: 1,
+                    max: 1000,
+                    disabled: isDisabled,
+                  }}
+                  description='Leave empty for unlimited participants (up to 1000).'
+                />
+
+                {/* Time Limit Per Question */}
+                <GoInputField
+                  name='timeLimitPerQuestion'
+                  labelProps={{ children: 'Time Limit Per Question (seconds, optional)' }}
+                  inputProps={{
+                    type: 'number',
+                    placeholder: 'e.g. 30',
+                    min: 5,
+                    max: 600,
+                    disabled: isDisabled,
+                  }}
+                  description='Default time limit for each question. You can override this per block.'
+                />
+
+                {/* Settings Checkboxes */}
+                {/* <div className='space-y-3 rounded-lg border p-4'>
+              <h3 className='text-sm font-semibold'>Session Settings</h3>
+
+              <GoCheckBoxField
+                name='allowLateJoin'
+                labelProps={{ children: 'Allow participants to join after the session starts' }}
+                checkboxProps={{
                   disabled: isSubmitting,
                 }}
-                description='Leave empty for unlimited participants (up to 1000).'
               />
 
-              {/* Time Limit Per Question */}
-              <GoInputField
-                name='timeLimitPerQuestion'
-                labelProps={{ children: 'Time Limit Per Question (seconds, optional)' }}
-                inputProps={{
-                  type: 'number',
-                  placeholder: 'e.g. 30',
-                  min: 5,
-                  max: 600,
+              <GoCheckBoxField
+                name='showLeaderboard'
+                labelProps={{ children: 'Show real-time leaderboard to participants' }}
+                checkboxProps={{
                   disabled: isSubmitting,
                 }}
-                description='Default time limit for each question. You can override this per block.'
               />
 
-              {/* Settings Checkboxes */}
-              <div className='space-y-3 rounded-lg border p-4'>
-                <h3 className='text-sm font-semibold'>Session Settings</h3>
+              <GoCheckBoxField
+                name='enableChat'
+                labelProps={{ children: 'Enable live chat' }}
+                checkboxProps={{
+                  disabled: isSubmitting,
+                }}
+              />
 
-                <GoCheckBoxField
-                  name='allowLateJoin'
-                  labelProps={{ children: 'Allow participants to join after the session starts' }}
-                  checkboxProps={{
-                    disabled: isSubmitting,
-                  }}
-                />
+              <GoCheckBoxField
+                name='enableReactions'
+                labelProps={{ children: 'Enable emoji reactions' }}
+                checkboxProps={{
+                  disabled: isSubmitting,
+                }}
+              />
+            </div> */}
 
-                <GoCheckBoxField
-                  name='showLeaderboard'
-                  labelProps={{ children: 'Show real-time leaderboard to participants' }}
-                  checkboxProps={{
-                    disabled: isSubmitting,
-                  }}
-                />
-
-                <GoCheckBoxField
-                  name='enableChat'
-                  labelProps={{ children: 'Enable live chat' }}
-                  checkboxProps={{
-                    disabled: isSubmitting,
-                  }}
-                />
-
-                <GoCheckBoxField
-                  name='enableReactions'
-                  labelProps={{ children: 'Enable emoji reactions' }}
-                  checkboxProps={{
-                    disabled: isSubmitting,
-                  }}
-                />
-              </div>
-
-              <div className='flex justify-end gap-2'>
-                <Button
-                  type='button'
-                  variant='outline'
-                  onClick={() => window.history.back()}
-                  disabled={isSubmitting}
-                >
-                  Cancel
-                </Button>
-                <Button type='submit' disabled={isSubmitting} isLoading={isSubmitting} rightIcon={<ChevronRight />}>
-                  Create Session
-                </Button>
-              </div>
-            </Form>
-          </RemixFormProvider>
+                <div className='flex justify-end gap-2'>
+                  <Button
+                    type='button'
+                    variant='ghost'
+                    onClick={() => window.history.back()}
+                    disabled={isDisabled}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type='submit'
+                    disabled={isDisabled}
+                    isLoading={isSubmitting}
+                    rightIcon={<ChevronRight />}
+                  >
+                    Create Session
+                  </Button>
+                </div>
+              </Form>
+            </RemixFormProvider>
+          )}
         </Modal.Body>
       </Modal.Content>
     </Modal>

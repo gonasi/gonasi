@@ -3,10 +3,11 @@
 -- =============================================
 -- Updates or creates aggregate analytics for a session
 
-create or replace function update_session_analytics(p_session_id uuid)
+create or replace function public.update_session_analytics(p_session_id uuid)
 returns void
 language plpgsql
 security definer
+set search_path = ''
 as $$
 declare
   v_total_participants integer;
@@ -15,20 +16,20 @@ declare
 begin
   -- Get counts
   select count(*) into v_total_participants
-  from live_session_participants
+  from public.live_session_participants
   where live_session_id = p_session_id;
 
   select count(*) into v_total_responses
-  from live_session_responses
+  from public.live_session_responses
   where live_session_id = p_session_id;
 
   select count(*) into v_total_blocks
-  from live_session_blocks
+  from public.live_session_blocks
   where live_session_id = p_session_id
     and status in ('closed', 'active');
 
   -- Upsert analytics
-  insert into live_session_analytics (
+  insert into public.live_session_analytics (
     live_session_id,
     organization_id,
     total_participants,
@@ -53,28 +54,28 @@ begin
       else null
     end,
     -- Average response time
-    (select avg(response_time_ms)::int from live_session_responses where live_session_id = p_session_id),
+    (select avg(response_time_ms)::int from public.live_session_responses where live_session_id = p_session_id),
     -- Average score
-    (select avg(lsp.total_score) from live_session_participants lsp where lsp.live_session_id = p_session_id),
+    (select avg(lsp.total_score) from public.live_session_participants lsp where lsp.live_session_id = p_session_id),
     -- Median score
     (select percentile_cont(0.5) within group (order by lsp.total_score)
-     from live_session_participants lsp where lsp.live_session_id = p_session_id),
+     from public.live_session_participants lsp where lsp.live_session_id = p_session_id),
     -- Highest score
-    (select max(lsp.total_score) from live_session_participants lsp where lsp.live_session_id = p_session_id),
+    (select max(lsp.total_score) from public.live_session_participants lsp where lsp.live_session_id = p_session_id),
     -- Lowest score
-    (select min(lsp.total_score) from live_session_participants lsp where lsp.live_session_id = p_session_id),
+    (select min(lsp.total_score) from public.live_session_participants lsp where lsp.live_session_id = p_session_id),
     -- Accuracy rate: (correct responses / total responses) * 100
     case
       when v_total_responses > 0
       then (
         select count(*)::numeric / v_total_responses * 100
-        from live_session_responses
+        from public.live_session_responses
         where live_session_id = p_session_id
           and status = 'correct'
       )
       else null
     end
-  from live_sessions ls
+  from public.live_sessions ls
   where ls.id = p_session_id
   on conflict (live_session_id)
   do update set
@@ -91,4 +92,4 @@ begin
 end;
 $$;
 
-comment on function update_session_analytics is 'Updates aggregate analytics for a live session';
+comment on function public.update_session_analytics is 'Updates aggregate analytics for a live session';

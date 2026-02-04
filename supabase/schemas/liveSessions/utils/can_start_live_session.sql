@@ -7,11 +7,11 @@
 -- 2. Must have at least one block
 -- 3. Session must not be ended
 
-create or replace function can_start_live_session(arg_session_id uuid)
+create or replace function public.can_start_live_session(arg_session_id uuid)
 returns jsonb
 language plpgsql
 security definer
-set search_path = public
+set search_path = ''
 as $$
 declare
   v_session record;
@@ -25,7 +25,7 @@ begin
     image_url,
     status
   into v_session
-  from live_sessions
+  from public.live_sessions
   where id = arg_session_id;
 
   -- Check if session exists
@@ -49,7 +49,7 @@ begin
   -- Check if session has at least one block
   select count(*)
   into v_block_count
-  from live_session_blocks
+  from public.live_session_blocks
   where session_id = arg_session_id;
 
   if v_block_count = 0 then
@@ -72,7 +72,7 @@ end;
 $$;
 
 -- Grant execute permission to authenticated users
-grant execute on function can_start_live_session(uuid) to authenticated;
+grant execute on function public.can_start_live_session(uuid) to authenticated;
 
 -- Add comment
-comment on function can_start_live_session(uuid) is 'Validates if a live session meets all requirements to be started (has thumbnail and at least one block)';
+comment on function public.can_start_live_session(uuid) is 'Validates if a live session meets all requirements to be started (has thumbnail and at least one block)';

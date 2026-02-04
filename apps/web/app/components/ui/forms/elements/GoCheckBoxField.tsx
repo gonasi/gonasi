@@ -1,7 +1,7 @@
 import { Controller } from 'react-hook-form';
 import { useRemixFormContext } from 'remix-hook-form';
 
-import { Checkbox } from '../../checkbox';
+import { Checkbox, type CheckboxProps } from '../../checkbox';
 import { Label, type LabelProps } from '../../label';
 import { ErrorDisplay, FormDescription } from './Common';
 
@@ -10,6 +10,7 @@ interface GoCheckBoxFieldProps {
   description?: string;
   className?: string;
   labelProps: Omit<LabelProps, 'htmlFor' | 'error'>;
+  checkboxProps?: Omit<CheckboxProps, 'error' | 'aria-invalid' | 'aria-describedby' | 'type'>;
   disabled?: boolean;
 }
 
@@ -18,6 +19,7 @@ export function GoCheckBoxField({
   description,
   className,
   labelProps,
+  checkboxProps,
   disabled = false,
 }: GoCheckBoxFieldProps) {
   const {
@@ -47,6 +49,7 @@ export function GoCheckBoxField({
               disabled={disabled}
               aria-invalid={hasError}
               aria-describedby={description ? descriptionId : undefined}
+              {...checkboxProps}
             />
             <Label htmlFor={id} error={hasError} {...labelProps} />
           </div>

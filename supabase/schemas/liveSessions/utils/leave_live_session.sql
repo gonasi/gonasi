@@ -3,10 +3,11 @@
 -- =============================================
 -- Marks a participant as having left the session
 
-create or replace function leave_live_session(p_session_id uuid)
+create or replace function public.leave_live_session(p_session_id uuid)
 returns jsonb
 language plpgsql
 security invoker
+set search_path = ''
 as $$
 declare
   v_user_id uuid;
@@ -17,7 +18,7 @@ begin
     raise exception 'Authentication required';
   end if;
 
-  update live_session_participants
+  update public.live_session_participants
   set
     status = 'left',
     left_at = now(),
@@ -41,4 +42,4 @@ exception
 end;
 $$;
 
-comment on function leave_live_session is 'RPC to leave a live session';
+comment on function public.leave_live_session is 'RPC to leave a live session';

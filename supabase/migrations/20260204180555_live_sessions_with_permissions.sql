@@ -458,6 +458,7 @@ CREATE OR REPLACE FUNCTION public.calculate_leaderboard_ranks(p_session_id uuid)
  RETURNS void
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path TO ''
 AS $function$
 begin
   with ranked_participants as (
@@ -468,11 +469,11 @@ begin
           total_score desc,
           average_response_time_ms asc nulls last
       ) as new_rank
-    from live_session_participants
+    from public.live_session_participants
     where live_session_id = p_session_id
       and status = 'joined'
   )
-  update live_session_participants p
+  update public.live_session_participants p
   set
     rank = rp.new_rank,
     updated_at = now()
@@ -486,7 +487,7 @@ CREATE OR REPLACE FUNCTION public.can_start_live_session(arg_session_id uuid)
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
- SET search_path TO 'public'
+ SET search_path TO ''
 AS $function$
 declare
   v_session record;
@@ -500,7 +501,7 @@ begin
     image_url,
     status
   into v_session
-  from live_sessions
+  from public.live_sessions
   where id = arg_session_id;
 
   -- Check if session exists
@@ -524,7 +525,7 @@ begin
   -- Check if session has at least one block
   select count(*)
   into v_block_count
-  from live_session_blocks
+  from public.live_session_blocks
   where session_id = arg_session_id;
 
   if v_block_count = 0 then
@@ -638,6 +639,7 @@ CREATE OR REPLACE FUNCTION public.generate_session_code()
  RETURNS text
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path TO ''
 AS $function$
 declare
   characters text := 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; -- Exclude similar chars (0, O, I, 1)
@@ -655,11 +657,12 @@ $function$
 CREATE OR REPLACE FUNCTION public.join_live_session(p_session_code text, p_session_key text DEFAULT NULL::text, p_display_name text DEFAULT NULL::text)
  RETURNS jsonb
  LANGUAGE plpgsql
+ SET search_path TO ''
 AS $function$
 declare
   v_session_id uuid;
-  v_session_visibility live_session_visibility;
-  v_session_status live_session_status;
+  v_session_visibility public.live_session_visibility;
+  v_session_status public.live_session_status;
   v_required_key text;
   v_organization_id uuid;
   v_allow_late_join boolean;
@@ -680,7 +683,7 @@ begin
     id, visibility, status, session_key, organization_id, allow_late_join, max_participants
   into
     v_session_id, v_session_visibility, v_session_status, v_required_key, v_organization_id, v_allow_late_join, v_max_participants
-  from live_sessions
+  from public.live_sessions
   where session_code = upper(p_session_code);
 
   if v_session_id is null then
@@ -709,7 +712,7 @@ begin
 
   -- Check if user is member of the organization
   if not exists (
-    select 1 from organization_members
+    select 1 from public.organization_members
     where user_id = v_user_id and organization_id = v_organization_id
   ) then
     raise exception 'You must be a member of this organization to join';
@@ -718,7 +721,7 @@ begin
   -- Check max participants
   if v_max_participants is not null then
     select count(*) into v_current_participants
-    from live_session_participants
+    from public.live_session_participants
     where live_session_id = v_session_id and status = 'joined';
 
     if v_current_participants >= v_max_participants then
@@ -727,7 +730,7 @@ begin
   end if;
 
   -- Insert or update participant
-  insert into live_session_participants (
+  insert into public.live_session_participants (
     live_session_id,
     user_id,
     organization_id,
@@ -744,7 +747,7 @@ begin
   on conflict (live_session_id, user_id)
   do update set
     status = 'joined',
-    display_name = coalesce(excluded.display_name, live_session_participants.display_name),
+    display_name = coalesce(excluded.display_name, public.live_session_participants.display_name),
     joined_at = now(),
     left_at = null,
     updated_at = now()
@@ -769,6 +772,7 @@ $function$
 CREATE OR REPLACE FUNCTION public.leave_live_session(p_session_id uuid)
  RETURNS jsonb
  LANGUAGE plpgsql
+ SET search_path TO ''
 AS $function$
 declare
   v_user_id uuid;
@@ -779,7 +783,7 @@ begin
     raise exception 'Authentication required';
   end if;
 
-  update live_session_participants
+  update public.live_session_participants
   set
     status = 'left',
     left_at = now(),
@@ -808,18 +812,19 @@ CREATE OR REPLACE FUNCTION public.reorder_live_session_blocks(block_positions js
  RETURNS void
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path TO ''
 AS $function$
 declare
   block_item jsonb;
 begin
   -- Validate user has permission
   if not exists (
-    select 1 from live_sessions
+    select 1 from public.live_sessions
     where id = p_live_session_id
       and (
         created_by = p_updated_by
         or organization_id in (
-          select organization_id from organization_members
+          select organization_id from public.organization_members
           where user_id = p_updated_by and role in ('owner', 'admin')
         )
       )
@@ -830,7 +835,7 @@ begin
   -- Update each block's position
   for block_item in select * from jsonb_array_elements(block_positions)
   loop
-    update live_session_blocks
+    update public.live_session_blocks
     set
       position = (block_item->>'position')::integer,
       updated_by = p_updated_by,
@@ -846,17 +851,20 @@ CREATE OR REPLACE FUNCTION public.trigger_generate_session_code()
  RETURNS trigger
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path TO ''
 AS $function$
 begin
   if new.session_code is null or new.session_code = '' then
-    -- Generate unique code (retry if collision)
     loop
-      new.session_code := generate_session_code();
+      new.session_code := public.generate_session_code();
       exit when not exists (
-        select 1 from live_sessions where session_code = new.session_code
+        select 1
+        from public.live_sessions
+        where session_code = new.session_code
       );
     end loop;
   end if;
+
   return new;
 end;
 $function$
@@ -866,19 +874,20 @@ CREATE OR REPLACE FUNCTION public.trigger_update_stats_after_response()
  RETURNS trigger
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path TO ''
 AS $function$
 begin
   -- Update block stats
-  perform update_block_stats(new.live_session_block_id);
+  perform public.update_block_stats(new.live_session_block_id);
 
   -- Update participant stats
-  perform update_participant_stats(new.participant_id);
+  perform public.update_participant_stats(new.participant_id);
 
   -- Recalculate leaderboard ranks
-  perform calculate_leaderboard_ranks(new.live_session_id);
+  perform public.calculate_leaderboard_ranks(new.live_session_id);
 
   -- Update session analytics
-  perform update_session_analytics(new.live_session_id);
+  perform public.update_session_analytics(new.live_session_id);
 
   return new;
 end;
@@ -889,24 +898,25 @@ CREATE OR REPLACE FUNCTION public.update_block_stats(p_block_id uuid)
  RETURNS void
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path TO ''
 AS $function$
 begin
-  update live_session_blocks
+  update public.live_session_blocks
   set
     total_responses = (
       select count(*)
-      from live_session_responses
+      from public.live_session_responses
       where live_session_block_id = p_block_id
     ),
     correct_responses = (
       select count(*)
-      from live_session_responses
+      from public.live_session_responses
       where live_session_block_id = p_block_id
         and status = 'correct'
     ),
     average_response_time_ms = (
       select avg(response_time_ms)::int
-      from live_session_responses
+      from public.live_session_responses
       where live_session_block_id = p_block_id
     ),
     updated_at = now()
@@ -919,29 +929,30 @@ CREATE OR REPLACE FUNCTION public.update_participant_stats(p_participant_id uuid
  RETURNS void
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path TO ''
 AS $function$
 begin
-  update live_session_participants
+  update public.live_session_participants
   set
     total_responses = (
       select count(*)
-      from live_session_responses
+      from public.live_session_responses
       where participant_id = p_participant_id
     ),
     correct_responses = (
       select count(*)
-      from live_session_responses
+      from public.live_session_responses
       where participant_id = p_participant_id
         and status = 'correct'
     ),
     total_score = (
       select coalesce(sum(score_earned), 0)
-      from live_session_responses
+      from public.live_session_responses
       where participant_id = p_participant_id
     ),
     average_response_time_ms = (
       select avg(response_time_ms)::int
-      from live_session_responses
+      from public.live_session_responses
       where participant_id = p_participant_id
     ),
     updated_at = now()
@@ -954,6 +965,7 @@ CREATE OR REPLACE FUNCTION public.update_session_analytics(p_session_id uuid)
  RETURNS void
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path TO ''
 AS $function$
 declare
   v_total_participants integer;
@@ -962,20 +974,20 @@ declare
 begin
   -- Get counts
   select count(*) into v_total_participants
-  from live_session_participants
+  from public.live_session_participants
   where live_session_id = p_session_id;
 
   select count(*) into v_total_responses
-  from live_session_responses
+  from public.live_session_responses
   where live_session_id = p_session_id;
 
   select count(*) into v_total_blocks
-  from live_session_blocks
+  from public.live_session_blocks
   where live_session_id = p_session_id
     and status in ('closed', 'active');
 
   -- Upsert analytics
-  insert into live_session_analytics (
+  insert into public.live_session_analytics (
     live_session_id,
     organization_id,
     total_participants,
@@ -1000,28 +1012,28 @@ begin
       else null
     end,
     -- Average response time
-    (select avg(response_time_ms)::int from live_session_responses where live_session_id = p_session_id),
+    (select avg(response_time_ms)::int from public.live_session_responses where live_session_id = p_session_id),
     -- Average score
-    (select avg(lsp.total_score) from live_session_participants lsp where lsp.live_session_id = p_session_id),
+    (select avg(lsp.total_score) from public.live_session_participants lsp where lsp.live_session_id = p_session_id),
     -- Median score
     (select percentile_cont(0.5) within group (order by lsp.total_score)
-     from live_session_participants lsp where lsp.live_session_id = p_session_id),
+     from public.live_session_participants lsp where lsp.live_session_id = p_session_id),
     -- Highest score
-    (select max(lsp.total_score) from live_session_participants lsp where lsp.live_session_id = p_session_id),
+    (select max(lsp.total_score) from public.live_session_participants lsp where lsp.live_session_id = p_session_id),
     -- Lowest score
-    (select min(lsp.total_score) from live_session_participants lsp where lsp.live_session_id = p_session_id),
+    (select min(lsp.total_score) from public.live_session_participants lsp where lsp.live_session_id = p_session_id),
     -- Accuracy rate: (correct responses / total responses) * 100
     case
       when v_total_responses > 0
       then (
         select count(*)::numeric / v_total_responses * 100
-        from live_session_responses
+        from public.live_session_responses
         where live_session_id = p_session_id
           and status = 'correct'
       )
       else null
     end
-  from live_sessions ls
+  from public.live_sessions ls
   where ls.id = p_session_id
   on conflict (live_session_id)
   do update set
@@ -1035,6 +1047,120 @@ begin
     lowest_score = excluded.lowest_score,
     accuracy_rate = excluded.accuracy_rate,
     updated_at = now();
+end;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.chk_org_storage_for_course(org_id uuid, net_storage_change_bytes bigint, course_id uuid DEFAULT NULL::uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+declare
+  storage_limit_mb integer;
+  storage_limit_bytes bigint;
+  builder_files bigint;
+  published_files bigint;
+  total_used bigint;
+  available bigint;
+  allowed boolean;
+begin
+  -- 1. Fetch org tier
+  select coalesce(tl.storage_limit_mb_per_org, 0)
+  into storage_limit_mb
+  from public.organizations o
+  join public.organization_subscriptions os on o.id = os.organization_id
+  join public.tier_limits tl on os.tier = tl.tier
+  where o.id = org_id;
+
+  if storage_limit_mb is null then
+    raise exception 'Organization % or subscription not found', org_id;
+  end if;
+
+  storage_limit_bytes := storage_limit_mb::bigint * 1024 * 1024;
+
+  -- 2. Builder files
+  select coalesce(sum(size), 0)
+  into builder_files
+  from public.file_library
+  where organization_id = org_id;
+
+  -- 3. Published files
+  select coalesce(sum(size), 0)
+  into published_files
+  from public.published_file_library
+  where organization_id = org_id;
+
+  -- 4. Totals
+  total_used := builder_files + published_files;
+  available := storage_limit_bytes - total_used;
+
+  -- 5. Allow?
+  allowed := available >= net_storage_change_bytes;
+
+  -- 6. Return JSON
+  return jsonb_build_object(
+    'storage_limit_mb', storage_limit_mb,
+    'storage_limit_bytes', storage_limit_bytes,
+    'storage_limit_readable', public.readable_size(storage_limit_bytes),
+
+    'usage', jsonb_build_object(
+      'builder_files_bytes', builder_files,
+      'builder_files_readable', public.readable_size(builder_files),
+
+      'published_files_bytes', published_files,
+      'published_files_readable', public.readable_size(published_files),
+
+      'total_used_bytes', total_used,
+      'total_used_readable', public.readable_size(total_used),
+
+      'available_bytes', available,
+      'available_readable', public.readable_size(available),
+
+      'usage_percentage',
+        case when storage_limit_bytes > 0
+          then round((total_used::numeric / storage_limit_bytes::numeric * 100)::numeric, 2)
+          else 0 end
+    ),
+
+    'change', jsonb_build_object(
+      'net_storage_change_bytes', net_storage_change_bytes,
+      'net_storage_change_readable', public.readable_size(net_storage_change_bytes),
+
+      'available_after_change_bytes', available - net_storage_change_bytes,
+      'available_after_change_readable', public.readable_size(available - net_storage_change_bytes)
+    ),
+
+    'allowed', allowed,
+    'reason', case
+      when allowed then 'Enough storage available'
+      else 'Not enough storage: requires ' || public.readable_size(net_storage_change_bytes)
+            || ', but only ' || public.readable_size(available) || ' available.'
+    end
+  );
+end;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.readable_size(bytes bigint)
+ RETURNS text
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO ''
+AS $function$
+begin
+  if bytes is null then
+    return '0 B';
+  elsif bytes >= 1024 * 1024 * 1024 then
+    return round(bytes::numeric / (1024 * 1024 * 1024), 2) || ' GB';
+  elsif bytes >= 1024 * 1024 then
+    return round(bytes::numeric / (1024 * 1024), 2) || ' MB';
+  elsif bytes >= 1024 then
+    return round(bytes::numeric / 1024, 2) || ' KB';
+  else
+    return bytes || ' B';
+  end if;
 end;
 $function$
 ;

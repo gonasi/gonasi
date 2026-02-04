@@ -11,18 +11,19 @@ create or replace function reorder_live_session_blocks(
 returns void
 language plpgsql
 security definer
+set search_path = ''
 as $$
 declare
   block_item jsonb;
 begin
   -- Validate user has permission
   if not exists (
-    select 1 from live_sessions
+    select 1 from public.live_sessions
     where id = p_live_session_id
       and (
         created_by = p_updated_by
         or organization_id in (
-          select organization_id from organization_members
+          select organization_id from public.organization_members
           where user_id = p_updated_by and role in ('owner', 'admin')
         )
       )
@@ -33,7 +34,7 @@ begin
   -- Update each block's position
   for block_item in select * from jsonb_array_elements(block_positions)
   loop
-    update live_session_blocks
+    update public.live_session_blocks
     set
       position = (block_item->>'position')::integer,
       updated_by = p_updated_by,

@@ -3,11 +3,12 @@ import { motion } from 'framer-motion';
 import { Pencil, PenOff, Plus } from 'lucide-react';
 
 import { fetchOrganizationLiveSessions } from '@gonasi/database/liveSessions';
+import { fetchOrgTierLimits } from '@gonasi/database/organizations';
 
 import type { Route } from './+types/live-sessions-index';
 
 import { PlainAvatar } from '~/components/avatars/plain-avatar';
-import { NotFoundCard } from '~/components/cards';
+import { BannerCard, NotFoundCard } from '~/components/cards';
 import { GoCardContent, GoCourseHeader, GoThumbnail } from '~/components/cards/go-course-card';
 import { Badge } from '~/components/ui/badge';
 import { IconNavLink } from '~/components/ui/button';
@@ -31,21 +32,26 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   const page = Number(url.searchParams.get('page')) || 1;
   const limit = 12;
 
-  const sessions = await fetchOrganizationLiveSessions({
-    supabase,
-    searchQuery: search,
-    limit,
-    page,
-    organizationId: params.organizationId ?? '',
-  });
+  const [sessions, tierLimits] = await Promise.all([
+    fetchOrganizationLiveSessions({
+      supabase,
+      searchQuery: search,
+      limit,
+      page,
+      organizationId: params.organizationId ?? '',
+    }),
+    fetchOrgTierLimits({ supabase, organizationId: params.organizationId }),
+  ]);
 
-  return { sessions };
+  return { sessions, tierLimits };
 }
 
 export default function LiveSessionsIndex({ params, loaderData }: Route.ComponentProps) {
   const {
     sessions: { data },
+    tierLimits,
   } = loaderData;
+  const isRestricted = tierLimits?.tier === 'temp';
 
   const fadeInUp = {
     hidden: { opacity: 0, y: 2 },
@@ -55,13 +61,30 @@ export default function LiveSessionsIndex({ params, loaderData }: Route.Componen
   return (
     <>
       <div className='mx-auto pt-4'>
+        {isRestricted && (
+          <div className='px-4 pb-4'>
+            <BannerCard
+              message='Live sessions are not available on your current plan'
+              description='Upgrade your plan to create, edit, and manage live sessions.'
+              showCloseIcon={false}
+              variant='restricted'
+              cta={{
+                to: `/${params.organizationId}/dashboard/subscriptions`,
+                children: 'Upgrade Plan',
+              }}
+            />
+          </div>
+        )}
+
         <div className='flex items-center justify-between px-4'>
           <h2 className='text-lg md:text-2xl'>Live Sessions</h2>
-          <IconNavLink
-            to={`/${params.organizationId}/live-sessions/new`}
-            icon={Plus}
-            className='rounded-lg border p-2'
-          />
+          {!isRestricted && (
+            <IconNavLink
+              to={`/${params.organizationId}/live-sessions/new`}
+              icon={Plus}
+              className='rounded-lg border p-2'
+            />
+          )}
         </div>
 
         <section className='px-0 py-4 md:px-4'>

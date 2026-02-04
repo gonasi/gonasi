@@ -4,7 +4,7 @@
 -- Validates and joins a user to a live session
 -- Checks visibility, session key, max participants, and session status
 
-create or replace function join_live_session(
+create or replace function public.join_live_session(
   p_session_code text,
   p_session_key text default null,
   p_display_name text default null
@@ -12,11 +12,12 @@ create or replace function join_live_session(
 returns jsonb
 language plpgsql
 security invoker
+set search_path = ''
 as $$
 declare
   v_session_id uuid;
-  v_session_visibility live_session_visibility;
-  v_session_status live_session_status;
+  v_session_visibility public.live_session_visibility;
+  v_session_status public.live_session_status;
   v_required_key text;
   v_organization_id uuid;
   v_allow_late_join boolean;
@@ -37,7 +38,7 @@ begin
     id, visibility, status, session_key, organization_id, allow_late_join, max_participants
   into
     v_session_id, v_session_visibility, v_session_status, v_required_key, v_organization_id, v_allow_late_join, v_max_participants
-  from live_sessions
+  from public.live_sessions
   where session_code = upper(p_session_code);
 
   if v_session_id is null then
@@ -66,7 +67,7 @@ begin
 
   -- Check if user is member of the organization
   if not exists (
-    select 1 from organization_members
+    select 1 from public.organization_members
     where user_id = v_user_id and organization_id = v_organization_id
   ) then
     raise exception 'You must be a member of this organization to join';
@@ -75,7 +76,7 @@ begin
   -- Check max participants
   if v_max_participants is not null then
     select count(*) into v_current_participants
-    from live_session_participants
+    from public.live_session_participants
     where live_session_id = v_session_id and status = 'joined';
 
     if v_current_participants >= v_max_participants then
@@ -84,7 +85,7 @@ begin
   end if;
 
   -- Insert or update participant
-  insert into live_session_participants (
+  insert into public.live_session_participants (
     live_session_id,
     user_id,
     organization_id,
@@ -101,7 +102,7 @@ begin
   on conflict (live_session_id, user_id)
   do update set
     status = 'joined',
-    display_name = coalesce(excluded.display_name, live_session_participants.display_name),
+    display_name = coalesce(excluded.display_name, public.live_session_participants.display_name),
     joined_at = now(),
     left_at = null,
     updated_at = now()
@@ -122,4 +123,4 @@ exception
 end;
 $$;
 
-comment on function join_live_session is 'RPC to join a live session with validation for visibility, key, and capacity';
+comment on function public.join_live_session is 'RPC to join a live session with validation for visibility, key, and capacity';

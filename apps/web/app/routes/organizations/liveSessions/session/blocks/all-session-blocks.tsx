@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link, Outlet } from 'react-router';
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
+import { Link, Outlet, useSearchParams } from 'react-router';
 import { motion } from 'framer-motion';
 import debounce from 'lodash.debounce';
 import {
@@ -106,37 +106,49 @@ const itemVariants = {
 export default function AllSessionBlocks({ params }: Route.ComponentProps) {
   const blocksPath = `/${params.organizationId}/live-sessions/${params.sessionId}/blocks`;
 
-  const [query, setQuery] = useState('');
-  const [debouncedQuery, setDebouncedQuery] = useState('');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [value, setValue] = useState(() => searchParams.get('q') ?? '');
+  const deferredValue = useDeferredValue(value);
 
-  const debouncedSetQuery = useMemo(
-    () => debounce((value: string) => setDebouncedQuery(value), 300),
-    [],
-  );
+  const debouncedSetSearchParams = useRef(
+    debounce((newValue: string) => {
+      setSearchParams(
+        (prev) => {
+          const newParams = new URLSearchParams(prev);
+          if (newValue) {
+            newParams.set('q', newValue);
+          } else {
+            newParams.delete('q');
+          }
+          return newParams;
+        },
+        { replace: true },
+      );
+    }, 300),
+  ).current;
 
-  useEffect(() => () => debouncedSetQuery.cancel(), [debouncedSetQuery]);
+  useEffect(() => {
+    debouncedSetSearchParams(deferredValue);
+    return () => debouncedSetSearchParams.cancel();
+  }, [deferredValue, debouncedSetSearchParams]);
 
-  const handleQueryChange = useCallback(
-    (value: string) => {
-      setQuery(value);
-      if (!value) {
-        debouncedSetQuery.cancel();
-        setDebouncedQuery('');
-      } else {
-        debouncedSetQuery(value);
-      }
-    },
-    [debouncedSetQuery],
-  );
+  // Sync query param -> value on back/forward nav
+  useEffect(() => {
+    const paramValue = searchParams.get('q') ?? '';
+    if (paramValue !== value) {
+      setValue(paramValue);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   const filteredPlugins = useMemo(() => {
-    const q = debouncedQuery.trim().toLowerCase();
+    const q = deferredValue.trim().toLowerCase();
     if (!q) return PLUGIN_TYPES;
     return PLUGIN_TYPES.filter(
       (plugin) =>
         plugin.label.toLowerCase().includes(q) || plugin.description.toLowerCase().includes(q),
     );
-  }, [debouncedQuery]);
+  }, [deferredValue]);
 
   return (
     <>
@@ -153,11 +165,12 @@ export default function AllSessionBlocks({ params }: Route.ComponentProps) {
               <div className='pt-1'>
                 <Input
                   placeholder='Search for a Block Plugin'
-                  value={query}
-                  onChange={(e) => handleQueryChange(e.target.value)}
+                  value={value}
+                  onChange={(e) => setValue(e.target.value)}
+                  onRightIconClick={() => setValue('')}
                   className='mb-4 rounded-full'
                   leftIcon={<Search />}
-                  rightIcon={query ? <CircleX onClick={() => handleQueryChange('')} /> : null}
+                  rightIcon={value ? <CircleX className='cursor-pointer' /> : null}
                 />
               </div>
             </motion.div>

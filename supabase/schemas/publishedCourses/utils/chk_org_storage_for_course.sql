@@ -1,17 +1,24 @@
-create or replace function public.readable_size(bytes bigint)
+-- =============================================
+-- READABLE FILE SIZE FUNCTION
+-- =============================================
+
+drop function if exists public.readable_size(bigint);
+
+create function public.readable_size(bytes bigint)
 returns text
 language plpgsql
 immutable
+set search_path = ''
 as $$
 begin
   if bytes is null then
     return '0 B';
   elsif bytes >= 1024 * 1024 * 1024 then
-    return round((bytes::numeric / (1024*1024*1024))::numeric, 2) || ' GB';
+    return round(bytes::numeric / (1024 * 1024 * 1024), 2) || ' GB';
   elsif bytes >= 1024 * 1024 then
-    return round((bytes::numeric / (1024*1024))::numeric, 2) || ' MB';
+    return round(bytes::numeric / (1024 * 1024), 2) || ' MB';
   elsif bytes >= 1024 then
-    return round((bytes::numeric / 1024)::numeric, 2) || ' KB';
+    return round(bytes::numeric / 1024, 2) || ' KB';
   else
     return bytes || ' B';
   end if;
@@ -29,7 +36,7 @@ create or replace function public.chk_org_storage_for_course(
 returns jsonb
 language plpgsql
 security definer
-set search_path = public
+set search_path = ''
 as $$
 declare
   storage_limit_mb integer;
@@ -43,9 +50,9 @@ begin
   -- 1. Fetch org tier
   select coalesce(tl.storage_limit_mb_per_org, 0)
   into storage_limit_mb
-  from organizations o
-  join organization_subscriptions os on o.id = os.organization_id
-  join tier_limits tl on os.tier = tl.tier
+  from public.organizations o
+  join public.organization_subscriptions os on o.id = os.organization_id
+  join public.tier_limits tl on os.tier = tl.tier
   where o.id = org_id;
 
   if storage_limit_mb is null then
@@ -57,13 +64,13 @@ begin
   -- 2. Builder files
   select coalesce(sum(size), 0)
   into builder_files
-  from file_library
+  from public.file_library
   where organization_id = org_id;
 
   -- 3. Published files
   select coalesce(sum(size), 0)
   into published_files
-  from published_file_library
+  from public.published_file_library
   where organization_id = org_id;
 
   -- 4. Totals
@@ -77,20 +84,20 @@ begin
   return jsonb_build_object(
     'storage_limit_mb', storage_limit_mb,
     'storage_limit_bytes', storage_limit_bytes,
-    'storage_limit_readable', readable_size(storage_limit_bytes),
+    'storage_limit_readable', public.readable_size(storage_limit_bytes),
 
     'usage', jsonb_build_object(
       'builder_files_bytes', builder_files,
-      'builder_files_readable', readable_size(builder_files),
+      'builder_files_readable', public.readable_size(builder_files),
 
       'published_files_bytes', published_files,
-      'published_files_readable', readable_size(published_files),
+      'published_files_readable', public.readable_size(published_files),
 
       'total_used_bytes', total_used,
-      'total_used_readable', readable_size(total_used),
+      'total_used_readable', public.readable_size(total_used),
 
       'available_bytes', available,
-      'available_readable', readable_size(available),
+      'available_readable', public.readable_size(available),
 
       'usage_percentage',
         case when storage_limit_bytes > 0
@@ -100,17 +107,17 @@ begin
 
     'change', jsonb_build_object(
       'net_storage_change_bytes', net_storage_change_bytes,
-      'net_storage_change_readable', readable_size(net_storage_change_bytes),
+      'net_storage_change_readable', public.readable_size(net_storage_change_bytes),
 
       'available_after_change_bytes', available - net_storage_change_bytes,
-      'available_after_change_readable', readable_size(available - net_storage_change_bytes)
+      'available_after_change_readable', public.readable_size(available - net_storage_change_bytes)
     ),
 
     'allowed', allowed,
     'reason', case
       when allowed then 'Enough storage available'
-      else 'Not enough storage: requires ' || readable_size(net_storage_change_bytes)
-            || ', but only ' || readable_size(available) || ' available.'
+      else 'Not enough storage: requires ' || public.readable_size(net_storage_change_bytes)
+            || ', but only ' || public.readable_size(available) || ' available.'
     end
   );
 end;
