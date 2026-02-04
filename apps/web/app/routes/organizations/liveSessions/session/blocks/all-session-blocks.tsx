@@ -1,7 +1,6 @@
-import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, Outlet, useSearchParams } from 'react-router';
+import { useEffect, useMemo, useState } from 'react';
+import { Link, Outlet } from 'react-router';
 import { motion } from 'framer-motion';
-import debounce from 'lodash.debounce';
 import {
   ArrowLeftRight,
   CircleDot,
@@ -105,50 +104,32 @@ const itemVariants = {
 
 export default function AllSessionBlocks({ params }: Route.ComponentProps) {
   const blocksPath = `/${params.organizationId}/live-sessions/${params.sessionId}/blocks`;
+  const [searchValue, setSearchValue] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
 
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [value, setValue] = useState(() => searchParams.get('q') ?? '');
-  const deferredValue = useDeferredValue(value);
-
-  const debouncedSetSearchParams = useRef(
-    debounce((newValue: string) => {
-      setSearchParams(
-        (prev) => {
-          const newParams = new URLSearchParams(prev);
-          if (newValue) {
-            newParams.set('q', newValue);
-          } else {
-            newParams.delete('q');
-          }
-          return newParams;
-        },
-        { replace: true },
-      );
-    }, 300),
-  ).current;
-
+  // Debounce the search input
   useEffect(() => {
-    debouncedSetSearchParams(deferredValue);
-    return () => debouncedSetSearchParams.cancel();
-  }, [deferredValue, debouncedSetSearchParams]);
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchValue);
+    }, 200);
 
-  // Sync query param -> value on back/forward nav
-  useEffect(() => {
-    const paramValue = searchParams.get('q') ?? '';
-    if (paramValue !== value) {
-      setValue(paramValue);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]);
+    return () => clearTimeout(timer);
+  }, [searchValue]);
 
   const filteredPlugins = useMemo(() => {
-    const q = deferredValue.trim().toLowerCase();
-    if (!q) return PLUGIN_TYPES;
+    const query = debouncedSearch.trim().toLowerCase();
+    if (!query) return PLUGIN_TYPES;
+
     return PLUGIN_TYPES.filter(
       (plugin) =>
-        plugin.label.toLowerCase().includes(q) || plugin.description.toLowerCase().includes(q),
+        plugin.label.toLowerCase().includes(query) ||
+        plugin.description.toLowerCase().includes(query),
     );
-  }, [deferredValue]);
+  }, [debouncedSearch]);
+
+  const handleClearSearch = () => {
+    setSearchValue('');
+  };
 
   return (
     <>
@@ -165,12 +146,12 @@ export default function AllSessionBlocks({ params }: Route.ComponentProps) {
               <div className='pt-1'>
                 <Input
                   placeholder='Search for a Block Plugin'
-                  value={value}
-                  onChange={(e) => setValue(e.target.value)}
-                  onRightIconClick={() => setValue('')}
+                  value={searchValue}
+                  onChange={(e) => setSearchValue(e.target.value)}
+                  onRightIconClick={handleClearSearch}
                   className='mb-4 rounded-full'
                   leftIcon={<Search />}
-                  rightIcon={value ? <CircleX className='cursor-pointer' /> : null}
+                  rightIcon={searchValue ? <CircleX className='cursor-pointer' /> : null}
                 />
               </div>
             </motion.div>
@@ -180,6 +161,7 @@ export default function AllSessionBlocks({ params }: Route.ComponentProps) {
               </p>
             )}
             <motion.div
+              key={debouncedSearch}
               className='grid gap-1'
               initial='hidden'
               animate='visible'

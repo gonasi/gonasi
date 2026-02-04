@@ -9,6 +9,7 @@ import { BlocksPositionUpdateArraySchema } from '@gonasi/schemas/plugins';
 
 import type { Route } from './+types/live-sessions-blocks-index';
 
+import { NotFoundCard } from '~/components/cards';
 import RichTextRenderer from '~/components/go-editor/ui/RichTextRenderer';
 import { Badge } from '~/components/ui/badge';
 import { IconNavLink } from '~/components/ui/button';
@@ -236,10 +237,8 @@ export default function BlocksIndex({ params, loaderData }: Route.ComponentProps
             ))}
           </Reorder.Group>
         ) : (
-          <div className='rounded border p-8 text-center'>
-            <p className='text-muted-foreground'>
-              No blocks yet. Add your first question block to get started.
-            </p>
+          <div>
+            <NotFoundCard message='No blocks yet. Add your first live block to get started.' />
           </div>
         )}
       </div>
