@@ -131,3 +131,32 @@ export const UpdateSessionStatusSchema = z.object({
 });
 
 export type UpdateSessionStatusSchemaTypes = z.infer<typeof UpdateSessionStatusSchema>;
+
+// ─── Live Session Block Schemas ─────────────────────────────
+
+import { NonEmptyLexicalState } from '../plugins/utils';
+import { LayoutPluginSettingsSchema } from '../plugins/pluginSettings';
+
+export const LiveSessionTrueOrFalseContentSchema = z.object({
+  questionState: NonEmptyLexicalState,
+  correctAnswer: z.enum(['true', 'false'], {
+    required_error: 'Select the correct answer.',
+  }),
+});
+export type LiveSessionTrueOrFalseContentSchemaTypes = z.infer<typeof LiveSessionTrueOrFalseContentSchema>;
+
+export const LiveSessionTrueOrFalseSettingsSchema = LayoutPluginSettingsSchema;
+export type LiveSessionTrueOrFalseSettingsSchemaTypes = z.infer<typeof LiveSessionTrueOrFalseSettingsSchema>;
+
+// time_limit: 0 means "use session default" — action converts 0 → null before DB write.
+export const LiveSessionTrueOrFalseSchema = z.object({
+  id: z.string().optional(),
+  live_session_id: z.string().uuid(),
+  organization_id: z.string().uuid(),
+  plugin_type: z.literal('true_or_false'),
+  content: LiveSessionTrueOrFalseContentSchema,
+  settings: LiveSessionTrueOrFalseSettingsSchema,
+  weight: z.number().int().min(1).max(10).default(2),
+  time_limit: z.number().int().min(0).max(600).default(0),
+});
+export type LiveSessionTrueOrFalseSchemaTypes = z.infer<typeof LiveSessionTrueOrFalseSchema>;

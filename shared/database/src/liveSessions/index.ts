@@ -2,3 +2,8 @@ export * from './createLiveSession';
 export * from './fetchLiveSessionById';
 export * from './fetchOrganizationLiveSessions';
 export * from './validateSessionReadyToStart';
+export * from './fetchLiveSessionBlocks';
+export * from './fetchLiveSessionBlockById';
+export * from './upsertLiveSessionBlock';
+export * from './deleteLiveSessionBlock';
+export * from './reorderLiveSessionBlocks';

@@ -54,19 +54,21 @@ export default function GoPluginsMenuDialog() {
   return (
     <>
       <motion.div
-        className='sticky top-0 z-10'
+        className='bg-background sticky top-0 z-10'
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
       >
-        <Input
-          placeholder='Search for a Go Plugin'
-          value={query}
-          onChange={(e) => handleQueryChange(e.target.value)}
-          className='mb-4 rounded-full'
-          leftIcon={<LucideIcons.Search />}
-          rightIcon={query ? <LucideIcons.CircleX onClick={() => handleQueryChange('')} /> : null}
-        />
+        <div className='pt-1'>
+          <Input
+            placeholder='Search for a Go Plugin'
+            value={query}
+            onChange={(e) => handleQueryChange(e.target.value)}
+            className='mb-4 rounded-full'
+            leftIcon={<LucideIcons.Search />}
+            rightIcon={query ? <LucideIcons.CircleX onClick={() => handleQueryChange('')} /> : null}
+          />
+        </div>
       </motion.div>
 
       <motion.div

@@ -362,18 +362,34 @@ export default [
           ),
           route('delete', 'routes/organizations/liveSessions/session/overview/delete-session.tsx'),
         ]),
-        route('blocks', 'routes/organizations/liveSessions/session/blocks/blocks-index.tsx', [
-          route('new', 'routes/organizations/liveSessions/session/blocks/new-block.tsx'),
-          route(':blockId/edit', 'routes/organizations/liveSessions/session/blocks/edit-block.tsx'),
-          route(
-            ':blockId/delete',
-            'routes/organizations/liveSessions/session/blocks/delete-block.tsx',
-          ),
-          route(
-            ':blockId/upsert',
-            'routes/organizations/liveSessions/session/blocks/upsert-block-api.tsx',
-          ),
-        ]),
+        route(
+          'blocks',
+          'routes/organizations/liveSessions/session/blocks/live-sessions-blocks-index.tsx',
+          [
+            route(
+              'all-session-blocks',
+              'routes/organizations/liveSessions/session/blocks/all-session-blocks.tsx',
+              [
+                route(
+                  ':pluginTypeId/create',
+                  'routes/organizations/liveSessions/session/blocks/create-session-block.tsx',
+                ),
+              ],
+            ),
+            route(
+              ':blockId/edit',
+              'routes/organizations/liveSessions/session/blocks/edit-block.tsx',
+            ),
+            route(
+              ':blockId/delete',
+              'routes/organizations/liveSessions/session/blocks/delete-block.tsx',
+            ),
+            route(
+              ':blockId/upsert',
+              'routes/organizations/liveSessions/session/blocks/upsert-block-api.tsx',
+            ),
+          ],
+        ),
         route(
           'facilitators',
           'routes/organizations/liveSessions/session/facilitators/facilitators-index.tsx',

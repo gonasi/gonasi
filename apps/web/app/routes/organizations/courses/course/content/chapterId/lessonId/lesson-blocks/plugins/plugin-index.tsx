@@ -44,7 +44,7 @@ export default function PluginsModal({ params }: Route.ComponentProps) {
       <Modal open>
         <Modal.Content size='lg'>
           <Modal.Header
-            leadingIcon={<AppLogo sizeClass='h-4 md:h-5 -mt-1' />}
+            leadingIcon={<AppLogo sizeClass='h-4 md:h-5 -mt-0.5' />}
             title='All Gonasi Plugins'
             closeRoute={lessonBasePath}
           />
