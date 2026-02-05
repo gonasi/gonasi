@@ -3,7 +3,7 @@ import { getValidatedFormData } from 'remix-hook-form';
 import { dataWithError, redirectWithSuccess } from 'remix-toast';
 
 import { upsertLiveSessionBlock } from '@gonasi/database/liveSessions';
-import { LiveSessionTrueOrFalseSchema } from '@gonasi/schemas/liveSessions';
+import { LiveSessionBlockSchema } from '@gonasi/schemas/liveSessions';
 
 import type { Route } from './+types/upsert-block-api';
 
@@ -20,7 +20,7 @@ export async function action({ request, params }: Route.ActionArgs) {
     errors,
     data,
     receivedValues: defaultValues,
-  } = await getValidatedFormData(formData, zodResolver(LiveSessionTrueOrFalseSchema));
+  } = await getValidatedFormData(formData, zodResolver(LiveSessionBlockSchema));
 
   if (errors) {
     return { errors, defaultValues };

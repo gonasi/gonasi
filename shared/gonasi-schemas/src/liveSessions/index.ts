@@ -1,5 +1,9 @@
 import { z } from 'zod';
 
+import { LayoutPluginSettingsSchema } from '../plugins/pluginSettings';
+// ─── Live Session Block Schemas ─────────────────────────────
+import { NonEmptyLexicalState } from '../plugins/utils';
+
 // Session name schema
 export const LiveSessionNameSchema = z
   .string({ required_error: 'Please enter a session name.' })
@@ -51,7 +55,8 @@ export const NewLiveSessionSchema = z
       return true;
     },
     {
-      message: 'Session key is required for private sessions and must be at least 4 characters long.',
+      message:
+        'Session key is required for private sessions and must be at least 4 characters long.',
       path: ['sessionKey'],
     },
   );
@@ -132,21 +137,14 @@ export const UpdateSessionStatusSchema = z.object({
 
 export type UpdateSessionStatusSchemaTypes = z.infer<typeof UpdateSessionStatusSchema>;
 
-// ─── Live Session Block Schemas ─────────────────────────────
-
-import { NonEmptyLexicalState } from '../plugins/utils';
-import { LayoutPluginSettingsSchema } from '../plugins/pluginSettings';
-
 export const LiveSessionTrueOrFalseContentSchema = z.object({
   questionState: NonEmptyLexicalState,
   correctAnswer: z.enum(['true', 'false'], {
     required_error: 'Select the correct answer.',
   }),
 });
-export type LiveSessionTrueOrFalseContentSchemaTypes = z.infer<typeof LiveSessionTrueOrFalseContentSchema>;
 
 export const LiveSessionTrueOrFalseSettingsSchema = LayoutPluginSettingsSchema;
-export type LiveSessionTrueOrFalseSettingsSchemaTypes = z.infer<typeof LiveSessionTrueOrFalseSettingsSchema>;
 
 // time_limit: 0 means "use session default" — action converts 0 → null before DB write.
 export const LiveSessionTrueOrFalseSchema = z.object({
@@ -160,3 +158,10 @@ export const LiveSessionTrueOrFalseSchema = z.object({
   time_limit: z.number().int().min(0).max(600).default(0),
 });
 export type LiveSessionTrueOrFalseSchemaTypes = z.infer<typeof LiveSessionTrueOrFalseSchema>;
+
+// ─── Live Session Block Discriminated Union ─────────────────
+// Server-side validation dispatcher — add new block schemas here as they are implemented.
+export const LiveSessionBlockSchema = z.discriminatedUnion('plugin_type', [
+  LiveSessionTrueOrFalseSchema,
+]);
+export type LiveSessionBlockSchemaTypes = z.infer<typeof LiveSessionBlockSchema>;

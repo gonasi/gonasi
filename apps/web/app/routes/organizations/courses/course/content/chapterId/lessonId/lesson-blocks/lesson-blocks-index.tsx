@@ -194,7 +194,12 @@ export default function EditLessonContent({ loaderData, params }: Route.Componen
               )}
             </div>
 
-            {canEdit ? <PluginButton onClick={navigateTo(`${lessonBasePath}/plugins`)} /> : null}
+            {canEdit ? (
+              <PluginButton
+                tooltipTitle='Add a lesson block'
+                onClick={navigateTo(`${lessonBasePath}/plugins`)}
+              />
+            ) : null}
           </Modal.Body>
         </Modal.Content>
       </Modal>

@@ -71,7 +71,8 @@ export default function DeleteBlock({ params, loaderData }: Route.ComponentProps
         <Modal.Header title='Delete Block' closeRoute={blocksPath} />
         <Modal.Body>
           <p className='mb-4'>
-            Are you sure you want to delete this <strong>{pluginLabel}</strong> block? This action cannot be undone.
+            Are you sure you want to delete this <strong>{pluginLabel}</strong> block? This action
+            cannot be undone.
           </p>
 
           <Form method='POST' className='space-y-4'>
@@ -82,7 +83,12 @@ export default function DeleteBlock({ params, loaderData }: Route.ComponentProps
                   Cancel
                 </Button>
               </NavLink>
-              <Button type='submit' variant='danger' disabled={isSubmitting} isLoading={isSubmitting}>
+              <Button
+                type='submit'
+                variant='danger'
+                disabled={isSubmitting}
+                isLoading={isSubmitting}
+              >
                 Delete Block
               </Button>
             </div>

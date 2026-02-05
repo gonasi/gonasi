@@ -4,10 +4,12 @@ import { fetchLiveSessionBlockById } from '@gonasi/database/liveSessions';
 
 import type { Route } from './+types/edit-block';
 
+import {
+  LiveSessionBlockFormWrapper,
+  liveSessionPluginRegistry,
+} from '~/components/plugins/liveSession';
 import { Modal } from '~/components/ui/modal';
 import { createClient } from '~/lib/supabase/supabase.server';
-
-import { LiveSessionTrueOrFalseForm } from './LiveSessionTrueOrFalseForm';
 
 export function meta() {
   return [{ title: 'Edit Block • Gonasi' }];
@@ -35,23 +37,20 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 
 export default function EditBlock({ params, loaderData }: Route.ComponentProps) {
   const { block } = loaderData;
+  const plugin = liveSessionPluginRegistry.get(block.plugin_type);
 
   const blocksPath = `/${params.organizationId}/live-sessions/${params.sessionId}/blocks`;
   const actionUrl = `${blocksPath}/${params.blockId}/upsert`;
 
-  if (block.plugin_type === 'true_or_false') {
+  if (!plugin) {
     return (
       <Modal open>
-        <Modal.Content size='lg'>
-          <Modal.Header title='Edit True or False Block' closeRoute={blocksPath} />
+        <Modal.Content size='sm'>
+          <Modal.Header title='Edit Block' closeRoute={blocksPath} />
           <Modal.Body>
-            <LiveSessionTrueOrFalseForm
-              block={block}
-              liveSessionId={params.sessionId}
-              organizationId={params.organizationId}
-              actionUrl={actionUrl}
-              closeRoute={blocksPath}
-            />
+            <p className='text-muted-foreground text-sm'>
+              This block type is not yet supported for editing.
+            </p>
           </Modal.Body>
         </Modal.Content>
       </Modal>
@@ -59,13 +58,13 @@ export default function EditBlock({ params, loaderData }: Route.ComponentProps) 
   }
 
   return (
-    <Modal open>
-      <Modal.Content size='md'>
-        <Modal.Header title='Edit Block' closeRoute={blocksPath} />
-        <Modal.Body>
-          <p className='text-muted-foreground text-sm'>This block type is not yet supported for editing.</p>
-        </Modal.Body>
-      </Modal.Content>
-    </Modal>
+    <LiveSessionBlockFormWrapper
+      plugin={plugin}
+      block={block}
+      liveSessionId={params.sessionId}
+      organizationId={params.organizationId}
+      actionUrl={actionUrl}
+      closeRoute={blocksPath}
+    />
   );
 }

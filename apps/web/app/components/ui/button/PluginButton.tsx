@@ -5,7 +5,13 @@ import { Button } from './Button';
 
 import { Tooltip, TooltipContent, TooltipTrigger } from '~/components/ui/tooltip';
 
-export function PluginButton({ onClick }: { onClick: () => void }) {
+export function PluginButton({
+  onClick,
+  tooltipTitle = 'Add a lesson block',
+}: {
+  onClick: () => void;
+  tooltipTitle: string;
+}) {
   return (
     <motion.div
       className='fixed right-4 bottom-4 z-50 md:right-8 md:bottom-8 lg:right-12 lg:bottom-12'
@@ -27,7 +33,7 @@ export function PluginButton({ onClick }: { onClick: () => void }) {
             <Plus className='h-5 w-5' strokeWidth={4} />
           </Button>
         </TooltipTrigger>
-        <TooltipContent side='top'>Add a lesson block</TooltipContent>
+        <TooltipContent side='top'>{tooltipTitle}</TooltipContent>
       </Tooltip>
     </motion.div>
   );

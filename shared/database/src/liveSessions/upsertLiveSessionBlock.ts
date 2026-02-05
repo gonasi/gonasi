@@ -33,6 +33,8 @@ export async function upsertLiveSessionBlock({ supabase, payload }: UpsertLiveSe
       time_limit: payload.time_limit,
     };
 
+    let error;
+
     if (isCreate) {
       // Compute next position
       const { data: maxRow } = await supabase
@@ -46,12 +48,13 @@ export async function upsertLiveSessionBlock({ supabase, payload }: UpsertLiveSe
       const nextPosition = (maxRow?.position ?? 0) + 1;
       upsertData.position = nextPosition;
       upsertData.created_by = userId;
-    } else {
-      upsertData.id = payload.id;
-      upsertData.updated_by = userId;
-    }
 
-    const { error } = await supabase.from('live_session_blocks').upsert(upsertData as any);
+      ({ error } = await supabase.from('live_session_blocks').insert(upsertData as any));
+    } else {
+      upsertData.updated_by = userId;
+
+      ({ error } = await supabase.from('live_session_blocks').update(upsertData as any).eq('id', payload.id));
+    }
 
     if (error) {
       console.error('[upsertLiveSessionBlock] error:', error);

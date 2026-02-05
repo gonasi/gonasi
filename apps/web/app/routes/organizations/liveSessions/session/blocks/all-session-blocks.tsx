@@ -15,6 +15,7 @@ import { redirectWithError } from 'remix-toast';
 
 import type { Route } from './+types/all-session-blocks';
 
+import { liveSessionPluginRegistry } from '~/components/plugins/liveSession';
 import { Badge } from '~/components/ui/badge';
 import { Input } from '~/components/ui/input';
 import { Modal } from '~/components/ui/modal';
@@ -42,48 +43,45 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   return { canEdit: true };
 }
 
+// Static display metadata for all block types (including coming-soon).
+// `available` is derived at render time from the plugin registry —
+// no manual flag to toggle when a new plugin is implemented.
 const PLUGIN_TYPES = [
   {
     id: 'true_or_false',
     label: 'True or False',
     description: 'Students decide if a statement is true or false.',
     icon: ToggleRight,
-    available: true,
   },
   {
     id: 'multiple_choice_single',
     label: 'Multiple Choice',
     description: 'Pick one correct answer from several options.',
     icon: CircleDot,
-    available: false,
   },
   {
     id: 'multiple_choice_multiple',
     label: 'Multi-Select',
     description: 'Select all answers that apply.',
     icon: SquareCheck,
-    available: false,
   },
   {
     id: 'fill_in_blank',
     label: 'Fill in the Blank',
     description: 'Complete the sentence or phrase.',
     icon: PenLine,
-    available: false,
   },
   {
     id: 'matching_game',
     label: 'Matching',
     description: 'Match items from two columns.',
     icon: ArrowLeftRight,
-    available: false,
   },
   {
     id: 'swipe_categorize',
     label: 'Swipe & Sort',
     description: 'Drag items into the correct categories.',
     icon: MoveHorizontal,
-    available: false,
   },
 ];
 
@@ -117,10 +115,15 @@ export default function AllSessionBlocks({ params }: Route.ComponentProps) {
   }, [searchValue]);
 
   const filteredPlugins = useMemo(() => {
-    const query = debouncedSearch.trim().toLowerCase();
-    if (!query) return PLUGIN_TYPES;
+    const plugins = PLUGIN_TYPES.map((plugin) => ({
+      ...plugin,
+      available: liveSessionPluginRegistry.has(plugin.id),
+    }));
 
-    return PLUGIN_TYPES.filter(
+    const query = debouncedSearch.trim().toLowerCase();
+    if (!query) return plugins;
+
+    return plugins.filter(
       (plugin) =>
         plugin.label.toLowerCase().includes(query) ||
         plugin.description.toLowerCase().includes(query),
@@ -205,7 +208,7 @@ export default function AllSessionBlocks({ params }: Route.ComponentProps) {
                   <MotionLink
                     key={plugin.id}
                     variants={itemVariants}
-                    to={`${blocksPath}/new/${plugin.id}/create`}
+                    to={`${blocksPath}/all-session-blocks/${plugin.id}/create`}
                     className='hover:bg-primary/5 flex w-full cursor-pointer items-center gap-3 rounded-sm p-2 text-left transition-all duration-200 ease-in-out'
                   >
                     {content}

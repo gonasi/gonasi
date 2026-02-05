@@ -1,21 +1,27 @@
-import { useEffect, useState } from 'react';
-import { data, Outlet, useFetcher } from 'react-router';
-import { Reorder, useDragControls, useMotionValue } from 'framer-motion';
-import { Edit, GripVerticalIcon, Plus, Trash2 } from 'lucide-react';
+import { lazy, Suspense, useEffect, useState } from 'react';
+import { data, Outlet, useFetcher, useNavigate } from 'react-router';
+import { Reorder } from 'framer-motion';
+import { Plus } from 'lucide-react';
 import { dataWithError } from 'remix-toast';
-
+import { ClientOnly } from 'remix-utils/client-only';
+import { PluginButton } from '~/components/ui/button';
 import { fetchLiveSessionBlocks, reorderLiveSessionBlocks } from '@gonasi/database/liveSessions';
 import { BlocksPositionUpdateArraySchema } from '@gonasi/schemas/plugins';
 
 import type { Route } from './+types/live-sessions-blocks-index';
 
 import { NotFoundCard } from '~/components/cards';
-import RichTextRenderer from '~/components/go-editor/ui/RichTextRenderer';
-import { Badge } from '~/components/ui/badge';
+import { Spinner } from '~/components/loaders';
+import LiveSessionBlockWrapper from '~/components/plugins/liveSession/LiveSessionBlockWrapper';
 import { IconNavLink } from '~/components/ui/button';
-import { ReorderIconTooltip } from '~/components/ui/tooltip/ReorderIconToolTip';
-import { useRaisedShadow } from '~/hooks/useRaisedShadow';
 import { createClient } from '~/lib/supabase/supabase.server';
+import { useStore } from '~/store';
+
+const ViewLiveSessionPluginRenderer = lazy(
+  () => import('~/components/plugins/liveSession/ViewLiveSessionPluginRenderer'),
+);
+
+export type LiveSessionBlock = Awaited<ReturnType<typeof fetchLiveSessionBlocks>>[number];
 
 export function meta() {
   return [
@@ -66,115 +72,25 @@ export async function action({ request, params }: Route.ActionArgs) {
   return data({ success: false });
 }
 
-// ─── Block Type Labels ────────────────────────────────────────
-const PLUGIN_TYPE_LABELS: Record<string, string> = {
-  true_or_false: 'True or False',
-  multiple_choice_single: 'Multiple Choice',
-  multiple_choice_multiple: 'Multi-Select',
-  fill_in_blank: 'Fill in the Blank',
-  matching_game: 'Matching',
-  swipe_categorize: 'Swipe & Sort',
-};
-
-const STATUS_COLORS: Record<string, string> = {
-  pending: 'bg-muted text-muted-foreground',
-  active: 'bg-green-100 text-green-800',
-  closed: 'bg-red-100 text-red-800',
-  skipped: 'bg-yellow-100 text-yellow-800',
-};
-
-// ─── Block Card (Reorder.Item) ────────────────────────────────
-type BlockRow = Awaited<ReturnType<typeof fetchLiveSessionBlocks>>[number];
-
-interface BlockCardProps {
-  block: BlockRow;
-  index: number;
-  canEdit: boolean;
-  loading: boolean;
-  organizationId: string;
-  sessionId: string;
-}
-
-function BlockCard({ block, index, canEdit, loading, organizationId, sessionId }: BlockCardProps) {
-  const basePath = `/${organizationId}/live-sessions/${sessionId}/blocks`;
-  const blockY = useMotionValue(0);
-  const blockShadow = useRaisedShadow(blockY, { borderRadius: '8px' });
-  const dragControls = useDragControls();
-
-  const questionPreview = (block.content as { questionState?: string })?.questionState;
-
-  return (
-    <Reorder.Item
-      value={block}
-      id={block.id}
-      style={{ boxShadow: blockShadow, y: blockY }}
-      dragListener={false}
-      dragControls={dragControls}
-      layoutScroll
-      className='select-none'
-    >
-      <div className='bg-card flex items-start gap-3 rounded-lg border p-3'>
-        {/* Drag handle */}
-        {canEdit && (
-          <div className='mt-1'>
-            <ReorderIconTooltip
-              title='Drag to reorder'
-              icon={GripVerticalIcon}
-              disabled={loading}
-              dragControls={dragControls}
-            />
-          </div>
-        )}
-
-        {/* Content */}
-        <div className='min-w-0 flex-1'>
-          <div className='flex items-center gap-2'>
-            <span className='text-muted-foreground font-mono text-xs'>#{index + 1}</span>
-            <span className='text-sm font-medium'>
-              {PLUGIN_TYPE_LABELS[block.plugin_type] ?? block.plugin_type}
-            </span>
-            <Badge className={STATUS_COLORS[block.status] ?? STATUS_COLORS.pending}>
-              {block.status}
-            </Badge>
-            <Badge variant='outline' className='text-xs'>
-              Weight: {block.weight}
-            </Badge>
-          </div>
-
-          {questionPreview && (
-            <div className='text-muted-foreground mt-1 line-clamp-2 text-sm'>
-              <RichTextRenderer editorState={questionPreview} />
-            </div>
-          )}
-        </div>
-
-        {/* Actions */}
-        {canEdit && (
-          <div className='flex gap-1'>
-            <IconNavLink
-              to={`${basePath}/${block.id}/edit`}
-              icon={Edit}
-              className='border-border/20 rounded border p-1.5'
-            />
-            <IconNavLink
-              to={`${basePath}/${block.id}/delete`}
-              icon={Trash2}
-              className='text-danger border-border/20 rounded border p-1.5'
-            />
-          </div>
-        )}
-      </div>
-    </Reorder.Item>
-  );
-}
-
 // ─── Main Component ──────────────────────────────────────────
 export default function BlocksIndex({ params, loaderData }: Route.ComponentProps) {
   const { blocks, canEdit } = loaderData;
   const fetcher = useFetcher();
+  const navigate = useNavigate();
 
-  const [reorderedBlocks, setReorderedBlocks] = useState<BlockRow[]>(blocks);
+  const { setMode } = useStore();
+
+  useEffect(() => {
+    setMode('preview');
+  }, [setMode]);
+
+  const blocksPath = `/${params.organizationId}/live-sessions/${params.sessionId}/blocks`;
+
+  const navigateTo = (path: string) => () => navigate(path);
+
+  const [reorderedBlocks, setReorderedBlocks] = useState<LiveSessionBlock[]>(blocks);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   useEffect(() => {
     setReorderedBlocks(blocks);
@@ -184,9 +100,7 @@ export default function BlocksIndex({ params, loaderData }: Route.ComponentProps
     setIsSubmitting(fetcher.state === 'submitting');
   }, [fetcher.state]);
 
-  const blocksPath = `/${params.organizationId}/live-sessions/${params.sessionId}/blocks`;
-
-  const handleReorder = (updated: BlockRow[]) => {
+  const handleReorder = (updated: LiveSessionBlock[]) => {
     if (!canEdit) return;
 
     setReorderedBlocks(updated);
@@ -205,42 +119,51 @@ export default function BlocksIndex({ params, loaderData }: Route.ComponentProps
 
   return (
     <>
-      <div className='space-y-6'>
-        <div className='flex items-center justify-end'>
-          {canEdit && (
-            <IconNavLink
-              to={`${blocksPath}/all-session-blocks`}
-              icon={Plus}
-              className='rounded-lg border p-2'
-            />
-          )}
-        </div>
-
+      <div className='mx-auto flex max-w-2xl flex-col pl-4 md:px-0'>
         {reorderedBlocks.length > 0 ? (
           <Reorder.Group
             axis='y'
             values={reorderedBlocks}
             onReorder={handleReorder}
-            layoutScroll
-            className='space-y-3 select-none'
+            className='flex w-full flex-col space-y-8 py-10'
           >
-            {reorderedBlocks.map((block, index) => (
-              <BlockCard
-                key={block.id}
-                block={block}
-                index={index}
-                canEdit={canEdit}
-                loading={isSubmitting}
-                organizationId={params.organizationId}
-                sessionId={params.sessionId}
-              />
-            ))}
+            {reorderedBlocks.map((block, index) => {
+              const blockIdPath = `${blocksPath}/${block.id}`;
+              const isLastBlock = index === reorderedBlocks.length - 1;
+
+              return (
+                <LiveSessionBlockWrapper
+                  key={block.id}
+                  block={block}
+                  loading={isSubmitting}
+                  onEdit={navigateTo(`${blockIdPath}/edit`)}
+                  onDelete={navigateTo(`${blockIdPath}/delete`)}
+                  canEdit={canEdit}
+                  isDragging={isDragging}
+                  onMinimize={() => setIsDragging(true)}
+                  onExpand={() => setIsDragging(false)}
+                >
+                  <ClientOnly fallback={<Spinner />}>
+                    {() => (
+                      <Suspense fallback={<Spinner />}>
+                        <ViewLiveSessionPluginRenderer block={block} isLastBlock={isLastBlock} />
+                      </Suspense>
+                    )}
+                  </ClientOnly>
+                </LiveSessionBlockWrapper>
+              );
+            })}
           </Reorder.Group>
         ) : (
-          <div>
-            <NotFoundCard message='No blocks yet. Add your first live block to get started.' />
-          </div>
+          <NotFoundCard message='No blocks yet. Add your first live block to get started.' />
         )}
+
+        {canEdit ? (
+          <PluginButton
+            tooltipTitle='Add a live session block'
+            onClick={navigateTo(`${blocksPath}/all-session-blocks`)}
+          />
+        ) : null}
       </div>
 
       <Outlet />
