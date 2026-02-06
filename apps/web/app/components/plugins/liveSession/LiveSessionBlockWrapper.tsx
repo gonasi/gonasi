@@ -1,5 +1,5 @@
 import { motion, Reorder, useDragControls, useMotionValue } from 'framer-motion';
-import { GripVerticalIcon, Pencil, Trash } from 'lucide-react';
+import { GripVerticalIcon, Pencil, Trash, Timer } from 'lucide-react';
 
 import { ActionDropdown } from '~/components/action-dropdown';
 import { Badge } from '~/components/ui/badge';
@@ -74,11 +74,9 @@ export default function LiveSessionBlockWrapper({
         <div className='flex w-full items-center justify-between'>
           <div className='ml-4 flex items-center gap-2'>
             <span className='text-muted-foreground text-sm'>{title}</span>
-            <Badge className={STATUS_COLORS[block.status] ?? STATUS_COLORS.pending}>
-              {block.status}
-            </Badge>
             <Badge variant='outline' className='text-xs'>
-              Weight: {block.weight}
+              <Timer />
+              {block.weight}
             </Badge>
           </div>
 

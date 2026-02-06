@@ -4,6 +4,7 @@ import { LiveSessionTrueOrFalseSchema } from '@gonasi/schemas/liveSessions';
 import { EMPTY_LEXICAL_STATE } from '@gonasi/schemas/plugins';
 
 import { createLiveSessionPlugin } from '../core/createLiveSessionPlugin';
+import { LiveTrueOrFalseView } from '../LiveSessionViews';
 
 import { LayoutStyleField } from '~/components/plugins/common/settings/LayoutStyleField';
 import { RandomizationModeField } from '~/components/plugins/common/settings/RandomizationModeField';
@@ -57,4 +58,6 @@ export const LiveSessionTrueOrFalsePlugin = createLiveSessionPlugin({
       </>
     );
   },
+
+  ViewComponent: LiveTrueOrFalseView,
 });

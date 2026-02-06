@@ -5,4 +5,8 @@ import './TrueOrFalse';
 export { liveSessionPluginRegistry } from './core/LiveSessionPluginRegistry';
 export { createLiveSessionPlugin } from './core/createLiveSessionPlugin';
 export { LiveSessionBlockFormWrapper } from './core/LiveSessionBlockFormWrapper';
-export type { LiveSessionPluginDefinition, LiveSessionPluginMetadata } from './core/types';
+export type {
+  LiveSessionPluginDefinition,
+  LiveSessionPluginMetadata,
+  LiveSessionViewComponentProps,
+} from './core/types';

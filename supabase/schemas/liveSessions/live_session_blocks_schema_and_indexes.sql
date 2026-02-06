@@ -19,7 +19,7 @@ create table "public"."live_session_blocks" (
   -- Block Configuration
   "position" integer not null default 0,
   "weight" numeric not null default 1.0, -- Points weight for scoring
-  "time_limit" integer, -- Override session default, in seconds
+  "time_limit" integer not null default 10,
 
   -- Block State
   "status" live_session_block_status not null default 'pending',

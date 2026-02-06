@@ -25,7 +25,7 @@ export type LiveSessionBlock = Awaited<ReturnType<typeof fetchLiveSessionBlocks>
 
 export function meta() {
   return [
-    { title: 'Session Blocks • Gonasi' },
+    { title: 'Live Session Blocks • Gonasi' },
     {
       name: 'description',
       content: 'Manage question blocks for your live session.',

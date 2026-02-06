@@ -1,7 +1,9 @@
-import type { ReactElement } from 'react';
+import type { ComponentType, ReactElement } from 'react';
 import type { UseFormReturn } from 'react-hook-form';
 import type { LucideIcon } from 'lucide-react';
 import type { ZodSchema } from 'zod';
+
+import type { LiveSessionBlock } from '~/routes/organizations/liveSessions/session/blocks/live-sessions-blocks-index';
 
 export interface LiveSessionPluginMetadata {
   name: string;
@@ -11,6 +13,16 @@ export interface LiveSessionPluginMetadata {
 
 export interface LiveSessionFieldsRenderProps {
   methods: UseFormReturn<any>;
+}
+
+/**
+ * Props for live session view components
+ * Different from regular course block views - tailored for real-time interaction
+ */
+export interface LiveSessionViewComponentProps {
+  block: LiveSessionBlock;
+  isLastBlock: boolean;
+  // Future: add instructor controls, real-time stats, etc.
 }
 
 /**
@@ -34,4 +46,6 @@ export interface LiveSessionPluginDefinition {
   renderFields: (props: LiveSessionFieldsRenderProps) => ReactElement;
   /** Renders plugin-specific settings fields inside the shared settings popover. */
   renderSettings?: (props: LiveSessionFieldsRenderProps) => ReactElement;
+  /** View component for rendering the block in a live session (optional) */
+  ViewComponent?: ComponentType<LiveSessionViewComponentProps>;
 }

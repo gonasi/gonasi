@@ -45,6 +45,23 @@ class LiveSessionPluginRegistry {
   getAllPlugins(): LiveSessionPluginDefinition[] {
     return Array.from(this.plugins.values());
   }
+
+  /**
+   * Get the view component for a plugin type
+   * Returns undefined if no view component is registered
+   */
+  getView(pluginType: string) {
+    const plugin = this.plugins.get(pluginType);
+    return plugin?.ViewComponent;
+  }
+
+  /**
+   * Check if a plugin has a view component registered
+   */
+  hasView(pluginType: string): boolean {
+    const plugin = this.plugins.get(pluginType);
+    return !!plugin?.ViewComponent;
+  }
 }
 
 export const liveSessionPluginRegistry = LiveSessionPluginRegistry.getInstance();
