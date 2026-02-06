@@ -3,6 +3,7 @@ import type { UseFormReturn } from 'react-hook-form';
 import type { LucideIcon } from 'lucide-react';
 import type { ZodSchema } from 'zod';
 
+import type { LivePluginBlockId } from '~/routes/organizations/liveSessions/constants/live-plugin-blocks';
 import type { LiveSessionBlock } from '~/routes/organizations/liveSessions/session/blocks/live-sessions-blocks-index';
 
 export interface LiveSessionPluginMetadata {
@@ -33,13 +34,13 @@ export interface LiveSessionViewComponentProps {
  * to what live session block editors actually need.
  */
 export interface LiveSessionPluginDefinition {
-  pluginType: string;
+  pluginType: LivePluginBlockId;
   metadata: LiveSessionPluginMetadata;
   schema: ZodSchema;
   defaults: {
     content: Record<string, unknown>;
     settings: Record<string, unknown>;
-    weight: number;
+    difficulty: 'easy' | 'medium' | 'hard';
     time_limit: number;
   };
   /** Renders the plugin-specific content fields inside the form body. */

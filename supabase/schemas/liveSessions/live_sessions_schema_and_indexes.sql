@@ -33,7 +33,6 @@ create table "public"."live_sessions" (
   "enable_reactions" boolean not null default true,
 
   -- Timing Settings
-  "time_limit_per_question" integer, -- seconds, null = no limit
   "scheduled_start_time" timestamp with time zone,
   "actual_start_time" timestamp with time zone,
   "ended_at" timestamp with time zone,

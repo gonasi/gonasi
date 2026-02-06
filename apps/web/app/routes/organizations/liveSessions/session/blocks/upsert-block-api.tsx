@@ -1,14 +1,17 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { getValidatedFormData } from 'remix-hook-form';
 import { dataWithError, redirectWithSuccess } from 'remix-toast';
+import type z from 'zod';
 
 import { upsertLiveSessionBlock } from '@gonasi/database/liveSessions';
-import { LiveSessionBlockSchema } from '@gonasi/schemas/liveSessions';
+import { LiveSessionBuilderSchema } from '@gonasi/schemas/liveSessions';
 
 import type { Route } from './+types/upsert-block-api';
 
 import { createClient } from '~/lib/supabase/supabase.server';
 import { checkHoneypot } from '~/utils/honeypot.server';
+
+type FormData = z.infer<typeof LiveSessionBuilderSchema>;
 
 export async function action({ request, params }: Route.ActionArgs) {
   const formData = await request.formData();
@@ -20,9 +23,11 @@ export async function action({ request, params }: Route.ActionArgs) {
     errors,
     data,
     receivedValues: defaultValues,
-  } = await getValidatedFormData(formData, zodResolver(LiveSessionBlockSchema));
+  } = await getValidatedFormData<FormData>(formData, zodResolver(LiveSessionBuilderSchema));
 
   if (errors) {
+    console.error('[UpsertLiveBlock] Validation errors:', JSON.stringify(errors, null, 2));
+    console.error('[UpsertLiveBlock] Received values:', JSON.stringify(defaultValues, null, 2));
     return { errors, defaultValues };
   }
 
@@ -38,8 +43,8 @@ export async function action({ request, params }: Route.ActionArgs) {
       plugin_type: data.plugin_type,
       content: data.content,
       settings: data.settings,
-      weight: data.weight,
-      time_limit: data.time_limit === 0 ? null : data.time_limit,
+      difficulty: data.difficulty,
+      time_limit: data.time_limit,
     },
   });
 

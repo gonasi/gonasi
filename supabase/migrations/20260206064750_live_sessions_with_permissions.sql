@@ -2,6 +2,8 @@ create type "public"."live_participant_status" as enum ('joined', 'left', 'kicke
 
 create type "public"."live_response_status" as enum ('submitted', 'correct', 'incorrect', 'partial');
 
+create type "public"."live_session_block_difficulty" as enum ('easy', 'medium', 'hard');
+
 create type "public"."live_session_block_status" as enum ('pending', 'active', 'closed', 'skipped');
 
 create type "public"."live_session_status" as enum ('draft', 'waiting', 'active', 'paused', 'ended');
@@ -44,8 +46,8 @@ alter table "public"."live_session_analytics" enable row level security;
     "content" jsonb not null default '{}'::jsonb,
     "settings" jsonb not null default '{}'::jsonb,
     "position" integer not null default 0,
-    "weight" numeric not null default 1.0,
-    "time_limit" integer,
+    "time_limit" integer not null default 10,
+    "difficulty" public.live_session_block_difficulty not null default 'medium'::public.live_session_block_difficulty,
     "status" public.live_session_block_status not null default 'pending'::public.live_session_block_status,
     "activated_at" timestamp with time zone,
     "closed_at" timestamp with time zone,
@@ -167,7 +169,6 @@ alter table "public"."live_session_responses" enable row level security;
     "show_leaderboard" boolean not null default true,
     "enable_chat" boolean not null default false,
     "enable_reactions" boolean not null default true,
-    "time_limit_per_question" integer,
     "scheduled_start_time" timestamp with time zone,
     "actual_start_time" timestamp with time zone,
     "ended_at" timestamp with time zone,

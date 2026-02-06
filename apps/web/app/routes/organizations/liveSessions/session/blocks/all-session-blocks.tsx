@@ -1,19 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, Outlet } from 'react-router';
 import { motion } from 'framer-motion';
-import {
-  ArrowLeftRight,
-  CircleDot,
-  CircleX,
-  MoveHorizontal,
-  PenLine,
-  Search,
-  SquareCheck,
-  ToggleRight,
-} from 'lucide-react';
+import { CircleX, Radio, Search } from 'lucide-react';
 import { redirectWithError } from 'remix-toast';
 
 import type { Route } from './+types/all-session-blocks';
+import { LIVE_PLUGIN_BLOCKS } from '../../constants/live-plugin-blocks';
 
 import { liveSessionPluginRegistry } from '~/components/plugins/liveSession';
 import { Badge } from '~/components/ui/badge';
@@ -42,48 +34,6 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 
   return { canEdit: true };
 }
-
-// Static display metadata for all block types (including coming-soon).
-// `available` is derived at render time from the plugin registry —
-// no manual flag to toggle when a new plugin is implemented.
-const PLUGIN_TYPES = [
-  {
-    id: 'true_or_false',
-    label: 'True or False',
-    description: 'Students decide if a statement is true or false.',
-    icon: ToggleRight,
-  },
-  {
-    id: 'multiple_choice_single',
-    label: 'Multiple Choice',
-    description: 'Pick one correct answer from several options.',
-    icon: CircleDot,
-  },
-  {
-    id: 'multiple_choice_multiple',
-    label: 'Multi-Select',
-    description: 'Select all answers that apply.',
-    icon: SquareCheck,
-  },
-  {
-    id: 'fill_in_blank',
-    label: 'Fill in the Blank',
-    description: 'Complete the sentence or phrase.',
-    icon: PenLine,
-  },
-  {
-    id: 'matching_game',
-    label: 'Matching',
-    description: 'Match items from two columns.',
-    icon: ArrowLeftRight,
-  },
-  {
-    id: 'swipe_categorize',
-    label: 'Swipe & Sort',
-    description: 'Drag items into the correct categories.',
-    icon: MoveHorizontal,
-  },
-];
 
 const MotionLink = motion(Link);
 
@@ -115,7 +65,7 @@ export default function AllSessionBlocks({ params }: Route.ComponentProps) {
   }, [searchValue]);
 
   const filteredPlugins = useMemo(() => {
-    const plugins = PLUGIN_TYPES.map((plugin) => ({
+    const plugins = LIVE_PLUGIN_BLOCKS.map((plugin) => ({
       ...plugin,
       available: liveSessionPluginRegistry.has(plugin.id),
     }));
@@ -137,8 +87,12 @@ export default function AllSessionBlocks({ params }: Route.ComponentProps) {
   return (
     <>
       <Modal open>
-        <Modal.Content size='md'>
-          <Modal.Header title='Select Block Plugin' closeRoute={blocksPath} />
+        <Modal.Content size='lg'>
+          <Modal.Header
+            title='Select Live Block Plugin'
+            closeRoute={blocksPath}
+            leadingIcon={<Radio />}
+          />
           <Modal.Body>
             <motion.div
               className='bg-background sticky top-0 z-10'

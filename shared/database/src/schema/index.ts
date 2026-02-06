@@ -1824,6 +1824,7 @@ export type Database = {
           correct_responses: number
           created_at: string
           created_by: string
+          difficulty: Database["public"]["Enums"]["live_session_block_difficulty"]
           id: string
           live_session_id: string
           organization_id: string
@@ -1831,11 +1832,10 @@ export type Database = {
           position: number
           settings: Json
           status: Database["public"]["Enums"]["live_session_block_status"]
-          time_limit: number | null
+          time_limit: number
           total_responses: number
           updated_at: string
           updated_by: string | null
-          weight: number
         }
         Insert: {
           activated_at?: string | null
@@ -1845,6 +1845,7 @@ export type Database = {
           correct_responses?: number
           created_at?: string
           created_by: string
+          difficulty?: Database["public"]["Enums"]["live_session_block_difficulty"]
           id?: string
           live_session_id: string
           organization_id: string
@@ -1852,11 +1853,10 @@ export type Database = {
           position?: number
           settings?: Json
           status?: Database["public"]["Enums"]["live_session_block_status"]
-          time_limit?: number | null
+          time_limit?: number
           total_responses?: number
           updated_at?: string
           updated_by?: string | null
-          weight?: number
         }
         Update: {
           activated_at?: string | null
@@ -1866,6 +1866,7 @@ export type Database = {
           correct_responses?: number
           created_at?: string
           created_by?: string
+          difficulty?: Database["public"]["Enums"]["live_session_block_difficulty"]
           id?: string
           live_session_id?: string
           organization_id?: string
@@ -1873,11 +1874,10 @@ export type Database = {
           position?: number
           settings?: Json
           status?: Database["public"]["Enums"]["live_session_block_status"]
-          time_limit?: number | null
+          time_limit?: number
           total_responses?: number
           updated_at?: string
           updated_by?: string | null
-          weight?: number
         }
         Relationships: [
           {
@@ -2279,7 +2279,6 @@ export type Database = {
           session_key: string | null
           show_leaderboard: boolean
           status: Database["public"]["Enums"]["live_session_status"]
-          time_limit_per_question: number | null
           updated_at: string
           updated_by: string | null
           visibility: Database["public"]["Enums"]["live_session_visibility"]
@@ -2306,7 +2305,6 @@ export type Database = {
           session_key?: string | null
           show_leaderboard?: boolean
           status?: Database["public"]["Enums"]["live_session_status"]
-          time_limit_per_question?: number | null
           updated_at?: string
           updated_by?: string | null
           visibility?: Database["public"]["Enums"]["live_session_visibility"]
@@ -2333,7 +2331,6 @@ export type Database = {
           session_key?: string | null
           show_leaderboard?: boolean
           status?: Database["public"]["Enums"]["live_session_status"]
-          time_limit_per_question?: number | null
           updated_at?: string
           updated_by?: string | null
           visibility?: Database["public"]["Enums"]["live_session_visibility"]
@@ -4302,6 +4299,7 @@ export type Database = {
         | "tax_remittance"
       live_participant_status: "joined" | "left" | "kicked"
       live_response_status: "submitted" | "correct" | "incorrect" | "partial"
+      live_session_block_difficulty: "easy" | "medium" | "hard"
       live_session_block_status: "pending" | "active" | "closed" | "skipped"
       live_session_status: "draft" | "waiting" | "active" | "paused" | "ended"
       live_session_visibility: "public" | "unlisted" | "private"
@@ -4584,6 +4582,7 @@ export const Constants = {
       ],
       live_participant_status: ["joined", "left", "kicked"],
       live_response_status: ["submitted", "correct", "incorrect", "partial"],
+      live_session_block_difficulty: ["easy", "medium", "hard"],
       live_session_block_status: ["pending", "active", "closed", "skipped"],
       live_session_status: ["draft", "waiting", "active", "paused", "ended"],
       live_session_visibility: ["public", "unlisted", "private"],

@@ -9,8 +9,8 @@ interface UpsertLiveSessionBlockPayload {
   plugin_type: string;
   content: Record<string, unknown>;
   settings: Record<string, unknown>;
-  weight: number;
-  time_limit: number | null;
+  difficulty: 'easy' | 'medium' | 'hard';
+  time_limit: number;
 }
 
 interface UpsertLiveSessionBlockArgs {
@@ -18,7 +18,10 @@ interface UpsertLiveSessionBlockArgs {
   payload: UpsertLiveSessionBlockPayload;
 }
 
-export async function upsertLiveSessionBlock({ supabase, payload }: UpsertLiveSessionBlockArgs): Promise<ApiResponse> {
+export async function upsertLiveSessionBlock({
+  supabase,
+  payload,
+}: UpsertLiveSessionBlockArgs): Promise<ApiResponse> {
   const userId = await getUserId(supabase);
   const isCreate = !payload.id;
 
@@ -29,7 +32,7 @@ export async function upsertLiveSessionBlock({ supabase, payload }: UpsertLiveSe
       plugin_type: payload.plugin_type,
       content: payload.content,
       settings: payload.settings,
-      weight: payload.weight,
+      difficulty: payload.difficulty,
       time_limit: payload.time_limit,
     };
 
@@ -53,7 +56,10 @@ export async function upsertLiveSessionBlock({ supabase, payload }: UpsertLiveSe
     } else {
       upsertData.updated_by = userId;
 
-      ({ error } = await supabase.from('live_session_blocks').update(upsertData as any).eq('id', payload.id));
+      ({ error } = await supabase
+        .from('live_session_blocks')
+        .update(upsertData as any)
+        .eq('id', payload.id ?? ''));
     }
 
     if (error) {

@@ -1,8 +1,10 @@
 import { z } from 'zod';
 
 import {
+  AudioPlayerInteractionSchema,
   FillInTheBlankStateInteractionSchema,
   GuidedImageHotspotsInteractionSchema,
+  ImageFocusQuizInteractionSchema,
   MatchingGameInteractionSchema,
   MultipleChoiceMultipleAnswersInteractionSchema,
   MultipleChoiceSingleAnswerInteractionSchema,
@@ -10,15 +12,15 @@ import {
   StepByStepRevealInteractionSchema,
   SwipeCategorizeInteractionSchema,
   TrueOrFalseStateInteractionSchema,
-  AudioPlayerInteractionSchema,
   VideoPlayerInteractionSchema,
-  YoutubeEmbedInteractionSchema,
   VimeoEmbedInteractionSchema,
-  ImageFocusQuizInteractionSchema,
+  YoutubeEmbedInteractionSchema,
 } from './interactions';
 import {
+  AudioPlayerSchema,
   FillInTheBlankSchema,
   GuidedImageHotspotSchema,
+  ImageFocusQuizSchema,
   MatchingGameSchema,
   MultipleChoiceMultipleAnswersSchema,
   MultipleChoiceSingleAnswerSchema,
@@ -26,11 +28,9 @@ import {
   StepByStepRevealSchema,
   SwipeCategorizeSchema,
   TrueOrFalseSchema,
-  AudioPlayerSchema,
   VideoPlayerSchema,
-  YoutubeEmbedSchema,
   VimeoEmbedSchema,
-  ImageFocusQuizSchema,
+  YoutubeEmbedSchema,
 } from './schemas';
 
 // Type that represents all possible plugin identifiers

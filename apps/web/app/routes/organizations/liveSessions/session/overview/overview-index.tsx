@@ -73,7 +73,6 @@ export default function OverviewIndex({ params, loaderData }: Route.ComponentPro
     show_leaderboard,
     enable_chat,
     enable_reactions,
-    time_limit_per_question,
     scheduled_start_time,
     actual_start_time,
     ended_at,
@@ -221,12 +220,6 @@ export default function OverviewIndex({ params, loaderData }: Route.ComponentPro
               <div>
                 <p className='text-muted-foreground text-xs'>Max Participants</p>
                 <p className='text-sm'>{max_participants ?? 'Unlimited'}</p>
-              </div>
-              <div>
-                <p className='text-muted-foreground text-xs'>Time Limit</p>
-                <p className='text-sm'>
-                  {time_limit_per_question ? `${time_limit_per_question}s` : 'No limit'}
-                </p>
               </div>
               <div>
                 <p className='text-muted-foreground text-xs'>Late Join</p>

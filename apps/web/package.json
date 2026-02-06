@@ -19,7 +19,7 @@
     "@forge42/seo-tools": "^1.4.5",
     "@gonasi/utils": "*",
     "@hookform/error-message": "^2.0.1",
-    "@hookform/resolvers": "^5.0.1",
+    "@hookform/resolvers": "^3.3.4",
     "@lexical/react": "^0.33.1",
     "@mjackson/form-data-parser": "0.7.0",
     "@oslojs/crypto": "1.0.1",

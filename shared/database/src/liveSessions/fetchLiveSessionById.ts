@@ -29,7 +29,6 @@ export async function fetchLiveSessionById({ supabase, sessionId }: FetchLiveSes
       show_leaderboard,
       enable_chat,
       enable_reactions,
-      time_limit_per_question,
       scheduled_start_time,
       actual_start_time,
       ended_at,

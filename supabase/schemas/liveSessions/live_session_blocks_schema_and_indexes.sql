@@ -4,6 +4,10 @@
 -- Questions/content blocks used in live sessions
 -- Reuses existing plugin types from lesson_blocks
 
+-- create the enum type for difficulty
+create type live_session_block_difficulty as enum ('easy', 'medium', 'hard');
+
+
 create table "public"."live_session_blocks" (
   "id" uuid not null default extensions.uuid_generate_v4(),
   "live_session_id" uuid not null,
@@ -18,8 +22,8 @@ create table "public"."live_session_blocks" (
 
   -- Block Configuration
   "position" integer not null default 0,
-  "weight" numeric not null default 1.0, -- Points weight for scoring
   "time_limit" integer not null default 10,
+  "difficulty" live_session_block_difficulty not null default 'medium', -- easy | medium | hard
 
   -- Block State
   "status" live_session_block_status not null default 'pending',

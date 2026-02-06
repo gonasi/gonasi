@@ -39,7 +39,6 @@ export const createLiveSession = async ({
         show_leaderboard: data.showLeaderboard,
         enable_chat: data.enableChat,
         enable_reactions: data.enableReactions,
-        time_limit_per_question: data.timeLimitPerQuestion || null,
       })
       .select('id, session_code')
       .single();

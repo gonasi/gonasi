@@ -44,7 +44,6 @@ export default function EditSettings({ params, loaderData }: Route.ComponentProp
   // - show_leaderboard (checkbox)
   // - enable_chat (checkbox)
   // - enable_reactions (checkbox)
-  // - time_limit_per_question
 
   return (
     <Modal open>

@@ -1,5 +1,5 @@
 import { motion, Reorder, useDragControls, useMotionValue } from 'framer-motion';
-import { GripVerticalIcon, Pencil, Trash, Timer } from 'lucide-react';
+import { Gauge, GripVerticalIcon, Pencil, Timer, Trash } from 'lucide-react';
 
 import { ActionDropdown } from '~/components/action-dropdown';
 import { Badge } from '~/components/ui/badge';
@@ -14,12 +14,16 @@ function toTitleCaseFromUnderscore(input: string): string {
     .join(' ');
 }
 
-const STATUS_COLORS: Record<string, string> = {
-  pending: 'bg-muted text-muted-foreground',
-  active: 'bg-green-100 text-green-800',
-  closed: 'bg-red-100 text-red-800',
-  skipped: 'bg-yellow-100 text-yellow-800',
-};
+function getDifficultyStyles(difficulty: 'easy' | 'medium' | 'hard') {
+  switch (difficulty) {
+    case 'easy':
+      return 'bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400';
+    case 'medium':
+      return 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400';
+    case 'hard':
+      return 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400';
+  }
+}
 
 interface LiveSessionBlockWrapperProps {
   children: React.ReactNode;
@@ -76,7 +80,11 @@ export default function LiveSessionBlockWrapper({
             <span className='text-muted-foreground text-sm'>{title}</span>
             <Badge variant='outline' className='text-xs'>
               <Timer />
-              {block.weight}
+              {block.time_limit}
+            </Badge>
+            <Badge className={`text-xs capitalize ${getDifficultyStyles(block.difficulty)}`}>
+              <Gauge />
+              {block.difficulty}
             </Badge>
           </div>
 

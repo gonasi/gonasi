@@ -37,7 +37,7 @@ interface LiveSessionBlockFormWrapperProps {
  * Owns the full Modal shell so it can place the settings popover
  * in the header (same pattern as the course plugin Builder).
  *
- * Common settings (weight, time_limit) live in the popover;
+ * Common settings (time_limit) live in the popover;
  * each plugin appends its own fields via renderSettings().
  * Content fields are rendered in the body via renderFields().
  */
@@ -65,8 +65,8 @@ export function LiveSessionBlockFormWrapper({
           plugin_type: plugin.pluginType,
           content: block.content,
           settings: block.settings,
-          weight: block.weight,
-          time_limit: block.time_limit ?? 0,
+          difficulty: block.difficulty,
+          time_limit: block.time_limit ?? 10,
         }
       : {
           live_session_id: liveSessionId,
@@ -74,7 +74,7 @@ export function LiveSessionBlockFormWrapper({
           plugin_type: plugin.pluginType,
           content: plugin.defaults.content,
           settings: plugin.defaults.settings,
-          weight: plugin.defaults.weight,
+          difficulty: plugin.defaults.difficulty,
           time_limit: plugin.defaults.time_limit,
         },
   });
@@ -82,14 +82,14 @@ export function LiveSessionBlockFormWrapper({
   const isDisabled = isPending || methods.formState.isSubmitting;
 
   const settingsPopover = (
-    <Popover>
+    <Popover modal>
       <PopoverTrigger asChild>
         <Settings
           className='transition-transform duration-200 hover:scale-105 hover:rotate-15 hover:cursor-pointer'
           size={20}
         />
       </PopoverTrigger>
-      <PopoverContent className='w-full max-w-md'>
+      <PopoverContent className='max-h-120 w-80 overflow-y-auto'>
         <div className='grid gap-4'>
           <div className='space-y-2'>
             <h4 className='leading-none font-medium'>Block settings</h4>
@@ -97,19 +97,11 @@ export function LiveSessionBlockFormWrapper({
           </div>
           <div className='grid gap-2'>
             <GoSliderField
-              name='weight'
-              labelProps={{ children: 'Block Weight' }}
-              min={1}
-              max={10}
-              description='How important this block is for scoring.'
-            />
-
-            <GoSliderField
               name='time_limit'
               labelProps={{ children: 'Time Limit (seconds)' }}
-              min={0}
-              max={600}
-              description='0 = use session default'
+              min={5}
+              max={25}
+              description='Set how long players have to answer each question before time runs out'
             />
 
             {plugin.renderSettings?.({ methods })}
@@ -129,7 +121,7 @@ export function LiveSessionBlockFormWrapper({
   return (
     <RemixFormProvider {...methods}>
       <Modal open>
-        <Modal.Content size='lg'>
+        <Modal.Content size='md'>
           <Modal.Header
             title={title}
             closeRoute={modalCloseRoute ?? closeRoute}

@@ -196,20 +196,6 @@ export default function NewSession({ params, loaderData }: Route.ComponentProps)
                   description='Leave empty for unlimited participants (up to 1000).'
                 />
 
-                {/* Time Limit Per Question */}
-                <GoInputField
-                  name='timeLimitPerQuestion'
-                  labelProps={{ children: 'Time Limit Per Question (seconds, optional)' }}
-                  inputProps={{
-                    type: 'number',
-                    placeholder: 'e.g. 30',
-                    min: 5,
-                    max: 600,
-                    disabled: isDisabled,
-                  }}
-                  description='Default time limit for each question. You can override this per block.'
-                />
-
                 {/* Settings Checkboxes */}
                 {/* <div className='space-y-3 rounded-lg border p-4'>
               <h3 className='text-sm font-semibold'>Session Settings</h3>

@@ -1,11 +1,12 @@
 import { ToggleRight } from 'lucide-react';
 
-import { LiveSessionTrueOrFalseSchema } from '@gonasi/schemas/liveSessions';
+import { LiveSessionTrueOrFalseSchema } from '@gonasi/schemas/liveSessions/schemas/liveTrueOrFalse';
 import { EMPTY_LEXICAL_STATE } from '@gonasi/schemas/plugins';
 
 import { createLiveSessionPlugin } from '../core/createLiveSessionPlugin';
 import { LiveTrueOrFalseView } from '../LiveSessionViews';
 
+import { DifficultyField } from '~/components/plugins/common/settings/DifficultyField';
 import { LayoutStyleField } from '~/components/plugins/common/settings/LayoutStyleField';
 import { RandomizationModeField } from '~/components/plugins/common/settings/RandomizationModeField';
 import { GoRadioGroupField, GoRichTextInputField } from '~/components/ui/forms/elements';
@@ -24,8 +25,8 @@ export const LiveSessionTrueOrFalsePlugin = createLiveSessionPlugin({
   defaults: {
     content: { questionState: EMPTY_LEXICAL_STATE, correctAnswer: 'true' },
     settings: { layoutStyle: 'double', randomization: 'shuffle' },
-    weight: 2,
-    time_limit: 0,
+    difficulty: 'medium',
+    time_limit: 10,
   },
 
   renderFields: () => (
@@ -50,11 +51,13 @@ export const LiveSessionTrueOrFalsePlugin = createLiveSessionPlugin({
   renderSettings: ({ methods }) => {
     const layoutStyle = methods.getValues('settings.layoutStyle');
     const randomization = methods.getValues('settings.randomization');
+    const difficulty = methods.getValues('difficulty');
 
     return (
       <>
         <LayoutStyleField name='settings.layoutStyle' watchValue={layoutStyle} />
         <RandomizationModeField name='settings.randomization' watchValue={randomization} />
+        <DifficultyField name='difficulty' watchValue={difficulty} />
       </>
     );
   },

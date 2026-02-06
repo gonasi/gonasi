@@ -1,10 +1,9 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { data, Outlet, useFetcher, useNavigate } from 'react-router';
 import { Reorder } from 'framer-motion';
-import { Plus } from 'lucide-react';
 import { dataWithError } from 'remix-toast';
 import { ClientOnly } from 'remix-utils/client-only';
-import { PluginButton } from '~/components/ui/button';
+
 import { fetchLiveSessionBlocks, reorderLiveSessionBlocks } from '@gonasi/database/liveSessions';
 import { BlocksPositionUpdateArraySchema } from '@gonasi/schemas/plugins';
 
@@ -13,7 +12,7 @@ import type { Route } from './+types/live-sessions-blocks-index';
 import { NotFoundCard } from '~/components/cards';
 import { Spinner } from '~/components/loaders';
 import LiveSessionBlockWrapper from '~/components/plugins/liveSession/LiveSessionBlockWrapper';
-import { IconNavLink } from '~/components/ui/button';
+import { PluginButton } from '~/components/ui/button';
 import { createClient } from '~/lib/supabase/supabase.server';
 import { useStore } from '~/store';
 
@@ -119,8 +118,8 @@ export default function BlocksIndex({ params, loaderData }: Route.ComponentProps
 
   return (
     <>
-      <div className='mx-auto flex max-w-2xl flex-col pl-4 md:px-0'>
-        {reorderedBlocks.length > 0 ? (
+      {reorderedBlocks.length > 0 ? (
+        <div className='mx-auto flex max-w-2xl flex-col pl-4 md:px-0'>
           <Reorder.Group
             axis='y'
             values={reorderedBlocks}
@@ -154,17 +153,19 @@ export default function BlocksIndex({ params, loaderData }: Route.ComponentProps
               );
             })}
           </Reorder.Group>
-        ) : (
+        </div>
+      ) : (
+        <div className='max-w-2xl'>
           <NotFoundCard message='No blocks yet. Add your first live block to get started.' />
-        )}
+        </div>
+      )}
 
-        {canEdit ? (
-          <PluginButton
-            tooltipTitle='Add a live session block'
-            onClick={navigateTo(`${blocksPath}/all-session-blocks`)}
-          />
-        ) : null}
-      </div>
+      {canEdit ? (
+        <PluginButton
+          tooltipTitle='Add a live session block'
+          onClick={navigateTo(`${blocksPath}/all-session-blocks`)}
+        />
+      ) : null}
 
       <Outlet />
     </>
