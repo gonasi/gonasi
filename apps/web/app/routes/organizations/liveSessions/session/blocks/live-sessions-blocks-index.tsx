@@ -4,7 +4,11 @@ import { Reorder } from 'framer-motion';
 import { dataWithError, redirectWithError } from 'remix-toast';
 import { ClientOnly } from 'remix-utils/client-only';
 
-import { fetchLiveSessionBlocks, reorderLiveSessionBlocks } from '@gonasi/database/liveSessions';
+import {
+  fetchLiveSessionBlocks,
+  type LiveSessionBlock,
+  reorderLiveSessionBlocks,
+} from '@gonasi/database/liveSessions';
 import { BlocksPositionUpdateArraySchema } from '@gonasi/schemas/plugins';
 
 import type { Route } from './+types/live-sessions-blocks-index';
@@ -19,10 +23,6 @@ import { useStore } from '~/store';
 const ViewLiveSessionPluginRenderer = lazy(
   () => import('~/components/plugins/liveSession/ViewLiveSessionPluginRenderer'),
 );
-
-export type LiveSessionBlock = NonNullable<NonNullable<LiveSessionBlockType>>[number];
-
-export type LiveSessionBlockType = Exclude<Awaited<ReturnType<typeof loader>>, Response>['blocks'];
 
 export function meta() {
   return [

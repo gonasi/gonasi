@@ -1,10 +1,10 @@
 import type { JSX } from 'react';
 
+import type { LiveSessionBlock } from '@gonasi/database/liveSessions';
 import type { PluginTypeId } from '@gonasi/schemas/plugins';
 
 import { liveSessionPluginRegistry } from '~/components/plugins/liveSession';
 import { DefaultLiveSessionView } from '~/components/plugins/liveSession/DefaultLiveSessionView';
-import type { LiveSessionBlock } from '~/routes/organizations/liveSessions/session/blocks/live-sessions-blocks-index';
 
 interface ViewLiveSessionPluginRendererProps {
   block: LiveSessionBlock;

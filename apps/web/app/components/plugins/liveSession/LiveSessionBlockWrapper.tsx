@@ -1,11 +1,12 @@
 import { motion, Reorder, useDragControls, useMotionValue } from 'framer-motion';
 import { Gauge, GripVerticalIcon, Pencil, Timer, Trash } from 'lucide-react';
 
+import type { LiveSessionBlock } from '@gonasi/database/liveSessions';
+
 import { ActionDropdown } from '~/components/action-dropdown';
 import { Badge } from '~/components/ui/badge';
 import { ReorderIconTooltip } from '~/components/ui/tooltip/ReorderIconToolTip';
 import { useRaisedShadow } from '~/hooks/useRaisedShadow';
-import type { LiveSessionBlock } from '~/routes/organizations/liveSessions/session/blocks/live-sessions-blocks-index';
 
 function toTitleCaseFromUnderscore(input: string): string {
   return input

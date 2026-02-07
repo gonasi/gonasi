@@ -3,8 +3,9 @@ import type { UseFormReturn } from 'react-hook-form';
 import type { LucideIcon } from 'lucide-react';
 import type { ZodSchema } from 'zod';
 
+import type { LiveSessionBlock } from '@gonasi/database/liveSessions';
+
 import type { LiveSessionPluginBlockId } from '~/routes/organizations/liveSessions/constants/live-plugin-blocks';
-import type { LiveSessionBlock } from '~/routes/organizations/liveSessions/session/blocks/live-sessions-blocks-index';
 
 export interface LiveSessionPluginMetadata {
   name: string;
