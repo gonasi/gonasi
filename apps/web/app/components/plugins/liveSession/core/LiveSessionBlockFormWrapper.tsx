@@ -81,6 +81,8 @@ export function LiveSessionBlockFormWrapper({
 
   const isDisabled = isPending || methods.formState.isSubmitting;
 
+  console.log('Errors: ', methods.formState.errors);
+
   const settingsPopover = (
     <Popover modal>
       <PopoverTrigger asChild>
@@ -100,7 +102,7 @@ export function LiveSessionBlockFormWrapper({
               name='time_limit'
               labelProps={{ children: 'Time Limit (seconds)' }}
               min={5}
-              max={25}
+              max={30}
               description='Set how long players have to answer each question before time runs out'
             />
 

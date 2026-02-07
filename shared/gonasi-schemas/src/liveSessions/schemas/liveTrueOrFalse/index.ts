@@ -24,7 +24,7 @@ export const LiveSessionTrueOrFalseSchema = z.object({
   id: z.string().optional(),
   organization_id: z.string({ required_error: 'Organization Id is required.' }),
   live_session_id: z.string().uuid(),
-  plugin_type: z.literal('true_or_false'),
+  plugin_type: z.literal('live_session_true_or_false'),
   content: LiveSessionTrueOrFalseContentSchema,
   settings: LiveSessionTrueOrFalseSettingsSchema,
   difficulty: z.enum(['easy', 'medium', 'hard']).default('easy'),

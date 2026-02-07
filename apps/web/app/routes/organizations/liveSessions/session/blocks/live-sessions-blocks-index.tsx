@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { data, Outlet, useFetcher, useNavigate } from 'react-router';
 import { Reorder } from 'framer-motion';
-import { dataWithError } from 'remix-toast';
+import { dataWithError, redirectWithError } from 'remix-toast';
 import { ClientOnly } from 'remix-utils/client-only';
 
 import { fetchLiveSessionBlocks, reorderLiveSessionBlocks } from '@gonasi/database/liveSessions';
@@ -20,7 +20,9 @@ const ViewLiveSessionPluginRenderer = lazy(
   () => import('~/components/plugins/liveSession/ViewLiveSessionPluginRenderer'),
 );
 
-export type LiveSessionBlock = Awaited<ReturnType<typeof fetchLiveSessionBlocks>>[number];
+export type LiveSessionBlock = NonNullable<NonNullable<LiveSessionBlockType>>[number];
+
+export type LiveSessionBlockType = Exclude<Awaited<ReturnType<typeof loader>>, Response>['blocks'];
 
 export function meta() {
   return [
@@ -37,14 +39,22 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   const sessionId = params.sessionId ?? '';
 
   const [blocks, canEditResult] = await Promise.all([
-    fetchLiveSessionBlocks({ supabase, liveSessionId: sessionId }),
+    fetchLiveSessionBlocks({
+      supabase,
+      liveSessionId: sessionId,
+      organizationId: params.organizationId,
+    }),
     supabase.rpc('can_user_edit_live_session', { arg_session_id: sessionId }),
   ]);
 
-  return {
-    blocks,
-    canEdit: canEditResult.data ?? false,
-  };
+  if (!blocks.success) {
+    return redirectWithError(
+      `/${params.organizationId}/live-sessions/${sessionId}/blocks`,
+      'Unable to load live session blocks.',
+    );
+  }
+
+  return { blocks: blocks.data, canEdit: canEditResult.data ?? false };
 }
 
 export async function action({ request, params }: Route.ActionArgs) {

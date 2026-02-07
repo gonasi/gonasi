@@ -1,6 +1,7 @@
 // Import all plugins — this triggers self-registration via createLiveSessionPlugin.
 // Adding a new block type: create its module, then add an import here.
-import './TrueOrFalse';
+import './LiveSessionTrueOrFalse';
+import './LiveSessionRichText';
 
 export { liveSessionPluginRegistry } from './core/LiveSessionPluginRegistry';
 export { createLiveSessionPlugin } from './core/createLiveSessionPlugin';

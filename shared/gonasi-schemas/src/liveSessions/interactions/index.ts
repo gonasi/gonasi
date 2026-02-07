@@ -1,1 +1,2 @@
-export * from './liveTrueOrFalseInteractionSchema';
+export * from './liveSessionTrueOrFalseInteractionSchema';
+export * from './liveSessionRichTextInteractionSchema';

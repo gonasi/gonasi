@@ -4,7 +4,7 @@ import { LiveSessionTrueOrFalseSchema } from '@gonasi/schemas/liveSessions/schem
 import { EMPTY_LEXICAL_STATE } from '@gonasi/schemas/plugins';
 
 import { createLiveSessionPlugin } from '../core/createLiveSessionPlugin';
-import { LiveTrueOrFalseView } from '../LiveSessionViews';
+import { LiveTrueOrFalseView } from './LiveTrueOrFalseView';
 
 import { DifficultyField } from '~/components/plugins/common/settings/DifficultyField';
 import { LayoutStyleField } from '~/components/plugins/common/settings/LayoutStyleField';
@@ -12,7 +12,7 @@ import { RandomizationModeField } from '~/components/plugins/common/settings/Ran
 import { GoRadioGroupField, GoRichTextInputField } from '~/components/ui/forms/elements';
 
 export const LiveSessionTrueOrFalsePlugin = createLiveSessionPlugin({
-  pluginType: 'true_or_false',
+  pluginType: 'live_session_true_or_false',
 
   metadata: {
     name: 'True or False',

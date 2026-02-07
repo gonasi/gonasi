@@ -5,7 +5,7 @@ import { CircleX, Radio, Search } from 'lucide-react';
 import { redirectWithError } from 'remix-toast';
 
 import type { Route } from './+types/all-session-blocks';
-import { LIVE_PLUGIN_BLOCKS } from '../../constants/live-plugin-blocks';
+import { LIVE_SESSION_PLUGIN_BLOCKS } from '../../constants/live-plugin-blocks';
 
 import { liveSessionPluginRegistry } from '~/components/plugins/liveSession';
 import { Badge } from '~/components/ui/badge';
@@ -65,7 +65,7 @@ export default function AllSessionBlocks({ params }: Route.ComponentProps) {
   }, [searchValue]);
 
   const filteredPlugins = useMemo(() => {
-    const plugins = LIVE_PLUGIN_BLOCKS.map((plugin) => ({
+    const plugins = LIVE_SESSION_PLUGIN_BLOCKS.map((plugin) => ({
       ...plugin,
       available: liveSessionPluginRegistry.has(plugin.id),
     }));
