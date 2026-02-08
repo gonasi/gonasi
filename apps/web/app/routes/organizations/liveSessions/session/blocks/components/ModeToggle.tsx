@@ -18,7 +18,7 @@ export function ModeToggle({ mode }: IModeToggleProps) {
   const isLive = mode === 'live';
   const nextMode = isLive ? 'test' : 'live';
 
-  const targetPath = `/${params.organizationId}/live-sessions/${params.sessionId}/control/update-mode?mode=${nextMode}`;
+  const targetPath = `/${params.organizationId}/live-sessions/${params.sessionId}/blocks/update-mode?mode=${nextMode}`;
 
   return (
     <div>
@@ -64,10 +64,13 @@ export function ModeToggle({ mode }: IModeToggleProps) {
 
         <span
           className={cn(
-            'text-sm font-medium transition-colors',
+            'relative flex items-center text-sm font-medium transition-colors',
             isLive ? 'text-success' : 'text-muted-foreground',
           )}
         >
+          {isLive && (
+            <span className='bg-success absolute -top-1 -right-1 h-1 w-1 animate-pulse rounded-full' />
+          )}
           Live
         </span>
       </div>

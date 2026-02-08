@@ -1,14 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import { data, Outlet, useLocation, useNavigate, useOutletContext } from 'react-router';
-import {
-  BarChart2,
-  ClipboardList,
-  LayoutList,
-  Pen,
-  PencilOff,
-  Play,
-  Users,
-} from 'lucide-react';
+import { BarChart2, ClipboardList, LayoutList, Pen, PencilOff, Users } from 'lucide-react';
 
 import type { Route } from './+types/session-index';
 
@@ -55,11 +47,6 @@ export default function SessionIndex({ params, loaderData }: Route.ComponentProp
         to: `${basePath}/facilitators`,
         name: 'Facilitators',
         icon: Users,
-      },
-      {
-        to: `${basePath}/control`,
-        name: 'Control',
-        icon: Play,
       },
       {
         to: `${basePath}/analytics`,

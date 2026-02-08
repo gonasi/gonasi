@@ -60,7 +60,7 @@ export async function action({ params, request }: Route.ActionArgs) {
   // If validation errors exist, return them along with default values
   if (errors) return { errors, defaultValues };
 
-  const redirectTo = `/${params.organizationId}/live-sessions/${params.sessionId}/control`;
+  const redirectTo = `/${params.organizationId}/live-sessions/${params.sessionId}/blocks`;
 
   // Define handlers for different mode types
   const modeHandlers = {
@@ -94,7 +94,7 @@ export default function UpdateModeModal({ params }: Route.ComponentProps) {
 
   const isPending = useIsPending();
 
-  const closeRoute = `/${organizationId}/live-sessions/${sessionId}/control`;
+  const closeRoute = `/${organizationId}/live-sessions/${sessionId}/blocks`;
 
   const isLive = mode === 'live';
   const nextMode = isLive ? 'Test' : 'Live';
@@ -172,7 +172,7 @@ export default function UpdateModeModal({ params }: Route.ComponentProps) {
 
               <div className='px-1 py-4'>
                 <Button
-                  variant={isLive ? 'secondary' : 'default'}
+                  variant={isLive ? 'secondary' : 'success'}
                   className='w-full'
                   leftIcon={isLive ? <FlaskConical /> : <TvMinimalPlay />}
                   type='submit'

@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { data, Outlet, useFetcher, useNavigate } from 'react-router';
 import { Reorder } from 'framer-motion';
-import { TestTubeDiagonal } from 'lucide-react';
+import { Info, TvMinimalPlay } from 'lucide-react';
 import { dataWithError, redirectWithError } from 'remix-toast';
 import { ClientOnly } from 'remix-utils/client-only';
 
@@ -14,11 +14,12 @@ import {
 import { BlocksPositionUpdateArraySchema } from '@gonasi/schemas/plugins';
 
 import type { Route } from './+types/live-sessions-blocks-index';
+import { ModeToggle } from './components/ModeToggle';
 
 import { NotFoundCard } from '~/components/cards';
 import { Spinner } from '~/components/loaders';
 import LiveSessionBlockWrapper from '~/components/plugins/liveSession/LiveSessionBlockWrapper';
-import { NavLinkButton, PluginButton } from '~/components/ui/button';
+import { Button, PluginButton } from '~/components/ui/button';
 import { createClient } from '~/lib/supabase/supabase.server';
 import { useStore } from '~/store';
 
@@ -62,6 +63,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   }
 
   return {
+    session,
     blocks: blocks.data,
     canEdit: canEditResult.data ?? false,
     sessionCode: session.session_code,
@@ -94,7 +96,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 
 // ─── Main Component ──────────────────────────────────────────
 export default function BlocksIndex({ params, loaderData }: Route.ComponentProps) {
-  const { blocks, canEdit, sessionCode } = loaderData;
+  const { session, blocks, canEdit, sessionCode } = loaderData;
   const fetcher = useFetcher();
   const navigate = useNavigate();
 
@@ -141,21 +143,26 @@ export default function BlocksIndex({ params, loaderData }: Route.ComponentProps
     <>
       {/* Test Session Button */}
       {canEdit && reorderedBlocks.length > 0 && (
-        <div className='mx-auto mb-4 flex max-w-2xl flex-col items-center justify-between space-y-4 pl-4 md:flex-row md:space-y-0 md:px-0'>
-          <p className='text-muted-foreground text-sm'>
-            Test your session before going live to ensure everything works perfectly
+        <div className='mx-auto mb-4 max-w-2xl'>
+          <p className='text-md mb-2 flex items-center space-x-2'>
+            <span>
+              <Info size={20} />
+            </span>
+            <span className='mt-1'>
+              Test your session before going live to ensure everything works perfectly
+            </span>
           </p>
           <div className='flex w-full justify-end md:w-fit'>
-            <div>
-              <NavLinkButton
-                to={`/l/${sessionCode}/test`}
-                variant='secondary'
-                size='sm'
-                leftIcon={<TestTubeDiagonal />}
-                target='_blank'
-              >
-                Test Session
-              </NavLinkButton>
+            <div className='flex items-end justify-center gap-2'>
+              <ModeToggle mode={session.mode} />
+              <div className='flex gap-2'>
+                <Button
+                  variant={session.mode === 'live' ? 'success' : 'secondary'}
+                  leftIcon={<TvMinimalPlay />}
+                >
+                  Start {`${session.mode}`} Session
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -210,7 +217,7 @@ export default function BlocksIndex({ params, loaderData }: Route.ComponentProps
         />
       ) : null}
 
-      <Outlet />
+      <Outlet context={{ mode: session.mode }} />
     </>
   );
 }

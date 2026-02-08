@@ -380,6 +380,10 @@ export default [
               ],
             ),
             route(
+              'update-mode',
+              'routes/organizations/liveSessions/session/blocks/update-mode-modal.tsx',
+            ),
+            route(
               ':blockId/edit',
               'routes/organizations/liveSessions/session/blocks/edit-block.tsx',
             ),
@@ -407,12 +411,7 @@ export default [
             ),
           ],
         ),
-        route('control', 'routes/organizations/liveSessions/session/control/control-panel.tsx', [
-          route(
-            'update-mode',
-            'routes/organizations/liveSessions/session/control/update-mode-modal.tsx',
-          ),
-        ]),
+
         route(
           'analytics',
           'routes/organizations/liveSessions/session/analytics/analytics-index.tsx',
