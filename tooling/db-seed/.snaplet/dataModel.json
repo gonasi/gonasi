@@ -11385,6 +11385,34 @@
           "maxLength": null
         },
         {
+          "id": "public.live_sessions.play_state",
+          "name": "play_state",
+          "columnName": "play_state",
+          "type": "live_session_play_state",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_sessions.play_mode",
+          "name": "play_mode",
+          "columnName": "play_mode",
+          "type": "live_session_play_mode",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
           "id": "public.live_sessions.max_participants",
           "name": "max_participants",
           "columnName": "max_participants",
@@ -23772,10 +23800,62 @@
           "name": "closed"
         },
         {
+          "name": "completed"
+        },
+        {
           "name": "pending"
         },
         {
           "name": "skipped"
+        }
+      ]
+    },
+    "live_session_play_mode": {
+      "schemaName": "public",
+      "values": [
+        {
+          "name": "autoplay"
+        },
+        {
+          "name": "manual"
+        }
+      ]
+    },
+    "live_session_play_state": {
+      "schemaName": "public",
+      "values": [
+        {
+          "name": "ended"
+        },
+        {
+          "name": "final_results"
+        },
+        {
+          "name": "intermission"
+        },
+        {
+          "name": "intro"
+        },
+        {
+          "name": "leaderboard"
+        },
+        {
+          "name": "lobby"
+        },
+        {
+          "name": "paused"
+        },
+        {
+          "name": "prizes"
+        },
+        {
+          "name": "question_active"
+        },
+        {
+          "name": "question_locked"
+        },
+        {
+          "name": "question_results"
         }
       ]
     },

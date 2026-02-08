@@ -1,5 +1,8 @@
+import { TvMinimalPlay } from 'lucide-react';
+
 import type { Route } from './+types/control-panel';
 
+import { Button } from '~/components/ui/button';
 import { createClient } from '~/lib/supabase/supabase.server';
 
 // TODO: Implement metadata
@@ -83,8 +86,9 @@ export default function ControlPanel({ params, loaderData }: Route.ComponentProp
       <div className='flex items-center justify-between'>
         <h2 className='text-xl font-semibold'>Control Panel</h2>
         <div className='flex gap-2'>
-          {/* TODO: Session control buttons */}
-          <button className='rounded bg-green-500 px-4 py-2 text-white'>Start Session</button>
+          <Button variant='success' leftIcon={<TvMinimalPlay />}>
+            Start Session
+          </Button>
         </div>
       </div>
 

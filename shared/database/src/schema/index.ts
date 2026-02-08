@@ -2273,6 +2273,8 @@ export type Database = {
           max_participants: number | null
           name: string
           organization_id: string
+          play_mode: Database["public"]["Enums"]["live_session_play_mode"]
+          play_state: Database["public"]["Enums"]["live_session_play_state"]
           published_course_id: string | null
           scheduled_start_time: string | null
           session_code: string
@@ -2299,6 +2301,8 @@ export type Database = {
           max_participants?: number | null
           name: string
           organization_id: string
+          play_mode?: Database["public"]["Enums"]["live_session_play_mode"]
+          play_state?: Database["public"]["Enums"]["live_session_play_state"]
           published_course_id?: string | null
           scheduled_start_time?: string | null
           session_code: string
@@ -2325,6 +2329,8 @@ export type Database = {
           max_participants?: number | null
           name?: string
           organization_id?: string
+          play_mode?: Database["public"]["Enums"]["live_session_play_mode"]
+          play_state?: Database["public"]["Enums"]["live_session_play_state"]
           published_course_id?: string | null
           scheduled_start_time?: string | null
           session_code?: string
@@ -4300,7 +4306,25 @@ export type Database = {
       live_participant_status: "joined" | "left" | "kicked"
       live_response_status: "submitted" | "correct" | "incorrect" | "partial"
       live_session_block_difficulty: "easy" | "medium" | "hard"
-      live_session_block_status: "pending" | "active" | "closed" | "skipped"
+      live_session_block_status:
+        | "pending"
+        | "active"
+        | "closed"
+        | "completed"
+        | "skipped"
+      live_session_play_mode: "manual" | "autoplay"
+      live_session_play_state:
+        | "lobby"
+        | "intro"
+        | "question_active"
+        | "question_locked"
+        | "question_results"
+        | "leaderboard"
+        | "intermission"
+        | "paused"
+        | "prizes"
+        | "final_results"
+        | "ended"
       live_session_status: "draft" | "waiting" | "active" | "paused" | "ended"
       live_session_visibility: "public" | "unlisted" | "private"
       org_notification_category:
@@ -4583,7 +4607,27 @@ export const Constants = {
       live_participant_status: ["joined", "left", "kicked"],
       live_response_status: ["submitted", "correct", "incorrect", "partial"],
       live_session_block_difficulty: ["easy", "medium", "hard"],
-      live_session_block_status: ["pending", "active", "closed", "skipped"],
+      live_session_block_status: [
+        "pending",
+        "active",
+        "closed",
+        "completed",
+        "skipped",
+      ],
+      live_session_play_mode: ["manual", "autoplay"],
+      live_session_play_state: [
+        "lobby",
+        "intro",
+        "question_active",
+        "question_locked",
+        "question_results",
+        "leaderboard",
+        "intermission",
+        "paused",
+        "prizes",
+        "final_results",
+        "ended",
+      ],
       live_session_status: ["draft", "waiting", "active", "paused", "ended"],
       live_session_visibility: ["public", "unlisted", "private"],
       org_notification_category: [

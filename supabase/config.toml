@@ -371,6 +371,9 @@ schema_paths = [
   # Enums
   './schemas/liveSessions/enums/live_session_visibility.sql',
   './schemas/liveSessions/enums/live_session_status.sql',
+  './schemas/liveSessions/enums/live_session_play_mode.sql',
+  './schemas/liveSessions/enums/live_session_play_state.sql',
+  './schemas/liveSessions/enums/live_session_block_status.sql',
   './schemas/liveSessions/enums/live_session_block_status.sql',
   './schemas/liveSessions/enums/live_response_status.sql',
   './schemas/liveSessions/enums/live_participant_status.sql',

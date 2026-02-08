@@ -4,6 +4,7 @@ import { LiveSessionRichTextSchema } from '@gonasi/schemas/liveSessions/schemas/
 import { EMPTY_LEXICAL_STATE } from '@gonasi/schemas/plugins';
 
 import { createLiveSessionPlugin } from '../core/createLiveSessionPlugin';
+import { LiveSessionRichTextPlay } from './LiveSessionRichTextPlay';
 import { LiveSessionRichTextView } from './LiveSessionRichTextView';
 
 import { DifficultyField } from '~/components/plugins/common/settings/DifficultyField';
@@ -48,4 +49,5 @@ export const LiveSessionRichTextPlugin = createLiveSessionPlugin({
   },
 
   ViewComponent: LiveSessionRichTextView,
+  PlayComponent: LiveSessionRichTextPlay,
 });

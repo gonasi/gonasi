@@ -24,8 +24,11 @@ create table "public"."live_sessions" (
   "course_id" uuid, -- Link to a course (optional)
   "published_course_id" uuid, -- Link to published course (optional)
 
-  -- Session Configuration
+  -- Session Lifecycle
   "status" live_session_status not null default 'draft',
+  "play_state" live_session_play_state not null default 'lobby',
+  "play_mode" live_session_play_mode not null default 'autoplay',
+
   "max_participants" integer, -- null = unlimited
   "allow_late_join" boolean not null default true,
   "show_leaderboard" boolean not null default true,

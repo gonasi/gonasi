@@ -22,6 +22,8 @@ export async function fetchLiveSessionById({ supabase, sessionId }: FetchLiveSes
       session_key,
       visibility,
       status,
+      play_state,
+      play_mode,
       course_id,
       published_course_id,
       max_participants,

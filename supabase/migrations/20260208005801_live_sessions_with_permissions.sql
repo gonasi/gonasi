@@ -4,7 +4,11 @@ create type "public"."live_response_status" as enum ('submitted', 'correct', 'in
 
 create type "public"."live_session_block_difficulty" as enum ('easy', 'medium', 'hard');
 
-create type "public"."live_session_block_status" as enum ('pending', 'active', 'closed', 'skipped');
+create type "public"."live_session_block_status" as enum ('pending', 'active', 'closed', 'completed', 'skipped');
+
+create type "public"."live_session_play_mode" as enum ('manual', 'autoplay');
+
+create type "public"."live_session_play_state" as enum ('lobby', 'intro', 'question_active', 'question_locked', 'question_results', 'leaderboard', 'intermission', 'paused', 'prizes', 'final_results', 'ended');
 
 create type "public"."live_session_status" as enum ('draft', 'waiting', 'active', 'paused', 'ended');
 
@@ -164,6 +168,8 @@ alter table "public"."live_session_responses" enable row level security;
     "course_id" uuid,
     "published_course_id" uuid,
     "status" public.live_session_status not null default 'draft'::public.live_session_status,
+    "play_state" public.live_session_play_state not null default 'lobby'::public.live_session_play_state,
+    "play_mode" public.live_session_play_mode not null default 'autoplay'::public.live_session_play_mode,
     "max_participants" integer,
     "allow_late_join" boolean not null default true,
     "show_leaderboard" boolean not null default true,

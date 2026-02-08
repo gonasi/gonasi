@@ -3,23 +3,23 @@ import { redirectWithError } from 'remix-toast';
 import { fetchLiveSessionBlocks, fetchLiveSessionByCode } from '@gonasi/database/liveSessions';
 import { getUserId } from '@gonasi/database/utils';
 
-import type { Route } from './+types/session-play';
+import type { Route } from './+types/session-test';
 
 import { LiveSessionPlayEngine } from '~/components/liveSession/LiveSessionPlayEngine';
 import { createClient } from '~/lib/supabase/supabase.server';
 
 export function meta() {
   return [
-    { title: 'Live Session • Gonasi' },
+    { title: 'Test Session • Gonasi' },
     {
       name: 'description',
-      content: 'Participate in a live interactive session on Gonasi.',
+      content: 'Test your live session before going live.',
     },
   ];
 }
 
 /**
- * Loader - Fetch session and blocks for live mode
+ * Loader - Fetch session and blocks for test mode
  */
 export async function loader({ request, params }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
@@ -34,28 +34,17 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 
   const session = sessionResult.data;
 
-  // Check privacy/visibility
+  // Check privacy/visibility (same as live mode)
   if (session.visibility === 'private') {
-    // TODO: Verify user is invited participant
-    // For now, allow all authenticated users
+    // TODO: Verify user is invited participant or facilitator
     const userId = await getUserId(supabase);
     if (!userId) {
-      return redirectWithError(`/live/${sessionCode}/join`, 'Please sign in to join this session.');
+      return redirectWithError(`/live/${sessionCode}/join`, 'Please sign in to test this session.');
     }
   }
 
-  // Check session status
-  if (session.status === 'draft') {
-    return redirectWithError(
-      '/go/explore',
-      'This session is not yet published. Please check back later.',
-    );
-  }
-
-  if (session.status === 'ended') {
-    // TODO: Show session results/summary page instead of redirecting
-    return redirectWithError('/go/explore', 'This session has ended.');
-  }
+  // Test mode allows testing any session status (even drafts)
+  // This is useful for facilitators to test before publishing
 
   // Fetch blocks
   const blocksResult = await fetchLiveSessionBlocks({
@@ -68,14 +57,13 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     return redirectWithError('/go/explore', 'Unable to load session blocks.');
   }
 
-  // TODO: Create participant record in live_session_participants
-  // TODO: Track join time and participant metadata
+  // Test mode: No participant record created
 
   return {
     sessionCode,
     sessionId: session.id,
     blocks: blocksResult.data,
-    sessionTitle: session.name,
+    sessionTitle: `${session.name} (Test Mode)`,
     session: {
       status: session.status,
       showLeaderboard: session.show_leaderboard,
@@ -87,20 +75,18 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 }
 
 /**
- * Action - Handle live mode interactions
+ * Action - Handle test mode interactions
+ * Test mode doesn't write to database
  */
 export async function action({ request, params }: Route.ActionArgs) {
-  const { supabase } = createClient(request);
   const formData = await request.formData();
   const intent = formData.get('intent');
 
   switch (intent) {
     case 'submit_response':
-      // TODO: Validate response data
-      // TODO: Submit to live_session_responses
-      // TODO: Update participant stats
-      // TODO: Trigger real-time leaderboard update
-      return { success: true };
+      // Test mode: Just acknowledge, don't persist
+      console.log('[Test Mode] Response received but not saved');
+      return { success: true, mode: 'test' };
 
     default:
       return { success: false, message: 'Unknown action' };
@@ -108,13 +94,20 @@ export async function action({ request, params }: Route.ActionArgs) {
 }
 
 /**
- * SessionPlay - Live mode component
- * Uses LiveSessionPlayEngine with mode="live"
+ * SessionTest - Test mode component
+ * Uses LiveSessionPlayEngine with mode="test"
+ *
+ * Key differences from live mode:
+ * - No database writes
+ * - Ephemeral Realtime channel
+ * - Manual navigation controls
+ * - Clear "Test Mode" indicators
+ * - Multi-user testing supported (respects privacy)
  */
-export default function SessionPlay({ loaderData }: Route.ComponentProps) {
+export default function SessionTest({ loaderData }: Route.ComponentProps) {
   return (
     <LiveSessionPlayEngine
-      mode='live'
+      mode='test'
       sessionCode={loaderData.sessionCode}
       sessionId={loaderData.sessionId}
       blocks={loaderData.blocks}

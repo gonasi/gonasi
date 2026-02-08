@@ -62,6 +62,23 @@ class LiveSessionPluginRegistry {
     const plugin = this.plugins.get(pluginType);
     return !!plugin?.ViewComponent;
   }
+
+  /**
+   * Get the play component for a plugin type
+   * Returns undefined if no play component is registered
+   */
+  getPlay(pluginType: string) {
+    const plugin = this.plugins.get(pluginType);
+    return plugin?.PlayComponent;
+  }
+
+  /**
+   * Check if a plugin has a play component registered
+   */
+  hasPlay(pluginType: string): boolean {
+    const plugin = this.plugins.get(pluginType);
+    return !!plugin?.PlayComponent;
+  }
 }
 
 export const liveSessionPluginRegistry = LiveSessionPluginRegistry.getInstance();

@@ -1,5 +1,6 @@
 export * from './createLiveSession';
 export * from './fetchLiveSessionById';
+export * from './fetchLiveSessionByCode';
 export * from './fetchOrganizationLiveSessions';
 export * from './validateSessionReadyToStart';
 export * from './fetchLiveSessionBlocks';

@@ -4,6 +4,7 @@ import { LiveSessionTrueOrFalseSchema } from '@gonasi/schemas/liveSessions/schem
 import { EMPTY_LEXICAL_STATE } from '@gonasi/schemas/plugins';
 
 import { createLiveSessionPlugin } from '../core/createLiveSessionPlugin';
+import { LiveSessionTrueOrFalsePlay } from './LiveSessionTrueOrFalsePlay';
 import { LiveTrueOrFalseView } from './LiveTrueOrFalseView';
 
 import { DifficultyField } from '~/components/plugins/common/settings/DifficultyField';
@@ -63,4 +64,5 @@ export const LiveSessionTrueOrFalsePlugin = createLiveSessionPlugin({
   },
 
   ViewComponent: LiveTrueOrFalseView,
+  PlayComponent: LiveSessionTrueOrFalsePlay,
 });

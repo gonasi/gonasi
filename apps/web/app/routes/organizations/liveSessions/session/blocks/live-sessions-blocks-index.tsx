@@ -1,11 +1,13 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { data, Outlet, useFetcher, useNavigate } from 'react-router';
 import { Reorder } from 'framer-motion';
+import { TestTubeDiagonal } from 'lucide-react';
 import { dataWithError, redirectWithError } from 'remix-toast';
 import { ClientOnly } from 'remix-utils/client-only';
 
 import {
   fetchLiveSessionBlocks,
+  fetchLiveSessionById,
   type LiveSessionBlock,
   reorderLiveSessionBlocks,
 } from '@gonasi/database/liveSessions';
@@ -16,7 +18,7 @@ import type { Route } from './+types/live-sessions-blocks-index';
 import { NotFoundCard } from '~/components/cards';
 import { Spinner } from '~/components/loaders';
 import LiveSessionBlockWrapper from '~/components/plugins/liveSession/LiveSessionBlockWrapper';
-import { PluginButton } from '~/components/ui/button';
+import { NavLinkButton, PluginButton } from '~/components/ui/button';
 import { createClient } from '~/lib/supabase/supabase.server';
 import { useStore } from '~/store';
 
@@ -38,7 +40,8 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
   const sessionId = params.sessionId ?? '';
 
-  const [blocks, canEditResult] = await Promise.all([
+  const [session, blocks, canEditResult] = await Promise.all([
+    fetchLiveSessionById({ supabase, sessionId }),
     fetchLiveSessionBlocks({
       supabase,
       liveSessionId: sessionId,
@@ -54,7 +57,15 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     );
   }
 
-  return { blocks: blocks.data, canEdit: canEditResult.data ?? false };
+  if (!session) {
+    return redirectWithError(`/${params.organizationId}/live-sessions`, 'Session not found.');
+  }
+
+  return {
+    blocks: blocks.data,
+    canEdit: canEditResult.data ?? false,
+    sessionCode: session.session_code,
+  };
 }
 
 export async function action({ request, params }: Route.ActionArgs) {
@@ -83,7 +94,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 
 // ─── Main Component ──────────────────────────────────────────
 export default function BlocksIndex({ params, loaderData }: Route.ComponentProps) {
-  const { blocks, canEdit } = loaderData;
+  const { blocks, canEdit, sessionCode } = loaderData;
   const fetcher = useFetcher();
   const navigate = useNavigate();
 
@@ -128,6 +139,27 @@ export default function BlocksIndex({ params, loaderData }: Route.ComponentProps
 
   return (
     <>
+      {/* Test Session Button */}
+      {canEdit && reorderedBlocks.length > 0 && (
+        <div className='mx-auto mb-4 flex max-w-2xl flex-col items-center justify-between space-y-4 pl-4 md:flex-row md:space-y-0 md:px-0'>
+          <p className='text-muted-foreground text-sm'>
+            Test your session before going live to ensure everything works perfectly
+          </p>
+          <div className='flex w-full justify-end md:w-fit'>
+            <div>
+              <NavLinkButton
+                to={`/l/${sessionCode}/test`}
+                variant='secondary'
+                size='sm'
+                leftIcon={<TestTubeDiagonal />}
+              >
+                Test Session
+              </NavLinkButton>
+            </div>
+          </div>
+        </div>
+      )}
+
       {reorderedBlocks.length > 0 ? (
         <div className='mx-auto flex max-w-2xl flex-col pl-4 md:px-0'>
           <Reorder.Group

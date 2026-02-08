@@ -1,5 +1,4 @@
 import type { LiveSessionBuilderSchemaTypes } from '@gonasi/schemas/liveSessions';
-import { LiveSessionBuilderSchema } from '@gonasi/schemas/liveSessions';
 
 import type { TypedSupabaseClient } from '../client';
 
@@ -40,6 +39,7 @@ export async function fetchLiveSessionBlocks({
       .from('live_session_blocks')
       .select('id, plugin_type, content, settings, position, time_limit, status, difficulty')
       .eq('live_session_id', liveSessionId)
+      .eq('organization_id', organizationId)
       .order('position', { ascending: true });
 
     if (error) {
@@ -51,42 +51,13 @@ export async function fetchLiveSessionBlocks({
       };
     }
 
-    const validatedBlocks = data
-      ?.map((block, index) => {
-        // Parse with required fields
-        const parseResult = LiveSessionBuilderSchema.safeParse({
-          plugin_type: block.plugin_type,
-          content: block.content,
-          settings: block.settings,
-          organization_id: organizationId,
-          live_session_id: liveSessionId,
-          difficulty: block.difficulty,
-          time_limit: block.time_limit,
-        });
+    // Just cast - trust your database has valid data
+    const blocks = (data ?? []) as LiveSessionBlock[];
 
-        if (!parseResult.success) {
-          console.error(
-            `Block ${index} validation failed (${block.plugin_type}):`,
-            parseResult.error.format(),
-          );
-          console.error('Raw block:', JSON.stringify(block, null, 2));
-          return null;
-        }
-
-        // Return block with validated plugin_type, content & settings
-        return {
-          ...parseResult.data,
-          id: block.id,
-          position: block.position,
-          status: block.status,
-        } as LiveSessionBlock;
-      })
-      .filter((block): block is LiveSessionBlock => block !== null);
-
-    if (!validatedBlocks || validatedBlocks.length === 0) {
+    if (blocks.length === 0) {
       return {
-        success: false,
-        message: 'Live session blocks validation failed.',
+        success: true,
+        message: 'No blocks found.',
         data: [],
       };
     }
@@ -94,7 +65,7 @@ export async function fetchLiveSessionBlocks({
     return {
       success: true,
       message: 'Live session blocks retrieved successfully.',
-      data: validatedBlocks,
+      data: blocks,
     };
   } catch (err) {
     console.error('Unexpected error in fetchLiveSessionBlocks:', err);

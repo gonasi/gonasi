@@ -20,16 +20,19 @@ export default [
       route('reset', 'routes/publishedCourses/reset-course.tsx'),
     ]),
 
-    // Live Sessions - Public participant routes
-    route('live/:sessionCode/join', 'routes/liveSessions/public/join-session.tsx'),
-    route('live/:sessionCode', 'routes/liveSessions/public/session-play.tsx'),
-
     route('api/check-username-exists', 'routes/api/check-username-exists.ts'),
     route('api/check-handle-exists/:organizationId', 'routes/api/check-handle-exists.ts'),
     route(
       'api/fetch-organization-available-credits/:organizationId',
       'routes/api/fetch-organization-available-credits.ts',
     ),
+  ]),
+
+  layout('routes/layouts/main/plain-main-layout.tsx', [
+    // Live Sessions - Public participant routes
+    // route('live/:sessionCode/join', 'routes/liveSessions/public/join-session.tsx'),
+    route('l/:sessionCode/test', 'routes/public/l/live-session-test.tsx'),
+    // route('live/:sessionCode', 'routes/liveSessions/public/session-play.tsx'),
   ]),
 
   layout('routes/layouts/gonasi/gonasi-layout.tsx', [

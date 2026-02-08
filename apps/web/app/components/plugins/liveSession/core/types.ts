@@ -18,13 +18,30 @@ export interface LiveSessionFieldsRenderProps {
 }
 
 /**
- * Props for live session view components
- * Different from regular course block views - tailored for real-time interaction
+ * Mode for live session components
+ * - test: Facilitators testing the session (no DB writes, real experience)
+ * - live: Actual participants in a live session (DB writes, real-time sync)
+ */
+export type LiveSessionMode = 'test' | 'live';
+
+/**
+ * Props for live session view components (static preview)
+ * Used for displaying blocks in the builder/preview mode
  */
 export interface LiveSessionViewComponentProps {
   block: LiveSessionBlock;
   isLastBlock: boolean;
-  // Future: add instructor controls, real-time stats, etc.
+}
+
+/**
+ * Props for live session play components (interactive)
+ * Used when actually playing the session (test or live mode)
+ */
+export interface LiveSessionPlayComponentProps {
+  block: LiveSessionBlock;
+  isLastBlock: boolean;
+  mode: LiveSessionMode;
+  // Future: add session context, real-time handlers, etc.
 }
 
 /**
@@ -48,6 +65,8 @@ export interface LiveSessionPluginDefinition {
   renderFields: (props: LiveSessionFieldsRenderProps) => ReactElement;
   /** Renders plugin-specific settings fields inside the shared settings popover. */
   renderSettings?: (props: LiveSessionFieldsRenderProps) => ReactElement;
-  /** View component for rendering the block in a live session (optional) */
+  /** View component for static preview/display (optional) */
   ViewComponent?: ComponentType<LiveSessionViewComponentProps>;
+  /** Play component for interactive gameplay with test/live modes (optional) */
+  PlayComponent?: ComponentType<LiveSessionPlayComponentProps>;
 }
