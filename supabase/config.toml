@@ -373,6 +373,7 @@ schema_paths = [
   './schemas/liveSessions/enums/live_session_status.sql',
   './schemas/liveSessions/enums/live_session_play_mode.sql',
   './schemas/liveSessions/enums/live_session_play_state.sql',
+  './schemas/liveSessions/enums/live_session_mode.sql',
   './schemas/liveSessions/enums/live_session_block_status.sql',
   './schemas/liveSessions/enums/live_session_block_status.sql',
   './schemas/liveSessions/enums/live_response_status.sql',

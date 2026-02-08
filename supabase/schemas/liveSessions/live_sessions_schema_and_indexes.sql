@@ -28,6 +28,7 @@ create table "public"."live_sessions" (
   "status" live_session_status not null default 'draft',
   "play_state" live_session_play_state not null default 'lobby',
   "play_mode" live_session_play_mode not null default 'autoplay',
+  "mode" live_session_mode not null default 'test', -- test | live
 
   "max_participants" integer, -- null = unlimited
   "allow_late_join" boolean not null default true,
@@ -99,6 +100,7 @@ create index "live_sessions_session_code_idx" on "public"."live_sessions" ("sess
 create index "live_sessions_course_id_idx" on "public"."live_sessions" ("course_id");
 create index "live_sessions_visibility_idx" on "public"."live_sessions" ("visibility");
 create index "live_sessions_image_url_idx" on "public"."live_sessions" ("image_url");
+create index "live_sessions_mode_idx" on "public"."live_sessions" ("mode");
 
 -- Comments
 comment on table "public"."live_sessions" is 'Live interactive learning sessions with real-time Q&A';
@@ -108,3 +110,4 @@ comment on column "public"."live_sessions"."session_code" is 'Short unique code 
 comment on column "public"."live_sessions"."session_key" is 'Password/key required for private sessions';
 comment on column "public"."live_sessions"."visibility" is 'Access control: public, unlisted, or private (key required)';
 comment on column "public"."live_sessions"."allow_late_join" is 'Whether participants can join after session has started';
+comment on column "public"."live_sessions"."mode" is 'Operational mode: test for facilitators to preview, live for actual sessions. State resets when switching modes.';

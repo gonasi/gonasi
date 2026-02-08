@@ -10,7 +10,7 @@ import { createClient } from '~/lib/supabase/supabase.server';
 
 export function meta() {
   return [
-    { title: 'Test Session • Gonasi' },
+    { title: 'Test Live Session • Gonasi' },
     {
       name: 'description',
       content: 'Test your live session before going live.',

@@ -6,6 +6,8 @@ create type "public"."live_session_block_difficulty" as enum ('easy', 'medium', 
 
 create type "public"."live_session_block_status" as enum ('pending', 'active', 'closed', 'completed', 'skipped');
 
+create type "public"."live_session_mode" as enum ('test', 'live');
+
 create type "public"."live_session_play_mode" as enum ('manual', 'autoplay');
 
 create type "public"."live_session_play_state" as enum ('lobby', 'intro', 'question_active', 'question_locked', 'question_results', 'leaderboard', 'intermission', 'paused', 'prizes', 'final_results', 'ended');
@@ -190,6 +192,7 @@ alter table "public"."live_session_test_responses" enable row level security;
     "status" public.live_session_status not null default 'draft'::public.live_session_status,
     "play_state" public.live_session_play_state not null default 'lobby'::public.live_session_play_state,
     "play_mode" public.live_session_play_mode not null default 'autoplay'::public.live_session_play_mode,
+    "mode" public.live_session_mode not null default 'test'::public.live_session_mode,
     "max_participants" integer,
     "allow_late_join" boolean not null default true,
     "show_leaderboard" boolean not null default true,
@@ -298,6 +301,8 @@ CREATE INDEX live_sessions_course_id_idx ON public.live_sessions USING btree (co
 CREATE INDEX live_sessions_created_by_idx ON public.live_sessions USING btree (created_by);
 
 CREATE INDEX live_sessions_image_url_idx ON public.live_sessions USING btree (image_url);
+
+CREATE INDEX live_sessions_mode_idx ON public.live_sessions USING btree (mode);
 
 CREATE INDEX live_sessions_organization_id_idx ON public.live_sessions USING btree (organization_id);
 
@@ -653,10 +658,11 @@ CREATE OR REPLACE FUNCTION public.cleanup_live_session_data()
  RETURNS trigger
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path TO ''
 AS $function$
 begin
   -- Delete any orphaned analytics entries (in case they weren't cascaded)
-  delete from live_session_analytics
+  delete from public.live_session_analytics
   where live_session_id = OLD.id;
 
   -- Log the deletion if needed (for audit purposes)
@@ -925,6 +931,65 @@ end;
 $function$
 ;
 
+CREATE OR REPLACE FUNCTION public.reset_live_session_on_mode_change()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+begin
+  -- Only proceed if mode actually changed
+  if OLD.mode is distinct from NEW.mode then
+
+    -- Reset session lifecycle state
+    NEW.status := 'draft';
+    NEW.play_state := 'lobby';
+    NEW.actual_start_time := null;
+    NEW.ended_at := null;
+
+    -- Delete all test responses (regardless of which mode we're switching to/from)
+    delete from public.live_session_test_responses
+    where live_session_id = NEW.id;
+
+    -- Delete all live responses (regardless of which mode we're switching to/from)
+    delete from public.live_session_responses
+    where live_session_id = NEW.id;
+
+    -- Delete all participants (will cascade to responses due to FK)
+    delete from public.live_session_participants
+    where live_session_id = NEW.id;
+
+    -- Delete all messages
+    delete from public.live_session_messages
+    where live_session_id = NEW.id;
+
+    -- Delete all reactions
+    delete from public.live_session_reactions
+    where live_session_id = NEW.id;
+
+    -- Reset block statistics and state
+    update public.live_session_blocks
+    set
+      status = 'pending',
+      activated_at = null,
+      closed_at = null,
+      total_responses = 0,
+      correct_responses = 0,
+      average_response_time_ms = null,
+      updated_at = now()
+    where live_session_id = NEW.id;
+
+    -- Reset or delete analytics (optional: you might want to keep historical data)
+    delete from public.live_session_analytics
+    where live_session_id = NEW.id;
+
+  end if;
+
+  return NEW;
+end;
+$function$
+;
+
 CREATE OR REPLACE FUNCTION public.trigger_generate_session_code()
  RETURNS trigger
  LANGUAGE plpgsql
@@ -1007,6 +1072,7 @@ CREATE OR REPLACE FUNCTION public.update_live_session_block_stats()
  RETURNS trigger
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path TO ''
 AS $function$
 declare
   v_total_responses integer;
@@ -1022,11 +1088,11 @@ begin
     v_total_responses,
     v_correct_responses,
     v_avg_response_time
-  from live_session_responses
+  from public.live_session_responses
   where live_session_block_id = coalesce(NEW.live_session_block_id, OLD.live_session_block_id);
 
   -- Update the block with new statistics
-  update live_session_blocks
+  update public.live_session_blocks
   set
     total_responses = v_total_responses,
     correct_responses = v_correct_responses,
@@ -1043,6 +1109,7 @@ CREATE OR REPLACE FUNCTION public.update_live_session_participant_stats()
  RETURNS trigger
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path TO ''
 AS $function$
 declare
   v_total_responses integer;
@@ -1061,11 +1128,11 @@ begin
     v_correct_responses,
     v_total_score,
     v_avg_response_time
-  from live_session_responses
+  from public.live_session_responses
   where participant_id = coalesce(NEW.participant_id, OLD.participant_id);
 
   -- Update the participant with new statistics
-  update live_session_participants
+  update public.live_session_participants
   set
     total_responses = v_total_responses,
     correct_responses = v_correct_responses,
@@ -1083,6 +1150,7 @@ CREATE OR REPLACE FUNCTION public.update_participant_rankings()
  RETURNS trigger
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path TO ''
 AS $function$
 begin
   -- Update rankings for all participants in the session
@@ -1096,11 +1164,11 @@ begin
           average_response_time_ms asc nulls last,
           joined_at asc
       ) as new_rank
-    from live_session_participants
+    from public.live_session_participants
     where live_session_id = NEW.live_session_id
       and status = 'joined'
   )
-  update live_session_participants lsp
+  update public.live_session_participants lsp
   set
     rank = rp.new_rank,
     updated_at = now()
@@ -2046,6 +2114,8 @@ CREATE TRIGGER live_session_response_update_update_participant_stats AFTER UPDAT
 CREATE TRIGGER live_session_responses_update_stats_trigger AFTER INSERT ON public.live_session_responses FOR EACH ROW EXECUTE FUNCTION public.trigger_update_stats_after_response();
 
 CREATE TRIGGER live_session_cleanup_trigger BEFORE DELETE ON public.live_sessions FOR EACH ROW EXECUTE FUNCTION public.cleanup_live_session_data();
+
+CREATE TRIGGER live_session_mode_change_reset BEFORE UPDATE OF mode ON public.live_sessions FOR EACH ROW EXECUTE FUNCTION public.reset_live_session_on_mode_change();
 
 CREATE TRIGGER live_sessions_generate_code_trigger BEFORE INSERT ON public.live_sessions FOR EACH ROW EXECUTE FUNCTION public.trigger_generate_session_code();
 

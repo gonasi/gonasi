@@ -35,8 +35,12 @@ create trigger live_session_analytics_update_timestamp_trigger
 -- =============================================
 
 -- Function to update block statistics when responses change
-create or replace function update_live_session_block_stats()
-returns trigger as $$
+create or replace function public.update_live_session_block_stats()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
 declare
   v_total_responses integer;
   v_correct_responses integer;
@@ -51,11 +55,11 @@ begin
     v_total_responses,
     v_correct_responses,
     v_avg_response_time
-  from live_session_responses
+  from public.live_session_responses
   where live_session_block_id = coalesce(NEW.live_session_block_id, OLD.live_session_block_id);
 
   -- Update the block with new statistics
-  update live_session_blocks
+  update public.live_session_blocks
   set
     total_responses = v_total_responses,
     correct_responses = v_correct_responses,
@@ -65,7 +69,7 @@ begin
 
   return coalesce(NEW, OLD);
 end;
-$$ language plpgsql security definer;
+$$;
 
 -- Trigger: Update block stats when response is inserted
 create trigger live_session_response_insert_update_block_stats
@@ -90,8 +94,12 @@ create trigger live_session_response_delete_update_block_stats
 -- =============================================
 
 -- Function to update participant statistics when responses change
-create or replace function update_live_session_participant_stats()
-returns trigger as $$
+create or replace function public.update_live_session_participant_stats()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
 declare
   v_total_responses integer;
   v_correct_responses integer;
@@ -109,11 +117,11 @@ begin
     v_correct_responses,
     v_total_score,
     v_avg_response_time
-  from live_session_responses
+  from public.live_session_responses
   where participant_id = coalesce(NEW.participant_id, OLD.participant_id);
 
   -- Update the participant with new statistics
-  update live_session_participants
+  update public.live_session_participants
   set
     total_responses = v_total_responses,
     correct_responses = v_correct_responses,
@@ -124,7 +132,7 @@ begin
 
   return coalesce(NEW, OLD);
 end;
-$$ language plpgsql security definer;
+$$;
 
 -- Trigger: Update participant stats when response is inserted
 create trigger live_session_response_insert_update_participant_stats
@@ -151,11 +159,15 @@ create trigger live_session_response_delete_update_participant_stats
 -- Function to clean up orphaned data when a live session is deleted
 -- Note: Most cleanup is handled by CASCADE foreign keys, but this ensures
 -- any related analytics or cached data is also removed
-create or replace function cleanup_live_session_data()
-returns trigger as $$
+create or replace function public.cleanup_live_session_data()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
 begin
   -- Delete any orphaned analytics entries (in case they weren't cascaded)
-  delete from live_session_analytics
+  delete from public.live_session_analytics
   where live_session_id = OLD.id;
 
   -- Log the deletion if needed (for audit purposes)
@@ -163,7 +175,7 @@ begin
 
   return OLD;
 end;
-$$ language plpgsql security definer;
+$$;
 
 -- Trigger: Cleanup when live session is deleted
 create trigger live_session_cleanup_trigger
@@ -176,8 +188,12 @@ create trigger live_session_cleanup_trigger
 -- =============================================
 
 -- Function to update participant rankings when scores change
-create or replace function update_participant_rankings()
-returns trigger as $$
+create or replace function public.update_participant_rankings()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
 begin
   -- Update rankings for all participants in the session
   -- Rankings are based on total_score (descending) and average_response_time_ms (ascending)
@@ -190,11 +206,11 @@ begin
           average_response_time_ms asc nulls last,
           joined_at asc
       ) as new_rank
-    from live_session_participants
+    from public.live_session_participants
     where live_session_id = NEW.live_session_id
       and status = 'joined'
   )
-  update live_session_participants lsp
+  update public.live_session_participants lsp
   set
     rank = rp.new_rank,
     updated_at = now()
@@ -204,10 +220,80 @@ begin
 
   return NEW;
 end;
-$$ language plpgsql security definer;
+$$;
 
 -- Trigger: Update rankings when participant stats change
 create trigger live_session_participant_update_rankings
   after update of total_score, average_response_time_ms on live_session_participants
   for each row
   execute function update_participant_rankings();
+
+-- =============================================
+-- MODE CHANGE RESET TRIGGER
+-- =============================================
+
+-- Function to reset session state when mode changes
+-- This ensures test data doesn't mix with live data and vice versa
+create or replace function public.reset_live_session_on_mode_change()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  -- Only proceed if mode actually changed
+  if OLD.mode is distinct from NEW.mode then
+
+    -- Reset session lifecycle state
+    NEW.status := 'draft';
+    NEW.play_state := 'lobby';
+    NEW.actual_start_time := null;
+    NEW.ended_at := null;
+
+    -- Delete all test responses (regardless of which mode we're switching to/from)
+    delete from public.live_session_test_responses
+    where live_session_id = NEW.id;
+
+    -- Delete all live responses (regardless of which mode we're switching to/from)
+    delete from public.live_session_responses
+    where live_session_id = NEW.id;
+
+    -- Delete all participants (will cascade to responses due to FK)
+    delete from public.live_session_participants
+    where live_session_id = NEW.id;
+
+    -- Delete all messages
+    delete from public.live_session_messages
+    where live_session_id = NEW.id;
+
+    -- Delete all reactions
+    delete from public.live_session_reactions
+    where live_session_id = NEW.id;
+
+    -- Reset block statistics and state
+    update public.live_session_blocks
+    set
+      status = 'pending',
+      activated_at = null,
+      closed_at = null,
+      total_responses = 0,
+      correct_responses = 0,
+      average_response_time_ms = null,
+      updated_at = now()
+    where live_session_id = NEW.id;
+
+    -- Reset or delete analytics (optional: you might want to keep historical data)
+    delete from public.live_session_analytics
+    where live_session_id = NEW.id;
+
+  end if;
+
+  return NEW;
+end;
+$$;
+
+-- Trigger: Reset state when mode changes
+create trigger live_session_mode_change_reset
+  before update of mode on live_sessions
+  for each row
+  execute function reset_live_session_on_mode_change();

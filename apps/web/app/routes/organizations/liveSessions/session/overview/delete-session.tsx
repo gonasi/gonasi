@@ -50,8 +50,8 @@ export default function DeleteSession({ params, loaderData }: Route.ComponentPro
         />
         <Modal.Body>
           <p className='mb-4 text-red-500'>
-            Warning: This action cannot be undone. All session data, including blocks, participants, and responses,
-            will be permanently deleted.
+            Warning: This action cannot be undone. All session data, including blocks, participants,
+            and responses, will be permanently deleted.
           </p>
 
           <Form method='POST' className='space-y-4'>
@@ -64,7 +64,12 @@ export default function DeleteSession({ params, loaderData }: Route.ComponentPro
               >
                 Cancel
               </Button>
-              <Button type='submit' variant='destructive' disabled={isSubmitting} isLoading={isSubmitting}>
+              <Button
+                type='submit'
+                variant='destructive'
+                disabled={isSubmitting}
+                isLoading={isSubmitting}
+              >
                 Delete Session
               </Button>
             </div>

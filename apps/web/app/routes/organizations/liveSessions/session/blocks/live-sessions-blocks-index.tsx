@@ -152,6 +152,7 @@ export default function BlocksIndex({ params, loaderData }: Route.ComponentProps
                 variant='secondary'
                 size='sm'
                 leftIcon={<TestTubeDiagonal />}
+                target='_blank'
               >
                 Test Session
               </NavLinkButton>

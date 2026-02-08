@@ -8,3 +8,5 @@ export * from './fetchLiveSessionBlockById';
 export * from './upsertLiveSessionBlock';
 export * from './deleteLiveSessionBlock';
 export * from './reorderLiveSessionBlocks';
+export * from './setLiveSessionToTest';
+export * from './setLiveSessionToLive';

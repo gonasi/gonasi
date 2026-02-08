@@ -1,6 +1,11 @@
+import { Outlet } from 'react-router';
 import { TvMinimalPlay } from 'lucide-react';
+import { redirectWithError } from 'remix-toast';
+
+import { fetchLiveSessionBlocks, fetchLiveSessionById } from '@gonasi/database/liveSessions';
 
 import type { Route } from './+types/control-panel';
+import { ModeToggle } from './components/ModeToggle';
 
 import { Button } from '~/components/ui/button';
 import { createClient } from '~/lib/supabase/supabase.server';
@@ -16,22 +21,43 @@ export function meta() {
   ];
 }
 
-// TODO: Implement loader to fetch session and blocks
 export async function loader({ request, params }: Route.LoaderArgs) {
   const { supabase } = createClient(request);
+  const sessionId = params.sessionId ?? '';
 
-  // TODO: Fetch session by ID
-  // TODO: Fetch all blocks with current status
-  // TODO: Fetch current participants count
-  // TODO: Check user can edit session
+  const [session, blocks, canEditResult] = await Promise.all([
+    fetchLiveSessionById({ supabase, sessionId }),
+    fetchLiveSessionBlocks({
+      supabase,
+      liveSessionId: sessionId,
+      organizationId: params.organizationId,
+    }),
+    supabase.rpc('can_user_edit_live_session', { arg_session_id: sessionId }),
+  ]);
 
-  return { session: null, blocks: [], participantCount: 0 };
+  if (!blocks.success) {
+    return redirectWithError(
+      `/${params.organizationId}/live-sessions/${sessionId}/blocks`,
+      'Unable to load live session blocks.',
+    );
+  }
+
+  if (!session) {
+    return redirectWithError(`/${params.organizationId}/live-sessions`, 'Session not found.');
+  }
+
+  return {
+    session,
+    blocks: blocks.data,
+    canEdit: canEditResult.data ?? false,
+    sessionCode: session.session_code,
+  };
 }
 
 // TODO: Implement action for session controls
-export async function action({ request, params }: Route.ActionArgs) {
-  const { supabase } = createClient(request);
-  const formData = await request.formData();
+export async function action({ request, params: _params }: Route.ActionArgs) {
+  const { supabase: _supabase } = createClient(request);
+  const _formData = await request.formData();
 
   // TODO: Handle different actions:
   // - start_session (draft → waiting)
@@ -46,8 +72,8 @@ export async function action({ request, params }: Route.ActionArgs) {
 }
 
 // TODO: Implement control panel component with real-time updates
-export default function ControlPanel({ params, loaderData }: Route.ComponentProps) {
-  const { session, blocks, participantCount } = loaderData;
+export default function ControlPanel({ params: _params, loaderData }: Route.ComponentProps) {
+  const { session } = loaderData;
 
   // TODO: Set up Supabase Realtime subscriptions:
   // - live_session_participants (for participant changes)
@@ -82,36 +108,41 @@ export default function ControlPanel({ params, loaderData }: Route.ComponentProp
   // - Reactions display (emoji stream)
 
   return (
-    <div className='space-y-6'>
-      <div className='flex items-center justify-between'>
-        <h2 className='text-xl font-semibold'>Control Panel</h2>
-        <div className='flex gap-2'>
-          <Button variant='success' leftIcon={<TvMinimalPlay />}>
-            Start Session
-          </Button>
+    <>
+      <div className='space-y-6'>
+        <div className='flex items-center justify-between'>
+          <h2 className='text-xl font-semibold'>Control Panel</h2>
+          <div className='flex items-end justify-center gap-2'>
+            <ModeToggle mode={session.mode} />
+            <div className='flex gap-2'>
+              <Button variant='success' leftIcon={<TvMinimalPlay />}>
+                Start Session
+              </Button>
+            </div>
+          </div>
         </div>
-      </div>
 
-      <div className='grid gap-6 md:grid-cols-2'>
-        {/* TODO: Blocks control section */}
+        <div className='grid gap-6 md:grid-cols-2'>
+          {/* TODO: Blocks control section */}
+          <div className='rounded border p-4'>
+            <h3 className='mb-4 font-semibold'>Blocks</h3>
+            <p>Block controls go here...</p>
+          </div>
+
+          {/* TODO: Live stats section */}
+          <div className='rounded border p-4'>
+            <h3 className='mb-4 font-semibold'>Live Stats</h3>
+            <p>Stats dashboard goes here...</p>
+          </div>
+        </div>
+
+        {/* TODO: Leaderboard section */}
         <div className='rounded border p-4'>
-          <h3 className='mb-4 font-semibold'>Blocks</h3>
-          <p>Block controls go here...</p>
-        </div>
-
-        {/* TODO: Live stats section */}
-        <div className='rounded border p-4'>
-          <h3 className='mb-4 font-semibold'>Live Stats</h3>
-          <p>Participants: {participantCount}</p>
-          <p>Stats dashboard goes here...</p>
+          <h3 className='mb-4 font-semibold'>Leaderboard</h3>
+          <p>Real-time leaderboard goes here...</p>
         </div>
       </div>
-
-      {/* TODO: Leaderboard section */}
-      <div className='rounded border p-4'>
-        <h3 className='mb-4 font-semibold'>Leaderboard</h3>
-        <p>Real-time leaderboard goes here...</p>
-      </div>
-    </div>
+      <Outlet context={{ mode: session.mode }} />
+    </>
   );
 }

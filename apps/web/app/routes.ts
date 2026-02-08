@@ -407,7 +407,12 @@ export default [
             ),
           ],
         ),
-        route('control', 'routes/organizations/liveSessions/session/control/control-panel.tsx'),
+        route('control', 'routes/organizations/liveSessions/session/control/control-panel.tsx', [
+          route(
+            'update-mode',
+            'routes/organizations/liveSessions/session/control/update-mode-modal.tsx',
+          ),
+        ]),
         route(
           'analytics',
           'routes/organizations/liveSessions/session/analytics/analytics-index.tsx',

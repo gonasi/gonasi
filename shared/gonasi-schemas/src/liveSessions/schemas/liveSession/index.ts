@@ -132,3 +132,10 @@ export const UpdateSessionStatusSchema = z.object({
 });
 
 export type UpdateSessionStatusSchemaTypes = z.infer<typeof UpdateSessionStatusSchema>;
+
+// Update Session Mode Schema (for switching between test and live mode)
+export const UpdateLiveSessionModeSchema = z.object({
+  setToMode: z.enum(['test', 'live']),
+});
+
+export type UpdateLiveSessionModeSchemaTypes = z.infer<typeof UpdateLiveSessionModeSchema>;
