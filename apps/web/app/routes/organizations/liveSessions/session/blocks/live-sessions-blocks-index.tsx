@@ -16,7 +16,7 @@ import { BlocksPositionUpdateArraySchema } from '@gonasi/schemas/plugins';
 import type { Route } from './+types/live-sessions-blocks-index';
 import { ModeToggle } from './components/ModeToggle';
 
-import { NotFoundCard } from '~/components/cards';
+import { BannerCard, NotFoundCard } from '~/components/cards';
 import { Spinner } from '~/components/loaders';
 import LiveSessionBlockWrapper from '~/components/plugins/liveSession/LiveSessionBlockWrapper';
 import { Button, PluginButton } from '~/components/ui/button';
@@ -142,29 +142,38 @@ export default function BlocksIndex({ params, loaderData }: Route.ComponentProps
   return (
     <>
       {/* Test Session Button */}
-      {canEdit && reorderedBlocks.length > 0 && (
+      {canEdit && (
         <div className='mx-auto mb-4 max-w-2xl'>
-          <p className='text-md mb-2 flex items-center space-x-2'>
-            <span>
-              <Info size={20} />
-            </span>
-            <span className='mt-1'>
-              Test your session before going live to ensure everything works perfectly
-            </span>
-          </p>
-          <div className='flex w-full justify-end md:w-fit'>
-            <div className='flex items-end justify-center gap-2'>
-              <ModeToggle mode={session.mode} />
-              <div className='flex gap-2'>
-                <Button
-                  variant={session.mode === 'live' ? 'success' : 'secondary'}
-                  leftIcon={<TvMinimalPlay />}
-                >
-                  Start {`${session.mode}`} Session
-                </Button>
+          {reorderedBlocks.length >= 5 ? (
+            <div>
+              <p className='text-md mb-2 flex items-center space-x-2'>
+                <span>
+                  <Info size={20} />
+                </span>
+                <span className='mt-1'>
+                  Test your session before going live to ensure everything works perfectly
+                </span>
+              </p>
+              <div className='flex w-full justify-end md:w-fit'>
+                <div className='flex items-end justify-center gap-2'>
+                  <ModeToggle mode={session.mode} />
+                  <div className='flex gap-2'>
+                    <Button
+                      variant={session.mode === 'live' ? 'success' : 'secondary'}
+                      leftIcon={<TvMinimalPlay />}
+                    >
+                      Start {session.mode} Session
+                    </Button>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
+          ) : (
+            <BannerCard
+              variant='warning'
+              message={`You need at least 5 blocks to start a session. You currently have ${reorderedBlocks.length}.`}
+            />
+          )}
         </div>
       )}
 
