@@ -8,8 +8,9 @@
 --     1. Organization 'owner' or 'admin'
 --     2. Assigned session facilitators (via live_session_facilitators table)
 --
---   Restriction:
+--   Restrictions:
 --     - If the organization's tier is 'temp', no editing is allowed for anyone.
+--     - If the session status is 'ended', no editing is allowed (session is read-only).
 --
 -- PARAMETERS:
 --   arg_session_id uuid – The ID of the live session to check.
@@ -34,13 +35,16 @@ as $$
     (
       -- Step 1: Fetch session and organization info
       with session_org as (
-        select ls.id as session_id, ls.organization_id
+        select ls.id as session_id, ls.organization_id, ls.status
         from public.live_sessions ls
         where ls.id = arg_session_id
       )
       select
-        -- Step 2: Check org subscription tier
+        -- Step 2: Check if session is ended (read-only)
         case
+          -- If the session is ended, editing is disallowed
+          when so.status = 'ended' then false
+
           -- If the org is in 'temp' tier, editing is disallowed
           when public.get_org_tier(so.organization_id) = 'temp' then false
 

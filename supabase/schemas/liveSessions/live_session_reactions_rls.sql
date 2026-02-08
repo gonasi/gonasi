@@ -21,7 +21,7 @@ using (
 );
 
 -- ============================================================================
--- INSERT: Active participants can add reactions if enabled
+-- INSERT: Active participants can add reactions if enabled and session not ended
 -- ============================================================================
 create policy "Insert: Participants can add reactions"
 on public.live_session_reactions
@@ -37,5 +37,6 @@ with check (
       and lsp.user_id = (select auth.uid())
       and lsp.status = 'joined'
       and ls.enable_reactions = true
+      and ls.status != 'ended'  -- Cannot add reactions to ended sessions
   )
 );

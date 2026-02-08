@@ -153,6 +153,26 @@ alter table "public"."live_session_reactions" enable row level security;
 alter table "public"."live_session_responses" enable row level security;
 
 
+  create table "public"."live_session_test_responses" (
+    "id" uuid not null default extensions.uuid_generate_v4(),
+    "live_session_id" uuid not null,
+    "live_session_block_id" uuid not null,
+    "facilitator_id" uuid not null,
+    "organization_id" uuid not null,
+    "response_data" jsonb not null,
+    "status" public.live_response_status not null,
+    "response_time_ms" integer not null,
+    "submitted_at" timestamp with time zone not null default timezone('utc'::text, now()),
+    "score_earned" numeric not null default 0,
+    "max_score" numeric not null,
+    "test_notes" text,
+    "created_at" timestamp with time zone not null default timezone('utc'::text, now())
+      );
+
+
+alter table "public"."live_session_test_responses" enable row level security;
+
+
   create table "public"."live_sessions" (
     "id" uuid not null default extensions.uuid_generate_v4(),
     "organization_id" uuid not null,
@@ -261,6 +281,18 @@ CREATE INDEX live_session_responses_status_idx ON public.live_session_responses 
 
 CREATE INDEX live_session_responses_user_id_idx ON public.live_session_responses USING btree (user_id);
 
+CREATE INDEX live_session_test_responses_facilitator_id_idx ON public.live_session_test_responses USING btree (facilitator_id);
+
+CREATE INDEX live_session_test_responses_live_session_block_id_idx ON public.live_session_test_responses USING btree (live_session_block_id);
+
+CREATE INDEX live_session_test_responses_live_session_id_idx ON public.live_session_test_responses USING btree (live_session_id);
+
+CREATE UNIQUE INDEX live_session_test_responses_pkey ON public.live_session_test_responses USING btree (id);
+
+CREATE INDEX live_session_test_responses_status_idx ON public.live_session_test_responses USING btree (status);
+
+CREATE INDEX live_session_test_responses_submitted_at_idx ON public.live_session_test_responses USING btree (submitted_at);
+
 CREATE INDEX live_sessions_course_id_idx ON public.live_sessions USING btree (course_id);
 
 CREATE INDEX live_sessions_created_by_idx ON public.live_sessions USING btree (created_by);
@@ -292,6 +324,8 @@ alter table "public"."live_session_participants" add constraint "live_session_pa
 alter table "public"."live_session_reactions" add constraint "live_session_reactions_pkey" PRIMARY KEY using index "live_session_reactions_pkey";
 
 alter table "public"."live_session_responses" add constraint "live_session_responses_pkey" PRIMARY KEY using index "live_session_responses_pkey";
+
+alter table "public"."live_session_test_responses" add constraint "live_session_test_responses_pkey" PRIMARY KEY using index "live_session_test_responses_pkey";
 
 alter table "public"."live_sessions" add constraint "live_sessions_pkey" PRIMARY KEY using index "live_sessions_pkey";
 
@@ -406,6 +440,22 @@ alter table "public"."live_session_responses" validate constraint "live_session_
 alter table "public"."live_session_responses" add constraint "live_session_responses_user_id_fkey" FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE not valid;
 
 alter table "public"."live_session_responses" validate constraint "live_session_responses_user_id_fkey";
+
+alter table "public"."live_session_test_responses" add constraint "live_session_test_responses_facilitator_id_fkey" FOREIGN KEY (facilitator_id) REFERENCES public.profiles(id) ON DELETE CASCADE not valid;
+
+alter table "public"."live_session_test_responses" validate constraint "live_session_test_responses_facilitator_id_fkey";
+
+alter table "public"."live_session_test_responses" add constraint "live_session_test_responses_live_session_block_id_fkey" FOREIGN KEY (live_session_block_id) REFERENCES public.live_session_blocks(id) ON DELETE CASCADE not valid;
+
+alter table "public"."live_session_test_responses" validate constraint "live_session_test_responses_live_session_block_id_fkey";
+
+alter table "public"."live_session_test_responses" add constraint "live_session_test_responses_live_session_id_fkey" FOREIGN KEY (live_session_id) REFERENCES public.live_sessions(id) ON DELETE CASCADE not valid;
+
+alter table "public"."live_session_test_responses" validate constraint "live_session_test_responses_live_session_id_fkey";
+
+alter table "public"."live_session_test_responses" add constraint "live_session_test_responses_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE not valid;
+
+alter table "public"."live_session_test_responses" validate constraint "live_session_test_responses_organization_id_fkey";
 
 alter table "public"."live_sessions" add constraint "live_sessions_course_id_fkey" FOREIGN KEY (course_id) REFERENCES public.courses(id) ON DELETE SET NULL not valid;
 
@@ -565,13 +615,16 @@ AS $function$
     (
       -- Step 1: Fetch session and organization info
       with session_org as (
-        select ls.id as session_id, ls.organization_id
+        select ls.id as session_id, ls.organization_id, ls.status
         from public.live_sessions ls
         where ls.id = arg_session_id
       )
       select
-        -- Step 2: Check org subscription tier
+        -- Step 2: Check if session is ended (read-only)
         case
+          -- If the session is ended, editing is disallowed
+          when so.status = 'ended' then false
+
           -- If the org is in 'temp' tier, editing is disallowed
           when public.get_org_tier(so.organization_id) = 'temp' then false
 
@@ -593,6 +646,24 @@ AS $function$
     -- Step 4: Default to false if session does not exist
     false
   )
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.cleanup_live_session_data()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+begin
+  -- Delete any orphaned analytics entries (in case they weren't cascaded)
+  delete from live_session_analytics
+  where live_session_id = OLD.id;
+
+  -- Log the deletion if needed (for audit purposes)
+  -- This could be extended to log to an audit table
+
+  return OLD;
+end;
 $function$
 ;
 
@@ -928,6 +999,116 @@ begin
     ),
     updated_at = now()
   where id = p_block_id;
+end;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.update_live_session_block_stats()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+declare
+  v_total_responses integer;
+  v_correct_responses integer;
+  v_avg_response_time integer;
+begin
+  -- Calculate statistics for the block
+  select
+    count(*),
+    count(*) filter (where status = 'correct'),
+    avg(response_time_ms)::integer
+  into
+    v_total_responses,
+    v_correct_responses,
+    v_avg_response_time
+  from live_session_responses
+  where live_session_block_id = coalesce(NEW.live_session_block_id, OLD.live_session_block_id);
+
+  -- Update the block with new statistics
+  update live_session_blocks
+  set
+    total_responses = v_total_responses,
+    correct_responses = v_correct_responses,
+    average_response_time_ms = v_avg_response_time,
+    updated_at = now()
+  where id = coalesce(NEW.live_session_block_id, OLD.live_session_block_id);
+
+  return coalesce(NEW, OLD);
+end;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.update_live_session_participant_stats()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+declare
+  v_total_responses integer;
+  v_correct_responses integer;
+  v_total_score numeric;
+  v_avg_response_time integer;
+begin
+  -- Calculate statistics for the participant
+  select
+    count(*),
+    count(*) filter (where status = 'correct'),
+    coalesce(sum(score_earned), 0),
+    avg(response_time_ms)::integer
+  into
+    v_total_responses,
+    v_correct_responses,
+    v_total_score,
+    v_avg_response_time
+  from live_session_responses
+  where participant_id = coalesce(NEW.participant_id, OLD.participant_id);
+
+  -- Update the participant with new statistics
+  update live_session_participants
+  set
+    total_responses = v_total_responses,
+    correct_responses = v_correct_responses,
+    total_score = v_total_score,
+    average_response_time_ms = v_avg_response_time,
+    updated_at = now()
+  where id = coalesce(NEW.participant_id, OLD.participant_id);
+
+  return coalesce(NEW, OLD);
+end;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.update_participant_rankings()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+begin
+  -- Update rankings for all participants in the session
+  -- Rankings are based on total_score (descending) and average_response_time_ms (ascending)
+  with ranked_participants as (
+    select
+      id,
+      row_number() over (
+        order by
+          total_score desc,
+          average_response_time_ms asc nulls last,
+          joined_at asc
+      ) as new_rank
+    from live_session_participants
+    where live_session_id = NEW.live_session_id
+      and status = 'joined'
+  )
+  update live_session_participants lsp
+  set
+    rank = rp.new_rank,
+    updated_at = now()
+  from ranked_participants rp
+  where lsp.id = rp.id
+    and (lsp.rank is distinct from rp.new_rank); -- Only update if rank changed
+
+  return NEW;
 end;
 $function$
 ;
@@ -1466,6 +1647,48 @@ grant truncate on table "public"."live_session_responses" to "service_role";
 
 grant update on table "public"."live_session_responses" to "service_role";
 
+grant delete on table "public"."live_session_test_responses" to "anon";
+
+grant insert on table "public"."live_session_test_responses" to "anon";
+
+grant references on table "public"."live_session_test_responses" to "anon";
+
+grant select on table "public"."live_session_test_responses" to "anon";
+
+grant trigger on table "public"."live_session_test_responses" to "anon";
+
+grant truncate on table "public"."live_session_test_responses" to "anon";
+
+grant update on table "public"."live_session_test_responses" to "anon";
+
+grant delete on table "public"."live_session_test_responses" to "authenticated";
+
+grant insert on table "public"."live_session_test_responses" to "authenticated";
+
+grant references on table "public"."live_session_test_responses" to "authenticated";
+
+grant select on table "public"."live_session_test_responses" to "authenticated";
+
+grant trigger on table "public"."live_session_test_responses" to "authenticated";
+
+grant truncate on table "public"."live_session_test_responses" to "authenticated";
+
+grant update on table "public"."live_session_test_responses" to "authenticated";
+
+grant delete on table "public"."live_session_test_responses" to "service_role";
+
+grant insert on table "public"."live_session_test_responses" to "service_role";
+
+grant references on table "public"."live_session_test_responses" to "service_role";
+
+grant select on table "public"."live_session_test_responses" to "service_role";
+
+grant trigger on table "public"."live_session_test_responses" to "service_role";
+
+grant truncate on table "public"."live_session_test_responses" to "service_role";
+
+grant update on table "public"."live_session_test_responses" to "service_role";
+
 grant delete on table "public"."live_sessions" to "anon";
 
 grant insert on table "public"."live_sessions" to "anon";
@@ -1560,7 +1783,9 @@ with check (public.can_user_edit_live_session(live_session_id));
   as permissive
   for delete
   to public
-using ((public.has_org_role(organization_id, 'admin'::text, ( SELECT auth.uid() AS uid)) AND (public.get_org_tier(organization_id) <> 'temp'::public.subscription_tier)));
+using ((public.has_org_role(organization_id, 'admin'::text, ( SELECT auth.uid() AS uid)) AND (public.get_org_tier(organization_id) <> 'temp'::public.subscription_tier) AND (EXISTS ( SELECT 1
+   FROM public.live_sessions ls
+  WHERE ((ls.id = live_session_facilitators.live_session_id) AND (ls.status <> 'ended'::public.live_session_status))))));
 
 
 
@@ -1571,7 +1796,9 @@ using ((public.has_org_role(organization_id, 'admin'::text, ( SELECT auth.uid() 
   to public
 with check ((public.has_org_role(organization_id, 'admin'::text, ( SELECT auth.uid() AS uid)) AND (EXISTS ( SELECT 1
    FROM public.organization_members m
-  WHERE ((m.organization_id = live_session_facilitators.organization_id) AND (m.user_id = live_session_facilitators.user_id)))) AND (public.get_org_tier(organization_id) <> 'temp'::public.subscription_tier)));
+  WHERE ((m.organization_id = live_session_facilitators.organization_id) AND (m.user_id = live_session_facilitators.user_id)))) AND (public.get_org_tier(organization_id) <> 'temp'::public.subscription_tier) AND (EXISTS ( SELECT 1
+   FROM public.live_sessions ls
+  WHERE ((ls.id = live_session_facilitators.live_session_id) AND (ls.status <> 'ended'::public.live_session_status))))));
 
 
 
@@ -1592,7 +1819,7 @@ using (public.has_org_role(organization_id, 'editor'::text, ( SELECT auth.uid() 
 with check (((user_id = ( SELECT auth.uid() AS uid)) AND (EXISTS ( SELECT 1
    FROM (public.live_session_participants lsp
      JOIN public.live_sessions ls ON ((ls.id = lsp.live_session_id)))
-  WHERE ((lsp.live_session_id = live_session_messages.live_session_id) AND (lsp.user_id = ( SELECT auth.uid() AS uid)) AND (lsp.status = 'joined'::public.live_participant_status) AND (ls.enable_chat = true))))));
+  WHERE ((lsp.live_session_id = live_session_messages.live_session_id) AND (lsp.user_id = ( SELECT auth.uid() AS uid)) AND (lsp.status = 'joined'::public.live_participant_status) AND (ls.enable_chat = true) AND (ls.status <> 'ended'::public.live_session_status))))));
 
 
 
@@ -1636,7 +1863,7 @@ using ((EXISTS ( SELECT 1
   to authenticated
 with check (((user_id = ( SELECT auth.uid() AS uid)) AND (EXISTS ( SELECT 1
    FROM public.live_sessions ls
-  WHERE ((ls.id = live_session_participants.live_session_id) AND (public.get_user_org_role(ls.organization_id, ( SELECT auth.uid() AS uid)) IS NOT NULL))))));
+  WHERE ((ls.id = live_session_participants.live_session_id) AND (public.get_user_org_role(ls.organization_id, ( SELECT auth.uid() AS uid)) IS NOT NULL) AND (ls.status <> 'ended'::public.live_session_status))))));
 
 
 
@@ -1670,7 +1897,7 @@ using (((user_id = ( SELECT auth.uid() AS uid)) OR (EXISTS ( SELECT 1
 with check (((user_id = ( SELECT auth.uid() AS uid)) AND (EXISTS ( SELECT 1
    FROM (public.live_session_participants lsp
      JOIN public.live_sessions ls ON ((ls.id = lsp.live_session_id)))
-  WHERE ((lsp.live_session_id = live_session_reactions.live_session_id) AND (lsp.user_id = ( SELECT auth.uid() AS uid)) AND (lsp.status = 'joined'::public.live_participant_status) AND (ls.enable_reactions = true))))));
+  WHERE ((lsp.live_session_id = live_session_reactions.live_session_id) AND (lsp.user_id = ( SELECT auth.uid() AS uid)) AND (lsp.status = 'joined'::public.live_participant_status) AND (ls.enable_reactions = true) AND (ls.status <> 'ended'::public.live_session_status))))));
 
 
 
@@ -1693,19 +1920,68 @@ using ((EXISTS ( SELECT 1
 with check (((user_id = ( SELECT auth.uid() AS uid)) AND (EXISTS ( SELECT 1
    FROM public.live_session_participants lsp
   WHERE ((lsp.id = live_session_responses.participant_id) AND (lsp.user_id = ( SELECT auth.uid() AS uid)) AND (lsp.live_session_id = live_session_responses.live_session_id) AND (lsp.status = 'joined'::public.live_participant_status)))) AND (EXISTS ( SELECT 1
-   FROM public.live_session_blocks lsb
-  WHERE ((lsb.id = live_session_responses.live_session_block_id) AND (lsb.status = 'active'::public.live_session_block_status))))));
+   FROM (public.live_session_blocks lsb
+     JOIN public.live_sessions ls ON ((ls.id = lsb.live_session_id)))
+  WHERE ((lsb.id = live_session_responses.live_session_block_id) AND (lsb.status = 'active'::public.live_session_block_status) AND (ls.status <> 'ended'::public.live_session_status))))));
 
 
 
-  create policy "Select: Org members can view responses"
+  create policy "Select: Org members can view responses or users can view their "
   on "public"."live_session_responses"
   as permissive
   for select
   to authenticated
-using ((EXISTS ( SELECT 1
+using (((user_id = ( SELECT auth.uid() AS uid)) OR (EXISTS ( SELECT 1
    FROM public.live_sessions ls
-  WHERE ((ls.id = live_session_responses.live_session_id) AND (public.get_user_org_role(ls.organization_id, ( SELECT auth.uid() AS uid)) IS NOT NULL)))));
+  WHERE ((ls.id = live_session_responses.live_session_id) AND (public.get_user_org_role(ls.organization_id, ( SELECT auth.uid() AS uid)) IS NOT NULL))))));
+
+
+
+  create policy "Delete: Facilitators can delete their own test responses"
+  on "public"."live_session_test_responses"
+  as permissive
+  for delete
+  to authenticated
+using (((facilitator_id = ( SELECT auth.uid() AS uid)) AND (EXISTS ( SELECT 1
+   FROM public.live_sessions ls
+  WHERE ((ls.id = live_session_test_responses.live_session_id) AND (ls.status <> 'ended'::public.live_session_status))))));
+
+
+
+  create policy "Insert: Facilitators can submit test responses"
+  on "public"."live_session_test_responses"
+  as permissive
+  for insert
+  to authenticated
+with check (((facilitator_id = ( SELECT auth.uid() AS uid)) AND (EXISTS ( SELECT 1
+   FROM (public.live_session_facilitators lsf
+     JOIN public.live_sessions ls ON ((ls.id = lsf.live_session_id)))
+  WHERE ((lsf.live_session_id = live_session_test_responses.live_session_id) AND (lsf.user_id = ( SELECT auth.uid() AS uid)) AND (ls.status <> 'ended'::public.live_session_status))))));
+
+
+
+  create policy "Select: Org members can view test responses or facilitators can"
+  on "public"."live_session_test_responses"
+  as permissive
+  for select
+  to authenticated
+using (((facilitator_id = ( SELECT auth.uid() AS uid)) OR (EXISTS ( SELECT 1
+   FROM public.live_sessions ls
+  WHERE ((ls.id = live_session_test_responses.live_session_id) AND (public.get_user_org_role(ls.organization_id, ( SELECT auth.uid() AS uid)) IS NOT NULL))))));
+
+
+
+  create policy "Update: Facilitators can update their own test responses"
+  on "public"."live_session_test_responses"
+  as permissive
+  for update
+  to authenticated
+using (((facilitator_id = ( SELECT auth.uid() AS uid)) AND (EXISTS ( SELECT 1
+   FROM public.live_sessions ls
+  WHERE ((ls.id = live_session_test_responses.live_session_id) AND (ls.status <> 'ended'::public.live_session_status))))))
+with check (((facilitator_id = ( SELECT auth.uid() AS uid)) AND (EXISTS ( SELECT 1
+   FROM public.live_sessions ls
+  WHERE ((ls.id = live_session_test_responses.live_session_id) AND (ls.status <> 'ended'::public.live_session_status))))));
 
 
 
@@ -1751,9 +2027,25 @@ CREATE TRIGGER live_session_blocks_update_timestamp_trigger BEFORE UPDATE ON pub
 
 CREATE TRIGGER trg_ensure_facilitator_is_valid BEFORE INSERT OR UPDATE ON public.live_session_facilitators FOR EACH ROW EXECUTE FUNCTION public.ensure_facilitator_is_valid();
 
+CREATE TRIGGER live_session_participant_update_rankings AFTER UPDATE OF total_score, average_response_time_ms ON public.live_session_participants FOR EACH ROW EXECUTE FUNCTION public.update_participant_rankings();
+
 CREATE TRIGGER live_session_participants_update_timestamp_trigger BEFORE UPDATE ON public.live_session_participants FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
+CREATE TRIGGER live_session_response_delete_update_block_stats AFTER DELETE ON public.live_session_responses FOR EACH ROW EXECUTE FUNCTION public.update_live_session_block_stats();
+
+CREATE TRIGGER live_session_response_delete_update_participant_stats AFTER DELETE ON public.live_session_responses FOR EACH ROW EXECUTE FUNCTION public.update_live_session_participant_stats();
+
+CREATE TRIGGER live_session_response_insert_update_block_stats AFTER INSERT ON public.live_session_responses FOR EACH ROW EXECUTE FUNCTION public.update_live_session_block_stats();
+
+CREATE TRIGGER live_session_response_insert_update_participant_stats AFTER INSERT ON public.live_session_responses FOR EACH ROW EXECUTE FUNCTION public.update_live_session_participant_stats();
+
+CREATE TRIGGER live_session_response_update_update_block_stats AFTER UPDATE ON public.live_session_responses FOR EACH ROW EXECUTE FUNCTION public.update_live_session_block_stats();
+
+CREATE TRIGGER live_session_response_update_update_participant_stats AFTER UPDATE ON public.live_session_responses FOR EACH ROW EXECUTE FUNCTION public.update_live_session_participant_stats();
+
 CREATE TRIGGER live_session_responses_update_stats_trigger AFTER INSERT ON public.live_session_responses FOR EACH ROW EXECUTE FUNCTION public.trigger_update_stats_after_response();
+
+CREATE TRIGGER live_session_cleanup_trigger BEFORE DELETE ON public.live_sessions FOR EACH ROW EXECUTE FUNCTION public.cleanup_live_session_data();
 
 CREATE TRIGGER live_sessions_generate_code_trigger BEFORE INSERT ON public.live_sessions FOR EACH ROW EXECUTE FUNCTION public.trigger_generate_session_code();
 

@@ -22,7 +22,7 @@ using (
 );
 
 -- ============================================================================
--- INSERT: Active participants can send messages if chat is enabled
+-- INSERT: Active participants can send messages if chat is enabled and session not ended
 -- ============================================================================
 create policy "Insert: Participants can send messages"
 on public.live_session_messages
@@ -38,6 +38,7 @@ with check (
       and lsp.user_id = (select auth.uid())
       and lsp.status = 'joined'
       and ls.enable_chat = true
+      and ls.status != 'ended'  -- Cannot send messages to ended sessions
   )
 );
 

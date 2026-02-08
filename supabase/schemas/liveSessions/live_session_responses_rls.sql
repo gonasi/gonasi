@@ -5,13 +5,17 @@
 alter table public.live_session_responses enable row level security;
 
 -- ============================================================================
--- SELECT: Org members can view responses in their sessions
+-- SELECT: Org members can view responses in their sessions OR users can view their own responses
 -- ============================================================================
-create policy "Select: Org members can view responses"
+create policy "Select: Org members can view responses or users can view their own"
 on public.live_session_responses
 for select
 to authenticated
 using (
+  -- User can view their own responses
+  user_id = (select auth.uid())
+  or
+  -- Or org members can view all responses in their sessions
   exists (
     select 1
     from public.live_sessions ls
@@ -21,7 +25,7 @@ using (
 );
 
 -- ============================================================================
--- INSERT: Active participants can submit responses to active blocks
+-- INSERT: Active participants can submit responses to active blocks (session not ended)
 -- ============================================================================
 create policy "Insert: Participants can submit responses"
 on public.live_session_responses
@@ -40,7 +44,9 @@ with check (
   and exists (
     select 1
     from public.live_session_blocks lsb
+    join public.live_sessions ls on ls.id = lsb.live_session_id
     where lsb.id = live_session_responses.live_session_block_id
       and lsb.status = 'active'
+      and ls.status != 'ended'  -- Cannot submit responses to ended sessions
   )
 );

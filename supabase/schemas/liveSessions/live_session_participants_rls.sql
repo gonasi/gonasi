@@ -21,7 +21,7 @@ using (
 );
 
 -- ============================================================================
--- INSERT: Users can join sessions via RPC (organization membership checked in RPC)
+-- INSERT: Users can join sessions (if not ended)
 -- ============================================================================
 create policy "Insert: Users can join sessions"
 on public.live_session_participants
@@ -34,6 +34,7 @@ with check (
     from public.live_sessions ls
     where ls.id = live_session_participants.live_session_id
       and public.get_user_org_role(ls.organization_id, (select auth.uid())) is not null
+      and ls.status != 'ended'  -- Cannot join ended sessions
   )
 );
 

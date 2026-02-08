@@ -2256,6 +2256,83 @@ export type Database = {
           },
         ]
       }
+      live_session_test_responses: {
+        Row: {
+          created_at: string
+          facilitator_id: string
+          id: string
+          live_session_block_id: string
+          live_session_id: string
+          max_score: number
+          organization_id: string
+          response_data: Json
+          response_time_ms: number
+          score_earned: number
+          status: Database["public"]["Enums"]["live_response_status"]
+          submitted_at: string
+          test_notes: string | null
+        }
+        Insert: {
+          created_at?: string
+          facilitator_id: string
+          id?: string
+          live_session_block_id: string
+          live_session_id: string
+          max_score: number
+          organization_id: string
+          response_data: Json
+          response_time_ms: number
+          score_earned?: number
+          status: Database["public"]["Enums"]["live_response_status"]
+          submitted_at?: string
+          test_notes?: string | null
+        }
+        Update: {
+          created_at?: string
+          facilitator_id?: string
+          id?: string
+          live_session_block_id?: string
+          live_session_id?: string
+          max_score?: number
+          organization_id?: string
+          response_data?: Json
+          response_time_ms?: number
+          score_earned?: number
+          status?: Database["public"]["Enums"]["live_response_status"]
+          submitted_at?: string
+          test_notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_session_test_responses_facilitator_id_fkey"
+            columns: ["facilitator_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "live_session_test_responses_live_session_block_id_fkey"
+            columns: ["live_session_block_id"]
+            isOneToOne: false
+            referencedRelation: "live_session_blocks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "live_session_test_responses_live_session_id_fkey"
+            columns: ["live_session_id"]
+            isOneToOne: false
+            referencedRelation: "live_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "live_session_test_responses_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       live_sessions: {
         Row: {
           actual_start_time: string | null
