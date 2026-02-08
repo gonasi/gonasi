@@ -384,6 +384,10 @@ export default [
               'routes/organizations/liveSessions/session/blocks/update-mode-modal.tsx',
             ),
             route(
+              'live-session',
+              'routes/organizations/liveSessions/session/blocks/live-session/live-session-index.tsx',
+            ),
+            route(
               ':blockId/edit',
               'routes/organizations/liveSessions/session/blocks/edit-block.tsx',
             ),

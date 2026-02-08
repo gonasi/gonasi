@@ -15,11 +15,12 @@ import { BlocksPositionUpdateArraySchema } from '@gonasi/schemas/plugins';
 
 import type { Route } from './+types/live-sessions-blocks-index';
 import { ModeToggle } from './components/ModeToggle';
+import type { LiveSessionBlocksOutletContext } from './types';
 
 import { BannerCard, NotFoundCard } from '~/components/cards';
 import { Spinner } from '~/components/loaders';
 import LiveSessionBlockWrapper from '~/components/plugins/liveSession/LiveSessionBlockWrapper';
-import { Button, PluginButton } from '~/components/ui/button';
+import { NavLinkButton, PluginButton } from '~/components/ui/button';
 import { createClient } from '~/lib/supabase/supabase.server';
 import { useStore } from '~/store';
 
@@ -158,12 +159,13 @@ export default function BlocksIndex({ params, loaderData }: Route.ComponentProps
                 <div className='flex items-end justify-center gap-2'>
                   <ModeToggle mode={session.mode} />
                   <div className='flex gap-2'>
-                    <Button
+                    <NavLinkButton
                       variant={session.mode === 'live' ? 'success' : 'secondary'}
                       leftIcon={<TvMinimalPlay />}
+                      to={`${blocksPath}/live-session`}
                     >
                       Start {session.mode} Session
-                    </Button>
+                    </NavLinkButton>
                   </div>
                 </div>
               </div>
@@ -226,7 +228,17 @@ export default function BlocksIndex({ params, loaderData }: Route.ComponentProps
         />
       ) : null}
 
-      <Outlet context={{ mode: session.mode }} />
+      <Outlet
+        context={
+          {
+            mode: session.mode,
+            session,
+            blocks: reorderedBlocks,
+            canEdit,
+            sessionCode,
+          } satisfies LiveSessionBlocksOutletContext
+        }
+      />
     </>
   );
 }
