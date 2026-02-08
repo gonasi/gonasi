@@ -5,6 +5,7 @@ import type { Route } from './+types/live-session-index';
 import type { LiveSessionBlocksOutletContext } from '../types';
 
 import { Modal } from '~/components/ui/modal';
+import { cn } from '~/lib/utils';
 
 export function meta() {
   return [
@@ -26,7 +27,34 @@ export default function LiveSessionIndex({ params }: Route.ComponentProps) {
     <Modal open>
       <Modal.Content size='full'>
         <Modal.Header
-          leadingIcon={<TvMinimalPlay />}
+          leadingIcon={
+            <div className='flex items-center space-x-1'>
+              <div
+                className={cn(
+                  'relative flex items-center text-sm font-medium transition-colors',
+                  mode === 'live' ? 'text-success' : 'text-muted-foreground',
+                )}
+              >
+                <TvMinimalPlay
+                  className={cn(mode === 'live' ? 'text-success' : 'text-secondary')}
+                />
+                <span
+                  className={cn(
+                    'absolute -top-1 -right-1 h-1 w-1 animate-pulse rounded-full',
+                    mode === 'live' ? 'bg-success' : 'bg-secondary',
+                  )}
+                />
+              </div>
+              <p
+                className={cn(
+                  'font-secondary text-xs',
+                  mode === 'live' ? 'text-success' : 'text-secondary',
+                )}
+              >
+                {mode}
+              </p>
+            </div>
+          }
           closeRoute={closeRoute}
           title='Session Controls'
         />
