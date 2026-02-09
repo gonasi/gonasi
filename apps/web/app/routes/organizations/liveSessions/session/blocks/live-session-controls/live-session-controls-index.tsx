@@ -215,11 +215,12 @@ export default function LiveSessionIndex({ params }: Route.ComponentProps) {
                 </div>
                 <p
                   className={cn(
-                    'font-secondary text-xs',
+                    'font-secondary flex flex-col text-xs',
                     mode === 'live' ? 'text-success' : 'text-secondary',
                   )}
                 >
-                  {mode}
+                  <span>{mode}</span>
+                  <span className='text-[8px]'>mode</span>
                 </p>
               </div>
               <div className='flex items-center gap-1'>
@@ -228,17 +229,22 @@ export default function LiveSessionIndex({ params }: Route.ComponentProps) {
                 ) : (
                   <WifiOff size={14} className='text-danger' />
                 )}
-                <span className='text-muted-foreground text-[10px]'>
+                <span className='text-muted-foreground font-secondary text-[10px]'>
                   {isConnected ? 'Connected' : 'Disconnected'}
                 </span>
               </div>
             </div>
           }
           closeRoute={closeRoute}
-          title='Session Controls'
+          title={session.name}
+          // subTitle={isConnected ? 'Connected' : 'Disconnected'}
+          className='container mx-auto'
         />
         <Modal.Body>
-          <div className='space-y-6'>
+          <div className='mx-auto max-w-2xl'>
+            <div>
+              <h1>Play State</h1>
+            </div>
             {/* Session Info */}
             <div className='rounded-lg border border-gray-200 bg-gray-50 p-4'>
               <h2 className='text-lg font-semibold'>{session.name}</h2>

@@ -162,7 +162,7 @@ export default function BlocksIndex({ params, loaderData }: Route.ComponentProps
                     <NavLinkButton
                       variant={session.mode === 'live' ? 'success' : 'secondary'}
                       leftIcon={<TvMinimalPlay />}
-                      to={`${blocksPath}/live-session`}
+                      to={`${blocksPath}/live-session-controls`}
                     >
                       Start {session.mode} Session
                     </NavLinkButton>

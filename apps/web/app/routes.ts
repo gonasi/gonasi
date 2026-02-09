@@ -383,8 +383,8 @@ export default [
               'routes/organizations/liveSessions/session/blocks/update-mode-modal.tsx',
             ),
             route(
-              'live-session',
-              'routes/organizations/liveSessions/session/blocks/live-session/live-session-index.tsx',
+              'live-session-controls',
+              'routes/organizations/liveSessions/session/blocks/live-session-controls/live-session-controls-index.tsx',
             ),
             route(
               ':blockId/edit',
