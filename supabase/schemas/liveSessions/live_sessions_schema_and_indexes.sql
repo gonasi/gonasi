@@ -29,6 +29,7 @@ create table "public"."live_sessions" (
   "play_state" live_session_play_state not null default 'lobby',
   "play_mode" live_session_play_mode not null default 'autoplay',
   "mode" live_session_mode not null default 'test', -- test | live
+  "current_block_id" uuid, -- Currently active block
 
   "max_participants" integer, -- null = unlimited
   "allow_late_join" boolean not null default true,
@@ -83,6 +84,12 @@ alter table "public"."live_sessions"
   references "public"."published_courses" ("id")
   on delete set null;
 
+alter table "public"."live_sessions"
+  add constraint "live_sessions_current_block_id_fkey"
+  foreign key ("current_block_id")
+  references "public"."live_session_blocks" ("id")
+  on delete set null;
+
 -- Constraints
 -- Private sessions must have a session_key
 alter table "public"."live_sessions"
@@ -101,6 +108,7 @@ create index "live_sessions_course_id_idx" on "public"."live_sessions" ("course_
 create index "live_sessions_visibility_idx" on "public"."live_sessions" ("visibility");
 create index "live_sessions_image_url_idx" on "public"."live_sessions" ("image_url");
 create index "live_sessions_mode_idx" on "public"."live_sessions" ("mode");
+create index "live_sessions_current_block_id_idx" on "public"."live_sessions" ("current_block_id");
 
 -- Comments
 comment on table "public"."live_sessions" is 'Live interactive learning sessions with real-time Q&A';
@@ -111,3 +119,4 @@ comment on column "public"."live_sessions"."session_key" is 'Password/key requir
 comment on column "public"."live_sessions"."visibility" is 'Access control: public, unlisted, or private (key required)';
 comment on column "public"."live_sessions"."allow_late_join" is 'Whether participants can join after session has started';
 comment on column "public"."live_sessions"."mode" is 'Operational mode: test for facilitators to preview, live for actual sessions. State resets when switching modes.';
+comment on column "public"."live_sessions"."current_block_id" is 'The currently active block in the live session';

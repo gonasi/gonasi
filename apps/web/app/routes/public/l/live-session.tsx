@@ -3,7 +3,7 @@ import { redirectWithError } from 'remix-toast';
 import { getUserId } from '@gonasi/database/auth';
 import { fetchLiveSessionBlocks, fetchLiveSessionByCode } from '@gonasi/database/liveSessions';
 
-import type { Route } from './+types/live-session-test';
+import type { Route } from './+types/live-session';
 
 import { LiveSessionPlayEngine } from '~/components/liveSession/LiveSessionPlayEngine';
 import { createClient } from '~/lib/supabase/supabase.server';
@@ -34,6 +34,11 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 
   const session = sessionResult.data;
 
+  // Ensure required fields exist
+  if (!session.id || !session.organization_id) {
+    return redirectWithError('/go/explore', 'Invalid session data.');
+  }
+
   // Check privacy/visibility (same as live mode)
   if (session.visibility === 'private') {
     // TODO: Verify user is invited participant or facilitator
@@ -59,6 +64,8 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   }
 
   // Test mode: No participant record created
+  // Default to first block if no current block is set
+  const currentBlockId = blocksResult.data.length > 0 ? (blocksResult.data[0]?.id ?? null) : null;
 
   return {
     sessionCode,
@@ -67,6 +74,9 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     sessionTitle: `${session.name} (Test Mode)`,
     session: {
       status: session.status,
+      playState: session.play_state,
+      playMode: session.play_mode,
+      currentBlockId,
       showLeaderboard: session.show_leaderboard,
       enableChat: session.enable_chat,
       enableReactions: session.enable_reactions,
@@ -79,7 +89,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
  * Action - Handle test mode interactions
  * Test mode doesn't write to database
  */
-export async function action({ request, params }: Route.ActionArgs) {
+export async function action({ request }: Route.ActionArgs) {
   const formData = await request.formData();
   const intent = formData.get('intent');
 
@@ -113,6 +123,11 @@ export default function LiveSessionTest({ loaderData }: Route.ComponentProps) {
       sessionId={loaderData.sessionId}
       blocks={loaderData.blocks}
       sessionTitle={loaderData.sessionTitle}
+      initialState={{
+        status: loaderData.session.status,
+        playState: loaderData.session.playState,
+        currentBlockId: loaderData.session.currentBlockId,
+      }}
     />
   );
 }

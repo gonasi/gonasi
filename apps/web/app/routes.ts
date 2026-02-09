@@ -30,9 +30,8 @@ export default [
 
   layout('routes/layouts/main/plain-main-layout.tsx', [
     // Live Sessions - Public participant routes
-    // route('live/:sessionCode/join', 'routes/liveSessions/public/join-session.tsx'),
-    route('l/:sessionCode/test', 'routes/public/l/live-session-test.tsx'),
-    // route('live/:sessionCode', 'routes/liveSessions/public/session-play.tsx'),
+    // Unified route for both test and live modes (mode determined from database)
+    route('l/:sessionCode', 'routes/public/l/live-session.tsx'),
   ]),
 
   layout('routes/layouts/gonasi/gonasi-layout.tsx', [

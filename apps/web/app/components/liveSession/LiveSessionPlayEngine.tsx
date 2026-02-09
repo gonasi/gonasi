@@ -1,11 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
+import type { Database } from '@gonasi/database/schema';
 import type { LiveSessionBlock } from '@gonasi/database/liveSessions';
 
 import type { LiveSessionMode } from '../plugins/liveSession/core/types';
 
+import { useParticipantRealtime } from './hooks/useParticipantRealtime';
+
 import { liveSessionPluginRegistry } from '~/components/plugins/liveSession';
-import { supabaseClient } from '~/lib/supabase/supabaseClient';
 
 interface LiveSessionPlayEngineProps {
   blocks: LiveSessionBlock[];
@@ -13,17 +15,27 @@ interface LiveSessionPlayEngineProps {
   sessionId: string;
   mode: LiveSessionMode;
   sessionTitle?: string;
+  initialState: {
+    status: Database['public']['Enums']['live_session_status'];
+    playState: Database['public']['Enums']['live_session_play_state'];
+    currentBlockId: string | null;
+  };
 }
 
 /**
  * LiveSessionPlayEngine - Shared component for both live and test modes
  *
+ * Database-first architecture:
+ * - Subscribes to Postgres Changes on live_sessions table
+ * - Facilitator updates database → triggers Postgres Changes → participants receive updates
+ * - Server is the single source of truth for session state
+ *
  * Handles:
- * - Block navigation
+ * - Block navigation (driven by current_block_id from database)
  * - Current block rendering with Play components
  * - Timer management
  * - Response handling (DB write for live, client-only for test)
- * - Real-time sync (supabaseClient Realtime)
+ * - Real-time sync via Postgres Changes
  *
  * Mode differences:
  * - test: Ephemeral Realtime channel, no DB writes, in-memory state
@@ -35,90 +47,39 @@ export function LiveSessionPlayEngine({
   sessionId,
   mode,
   sessionTitle,
+  initialState,
 }: LiveSessionPlayEngineProps) {
-  const [currentBlockIndex, setCurrentBlockIndex] = useState(0);
   const [responses, setResponses] = useState<Record<string, any>>({});
-  const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'error'>(
-    'connecting',
-  );
+  const isTestMode = mode === 'test';
+
+  // Subscribe to database changes via Postgres Changes
+  const { isConnected, sessionState } = useParticipantRealtime({
+    sessionId,
+    mode,
+  });
+
+  // Use session state from database (or initial state)
+  const currentStatus = sessionState?.status ?? initialState.status;
+  const currentPlayState = sessionState?.playState ?? initialState.playState;
+  const currentBlockId = sessionState?.currentBlockId ?? initialState.currentBlockId;
+
+  // Derive current block index from currentBlockId
+  const currentBlockIndex = useMemo(() => {
+    if (!currentBlockId) return 0;
+    const index = blocks.findIndex((block) => block.id === currentBlockId);
+    return index >= 0 ? index : 0;
+  }, [currentBlockId, blocks]);
 
   const currentBlock = blocks[currentBlockIndex];
   const isLastBlock = currentBlockIndex === blocks.length - 1;
-  const isTestMode = mode === 'test';
 
-  // supabaseClient Realtime setup
-  useEffect(() => {
-    // Generate channel name based on mode
-    const channelName = isTestMode
-      ? `test:${sessionCode}:${Date.now()}` // Unique test session
-      : `live_session:${sessionId}`;
+  const connectionStatus: 'connecting' | 'connected' | 'error' = isConnected
+    ? 'connected'
+    : 'connecting';
 
-    const channel = supabaseClient.channel(channelName, {
-      config: {
-        presence: {
-          key: 'participant',
-        },
-      },
-    });
-
-    // Subscribe to block changes (facilitator control)
-    channel.on('broadcast', { event: 'block_change' }, (payload) => {
-      const { blockIndex } = payload.payload as { blockIndex: number };
-      if (typeof blockIndex === 'number' && blockIndex !== currentBlockIndex) {
-        setCurrentBlockIndex(blockIndex);
-      }
-    });
-
-    // Subscribe to session status changes
-    channel.on('broadcast', { event: 'session_status' }, (payload) => {
-      const { status } = payload.payload as { status: string };
-      console.log('[Realtime] Session status changed:', status);
-      // TODO: Handle session pause, resume, end
-    });
-
-    // Track presence (who's currently in the session)
-    channel.on('presence', { event: 'sync' }, () => {
-      const presenceState = channel.presenceState();
-      console.log('[Realtime] Participants:', Object.keys(presenceState).length);
-      // TODO: Update participant count display
-    });
-
-    // Subscribe and track connection
-    channel.subscribe((status) => {
-      if (status === 'SUBSCRIBED') {
-        setConnectionStatus('connected');
-        console.log(`[Realtime] Connected to ${channelName}`);
-
-        // Track this participant's presence (live mode only)
-        if (!isTestMode) {
-          channel.track({
-            online_at: new Date().toISOString(),
-          });
-        }
-      } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
-        setConnectionStatus('error');
-        console.error('[Realtime] Connection error, status:', status);
-      }
-    });
-
-    // Cleanup on unmount
-    return () => {
-      channel.unsubscribe();
-      console.log(`[Realtime] Unsubscribed from ${channelName}`);
-    };
-  }, [sessionCode, sessionId, isTestMode, currentBlockIndex]);
-
-  const handleNext = () => {
-    if (!isLastBlock) {
-      setCurrentBlockIndex((prev) => prev + 1);
-    }
-  };
-
-  const handlePrevious = () => {
-    if (currentBlockIndex > 0) {
-      setCurrentBlockIndex((prev) => prev - 1);
-    }
-  };
+  // Note: In test mode, manual navigation is removed
+  // The facilitator controls should be used via the session controls page
+  // Participants (including test mode users) see whatever block the database says is current
 
   const handleResponse = async (blockId: string, response: any) => {
     if (isTestMode) {
@@ -235,28 +196,25 @@ export function LiveSessionPlayEngine({
         )}
       </div>
 
-      {/* Navigation Controls (Test Mode Only - Live mode controlled by facilitator) */}
-      {isTestMode && (
-        <div className='flex items-center justify-between'>
-          <button
-            onClick={handlePrevious}
-            disabled={currentBlockIndex === 0}
-            className='bg-secondary text-secondary-foreground rounded-lg px-6 py-2 disabled:opacity-50'
-          >
-            ← Previous
-          </button>
-          <div className='text-muted-foreground text-sm'>
-            {currentBlockIndex + 1} / {blocks.length}
-          </div>
-          <button
-            onClick={handleNext}
-            disabled={isLastBlock}
-            className='bg-secondary text-secondary-foreground rounded-lg px-6 py-2 disabled:opacity-50'
-          >
-            {isLastBlock ? 'Finish' : 'Next →'}
-          </button>
+      {/* Session State Information */}
+      <div className='text-muted-foreground rounded-lg border p-4 text-sm'>
+        <p className='font-semibold'>Session State</p>
+        <div className='mt-2 space-y-1 text-xs'>
+          <p>
+            <span className='font-medium'>Status:</span>{' '}
+            <span className='capitalize'>{currentStatus}</span>
+          </p>
+          <p>
+            <span className='font-medium'>Play State:</span>{' '}
+            <span className='capitalize'>{currentPlayState.replace(/_/g, ' ')}</span>
+          </p>
+          {isTestMode && (
+            <p className='text-warning mt-2 italic'>
+              Use the Session Controls page to navigate between blocks
+            </p>
+          )}
         </div>
-      )}
+      </div>
 
       {/* Implementation Status */}
       <div className='border-border rounded-lg border p-4'>

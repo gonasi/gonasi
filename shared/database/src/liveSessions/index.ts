@@ -10,3 +10,6 @@ export * from './deleteLiveSessionBlock';
 export * from './reorderLiveSessionBlocks';
 export * from './setLiveSessionToTest';
 export * from './setLiveSessionToLive';
+export * from './updateLiveSessionStatus';
+export * from './updateLiveSessionPlayState';
+export * from './updateLiveSessionBlockStatus';
