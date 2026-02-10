@@ -285,10 +285,10 @@ export default function LiveSessionIndex({ params, loaderData }: Route.Component
           // subTitle={isConnected ? 'Connected' : 'Disconnected'}
           className='container mx-auto'
         />
-        <Modal.Body>
+        <Modal.Body className='px-0 md:px-4'>
           <div className='mx-auto max-w-2xl'>
             {/* Play State Controls */}
-            <div className='bg-card p-4'>
+            <div className='md:bg-card bg-transparent p-4'>
               <PlayStateControls
                 currentPlayState={currentPlayState}
                 onPlayStateChange={handlePlayStateChange}

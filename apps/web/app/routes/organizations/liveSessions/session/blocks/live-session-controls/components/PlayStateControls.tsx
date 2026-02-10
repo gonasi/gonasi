@@ -1,11 +1,11 @@
-import { ChevronDown, Gamepad2, LoaderCircle, PlayCircle } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Gamepad2, type LucideIcon, PlayCircle } from 'lucide-react';
 
+import { PlayStateButton } from '../../components/PlayStateButton';
 import { PLAY_STATES } from '../constants/play-states';
 import type { LiveSessionPlayState } from '../types';
 
 import useModal from '~/components/go-editor/hooks/useModal';
-import { Button } from '~/components/ui/button';
-import { cn } from '~/lib/utils';
 
 interface PlayStateControlsProps {
   currentPlayState: LiveSessionPlayState;
@@ -37,28 +37,37 @@ export function PlayStateControls({
     showModal(
       'Change Play State',
       (onClose) => (
-        <div className='grid grid-cols-1 gap-2 sm:grid-cols-2'>
+        <motion.div
+          className='grid grid-cols-1 gap-2 sm:grid-cols-2'
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3 }}
+        >
           {PLAY_STATES.filter((state) => state.state !== currentPlayState).map(
-            ({ state, label, icon: Icon, description }) => (
-              <Button
+            ({ state, label, icon, description }, index) => (
+              <motion.div
                 key={state}
-                size='sm'
-                variant='secondary'
-                className='flex h-auto flex-col items-start justify-start py-3'
-                onClick={() => handleStateChange(state, onClose)}
-                disabled={disabled}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{
+                  delay: index * 0.08,
+                  duration: 0.4,
+                  ease: [0.22, 1, 0.36, 1],
+                }}
               >
-                <div className='flex w-full items-center gap-2'>
-                  <Icon size={16} />
-                  <span className='text-xs font-medium'>{label}</span>
-                </div>
-                <span className='text-muted-foreground mt-1 text-left text-[10px]'>
-                  {description}
-                </span>
-              </Button>
+                <PlayStateButton
+                  icon={icon as LucideIcon}
+                  label={label}
+                  description={description}
+                  onClick={() => handleStateChange(state, onClose)}
+                  disabled={disabled}
+                  isLoading={isLoading}
+                  showPresentationIcon
+                />
+              </motion.div>
             ),
           )}
-        </div>
+        </motion.div>
       ),
       '',
       <Gamepad2 />,
@@ -68,79 +77,34 @@ export function PlayStateControls({
 
   return (
     <>
-      <div className='space-y-3'>
-        <div className='flex items-center gap-2'>
-          <Gamepad2 size={18} />
-          <h3 className='font-semibold'>Play State</h3>
-        </div>
-
-        {/* 
-          Replacing non-interactive div with a properly accessible button.
-          If you want just a demo area, prefer <button> or give role and keyboard handlers.
-        */}
-
-        <button
-          type='button'
-          onClick={openStateModal}
-          className={cn(
-            'group w-full rounded-none border bg-transparent px-3 py-2',
-            'text-foreground transition',
-            'hover:shadow-sm',
-            'hover:cursor-ponter',
-            'focus:ring-border focus:ring-2 focus:outline-none',
-          )}
+      <motion.div
+        className='space-y-3'
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: 'easeOut' }}
+      >
+        <motion.div
+          className='flex items-center gap-2'
+          initial={{ opacity: 0, x: -8 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.1, duration: 0.4 }}
         >
-          <div className='flex items-center gap-3'>
-            <ActiveIcon className='shrink-0' />
+          <motion.div whileHover={{ rotate: 15, scale: 1.1 }} transition={{ duration: 0.2 }}>
+            <Gamepad2 size={18} />
+          </motion.div>
+          <h3 className='text-lg font-semibold'>Play State</h3>
+        </motion.div>
 
-            <div className='flex min-w-0 flex-1 flex-col text-left'>
-              <span className='truncate text-sm font-medium'>{activeState?.label}</span>
-              <span className='text-muted-foreground truncate text-[11px] leading-tight'>
-                {activeState?.description}
-              </span>
-            </div>
-
-            <div className='ml-2 flex shrink-0 items-center'>
-              {!isLoading ? (
-                <LoaderCircle className='animate-spin' />
-              ) : (
-                <ChevronDown
-                  className={cn('transition-transform', 'group-hover:translate-y-[1px]')}
-                />
-              )}
-            </div>
-          </div>
-        </button>
-
-        <Button
-          size='sm'
-          variant='default'
-          className='flex h-auto flex-col items-start justify-start py-3'
+        <PlayStateButton
+          icon={ActiveIcon as LucideIcon}
+          label={activeState?.label || ''}
+          description={activeState?.description || ''}
           onClick={openStateModal}
-          disabled={disabled || isLoading}
+          disabled={disabled}
           isLoading={isLoading}
-          leftIcon={<ActiveIcon size={16} />}
-          leftIconAtEdge
-        >
-          <div className='flex w-full items-center justify-between gap-2'>
-            <div className='flex items-center gap-2'>
-              {isLoading ? (
-                <Spinner />
-              ) : (
-                <>
-                  <span className='text-xs font-medium'>{activeState?.label}</span>
-                </>
-              )}
-            </div>
-            {!isLoading && <ChevronDown size={14} />}
-          </div>
-          {!isLoading && (
-            <span className='text-muted-foreground mt-1 text-left text-[10px]'>
-              {activeState?.description}
-            </span>
-          )}
-        </Button>
-      </div>
+          showChevron
+        />
+      </motion.div>
       {modal}
     </>
   );
