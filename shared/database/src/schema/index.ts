@@ -2341,6 +2341,7 @@ export type Database = {
           course_id: string | null
           created_at: string
           created_by: string
+          current_block_id: string | null
           description: string | null
           enable_chat: boolean
           enable_reactions: boolean
@@ -2370,6 +2371,7 @@ export type Database = {
           course_id?: string | null
           created_at?: string
           created_by: string
+          current_block_id?: string | null
           description?: string | null
           enable_chat?: boolean
           enable_reactions?: boolean
@@ -2399,6 +2401,7 @@ export type Database = {
           course_id?: string | null
           created_at?: string
           created_by?: string
+          current_block_id?: string | null
           description?: string | null
           enable_chat?: boolean
           enable_reactions?: boolean
@@ -2434,6 +2437,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "live_sessions_current_block_id_fkey"
+            columns: ["current_block_id"]
+            isOneToOne: false
+            referencedRelation: "live_session_blocks"
             referencedColumns: ["id"]
           },
           {

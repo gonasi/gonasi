@@ -383,6 +383,7 @@ schema_paths = [
   './schemas/liveSessions/live_sessions_schema_and_indexes.sql',
   './schemas/liveSessions/live_session_facilitators_schema_and_indexes.sql',
   './schemas/liveSessions/live_session_blocks_schema_and_indexes.sql',
+  './schemas/liveSessions/live_sessions_add_current_block_fkey.sql', # Add FK after both tables exist
   './schemas/liveSessions/live_session_participants_schema_and_indexes.sql',
   './schemas/liveSessions/live_session_responses_schema_and_indexes.sql',
   './schemas/liveSessions/live_session_test_responses_schema_and_indexes.sql',

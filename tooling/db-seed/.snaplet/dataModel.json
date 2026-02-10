@@ -5808,6 +5808,20 @@
           "hasDefaultValue": false
         },
         {
+          "name": "live_sessions",
+          "type": "live_sessions",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "live_sessionsTocourses",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
           "name": "published_courses",
           "type": "published_courses",
           "isRequired": false,
@@ -9265,6 +9279,2838 @@
           "fields": [
             "chapter_id",
             "position"
+          ],
+          "nullNotDistinct": false
+        }
+      ]
+    },
+    "live_session_analytics": {
+      "id": "public.live_session_analytics",
+      "schemaName": "public",
+      "tableName": "live_session_analytics",
+      "fields": [
+        {
+          "id": "public.live_session_analytics.id",
+          "name": "id",
+          "columnName": "id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": true,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_analytics.live_session_id",
+          "name": "live_session_id",
+          "columnName": "live_session_id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_analytics.organization_id",
+          "name": "organization_id",
+          "columnName": "organization_id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_analytics.total_participants",
+          "name": "total_participants",
+          "columnName": "total_participants",
+          "type": "int4",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_analytics.peak_participants",
+          "name": "peak_participants",
+          "columnName": "peak_participants",
+          "type": "int4",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_analytics.average_participants",
+          "name": "average_participants",
+          "columnName": "average_participants",
+          "type": "int4",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_analytics.total_responses",
+          "name": "total_responses",
+          "columnName": "total_responses",
+          "type": "int4",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_analytics.participation_rate",
+          "name": "participation_rate",
+          "columnName": "participation_rate",
+          "type": "numeric",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_analytics.average_response_time_ms",
+          "name": "average_response_time_ms",
+          "columnName": "average_response_time_ms",
+          "type": "int4",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_analytics.median_response_time_ms",
+          "name": "median_response_time_ms",
+          "columnName": "median_response_time_ms",
+          "type": "int4",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_analytics.average_score",
+          "name": "average_score",
+          "columnName": "average_score",
+          "type": "numeric",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_analytics.median_score",
+          "name": "median_score",
+          "columnName": "median_score",
+          "type": "numeric",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_analytics.highest_score",
+          "name": "highest_score",
+          "columnName": "highest_score",
+          "type": "numeric",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_analytics.lowest_score",
+          "name": "lowest_score",
+          "columnName": "lowest_score",
+          "type": "numeric",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_analytics.accuracy_rate",
+          "name": "accuracy_rate",
+          "columnName": "accuracy_rate",
+          "type": "numeric",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_analytics.session_duration_seconds",
+          "name": "session_duration_seconds",
+          "columnName": "session_duration_seconds",
+          "type": "int4",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_analytics.created_at",
+          "name": "created_at",
+          "columnName": "created_at",
+          "type": "timestamptz",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_analytics.updated_at",
+          "name": "updated_at",
+          "columnName": "updated_at",
+          "type": "timestamptz",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "name": "live_sessions",
+          "type": "live_sessions",
+          "isRequired": true,
+          "kind": "object",
+          "relationName": "live_session_analyticsTolive_sessions",
+          "relationFromFields": [
+            "live_session_id"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "organizations",
+          "type": "organizations",
+          "isRequired": true,
+          "kind": "object",
+          "relationName": "live_session_analyticsToorganizations",
+          "relationFromFields": [
+            "organization_id"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        }
+      ],
+      "uniqueConstraints": [
+        {
+          "name": "live_session_analytics_pkey",
+          "fields": [
+            "id"
+          ],
+          "nullNotDistinct": false
+        },
+        {
+          "name": "live_session_analytics_session_unique",
+          "fields": [
+            "live_session_id"
+          ],
+          "nullNotDistinct": false
+        }
+      ]
+    },
+    "live_session_blocks": {
+      "id": "public.live_session_blocks",
+      "schemaName": "public",
+      "tableName": "live_session_blocks",
+      "fields": [
+        {
+          "id": "public.live_session_blocks.id",
+          "name": "id",
+          "columnName": "id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": true,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_blocks.live_session_id",
+          "name": "live_session_id",
+          "columnName": "live_session_id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_blocks.organization_id",
+          "name": "organization_id",
+          "columnName": "organization_id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_blocks.created_by",
+          "name": "created_by",
+          "columnName": "created_by",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_blocks.updated_by",
+          "name": "updated_by",
+          "columnName": "updated_by",
+          "type": "uuid",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_blocks.plugin_type",
+          "name": "plugin_type",
+          "columnName": "plugin_type",
+          "type": "text",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_blocks.content",
+          "name": "content",
+          "columnName": "content",
+          "type": "jsonb",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_blocks.settings",
+          "name": "settings",
+          "columnName": "settings",
+          "type": "jsonb",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_blocks.position",
+          "name": "position",
+          "columnName": "position",
+          "type": "int4",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_blocks.time_limit",
+          "name": "time_limit",
+          "columnName": "time_limit",
+          "type": "int4",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_blocks.difficulty",
+          "name": "difficulty",
+          "columnName": "difficulty",
+          "type": "live_session_block_difficulty",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_blocks.status",
+          "name": "status",
+          "columnName": "status",
+          "type": "live_session_block_status",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_blocks.activated_at",
+          "name": "activated_at",
+          "columnName": "activated_at",
+          "type": "timestamptz",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_blocks.closed_at",
+          "name": "closed_at",
+          "columnName": "closed_at",
+          "type": "timestamptz",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_blocks.total_responses",
+          "name": "total_responses",
+          "columnName": "total_responses",
+          "type": "int4",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_blocks.correct_responses",
+          "name": "correct_responses",
+          "columnName": "correct_responses",
+          "type": "int4",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_blocks.average_response_time_ms",
+          "name": "average_response_time_ms",
+          "columnName": "average_response_time_ms",
+          "type": "int4",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_blocks.created_at",
+          "name": "created_at",
+          "columnName": "created_at",
+          "type": "timestamptz",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_blocks.updated_at",
+          "name": "updated_at",
+          "columnName": "updated_at",
+          "type": "timestamptz",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "name": "live_sessions",
+          "type": "live_sessions",
+          "isRequired": true,
+          "kind": "object",
+          "relationName": "live_session_blocksTolive_sessions",
+          "relationFromFields": [
+            "live_session_id"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "organizations",
+          "type": "organizations",
+          "isRequired": true,
+          "kind": "object",
+          "relationName": "live_session_blocksToorganizations",
+          "relationFromFields": [
+            "organization_id"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "profiles_live_session_blocks_created_byToprofiles",
+          "type": "profiles",
+          "isRequired": true,
+          "kind": "object",
+          "relationName": "live_session_blocks_created_byToprofiles",
+          "relationFromFields": [
+            "created_by"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "profiles_live_session_blocks_updated_byToprofiles",
+          "type": "profiles",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "live_session_blocks_updated_byToprofiles",
+          "relationFromFields": [
+            "updated_by"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "live_session_reactions",
+          "type": "live_session_reactions",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "live_session_reactionsTolive_session_blocks",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "live_session_responses",
+          "type": "live_session_responses",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "live_session_responsesTolive_session_blocks",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "live_session_test_responses",
+          "type": "live_session_test_responses",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "live_session_test_responsesTolive_session_blocks",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "live_sessions",
+          "type": "live_sessions",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "live_sessionsTolive_session_blocks",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        }
+      ],
+      "uniqueConstraints": [
+        {
+          "name": "live_session_blocks_pkey",
+          "fields": [
+            "id"
+          ],
+          "nullNotDistinct": false
+        }
+      ]
+    },
+    "live_session_facilitators": {
+      "id": "public.live_session_facilitators",
+      "schemaName": "public",
+      "tableName": "live_session_facilitators",
+      "fields": [
+        {
+          "id": "public.live_session_facilitators.id",
+          "name": "id",
+          "columnName": "id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": true,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_facilitators.live_session_id",
+          "name": "live_session_id",
+          "columnName": "live_session_id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_facilitators.organization_id",
+          "name": "organization_id",
+          "columnName": "organization_id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_facilitators.user_id",
+          "name": "user_id",
+          "columnName": "user_id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_facilitators.added_by",
+          "name": "added_by",
+          "columnName": "added_by",
+          "type": "uuid",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_facilitators.added_at",
+          "name": "added_at",
+          "columnName": "added_at",
+          "type": "timestamptz",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "name": "live_sessions",
+          "type": "live_sessions",
+          "isRequired": true,
+          "kind": "object",
+          "relationName": "live_session_facilitatorsTolive_sessions",
+          "relationFromFields": [
+            "live_session_id"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "organizations",
+          "type": "organizations",
+          "isRequired": true,
+          "kind": "object",
+          "relationName": "live_session_facilitatorsToorganizations",
+          "relationFromFields": [
+            "organization_id"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "profiles_live_session_facilitators_added_byToprofiles",
+          "type": "profiles",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "live_session_facilitators_added_byToprofiles",
+          "relationFromFields": [
+            "added_by"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "profiles_live_session_facilitators_user_idToprofiles",
+          "type": "profiles",
+          "isRequired": true,
+          "kind": "object",
+          "relationName": "live_session_facilitators_user_idToprofiles",
+          "relationFromFields": [
+            "user_id"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        }
+      ],
+      "uniqueConstraints": [
+        {
+          "name": "live_session_facilitators_live_session_id_user_id_key",
+          "fields": [
+            "live_session_id",
+            "user_id"
+          ],
+          "nullNotDistinct": false
+        },
+        {
+          "name": "live_session_facilitators_pkey",
+          "fields": [
+            "id"
+          ],
+          "nullNotDistinct": false
+        }
+      ]
+    },
+    "live_session_messages": {
+      "id": "public.live_session_messages",
+      "schemaName": "public",
+      "tableName": "live_session_messages",
+      "fields": [
+        {
+          "id": "public.live_session_messages.id",
+          "name": "id",
+          "columnName": "id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": true,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_messages.live_session_id",
+          "name": "live_session_id",
+          "columnName": "live_session_id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_messages.user_id",
+          "name": "user_id",
+          "columnName": "user_id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_messages.organization_id",
+          "name": "organization_id",
+          "columnName": "organization_id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_messages.message",
+          "name": "message",
+          "columnName": "message",
+          "type": "text",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_messages.is_instructor",
+          "name": "is_instructor",
+          "columnName": "is_instructor",
+          "type": "bool",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_messages.is_pinned",
+          "name": "is_pinned",
+          "columnName": "is_pinned",
+          "type": "bool",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_messages.is_deleted",
+          "name": "is_deleted",
+          "columnName": "is_deleted",
+          "type": "bool",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_messages.deleted_by",
+          "name": "deleted_by",
+          "columnName": "deleted_by",
+          "type": "uuid",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_messages.deleted_at",
+          "name": "deleted_at",
+          "columnName": "deleted_at",
+          "type": "timestamptz",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_messages.created_at",
+          "name": "created_at",
+          "columnName": "created_at",
+          "type": "timestamptz",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "name": "live_sessions",
+          "type": "live_sessions",
+          "isRequired": true,
+          "kind": "object",
+          "relationName": "live_session_messagesTolive_sessions",
+          "relationFromFields": [
+            "live_session_id"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "organizations",
+          "type": "organizations",
+          "isRequired": true,
+          "kind": "object",
+          "relationName": "live_session_messagesToorganizations",
+          "relationFromFields": [
+            "organization_id"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "profiles_live_session_messages_deleted_byToprofiles",
+          "type": "profiles",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "live_session_messages_deleted_byToprofiles",
+          "relationFromFields": [
+            "deleted_by"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "profiles_live_session_messages_user_idToprofiles",
+          "type": "profiles",
+          "isRequired": true,
+          "kind": "object",
+          "relationName": "live_session_messages_user_idToprofiles",
+          "relationFromFields": [
+            "user_id"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        }
+      ],
+      "uniqueConstraints": [
+        {
+          "name": "live_session_messages_pkey",
+          "fields": [
+            "id"
+          ],
+          "nullNotDistinct": false
+        }
+      ]
+    },
+    "live_session_participants": {
+      "id": "public.live_session_participants",
+      "schemaName": "public",
+      "tableName": "live_session_participants",
+      "fields": [
+        {
+          "id": "public.live_session_participants.id",
+          "name": "id",
+          "columnName": "id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": true,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_participants.live_session_id",
+          "name": "live_session_id",
+          "columnName": "live_session_id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_participants.user_id",
+          "name": "user_id",
+          "columnName": "user_id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_participants.organization_id",
+          "name": "organization_id",
+          "columnName": "organization_id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_participants.status",
+          "name": "status",
+          "columnName": "status",
+          "type": "live_participant_status",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_participants.display_name",
+          "name": "display_name",
+          "columnName": "display_name",
+          "type": "text",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_participants.joined_at",
+          "name": "joined_at",
+          "columnName": "joined_at",
+          "type": "timestamptz",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_participants.left_at",
+          "name": "left_at",
+          "columnName": "left_at",
+          "type": "timestamptz",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_participants.total_responses",
+          "name": "total_responses",
+          "columnName": "total_responses",
+          "type": "int4",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_participants.correct_responses",
+          "name": "correct_responses",
+          "columnName": "correct_responses",
+          "type": "int4",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_participants.total_score",
+          "name": "total_score",
+          "columnName": "total_score",
+          "type": "numeric",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_participants.average_response_time_ms",
+          "name": "average_response_time_ms",
+          "columnName": "average_response_time_ms",
+          "type": "int4",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_participants.rank",
+          "name": "rank",
+          "columnName": "rank",
+          "type": "int4",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_participants.created_at",
+          "name": "created_at",
+          "columnName": "created_at",
+          "type": "timestamptz",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_participants.updated_at",
+          "name": "updated_at",
+          "columnName": "updated_at",
+          "type": "timestamptz",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "name": "live_sessions",
+          "type": "live_sessions",
+          "isRequired": true,
+          "kind": "object",
+          "relationName": "live_session_participantsTolive_sessions",
+          "relationFromFields": [
+            "live_session_id"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "organizations",
+          "type": "organizations",
+          "isRequired": true,
+          "kind": "object",
+          "relationName": "live_session_participantsToorganizations",
+          "relationFromFields": [
+            "organization_id"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "profiles",
+          "type": "profiles",
+          "isRequired": true,
+          "kind": "object",
+          "relationName": "live_session_participantsToprofiles",
+          "relationFromFields": [
+            "user_id"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "live_session_responses",
+          "type": "live_session_responses",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "live_session_responsesTolive_session_participants",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        }
+      ],
+      "uniqueConstraints": [
+        {
+          "name": "live_session_participants_pkey",
+          "fields": [
+            "id"
+          ],
+          "nullNotDistinct": false
+        },
+        {
+          "name": "live_session_participants_session_user_unique",
+          "fields": [
+            "live_session_id",
+            "user_id"
+          ],
+          "nullNotDistinct": false
+        }
+      ]
+    },
+    "live_session_reactions": {
+      "id": "public.live_session_reactions",
+      "schemaName": "public",
+      "tableName": "live_session_reactions",
+      "fields": [
+        {
+          "id": "public.live_session_reactions.id",
+          "name": "id",
+          "columnName": "id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": true,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_reactions.live_session_id",
+          "name": "live_session_id",
+          "columnName": "live_session_id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_reactions.live_session_block_id",
+          "name": "live_session_block_id",
+          "columnName": "live_session_block_id",
+          "type": "uuid",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_reactions.user_id",
+          "name": "user_id",
+          "columnName": "user_id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_reactions.organization_id",
+          "name": "organization_id",
+          "columnName": "organization_id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_reactions.emoji",
+          "name": "emoji",
+          "columnName": "emoji",
+          "type": "text",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_reactions.created_at",
+          "name": "created_at",
+          "columnName": "created_at",
+          "type": "timestamptz",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "name": "live_session_blocks",
+          "type": "live_session_blocks",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "live_session_reactionsTolive_session_blocks",
+          "relationFromFields": [
+            "live_session_block_id"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "live_sessions",
+          "type": "live_sessions",
+          "isRequired": true,
+          "kind": "object",
+          "relationName": "live_session_reactionsTolive_sessions",
+          "relationFromFields": [
+            "live_session_id"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "organizations",
+          "type": "organizations",
+          "isRequired": true,
+          "kind": "object",
+          "relationName": "live_session_reactionsToorganizations",
+          "relationFromFields": [
+            "organization_id"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "profiles",
+          "type": "profiles",
+          "isRequired": true,
+          "kind": "object",
+          "relationName": "live_session_reactionsToprofiles",
+          "relationFromFields": [
+            "user_id"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        }
+      ],
+      "uniqueConstraints": [
+        {
+          "name": "live_session_reactions_pkey",
+          "fields": [
+            "id"
+          ],
+          "nullNotDistinct": false
+        }
+      ]
+    },
+    "live_session_responses": {
+      "id": "public.live_session_responses",
+      "schemaName": "public",
+      "tableName": "live_session_responses",
+      "fields": [
+        {
+          "id": "public.live_session_responses.id",
+          "name": "id",
+          "columnName": "id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": true,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_responses.live_session_id",
+          "name": "live_session_id",
+          "columnName": "live_session_id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_responses.live_session_block_id",
+          "name": "live_session_block_id",
+          "columnName": "live_session_block_id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_responses.participant_id",
+          "name": "participant_id",
+          "columnName": "participant_id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_responses.user_id",
+          "name": "user_id",
+          "columnName": "user_id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_responses.organization_id",
+          "name": "organization_id",
+          "columnName": "organization_id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_responses.response_data",
+          "name": "response_data",
+          "columnName": "response_data",
+          "type": "jsonb",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_responses.status",
+          "name": "status",
+          "columnName": "status",
+          "type": "live_response_status",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_responses.response_time_ms",
+          "name": "response_time_ms",
+          "columnName": "response_time_ms",
+          "type": "int4",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_responses.submitted_at",
+          "name": "submitted_at",
+          "columnName": "submitted_at",
+          "type": "timestamptz",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_responses.score_earned",
+          "name": "score_earned",
+          "columnName": "score_earned",
+          "type": "numeric",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_responses.max_score",
+          "name": "max_score",
+          "columnName": "max_score",
+          "type": "numeric",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_responses.created_at",
+          "name": "created_at",
+          "columnName": "created_at",
+          "type": "timestamptz",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "name": "live_session_blocks",
+          "type": "live_session_blocks",
+          "isRequired": true,
+          "kind": "object",
+          "relationName": "live_session_responsesTolive_session_blocks",
+          "relationFromFields": [
+            "live_session_block_id"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "live_session_participants",
+          "type": "live_session_participants",
+          "isRequired": true,
+          "kind": "object",
+          "relationName": "live_session_responsesTolive_session_participants",
+          "relationFromFields": [
+            "participant_id"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "live_sessions",
+          "type": "live_sessions",
+          "isRequired": true,
+          "kind": "object",
+          "relationName": "live_session_responsesTolive_sessions",
+          "relationFromFields": [
+            "live_session_id"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "organizations",
+          "type": "organizations",
+          "isRequired": true,
+          "kind": "object",
+          "relationName": "live_session_responsesToorganizations",
+          "relationFromFields": [
+            "organization_id"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "profiles",
+          "type": "profiles",
+          "isRequired": true,
+          "kind": "object",
+          "relationName": "live_session_responsesToprofiles",
+          "relationFromFields": [
+            "user_id"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        }
+      ],
+      "uniqueConstraints": [
+        {
+          "name": "live_session_responses_block_participant_unique",
+          "fields": [
+            "live_session_block_id",
+            "participant_id"
+          ],
+          "nullNotDistinct": false
+        },
+        {
+          "name": "live_session_responses_pkey",
+          "fields": [
+            "id"
+          ],
+          "nullNotDistinct": false
+        }
+      ]
+    },
+    "live_session_test_responses": {
+      "id": "public.live_session_test_responses",
+      "schemaName": "public",
+      "tableName": "live_session_test_responses",
+      "fields": [
+        {
+          "id": "public.live_session_test_responses.id",
+          "name": "id",
+          "columnName": "id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": true,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_test_responses.live_session_id",
+          "name": "live_session_id",
+          "columnName": "live_session_id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_test_responses.live_session_block_id",
+          "name": "live_session_block_id",
+          "columnName": "live_session_block_id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_test_responses.facilitator_id",
+          "name": "facilitator_id",
+          "columnName": "facilitator_id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_test_responses.organization_id",
+          "name": "organization_id",
+          "columnName": "organization_id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_test_responses.response_data",
+          "name": "response_data",
+          "columnName": "response_data",
+          "type": "jsonb",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_test_responses.status",
+          "name": "status",
+          "columnName": "status",
+          "type": "live_response_status",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_test_responses.response_time_ms",
+          "name": "response_time_ms",
+          "columnName": "response_time_ms",
+          "type": "int4",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_test_responses.submitted_at",
+          "name": "submitted_at",
+          "columnName": "submitted_at",
+          "type": "timestamptz",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_test_responses.score_earned",
+          "name": "score_earned",
+          "columnName": "score_earned",
+          "type": "numeric",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_test_responses.max_score",
+          "name": "max_score",
+          "columnName": "max_score",
+          "type": "numeric",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_test_responses.test_notes",
+          "name": "test_notes",
+          "columnName": "test_notes",
+          "type": "text",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_session_test_responses.created_at",
+          "name": "created_at",
+          "columnName": "created_at",
+          "type": "timestamptz",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "name": "live_session_blocks",
+          "type": "live_session_blocks",
+          "isRequired": true,
+          "kind": "object",
+          "relationName": "live_session_test_responsesTolive_session_blocks",
+          "relationFromFields": [
+            "live_session_block_id"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "live_sessions",
+          "type": "live_sessions",
+          "isRequired": true,
+          "kind": "object",
+          "relationName": "live_session_test_responsesTolive_sessions",
+          "relationFromFields": [
+            "live_session_id"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "organizations",
+          "type": "organizations",
+          "isRequired": true,
+          "kind": "object",
+          "relationName": "live_session_test_responsesToorganizations",
+          "relationFromFields": [
+            "organization_id"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "profiles",
+          "type": "profiles",
+          "isRequired": true,
+          "kind": "object",
+          "relationName": "live_session_test_responsesToprofiles",
+          "relationFromFields": [
+            "facilitator_id"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        }
+      ],
+      "uniqueConstraints": [
+        {
+          "name": "live_session_test_responses_pkey",
+          "fields": [
+            "id"
+          ],
+          "nullNotDistinct": false
+        }
+      ]
+    },
+    "live_sessions": {
+      "id": "public.live_sessions",
+      "schemaName": "public",
+      "tableName": "live_sessions",
+      "fields": [
+        {
+          "id": "public.live_sessions.id",
+          "name": "id",
+          "columnName": "id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": true,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_sessions.organization_id",
+          "name": "organization_id",
+          "columnName": "organization_id",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_sessions.created_by",
+          "name": "created_by",
+          "columnName": "created_by",
+          "type": "uuid",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_sessions.updated_by",
+          "name": "updated_by",
+          "columnName": "updated_by",
+          "type": "uuid",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_sessions.name",
+          "name": "name",
+          "columnName": "name",
+          "type": "text",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_sessions.description",
+          "name": "description",
+          "columnName": "description",
+          "type": "text",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_sessions.image_url",
+          "name": "image_url",
+          "columnName": "image_url",
+          "type": "text",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_sessions.blur_hash",
+          "name": "blur_hash",
+          "columnName": "blur_hash",
+          "type": "text",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_sessions.session_code",
+          "name": "session_code",
+          "columnName": "session_code",
+          "type": "text",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_sessions.visibility",
+          "name": "visibility",
+          "columnName": "visibility",
+          "type": "live_session_visibility",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_sessions.session_key",
+          "name": "session_key",
+          "columnName": "session_key",
+          "type": "text",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_sessions.course_id",
+          "name": "course_id",
+          "columnName": "course_id",
+          "type": "uuid",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_sessions.published_course_id",
+          "name": "published_course_id",
+          "columnName": "published_course_id",
+          "type": "uuid",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_sessions.status",
+          "name": "status",
+          "columnName": "status",
+          "type": "live_session_status",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_sessions.play_state",
+          "name": "play_state",
+          "columnName": "play_state",
+          "type": "live_session_play_state",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_sessions.play_mode",
+          "name": "play_mode",
+          "columnName": "play_mode",
+          "type": "live_session_play_mode",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_sessions.mode",
+          "name": "mode",
+          "columnName": "mode",
+          "type": "live_session_mode",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_sessions.current_block_id",
+          "name": "current_block_id",
+          "columnName": "current_block_id",
+          "type": "uuid",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_sessions.max_participants",
+          "name": "max_participants",
+          "columnName": "max_participants",
+          "type": "int4",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_sessions.allow_late_join",
+          "name": "allow_late_join",
+          "columnName": "allow_late_join",
+          "type": "bool",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_sessions.show_leaderboard",
+          "name": "show_leaderboard",
+          "columnName": "show_leaderboard",
+          "type": "bool",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_sessions.enable_chat",
+          "name": "enable_chat",
+          "columnName": "enable_chat",
+          "type": "bool",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_sessions.enable_reactions",
+          "name": "enable_reactions",
+          "columnName": "enable_reactions",
+          "type": "bool",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_sessions.scheduled_start_time",
+          "name": "scheduled_start_time",
+          "columnName": "scheduled_start_time",
+          "type": "timestamptz",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_sessions.actual_start_time",
+          "name": "actual_start_time",
+          "columnName": "actual_start_time",
+          "type": "timestamptz",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_sessions.ended_at",
+          "name": "ended_at",
+          "columnName": "ended_at",
+          "type": "timestamptz",
+          "isRequired": false,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_sessions.created_at",
+          "name": "created_at",
+          "columnName": "created_at",
+          "type": "timestamptz",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "id": "public.live_sessions.updated_at",
+          "name": "updated_at",
+          "columnName": "updated_at",
+          "type": "timestamptz",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
+          "name": "courses",
+          "type": "courses",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "live_sessionsTocourses",
+          "relationFromFields": [
+            "course_id"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "live_session_blocks",
+          "type": "live_session_blocks",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "live_sessionsTolive_session_blocks",
+          "relationFromFields": [
+            "current_block_id"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "organizations",
+          "type": "organizations",
+          "isRequired": true,
+          "kind": "object",
+          "relationName": "live_sessionsToorganizations",
+          "relationFromFields": [
+            "organization_id"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "profiles_live_sessions_created_byToprofiles",
+          "type": "profiles",
+          "isRequired": true,
+          "kind": "object",
+          "relationName": "live_sessions_created_byToprofiles",
+          "relationFromFields": [
+            "created_by"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "profiles_live_sessions_updated_byToprofiles",
+          "type": "profiles",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "live_sessions_updated_byToprofiles",
+          "relationFromFields": [
+            "updated_by"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "published_courses",
+          "type": "published_courses",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "live_sessionsTopublished_courses",
+          "relationFromFields": [
+            "published_course_id"
+          ],
+          "relationToFields": [
+            "id"
+          ],
+          "isList": false,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "live_session_analytics",
+          "type": "live_session_analytics",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "live_session_analyticsTolive_sessions",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "live_session_blocks",
+          "type": "live_session_blocks",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "live_session_blocksTolive_sessions",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "live_session_facilitators",
+          "type": "live_session_facilitators",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "live_session_facilitatorsTolive_sessions",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "live_session_messages",
+          "type": "live_session_messages",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "live_session_messagesTolive_sessions",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "live_session_participants",
+          "type": "live_session_participants",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "live_session_participantsTolive_sessions",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "live_session_reactions",
+          "type": "live_session_reactions",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "live_session_reactionsTolive_sessions",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "live_session_responses",
+          "type": "live_session_responses",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "live_session_responsesTolive_sessions",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "live_session_test_responses",
+          "type": "live_session_test_responses",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "live_session_test_responsesTolive_sessions",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        }
+      ],
+      "uniqueConstraints": [
+        {
+          "name": "live_sessions_pkey",
+          "fields": [
+            "id"
+          ],
+          "nullNotDistinct": false
+        },
+        {
+          "name": "live_sessions_session_code_key",
+          "fields": [
+            "session_code"
           ],
           "nullNotDistinct": false
         }
@@ -13432,6 +16278,132 @@
           "hasDefaultValue": false
         },
         {
+          "name": "live_session_analytics",
+          "type": "live_session_analytics",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "live_session_analyticsToorganizations",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "live_session_blocks",
+          "type": "live_session_blocks",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "live_session_blocksToorganizations",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "live_session_facilitators",
+          "type": "live_session_facilitators",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "live_session_facilitatorsToorganizations",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "live_session_messages",
+          "type": "live_session_messages",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "live_session_messagesToorganizations",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "live_session_participants",
+          "type": "live_session_participants",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "live_session_participantsToorganizations",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "live_session_reactions",
+          "type": "live_session_reactions",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "live_session_reactionsToorganizations",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "live_session_responses",
+          "type": "live_session_responses",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "live_session_responsesToorganizations",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "live_session_test_responses",
+          "type": "live_session_test_responses",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "live_session_test_responsesToorganizations",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "live_sessions",
+          "type": "live_sessions",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "live_sessionsToorganizations",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
           "name": "org_notifications",
           "type": "org_notifications",
           "isRequired": false,
@@ -14419,6 +17391,174 @@
           "hasDefaultValue": false
         },
         {
+          "name": "live_session_blocks_live_session_blocks_created_byToprofiles",
+          "type": "live_session_blocks",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "live_session_blocks_created_byToprofiles",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "live_session_blocks_live_session_blocks_updated_byToprofiles",
+          "type": "live_session_blocks",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "live_session_blocks_updated_byToprofiles",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "live_session_facilitators_live_session_facilitators_added_byToprofiles",
+          "type": "live_session_facilitators",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "live_session_facilitators_added_byToprofiles",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "live_session_facilitators_live_session_facilitators_user_idToprofiles",
+          "type": "live_session_facilitators",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "live_session_facilitators_user_idToprofiles",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "live_session_messages_live_session_messages_deleted_byToprofiles",
+          "type": "live_session_messages",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "live_session_messages_deleted_byToprofiles",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "live_session_messages_live_session_messages_user_idToprofiles",
+          "type": "live_session_messages",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "live_session_messages_user_idToprofiles",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "live_session_participants",
+          "type": "live_session_participants",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "live_session_participantsToprofiles",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "live_session_reactions",
+          "type": "live_session_reactions",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "live_session_reactionsToprofiles",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "live_session_responses",
+          "type": "live_session_responses",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "live_session_responsesToprofiles",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "live_session_test_responses",
+          "type": "live_session_test_responses",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "live_session_test_responsesToprofiles",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "live_sessions_live_sessions_created_byToprofiles",
+          "type": "live_sessions",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "live_sessions_created_byToprofiles",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "live_sessions_live_sessions_updated_byToprofiles",
+          "type": "live_sessions",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "live_sessions_updated_byToprofiles",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
           "name": "org_notification_reads",
           "type": "org_notification_reads",
           "isRequired": false,
@@ -15362,6 +18502,20 @@
           "isRequired": false,
           "kind": "object",
           "relationName": "lesson_reset_countTopublished_courses",
+          "relationFromFields": [],
+          "relationToFields": [],
+          "isList": true,
+          "isId": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": false
+        },
+        {
+          "name": "live_sessions",
+          "type": "live_sessions",
+          "isRequired": false,
+          "kind": "object",
+          "relationName": "live_sessionsTopublished_courses",
           "relationFromFields": [],
           "relationToFields": [],
           "isList": true,
@@ -20974,6 +24128,165 @@
         },
         {
           "name": "withdrawal_request"
+        }
+      ]
+    },
+    "live_participant_status": {
+      "schemaName": "public",
+      "values": [
+        {
+          "name": "joined"
+        },
+        {
+          "name": "kicked"
+        },
+        {
+          "name": "left"
+        }
+      ]
+    },
+    "live_response_status": {
+      "schemaName": "public",
+      "values": [
+        {
+          "name": "correct"
+        },
+        {
+          "name": "incorrect"
+        },
+        {
+          "name": "partial"
+        },
+        {
+          "name": "submitted"
+        }
+      ]
+    },
+    "live_session_block_difficulty": {
+      "schemaName": "public",
+      "values": [
+        {
+          "name": "easy"
+        },
+        {
+          "name": "hard"
+        },
+        {
+          "name": "medium"
+        }
+      ]
+    },
+    "live_session_block_status": {
+      "schemaName": "public",
+      "values": [
+        {
+          "name": "active"
+        },
+        {
+          "name": "closed"
+        },
+        {
+          "name": "completed"
+        },
+        {
+          "name": "pending"
+        },
+        {
+          "name": "skipped"
+        }
+      ]
+    },
+    "live_session_mode": {
+      "schemaName": "public",
+      "values": [
+        {
+          "name": "live"
+        },
+        {
+          "name": "test"
+        }
+      ]
+    },
+    "live_session_play_mode": {
+      "schemaName": "public",
+      "values": [
+        {
+          "name": "autoplay"
+        },
+        {
+          "name": "manual"
+        }
+      ]
+    },
+    "live_session_play_state": {
+      "schemaName": "public",
+      "values": [
+        {
+          "name": "ended"
+        },
+        {
+          "name": "final_results"
+        },
+        {
+          "name": "intermission"
+        },
+        {
+          "name": "intro"
+        },
+        {
+          "name": "leaderboard"
+        },
+        {
+          "name": "lobby"
+        },
+        {
+          "name": "paused"
+        },
+        {
+          "name": "prizes"
+        },
+        {
+          "name": "question_active"
+        },
+        {
+          "name": "question_locked"
+        },
+        {
+          "name": "question_results"
+        }
+      ]
+    },
+    "live_session_status": {
+      "schemaName": "public",
+      "values": [
+        {
+          "name": "active"
+        },
+        {
+          "name": "draft"
+        },
+        {
+          "name": "ended"
+        },
+        {
+          "name": "paused"
+        },
+        {
+          "name": "waiting"
+        }
+      ]
+    },
+    "live_session_visibility": {
+      "schemaName": "public",
+      "values": [
+        {
+          "name": "private"
+        },
+        {
+          "name": "public"
+        },
+        {
+          "name": "unlisted"
         }
       ]
     },

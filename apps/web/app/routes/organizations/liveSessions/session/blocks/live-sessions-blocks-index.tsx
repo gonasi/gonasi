@@ -15,7 +15,6 @@ import { BlocksPositionUpdateArraySchema } from '@gonasi/schemas/plugins';
 
 import type { Route } from './+types/live-sessions-blocks-index';
 import { ModeToggle } from './components/ModeToggle';
-import type { LiveSessionBlocksOutletContext } from './types';
 
 import { BannerCard, NotFoundCard } from '~/components/cards';
 import { Spinner } from '~/components/loaders';
@@ -100,7 +99,6 @@ export default function BlocksIndex({ params, loaderData }: Route.ComponentProps
   const { session, blocks, canEdit, sessionCode } = loaderData;
   const fetcher = useFetcher();
   const navigate = useNavigate();
-
   const { setMode } = useStore();
 
   useEffect(() => {
@@ -108,7 +106,6 @@ export default function BlocksIndex({ params, loaderData }: Route.ComponentProps
   }, [setMode]);
 
   const blocksPath = `/${params.organizationId}/live-sessions/${params.sessionId}/blocks`;
-
   const navigateTo = (path: string) => () => navigate(path);
 
   const [reorderedBlocks, setReorderedBlocks] = useState<LiveSessionBlock[]>(blocks);
@@ -140,46 +137,56 @@ export default function BlocksIndex({ params, loaderData }: Route.ComponentProps
     fetcher.submit(formData, { method: 'post', action: blocksPath });
   };
 
+  // ─── Single source of truth ────────────────────────────────
+  const blockCount = reorderedBlocks.length;
+
+  const blockState: 'empty' | 'insufficient' | 'ready' =
+    blockCount === 0 ? 'empty' : blockCount < 5 ? 'insufficient' : 'ready';
+
   return (
     <>
-      {/* Test Session Button */}
+      {/* Top Banner / Test Session */}
       {canEdit && (
         <div className='mx-auto mb-4 max-w-2xl'>
-          {reorderedBlocks.length >= 5 ? (
+          {blockState === 'ready' && (
             <div>
               <p className='text-md mb-2 flex items-center space-x-2'>
-                <span>
-                  <Info size={20} />
-                </span>
+                <Info size={20} />
                 <span className='mt-1'>
                   Test your session before going live to ensure everything works perfectly
                 </span>
               </p>
+
               <div className='flex w-full justify-end md:w-fit'>
                 <div className='flex items-end justify-center gap-2'>
                   <ModeToggle mode={session.mode} />
-                  <div className='flex gap-2'>
-                    <NavLinkButton
-                      variant={session.mode === 'live' ? 'success' : 'secondary'}
-                      leftIcon={<TvMinimalPlay />}
-                      to={`${blocksPath}/live-session-controls`}
-                    >
-                      Start {session.mode} Session
-                    </NavLinkButton>
-                  </div>
+                  <NavLinkButton
+                    variant={session.mode === 'live' ? 'success' : 'secondary'}
+                    leftIcon={<TvMinimalPlay />}
+                    to={`${blocksPath}/live-session-controls`}
+                  >
+                    Start {session.mode} Session
+                  </NavLinkButton>
                 </div>
               </div>
             </div>
-          ) : (
+          )}
+
+          {blockState === 'insufficient' && (
             <BannerCard
               variant='warning'
-              message={`You need at least 5 blocks to start a session. You currently have ${reorderedBlocks.length}.`}
+              message={`You need at least 5 blocks to start a session. You currently have ${blockCount}.`}
             />
           )}
         </div>
       )}
 
-      {reorderedBlocks.length > 0 ? (
+      {/* Main Content */}
+      {blockState === 'empty' ? (
+        <div className='mx-auto max-w-2xl'>
+          <NotFoundCard message='No blocks yet. Add your first live block to get started.' />
+        </div>
+      ) : (
         <div className='mx-auto flex max-w-2xl flex-col pl-4 md:px-0'>
           <Reorder.Group
             axis='y'
@@ -215,29 +222,23 @@ export default function BlocksIndex({ params, loaderData }: Route.ComponentProps
             })}
           </Reorder.Group>
         </div>
-      ) : (
-        <div className='max-w-2xl'>
-          <NotFoundCard message='No blocks yet. Add your first live block to get started.' />
-        </div>
       )}
 
-      {canEdit ? (
+      {canEdit && (
         <PluginButton
           tooltipTitle='Add a live session block'
           onClick={navigateTo(`${blocksPath}/all-session-blocks`)}
         />
-      ) : null}
+      )}
 
       <Outlet
-        context={
-          {
-            mode: session.mode,
-            session,
-            blocks: reorderedBlocks,
-            canEdit,
-            sessionCode,
-          } satisfies LiveSessionBlocksOutletContext
-        }
+        context={{
+          mode: session.mode,
+          session,
+          blocks: reorderedBlocks,
+          canEdit,
+          sessionCode,
+        }}
       />
     </>
   );

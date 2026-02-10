@@ -193,6 +193,7 @@ alter table "public"."live_session_test_responses" enable row level security;
     "play_state" public.live_session_play_state not null default 'lobby'::public.live_session_play_state,
     "play_mode" public.live_session_play_mode not null default 'autoplay'::public.live_session_play_mode,
     "mode" public.live_session_mode not null default 'test'::public.live_session_mode,
+    "current_block_id" uuid,
     "max_participants" integer,
     "allow_late_join" boolean not null default true,
     "show_leaderboard" boolean not null default true,
@@ -299,6 +300,8 @@ CREATE INDEX live_session_test_responses_submitted_at_idx ON public.live_session
 CREATE INDEX live_sessions_course_id_idx ON public.live_sessions USING btree (course_id);
 
 CREATE INDEX live_sessions_created_by_idx ON public.live_sessions USING btree (created_by);
+
+CREATE INDEX live_sessions_current_block_id_idx ON public.live_sessions USING btree (current_block_id);
 
 CREATE INDEX live_sessions_image_url_idx ON public.live_sessions USING btree (image_url);
 
@@ -469,6 +472,10 @@ alter table "public"."live_sessions" validate constraint "live_sessions_course_i
 alter table "public"."live_sessions" add constraint "live_sessions_created_by_fkey" FOREIGN KEY (created_by) REFERENCES public.profiles(id) ON DELETE CASCADE not valid;
 
 alter table "public"."live_sessions" validate constraint "live_sessions_created_by_fkey";
+
+alter table "public"."live_sessions" add constraint "live_sessions_current_block_id_fkey" FOREIGN KEY (current_block_id) REFERENCES public.live_session_blocks(id) ON DELETE SET NULL not valid;
+
+alter table "public"."live_sessions" validate constraint "live_sessions_current_block_id_fkey";
 
 alter table "public"."live_sessions" add constraint "live_sessions_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE not valid;
 

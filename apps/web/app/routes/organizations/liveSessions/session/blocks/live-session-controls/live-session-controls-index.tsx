@@ -1,21 +1,22 @@
-import { useCallback, useState } from 'react';
-import { data as routerData, useFetcher, useOutletContext } from 'react-router';
+import { useCallback, useEffect, useState } from 'react';
+import { data as routerData, useFetcher } from 'react-router';
 import { TvMinimalPlay, Wifi, WifiOff } from 'lucide-react';
-import { dataWithError } from 'remix-toast';
+import { dataWithError, redirectWithError } from 'remix-toast';
 
 import {
+  fetchLiveSessionBlocks,
+  fetchLiveSessionById,
   updateLiveSessionBlockStatus,
   updateLiveSessionPlayState,
   updateLiveSessionStatus,
 } from '@gonasi/database/liveSessions';
 import type { Database } from '@gonasi/database/schema';
 
-import type { Route } from './+types/live-session-index';
+import type { Route } from './+types/live-session-controls-index';
 import { BlockControls } from './components/BlockControls';
 import { PlayStateControls } from './components/PlayStateControls';
 import { SessionStatusControls } from './components/SessionStatusControls';
 import { useLiveSessionRealtime } from './hooks/useLiveSessionRealtime';
-import type { LiveSessionBlocksOutletContext } from '../types';
 import type { LiveSessionBlockStatus, LiveSessionPlayState, LiveSessionStatus } from './types';
 
 import { Modal } from '~/components/ui/modal';
@@ -30,6 +31,44 @@ export function meta() {
       content: 'Control the flow of live session',
     },
   ];
+}
+
+export async function loader({ request, params }: Route.LoaderArgs) {
+  const { supabase, headers } = createClient(request);
+  const sessionId = params.sessionId ?? '';
+
+  const [session, blocksResult] = await Promise.all([
+    fetchLiveSessionById({ supabase, sessionId }),
+    fetchLiveSessionBlocks({
+      supabase,
+      liveSessionId: sessionId,
+      organizationId: params.organizationId,
+    }),
+  ]);
+
+  if (!session) {
+    return redirectWithError(`/${params.organizationId}/live-sessions`, 'Session not found.', {
+      headers,
+    });
+  }
+
+  if (!blocksResult.success) {
+    return redirectWithError(
+      `/${params.organizationId}/live-sessions/${sessionId}/blocks`,
+      'Unable to load live session blocks.',
+      { headers },
+    );
+  }
+
+  return routerData(
+    {
+      session,
+      blocks: blocksResult.data,
+      sessionCode: session.session_code,
+      mode: session.mode as 'test' | 'live',
+    },
+    { headers },
+  );
 }
 
 export async function action({ request }: Route.ActionArgs) {
@@ -106,12 +145,12 @@ export async function action({ request }: Route.ActionArgs) {
   }
 }
 
-export default function LiveSessionIndex({ params }: Route.ComponentProps) {
+export default function LiveSessionIndex({ params, loaderData }: Route.ComponentProps) {
   const { organizationId, sessionId } = params;
-  const { session, blocks, sessionCode, mode } = useOutletContext<LiveSessionBlocksOutletContext>();
+  const { session, blocks, sessionCode, mode } = loaderData;
   const fetcher = useFetcher();
 
-  // Local state for current session controls (synced with realtime updates)
+  // Local state for current session controls (synced with realtime updates and loader data)
   const [currentSessionStatus, setCurrentSessionStatus] = useState<LiveSessionStatus>(
     session.status as LiveSessionStatus,
   );
@@ -121,6 +160,12 @@ export default function LiveSessionIndex({ params }: Route.ComponentProps) {
   const [currentBlockIndex, setCurrentBlockIndex] = useState(0);
 
   const closeRoute = `/${organizationId}/live-sessions/${sessionId}/blocks`;
+
+  // Sync local state with session data from loader (handles revalidation after actions)
+  useEffect(() => {
+    setCurrentSessionStatus(session.status as LiveSessionStatus);
+    setCurrentPlayState(session.play_state as LiveSessionPlayState);
+  }, [session.status, session.play_state]);
 
   // Handle realtime session updates
   const handleSessionUpdate = useCallback((payload: any) => {
@@ -242,9 +287,17 @@ export default function LiveSessionIndex({ params }: Route.ComponentProps) {
         />
         <Modal.Body>
           <div className='mx-auto max-w-2xl'>
-            <div>
-              <h1>Play State</h1>
+            {/* Play State Controls */}
+            <div className='bg-card p-4'>
+              <PlayStateControls
+                currentPlayState={currentPlayState}
+                onPlayStateChange={handlePlayStateChange}
+                currentBlockId={blocks[currentBlockIndex]?.id}
+                disabled={!isConnected}
+                isLoading={fetcher.state !== 'idle'}
+              />
             </div>
+
             {/* Session Info */}
             <div className='rounded-lg border border-gray-200 bg-gray-50 p-4'>
               <h2 className='text-lg font-semibold'>{session.name}</h2>
@@ -287,16 +340,6 @@ export default function LiveSessionIndex({ params }: Route.ComponentProps) {
                   disabled={!isConnected}
                 />
               </div>
-            </div>
-
-            {/* Play State Controls */}
-            <div className='rounded-lg border border-gray-200 bg-white p-4'>
-              <PlayStateControls
-                currentPlayState={currentPlayState}
-                onPlayStateChange={handlePlayStateChange}
-                currentBlockId={blocks[currentBlockIndex]?.id}
-                disabled={!isConnected}
-              />
             </div>
 
             {/* Blocks List */}

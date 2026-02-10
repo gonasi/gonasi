@@ -84,11 +84,8 @@ alter table "public"."live_sessions"
   references "public"."published_courses" ("id")
   on delete set null;
 
-alter table "public"."live_sessions"
-  add constraint "live_sessions_current_block_id_fkey"
-  foreign key ("current_block_id")
-  references "public"."live_session_blocks" ("id")
-  on delete set null;
+-- Note: Foreign key for current_block_id is added after live_session_blocks table is created
+-- See: live_sessions_add_current_block_fkey.sql
 
 -- Constraints
 -- Private sessions must have a session_key
