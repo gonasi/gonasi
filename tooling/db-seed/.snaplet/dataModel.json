@@ -24222,10 +24222,19 @@
       "schemaName": "public",
       "values": [
         {
+          "name": "block_skipped"
+        },
+        {
+          "name": "countdown"
+        },
+        {
           "name": "ended"
         },
         {
           "name": "final_results"
+        },
+        {
+          "name": "host_segment"
         },
         {
           "name": "intermission"
@@ -24253,6 +24262,9 @@
         },
         {
           "name": "question_results"
+        },
+        {
+          "name": "question_soft_locked"
         }
       ]
     },

@@ -10,7 +10,7 @@ create type "public"."live_session_mode" as enum ('test', 'live');
 
 create type "public"."live_session_play_mode" as enum ('manual', 'autoplay');
 
-create type "public"."live_session_play_state" as enum ('lobby', 'intro', 'question_active', 'question_locked', 'question_results', 'leaderboard', 'intermission', 'paused', 'prizes', 'final_results', 'ended');
+create type "public"."live_session_play_state" as enum ('lobby', 'countdown', 'intro', 'question_active', 'question_soft_locked', 'question_locked', 'question_results', 'leaderboard', 'intermission', 'paused', 'host_segment', 'block_skipped', 'prizes', 'final_results', 'ended');
 
 create type "public"."live_session_status" as enum ('draft', 'waiting', 'active', 'paused', 'ended');
 

@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { Gamepad2, type LucideIcon, PlayCircle } from 'lucide-react';
 
 import { PlayStateButton } from '../../components/PlayStateButton';
-import { PLAY_STATES } from '../constants/play-states';
+import { getValidPlayStateTransitions, PLAY_STATES } from '../constants/play-states';
 import type { LiveSessionPlayState } from '../types';
 
 import useModal from '~/components/go-editor/hooks/useModal';
@@ -34,17 +34,27 @@ export function PlayStateControls({
   };
 
   const openStateModal = () => {
+    // Get valid transitions for current state
+    const validTransitions = getValidPlayStateTransitions(currentPlayState);
+
+    // Filter play states to only show valid transitions
+    const availableStates = PLAY_STATES.filter((state) => validTransitions.includes(state.state));
+
     showModal(
       'Change Play State',
       (onClose) => (
         <motion.div
-          className='grid grid-cols-1 gap-2 sm:grid-cols-2'
+          className='grid grid-cols-1 gap-2'
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.3 }}
         >
-          {PLAY_STATES.filter((state) => state.state !== currentPlayState).map(
-            ({ state, label, icon, description }, index) => (
+          {availableStates.length === 0 ? (
+            <div className='text-muted-foreground col-span-2 py-6 text-center text-sm'>
+              No valid state transitions available from <strong>{activeState?.label}</strong>.
+            </div>
+          ) : (
+            availableStates.map(({ state, label, icon, description }, index) => (
               <motion.div
                 key={state}
                 initial={{ opacity: 0, y: 12 }}
@@ -65,7 +75,7 @@ export function PlayStateControls({
                   showPresentationIcon
                 />
               </motion.div>
-            ),
+            ))
           )}
         </motion.div>
       ),

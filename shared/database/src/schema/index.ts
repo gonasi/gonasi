@@ -4406,13 +4406,17 @@ export type Database = {
       live_session_play_mode: "manual" | "autoplay"
       live_session_play_state:
         | "lobby"
+        | "countdown"
         | "intro"
         | "question_active"
+        | "question_soft_locked"
         | "question_locked"
         | "question_results"
         | "leaderboard"
         | "intermission"
         | "paused"
+        | "host_segment"
+        | "block_skipped"
         | "prizes"
         | "final_results"
         | "ended"
@@ -4709,13 +4713,17 @@ export const Constants = {
       live_session_play_mode: ["manual", "autoplay"],
       live_session_play_state: [
         "lobby",
+        "countdown",
         "intro",
         "question_active",
+        "question_soft_locked",
         "question_locked",
         "question_results",
         "leaderboard",
         "intermission",
         "paused",
+        "host_segment",
+        "block_skipped",
         "prizes",
         "final_results",
         "ended",

@@ -14,6 +14,8 @@ import type { Database } from '@gonasi/database/schema';
 
 import type { Route } from './+types/live-session-controls-index';
 import { BlockControls } from './components/BlockControls';
+import { ChatModeControls } from './components/ChatModeControls';
+import { ControlModeSelector } from './components/ControlModeSelector';
 import { PlayStateControls } from './components/PlayStateControls';
 import { SessionStatusControls } from './components/SessionStatusControls';
 import { useLiveSessionRealtime } from './hooks/useLiveSessionRealtime';
@@ -82,11 +84,15 @@ export async function action({ request }: Route.ActionArgs) {
       case 'update-session-status': {
         const sessionId = formData.get('sessionId') as string;
         const status = formData.get('status') as Database['public']['Enums']['live_session_status'];
+        const pauseReason = formData.get('pauseReason') as
+          | Database['public']['Enums']['live_session_pause_reason']
+          | null;
 
         const result = await updateLiveSessionStatus({
           supabase,
           sessionId,
           status,
+          pauseReason: pauseReason || undefined,
         });
 
         if (!result.success) {
@@ -94,6 +100,46 @@ export async function action({ request }: Route.ActionArgs) {
         }
 
         return routerData({ success: true }, { headers });
+      }
+
+      case 'update-control-mode': {
+        const sessionId = formData.get('sessionId') as string;
+        const controlMode = formData.get(
+          'controlMode',
+        ) as Database['public']['Enums']['live_session_control_mode'];
+
+        const { data, error } = await supabase
+          .from('live_sessions')
+          .update({ control_mode: controlMode })
+          .eq('id', sessionId)
+          .select()
+          .single();
+
+        if (error) {
+          return dataWithError(null, error.message, { headers });
+        }
+
+        return routerData({ success: true, data }, { headers });
+      }
+
+      case 'update-chat-mode': {
+        const sessionId = formData.get('sessionId') as string;
+        const chatMode = formData.get(
+          'chatMode',
+        ) as Database['public']['Enums']['live_session_chat_mode'];
+
+        const { data, error } = await supabase
+          .from('live_sessions')
+          .update({ chat_mode: chatMode })
+          .eq('id', sessionId)
+          .select()
+          .single();
+
+        if (error) {
+          return dataWithError(null, error.message, { headers });
+        }
+
+        return routerData({ success: true, data }, { headers });
       }
 
       case 'update-play-state': {
@@ -158,6 +204,15 @@ export default function LiveSessionIndex({ params, loaderData }: Route.Component
     session.play_state as LiveSessionPlayState,
   );
   const [currentBlockIndex, setCurrentBlockIndex] = useState(0);
+  const [controlMode, setControlMode] = useState(
+    (session.control_mode as Database['public']['Enums']['live_session_control_mode']) || 'hybrid',
+  );
+  const [chatMode, setChatMode] = useState(
+    (session.chat_mode as Database['public']['Enums']['live_session_chat_mode']) || 'open',
+  );
+  const [pauseReason, setPauseReason] = useState<
+    Database['public']['Enums']['live_session_pause_reason'] | null
+  >((session.pause_reason as Database['public']['Enums']['live_session_pause_reason']) || null);
 
   const closeRoute = `/${organizationId}/live-sessions/${sessionId}/blocks`;
 
@@ -165,7 +220,23 @@ export default function LiveSessionIndex({ params, loaderData }: Route.Component
   useEffect(() => {
     setCurrentSessionStatus(session.status as LiveSessionStatus);
     setCurrentPlayState(session.play_state as LiveSessionPlayState);
-  }, [session.status, session.play_state]);
+    setControlMode(
+      (session.control_mode as Database['public']['Enums']['live_session_control_mode']) ||
+        'hybrid',
+    );
+    setChatMode(
+      (session.chat_mode as Database['public']['Enums']['live_session_chat_mode']) || 'open',
+    );
+    setPauseReason(
+      (session.pause_reason as Database['public']['Enums']['live_session_pause_reason']) || null,
+    );
+  }, [
+    session.status,
+    session.play_state,
+    session.control_mode,
+    session.chat_mode,
+    session.pause_reason,
+  ]);
 
   // Handle realtime session updates
   const handleSessionUpdate = useCallback((payload: any) => {
@@ -175,6 +246,15 @@ export default function LiveSessionIndex({ params, loaderData }: Route.Component
     }
     if (newRecord.play_state) {
       setCurrentPlayState(newRecord.play_state);
+    }
+    if (newRecord.control_mode) {
+      setControlMode(newRecord.control_mode);
+    }
+    if (newRecord.chat_mode) {
+      setChatMode(newRecord.chat_mode);
+    }
+    if (newRecord.pause_reason !== undefined) {
+      setPauseReason(newRecord.pause_reason);
     }
   }, []);
 
@@ -194,11 +274,39 @@ export default function LiveSessionIndex({ params, loaderData }: Route.Component
   });
 
   // Handle session status change - updates database which triggers realtime
-  const handleSessionStatusChange = (status: LiveSessionStatus) => {
+  const handleSessionStatusChange = (
+    status: LiveSessionStatus,
+    pauseReason?: Database['public']['Enums']['live_session_pause_reason'],
+  ) => {
     const formData = new FormData();
     formData.append('intent', 'update-session-status');
     formData.append('sessionId', sessionId);
     formData.append('status', status);
+    if (pauseReason) {
+      formData.append('pauseReason', pauseReason);
+    }
+
+    fetcher.submit(formData, { method: 'POST' });
+  };
+
+  // Handle control mode change
+  const handleControlModeChange = (
+    newMode: Database['public']['Enums']['live_session_control_mode'],
+  ) => {
+    const formData = new FormData();
+    formData.append('intent', 'update-control-mode');
+    formData.append('sessionId', sessionId);
+    formData.append('controlMode', newMode);
+
+    fetcher.submit(formData, { method: 'POST' });
+  };
+
+  // Handle chat mode change
+  const handleChatModeChange = (newMode: Database['public']['Enums']['live_session_chat_mode']) => {
+    const formData = new FormData();
+    formData.append('intent', 'update-chat-mode');
+    formData.append('sessionId', sessionId);
+    formData.append('chatMode', newMode);
 
     fetcher.submit(formData, { method: 'POST' });
   };
@@ -325,6 +433,7 @@ export default function LiveSessionIndex({ params, loaderData }: Route.Component
               <div className='rounded-lg border border-gray-200 bg-white p-4'>
                 <SessionStatusControls
                   currentStatus={currentSessionStatus}
+                  pauseReason={pauseReason}
                   onStatusChange={handleSessionStatusChange}
                   disabled={!isConnected}
                 />
@@ -339,6 +448,58 @@ export default function LiveSessionIndex({ params, loaderData }: Route.Component
                   onBlockStatusChange={handleBlockStatusChange}
                   disabled={!isConnected}
                 />
+              </div>
+            </div>
+
+            {/* Advanced Controls */}
+            <div className='grid gap-6 lg:grid-cols-3'>
+              {/* Control Mode */}
+              <div className='rounded-lg border border-gray-200 bg-white p-4'>
+                <ControlModeSelector
+                  currentMode={controlMode}
+                  sessionStatus={currentSessionStatus}
+                  onModeChange={handleControlModeChange}
+                  disabled={!isConnected}
+                />
+              </div>
+
+              {/* Chat Mode */}
+              <div className='rounded-lg border border-gray-200 bg-white p-4'>
+                <ChatModeControls
+                  currentMode={chatMode}
+                  onModeChange={handleChatModeChange}
+                  disabled={!isConnected}
+                  pauseReason={pauseReason || undefined}
+                />
+              </div>
+
+              {/* Session Info Quick Stats */}
+              <div className='rounded-lg border border-gray-200 bg-gray-50 p-4'>
+                <h3 className='mb-2 text-sm font-semibold'>Quick Stats</h3>
+                <div className='space-y-1.5 text-xs text-gray-600'>
+                  <div className='flex justify-between'>
+                    <span>Total Blocks:</span>
+                    <span className='font-medium'>{blocks.length}</span>
+                  </div>
+                  <div className='flex justify-between'>
+                    <span>Active:</span>
+                    <span className='font-medium'>
+                      {blocks.filter((b) => b.status === 'active').length}
+                    </span>
+                  </div>
+                  <div className='flex justify-between'>
+                    <span>Completed:</span>
+                    <span className='font-medium'>
+                      {blocks.filter((b) => b.status === 'completed').length}
+                    </span>
+                  </div>
+                  <div className='flex justify-between'>
+                    <span>Skipped:</span>
+                    <span className='font-medium'>
+                      {blocks.filter((b) => b.status === 'skipped').length}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
 
