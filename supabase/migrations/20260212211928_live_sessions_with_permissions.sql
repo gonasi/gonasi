@@ -122,7 +122,8 @@ alter table "public"."live_session_messages" enable row level security;
     "average_response_time_ms" integer,
     "rank" integer,
     "created_at" timestamp with time zone not null default timezone('utc'::text, now()),
-    "updated_at" timestamp with time zone not null default timezone('utc'::text, now())
+    "updated_at" timestamp with time zone not null default timezone('utc'::text, now()),
+    "join_context" public.live_participant_join_context not null default 'lobby'::public.live_participant_join_context
       );
 
 
@@ -211,7 +212,10 @@ alter table "public"."live_session_test_responses" enable row level security;
     "actual_start_time" timestamp with time zone,
     "ended_at" timestamp with time zone,
     "created_at" timestamp with time zone not null default timezone('utc'::text, now()),
-    "updated_at" timestamp with time zone not null default timezone('utc'::text, now())
+    "updated_at" timestamp with time zone not null default timezone('utc'::text, now()),
+    "control_mode" public.live_session_control_mode not null default 'hybrid'::public.live_session_control_mode,
+    "pause_reason" public.live_session_pause_reason,
+    "chat_mode" public.live_session_chat_mode not null default 'open'::public.live_session_chat_mode
       );
 
 
@@ -259,6 +263,8 @@ CREATE UNIQUE INDEX live_session_messages_pkey ON public.live_session_messages U
 
 CREATE INDEX live_session_messages_user_id_idx ON public.live_session_messages USING btree (user_id);
 
+CREATE INDEX live_session_participants_join_context_idx ON public.live_session_participants USING btree (join_context);
+
 CREATE INDEX live_session_participants_live_session_id_idx ON public.live_session_participants USING btree (live_session_id);
 
 CREATE UNIQUE INDEX live_session_participants_pkey ON public.live_session_participants USING btree (id);
@@ -305,6 +311,8 @@ CREATE INDEX live_session_test_responses_status_idx ON public.live_session_test_
 
 CREATE INDEX live_session_test_responses_submitted_at_idx ON public.live_session_test_responses USING btree (submitted_at);
 
+CREATE INDEX live_sessions_control_mode_idx ON public.live_sessions USING btree (control_mode);
+
 CREATE INDEX live_sessions_course_id_idx ON public.live_sessions USING btree (course_id);
 
 CREATE INDEX live_sessions_created_by_idx ON public.live_sessions USING btree (created_by);
@@ -316,6 +324,8 @@ CREATE INDEX live_sessions_image_url_idx ON public.live_sessions USING btree (im
 CREATE INDEX live_sessions_mode_idx ON public.live_sessions USING btree (mode);
 
 CREATE INDEX live_sessions_organization_id_idx ON public.live_sessions USING btree (organization_id);
+
+CREATE INDEX live_sessions_pause_reason_idx ON public.live_sessions USING btree (pause_reason);
 
 CREATE UNIQUE INDEX live_sessions_pkey ON public.live_sessions USING btree (id);
 
@@ -488,6 +498,10 @@ alter table "public"."live_sessions" validate constraint "live_sessions_current_
 alter table "public"."live_sessions" add constraint "live_sessions_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE not valid;
 
 alter table "public"."live_sessions" validate constraint "live_sessions_organization_id_fkey";
+
+alter table "public"."live_sessions" add constraint "live_sessions_pause_reason_when_paused_check" CHECK ((((status = 'paused'::public.live_session_status) AND (pause_reason IS NOT NULL)) OR ((status <> 'paused'::public.live_session_status) AND (pause_reason IS NULL)))) not valid;
+
+alter table "public"."live_sessions" validate constraint "live_sessions_pause_reason_when_paused_check";
 
 alter table "public"."live_sessions" add constraint "live_sessions_private_requires_key_check" CHECK ((((visibility = 'private'::public.live_session_visibility) AND (session_key IS NOT NULL) AND (session_key <> ''::text)) OR (visibility <> 'private'::public.live_session_visibility))) not valid;
 

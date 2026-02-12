@@ -484,19 +484,22 @@ export default function LiveSessionIndex({ params, loaderData }: Route.Component
                   <div className='flex justify-between'>
                     <span>Active:</span>
                     <span className='font-medium'>
-                      {blocks.filter((b) => b.status === 'active').length}
+                      {blocks.filter((b: (typeof blocks)[number]) => b.status === 'active').length}
                     </span>
                   </div>
                   <div className='flex justify-between'>
                     <span>Completed:</span>
                     <span className='font-medium'>
-                      {blocks.filter((b) => b.status === 'completed').length}
+                      {
+                        blocks.filter((b: (typeof blocks)[number]) => b.status === 'completed')
+                          .length
+                      }
                     </span>
                   </div>
                   <div className='flex justify-between'>
                     <span>Skipped:</span>
                     <span className='font-medium'>
-                      {blocks.filter((b) => b.status === 'skipped').length}
+                      {blocks.filter((b: (typeof blocks)[number]) => b.status === 'skipped').length}
                     </span>
                   </div>
                 </div>
@@ -507,7 +510,7 @@ export default function LiveSessionIndex({ params, loaderData }: Route.Component
             <div>
               <h3 className='mb-3 text-base font-semibold'>Session Blocks</h3>
               <div className='space-y-2'>
-                {blocks.map((block, index) => (
+                {blocks.map((block: (typeof blocks)[number], index: number) => (
                   <div
                     key={block.id}
                     className={cn(

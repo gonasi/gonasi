@@ -39,6 +39,12 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     return redirectWithError('/go/explore', 'Invalid session data.');
   }
 
+  // Business Rule: Only allow lobby access when session is 'active' (started)
+  // Drafts, waiting, paused, and ended sessions should not be accessible
+  if (session.status !== 'active') {
+    return redirectWithError('/go/explore', 'This session is not currently active.');
+  }
+
   // Check privacy/visibility (same as live mode)
   if (session.visibility === 'private') {
     // TODO: Verify user is invited participant or facilitator
@@ -48,9 +54,6 @@ export async function loader({ request, params }: Route.LoaderArgs) {
       return redirectWithError(`/live/${sessionCode}/join`, 'Please sign in to test this session.');
     }
   }
-
-  // Test mode allows testing any session status (even drafts)
-  // This is useful for facilitators to test before publishing
 
   // Fetch blocks
   const blocksResult = await fetchLiveSessionBlocks({

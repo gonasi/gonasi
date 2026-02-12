@@ -2044,6 +2044,7 @@ export type Database = {
           created_at: string
           display_name: string | null
           id: string
+          join_context: Database["public"]["Enums"]["live_participant_join_context"]
           joined_at: string
           left_at: string | null
           live_session_id: string
@@ -2061,6 +2062,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          join_context?: Database["public"]["Enums"]["live_participant_join_context"]
           joined_at?: string
           left_at?: string | null
           live_session_id: string
@@ -2078,6 +2080,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          join_context?: Database["public"]["Enums"]["live_participant_join_context"]
           joined_at?: string
           left_at?: string | null
           live_session_id?: string
@@ -2338,6 +2341,8 @@ export type Database = {
           actual_start_time: string | null
           allow_late_join: boolean
           blur_hash: string | null
+          chat_mode: Database["public"]["Enums"]["live_session_chat_mode"]
+          control_mode: Database["public"]["Enums"]["live_session_control_mode"]
           course_id: string | null
           created_at: string
           created_by: string
@@ -2352,6 +2357,9 @@ export type Database = {
           mode: Database["public"]["Enums"]["live_session_mode"]
           name: string
           organization_id: string
+          pause_reason:
+            | Database["public"]["Enums"]["live_session_pause_reason"]
+            | null
           play_mode: Database["public"]["Enums"]["live_session_play_mode"]
           play_state: Database["public"]["Enums"]["live_session_play_state"]
           published_course_id: string | null
@@ -2368,6 +2376,8 @@ export type Database = {
           actual_start_time?: string | null
           allow_late_join?: boolean
           blur_hash?: string | null
+          chat_mode?: Database["public"]["Enums"]["live_session_chat_mode"]
+          control_mode?: Database["public"]["Enums"]["live_session_control_mode"]
           course_id?: string | null
           created_at?: string
           created_by: string
@@ -2382,6 +2392,9 @@ export type Database = {
           mode?: Database["public"]["Enums"]["live_session_mode"]
           name: string
           organization_id: string
+          pause_reason?:
+            | Database["public"]["Enums"]["live_session_pause_reason"]
+            | null
           play_mode?: Database["public"]["Enums"]["live_session_play_mode"]
           play_state?: Database["public"]["Enums"]["live_session_play_state"]
           published_course_id?: string | null
@@ -2398,6 +2411,8 @@ export type Database = {
           actual_start_time?: string | null
           allow_late_join?: boolean
           blur_hash?: string | null
+          chat_mode?: Database["public"]["Enums"]["live_session_chat_mode"]
+          control_mode?: Database["public"]["Enums"]["live_session_control_mode"]
           course_id?: string | null
           created_at?: string
           created_by?: string
@@ -2412,6 +2427,9 @@ export type Database = {
           mode?: Database["public"]["Enums"]["live_session_mode"]
           name?: string
           organization_id?: string
+          pause_reason?:
+            | Database["public"]["Enums"]["live_session_pause_reason"]
+            | null
           play_mode?: Database["public"]["Enums"]["live_session_play_mode"]
           play_state?: Database["public"]["Enums"]["live_session_play_state"]
           published_course_id?: string | null
