@@ -1,3 +1,5 @@
+create type "public"."live_participant_join_context" as enum ('lobby', 'mid_question', 'results', 'intermission', 'late');
+
 create type "public"."live_participant_status" as enum ('joined', 'left', 'kicked');
 
 create type "public"."live_response_status" as enum ('submitted', 'correct', 'incorrect', 'partial');
@@ -6,7 +8,13 @@ create type "public"."live_session_block_difficulty" as enum ('easy', 'medium', 
 
 create type "public"."live_session_block_status" as enum ('pending', 'active', 'closed', 'completed', 'skipped');
 
+create type "public"."live_session_chat_mode" as enum ('open', 'reactions_only', 'host_only', 'muted');
+
+create type "public"."live_session_control_mode" as enum ('autoplay', 'host_driven', 'hybrid');
+
 create type "public"."live_session_mode" as enum ('test', 'live');
+
+create type "public"."live_session_pause_reason" as enum ('host_hold', 'technical_issue', 'moderation', 'system');
 
 create type "public"."live_session_play_mode" as enum ('manual', 'autoplay');
 

@@ -4393,6 +4393,12 @@ export type Database = {
         | "currency_conversion"
         | "tax_withholding"
         | "tax_remittance"
+      live_participant_join_context:
+        | "lobby"
+        | "mid_question"
+        | "results"
+        | "intermission"
+        | "late"
       live_participant_status: "joined" | "left" | "kicked"
       live_response_status: "submitted" | "correct" | "incorrect" | "partial"
       live_session_block_difficulty: "easy" | "medium" | "hard"
@@ -4402,7 +4408,14 @@ export type Database = {
         | "closed"
         | "completed"
         | "skipped"
+      live_session_chat_mode: "open" | "reactions_only" | "host_only" | "muted"
+      live_session_control_mode: "autoplay" | "host_driven" | "hybrid"
       live_session_mode: "test" | "live"
+      live_session_pause_reason:
+        | "host_hold"
+        | "technical_issue"
+        | "moderation"
+        | "system"
       live_session_play_mode: "manual" | "autoplay"
       live_session_play_state:
         | "lobby"
@@ -4699,6 +4712,13 @@ export const Constants = {
         "tax_withholding",
         "tax_remittance",
       ],
+      live_participant_join_context: [
+        "lobby",
+        "mid_question",
+        "results",
+        "intermission",
+        "late",
+      ],
       live_participant_status: ["joined", "left", "kicked"],
       live_response_status: ["submitted", "correct", "incorrect", "partial"],
       live_session_block_difficulty: ["easy", "medium", "hard"],
@@ -4709,7 +4729,15 @@ export const Constants = {
         "completed",
         "skipped",
       ],
+      live_session_chat_mode: ["open", "reactions_only", "host_only", "muted"],
+      live_session_control_mode: ["autoplay", "host_driven", "hybrid"],
       live_session_mode: ["test", "live"],
+      live_session_pause_reason: [
+        "host_hold",
+        "technical_issue",
+        "moderation",
+        "system",
+      ],
       live_session_play_mode: ["manual", "autoplay"],
       live_session_play_state: [
         "lobby",

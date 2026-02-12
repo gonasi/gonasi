@@ -5,6 +5,7 @@ import { seedCourseCategories } from './src/seedCourseCategories';
 import { seedCreateCourse } from './src/seedCreateCourse';
 import { seedGonasiOrgWallets } from './src/seedGonasiOrgWallets';
 import { seedLessonTypes } from './src/seedLessonTypes';
+import { seedLiveSessions } from './src/seedLiveSessions';
 import { seedOrgNotificationsTypes } from './src/seedOrgNotificationsTypes';
 import { seedOwnerOrganizations } from './src/seedOwnerOrganizations';
 import { seedPricingTiers } from './src/seedPricingTiers';
@@ -36,6 +37,9 @@ const main = async () => {
 
   // create course titles
   await seedCreateCourse();
+
+  // create live sessions with blocks
+  await seedLiveSessions();
 
   process.exit();
 };

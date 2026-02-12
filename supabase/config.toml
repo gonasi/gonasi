@@ -374,10 +374,13 @@ schema_paths = [
   './schemas/liveSessions/enums/live_session_play_mode.sql',
   './schemas/liveSessions/enums/live_session_play_state.sql',
   './schemas/liveSessions/enums/live_session_mode.sql',
-  './schemas/liveSessions/enums/live_session_block_status.sql',
+  './schemas/liveSessions/enums/live_session_control_mode.sql',
+  './schemas/liveSessions/enums/live_session_pause_reason.sql',
+  './schemas/liveSessions/enums/live_session_chat_mode.sql',
   './schemas/liveSessions/enums/live_session_block_status.sql',
   './schemas/liveSessions/enums/live_response_status.sql',
   './schemas/liveSessions/enums/live_participant_status.sql',
+  './schemas/liveSessions/enums/live_participant_join_context.sql',
 
   # Tables and indexes
   './schemas/liveSessions/live_sessions_schema_and_indexes.sql',

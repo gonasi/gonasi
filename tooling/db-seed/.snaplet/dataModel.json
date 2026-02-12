@@ -24131,6 +24131,26 @@
         }
       ]
     },
+    "live_participant_join_context": {
+      "schemaName": "public",
+      "values": [
+        {
+          "name": "intermission"
+        },
+        {
+          "name": "late"
+        },
+        {
+          "name": "lobby"
+        },
+        {
+          "name": "mid_question"
+        },
+        {
+          "name": "results"
+        }
+      ]
+    },
     "live_participant_status": {
       "schemaName": "public",
       "values": [
@@ -24196,6 +24216,37 @@
         }
       ]
     },
+    "live_session_chat_mode": {
+      "schemaName": "public",
+      "values": [
+        {
+          "name": "host_only"
+        },
+        {
+          "name": "muted"
+        },
+        {
+          "name": "open"
+        },
+        {
+          "name": "reactions_only"
+        }
+      ]
+    },
+    "live_session_control_mode": {
+      "schemaName": "public",
+      "values": [
+        {
+          "name": "autoplay"
+        },
+        {
+          "name": "host_driven"
+        },
+        {
+          "name": "hybrid"
+        }
+      ]
+    },
     "live_session_mode": {
       "schemaName": "public",
       "values": [
@@ -24204,6 +24255,23 @@
         },
         {
           "name": "test"
+        }
+      ]
+    },
+    "live_session_pause_reason": {
+      "schemaName": "public",
+      "values": [
+        {
+          "name": "host_hold"
+        },
+        {
+          "name": "moderation"
+        },
+        {
+          "name": "system"
+        },
+        {
+          "name": "technical_issue"
         }
       ]
     },
