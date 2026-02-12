@@ -6,19 +6,28 @@
 -- paused, or completed. It changes infrequently and is
 -- controlled by the host or system.
 --
+-- VALID FLOWS:
+-- 1. Standard: draft → waiting → active → ended
+--    (with lobby period for participants to join)
+-- 2. Quick start: draft → active → ended
+--    (immediate start, skips waiting phase)
+-- 3. Can pause/resume during active: active ↔ paused → ended
+--
 -- IMPORTANT:
 -- - This does NOT represent what screen users are seeing.
 -- - UI rendering should rely on `live_session_play_state`.
+-- - play_state is NULL when status is draft or waiting
+-- - play_state becomes 'lobby' automatically when status → active
 -- ============================================================
 
 create type "public"."live_session_status" as enum (
-  'draft',     -- Session created but not live. Fully editable. No participants can join.
-  'waiting',   -- Session is open for participants to join. Gameplay has not started.
-  'active',    -- Session is live. Gameplay may be ongoing or ready to proceed.
-  'paused',    -- Session is temporarily halted. Timers and progression should stop.
-  'ended'      -- Session is completed. No further interactions are allowed.
+  'draft',     -- Session created but not live. Fully editable. No participants can join. play_state = NULL
+  'waiting',   -- Session open for participants to join lobby. Gameplay has not started. play_state = NULL
+  'active',    -- Session started. actual_start_time set. play_state automatically becomes 'lobby'
+  'paused',    -- Session temporarily halted. Timers and progression stopped. play_state preserved
+  'ended'      -- Session completed. No further interactions allowed. Final state
 );
 
 comment on type "public"."live_session_status" is
-'High-level lifecycle status of a live session. Indicates whether the session is editable, open for joining, actively running, temporarily paused, or fully completed. This status changes infrequently and is independent of the current play or UI state.';
+'High-level lifecycle status of a live session. Supports two flows: (1) draft→waiting→active for lobby period, or (2) draft→active for quick start. play_state is NULL until active status triggers automatic initialization to lobby.';
 

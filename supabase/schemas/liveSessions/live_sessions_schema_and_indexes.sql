@@ -26,7 +26,7 @@ create table "public"."live_sessions" (
 
   -- Session Lifecycle
   "status" live_session_status not null default 'draft',
-  "play_state" live_session_play_state not null default 'lobby',
+  "play_state" live_session_play_state, -- NULL until session starts (actual_start_time set), then automatically becomes 'lobby'
   "play_mode" live_session_play_mode not null default 'autoplay',
   "mode" live_session_mode not null default 'test', -- test | live
   "current_block_id" uuid, -- Currently active block
@@ -96,6 +96,16 @@ alter table "public"."live_sessions"
     or visibility != 'private'
   );
 
+-- Play state lifecycle constraint:
+-- - Before session starts (actual_start_time IS NULL): play_state MUST be NULL
+-- - After session starts (actual_start_time IS NOT NULL): play_state MUST NOT be NULL
+alter table "public"."live_sessions"
+  add constraint "live_sessions_play_state_lifecycle_check"
+  check (
+    (actual_start_time is null and play_state is null)
+    or (actual_start_time is not null and play_state is not null)
+  );
+
 -- Indexes
 create index "live_sessions_organization_id_idx" on "public"."live_sessions" ("organization_id");
 create index "live_sessions_created_by_idx" on "public"."live_sessions" ("created_by");
@@ -108,7 +118,7 @@ create index "live_sessions_mode_idx" on "public"."live_sessions" ("mode");
 create index "live_sessions_current_block_id_idx" on "public"."live_sessions" ("current_block_id");
 
 -- Comments
-comment on table "public"."live_sessions" is 'Live interactive learning sessions with real-time Q&A';
+comment on table "public"."live_sessions" is 'Live interactive learning sessions with real-time Q&A and quiz hosting';
 comment on column "public"."live_sessions"."image_url" is 'Cloudinary public_id for the session thumbnail image';
 comment on column "public"."live_sessions"."blur_hash" is 'BlurHash string for placeholder image while loading';
 comment on column "public"."live_sessions"."session_code" is 'Short unique code for joining (e.g., "ABC123")';
@@ -117,3 +127,6 @@ comment on column "public"."live_sessions"."visibility" is 'Access control: publ
 comment on column "public"."live_sessions"."allow_late_join" is 'Whether participants can join after session has started';
 comment on column "public"."live_sessions"."mode" is 'Operational mode: test for facilitators to preview, live for actual sessions. State resets when switching modes.';
 comment on column "public"."live_sessions"."current_block_id" is 'The currently active block in the live session';
+comment on column "public"."live_sessions"."play_state" is 'Current play state of the session. NULL before session starts, automatically set to "lobby" when session transitions to active status (actual_start_time is set). Controls what screen participants see and what interactions are allowed.';
+comment on column "public"."live_sessions"."status" is 'High-level session lifecycle: draft (editing), waiting (open for joining), active (session started), paused (temporarily halted), ended (completed). When transitioning to active, actual_start_time is set and play_state becomes lobby.';
+comment on column "public"."live_sessions"."actual_start_time" is 'Timestamp when session actually started (status changed to active). Triggers play_state to be set to lobby. NULL means session has not started yet.';

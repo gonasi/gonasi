@@ -200,8 +200,8 @@ export default function LiveSessionIndex({ params, loaderData }: Route.Component
   const [currentSessionStatus, setCurrentSessionStatus] = useState<LiveSessionStatus>(
     session.status as LiveSessionStatus,
   );
-  const [currentPlayState, setCurrentPlayState] = useState<LiveSessionPlayState>(
-    session.play_state as LiveSessionPlayState,
+  const [currentPlayState, setCurrentPlayState] = useState<LiveSessionPlayState | null>(
+    session.play_state as LiveSessionPlayState | null,
   );
   const [currentBlockIndex, setCurrentBlockIndex] = useState(0);
   const [controlMode, setControlMode] = useState(
@@ -219,7 +219,7 @@ export default function LiveSessionIndex({ params, loaderData }: Route.Component
   // Sync local state with session data from loader (handles revalidation after actions)
   useEffect(() => {
     setCurrentSessionStatus(session.status as LiveSessionStatus);
-    setCurrentPlayState(session.play_state as LiveSessionPlayState);
+    setCurrentPlayState(session.play_state as LiveSessionPlayState | null);
     setControlMode(
       (session.control_mode as Database['public']['Enums']['live_session_control_mode']) ||
         'hybrid',
@@ -244,7 +244,7 @@ export default function LiveSessionIndex({ params, loaderData }: Route.Component
     if (newRecord.status) {
       setCurrentSessionStatus(newRecord.status);
     }
-    if (newRecord.play_state) {
+    if (newRecord.play_state !== undefined) {
       setCurrentPlayState(newRecord.play_state);
     }
     if (newRecord.control_mode) {

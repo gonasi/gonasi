@@ -99,7 +99,7 @@ export async function updateLiveSessionPlayState({
   // Step 1: Validate session exists and get current state
   const { data: session, error: fetchError } = await supabase
     .from('live_sessions')
-    .select('id, status, play_state, organization_id, current_block_id')
+    .select('id, status, play_state, organization_id, current_block_id, actual_start_time')
     .eq('id', sessionId)
     .maybeSingle();
 
@@ -116,7 +116,17 @@ export async function updateLiveSessionPlayState({
     };
   }
 
-  // Step 2: Validate business rules based on session status
+  // Step 2: Validate session has started
+  // Play state can only be changed after the session has started (actual_start_time is set)
+  if (!session.actual_start_time) {
+    console.error('[updateLiveSessionPlayState] Session has not started yet:', sessionId);
+    return {
+      success: false as const,
+      error: 'Cannot change play state. Session has not started yet. Please start the session first.',
+    };
+  }
+
+  // Step 3: Validate business rules based on session status
   if (session.status === 'ended') {
     console.error('[updateLiveSessionPlayState] Cannot update ended session:', sessionId);
     return {
@@ -125,7 +135,7 @@ export async function updateLiveSessionPlayState({
     };
   }
 
-  // Step 2b: Validate play states are appropriate for session status
+  // Step 4: Validate play states are appropriate for session status
   const sessionStatus = session.status;
 
   // When session is in "waiting" status, only lobby, countdown, host_segment, and paused are allowed
@@ -154,21 +164,24 @@ export async function updateLiveSessionPlayState({
     }
   }
 
-  // Step 3: Validate play state transition
+  // Step 5: Validate play state transition
   const currentPlayState = session.play_state;
-  const allowedTransitions = VALID_PLAY_STATE_TRANSITIONS[currentPlayState];
+
+  // If currentPlayState is null (shouldn't happen due to trigger, but be safe), treat as if in lobby
+  const effectiveCurrentState = currentPlayState || 'lobby';
+  const allowedTransitions = VALID_PLAY_STATE_TRANSITIONS[effectiveCurrentState];
 
   if (!allowedTransitions.includes(playState)) {
     console.error(
-      `[updateLiveSessionPlayState] Invalid transition from "${currentPlayState}" to "${playState}"`,
+      `[updateLiveSessionPlayState] Invalid transition from "${effectiveCurrentState}" to "${playState}"`,
     );
     return {
       success: false as const,
-      error: `Cannot transition from "${currentPlayState}" to "${playState}". Invalid play state transition.`,
+      error: `Cannot transition from "${effectiveCurrentState}" to "${playState}". Invalid play state transition.`,
     };
   }
 
-  // Step 4: Validate current_block_id if transitioning to question_active
+  // Step 6: Validate current_block_id if transitioning to question_active
   if (playState === 'question_active' && currentBlockId) {
     const { data: block, error: blockError } = await supabase
       .from('live_session_blocks')
@@ -194,7 +207,7 @@ export async function updateLiveSessionPlayState({
     }
   }
 
-  // Step 5: Additional validation for final_results
+  // Step 7: Additional validation for final_results
   if (playState === 'final_results') {
     // Check if all blocks are completed or skipped
     const { data: blocks, error: blocksError } = await supabase
@@ -219,7 +232,7 @@ export async function updateLiveSessionPlayState({
     }
   }
 
-  // Step 6: Prepare update data
+  // Step 8: Prepare update data
   const updateData: {
     play_state: typeof playState;
     current_block_id?: string | null;
@@ -232,7 +245,7 @@ export async function updateLiveSessionPlayState({
     updateData.current_block_id = currentBlockId || null;
   }
 
-  // Step 7: Attempt update
+  // Step 9: Attempt update
   const { data, error } = await supabase
     .from('live_sessions')
     .update(updateData)

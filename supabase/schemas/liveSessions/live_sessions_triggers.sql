@@ -246,7 +246,7 @@ begin
 
     -- Reset session lifecycle state
     NEW.status := 'draft';
-    NEW.play_state := 'lobby';
+    NEW.play_state := null; -- Set to NULL since session hasn't started
     NEW.actual_start_time := null;
     NEW.ended_at := null;
 
@@ -297,3 +297,35 @@ create trigger live_session_mode_change_reset
   before update of mode on live_sessions
   for each row
   execute function reset_live_session_on_mode_change();
+
+-- =============================================
+-- SESSION START TRIGGER
+-- =============================================
+
+-- Function to initialize play state when session starts
+-- When actual_start_time is set (session transitions to active),
+-- automatically set play_state to 'lobby' if it's currently NULL
+create or replace function public.initialize_play_state_on_session_start()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  -- If actual_start_time is being set (from NULL to a value)
+  -- and play_state is currently NULL, set it to 'lobby'
+  if OLD.actual_start_time is null
+     and NEW.actual_start_time is not null
+     and NEW.play_state is null then
+    NEW.play_state := 'lobby';
+  end if;
+
+  return NEW;
+end;
+$$;
+
+-- Trigger: Initialize play state when session starts
+create trigger live_session_initialize_play_state
+  before update of actual_start_time on live_sessions
+  for each row
+  execute function initialize_play_state_on_session_start();

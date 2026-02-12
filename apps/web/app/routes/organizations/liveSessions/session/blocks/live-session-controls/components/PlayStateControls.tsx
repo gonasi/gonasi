@@ -8,7 +8,7 @@ import type { LiveSessionPlayState } from '../types';
 import useModal from '~/components/go-editor/hooks/useModal';
 
 interface PlayStateControlsProps {
-  currentPlayState: LiveSessionPlayState;
+  currentPlayState: LiveSessionPlayState | null;
   onPlayStateChange: (playState: LiveSessionPlayState, blockId?: string) => void;
   currentBlockId?: string;
   disabled?: boolean;
@@ -24,7 +24,9 @@ export function PlayStateControls({
 }: PlayStateControlsProps) {
   const [modal, showModal] = useModal();
 
-  const activeState = PLAY_STATES.find((state) => state.state === currentPlayState);
+  // Handle null play state (session not started yet)
+  const isSessionNotStarted = currentPlayState === null;
+  const activeState = currentPlayState ? PLAY_STATES.find((state) => state.state === currentPlayState) : null;
   const ActiveIcon = activeState?.icon || PlayCircle;
 
   const handleStateChange = (state: LiveSessionPlayState, onClose: () => void) => {
@@ -34,8 +36,13 @@ export function PlayStateControls({
   };
 
   const openStateModal = () => {
+    // Cannot change play state if session hasn't started
+    if (isSessionNotStarted) {
+      return;
+    }
+
     // Get valid transitions for current state
-    const validTransitions = getValidPlayStateTransitions(currentPlayState);
+    const validTransitions = getValidPlayStateTransitions(currentPlayState!);
 
     // Filter play states to only show valid transitions
     const availableStates = PLAY_STATES.filter((state) => validTransitions.includes(state.state));
@@ -107,12 +114,16 @@ export function PlayStateControls({
 
         <PlayStateButton
           icon={ActiveIcon as LucideIcon}
-          label={activeState?.label || ''}
-          description={activeState?.description || ''}
+          label={isSessionNotStarted ? 'Not Started' : activeState?.label || ''}
+          description={
+            isSessionNotStarted
+              ? 'Start the session to activate play state controls'
+              : activeState?.description || ''
+          }
           onClick={openStateModal}
-          disabled={disabled}
+          disabled={disabled || isSessionNotStarted}
           isLoading={isLoading}
-          showChevron
+          showChevron={!isSessionNotStarted}
         />
       </motion.div>
       {modal}

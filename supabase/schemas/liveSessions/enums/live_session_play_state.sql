@@ -5,10 +5,18 @@
 -- This directly controls what screen participants see
 -- (question, results, leaderboard, etc).
 --
+-- LIFECYCLE:
+-- - NULL: Session has not started yet (status = draft or waiting)
+-- - 'lobby': Automatically set when session starts (status → active)
+-- - Then transitions through game states: countdown → questions → results → ended
+--
 -- IMPORTANT:
--- - This state changes frequently during a session.
--- - Frontend clients should render UI based on this value.
--- - Rejoining clients should rely on this to recover state.
+-- - play_state is NULLABLE (NULL before session starts)
+-- - Cannot change play_state until actual_start_time is set
+-- - Trigger automatically initializes to 'lobby' when session starts
+-- - This state changes frequently during an active session
+-- - Frontend clients should render UI based on this value
+-- - Rejoining clients should rely on this to recover state
 -- ============================================================
 
 create type "public"."live_session_play_state" as enum (

@@ -2361,7 +2361,9 @@ export type Database = {
             | Database["public"]["Enums"]["live_session_pause_reason"]
             | null
           play_mode: Database["public"]["Enums"]["live_session_play_mode"]
-          play_state: Database["public"]["Enums"]["live_session_play_state"]
+          play_state:
+            | Database["public"]["Enums"]["live_session_play_state"]
+            | null
           published_course_id: string | null
           scheduled_start_time: string | null
           session_code: string
@@ -2396,7 +2398,9 @@ export type Database = {
             | Database["public"]["Enums"]["live_session_pause_reason"]
             | null
           play_mode?: Database["public"]["Enums"]["live_session_play_mode"]
-          play_state?: Database["public"]["Enums"]["live_session_play_state"]
+          play_state?:
+            | Database["public"]["Enums"]["live_session_play_state"]
+            | null
           published_course_id?: string | null
           scheduled_start_time?: string | null
           session_code: string
@@ -2431,7 +2435,9 @@ export type Database = {
             | Database["public"]["Enums"]["live_session_pause_reason"]
             | null
           play_mode?: Database["public"]["Enums"]["live_session_play_mode"]
-          play_state?: Database["public"]["Enums"]["live_session_play_state"]
+          play_state?:
+            | Database["public"]["Enums"]["live_session_play_state"]
+            | null
           published_course_id?: string | null
           scheduled_start_time?: string | null
           session_code?: string

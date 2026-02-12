@@ -11,16 +11,23 @@ interface UpdateLiveSessionStatusArgs {
 /**
  * Valid session status transitions
  * Maps current status to allowed next statuses
+ *
+ * Session Lifecycle Flows:
+ * 1. Standard: draft → waiting → active → ended
+ *    - waiting phase allows participants to join lobby before session starts
+ * 2. Quick start: draft → active → ended
+ *    - Skips waiting phase for immediate starts or test sessions
+ * 3. Can pause at any point during active session
  */
 const VALID_SESSION_STATUS_TRANSITIONS: Record<
   Database['public']['Enums']['live_session_status'],
   Database['public']['Enums']['live_session_status'][]
 > = {
-  draft: ['waiting', 'ended'], // Can cancel from draft
-  waiting: ['active', 'paused', 'ended'],
+  draft: ['waiting', 'active', 'ended'], // Can start directly or open lobby first, or cancel
+  waiting: ['active', 'paused', 'ended'], // Can start session, pause lobby, or cancel
   active: ['paused', 'ended'],
   paused: ['active', 'ended'],
-  ended: [], // Terminal state
+  ended: [], // Terminal state - no transitions
 };
 
 export async function updateLiveSessionStatus({
@@ -73,7 +80,8 @@ export async function updateLiveSessionStatus({
   }
 
   // Step 4: Additional validation for specific transitions
-  if (status === 'waiting' && currentStatus === 'draft') {
+  // Validate that session has blocks when transitioning from draft to waiting or active
+  if ((status === 'waiting' || status === 'active') && currentStatus === 'draft') {
     // Check if session has at least 1 block
     const { count, error: countError } = await supabase
       .from('live_session_blocks')

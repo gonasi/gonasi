@@ -199,7 +199,7 @@ alter table "public"."live_session_test_responses" enable row level security;
     "course_id" uuid,
     "published_course_id" uuid,
     "status" public.live_session_status not null default 'draft'::public.live_session_status,
-    "play_state" public.live_session_play_state not null default 'lobby'::public.live_session_play_state,
+    "play_state" public.live_session_play_state,
     "play_mode" public.live_session_play_mode not null default 'autoplay'::public.live_session_play_mode,
     "mode" public.live_session_mode not null default 'test'::public.live_session_mode,
     "current_block_id" uuid,
@@ -503,6 +503,10 @@ alter table "public"."live_sessions" add constraint "live_sessions_pause_reason_
 
 alter table "public"."live_sessions" validate constraint "live_sessions_pause_reason_when_paused_check";
 
+alter table "public"."live_sessions" add constraint "live_sessions_play_state_lifecycle_check" CHECK ((((actual_start_time IS NULL) AND (play_state IS NULL)) OR ((actual_start_time IS NOT NULL) AND (play_state IS NOT NULL)))) not valid;
+
+alter table "public"."live_sessions" validate constraint "live_sessions_play_state_lifecycle_check";
+
 alter table "public"."live_sessions" add constraint "live_sessions_private_requires_key_check" CHECK ((((visibility = 'private'::public.live_session_visibility) AND (session_key IS NOT NULL) AND (session_key <> ''::text)) OR (visibility <> 'private'::public.live_session_visibility))) not valid;
 
 alter table "public"."live_sessions" validate constraint "live_sessions_private_requires_key_check";
@@ -767,6 +771,26 @@ end;
 $function$
 ;
 
+CREATE OR REPLACE FUNCTION public.initialize_play_state_on_session_start()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+begin
+  -- If actual_start_time is being set (from NULL to a value)
+  -- and play_state is currently NULL, set it to 'lobby'
+  if OLD.actual_start_time is null
+     and NEW.actual_start_time is not null
+     and NEW.play_state is null then
+    NEW.play_state := 'lobby';
+  end if;
+
+  return NEW;
+end;
+$function$
+;
+
 CREATE OR REPLACE FUNCTION public.join_live_session(p_session_code text, p_session_key text DEFAULT NULL::text, p_display_name text DEFAULT NULL::text)
  RETURNS jsonb
  LANGUAGE plpgsql
@@ -972,7 +996,7 @@ begin
 
     -- Reset session lifecycle state
     NEW.status := 'draft';
-    NEW.play_state := 'lobby';
+    NEW.play_state := null; -- Set to NULL since session hasn't started
     NEW.actual_start_time := null;
     NEW.ended_at := null;
 
@@ -2143,6 +2167,8 @@ CREATE TRIGGER live_session_response_update_update_participant_stats AFTER UPDAT
 CREATE TRIGGER live_session_responses_update_stats_trigger AFTER INSERT ON public.live_session_responses FOR EACH ROW EXECUTE FUNCTION public.trigger_update_stats_after_response();
 
 CREATE TRIGGER live_session_cleanup_trigger BEFORE DELETE ON public.live_sessions FOR EACH ROW EXECUTE FUNCTION public.cleanup_live_session_data();
+
+CREATE TRIGGER live_session_initialize_play_state BEFORE UPDATE OF actual_start_time ON public.live_sessions FOR EACH ROW EXECUTE FUNCTION public.initialize_play_state_on_session_start();
 
 CREATE TRIGGER live_session_mode_change_reset BEFORE UPDATE OF mode ON public.live_sessions FOR EACH ROW EXECUTE FUNCTION public.reset_live_session_on_mode_change();
 
