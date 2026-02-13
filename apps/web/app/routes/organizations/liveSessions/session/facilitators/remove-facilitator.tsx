@@ -46,7 +46,8 @@ export default function RemoveFacilitator({ params, loaderData }: Route.Componen
         />
         <Modal.Body>
           <p className='mb-4'>
-            Are you sure you want to remove this facilitator? They will lose access to edit this session.
+            Are you sure you want to remove this facilitator? They will lose access to edit this
+            session.
           </p>
 
           <Form method='POST' className='space-y-4'>
@@ -59,7 +60,12 @@ export default function RemoveFacilitator({ params, loaderData }: Route.Componen
               >
                 Cancel
               </Button>
-              <Button type='submit' variant='destructive' disabled={isSubmitting} isLoading={isSubmitting}>
+              <Button
+                type='submit'
+                variant='destructive'
+                disabled={isSubmitting}
+                isLoading={isSubmitting}
+              >
                 Remove Facilitator
               </Button>
             </div>

@@ -141,10 +141,7 @@ export function LiveSessionTrueOrFalsePlay({ block, mode }: LiveSessionPlayCompo
                     />
                   )}
                   {isWrong && (
-                    <X
-                      size={14}
-                      className='text-danger-foreground bg-danger rounded-full p-0.5'
-                    />
+                    <X size={14} className='text-danger-foreground bg-danger rounded-full p-0.5' />
                   )}
                 </div>
               )}
@@ -185,9 +182,7 @@ export function LiveSessionTrueOrFalsePlay({ block, mode }: LiveSessionPlayCompo
 
       {/* TODO: Implementation notes */}
       <div className='border-border rounded-lg border p-4'>
-        <p className='text-muted-foreground text-sm'>
-          TODO: Implement additional features:
-        </p>
+        <p className='text-muted-foreground text-sm'>TODO: Implement additional features:</p>
         <ul className='text-muted-foreground mt-2 list-inside list-disc text-xs'>
           <li>Real countdown timer with auto-submit</li>
           {!isTestMode && (

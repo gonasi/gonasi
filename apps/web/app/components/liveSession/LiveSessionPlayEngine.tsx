@@ -1,11 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 
-import type { Database } from '@gonasi/database/schema';
 import type { LiveSessionBlock } from '@gonasi/database/liveSessions';
-
-import type { LiveSessionMode } from '../plugins/liveSession/core/types';
+import type { Database } from '@gonasi/database/schema';
 
 import { useParticipantRealtime } from './hooks/useParticipantRealtime';
+import type { LiveSessionMode } from '../plugins/liveSession/core/types';
 
 import { liveSessionPluginRegistry } from '~/components/plugins/liveSession';
 

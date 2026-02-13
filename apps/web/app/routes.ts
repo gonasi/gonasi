@@ -387,6 +387,10 @@ export default [
               'routes/organizations/liveSessions/session/blocks/live-session-controls/live-session-controls-index.tsx',
             ),
             route(
+              'live-session-presentation',
+              'routes/organizations/liveSessions/session/blocks/live-session-presentation/live-session-presentation-index.tsx',
+            ),
+            route(
               ':blockId/edit',
               'routes/organizations/liveSessions/session/blocks/edit-block.tsx',
             ),

@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
-import { data as routerData, useFetcher } from 'react-router';
+import { useCallback, useEffect } from 'react';
+import { data as routerData } from 'react-router';
 import { TvMinimalPlay, Wifi, WifiOff } from 'lucide-react';
 import { dataWithError, redirectWithError } from 'remix-toast';
 
@@ -10,16 +10,29 @@ import {
   updateLiveSessionPlayState,
   updateLiveSessionStatus,
 } from '@gonasi/database/liveSessions';
+import { getUserProfile } from '@gonasi/database/profile';
 import type { Database } from '@gonasi/database/schema';
 
 import type { Route } from './+types/live-session-controls-index';
-import { BlockControls } from './components/BlockControls';
-import { ChatModeControls } from './components/ChatModeControls';
-import { ControlModeSelector } from './components/ControlModeSelector';
-import { PlayStateControls } from './components/PlayStateControls';
-import { SessionStatusControls } from './components/SessionStatusControls';
+import { useLiveSessionGameState } from './hooks/useLiveSessionGameState';
 import { useLiveSessionRealtime } from './hooks/useLiveSessionRealtime';
-import type { LiveSessionBlockStatus, LiveSessionPlayState, LiveSessionStatus } from './types';
+// Phase-specific panels
+import { BlockSkippedPanel } from './panels/BlockSkippedPanel';
+import { CountdownPanel } from './panels/CountdownPanel';
+import { EndedPanel } from './panels/EndedPanel';
+import { FinalResultsPanel } from './panels/FinalResultsPanel';
+import { HostSegmentPanel } from './panels/HostSegmentPanel';
+import { IntermissionPanel } from './panels/IntermissionPanel';
+import { IntroPanel } from './panels/IntroPanel';
+import { LeaderboardPanel } from './panels/LeaderboardPanel';
+import { LobbyPanel } from './panels/LobbyPanel';
+import { NotStartedPanel } from './panels/NotStartedPanel';
+import { PausedPanel } from './panels/PausedPanel';
+import { PrizesPanel } from './panels/PrizesPanel';
+import { QuestionActivePanel } from './panels/QuestionActivePanel';
+import { QuestionLockedPanel } from './panels/QuestionLockedPanel';
+import { QuestionResultsPanel } from './panels/QuestionResultsPanel';
+import { QuestionSoftLockedPanel } from './panels/QuestionSoftLockedPanel';
 
 import { Modal } from '~/components/ui/modal';
 import { createClient } from '~/lib/supabase/supabase.server';
@@ -39,17 +52,24 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   const { supabase, headers } = createClient(request);
   const sessionId = params.sessionId ?? '';
 
-  const [session, blocksResult] = await Promise.all([
+  const [session, blocksResult, user] = await Promise.all([
     fetchLiveSessionById({ supabase, sessionId }),
     fetchLiveSessionBlocks({
       supabase,
       liveSessionId: sessionId,
       organizationId: params.organizationId,
     }),
+    getUserProfile(supabase),
   ]);
 
   if (!session) {
     return redirectWithError(`/${params.organizationId}/live-sessions`, 'Session not found.', {
+      headers,
+    });
+  }
+
+  if (!user.user) {
+    return redirectWithError(`/${params.organizationId}/live-sessions`, 'User not found.', {
       headers,
     });
   }
@@ -65,6 +85,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   return routerData(
     {
       session,
+      user: user.user,
       blocks: blocksResult.data,
       sessionCode: session.session_code,
       mode: session.mode as 'test' | 'live',
@@ -193,76 +214,34 @@ export async function action({ request }: Route.ActionArgs) {
 
 export default function LiveSessionIndex({ params, loaderData }: Route.ComponentProps) {
   const { organizationId, sessionId } = params;
-  const { session, blocks, sessionCode, mode } = loaderData;
-  const fetcher = useFetcher();
-
-  // Local state for current session controls (synced with realtime updates and loader data)
-  const [currentSessionStatus, setCurrentSessionStatus] = useState<LiveSessionStatus>(
-    session.status as LiveSessionStatus,
-  );
-  const [currentPlayState, setCurrentPlayState] = useState<LiveSessionPlayState | null>(
-    session.play_state as LiveSessionPlayState | null,
-  );
-  const [currentBlockIndex, setCurrentBlockIndex] = useState(0);
-  const [controlMode, setControlMode] = useState(
-    (session.control_mode as Database['public']['Enums']['live_session_control_mode']) || 'hybrid',
-  );
-  const [chatMode, setChatMode] = useState(
-    (session.chat_mode as Database['public']['Enums']['live_session_chat_mode']) || 'open',
-  );
-  const [pauseReason, setPauseReason] = useState<
-    Database['public']['Enums']['live_session_pause_reason'] | null
-  >((session.pause_reason as Database['public']['Enums']['live_session_pause_reason']) || null);
+  const { session, blocks, sessionCode, mode, user } = loaderData;
 
   const closeRoute = `/${organizationId}/live-sessions/${sessionId}/blocks`;
 
-  // Sync local state with session data from loader (handles revalidation after actions)
-  useEffect(() => {
-    setCurrentSessionStatus(session.status as LiveSessionStatus);
-    setCurrentPlayState(session.play_state as LiveSessionPlayState | null);
-    setControlMode(
-      (session.control_mode as Database['public']['Enums']['live_session_control_mode']) ||
-        'hybrid',
-    );
-    setChatMode(
-      (session.chat_mode as Database['public']['Enums']['live_session_chat_mode']) || 'open',
-    );
-    setPauseReason(
-      (session.pause_reason as Database['public']['Enums']['live_session_pause_reason']) || null,
-    );
-  }, [
-    session.status,
-    session.play_state,
-    session.control_mode,
-    session.chat_mode,
-    session.pause_reason,
-  ]);
+  // Initialize game state hook - manages all session state and actions
+  const gameState = useLiveSessionGameState({
+    initialSession: session,
+    blocks,
+    sessionCode,
+    mode,
+    organizationId,
+    sessionId,
+    isConnected: true, // Will be updated by realtime hook
+  });
 
-  // Handle realtime session updates
-  const handleSessionUpdate = useCallback((payload: any) => {
-    const newRecord = payload.new;
-    if (newRecord.status) {
-      setCurrentSessionStatus(newRecord.status);
-    }
-    if (newRecord.play_state !== undefined) {
-      setCurrentPlayState(newRecord.play_state);
-    }
-    if (newRecord.control_mode) {
-      setControlMode(newRecord.control_mode);
-    }
-    if (newRecord.chat_mode) {
-      setChatMode(newRecord.chat_mode);
-    }
-    if (newRecord.pause_reason !== undefined) {
-      setPauseReason(newRecord.pause_reason);
-    }
-  }, []);
+  // Handle realtime session updates - sync with server
+  const handleSessionUpdate = useCallback(
+    (payload: any) => {
+      gameState.syncFromServer(payload.new);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
 
   // Handle realtime block updates
   const handleBlockUpdate = useCallback((payload: any) => {
-    // Block updates will be reflected in the blocks array from parent
-    // which will trigger a re-render
     console.log('[Live Session] Block updated:', payload);
+    // TODO: Update blocks in game state if needed
   }, []);
 
   // Initialize realtime subscription
@@ -273,73 +252,185 @@ export default function LiveSessionIndex({ params, loaderData }: Route.Component
     onBlockUpdate: handleBlockUpdate,
   });
 
-  // Handle session status change - updates database which triggers realtime
-  const handleSessionStatusChange = (
-    status: LiveSessionStatus,
-    pauseReason?: Database['public']['Enums']['live_session_pause_reason'],
-  ) => {
-    const formData = new FormData();
-    formData.append('intent', 'update-session-status');
-    formData.append('sessionId', sessionId);
-    formData.append('status', status);
-    if (pauseReason) {
-      formData.append('pauseReason', pauseReason);
+  // Update connection status in game state
+  useEffect(() => {
+    gameState.setIsConnected(isConnected);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isConnected]);
+
+  /**
+   * PHASE-BASED RENDERING
+   * Renders the appropriate panel based on current play state
+   */
+  const renderPhase = () => {
+    const { playState } = gameState.state;
+
+    // Before session starts: play_state is NULL
+    if (playState === null) {
+      return (
+        <NotStartedPanel
+          sessionStatus={gameState.state.sessionStatus}
+          sessionName={gameState.state.sessionName}
+          sessionCode={gameState.state.sessionCode}
+          participantCount={0} // TODO: Get from realtime participants
+          onStartSession={gameState.startSession}
+          disabled={!isConnected || gameState.isLoading}
+          user={user}
+        />
+      );
     }
 
-    fetcher.submit(formData, { method: 'POST' });
-  };
+    // After session starts: render phase-specific panels
+    switch (playState) {
+      case 'lobby':
+        return (
+          <LobbyPanel
+            state={gameState.state}
+            participantCount={0} // TODO: Get from realtime participants
+            onBegin={gameState.begin}
+            disabled={!isConnected || gameState.isLoading}
+          />
+        );
 
-  // Handle control mode change
-  const handleControlModeChange = (
-    newMode: Database['public']['Enums']['live_session_control_mode'],
-  ) => {
-    const formData = new FormData();
-    formData.append('intent', 'update-control-mode');
-    formData.append('sessionId', sessionId);
-    formData.append('controlMode', newMode);
+      case 'countdown':
+        return <CountdownPanel onComplete={() => gameState.setPlayState('intro')} />;
 
-    fetcher.submit(formData, { method: 'POST' });
-  };
+      case 'intro':
+        return (
+          <IntroPanel
+            sessionName={gameState.state.sessionName}
+            totalQuestions={gameState.state.blocks.length}
+            onNext={gameState.nextQuestion}
+            disabled={!isConnected || gameState.isLoading}
+          />
+        );
 
-  // Handle chat mode change
-  const handleChatModeChange = (newMode: Database['public']['Enums']['live_session_chat_mode']) => {
-    const formData = new FormData();
-    formData.append('intent', 'update-chat-mode');
-    formData.append('sessionId', sessionId);
-    formData.append('chatMode', newMode);
+      case 'question_active':
+        return (
+          <QuestionActivePanel
+            state={gameState.state}
+            onLockNow={gameState.lockQuestion}
+            onSkip={gameState.skipBlock}
+            onPause={() => gameState.pauseSession('host_hold')}
+            disabled={!isConnected || gameState.isLoading}
+          />
+        );
 
-    fetcher.submit(formData, { method: 'POST' });
-  };
+      case 'question_soft_locked':
+        return (
+          <QuestionSoftLockedPanel
+            onComplete={() => gameState.setPlayState('question_locked')}
+            gracePeriodSeconds={3}
+          />
+        );
 
-  // Handle play state change - updates database which triggers realtime
-  const handlePlayStateChange = (playState: LiveSessionPlayState, blockId?: string) => {
-    const formData = new FormData();
-    formData.append('intent', 'update-play-state');
-    formData.append('sessionId', sessionId);
-    formData.append('playState', playState);
-    if (blockId) {
-      formData.append('currentBlockId', blockId);
-    }
+      case 'question_locked':
+        return (
+          <QuestionLockedPanel
+            onReveal={gameState.showResults}
+            disabled={!isConnected || gameState.isLoading}
+          />
+        );
 
-    fetcher.submit(formData, { method: 'POST' });
-  };
+      case 'question_results':
+        return (
+          <QuestionResultsPanel
+            state={gameState.state}
+            onNext={gameState.showLeaderboard}
+            disabled={!isConnected || gameState.isLoading}
+          />
+        );
 
-  // Handle block status change - updates database which triggers realtime
-  const handleBlockStatusChange = (blockId: string, status: LiveSessionBlockStatus) => {
-    const formData = new FormData();
-    formData.append('intent', 'update-block-status');
-    formData.append('blockId', blockId);
-    formData.append('status', status);
+      case 'leaderboard':
+        return (
+          <LeaderboardPanel
+            state={gameState.state}
+            onNext={() => {
+              const hasMoreQuestions =
+                gameState.state.currentBlockIndex + 1 < gameState.state.blocks.length;
+              if (hasMoreQuestions) {
+                gameState.goToIntermission();
+              } else {
+                gameState.showFinalResults();
+              }
+            }}
+            onShowPrizes={gameState.showPrizes}
+            disabled={!isConnected || gameState.isLoading}
+          />
+        );
 
-    fetcher.submit(formData, { method: 'POST' });
-  };
+      case 'intermission':
+        return (
+          <IntermissionPanel
+            onNext={gameState.nextQuestion}
+            nextQuestionNumber={gameState.state.currentBlockIndex + 2}
+            isLastQuestion={gameState.state.currentBlockIndex + 1 >= gameState.state.blocks.length}
+            disabled={!isConnected || gameState.isLoading}
+          />
+        );
 
-  // Handle block navigation
-  const handleBlockChange = (index: number) => {
-    setCurrentBlockIndex(index);
-    const block = blocks[index];
-    if (block) {
-      handlePlayStateChange('question_active', block.id);
+      case 'paused':
+        return (
+          <PausedPanel
+            reason={gameState.state.pauseReason}
+            onResume={gameState.resumeSession}
+            disabled={!isConnected || gameState.isLoading}
+          />
+        );
+
+      case 'host_segment':
+        return (
+          <HostSegmentPanel
+            onEnd={gameState.endHostSegment}
+            disabled={!isConnected || gameState.isLoading}
+          />
+        );
+
+      case 'block_skipped':
+        return (
+          <BlockSkippedPanel
+            blockName={gameState.state.blocks[gameState.state.currentBlockIndex]?.name}
+            onComplete={gameState.nextQuestion}
+            displaySeconds={2}
+          />
+        );
+
+      case 'prizes':
+        return (
+          <PrizesPanel
+            onBack={() => gameState.setPlayState('leaderboard')}
+            disabled={!isConnected || gameState.isLoading}
+          />
+        );
+
+      case 'final_results':
+        return (
+          <FinalResultsPanel
+            state={gameState.state}
+            onEnd={gameState.endSession}
+            disabled={!isConnected || gameState.isLoading}
+          />
+        );
+
+      case 'ended':
+        return (
+          <EndedPanel
+            sessionName={gameState.state.sessionName}
+            totalQuestions={gameState.state.blocks.length}
+            onClose={() => (window.location.href = closeRoute)}
+            disabled={!isConnected || gameState.isLoading}
+          />
+        );
+
+      default:
+        return (
+          <div className='text-muted-foreground flex min-h-[60vh] items-center justify-center'>
+            <div className='space-y-4 text-center'>
+              <div className='text-4xl'>❓</div>
+              <p>Unknown play state: {playState}</p>
+            </div>
+          </div>
+        );
     }
   };
 
@@ -349,6 +440,7 @@ export default function LiveSessionIndex({ params, loaderData }: Route.Component
         <Modal.Header
           leadingIcon={
             <div className='flex items-center space-x-2'>
+              {/* Mode Indicator */}
               <div className='flex items-center space-x-1'>
                 <div
                   className={cn(
@@ -376,6 +468,8 @@ export default function LiveSessionIndex({ params, loaderData }: Route.Component
                   <span className='text-[8px]'>mode</span>
                 </p>
               </div>
+
+              {/* Connection Status */}
               <div className='flex items-center gap-1'>
                 {isConnected ? (
                   <Wifi size={14} className='text-success' />
@@ -390,173 +484,48 @@ export default function LiveSessionIndex({ params, loaderData }: Route.Component
           }
           closeRoute={closeRoute}
           title={session.name}
-          // subTitle={isConnected ? 'Connected' : 'Disconnected'}
           className='container mx-auto'
         />
+
         <Modal.Body className='px-0 md:px-4'>
-          <div className='mx-auto max-w-2xl'>
-            {/* Play State Controls */}
-            <div className='md:bg-card bg-transparent p-4'>
-              <PlayStateControls
-                currentPlayState={currentPlayState}
-                onPlayStateChange={handlePlayStateChange}
-                currentBlockId={blocks[currentBlockIndex]?.id}
-                disabled={!isConnected}
-                isLoading={fetcher.state !== 'idle'}
-              />
-            </div>
+          <div className='mx-auto max-w-4xl'>
+            {/* PHASE-BASED RENDERING - Main Content */}
+            {renderPhase()}
 
-            {/* Session Info */}
-            <div className='rounded-lg border border-gray-200 bg-gray-50 p-4'>
-              <h2 className='text-lg font-semibold'>{session.name}</h2>
-              <div className='mt-2 space-y-1 text-sm text-gray-600'>
-                <p>
-                  <span className='font-medium'>Session Code:</span> {sessionCode}
-                </p>
-                <p>
-                  <span className='font-medium'>Mode:</span>{' '}
-                  <span className='capitalize'>{mode}</span>
-                </p>
-                <p>
-                  <span className='font-medium'>Status:</span>{' '}
-                  <span className='capitalize'>{session.status}</span>
-                </p>
-                <p>
-                  <span className='font-medium'>Total Blocks:</span> {blocks.length}
-                </p>
-              </div>
-            </div>
-
-            {/* Control Sections */}
-            <div className='grid gap-6 lg:grid-cols-2'>
-              {/* Session Status Controls */}
-              <div className='rounded-lg border border-gray-200 bg-white p-4'>
-                <SessionStatusControls
-                  currentStatus={currentSessionStatus}
-                  pauseReason={pauseReason}
-                  onStatusChange={handleSessionStatusChange}
-                  disabled={!isConnected}
-                />
-              </div>
-
-              {/* Block Navigation */}
-              <div className='rounded-lg border border-gray-200 bg-white p-4'>
-                <BlockControls
-                  blocks={blocks}
-                  currentBlockIndex={currentBlockIndex}
-                  onBlockChange={handleBlockChange}
-                  onBlockStatusChange={handleBlockStatusChange}
-                  disabled={!isConnected}
-                />
-              </div>
-            </div>
-
-            {/* Advanced Controls */}
-            <div className='grid gap-6 lg:grid-cols-3'>
-              {/* Control Mode */}
-              <div className='rounded-lg border border-gray-200 bg-white p-4'>
-                <ControlModeSelector
-                  currentMode={controlMode}
-                  sessionStatus={currentSessionStatus}
-                  onModeChange={handleControlModeChange}
-                  disabled={!isConnected}
-                />
-              </div>
-
-              {/* Chat Mode */}
-              <div className='rounded-lg border border-gray-200 bg-white p-4'>
-                <ChatModeControls
-                  currentMode={chatMode}
-                  onModeChange={handleChatModeChange}
-                  disabled={!isConnected}
-                  pauseReason={pauseReason || undefined}
-                />
-              </div>
-
-              {/* Session Info Quick Stats */}
-              <div className='rounded-lg border border-gray-200 bg-gray-50 p-4'>
-                <h3 className='mb-2 text-sm font-semibold'>Quick Stats</h3>
-                <div className='space-y-1.5 text-xs text-gray-600'>
-                  <div className='flex justify-between'>
-                    <span>Total Blocks:</span>
-                    <span className='font-medium'>{blocks.length}</span>
+            {/* Debug Info (Development Only) */}
+            {process.env.NODE_ENV === 'development' && (
+              <div className='bg-muted/50 mt-8 space-y-2 rounded-lg p-4 font-mono text-xs'>
+                <p className='mb-2 text-sm font-bold'>🐛 Debug Info</p>
+                <div className='grid grid-cols-2 gap-2'>
+                  <div>
+                    <span className='text-muted-foreground'>Session Status:</span>{' '}
+                    <span className='font-semibold'>{gameState.state.sessionStatus}</span>
                   </div>
-                  <div className='flex justify-between'>
-                    <span>Active:</span>
-                    <span className='font-medium'>
-                      {blocks.filter((b: (typeof blocks)[number]) => b.status === 'active').length}
+                  <div>
+                    <span className='text-muted-foreground'>Play State:</span>{' '}
+                    <span className='font-semibold'>{gameState.state.playState || 'NULL'}</span>
+                  </div>
+                  <div>
+                    <span className='text-muted-foreground'>Block:</span>{' '}
+                    <span className='font-semibold'>
+                      {gameState.state.currentBlockIndex + 1} / {gameState.state.blocks.length}
                     </span>
                   </div>
-                  <div className='flex justify-between'>
-                    <span>Completed:</span>
-                    <span className='font-medium'>
-                      {
-                        blocks.filter((b: (typeof blocks)[number]) => b.status === 'completed')
-                          .length
-                      }
-                    </span>
+                  <div>
+                    <span className='text-muted-foreground'>Connected:</span>{' '}
+                    <span className='font-semibold'>{isConnected ? 'Yes' : 'No'}</span>
                   </div>
-                  <div className='flex justify-between'>
-                    <span>Skipped:</span>
-                    <span className='font-medium'>
-                      {blocks.filter((b: (typeof blocks)[number]) => b.status === 'skipped').length}
-                    </span>
+                  <div>
+                    <span className='text-muted-foreground'>Loading:</span>{' '}
+                    <span className='font-semibold'>{gameState.isLoading ? 'Yes' : 'No'}</span>
+                  </div>
+                  <div>
+                    <span className='text-muted-foreground'>Control Mode:</span>{' '}
+                    <span className='font-semibold'>{gameState.state.controlMode}</span>
                   </div>
                 </div>
               </div>
-            </div>
-
-            {/* Blocks List */}
-            <div>
-              <h3 className='mb-3 text-base font-semibold'>Session Blocks</h3>
-              <div className='space-y-2'>
-                {blocks.map((block: (typeof blocks)[number], index: number) => (
-                  <div
-                    key={block.id}
-                    className={cn(
-                      'flex items-center justify-between rounded-lg border p-3 transition-colors',
-                      index === currentBlockIndex
-                        ? 'border-primary bg-primary/5'
-                        : 'border-gray-200 bg-white',
-                    )}
-                  >
-                    <div className='flex items-center gap-3'>
-                      <span
-                        className={cn(
-                          'flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium',
-                          index === currentBlockIndex
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-primary/10 text-primary',
-                        )}
-                      >
-                        {index + 1}
-                      </span>
-                      <div>
-                        <p className='font-medium capitalize'>
-                          {block.plugin_type.replace(/_/g, ' ')}
-                        </p>
-                        <p className='text-xs text-gray-500'>
-                          Time Limit: {block.time_limit}s | Difficulty: {block.difficulty}
-                        </p>
-                      </div>
-                    </div>
-                    <div className='text-sm text-gray-500'>
-                      <span
-                        className={cn(
-                          'rounded-full px-2 py-0.5 text-xs font-medium capitalize',
-                          block.status === 'active' && 'bg-success/10 text-success',
-                          block.status === 'pending' && 'bg-gray-200 text-gray-700',
-                          block.status === 'completed' && 'bg-primary/10 text-primary',
-                          block.status === 'skipped' && 'bg-warning/10 text-warning',
-                        )}
-                      >
-                        {block.status}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+            )}
           </div>
         </Modal.Body>
       </Modal.Content>
