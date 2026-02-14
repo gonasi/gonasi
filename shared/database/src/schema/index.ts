@@ -2368,6 +2368,7 @@ export type Database = {
           scheduled_start_time: string | null
           session_code: string
           session_key: string | null
+          session_type: Database["public"]["Enums"]["live_session_type"]
           show_leaderboard: boolean
           status: Database["public"]["Enums"]["live_session_status"]
           updated_at: string
@@ -2405,6 +2406,7 @@ export type Database = {
           scheduled_start_time?: string | null
           session_code: string
           session_key?: string | null
+          session_type?: Database["public"]["Enums"]["live_session_type"]
           show_leaderboard?: boolean
           status?: Database["public"]["Enums"]["live_session_status"]
           updated_at?: string
@@ -2442,6 +2444,7 @@ export type Database = {
           scheduled_start_time?: string | null
           session_code?: string
           session_key?: string | null
+          session_type?: Database["public"]["Enums"]["live_session_type"]
           show_leaderboard?: boolean
           status?: Database["public"]["Enums"]["live_session_status"]
           updated_at?: string
@@ -3750,6 +3753,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      auto_start_scheduled_sessions: { Args: never; Returns: Json }
       calculate_access_end_date: {
         Args: {
           frequency: Database["public"]["Enums"]["payment_frequency"]
@@ -4458,6 +4462,7 @@ export type Database = {
         | "final_results"
         | "ended"
       live_session_status: "draft" | "waiting" | "active" | "paused" | "ended"
+      live_session_type: "auto_start" | "manual_start"
       live_session_visibility: "public" | "unlisted" | "private"
       org_notification_category:
         | "billing"
@@ -4781,6 +4786,7 @@ export const Constants = {
         "ended",
       ],
       live_session_status: ["draft", "waiting", "active", "paused", "ended"],
+      live_session_type: ["auto_start", "manual_start"],
       live_session_visibility: ["public", "unlisted", "private"],
       org_notification_category: [
         "billing",

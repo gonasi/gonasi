@@ -23,7 +23,9 @@ begin
     id,
     name,
     image_url,
-    status
+    status,
+    session_type,
+    scheduled_start_time
   into v_session
   from public.live_sessions
   where id = arg_session_id;
@@ -39,6 +41,11 @@ begin
   -- Check if session is already ended
   if v_session.status = 'ended' then
     v_errors := array_append(v_errors, 'Cannot start an ended session');
+  end if;
+
+  -- Check if auto_start sessions have scheduled_start_time
+  if v_session.session_type = 'auto_start' and (v_session.scheduled_start_time is null) then
+    v_errors := array_append(v_errors, 'Auto-start sessions must have a scheduled start time');
   end if;
 
   -- Check if thumbnail exists

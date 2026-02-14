@@ -86,6 +86,7 @@ export default function NewSession({ params, loaderData }: Route.ComponentProps)
     defaultValues: {
       organizationId: params.organizationId,
       visibility: 'public',
+      sessionType: 'manual_start',
       allowLateJoin: true,
       showLeaderboard: true,
       enableChat: false,
@@ -94,6 +95,7 @@ export default function NewSession({ params, loaderData }: Route.ComponentProps)
   });
 
   const visibility = methods.watch('visibility');
+  const sessionType = methods.watch('sessionType');
 
   return (
     <Modal open>
@@ -142,6 +144,41 @@ export default function NewSession({ params, loaderData }: Route.ComponentProps)
                   }}
                   description='Help participants understand what this session is about.'
                 />
+
+                {/* Session Type */}
+                <GoSelectInputField
+                  name='sessionType'
+                  labelProps={{ children: 'Session Type' }}
+                  selectProps={{
+                    disabled: isDisabled,
+                    placeholder: 'Select session type',
+                    options: [
+                      {
+                        value: 'manual_start',
+                        label: 'Manual Start - Host controls when session begins',
+                      },
+                      {
+                        value: 'auto_start',
+                        label: 'Auto Start - Session starts automatically at scheduled time',
+                      },
+                    ],
+                  }}
+                  description='Choose how your session will start.'
+                />
+
+                {/* Scheduled Start Time (required for auto_start) */}
+                {sessionType === 'auto_start' && (
+                  <GoInputField
+                    name='scheduledStartTime'
+                    labelProps={{ children: 'Scheduled Start Time' }}
+                    inputProps={{
+                      type: 'datetime-local',
+                      disabled: isDisabled,
+                      min: new Date().toISOString().slice(0, 16),
+                    }}
+                    description='Session will automatically start at this time.'
+                  />
+                )}
 
                 {/* Visibility */}
                 <GoSelectInputField

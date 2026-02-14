@@ -27,6 +27,11 @@ export const LiveSessionVisibilitySchema = z.enum(['public', 'unlisted', 'privat
   required_error: 'Please select a visibility option.',
 });
 
+// Session type enum (matches database enum live_session_type)
+export const LiveSessionTypeSchema = z.enum(['auto_start', 'manual_start'], {
+  required_error: 'Please select a session type.',
+});
+
 // New Live Session Schema
 export const NewLiveSessionSchema = z
   .object({
@@ -34,6 +39,8 @@ export const NewLiveSessionSchema = z
     description: LiveSessionDescriptionSchema,
     organizationId: z.string().uuid(),
     visibility: LiveSessionVisibilitySchema,
+    sessionType: LiveSessionTypeSchema,
+    scheduledStartTime: z.string().datetime().optional().nullable(),
     sessionKey: LiveSessionKeySchema,
     maxParticipants: z.number().int().positive().max(1000).optional().nullable(),
     allowLateJoin: z.boolean(),
@@ -54,6 +61,19 @@ export const NewLiveSessionSchema = z
       message:
         'Session key is required for private sessions and must be at least 4 characters long.',
       path: ['sessionKey'],
+    },
+  )
+  .refine(
+    (data) => {
+      // If sessionType is 'auto_start', scheduledStartTime is required
+      if (data.sessionType === 'auto_start') {
+        return !!data.scheduledStartTime;
+      }
+      return true;
+    },
+    {
+      message: 'Scheduled start time is required for auto-start sessions.',
+      path: ['scheduledStartTime'],
     },
   );
 

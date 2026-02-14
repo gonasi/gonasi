@@ -22,6 +22,8 @@ create type "public"."live_session_play_state" as enum ('lobby', 'countdown', 'i
 
 create type "public"."live_session_status" as enum ('draft', 'waiting', 'active', 'paused', 'ended');
 
+create type "public"."live_session_type" as enum ('auto_start', 'manual_start');
+
 create type "public"."live_session_visibility" as enum ('public', 'unlisted', 'private');
 
 
@@ -202,6 +204,7 @@ alter table "public"."live_session_test_responses" enable row level security;
     "play_state" public.live_session_play_state,
     "play_mode" public.live_session_play_mode not null default 'autoplay'::public.live_session_play_mode,
     "mode" public.live_session_mode not null default 'test'::public.live_session_mode,
+    "session_type" public.live_session_type not null default 'manual_start'::public.live_session_type,
     "current_block_id" uuid,
     "max_participants" integer,
     "allow_late_join" boolean not null default true,
@@ -332,6 +335,8 @@ CREATE UNIQUE INDEX live_sessions_pkey ON public.live_sessions USING btree (id);
 CREATE INDEX live_sessions_session_code_idx ON public.live_sessions USING btree (session_code);
 
 CREATE UNIQUE INDEX live_sessions_session_code_key ON public.live_sessions USING btree (session_code);
+
+CREATE INDEX live_sessions_session_type_idx ON public.live_sessions USING btree (session_type);
 
 CREATE INDEX live_sessions_status_idx ON public.live_sessions USING btree (status);
 
@@ -483,6 +488,10 @@ alter table "public"."live_session_test_responses" add constraint "live_session_
 
 alter table "public"."live_session_test_responses" validate constraint "live_session_test_responses_organization_id_fkey";
 
+alter table "public"."live_sessions" add constraint "live_sessions_auto_start_requires_schedule_check" CHECK ((((session_type = 'auto_start'::public.live_session_type) AND (scheduled_start_time IS NOT NULL)) OR (session_type <> 'auto_start'::public.live_session_type))) not valid;
+
+alter table "public"."live_sessions" validate constraint "live_sessions_auto_start_requires_schedule_check";
+
 alter table "public"."live_sessions" add constraint "live_sessions_course_id_fkey" FOREIGN KEY (course_id) REFERENCES public.courses(id) ON DELETE SET NULL not valid;
 
 alter table "public"."live_sessions" validate constraint "live_sessions_course_id_fkey";
@@ -549,6 +558,76 @@ end;
 $function$
 ;
 
+CREATE OR REPLACE FUNCTION public.auto_start_scheduled_sessions()
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+declare
+  v_session record;
+  v_started_sessions uuid[] := '{}';
+  v_failed_sessions jsonb[] := '{}';
+  v_validation_result jsonb;
+begin
+  -- Find all auto_start sessions ready to begin
+  for v_session in
+    select id, name, scheduled_start_time
+    from public.live_sessions
+    where session_type = 'auto_start'
+      and status = 'waiting'
+      and scheduled_start_time is not null
+      and scheduled_start_time <= now()
+    order by scheduled_start_time asc
+  loop
+    -- Validate session can start
+    v_validation_result := public.can_start_live_session(v_session.id);
+
+    if (v_validation_result->>'can_start')::boolean then
+      -- Start the session by transitioning to active
+      -- This will automatically:
+      -- 1. Set actual_start_time to now()
+      -- 2. Trigger play_state to become 'lobby' via existing triggers
+      update public.live_sessions
+      set
+        status = 'active',
+        actual_start_time = now(),
+        play_state = 'lobby',
+        updated_at = now()
+      where id = v_session.id;
+
+      -- Add to success list
+      v_started_sessions := array_append(v_started_sessions, v_session.id);
+
+      -- TODO: Consider emitting a notification/event here for participants
+      -- that the session has started
+
+    else
+      -- Add to failed list with reason
+      v_failed_sessions := array_append(
+        v_failed_sessions,
+        jsonb_build_object(
+          'session_id', v_session.id,
+          'session_name', v_session.name,
+          'scheduled_time', v_session.scheduled_start_time,
+          'errors', v_validation_result->'errors'
+        )
+      );
+    end if;
+  end loop;
+
+  -- Return summary
+  return jsonb_build_object(
+    'started_count', array_length(v_started_sessions, 1),
+    'started_session_ids', v_started_sessions,
+    'failed_count', array_length(v_failed_sessions, 1),
+    'failed_sessions', v_failed_sessions,
+    'executed_at', now()
+  );
+end;
+$function$
+;
+
 CREATE OR REPLACE FUNCTION public.calculate_leaderboard_ranks(p_session_id uuid)
  RETURNS void
  LANGUAGE plpgsql
@@ -594,7 +673,9 @@ begin
     id,
     name,
     image_url,
-    status
+    status,
+    session_type,
+    scheduled_start_time
   into v_session
   from public.live_sessions
   where id = arg_session_id;
@@ -610,6 +691,11 @@ begin
   -- Check if session is already ended
   if v_session.status = 'ended' then
     v_errors := array_append(v_errors, 'Cannot start an ended session');
+  end if;
+
+  -- Check if auto_start sessions have scheduled_start_time
+  if v_session.session_type = 'auto_start' and (v_session.scheduled_start_time is null) then
+    v_errors := array_append(v_errors, 'Auto-start sessions must have a scheduled start time');
   end if;
 
   -- Check if thumbnail exists

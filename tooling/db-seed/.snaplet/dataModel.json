@@ -11739,6 +11739,20 @@
           "maxLength": null
         },
         {
+          "id": "public.live_sessions.session_type",
+          "name": "session_type",
+          "columnName": "session_type",
+          "type": "live_session_type",
+          "isRequired": true,
+          "kind": "scalar",
+          "isList": false,
+          "isGenerated": false,
+          "sequence": false,
+          "hasDefaultValue": true,
+          "isId": false,
+          "maxLength": null
+        },
+        {
           "id": "public.live_sessions.current_block_id",
           "name": "current_block_id",
           "columnName": "current_block_id",
@@ -24409,6 +24423,17 @@
         },
         {
           "name": "waiting"
+        }
+      ]
+    },
+    "live_session_type": {
+      "schemaName": "public",
+      "values": [
+        {
+          "name": "auto_start"
+        },
+        {
+          "name": "manual_start"
         }
       ]
     },

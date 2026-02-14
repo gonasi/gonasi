@@ -29,6 +29,7 @@ create table "public"."live_sessions" (
   "play_state" live_session_play_state, -- NULL until session starts (actual_start_time set), then automatically becomes 'lobby'
   "play_mode" live_session_play_mode not null default 'autoplay',
   "mode" live_session_mode not null default 'test', -- test | live
+  "session_type" live_session_type not null default 'manual_start', -- Determines if session auto-starts or requires manual start
   "current_block_id" uuid, -- Currently active block
 
   "max_participants" integer, -- null = unlimited
@@ -106,6 +107,14 @@ alter table "public"."live_sessions"
     or (actual_start_time is not null and play_state is not null)
   );
 
+-- Auto-start sessions must have a scheduled_start_time
+alter table "public"."live_sessions"
+  add constraint "live_sessions_auto_start_requires_schedule_check"
+  check (
+    (session_type = 'auto_start' and scheduled_start_time is not null)
+    or session_type != 'auto_start'
+  );
+
 -- Indexes
 create index "live_sessions_organization_id_idx" on "public"."live_sessions" ("organization_id");
 create index "live_sessions_created_by_idx" on "public"."live_sessions" ("created_by");
@@ -115,6 +124,7 @@ create index "live_sessions_course_id_idx" on "public"."live_sessions" ("course_
 create index "live_sessions_visibility_idx" on "public"."live_sessions" ("visibility");
 create index "live_sessions_image_url_idx" on "public"."live_sessions" ("image_url");
 create index "live_sessions_mode_idx" on "public"."live_sessions" ("mode");
+create index "live_sessions_session_type_idx" on "public"."live_sessions" ("session_type");
 create index "live_sessions_current_block_id_idx" on "public"."live_sessions" ("current_block_id");
 
 -- Comments
@@ -126,6 +136,7 @@ comment on column "public"."live_sessions"."session_key" is 'Password/key requir
 comment on column "public"."live_sessions"."visibility" is 'Access control: public, unlisted, or private (key required)';
 comment on column "public"."live_sessions"."allow_late_join" is 'Whether participants can join after session has started';
 comment on column "public"."live_sessions"."mode" is 'Operational mode: test for facilitators to preview, live for actual sessions. State resets when switching modes.';
+comment on column "public"."live_sessions"."session_type" is 'Start mechanism: auto_start sessions begin automatically at scheduled_start_time, manual_start sessions require host to click Start button.';
 comment on column "public"."live_sessions"."current_block_id" is 'The currently active block in the live session';
 comment on column "public"."live_sessions"."play_state" is 'Current play state of the session. NULL before session starts, automatically set to "lobby" when session transitions to active status (actual_start_time is set). Controls what screen participants see and what interactions are allowed.';
 comment on column "public"."live_sessions"."status" is 'High-level session lifecycle: draft (editing), waiting (open for joining), active (session started), paused (temporarily halted), ended (completed). When transitioning to active, actual_start_time is set and play_state becomes lobby.';
