@@ -13,3 +13,6 @@ export * from './setLiveSessionToLive';
 export * from './updateLiveSessionStatus';
 export * from './updateLiveSessionPlayState';
 export * from './updateLiveSessionBlockStatus';
+export * from './editLiveSessionDetails';
+export * from './editLiveSessionSettings';
+export * from './deleteLiveSession';
