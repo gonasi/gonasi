@@ -105,7 +105,8 @@ export const initializeTransactionEnroll = async ({
 
     const effectivePrice = hasValidPromotion ? selectedTier.promotional_price! : selectedTier.price;
     const isFree = effectivePrice === 0;
-    const finalAmount = effectivePrice * 100; // Convert to kobo or cents
+    // Convert to kobo or cents. Round to avoid float artifacts (e.g. 19.99 * 100 = 1998.9999999999998)
+    const finalAmount = Math.round(effectivePrice * 100);
 
     // ─────────────────────────────────────────────────────
     // FREE ENROLLMENT FLOW
@@ -185,10 +186,18 @@ export const initializeTransactionEnroll = async ({
     );
 
     if (transactionError || !transactionData) {
-      console.error(
-        '[initializeTransactionEnroll] Payment initialization failed:',
-        transactionError,
-      );
+      // The edge function's error body lives on the Response in `context`
+      const errorBody =
+        transactionError?.context instanceof Response
+          ? await transactionError.context.text().catch(() => null)
+          : null;
+      console.error('[initializeTransactionEnroll] Payment initialization failed:', {
+        error: transactionError?.message,
+        status: transactionError?.context?.status,
+        body: errorBody,
+        amount: finalAmount,
+        reference,
+      });
       return {
         success: false,
         message: 'We couldn’t start the payment process. Please try again.',

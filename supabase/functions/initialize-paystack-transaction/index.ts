@@ -9,11 +9,22 @@ console.log('[initialize-paystack-transaction]');
 const FRONTEND_URL = Deno.env.get('FRONTEND_URL');
 const PAYSTACK_SECRET_KEY = Deno.env.get('PAYSTACK_SECRET_KEY');
 
+const jsonResponse = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json' },
+  });
+
 // Zod schema for request body validation
 const InitializeTransactionSchema = z.object({
   email: z.string().email({ message: 'Invalid email address' }),
-  name: z.string().min(1, { message: 'Name is required' }),
-  amount: z.number().positive({ message: 'Amount must be a positive number' }),
+  // Not all profiles have a full name set, so don't block payment on it
+  name: z.string().nullish(),
+  // Paystack requires amounts as integers in the currency subunit (cents)
+  amount: z
+    .number()
+    .positive({ message: 'Amount must be a positive number' })
+    .transform((value) => Math.round(value)),
   currencyCode: z.enum(['KES', 'USD'], { required_error: 'Currency code is required' }),
   reference: z.string().uuid({ message: 'Reference must be a valid UUID' }),
   metadata: z.any(),
@@ -30,9 +41,7 @@ Deno.serve(async (req) => {
       FRONTEND_URL,
       PAYSTACK_SECRET_KEY_EXISTS: !!PAYSTACK_SECRET_KEY,
     });
-    return new Response(JSON.stringify({ error: 'Missing environment configuration' }), {
-      status: 500,
-    });
+    return jsonResponse({ error: 'Missing environment configuration' }, 500);
   }
 
   let json: unknown;
@@ -40,7 +49,7 @@ Deno.serve(async (req) => {
     json = await req.json();
   } catch (err) {
     console.error('Failed to parse JSON body:', err);
-    return new Response(JSON.stringify({ error: 'Invalid JSON body' }), { status: 400 });
+    return jsonResponse({ error: 'Invalid JSON body' }, 400);
   }
 
   const parsed = InitializeTransactionSchema.safeParse(json);
@@ -48,9 +57,7 @@ Deno.serve(async (req) => {
   if (!parsed.success) {
     const errorMessages = parsed.error.flatten().fieldErrors;
     console.error('Validation failed:', errorMessages);
-    return new Response(JSON.stringify({ error: 'Validation failed', details: errorMessages }), {
-      status: 400,
-    });
+    return jsonResponse({ error: 'Validation failed', details: errorMessages }, 400);
   }
 
   const { email, name, amount, currencyCode, reference, metadata } = parsed.data;
@@ -80,23 +87,26 @@ Deno.serve(async (req) => {
     const paystackData = await paystackRes.json();
 
     if (!paystackRes.ok) {
-      console.error('Paystack API returned error:', paystackData);
-      return new Response(
-        JSON.stringify({
-          error: 'Failed to initialize Paystack transaction',
+      console.error('Paystack API returned error:', {
+        status: paystackRes.status,
+        response: paystackData,
+        amount,
+        currency: currencyCode,
+        reference,
+      });
+      // Paystack 4xx means the request itself was rejected (bad amount, unsupported currency, ...)
+      return jsonResponse(
+        {
+          error: paystackData?.message ?? 'Failed to initialize Paystack transaction',
           details: paystackData,
-        }),
-        { status: 500 },
+        },
+        paystackRes.status >= 400 && paystackRes.status < 500 ? 400 : 502,
       );
     }
 
-    return new Response(JSON.stringify({ success: true, data: paystackData }), {
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return jsonResponse({ success: true, data: paystackData });
   } catch (error) {
     console.error('Unexpected error initializing Paystack transaction:', error);
-    return new Response(JSON.stringify({ error: 'Unexpected error occurred' }), {
-      status: 500,
-    });
+    return jsonResponse({ error: 'Unexpected error occurred' }, 500);
   }
 });
