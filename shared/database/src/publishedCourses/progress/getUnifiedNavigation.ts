@@ -46,6 +46,12 @@ export async function getUnifiedNavigation({
     return null;
   }
 
+  // The RPC returns { error } when the course structure or current context can't be resolved
+  if (typeof data === 'object' && !Array.isArray(data) && 'error' in data) {
+    console.warn(`[getUnifiedNavigation] ${data.error} (course ${courseId})`);
+    return null;
+  }
+
   const parsed = UnifiedNavigationSchema.safeParse(data);
   if (!parsed.success) {
     console.error(
